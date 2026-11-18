@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ordered-vector-cursors/vec-reverse-and-lanes/bound/mech-worker",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ordered-vector-cursors/vec-reverse-and-lanes/bound/metadata.json",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "complete_smokes": 162,
+  "verified": true,
+  "worker_sha256": "2804edf5c59717ad63c557f4d3c9dc87814ba9c53ca81e2a7414c2fedaf70ad3",
+  "metadata_sha256": "5ace9bc36932bf4b4c85275ebf5fc89de5a14221500e68a13426c9949d2e777c"
+}

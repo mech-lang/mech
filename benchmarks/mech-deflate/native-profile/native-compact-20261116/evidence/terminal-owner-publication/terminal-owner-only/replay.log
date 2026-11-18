@@ -1,0 +1,76 @@
+{
+  "decision": "Reject",
+  "rejected": [
+    "empty: established slowdown above the 0.5% resolution"
+  ],
+  "unresolved": [
+    "both complete timing orders are required",
+    "random-64: regression bound or duplicate-control repeatability unresolved"
+  ],
+  "runs": [
+    {
+      "id": "terminal-owner-only-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 9,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 9,
+            "mech-experiment": 9
+          },
+          "precision_supported_wins": {
+            "mech-control": 9,
+            "mech-experiment": 9
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 5,
+            "mech-experiment": 5
+          },
+          "precision_supported_wins": {
+            "mech-control": 5,
+            "mech-experiment": 5
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "terminal-owner-only-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 9,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 9,
+            "mech-experiment": 9
+          },
+          "precision_supported_wins": {
+            "mech-control": 9,
+            "mech-experiment": 9
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 6,
+            "mech-experiment": 6
+          },
+          "precision_supported_wins": {
+            "mech-control": 6,
+            "mech-experiment": 6
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    }
+  ]
+}

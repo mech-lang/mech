@@ -1,0 +1,57 @@
+{
+  "base": "d03f097b06c8386822a8063de9826715a9c1e897",
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "input": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+  "orders": [
+    [
+      "control",
+      "ascii-miss"
+    ],
+    [
+      "ascii-miss",
+      "control"
+    ],
+    [
+      "ascii-miss",
+      "control"
+    ],
+    [
+      "control",
+      "ascii-miss"
+    ],
+    [
+      "control",
+      "ascii-miss"
+    ],
+    [
+      "ascii-miss",
+      "control"
+    ],
+    [
+      "ascii-miss",
+      "control"
+    ],
+    [
+      "control",
+      "ascii-miss"
+    ]
+  ],
+  "binaries": {
+    "control": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ascii-graphemes/candidate/parser",
+      "sha256": "0e0c96d7331d9c7a15cb7b3cc062fb60a4627b3ed5c6ff02cfd7ac37e29b36e5"
+    },
+    "ascii-miss": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ascii-literal-miss/candidate/parser",
+      "sha256": "9c6654110d908dcf10ab92a18abfff67cabc8a7d14c6c84a14de880df517add0"
+    }
+  },
+  "report_contract": {
+    "events": 718353,
+    "parser_steps": 3967302,
+    "source_bytes": 243209,
+    "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+    "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+  },
+  "boundary": "fresh-process standalone strict parser interval"
+}

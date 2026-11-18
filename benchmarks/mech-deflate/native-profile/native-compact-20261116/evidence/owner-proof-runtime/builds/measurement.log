@@ -1,0 +1,84 @@
+mech warmup {'frontend': 4.10555341700092, 'native': 2.3129931250587106, 'link': 0.24120874982327223, 'total': 6.660398665815592}
+mech warmup {'frontend': 3.9777808748185635, 'native': 2.239651458337903, 'link': 0.040950917173177004, 'total': 6.258968916255981}
+roc warmup {'compile': 3.190889500081539, 'link': 0.043889792170375586, 'total': 3.235119208227843}
+libdeflate warmup {'compile': 0.6028177919797599, 'link': 0.03416533302515745, 'total': 0.6372474171221256}
+mech order-1 {'frontend': 3.988009291701019, 'native': 2.2265804172493517, 'link': 0.0408587078563869, 'total': 6.256062041968107}
+mech order-1 {'frontend': 3.9822897501289845, 'native': 2.229285541921854, 'link': 0.04746679123491049, 'total': 6.259661083109677}
+libdeflate order-1 {'compile': 0.4560757908038795, 'link': 0.03448679065331817, 'total': 0.4908154159784317}
+roc order-1 {'compile': 2.9587390422821045, 'link': 0.03458845801651478, 'total': 2.993650041986257}
+mech order-2 {'frontend': 4.003214833326638, 'native': 2.2303467500023544, 'link': 0.04774204082787037, 'total': 6.282081749755889}
+roc order-2 {'compile': 2.9532988341525197, 'link': 0.03395845927298069, 'total': 2.987621999811381}
+mech order-2 {'frontend': 3.9738229997456074, 'native': 2.226286666933447, 'link': 0.04043120797723532, 'total': 6.241154624614865}
+libdeflate order-2 {'compile': 0.45654079178348184, 'link': 0.0335165411233902, 'total': 0.49032304203137755}
+roc order-3 {'compile': 2.958537416998297, 'link': 0.0348874581977725, 'total': 2.993753249756992}
+libdeflate order-3 {'compile': 0.4564510826021433, 'link': 0.03338858298957348, 'total': 0.49012266704812646}
+mech order-3 {'frontend': 3.9874068330973387, 'native': 2.230867000296712, 'link': 0.04840700002387166, 'total': 6.267291249707341}
+mech order-3 {'frontend': 3.973707417026162, 'native': 2.231239166110754, 'link': 0.040235333144664764, 'total': 6.245761124882847}
+libdeflate order-4 {'compile': 0.44752791710197926, 'link': 0.03331745881587267, 'total': 0.4811095828190446}
+mech order-4 {'frontend': 3.9696874166838825, 'native': 2.2284332499839365, 'link': 0.04072720790281892, 'total': 6.2394995000213385}
+roc order-4 {'compile': 2.9496246660128236, 'link': 0.03360320767387748, 'total': 2.9835460828617215}
+mech order-4 {'frontend': 3.9679667907767, 'native': 2.228411499876529, 'link': 0.04075854178518057, 'total': 6.237832040991634}
+matched-owner-ranges-mech-control 162 exact linked calls
+matched-owner-ranges-mech-owner-ranges 162 exact linked calls
+{
+  "medians": {
+    "mech-control": {
+      "frontend": 3.9737652083858848,
+      "native": 2.227506833616644,
+      "link": 0.04057920794002712,
+      "total": 6.243457874748856,
+      "parse": 3.5229570005
+    },
+    "mech-owner-ranges": {
+      "frontend": 3.9848482916131616,
+      "native": 2.229816145962104,
+      "link": 0.04760441603139043,
+      "total": 6.263476166408509,
+      "parse": 3.527862917
+    },
+    "roc": {
+      "compile": 2.9559181255754083,
+      "link": 0.034273458644747734,
+      "total": 2.990636020898819
+    },
+    "libdeflate": {
+      "compile": 0.4562634367030114,
+      "link": 0.03345256205648184,
+      "total": 0.490222854539752
+    }
+  },
+  "sizes": {
+    "mech-control": {
+      "emitted_text_bytes": 72520,
+      "encoder_file_bytes": 160136,
+      "linked_text_bytes": 475444,
+      "executable_file_bytes": 956056,
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c"
+    },
+    "mech-owner-ranges": {
+      "emitted_text_bytes": 72392,
+      "encoder_file_bytes": 160008,
+      "linked_text_bytes": 475316,
+      "executable_file_bytes": 956056,
+      "encoder_sha256": "172a40de486b0c53ecfb94ce383ac9036f17b12b84f632005421ded5d04f6ce0"
+    },
+    "roc": {
+      "emitted_text_bytes": 57696,
+      "encoder_file_bytes": 79160,
+      "linked_text_bytes": 150416,
+      "executable_file_bytes": 230600,
+      "encoder_sha256": "56bdcd935d0814afc2b587a83374164c51c09491d86295d0f26f87a95fc7a6a4"
+    },
+    "libdeflate": {
+      "emitted_text_bytes": 37080,
+      "encoder_file_bytes": 52128,
+      "linked_text_bytes": 129900,
+      "executable_file_bytes": 210168,
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726"
+    }
+  },
+  "byte_identical": [
+    "canonical bytecode across both variants",
+    "native object, complete metadata and executable within all five builds of each variant"
+  ]
+}

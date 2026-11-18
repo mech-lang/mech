@@ -139,12 +139,13 @@ fn emit(case: Case, optimize: bool) -> (JITModule, Entry) {
         } else {
             BTreeMap::from([(table, bytes)])
         };
-        let changed = fold(&mut ctx.func, &ctx.cfg, &ctx.domtree, &floors);
+        let (changed, stores) = fold(&mut ctx.func, &ctx.cfg, &ctx.domtree, &floors);
         assert_eq!(
             changed,
             usize::from(matches!(case, Case::Exact | Case::Offset)),
             "{case:?}"
         );
+        assert_eq!(stores.fold(&mut ctx.func, &ctx.cfg), changed, "{case:?}");
     }
     ctx.verify(module.isa()).unwrap();
     let id = module

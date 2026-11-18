@@ -1,0 +1,30 @@
+{
+  "archived_comparison_valid": false,
+  "superseded_review_commit": "61f012dd1233e746ec199f1d43ea4584ed172737",
+  "reason": "Both linked commands supplied the same reference program.o. The outline object was copied but not passed to the linker.",
+  "invalidated_evidence": [
+    "focused comparative runtime",
+    "complete comparative runtime",
+    "first linked outline output and checked failures",
+    "first linked outline stack high-water"
+  ],
+  "archived_worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+  "reference_encoder_sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+  "outline_encoder_sha256": "1ba5b62ab2f54deaa2b34ea1d97a635458a09dd981e471789e6bd94fedd15460",
+  "corrected_outline_worker_sha256": "149d0c2cb7d2794d180863d12a3953492d0ddb28b3c6b1f05b4cd14c8d5cbf03",
+  "corrected_success_observations_matched": 162,
+  "corrected_failure_cases_matched": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "prefix-periodic-4096",
+    "prefix-repeated-16384",
+    "heldout-mixed-131073"
+  ],
+  "corrected_stack_peak_bytes": {
+    "control": 5280,
+    "general-byte-read": 5328
+  },
+  "predeclared_stack_ceiling_bytes": 5280,
+  "outline_status": "Exceeds predeclared stack ceiling. Pending runtime qualification."
+}

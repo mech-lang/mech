@@ -6,8 +6,9 @@ use crate::native_artifact::codegen::common::{aggregates, terminators, word_acce
 use crate::native_artifact::codegen::control::plan::CodePlan;
 use crate::native_artifact::codegen::options::{CompilationControls, OptimizationPass};
 use crate::native_artifact::compiler::{backend, primitive};
+use crate::native_artifact::program::compact::PrivatePhase;
 use crate::native_artifact::program::prepare::{
-    readonly_numeric::Operation,
+    readonly_numeric::{Operation, Proof},
     tail::{OVERHEAD, Region},
 };
 use cranelift_codegen::ir::condcodes::IntCC;
@@ -80,6 +81,36 @@ impl Report {
     }
 }
 
+pub(in crate::native_artifact) fn private_checked_child_bounds(
+    code: CodePlan<'_>,
+    region: &Region,
+    private: &PrivatePhase,
+) -> Option<Vec<(usize, u64)>> {
+    let proof = region.numeric.as_ref()?;
+    let shadow = region.shadow?;
+    if !private.permits(proof) {
+        return None;
+    }
+    super::numeric_phase_bounds::checked_child_bounds(
+        code,
+        proof,
+        terminal_fallbacks(proof, shadow, Some(private)),
+    )
+}
+
+fn terminal_fallbacks(proof: &Proof, shadow: usize, private: Option<&PrivatePhase>) -> bool {
+    private.is_some_and(|contract| {
+        if std::env::var_os("MECH_PHASE_ASSERTION_FLOORS").is_none() || !contract.permits(proof) {
+            return false;
+        }
+        let handoffs = contract.exports(shadow);
+        proof
+            .actions
+            .iter()
+            .all(|(at, op)| !matches!(op, Operation::Fallback) || handoffs.contains_key(at))
+    })
+}
+
 pub(in crate::native_artifact) fn emit(
     controls: &CompilationControls,
     b: &mut FunctionBuilder<'_>,
@@ -146,7 +177,13 @@ pub(in crate::native_artifact) fn emit(
             blocks[&site]
         }
     };
-    let read_packs = super::numeric_read_packs::derive(&program.metadata().plan.facts(), proof);
+    let (read_packs, boolean_successors) = {
+        let facts = program.metadata().plan.facts();
+        (
+            super::numeric_read_packs::derive(&facts, proof),
+            super::numeric_branches::derive(&facts, proof),
+        )
+    };
     // Packing can bypass every original scalar definition in these regions.
     // Source confinement does not account for uses introduced by read/operand
     // reuse. Do not publish fallback-only CLIF values into the snapshot cache:
@@ -156,8 +193,6 @@ pub(in crate::native_artifact) fn emit(
         .iter()
         .flat_map(|pack| pack.sites())
         .collect::<BTreeSet<_>>();
-    let boolean_successors =
-        super::numeric_branches::derive(&program.metadata().plan.facts(), proof);
     let versions = super::numeric_loop_windows::derive(
         code,
         proof,
@@ -171,18 +206,13 @@ pub(in crate::native_artifact) fn emit(
         .map(|v| (v.initialize, v.queries(proof)))
         .collect();
     let initial = super::numeric_traversal::derive(code, proof, shadow, &checks, &[], true);
-    let terminal_fallbacks = private.is_some_and(|contract| {
-        if std::env::var_os("MECH_PHASE_ASSERTION_FLOORS").is_none() || !contract.permits(proof) {
-            return false;
-        }
-        let handoffs = contract.exports(shadow);
-        proof
-            .actions
-            .iter()
-            .all(|(at, op)| !matches!(op, Operation::Fallback) || handoffs.contains_key(at))
-    });
-    let phase_entry_bounds =
-        super::numeric_phase_bounds::derive(code, proof, &versions, &initial, terminal_fallbacks);
+    let phase_entry_bounds = super::numeric_phase_bounds::derive(
+        code,
+        proof,
+        &versions,
+        &initial,
+        terminal_fallbacks(proof, shadow, private),
+    );
     let collect_fixed_writes = vectors.is_some()
         && private.is_some_and(|contract| contract.permits(proof))
         && (std::env::var_os("MECH_PREFETCH_PRIVATE_WRITES").is_some()

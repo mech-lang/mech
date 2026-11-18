@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-ordered-scorer.JpuxMQ/preserve/mech-worker",
+    "/private/tmp/mech-ordered-scorer.JpuxMQ/preserve/metadata.json",
+    "/private/tmp/mech-ordered-scorer.JpuxMQ/preserve/fixtures.json"
+  ],
+  "complete_smokes": 162,
+  "verified": true,
+  "worker_sha256": "6e60047970ac9730f77247a820f29ec8e2048f552f16810bf28ab254fd5b1b5e",
+  "metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+}

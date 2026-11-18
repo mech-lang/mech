@@ -398,6 +398,59 @@ pub unsafe extern "C" fn mech_compact_allocate(
         Err(status) => status,
     }
 }
+
+// Apple AArch64 returns this two-word C aggregate in x0 and x1. Every
+// successful allocation has a nonzero data address, including an empty view.
+#[cfg(all(target_arch = "aarch64", target_os = "macos"))]
+#[repr(C)]
+pub struct BackingResult {
+    data: u64,
+    owner_or_status: u64,
+}
+
+#[cfg(all(target_arch = "aarch64", target_os = "macos"))]
+impl From<Result<View, u64>> for BackingResult {
+    fn from(result: Result<View, u64>) -> Self {
+        match result {
+            Ok(view) => {
+                debug_assert_ne!(view[0], 0);
+                Self {
+                    data: view[0],
+                    owner_or_status: view[5],
+                }
+            }
+            Err(status) => Self {
+                data: 0,
+                owner_or_status: status,
+            },
+        }
+    }
+}
+
+/// Allocate backing for an empty row and return its address and owner.
+/// # Safety
+/// A nonnull context must point to the current exclusive heap.
+#[cfg(all(target_arch = "aarch64", target_os = "macos"))]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn mech_compact_allocate_backing(
+    context: *mut Heap,
+    capacity: u64,
+    stride: u64,
+    alignment: u64,
+    zeroed: u64,
+) -> BackingResult {
+    if context.is_null() {
+        return Err(INVALID).into();
+    }
+    unsafe { &mut *context }
+        .allocate(
+            capacity as usize,
+            stride as usize,
+            alignment as usize,
+            zeroed != 0,
+        )
+        .into()
+}
 /// A successful writable view keeps the source's length, rows, and columns,
 /// whether its backing was reused or copied.
 ///
@@ -476,6 +529,40 @@ pub unsafe extern "C" fn mech_compact_writable_scalar(
     }
 }
 
+/// Return only the address and owner of a writable scalar view.
+/// Successful capacity is the maximum of the source capacity and the minimum.
+/// # Safety
+/// The source and all current owners belong to the exclusive heap. The low
+/// bit of `layout` requires last-use proof when set. Its other bits carry the
+/// scalar stride and alignment.
+#[cfg(all(target_arch = "aarch64", target_os = "macos"))]
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn mech_compact_writable_scalar_backing(
+    context: *mut Heap,
+    data: u64,
+    length: u64,
+    capacity: u64,
+    owner: u64,
+    minimum: u64,
+    layout: u64,
+) -> BackingResult {
+    let width = layout >> 1;
+    if context.is_null() || !matches!(width, 1 | 2 | 4 | 8) {
+        return Err(INVALID).into();
+    }
+    // An empty or borrowed source seeks new backing. A reused owner has
+    // already been checked against its nonzero, registered data address.
+    unsafe { &mut *context }
+        .writable(
+            [data, length, capacity, 0, 0, owner],
+            layout & 1 != 0,
+            minimum as usize,
+            width as usize,
+            width as usize,
+        )
+        .into()
+}
+
 // Keep this as a tail-call target for the shared decrement. An inlined
 // final release would require a frame even when another reference stays live.
 /// Release a registered owner after its last reference is retired.
@@ -507,6 +594,69 @@ pub unsafe extern "C" fn mech_compact_release_owner(context: *mut Heap, owner: *
     } else {
         0
     }
+}
+
+unsafe fn release_owners(context: *mut Heap, owners: &[*mut Owner]) -> u64 {
+    for &owner in owners {
+        if !owner.is_null() {
+            // SAFETY: each nonnull owner holds its own reference in this heap.
+            let status = unsafe { mech_compact_release_owner(context, owner) };
+            if status != 0 {
+                return status;
+            }
+        }
+    }
+    0
+}
+
+/// Retire one reference if present.
+/// # Safety
+/// A nonnull owner holds a reference from the exclusive current heap.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn mech_compact_release_nullable(
+    context: *mut Heap,
+    owner: *mut Owner,
+) -> u64 {
+    unsafe { release_owners(context, &[owner]) }
+}
+
+/// Retire two references in source order, stopping at the first failure.
+/// # Safety
+/// Each nonnull owner holds a reference from the exclusive current heap.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn mech_compact_release_two(
+    context: *mut Heap,
+    first: *mut Owner,
+    second: *mut Owner,
+) -> u64 {
+    unsafe { release_owners(context, &[first, second]) }
+}
+
+/// Retire up to three references in source order, stopping at the first failure.
+/// # Safety
+/// Each nonnull owner holds a reference from the exclusive current heap.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn mech_compact_release_three(
+    context: *mut Heap,
+    first: *mut Owner,
+    second: *mut Owner,
+    third: *mut Owner,
+) -> u64 {
+    unsafe { release_owners(context, &[first, second, third]) }
+}
+
+/// Retire up to four references in source order, stopping at the first failure.
+/// # Safety
+/// Each nonnull owner holds a reference from the exclusive current heap.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn mech_compact_release_four(
+    context: *mut Heap,
+    first: *mut Owner,
+    second: *mut Owner,
+    third: *mut Owner,
+    fourth: *mut Owner,
+) -> u64 {
+    unsafe { release_owners(context, &[first, second, third, fourth]) }
 }
 
 #[cfg(test)]
@@ -794,6 +944,39 @@ mod mapped_tests {
     use super::*;
 
     #[test]
+    fn smaller_numeric_zeros_keep_allocator_backing_and_recover_after_release() {
+        let count = zero_pages::minimum_mapping_bytes() / 2 / 2;
+        let mut heap = Heap::new();
+        zero_pages::DENY.with(|deny| deny.set(true));
+        let first = heap.allocate(count, 2, 2, true);
+        zero_pages::DENY.with(|deny| deny.set(false));
+        let mut first = first.unwrap();
+        let words = unsafe { std::slice::from_raw_parts_mut(first[0] as *mut u16, count) };
+        assert!(words.iter().all(|word| *word == 0));
+        words[0] = 17;
+        words[count - 1] = 29;
+        first[1] = count as u64;
+        first[4] = count as u64;
+        unsafe { (*(first[5] as *mut Owner)).references = 2 };
+        let copied = heap.writable(first, true, count, 2, 2).unwrap();
+        assert_ne!(copied[0], first[0]);
+        unsafe { (copied[0] as *mut u16).write(73) };
+        assert_eq!((words[0], words[count - 1]), (17, 29));
+        assert_eq!(heap.counters.mapped_payload_requests, 0);
+        heap.discard_private();
+        assert_eq!(heap.counters.live_payload_bytes, 0);
+        let retry = heap.allocate(count, 2, 2, true).unwrap();
+        assert!(
+            unsafe { std::slice::from_raw_parts(retry[0] as *const u16, count) }
+                .iter()
+                .all(|word| *word == 0)
+        );
+        heap.discard_private();
+        assert_eq!(heap.counters.live_payload_bytes, 0);
+        assert_eq!(heap.counters.live_mapped_payload_bytes, 0);
+    }
+
+    #[test]
     fn mapped_numeric_zeros_remain_readable_and_live_aliases_keep_their_words() {
         assert_eq!(
             std::mem::size_of::<Owner>(),
@@ -1025,18 +1208,30 @@ pub unsafe extern "C" fn mech_compact_parallel(
 #[cfg(test)]
 mod parallel_tests {
     use super::*;
+
+    fn mapped_words() -> usize {
+        #[cfg(target_os = "macos")]
+        {
+            zero_pages::minimum_mapping_bytes() / 8
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            32768
+        }
+    }
+
     #[cfg(target_os = "macos")]
     #[test]
     fn refused_mapping_preserves_existing_storage_and_recovers() {
         let mut heap = Heap::new();
         let existing = heap.allocate(3, 8, 8, false).unwrap();
         deny_test_mapping(true);
-        let denied = heap.allocate(32768, 8, 8, true);
+        let denied = heap.allocate(mapped_words(), 8, 8, true);
         deny_test_mapping(false);
         assert_eq!(denied.unwrap_err(), ALLOCATION);
         assert_eq!(heap.counters.live_payload_bytes, 24);
         assert_eq!(heap.first_owner, existing[5] as *mut Owner);
-        heap.allocate(32768, 8, 8, true).unwrap();
+        heap.allocate(mapped_words(), 8, 8, true).unwrap();
         heap.discard_private();
     }
     unsafe extern "C" fn copy_borrow(
@@ -1047,7 +1242,7 @@ mod parallel_tests {
         // SAFETY: the test passes four initialized words per packet.
         let packet = unsafe { std::slice::from_raw_parts(input, 4) };
         let heap = unsafe { &mut *context };
-        let mut view = heap.allocate(32768, 8, 8, true).unwrap();
+        let mut view = heap.allocate(mapped_words(), 8, 8, true).unwrap();
         view[1] = 3;
         view[4] = 3;
         // The native writer initializes its own storage; the shared input is
@@ -1102,7 +1297,7 @@ mod parallel_tests {
             assert_eq!(parent.parallel_batches, 1);
             assert_eq!(
                 parent.counters.live_payload_bytes,
-                24 + count as u64 * 32768 * 8
+                24 + count as u64 * mapped_words() as u64 * 8
             );
             assert_eq!(parent.counters.payload_requests, 1 + count as u64);
             assert_eq!(parent.first_owner, existing[5] as *mut Owner);
@@ -1116,7 +1311,7 @@ mod parallel_tests {
             #[cfg(target_os = "macos")]
             assert_eq!(
                 parent.counters.live_mapped_payload_bytes,
-                count as u64 * 32768 * 8
+                count as u64 * mapped_words() as u64 * 8
             );
             parent.discard_private();
             assert_eq!(parent.counters.live_payload_bytes, 0);

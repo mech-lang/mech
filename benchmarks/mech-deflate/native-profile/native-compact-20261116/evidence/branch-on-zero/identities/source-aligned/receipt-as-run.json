@@ -1,0 +1,19 @@
+{
+  "object_text_bytes": 71768,
+  "object_text_x_roc": 1.2438990571270105,
+  "object_text_x_libdeflate": 1.745670363884024,
+  "roc_object_text_bytes": 57696,
+  "libdeflate_object_text_bytes": 41112,
+  "root_code_bytes": 51240,
+  "root_frame_bytes": 3728,
+  "source_blocks": 8223,
+  "root_direct_calls": 372,
+  "emit_seconds": 2.3959243330173194,
+  "peak_resident_bytes": 217874432,
+  "object_sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+  "metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+  "linked_text_bytes": 474692,
+  "worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+  "verified_calls": 162,
+  "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-size-20261117-source-aligned-qualification.json"
+}

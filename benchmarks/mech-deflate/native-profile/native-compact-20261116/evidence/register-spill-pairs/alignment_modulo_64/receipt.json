@@ -1,0 +1,27 @@
+{
+  "object_text_bytes": 71896,
+  "object_text_x_roc": 1.2461175818080976,
+  "object_text_x_libdeflate": 1.9389428263214672,
+  "roc_object_text_bytes": 57696,
+  "libdeflate_object_text_bytes": 37080,
+  "root_code_bytes": 51448,
+  "root_frame_bytes": 3744,
+  "source_blocks": 8223,
+  "root_direct_calls": 372,
+  "emit_seconds": 1.7942254999652505,
+  "peak_resident_bytes": 218071040,
+  "object_sha256": "cd7a1938284f04f77f80bb147a256b0b676d2407af11a444bc8893c37896cc6d",
+  "metadata_sha256": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab",
+  "linked_text_bytes": 474788,
+  "worker_sha256": "775b12ba2e8c54a3a153504833df4601307ae691cd6bb31ecd57d16c78960b91",
+  "verified_calls": 162,
+  "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/spill-pairs-residue-64-worker-qualification.json",
+  "postprocess": {
+    "matched_atom": "_mech_compact_numeric_475_vector",
+    "bytes_of_unreachable_padding": 32,
+    "paired_object_sha256": "463a3a0d275548b9be6f646cd9f978f6c929b58c9779b88e2d22183019b0b99a",
+    "all_object_text_symbol_address_residues_modulo_64_restored": true
+  },
+  "linked_native_symbol_addresses_checked": 40,
+  "linked_native_symbols_with_different_address_residues": []
+}

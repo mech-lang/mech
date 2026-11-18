@@ -1,0 +1,2686 @@
+{
+  "runs": [
+    {
+      "id": "source-owner-exchange-71288-v2-full-forward",
+      "kind": "full",
+      "order": "forward",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 61,
+            "mech-experiment": 61
+          },
+          "precision_supported_wins": {
+            "mech-control": 60,
+            "mech-experiment": 60
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 55,
+            "mech-experiment": 55
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 54,
+            "mech-experiment": 54
+          }
+        }
+      }
+    },
+    {
+      "id": "source-owner-exchange-71288-v2-full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 60,
+            "mech-experiment": 60
+          },
+          "precision_supported_wins": {
+            "mech-control": 59,
+            "mech-experiment": 59
+          },
+          "lost_cases": [
+            "random-1024"
+          ],
+          "gained_cases": [
+            "320-overlap"
+          ],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 54,
+            "mech-experiment": 54
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 53,
+            "mech-experiment": 53
+          }
+        }
+      }
+    }
+  ],
+  "cases": {
+    "empty": {
+      "decision": "regression",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.011562728804238365,
+          "lower": 0.004692212023164943,
+          "upper": 0.018418809577744222
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.014447833486441963,
+          "lower": 0.006726615794709234,
+          "upper": 0.022311655336597846
+        }
+      },
+      "combined": {
+        "estimate": 0.013004254024183703,
+        "lower": 0.007630213138734909,
+        "upper": 0.01823797909697622
+      },
+      "adverse_runs": [
+        "source-owner-exchange-71288-v2-full-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "one-stored": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.001348232786559156,
+          "lower": -0.009645747223131829,
+          "upper": 0.006785780500520033
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.01057982692464643,
+          "lower": -0.020350068682613243,
+          "upper": -0.00036595746189438394
+        }
+      },
+      "combined": {
+        "estimate": -0.005974746619417881,
+        "lower": -0.012322802807208655,
+        "upper": 0.0005493637761269099
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "seven-stored-prefix": {
+      "decision": "unresolved",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.004258971818937862,
+          "lower": -0.002874771897119821,
+          "upper": 0.01154866709624569
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.002941691537052593,
+          "lower": -0.010379037045572748,
+          "upper": 0.004465753752716628
+        }
+      },
+      "combined": {
+        "estimate": 0.0006521631918501303,
+        "lower": -0.004588716842792828,
+        "upper": 0.005881709539154123
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "eight-literals": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.004623140467735265,
+          "lower": -0.007241519538814245,
+          "upper": -0.0018834370853624272
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0028190667307537165,
+          "lower": -0.010159067341000139,
+          "upper": 0.0054412264981604785
+        }
+      },
+      "combined": {
+        "estimate": -0.0037215119541146313,
+        "lower": -0.007643444131188448,
+        "upper": 0.0006810386090736475
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "eight-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0012481200510724433,
+          "lower": -0.0059611528458141105,
+          "upper": 0.003273541748665343
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.005227327115518654,
+          "lower": -0.00991256290995457,
+          "upper": -0.0005276053334052344
+        }
+      },
+      "combined": {
+        "estimate": -0.0032397092754972157,
+        "lower": -0.006633170671393462,
+        "upper": 8.118062267081783e-05
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.000256297123828908,
+          "lower": -0.00223056671470534,
+          "upper": 0.002568460702814024
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.007313977299664209,
+          "lower": -0.023362687052058573,
+          "upper": 0.007881712710891442
+        }
+      },
+      "combined": {
+        "estimate": -0.0035360291145398737,
+        "lower": -0.011476944243788978,
+        "upper": 0.004249180413193221
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "eight-literals-prefix": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.005294892331512258,
+          "lower": -0.007508046390846568,
+          "upper": -0.003070056432861068
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0001931877077369082,
+          "lower": -0.0037474717886079034,
+          "upper": 0.00328507839764125
+        }
+      },
+      "combined": {
+        "estimate": -0.002747302400809226,
+        "lower": -0.004820393569283432,
+        "upper": -0.0007044269724846286
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "128-biased-dynamic": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0034180073736266303,
+          "lower": -0.006057441878855707,
+          "upper": -0.0009841873892439956
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.0012001563417620709,
+          "lower": -0.0014376922643999368,
+          "upper": 0.003811693421053919
+        }
+      },
+      "combined": {
+        "estimate": -0.0011115944086097507,
+        "lower": -0.002917082701884288,
+        "upper": 0.0006648717694182071
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "32-high-entropy-stored": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.004249239864010823,
+          "lower": -0.00751790661975249,
+          "upper": -0.00041312734408804896
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.005628243363190233,
+          "lower": -0.01057714735133608,
+          "upper": -0.0009533875423403115
+        }
+      },
+      "combined": {
+        "estimate": -0.004938980499757384,
+        "lower": -0.007897617988697148,
+        "upper": -0.001820787264286361
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "16384-distribution-change": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.003500594111634503,
+          "lower": -0.006287893332419858,
+          "upper": -0.0007134635068424267
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0008276361453996017,
+          "lower": -0.003580267068682752,
+          "upper": 0.0019779785730753563
+        }
+      },
+      "combined": {
+        "estimate": -0.0021650101538917,
+        "lower": -0.004145366166058317,
+        "upper": -0.00023102727914248167
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "33027-periodic-window": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.00012592730873484115,
+          "lower": -0.002145581844079425,
+          "upper": 0.0020087267304462753
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0036041381402069916,
+          "lower": -0.005399037973704224,
+          "upper": -0.001815483000783269
+        }
+      },
+      "combined": {
+        "estimate": -0.0018665477950984277,
+        "lower": -0.003173859290213299,
+        "upper": -0.00046820679812098476
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "unresolved",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.00794782152233453,
+          "lower": 2.0485992513252782e-05,
+          "upper": 0.016273882410573037
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.000514093578946051,
+          "lower": -0.0076609198607520135,
+          "upper": 0.00759361841906947
+        }
+      },
+      "combined": {
+        "estimate": 0.0042240790905643255,
+        "lower": -0.0015269090917452433,
+        "upper": 0.009821637233488723
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-256": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0025139260981372757,
+          "lower": -0.007662689614706397,
+          "upper": 0.001788103185953016
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.010880351067324878,
+          "lower": -0.02423844615179338,
+          "upper": 0.002300789871359621
+        }
+      },
+      "combined": {
+        "estimate": -0.00670594724772311,
+        "lower": -0.013816708724187055,
+        "upper": 0.0003688829443400099
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-1024": {
+      "decision": "unresolved",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0022444870547836393,
+          "lower": -0.0035221535604011978,
+          "upper": -0.0010452238344352827
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.006130436317870025,
+          "lower": -0.022347427992278623,
+          "upper": 0.03501101267338336
+        }
+      },
+      "combined": {
+        "estimate": 0.0019342241774811253,
+        "lower": -0.011588032395230985,
+        "upper": 0.016165490700899454
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "repeated-1024": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.000980927920652519,
+          "lower": -0.011123557949037077,
+          "upper": 0.008104467116696545
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.0007079780048231399,
+          "lower": -0.0010700658261656448,
+          "upper": 0.002658387337460155
+        }
+      },
+      "combined": {
+        "estimate": -0.0001368315570483558,
+        "lower": -0.00532564323815321,
+        "upper": 0.004473247050054141
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-32769": {
+      "decision": "unresolved",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.014600646267148853,
+          "lower": 0.0026444602197992495,
+          "upper": 0.02865707919563465
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.002588849612391142,
+          "lower": -0.004781743255242943,
+          "upper": -0.00036385180382647597
+        }
+      },
+      "combined": {
+        "estimate": 0.005969183313946358,
+        "lower": -2.7669680443320743e-05,
+        "upper": 0.013099267240107793
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "repeated-32769": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0037718627379664804,
+          "lower": -0.006656805964288082,
+          "upper": -0.0007613528296370742
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0032144515058072365,
+          "lower": -0.009908538881607254,
+          "upper": 0.003132632827268722
+        }
+      },
+      "combined": {
+        "estimate": -0.0034931960964420528,
+        "lower": -0.0071407252316900705,
+        "upper": 0.00019033466631834806
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "reymont-prefix-1024": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0016787204151033075,
+          "lower": -0.0028770799514895584,
+          "upper": -0.00047930432940390677
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.00014724004574628857,
+          "lower": -0.00603326111664948,
+          "upper": 0.009237206203853487
+        }
+      },
+      "combined": {
+        "estimate": -0.000766157270595591,
+        "lower": -0.003970274623726566,
+        "upper": 0.0038877119360984924
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "reymont-prefix-16384": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0007592707336162574,
+          "lower": -0.001586627474843949,
+          "upper": 8.720770600856298e-05
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.00038566319026434037,
+          "lower": -0.0004979624604126709,
+          "upper": 0.0013418463095016264
+        }
+      },
+      "combined": {
+        "estimate": -0.00018696766151593547,
+        "lower": -0.0007948924041607519,
+        "upper": 0.000439229643977912
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "reymont-prefix-32769": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0014974135397495258,
+          "lower": -0.0020685272739983107,
+          "upper": -0.0009531328617341517
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.00040880315419267177,
+          "lower": -0.0010155850726897286,
+          "upper": 0.0019535464926798696
+        }
+      },
+      "combined": {
+        "estimate": -0.0005447596480046002,
+        "lower": -0.0012911288769634766,
+        "upper": 0.00029344128687158744
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-window-32767": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0012987262752183204,
+          "lower": -0.0021135894828229196,
+          "upper": -0.0005478309054477437
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.0007510473677652119,
+          "lower": -9.204063721268696e-05,
+          "upper": 0.0016680082536020269
+        }
+      },
+      "combined": {
+        "estimate": -0.0002743647942219374,
+        "lower": -0.0008550724611865457,
+        "upper": 0.00032353597782641685
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-window-32768": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.001540386657601922,
+          "lower": -0.0021554520162597735,
+          "upper": -0.0008913952916529411
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.0007129818705267077,
+          "lower": -0.0008458354680428437,
+          "upper": 0.0022646474883725176
+        }
+      },
+      "combined": {
+        "estimate": -0.00041433736514395747,
+        "lower": -0.0012491465650479316,
+        "upper": 0.00041809228603106874
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-slides-65537": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0029284346692504126,
+          "lower": -0.003383248086323065,
+          "upper": -0.0024744662454612154
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -4.7474148762383095e-05,
+          "lower": -0.001300005255016723,
+          "upper": 0.0013981137926586396
+        }
+      },
+      "combined": {
+        "estimate": -0.00148899344727782,
+        "lower": -0.0021719871340782904,
+        "upper": -0.0007445182279325335
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-random-65537": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.001921349451407428,
+          "lower": -0.0031941123392684734,
+          "upper": -0.0006580899993083866
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0027849652295234284,
+          "lower": -0.0043538621508159014,
+          "upper": -0.0011486502368271978
+        }
+      },
+      "combined": {
+        "estimate": -0.0023532507893962995,
+        "lower": -0.003379506527143805,
+        "upper": -0.001334005684220152
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-mixed-131073": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0015273847212545766,
+          "lower": -0.0041360381284154535,
+          "upper": 0.0007408694608443955
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.001372536776528488,
+          "lower": -0.002739331004646961,
+          "upper": -1.0287289897492613e-05
+        }
+      },
+      "combined": {
+        "estimate": -0.001449963750479455,
+        "lower": -0.002908128836113466,
+        "upper": -9.005498888781105e-05
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-1024": {
+      "decision": "unresolved",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.008156785164349811,
+          "lower": -0.016220580144937213,
+          "upper": 0.03360246952476631
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.00513521825919705,
+          "lower": -0.0065994931430444215,
+          "upper": -0.00356710913153091
+        }
+      },
+      "combined": {
+        "estimate": 0.0014887318552518902,
+        "lower": -0.01040607160947482,
+        "upper": 0.014353814551264277
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-4096": {
+      "decision": "unresolved",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.001403905482644463,
+          "lower": -0.018145913633059174,
+          "upper": 0.026251680951479228
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.006548105378331837,
+          "lower": -0.00866896437241571,
+          "upper": -0.004510600837944079
+        }
+      },
+      "combined": {
+        "estimate": -0.002580024672018566,
+        "lower": -0.012624002310033244,
+        "upper": 0.009318239639941384
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0016761467450678857,
+          "lower": -0.003979624570007889,
+          "upper": 0.000626036569130406
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0030490294390276285,
+          "lower": -0.004554762630403775,
+          "upper": -0.0015477359078568398
+        }
+      },
+      "combined": {
+        "estimate": -0.0023628242508830777,
+        "lower": -0.0036877217398029183,
+        "upper": -0.000992265853852481
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-16384": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.008496812943935117,
+          "lower": -0.019162351901522934,
+          "upper": 0.0013788823224814006
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0002582796468307835,
+          "lower": -0.0013540428397093018,
+          "upper": 0.0008050360825915259
+        }
+      },
+      "combined": {
+        "estimate": -0.004386067813893835,
+        "lower": -0.009811607350936336,
+        "upper": 0.0005519029751457349
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-32767": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0028520793072236428,
+          "lower": -0.00343795174638184,
+          "upper": -0.0022920498620910834
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.00010153507539845119,
+          "lower": -0.0005829094744826957,
+          "upper": 0.0003862805051062512
+        }
+      },
+      "combined": {
+        "estimate": -0.0014777542771190477,
+        "lower": -0.0018669867637487458,
+        "upper": -0.0010974151791673936
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-32768": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0034986826279416183,
+          "lower": -0.004105033233032462,
+          "upper": -0.002863726040433612
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.00025780384298557113,
+          "lower": -0.0007663869587399841,
+          "upper": 0.0002492094453871996
+        }
+      },
+      "combined": {
+        "estimate": -0.0018795586188510294,
+        "lower": -0.002269882669187373,
+        "upper": -0.0014821256083943357
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-32769": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.003555332372869313,
+          "lower": -0.004262856828841199,
+          "upper": -0.0028581914510259487
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 8.576192193032739e-05,
+          "lower": -0.0009926689057235816,
+          "upper": 0.0011099798860250143
+        }
+      },
+      "combined": {
+        "estimate": -0.0017364453026827986,
+        "lower": -0.0023724950371689646,
+        "upper": -0.0010846804872580718
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-33027": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0034152044962709738,
+          "lower": -0.004631753730157118,
+          "upper": -0.002265075328077848
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.0013296544810414979,
+          "lower": -0.004080615359464468,
+          "upper": 0.009260948628478705
+        }
+      },
+      "combined": {
+        "estimate": -0.001045592160078379,
+        "lower": -0.0038254229461237577,
+        "upper": 0.002848190218072144
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-65535": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.0015144789361256628,
+          "lower": -0.00014954726237992322,
+          "upper": 0.0035214025314753705
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.00016042580442832133,
+          "lower": -0.0006799087425300998,
+          "upper": 0.0010595756510733967
+        }
+      },
+      "combined": {
+        "estimate": 0.0008372233795341799,
+        "lower": -9.81056988347273e-05,
+        "upper": 0.001913765281003732
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-65536": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0020721375045615886,
+          "lower": -0.0055177935207485485,
+          "upper": 0.0002099005690290312
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.0004726634381690964,
+          "lower": -9.54284142347106e-05,
+          "upper": 0.0011410770428035288
+        }
+      },
+      "combined": {
+        "estimate": -0.0008005471829108934,
+        "lower": -0.0024803161201709667,
+        "upper": 0.00040597408477549557
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-65537": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.00030801486096887487,
+          "lower": -0.0004017099523608847,
+          "upper": 0.0011346035201083016
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.0011783221954959622,
+          "lower": 7.481132909981092e-05,
+          "upper": 0.0026685542686224473
+        }
+      },
+      "combined": {
+        "estimate": 0.0007430739191813807,
+        "lower": 5.198576166565161e-05,
+        "upper": 0.001556837139526479
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-131072": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.0016742801247267014,
+          "lower": -0.0020063476006543235,
+          "upper": 0.005943246396880708
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.002297914616654184,
+          "lower": 0.0015214545179114136,
+          "upper": 0.003225790366610859
+        }
+      },
+      "combined": {
+        "estimate": 0.001986048852054667,
+        "lower": 0.00013669368461921572,
+        "upper": 0.004075925045703643
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-262144": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.001189914528566094,
+          "lower": 0.0007497080642975273,
+          "upper": 0.0017653042476020175
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.0007596427826090935,
+          "lower": -7.940912350679064e-05,
+          "upper": 0.0016318547609830425
+        }
+      },
+      "combined": {
+        "estimate": 0.0009747555364014726,
+        "lower": 0.0004951314776235893,
+        "upper": 0.001507070280867051
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.0011782270681617302,
+          "lower": -0.0001717240695583433,
+          "upper": 0.0027323857624867998
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.0019006957813496594,
+          "lower": 2.4484773004873617e-05,
+          "upper": 0.003956110965235071
+        }
+      },
+      "combined": {
+        "estimate": 0.001539396279911509,
+        "lower": 0.0003780503367829535,
+        "upper": 0.0028142832670392526
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.008501014619943348,
+          "lower": -0.027630332916587452,
+          "upper": 0.010148869195668597
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.00381674619521688,
+          "lower": -0.005715021234450779,
+          "upper": -0.0018010949898475959
+        }
+      },
+      "combined": {
+        "estimate": -0.006161640204984886,
+        "lower": -0.015908676559328816,
+        "upper": 0.0030917009466504553
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-4096": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.02171914122866958,
+          "lower": -0.025248653829799572,
+          "upper": -0.018125173784743098
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.010412148143989164,
+          "lower": -0.017426002359560933,
+          "upper": -0.0025227908274392252
+        }
+      },
+      "combined": {
+        "estimate": -0.016081886769343745,
+        "lower": -0.02014930815374838,
+        "upper": -0.011630522690252776
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-8192": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.014784515870413295,
+          "lower": -0.018806443464366218,
+          "upper": -0.010755107813676501
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.0024706909995126924,
+          "lower": -0.003803487929242122,
+          "upper": 0.00865047628220017
+        }
+      },
+      "combined": {
+        "estimate": -0.006194361477654842,
+        "lower": -0.009920211159741399,
+        "upper": -0.002385201127292791
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-16384": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.009751841653573234,
+          "lower": -0.012257775905146762,
+          "upper": -0.007267855330894579
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.004169709437102931,
+          "lower": -0.010014635546859885,
+          "upper": 0.0019897000570796575
+        }
+      },
+      "combined": {
+        "estimate": -0.006964697880535664,
+        "lower": -0.010106573316478462,
+        "upper": -0.0037237866053722035
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-32767": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0002449504329373742,
+          "lower": -0.0025480674659295044,
+          "upper": 0.0020038454376136716
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.001232766603614488,
+          "lower": -0.0041544300114408905,
+          "upper": 0.0017553013420570363
+        }
+      },
+      "combined": {
+        "estimate": -0.0007389805810689154,
+        "lower": -0.0025778710082028367,
+        "upper": 0.0011277340171333972
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-32768": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.0005131988127695664,
+          "lower": -0.0018464663858978048,
+          "upper": 0.003035114262523786
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0006574149790136152,
+          "lower": -0.0039041099105076027,
+          "upper": 0.0026392005830149223
+        }
+      },
+      "combined": {
+        "estimate": -7.227938757026209e-05,
+        "lower": -0.0020757589687026012,
+        "upper": 0.0020117275299720294
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-32769": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0017490734190621637,
+          "lower": -0.0036681733826801066,
+          "upper": 0.00021715441402880842
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0025018690408346034,
+          "lower": -0.005420088870282447,
+          "upper": 0.0004505573807371821
+        }
+      },
+      "combined": {
+        "estimate": -0.002125542218491039,
+        "lower": -0.003939106810807669,
+        "upper": -0.00035424049222199105
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-33027": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0008612470404422146,
+          "lower": -0.0029337674793399326,
+          "upper": 0.001185056195028844
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0011820380625421345,
+          "lower": -0.004626179211708159,
+          "upper": 0.0023260585501287956
+        }
+      },
+      "combined": {
+        "estimate": -0.001021655428007473,
+        "lower": -0.0029961286788294794,
+        "upper": 0.0009868930092975514
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-65535": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.001080293185476311,
+          "lower": -0.002128568965723332,
+          "upper": -5.3877299188154204e-05
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.004856388285308433,
+          "lower": -0.0072322651891427725,
+          "upper": -0.0025550180284317214
+        }
+      },
+      "combined": {
+        "estimate": -0.002970128405178629,
+        "lower": -0.0042724287214868095,
+        "upper": -0.0017356346937366096
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-65536": {
+      "decision": "unresolved",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.008059238736258356,
+          "lower": -0.0035055327215222087,
+          "upper": 0.021131590177875914
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.00366295827117602,
+          "lower": -0.005620897914519585,
+          "upper": -0.0017624222760739272
+        }
+      },
+      "combined": {
+        "estimate": 0.002181001521129211,
+        "lower": -0.0035613486213683654,
+        "upper": 0.008834441441938345
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-65537": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0007883779110237077,
+          "lower": -0.0029900768603682293,
+          "upper": 0.001432130221726835
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.003939012257491381,
+          "lower": -0.005838319021387872,
+          "upper": -0.0020706395194161065
+        }
+      },
+      "combined": {
+        "estimate": -0.0023649388369814117,
+        "lower": -0.003790191945445498,
+        "upper": -0.0009315185465170739
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-131072": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -5.1214793490128585e-05,
+          "lower": -0.0008505308587912763,
+          "upper": 0.000735037114081738
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0002634628282419671,
+          "lower": -0.002335607412125351,
+          "upper": 0.002139570979105665
+        }
+      },
+      "combined": {
+        "estimate": -0.00015734444290582683,
+        "lower": -0.0012561098434054063,
+        "upper": 0.0011268178820162955
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-262144": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.00010145743403011664,
+          "lower": -0.003124043431412593,
+          "upper": 0.0028914560867454586
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.00010003825900617436,
+          "lower": -0.0012583366406111463,
+          "upper": 0.0012207511901611845
+        }
+      },
+      "combined": {
+        "estimate": -0.00010074784676994408,
+        "lower": -0.0017324102711780975,
+        "upper": 0.0015607118032399114
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.001071394910077128,
+          "lower": -0.000315893939441092,
+          "upper": 0.0025108433980403078
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0015177997048274605,
+          "lower": -0.006263572257680039,
+          "upper": 0.002918896883741917
+        }
+      },
+      "combined": {
+        "estimate": -0.0002240405759040831,
+        "lower": -0.0027959531045337327,
+        "upper": 0.002188024288858559
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-1024": {
+      "decision": "unresolved",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0032062456881229995,
+          "lower": -0.01855459257427161,
+          "upper": 0.009323166361587365
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0006976445531693409,
+          "lower": -0.0068406837080001726,
+          "upper": 0.006116929557066886
+        }
+      },
+      "combined": {
+        "estimate": -0.0019527332943853892,
+        "lower": -0.010437188626921445,
+        "upper": 0.005330043286769781
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-4096": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.012507769106231637,
+          "lower": -0.015370714207157077,
+          "upper": -0.009566498883682217
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.008124877833612931,
+          "lower": -0.014433376202129367,
+          "upper": -0.001808251038363462
+        }
+      },
+      "combined": {
+        "estimate": -0.010318749719832931,
+        "lower": -0.013819604838076316,
+        "upper": -0.006796997790915027
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-8192": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.005253840382810182,
+          "lower": -0.013257840075605487,
+          "upper": 0.0028586325572497184
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.013408167207985988,
+          "lower": -0.018588172878641562,
+          "upper": -0.008568318078983506
+        }
+      },
+      "combined": {
+        "estimate": -0.009339393748019953,
+        "lower": -0.014139894713839585,
+        "upper": -0.004619532058942388
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-16384": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0009239838515701093,
+          "lower": -0.0031603803462860736,
+          "upper": 0.0012159793135366748
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0036227062086706674,
+          "lower": -0.006900875943547491,
+          "upper": -0.0001839750958216868
+        }
+      },
+      "combined": {
+        "estimate": -0.002274257492673959,
+        "lower": -0.004267917445440417,
+        "upper": -0.00022917263208144245
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-32767": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0023977384730999862,
+          "lower": -0.008725593956007471,
+          "upper": 0.0023168478277166837
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.00258121125148969,
+          "lower": -0.0056638791725319715,
+          "upper": 0.0005354620033659607
+        }
+      },
+      "combined": {
+        "estimate": -0.002489479080578727,
+        "lower": -0.0058820246045580005,
+        "upper": 0.000442723393415001
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-32768": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.0007814597486419661,
+          "lower": -0.00024745467183540093,
+          "upper": 0.0018035348857519118
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0005801679064421084,
+          "lower": -0.0038288250504607824,
+          "upper": 0.0028694474091324196
+        }
+      },
+      "combined": {
+        "estimate": 0.00010041419066197932,
+        "lower": -0.0015188701493398238,
+        "upper": 0.0019200816652702457
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-32769": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.0012782958657167054,
+          "lower": -0.001197150767805688,
+          "upper": 0.003836122434443423
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.005168415118392278,
+          "lower": -0.008695970663376462,
+          "upper": -0.0017315336725500785
+        }
+      },
+      "combined": {
+        "estimate": -0.0019502647745222035,
+        "lower": -0.004139461036383296,
+        "upper": 0.0002638396397447451
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-33027": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.0009036248080189768,
+          "lower": -0.0015198190883684015,
+          "upper": 0.0034070528836394054
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.002442488495211448,
+          "lower": -0.005406916321687882,
+          "upper": 0.0005180907319328742
+        }
+      },
+      "combined": {
+        "estimate": -0.0007708324815522971,
+        "lower": -0.002679725947583367,
+        "upper": 0.0011246070834762811
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-65535": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0018872380127559207,
+          "lower": -0.0043495581898537194,
+          "upper": 0.0005372766552937946
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0012700121952189392,
+          "lower": -0.004382973741479224,
+          "upper": 0.0018145442894195174
+        }
+      },
+      "combined": {
+        "estimate": -0.0015786728002468164,
+        "lower": -0.003547784214690264,
+        "upper": 0.0004334774760481608
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-65536": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0012283744419361309,
+          "lower": -0.0030281997327654686,
+          "upper": 0.0005610931868709201
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0002760790419470416,
+          "lower": -0.0023619568706464422,
+          "upper": 0.0016949421920264829
+        }
+      },
+      "combined": {
+        "estimate": -0.0007523401855994427,
+        "lower": -0.0020737933669408015,
+        "upper": 0.0006040977945938053
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-65537": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.0005962148547946633,
+          "lower": -0.0011160417599567207,
+          "upper": 0.002289750816778735
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.00214581791312507,
+          "lower": -0.004162359065675192,
+          "upper": -0.00010200019054540377
+        }
+      },
+      "combined": {
+        "estimate": -0.000775742101326804,
+        "lower": -0.002080044932435854,
+        "upper": 0.000544072469452983
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-131072": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0007542436519197837,
+          "lower": -0.0025187252181696484,
+          "upper": 0.0009094446255928368
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0012838664395369292,
+          "lower": -0.002925564129128033,
+          "upper": 0.0003463286031959445
+        }
+      },
+      "combined": {
+        "estimate": -0.00101909014403323,
+        "lower": -0.0022509634638135934,
+        "upper": 0.00013735907308376483
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-262144": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.003651487715018331,
+          "lower": -0.007442349833573392,
+          "upper": -0.0007571943217135058
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.0017690845694515733,
+          "lower": -2.0497719951828586e-05,
+          "upper": 0.003698345276998749
+        }
+      },
+      "combined": {
+        "estimate": -0.0009448778651595102,
+        "lower": -0.0030532078865378454,
+        "upper": 0.0007943129369332169
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.00025680098246871896,
+          "lower": -0.0013970331259882673,
+          "upper": 0.0007492842870910899
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": 0.003967145716100795,
+          "lower": 0.0009380547732456002,
+          "upper": 0.007945628584202113
+        }
+      },
+      "combined": {
+        "estimate": 0.0018529462784020456,
+        "lower": 0.0002075877181046959,
+        "upper": 0.0038349315705787923
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-1024": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.0006514128469192748,
+          "lower": -0.0014764786800313123,
+          "upper": 0.0026291405159459824
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0020870315043944876,
+          "lower": -0.003559205463673165,
+          "upper": -0.000567916257293577
+        }
+      },
+      "combined": {
+        "estimate": -0.0007187473872077854,
+        "lower": -0.002025478232944078,
+        "upper": 0.0005357966445318496
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-4096": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0010617588593717642,
+          "lower": -0.0078037953614382705,
+          "upper": 0.005511381572325114
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.007608255379510709,
+          "lower": -0.012758208072735533,
+          "upper": -0.002107302939307054
+        }
+      },
+      "combined": {
+        "estimate": -0.004340387535142098,
+        "lower": -0.008589600038266698,
+        "upper": -0.00014648386394677804
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-8192": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0019236529454265128,
+          "lower": -0.005984642395219453,
+          "upper": 0.0020956355328016762
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.006469671125135745,
+          "lower": -0.011343977954533124,
+          "upper": -0.0014611807349691475
+        }
+      },
+      "combined": {
+        "estimate": -0.004199256210684621,
+        "lower": -0.007434345556143085,
+        "upper": -0.0010135687678309857
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-16384": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0012368548947624403,
+          "lower": -0.004180870243692736,
+          "upper": 0.0016658043941499834
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0023309001388520656,
+          "lower": -0.006310240336394379,
+          "upper": 0.0016560955156681434
+        }
+      },
+      "combined": {
+        "estimate": -0.0017840274010682,
+        "lower": -0.004241003004950894,
+        "upper": 0.0006495553968972612
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-32767": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0016667251730282384,
+          "lower": -0.00344523707647304,
+          "upper": 0.00018429049288393173
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.001967841698129691,
+          "lower": -0.005316041760249468,
+          "upper": 0.0012964389382730257
+        }
+      },
+      "combined": {
+        "estimate": -0.0018172947901086145,
+        "lower": -0.0036914802401116775,
+        "upper": 8.650299237111803e-05
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-32768": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.00012885769046344642,
+          "lower": -0.002793252383273326,
+          "upper": 0.0023802664599561485
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.002493489355329115,
+          "lower": -0.004870811068074521,
+          "upper": -2.739432768350536e-05
+        }
+      },
+      "combined": {
+        "estimate": -0.0013118733761340318,
+        "lower": -0.0031369713036590863,
+        "upper": 0.0004115959889927634
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-32769": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0014900262885771953,
+          "lower": -0.004652097978471104,
+          "upper": 0.001678659899105428
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0030954897474698706,
+          "lower": -0.006801272309381656,
+          "upper": 0.000654756551702107
+        }
+      },
+      "combined": {
+        "estimate": -0.002293080947589732,
+        "lower": -0.004761231756236106,
+        "upper": 0.00016184159532328657
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-33027": {
+      "decision": "unresolved",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0006979469093703061,
+          "lower": -0.003766684515175589,
+          "upper": 0.0021902918591867326
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.001584138858506945,
+          "lower": -0.057368981343022596,
+          "upper": 0.05582879222241188
+        }
+      },
+      "combined": {
+        "estimate": -0.0011411411631054857,
+        "lower": -0.03033822854003887,
+        "upper": 0.027406871807071687
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-65535": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -1.7027609873876415e-05,
+          "lower": -0.00233572436578644,
+          "upper": 0.0023695321022785265
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0026380122089844082,
+          "lower": -0.004985481064937014,
+          "upper": -0.000374027733716531
+        }
+      },
+      "combined": {
+        "estimate": -0.0013283797462829705,
+        "lower": -0.002995850230049779,
+        "upper": 0.0003303873384081779
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-65536": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0007217561319857735,
+          "lower": -0.0036130353637483514,
+          "upper": 0.0019691861379127484
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.002125851603584472,
+          "lower": -0.004706343951793035,
+          "upper": 0.0005114576630800283
+        }
+      },
+      "combined": {
+        "estimate": -0.0014240506547034126,
+        "lower": -0.0033128865987402945,
+        "upper": 0.00045708166577518305
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-65537": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0014812607056801097,
+          "lower": -0.004230193872309607,
+          "upper": 0.001199071925711781
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0016653683803460329,
+          "lower": -0.004772336748050332,
+          "upper": 0.0014285429516083248
+        }
+      },
+      "combined": {
+        "estimate": -0.001573318786644129,
+        "lower": -0.0036190004702716383,
+        "upper": 0.0005074736206522878
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-131072": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0008612237622026564,
+          "lower": -0.0030273527052263605,
+          "upper": 0.00130720629555503
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0005498992033214911,
+          "lower": -0.002629721801387319,
+          "upper": 0.0015507994051826568
+        }
+      },
+      "combined": {
+        "estimate": -0.0007055736066889917,
+        "lower": -0.0022199095172363847,
+        "upper": 0.0008158847912795864
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-262144": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": 0.0005306112196468149,
+          "lower": -0.0004011101411818263,
+          "upper": 0.0014590581453493012
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0007725136544475264,
+          "lower": -0.0018841889565026637,
+          "upper": 0.00032152585947797796
+        }
+      },
+      "combined": {
+        "estimate": -0.00012116350990465374,
+        "lower": -0.00083806105904638,
+        "upper": 0.0006152467606954648
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "source-owner-exchange-71288-v2-full-forward": {
+          "estimate": -0.0001510352788250957,
+          "lower": -0.00362831970592592,
+          "upper": 0.003912943133122182
+        },
+        "source-owner-exchange-71288-v2-full-reverse": {
+          "estimate": -0.0002271828261624087,
+          "lower": -0.001713595483599839,
+          "upper": 0.0012359892344719903
+        }
+      },
+      "combined": {
+        "estimate": -0.00018910977743702428,
+        "lower": -0.0020518247921644805,
+        "upper": 0.0019441157898096861
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    }
+  },
+  "scope": "90% per-case paired bootstrap, stratified by run and actor order",
+  "equivalent_named_cases": [
+    [
+      "33027-periodic-window",
+      "prefix-periodic-33027"
+    ],
+    [
+      "prefix-repeated-1024",
+      "repeated-1024"
+    ],
+    [
+      "prefix-repeated-32769",
+      "repeated-32769"
+    ],
+    [
+      "prefix-natural-1024",
+      "reymont-prefix-1024"
+    ],
+    [
+      "prefix-natural-16384",
+      "reymont-prefix-16384"
+    ],
+    [
+      "prefix-natural-32769",
+      "reymont-prefix-32769"
+    ],
+    [
+      "heldout-window-32767",
+      "prefix-natural-32767"
+    ]
+  ],
+  "peak_private_payload_bytes": {
+    "mech-control": 10548878,
+    "mech-experiment": 10548878
+  },
+  "candidate_control_timing_observations": {
+    "slowdowns": [
+      "empty: established slowdown above the 0.5% resolution"
+    ],
+    "uncertain": [
+      "seven-stored-prefix: regression bound or duplicate-control repeatability unresolved",
+      "random-64: regression bound or duplicate-control repeatability unresolved",
+      "random-1024: regression bound or duplicate-control repeatability unresolved",
+      "random-32769: regression bound or duplicate-control repeatability unresolved",
+      "prefix-natural-1024: regression bound or duplicate-control repeatability unresolved",
+      "prefix-natural-4096: regression bound or duplicate-control repeatability unresolved",
+      "prefix-random-65536: regression bound or duplicate-control repeatability unresolved",
+      "prefix-periodic-1024: regression bound or duplicate-control repeatability unresolved",
+      "prefix-repeated-33027: regression bound or duplicate-control repeatability unresolved"
+    ]
+  },
+  "decision": "Reject",
+  "rejected": [
+    "source-owner-exchange-71288-v2-full-reverse: lost previously won libdeflate cases: random-1024"
+  ],
+  "unresolved": [
+    "source-owner-exchange-71288-v2-full-reverse: libdeflate floor 61 missed (control 60, candidate 60)"
+  ],
+  "plan": {
+    "path": "backend-work-hardened/source-owner-exchange-71288-v2/plan.json",
+    "sha256": "b0ffed843fdf2da0074dfd1fb1c755bdf014b9497d16570d991745b14d19a97c"
+  },
+  "receipts": {
+    "source-owner-exchange-71288-v2-full-forward": {
+      "id": "source-owner-exchange-71288-v2-full-forward",
+      "kind": "full",
+      "order": "forward",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "backend-work-hardened/source-owner-exchange-71288-v2/canonical-pins/source-owner-exchange-71288-v2-full-forward.json",
+        "sha256": "38cbc04f6134a848c9948c816013ad54bbbf757e5057f63ef2a7c7040af25b84"
+      },
+      "original_pins": {
+        "path": "source-owner-exchange-71288-v2-full-forward/pins.json",
+        "sha256": "266da887fc23cd6ea3ce1763a1a024a551478225c79d30f9c16b0e43e4f86242"
+      },
+      "summary": {
+        "path": "source-owner-exchange-71288-v2-full-forward/summary.json",
+        "sha256": "a3530f41b0e76381c39b9586c87493ada1060f8da411df6b31a61896ba20c491"
+      },
+      "complete": {
+        "path": "source-owner-exchange-71288-v2-full-forward/complete.json",
+        "sha256": "2e54dfa5984a50621e44303a7cbdd811e578a4c88e1b46ef989159527d443c6f"
+      },
+      "observations": {
+        "128-biased-dynamic": {
+          "path": "source-owner-exchange-71288-v2-full-forward/128-biased-dynamic/observations.json.gz",
+          "sha256": "7f39b691e50679b2e25de12056cb25b4be5c44697ea02f5dc67b2c4e437fb2bb"
+        },
+        "16384-distribution-change": {
+          "path": "source-owner-exchange-71288-v2-full-forward/16384-distribution-change/observations.json.gz",
+          "sha256": "82d8327b6e6c157ea98afcd67badf5a8730b86b57426de45cb715fe064ae190d"
+        },
+        "32-high-entropy-stored": {
+          "path": "source-owner-exchange-71288-v2-full-forward/32-high-entropy-stored/observations.json.gz",
+          "sha256": "e2f5611d4194790fd26a58c035c052175518c1a08360a0437d0f3d49d602851d"
+        },
+        "320-overlap": {
+          "path": "source-owner-exchange-71288-v2-full-forward/320-overlap/observations.json.gz",
+          "sha256": "2d900e21a4af7a97e62f50b8cd8c1759800028dbcc2c97beb7c3bca791ebdd6a"
+        },
+        "33027-periodic-window": {
+          "path": "source-owner-exchange-71288-v2-full-forward/33027-periodic-window/observations.json.gz",
+          "sha256": "8a812f867a25bf37653897b3d4d2f878147b5b14cc9a0c785ee05d1beebb02fe"
+        },
+        "eight-literals": {
+          "path": "source-owner-exchange-71288-v2-full-forward/eight-literals/observations.json.gz",
+          "sha256": "b2a36c8c9526b9060fc2cb5f9ccdf29de4aa460095477ad7a955c6af1afdb3af"
+        },
+        "eight-literals-prefix": {
+          "path": "source-owner-exchange-71288-v2-full-forward/eight-literals-prefix/observations.json.gz",
+          "sha256": "88d94a429e74a4d57b0f20caa31869a513f7bfffc2a2c0ff95aba87a71533694"
+        },
+        "eight-overlap": {
+          "path": "source-owner-exchange-71288-v2-full-forward/eight-overlap/observations.json.gz",
+          "sha256": "bf40d4af731d0cc436ed8bac109f42e637b6cf22918d663db4a1fdf261b95a49"
+        },
+        "empty": {
+          "path": "source-owner-exchange-71288-v2-full-forward/empty/observations.json.gz",
+          "sha256": "64ba7e5fef76cb9fd17e71daf15291efc42f5d5a3d1fe7ef6c5b61d2fc49d9f1"
+        },
+        "heldout-mixed-131073": {
+          "path": "source-owner-exchange-71288-v2-full-forward/heldout-mixed-131073/observations.json.gz",
+          "sha256": "2eb1bf3bfa9efbfc4b560673d0985678f669b2ff0e0f652b0d1ad4483cc000c4"
+        },
+        "heldout-random-65537": {
+          "path": "source-owner-exchange-71288-v2-full-forward/heldout-random-65537/observations.json.gz",
+          "sha256": "ae81f8664d7452aebe51e2a2461daca0f8cf8fcb87e113448583803f19d9f3c0"
+        },
+        "heldout-slides-65537": {
+          "path": "source-owner-exchange-71288-v2-full-forward/heldout-slides-65537/observations.json.gz",
+          "sha256": "f7ef04363698787b31a5dd32bd5940d32f5228f25f67b31448d1b9dfff8dea9f"
+        },
+        "heldout-window-32767": {
+          "path": "source-owner-exchange-71288-v2-full-forward/heldout-window-32767/observations.json.gz",
+          "sha256": "8902fc4a45b86da73e671c6c376675a4e67776cb6c642505ba99dc5293f54bef"
+        },
+        "heldout-window-32768": {
+          "path": "source-owner-exchange-71288-v2-full-forward/heldout-window-32768/observations.json.gz",
+          "sha256": "94022345336a17edc35f1c817d52e53ac2c0900272b008036c7745361dcb9bd6"
+        },
+        "one-stored": {
+          "path": "source-owner-exchange-71288-v2-full-forward/one-stored/observations.json.gz",
+          "sha256": "cb7591030149c7c7c3d7744cb02dd2fba117a38714c21e5fee691f9169b2defa"
+        },
+        "prefix-natural-1024": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-natural-1024/observations.json.gz",
+          "sha256": "3b0bb292cdeba763573dd63972fe15ca8dc2908041f14c226eb940c36c9d9107"
+        },
+        "prefix-natural-1048576": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-natural-1048576/observations.json.gz",
+          "sha256": "a84782704c41c1c6331f71fd33e1658815b14d81f639bc4d76fa16e74ebfec0c"
+        },
+        "prefix-natural-131072": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-natural-131072/observations.json.gz",
+          "sha256": "83f9e949b9a000eedfc4b15dbc16251ba2eb39c7b137055b7f532bd7d1348218"
+        },
+        "prefix-natural-16384": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-natural-16384/observations.json.gz",
+          "sha256": "9b2e2056f3ebb6e49fb492c5ff01cf7feb3a497d314bd7598b90f420ebedd38a"
+        },
+        "prefix-natural-262144": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-natural-262144/observations.json.gz",
+          "sha256": "9170ba45777ba379c7ace4d47820529f59b72a7e82c81120b63f29ac2951cfa9"
+        },
+        "prefix-natural-32767": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-natural-32767/observations.json.gz",
+          "sha256": "1f7cf71e497a2875b9ce3408aa727757c147620815dba668aa78adcfdf65eae0"
+        },
+        "prefix-natural-32768": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-natural-32768/observations.json.gz",
+          "sha256": "21dddbc22223cf0d478eb74158b351cfcc1dcc0e9f3c0200b0062bec186bed2e"
+        },
+        "prefix-natural-32769": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-natural-32769/observations.json.gz",
+          "sha256": "923c0228d190cbd158bbb24ceac475f73cfb0aba29558dc48112e7f1acd5d990"
+        },
+        "prefix-natural-33027": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-natural-33027/observations.json.gz",
+          "sha256": "7a25038aabe8967646e2f3a7a2d4e69a711ec40647a10d8c7ed4b8f98f9f3d7f"
+        },
+        "prefix-natural-4096": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-natural-4096/observations.json.gz",
+          "sha256": "a8bfbd08183a55fdc3d97e1f85594f80fd278c0632b50a84761035badb6e0dfc"
+        },
+        "prefix-natural-65535": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-natural-65535/observations.json.gz",
+          "sha256": "e0387398d7cd811fd351ab769110cfcdea00eff1a9816555c2d2e363a1f292bd"
+        },
+        "prefix-natural-65536": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-natural-65536/observations.json.gz",
+          "sha256": "a462ee3671950e095faaee504626a59d242d8c5a01210f3887febace9930536a"
+        },
+        "prefix-natural-65537": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-natural-65537/observations.json.gz",
+          "sha256": "5cd3499cbd7351ad008823bddc9a29fce7f29ea2b3dffcc2501d72d090f82bd5"
+        },
+        "prefix-natural-8192": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-natural-8192/observations.json.gz",
+          "sha256": "4b91de325fd2b587a07cc4cdc2058356aada2cee339617afcca95c9610cf4be6"
+        },
+        "prefix-periodic-1024": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-periodic-1024/observations.json.gz",
+          "sha256": "4b3e3ab628398acf20fd0aaa930bb4e787a85df16ad0f01e62bab0a1f93637c7"
+        },
+        "prefix-periodic-1048576": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-periodic-1048576/observations.json.gz",
+          "sha256": "7a3895c30c4e2ed8579cc1db5dfe50be67fc4f3143be1619a245cef264ff66f5"
+        },
+        "prefix-periodic-131072": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-periodic-131072/observations.json.gz",
+          "sha256": "c6323e255d14af02586febf3e25f940e3ae45a446ac11e5be579745c06dd9466"
+        },
+        "prefix-periodic-16384": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-periodic-16384/observations.json.gz",
+          "sha256": "42078781e59f090cdfe2a9284862609239b780a32b10762355c0bf2f674a6d5b"
+        },
+        "prefix-periodic-262144": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-periodic-262144/observations.json.gz",
+          "sha256": "74f20f1820aa84c291d6bddbcf0ef8ffdba8a7b3fb2c631a51be9d595652eff0"
+        },
+        "prefix-periodic-32767": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-periodic-32767/observations.json.gz",
+          "sha256": "aad034fe046a0b16ca3a68c2f404a64ef5be8586f234a230d329bf50a962520c"
+        },
+        "prefix-periodic-32768": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-periodic-32768/observations.json.gz",
+          "sha256": "7085b748ef0b6b89a7651b19112be868ba193f8d59dbfd6e27dce2e67c564d06"
+        },
+        "prefix-periodic-32769": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-periodic-32769/observations.json.gz",
+          "sha256": "e0068a2d7c920da622a49b47c7f66d97bc20c84a724d193a840143a424689b83"
+        },
+        "prefix-periodic-33027": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-periodic-33027/observations.json.gz",
+          "sha256": "46b53c24a293413169e7e9f9115d8e60f092d205957b627afb2f2078541c2414"
+        },
+        "prefix-periodic-4096": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-periodic-4096/observations.json.gz",
+          "sha256": "c9595c23312434dd417660d964a3940b6e26761eb63bc3e5f53b2ed841b52386"
+        },
+        "prefix-periodic-65535": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-periodic-65535/observations.json.gz",
+          "sha256": "557f7431c198c378319599ed324ba9c784c6c7e08685ac93c86f5444d2176c07"
+        },
+        "prefix-periodic-65536": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-periodic-65536/observations.json.gz",
+          "sha256": "35dd62cf30ced4a0f9bdc07591950cbf95eae565210c63aeb6bdc1f70f4e1855"
+        },
+        "prefix-periodic-65537": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-periodic-65537/observations.json.gz",
+          "sha256": "b9f58c16e1998e87c90685b60d2bed2fc49da5d99b3d5770cb434f50432efdc3"
+        },
+        "prefix-periodic-8192": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-periodic-8192/observations.json.gz",
+          "sha256": "593b351e74e415bbb29e2efd6476bfb49988e0e56e9134d24b21e6c66af2a46f"
+        },
+        "prefix-random-1024": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-random-1024/observations.json.gz",
+          "sha256": "de29f4d5100c9fb88ede932d320a0e522e8edb7a9e92d5dc8b547d955d882a25"
+        },
+        "prefix-random-1048576": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-random-1048576/observations.json.gz",
+          "sha256": "e82189aa57369d74e8babf33e5cf103542ffa9fb80e2d9ddf5c8b27f7013de0f"
+        },
+        "prefix-random-131072": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-random-131072/observations.json.gz",
+          "sha256": "a1402e34f8ae298ca0e46a7d1c53294dd7d0385938f70583f79b5439ea5460e6"
+        },
+        "prefix-random-16384": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-random-16384/observations.json.gz",
+          "sha256": "70d1065550156be63e1eb33f720527cf344e0ff44770d07d84a72df85d66a454"
+        },
+        "prefix-random-262144": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-random-262144/observations.json.gz",
+          "sha256": "cab939001f728a45c764a098404f9afaf5a3857a7c1595d6268ae3bb3e632d51"
+        },
+        "prefix-random-32767": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-random-32767/observations.json.gz",
+          "sha256": "92595a187358bc10bbcc1c0520f6a1df6840865bccb47125fe74695f628fce3d"
+        },
+        "prefix-random-32768": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-random-32768/observations.json.gz",
+          "sha256": "10d239f63e906205c7f54c2fd448d6d794859e3d583162d07b3b338fa33716e3"
+        },
+        "prefix-random-32769": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-random-32769/observations.json.gz",
+          "sha256": "911f37d29c6bd5d277c1af3d5f6438b2c2e9fc350077f2b5d73b1baf47b671df"
+        },
+        "prefix-random-33027": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-random-33027/observations.json.gz",
+          "sha256": "e998b823dcf428d9cf8949b3984c01d100918eda11dd1bd8b50da47ea4b68fe5"
+        },
+        "prefix-random-4096": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-random-4096/observations.json.gz",
+          "sha256": "36ca91cd011a14e28f0bfa50782eda234546622be7f941ee7287a9f1536861eb"
+        },
+        "prefix-random-65535": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-random-65535/observations.json.gz",
+          "sha256": "742d5d134e5ae7f48396b6def81937ab853aaaee949d17effd8498315a321765"
+        },
+        "prefix-random-65536": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-random-65536/observations.json.gz",
+          "sha256": "2e6da712463da473eaf77fb44c0fbbb48b72c7703a5f59b523865b5330955d5e"
+        },
+        "prefix-random-65537": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-random-65537/observations.json.gz",
+          "sha256": "60172c601d8e0e67f23546e73553e69d74b78df8b630cb5f959c41608312fc54"
+        },
+        "prefix-random-8192": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-random-8192/observations.json.gz",
+          "sha256": "611e706c00f4b02f8b9fdf38cb95499a15f9cdb38c3cf11ceff2b22d7bc5e2b0"
+        },
+        "prefix-repeated-1024": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-repeated-1024/observations.json.gz",
+          "sha256": "cbda9e4520cdd66c7fd7649fb49aa8f2150ef5034a168bbe982389eb4875b87b"
+        },
+        "prefix-repeated-1048576": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-repeated-1048576/observations.json.gz",
+          "sha256": "06b438128006c3b5403ba237d4dffdfbc8dfadcb34f558632dd98cd0e2318acd"
+        },
+        "prefix-repeated-131072": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-repeated-131072/observations.json.gz",
+          "sha256": "cccb7c60c18e0510db3b1658e4fb815b4ebd8920374e6441d6fb9d7eb536e121"
+        },
+        "prefix-repeated-16384": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-repeated-16384/observations.json.gz",
+          "sha256": "5656cd615802c42544da10857163316634803db8d799781640226427a6aaa15d"
+        },
+        "prefix-repeated-262144": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-repeated-262144/observations.json.gz",
+          "sha256": "120118f8a051ec36745fde34d4a2f7e316a7f02a60e8e0651257da3ab4c4c2cc"
+        },
+        "prefix-repeated-32767": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-repeated-32767/observations.json.gz",
+          "sha256": "31206cacf9842d95f423e08f420bcffde29ace56b0cc791db079335a752202ca"
+        },
+        "prefix-repeated-32768": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-repeated-32768/observations.json.gz",
+          "sha256": "b60c14e49cc297d3a1ca310fc2f1b7bd53d9ab4870e0289e280c8bcf80cb7b07"
+        },
+        "prefix-repeated-32769": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-repeated-32769/observations.json.gz",
+          "sha256": "de8bea3a1b9f8f99de540f80ca9c41ac8df3c46dd263ee36040aae593a2b6504"
+        },
+        "prefix-repeated-33027": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-repeated-33027/observations.json.gz",
+          "sha256": "0ea4734018a3ffd31ebec23847445dc806c72042dc8823a4a371c95c9829f600"
+        },
+        "prefix-repeated-4096": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-repeated-4096/observations.json.gz",
+          "sha256": "6dbe34ee47ae63d9ffc94e7658f472b9f97ca1a5d37c7926987a3208509f0fca"
+        },
+        "prefix-repeated-65535": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-repeated-65535/observations.json.gz",
+          "sha256": "848889a4be476908fcee3a453a10b70d0184c3ecd8ac05cb62b8e6de303e16a8"
+        },
+        "prefix-repeated-65536": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-repeated-65536/observations.json.gz",
+          "sha256": "5eca8d25d08f0508166a0e27e1cad73a14255e08896cd9a2db03fc1df9647e56"
+        },
+        "prefix-repeated-65537": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-repeated-65537/observations.json.gz",
+          "sha256": "107f970013380d101fd92cf2a9cff5aeac2e4acd980da5ce613180f415c783c6"
+        },
+        "prefix-repeated-8192": {
+          "path": "source-owner-exchange-71288-v2-full-forward/prefix-repeated-8192/observations.json.gz",
+          "sha256": "f1ebea039ece5c1590b4cdfde2eb721ac5503bd108fac87ca0160e0ff3db4ef4"
+        },
+        "random-1024": {
+          "path": "source-owner-exchange-71288-v2-full-forward/random-1024/observations.json.gz",
+          "sha256": "5fea64eb094a10d60f4cc826b240f89a191a80bfe69fddf15c400e9653735c2c"
+        },
+        "random-256": {
+          "path": "source-owner-exchange-71288-v2-full-forward/random-256/observations.json.gz",
+          "sha256": "c39b32271795be1c9cbb5419e9cbb0f6ab077ae63235e5bec30fe0447bf51675"
+        },
+        "random-32769": {
+          "path": "source-owner-exchange-71288-v2-full-forward/random-32769/observations.json.gz",
+          "sha256": "0af9c82eebbcfb6a90c7c18fc5cb7341a904784b66b07f445f31fdb3eba8b479"
+        },
+        "random-64": {
+          "path": "source-owner-exchange-71288-v2-full-forward/random-64/observations.json.gz",
+          "sha256": "eb1cc800877f20a04a595865586c9d428b100816324656c407aced925f40ac41"
+        },
+        "repeated-1024": {
+          "path": "source-owner-exchange-71288-v2-full-forward/repeated-1024/observations.json.gz",
+          "sha256": "59ea1490fbfe0dac51c35c43f3755753f729ef79e608c8b2c58567eef824daf8"
+        },
+        "repeated-32769": {
+          "path": "source-owner-exchange-71288-v2-full-forward/repeated-32769/observations.json.gz",
+          "sha256": "6c421c9aec1a88a990ed306ecb6f431129a84b65ff4ef0d14e33c6ef73122071"
+        },
+        "reymont-prefix-1024": {
+          "path": "source-owner-exchange-71288-v2-full-forward/reymont-prefix-1024/observations.json.gz",
+          "sha256": "0059d0b3856e2de4e59e7d221ee6fc13b11865047b345c892be131cfcf54d61d"
+        },
+        "reymont-prefix-16384": {
+          "path": "source-owner-exchange-71288-v2-full-forward/reymont-prefix-16384/observations.json.gz",
+          "sha256": "8d867c01b3ce247f6df5580f6065d7eef05b28b168507cb823559f260d0add97"
+        },
+        "reymont-prefix-32769": {
+          "path": "source-owner-exchange-71288-v2-full-forward/reymont-prefix-32769/observations.json.gz",
+          "sha256": "b8ba5b345a1d6ee2495b486144999c5e26676a4de6628c00c8fa7b0ebad3f0a8"
+        },
+        "seven-stored-prefix": {
+          "path": "source-owner-exchange-71288-v2-full-forward/seven-stored-prefix/observations.json.gz",
+          "sha256": "afbb4b3c6d210b6e6fef6564bea5c4c03026985d3fdbeb53fbb002a5e0ff9771"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "source-owner-exchange-71288-v2-full-forward/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "source-owner-exchange-71288-v2-full-forward/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "source-owner-exchange-71288-v2-full-forward/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "source-owner-exchange-71288-v2-full-forward/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    },
+    "source-owner-exchange-71288-v2-full-reverse": {
+      "id": "source-owner-exchange-71288-v2-full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "backend-work-hardened/source-owner-exchange-71288-v2/canonical-pins/source-owner-exchange-71288-v2-full-reverse.json",
+        "sha256": "38cbc04f6134a848c9948c816013ad54bbbf757e5057f63ef2a7c7040af25b84"
+      },
+      "original_pins": {
+        "path": "source-owner-exchange-71288-v2-full-reverse/pins.json",
+        "sha256": "266da887fc23cd6ea3ce1763a1a024a551478225c79d30f9c16b0e43e4f86242"
+      },
+      "summary": {
+        "path": "source-owner-exchange-71288-v2-full-reverse/summary.json",
+        "sha256": "7ca08acd8b34700ccd310876661cf65f31e035e73420fd8619d7a4fcbbca20ef"
+      },
+      "complete": {
+        "path": "source-owner-exchange-71288-v2-full-reverse/complete.json",
+        "sha256": "2e54dfa5984a50621e44303a7cbdd811e578a4c88e1b46ef989159527d443c6f"
+      },
+      "observations": {
+        "128-biased-dynamic": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/128-biased-dynamic/observations.json.gz",
+          "sha256": "a65f9a8fba8b710a97f8f76eaa6f951e5daa9977ca79511ade3b1559dabe8a73"
+        },
+        "16384-distribution-change": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/16384-distribution-change/observations.json.gz",
+          "sha256": "90d9433706a2c9a64544497783bfd1dcf78aef6da2baec61fa3b620cb352f8da"
+        },
+        "32-high-entropy-stored": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/32-high-entropy-stored/observations.json.gz",
+          "sha256": "a3eeaf0b7f60f70dab7b1336cc2c35e4dc14644998fa22d97b36be539b104f54"
+        },
+        "320-overlap": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/320-overlap/observations.json.gz",
+          "sha256": "fd7a2f22d5c9a3b90c6cc5858371fa29eade3e72ab42c620b5e943f72e633cf1"
+        },
+        "33027-periodic-window": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/33027-periodic-window/observations.json.gz",
+          "sha256": "e701f13f54c30e75cdb3cc693bbc90c6b394a8087cdd518a540716bfc25e4848"
+        },
+        "eight-literals": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/eight-literals/observations.json.gz",
+          "sha256": "c0e29fba02f6696ff51cc41d43ac7b0fe9b4dc14a5877bb8dbdb7c64110ff468"
+        },
+        "eight-literals-prefix": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/eight-literals-prefix/observations.json.gz",
+          "sha256": "51ad9ea41790219f6128cb4243596489c4503975d638bbacef51ffef65bef2f0"
+        },
+        "eight-overlap": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/eight-overlap/observations.json.gz",
+          "sha256": "5a60e68cb1fb2f48caf7acd35d124b848c833a7752a77920be3a4ce868eff9e3"
+        },
+        "empty": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/empty/observations.json.gz",
+          "sha256": "871cd3272fb97d87d7d331a35e890fde79bd92319447541d51cf2f730ebf6fd0"
+        },
+        "heldout-mixed-131073": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/heldout-mixed-131073/observations.json.gz",
+          "sha256": "ab2a4d4feaa664d3f9b6467d8f1a82d633d12ac84b10632dd05fe166900889a8"
+        },
+        "heldout-random-65537": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/heldout-random-65537/observations.json.gz",
+          "sha256": "6de3af6037a030ddeb10d77c4fbd3c5def59fc1f50f1fe94095f23a40411473f"
+        },
+        "heldout-slides-65537": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/heldout-slides-65537/observations.json.gz",
+          "sha256": "c7a16614c8e0f8d9cb1cd8fbc10e67c9103e73e93f091fc1e73353f7821c0da9"
+        },
+        "heldout-window-32767": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/heldout-window-32767/observations.json.gz",
+          "sha256": "c44286b5c7c83ed500f10d1763d7fc4efd044e9afa1a67ce509468e7ebb493b8"
+        },
+        "heldout-window-32768": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/heldout-window-32768/observations.json.gz",
+          "sha256": "a9f91a91b06132cb7b4eb56124cff2824b6288feb6d12dfc8ff2ceabfbc86dec"
+        },
+        "one-stored": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/one-stored/observations.json.gz",
+          "sha256": "3cd2b093cabec9be3d0af02a0f765a8cfbe583c29d8426ad3710edf1542d191e"
+        },
+        "prefix-natural-1024": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-natural-1024/observations.json.gz",
+          "sha256": "6b4e4c16c1ac919633e63d5eeb5c242bab0d7d8d96dc928180902759a288496b"
+        },
+        "prefix-natural-1048576": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-natural-1048576/observations.json.gz",
+          "sha256": "6badb0fd703e2d0b2727491df1610e7e9a92998e6a04a87268f6ec92f335d734"
+        },
+        "prefix-natural-131072": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-natural-131072/observations.json.gz",
+          "sha256": "8937b9632aff65367d6e4850a47b4c655587a0b3aa66d5f882a20cff1ece4cb3"
+        },
+        "prefix-natural-16384": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-natural-16384/observations.json.gz",
+          "sha256": "80d1daa78d3e4f8ec38e69c8a486f8f8185e450feea816a9111b718e750264b8"
+        },
+        "prefix-natural-262144": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-natural-262144/observations.json.gz",
+          "sha256": "5b8774e9c74cedf8c52352819650044bc1264796180b97edde03418d3a259849"
+        },
+        "prefix-natural-32767": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-natural-32767/observations.json.gz",
+          "sha256": "09e0eca958f35a9fc2fa563313b96275bd27f71db00c6d44046d67a7a6d61528"
+        },
+        "prefix-natural-32768": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-natural-32768/observations.json.gz",
+          "sha256": "3e5583c4f5a19d8469804fdfb4be4c5854900f93d63a8a2143ec1838c06d1816"
+        },
+        "prefix-natural-32769": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-natural-32769/observations.json.gz",
+          "sha256": "d26dc5c015362873533a264e7e46cca931f1f619a5016b508e3a86bdfc6f544c"
+        },
+        "prefix-natural-33027": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-natural-33027/observations.json.gz",
+          "sha256": "9ef704ebbab72bb1d0a039aa5ded0182ce11c1c90a485a2d0133b10d6f81eafe"
+        },
+        "prefix-natural-4096": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-natural-4096/observations.json.gz",
+          "sha256": "19d34e0921c35b0ae8ac5da4af062f35fd44455bc4573809ba84c6cf8b8782c6"
+        },
+        "prefix-natural-65535": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-natural-65535/observations.json.gz",
+          "sha256": "e84ae2afd5a385fc745df91206203ef4b8dbf300566182600dd165e9728c0c45"
+        },
+        "prefix-natural-65536": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-natural-65536/observations.json.gz",
+          "sha256": "af753671114f4cf0fce636181e4ce00ae4c17704971a8b472a477c5594578213"
+        },
+        "prefix-natural-65537": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-natural-65537/observations.json.gz",
+          "sha256": "9c422b706eb11ecfd2955cf4be64f96a2b47c0141e4b12ff13b6157ff5c2b4b5"
+        },
+        "prefix-natural-8192": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-natural-8192/observations.json.gz",
+          "sha256": "c56149cc65e02ba4c10497a70445e07fb690174ada41a5a547e0b79e316e6c45"
+        },
+        "prefix-periodic-1024": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-periodic-1024/observations.json.gz",
+          "sha256": "9c0184f2d6e6a76a4c81c6421ef69ebe5d2476466637de633d9f35352facfd74"
+        },
+        "prefix-periodic-1048576": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-periodic-1048576/observations.json.gz",
+          "sha256": "bbbe13fe1671b467fe41da117a4f85a7a578d82d7e5cb446a58f7d3717445818"
+        },
+        "prefix-periodic-131072": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-periodic-131072/observations.json.gz",
+          "sha256": "c7269640025d7b12fcb61ad12e9eb170d6cea853eb564dd79ed775cc8d575000"
+        },
+        "prefix-periodic-16384": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-periodic-16384/observations.json.gz",
+          "sha256": "32315de5fe912c37d569644366e5f0c18c867071db741a87c3cf5b15360d9c3d"
+        },
+        "prefix-periodic-262144": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-periodic-262144/observations.json.gz",
+          "sha256": "ceb511e65ba01765f4b4f3f0b874f1f7ebbf07e383b48525c7cf89939b265d39"
+        },
+        "prefix-periodic-32767": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-periodic-32767/observations.json.gz",
+          "sha256": "90d258ffcae0a48d6b25f835283e44b274d75e6b7a283fd48bfed95da663a544"
+        },
+        "prefix-periodic-32768": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-periodic-32768/observations.json.gz",
+          "sha256": "5638c1223d1d26e3d8ce0a1176f510d78da0b8fc7adce982fbbf686d3b2625d3"
+        },
+        "prefix-periodic-32769": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-periodic-32769/observations.json.gz",
+          "sha256": "badca8300a8575908cf79f8338d93f66dab8a14b62f22a96eaa50a8f436e5666"
+        },
+        "prefix-periodic-33027": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-periodic-33027/observations.json.gz",
+          "sha256": "3917f138cbbb38b04418709aa4fefa0b45d232ca4c75d30821fe31ad6fca8618"
+        },
+        "prefix-periodic-4096": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-periodic-4096/observations.json.gz",
+          "sha256": "dda9d6adab998bc5d3c11f95455379b3997b9de2a65aa86757cf9b225b8469bb"
+        },
+        "prefix-periodic-65535": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-periodic-65535/observations.json.gz",
+          "sha256": "27a19cb7dfff09a4903b0096ef8dee48d6f1b6446995dd5bec3de569174eb19b"
+        },
+        "prefix-periodic-65536": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-periodic-65536/observations.json.gz",
+          "sha256": "09908658169a7c247a4b8f938df0bfdeafce211ede5ea826ec91830132127f95"
+        },
+        "prefix-periodic-65537": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-periodic-65537/observations.json.gz",
+          "sha256": "b31fbed40f77d65461761df4412cdf95ecd84571de9f9a50f89375ddb58eec5e"
+        },
+        "prefix-periodic-8192": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-periodic-8192/observations.json.gz",
+          "sha256": "c715b4f8fd1afec8e8624a2f50848e16de95148ed3ad9f44f367d9b1a0bff584"
+        },
+        "prefix-random-1024": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-random-1024/observations.json.gz",
+          "sha256": "ae7dc2c64db5c16e919279ab6c5aafbb07cba0556c5ab8c4b2140d38c1533574"
+        },
+        "prefix-random-1048576": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-random-1048576/observations.json.gz",
+          "sha256": "8b78d3fcb000dce2db23663c8cbda0e277de68b8c1b24d5471df31024cf6c4c8"
+        },
+        "prefix-random-131072": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-random-131072/observations.json.gz",
+          "sha256": "8608a20380f4c1d71772c400d35b7ec06ec53cd133ec314424b517456c822af4"
+        },
+        "prefix-random-16384": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-random-16384/observations.json.gz",
+          "sha256": "b6f6f6f6b5d49b7800c633cc335949340678d36ef21ac71482a5cd6e10a83b85"
+        },
+        "prefix-random-262144": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-random-262144/observations.json.gz",
+          "sha256": "0bf8255f45ec334b9d5156dce218f3d130b17ba35f31cbba4dcd269115721c6e"
+        },
+        "prefix-random-32767": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-random-32767/observations.json.gz",
+          "sha256": "5516bed5911467ce5cf0db8d414999ffd3f244edf07a8cf8626787e747a62678"
+        },
+        "prefix-random-32768": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-random-32768/observations.json.gz",
+          "sha256": "dd3f266303b33563c84b58b979dea3310fec971b8f708b187fdb4e0e134d8286"
+        },
+        "prefix-random-32769": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-random-32769/observations.json.gz",
+          "sha256": "ab6affb021fdefc1b664157192342ce187c3d1856d2bad7ecce7fa2f769ffe3c"
+        },
+        "prefix-random-33027": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-random-33027/observations.json.gz",
+          "sha256": "9aa642d63b52b60ca0f31ccbff93e4a2427a280a166ce02c35f7a42648ee5237"
+        },
+        "prefix-random-4096": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-random-4096/observations.json.gz",
+          "sha256": "159623d510b1961de7ea8f29ba0a1a9870524497a2c1b1cbcdfd596e8231ca07"
+        },
+        "prefix-random-65535": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-random-65535/observations.json.gz",
+          "sha256": "fd91c99cfe8f353ad2447fa70fae0770827566aba394804b64b084214dde8d86"
+        },
+        "prefix-random-65536": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-random-65536/observations.json.gz",
+          "sha256": "d5e34e670c9210d1a0c946e70cd054ed7998117de0beb48e9eaeaf81f0f7877f"
+        },
+        "prefix-random-65537": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-random-65537/observations.json.gz",
+          "sha256": "d53cf1101f521404d5a4e3698f249358148a9eaf4b3c11a2553539a99b0b0413"
+        },
+        "prefix-random-8192": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-random-8192/observations.json.gz",
+          "sha256": "6ee7b1d826ab2d8066f9de990a0cf1692c2226f4804159d7acd23376168584c7"
+        },
+        "prefix-repeated-1024": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-repeated-1024/observations.json.gz",
+          "sha256": "3fc1ff479d5538430329e29aa428170e1a49233aae3e134c28da80a3480f3f7f"
+        },
+        "prefix-repeated-1048576": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-repeated-1048576/observations.json.gz",
+          "sha256": "41af90ff29d6e180eb06546ddbe3e846315dbd297e4686d2211b2b3c0d7d60e3"
+        },
+        "prefix-repeated-131072": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-repeated-131072/observations.json.gz",
+          "sha256": "00687fdd0357e1978c4f9ce33e223678c9a41cec286b6a8f7b284fd0193312d8"
+        },
+        "prefix-repeated-16384": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-repeated-16384/observations.json.gz",
+          "sha256": "3a3f028d51f14169af86996f40660119b0eb29e3e786677f0c21d200cba41181"
+        },
+        "prefix-repeated-262144": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-repeated-262144/observations.json.gz",
+          "sha256": "abfabb6102cbc80ca7ee0c28ba703b8b31c412b793cd4fa320768d9163ea1021"
+        },
+        "prefix-repeated-32767": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-repeated-32767/observations.json.gz",
+          "sha256": "5dc24a4594d3a940f603a6acf8458e6507f2273abb454b0ffed2bc1a16b88492"
+        },
+        "prefix-repeated-32768": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-repeated-32768/observations.json.gz",
+          "sha256": "2b2c3972bd4aa5b291c77e55c7ede48387ded18f4eb003704ff84f1a04d33cbc"
+        },
+        "prefix-repeated-32769": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-repeated-32769/observations.json.gz",
+          "sha256": "a2215d0dee8a1ef7153d4b939ec7aaae9135cf9e60fd5cc2de5309c21f8fac85"
+        },
+        "prefix-repeated-33027": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-repeated-33027/observations.json.gz",
+          "sha256": "e46423660efbb3d01bcde677e9b8c33bc18becdb6c6cbb79f682030b24636817"
+        },
+        "prefix-repeated-4096": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-repeated-4096/observations.json.gz",
+          "sha256": "982a2a88a014a8df9b011d7acf39d715f121b96c773a83814a50bd26fbf1b900"
+        },
+        "prefix-repeated-65535": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-repeated-65535/observations.json.gz",
+          "sha256": "be5b964c5c092a8034f2fb20786a5fb37f4cd52f23a1e56ec9ebdc990c163a73"
+        },
+        "prefix-repeated-65536": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-repeated-65536/observations.json.gz",
+          "sha256": "2c4cf34ea2de59db1332eda2d0a4058cfa9016dc0e1516d450ca66b2bbb385ba"
+        },
+        "prefix-repeated-65537": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-repeated-65537/observations.json.gz",
+          "sha256": "60c8357503d6c9ea0ddc44d99a235cf1ef72f46261e9834f11f8556668ba219a"
+        },
+        "prefix-repeated-8192": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/prefix-repeated-8192/observations.json.gz",
+          "sha256": "d402fa570c637b3f61dd53b730c9182d7323bdfecd467996c59936a256ca5921"
+        },
+        "random-1024": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/random-1024/observations.json.gz",
+          "sha256": "d11095122791ac4cd16ba893968b3e3fc59b32de6a29aaa7753c31aa2fe11066"
+        },
+        "random-256": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/random-256/observations.json.gz",
+          "sha256": "75064477cc880b4cb8b4d5e9f1eb04e6dfb218eea241db97d3e9fd4f447c96aa"
+        },
+        "random-32769": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/random-32769/observations.json.gz",
+          "sha256": "9487894014f4f6d5f5afcf1cebd5b5c0778e6abd4f79d2ccd1f889acf7dc7904"
+        },
+        "random-64": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/random-64/observations.json.gz",
+          "sha256": "5de2d431ebb88834f579d88f0a53f26ff7e80f365a8dc99059f7def124119fd8"
+        },
+        "repeated-1024": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/repeated-1024/observations.json.gz",
+          "sha256": "9bf16358cb26b3f7149f876ed7ada6b75c76208b91ef4f883bfb9bd10dd9a410"
+        },
+        "repeated-32769": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/repeated-32769/observations.json.gz",
+          "sha256": "87a09900dd0bb3a482e1afadec9464f025c88498fb3b506d20cde18e8f3ee9bf"
+        },
+        "reymont-prefix-1024": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/reymont-prefix-1024/observations.json.gz",
+          "sha256": "8eb969f5a0c5ef3a5e611c2d703c65d6b5e5c0832710d460607bcd7e74535bc2"
+        },
+        "reymont-prefix-16384": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/reymont-prefix-16384/observations.json.gz",
+          "sha256": "61189ac83d759742fca6be89c4f89c113a08080dc5e78247077b2b2dc5f000e8"
+        },
+        "reymont-prefix-32769": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/reymont-prefix-32769/observations.json.gz",
+          "sha256": "e20104880f751c01b4d789a7bfeb5acf5e91717a6bd4ae8805c6a0e1c71875b6"
+        },
+        "seven-stored-prefix": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/seven-stored-prefix/observations.json.gz",
+          "sha256": "0371c6f05860a62ce65c4cc5cc8bf4f20cd32ea04b3768078cace316dd3b03e1"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "source-owner-exchange-71288-v2-full-reverse/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    }
+  }
+}

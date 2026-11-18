@@ -1,0 +1,30 @@
+{
+  "preserve": {
+    "reference_text": 474692,
+    "candidate_text": 474692,
+    "same_symbol_positions": true,
+    "scorer_position": 380192,
+    "scorer_bytes": 1152,
+    "reference_scorer_position": 380192,
+    "reference_scorer_bytes": 1152,
+    "outside_atom_same_bytes": true,
+    "base_outside_atom_sha256": "e243cdaee77ef024795973e1899c84eda8fc885a2618b208740df16c384d339d",
+    "candidate_outside_atom_sha256": "e243cdaee77ef024795973e1899c84eda8fc885a2618b208740df16c384d339d",
+    "shifted_native_symbols": 0,
+    "shifted_native_symbols_mod_64": 0
+  },
+  "shrink": {
+    "reference_text": 474692,
+    "candidate_text": 474628,
+    "same_symbol_positions": false,
+    "scorer_position": 380192,
+    "scorer_bytes": 1088,
+    "reference_scorer_position": 380192,
+    "reference_scorer_bytes": 1152,
+    "outside_atom_same_bytes": false,
+    "base_outside_atom_sha256": "e243cdaee77ef024795973e1899c84eda8fc885a2618b208740df16c384d339d",
+    "candidate_outside_atom_sha256": "90772a94fbc0edf96726f168cfc4941389d0abb0f009f793c2db29e1245db69f",
+    "shifted_native_symbols": 28,
+    "shifted_native_symbols_mod_64": 0
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "acceptance_resolution": 0.005,
+  "seed": 99371769,
+  "order": [
+    "prefix-random-16384",
+    "prefix-repeated-4096",
+    "prefix-random-4096"
+  ],
+  "repetitions_per_order": 64,
+  "timer": "worker complete-call elapsed durations",
+  "worker_sha256": {
+    "control": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41",
+    "duplicate-control": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41",
+    "candidate": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9"
+  },
+  "distinct_worker_files": 3,
+  "batch_floor": 32,
+  "environment_sha256": "c98315ff0b534b2afb0340e534aa1174d8968d62ce6db3e0bd66cbe773b10aa9",
+  "contract_sha256": "d6bad82c50b75f249e856be4443a3838668a8d2cc022dfac51baf5bb07c869c8"
+}

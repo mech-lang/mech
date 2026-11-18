@@ -1,0 +1,2702 @@
+{
+  "object_sha256": "e43ea00603fa9908b8213692678f0689f8083db2489d122d4d199fd350b58396",
+  "symbol": "_mech_compact_numeric_3009_no_growth_composed",
+  "literal_offset": 1152,
+  "cases": {
+    "prefix-natural-4096": {
+      "calls": 5,
+      "counts": {
+        "instructions": 3449625,
+        "pacibsp": 5,
+        "stp": 30,
+        "stack_stores": 3525,
+        "mov": 188115,
+        "sub": 279590,
+        "ldr": 470655,
+        "payload_loads": 506220,
+        "stur": 3495,
+        "cmp": 407530,
+        "b.ne": 38905,
+        "branches": 574015,
+        "str": 20535,
+        "payload_stores": 20535,
+        "ldur": 17280,
+        "stack_loads": 17310,
+        "add": 560375,
+        "ldp": 30,
+        "retab": 5,
+        "b.hs": 109210,
+        "lsr": 56045,
+        "cbz": 17265,
+        "lsl": 17265,
+        "and": 81565,
+        "orr": 147005,
+        "adrp": 17265,
+        "b.eq": 183910,
+        "b": 125010,
+        "ldrb": 35565,
+        "b.hi": 35565,
+        "subs": 106045,
+        "b.ls": 36725,
+        "csel": 208540,
+        "dup.4s": 10650,
+        "movi.16b": 3550,
+        "add.4s": 76180,
+        "movi.4s": 3550,
+        "mov.16b": 44870,
+        "tbl.16b": 24210,
+        "umin.4s": 38410,
+        "cmhi.4s": 24210,
+        "bsl.16b": 27760,
+        "ext.16b": 7100,
+        "rev64.4s": 7100,
+        "mov.s": 7100,
+        "cmeq.4s": 3550,
+        "neg": 1160,
+        "ccmp": 3480,
+        "b.lo": 3215
+      },
+      "blocks": [
+        {
+          "address": "0x23ac",
+          "visits": 70480,
+          "instructions": [
+            [
+              "ldr",
+              "w8, [x10, x7, lsl #2]"
+            ],
+            [
+              "ldr",
+              "w23, [x24, #-0x8]!"
+            ],
+            [
+              "add",
+              "w8, w22, w8"
+            ],
+            [
+              "add",
+              "w8, w8, w23"
+            ],
+            [
+              "cmp",
+              "w8, w28"
+            ],
+            [
+              "csel",
+              "x28, x8, x28, lo"
+            ],
+            [
+              "orr",
+              "w8, w7, w21, lsl #9"
+            ],
+            [
+              "add",
+              "x7, x7, #0x1"
+            ],
+            [
+              "csel",
+              "x27, x8, x27, lo"
+            ],
+            [
+              "subs",
+              "x14, x14, #0x1"
+            ],
+            [
+              "b.eq",
+              "0x220c"
+            ]
+          ]
+        },
+        {
+          "address": "0x23d8",
+          "visits": 55165,
+          "instructions": [
+            [
+              "b",
+              "0x23ac"
+            ]
+          ]
+        },
+        {
+          "address": "0x220c",
+          "visits": 35565,
+          "instructions": [
+            [
+              "mov",
+              "w24, w28"
+            ],
+            [
+              "mov",
+              "x23, x25"
+            ]
+          ]
+        },
+        {
+          "address": "0x2214",
+          "visits": 35565,
+          "instructions": [
+            [
+              "add",
+              "x20, x20, #0x1"
+            ],
+            [
+              "cmp",
+              "x20, x12"
+            ],
+            [
+              "b.eq",
+              "0x23dc"
+            ]
+          ]
+        },
+        {
+          "address": "0x2220",
+          "visits": 35565,
+          "instructions": [
+            [
+              "cmp",
+              "x20, x6"
+            ],
+            [
+              "b.hs",
+              "0x24f4"
+            ]
+          ]
+        },
+        {
+          "address": "0x2228",
+          "visits": 35565,
+          "instructions": [
+            [
+              "ldr",
+              "w25, [x5, x20, lsl #2]"
+            ]
+          ]
+        },
+        {
+          "address": "0x222c",
+          "visits": 35565,
+          "instructions": [
+            [
+              "lsr",
+              "x21, x25, #16"
+            ],
+            [
+              "ldrb",
+              "w7, [x19, w21, uxtw]"
+            ],
+            [
+              "add",
+              "x8, x3, #0x80c"
+            ],
+            [
+              "ldr",
+              "w22, [x8, x7, lsl #2]"
+            ],
+            [
+              "and",
+              "x25, x25, #0xffff"
+            ],
+            [
+              "sub",
+              "x7, x25, #0x3"
+            ],
+            [
+              "cmp",
+              "x7, #0xff"
+            ],
+            [
+              "b.hi",
+              "0x24fc"
+            ]
+          ]
+        },
+        {
+          "address": "0x224c",
+          "visits": 35565,
+          "instructions": [
+            [
+              "subs",
+              "x26, x25, x23"
+            ],
+            [
+              "b.ls",
+              "0x2214"
+            ]
+          ]
+        },
+        {
+          "address": "0x2254",
+          "visits": 35565,
+          "instructions": [
+            [
+              "cmp",
+              "x26, #0x10"
+            ],
+            [
+              "b.hs",
+              "0x22ac"
+            ]
+          ]
+        },
+        {
+          "address": "0x225c",
+          "visits": 32015,
+          "instructions": [
+            [
+              "add",
+              "x8, x23, #0x1"
+            ],
+            [
+              "ldr",
+              "w7, [x10, x8, lsl #2]"
+            ],
+            [
+              "sub",
+              "x8, x0, x8"
+            ],
+            [
+              "ldr",
+              "x8, [x11, x8, lsl #3]"
+            ],
+            [
+              "add",
+              "w7, w22, w7"
+            ],
+            [
+              "add",
+              "w7, w7, w8"
+            ],
+            [
+              "cmp",
+              "w7, w24"
+            ],
+            [
+              "csel",
+              "x28, x7, x24, lo"
+            ],
+            [
+              "add",
+              "w8, w23, #0x1"
+            ],
+            [
+              "orr",
+              "w8, w8, w21, lsl #9"
+            ],
+            [
+              "csel",
+              "x27, x8, x27, lo"
+            ],
+            [
+              "cmp",
+              "x26, #0x1"
+            ],
+            [
+              "b.eq",
+              "0x220c"
+            ]
+          ]
+        },
+        {
+          "address": "0x22f0",
+          "visits": 24210,
+          "instructions": [
+            [
+              "ldr",
+              "q19, [x14]"
+            ],
+            [
+              "ldr",
+              "q30, [x23]"
+            ],
+            [
+              "ldr",
+              "q31, [x23, #0x10]"
+            ],
+            [
+              "sub",
+              "x8, x28, #0x4"
+            ],
+            [
+              "add.4s",
+              "v19, v17, v19"
+            ],
+            [
+              "ldr",
+              "q20, 0x2540"
+            ],
+            [
+              "tbl.16b",
+              "v20, { v30, v31 }, v20"
+            ],
+            [
+              "add.4s",
+              "v19, v19, v20"
+            ],
+            [
+              "umin.4s",
+              "v20, v19, v0"
+            ],
+            [
+              "cmhi.4s",
+              "v19, v0, v19"
+            ],
+            [
+              "bsl.16b",
+              "v19, v6, v21"
+            ],
+            [
+              "add.4s",
+              "v6, v6, v18"
+            ],
+            [
+              "sub",
+              "x23, x23, #0x20"
+            ],
+            [
+              "add",
+              "x14, x14, #0x10"
+            ],
+            [
+              "cmp",
+              "x28, #0x4"
+            ],
+            [
+              "b.eq",
+              "0x2340"
+            ]
+          ]
+        },
+        {
+          "address": "0x2330",
+          "visits": 20660,
+          "instructions": [
+            [
+              "mov",
+              "x28, x8"
+            ],
+            [
+              "mov.16b",
+              "v0, v20"
+            ],
+            [
+              "mov.16b",
+              "v21, v19"
+            ],
+            [
+              "b",
+              "0x22f0"
+            ]
+          ]
+        },
+        {
+          "address": "0x2138",
+          "visits": 17270,
+          "instructions": [
+            [
+              "cmp",
+              "x4, #0x0"
+            ],
+            [
+              "b.ne",
+              "0x21a0"
+            ]
+          ]
+        },
+        {
+          "address": "0x21a0",
+          "visits": 17265,
+          "instructions": [
+            [
+              "cmp",
+              "x12, x6"
+            ],
+            [
+              "b.hs",
+              "0x24dc"
+            ]
+          ]
+        },
+        {
+          "address": "0x21a8",
+          "visits": 17265,
+          "instructions": [
+            [
+              "ldr",
+              "w15, [x5, x12, lsl #2]"
+            ]
+          ]
+        },
+        {
+          "address": "0x21ac",
+          "visits": 17265,
+          "instructions": [
+            [
+              "lsr",
+              "x19, x15, #16"
+            ],
+            [
+              "add",
+              "x8, x19, #0x103"
+            ],
+            [
+              "ldur",
+              "x7, [sp, #0x70]"
+            ],
+            [
+              "cmp",
+              "x8, x7"
+            ],
+            [
+              "b.hs",
+              "0x24e4"
+            ]
+          ]
+        },
+        {
+          "address": "0x21c0",
+          "visits": 17265,
+          "instructions": [
+            [
+              "add",
+              "x7, x19, #0x103"
+            ],
+            [
+              "ldr",
+              "w20, [x10, x7, lsl #2]"
+            ]
+          ]
+        },
+        {
+          "address": "0x21c8",
+          "visits": 17265,
+          "instructions": [
+            [
+              "cbz",
+              "x0, 0x24ec"
+            ]
+          ]
+        },
+        {
+          "address": "0x21cc",
+          "visits": 17265,
+          "instructions": [
+            [
+              "sub",
+              "x7, x11, #0x8"
+            ],
+            [
+              "lsl",
+              "x8, x0, #3"
+            ],
+            [
+              "ldr",
+              "w21, [x7, x8]"
+            ]
+          ]
+        },
+        {
+          "address": "0x21d8",
+          "visits": 17265,
+          "instructions": [
+            [
+              "and",
+              "x7, x15, #0xffff"
+            ],
+            [
+              "sub",
+              "x13, x12, x7"
+            ],
+            [
+              "add",
+              "w7, w20, w21"
+            ],
+            [
+              "mov",
+              "w24, w7"
+            ],
+            [
+              "mov",
+              "w7, #0x1"
+            ],
+            [
+              "orr",
+              "w27, w7, w19, lsl #9"
+            ],
+            [
+              "mov",
+              "x23, #0x2"
+            ],
+            [
+              "adrp",
+              "x19, 0 ; 0x2000"
+            ],
+            [
+              "ldr",
+              "x19, [x19]"
+            ],
+            [
+              "cmp",
+              "x13, x12"
+            ],
+            [
+              "b.eq",
+              "0x23dc"
+            ]
+          ]
+        },
+        {
+          "address": "0x23dc",
+          "visits": 17265,
+          "instructions": [
+            [
+              "orr",
+              "x12, x24, x27, lsl #32"
+            ],
+            [
+              "str",
+              "x12, [x11, x0, lsl #3]"
+            ],
+            [
+              "and",
+              "x7, x15, #0xffff"
+            ],
+            [
+              "cmp",
+              "x7, #0x0"
+            ],
+            [
+              "b.ne",
+              "0x2428"
+            ]
+          ]
+        },
+        {
+          "address": "0x2204",
+          "visits": 16105,
+          "instructions": [
+            [
+              "mov",
+              "x20, x13"
+            ],
+            [
+              "b",
+              "0x2220"
+            ]
+          ]
+        },
+        {
+          "address": "0x2428",
+          "visits": 16105,
+          "instructions": [
+            [
+              "sub",
+              "x4, x4, #0x1"
+            ],
+            [
+              "sub",
+              "x12, x13, #0x1"
+            ],
+            [
+              "add",
+              "x0, x0, #0x1"
+            ],
+            [
+              "mov",
+              "x13, x0"
+            ],
+            [
+              "b",
+              "0x2138"
+            ]
+          ]
+        },
+        {
+          "address": "0x2290",
+          "visits": 12600,
+          "instructions": [
+            [
+              "add",
+              "x7, x23, #0x2"
+            ],
+            [
+              "sub",
+              "x14, x0, #0x3"
+            ],
+            [
+              "add",
+              "x14, x11, x14, lsl #3"
+            ],
+            [
+              "sub",
+              "x8, x23, #0x2"
+            ],
+            [
+              "sub",
+              "x24, x14, x8, lsl #3"
+            ],
+            [
+              "sub",
+              "x14, x26, #0x1"
+            ],
+            [
+              "b",
+              "0x23ac"
+            ]
+          ]
+        },
+        {
+          "address": "0x2444",
+          "visits": 4375,
+          "instructions": [
+            [
+              "cmp",
+              "x4, #0x0"
+            ],
+            [
+              "b.eq",
+              "0x2470"
+            ]
+          ]
+        },
+        {
+          "address": "0x244c",
+          "visits": 4370,
+          "instructions": [
+            [
+              "sub",
+              "x5, x13, #0x1"
+            ],
+            [
+              "ldr",
+              "w5, [x19, x5, lsl #2]"
+            ],
+            [
+              "and",
+              "x6, x5, #0xffff"
+            ],
+            [
+              "cmp",
+              "x6, #0x0"
+            ],
+            [
+              "b.ne",
+              "0x2470"
+            ]
+          ]
+        },
+        {
+          "address": "0x22ac",
+          "visits": 3550,
+          "instructions": [
+            [
+              "and",
+              "x28, x26, #0xfffffffffffffffc"
+            ],
+            [
+              "dup.4s",
+              "v0, w24"
+            ],
+            [
+              "movi.16b",
+              "v16, #0xff"
+            ],
+            [
+              "sub",
+              "w14, w23, #0x2"
+            ],
+            [
+              "dup.4s",
+              "v17, w14"
+            ],
+            [
+              "ldr",
+              "q18, 0x2530"
+            ],
+            [
+              "add.4s",
+              "v6, v17, v18"
+            ],
+            [
+              "sub",
+              "x14, x0, #0x3"
+            ],
+            [
+              "add",
+              "x24, x11, x14, lsl #3"
+            ],
+            [
+              "sub",
+              "x7, x23, #0x2"
+            ],
+            [
+              "sub",
+              "x14, x24, x7, lsl #3"
+            ],
+            [
+              "sub",
+              "x23, x14, #0x18"
+            ],
+            [
+              "add",
+              "x14, x10, #0xc"
+            ],
+            [
+              "add",
+              "x14, x14, x7, lsl #2"
+            ],
+            [
+              "dup.4s",
+              "v17, w22"
+            ],
+            [
+              "movi.4s",
+              "v18, #0x4"
+            ],
+            [
+              "mov.16b",
+              "v21, v16"
+            ]
+          ]
+        },
+        {
+          "address": "0x2340",
+          "visits": 3550,
+          "instructions": [
+            [
+              "and",
+              "x8, x26, #0xfffffffffffffffc"
+            ],
+            [
+              "add",
+              "x23, x7, x8"
+            ],
+            [
+              "sub",
+              "x7, x25, #0x2"
+            ],
+            [
+              "ext.16b",
+              "v17, v20, v20, #0x8"
+            ],
+            [
+              "umin.4s",
+              "v17, v20, v17"
+            ],
+            [
+              "rev64.4s",
+              "v18, v17"
+            ],
+            [
+              "umin.4s",
+              "v17, v17, v18"
+            ],
+            [
+              "mov.s",
+              "w28, v17[0]"
+            ],
+            [
+              "cmeq.4s",
+              "v17, v20, v17"
+            ],
+            [
+              "bsl.16b",
+              "v17, v19, v16"
+            ],
+            [
+              "ext.16b",
+              "v18, v17, v17, #0x8"
+            ],
+            [
+              "umin.4s",
+              "v17, v17, v18"
+            ],
+            [
+              "rev64.4s",
+              "v18, v17"
+            ],
+            [
+              "umin.4s",
+              "v17, v17, v18"
+            ],
+            [
+              "mov.s",
+              "w8, v17[0]"
+            ],
+            [
+              "add",
+              "w14, w8, #0x3"
+            ],
+            [
+              "orr",
+              "w14, w14, w21, lsl #9"
+            ],
+            [
+              "mov",
+              "w26, #-0x1"
+            ],
+            [
+              "cmp",
+              "w8, w26"
+            ],
+            [
+              "csel",
+              "x27, x14, x27, ne"
+            ],
+            [
+              "cmp",
+              "x23, x7"
+            ],
+            [
+              "b.hs",
+              "0x220c"
+            ]
+          ]
+        },
+        {
+          "address": "0x2460",
+          "visits": 3215,
+          "instructions": [
+            [
+              "lsr",
+              "x5, x5, #16"
+            ],
+            [
+              "add",
+              "x6, x5, #0x103"
+            ],
+            [
+              "cmp",
+              "x6, x21"
+            ],
+            [
+              "b.lo",
+              "0x24b0"
+            ]
+          ]
+        },
+        {
+          "address": "0x24b0",
+          "visits": 3215,
+          "instructions": [
+            [
+              "ldr",
+              "w6, [x20, x6, lsl #2]"
+            ],
+            [
+              "add",
+              "w6, w6, w12"
+            ],
+            [
+              "mov",
+              "w6, w6"
+            ],
+            [
+              "mov",
+              "w7, #0x1"
+            ],
+            [
+              "orr",
+              "w5, w7, w5, lsl #9"
+            ],
+            [
+              "orr",
+              "x12, x6, x5, lsl #32"
+            ],
+            [
+              "str",
+              "x12, [x15, x0, lsl #3]"
+            ],
+            [
+              "sub",
+              "x4, x4, #0x1"
+            ],
+            [
+              "sub",
+              "x13, x13, #0x1"
+            ],
+            [
+              "add",
+              "x0, x0, #0x1"
+            ],
+            [
+              "b",
+              "0x2444"
+            ]
+          ]
+        },
+        {
+          "address": "0x2398",
+          "visits": 2715,
+          "instructions": [
+            [
+              "add",
+              "x7, x23, #0x3"
+            ],
+            [
+              "sub",
+              "x8, x23, #0x1"
+            ],
+            [
+              "sub",
+              "x24, x24, x8, lsl #3"
+            ],
+            [
+              "sub",
+              "x8, x25, #0x2"
+            ],
+            [
+              "sub",
+              "x14, x8, x23"
+            ]
+          ]
+        },
+        {
+          "address": "0x23f0",
+          "visits": 1160,
+          "instructions": [
+            [
+              "ldr",
+              "x15, [x1, #0x10]"
+            ],
+            [
+              "ldr",
+              "x19, [x1, #0x30]"
+            ],
+            [
+              "ldr",
+              "x7, [x1, #0x38]"
+            ],
+            [
+              "ldr",
+              "x20, [x1, #0x50]"
+            ],
+            [
+              "ldr",
+              "x21, [x1, #0x58]"
+            ],
+            [
+              "sub",
+              "x22, x4, #0x1"
+            ],
+            [
+              "mov",
+              "x8, #-0x1"
+            ],
+            [
+              "add",
+              "x14, x0, #0x1"
+            ],
+            [
+              "neg",
+              "x23, x4"
+            ],
+            [
+              "cmp",
+              "x22, x13"
+            ],
+            [
+              "ccmp",
+              "x13, x7, #0x2, ls"
+            ],
+            [
+              "ccmp",
+              "x0, x8, #0x4, ls"
+            ],
+            [
+              "ccmp",
+              "x14, x23, #0x2, ne"
+            ],
+            [
+              "b.ls",
+              "0x243c"
+            ]
+          ]
+        },
+        {
+          "address": "0x243c",
+          "visits": 1160,
+          "instructions": [
+            [
+              "sub",
+              "x4, x4, #0x1"
+            ],
+            [
+              "add",
+              "x0, x0, #0x1"
+            ]
+          ]
+        },
+        {
+          "address": "0x2470",
+          "visits": 1160,
+          "instructions": [
+            [
+              "ldr",
+              "x7, [x1, #0x98]"
+            ],
+            [
+              "ldr",
+              "x11, [x1, #0x10]"
+            ],
+            [
+              "ldr",
+              "x10, [x1, #0x20]"
+            ],
+            [
+              "stur",
+              "x10, [sp, #0x68]"
+            ],
+            [
+              "ldr",
+              "x5, [x1, #0x30]"
+            ],
+            [
+              "ldr",
+              "x6, [x1, #0x38]"
+            ],
+            [
+              "ldr",
+              "x10, [x1, #0x50]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x58]"
+            ],
+            [
+              "ldr",
+              "x9, [x1, #0x70]"
+            ],
+            [
+              "ldr",
+              "x9, [x1, #0x78]"
+            ],
+            [
+              "ldr",
+              "x9, [x1, #0x90]"
+            ],
+            [
+              "sub",
+              "x12, x13, #0x1"
+            ],
+            [
+              "mov",
+              "x13, x0"
+            ],
+            [
+              "stur",
+              "x7, [sp, #0x60]"
+            ],
+            [
+              "stur",
+              "x8, [sp, #0x70]"
+            ],
+            [
+              "b",
+              "0x2138"
+            ]
+          ]
+        },
+        {
+          "address": "0x20b0",
+          "visits": 5,
+          "instructions": [
+            [
+              "pacibsp",
+              ""
+            ],
+            [
+              "stp",
+              "x29, x30, [sp, #-0x10]!"
+            ],
+            [
+              "mov",
+              "x29, sp"
+            ],
+            [
+              "stp",
+              "x27, x28, [sp, #-0x10]!"
+            ],
+            [
+              "stp",
+              "x25, x26, [sp, #-0x10]!"
+            ],
+            [
+              "stp",
+              "x23, x24, [sp, #-0x10]!"
+            ],
+            [
+              "stp",
+              "x21, x22, [sp, #-0x10]!"
+            ],
+            [
+              "stp",
+              "x19, x20, [sp, #-0x10]!"
+            ],
+            [
+              "sub",
+              "sp, sp, #0x80"
+            ],
+            [
+              "ldr",
+              "x14, [x1, #0x98]"
+            ],
+            [
+              "stur",
+              "x14, [sp, #0x60]"
+            ],
+            [
+              "ldr",
+              "x4, [x1]"
+            ],
+            [
+              "ldr",
+              "x7, [x1, #0x8]"
+            ],
+            [
+              "ldr",
+              "x11, [x1, #0x10]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x18]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x20]"
+            ],
+            [
+              "stur",
+              "x8, [sp, #0x68]"
+            ],
+            [
+              "ldr",
+              "x13, [x1, #0x28]"
+            ],
+            [
+              "ldr",
+              "x5, [x1, #0x30]"
+            ],
+            [
+              "ldr",
+              "x6, [x1, #0x38]"
+            ],
+            [
+              "ldr",
+              "x3, [x1, #0x40]"
+            ],
+            [
+              "ldr",
+              "x3, [x1, #0x48]"
+            ],
+            [
+              "ldr",
+              "x3, [x1, #0x50]"
+            ],
+            [
+              "ldr",
+              "x9, [x1, #0x58]"
+            ],
+            [
+              "stur",
+              "x9, [sp, #0x70]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x60]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x68]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x70]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x78]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x80]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x88]"
+            ],
+            [
+              "ldr",
+              "x9, [x1, #0x90]"
+            ],
+            [
+              "sub",
+              "x12, x7, #0x1"
+            ],
+            [
+              "mov",
+              "x10, x3"
+            ]
+          ]
+        },
+        {
+          "address": "0x2140",
+          "visits": 5,
+          "instructions": [
+            [
+              "str",
+              "x11, [x2, #0x8]"
+            ],
+            [
+              "str",
+              "x0, [x2, #0x10]"
+            ],
+            [
+              "ldur",
+              "x1, [sp, #0x68]"
+            ],
+            [
+              "str",
+              "x1, [x2, #0x18]"
+            ],
+            [
+              "str",
+              "x13, [x2, #0x20]"
+            ],
+            [
+              "str",
+              "x9, [x2, #0x28]"
+            ],
+            [
+              "str",
+              "x11, [x2, #0x30]"
+            ],
+            [
+              "str",
+              "x0, [x2, #0x38]"
+            ],
+            [
+              "str",
+              "x9, [x2, #0x40]"
+            ],
+            [
+              "ldur",
+              "x0, [sp, #0x68]"
+            ],
+            [
+              "str",
+              "x0, [x2, #0x48]"
+            ],
+            [
+              "str",
+              "x13, [x2, #0x50]"
+            ],
+            [
+              "ldur",
+              "x0, [sp, #0x60]"
+            ],
+            [
+              "str",
+              "x0, [x2, #0x58]"
+            ],
+            [
+              "mov",
+              "x1, #0x0"
+            ],
+            [
+              "mov",
+              "x0, x1"
+            ],
+            [
+              "add",
+              "sp, sp, #0x80"
+            ],
+            [
+              "ldp",
+              "x19, x20, [sp], #0x10"
+            ],
+            [
+              "ldp",
+              "x21, x22, [sp], #0x10"
+            ],
+            [
+              "ldp",
+              "x23, x24, [sp], #0x10"
+            ],
+            [
+              "ldp",
+              "x25, x26, [sp], #0x10"
+            ],
+            [
+              "ldp",
+              "x27, x28, [sp], #0x10"
+            ],
+            [
+              "ldp",
+              "x29, x30, [sp], #0x10"
+            ],
+            [
+              "retab",
+              ""
+            ]
+          ]
+        }
+      ]
+    },
+    "prefix-natural-8192": {
+      "calls": 6,
+      "counts": {
+        "instructions": 7587834,
+        "pacibsp": 6,
+        "stp": 36,
+        "stack_stores": 10458,
+        "mov": 441924,
+        "sub": 618054,
+        "ldr": 1020270,
+        "payload_loads": 1107174,
+        "stur": 10422,
+        "cmp": 943968,
+        "b.ne": 95640,
+        "branches": 1284468,
+        "str": 49218,
+        "payload_stores": 49218,
+        "ldur": 43038,
+        "stack_loads": 43074,
+        "add": 1238922,
+        "ldp": 36,
+        "retab": 6,
+        "b.hs": 265884,
+        "lsr": 136056,
+        "cbz": 43020,
+        "lsl": 43020,
+        "and": 194610,
+        "orr": 323124,
+        "adrp": 43020,
+        "b.eq": 399036,
+        "b": 256752,
+        "ldrb": 86904,
+        "b.hi": 86904,
+        "subs": 224820,
+        "b.ls": 90372,
+        "csel": 443604,
+        "dup.4s": 18108,
+        "movi.16b": 6036,
+        "add.4s": 128220,
+        "movi.4s": 6036,
+        "mov.16b": 75420,
+        "tbl.16b": 40728,
+        "umin.4s": 64872,
+        "cmhi.4s": 40728,
+        "bsl.16b": 46764,
+        "ext.16b": 12072,
+        "rev64.4s": 12072,
+        "mov.s": 12072,
+        "cmeq.4s": 6036,
+        "neg": 3468,
+        "ccmp": 10404,
+        "b.lo": 6132
+      },
+      "blocks": [
+        {
+          "address": "0x23ac",
+          "visits": 137916,
+          "instructions": [
+            [
+              "ldr",
+              "w8, [x10, x7, lsl #2]"
+            ],
+            [
+              "ldr",
+              "w23, [x24, #-0x8]!"
+            ],
+            [
+              "add",
+              "w8, w22, w8"
+            ],
+            [
+              "add",
+              "w8, w8, w23"
+            ],
+            [
+              "cmp",
+              "w8, w28"
+            ],
+            [
+              "csel",
+              "x28, x8, x28, lo"
+            ],
+            [
+              "orr",
+              "w8, w7, w21, lsl #9"
+            ],
+            [
+              "add",
+              "x7, x7, #0x1"
+            ],
+            [
+              "csel",
+              "x27, x8, x27, lo"
+            ],
+            [
+              "subs",
+              "x14, x14, #0x1"
+            ],
+            [
+              "b.eq",
+              "0x220c"
+            ]
+          ]
+        },
+        {
+          "address": "0x23d8",
+          "visits": 104118,
+          "instructions": [
+            [
+              "b",
+              "0x23ac"
+            ]
+          ]
+        },
+        {
+          "address": "0x220c",
+          "visits": 86904,
+          "instructions": [
+            [
+              "mov",
+              "w24, w28"
+            ],
+            [
+              "mov",
+              "x23, x25"
+            ]
+          ]
+        },
+        {
+          "address": "0x2214",
+          "visits": 86904,
+          "instructions": [
+            [
+              "add",
+              "x20, x20, #0x1"
+            ],
+            [
+              "cmp",
+              "x20, x12"
+            ],
+            [
+              "b.eq",
+              "0x23dc"
+            ]
+          ]
+        },
+        {
+          "address": "0x2220",
+          "visits": 86904,
+          "instructions": [
+            [
+              "cmp",
+              "x20, x6"
+            ],
+            [
+              "b.hs",
+              "0x24f4"
+            ]
+          ]
+        },
+        {
+          "address": "0x2228",
+          "visits": 86904,
+          "instructions": [
+            [
+              "ldr",
+              "w25, [x5, x20, lsl #2]"
+            ]
+          ]
+        },
+        {
+          "address": "0x222c",
+          "visits": 86904,
+          "instructions": [
+            [
+              "lsr",
+              "x21, x25, #16"
+            ],
+            [
+              "ldrb",
+              "w7, [x19, w21, uxtw]"
+            ],
+            [
+              "add",
+              "x8, x3, #0x80c"
+            ],
+            [
+              "ldr",
+              "w22, [x8, x7, lsl #2]"
+            ],
+            [
+              "and",
+              "x25, x25, #0xffff"
+            ],
+            [
+              "sub",
+              "x7, x25, #0x3"
+            ],
+            [
+              "cmp",
+              "x7, #0xff"
+            ],
+            [
+              "b.hi",
+              "0x24fc"
+            ]
+          ]
+        },
+        {
+          "address": "0x224c",
+          "visits": 86904,
+          "instructions": [
+            [
+              "subs",
+              "x26, x25, x23"
+            ],
+            [
+              "b.ls",
+              "0x2214"
+            ]
+          ]
+        },
+        {
+          "address": "0x2254",
+          "visits": 86904,
+          "instructions": [
+            [
+              "cmp",
+              "x26, #0x10"
+            ],
+            [
+              "b.hs",
+              "0x22ac"
+            ]
+          ]
+        },
+        {
+          "address": "0x225c",
+          "visits": 80868,
+          "instructions": [
+            [
+              "add",
+              "x8, x23, #0x1"
+            ],
+            [
+              "ldr",
+              "w7, [x10, x8, lsl #2]"
+            ],
+            [
+              "sub",
+              "x8, x0, x8"
+            ],
+            [
+              "ldr",
+              "x8, [x11, x8, lsl #3]"
+            ],
+            [
+              "add",
+              "w7, w22, w7"
+            ],
+            [
+              "add",
+              "w7, w7, w8"
+            ],
+            [
+              "cmp",
+              "w7, w24"
+            ],
+            [
+              "csel",
+              "x28, x7, x24, lo"
+            ],
+            [
+              "add",
+              "w8, w23, #0x1"
+            ],
+            [
+              "orr",
+              "w8, w8, w21, lsl #9"
+            ],
+            [
+              "csel",
+              "x27, x8, x27, lo"
+            ],
+            [
+              "cmp",
+              "x26, #0x1"
+            ],
+            [
+              "b.eq",
+              "0x220c"
+            ]
+          ]
+        },
+        {
+          "address": "0x2138",
+          "visits": 43026,
+          "instructions": [
+            [
+              "cmp",
+              "x4, #0x0"
+            ],
+            [
+              "b.ne",
+              "0x21a0"
+            ]
+          ]
+        },
+        {
+          "address": "0x21a0",
+          "visits": 43020,
+          "instructions": [
+            [
+              "cmp",
+              "x12, x6"
+            ],
+            [
+              "b.hs",
+              "0x24dc"
+            ]
+          ]
+        },
+        {
+          "address": "0x21a8",
+          "visits": 43020,
+          "instructions": [
+            [
+              "ldr",
+              "w15, [x5, x12, lsl #2]"
+            ]
+          ]
+        },
+        {
+          "address": "0x21ac",
+          "visits": 43020,
+          "instructions": [
+            [
+              "lsr",
+              "x19, x15, #16"
+            ],
+            [
+              "add",
+              "x8, x19, #0x103"
+            ],
+            [
+              "ldur",
+              "x7, [sp, #0x70]"
+            ],
+            [
+              "cmp",
+              "x8, x7"
+            ],
+            [
+              "b.hs",
+              "0x24e4"
+            ]
+          ]
+        },
+        {
+          "address": "0x21c0",
+          "visits": 43020,
+          "instructions": [
+            [
+              "add",
+              "x7, x19, #0x103"
+            ],
+            [
+              "ldr",
+              "w20, [x10, x7, lsl #2]"
+            ]
+          ]
+        },
+        {
+          "address": "0x21c8",
+          "visits": 43020,
+          "instructions": [
+            [
+              "cbz",
+              "x0, 0x24ec"
+            ]
+          ]
+        },
+        {
+          "address": "0x21cc",
+          "visits": 43020,
+          "instructions": [
+            [
+              "sub",
+              "x7, x11, #0x8"
+            ],
+            [
+              "lsl",
+              "x8, x0, #3"
+            ],
+            [
+              "ldr",
+              "w21, [x7, x8]"
+            ]
+          ]
+        },
+        {
+          "address": "0x21d8",
+          "visits": 43020,
+          "instructions": [
+            [
+              "and",
+              "x7, x15, #0xffff"
+            ],
+            [
+              "sub",
+              "x13, x12, x7"
+            ],
+            [
+              "add",
+              "w7, w20, w21"
+            ],
+            [
+              "mov",
+              "w24, w7"
+            ],
+            [
+              "mov",
+              "w7, #0x1"
+            ],
+            [
+              "orr",
+              "w27, w7, w19, lsl #9"
+            ],
+            [
+              "mov",
+              "x23, #0x2"
+            ],
+            [
+              "adrp",
+              "x19, 0 ; 0x2000"
+            ],
+            [
+              "ldr",
+              "x19, [x19]"
+            ],
+            [
+              "cmp",
+              "x13, x12"
+            ],
+            [
+              "b.eq",
+              "0x23dc"
+            ]
+          ]
+        },
+        {
+          "address": "0x23dc",
+          "visits": 43020,
+          "instructions": [
+            [
+              "orr",
+              "x12, x24, x27, lsl #32"
+            ],
+            [
+              "str",
+              "x12, [x11, x0, lsl #3]"
+            ],
+            [
+              "and",
+              "x7, x15, #0xffff"
+            ],
+            [
+              "cmp",
+              "x7, #0x0"
+            ],
+            [
+              "b.ne",
+              "0x2428"
+            ]
+          ]
+        },
+        {
+          "address": "0x22f0",
+          "visits": 40728,
+          "instructions": [
+            [
+              "ldr",
+              "q19, [x14]"
+            ],
+            [
+              "ldr",
+              "q30, [x23]"
+            ],
+            [
+              "ldr",
+              "q31, [x23, #0x10]"
+            ],
+            [
+              "sub",
+              "x8, x28, #0x4"
+            ],
+            [
+              "add.4s",
+              "v19, v17, v19"
+            ],
+            [
+              "ldr",
+              "q20, 0x2540"
+            ],
+            [
+              "tbl.16b",
+              "v20, { v30, v31 }, v20"
+            ],
+            [
+              "add.4s",
+              "v19, v19, v20"
+            ],
+            [
+              "umin.4s",
+              "v20, v19, v0"
+            ],
+            [
+              "cmhi.4s",
+              "v19, v0, v19"
+            ],
+            [
+              "bsl.16b",
+              "v19, v6, v21"
+            ],
+            [
+              "add.4s",
+              "v6, v6, v18"
+            ],
+            [
+              "sub",
+              "x23, x23, #0x20"
+            ],
+            [
+              "add",
+              "x14, x14, #0x10"
+            ],
+            [
+              "cmp",
+              "x28, #0x4"
+            ],
+            [
+              "b.eq",
+              "0x2340"
+            ]
+          ]
+        },
+        {
+          "address": "0x2204",
+          "visits": 39552,
+          "instructions": [
+            [
+              "mov",
+              "x20, x13"
+            ],
+            [
+              "b",
+              "0x2220"
+            ]
+          ]
+        },
+        {
+          "address": "0x2428",
+          "visits": 39552,
+          "instructions": [
+            [
+              "sub",
+              "x4, x4, #0x1"
+            ],
+            [
+              "sub",
+              "x12, x13, #0x1"
+            ],
+            [
+              "add",
+              "x0, x0, #0x1"
+            ],
+            [
+              "mov",
+              "x13, x0"
+            ],
+            [
+              "b",
+              "0x2138"
+            ]
+          ]
+        },
+        {
+          "address": "0x2330",
+          "visits": 34692,
+          "instructions": [
+            [
+              "mov",
+              "x28, x8"
+            ],
+            [
+              "mov.16b",
+              "v0, v20"
+            ],
+            [
+              "mov.16b",
+              "v21, v19"
+            ],
+            [
+              "b",
+              "0x22f0"
+            ]
+          ]
+        },
+        {
+          "address": "0x2290",
+          "visits": 29238,
+          "instructions": [
+            [
+              "add",
+              "x7, x23, #0x2"
+            ],
+            [
+              "sub",
+              "x14, x0, #0x3"
+            ],
+            [
+              "add",
+              "x14, x11, x14, lsl #3"
+            ],
+            [
+              "sub",
+              "x8, x23, #0x2"
+            ],
+            [
+              "sub",
+              "x24, x14, x8, lsl #3"
+            ],
+            [
+              "sub",
+              "x14, x26, #0x1"
+            ],
+            [
+              "b",
+              "0x23ac"
+            ]
+          ]
+        },
+        {
+          "address": "0x2444",
+          "visits": 9600,
+          "instructions": [
+            [
+              "cmp",
+              "x4, #0x0"
+            ],
+            [
+              "b.eq",
+              "0x2470"
+            ]
+          ]
+        },
+        {
+          "address": "0x244c",
+          "visits": 9594,
+          "instructions": [
+            [
+              "sub",
+              "x5, x13, #0x1"
+            ],
+            [
+              "ldr",
+              "w5, [x19, x5, lsl #2]"
+            ],
+            [
+              "and",
+              "x6, x5, #0xffff"
+            ],
+            [
+              "cmp",
+              "x6, #0x0"
+            ],
+            [
+              "b.ne",
+              "0x2470"
+            ]
+          ]
+        },
+        {
+          "address": "0x2460",
+          "visits": 6132,
+          "instructions": [
+            [
+              "lsr",
+              "x5, x5, #16"
+            ],
+            [
+              "add",
+              "x6, x5, #0x103"
+            ],
+            [
+              "cmp",
+              "x6, x21"
+            ],
+            [
+              "b.lo",
+              "0x24b0"
+            ]
+          ]
+        },
+        {
+          "address": "0x24b0",
+          "visits": 6132,
+          "instructions": [
+            [
+              "ldr",
+              "w6, [x20, x6, lsl #2]"
+            ],
+            [
+              "add",
+              "w6, w6, w12"
+            ],
+            [
+              "mov",
+              "w6, w6"
+            ],
+            [
+              "mov",
+              "w7, #0x1"
+            ],
+            [
+              "orr",
+              "w5, w7, w5, lsl #9"
+            ],
+            [
+              "orr",
+              "x12, x6, x5, lsl #32"
+            ],
+            [
+              "str",
+              "x12, [x15, x0, lsl #3]"
+            ],
+            [
+              "sub",
+              "x4, x4, #0x1"
+            ],
+            [
+              "sub",
+              "x13, x13, #0x1"
+            ],
+            [
+              "add",
+              "x0, x0, #0x1"
+            ],
+            [
+              "b",
+              "0x2444"
+            ]
+          ]
+        },
+        {
+          "address": "0x22ac",
+          "visits": 6036,
+          "instructions": [
+            [
+              "and",
+              "x28, x26, #0xfffffffffffffffc"
+            ],
+            [
+              "dup.4s",
+              "v0, w24"
+            ],
+            [
+              "movi.16b",
+              "v16, #0xff"
+            ],
+            [
+              "sub",
+              "w14, w23, #0x2"
+            ],
+            [
+              "dup.4s",
+              "v17, w14"
+            ],
+            [
+              "ldr",
+              "q18, 0x2530"
+            ],
+            [
+              "add.4s",
+              "v6, v17, v18"
+            ],
+            [
+              "sub",
+              "x14, x0, #0x3"
+            ],
+            [
+              "add",
+              "x24, x11, x14, lsl #3"
+            ],
+            [
+              "sub",
+              "x7, x23, #0x2"
+            ],
+            [
+              "sub",
+              "x14, x24, x7, lsl #3"
+            ],
+            [
+              "sub",
+              "x23, x14, #0x18"
+            ],
+            [
+              "add",
+              "x14, x10, #0xc"
+            ],
+            [
+              "add",
+              "x14, x14, x7, lsl #2"
+            ],
+            [
+              "dup.4s",
+              "v17, w22"
+            ],
+            [
+              "movi.4s",
+              "v18, #0x4"
+            ],
+            [
+              "mov.16b",
+              "v21, v16"
+            ]
+          ]
+        },
+        {
+          "address": "0x2340",
+          "visits": 6036,
+          "instructions": [
+            [
+              "and",
+              "x8, x26, #0xfffffffffffffffc"
+            ],
+            [
+              "add",
+              "x23, x7, x8"
+            ],
+            [
+              "sub",
+              "x7, x25, #0x2"
+            ],
+            [
+              "ext.16b",
+              "v17, v20, v20, #0x8"
+            ],
+            [
+              "umin.4s",
+              "v17, v20, v17"
+            ],
+            [
+              "rev64.4s",
+              "v18, v17"
+            ],
+            [
+              "umin.4s",
+              "v17, v17, v18"
+            ],
+            [
+              "mov.s",
+              "w28, v17[0]"
+            ],
+            [
+              "cmeq.4s",
+              "v17, v20, v17"
+            ],
+            [
+              "bsl.16b",
+              "v17, v19, v16"
+            ],
+            [
+              "ext.16b",
+              "v18, v17, v17, #0x8"
+            ],
+            [
+              "umin.4s",
+              "v17, v17, v18"
+            ],
+            [
+              "rev64.4s",
+              "v18, v17"
+            ],
+            [
+              "umin.4s",
+              "v17, v17, v18"
+            ],
+            [
+              "mov.s",
+              "w8, v17[0]"
+            ],
+            [
+              "add",
+              "w14, w8, #0x3"
+            ],
+            [
+              "orr",
+              "w14, w14, w21, lsl #9"
+            ],
+            [
+              "mov",
+              "w26, #-0x1"
+            ],
+            [
+              "cmp",
+              "w8, w26"
+            ],
+            [
+              "csel",
+              "x27, x14, x27, ne"
+            ],
+            [
+              "cmp",
+              "x23, x7"
+            ],
+            [
+              "b.hs",
+              "0x220c"
+            ]
+          ]
+        },
+        {
+          "address": "0x2398",
+          "visits": 4560,
+          "instructions": [
+            [
+              "add",
+              "x7, x23, #0x3"
+            ],
+            [
+              "sub",
+              "x8, x23, #0x1"
+            ],
+            [
+              "sub",
+              "x24, x24, x8, lsl #3"
+            ],
+            [
+              "sub",
+              "x8, x25, #0x2"
+            ],
+            [
+              "sub",
+              "x14, x8, x23"
+            ]
+          ]
+        },
+        {
+          "address": "0x23f0",
+          "visits": 3468,
+          "instructions": [
+            [
+              "ldr",
+              "x15, [x1, #0x10]"
+            ],
+            [
+              "ldr",
+              "x19, [x1, #0x30]"
+            ],
+            [
+              "ldr",
+              "x7, [x1, #0x38]"
+            ],
+            [
+              "ldr",
+              "x20, [x1, #0x50]"
+            ],
+            [
+              "ldr",
+              "x21, [x1, #0x58]"
+            ],
+            [
+              "sub",
+              "x22, x4, #0x1"
+            ],
+            [
+              "mov",
+              "x8, #-0x1"
+            ],
+            [
+              "add",
+              "x14, x0, #0x1"
+            ],
+            [
+              "neg",
+              "x23, x4"
+            ],
+            [
+              "cmp",
+              "x22, x13"
+            ],
+            [
+              "ccmp",
+              "x13, x7, #0x2, ls"
+            ],
+            [
+              "ccmp",
+              "x0, x8, #0x4, ls"
+            ],
+            [
+              "ccmp",
+              "x14, x23, #0x2, ne"
+            ],
+            [
+              "b.ls",
+              "0x243c"
+            ]
+          ]
+        },
+        {
+          "address": "0x243c",
+          "visits": 3468,
+          "instructions": [
+            [
+              "sub",
+              "x4, x4, #0x1"
+            ],
+            [
+              "add",
+              "x0, x0, #0x1"
+            ]
+          ]
+        },
+        {
+          "address": "0x2470",
+          "visits": 3468,
+          "instructions": [
+            [
+              "ldr",
+              "x7, [x1, #0x98]"
+            ],
+            [
+              "ldr",
+              "x11, [x1, #0x10]"
+            ],
+            [
+              "ldr",
+              "x10, [x1, #0x20]"
+            ],
+            [
+              "stur",
+              "x10, [sp, #0x68]"
+            ],
+            [
+              "ldr",
+              "x5, [x1, #0x30]"
+            ],
+            [
+              "ldr",
+              "x6, [x1, #0x38]"
+            ],
+            [
+              "ldr",
+              "x10, [x1, #0x50]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x58]"
+            ],
+            [
+              "ldr",
+              "x9, [x1, #0x70]"
+            ],
+            [
+              "ldr",
+              "x9, [x1, #0x78]"
+            ],
+            [
+              "ldr",
+              "x9, [x1, #0x90]"
+            ],
+            [
+              "sub",
+              "x12, x13, #0x1"
+            ],
+            [
+              "mov",
+              "x13, x0"
+            ],
+            [
+              "stur",
+              "x7, [sp, #0x60]"
+            ],
+            [
+              "stur",
+              "x8, [sp, #0x70]"
+            ],
+            [
+              "b",
+              "0x2138"
+            ]
+          ]
+        },
+        {
+          "address": "0x20b0",
+          "visits": 6,
+          "instructions": [
+            [
+              "pacibsp",
+              ""
+            ],
+            [
+              "stp",
+              "x29, x30, [sp, #-0x10]!"
+            ],
+            [
+              "mov",
+              "x29, sp"
+            ],
+            [
+              "stp",
+              "x27, x28, [sp, #-0x10]!"
+            ],
+            [
+              "stp",
+              "x25, x26, [sp, #-0x10]!"
+            ],
+            [
+              "stp",
+              "x23, x24, [sp, #-0x10]!"
+            ],
+            [
+              "stp",
+              "x21, x22, [sp, #-0x10]!"
+            ],
+            [
+              "stp",
+              "x19, x20, [sp, #-0x10]!"
+            ],
+            [
+              "sub",
+              "sp, sp, #0x80"
+            ],
+            [
+              "ldr",
+              "x14, [x1, #0x98]"
+            ],
+            [
+              "stur",
+              "x14, [sp, #0x60]"
+            ],
+            [
+              "ldr",
+              "x4, [x1]"
+            ],
+            [
+              "ldr",
+              "x7, [x1, #0x8]"
+            ],
+            [
+              "ldr",
+              "x11, [x1, #0x10]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x18]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x20]"
+            ],
+            [
+              "stur",
+              "x8, [sp, #0x68]"
+            ],
+            [
+              "ldr",
+              "x13, [x1, #0x28]"
+            ],
+            [
+              "ldr",
+              "x5, [x1, #0x30]"
+            ],
+            [
+              "ldr",
+              "x6, [x1, #0x38]"
+            ],
+            [
+              "ldr",
+              "x3, [x1, #0x40]"
+            ],
+            [
+              "ldr",
+              "x3, [x1, #0x48]"
+            ],
+            [
+              "ldr",
+              "x3, [x1, #0x50]"
+            ],
+            [
+              "ldr",
+              "x9, [x1, #0x58]"
+            ],
+            [
+              "stur",
+              "x9, [sp, #0x70]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x60]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x68]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x70]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x78]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x80]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x88]"
+            ],
+            [
+              "ldr",
+              "x9, [x1, #0x90]"
+            ],
+            [
+              "sub",
+              "x12, x7, #0x1"
+            ],
+            [
+              "mov",
+              "x10, x3"
+            ]
+          ]
+        },
+        {
+          "address": "0x2140",
+          "visits": 6,
+          "instructions": [
+            [
+              "str",
+              "x11, [x2, #0x8]"
+            ],
+            [
+              "str",
+              "x0, [x2, #0x10]"
+            ],
+            [
+              "ldur",
+              "x1, [sp, #0x68]"
+            ],
+            [
+              "str",
+              "x1, [x2, #0x18]"
+            ],
+            [
+              "str",
+              "x13, [x2, #0x20]"
+            ],
+            [
+              "str",
+              "x9, [x2, #0x28]"
+            ],
+            [
+              "str",
+              "x11, [x2, #0x30]"
+            ],
+            [
+              "str",
+              "x0, [x2, #0x38]"
+            ],
+            [
+              "str",
+              "x9, [x2, #0x40]"
+            ],
+            [
+              "ldur",
+              "x0, [sp, #0x68]"
+            ],
+            [
+              "str",
+              "x0, [x2, #0x48]"
+            ],
+            [
+              "str",
+              "x13, [x2, #0x50]"
+            ],
+            [
+              "ldur",
+              "x0, [sp, #0x60]"
+            ],
+            [
+              "str",
+              "x0, [x2, #0x58]"
+            ],
+            [
+              "mov",
+              "x1, #0x0"
+            ],
+            [
+              "mov",
+              "x0, x1"
+            ],
+            [
+              "add",
+              "sp, sp, #0x80"
+            ],
+            [
+              "ldp",
+              "x19, x20, [sp], #0x10"
+            ],
+            [
+              "ldp",
+              "x21, x22, [sp], #0x10"
+            ],
+            [
+              "ldp",
+              "x23, x24, [sp], #0x10"
+            ],
+            [
+              "ldp",
+              "x25, x26, [sp], #0x10"
+            ],
+            [
+              "ldp",
+              "x27, x28, [sp], #0x10"
+            ],
+            [
+              "ldp",
+              "x29, x30, [sp], #0x10"
+            ],
+            [
+              "retab",
+              ""
+            ]
+          ]
+        }
+      ]
+    },
+    "prefix-random-8192": {
+      "calls": 0,
+      "counts": {},
+      "blocks": []
+    },
+    "prefix-random-1048576": {
+      "calls": 0,
+      "counts": {},
+      "blocks": []
+    },
+    "empty": {
+      "calls": 0,
+      "counts": {},
+      "blocks": []
+    }
+  }
+}

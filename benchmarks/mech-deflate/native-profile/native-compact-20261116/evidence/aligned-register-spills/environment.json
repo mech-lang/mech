@@ -1,0 +1,6 @@
+{
+  "cpu": "Apple M1",
+  "os": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "clock": "Rust Instant on Darwin, with pinned peers",
+  "conditions": "Serial four-actor runs with a fixed runtime, adapters and comparators"
+}

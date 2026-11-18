@@ -1,0 +1,8 @@
+{
+  "events": 718353,
+  "parse_seconds": 1.882518166,
+  "parser_steps": 3967302,
+  "source_bytes": 243209,
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+}

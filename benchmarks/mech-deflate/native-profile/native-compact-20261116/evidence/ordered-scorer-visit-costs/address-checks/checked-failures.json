@@ -1,0 +1,668 @@
+{
+  "actors": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ordered-scorer/ord-abi/checks/worker-checks/control",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ordered-scorer/ord-abi/checks/worker-checks/ord-abi"
+  ],
+  "cases": {
+    "empty": {
+      "outcome": {
+        "bytes": 0,
+        "case": "empty",
+        "live_at_failure": 0,
+        "origin": 23,
+        "requests": 0,
+        "status": 103426
+      },
+      "medians_seconds": [
+        2.08e-07,
+        1.25e-07
+      ],
+      "raw": [
+        [
+          {
+            "bytes": 0,
+            "case": "empty",
+            "live_at_failure": 0,
+            "origin": 23,
+            "requests": 0,
+            "seconds": 4.3041e-05,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "empty",
+            "live_at_failure": 0,
+            "origin": 23,
+            "requests": 0,
+            "seconds": 2.08e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "empty",
+            "live_at_failure": 0,
+            "origin": 23,
+            "requests": 0,
+            "seconds": 2.08e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "empty",
+            "live_at_failure": 0,
+            "origin": 23,
+            "requests": 0,
+            "seconds": 1.25e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "empty",
+            "live_at_failure": 0,
+            "origin": 23,
+            "requests": 0,
+            "seconds": 1.67e-07,
+            "status": 103426
+          }
+        ],
+        [
+          {
+            "bytes": 0,
+            "case": "empty",
+            "live_at_failure": 0,
+            "origin": 23,
+            "requests": 0,
+            "seconds": 4.5667e-05,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "empty",
+            "live_at_failure": 0,
+            "origin": 23,
+            "requests": 0,
+            "seconds": 2.92e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "empty",
+            "live_at_failure": 0,
+            "origin": 23,
+            "requests": 0,
+            "seconds": 1.25e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "empty",
+            "live_at_failure": 0,
+            "origin": 23,
+            "requests": 0,
+            "seconds": 1.25e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "empty",
+            "live_at_failure": 0,
+            "origin": 23,
+            "requests": 0,
+            "seconds": 2.08e-07,
+            "status": 103426
+          }
+        ]
+      ]
+    },
+    "one-stored": {
+      "outcome": {
+        "bytes": 0,
+        "case": "one-stored",
+        "live_at_failure": 0,
+        "origin": 69,
+        "requests": 0,
+        "status": 103426
+      },
+      "medians_seconds": [
+        1.25e-07,
+        1.25e-07
+      ],
+      "raw": [
+        [
+          {
+            "bytes": 0,
+            "case": "one-stored",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 2.5e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "one-stored",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 1.25e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "one-stored",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 1.25e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "one-stored",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 2.09e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "one-stored",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 1.66e-07,
+            "status": 103426
+          }
+        ],
+        [
+          {
+            "bytes": 0,
+            "case": "one-stored",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 2.08e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "one-stored",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 1.67e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "one-stored",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 1.25e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "one-stored",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 1.25e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "one-stored",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 2.08e-07,
+            "status": 103426
+          }
+        ]
+      ]
+    },
+    "seven-stored-prefix": {
+      "outcome": {
+        "bytes": 0,
+        "case": "seven-stored-prefix",
+        "live_at_failure": 0,
+        "origin": 69,
+        "requests": 0,
+        "status": 103426
+      },
+      "medians_seconds": [
+        1.25e-07,
+        1.25e-07
+      ],
+      "raw": [
+        [
+          {
+            "bytes": 0,
+            "case": "seven-stored-prefix",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 2.08e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "seven-stored-prefix",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 1.25e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "seven-stored-prefix",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 2.08e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "seven-stored-prefix",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 1.25e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "seven-stored-prefix",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 7.08e-07,
+            "status": 103426
+          }
+        ],
+        [
+          {
+            "bytes": 0,
+            "case": "seven-stored-prefix",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 1.67e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "seven-stored-prefix",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 1.25e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "seven-stored-prefix",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 1.25e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "seven-stored-prefix",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 2.08e-07,
+            "status": 103426
+          },
+          {
+            "bytes": 0,
+            "case": "seven-stored-prefix",
+            "live_at_failure": 0,
+            "origin": 69,
+            "requests": 0,
+            "seconds": 7.08e-07,
+            "status": 103426
+          }
+        ]
+      ]
+    },
+    "prefix-periodic-4096": {
+      "outcome": {
+        "bytes": 4796076,
+        "case": "prefix-periodic-4096",
+        "live_at_failure": 4778960,
+        "origin": 7164,
+        "requests": 41,
+        "status": 103426
+      },
+      "medians_seconds": [
+        0.000336667,
+        0.000352292
+      ],
+      "raw": [
+        [
+          {
+            "bytes": 4796076,
+            "case": "prefix-periodic-4096",
+            "live_at_failure": 4778960,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.000631084,
+            "status": 103426
+          },
+          {
+            "bytes": 4796076,
+            "case": "prefix-periodic-4096",
+            "live_at_failure": 4778960,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.000336667,
+            "status": 103426
+          },
+          {
+            "bytes": 4796076,
+            "case": "prefix-periodic-4096",
+            "live_at_failure": 4778960,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.000340792,
+            "status": 103426
+          },
+          {
+            "bytes": 4796076,
+            "case": "prefix-periodic-4096",
+            "live_at_failure": 4778960,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.000281667,
+            "status": 103426
+          },
+          {
+            "bytes": 4796076,
+            "case": "prefix-periodic-4096",
+            "live_at_failure": 4778960,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.000257708,
+            "status": 103426
+          }
+        ],
+        [
+          {
+            "bytes": 4796076,
+            "case": "prefix-periodic-4096",
+            "live_at_failure": 4778960,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.000644375,
+            "status": 103426
+          },
+          {
+            "bytes": 4796076,
+            "case": "prefix-periodic-4096",
+            "live_at_failure": 4778960,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.000350583,
+            "status": 103426
+          },
+          {
+            "bytes": 4796076,
+            "case": "prefix-periodic-4096",
+            "live_at_failure": 4778960,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.000352292,
+            "status": 103426
+          },
+          {
+            "bytes": 4796076,
+            "case": "prefix-periodic-4096",
+            "live_at_failure": 4778960,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.000354833,
+            "status": 103426
+          },
+          {
+            "bytes": 4796076,
+            "case": "prefix-periodic-4096",
+            "live_at_failure": 4778960,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.00027325,
+            "status": 103426
+          }
+        ]
+      ]
+    },
+    "prefix-repeated-16384": {
+      "outcome": {
+        "bytes": 6685744,
+        "case": "prefix-repeated-16384",
+        "live_at_failure": 6668628,
+        "origin": 7164,
+        "requests": 41,
+        "status": 103426
+      },
+      "medians_seconds": [
+        0.000322875,
+        0.000380542
+      ],
+      "raw": [
+        [
+          {
+            "bytes": 6685744,
+            "case": "prefix-repeated-16384",
+            "live_at_failure": 6668628,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.000882292,
+            "status": 103426
+          },
+          {
+            "bytes": 6685744,
+            "case": "prefix-repeated-16384",
+            "live_at_failure": 6668628,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.000798041,
+            "status": 103426
+          },
+          {
+            "bytes": 6685744,
+            "case": "prefix-repeated-16384",
+            "live_at_failure": 6668628,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.000314917,
+            "status": 103426
+          },
+          {
+            "bytes": 6685744,
+            "case": "prefix-repeated-16384",
+            "live_at_failure": 6668628,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.000322875,
+            "status": 103426
+          },
+          {
+            "bytes": 6685744,
+            "case": "prefix-repeated-16384",
+            "live_at_failure": 6668628,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.000321334,
+            "status": 103426
+          }
+        ],
+        [
+          {
+            "bytes": 6685744,
+            "case": "prefix-repeated-16384",
+            "live_at_failure": 6668628,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.000888291,
+            "status": 103426
+          },
+          {
+            "bytes": 6685744,
+            "case": "prefix-repeated-16384",
+            "live_at_failure": 6668628,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.000787625,
+            "status": 103426
+          },
+          {
+            "bytes": 6685744,
+            "case": "prefix-repeated-16384",
+            "live_at_failure": 6668628,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.000380542,
+            "status": 103426
+          },
+          {
+            "bytes": 6685744,
+            "case": "prefix-repeated-16384",
+            "live_at_failure": 6668628,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.000316166,
+            "status": 103426
+          },
+          {
+            "bytes": 6685744,
+            "case": "prefix-repeated-16384",
+            "live_at_failure": 6668628,
+            "origin": 7164,
+            "requests": 41,
+            "seconds": 0.000317417,
+            "status": 103426
+          }
+        ]
+      ]
+    },
+    "heldout-mixed-131073": {
+      "outcome": {
+        "bytes": 7631132,
+        "case": "heldout-mixed-131073",
+        "live_at_failure": 7586140,
+        "origin": 7164,
+        "requests": 92,
+        "status": 103426
+      },
+      "medians_seconds": [
+        0.001389625,
+        0.001307666
+      ],
+      "raw": [
+        [
+          {
+            "bytes": 7631132,
+            "case": "heldout-mixed-131073",
+            "live_at_failure": 7586140,
+            "origin": 7164,
+            "requests": 92,
+            "seconds": 0.0007535,
+            "status": 103426
+          },
+          {
+            "bytes": 7631132,
+            "case": "heldout-mixed-131073",
+            "live_at_failure": 7586140,
+            "origin": 7164,
+            "requests": 92,
+            "seconds": 0.001389625,
+            "status": 103426
+          },
+          {
+            "bytes": 7631132,
+            "case": "heldout-mixed-131073",
+            "live_at_failure": 7586140,
+            "origin": 7164,
+            "requests": 92,
+            "seconds": 0.0014555,
+            "status": 103426
+          },
+          {
+            "bytes": 7631132,
+            "case": "heldout-mixed-131073",
+            "live_at_failure": 7586140,
+            "origin": 7164,
+            "requests": 92,
+            "seconds": 0.001199583,
+            "status": 103426
+          },
+          {
+            "bytes": 7631132,
+            "case": "heldout-mixed-131073",
+            "live_at_failure": 7586140,
+            "origin": 7164,
+            "requests": 92,
+            "seconds": 0.0011915,
+            "status": 103426
+          }
+        ],
+        [
+          {
+            "bytes": 7631132,
+            "case": "heldout-mixed-131073",
+            "live_at_failure": 7586140,
+            "origin": 7164,
+            "requests": 92,
+            "seconds": 0.001516625,
+            "status": 103426
+          },
+          {
+            "bytes": 7631132,
+            "case": "heldout-mixed-131073",
+            "live_at_failure": 7586140,
+            "origin": 7164,
+            "requests": 92,
+            "seconds": 0.001299292,
+            "status": 103426
+          },
+          {
+            "bytes": 7631132,
+            "case": "heldout-mixed-131073",
+            "live_at_failure": 7586140,
+            "origin": 7164,
+            "requests": 92,
+            "seconds": 0.001307666,
+            "status": 103426
+          },
+          {
+            "bytes": 7631132,
+            "case": "heldout-mixed-131073",
+            "live_at_failure": 7586140,
+            "origin": 7164,
+            "requests": 92,
+            "seconds": 0.001316584,
+            "status": 103426
+          },
+          {
+            "bytes": 7631132,
+            "case": "heldout-mixed-131073",
+            "live_at_failure": 7586140,
+            "origin": 7164,
+            "requests": 92,
+            "seconds": 0.001193083,
+            "status": 103426
+          }
+        ]
+      ]
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "binary": "2e9fb60133f14c6a7dbe5e816d316633142a32d770d0468ee57844ff75305fa4",
+  "command": [
+    "rustc",
+    "+nightly-2026-03-03",
+    "--edition=2024",
+    "-C",
+    "opt-level=3",
+    "-C",
+    "codegen-units=16",
+    "-C",
+    "embed-bitcode=no",
+    "-L",
+    "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps",
+    "-D",
+    "warnings",
+    "-L",
+    "native=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/build/libmimalloc-sys-2b75cf156f3cf9a0/out",
+    "--extern",
+    "serde_json=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libserde_json-fcf6d49dea77c577.rlib",
+    "--extern",
+    "sha2=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libsha2-58c79a6f6dca8f56.rlib",
+    "--extern",
+    "mimalloc=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libmimalloc-14ebbbc9ab4f8cc1.rlib",
+    "--extern",
+    "mech_syntax=/private/tmp/mech-post-statement-profile.1tm8ucah/plain/libmech_syntax.rlib",
+    "/private/tmp/mech-post-statement-profile.1tm8ucah/sampler-probe.rs",
+    "-o",
+    "/private/tmp/mech-post-statement-profile.1tm8ucah/sampler-probe"
+  ]
+}

@@ -1,0 +1,537 @@
+{
+  "runs": [
+    {
+      "id": "shrink-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 11,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 11,
+            "mech-experiment": 11
+          },
+          "precision_supported_wins": {
+            "mech-control": 11,
+            "mech-experiment": 11
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 8,
+            "mech-experiment": 8
+          },
+          "precision_supported_wins": {
+            "mech-control": 8,
+            "mech-experiment": 8
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "shrink-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 11,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 11,
+            "mech-experiment": 11
+          },
+          "precision_supported_wins": {
+            "mech-control": 11,
+            "mech-experiment": 11
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 8,
+            "mech-experiment": 8
+          },
+          "precision_supported_wins": {
+            "mech-control": 8,
+            "mech-experiment": 8
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    }
+  ],
+  "cases": {
+    "empty": {
+      "decision": "regression",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": 0.03130407067456553,
+          "lower": 0.023602018857879825,
+          "upper": 0.03897763480760541
+        },
+        "shrink-focus-reverse": {
+          "estimate": 0.0033321247832740486,
+          "lower": -0.0060013234566529405,
+          "upper": 0.012513874650330159
+        }
+      },
+      "combined": {
+        "estimate": 0.017221954406977824,
+        "lower": 0.011304197992044962,
+        "upper": 0.02329305624531064
+      },
+      "adverse_runs": [
+        "shrink-focus-forward"
+      ],
+      "duplicate_controls": []
+    },
+    "one-stored": {
+      "decision": "regression",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": 0.03562322995167633,
+          "lower": 0.02688167136224129,
+          "upper": 0.04465670490839968
+        },
+        "shrink-focus-reverse": {
+          "estimate": -0.007783263404428031,
+          "lower": -0.016666223318356654,
+          "upper": 0.0007962407224249013
+        }
+      },
+      "combined": {
+        "estimate": 0.013687674565108887,
+        "lower": 0.007577216923274399,
+        "upper": 0.020002508413362152
+      },
+      "adverse_runs": [
+        "shrink-focus-forward"
+      ],
+      "duplicate_controls": []
+    },
+    "seven-stored-prefix": {
+      "decision": "unresolved",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": 0.016701222322787812,
+          "lower": 0.009181981434892128,
+          "upper": 0.024512109076510802
+        },
+        "shrink-focus-reverse": {
+          "estimate": -0.006012360344702095,
+          "lower": -0.013988695370642512,
+          "upper": 0.00200767417325709
+        }
+      },
+      "combined": {
+        "estimate": 0.005280283409201392,
+        "lower": -0.0004093309710747617,
+        "upper": 0.01080688615010894
+      },
+      "adverse_runs": [
+        "shrink-focus-forward"
+      ],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": -0.0015246829192241407,
+          "lower": -0.0038948090824946213,
+          "upper": 0.0008876173703180612
+        },
+        "shrink-focus-reverse": {
+          "estimate": -0.002496977378873888,
+          "lower": -0.004234843621600759,
+          "upper": -0.000919436852504063
+        }
+      },
+      "combined": {
+        "estimate": -0.0020109485567183505,
+        "lower": -0.003472283670270304,
+        "upper": -0.0005603508850965389
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "bounded",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": -0.006652926358216127,
+          "lower": -0.012937057457015122,
+          "upper": -0.00045858494246442394
+        },
+        "shrink-focus-reverse": {
+          "estimate": 0.0026580711039454474,
+          "lower": -0.00428493293631349,
+          "upper": 0.009696434974825197
+        }
+      },
+      "combined": {
+        "estimate": -0.0020082862095397447,
+        "lower": -0.006615206761136805,
+        "upper": 0.0026841151144034736
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-4096": {
+      "decision": "bounded",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": -0.014809420325521017,
+          "lower": -0.01861010576788491,
+          "upper": -0.011069918650751465
+        },
+        "shrink-focus-reverse": {
+          "estimate": -0.014513639609275764,
+          "lower": -0.01696765228676489,
+          "upper": -0.012106262258294698
+        }
+      },
+      "combined": {
+        "estimate": -0.014661541065898454,
+        "lower": -0.016912659623146364,
+        "upper": -0.012449053284473988
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "bounded",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": -0.015837197568638883,
+          "lower": -0.018018533102901024,
+          "upper": -0.013508904408077615
+        },
+        "shrink-focus-reverse": {
+          "estimate": -0.015291102776996301,
+          "lower": -0.016697115839533483,
+          "upper": -0.013851443140915243
+        }
+      },
+      "combined": {
+        "estimate": -0.015564188039623228,
+        "lower": -0.016821050212939004,
+        "upper": -0.014193515708094462
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-16384": {
+      "decision": "bounded",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": -0.017816218058702815,
+          "lower": -0.018706010117653493,
+          "upper": -0.016973268526111696
+        },
+        "shrink-focus-reverse": {
+          "estimate": -0.015106908073087677,
+          "lower": -0.016570157725581458,
+          "upper": -0.013329477291374348
+        }
+      },
+      "combined": {
+        "estimate": -0.016462495968439184,
+        "lower": -0.017333533363212195,
+        "upper": -0.015488946076133159
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-32769": {
+      "decision": "bounded",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": -0.013822417999174719,
+          "lower": -0.01585297125008933,
+          "upper": -0.01234026965370616
+        },
+        "shrink-focus-reverse": {
+          "estimate": -0.012293590938102339,
+          "lower": -0.013169788313373787,
+          "upper": -0.011231332275747463
+        }
+      },
+      "combined": {
+        "estimate": -0.013058300498261288,
+        "lower": -0.014167851234941242,
+        "upper": -0.012117559857862115
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-4096": {
+      "decision": "bounded",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": -0.001860392371398012,
+          "lower": -0.006366504274097684,
+          "upper": 0.0024942337858848695
+        },
+        "shrink-focus-reverse": {
+          "estimate": -0.020646861072712408,
+          "lower": -0.02775756925459505,
+          "upper": -0.011008514208732278
+        }
+      },
+      "combined": {
+        "estimate": -0.011298246275085022,
+        "lower": -0.015706656720244405,
+        "upper": -0.006055242660116811
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-32769": {
+      "decision": "bounded",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": 0.003962523163284493,
+          "lower": 0.0020525423452690816,
+          "upper": 0.005979721584885134
+        },
+        "shrink-focus-reverse": {
+          "estimate": -0.0030752793947302903,
+          "lower": -0.004705267852474604,
+          "upper": -0.0014597814625780803
+        }
+      },
+      "combined": {
+        "estimate": 0.00043743327742329363,
+        "lower": -0.0008400405751595175,
+        "upper": 0.0017237174030073632
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    }
+  },
+  "scope": "90% per-case paired bootstrap, stratified by run and actor order",
+  "equivalent_named_cases": [
+    [
+      "33027-periodic-window",
+      "prefix-periodic-33027"
+    ],
+    [
+      "prefix-repeated-1024",
+      "repeated-1024"
+    ],
+    [
+      "prefix-repeated-32769",
+      "repeated-32769"
+    ],
+    [
+      "prefix-natural-1024",
+      "reymont-prefix-1024"
+    ],
+    [
+      "prefix-natural-16384",
+      "reymont-prefix-16384"
+    ],
+    [
+      "prefix-natural-32769",
+      "reymont-prefix-32769"
+    ],
+    [
+      "heldout-window-32767",
+      "prefix-natural-32767"
+    ]
+  ],
+  "peak_private_payload_bytes": {},
+  "decision": "Reject",
+  "rejected": [
+    "empty: established slowdown above the 0.5% resolution",
+    "one-stored: established slowdown above the 0.5% resolution"
+  ],
+  "unresolved": [
+    "both complete timing orders are required",
+    "seven-stored-prefix: combined and individual run bounds conflict: shrink-focus-forward"
+  ],
+  "plan": {
+    "path": "mech-ordered-scorer.JpuxMQ/shrink-timing/plan.json",
+    "sha256": "2f17b17cc14a154e918430e90fe1c5fa8f255a418b35b9dc73348870d1263992"
+  },
+  "receipts": {
+    "shrink-focus-forward": {
+      "id": "shrink-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "mech-ordered-scorer.JpuxMQ/shrink-timing/canonical-pins/shrink-focus-forward.json",
+        "sha256": "ef337f2ced121d10c2e2943b82753fc40037bcdb984a7aac5fc1e058b3abfb0f"
+      },
+      "original_pins": {
+        "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-forward/pins.json",
+        "sha256": "4b010d67209412ca0da7ef93f6f960694bd6cda8604530a7c1c509da154f02b5"
+      },
+      "summary": {
+        "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-forward/summary.json",
+        "sha256": "e61b9a5957a02961efe4b25007ade54e6530ec3e4f03e44dc4bc640dec288a2c"
+      },
+      "complete": {
+        "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-forward/complete.json",
+        "sha256": "3533486faa020b5830244d082a04e2cbc855d2601801f979303857b21551c4dc"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-forward/320-overlap/observations.json.gz",
+          "sha256": "72fd93c2a1cad11861328be82cfafcd7871085571480cd655a0b06c01bd011b3"
+        },
+        "empty": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-forward/empty/observations.json.gz",
+          "sha256": "5b160f22584823b49b29a911a35c78d07126d78afc158419707a4b4e9498ecfd"
+        },
+        "one-stored": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-forward/one-stored/observations.json.gz",
+          "sha256": "e43b75e347e5b9a160c21c7461e64b25957e9ceb34981c1becb70da412c63356"
+        },
+        "prefix-natural-16384": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-forward/prefix-natural-16384/observations.json.gz",
+          "sha256": "cf360ed077ff8a9df1895808a8728468c4d541c9f4515ab9d0d9f87ade4f7f83"
+        },
+        "prefix-natural-32769": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-forward/prefix-natural-32769/observations.json.gz",
+          "sha256": "6fec51c711c9422a83f19f2002327dd59f8161cfdab1d94cab1be70417f3dc69"
+        },
+        "prefix-natural-4096": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-forward/prefix-natural-4096/observations.json.gz",
+          "sha256": "7881a13fc380848829c8763887aad0c61be1f33cb552ab38fb6c4872e92cf02d"
+        },
+        "prefix-natural-8192": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-forward/prefix-natural-8192/observations.json.gz",
+          "sha256": "5666c5f4da8f6709f806ae5361b5db493055cb56e1f431a4101e97fdf891fb3b"
+        },
+        "prefix-random-4096": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-forward/prefix-random-4096/observations.json.gz",
+          "sha256": "ed6212500b0943f8073dab4883cf98b8e091a7a713edbe759f72f74f8ef29909"
+        },
+        "prefix-repeated-32769": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-forward/prefix-repeated-32769/observations.json.gz",
+          "sha256": "5c35348d80b3f401cc4fcda6aa59324c7506f79c70217a96bdc8b052e2b6f8fa"
+        },
+        "random-64": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-forward/random-64/observations.json.gz",
+          "sha256": "497efba99bddb238021ecb06f7c2ae1f7ccf54d2abdbb239c19596ffcb7254df"
+        },
+        "seven-stored-prefix": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-forward/seven-stored-prefix/observations.json.gz",
+          "sha256": "3e8afd99698f9e7c3f93369e8ba31afa41ad10b9c72edfdac0aa851911593fe3"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-forward/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-forward/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-forward/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-forward/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    },
+    "shrink-focus-reverse": {
+      "id": "shrink-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "mech-ordered-scorer.JpuxMQ/shrink-timing/canonical-pins/shrink-focus-reverse.json",
+        "sha256": "ef337f2ced121d10c2e2943b82753fc40037bcdb984a7aac5fc1e058b3abfb0f"
+      },
+      "original_pins": {
+        "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-reverse/pins.json",
+        "sha256": "4b010d67209412ca0da7ef93f6f960694bd6cda8604530a7c1c509da154f02b5"
+      },
+      "summary": {
+        "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-reverse/summary.json",
+        "sha256": "2baf6bedf932cf36a4abeaa17511d72337a1cd63f51262400c6163ede5682c7f"
+      },
+      "complete": {
+        "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-reverse/complete.json",
+        "sha256": "3533486faa020b5830244d082a04e2cbc855d2601801f979303857b21551c4dc"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-reverse/320-overlap/observations.json.gz",
+          "sha256": "c73b5ad743105ad7e1705f48d5bd89fb83a3e3e6898188562f3b0e395a5c87f6"
+        },
+        "empty": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-reverse/empty/observations.json.gz",
+          "sha256": "84b93dce10df68c0f930da4d66925866b13573cd032165bbc166d62052889f5e"
+        },
+        "one-stored": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-reverse/one-stored/observations.json.gz",
+          "sha256": "ec8d484aaa3dcfefbc766e669b1082fd5537521f27610f365d6420e975d44bc6"
+        },
+        "prefix-natural-16384": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-reverse/prefix-natural-16384/observations.json.gz",
+          "sha256": "86e5a0b128aae742dd16a6b2484a710d9d5fd21d029af9b85f65f86ab09b4101"
+        },
+        "prefix-natural-32769": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-reverse/prefix-natural-32769/observations.json.gz",
+          "sha256": "94fa6dcf61df604336fd438ce8cd12bc578a085159e66111ca1405c0eaea5737"
+        },
+        "prefix-natural-4096": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-reverse/prefix-natural-4096/observations.json.gz",
+          "sha256": "8927ca8c84df4a61c91602ec9016face6bcd428b0f2f66456a3b8c61390ae4d0"
+        },
+        "prefix-natural-8192": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-reverse/prefix-natural-8192/observations.json.gz",
+          "sha256": "0c7b787e45d89608f7d9325cb091dbfc3ccba9a74d2cceea74d5d01e63fac510"
+        },
+        "prefix-random-4096": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-reverse/prefix-random-4096/observations.json.gz",
+          "sha256": "6cf23f10993ba000b963301bfa58e1a6102424fe715c24684bbe03f8efee094e"
+        },
+        "prefix-repeated-32769": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-reverse/prefix-repeated-32769/observations.json.gz",
+          "sha256": "19a26e17bc8be3a6317de736b9ca464304db12efdb8efe8971580031c5e450c2"
+        },
+        "random-64": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-reverse/random-64/observations.json.gz",
+          "sha256": "12c7c66ecbd1ffd5829f77bfbab8866be53d370e6dc55461500f4134dea10d4d"
+        },
+        "seven-stored-prefix": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-reverse/seven-stored-prefix/observations.json.gz",
+          "sha256": "f21dc8cdb1dad450378f220d3ecd483d1a74b502ce177ddd0ccb0bda5c33e9ea"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-reverse/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-reverse/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-reverse/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "mech-ordered-scorer.JpuxMQ/shrink-focus-reverse/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    }
+  }
+}

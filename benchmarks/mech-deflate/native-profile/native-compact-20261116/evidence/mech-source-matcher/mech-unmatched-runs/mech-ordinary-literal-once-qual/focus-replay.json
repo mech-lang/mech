@@ -1,0 +1,593 @@
+{
+  "runs": [
+    {
+      "id": "mech-ordinary-literal-once-qual-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 13,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 12,
+            "mech-experiment": 12
+          },
+          "precision_supported_wins": {
+            "mech-control": 12,
+            "mech-experiment": 12
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 4,
+            "mech-experiment": 4
+          },
+          "precision_supported_wins": {
+            "mech-control": 4,
+            "mech-experiment": 4
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "mech-ordinary-literal-once-qual-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 13,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 12,
+            "mech-experiment": 12
+          },
+          "precision_supported_wins": {
+            "mech-control": 12,
+            "mech-experiment": 12
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 4,
+            "mech-experiment": 4
+          },
+          "precision_supported_wins": {
+            "mech-control": 4,
+            "mech-experiment": 4
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    }
+  ],
+  "cases": {
+    "empty": {
+      "decision": "unresolved",
+      "runs": {
+        "mech-ordinary-literal-once-qual-forward": {
+          "estimate": -0.006272902533021263,
+          "lower": -0.037753031718580465,
+          "upper": 0.026825442613367834
+        },
+        "mech-ordinary-literal-once-qual-reverse": {
+          "estimate": -0.0120444423587589,
+          "lower": -0.030516021042559238,
+          "upper": 0.005381434494251547
+        }
+      },
+      "combined": {
+        "estimate": -0.009162874776484253,
+        "lower": -0.02822355516455155,
+        "upper": 0.00993718455885051
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "seven-stored-prefix": {
+      "decision": "unresolved",
+      "runs": {
+        "mech-ordinary-literal-once-qual-forward": {
+          "estimate": 0.003424733580820849,
+          "lower": -0.014721599929960028,
+          "upper": 0.02281595658028568
+        },
+        "mech-ordinary-literal-once-qual-reverse": {
+          "estimate": 0.03625033997671867,
+          "lower": -0.0003310705656156543,
+          "upper": 0.08829349071824555
+        }
+      },
+      "combined": {
+        "estimate": 0.019705458117281083,
+        "lower": -0.0012857212635820625,
+        "upper": 0.046659825688307066
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "mech-ordinary-literal-once-qual-forward": {
+          "estimate": -0.0103436529910087,
+          "lower": -0.013536539564764083,
+          "upper": -0.007186588212434342
+        },
+        "mech-ordinary-literal-once-qual-reverse": {
+          "estimate": -0.009297764105203887,
+          "lower": -0.01410374885850929,
+          "upper": -0.0046402954915530925
+        }
+      },
+      "combined": {
+        "estimate": -0.009820846639718495,
+        "lower": -0.012645578082605247,
+        "upper": -0.0070875831072223505
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "unresolved",
+      "runs": {
+        "mech-ordinary-literal-once-qual-forward": {
+          "estimate": -0.010829522030394223,
+          "lower": -0.025227383450181717,
+          "upper": 0.007442254617815003
+        },
+        "mech-ordinary-literal-once-qual-reverse": {
+          "estimate": -0.0002579679131214929,
+          "lower": -0.01468589418126498,
+          "upper": 0.019742519221530364
+        }
+      },
+      "combined": {
+        "estimate": -0.0055577926668224364,
+        "lower": -0.016250002716103773,
+        "upper": 0.007674473503558765
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-random-65537": {
+      "decision": "bounded",
+      "runs": {
+        "mech-ordinary-literal-once-qual-forward": {
+          "estimate": -0.001333721795735876,
+          "lower": -0.0049780033251218825,
+          "upper": 0.002502250216751545
+        },
+        "mech-ordinary-literal-once-qual-reverse": {
+          "estimate": -0.0010794955982084131,
+          "lower": -0.004607560467958849,
+          "upper": 0.002556286510204453
+        }
+      },
+      "combined": {
+        "estimate": -0.001206616785601966,
+        "lower": -0.0037137498948998093,
+        "upper": 0.0013549822566873981
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-4096": {
+      "decision": "unresolved",
+      "runs": {
+        "mech-ordinary-literal-once-qual-forward": {
+          "estimate": 0.010379365938278928,
+          "lower": -0.0028826960202995577,
+          "upper": 0.023057396409605246
+        },
+        "mech-ordinary-literal-once-qual-reverse": {
+          "estimate": -0.0015422624558439901,
+          "lower": -0.008598235588735959,
+          "upper": 0.00464294357339079
+        }
+      },
+      "combined": {
+        "estimate": 0.004400864085666312,
+        "lower": -0.0031167613273612726,
+        "upper": 0.01135730299965454
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "bounded",
+      "runs": {
+        "mech-ordinary-literal-once-qual-forward": {
+          "estimate": -0.0006023410143217722,
+          "lower": -0.00829452063242242,
+          "upper": 0.006214422606602987
+        },
+        "mech-ordinary-literal-once-qual-reverse": {
+          "estimate": -0.0015993016668913729,
+          "lower": -0.007136838639852483,
+          "upper": 0.0037156835197798
+        }
+      },
+      "combined": {
+        "estimate": -0.0011009457188504435,
+        "lower": -0.0058652466126180025,
+        "upper": 0.003238230483133764
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1024": {
+      "decision": "unresolved",
+      "runs": {
+        "mech-ordinary-literal-once-qual-forward": {
+          "estimate": -0.0033768849650649413,
+          "lower": -0.015195145075548422,
+          "upper": 0.012336927156620936
+        },
+        "mech-ordinary-literal-once-qual-reverse": {
+          "estimate": 0.004324379047121019,
+          "lower": -0.0061537284876006515,
+          "upper": 0.018382914004075435
+        }
+      },
+      "combined": {
+        "estimate": 0.0004663368407098467,
+        "lower": -0.008021111743077514,
+        "upper": 0.010519836666451843
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-4096": {
+      "decision": "bounded",
+      "runs": {
+        "mech-ordinary-literal-once-qual-forward": {
+          "estimate": -0.02075488036201445,
+          "lower": -0.03579177556812352,
+          "upper": -0.005071583854839079
+        },
+        "mech-ordinary-literal-once-qual-reverse": {
+          "estimate": -0.01314768397744559,
+          "lower": -0.031619561408719576,
+          "upper": 0.007853932173052414
+        }
+      },
+      "combined": {
+        "estimate": -0.016958640611429043,
+        "lower": -0.029015605859675886,
+        "upper": -0.0034870143731011716
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-8192": {
+      "decision": "unresolved",
+      "runs": {
+        "mech-ordinary-literal-once-qual-forward": {
+          "estimate": 0.005318978260637319,
+          "lower": -0.0035450369678926563,
+          "upper": 0.016151989772080544
+        },
+        "mech-ordinary-literal-once-qual-reverse": {
+          "estimate": -0.0031272319502785306,
+          "lower": -0.010855488274188141,
+          "upper": 0.004946219814571329
+        }
+      },
+      "combined": {
+        "estimate": 0.001086965568725784,
+        "lower": -0.004933072327466537,
+        "upper": 0.00741662445497604
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-32769": {
+      "decision": "bounded",
+      "runs": {
+        "mech-ordinary-literal-once-qual-forward": {
+          "estimate": -0.0024085476769274416,
+          "lower": -0.00462071180724799,
+          "upper": -0.00013692659750030867
+        },
+        "mech-ordinary-literal-once-qual-reverse": {
+          "estimate": -0.00023559199538214504,
+          "lower": -0.00497839680157397,
+          "upper": 0.005069621971467209
+        }
+      },
+      "combined": {
+        "estimate": -0.0013226608347201019,
+        "lower": -0.003955696852927959,
+        "upper": 0.001553125799008459
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "mech-ordinary-literal-once-qual-forward": {
+          "estimate": 0.0002912505273413579,
+          "lower": -0.0006030128626181019,
+          "upper": 0.0011833717593128235
+        },
+        "mech-ordinary-literal-once-qual-reverse": {
+          "estimate": 0.0003885185482306319,
+          "lower": -0.005650376561210035,
+          "upper": 0.007027643685059148
+        }
+      },
+      "combined": {
+        "estimate": 0.000339883355554349,
+        "lower": -0.0026676193314250085,
+        "upper": 0.00370286989604951
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-16384": {
+      "decision": "bounded",
+      "runs": {
+        "mech-ordinary-literal-once-qual-forward": {
+          "estimate": 0.0010610320133883633,
+          "lower": -0.002017453988544693,
+          "upper": 0.004301017717830646
+        },
+        "mech-ordinary-literal-once-qual-reverse": {
+          "estimate": -4.50998202606856e-05,
+          "lower": -0.003343076194561534,
+          "upper": 0.003308672817585734
+        }
+      },
+      "combined": {
+        "estimate": 0.000507813233247445,
+        "lower": -0.001791365508016951,
+        "upper": 0.002829553384295469
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    }
+  },
+  "scope": "90% per-case paired bootstrap, stratified by run and actor order",
+  "equivalent_named_cases": [
+    [
+      "33027-periodic-window",
+      "prefix-periodic-33027"
+    ],
+    [
+      "prefix-repeated-1024",
+      "repeated-1024"
+    ],
+    [
+      "prefix-repeated-32769",
+      "repeated-32769"
+    ],
+    [
+      "prefix-natural-1024",
+      "reymont-prefix-1024"
+    ],
+    [
+      "prefix-natural-16384",
+      "reymont-prefix-16384"
+    ],
+    [
+      "prefix-natural-32769",
+      "reymont-prefix-32769"
+    ],
+    [
+      "heldout-window-32767",
+      "prefix-natural-32767"
+    ]
+  ],
+  "peak_private_payload_bytes": {},
+  "decision": "Unresolved",
+  "rejected": [],
+  "unresolved": [
+    "both complete timing orders are required",
+    "empty: regression bound or duplicate-control repeatability unresolved",
+    "seven-stored-prefix: regression bound or duplicate-control repeatability unresolved",
+    "random-64: regression bound or duplicate-control repeatability unresolved",
+    "prefix-natural-4096: regression bound or duplicate-control repeatability unresolved",
+    "prefix-random-1024: regression bound or duplicate-control repeatability unresolved",
+    "prefix-random-8192: regression bound or duplicate-control repeatability unresolved"
+  ],
+  "plan": {
+    "path": "mech-unmatched-runs/mech-ordinary-literal-once-qual/plan.json",
+    "sha256": "edd72166b08468fbcda3ed89fe7bb6d03702df0b75901853f17aa371fb245bee"
+  },
+  "receipts": {
+    "mech-ordinary-literal-once-qual-forward": {
+      "id": "mech-ordinary-literal-once-qual-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 24,
+      "pins": {
+        "path": "mech-unmatched-runs/mech-ordinary-literal-once-qual/canonical-pins/mech-ordinary-literal-once-qual-forward.json",
+        "sha256": "62f1b73d18cd1fc3648a9d6a5e3401319f6721d2c64aec623e769a14e554fa55"
+      },
+      "original_pins": {
+        "path": "mech-ordinary-literal-once-qual-forward/pins.json",
+        "sha256": "35de86f66a211b0d1e469defa47198f16638fe7ba53568406e17b7f3a37a19ed"
+      },
+      "summary": {
+        "path": "mech-ordinary-literal-once-qual-forward/summary.json",
+        "sha256": "07cc9b88f9bbb0fe0a41c8175087ce456caeb3e6157a8bc6864902087aa1640a"
+      },
+      "complete": {
+        "path": "mech-ordinary-literal-once-qual-forward/complete.json",
+        "sha256": "fad0315b305aef0605a7606251ec812bb9c9fb0d320a69fb1951858398f75e41"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "mech-ordinary-literal-once-qual-forward/320-overlap/observations.json.gz",
+          "sha256": "5f1dda05e96ffcc35552819610a27c3c1f626c3e36736efa847cd8becfa842c5"
+        },
+        "empty": {
+          "path": "mech-ordinary-literal-once-qual-forward/empty/observations.json.gz",
+          "sha256": "eb480a53f47b3d7640e7e353e8fcb68770fdf811022d2e79b1a43d7311a5e68e"
+        },
+        "heldout-random-65537": {
+          "path": "mech-ordinary-literal-once-qual-forward/heldout-random-65537/observations.json.gz",
+          "sha256": "d13c6c12f57b8a7b91400f7de1abe773db7e0398f28ba8b42ffec45e82a881ae"
+        },
+        "prefix-natural-4096": {
+          "path": "mech-ordinary-literal-once-qual-forward/prefix-natural-4096/observations.json.gz",
+          "sha256": "232258a317ada217595132f57172a43f7206e0ca976ee8d6467a6e52746643cd"
+        },
+        "prefix-natural-8192": {
+          "path": "mech-ordinary-literal-once-qual-forward/prefix-natural-8192/observations.json.gz",
+          "sha256": "d8c18e7777c3b01232d5b1d3a74b2c0188660b6e3771bd83f1904f9146a9d6ad"
+        },
+        "prefix-periodic-16384": {
+          "path": "mech-ordinary-literal-once-qual-forward/prefix-periodic-16384/observations.json.gz",
+          "sha256": "58b984ce0cffcc7004dba4a52c56ad57daaeaf7249bb0e1252ec4444a6a148ac"
+        },
+        "prefix-random-1024": {
+          "path": "mech-ordinary-literal-once-qual-forward/prefix-random-1024/observations.json.gz",
+          "sha256": "cedf915ada9ee5778382651632f92ff7b9daee47183fce33aaa9385a1baff46b"
+        },
+        "prefix-random-1048576": {
+          "path": "mech-ordinary-literal-once-qual-forward/prefix-random-1048576/observations.json.gz",
+          "sha256": "bca9b60bf4435c3b5884b3da2bde611587ad9a1d80ebf805da986b116e7e90cc"
+        },
+        "prefix-random-32769": {
+          "path": "mech-ordinary-literal-once-qual-forward/prefix-random-32769/observations.json.gz",
+          "sha256": "5bcc78d2efb2abff06c51f6050362cb9e488f965c26ba3ee4834849d84086ba3"
+        },
+        "prefix-random-4096": {
+          "path": "mech-ordinary-literal-once-qual-forward/prefix-random-4096/observations.json.gz",
+          "sha256": "bdd768f3cd81e5cbb905265f524d0df5826d024e9347a044c274b88d8f6a0b66"
+        },
+        "prefix-random-8192": {
+          "path": "mech-ordinary-literal-once-qual-forward/prefix-random-8192/observations.json.gz",
+          "sha256": "4c86275c4867ec4080753aae883f67d57393f26f3d898a12793ab688aeb16cb9"
+        },
+        "random-64": {
+          "path": "mech-ordinary-literal-once-qual-forward/random-64/observations.json.gz",
+          "sha256": "d1165c0d8f2feb5fb6b2aef816db5081998364d118f7f3e14f6ae4b80d8887a9"
+        },
+        "seven-stored-prefix": {
+          "path": "mech-ordinary-literal-once-qual-forward/seven-stored-prefix/observations.json.gz",
+          "sha256": "2caffba11367b9819fa4eb49ca9613fb58c9753cfb7b6ecea736b289b8d7d178"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "mech-ordinary-literal-once-qual-forward/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "mech-ordinary-literal-once-qual-forward/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "mech-ordinary-literal-once-qual-forward/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "mech-ordinary-literal-once-qual-forward/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    },
+    "mech-ordinary-literal-once-qual-reverse": {
+      "id": "mech-ordinary-literal-once-qual-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 24,
+      "pins": {
+        "path": "mech-unmatched-runs/mech-ordinary-literal-once-qual/canonical-pins/mech-ordinary-literal-once-qual-reverse.json",
+        "sha256": "62f1b73d18cd1fc3648a9d6a5e3401319f6721d2c64aec623e769a14e554fa55"
+      },
+      "original_pins": {
+        "path": "mech-ordinary-literal-once-qual-reverse/pins.json",
+        "sha256": "35de86f66a211b0d1e469defa47198f16638fe7ba53568406e17b7f3a37a19ed"
+      },
+      "summary": {
+        "path": "mech-ordinary-literal-once-qual-reverse/summary.json",
+        "sha256": "dccef114387e6e93b82ded0a24d6cef270914045c5230681b043e75c00914418"
+      },
+      "complete": {
+        "path": "mech-ordinary-literal-once-qual-reverse/complete.json",
+        "sha256": "fad0315b305aef0605a7606251ec812bb9c9fb0d320a69fb1951858398f75e41"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "mech-ordinary-literal-once-qual-reverse/320-overlap/observations.json.gz",
+          "sha256": "fccd18bf2db397dcdaeb39092ea8edd43f696411d6f53188e17edfdfa1705362"
+        },
+        "empty": {
+          "path": "mech-ordinary-literal-once-qual-reverse/empty/observations.json.gz",
+          "sha256": "22b9dd03edb83af5317790c411e5c6954bf5debebc5610bb86d777f42f02bc71"
+        },
+        "heldout-random-65537": {
+          "path": "mech-ordinary-literal-once-qual-reverse/heldout-random-65537/observations.json.gz",
+          "sha256": "6ddd7156307f8503639aa06ee26440d93f6047474d34819612e0682db1bb61e4"
+        },
+        "prefix-natural-4096": {
+          "path": "mech-ordinary-literal-once-qual-reverse/prefix-natural-4096/observations.json.gz",
+          "sha256": "2837e7352808f60d0858f4fc6efaf123dfce49ff931da76f5c7cb1eeba76afee"
+        },
+        "prefix-natural-8192": {
+          "path": "mech-ordinary-literal-once-qual-reverse/prefix-natural-8192/observations.json.gz",
+          "sha256": "3281f93a86ed47f4ffcc31f804e8771d516284027fa2a3f2f73ba10ddd5d0e53"
+        },
+        "prefix-periodic-16384": {
+          "path": "mech-ordinary-literal-once-qual-reverse/prefix-periodic-16384/observations.json.gz",
+          "sha256": "5531bfb94f4dfc1ad0d521132c52f97910d535914680260d5fee98ab9053baf8"
+        },
+        "prefix-random-1024": {
+          "path": "mech-ordinary-literal-once-qual-reverse/prefix-random-1024/observations.json.gz",
+          "sha256": "d9865ec9bdc010fb4bc68b1367e1687ce821c6dcdeacb44c5a71f922b93f8aef"
+        },
+        "prefix-random-1048576": {
+          "path": "mech-ordinary-literal-once-qual-reverse/prefix-random-1048576/observations.json.gz",
+          "sha256": "a6b6e3e1134fead36bc85c94ed820f42918d1b32cce6613710745ff4f5c715a9"
+        },
+        "prefix-random-32769": {
+          "path": "mech-ordinary-literal-once-qual-reverse/prefix-random-32769/observations.json.gz",
+          "sha256": "eb7d5987ecd55b3a9746c3b5381cd45185b91837c5e4a3f830b0321d103d5e63"
+        },
+        "prefix-random-4096": {
+          "path": "mech-ordinary-literal-once-qual-reverse/prefix-random-4096/observations.json.gz",
+          "sha256": "2e394414897545e39ce061f7ca9e1683ee807c1bbe9a589c8bd26f498bffb34f"
+        },
+        "prefix-random-8192": {
+          "path": "mech-ordinary-literal-once-qual-reverse/prefix-random-8192/observations.json.gz",
+          "sha256": "69ffbbf5ccd44e6f04993a94c197b39ad4935f17f80c1676b4924f36f77b263c"
+        },
+        "random-64": {
+          "path": "mech-ordinary-literal-once-qual-reverse/random-64/observations.json.gz",
+          "sha256": "afdf8725ea4bb09d5e336b71c295a795b1177310e96d140928c79c2782a345ed"
+        },
+        "seven-stored-prefix": {
+          "path": "mech-ordinary-literal-once-qual-reverse/seven-stored-prefix/observations.json.gz",
+          "sha256": "d70e84007a84a2f98112ee93e8870a98b357e34744fc37934d8f63fe934281fd"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "mech-ordinary-literal-once-qual-reverse/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "mech-ordinary-literal-once-qual-reverse/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "mech-ordinary-literal-once-qual-reverse/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "mech-ordinary-literal-once-qual-reverse/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    }
+  }
+}

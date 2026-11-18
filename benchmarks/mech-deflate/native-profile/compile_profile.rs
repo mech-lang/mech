@@ -51,31 +51,54 @@ fn run() {
         eprintln!("{row}");
         phases.push(row);
     };
-    eprintln!("compile-profile: pid={} phase=parse", std::process::id());
-    let start = Instant::now();
-    let parsed = parse_canonical_document(
-        TextSnapshot::new(DocumentId(0x50524f47), Revision(1), source.as_str()).unwrap(),
-        ParseConfig::default(),
-    );
-    assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
-    let syntax = DocumentSyntax::cast(parsed.syntax()).unwrap();
-    stamp("parse", start);
-    let start = Instant::now();
-    let catalog = mech_stdlib::source_catalog();
-    stamp("catalog", start);
-    eprintln!("compile-profile: phase=frontend");
-    let start = Instant::now();
-    let product = CanonicalSourceFrontend
-        .compile_document_with_catalog(&syntax, catalog.clone())
-        .unwrap();
-    stamp("frontend", start);
-    let start = Instant::now();
-    let artifact = product.compile_artifact().unwrap();
-    stamp("artifact", start);
-    let start = Instant::now();
-    let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
-    stamp("encode", start);
-    std::fs::write(out.join("program.mecb"), &bytes).unwrap();
+    let load_catalog = || {
+        let start = Instant::now();
+        let catalog = mech_stdlib::source_catalog();
+        (catalog, start.elapsed().as_secs_f64())
+    };
+    let preload = std::env::var_os("MECH_COMPILE_OVERLAP_SOURCE_CATALOG").and_then(|_| {
+        std::thread::Builder::new()
+            .name("source-catalog-preload".into())
+            .spawn(load_catalog)
+            .ok()
+    });
+    let overlapped_catalog = preload.is_some();
+    let (artifact, catalog, catalog_work_seconds) = {
+        eprintln!("compile-profile: pid={} phase=parse", std::process::id());
+        let start = Instant::now();
+        let parsed = parse_canonical_document(
+            TextSnapshot::new(DocumentId(0x50524f47), Revision(1), source.as_str()).unwrap(),
+            ParseConfig::default(),
+        );
+        assert!(parsed.is_strictly_clean(), "{:?}", parsed.diagnostics);
+        let syntax = DocumentSyntax::cast(parsed.syntax()).unwrap();
+        stamp("parse", start);
+        let start = Instant::now();
+        let (catalog, catalog_work_seconds) = match preload {
+            Some(worker) => worker
+                .join()
+                .unwrap_or_else(|payload| std::panic::resume_unwind(payload)),
+            None => load_catalog(),
+        };
+        stamp("catalog", start);
+        eprintln!("compile-profile: phase=frontend");
+        let start = Instant::now();
+        let product = CanonicalSourceFrontend
+            .compile_document_with_catalog(&syntax, catalog.clone())
+            .unwrap();
+        stamp("frontend", start);
+        let start = Instant::now();
+        let artifact = product.compile_artifact().unwrap();
+        stamp("artifact", start);
+        (artifact, catalog, catalog_work_seconds)
+    };
+    let (bytecode_bytes, bytecode_sha256) = {
+        let start = Instant::now();
+        let bytes = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
+        stamp("encode", start);
+        std::fs::write(out.join("program.mecb"), &bytes).unwrap();
+        (bytes.len(), hash(&bytes))
+    };
     eprintln!("compile-profile: phase=native mode={}", args[3]);
     let start = Instant::now();
     let (object, metadata) = match args[3].as_str() {
@@ -99,7 +122,19 @@ fn run() {
         serde_json::to_vec(&metadata).unwrap(),
     )
     .unwrap();
-    let receipt = serde_json::json!({"mode":args[3],"phases":phases,"total_seconds":total_seconds,"source_bytes":source.len(),"source_sha256":hash(source.as_bytes()),"bytecode_bytes":bytes.len(),"bytecode_sha256":hash(&bytes),"object_bytes":object.len(),"object_sha256":hash(&object)});
+    let receipt = serde_json::json!({
+        "mode": args[3],
+        "phases": phases,
+        "catalog_work_seconds": catalog_work_seconds,
+        "catalog_overlapped_parse": overlapped_catalog,
+        "total_seconds": total_seconds,
+        "source_bytes": source.len(),
+        "source_sha256": hash(source.as_bytes()),
+        "bytecode_bytes": bytecode_bytes,
+        "bytecode_sha256": bytecode_sha256,
+        "object_bytes": object.len(),
+        "object_sha256": hash(&object),
+    });
     std::fs::write(
         out.join("compile.json"),
         serde_json::to_vec_pretty(&receipt).unwrap(),

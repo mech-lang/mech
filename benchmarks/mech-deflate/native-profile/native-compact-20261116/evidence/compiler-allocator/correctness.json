@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-compiler-allocator-current/warmup/mech-compiler-allocator/compressor",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-compiler-allocator-current/warmup/mech-compiler-allocator/native/metadata.json",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "complete_smokes": 162,
+  "verified": true,
+  "worker_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309",
+  "metadata_sha256": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+}

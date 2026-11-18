@@ -1,0 +1,558 @@
+{
+  "orders": [
+    [
+      "control",
+      "accounting"
+    ],
+    [
+      "accounting",
+      "control"
+    ],
+    [
+      "control",
+      "accounting"
+    ],
+    [
+      "accounting",
+      "control"
+    ],
+    [
+      "control",
+      "accounting"
+    ],
+    [
+      "accounting",
+      "control"
+    ]
+  ],
+  "inputs": {
+    "tests/fixtures/syntax-source-boundary/executable.mec": {
+      "trials": [
+        {
+          "events": 112,
+          "parse_seconds": 0.002466584,
+          "parser_steps": 622,
+          "source_bytes": 24,
+          "source_sha256": "234df112c12f48f73f62b12ae26a25c6292fcdf9529d71fefa4c0cc21875dbd7",
+          "tree_sha256": "4d30e9bddc6976e3b90e30698c99a6e25a8aa0f7d700e0b29765f278e72c60f2",
+          "actor": "control",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/parser-stages/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/executable/1-control.json"
+          ]
+        },
+        {
+          "events": 112,
+          "parse_seconds": 0.002335541,
+          "parser_steps": 622,
+          "source_bytes": 24,
+          "source_sha256": "234df112c12f48f73f62b12ae26a25c6292fcdf9529d71fefa4c0cc21875dbd7",
+          "tree_sha256": "4d30e9bddc6976e3b90e30698c99a6e25a8aa0f7d700e0b29765f278e72c60f2",
+          "actor": "accounting",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/parser",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/executable/1-accounting.json"
+          ]
+        },
+        {
+          "events": 112,
+          "parse_seconds": 0.001152125,
+          "parser_steps": 622,
+          "source_bytes": 24,
+          "source_sha256": "234df112c12f48f73f62b12ae26a25c6292fcdf9529d71fefa4c0cc21875dbd7",
+          "tree_sha256": "4d30e9bddc6976e3b90e30698c99a6e25a8aa0f7d700e0b29765f278e72c60f2",
+          "actor": "accounting",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/parser",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/executable/2-accounting.json"
+          ]
+        },
+        {
+          "events": 112,
+          "parse_seconds": 0.001180917,
+          "parser_steps": 622,
+          "source_bytes": 24,
+          "source_sha256": "234df112c12f48f73f62b12ae26a25c6292fcdf9529d71fefa4c0cc21875dbd7",
+          "tree_sha256": "4d30e9bddc6976e3b90e30698c99a6e25a8aa0f7d700e0b29765f278e72c60f2",
+          "actor": "control",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/parser-stages/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/executable/2-control.json"
+          ]
+        },
+        {
+          "events": 112,
+          "parse_seconds": 0.00114825,
+          "parser_steps": 622,
+          "source_bytes": 24,
+          "source_sha256": "234df112c12f48f73f62b12ae26a25c6292fcdf9529d71fefa4c0cc21875dbd7",
+          "tree_sha256": "4d30e9bddc6976e3b90e30698c99a6e25a8aa0f7d700e0b29765f278e72c60f2",
+          "actor": "control",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/parser-stages/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/executable/3-control.json"
+          ]
+        },
+        {
+          "events": 112,
+          "parse_seconds": 0.001159083,
+          "parser_steps": 622,
+          "source_bytes": 24,
+          "source_sha256": "234df112c12f48f73f62b12ae26a25c6292fcdf9529d71fefa4c0cc21875dbd7",
+          "tree_sha256": "4d30e9bddc6976e3b90e30698c99a6e25a8aa0f7d700e0b29765f278e72c60f2",
+          "actor": "accounting",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/parser",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/executable/3-accounting.json"
+          ]
+        },
+        {
+          "events": 112,
+          "parse_seconds": 0.001130334,
+          "parser_steps": 622,
+          "source_bytes": 24,
+          "source_sha256": "234df112c12f48f73f62b12ae26a25c6292fcdf9529d71fefa4c0cc21875dbd7",
+          "tree_sha256": "4d30e9bddc6976e3b90e30698c99a6e25a8aa0f7d700e0b29765f278e72c60f2",
+          "actor": "accounting",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/parser",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/executable/4-accounting.json"
+          ]
+        },
+        {
+          "events": 112,
+          "parse_seconds": 0.001181125,
+          "parser_steps": 622,
+          "source_bytes": 24,
+          "source_sha256": "234df112c12f48f73f62b12ae26a25c6292fcdf9529d71fefa4c0cc21875dbd7",
+          "tree_sha256": "4d30e9bddc6976e3b90e30698c99a6e25a8aa0f7d700e0b29765f278e72c60f2",
+          "actor": "control",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/parser-stages/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/executable/4-control.json"
+          ]
+        },
+        {
+          "events": 112,
+          "parse_seconds": 0.001160791,
+          "parser_steps": 622,
+          "source_bytes": 24,
+          "source_sha256": "234df112c12f48f73f62b12ae26a25c6292fcdf9529d71fefa4c0cc21875dbd7",
+          "tree_sha256": "4d30e9bddc6976e3b90e30698c99a6e25a8aa0f7d700e0b29765f278e72c60f2",
+          "actor": "control",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/parser-stages/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/executable/5-control.json"
+          ]
+        },
+        {
+          "events": 112,
+          "parse_seconds": 0.001165958,
+          "parser_steps": 622,
+          "source_bytes": 24,
+          "source_sha256": "234df112c12f48f73f62b12ae26a25c6292fcdf9529d71fefa4c0cc21875dbd7",
+          "tree_sha256": "4d30e9bddc6976e3b90e30698c99a6e25a8aa0f7d700e0b29765f278e72c60f2",
+          "actor": "accounting",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/parser",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/executable/5-accounting.json"
+          ]
+        },
+        {
+          "events": 112,
+          "parse_seconds": 0.00113975,
+          "parser_steps": 622,
+          "source_bytes": 24,
+          "source_sha256": "234df112c12f48f73f62b12ae26a25c6292fcdf9529d71fefa4c0cc21875dbd7",
+          "tree_sha256": "4d30e9bddc6976e3b90e30698c99a6e25a8aa0f7d700e0b29765f278e72c60f2",
+          "actor": "accounting",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/parser",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/executable/6-accounting.json"
+          ]
+        },
+        {
+          "events": 112,
+          "parse_seconds": 0.001181833,
+          "parser_steps": 622,
+          "source_bytes": 24,
+          "source_sha256": "234df112c12f48f73f62b12ae26a25c6292fcdf9529d71fefa4c0cc21875dbd7",
+          "tree_sha256": "4d30e9bddc6976e3b90e30698c99a6e25a8aa0f7d700e0b29765f278e72c60f2",
+          "actor": "control",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/parser-stages/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/executable/6-control.json"
+          ]
+        }
+      ],
+      "medians_seconds": {
+        "control": 0.001181021,
+        "accounting": 0.001155604
+      }
+    },
+    "tests/fixtures/syntax-source-boundary/resolver-index.mec": {
+      "trials": [
+        {
+          "events": 114,
+          "parse_seconds": 0.001788667,
+          "parser_steps": 668,
+          "source_bytes": 49,
+          "source_sha256": "11ccc2f7d39922a067027f2abf2e7515c945dddd63133a2dc9dfdb8db8b36790",
+          "tree_sha256": "b93b27e12951f8d746acb9ea30f81b1d69665a9448cb783f81333d7c89e6a34e",
+          "actor": "control",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/parser-stages/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/resolver-index/1-control.json"
+          ]
+        },
+        {
+          "events": 114,
+          "parse_seconds": 0.001773791,
+          "parser_steps": 668,
+          "source_bytes": 49,
+          "source_sha256": "11ccc2f7d39922a067027f2abf2e7515c945dddd63133a2dc9dfdb8db8b36790",
+          "tree_sha256": "b93b27e12951f8d746acb9ea30f81b1d69665a9448cb783f81333d7c89e6a34e",
+          "actor": "accounting",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/parser",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/resolver-index/1-accounting.json"
+          ]
+        },
+        {
+          "events": 114,
+          "parse_seconds": 0.0017585,
+          "parser_steps": 668,
+          "source_bytes": 49,
+          "source_sha256": "11ccc2f7d39922a067027f2abf2e7515c945dddd63133a2dc9dfdb8db8b36790",
+          "tree_sha256": "b93b27e12951f8d746acb9ea30f81b1d69665a9448cb783f81333d7c89e6a34e",
+          "actor": "accounting",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/parser",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/resolver-index/2-accounting.json"
+          ]
+        },
+        {
+          "events": 114,
+          "parse_seconds": 0.001796,
+          "parser_steps": 668,
+          "source_bytes": 49,
+          "source_sha256": "11ccc2f7d39922a067027f2abf2e7515c945dddd63133a2dc9dfdb8db8b36790",
+          "tree_sha256": "b93b27e12951f8d746acb9ea30f81b1d69665a9448cb783f81333d7c89e6a34e",
+          "actor": "control",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/parser-stages/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/resolver-index/2-control.json"
+          ]
+        },
+        {
+          "events": 114,
+          "parse_seconds": 0.001770541,
+          "parser_steps": 668,
+          "source_bytes": 49,
+          "source_sha256": "11ccc2f7d39922a067027f2abf2e7515c945dddd63133a2dc9dfdb8db8b36790",
+          "tree_sha256": "b93b27e12951f8d746acb9ea30f81b1d69665a9448cb783f81333d7c89e6a34e",
+          "actor": "control",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/parser-stages/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/resolver-index/3-control.json"
+          ]
+        },
+        {
+          "events": 114,
+          "parse_seconds": 0.00177875,
+          "parser_steps": 668,
+          "source_bytes": 49,
+          "source_sha256": "11ccc2f7d39922a067027f2abf2e7515c945dddd63133a2dc9dfdb8db8b36790",
+          "tree_sha256": "b93b27e12951f8d746acb9ea30f81b1d69665a9448cb783f81333d7c89e6a34e",
+          "actor": "accounting",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/parser",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/resolver-index/3-accounting.json"
+          ]
+        },
+        {
+          "events": 114,
+          "parse_seconds": 0.001765458,
+          "parser_steps": 668,
+          "source_bytes": 49,
+          "source_sha256": "11ccc2f7d39922a067027f2abf2e7515c945dddd63133a2dc9dfdb8db8b36790",
+          "tree_sha256": "b93b27e12951f8d746acb9ea30f81b1d69665a9448cb783f81333d7c89e6a34e",
+          "actor": "accounting",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/parser",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/resolver-index/4-accounting.json"
+          ]
+        },
+        {
+          "events": 114,
+          "parse_seconds": 0.001813416,
+          "parser_steps": 668,
+          "source_bytes": 49,
+          "source_sha256": "11ccc2f7d39922a067027f2abf2e7515c945dddd63133a2dc9dfdb8db8b36790",
+          "tree_sha256": "b93b27e12951f8d746acb9ea30f81b1d69665a9448cb783f81333d7c89e6a34e",
+          "actor": "control",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/parser-stages/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/resolver-index/4-control.json"
+          ]
+        },
+        {
+          "events": 114,
+          "parse_seconds": 0.00179025,
+          "parser_steps": 668,
+          "source_bytes": 49,
+          "source_sha256": "11ccc2f7d39922a067027f2abf2e7515c945dddd63133a2dc9dfdb8db8b36790",
+          "tree_sha256": "b93b27e12951f8d746acb9ea30f81b1d69665a9448cb783f81333d7c89e6a34e",
+          "actor": "control",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/parser-stages/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/resolver-index/5-control.json"
+          ]
+        },
+        {
+          "events": 114,
+          "parse_seconds": 0.001784959,
+          "parser_steps": 668,
+          "source_bytes": 49,
+          "source_sha256": "11ccc2f7d39922a067027f2abf2e7515c945dddd63133a2dc9dfdb8db8b36790",
+          "tree_sha256": "b93b27e12951f8d746acb9ea30f81b1d69665a9448cb783f81333d7c89e6a34e",
+          "actor": "accounting",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/parser",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/resolver-index/5-accounting.json"
+          ]
+        },
+        {
+          "events": 114,
+          "parse_seconds": 0.001763625,
+          "parser_steps": 668,
+          "source_bytes": 49,
+          "source_sha256": "11ccc2f7d39922a067027f2abf2e7515c945dddd63133a2dc9dfdb8db8b36790",
+          "tree_sha256": "b93b27e12951f8d746acb9ea30f81b1d69665a9448cb783f81333d7c89e6a34e",
+          "actor": "accounting",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/parser",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/resolver-index/6-accounting.json"
+          ]
+        },
+        {
+          "events": 114,
+          "parse_seconds": 0.001797709,
+          "parser_steps": 668,
+          "source_bytes": 49,
+          "source_sha256": "11ccc2f7d39922a067027f2abf2e7515c945dddd63133a2dc9dfdb8db8b36790",
+          "tree_sha256": "b93b27e12951f8d746acb9ea30f81b1d69665a9448cb783f81333d7c89e6a34e",
+          "actor": "control",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/parser-stages/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/resolver-index/6-control.json"
+          ]
+        }
+      ],
+      "medians_seconds": {
+        "control": 0.001793125,
+        "accounting": 0.0017696245
+      }
+    },
+    "src/syntax/tests/fixtures/document/accepted/unicode.mec": {
+      "trials": [
+        {
+          "events": 91,
+          "parse_seconds": 0.001367291,
+          "parser_steps": 665,
+          "source_bytes": 45,
+          "source_sha256": "db5abf6c027868e858e5c10551990bd3b87351a9701733e4b15043015aa4f591",
+          "tree_sha256": "5bb8d0841103d992747881f26c4eedb60eee166f65115ee466e1f17394ae4829",
+          "actor": "control",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/parser-stages/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/unicode/1-control.json"
+          ]
+        },
+        {
+          "events": 91,
+          "parse_seconds": 0.001386167,
+          "parser_steps": 665,
+          "source_bytes": 45,
+          "source_sha256": "db5abf6c027868e858e5c10551990bd3b87351a9701733e4b15043015aa4f591",
+          "tree_sha256": "5bb8d0841103d992747881f26c4eedb60eee166f65115ee466e1f17394ae4829",
+          "actor": "accounting",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/parser",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/unicode/1-accounting.json"
+          ]
+        },
+        {
+          "events": 91,
+          "parse_seconds": 0.001342125,
+          "parser_steps": 665,
+          "source_bytes": 45,
+          "source_sha256": "db5abf6c027868e858e5c10551990bd3b87351a9701733e4b15043015aa4f591",
+          "tree_sha256": "5bb8d0841103d992747881f26c4eedb60eee166f65115ee466e1f17394ae4829",
+          "actor": "accounting",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/parser",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/unicode/2-accounting.json"
+          ]
+        },
+        {
+          "events": 91,
+          "parse_seconds": 0.001376084,
+          "parser_steps": 665,
+          "source_bytes": 45,
+          "source_sha256": "db5abf6c027868e858e5c10551990bd3b87351a9701733e4b15043015aa4f591",
+          "tree_sha256": "5bb8d0841103d992747881f26c4eedb60eee166f65115ee466e1f17394ae4829",
+          "actor": "control",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/parser-stages/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/unicode/2-control.json"
+          ]
+        },
+        {
+          "events": 91,
+          "parse_seconds": 0.0013565,
+          "parser_steps": 665,
+          "source_bytes": 45,
+          "source_sha256": "db5abf6c027868e858e5c10551990bd3b87351a9701733e4b15043015aa4f591",
+          "tree_sha256": "5bb8d0841103d992747881f26c4eedb60eee166f65115ee466e1f17394ae4829",
+          "actor": "control",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/parser-stages/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/unicode/3-control.json"
+          ]
+        },
+        {
+          "events": 91,
+          "parse_seconds": 0.0013825,
+          "parser_steps": 665,
+          "source_bytes": 45,
+          "source_sha256": "db5abf6c027868e858e5c10551990bd3b87351a9701733e4b15043015aa4f591",
+          "tree_sha256": "5bb8d0841103d992747881f26c4eedb60eee166f65115ee466e1f17394ae4829",
+          "actor": "accounting",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/parser",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/unicode/3-accounting.json"
+          ]
+        },
+        {
+          "events": 91,
+          "parse_seconds": 0.001338167,
+          "parser_steps": 665,
+          "source_bytes": 45,
+          "source_sha256": "db5abf6c027868e858e5c10551990bd3b87351a9701733e4b15043015aa4f591",
+          "tree_sha256": "5bb8d0841103d992747881f26c4eedb60eee166f65115ee466e1f17394ae4829",
+          "actor": "accounting",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/parser",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/unicode/4-accounting.json"
+          ]
+        },
+        {
+          "events": 91,
+          "parse_seconds": 0.001382583,
+          "parser_steps": 665,
+          "source_bytes": 45,
+          "source_sha256": "db5abf6c027868e858e5c10551990bd3b87351a9701733e4b15043015aa4f591",
+          "tree_sha256": "5bb8d0841103d992747881f26c4eedb60eee166f65115ee466e1f17394ae4829",
+          "actor": "control",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/parser-stages/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/unicode/4-control.json"
+          ]
+        },
+        {
+          "events": 91,
+          "parse_seconds": 0.001358292,
+          "parser_steps": 665,
+          "source_bytes": 45,
+          "source_sha256": "db5abf6c027868e858e5c10551990bd3b87351a9701733e4b15043015aa4f591",
+          "tree_sha256": "5bb8d0841103d992747881f26c4eedb60eee166f65115ee466e1f17394ae4829",
+          "actor": "control",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/parser-stages/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/unicode/5-control.json"
+          ]
+        },
+        {
+          "events": 91,
+          "parse_seconds": 0.0013875,
+          "parser_steps": 665,
+          "source_bytes": 45,
+          "source_sha256": "db5abf6c027868e858e5c10551990bd3b87351a9701733e4b15043015aa4f591",
+          "tree_sha256": "5bb8d0841103d992747881f26c4eedb60eee166f65115ee466e1f17394ae4829",
+          "actor": "accounting",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/parser",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/unicode/5-accounting.json"
+          ]
+        },
+        {
+          "events": 91,
+          "parse_seconds": 0.001347417,
+          "parser_steps": 665,
+          "source_bytes": 45,
+          "source_sha256": "db5abf6c027868e858e5c10551990bd3b87351a9701733e4b15043015aa4f591",
+          "tree_sha256": "5bb8d0841103d992747881f26c4eedb60eee166f65115ee466e1f17394ae4829",
+          "actor": "accounting",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/parser",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/unicode/6-accounting.json"
+          ]
+        },
+        {
+          "events": 91,
+          "parse_seconds": 0.0013965,
+          "parser_steps": 665,
+          "source_bytes": 45,
+          "source_sha256": "db5abf6c027868e858e5c10551990bd3b87351a9701733e4b15043015aa4f591",
+          "tree_sha256": "5bb8d0841103d992747881f26c4eedb60eee166f65115ee466e1f17394ae4829",
+          "actor": "control",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/parser-stages/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/stale-cache-accounting/small-inputs/unicode/6-control.json"
+          ]
+        }
+      ],
+      "medians_seconds": {
+        "control": 0.0013716875,
+        "accounting": 0.0013649585
+      }
+    }
+  }
+}

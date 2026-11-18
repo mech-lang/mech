@@ -1,0 +1,15 @@
+{
+  "object_text_bytes": 72924,
+  "object_text_x_roc": 1.2639351081530783,
+  "object_text_x_libdeflate": 1.9666666666666666,
+  "roc_object_text_bytes": 57696,
+  "libdeflate_object_text_bytes": 37080,
+  "root_code_bytes": 52040,
+  "root_frame_bytes": 3840,
+  "source_blocks": 8223,
+  "root_direct_calls": 370,
+  "emit_seconds": 2.2353352908976376,
+  "peak_resident_bytes": 226525184,
+  "object_sha256": "cf4effbad2d62782ce6f7fb438773bf00ad28de19f70db17ca0cd19fda2f9592",
+  "metadata_sha256": "eda3f0bf7d97b4bdf4978957962f4c2a791be7445bb62f7d88083f1f4bb0a031"
+}

@@ -1,0 +1,15 @@
+{
+  "source_sha256": "71f3700e260b332db9ec33a4effc470a9c938df760962d4be097b0ca50665386",
+  "original_source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "bytecode_sha256": "0a9f6029ea68881467cb53cda64bda747389aaa8dea29d008e417cad8386fe00",
+  "encoder_sha256": "3b2ee18e550aebfb229eb12437e5f16e3aea097178007bab3c6d550cf4053538",
+  "worker_sha256": "2663e56012ba8409e9edb8312c13ef96c71a45ee1cf8ffe154bf5a00fdf67f8c",
+  "smoke_sha256": "e4b15f7e07d2e7547e57bf4b22a001d3cb42c5077acd8745f6a89c74b1e0cdf2",
+  "exact_calls": 162,
+  "emit": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/growth-packed-scope/compiler/compile_profile",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/growth-ordinal/small-scratch/small-scratch.mec",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/growth-packed-scope/scoped-small-scratch/frontend",
+    "compact"
+  ]
+}

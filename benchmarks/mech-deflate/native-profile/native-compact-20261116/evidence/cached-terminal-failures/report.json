@@ -1,0 +1,34 @@
+{
+  "scope": "Apple M1 standalone parser, pinned Rust opt-level 3 and mimalloc",
+  "source_revision": "78b064c5bb70937db72db21ebd3ab2fd556816c3",
+  "exact_outputs": {
+    "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056",
+    "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+    "source_bytes": 243209,
+    "parser_steps": 3967302,
+    "events": 718353
+  },
+  "same_tree_and_work_in_every_trial": true,
+  "median_parse_seconds": {
+    "before": 1.885779125,
+    "candidate": 1.8783937499999999
+  },
+  "median_paired_ratio": 0.9972446280009264,
+  "faster_pairs": 6,
+  "timed_pairs": 8,
+  "median_peak_rss_bytes": {
+    "before": 113999872.0,
+    "candidate": 113983488.0
+  },
+  "census": {
+    "scope": "Exact terminal cache probes and resolved one-shot failures.",
+    "probes": 5535739,
+    "hits": 4263296,
+    "negative_hits": 3874036,
+    "eligible_batch_negative_hits": 3874036,
+    "eligible_fraction_of_probes": 0.6998227336946341
+  },
+  "unit_tests": "test result: ok. 536 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.33s",
+  "matched_snapshots": 60,
+  "decision": "Archive the near-flat standalone result below the prior 2% screen."
+}

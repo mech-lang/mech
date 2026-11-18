@@ -1,0 +1,8 @@
+{
+  "base": "e8b2bb4f2d8c44390e9a67dfe054c6ff40341249",
+  "patch_sha256": "6c9971df60510dc16da0d92a40f11940a67191e3fb19c43413b29d3ede90f481",
+  "production_sources": {
+    "hosts/gpu/src/native_artifact/program/compact/emit.rs": "7ff97d65d2aa1791a618a52e427b3e77dbc02b72e492a14bbbfba819ef28494a"
+  },
+  "prototype_sha256": "ae522d5dc293dda31e903be9b9b095743e5216a2568e7081104430eac5530d2d"
+}

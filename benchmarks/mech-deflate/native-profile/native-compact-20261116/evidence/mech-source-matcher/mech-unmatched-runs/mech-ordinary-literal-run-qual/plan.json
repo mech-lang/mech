@@ -1,0 +1,139 @@
+{
+  "objective": "Isolate the shared-path runtime effect with ID-independent flags. Focused stages only.",
+  "focus_cases": [
+    "empty",
+    "seven-stored-prefix",
+    "320-overlap",
+    "random-64",
+    "prefix-random-1024",
+    "prefix-random-4096",
+    "prefix-random-8192",
+    "prefix-random-32769",
+    "prefix-random-1048576",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-periodic-16384",
+    "heldout-random-65537"
+  ],
+  "runs": [
+    {
+      "id": "mech-ordinary-literal-run-qual-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 24
+    },
+    {
+      "id": "mech-ordinary-literal-run-qual-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 24
+    }
+  ],
+  "policy": {
+    "path": "native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification-policy-v1.json",
+    "sha256": "1889b824a300e5b2c5c8bfb40aea1652cb525cb740152706ec5bf72543bce984"
+  },
+  "timer": {
+    "path": "compare-library.py",
+    "sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a"
+  },
+  "driver": {
+    "path": "mech-unmatched-runs/focus.py",
+    "sha256": "74da7c1757c7212f377426fc53eb730f07b99f6c5675e65fb2f8feab40e85f22"
+  },
+  "as_run_inventory": {
+    "path": "fixtures.json",
+    "sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+  },
+  "pinned_peers": {
+    "path": "pinned-peers/pins.json",
+    "sha256": "db5a289d7a929176e5a1c9efbff5f69702596b0dccba9f2cace86d78cc18902d"
+  },
+  "fixture_content_sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+  "bindings": {
+    "mech-control": {
+      "program.o": {
+        "path": "mech-unmatched-runs/expanded-fuel-proof/expanded-control/program.o",
+        "sha256": "374cfecee5332c5520ae429e0a2c27eaa7007b3b2f75f346531de202a51b34e1"
+      },
+      "metadata.json": {
+        "path": "mech-unmatched-runs/expanded-fuel-proof/expanded-control/metadata.json",
+        "sha256": "5f6158242e00c0bf05fc5f0bde650fdc762076d9c6b2c0d94e475e128b00c02e"
+      },
+      "runtime.json": {
+        "path": "mech-unmatched-runs/expanded-fuel-proof/expanded-control/runtime.json",
+        "sha256": "6815ddfbebcdc81fc1e55a1b063a5a3d50b34cbe6542b80b5a61f1e778344331"
+      },
+      "mech-worker": {
+        "path": "mech-unmatched-runs/expanded-fuel-proof/expanded-control/mech-worker",
+        "sha256": "f9797804d0e518bdbce2f48d4844d406c8b1cd720dcd7551bd00fb39b8b49e36"
+      }
+    },
+    "mech-experiment": {
+      "program.o": {
+        "path": "mech-unmatched-runs/expanded-fuel-proof/expanded-literal-run/program.o",
+        "sha256": "cf773d1e33ba08a6d7323525e95b8f3c0c38be7667a0a7967ed3961177ec420a"
+      },
+      "metadata.json": {
+        "path": "mech-unmatched-runs/expanded-fuel-proof/expanded-literal-run/metadata.json",
+        "sha256": "7d858a68018c3a68eb43c133966ae72002061971fccfd01b446018893b92c7c7"
+      },
+      "runtime.json": {
+        "path": "mech-unmatched-runs/expanded-fuel-proof/expanded-literal-run/runtime.json",
+        "sha256": "8434a3aa17910bc16599fd88ff33274018f6c02cb5c683f6a156e428e8ebc901"
+      },
+      "mech-worker": {
+        "path": "mech-unmatched-runs/expanded-fuel-proof/expanded-literal-run/mech-worker",
+        "sha256": "98ef8697fedff0578c915b0fe44bef050232e0f08bc667eaa9c9d8c944dd8168"
+      }
+    }
+  },
+  "identities": {
+    "mech-control": {
+      "worker": "f9797804d0e518bdbce2f48d4844d406c8b1cd720dcd7551bd00fb39b8b49e36",
+      "metadata": "5f6158242e00c0bf05fc5f0bde650fdc762076d9c6b2c0d94e475e128b00c02e"
+    },
+    "mech-experiment": {
+      "worker": "98ef8697fedff0578c915b0fe44bef050232e0f08bc667eaa9c9d8c944dd8168",
+      "metadata": "7d858a68018c3a68eb43c133966ae72002061971fccfd01b446018893b92c7c7"
+    },
+    "roc": {
+      "worker": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+      "metadata": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee"
+    },
+    "libdeflate": {
+      "worker": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "metadata": null
+    },
+    "environment_sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+    "contract_sha256": "f8d0b099053f18375d9b2122fd993d7a34cc8cffab47bd7c3fd9a7e8a9ed58d7"
+  },
+  "compiler_source": "b72b7419b39b22765fe1eed6b5c636e63964b905",
+  "acquisition_datasets": [
+    {
+      "path": "mech-unmatched-runs/mech-ordinary-literal-run-qual/environment.json",
+      "sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4"
+    },
+    {
+      "path": "mech-unmatched-runs/mech-ordinary-literal-run-qual/contract.json",
+      "sha256": "f8d0b099053f18375d9b2122fd993d7a34cc8cffab47bd7c3fd9a7e8a9ed58d7"
+    }
+  ],
+  "construction_plan": {
+    "path": "mech-unmatched-runs/native/plan.json",
+    "sha256": "8bde575553b20e744aac779e66ffe95da5a4eee16246935ef1d711fc8e2ae64d"
+  },
+  "qualification_driver": {
+    "path": "source-frame-copy-tails/full-timing.py",
+    "sha256": "f9fa19f1ef9876ee3484a339b619889ba94027cf35a76fa355e12813cea31d07"
+  },
+  "source_control": {
+    "path": "mech-unmatched-runs/expanded-fuel-proof/expanded-control/source.mec",
+    "sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299"
+  },
+  "source_experiment": {
+    "path": "mech-unmatched-runs/expanded-fuel-proof/expanded-literal-run/source.mec",
+    "sha256": "5f900ce0caff9e206a02ef39fb7aef7c10275e7d48bc2c3186c7924f0d014275"
+  },
+  "default_parse_admission": false
+}

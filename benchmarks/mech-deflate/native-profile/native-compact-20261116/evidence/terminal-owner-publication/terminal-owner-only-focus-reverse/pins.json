@@ -1,0 +1,148 @@
+{
+  "actors": {
+    "roc": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/roc-worker",
+        "/private/tmp/mech-wide-tier-round270-20261110/full-image/original/metadata.json",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+      ],
+      "binary_sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+      "metadata_sha256": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee",
+      "original_command": [
+        "/private/tmp/mech-matched-comparison-round224-20261109/reference-worker",
+        "/private/tmp/mech-wide-tier-round270-20261110/full-image/original/metadata.json",
+        "/private/tmp/mech-pr973-merged-compression-20261112/fixtures.json"
+      ]
+    },
+    "libdeflate": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/libdeflate-worker",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+      ],
+      "binary_sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "original_command": [
+        "/private/tmp/mech-wide-tier-round270-20261110/libdeflate-comparison/libdeflate-worker",
+        "/private/tmp/mech-pr973-merged-compression-20261112/fixtures.json"
+      ]
+    },
+    "mech-control": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-size-20261117/source-aligned/mech-worker",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-size-20261117/source-aligned/metadata.json",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+      ],
+      "binary_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+      "metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+    },
+    "mech-experiment": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/terminal-owner-only-native/final-candidate/mech-worker",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/terminal-owner-only-native/final-candidate/metadata.json",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+      ],
+      "binary_sha256": "aac83d01f73bf5af6f1be065eadb4dcc3e0dcd5492633b184e2c5853413c15e7",
+      "metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+    }
+  },
+  "input_inventory_sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4",
+  "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+  "libdeflate_source": {
+    "version": "1.26",
+    "git_revision": "92e6a0db9fa848d742f9eb286c92afc60f2c3dda",
+    "source_archive_sha256": "af56498149827f5a5e3f1ffb653c79c8c75557f3dc2caf6002cac38a59b844b7",
+    "source_bytes": 198808,
+    "source_url": "https://codeload.github.com/ebiggers/libdeflate/tar.gz/92e6a0db9fa848d742f9eb286c92afc60f2c3dda"
+  },
+  "matching_packet_abi": {
+    "symbol": "mech_compact_closed_v2",
+    "inputs": [
+      {
+        "input_offset": 0,
+        "name": "mech-source-input-696e707574",
+        "type": {
+          "kind": {
+            "array_element": {
+              "kind": {
+                "float": false,
+                "scalar_bytes": 1,
+                "signed": false
+              },
+              "owners": [],
+              "packed_align": 1,
+              "packed_bytes": 1,
+              "words": 1
+            }
+          },
+          "owners": [
+            5
+          ],
+          "packed_align": 8,
+          "packed_bytes": null,
+          "words": 6
+        },
+        "value": 0
+      },
+      {
+        "input_offset": 6,
+        "name": "mech-source-input-6f7574707574",
+        "type": {
+          "kind": {
+            "array_element": {
+              "kind": {
+                "float": false,
+                "scalar_bytes": 1,
+                "signed": false
+              },
+              "owners": [],
+              "packed_align": 1,
+              "packed_bytes": 1,
+              "words": 1
+            }
+          },
+          "owners": [
+            5
+          ],
+          "packed_align": 8,
+          "packed_bytes": null,
+          "words": 6
+        },
+        "value": 1
+      }
+    ],
+    "input_words": 12,
+    "output_words": 6,
+    "output_types": [
+      {
+        "kind": {
+          "array_element": {
+            "kind": {
+              "float": false,
+              "scalar_bytes": 1,
+              "signed": false
+            },
+            "owners": [],
+            "packed_align": 1,
+            "packed_bytes": 1,
+            "words": 1
+          }
+        },
+        "owners": [
+          5
+        ],
+        "packed_align": 8,
+        "packed_bytes": null,
+        "words": 6
+      }
+    ]
+  },
+  "level": 12,
+  "native_four_actor_comparison": true,
+  "fresh_libdeflate_compressor_inside_timing": true,
+  "allocator": {
+    "path": "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+    "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+  },
+  "warmup_ms": 200,
+  "environment_sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+  "contract_sha256": "f8d0b099053f18375d9b2122fd993d7a34cc8cffab47bd7c3fd9a7e8a9ed58d7"
+}

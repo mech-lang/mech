@@ -1,0 +1,65 @@
+{
+  "random-64": {
+    "calls_per_batch": 64,
+    "blocks": 96,
+    "median_batch_seconds": 0.0007672715000000001,
+    "aa_x_by_physical_order": {
+      "candidate > duplicate-control > control": 0.9954417639541966,
+      "control > candidate > duplicate-control": 0.9557250666752066,
+      "duplicate-control > control > candidate": 0.9999592419843969,
+      "candidate > control > duplicate-control": 0.98345505064112,
+      "control > duplicate-control > candidate": 0.9552080272713973,
+      "duplicate-control > candidate > control": 1.0015683722570692
+    },
+    "aa_x_control_executes_first": {
+      "True": 0.9647063823741853,
+      "False": 0.9989864234553504
+    },
+    "aa_x_first_half": 0.969355510586814,
+    "aa_x_second_half": 0.9941951823527875,
+    "aa_x_lowest_block": 0.8109799795983142,
+    "aa_x_highest_block": 1.0636167541717867
+  },
+  "reymont-prefix-32769": {
+    "calls_per_batch": 64,
+    "blocks": 96,
+    "median_batch_seconds": 0.271234125,
+    "aa_x_by_physical_order": {
+      "candidate > control > duplicate-control": 0.9999721046120335,
+      "candidate > duplicate-control > control": 1.0012306990129773,
+      "control > duplicate-control > candidate": 1.0011229573791784,
+      "control > candidate > duplicate-control": 1.0004159415503138,
+      "duplicate-control > control > candidate": 0.9551652017972894,
+      "duplicate-control > candidate > control": 0.999700266124471
+    },
+    "aa_x_control_executes_first": {
+      "True": 1.0005035556174937,
+      "False": 0.9851313780999481
+    },
+    "aa_x_first_half": 0.9849604186067719,
+    "aa_x_second_half": 1.000677212931593,
+    "aa_x_lowest_block": 0.49006560436393504,
+    "aa_x_highest_block": 1.0143811824693678
+  },
+  "prefix-natural-16384": {
+    "calls_per_batch": 64,
+    "blocks": 96,
+    "median_batch_seconds": 0.12805650200000002,
+    "aa_x_by_physical_order": {
+      "candidate > control > duplicate-control": 1.0005188069279942,
+      "control > candidate > duplicate-control": 0.9848816248396008,
+      "duplicate-control > control > candidate": 0.9994302476422101,
+      "duplicate-control > candidate > control": 0.9959243288710394,
+      "candidate > duplicate-control > control": 1.0039206059923604,
+      "control > duplicate-control > candidate": 0.9999959517362577
+    },
+    "aa_x_control_executes_first": {
+      "True": 0.9951056171382682,
+      "False": 0.9997530393013728
+    },
+    "aa_x_first_half": 0.9991818386830305,
+    "aa_x_second_half": 0.9956744875098258,
+    "aa_x_lowest_block": 0.805616542470918,
+    "aa_x_highest_block": 1.0631890366848105
+  }
+}

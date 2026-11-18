@@ -194,6 +194,69 @@ impl LiteralCache {
         let work = entry.work;
         Some((result, work))
     }
+    /// Complete a fresh, sealed single-grapheme ASCII mismatch. The normal
+    /// scan charges one expected-scalar call, one prefix byte, two source
+    /// calls including lookahead, and one compared byte.
+    pub fn sealed_ascii_miss<S: ScanSource + ?Sized>(
+        &mut self,
+        source: &S,
+        literal: &'static str,
+        start: TextSize,
+        consume_end: TextSize,
+        context_end: TextSize,
+        allowance: u64,
+    ) -> Option<(Option<TextSize>, u64)> {
+        const SCAN_WORK: u64 = 5;
+        if allowance < SCAN_WORK + 3 {
+            return None;
+        }
+        let [wanted] = literal.as_bytes() else {
+            return None;
+        };
+        if !(b' '..=b'~').contains(wanted) {
+            return None;
+        }
+        let text = source
+            .contiguous_without_lookup_work()?
+            .get(..context_end.to_usize())?;
+        if !text.is_char_boundary(consume_end.to_usize()) {
+            return None;
+        }
+        let bytes = text.as_bytes();
+        let at = start.to_usize();
+        let next = at.checked_add(1)?;
+        if next > consume_end.to_usize() {
+            return None;
+        }
+        let actual = *bytes.get(at)?;
+        if actual == *wanted
+            || !(b' '..=b'~').contains(&actual)
+            || !bytes.get(next)?.is_ascii()
+            || (at > 0 && !bytes[at - 1].is_ascii())
+        {
+            return None;
+        }
+        self.remember(
+            Self::slot(literal, start),
+            CacheEntry {
+                literal,
+                start,
+                consume_end,
+                context_end,
+                result: None,
+                work: SCAN_WORK,
+            },
+        );
+        Some((None, SCAN_WORK))
+    }
+
+    fn remember(&mut self, index: usize, entry: CacheEntry) {
+        if self.slots.is_empty() {
+            self.slots.resize(CACHE_CAPACITY, None);
+        }
+        self.slots[index] = Some(entry);
+    }
+
     fn slot(literal: &str, start: TextSize) -> usize {
         let mut hash = 0x811c9dc5_u32;
         for byte in literal.bytes() {
@@ -240,17 +303,17 @@ impl LiteralScan<'static> {
         let before = *allowance;
         let result = self.advance(source, consume_end, context_end, final_input, allowance);
         if let LiteralProgress::Complete(result) = result {
-            if cache.slots.is_empty() {
-                cache.slots.resize(CACHE_CAPACITY, None);
-            }
-            cache.slots[index] = Some(CacheEntry {
-                literal: self.literal,
-                start,
-                consume_end,
-                context_end,
-                result,
-                work: before - *allowance,
-            });
+            cache.remember(
+                index,
+                CacheEntry {
+                    literal: self.literal,
+                    start,
+                    consume_end,
+                    context_end,
+                    result,
+                    work: before - *allowance,
+                },
+            );
         }
         result
     }
@@ -309,6 +372,45 @@ mod tests {
             end = at + found.len();
         }
         Some(TextSize(end as u32))
+    }
+
+    #[test]
+    fn sealed_ascii_miss_matches_the_scan_and_cache_work() {
+        for (text, start, expected, accepts) in [
+            ("a+b", 1, "-", true),
+            ("a+b", 1, "+", false),
+            ("a+b", 1, "--", false),
+            ("a+\u{0301}b", 1, "-", false),
+            ("é+b", 2, "-", false),
+            ("a+", 1, "-", false),
+            ("x+", 0, "-", true),
+        ] {
+            let start = TextSize(start);
+            let end = TextSize(text.len() as u32);
+            for budget in 0..=10 {
+                let mut candidate = LiteralCache::default();
+                let admitted = candidate.sealed_ascii_miss(text, expected, start, end, end, budget);
+                assert_eq!(
+                    admitted.is_some(),
+                    accepts && budget >= 8,
+                    "{text:?} {budget}"
+                );
+                if let Some((result, charged)) = admitted {
+                    let mut ordinary = LiteralCache::default();
+                    let mut scan = LiteralScan::new(expected, start, Some(end)).unwrap();
+                    let mut remaining = budget;
+                    assert_eq!(
+                        scan.advance_cached(text, end, end, true, &mut remaining, &mut ordinary),
+                        LiteralProgress::Complete(result),
+                    );
+                    assert_eq!(budget - remaining, charged);
+                    assert_eq!(
+                        ordinary.replay(expected, start, end, end, budget),
+                        candidate.replay(expected, start, end, end, budget),
+                    );
+                }
+            }
+        }
     }
 
     #[test]

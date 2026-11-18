@@ -1,0 +1,152 @@
+{
+  "prefix-random-1048576": {
+    "adjacent_mask_shift_pairs": [
+      {
+        "block": "0x2d8",
+        "instruction_index": 5,
+        "visits": 1048541,
+        "remaining_bit_width": 16,
+        "and": "x5, x5, #0xffffffff",
+        "lsr": "x20, x5, #16"
+      },
+      {
+        "block": "0x2d8",
+        "instruction_index": 13,
+        "visits": 1048541,
+        "remaining_bit_width": 16,
+        "and": "x0, x0, #0xffffffff",
+        "lsr": "x24, x0, #16"
+      }
+    ],
+    "upper_bound_dynamic_merges": 2097082
+  },
+  "prefix-random-4096": {
+    "adjacent_mask_shift_pairs": [
+      {
+        "block": "0x2d8",
+        "instruction_index": 5,
+        "visits": 4092,
+        "remaining_bit_width": 16,
+        "and": "x5, x5, #0xffffffff",
+        "lsr": "x20, x5, #16"
+      },
+      {
+        "block": "0x2d8",
+        "instruction_index": 13,
+        "visits": 4092,
+        "remaining_bit_width": 16,
+        "and": "x0, x0, #0xffffffff",
+        "lsr": "x24, x0, #16"
+      }
+    ],
+    "upper_bound_dynamic_merges": 8184
+  },
+  "prefix-natural-8192": {
+    "adjacent_mask_shift_pairs": [
+      {
+        "block": "0x2d8",
+        "instruction_index": 5,
+        "visits": 8188,
+        "remaining_bit_width": 16,
+        "and": "x5, x5, #0xffffffff",
+        "lsr": "x20, x5, #16"
+      },
+      {
+        "block": "0x2d8",
+        "instruction_index": 13,
+        "visits": 8188,
+        "remaining_bit_width": 16,
+        "and": "x0, x0, #0xffffffff",
+        "lsr": "x24, x0, #16"
+      }
+    ],
+    "upper_bound_dynamic_merges": 16376
+  },
+  "prefix-natural-1024": {
+    "adjacent_mask_shift_pairs": [
+      {
+        "block": "0x2d8",
+        "instruction_index": 5,
+        "visits": 1020,
+        "remaining_bit_width": 16,
+        "and": "x5, x5, #0xffffffff",
+        "lsr": "x20, x5, #16"
+      },
+      {
+        "block": "0x2d8",
+        "instruction_index": 13,
+        "visits": 1020,
+        "remaining_bit_width": 16,
+        "and": "x0, x0, #0xffffffff",
+        "lsr": "x24, x0, #16"
+      },
+      {
+        "block": "0x4f4",
+        "instruction_index": 4,
+        "visits": 8,
+        "remaining_bit_width": 16,
+        "and": "x6, x10, #0xffffffff",
+        "lsr": "x6, x6, #16"
+      }
+    ],
+    "upper_bound_dynamic_merges": 2048
+  },
+  "320-overlap": {
+    "adjacent_mask_shift_pairs": [
+      {
+        "block": "0x2d8",
+        "instruction_index": 5,
+        "visits": 316,
+        "remaining_bit_width": 16,
+        "and": "x5, x5, #0xffffffff",
+        "lsr": "x20, x5, #16"
+      },
+      {
+        "block": "0x2d8",
+        "instruction_index": 13,
+        "visits": 316,
+        "remaining_bit_width": 16,
+        "and": "x0, x0, #0xffffffff",
+        "lsr": "x24, x0, #16"
+      },
+      {
+        "block": "0x4f4",
+        "instruction_index": 4,
+        "visits": 312,
+        "remaining_bit_width": 16,
+        "and": "x6, x10, #0xffffffff",
+        "lsr": "x6, x6, #16"
+      }
+    ],
+    "upper_bound_dynamic_merges": 944
+  },
+  "prefix-periodic-1024": {
+    "adjacent_mask_shift_pairs": [
+      {
+        "block": "0x2d8",
+        "instruction_index": 5,
+        "visits": 1020,
+        "remaining_bit_width": 16,
+        "and": "x5, x5, #0xffffffff",
+        "lsr": "x20, x5, #16"
+      },
+      {
+        "block": "0x2d8",
+        "instruction_index": 13,
+        "visits": 1020,
+        "remaining_bit_width": 16,
+        "and": "x0, x0, #0xffffffff",
+        "lsr": "x24, x0, #16"
+      },
+      {
+        "block": "0x4f4",
+        "instruction_index": 4,
+        "visits": 975,
+        "remaining_bit_width": 16,
+        "and": "x6, x10, #0xffffffff",
+        "lsr": "x6, x6, #16"
+      }
+    ],
+    "upper_bound_dynamic_merges": 3015
+  }
+}

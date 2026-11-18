@@ -1,0 +1,102 @@
+[
+  {
+    "family": 0,
+    "windows": "8827:196:176,8882:209:189,8937:222:202,8992:235:215,9102:261:241",
+    "exit_code": 0,
+    "object_text_bytes": 73500,
+    "root_code_bytes": 52244,
+    "root_frame_bytes": 3920,
+    "root_direct_calls": 367,
+    "emit_seconds": 2.260988417081535
+  },
+  {
+    "family": 1,
+    "windows": "183:195:176,196:208:189,209:221:202,222:234:215,248:260:241",
+    "exit_code": 0,
+    "object_text_bytes": 73524,
+    "root_code_bytes": 52272,
+    "root_frame_bytes": 3920,
+    "root_direct_calls": 367,
+    "emit_seconds": 2.2405194169841707
+  },
+  {
+    "family": 2,
+    "windows": "182:8879:176,195:8934:189,208:8989:202,221:9044:215,247:9154:241",
+    "exit_code": 0,
+    "object_text_bytes": 73532,
+    "root_code_bytes": 52272,
+    "root_frame_bytes": 3904,
+    "root_direct_calls": 368,
+    "emit_seconds": 2.2520348331891
+  },
+  {
+    "family": 3,
+    "windows": "8833:8879:176,8888:8934:189,8943:8989:202,8998:9044:215,9108:9154:241",
+    "exit_code": 0,
+    "object_text_bytes": 72920,
+    "root_code_bytes": 52152,
+    "root_frame_bytes": 3840,
+    "root_direct_calls": 372,
+    "emit_seconds": 2.2394761252216995
+  },
+  {
+    "family": 4,
+    "windows": "8833:196:176,8888:209:189,8943:222:202,8998:235:215,9108:261:241",
+    "exit_code": 0,
+    "object_text_bytes": 73204,
+    "root_code_bytes": 52440,
+    "root_frame_bytes": 3888,
+    "root_direct_calls": 372,
+    "emit_seconds": 2.241531291976571
+  },
+  {
+    "family": 5,
+    "windows": "8824:8882:176,8934:8992:202,9099:9157:241",
+    "exit_code": 0,
+    "object_text_bytes": 72924,
+    "root_code_bytes": 52040,
+    "root_frame_bytes": 3840,
+    "root_direct_calls": 370,
+    "emit_seconds": 2.2353352908976376
+  },
+  {
+    "family": 6,
+    "windows": "8827:208:176,8937:234:202",
+    "exit_code": 0,
+    "object_text_bytes": 73244,
+    "root_code_bytes": 52036,
+    "root_frame_bytes": 4032,
+    "root_direct_calls": 366,
+    "emit_seconds": 2.238787791226059
+  },
+  {
+    "family": 7,
+    "windows": "183:8934:176,209:9044:202",
+    "exit_code": 0,
+    "object_text_bytes": 73252,
+    "root_code_bytes": 52036,
+    "root_frame_bytes": 4032,
+    "root_direct_calls": 366,
+    "emit_seconds": 2.253588458057493
+  },
+  {
+    "family": 8,
+    "windows": "8876:8934:189,8986:9044:215",
+    "exit_code": 0,
+    "object_text_bytes": 73320,
+    "root_code_bytes": 51464,
+    "root_frame_bytes": 3696,
+    "root_direct_calls": 370,
+    "emit_seconds": 2.2407758748158813
+  },
+  {
+    "family": 9,
+    "windows": "8632:144:120,8738:176:152",
+    "exit_code": 0,
+    "object_text_bytes": 72520,
+    "root_code_bytes": 52008,
+    "root_frame_bytes": 3744,
+    "root_direct_calls": 372,
+    "emit_seconds": 2.233331334311515
+  }
+]

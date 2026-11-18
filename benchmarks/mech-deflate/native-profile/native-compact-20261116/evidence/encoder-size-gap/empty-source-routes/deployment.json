@@ -1,0 +1,112 @@
+{
+  "plan_sha256": "cddca899ce9617b9b8a64acc4befff2cdb334d2f5478b12f21ee4156eb8f7b8c",
+  "medians": {
+    "source-control": {
+      "source": 2.3925610419828445,
+      "link": 0.03413718752563,
+      "source_through_link": 2.4269981663674116,
+      "strip": 0.01027745846658945,
+      "source_through_strip": 2.43754631257616
+    },
+    "source-forwarded": {
+      "source": 2.3475807707291096,
+      "link": 0.036207207944244146,
+      "source_through_link": 2.386758791981265,
+      "strip": 0.010310124838724732,
+      "source_through_strip": 2.39714118745178
+    },
+    "shared-free": {
+      "source": 2.410880125593394,
+      "link": 0.03463356266729534,
+      "source_through_link": 2.447286749491468,
+      "strip": 0.010382625041529536,
+      "source_through_strip": 2.457743354141712
+    },
+    "roc": {
+      "source": 2.954895957838744,
+      "link": 0.03434079163707793,
+      "source_through_link": 2.9896555836312473,
+      "strip": 0.010345583548769355,
+      "source_through_strip": 3.0001033961307257
+    },
+    "libdeflate": {
+      "source": 0.4479798749089241,
+      "link": 0.034053167095407844,
+      "source_through_link": 0.48233764595352113,
+      "strip": 0.010224353987723589,
+      "source_through_strip": 0.4927195005584508
+    }
+  },
+  "paired_ratios": {
+    "source-control": {
+      "source-control": 1.0,
+      "roc": 0.8125664659520422,
+      "libdeflate": 5.031771927420564
+    },
+    "source-forwarded": {
+      "source-control": 0.9832629748697254,
+      "roc": 0.7982430645485437,
+      "libdeflate": 4.953312506218055
+    },
+    "shared-free": {
+      "source-control": 1.0053393781560853,
+      "roc": 0.8165165729427006,
+      "libdeflate": 5.060266349325083
+    }
+  },
+  "paired_forwarding_saves": [
+    0.046207332983613014,
+    0.07739575067535043,
+    0.03906149975955486,
+    0.04219387425109744,
+    0.022230292204767466,
+    0.036482041236013174,
+    0.05666391598060727,
+    0.0316724581643939,
+    0.03806137479841709,
+    0.04674004064872861
+  ],
+  "median_forwarding_saves": 0.04062768700532615,
+  "phases": {
+    "source-control": {
+      "parse": 0.7870874999999999,
+      "catalog": 1.99375e-05,
+      "frontend": 0.22662704150000001,
+      "artifact": 0.0070308125,
+      "encode": 0.0025992295000000004,
+      "native": 1.343651479
+    },
+    "source-forwarded": {
+      "parse": 0.786982563,
+      "catalog": 1.8792e-05,
+      "frontend": 0.22671760400000002,
+      "artifact": 0.0070520625,
+      "encode": 0.0026055415,
+      "native": 1.2972025625
+    },
+    "shared-free": {
+      "parse": 0.789207333,
+      "catalog": 2.10625e-05,
+      "frontend": 0.2292235205,
+      "artifact": 0.0070526455,
+      "encode": 0.002606625,
+      "native": 1.3504402295
+    }
+  },
+  "stripped_sizes": {
+    "source-control": 276056,
+    "source-forwarded": 276056,
+    "shared-free": 276056,
+    "roc": 191912,
+    "libdeflate": 155752
+  },
+  "load_after": [
+    2.1083984375,
+    2.177734375,
+    2.20654296875
+  ],
+  "host": "Apple M1, macOS 15.6.1, arm64",
+  "scope": "Fresh deployment source through final executable link with fixed support prebuilt.",
+  "measured_trials": 10,
+  "faster_forwarding_trials": 10
+}

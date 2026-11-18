@@ -1,0 +1,137 @@
+{
+  "parent": "f11628e21630bd3cf9e3a662417b717709f45453",
+  "description": "Reuse retained event pages during tree construction, hash contiguous token bytes within the same work grants, and skip unused event maps in cached subtrees. Use 32-event journal pages.",
+  "changed_source_sha256": {
+    "src/syntax/src/document/parser/event.rs": {
+      "before_sha256": "3b8e5672ab0fa903a3323401ec2cfa8d26620e6f0281dbd1afac051615265e93",
+      "after_sha256": "83c7489e22ae7420982f8fd3af40c3ca0adcad13dcca0300d9a0b20f8b807eb6"
+    },
+    "src/syntax/src/document/parser/journal.rs": {
+      "before_sha256": "ec7454b7a998426e9dae45f1a66dfd46fe0c0f2467a70703f38e0a73ce31a6c1",
+      "after_sha256": "1c0dc8c04dfb92dca443248f6642caa6e5011d9e2458296f787686d98f7c921c"
+    },
+    "src/syntax/src/document/parser/tree_cache.rs": {
+      "before_sha256": "1e33d96728376f91004dfbc2b18b9655fd994d838a240d957cb74a4b5719b8e6",
+      "after_sha256": "dc03fa8290e03ac40e89ca1ddb00b66dee6b51a236ba5dc5151c4e0a8261312f"
+    }
+  },
+  "benchmark_host": "Apple M1",
+  "parser_only": {
+    "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+    "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056",
+    "same_parser_steps": 3967302,
+    "same_events": 718353,
+    "median_parse_seconds": {
+      "control": 3.5171291455,
+      "batched": 2.925666646
+    },
+    "median_peak_process_rss_bytes": {
+      "control": 130539520.0,
+      "batched": 115974144.0
+    },
+    "journal_page_screen_batched_parser": {
+      "page-4": {
+        "parse_seconds": 3.4428453335,
+        "peak_rss_bytes": 130564096.0
+      },
+      "page-8": {
+        "parse_seconds": 3.2095716665,
+        "peak_rss_bytes": 122093568.0
+      },
+      "page-16": {
+        "parse_seconds": 3.062705292,
+        "peak_rss_bytes": 117506048.0
+      },
+      "page-32": {
+        "parse_seconds": 3.0005961875000002,
+        "peak_rss_bytes": 115965952.0
+      }
+    },
+    "raw_trials": "selected-parser/parser-comparison.json"
+  },
+  "complete_build": {
+    "medians_seconds": {
+      "mech-control": {
+        "frontend": 4.0219734373968095,
+        "native": 2.23674154211767,
+        "link": 0.043234104523435235,
+        "total": 6.302984000183642,
+        "parse": 3.534607563
+      },
+      "mech-journal-pages": {
+        "frontend": 3.3825306457001716,
+        "native": 2.231717749964446,
+        "link": 0.03986275033093989,
+        "total": 5.658451271010563,
+        "parse": 2.929991167
+      },
+      "roc": {
+        "compile": 2.9515718538314104,
+        "link": 0.03476756205782294,
+        "total": 2.9866448119282722
+      },
+      "libdeflate": {
+        "compile": 0.4525462915189564,
+        "link": 0.03414697921834886,
+        "total": 0.48728443728759885
+      }
+    },
+    "ratios": {
+      "mech_over_preceding_mech": 0.8977416523420811,
+      "mech_over_roc": 1.8945846015607353,
+      "mech_over_libdeflate": 11.612214218265509
+    },
+    "sizes": {
+      "mech-control": {
+        "emitted_text_bytes": 72520,
+        "encoder_file_bytes": 160136,
+        "linked_text_bytes": 475444,
+        "executable_file_bytes": 956056,
+        "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c"
+      },
+      "mech-journal-pages": {
+        "emitted_text_bytes": 72520,
+        "encoder_file_bytes": 160136,
+        "linked_text_bytes": 475444,
+        "executable_file_bytes": 956056,
+        "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c"
+      },
+      "roc": {
+        "emitted_text_bytes": 57696,
+        "encoder_file_bytes": 79160,
+        "linked_text_bytes": 150416,
+        "executable_file_bytes": 230600,
+        "encoder_sha256": "56bdcd935d0814afc2b587a83374164c51c09491d86295d0f26f87a95fc7a6a4"
+      },
+      "libdeflate": {
+        "emitted_text_bytes": 37080,
+        "encoder_file_bytes": 52128,
+        "linked_text_bytes": 129900,
+        "executable_file_bytes": 210168,
+        "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726"
+      }
+    },
+    "equal_across_both_mech_frontends": [
+      "frontend/program.mecb",
+      "native/program.o",
+      "native/metadata.json",
+      "compressor"
+    ],
+    "records": "builds/timing.json"
+  },
+  "qualification": {
+    "native_syntax_unit_tests": 531,
+    "new_worker_exact_output_alias_inflate_calls": 324,
+    "rebuild_variants": [
+      "baseline",
+      "fresh-owner-counts"
+    ],
+    "rebuild_exact_calls_per_variant": 162,
+    "retained_pinned_artifacts_byte_identical": {
+      "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+      "mech-worker": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6"
+    },
+    "runtime_scope": "The pinned benchmark worker is byte-identical to the retained 81/61 worker; no new runtime score was measured by this parser study."
+  }
+}

@@ -190,6 +190,9 @@ jobs:
         timeout-minutes: 2
         with:
           ref: ${{ inputs.validation_ref }}
+          # Reuse GitHub's advertised branch pack; shallow merge-SHA fetches
+          # repeatedly exhausted the checkout bound for this evidence tree.
+          fetch-depth: 0
       - name: Record exact canonical hosted checkout
         timeout-minutes: 2
         env:
@@ -281,8 +284,8 @@ jobs:
   canonical-policy:
     name: Same-binary native policy controls
     runs-on: ubuntu-latest
-    # Serial Actions ceilings total 308 minutes, with orchestration headroom.
-    timeout-minutes: 320
+    # Serial Actions ceilings total 311 minutes, with orchestration headroom.
+    timeout-minutes: 323
     env:
       RUSTUP_TOOLCHAIN: nightly-2026-03-03
       CARGO_BUILD_JOBS: "1"
@@ -295,6 +298,9 @@ jobs:
         timeout-minutes: 2
         with:
           ref: ${{ inputs.validation_ref }}
+          # Reuse GitHub's advertised branch pack; shallow merge-SHA fetches
+          # repeatedly exhausted the checkout bound for this evidence tree.
+          fetch-depth: 0
       - name: Record exact benchmark policy checkout
         timeout-minutes: 2
         env:
@@ -323,7 +329,7 @@ jobs:
         run: |
           cargo +nightly-2026-03-03 fetch --locked
           cargo +nightly-2026-03-03 fetch --locked --manifest-path vendor/cranelift-codegen/Cargo.toml
-      - name: Verify Apple ARM64 cold epilogues on Linux
+      - name: Verify Apple ARM64 cold epilogues and tails on Linux
         timeout-minutes: 11
         run: |
           python3 scripts/run-native-plan-stage.py --stage cold-epilogues --timeout-secs 600 -- \
@@ -331,8 +337,8 @@ jobs:
             --manifest-path vendor/cranelift-codegen/Cargo.toml \
             --target-dir target/cold-epilogues \
             --no-default-features --features std,unwind,arm64,experimental-cmp-reuse \
-            --lib isa::aarch64::cold_epilogues_tests::
-          python3 -c 'from pathlib import Path; import re; text = Path("target/native-plan-logs/cold-epilogues.log").read_text(); assert re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text) == [("8", "0", "0")]'
+            --lib isa::aarch64::cold_
+          python3 -c 'from pathlib import Path; import re; text = Path("target/native-plan-logs/cold-epilogues.log").read_text(); assert re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text) == [("13", "0", "0")]'
       - name: Compile benchmark policy contracts without execution
         timeout-minutes: 20
         run: |
@@ -352,6 +358,14 @@ jobs:
             --no-default-features --features canonical-native-benchmark-policy \
             --lib native_artifact::benchmark_policy:: -- --test-threads=1 --nocapture
           python3 -c 'from pathlib import Path; import re; text = Path("target/native-plan-logs/canonical-policy-kernel.log").read_text(); assert re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text) == [("13", "0", "0")]'
+      - name: Execute fresh-owner reference-count contracts
+        timeout-minutes: 3
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage canonical-policy-owner-counts --timeout-secs 120 -- \
+            cargo +nightly-2026-03-03 test --locked --offline -j1 -p mech-gpu \
+            --no-default-features --features canonical-native-benchmark-policy \
+            --lib native_artifact::program::compact::owner_counts::tests:: -- --test-threads=1 --nocapture
+          python3 -c 'from pathlib import Path; import re; text = Path("target/native-plan-logs/canonical-policy-owner-counts.log").read_text(); assert re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored;", text) == [("5", "0", "0")]'
       - name: Execute benchmark generation and ordinary hosted contracts
         timeout-minutes: 10
         run: |
@@ -415,6 +429,9 @@ jobs:
         timeout-minutes: 2
         with:
           ref: ${{ inputs.validation_ref }}
+          # Reuse GitHub's advertised branch pack; shallow merge-SHA fetches
+          # repeatedly exhausted the checkout bound for this evidence tree.
+          fetch-depth: 0
       - name: Record exact public canonical CLI checkout and source pins
         timeout-minutes: 2
         env:

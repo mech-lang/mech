@@ -1,0 +1,30 @@
+{
+  "initial_replay_sha256": "a3cc06495a60758541635fccf13119408d48226131f321ad0cdc44b46d61a2d7",
+  "initial_plan_sha256": "98cbea5220c92cec03b3755bff56e6259a7759cde5b9710705d923a0ffd95889",
+  "cases": [
+    "seven-stored-prefix",
+    "prefix-random-4096",
+    "prefix-repeated-32767",
+    "prefix-repeated-32768",
+    "prefix-repeated-32769",
+    "prefix-repeated-262144"
+  ],
+  "worker_sha256": {
+    "control": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41",
+    "duplicate-control": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41",
+    "candidate": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9"
+  },
+  "repetitions_per_order": 32,
+  "batch_floor": 64,
+  "seed": 9937176802,
+  "driver": {
+    "path": "measure-cold-epilogues-followup.py",
+    "sha256": "8b88cb5f344f9a94c7a4d6e0b602f932ff02e659a4ccf3934f88c2f11bed8e0f"
+  },
+  "driver_wrapper": {
+    "path": "bound-baseline-qualification/repeatability.py",
+    "sha256": "3a1ae478e448cb6af729b73b75ade3b1c1ae11c4c249a83622b304c48b05c96b"
+  },
+  "environment_sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+  "contract_sha256": "f8d0b099053f18375d9b2122fd993d7a34cc8cffab47bd7c3fd9a7e8a9ed58d7"
+}

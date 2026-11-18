@@ -1,0 +1,58 @@
+{
+  "source_case": {
+    "name": "prefix-natural-4096",
+    "family": "natural",
+    "input": "/private/tmp/mech-work-ledger-round248-20261109/prefix-fixtures/prefix-natural-4096/input.input",
+    "prefix": "/private/tmp/mech-work-ledger-round248-20261109/prefix-fixtures/prefix-natural-4096/output.prefix",
+    "expected": "/private/tmp/mech-work-ledger-round248-20261109/prefix-fixtures/prefix-natural-4096/expected.deflate",
+    "capacity": 4101,
+    "input_bytes": 4096,
+    "prefix_bytes": 0,
+    "raw_bytes": 983,
+    "input_sha256": "849382ed7bd61eddf344a7ab603377c5bc5cfcc6a4ae6a2dc3d62936bbaea7ba",
+    "expected_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+    "frozen_stream_sha256": "fc42c772bf7961598b23936784396392710995c5273074d0f0aba226ef924e2a",
+    "exact_prefix": true,
+    "reference_command": [
+      "/private/tmp/mech-matched-comparison-round224-20261109/reference-worker",
+      "--oracle",
+      "/private/tmp/mech-work-ledger-round248-20261109/prefix-fixtures/prefix-natural-4096/input.input",
+      "/private/tmp/mech-work-ledger-round248-20261109/prefix-fixtures/prefix-natural-4096/output.prefix",
+      "4101",
+      "/private/tmp/mech-work-ledger-round248-20261109/prefix-fixtures/prefix-natural-4096/expected.deflate"
+    ]
+  },
+  "schedule": [
+    "libdeflate",
+    "current",
+    "bottom-tested",
+    "bottom-tested",
+    "current",
+    "libdeflate"
+  ],
+  "sample_interval_ms": 1,
+  "sample_duration_seconds": 3,
+  "actors": {
+    "libdeflate": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/libdeflate-worker",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+    ],
+    "current": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/frame-copy-v2/bound/worker-checks/shared-frame-copies/mech-worker",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/frame-copy-v2/bound/worker-checks/shared-frame-copies/metadata.json",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+    ],
+    "bottom-tested": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-kept-root-layout/bound/mech-worker",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-kept-root-layout/bound/metadata.json",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+    ]
+  },
+  "worker_sha256": {
+    "libdeflate": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+    "current": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+    "bottom-tested": "93bac0605cdad991dc0a6a5fe3eb236dda77b8bbf61e854c1f2be2e75d1d9b7c"
+  },
+  "fixture_inventory_sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4",
+  "untimed": true
+}

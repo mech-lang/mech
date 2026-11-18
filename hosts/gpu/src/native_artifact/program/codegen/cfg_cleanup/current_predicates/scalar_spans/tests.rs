@@ -207,6 +207,9 @@ enum PackedSpan {
     Short,
     OtherLength,
     NextPosition,
+    CheckedNextImmediate,
+    CheckedNextWord,
+    WrappingOffset,
 }
 
 type PackedEntry = unsafe extern "C" fn(*const u8, u64, u64, u64, u64, u64) -> u64;
@@ -252,9 +255,14 @@ fn compile_packed_span(
         b.ins().jump(extent_check, &[]);
     }
     b.switch_to_block(extent_check);
-    let minimum = b
-        .ins()
-        .iconst(types::I64, if shape == PackedSpan::Short { 3 } else { 4 });
+    let minimum = b.ins().iconst(
+        types::I64,
+        match shape {
+            PackedSpan::Short => 3,
+            PackedSpan::CheckedNextImmediate | PackedSpan::CheckedNextWord => 5,
+            _ => 4,
+        },
+    );
     let wide = b
         .ins()
         .icmp(IntCC::UnsignedGreaterThanOrEqual, extent, minimum);
@@ -271,10 +279,14 @@ fn compile_packed_span(
     let fits = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, end, length);
     b.ins().brif(fits, packed_check, &[], rejected, &[]);
     b.switch_to_block(packed_check);
-    let start = if shape == PackedSpan::NextPosition {
-        b.ins().iadd_imm(base, 1)
-    } else {
-        base
+    let start = match shape {
+        PackedSpan::NextPosition | PackedSpan::CheckedNextImmediate => b.ins().iadd_imm(base, 1),
+        PackedSpan::CheckedNextWord => {
+            let one = b.ins().iconst(types::I64, 1);
+            b.ins().iadd(one, base)
+        }
+        PackedSpan::WrappingOffset => b.ins().iadd_imm(base, -2),
+        _ => base,
     };
     let fits = b.ins().icmp(IntCC::UnsignedLessThan, start, limit);
     b.ins().brif(fits, read, &[], default, &[]);
@@ -292,8 +304,11 @@ fn compile_packed_span(
     if optimize {
         let controls = CompilationControls::new(OptimizationOptions::default());
         assert_eq!(
-            prove_packed_bases(&controls, &mut context, module.isa()).unwrap(),
-            usize::from(shape == PackedSpan::Exact),
+            prove_packed_bases(&controls, &mut context, module.isa(), true).unwrap(),
+            usize::from(matches!(
+                shape,
+                PackedSpan::Exact | PackedSpan::CheckedNextImmediate | PackedSpan::CheckedNextWord
+            )),
             "{shape:?}"
         );
     }
@@ -310,7 +325,7 @@ fn compile_packed_span(
 }
 
 #[test]
-fn checked_extent_proves_only_its_current_packed_base() {
+fn checked_extent_proves_only_packed_accesses_it_covers() {
     let input = [2u8, 4, 9, 13, 17, 29, 33, 41];
     for shape in [
         PackedSpan::Exact,
@@ -319,6 +334,9 @@ fn checked_extent_proves_only_its_current_packed_base() {
         PackedSpan::Short,
         PackedSpan::OtherLength,
         PackedSpan::NextPosition,
+        PackedSpan::CheckedNextImmediate,
+        PackedSpan::CheckedNextWord,
+        PackedSpan::WrappingOffset,
     ] {
         let (_before, baseline) = compile_packed_span(shape, false);
         let (_after, optimized) = compile_packed_span(shape, true);
@@ -328,6 +346,7 @@ fn checked_extent_proves_only_its_current_packed_base() {
             (5, 3, 8, 8, 0),
             (5, 4, 8, 8, 0),
             (4, 4, 8, 8, 0),
+            (3, 5, 8, 8, 0),
             (0, 5, 8, 0, 1),
             (5, 2, 8, 8, 1),
             (u64::MAX, 4, 8, 8, 0),

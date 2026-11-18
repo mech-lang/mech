@@ -1,0 +1,685 @@
+{
+  "runs": [
+    {
+      "id": "branch-on-zero-focus-zero-branch-cases",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 16,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 16,
+            "mech-experiment": 16
+          },
+          "precision_supported_wins": {
+            "mech-control": 16,
+            "mech-experiment": 16
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "precision_supported_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "branch-on-zero-focus-zero-branch-cases-reverse",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 16,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 16,
+            "mech-experiment": 16
+          },
+          "precision_supported_wins": {
+            "mech-control": 16,
+            "mech-experiment": 16
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "precision_supported_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    }
+  ],
+  "cases": {
+    "empty": {
+      "decision": "regression",
+      "runs": {
+        "branch-on-zero-focus-zero-branch-cases": {
+          "estimate": 0.031124670351855732,
+          "lower": 0.01732021967935604,
+          "upper": 0.048108422615070534
+        },
+        "branch-on-zero-focus-zero-branch-cases-reverse": {
+          "estimate": 0.00031186277499228865,
+          "lower": -0.008506061041692492,
+          "upper": 0.009064372492176842
+        }
+      },
+      "combined": {
+        "estimate": 0.015601417758420943,
+        "lower": 0.007286222548237742,
+        "upper": 0.02499932050547593
+      },
+      "adverse_runs": [
+        "branch-on-zero-focus-zero-branch-cases"
+      ],
+      "duplicate_controls": []
+    },
+    "one-stored": {
+      "decision": "unresolved",
+      "runs": {
+        "branch-on-zero-focus-zero-branch-cases": {
+          "estimate": 0.01418024981638788,
+          "lower": 0.005519485336430652,
+          "upper": 0.022580764168638412
+        },
+        "branch-on-zero-focus-zero-branch-cases-reverse": {
+          "estimate": -0.008115689591041031,
+          "lower": -0.01539613529265449,
+          "upper": -0.0008359130319667285
+        }
+      },
+      "combined": {
+        "estimate": 0.0029703274372145927,
+        "lower": -0.0025476349670560117,
+        "upper": 0.008547317767526152
+      },
+      "adverse_runs": [
+        "branch-on-zero-focus-zero-branch-cases"
+      ],
+      "duplicate_controls": []
+    },
+    "seven-stored-prefix": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-focus-zero-branch-cases": {
+          "estimate": 0.001612785220411972,
+          "lower": -0.006387158735259191,
+          "upper": 0.00968537248577106
+        },
+        "branch-on-zero-focus-zero-branch-cases-reverse": {
+          "estimate": -0.014446760857765417,
+          "lower": -0.024157286074068862,
+          "upper": -0.005023492029414323
+        }
+      },
+      "combined": {
+        "estimate": -0.006449435186989372,
+        "lower": -0.01263015064788553,
+        "upper": -0.00039472036954146805
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "eight-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-focus-zero-branch-cases": {
+          "estimate": -0.0019471606542162956,
+          "lower": -0.00552601473313008,
+          "upper": 0.001681765425854742
+        },
+        "branch-on-zero-focus-zero-branch-cases-reverse": {
+          "estimate": -0.0006936729528037588,
+          "lower": -0.004412003201707204,
+          "upper": 0.0030478319313844704
+        }
+      },
+      "combined": {
+        "estimate": -0.0013206134671345238,
+        "lower": -0.0038657502392770438,
+        "upper": 0.0012684161459435295
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-focus-zero-branch-cases": {
+          "estimate": -0.002810850803004916,
+          "lower": -0.004442883769635753,
+          "upper": -0.0012001022467933442
+        },
+        "branch-on-zero-focus-zero-branch-cases-reverse": {
+          "estimate": -0.004612499005765991,
+          "lower": -0.006331295515275559,
+          "upper": -0.0027773991181986313
+        }
+      },
+      "combined": {
+        "estimate": -0.0037120821580926,
+        "lower": -0.0048785836348761435,
+        "upper": -0.002541315593558635
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-focus-zero-branch-cases": {
+          "estimate": 0.001174913783316578,
+          "lower": -0.004511371558927113,
+          "upper": 0.006857417300067725
+        },
+        "branch-on-zero-focus-zero-branch-cases-reverse": {
+          "estimate": -0.001263831347259603,
+          "lower": -0.0062089444222164225,
+          "upper": 0.003985365192937129
+        }
+      },
+      "combined": {
+        "estimate": -4.520225002802025e-05,
+        "lower": -0.0038036516297671463,
+        "upper": 0.0038058183898666
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-focus-zero-branch-cases": {
+          "estimate": -0.00311756355601156,
+          "lower": -0.004908153349098554,
+          "upper": -0.0013487418832597298
+        },
+        "branch-on-zero-focus-zero-branch-cases-reverse": {
+          "estimate": -0.004514711420799067,
+          "lower": -0.0061678279704689976,
+          "upper": -0.0029218112766407067
+        }
+      },
+      "combined": {
+        "estimate": -0.003816382425920084,
+        "lower": -0.005051190439756326,
+        "upper": -0.0026028348899861387
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "reymont-prefix-32769": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-focus-zero-branch-cases": {
+          "estimate": -0.00014506043591233642,
+          "lower": -0.0012100041989067112,
+          "upper": 0.0008254499441522345
+        },
+        "branch-on-zero-focus-zero-branch-cases-reverse": {
+          "estimate": 0.0001081672791511945,
+          "lower": -0.0008869867924448105,
+          "upper": 0.0011135988235912997
+        }
+      },
+      "combined": {
+        "estimate": -1.8454594062911056e-05,
+        "lower": -0.000720383823375581,
+        "upper": 0.000676379700586649
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-mixed-131073": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-focus-zero-branch-cases": {
+          "estimate": 0.0014192151162459865,
+          "lower": -0.001757355559711904,
+          "upper": 0.005552339484257596
+        },
+        "branch-on-zero-focus-zero-branch-cases-reverse": {
+          "estimate": -0.00274147139890335,
+          "lower": -0.0034552670267535834,
+          "upper": -0.0020687353403754383
+        }
+      },
+      "combined": {
+        "estimate": -0.0006632934892800701,
+        "lower": -0.002293196657306096,
+        "upper": 0.0013618359787039847
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-4096": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-focus-zero-branch-cases": {
+          "estimate": -0.0018567810590226497,
+          "lower": -0.005271348312395063,
+          "upper": 0.0014594881491478695
+        },
+        "branch-on-zero-focus-zero-branch-cases-reverse": {
+          "estimate": -0.0015352192672041243,
+          "lower": -0.005943980212280819,
+          "upper": 0.0027141565564896553
+        }
+      },
+      "combined": {
+        "estimate": -0.0016960131103201936,
+        "lower": -0.004415226249580462,
+        "upper": 0.0009335944550523667
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-focus-zero-branch-cases": {
+          "estimate": -0.0029727952433195037,
+          "lower": -0.005038063089286782,
+          "upper": -0.0009606165046992521
+        },
+        "branch-on-zero-focus-zero-branch-cases-reverse": {
+          "estimate": -0.0008002950245634688,
+          "lower": -0.0035345305042280284,
+          "upper": 0.001965286003670519
+        }
+      },
+      "combined": {
+        "estimate": -0.0018871362188747076,
+        "lower": -0.003601567705218467,
+        "upper": -0.00019387590216146666
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-16384": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-focus-zero-branch-cases": {
+          "estimate": 0.0021863259758145848,
+          "lower": 0.0010869682228160649,
+          "upper": 0.003302011589253917
+        },
+        "branch-on-zero-focus-zero-branch-cases-reverse": {
+          "estimate": -0.0005760006146655616,
+          "lower": -0.002008672400316769,
+          "upper": 0.0008151665577178502
+        }
+      },
+      "combined": {
+        "estimate": 0.000804209641447784,
+        "lower": -8.446496086711441e-05,
+        "upper": 0.001688936836143906
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-focus-zero-branch-cases": {
+          "estimate": -0.00227859422558796,
+          "lower": -0.004111949660838721,
+          "upper": -0.0004623435766598627
+        },
+        "branch-on-zero-focus-zero-branch-cases-reverse": {
+          "estimate": -0.0025769915869429116,
+          "lower": -0.004827836282436659,
+          "upper": -0.00047805591142235926
+        }
+      },
+      "combined": {
+        "estimate": -0.00242780406347598,
+        "lower": -0.003864197520014989,
+        "upper": -0.0009802303293970915
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-focus-zero-branch-cases": {
+          "estimate": -0.0005844687894603906,
+          "lower": -0.0016002894658913025,
+          "upper": 0.00038084437334040544
+        },
+        "branch-on-zero-focus-zero-branch-cases-reverse": {
+          "estimate": -0.00021757716218273604,
+          "lower": -0.0006502491986738468,
+          "upper": 0.000221055074608012
+        }
+      },
+      "combined": {
+        "estimate": -0.0004010398087553879,
+        "lower": -0.0009743096850357569,
+        "upper": 0.0001316185120643354
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-1024": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-focus-zero-branch-cases": {
+          "estimate": -0.003982028633611412,
+          "lower": -0.00703041453570008,
+          "upper": -0.0012670602178573853
+        },
+        "branch-on-zero-focus-zero-branch-cases-reverse": {
+          "estimate": -0.002950843979829587,
+          "lower": -0.0047814255142240025,
+          "upper": -0.0009449114321141705
+        }
+      },
+      "combined": {
+        "estimate": -0.0034665696868068085,
+        "lower": -0.005228604166493733,
+        "upper": -0.0018059737021403066
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-262144": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-focus-zero-branch-cases": {
+          "estimate": -0.0012236404440956195,
+          "lower": -0.003086226020282856,
+          "upper": 0.0008036493568530645
+        },
+        "branch-on-zero-focus-zero-branch-cases-reverse": {
+          "estimate": -9.764331612205357e-05,
+          "lower": -0.0013685414659642126,
+          "upper": 0.0012676847304951
+        }
+      },
+      "combined": {
+        "estimate": -0.0006608004685830782,
+        "lower": -0.00183908999989002,
+        "upper": 0.0005190015899887435
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    }
+  },
+  "scope": "Runtime diagnostics with frozen artifacts and v1 per-case and peer checks.",
+  "equivalent_named_cases": [
+    [
+      "33027-periodic-window",
+      "prefix-periodic-33027"
+    ],
+    [
+      "prefix-repeated-1024",
+      "repeated-1024"
+    ],
+    [
+      "prefix-repeated-32769",
+      "repeated-32769"
+    ],
+    [
+      "prefix-natural-1024",
+      "reymont-prefix-1024"
+    ],
+    [
+      "prefix-natural-16384",
+      "reymont-prefix-16384"
+    ],
+    [
+      "prefix-natural-32769",
+      "reymont-prefix-32769"
+    ],
+    [
+      "heldout-window-32767",
+      "prefix-natural-32767"
+    ]
+  ],
+  "peak_private_payload_bytes": {},
+  "plan_sha256": "17a37694084410c7f58874ef608b06512e8a0f3d89b5a11c3258869a54090c58",
+  "observed_receipts": {
+    "branch-on-zero-focus-zero-branch-cases": {
+      "id": "branch-on-zero-focus-zero-branch-cases",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "native-size-20261117/canonical-pins/branch-on-zero-focus-zero-branch-cases.json",
+        "sha256": "1ac80b144ee2623376292a8a8339a02e978e16e2673ba69c0aaec583d55d3fc1"
+      },
+      "original_pins": {
+        "path": "branch-on-zero-focus-zero-branch-cases/pins.json",
+        "sha256": "5dba01e8c6e3ca42b2bf30a215a22ca5a6ed1a9e11977f8d03ebeec1d338ebfb"
+      },
+      "summary": {
+        "path": "branch-on-zero-focus-zero-branch-cases/summary.json",
+        "sha256": "47b90a43c5d04b7ec5ade70588ba8d5fabef7a4ca372030e8880b4d7cc567f52"
+      },
+      "complete": {
+        "path": "branch-on-zero-focus-zero-branch-cases/complete.json",
+        "sha256": "8e65ed7d64e22179d8548f5d37057bed2ea3c9147bab27118c6798875277f026"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "branch-on-zero-focus-zero-branch-cases/320-overlap/observations.json.gz",
+          "sha256": "4104bed133dd187ee3d8d8a01eba5606b8a8364947b7a72dec49e4d07d60e917"
+        },
+        "eight-overlap": {
+          "path": "branch-on-zero-focus-zero-branch-cases/eight-overlap/observations.json.gz",
+          "sha256": "eceb2a93dc1c27add604f64b3775ee3169ed905d9c82c32fedbc2cdf74c49ec5"
+        },
+        "empty": {
+          "path": "branch-on-zero-focus-zero-branch-cases/empty/observations.json.gz",
+          "sha256": "f18d58084a14aab531d19e4f061cfae643b3d838b794dfcfa662084a18d60798"
+        },
+        "heldout-mixed-131073": {
+          "path": "branch-on-zero-focus-zero-branch-cases/heldout-mixed-131073/observations.json.gz",
+          "sha256": "809b8999073969789780d9ec25d2eb5a47ac332a65f2c4fdb08c5dcfd4e5b1e7"
+        },
+        "one-stored": {
+          "path": "branch-on-zero-focus-zero-branch-cases/one-stored/observations.json.gz",
+          "sha256": "e1b0e2e491d43cd4e2159109e3bdc407a430c36ec6183bed20fa5f61c942d89c"
+        },
+        "prefix-natural-16384": {
+          "path": "branch-on-zero-focus-zero-branch-cases/prefix-natural-16384/observations.json.gz",
+          "sha256": "c88395f70e9e5a497f8b30c8a3abc1f0bca0d05eeacb9be7dd7b3775c73533ee"
+        },
+        "prefix-natural-4096": {
+          "path": "branch-on-zero-focus-zero-branch-cases/prefix-natural-4096/observations.json.gz",
+          "sha256": "6076b1ffc6d87ab4f53c5a642e0da74af1ca9e616e3015a73ac580e08ea8fb49"
+        },
+        "prefix-natural-8192": {
+          "path": "branch-on-zero-focus-zero-branch-cases/prefix-natural-8192/observations.json.gz",
+          "sha256": "f177dc3e94bc50d44cbda1b8733a1c14b095222bf6f7644a2e6b1a7bd06d57ad"
+        },
+        "prefix-periodic-1024": {
+          "path": "branch-on-zero-focus-zero-branch-cases/prefix-periodic-1024/observations.json.gz",
+          "sha256": "b5ba393977711895359a91221ae6704fed2907bd0d154bf6aa02e1d63b5b63c0"
+        },
+        "prefix-periodic-262144": {
+          "path": "branch-on-zero-focus-zero-branch-cases/prefix-periodic-262144/observations.json.gz",
+          "sha256": "4752bca9adbbf647396a83be5f6cde45a55969980eeecccd38cb72a84f8c2ca3"
+        },
+        "prefix-random-1024": {
+          "path": "branch-on-zero-focus-zero-branch-cases/prefix-random-1024/observations.json.gz",
+          "sha256": "3d3eda27c05885671fb274b531e7cb0199624a9a58734af1d7aec570bed1d672"
+        },
+        "prefix-random-1048576": {
+          "path": "branch-on-zero-focus-zero-branch-cases/prefix-random-1048576/observations.json.gz",
+          "sha256": "71f58533fdf1a72de944ccf1b32c5caaaa8f2cdefbbcadee67b6686c6c910126"
+        },
+        "random-1024": {
+          "path": "branch-on-zero-focus-zero-branch-cases/random-1024/observations.json.gz",
+          "sha256": "ce60e48df4d37ec50d4fc7bc3d4f93068886f891f769a8cbab41bc8bc9b184b7"
+        },
+        "random-64": {
+          "path": "branch-on-zero-focus-zero-branch-cases/random-64/observations.json.gz",
+          "sha256": "1e3d4645d1d58c9ab7d74fdd07125d571d74019bab7b42da2cbaa55718bda842"
+        },
+        "reymont-prefix-32769": {
+          "path": "branch-on-zero-focus-zero-branch-cases/reymont-prefix-32769/observations.json.gz",
+          "sha256": "068e68fdb2e9a8d0d52306dae356d555996409ecfb11835532480c96b9ad19fc"
+        },
+        "seven-stored-prefix": {
+          "path": "branch-on-zero-focus-zero-branch-cases/seven-stored-prefix/observations.json.gz",
+          "sha256": "298e2f37dce3d6e377cbfb5cb266b2d843995c10599338bd7ed4df10ce619aa3"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "branch-on-zero-focus-zero-branch-cases/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "branch-on-zero-focus-zero-branch-cases/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "branch-on-zero-focus-zero-branch-cases/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "branch-on-zero-focus-zero-branch-cases/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    },
+    "branch-on-zero-focus-zero-branch-cases-reverse": {
+      "id": "branch-on-zero-focus-zero-branch-cases-reverse",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "native-size-20261117/canonical-pins/branch-on-zero-focus-zero-branch-cases-reverse.json",
+        "sha256": "1ac80b144ee2623376292a8a8339a02e978e16e2673ba69c0aaec583d55d3fc1"
+      },
+      "original_pins": {
+        "path": "branch-on-zero-focus-zero-branch-cases-reverse/pins.json",
+        "sha256": "5dba01e8c6e3ca42b2bf30a215a22ca5a6ed1a9e11977f8d03ebeec1d338ebfb"
+      },
+      "summary": {
+        "path": "branch-on-zero-focus-zero-branch-cases-reverse/summary.json",
+        "sha256": "a5fa71271c497b1c63f27a87de622341e9b2ea2d50f52ffdf163924e0cf4d1e2"
+      },
+      "complete": {
+        "path": "branch-on-zero-focus-zero-branch-cases-reverse/complete.json",
+        "sha256": "8e65ed7d64e22179d8548f5d37057bed2ea3c9147bab27118c6798875277f026"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/320-overlap/observations.json.gz",
+          "sha256": "4a868f33da1921fac6d129226f028b295141c27f172581512bae20ae49f8bc96"
+        },
+        "eight-overlap": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/eight-overlap/observations.json.gz",
+          "sha256": "38cd68c27a05d63e5c4b1a9e7cb4d6634657dc77e9f5b4a31c676841cb265158"
+        },
+        "empty": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/empty/observations.json.gz",
+          "sha256": "5e701c155e73940e983a5d554b449ae7af861548f321ef8c66ca5200fe5abb74"
+        },
+        "heldout-mixed-131073": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/heldout-mixed-131073/observations.json.gz",
+          "sha256": "1464b84d820f8b4e81fe192552ee568fbcd26059f62543022af9a4bb36eca18b"
+        },
+        "one-stored": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/one-stored/observations.json.gz",
+          "sha256": "794af2a6fd0cfa3213058d524263c24355b537b0d7bea653089cc3f988ac2603"
+        },
+        "prefix-natural-16384": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/prefix-natural-16384/observations.json.gz",
+          "sha256": "940ddc91a2cf496d53ebb13d35ed7844c1d5e995b4dd8aed501d2772d16c8382"
+        },
+        "prefix-natural-4096": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/prefix-natural-4096/observations.json.gz",
+          "sha256": "30213f70d35226f543793a90c4a5121e9de1d81f1187385f040a382e180b293a"
+        },
+        "prefix-natural-8192": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/prefix-natural-8192/observations.json.gz",
+          "sha256": "36de73476b0d9a828e18b489aacd1851be26cbf4f4aa7902b1a7ee6029482eac"
+        },
+        "prefix-periodic-1024": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/prefix-periodic-1024/observations.json.gz",
+          "sha256": "39a57f2f539db600b51cf667f1b6bdd4b810f1fabf4b081ea9f75348e3a33417"
+        },
+        "prefix-periodic-262144": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/prefix-periodic-262144/observations.json.gz",
+          "sha256": "24056dda48ea37372ded87f8097eb535ce2f7c7eaa7bde2f868f708f0063ca0b"
+        },
+        "prefix-random-1024": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/prefix-random-1024/observations.json.gz",
+          "sha256": "c748be46e56901513ddad37e970797f2397db8f97b077562334c86ccb851fc0f"
+        },
+        "prefix-random-1048576": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/prefix-random-1048576/observations.json.gz",
+          "sha256": "dcb6bd7ac645955c54aa4d90f7a94f1bad7701abc4eef67bae72800a7e01df4b"
+        },
+        "random-1024": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/random-1024/observations.json.gz",
+          "sha256": "eaf697bcf38c49db71da6d64ddc28ac9399b9bd8667bc1ac6ffb20d67c126142"
+        },
+        "random-64": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/random-64/observations.json.gz",
+          "sha256": "d7141b1492a56c0e6679a730fc0e312eeafb860fc9e2ce0d3cbb1a8f438f7574"
+        },
+        "reymont-prefix-32769": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/reymont-prefix-32769/observations.json.gz",
+          "sha256": "f56754ebb85b219547fd4b818f18a4539a80d59324aff2244f50a59ac4bf50ea"
+        },
+        "seven-stored-prefix": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/seven-stored-prefix/observations.json.gz",
+          "sha256": "9e914baf3581ca9ad3a15e852c495f412c00c7cfb75ce69e0d294c013a580a69"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "branch-on-zero-focus-zero-branch-cases-reverse/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    }
+  },
+  "decision": "Reject",
+  "rejected": [
+    "empty: established slowdown above the 0.5% resolution"
+  ],
+  "unresolved": [
+    "branch-on-zero-focus-zero-branch-cases: missing run binding for environment_sha256",
+    "branch-on-zero-focus-zero-branch-cases: missing run binding for contract_sha256",
+    "branch-on-zero-focus-zero-branch-cases-reverse: missing run binding for environment_sha256",
+    "branch-on-zero-focus-zero-branch-cases-reverse: missing run binding for contract_sha256",
+    "both complete timing orders are required",
+    "one-stored: combined and individual run bounds conflict: branch-on-zero-focus-zero-branch-cases"
+  ]
+}

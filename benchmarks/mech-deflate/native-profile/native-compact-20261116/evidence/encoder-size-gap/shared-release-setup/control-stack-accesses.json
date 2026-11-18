@@ -1,0 +1,203 @@
+{
+  "call_relocations": {
+    "_mech_compact_allocate_backing": 26,
+    "_mech_compact_append_backing_byte_consume": 10,
+    "_mech_compact_checked_layout_10939": 4,
+    "_mech_compact_checked_layout_13100": 9,
+    "_mech_compact_checked_layout_16147": 11,
+    "_mech_compact_checked_layout_continuation_16644": 2,
+    "_mech_compact_checked_layout_continuation_21031": 2,
+    "_mech_compact_checked_layout_continuation_44066": 4,
+    "_mech_compact_checked_layout_continuation_8603": 15,
+    "_mech_compact_checked_layout_continuation_9112": 2,
+    "_mech_compact_checked_layout_continuation_9562": 4,
+    "_mech_compact_expand_capacity_preserving": 3,
+    "_mech_compact_matrix_word": 9,
+    "_mech_compact_numeric_8026": 1,
+    "_mech_compact_release_four": 31,
+    "_mech_compact_release_nullable": 26,
+    "_mech_compact_release_owner": 74,
+    "_mech_compact_release_three": 32,
+    "_mech_compact_release_two": 30,
+    "_mech_compact_writable_scalar_backing": 31
+  },
+  "distinct_direct_spill_offsets": 294,
+  "encoder_sha256": "1ab76d3a6064fa1af82afb7f07fa021f514301d2100def23b2b4d6945bd49858",
+  "explicit_slots_size": 560,
+  "head": "6cd97ac67e17b4f81dbd7fd909cb328ef72f67a8",
+  "machine_opcodes": {
+    "frame_save_restore": {
+      "ldp": 18,
+      "stp": 6
+    },
+    "outgoing_arguments": {
+      "stur": 6
+    },
+    "spill": {
+      "ldr": 2294,
+      "str": 877
+    },
+    "ss2": {
+      "ldur": 3
+    },
+    "ss3": {
+      "ldr": 4,
+      "ldur": 30,
+      "str": 2,
+      "stur": 4
+    },
+    "ss4": {
+      "ldr": 6,
+      "str": 17
+    },
+    "ss6": {
+      "str": 15
+    }
+  },
+  "outgoing_args_size": 32,
+  "root_extent": 48544,
+  "root_fixed_frame": 3136,
+  "root_instructions": 12136,
+  "slots": [
+    {
+      "bytes": 48,
+      "offset": 0,
+      "slot": "ss0"
+    },
+    {
+      "bytes": 48,
+      "offset": 48,
+      "slot": "ss1"
+    },
+    {
+      "bytes": 8,
+      "offset": 96,
+      "slot": "ss2"
+    },
+    {
+      "bytes": 232,
+      "offset": 104,
+      "slot": "ss3"
+    },
+    {
+      "bytes": 136,
+      "offset": 336,
+      "slot": "ss4"
+    },
+    {
+      "bytes": 32,
+      "offset": 472,
+      "slot": "ss5"
+    },
+    {
+      "bytes": 56,
+      "offset": 504,
+      "slot": "ss6"
+    }
+  ],
+  "stack_instructions": {
+    "frame_save_restore": {
+      "load": 18,
+      "store": 6
+    },
+    "outgoing_arguments": {
+      "load": 0,
+      "store": 6
+    },
+    "spill": {
+      "load": 2294,
+      "store": 877
+    },
+    "ss2": {
+      "load": 3,
+      "store": 0
+    },
+    "ss3": {
+      "load": 34,
+      "store": 6
+    },
+    "ss4": {
+      "load": 6,
+      "store": 17
+    },
+    "ss6": {
+      "load": 0,
+      "store": 15
+    }
+  },
+  "stack_operands": {
+    "frame_save_restore": 48,
+    "outgoing_arguments": 6,
+    "spill": 3171,
+    "ss2": 3,
+    "ss3": 40,
+    "ss4": 23,
+    "ss6": 15
+  },
+  "top_spill_offsets": {
+    "0x310": {
+      "load": 342,
+      "store": 1
+    },
+    "0x440": {
+      "load": 21,
+      "store": 5
+    },
+    "0x448": {
+      "load": 12,
+      "store": 15
+    },
+    "0x620": {
+      "load": 18,
+      "store": 9
+    },
+    "0x650": {
+      "load": 31,
+      "store": 1
+    },
+    "0x6d8": {
+      "load": 127,
+      "store": 2
+    },
+    "0x7e0": {
+      "load": 22,
+      "store": 8
+    },
+    "0x7f0": {
+      "load": 25,
+      "store": 11
+    },
+    "0x908": {
+      "load": 24,
+      "store": 9
+    },
+    "0xb10": {
+      "load": 28,
+      "store": 10
+    },
+    "0xc08": {
+      "load": 29,
+      "store": 1
+    },
+    "0xc18": {
+      "load": 74,
+      "store": 1
+    },
+    "0xc20": {
+      "load": 30,
+      "store": 1
+    },
+    "0xc28": {
+      "load": 34,
+      "store": 1
+    },
+    "0xc30": {
+      "load": 41,
+      "store": 2
+    },
+    "0xc38": {
+      "load": 42,
+      "store": 1
+    }
+  }
+}

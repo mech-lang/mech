@@ -1,0 +1,142 @@
+{
+  "focus-forward": {
+    "observations_sha256": "d6470dc2b147a88e025d122bc65d20e73ad926c1d8b6ddb001e16c0c63d4e9b6",
+    "paired_x_libdeflate": {
+      "mech-control": 0.9896728306774643,
+      "mech-experiment": 0.987278261024408,
+      "roc": 10.749795944998905,
+      "libdeflate": 1.0
+    },
+    "median_block_seconds_by_quarter": [
+      {
+        "mech-control": 2.7433968749999998e-05,
+        "mech-experiment": 2.7421921875e-05,
+        "roc": 0.00029760771875,
+        "libdeflate": 2.7846375e-05
+      },
+      {
+        "mech-control": 2.75140625e-05,
+        "mech-experiment": 2.7423859375e-05,
+        "roc": 0.0002989726328125,
+        "libdeflate": 2.76848671875e-05
+      },
+      {
+        "mech-control": 2.7405312499999997e-05,
+        "mech-experiment": 2.7331390624999997e-05,
+        "roc": 0.0002993202734375,
+        "libdeflate": 2.76102578125e-05
+      },
+      {
+        "mech-control": 2.76354609375e-05,
+        "mech-experiment": 2.7576859375e-05,
+        "roc": 0.0002974759375,
+        "libdeflate": 2.7754945312500003e-05
+      }
+    ]
+  },
+  "focus-reverse": {
+    "observations_sha256": "08c5de3a2086250e9feed09484d9cfe6afccf2b2d375673a391a1feaaacd5017",
+    "paired_x_libdeflate": {
+      "libdeflate": 1.0,
+      "roc": 10.828457409533748,
+      "mech-experiment": 0.9858990613321369,
+      "mech-control": 0.993349668000349
+    },
+    "median_block_seconds_by_quarter": [
+      {
+        "mech-control": 2.74758984375e-05,
+        "mech-experiment": 2.7303749999999998e-05,
+        "roc": 0.000300299109375,
+        "libdeflate": 2.76588671875e-05
+      },
+      {
+        "mech-control": 2.7461570312499998e-05,
+        "mech-experiment": 2.7314124999999998e-05,
+        "roc": 0.000300228234375,
+        "libdeflate": 2.76129609375e-05
+      },
+      {
+        "mech-control": 2.75090859375e-05,
+        "mech-experiment": 2.7266265625e-05,
+        "roc": 0.0002999241484375,
+        "libdeflate": 2.7635085937499998e-05
+      },
+      {
+        "mech-control": 2.75133515625e-05,
+        "mech-experiment": 2.72978671875e-05,
+        "roc": 0.000300074875,
+        "libdeflate": 2.76094140625e-05
+      }
+    ]
+  },
+  "full-forward": {
+    "observations_sha256": "cf3e5a182ec7efe4dec5e185476a20437cd9f838bd96455c8f02cb7ca3363997",
+    "paired_x_libdeflate": {
+      "mech-control": 0.9877138675223992,
+      "mech-experiment": 0.983585376542585,
+      "roc": 10.888858100225354,
+      "libdeflate": 1.0
+    },
+    "median_block_seconds_by_quarter": [
+      {
+        "mech-control": 2.7456671875e-05,
+        "mech-experiment": 2.73642890625e-05,
+        "roc": 0.0003005846015625,
+        "libdeflate": 2.7712515625e-05
+      },
+      {
+        "mech-control": 2.7421203125000002e-05,
+        "mech-experiment": 2.7408195312499998e-05,
+        "roc": 0.0003004234375,
+        "libdeflate": 2.7650062500000002e-05
+      },
+      {
+        "mech-control": 2.741278125e-05,
+        "mech-experiment": 2.73903125e-05,
+        "roc": 0.0003007734453125,
+        "libdeflate": 2.7645546875e-05
+      },
+      {
+        "mech-control": 2.7430304687500002e-05,
+        "mech-experiment": 2.7231109375e-05,
+        "roc": 0.00031371876562499997,
+        "libdeflate": 2.81784765625e-05
+      }
+    ]
+  },
+  "full-reverse": {
+    "observations_sha256": "e9c3332834be73d685d7bd42c9ca6d851a192c560d25f0b21711070c74cb74e6",
+    "paired_x_libdeflate": {
+      "libdeflate": 1.0,
+      "roc": 10.272430643059034,
+      "mech-experiment": 1.0915171790865454,
+      "mech-control": 1.0176944563651014
+    },
+    "median_block_seconds_by_quarter": [
+      {
+        "mech-control": 3.15273203125e-05,
+        "mech-experiment": 3.5087515625e-05,
+        "roc": 0.0003227842109375,
+        "libdeflate": 2.94836875e-05
+      },
+      {
+        "mech-control": 2.7808304687499998e-05,
+        "mech-experiment": 2.8576859375e-05,
+        "roc": 0.0003183317265625,
+        "libdeflate": 2.89384609375e-05
+      },
+      {
+        "mech-control": 2.812078125e-05,
+        "mech-experiment": 2.87532578125e-05,
+        "roc": 0.000314979875,
+        "libdeflate": 2.884959375e-05
+      },
+      {
+        "mech-control": 2.88902421875e-05,
+        "mech-experiment": 2.83383046875e-05,
+        "roc": 0.0003170309296875,
+        "libdeflate": 2.96917265625e-05
+      }
+    ]
+  }
+}

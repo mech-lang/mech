@@ -3493,6 +3493,8 @@ struct SemanticBuilder {
     scope_definitions: BTreeSet<String>,
     external_definitions: BTreeSet<String>,
     local_functions: BTreeMap<String, SyntaxNode>,
+    document_function_plans:
+        BTreeMap<String, Arc<document_lowering::document_functions::DocumentFunctionPlan>>,
     local_fsms: BTreeMap<String, document_lowering::document_fsms::DeclaredFsm>,
     function_imports: BTreeSet<String>,
     resolved_source_modules: BTreeSet<String>,
@@ -3691,6 +3693,7 @@ impl SemanticBuilder {
             scope_definitions: BTreeSet::new(),
             external_definitions: BTreeSet::new(),
             local_functions: BTreeMap::new(),
+            document_function_plans: BTreeMap::new(),
             local_fsms: BTreeMap::new(),
             function_imports: BTreeSet::new(),
             resolved_source_modules: BTreeSet::new(),
@@ -10096,7 +10099,7 @@ mod tests {
                     id: crate::ControlBlockId(2),
                     parameters: vec![(
                         crate::ControlParameterSource::PatternBinding(0),
-                        schema(SchemaBody::Index),
+                        schema(SchemaBody::Index).into(),
                     )],
                     operations: Vec::new(),
                     yield_value: PendingControlValue::Parameter(0),
@@ -11436,15 +11439,17 @@ fn resolve_pending_match(
                     crate::MatchPattern::Wildcard => crate::MatchPattern::Wildcard,
                     crate::MatchPattern::Bind => crate::MatchPattern::Bind,
                     crate::MatchPattern::Structural(pattern) => crate::MatchPattern::Structural(
-                        pattern.map(&|draft| retained_control_schema(schemas, draft), &|value| match value {
-                            crate::MatchPatternValue::Literal(index) => {
-                                crate::MatchPatternValue::Literal(constants[*index])
-                            }
-                            crate::MatchPatternValue::Binding(local) => {
-                                crate::MatchPatternValue::Binding(*local)
-                            }
-                            crate::MatchPatternValue::Input(input) => {
-                                crate::MatchPatternValue::Input(*input)
+                        pattern.map(&|draft| retained_control_schema(schemas, draft), &|value| {
+                            match value {
+                                crate::MatchPatternValue::Literal(index) => {
+                                    crate::MatchPatternValue::Literal(constants[*index])
+                                }
+                                crate::MatchPatternValue::Binding(local) => {
+                                    crate::MatchPatternValue::Binding(*local)
+                                }
+                                crate::MatchPatternValue::Input(input) => {
+                                    crate::MatchPatternValue::Input(*input)
+                                }
                             }
                         }),
                     ),

@@ -1,0 +1,61 @@
+{
+  "paired-spills-rebased": {
+    "encoder_text_bytes": 67568,
+    "object_sha256": "fb468dae1264983c58af5bca945cabe5d4a15d985c82e631c5d0849e59aea805",
+    "worker_sha256": "681fb0c1484e6c8bc45ff4ee791b1056d1e6e476381b404363975e864d19f3b1",
+    "focus": {
+      "roc": [
+        15,
+        15
+      ],
+      "libdeflate": [
+        12,
+        12
+      ]
+    },
+    "focus_decision": "Reject"
+  },
+  "first-address": {
+    "encoder_text_bytes": 67648,
+    "object_sha256": "e48f2ffd741fdb6c94f4c9deece365757e0d2c3f7c3b5d6d979e3c534b84f299",
+    "worker_sha256": "b689da0bedfa62804143064a9a812ff7430abd8937e036c940763b9372ee8ad5",
+    "focus": {
+      "roc": [
+        15,
+        15
+      ],
+      "libdeflate": [
+        12,
+        12
+      ]
+    },
+    "focus_decision": "Reject"
+  },
+  "matcher-natural-layout": {
+    "encoder_text_bytes": 67648,
+    "object_sha256": "6aa84b6f1959257d89790935b17abf47cb195ba728c8fd01d5876281b569d096",
+    "worker_sha256": "50423a79f10e605167e8d98a051239aedb2fba5c9c34bc7ddf96fb64cf9e2d6d",
+    "focus": {
+      "roc": [
+        15,
+        15
+      ],
+      "libdeflate": [
+        13,
+        13
+      ]
+    },
+    "focus_decision": "Unresolved",
+    "full": {
+      "roc": [
+        81,
+        81
+      ],
+      "libdeflate": [
+        62,
+        62
+      ]
+    },
+    "full_decision": "Retain"
+  }
+}

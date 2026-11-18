@@ -1,0 +1,8 @@
+{
+  "reference_object": "0fd6735cf7c559f8d775c9249a552928f0ca7826d4ada4511a17079c7880bcdc",
+  "profile": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-machine-outline-matcher-balanced-fallthroughs-native/final-candidate/report.json",
+  "profile_sha256": "13b891e125554f1b5c66d8147e63d854192e295c1b0050169ce2917f0f8406fc",
+  "original_heads": 417,
+  "packed_heads": 417,
+  "equal_ordered_graphs": true
+}

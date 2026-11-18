@@ -1,0 +1,24 @@
+{
+  "base": "dae46c686703560230150a93f36c44c4978ffdc7",
+  "inputs": {
+    "benchmarks/mech-deflate/native-profile/compile_profile.rs": "14874e4b87f32998d97780fe9b1afd7829b48d9b24ce88da6ab419b2dc2f0662",
+    "hosts/gpu/Cargo.toml": "54326904b1c4e33efe4f00d117db73364229db8222e9724b50e3ca3c75dc2284",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_compact.rs": "429bdc68dc90e990f7ce3768b589a819f38ff846a277830fb5f73def648047c0",
+    "hosts/gpu/src/native_artifact/program/compact/compile_jobs.rs": "8cb00fb1bae864bb705e7db4dac10c2c1c1c34b1862a5e91fbdcbba519dab13d",
+    "hosts/gpu/src/native_artifact/program/compact/emit.rs": "67a34efd8457be49e3423a6be537278dbc0227c5fd63456311787388937d328f",
+    "hosts/gpu/src/native_artifact/program/compact/object.rs": "69b14afe75479dec8f3c767385c71317a29fa96e3eabb69190b0e0ee23cf53f0",
+    "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "bbe80f667f7ccc84b31a144ff9e5844d59d441ca47fe79c6245a593b44992bad",
+    "hosts/gpu/src/native_artifact/program/compact/phases.rs": "056453cdf5dd387eb0857c169fc99aaefb85849fe2a3e17e649aff57675e0ea3",
+    "hosts/gpu/src/native_artifact/program/compiler.rs": "c3543861e845b7a685f8385c65d9f6a2a853f442a5143a4c7e6bc8621ec20861",
+    "src/engine/src/native_artifact/compiler_trace.rs": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "src/engine/src/native_artifact/fusion_semantics.rs": "b1af49e67dc22ec167459f04ec6a166975f9e4765ff14f1e2f531f8b47536d46",
+    "src/engine/src/native_artifact/mod.rs": "6cdbe9db4a1899566bc914a125e9e5ce56bcc5d0fb12bc08355cdb66b5596ae1",
+    "src/engine/src/native_artifact/program_facts.rs": "db1f7bd1bc986f21cdf60c71403db93cb394afc6a0b22db5e17f9aa044daacb0",
+    "vendor/cranelift-codegen/src/context.rs": "c3f1fe21857f226b70fd35b990139356a5020fe5dc688d6ac87942c7334479a5",
+    "vendor/cranelift-codegen/src/timing.rs": "707fbd2387058425ea16d17cccafc5e7ca5073bcb8f8b76e7911646f1a826bea"
+  },
+  "patches": {
+    "trace.patch": "dc34011b4a54ce7ee178b695baada69e19a617c88bc50cc5fd1bcb0d994919dc",
+    "shared-facts-only.patch": "781b9a356015ef641d4f8d5bc67113cd6f0f69b33b49fc2931f8354aa72a4e26"
+  }
+}

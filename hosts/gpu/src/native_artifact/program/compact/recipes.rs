@@ -1,5 +1,5 @@
 //! Source-derived native operation recipes, with no source-name eligibility.
-use super::layout::{Kind, Layout, Type};
+use super::layout::{Layout, LayoutKind, Type};
 use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::compiler::backend;
 use mech_core::ValueData;
@@ -38,7 +38,7 @@ pub(super) enum Recipe {
     None,
 }
 fn words(layout: &Layout, value: Value) -> Vec<Word> {
-    if matches!(layout.ty(value.get()).kind, Kind::Scalar { .. }) {
+    if matches!(layout.ty(value.get()).kind, LayoutKind::Scalar { .. }) {
         vec![Word::Scalar(value)]
     } else {
         (0..layout.ty(value.get()).words)
@@ -76,7 +76,7 @@ pub(super) fn derive(
                 if operands.len() != 2
                     || operands
                         .iter()
-                        .any(|v| !matches!(layout.ty(v.get()).kind, Kind::Utf8))
+                        .any(|v| !matches!(layout.ty(v.get()).kind, LayoutKind::Utf8))
                 {
                     return Err(backend("native String comparison requires two UTF8 spans"));
                 }
@@ -160,7 +160,7 @@ pub(super) fn derive(
                     })
                     .ok_or_else(|| backend("compact enum requires an exact source ordinal"))?;
                 let ty = layout.ty(output.get());
-                let Kind::Tagged(variants) = &ty.kind else {
+                let LayoutKind::Tagged(variants) = &ty.kind else {
                     return Err(backend("compact enum source lacks a tagged result"));
                 };
                 let variant = variants
@@ -189,7 +189,7 @@ pub(super) fn derive(
                 // String length counts Unicode graphemes, rather than bytes.
                 // Keep that separate lowering gap explicit until its complete
                 // Unicode state machine is compiled natively.
-                if matches!(layout.ty(operands[0].get()).kind, Kind::Utf8) {
+                if matches!(layout.ty(operands[0].get()).kind, LayoutKind::Utf8) {
                     return Ok(Recipe::Pending(Primitive::SequenceLength));
                 }
                 layout.ty(operands[0].get()).element()?;
@@ -256,7 +256,7 @@ pub(super) fn derive(
                         ty = &field.ty;
                     }
                     Step::EnumPayload { ordinal } => {
-                        let Kind::Tagged(variants) = &ty.kind else {
+                        let LayoutKind::Tagged(variants) = &ty.kind else {
                             return Err(backend("compact enum projection lacks tagged input"));
                         };
                         let variant = variants.get(ordinal as usize).ok_or_else(|| {
@@ -273,7 +273,7 @@ pub(super) fn derive(
             }
             match observation {
                 Observation::EnumOrdinal { ordinal } => {
-                    if !matches!(ty.kind, Kind::Tagged(_)) {
+                    if !matches!(ty.kind, LayoutKind::Tagged(_)) {
                         return Err(backend("compact enum observation requires tag"));
                     }
                     Recipe::Aggregate(Aggregate::Observe {
@@ -294,8 +294,8 @@ pub(super) fn derive(
                     })
                 }
                 Observation::StringEqual { peer } => {
-                    if !matches!(ty.kind, Kind::Utf8)
-                        || !matches!(layout.ty(peer.get()).kind, Kind::Utf8)
+                    if !matches!(ty.kind, LayoutKind::Utf8)
+                        || !matches!(layout.ty(peer.get()).kind, LayoutKind::Utf8)
                     {
                         return Err(backend("native String observation requires UTF8 spans"));
                     }

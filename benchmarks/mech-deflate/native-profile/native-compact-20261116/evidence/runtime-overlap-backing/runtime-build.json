@@ -1,0 +1,38 @@
+{
+  "source_pin": "8fb7fa9683a3034866104db196ca5a72d7d312da",
+  "command": [
+    "rustc",
+    "+nightly-2026-03-03",
+    "--edition=2024",
+    "--crate-name",
+    "mech_gpu",
+    "--crate-type=rlib",
+    "-C",
+    "opt-level=3",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/runtime-overlap-margin/runtime/runtime-lib.rs",
+    "-o",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/runtime-overlap-margin/runtime/libmech_gpu_runtime.rlib"
+  ],
+  "test_command": [
+    "rustc",
+    "+nightly-2026-03-03",
+    "--edition=2024",
+    "--test",
+    "--crate-name",
+    "mech_gpu",
+    "-C",
+    "opt-level=3",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/runtime-overlap-margin/runtime/runtime-lib.rs",
+    "-o",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/runtime-overlap-margin/runtime/runtime-tests"
+  ],
+  "runtime_library_sha256": "9d49d56968b82e629b10c9a0e42abb2eee2fad87a475454923b8caec97aa3f7d",
+  "old_runtime_library_sha256": "147fef325ee8f2ac03e7385ba9ae1465e3e1dc3fdbe9c559b6ced2db683fc673",
+  "runtime_change_sha256": "7d9c0966696f518acf6b8886106fcf2fa6700ecac972244c2cd5323aaae14adc",
+  "source_sha256": {
+    "runtime-lib.rs": "6e08a152f1e35b5adcf0bea77f7541b8d00ac141104c70d123dbb8a169cf7955",
+    "compact_runtime/zero_pages.rs": "2dfe2936248bcd178ee7f35df2629a50f5c5eb8f02ab6367e7d804897f781dc6",
+    "compact_runtime/mod.rs": "57febc7bc97475eddf6b03dff0fe7b98173ba4c5eeebc976c8b650797ae80710",
+    "compact_runtime/terminal_appends.rs": "3cbe6cbe3237d14264649b6e217a2eaeaf9e1f5a43fabb0122401fd62314cbe4"
+  }
+}

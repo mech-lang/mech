@@ -1,0 +1,35 @@
+{
+  "base": "b05241855264df7df861994ef125e5dfb678bc81",
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/cost.rs": "da80b85aafc6dcf3d2cf5fee02ad807cdd5d61a4a782ef6eab52217e63cf0bb0",
+    "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs": "3727410536a8b440186f0ea9b4642896a1c57bf271cc75dceb428e18e3eee04d"
+  },
+  "flag": "MECH_ORDERED_VECTOR_WINDOW_CURSORS",
+  "census_sha256": "ad538af1b5b225016f3abb89b9a584e8d71503044b847af7c3b2cb54d41900ac",
+  "validated": true,
+  "compiler_control": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ascii-literal-miss/production/compile_profile",
+  "compiler_control_sha256": "9b3dd2ebae981a27c4890484a1e203b19633313920e628db83240fe1da04c77d",
+  "compiler_sha256": "0cf55f4eea5e7b1ff54f64298fac1a16d91d8ea7942c883455a42bb7ec311e98",
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ordered-vector-cursors/probe-compiler/disabled",
+    "--variant",
+    "frame-copies",
+    "--compiler-opt-level",
+    "3",
+    "--direct-source",
+    "--preselect-root-inlining",
+    "--skip-refused-general-ssa",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target"
+  ],
+  "disabled_artifacts": {
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "prior_plan_sha256": "ff748dc8c8eaf95315c0256835a078aea6b7b64b7ff40e0744efa9033f175c98",
+  "source_patch_sha256": "44a32884d4aa4f37c4076dd833dede0692ee9e1fe49b180e85a37c270b4b5eb0"
+}

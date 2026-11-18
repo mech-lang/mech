@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cold-origin-packed-native/final-candidate/mech-worker",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cold-origin-packed-native/final-candidate/metadata.json",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "complete_smokes": 162,
+  "verified": true,
+  "worker_sha256": "ae786482e20040bcaa8f8d44d4f0e93263b9db8b9caf82c14d56a6b9e47ff8f0",
+  "metadata_sha256": "0aac5b222891e6ca9d4ed88e85597cdef1ef46d9f405648436a18f5d2820d37b"
+}

@@ -1,0 +1,55 @@
+{
+  "pin": "f5df10d5791a54f39253b693abfb3d43ccb03da3",
+  "unchanged_worker": "884e35f4bdacf47e82adc39c5535451eb0a82b271b6c1fdd6419984312d4f61c",
+  "text_bytes": 65036,
+  "variants": {
+    "heap-backing": {
+      "encoder": "b1775af2bd1c6c3e79da7eca92d9ba89982cea715b2385bb469d9fea9016a343",
+      "worker": "468299d864181adc94cc468bc11e195a216bf4d081498c5a746890cec9a024d6",
+      "text_bytes": 64748,
+      "saved_bytes": 288,
+      "root_bytes": 47868,
+      "new_atoms": [
+        "_mech_compact_allocate_backing_from_frame",
+        "_mech_compact_writable_scalar_backing_from_frame"
+      ],
+      "retired_atoms": [],
+      "admission": [
+        "compact root shared backing setup: 2 additional stubs",
+        "compact root shared release setup: 250 calls in 7 stubs"
+      ]
+    },
+    "heap-append": {
+      "encoder": "d5ec6b8fecdec4b6e4eb83b5179556f7cf1d54fff627fbf68357f465b1dcb82a",
+      "worker": "5ccbf4b3152f4443eb5b5886cdccd3d01161e7303e50f307087f035e6fcc8345",
+      "text_bytes": 65004,
+      "saved_bytes": 32,
+      "root_bytes": 48160,
+      "new_atoms": [
+        "_mech_compact_append_backing_byte_consume_from_frame"
+      ],
+      "retired_atoms": [],
+      "admission": [
+        "compact root shared backing setup: 1 additional stubs",
+        "compact root shared release setup: 203 calls in 6 stubs"
+      ]
+    },
+    "heap-calls": {
+      "encoder": "a747b26a6fc09684222fa85b3f7ca1d3532ec2abb5902fc1e359fbf8fadb6fed",
+      "worker": "2b5ad01cdf276075c93d75957b48da8d0914e256f6ad9414bc3c76403966ba85",
+      "text_bytes": 64668,
+      "saved_bytes": 368,
+      "root_bytes": 47768,
+      "new_atoms": [
+        "_mech_compact_allocate_backing_from_frame",
+        "_mech_compact_append_backing_byte_consume_from_frame",
+        "_mech_compact_writable_scalar_backing_from_frame"
+      ],
+      "retired_atoms": [],
+      "admission": [
+        "compact root shared backing setup: 3 additional stubs",
+        "compact root shared release setup: 260 calls in 8 stubs"
+      ]
+    }
+  }
+}

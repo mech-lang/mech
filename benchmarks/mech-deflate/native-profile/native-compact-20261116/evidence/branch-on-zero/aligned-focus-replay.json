@@ -1,0 +1,682 @@
+{
+  "runs": [
+    {
+      "id": "branch-on-zero-aligned-focus-zero-branch-cases",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 16,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 16,
+            "mech-experiment": 16
+          },
+          "precision_supported_wins": {
+            "mech-control": 16,
+            "mech-experiment": 16
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "precision_supported_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "branch-on-zero-aligned-focus-zero-branch-cases-reverse",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 16,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 16,
+            "mech-experiment": 16
+          },
+          "precision_supported_wins": {
+            "mech-control": 16,
+            "mech-experiment": 16
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "precision_supported_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    }
+  ],
+  "cases": {
+    "empty": {
+      "decision": "unresolved",
+      "runs": {
+        "branch-on-zero-aligned-focus-zero-branch-cases": {
+          "estimate": 0.002174661379545473,
+          "lower": -0.005309395454039967,
+          "upper": 0.009681323291419242
+        },
+        "branch-on-zero-aligned-focus-zero-branch-cases-reverse": {
+          "estimate": 0.01185223371702171,
+          "lower": 0.0034775444752439544,
+          "upper": 0.020178173919540576
+        }
+      },
+      "combined": {
+        "estimate": 0.007001822089460319,
+        "lower": 0.0013925200086626344,
+        "upper": 0.012704666742811233
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "one-stored": {
+      "decision": "unresolved",
+      "runs": {
+        "branch-on-zero-aligned-focus-zero-branch-cases": {
+          "estimate": 0.002606385824705404,
+          "lower": -0.003899784832782638,
+          "upper": 0.009190021103143264
+        },
+        "branch-on-zero-aligned-focus-zero-branch-cases-reverse": {
+          "estimate": 0.003185091215561986,
+          "lower": -0.004419275825426672,
+          "upper": 0.010826974561236158
+        }
+      },
+      "combined": {
+        "estimate": 0.0028956967785143117,
+        "lower": -0.0019884747586347284,
+        "upper": 0.008024185341077406
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "seven-stored-prefix": {
+      "decision": "unresolved",
+      "runs": {
+        "branch-on-zero-aligned-focus-zero-branch-cases": {
+          "estimate": 0.0035137935087943273,
+          "lower": -0.005940784906579899,
+          "upper": 0.013279327227307514
+        },
+        "branch-on-zero-aligned-focus-zero-branch-cases-reverse": {
+          "estimate": 0.009018860226300607,
+          "lower": 0.001972359198396889,
+          "upper": 0.016124825033314805
+        }
+      },
+      "combined": {
+        "estimate": 0.006262562230959112,
+        "lower": 0.00037169737084763455,
+        "upper": 0.01247199630944218
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "eight-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-aligned-focus-zero-branch-cases": {
+          "estimate": -0.00211376579266076,
+          "lower": -0.005910342609061869,
+          "upper": 0.001666360310654147
+        },
+        "branch-on-zero-aligned-focus-zero-branch-cases-reverse": {
+          "estimate": -0.005795224415943601,
+          "lower": -0.009905530383339411,
+          "upper": -0.0016608728911610138
+        }
+      },
+      "combined": {
+        "estimate": -0.003956195974028964,
+        "lower": -0.006854919803718107,
+        "upper": -0.0010933432316871938
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-aligned-focus-zero-branch-cases": {
+          "estimate": -0.002442172568974166,
+          "lower": -0.005482885919524949,
+          "upper": 0.00014123522258824295
+        },
+        "branch-on-zero-aligned-focus-zero-branch-cases-reverse": {
+          "estimate": -0.0012865144833966724,
+          "lower": -0.002845554169130904,
+          "upper": 0.00022116263355664856
+        }
+      },
+      "combined": {
+        "estimate": -0.0018645107812216288,
+        "lower": -0.0035974839761492294,
+        "upper": -0.0003484817357058967
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "unresolved",
+      "runs": {
+        "branch-on-zero-aligned-focus-zero-branch-cases": {
+          "estimate": -0.00018415632292045903,
+          "lower": -0.0059614142857231656,
+          "upper": 0.00573182379829329
+        },
+        "branch-on-zero-aligned-focus-zero-branch-cases-reverse": {
+          "estimate": 0.0018332821543487476,
+          "lower": -0.0039934327158778204,
+          "upper": 0.008072689463473726
+        }
+      },
+      "combined": {
+        "estimate": 0.0008240545774904628,
+        "lower": -0.0033004215107018675,
+        "upper": 0.005070187684857785
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-aligned-focus-zero-branch-cases": {
+          "estimate": -0.002275732750001036,
+          "lower": -0.0047403377706096705,
+          "upper": 0.0005919509312000137
+        },
+        "branch-on-zero-aligned-focus-zero-branch-cases-reverse": {
+          "estimate": -0.0027944072729652047,
+          "lower": -0.0044488613570133895,
+          "upper": -0.001166070712624312
+        }
+      },
+      "combined": {
+        "estimate": -0.0025351037248571018,
+        "lower": -0.004010153320146981,
+        "upper": -0.0009054152238884283
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "reymont-prefix-32769": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-aligned-focus-zero-branch-cases": {
+          "estimate": -0.0014515835542054933,
+          "lower": -0.0028227859892300255,
+          "upper": -0.0003332956685502264
+        },
+        "branch-on-zero-aligned-focus-zero-branch-cases-reverse": {
+          "estimate": 4.938739605497844e-05,
+          "lower": -0.0014741229215785578,
+          "upper": 0.001647701716386063
+        }
+      },
+      "combined": {
+        "estimate": -0.0007013798909168978,
+        "lower": -0.0017036866899439174,
+        "upper": 0.0002878364225660235
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-mixed-131073": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-aligned-focus-zero-branch-cases": {
+          "estimate": -0.0021133390078236225,
+          "lower": -0.0032074323607387267,
+          "upper": -0.0011374890053020836
+        },
+        "branch-on-zero-aligned-focus-zero-branch-cases-reverse": {
+          "estimate": -0.001627284578947008,
+          "lower": -0.0023076391209352343,
+          "upper": -0.000920811324627735
+        }
+      },
+      "combined": {
+        "estimate": -0.0018703413798351054,
+        "lower": -0.002488676551759217,
+        "upper": -0.0012730383871443207
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-4096": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-aligned-focus-zero-branch-cases": {
+          "estimate": -0.000837339973801865,
+          "lower": -0.005632410483126682,
+          "upper": 0.0039094011918381355
+        },
+        "branch-on-zero-aligned-focus-zero-branch-cases-reverse": {
+          "estimate": -0.002295135461708231,
+          "lower": -0.0060307331218878435,
+          "upper": 0.0014961108594078176
+        }
+      },
+      "combined": {
+        "estimate": -0.00156650378046852,
+        "lower": -0.0045835460785311755,
+        "upper": 0.001392118739992565
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-aligned-focus-zero-branch-cases": {
+          "estimate": -9.93913285651793e-06,
+          "lower": -0.0021027962473300077,
+          "upper": 0.002188900643036229
+        },
+        "branch-on-zero-aligned-focus-zero-branch-cases-reverse": {
+          "estimate": -0.0033122863814548653,
+          "lower": -0.005781311554647228,
+          "upper": -0.0006399444956242117
+        }
+      },
+      "combined": {
+        "estimate": -0.0016624782134334604,
+        "lower": -0.003332098055974342,
+        "upper": 1.377266126167953e-05
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-16384": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-aligned-focus-zero-branch-cases": {
+          "estimate": 0.0011389907814876032,
+          "lower": -0.0009864129467694882,
+          "upper": 0.0028340552343393277
+        },
+        "branch-on-zero-aligned-focus-zero-branch-cases-reverse": {
+          "estimate": -0.0013649473924505218,
+          "lower": -0.0028460100125996535,
+          "upper": 6.233710261405179e-05
+        }
+      },
+      "combined": {
+        "estimate": -0.00011376210763858197,
+        "lower": -0.001403054224583422,
+        "upper": 0.001019325982103858
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-aligned-focus-zero-branch-cases": {
+          "estimate": 0.0008629859796283057,
+          "lower": -0.00163955998731935,
+          "upper": 0.0035216415595829
+        },
+        "branch-on-zero-aligned-focus-zero-branch-cases-reverse": {
+          "estimate": -0.0004378651307677117,
+          "lower": -0.002560119789302262,
+          "upper": 0.001633059100584866
+        }
+      },
+      "combined": {
+        "estimate": 0.00021234894265909077,
+        "lower": -0.0013991688484489284,
+        "upper": 0.001900455499748377
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-aligned-focus-zero-branch-cases": {
+          "estimate": -0.0003777723509305053,
+          "lower": -0.001151612410562497,
+          "upper": 0.00026370963581667795
+        },
+        "branch-on-zero-aligned-focus-zero-branch-cases-reverse": {
+          "estimate": 0.0003178637425833575,
+          "lower": -0.0003442133272678616,
+          "upper": 0.001109240055906957
+        }
+      },
+      "combined": {
+        "estimate": -3.0014794684229962e-05,
+        "lower": -0.000550096994247129,
+        "upper": 0.0004906616672764041
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-1024": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-aligned-focus-zero-branch-cases": {
+          "estimate": -0.004566110450842764,
+          "lower": -0.007427405753682614,
+          "upper": -0.002111314378857143
+        },
+        "branch-on-zero-aligned-focus-zero-branch-cases-reverse": {
+          "estimate": -0.003308854659838212,
+          "lower": -0.004815193406403684,
+          "upper": -0.0018323351501402518
+        }
+      },
+      "combined": {
+        "estimate": -0.003937680922944664,
+        "lower": -0.005516568217601825,
+        "upper": -0.002511471898937634
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-262144": {
+      "decision": "bounded",
+      "runs": {
+        "branch-on-zero-aligned-focus-zero-branch-cases": {
+          "estimate": -0.001756854184536527,
+          "lower": -0.0031889604194295096,
+          "upper": -0.0004063100433988609
+        },
+        "branch-on-zero-aligned-focus-zero-branch-cases-reverse": {
+          "estimate": -0.00036335611126692147,
+          "lower": -0.0019885149906764266,
+          "upper": 0.001118744759687429
+        }
+      },
+      "combined": {
+        "estimate": -0.0010603481351332267,
+        "lower": -0.0021038547143000796,
+        "upper": -2.9931914792280523e-05
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    }
+  },
+  "scope": "Runtime diagnostics with frozen artifacts and v1 per-case and peer checks.",
+  "equivalent_named_cases": [
+    [
+      "33027-periodic-window",
+      "prefix-periodic-33027"
+    ],
+    [
+      "prefix-repeated-1024",
+      "repeated-1024"
+    ],
+    [
+      "prefix-repeated-32769",
+      "repeated-32769"
+    ],
+    [
+      "prefix-natural-1024",
+      "reymont-prefix-1024"
+    ],
+    [
+      "prefix-natural-16384",
+      "reymont-prefix-16384"
+    ],
+    [
+      "prefix-natural-32769",
+      "reymont-prefix-32769"
+    ],
+    [
+      "heldout-window-32767",
+      "prefix-natural-32767"
+    ]
+  ],
+  "peak_private_payload_bytes": {},
+  "plan_sha256": "e55822e3bd66167eddaf6b736dc5296919e2c71398dff83f7ebcb50271b9e0e0",
+  "observed_receipts": {
+    "branch-on-zero-aligned-focus-zero-branch-cases": {
+      "id": "branch-on-zero-aligned-focus-zero-branch-cases",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "native-size-20261117/canonical-pins/branch-on-zero-aligned-focus-zero-branch-cases.json",
+        "sha256": "5fd9455535a317d2f4c8458d0dad27dd70d5296af2bacf3fa83901a7e0100e06"
+      },
+      "original_pins": {
+        "path": "branch-on-zero-aligned-focus-zero-branch-cases/pins.json",
+        "sha256": "a264875a1d0ff3f910f7e9eac050e08e11b7ed882681863fb268e7b9c8a36cd5"
+      },
+      "summary": {
+        "path": "branch-on-zero-aligned-focus-zero-branch-cases/summary.json",
+        "sha256": "9357f11482984801e7985e31195d768cf43d56c6f575f5782c806e6914c372a8"
+      },
+      "complete": {
+        "path": "branch-on-zero-aligned-focus-zero-branch-cases/complete.json",
+        "sha256": "8e65ed7d64e22179d8548f5d37057bed2ea3c9147bab27118c6798875277f026"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/320-overlap/observations.json.gz",
+          "sha256": "e29740a98540a8d7a08c026316f551e116ffc70b091be33a0f7bf577c412778b"
+        },
+        "eight-overlap": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/eight-overlap/observations.json.gz",
+          "sha256": "5ba0a000e0c5e1228facece97674497f87ef8f795ce81630b56b4fab146b97fb"
+        },
+        "empty": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/empty/observations.json.gz",
+          "sha256": "ba0a6b3bbe81ee2ccbab7ba3b6eebafefeae8e65795dd138cc06cd9ca7ae5d95"
+        },
+        "heldout-mixed-131073": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/heldout-mixed-131073/observations.json.gz",
+          "sha256": "1847627536893684bb1a391e59c4d2b2cab538ed5dc20af024cadcac44f8add5"
+        },
+        "one-stored": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/one-stored/observations.json.gz",
+          "sha256": "8615ba82fad677fa2ff4697b81bf53d10460b2e183b065ecd92b06f2098a3fc7"
+        },
+        "prefix-natural-16384": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/prefix-natural-16384/observations.json.gz",
+          "sha256": "2d90f82e30a79ee9edc8122e23ce636008528a7455ffa7f68ea53cf8f67d0810"
+        },
+        "prefix-natural-4096": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/prefix-natural-4096/observations.json.gz",
+          "sha256": "358ecb243c1760be1953d959e62460c8ed2c80104b3d4826a4559293f867085b"
+        },
+        "prefix-natural-8192": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/prefix-natural-8192/observations.json.gz",
+          "sha256": "bd1ab97d2474ad94d1b4cd2def3734f5013fcbd7d675b822e73b49cb4645f539"
+        },
+        "prefix-periodic-1024": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/prefix-periodic-1024/observations.json.gz",
+          "sha256": "f08bd70d93556795df25a98e5fc3b96dbda967cdfab7ec7d7980b8ff0a26181b"
+        },
+        "prefix-periodic-262144": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/prefix-periodic-262144/observations.json.gz",
+          "sha256": "60b853c651ae25b2c4b2d76111426061d36cb1d1d9198f85932c87a6602b8bdd"
+        },
+        "prefix-random-1024": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/prefix-random-1024/observations.json.gz",
+          "sha256": "cbe6fe524d7cf0c8d047ced5f2938d8d0c1cbab227d1b82119881fa601b4037b"
+        },
+        "prefix-random-1048576": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/prefix-random-1048576/observations.json.gz",
+          "sha256": "35c0f5818a3b57355921ed543a4bf1a781218cabfdb052ad6bfb51aa50894f83"
+        },
+        "random-1024": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/random-1024/observations.json.gz",
+          "sha256": "b4443f9c323cbfbd083ee165eb49ca68422103cbe5a20e381acde98db47ce83b"
+        },
+        "random-64": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/random-64/observations.json.gz",
+          "sha256": "64093e61b3612f48dba0349199904a4981d97d2fb7db05b0385ee3f1682c7302"
+        },
+        "reymont-prefix-32769": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/reymont-prefix-32769/observations.json.gz",
+          "sha256": "440d0940acfb68f09873fe02da0c4b69f275bfecab474643d0d01cf4fd47e7a6"
+        },
+        "seven-stored-prefix": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/seven-stored-prefix/observations.json.gz",
+          "sha256": "aef1c7898bb6c5b33e046e70b8f34aefeb4e4797fecafc6d5a71e12eb3451d0a"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    },
+    "branch-on-zero-aligned-focus-zero-branch-cases-reverse": {
+      "id": "branch-on-zero-aligned-focus-zero-branch-cases-reverse",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "native-size-20261117/canonical-pins/branch-on-zero-aligned-focus-zero-branch-cases-reverse.json",
+        "sha256": "5fd9455535a317d2f4c8458d0dad27dd70d5296af2bacf3fa83901a7e0100e06"
+      },
+      "original_pins": {
+        "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/pins.json",
+        "sha256": "a264875a1d0ff3f910f7e9eac050e08e11b7ed882681863fb268e7b9c8a36cd5"
+      },
+      "summary": {
+        "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/summary.json",
+        "sha256": "3300a19e4100f03a2fe459346d8204124358172ad0df2d58842bc67e113a0ba8"
+      },
+      "complete": {
+        "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/complete.json",
+        "sha256": "8e65ed7d64e22179d8548f5d37057bed2ea3c9147bab27118c6798875277f026"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/320-overlap/observations.json.gz",
+          "sha256": "72d531aaf4999b4bc3f38a38745a19dff3ef9874fb736bc916925f024a894f26"
+        },
+        "eight-overlap": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/eight-overlap/observations.json.gz",
+          "sha256": "0d1066a0bbec700e2f655fc2c929f43b066044e9a123f723b6d6d7c6c9e6b5cf"
+        },
+        "empty": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/empty/observations.json.gz",
+          "sha256": "5def6d887a295e1ad63c3e9c7c0f4b9d6dee5c64f5eaccc698929d8a121227d7"
+        },
+        "heldout-mixed-131073": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/heldout-mixed-131073/observations.json.gz",
+          "sha256": "062ab6fb678f1f2fa99eeb5685ad3c7eceb379e3dbd1635019070bd3e3e8b081"
+        },
+        "one-stored": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/one-stored/observations.json.gz",
+          "sha256": "5daa5cd430d068a0c40c6bddb16b7d3be8f35ddd305f0f4271e2fc486fdc11ba"
+        },
+        "prefix-natural-16384": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/prefix-natural-16384/observations.json.gz",
+          "sha256": "3609ec47209bc6997ae792105829b2989adad8f2e76002b638d2c662506c5baf"
+        },
+        "prefix-natural-4096": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/prefix-natural-4096/observations.json.gz",
+          "sha256": "78af21f7243c425b41659e094f6c209c59627380860805a9da5bfab9e781625f"
+        },
+        "prefix-natural-8192": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/prefix-natural-8192/observations.json.gz",
+          "sha256": "1a8b613f111776423f70d328b7476e2d28a9f833494ecbedbf688e90d8916922"
+        },
+        "prefix-periodic-1024": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/prefix-periodic-1024/observations.json.gz",
+          "sha256": "c76d6aa928970d10c9ba953eced96d22a180e0b62ae2ede68830e1770d800ce7"
+        },
+        "prefix-periodic-262144": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/prefix-periodic-262144/observations.json.gz",
+          "sha256": "0b3fec1e6d3ed8960c660ecba15ba91b135f5668a15166629cc99e7bc89b31a0"
+        },
+        "prefix-random-1024": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/prefix-random-1024/observations.json.gz",
+          "sha256": "cd2c3b64abcdf572616aaca025c38ae13679756def203001f9b45b086ff3c123"
+        },
+        "prefix-random-1048576": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/prefix-random-1048576/observations.json.gz",
+          "sha256": "604ab9b2ccbabaedb9113b290e82d79db683f53826d04f5707764a622cf6f2b2"
+        },
+        "random-1024": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/random-1024/observations.json.gz",
+          "sha256": "35b738c325c38aa62bfe8f3d2740bddfb46a0bfa8d5225705773a91e05dadb81"
+        },
+        "random-64": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/random-64/observations.json.gz",
+          "sha256": "ad3f15dc51d997e7a260a415638f4d33305804afcea9332755ecc1124593588d"
+        },
+        "reymont-prefix-32769": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/reymont-prefix-32769/observations.json.gz",
+          "sha256": "c91a0ed2cfced3f705aa4871a9c202198e7cef01cfd0371c8ebcef85777fc3f1"
+        },
+        "seven-stored-prefix": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/seven-stored-prefix/observations.json.gz",
+          "sha256": "e5ea7766f2bf244dfe2e75ea1123d74917d4baf79dd362539b619ff43e60ad77"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "branch-on-zero-aligned-focus-zero-branch-cases-reverse/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    }
+  },
+  "decision": "Unresolved",
+  "rejected": [],
+  "unresolved": [
+    "branch-on-zero-aligned-focus-zero-branch-cases: missing run binding for environment_sha256",
+    "branch-on-zero-aligned-focus-zero-branch-cases: missing run binding for contract_sha256",
+    "branch-on-zero-aligned-focus-zero-branch-cases-reverse: missing run binding for environment_sha256",
+    "branch-on-zero-aligned-focus-zero-branch-cases-reverse: missing run binding for contract_sha256",
+    "both complete timing orders are required",
+    "empty: regression bound or duplicate-control repeatability unresolved",
+    "one-stored: regression bound or duplicate-control repeatability unresolved",
+    "seven-stored-prefix: regression bound or duplicate-control repeatability unresolved",
+    "random-64: regression bound or duplicate-control repeatability unresolved"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "cases": 24,
+  "exact_object_and_metadata_matches": 24,
+  "mismatches": 0,
+  "emitter_sha256": "b63eeb1fb8e4522a84b7016ec63ca8e0da2c92511be640f66f0ba9b98bc100b8",
+  "entry": "size_screens.py",
+  "scope": "The checkout-relative static-screen reproduction ran successfully for all 24 cases. No linked runtime qualification was performed.",
+  "raw_results": "reproduction-verification.json.gz"
+}

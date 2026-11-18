@@ -12,7 +12,10 @@ use mech_syntax::document::{
     parse_canonical_document,
 };
 
-#[allow(dead_code)]
+#[expect(
+    dead_code,
+    reason = "this probe uses only the count-and-byte measurement API"
+)]
 #[path = "../../../src/core/tests/support/allocation_probe.rs"]
 mod allocation_probe;
 #[global_allocator]

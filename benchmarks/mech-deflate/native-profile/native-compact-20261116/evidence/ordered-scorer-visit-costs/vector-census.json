@@ -1,0 +1,471 @@
+{
+  "object_sha256": "4fc883f9245d29542c1c642369cf3fe9a1799361963c998a3c96be65b2fbce98",
+  "counts_sha256": "3101c02234c53d5fd60500f94d73c993b7eb0d0ad7993a5877fba4c5fd854789",
+  "measurement": "exact executing block visits. Counts exclude synthetic instrumentation.",
+  "cases": {
+    "prefix-natural-4096": {
+      "groups": 24210,
+      "scorer_instructions": 3542835,
+      "group_instructions": 581040,
+      "address_preparation_instructions": 121050,
+      "lane_literal_loads": 24210,
+      "group_address_instruction_indices": [
+        0,
+        1,
+        3,
+        4,
+        5
+      ],
+      "original_group": {
+        "address": "0x2320",
+        "visits": 24210,
+        "instructions": [
+          [
+            "add",
+            "x7, x10, #0xc"
+          ],
+          [
+            "lsl",
+            "x14, x26, #2"
+          ],
+          [
+            "ldr",
+            "q28, [x7, x14]"
+          ],
+          [
+            "sub",
+            "x7, x0, #0x3"
+          ],
+          [
+            "add",
+            "x7, x11, x7, lsl #3"
+          ],
+          [
+            "sub",
+            "x7, x7, x26, lsl #3"
+          ],
+          [
+            "ldur",
+            "q29, [x7, #-0x18]"
+          ],
+          [
+            "ldur",
+            "q30, [x7, #-0x8]"
+          ],
+          [
+            "add",
+            "x7, x26, #0x4"
+          ],
+          [
+            "dup.4s",
+            "v31, w23"
+          ],
+          [
+            "add.4s",
+            "v28, v31, v28"
+          ],
+          [
+            "uzp1.4s",
+            "v29, v30, v29"
+          ],
+          [
+            "rev64.4s",
+            "v29, v29"
+          ],
+          [
+            "add.4s",
+            "v29, v28, v29"
+          ],
+          [
+            "umin.4s",
+            "v28, v29, v0"
+          ],
+          [
+            "cmhi.4s",
+            "v24, v0, v29"
+          ],
+          [
+            "dup.4s",
+            "v29, w26"
+          ],
+          [
+            "ldr",
+            "q30, 0x24d0"
+          ],
+          [
+            "add.4s",
+            "v29, v29, v30"
+          ],
+          [
+            "bsl.16b",
+            "v24, v29, v5"
+          ],
+          [
+            "mov",
+            "x26, x7"
+          ],
+          [
+            "mov.16b",
+            "v0, v28"
+          ],
+          [
+            "mov.16b",
+            "v5, v24"
+          ],
+          [
+            "b",
+            "0x228c"
+          ]
+        ]
+      }
+    },
+    "prefix-natural-8192": {
+      "groups": 40728,
+      "scorer_instructions": 7728432,
+      "group_instructions": 977472,
+      "address_preparation_instructions": 203640,
+      "lane_literal_loads": 40728,
+      "group_address_instruction_indices": [
+        0,
+        1,
+        3,
+        4,
+        5
+      ],
+      "original_group": {
+        "address": "0x2320",
+        "visits": 40728,
+        "instructions": [
+          [
+            "add",
+            "x7, x10, #0xc"
+          ],
+          [
+            "lsl",
+            "x14, x26, #2"
+          ],
+          [
+            "ldr",
+            "q28, [x7, x14]"
+          ],
+          [
+            "sub",
+            "x7, x0, #0x3"
+          ],
+          [
+            "add",
+            "x7, x11, x7, lsl #3"
+          ],
+          [
+            "sub",
+            "x7, x7, x26, lsl #3"
+          ],
+          [
+            "ldur",
+            "q29, [x7, #-0x18]"
+          ],
+          [
+            "ldur",
+            "q30, [x7, #-0x8]"
+          ],
+          [
+            "add",
+            "x7, x26, #0x4"
+          ],
+          [
+            "dup.4s",
+            "v31, w23"
+          ],
+          [
+            "add.4s",
+            "v28, v31, v28"
+          ],
+          [
+            "uzp1.4s",
+            "v29, v30, v29"
+          ],
+          [
+            "rev64.4s",
+            "v29, v29"
+          ],
+          [
+            "add.4s",
+            "v29, v28, v29"
+          ],
+          [
+            "umin.4s",
+            "v28, v29, v0"
+          ],
+          [
+            "cmhi.4s",
+            "v24, v0, v29"
+          ],
+          [
+            "dup.4s",
+            "v29, w26"
+          ],
+          [
+            "ldr",
+            "q30, 0x24d0"
+          ],
+          [
+            "add.4s",
+            "v29, v29, v30"
+          ],
+          [
+            "bsl.16b",
+            "v24, v29, v5"
+          ],
+          [
+            "mov",
+            "x26, x7"
+          ],
+          [
+            "mov.16b",
+            "v0, v28"
+          ],
+          [
+            "mov.16b",
+            "v5, v24"
+          ],
+          [
+            "b",
+            "0x228c"
+          ]
+        ]
+      }
+    },
+    "reymont-prefix-32769": {
+      "groups": 71795,
+      "scorer_instructions": 27493895,
+      "group_instructions": 1723080,
+      "address_preparation_instructions": 358975,
+      "lane_literal_loads": 71795,
+      "group_address_instruction_indices": [
+        0,
+        1,
+        3,
+        4,
+        5
+      ],
+      "original_group": {
+        "address": "0x2320",
+        "visits": 71795,
+        "instructions": [
+          [
+            "add",
+            "x7, x10, #0xc"
+          ],
+          [
+            "lsl",
+            "x14, x26, #2"
+          ],
+          [
+            "ldr",
+            "q28, [x7, x14]"
+          ],
+          [
+            "sub",
+            "x7, x0, #0x3"
+          ],
+          [
+            "add",
+            "x7, x11, x7, lsl #3"
+          ],
+          [
+            "sub",
+            "x7, x7, x26, lsl #3"
+          ],
+          [
+            "ldur",
+            "q29, [x7, #-0x18]"
+          ],
+          [
+            "ldur",
+            "q30, [x7, #-0x8]"
+          ],
+          [
+            "add",
+            "x7, x26, #0x4"
+          ],
+          [
+            "dup.4s",
+            "v31, w23"
+          ],
+          [
+            "add.4s",
+            "v28, v31, v28"
+          ],
+          [
+            "uzp1.4s",
+            "v29, v30, v29"
+          ],
+          [
+            "rev64.4s",
+            "v29, v29"
+          ],
+          [
+            "add.4s",
+            "v29, v28, v29"
+          ],
+          [
+            "umin.4s",
+            "v28, v29, v0"
+          ],
+          [
+            "cmhi.4s",
+            "v24, v0, v29"
+          ],
+          [
+            "dup.4s",
+            "v29, w26"
+          ],
+          [
+            "ldr",
+            "q30, 0x24d0"
+          ],
+          [
+            "add.4s",
+            "v29, v29, v30"
+          ],
+          [
+            "bsl.16b",
+            "v24, v29, v5"
+          ],
+          [
+            "mov",
+            "x26, x7"
+          ],
+          [
+            "mov.16b",
+            "v0, v28"
+          ],
+          [
+            "mov.16b",
+            "v5, v24"
+          ],
+          [
+            "b",
+            "0x228c"
+          ]
+        ]
+      }
+    },
+    "prefix-natural-32769": {
+      "groups": 71795,
+      "scorer_instructions": 27493895,
+      "group_instructions": 1723080,
+      "address_preparation_instructions": 358975,
+      "lane_literal_loads": 71795,
+      "group_address_instruction_indices": [
+        0,
+        1,
+        3,
+        4,
+        5
+      ],
+      "original_group": {
+        "address": "0x2320",
+        "visits": 71795,
+        "instructions": [
+          [
+            "add",
+            "x7, x10, #0xc"
+          ],
+          [
+            "lsl",
+            "x14, x26, #2"
+          ],
+          [
+            "ldr",
+            "q28, [x7, x14]"
+          ],
+          [
+            "sub",
+            "x7, x0, #0x3"
+          ],
+          [
+            "add",
+            "x7, x11, x7, lsl #3"
+          ],
+          [
+            "sub",
+            "x7, x7, x26, lsl #3"
+          ],
+          [
+            "ldur",
+            "q29, [x7, #-0x18]"
+          ],
+          [
+            "ldur",
+            "q30, [x7, #-0x8]"
+          ],
+          [
+            "add",
+            "x7, x26, #0x4"
+          ],
+          [
+            "dup.4s",
+            "v31, w23"
+          ],
+          [
+            "add.4s",
+            "v28, v31, v28"
+          ],
+          [
+            "uzp1.4s",
+            "v29, v30, v29"
+          ],
+          [
+            "rev64.4s",
+            "v29, v29"
+          ],
+          [
+            "add.4s",
+            "v29, v28, v29"
+          ],
+          [
+            "umin.4s",
+            "v28, v29, v0"
+          ],
+          [
+            "cmhi.4s",
+            "v24, v0, v29"
+          ],
+          [
+            "dup.4s",
+            "v29, w26"
+          ],
+          [
+            "ldr",
+            "q30, 0x24d0"
+          ],
+          [
+            "add.4s",
+            "v29, v29, v30"
+          ],
+          [
+            "bsl.16b",
+            "v24, v29, v5"
+          ],
+          [
+            "mov",
+            "x26, x7"
+          ],
+          [
+            "mov.16b",
+            "v0, v28"
+          ],
+          [
+            "mov.16b",
+            "v5, v24"
+          ],
+          [
+            "b",
+            "0x228c"
+          ]
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,193 @@
+{
+  "size_qualified": 68424,
+  "size_smaller": 67664,
+  "size_candidate": 67568,
+  "object_sha256": "fb468dae1264983c58af5bca945cabe5d4a15d985c82e631c5d0849e59aea805",
+  "changed_atoms": {
+    "_mech_compact_numeric_475_vector": {
+      "from": 6592,
+      "to": 6496,
+      "offset_before": 0,
+      "offset_after": 0
+    },
+    "_mech_compact_numeric_3009_no_growth": {
+      "from": 1328,
+      "to": 1328,
+      "offset_before": 7728,
+      "offset_after": 7632
+    },
+    "_mech_compact_numeric_3009_no_growth_composed": {
+      "from": 1136,
+      "to": 1136,
+      "offset_before": 6592,
+      "offset_after": 6496
+    },
+    "_mech_compact_numeric_4173": {
+      "from": 896,
+      "to": 896,
+      "offset_before": 9056,
+      "offset_after": 8960
+    },
+    "_mech_compact_numeric_3447": {
+      "from": 544,
+      "to": 544,
+      "offset_before": 10608,
+      "offset_after": 10512
+    },
+    "_mech_compact_numeric_3447_grouped": {
+      "from": 656,
+      "to": 656,
+      "offset_before": 9952,
+      "offset_after": 9856
+    },
+    "_mech_compact_numeric_3956_vector": {
+      "from": 384,
+      "to": 384,
+      "offset_before": 11152,
+      "offset_after": 11056
+    },
+    "_mech_compact_numeric_6633": {
+      "from": 480,
+      "to": 480,
+      "offset_before": 11536,
+      "offset_after": 11440
+    },
+    "_mech_compact_numeric_5895": {
+      "from": 368,
+      "to": 368,
+      "offset_before": 12016,
+      "offset_after": 11920
+    },
+    "_mech_compact_numeric_3872": {
+      "from": 256,
+      "to": 256,
+      "offset_before": 12384,
+      "offset_after": 12288
+    },
+    "_mech_compact_numeric_4799": {
+      "from": 272,
+      "to": 272,
+      "offset_before": 12640,
+      "offset_after": 12544
+    },
+    "_mech_compact_numeric_2821_vector": {
+      "from": 256,
+      "to": 256,
+      "offset_before": 12912,
+      "offset_after": 12816
+    },
+    "_mech_compact_numeric_8026": {
+      "from": 208,
+      "to": 208,
+      "offset_before": 13168,
+      "offset_after": 13072
+    },
+    "_mech_compact_numeric_362_vector": {
+      "from": 240,
+      "to": 240,
+      "offset_before": 13376,
+      "offset_after": 13280
+    },
+    "_mech_compact_word_collection_10": {
+      "from": 256,
+      "to": 256,
+      "offset_before": 13616,
+      "offset_after": 13520
+    },
+    "_mech_compact_matrix_word": {
+      "from": 160,
+      "to": 160,
+      "offset_before": 13872,
+      "offset_after": 13776
+    },
+    "_mech_compact_unsigned_dot_product": {
+      "from": 160,
+      "to": 160,
+      "offset_before": 64128,
+      "offset_after": 64032
+    },
+    "_mech_compact_closed_checked": {
+      "from": 49360,
+      "to": 49360,
+      "offset_before": 14768,
+      "offset_after": 14672
+    },
+    "_mech_compact_expand_capacity_preserving": {
+      "from": 176,
+      "to": 176,
+      "offset_before": 14416,
+      "offset_after": 14320
+    },
+    "_mech_compact_append_backing_byte_consume": {
+      "from": 176,
+      "to": 176,
+      "offset_before": 14592,
+      "offset_after": 14496
+    },
+    "_mech_compact_checked_layout_16147": {
+      "from": 304,
+      "to": 304,
+      "offset_before": 64288,
+      "offset_after": 64192
+    },
+    "_mech_compact_checked_layout_13100": {
+      "from": 304,
+      "to": 304,
+      "offset_before": 64592,
+      "offset_after": 64496
+    },
+    "_mech_compact_checked_layout_10939": {
+      "from": 304,
+      "to": 304,
+      "offset_before": 64896,
+      "offset_after": 64800
+    },
+    "_mech_compact_checked_layout_continuation_9112": {
+      "from": 336,
+      "to": 336,
+      "offset_before": 65200,
+      "offset_after": 65104
+    },
+    "_mech_compact_checked_layout_continuation_9562": {
+      "from": 320,
+      "to": 320,
+      "offset_before": 65536,
+      "offset_after": 65440
+    },
+    "_mech_compact_checked_layout_continuation_21031": {
+      "from": 304,
+      "to": 304,
+      "offset_before": 65856,
+      "offset_after": 65760
+    },
+    "_mech_compact_checked_layout_continuation_44070": {
+      "from": 656,
+      "to": 656,
+      "offset_before": 66160,
+      "offset_after": 66064
+    },
+    "_mech_compact_checked_layout_continuation_16644": {
+      "from": 848,
+      "to": 848,
+      "offset_before": 66816,
+      "offset_after": 66720
+    },
+    "_mech_compact_closed_v2": {
+      "from": 384,
+      "to": 384,
+      "offset_before": 14032,
+      "offset_after": 13936
+    }
+  },
+  "preserved_proof_fields": [
+    "origins",
+    "source_error_origins",
+    "all_path_initialization_proved",
+    "layout_checked_controllers",
+    "guarded_consuming_sites",
+    "owner_transfer_sites",
+    "buffer_result_sites",
+    "prechange_retirement_sites"
+  ],
+  "equivalent_to_smaller": false
+}

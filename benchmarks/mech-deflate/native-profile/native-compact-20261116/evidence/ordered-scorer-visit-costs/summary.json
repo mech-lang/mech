@@ -1,0 +1,679 @@
+{
+  "source_pin": "d03f097b06c8386822a8063de9826715a9c1e897",
+  "decision": "Park the conditional item branches. Keep address arguments diagnostic.",
+  "winner_floors": {
+    "roc": 81,
+    "libdeflate": 62
+  },
+  "target_libdeflate": 63,
+  "linked_address_results": {
+    "commands": {
+      "failures": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ordered-scorer/ord-abi/checks/linked-proofs/check-linked-error-exits.py",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ordered-scorer/ord-abi/checks/worker-checks/control",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ordered-scorer/ord-abi/checks/worker-checks/ord-abi"
+      ],
+      "stack": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ordered-scorer/ord-abi/checks/linked-proofs/check-layout-stack.py",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ordered-scorer/ord-abi/checks/worker-checks/control",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ordered-scorer/ord-abi/checks/worker-checks/ord-abi"
+      ]
+    },
+    "peak_stack_bytes": {
+      "control": 5280,
+      "ord-abi": 5296
+    },
+    "matches_success_observations": 162,
+    "checked_failure_cases": [
+      "empty",
+      "one-stored",
+      "seven-stored-prefix",
+      "prefix-periodic-4096",
+      "prefix-repeated-16384",
+      "heldout-mixed-131073"
+    ]
+  },
+  "variants": {
+    "ord-control": {
+      "encoder_text_bytes": 71048,
+      "worker_sha256": "8f3d97ca2d684ac60fa0910fa3124816edff0468639587a823fd342425b477a2",
+      "object_sha256": "4fc883f9245d29542c1c642369cf3fe9a1799361963c998a3c96be65b2fbce98"
+    },
+    "ord-abi": {
+      "encoder_text_bytes": 71000,
+      "worker_sha256": "fe8eb71142a7cf8b847f0dd2c4cc79c674f015217d2a3f5225aa587423f8294d",
+      "object_sha256": "6fe530eb77fa449f5619f3ae8d7c7245969a44cce8a6ea1315f7bf83c66015c4"
+    },
+    "ord-first": {
+      "encoder_text_bytes": 71048,
+      "worker_sha256": "8bd649c8631fac72fdf4202d53a44086ae360feb91dc84a2fc834d76cd874f8a",
+      "object_sha256": "b539b81309b3a5048d217fa7bb402857238c45a366ce93df7c562f39e6e17106"
+    },
+    "ord-all": {
+      "encoder_text_bytes": 71064,
+      "worker_sha256": "cd96c018ce9bcdd163de3ca87e882ad9905c1f56bcfad99591f8025521b55c58",
+      "object_sha256": "68498a11817038f531da85d10f8a4d98cee630e69d5ac5d009bb425aa7e52e4d"
+    },
+    "ord-first-layout": {
+      "encoder_text_bytes": 71048,
+      "worker_sha256": "843b0c7775061a30460bb042d83bed6d35aea6f6e71abbc3d706b806e60fd566",
+      "object_sha256": "0f8b65d8bbd0f07e9857d2601d82df9e20ad196708dd388659c2e9be42939b86",
+      "focus": {
+        "kind": "focus",
+        "policy_decision": "Reject",
+        "runs": [
+          {
+            "order": "forward",
+            "cases": {
+              "prefix-natural-8192": {
+                "mech-control": 1.0312509860634973,
+                "mech-experiment": 1.1113075796107932
+              },
+              "320-overlap": {
+                "mech-control": 0.9925539542289866,
+                "mech-experiment": 0.9947683505810788
+              },
+              "random-1024": {
+                "mech-control": 0.9555063090550144,
+                "mech-experiment": 0.9549980903735402
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 0.9802157272227321,
+                "mech-experiment": 0.9842511476478463
+              }
+            },
+            "lost_cases": {
+              "roc": [
+                "prefix-natural-16384",
+                "prefix-natural-32769",
+                "reymont-prefix-32769"
+              ],
+              "libdeflate": [
+                "heldout-mixed-131073",
+                "prefix-natural-16384",
+                "prefix-natural-32769",
+                "reymont-prefix-32769"
+              ]
+            },
+            "gained_cases": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 12
+              },
+              "libdeflate": {
+                "mech-control": 12,
+                "mech-experiment": 8
+              }
+            }
+          },
+          {
+            "order": "reverse",
+            "cases": {
+              "prefix-natural-8192": {
+                "mech-control": 1.0377247680625066,
+                "mech-experiment": 1.1199328053142041
+              },
+              "320-overlap": {
+                "mech-control": 0.9940087281354705,
+                "mech-experiment": 0.9981885461236322
+              },
+              "random-1024": {
+                "mech-control": 0.9572827714760526,
+                "mech-experiment": 0.9582041780488951
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 0.9877696120941358,
+                "mech-experiment": 0.9914188136260351
+              }
+            },
+            "lost_cases": {
+              "roc": [
+                "prefix-natural-16384",
+                "prefix-natural-32769",
+                "reymont-prefix-32769"
+              ],
+              "libdeflate": [
+                "heldout-mixed-131073",
+                "prefix-natural-16384",
+                "prefix-natural-32769",
+                "reymont-prefix-32769"
+              ]
+            },
+            "gained_cases": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 12
+              },
+              "libdeflate": {
+                "mech-control": 12,
+                "mech-experiment": 8
+              }
+            }
+          }
+        ],
+        "rejected": [
+          "prefix-natural-16384: repeated focused loss against roc",
+          "prefix-natural-32769: repeated focused loss against roc",
+          "reymont-prefix-32769: repeated focused loss against roc",
+          "heldout-mixed-131073: repeated focused loss against libdeflate",
+          "prefix-natural-16384: repeated focused loss against libdeflate",
+          "prefix-natural-32769: repeated focused loss against libdeflate",
+          "reymont-prefix-32769: repeated focused loss against libdeflate"
+        ],
+        "unresolved": [
+          "scorer-20261117-ord-first-layout-focus-forward: focused losses against roc: prefix-natural-16384, prefix-natural-32769, reymont-prefix-32769",
+          "scorer-20261117-ord-first-layout-focus-forward: focused losses against libdeflate: heldout-mixed-131073, prefix-natural-16384, prefix-natural-32769, reymont-prefix-32769",
+          "scorer-20261117-ord-first-layout-focus-reverse: focused losses against roc: prefix-natural-16384, prefix-natural-32769, reymont-prefix-32769",
+          "scorer-20261117-ord-first-layout-focus-reverse: focused losses against libdeflate: heldout-mixed-131073, prefix-natural-16384, prefix-natural-32769, reymont-prefix-32769",
+          "both complete timing orders are required"
+        ],
+        "achieves_target": false,
+        "preserves_peer_wins": false
+      }
+    },
+    "ord-all-layout": {
+      "encoder_text_bytes": 71080,
+      "worker_sha256": "dfa3c059244cf3793cebe66cbb4eb0c68374c153bc55f37efb716b8eb2de4804",
+      "object_sha256": "5ef3ca08dc29fe91efab07356e3e0d088ffe52c2124de1fc25eb7b9106a7d8ed",
+      "focus": {
+        "kind": "focus",
+        "policy_decision": "Reject",
+        "runs": [
+          {
+            "order": "forward",
+            "cases": {
+              "prefix-natural-8192": {
+                "mech-control": 1.027565806185175,
+                "mech-experiment": 1.1927678975967155
+              },
+              "320-overlap": {
+                "mech-control": 0.9921628934209411,
+                "mech-experiment": 0.996591346392248
+              },
+              "random-1024": {
+                "mech-control": 0.9534398302822109,
+                "mech-experiment": 0.9547839646494701
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 0.9856324331838504,
+                "mech-experiment": 0.9862177967132417
+              }
+            },
+            "lost_cases": {
+              "roc": [
+                "prefix-natural-16384",
+                "prefix-natural-32769",
+                "reymont-prefix-32769"
+              ],
+              "libdeflate": [
+                "heldout-mixed-131073",
+                "prefix-natural-16384",
+                "prefix-natural-32769",
+                "reymont-prefix-32769"
+              ]
+            },
+            "gained_cases": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 12
+              },
+              "libdeflate": {
+                "mech-control": 12,
+                "mech-experiment": 8
+              }
+            }
+          },
+          {
+            "order": "reverse",
+            "cases": {
+              "prefix-natural-8192": {
+                "mech-control": 1.0400311463130392,
+                "mech-experiment": 1.2066913443719864
+              },
+              "320-overlap": {
+                "mech-control": 0.9886472983156412,
+                "mech-experiment": 0.9982149188861834
+              },
+              "random-1024": {
+                "mech-control": 0.9792049382306692,
+                "mech-experiment": 0.9581635924908204
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 0.9808869222721152,
+                "mech-experiment": 0.9810563520191896
+              }
+            },
+            "lost_cases": {
+              "roc": [
+                "prefix-natural-16384",
+                "prefix-natural-32769",
+                "reymont-prefix-32769"
+              ],
+              "libdeflate": [
+                "heldout-mixed-131073",
+                "prefix-natural-16384",
+                "prefix-natural-32769",
+                "reymont-prefix-32769"
+              ]
+            },
+            "gained_cases": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 12
+              },
+              "libdeflate": {
+                "mech-control": 12,
+                "mech-experiment": 8
+              }
+            }
+          }
+        ],
+        "rejected": [
+          "prefix-natural-16384: repeated focused loss against roc",
+          "prefix-natural-32769: repeated focused loss against roc",
+          "reymont-prefix-32769: repeated focused loss against roc",
+          "heldout-mixed-131073: repeated focused loss against libdeflate",
+          "prefix-natural-16384: repeated focused loss against libdeflate",
+          "prefix-natural-32769: repeated focused loss against libdeflate",
+          "reymont-prefix-32769: repeated focused loss against libdeflate"
+        ],
+        "unresolved": [
+          "scorer-20261117-ord-all-layout-focus-forward: focused losses against roc: prefix-natural-16384, prefix-natural-32769, reymont-prefix-32769",
+          "scorer-20261117-ord-all-layout-focus-forward: focused losses against libdeflate: heldout-mixed-131073, prefix-natural-16384, prefix-natural-32769, reymont-prefix-32769",
+          "scorer-20261117-ord-all-layout-focus-reverse: focused losses against roc: prefix-natural-16384, prefix-natural-32769, reymont-prefix-32769",
+          "scorer-20261117-ord-all-layout-focus-reverse: focused losses against libdeflate: heldout-mixed-131073, prefix-natural-16384, prefix-natural-32769, reymont-prefix-32769",
+          "both complete timing orders are required"
+        ],
+        "achieves_target": false,
+        "preserves_peer_wins": false
+      }
+    }
+  },
+  "visit_counts": {
+    "prefix-natural-4096": {
+      "trip_histogram": {
+        "1": 19415,
+        "2": 2205,
+        "3": 1370,
+        "4": 1265,
+        "5": 1055,
+        "6": 1390,
+        "7": 1475,
+        "8": 875,
+        "9": 595,
+        "10": 715,
+        "11": 430,
+        "12": 360,
+        "13": 300,
+        "14": 280,
+        "15": 285,
+        "16": 270,
+        "17": 260,
+        "18": 215,
+        "19": 230,
+        "20": 135,
+        "21": 375,
+        "22": 180,
+        "23": 65,
+        "24": 70,
+        "25": 65,
+        "26": 105,
+        "27": 95,
+        "28": 60,
+        "29": 50,
+        "30": 60,
+        "31": 50,
+        "32": 85,
+        "33": 50,
+        "34": 50,
+        "35": 45,
+        "36": 50,
+        "37": 70,
+        "38": 60,
+        "39": 90,
+        "40": 55,
+        "41": 45,
+        "42": 35,
+        "43": 40,
+        "44": 30,
+        "45": 260,
+        "46": 20,
+        "47": 25,
+        "48": 20,
+        "49": 20,
+        "50": 20,
+        "51": 20,
+        "52": 20,
+        "53": 40,
+        "54": 20,
+        "55": 50,
+        "56": 40,
+        "59": 5
+      },
+      "first_scalar": {
+        "visits": 32015,
+        "improvements": 3786
+      },
+      "continued_scalar": {
+        "visits": 70480,
+        "improvements": 15089
+      }
+    },
+    "prefix-natural-8192": {
+      "trip_histogram": {
+        "1": 51630,
+        "2": 7494,
+        "3": 4170,
+        "4": 3078,
+        "5": 2286,
+        "6": 2580,
+        "7": 2682,
+        "8": 1650,
+        "9": 948,
+        "10": 1392,
+        "11": 804,
+        "12": 642,
+        "13": 546,
+        "14": 492,
+        "15": 474,
+        "16": 438,
+        "17": 420,
+        "18": 354,
+        "19": 372,
+        "20": 288,
+        "21": 600,
+        "22": 426,
+        "23": 114,
+        "24": 132,
+        "25": 114,
+        "26": 180,
+        "27": 150,
+        "28": 102,
+        "29": 90,
+        "30": 108,
+        "31": 90,
+        "32": 132,
+        "33": 90,
+        "34": 90,
+        "35": 84,
+        "36": 90,
+        "37": 126,
+        "38": 114,
+        "39": 132,
+        "40": 84,
+        "41": 72,
+        "42": 66,
+        "43": 60,
+        "44": 66,
+        "45": 324,
+        "46": 42,
+        "47": 42,
+        "48": 36,
+        "49": 36,
+        "50": 36,
+        "51": 36,
+        "52": 36,
+        "53": 60,
+        "54": 36,
+        "55": 90,
+        "56": 72,
+        "59": 6
+      },
+      "first_scalar": {
+        "visits": 80868,
+        "improvements": 15615
+      },
+      "continued_scalar": {
+        "visits": 137916,
+        "improvements": 31602
+      }
+    },
+    "prefix-natural-16384": {
+      "trip_histogram": {
+        "1": 117555,
+        "2": 21048,
+        "3": 11765,
+        "4": 7843,
+        "5": 5528,
+        "6": 4710,
+        "7": 4545,
+        "8": 2288,
+        "9": 1431,
+        "10": 1755,
+        "11": 1220,
+        "12": 913,
+        "13": 816,
+        "14": 807,
+        "15": 601,
+        "16": 554,
+        "17": 504,
+        "18": 515,
+        "19": 518,
+        "20": 480,
+        "21": 584,
+        "22": 451,
+        "23": 149,
+        "24": 171,
+        "25": 144,
+        "26": 201,
+        "27": 131,
+        "28": 91,
+        "29": 99,
+        "30": 102,
+        "31": 87,
+        "32": 122,
+        "33": 93,
+        "34": 93,
+        "35": 88,
+        "36": 93,
+        "37": 207,
+        "38": 107,
+        "39": 122,
+        "40": 82,
+        "41": 78,
+        "42": 73,
+        "43": 56,
+        "44": 67,
+        "45": 414,
+        "46": 41,
+        "47": 41,
+        "48": 36,
+        "49": 36,
+        "50": 36,
+        "51": 36,
+        "52": 36,
+        "53": 56,
+        "54": 36,
+        "55": 81,
+        "56": 84,
+        "59": 5
+      },
+      "first_scalar": {
+        "visits": 182825,
+        "improvements": 46227
+      },
+      "continued_scalar": {
+        "visits": 244705,
+        "improvements": 64479
+      }
+    },
+    "reymont-prefix-32769": {
+      "trip_histogram": {
+        "1": 235600,
+        "2": 47285,
+        "3": 26085,
+        "4": 18425,
+        "5": 11630,
+        "6": 8655,
+        "7": 7720,
+        "8": 4590,
+        "9": 3165,
+        "10": 2760,
+        "11": 1900,
+        "12": 1435,
+        "13": 1295,
+        "14": 1440,
+        "15": 950,
+        "16": 895,
+        "17": 875,
+        "18": 830,
+        "19": 895,
+        "20": 800,
+        "21": 780,
+        "22": 595,
+        "23": 305,
+        "24": 255,
+        "25": 285,
+        "26": 240,
+        "27": 175,
+        "28": 140,
+        "29": 130,
+        "30": 135,
+        "31": 115,
+        "32": 150,
+        "33": 120,
+        "34": 140,
+        "35": 115,
+        "36": 130,
+        "37": 310,
+        "38": 185,
+        "39": 150,
+        "40": 100,
+        "41": 105,
+        "42": 115,
+        "43": 70,
+        "44": 95,
+        "45": 405,
+        "46": 165,
+        "47": 80,
+        "48": 50,
+        "49": 90,
+        "50": 50,
+        "51": 50,
+        "52": 50,
+        "53": 70,
+        "54": 45,
+        "55": 115,
+        "56": 105,
+        "57": 5,
+        "58": 15,
+        "59": 95,
+        "60": 5,
+        "61": 5,
+        "62": 5,
+        "63": 25,
+        "65": 5,
+        "67": 5,
+        "69": 30,
+        "76": 10,
+        "77": 45,
+        "86": 5,
+        "87": 15,
+        "90": 20
+      },
+      "first_scalar": {
+        "visits": 372935,
+        "improvements": 91389
+      },
+      "continued_scalar": {
+        "visits": 470460,
+        "improvements": 123058
+      }
+    }
+  },
+  "unlaid_scorer_counts": {
+    "ord-control": {
+      "prefix-natural-4096": {
+        "instructions": 3542835,
+        "branches": 556905
+      },
+      "prefix-natural-8192": {
+        "instructions": 7728432,
+        "branches": 1255812
+      },
+      "reymont-prefix-32769": {
+        "instructions": 27493895,
+        "branches": 4684405
+      },
+      "prefix-natural-32769": {
+        "instructions": 27493895,
+        "branches": 4684405
+      }
+    },
+    "ord-abi": {
+      "prefix-natural-4096": {
+        "instructions": 3472735,
+        "branches": 556905
+      },
+      "prefix-natural-8192": {
+        "instructions": 7555482,
+        "branches": 1255812
+      },
+      "reymont-prefix-32769": {
+        "instructions": 26797670,
+        "branches": 4684405
+      },
+      "prefix-natural-32769": {
+        "instructions": 26797670,
+        "branches": 4684405
+      }
+    },
+    "ord-first": {
+      "prefix-natural-4096": {
+        "instructions": 3458148,
+        "branches": 588920
+      },
+      "prefix-natural-8192": {
+        "instructions": 7532673,
+        "branches": 1336680
+      },
+      "reymont-prefix-32769": {
+        "instructions": 26649257,
+        "branches": 5057340
+      },
+      "prefix-natural-32769": {
+        "instructions": 26649257,
+        "branches": 5057340
+      }
+    },
+    "ord-all": {
+      "prefix-natural-4096": {
+        "instructions": 3543491,
+        "branches": 659400
+      },
+      "prefix-natural-8192": {
+        "instructions": 7699995,
+        "branches": 1474596
+      },
+      "reymont-prefix-32769": {
+        "instructions": 27220483,
+        "branches": 5527800
+      },
+      "prefix-natural-32769": {
+        "instructions": 27220483,
+        "branches": 5527800
+      }
+    }
+  },
+  "evidence": "evidence/ordered-scorer-visit-costs/README.md"
+}

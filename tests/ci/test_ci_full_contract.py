@@ -1259,8 +1259,9 @@ class FullWorkflowContractTests(unittest.TestCase):
         native = job_block(NATIVE, "canonical-native-cli")
         checker = (ROOT / "scripts/check_canonical_cli_ci.py").read_text(encoding="utf-8")
         self.assertIn("len(names) == len(expected) and set(names) == expected", checker)
-        self.assertIn('passed_count(log_dir / "canonical-cli-unit-contracts.log", 5)', checker)
-        self.assertIn('passed_count(log_dir / "canonical-cli-public-qualification.log", 3)', checker)
+        self.assertIn("explicit_compile_policy_is_strict_and_separate_from_launch_authority", checker)
+        self.assertIn('passed_count(log_dir / "canonical-cli-unit-contracts.log", len(UNIT_NAMES))', checker)
+        self.assertIn('passed_count(log_dir / "canonical-cli-public-qualification.log", len(PUBLIC_NAMES))', checker)
         for required in ('"owned_group_cleanup") == "complete"', '"command_exit_status") == 0',
                          '"reason") == "exit"', 'target.get("kind") == ["bin"]',
                          'message.get("reason") == "compiler-artifact"',

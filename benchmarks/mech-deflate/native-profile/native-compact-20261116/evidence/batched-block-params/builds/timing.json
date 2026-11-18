@@ -1,0 +1,1530 @@
+{
+  "machine": "Apple M1",
+  "scope": "Fresh encoder source through final executable link; compilers, runtimes and adapters prebuilt.",
+  "mech_compiler_build": "Rust release opt-level 1, no PGO; shared frontend and fixed runtime.",
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "frontend_sha256": "29f91fd50d58cea9298e63c8dda1d1effa92e87d55fcca5cfae45abf6f6384bd",
+  "emitters": {
+    "mech-control": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-compile-stages-study/control-emitter",
+      "sha256": "660a78aca6eb616c18873fdcf7f6dd19ca635aa5b9c919290598ee4e4d607580"
+    },
+    "mech-batch": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/emit_compact_size",
+      "sha256": "95bab6090594693c33a9598c9431d38dc3bdfbddb249de6095d056fa71568b9b"
+    }
+  },
+  "runtime_sha256": "147fef325ee8f2ac03e7385ba9ae1465e3e1dc3fdbe9c559b6ced2db683fc673",
+  "roc_compiler_sha256": "28467784aa83637d8a5aa70e074e627d5469449c4a6a1f068dd0b5cfb9819b9b",
+  "roc_source_sha256": "e2a7a543f4fb8863e1dd3f98d62a5a29a12d16cb3fa2db1960e8d55af0d0c2f1",
+  "c_source_sha256": "a46dae12f2020b68d20c965ae43f9710e3e792bf77f3ca4611582f8d8d0c9541",
+  "native_warmup": [
+    {
+      "actor": "mech-control",
+      "seconds": 2.4094578330405056,
+      "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-compile-stages-study/control-emitter",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-warmup/mech-control"
+      ],
+      "output": {
+        "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+      },
+      "diagnostic": false,
+      "events": []
+    },
+    {
+      "actor": "mech-batch",
+      "seconds": 2.3041944997385144,
+      "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/emit_compact_size",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-warmup/mech-batch"
+      ],
+      "output": {
+        "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+      },
+      "diagnostic": false,
+      "events": []
+    }
+  ],
+  "native_trials": [
+    [
+      {
+        "actor": "mech-control",
+        "seconds": 2.2216505841352046,
+        "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-compile-stages-study/control-emitter",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-1/mech-control"
+        ],
+        "output": {
+          "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+          "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+        },
+        "diagnostic": false,
+        "events": []
+      },
+      {
+        "actor": "mech-batch",
+        "seconds": 2.2179788751527667,
+        "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/emit_compact_size",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-1/mech-batch"
+        ],
+        "output": {
+          "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+          "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+        },
+        "diagnostic": false,
+        "events": []
+      }
+    ],
+    [
+      {
+        "actor": "mech-batch",
+        "seconds": 2.2168442918919027,
+        "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/emit_compact_size",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-2/mech-batch"
+        ],
+        "output": {
+          "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+          "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+        },
+        "diagnostic": false,
+        "events": []
+      },
+      {
+        "actor": "mech-control",
+        "seconds": 2.225649541243911,
+        "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-compile-stages-study/control-emitter",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-2/mech-control"
+        ],
+        "output": {
+          "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+          "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+        },
+        "diagnostic": false,
+        "events": []
+      }
+    ],
+    [
+      {
+        "actor": "mech-control",
+        "seconds": 2.223667582962662,
+        "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-compile-stages-study/control-emitter",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-3/mech-control"
+        ],
+        "output": {
+          "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+          "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+        },
+        "diagnostic": false,
+        "events": []
+      },
+      {
+        "actor": "mech-batch",
+        "seconds": 2.2235227921046317,
+        "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/emit_compact_size",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-3/mech-batch"
+        ],
+        "output": {
+          "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+          "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+        },
+        "diagnostic": false,
+        "events": []
+      }
+    ],
+    [
+      {
+        "actor": "mech-batch",
+        "seconds": 2.233914124779403,
+        "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/emit_compact_size",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-4/mech-batch"
+        ],
+        "output": {
+          "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+          "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+        },
+        "diagnostic": false,
+        "events": []
+      },
+      {
+        "actor": "mech-control",
+        "seconds": 2.226841083727777,
+        "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-compile-stages-study/control-emitter",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-4/mech-control"
+        ],
+        "output": {
+          "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+          "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+        },
+        "diagnostic": false,
+        "events": []
+      }
+    ],
+    [
+      {
+        "actor": "mech-control",
+        "seconds": 2.229992958251387,
+        "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-compile-stages-study/control-emitter",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-5/mech-control"
+        ],
+        "output": {
+          "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+          "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+        },
+        "diagnostic": false,
+        "events": []
+      },
+      {
+        "actor": "mech-batch",
+        "seconds": 2.2156248330138624,
+        "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/emit_compact_size",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-5/mech-batch"
+        ],
+        "output": {
+          "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+          "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+        },
+        "diagnostic": false,
+        "events": []
+      }
+    ],
+    [
+      {
+        "actor": "mech-batch",
+        "seconds": 2.2161125843413174,
+        "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/emit_compact_size",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-6/mech-batch"
+        ],
+        "output": {
+          "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+          "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+        },
+        "diagnostic": false,
+        "events": []
+      },
+      {
+        "actor": "mech-control",
+        "seconds": 2.2269331659190357,
+        "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-compile-stages-study/control-emitter",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-6/mech-control"
+        ],
+        "output": {
+          "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+          "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+        },
+        "diagnostic": false,
+        "events": []
+      }
+    ],
+    [
+      {
+        "actor": "mech-control",
+        "seconds": 2.613402791786939,
+        "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-compile-stages-study/control-emitter",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-7/mech-control"
+        ],
+        "output": {
+          "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+          "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+        },
+        "diagnostic": false,
+        "events": []
+      },
+      {
+        "actor": "mech-batch",
+        "seconds": 2.2145682498812675,
+        "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/emit_compact_size",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-7/mech-batch"
+        ],
+        "output": {
+          "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+          "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+        },
+        "diagnostic": false,
+        "events": []
+      }
+    ],
+    [
+      {
+        "actor": "mech-batch",
+        "seconds": 2.2146562919951975,
+        "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/emit_compact_size",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-8/mech-batch"
+        ],
+        "output": {
+          "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+          "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+        },
+        "diagnostic": false,
+        "events": []
+      },
+      {
+        "actor": "mech-control",
+        "seconds": 2.2239936250261962,
+        "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-compile-stages-study/control-emitter",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-8/mech-control"
+        ],
+        "output": {
+          "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+          "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+        },
+        "diagnostic": false,
+        "events": []
+      }
+    ]
+  ],
+  "native_medians": {
+    "mech-control": 2.226245312485844,
+    "mech-batch": 2.21647843811661
+  },
+  "native_diagnostic_profiles": [
+    {
+      "actor": "mech-control",
+      "seconds": 2.231310958042741,
+      "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-compile-stages-study/control-emitter",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-profile-1/mech-control"
+      ],
+      "output": {
+        "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+      },
+      "diagnostic": true,
+      "events": [
+        [
+          0.13561229221522808,
+          "compact-stage: canonical lowering"
+        ],
+        [
+          0.15924008330330253,
+          "compact-stage: preparation blocks=8223 values=5690"
+        ],
+        [
+          0.3352237921208143,
+          "compact-stage: native module"
+        ],
+        [
+          0.3990553333424032,
+          "compact-stage: numeric phase mech_compact_numeric_475"
+        ],
+        [
+          0.4382313331589103,
+          "compact-stage: numeric phase mech_compact_numeric_475_vector"
+        ],
+        [
+          0.5631240420043468,
+          "compact-stage: numeric phase mech_compact_numeric_3009"
+        ],
+        [
+          0.5719402502290905,
+          "compact-stage: numeric phase mech_compact_numeric_3009_vector"
+        ],
+        [
+          0.5911144581623375,
+          "compact-stage: numeric phase mech_compact_numeric_3009_no_growth"
+        ],
+        [
+          0.6265079583972692,
+          "compact-stage: numeric phase mech_compact_numeric_4173"
+        ],
+        [
+          0.6329536251723766,
+          "compact-stage: numeric phase mech_compact_numeric_4173_vector"
+        ],
+        [
+          0.6402655001729727,
+          "compact-stage: numeric phase mech_compact_numeric_3447"
+        ],
+        [
+          0.6459599579684436,
+          "compact-stage: numeric phase mech_compact_numeric_3447_vector"
+        ],
+        [
+          0.6518395422026515,
+          "compact-stage: numeric phase mech_compact_numeric_3956"
+        ],
+        [
+          0.6534962081350386,
+          "compact-stage: numeric phase mech_compact_numeric_3956_vector"
+        ],
+        [
+          0.6584900002926588,
+          "compact-stage: numeric phase mech_compact_numeric_4879"
+        ],
+        [
+          0.6630583750084043,
+          "compact-stage: numeric phase mech_compact_numeric_4879_vector"
+        ],
+        [
+          0.6672916673123837,
+          "compact-stage: numeric phase mech_compact_numeric_4673"
+        ],
+        [
+          0.6702553750947118,
+          "compact-stage: numeric phase mech_compact_numeric_4673_vector"
+        ],
+        [
+          0.6734722922556102,
+          "compact-stage: numeric phase mech_compact_numeric_6633"
+        ],
+        [
+          0.6766452081501484,
+          "compact-stage: numeric phase mech_compact_numeric_6633_vector"
+        ],
+        [
+          0.6804224173538387,
+          "compact-stage: numeric phase mech_compact_numeric_5895"
+        ],
+        [
+          0.6833448330871761,
+          "compact-stage: numeric phase mech_compact_numeric_5895_vector"
+        ],
+        [
+          0.6868359171785414,
+          "compact-stage: numeric phase mech_compact_numeric_3872"
+        ],
+        [
+          0.689351708162576,
+          "compact-stage: numeric phase mech_compact_numeric_3872_vector"
+        ],
+        [
+          0.6921772081404924,
+          "compact-stage: numeric phase mech_compact_numeric_4799"
+        ],
+        [
+          0.6940104579553008,
+          "compact-stage: numeric phase mech_compact_numeric_4799_vector"
+        ],
+        [
+          0.696254167240113,
+          "compact-stage: numeric phase mech_compact_numeric_2821"
+        ],
+        [
+          0.6982670002616942,
+          "compact-stage: numeric phase mech_compact_numeric_2821_vector"
+        ],
+        [
+          0.7004924584180117,
+          "compact-stage: numeric phase mech_compact_numeric_8026"
+        ],
+        [
+          0.7020117081701756,
+          "compact-stage: numeric phase mech_compact_numeric_8026_vector"
+        ],
+        [
+          0.7038629581220448,
+          "compact-stage: numeric phase mech_compact_numeric_362"
+        ],
+        [
+          0.705352958291769,
+          "compact-stage: numeric phase mech_compact_numeric_362_vector"
+        ],
+        [
+          0.7069860831834376,
+          "compact-stage: typed layout"
+        ],
+        [
+          0.70698875002563,
+          "compact-stage: flow proof"
+        ],
+        [
+          0.7101167920045555,
+          "compact-stage: operation recipes"
+        ],
+        [
+          0.9137065000832081,
+          "compact-stage: source CFG"
+        ],
+        [
+          0.913711208384484,
+          "compact-stage: source site 0/8223"
+        ],
+        [
+          0.9807921671308577,
+          "compact-stage: source site 4096/8223"
+        ],
+        [
+          1.1300383331254125,
+          "compact-stage: source site 8192/8223"
+        ],
+        [
+          1.163270500022918,
+          "compact-stage: finalize SSA"
+        ],
+        [
+          1.2007434172555804,
+          "compact-stage: compact values before=1399985"
+        ],
+        [
+          1.2170365420170128,
+          "compact-stage: CFG cleanup"
+        ],
+        [
+          1.6698125833645463,
+          "compact vector 362 array 1 keeps guard: computed geometry at v1398 Result(inst1395, 0)"
+        ],
+        [
+          2.001877292059362,
+          "compact-stage: machine code"
+        ],
+        [
+          2.220632500015199,
+          "compact-stage: machine code complete"
+        ]
+      ]
+    },
+    {
+      "actor": "mech-batch",
+      "seconds": 2.2070960830897093,
+      "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/emit_compact_size",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-profile-1/mech-batch"
+      ],
+      "output": {
+        "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+      },
+      "diagnostic": true,
+      "events": [
+        [
+          0.13643025001510978,
+          "compact-stage: canonical lowering"
+        ],
+        [
+          0.16012291703373194,
+          "compact-stage: preparation blocks=8223 values=5690"
+        ],
+        [
+          0.3349332921206951,
+          "compact-stage: native module"
+        ],
+        [
+          0.3989052497781813,
+          "compact-stage: numeric phase mech_compact_numeric_475"
+        ],
+        [
+          0.43809300009161234,
+          "compact-stage: numeric phase mech_compact_numeric_475_vector"
+        ],
+        [
+          0.5626807496882975,
+          "compact-stage: numeric phase mech_compact_numeric_3009"
+        ],
+        [
+          0.5715742921456695,
+          "compact-stage: numeric phase mech_compact_numeric_3009_vector"
+        ],
+        [
+          0.5908589167520404,
+          "compact-stage: numeric phase mech_compact_numeric_3009_no_growth"
+        ],
+        [
+          0.6263722497969866,
+          "compact-stage: numeric phase mech_compact_numeric_4173"
+        ],
+        [
+          0.6328265420161188,
+          "compact-stage: numeric phase mech_compact_numeric_4173_vector"
+        ],
+        [
+          0.6401021247729659,
+          "compact-stage: numeric phase mech_compact_numeric_3447"
+        ],
+        [
+          0.645814707968384,
+          "compact-stage: numeric phase mech_compact_numeric_3447_vector"
+        ],
+        [
+          0.6517281248234212,
+          "compact-stage: numeric phase mech_compact_numeric_3956"
+        ],
+        [
+          0.6533853746950626,
+          "compact-stage: numeric phase mech_compact_numeric_3956_vector"
+        ],
+        [
+          0.6583343329839408,
+          "compact-stage: numeric phase mech_compact_numeric_4879"
+        ],
+        [
+          0.6629612920805812,
+          "compact-stage: numeric phase mech_compact_numeric_4879_vector"
+        ],
+        [
+          0.6672052079811692,
+          "compact-stage: numeric phase mech_compact_numeric_4673"
+        ],
+        [
+          0.6701758750714362,
+          "compact-stage: numeric phase mech_compact_numeric_4673_vector"
+        ],
+        [
+          0.6733809169381857,
+          "compact-stage: numeric phase mech_compact_numeric_6633"
+        ],
+        [
+          0.67658849991858,
+          "compact-stage: numeric phase mech_compact_numeric_6633_vector"
+        ],
+        [
+          0.680358249694109,
+          "compact-stage: numeric phase mech_compact_numeric_5895"
+        ],
+        [
+          0.6832894580438733,
+          "compact-stage: numeric phase mech_compact_numeric_5895_vector"
+        ],
+        [
+          0.6868002498522401,
+          "compact-stage: numeric phase mech_compact_numeric_3872"
+        ],
+        [
+          0.6893099579028785,
+          "compact-stage: numeric phase mech_compact_numeric_3872_vector"
+        ],
+        [
+          0.6920983749441803,
+          "compact-stage: numeric phase mech_compact_numeric_4799"
+        ],
+        [
+          0.6939512919634581,
+          "compact-stage: numeric phase mech_compact_numeric_4799_vector"
+        ],
+        [
+          0.6962187918834388,
+          "compact-stage: numeric phase mech_compact_numeric_2821"
+        ],
+        [
+          0.6982867498882115,
+          "compact-stage: numeric phase mech_compact_numeric_2821_vector"
+        ],
+        [
+          0.7005392080172896,
+          "compact-stage: numeric phase mech_compact_numeric_8026"
+        ],
+        [
+          0.7020617919042706,
+          "compact-stage: numeric phase mech_compact_numeric_8026_vector"
+        ],
+        [
+          0.7039250419475138,
+          "compact-stage: numeric phase mech_compact_numeric_362"
+        ],
+        [
+          0.705417291726917,
+          "compact-stage: numeric phase mech_compact_numeric_362_vector"
+        ],
+        [
+          0.7070832080207765,
+          "compact-stage: typed layout"
+        ],
+        [
+          0.7070845421403646,
+          "compact-stage: flow proof"
+        ],
+        [
+          0.710202292073518,
+          "compact-stage: operation recipes"
+        ],
+        [
+          0.9131859997287393,
+          "compact-stage: source CFG"
+        ],
+        [
+          0.913189624901861,
+          "compact-stage: source site 0/8223"
+        ],
+        [
+          0.9800305417738855,
+          "compact-stage: source site 4096/8223"
+        ],
+        [
+          1.1287917918525636,
+          "compact-stage: source site 8192/8223"
+        ],
+        [
+          1.1617187079973519,
+          "compact-stage: finalize SSA"
+        ],
+        [
+          1.1992138330824673,
+          "compact-stage: compact values before=1399985"
+        ],
+        [
+          1.2154471250250936,
+          "compact-stage: CFG cleanup"
+        ],
+        [
+          1.6437094579450786,
+          "compact vector 362 array 1 keeps guard: computed geometry at v1398 Result(inst1395, 0)"
+        ],
+        [
+          1.9773099170997739,
+          "compact-stage: machine code"
+        ],
+        [
+          2.196585916914046,
+          "compact-stage: machine code complete"
+        ]
+      ]
+    },
+    {
+      "actor": "mech-batch",
+      "seconds": 2.211258958093822,
+      "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/emit_compact_size",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-profile-2/mech-batch"
+      ],
+      "output": {
+        "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+      },
+      "diagnostic": true,
+      "events": [
+        [
+          0.13726333295926452,
+          "compact-stage: canonical lowering"
+        ],
+        [
+          0.16083120787516236,
+          "compact-stage: preparation blocks=8223 values=5690"
+        ],
+        [
+          0.3361669168807566,
+          "compact-stage: native module"
+        ],
+        [
+          0.4001967082731426,
+          "compact-stage: numeric phase mech_compact_numeric_475"
+        ],
+        [
+          0.43971825018525124,
+          "compact-stage: numeric phase mech_compact_numeric_475_vector"
+        ],
+        [
+          0.5645769583061337,
+          "compact-stage: numeric phase mech_compact_numeric_3009"
+        ],
+        [
+          0.5735150831751525,
+          "compact-stage: numeric phase mech_compact_numeric_3009_vector"
+        ],
+        [
+          0.5926996250636876,
+          "compact-stage: numeric phase mech_compact_numeric_3009_no_growth"
+        ],
+        [
+          0.6282342500053346,
+          "compact-stage: numeric phase mech_compact_numeric_4173"
+        ],
+        [
+          0.6347292079590261,
+          "compact-stage: numeric phase mech_compact_numeric_4173_vector"
+        ],
+        [
+          0.6420624172315001,
+          "compact-stage: numeric phase mech_compact_numeric_3447"
+        ],
+        [
+          0.6477844999171793,
+          "compact-stage: numeric phase mech_compact_numeric_3447_vector"
+        ],
+        [
+          0.6537797502242029,
+          "compact-stage: numeric phase mech_compact_numeric_3956"
+        ],
+        [
+          0.6554380422458053,
+          "compact-stage: numeric phase mech_compact_numeric_3956_vector"
+        ],
+        [
+          0.6603645421564579,
+          "compact-stage: numeric phase mech_compact_numeric_4879"
+        ],
+        [
+          0.6649491670541465,
+          "compact-stage: numeric phase mech_compact_numeric_4879_vector"
+        ],
+        [
+          0.6691899579018354,
+          "compact-stage: numeric phase mech_compact_numeric_4673"
+        ],
+        [
+          0.6721605421043932,
+          "compact-stage: numeric phase mech_compact_numeric_4673_vector"
+        ],
+        [
+          0.6753882500343025,
+          "compact-stage: numeric phase mech_compact_numeric_6633"
+        ],
+        [
+          0.6785754580050707,
+          "compact-stage: numeric phase mech_compact_numeric_6633_vector"
+        ],
+        [
+          0.6823368328623474,
+          "compact-stage: numeric phase mech_compact_numeric_5895"
+        ],
+        [
+          0.6853189999237657,
+          "compact-stage: numeric phase mech_compact_numeric_5895_vector"
+        ],
+        [
+          0.6888222922571003,
+          "compact-stage: numeric phase mech_compact_numeric_3872"
+        ],
+        [
+          0.691349542234093,
+          "compact-stage: numeric phase mech_compact_numeric_3872_vector"
+        ],
+        [
+          0.6941360831260681,
+          "compact-stage: numeric phase mech_compact_numeric_4799"
+        ],
+        [
+          0.6959771672263741,
+          "compact-stage: numeric phase mech_compact_numeric_4799_vector"
+        ],
+        [
+          0.698236667085439,
+          "compact-stage: numeric phase mech_compact_numeric_2821"
+        ],
+        [
+          0.7002891250886023,
+          "compact-stage: numeric phase mech_compact_numeric_2821_vector"
+        ],
+        [
+          0.7025307919830084,
+          "compact-stage: numeric phase mech_compact_numeric_8026"
+        ],
+        [
+          0.7040561251342297,
+          "compact-stage: numeric phase mech_compact_numeric_8026_vector"
+        ],
+        [
+          0.705917333252728,
+          "compact-stage: numeric phase mech_compact_numeric_362"
+        ],
+        [
+          0.7074100421741605,
+          "compact-stage: numeric phase mech_compact_numeric_362_vector"
+        ],
+        [
+          0.7090284582227468,
+          "compact-stage: typed layout"
+        ],
+        [
+          0.709029583260417,
+          "compact-stage: flow proof"
+        ],
+        [
+          0.7121367920190096,
+          "compact-stage: operation recipes"
+        ],
+        [
+          0.9152746251784265,
+          "compact-stage: source CFG"
+        ],
+        [
+          0.915278417058289,
+          "compact-stage: source site 0/8223"
+        ],
+        [
+          0.9820676669478416,
+          "compact-stage: source site 4096/8223"
+        ],
+        [
+          1.1318023749627173,
+          "compact-stage: source site 8192/8223"
+        ],
+        [
+          1.1651329169981182,
+          "compact-stage: finalize SSA"
+        ],
+        [
+          1.2022436670958996,
+          "compact-stage: compact values before=1399985"
+        ],
+        [
+          1.2187760421074927,
+          "compact-stage: CFG cleanup"
+        ],
+        [
+          1.646198166999966,
+          "compact vector 362 array 1 keeps guard: computed geometry at v1398 Result(inst1395, 0)"
+        ],
+        [
+          1.981072667054832,
+          "compact-stage: machine code"
+        ],
+        [
+          2.2007876252755523,
+          "compact-stage: machine code complete"
+        ]
+      ]
+    },
+    {
+      "actor": "mech-control",
+      "seconds": 2.2201210418716073,
+      "cwd": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-compile-stages-study/control-emitter",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/shared-huffman-packed-writer-shell-sort-keys-reachable-unmapped-native/frontend/program.mecb",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/native-profile-2/mech-control"
+      ],
+      "output": {
+        "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+      },
+      "diagnostic": true,
+      "events": [
+        [
+          0.13621141714975238,
+          "compact-stage: canonical lowering"
+        ],
+        [
+          0.1598095828667283,
+          "compact-stage: preparation blocks=8223 values=5690"
+        ],
+        [
+          0.3351482921279967,
+          "compact-stage: native module"
+        ],
+        [
+          0.39918870804831386,
+          "compact-stage: numeric phase mech_compact_numeric_475"
+        ],
+        [
+          0.43874816689640284,
+          "compact-stage: numeric phase mech_compact_numeric_475_vector"
+        ],
+        [
+          0.5633727079257369,
+          "compact-stage: numeric phase mech_compact_numeric_3009"
+        ],
+        [
+          0.5723655000329018,
+          "compact-stage: numeric phase mech_compact_numeric_3009_vector"
+        ],
+        [
+          0.5915561248548329,
+          "compact-stage: numeric phase mech_compact_numeric_3009_no_growth"
+        ],
+        [
+          0.6270078751258552,
+          "compact-stage: numeric phase mech_compact_numeric_4173"
+        ],
+        [
+          0.6335078328847885,
+          "compact-stage: numeric phase mech_compact_numeric_4173_vector"
+        ],
+        [
+          0.6408708752132952,
+          "compact-stage: numeric phase mech_compact_numeric_3447"
+        ],
+        [
+          0.6465769167989492,
+          "compact-stage: numeric phase mech_compact_numeric_3447_vector"
+        ],
+        [
+          0.6524686249904335,
+          "compact-stage: numeric phase mech_compact_numeric_3956"
+        ],
+        [
+          0.6541346251033247,
+          "compact-stage: numeric phase mech_compact_numeric_3956_vector"
+        ],
+        [
+          0.6590987918898463,
+          "compact-stage: numeric phase mech_compact_numeric_4879"
+        ],
+        [
+          0.6636720830574632,
+          "compact-stage: numeric phase mech_compact_numeric_4879_vector"
+        ],
+        [
+          0.6678966251201928,
+          "compact-stage: numeric phase mech_compact_numeric_4673"
+        ],
+        [
+          0.6709084999747574,
+          "compact-stage: numeric phase mech_compact_numeric_4673_vector"
+        ],
+        [
+          0.6741172918118536,
+          "compact-stage: numeric phase mech_compact_numeric_6633"
+        ],
+        [
+          0.6773259998299181,
+          "compact-stage: numeric phase mech_compact_numeric_6633_vector"
+        ],
+        [
+          0.6810765829868615,
+          "compact-stage: numeric phase mech_compact_numeric_5895"
+        ],
+        [
+          0.6840207921341062,
+          "compact-stage: numeric phase mech_compact_numeric_5895_vector"
+        ],
+        [
+          0.6875396249815822,
+          "compact-stage: numeric phase mech_compact_numeric_3872"
+        ],
+        [
+          0.6900566671974957,
+          "compact-stage: numeric phase mech_compact_numeric_3872_vector"
+        ],
+        [
+          0.6928362501785159,
+          "compact-stage: numeric phase mech_compact_numeric_4799"
+        ],
+        [
+          0.6946707922033966,
+          "compact-stage: numeric phase mech_compact_numeric_4799_vector"
+        ],
+        [
+          0.696917749941349,
+          "compact-stage: numeric phase mech_compact_numeric_2821"
+        ],
+        [
+          0.6989375832490623,
+          "compact-stage: numeric phase mech_compact_numeric_2821_vector"
+        ],
+        [
+          0.7011581668630242,
+          "compact-stage: numeric phase mech_compact_numeric_8026"
+        ],
+        [
+          0.702676750253886,
+          "compact-stage: numeric phase mech_compact_numeric_8026_vector"
+        ],
+        [
+          0.704570374917239,
+          "compact-stage: numeric phase mech_compact_numeric_362"
+        ],
+        [
+          0.7060631671920419,
+          "compact-stage: numeric phase mech_compact_numeric_362_vector"
+        ],
+        [
+          0.7076971670612693,
+          "compact-stage: typed layout"
+        ],
+        [
+          0.7076983330771327,
+          "compact-stage: flow proof"
+        ],
+        [
+          0.7108147079125047,
+          "compact-stage: operation recipes"
+        ],
+        [
+          0.914020833093673,
+          "compact-stage: source CFG"
+        ],
+        [
+          0.9140241672284901,
+          "compact-stage: source site 0/8223"
+        ],
+        [
+          0.9811688330955803,
+          "compact-stage: source site 4096/8223"
+        ],
+        [
+          1.1305726668797433,
+          "compact-stage: source site 8192/8223"
+        ],
+        [
+          1.1634439169429243,
+          "compact-stage: finalize SSA"
+        ],
+        [
+          1.20081870816648,
+          "compact-stage: compact values before=1399985"
+        ],
+        [
+          1.2171374578028917,
+          "compact-stage: CFG cleanup"
+        ],
+        [
+          1.6570279579609632,
+          "compact vector 362 array 1 keeps guard: computed geometry at v1398 Result(inst1395, 0)"
+        ],
+        [
+          1.9900050000287592,
+          "compact-stage: machine code"
+        ],
+        [
+          2.20938608283177,
+          "compact-stage: machine code complete"
+        ]
+      ]
+    }
+  ],
+  "complete_orders": [
+    [
+      "mech-control",
+      "mech-batch",
+      "libdeflate",
+      "roc"
+    ],
+    [
+      "mech-batch",
+      "roc",
+      "mech-control",
+      "libdeflate"
+    ],
+    [
+      "roc",
+      "libdeflate",
+      "mech-batch",
+      "mech-control"
+    ],
+    [
+      "libdeflate",
+      "mech-control",
+      "roc",
+      "mech-batch"
+    ]
+  ],
+  "complete_warmup": [
+    {
+      "actor": "mech-control",
+      "seconds": {
+        "frontend": 5.086284707766026,
+        "native": 2.2247222079895437,
+        "link": 0.05465208413079381,
+        "total": 7.366311958990991,
+        "parse": 2.972936417
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/warmup/mech-control/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "mech-batch",
+      "seconds": {
+        "frontend": 3.382770291995257,
+        "native": 2.215279333293438,
+        "link": 0.039170249830931425,
+        "total": 5.637836500070989,
+        "parse": 2.935341792
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/warmup/mech-batch/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "roc",
+      "seconds": {
+        "compile": 3.2864031246863306,
+        "link": 0.036149832885712385,
+        "total": 3.3228911249898374
+      },
+      "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+      "encoder_bytes": 88808,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/warmup/roc/compressor",
+      "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+    },
+    {
+      "actor": "libdeflate",
+      "seconds": {
+        "compile": 0.6072166250087321,
+        "link": 0.03405095776543021,
+        "total": 0.6415297910571098
+      },
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+      "encoder_bytes": 52128,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/warmup/libdeflate/compressor",
+      "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+    }
+  ],
+  "complete_trials": [
+    {
+      "actor": "mech-control",
+      "seconds": {
+        "frontend": 3.390694084111601,
+        "native": 2.2224121247418225,
+        "link": 0.047257582657039165,
+        "total": 5.660968334414065,
+        "parse": 2.93439525
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/order-1/mech-control/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "mech-batch",
+      "seconds": {
+        "frontend": 3.39438149984926,
+        "native": 2.2159319170750678,
+        "link": 0.03974791616201401,
+        "total": 5.650654333177954,
+        "parse": 2.945234792
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/order-1/mech-batch/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "libdeflate",
+      "seconds": {
+        "compile": 0.4534950419329107,
+        "link": 0.033754332922399044,
+        "total": 0.4875091672874987
+      },
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+      "encoder_bytes": 52128,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/order-1/libdeflate/compressor",
+      "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+    },
+    {
+      "actor": "roc",
+      "seconds": {
+        "compile": 2.9625512501224875,
+        "link": 0.03438333421945572,
+        "total": 2.997267042286694
+      },
+      "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+      "encoder_bytes": 88808,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/order-1/roc/compressor",
+      "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+    },
+    {
+      "actor": "mech-batch",
+      "seconds": {
+        "frontend": 3.3783819167874753,
+        "native": 2.2179535417817533,
+        "link": 0.04719995800405741,
+        "total": 5.644131457898766,
+        "parse": 2.929767667
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/order-2/mech-batch/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "roc",
+      "seconds": {
+        "compile": 2.94973558280617,
+        "link": 0.03419808391481638,
+        "total": 2.9842522088438272
+      },
+      "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+      "encoder_bytes": 88808,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/order-2/roc/compressor",
+      "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+    },
+    {
+      "actor": "mech-control",
+      "seconds": {
+        "frontend": 3.3801154172979295,
+        "native": 2.224852082785219,
+        "link": 0.04000316699966788,
+        "total": 5.645575874950737,
+        "parse": 2.929919291
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/order-2/mech-control/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "libdeflate",
+      "seconds": {
+        "compile": 0.45557024981826544,
+        "link": 0.033907500095665455,
+        "total": 0.48973433393985033
+      },
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+      "encoder_bytes": 52128,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/order-2/libdeflate/compressor",
+      "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+    },
+    {
+      "actor": "roc",
+      "seconds": {
+        "compile": 2.946420167107135,
+        "link": 0.033780249767005444,
+        "total": 2.9805115424096584
+      },
+      "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+      "encoder_bytes": 88808,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/order-3/roc/compressor",
+      "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+    },
+    {
+      "actor": "libdeflate",
+      "seconds": {
+        "compile": 0.445888957940042,
+        "link": 0.03321929182857275,
+        "total": 0.47937049996107817
+      },
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+      "encoder_bytes": 52128,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/order-3/libdeflate/compressor",
+      "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+    },
+    {
+      "actor": "mech-batch",
+      "seconds": {
+        "frontend": 3.38273570779711,
+        "native": 2.2163827498443425,
+        "link": 0.03969779098406434,
+        "total": 5.639385874848813,
+        "parse": 2.934213042
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/order-3/mech-batch/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "mech-control",
+      "seconds": {
+        "frontend": 3.3813582500442863,
+        "native": 2.2280590422451496,
+        "link": 0.03977245790883899,
+        "total": 5.649828332941979,
+        "parse": 2.9312273749999997
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/order-3/mech-control/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "libdeflate",
+      "seconds": {
+        "compile": 0.4453414580784738,
+        "link": 0.0340556250885129,
+        "total": 0.4796643750742078
+      },
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+      "encoder_bytes": 52128,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/order-4/libdeflate/compressor",
+      "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+    },
+    {
+      "actor": "mech-control",
+      "seconds": {
+        "frontend": 3.3895158749073744,
+        "native": 2.2237374167889357,
+        "link": 0.039676958695054054,
+        "total": 5.653515416197479,
+        "parse": 2.9397865
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/order-4/mech-control/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "roc",
+      "seconds": {
+        "compile": 2.9573221248574555,
+        "link": 0.03375824959948659,
+        "total": 2.9913907079026103
+      },
+      "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+      "encoder_bytes": 88808,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/order-4/roc/compressor",
+      "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+    },
+    {
+      "actor": "mech-batch",
+      "seconds": {
+        "frontend": 3.376588124781847,
+        "native": 2.2181595829315484,
+        "link": 0.04057512478902936,
+        "total": 5.635971417184919,
+        "parse": 2.929521667
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/order-4/mech-batch/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    }
+  ],
+  "complete_medians": {
+    "mech-control": {
+      "frontend": 3.3854370624758303,
+      "native": 2.2242947497870773,
+      "link": 0.039887812454253435,
+      "total": 5.651671874569729,
+      "parse": 2.9328113125
+    },
+    "mech-batch": {
+      "frontend": 3.3805588122922927,
+      "native": 2.217168145813048,
+      "link": 0.040161520475521684,
+      "total": 5.641758666373789,
+      "parse": 2.9319903545
+    },
+    "roc": {
+      "compile": 2.9535288538318127,
+      "link": 0.03398916684091091,
+      "total": 2.9878214583732188
+    },
+    "libdeflate": {
+      "compile": 0.44969199993647635,
+      "link": 0.03383091650903225,
+      "total": 0.48358677118085325
+    }
+  },
+  "complete_diagnostic_profiles": [
+    {
+      "actor": "mech-control",
+      "seconds": {
+        "frontend": 3.402665459085256,
+        "native": 2.221340916119516,
+        "link": 0.042690291069447994,
+        "total": 5.667581874877214,
+        "parse": 2.953991417
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/profile/mech-control/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "mech-batch",
+      "seconds": {
+        "frontend": 3.3844695421867073,
+        "native": 2.211665750015527,
+        "link": 0.04533562529832125,
+        "total": 5.642312167212367,
+        "parse": 2.935470958
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/profile/mech-batch/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "roc",
+      "seconds": {
+        "compile": 3.011572833172977,
+        "link": 0.03640254074707627,
+        "total": 3.0482852086424828
+      },
+      "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+      "encoder_bytes": 88808,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/profile/roc/compressor",
+      "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+    },
+    {
+      "actor": "libdeflate",
+      "seconds": {
+        "compile": 0.5560345840640366,
+        "link": 0.034360083285719156,
+        "total": 0.5906892078928649
+      },
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+      "encoder_bytes": 52128,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-batched-block-params/profile/libdeflate/compressor",
+      "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+    }
+  ],
+  "sizes": {
+    "mech-control": {
+      "emitted_text_bytes": 72520,
+      "encoder_file_bytes": 160136,
+      "linked_text_bytes": 475444,
+      "executable_file_bytes": 956056,
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c"
+    },
+    "mech-batch": {
+      "emitted_text_bytes": 72520,
+      "encoder_file_bytes": 160136,
+      "linked_text_bytes": 475444,
+      "executable_file_bytes": 956056,
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c"
+    },
+    "roc": {
+      "emitted_text_bytes": 57696,
+      "encoder_file_bytes": 79160,
+      "linked_text_bytes": 150416,
+      "executable_file_bytes": 230600,
+      "encoder_sha256": "56bdcd935d0814afc2b587a83374164c51c09491d86295d0f26f87a95fc7a6a4"
+    },
+    "libdeflate": {
+      "emitted_text_bytes": 37080,
+      "encoder_file_bytes": 52128,
+      "linked_text_bytes": 129900,
+      "executable_file_bytes": 210168,
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726"
+    }
+  },
+  "byte_identical_across_both_emitters_and_all_complete_builds": [
+    "frontend/program.mecb",
+    "native/program.o",
+    "native/metadata.json",
+    "compressor"
+  ],
+  "verified_exact_calls": 324
+}

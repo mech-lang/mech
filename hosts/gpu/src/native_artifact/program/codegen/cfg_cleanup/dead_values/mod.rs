@@ -145,13 +145,12 @@ pub(in crate::native_artifact::program) fn eliminate(function: &mut Function) ->
             }
         }
     }
-    for params in blocks.values() {
-        for &value in params.iter().rev() {
-            if !live_values[value.as_u32() as usize] {
-                function.dfg.remove_block_param(value);
-                removed.parameters += 1;
-            }
-        }
+    for &block in blocks.keys() {
+        function.dfg.retain_block_params(block, |value| {
+            let live = live_values[value.as_u32() as usize];
+            removed.parameters += usize::from(!live);
+            live
+        });
     }
     removed
 }

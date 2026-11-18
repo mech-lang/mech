@@ -1,0 +1,19 @@
+{
+  "commit": "6cd97ac67e17b4f81dbd7fd909cb328ef72f67a8",
+  "text_bytes": 65036,
+  "bytes_saved": 240,
+  "root_extent_before_after": [
+    48544,
+    48220
+  ],
+  "new_stubs": {
+    "_mech_compact_release_four_from_frame": 24,
+    "_mech_compact_release_nullable_from_frame": 12,
+    "_mech_compact_release_owner_from_frame": 12,
+    "_mech_compact_release_three_from_frame": 20,
+    "_mech_compact_release_two_from_frame": 16
+  },
+  "admission": "compact root shared release setup: 193 calls in 5 stubs",
+  "encoder": "06186246e2f3a9a50f90778be101587ec71277bbcf8f4192862c72fc726c4f8f",
+  "worker": "884e35f4bdacf47e82adc39c5535451eb0a82b271b6c1fdd6419984312d4f61c"
+}

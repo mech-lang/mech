@@ -3,7 +3,7 @@
 //! capability survives a call, alias construction, join, or changed view.
 use super::{
     flow::Flow,
-    layout::{Kind, Layout},
+    layout::{Layout, LayoutKind},
     recipes::Recipe,
 };
 use crate::native_artifact::codegen::common::ssa_words::Words;
@@ -107,7 +107,7 @@ fn replacement(
     // Full element checks and canonical row/column/rectangular translation are
     // shared with ordinary emission. Identity here forbids changing the view.
     if layout.ty(source.get()) != layout.ty(output.get())
-        || !matches!(layout.ty(source.get()).kind, Kind::Array { .. })
+        || !matches!(layout.ty(source.get()).kind, LayoutKind::Array { .. })
     {
         return None;
     }
@@ -141,7 +141,7 @@ fn scalar_read(layout: &Layout, actions: &[Recipe], site: usize, current: V) -> 
     };
     *source == current
         && layout.ty(output.get()).owners.is_empty()
-        && matches!(layout.ty(output.get()).kind, Kind::Scalar { .. })
+        && matches!(layout.ty(output.get()).kind, LayoutKind::Scalar { .. })
 }
 
 pub(super) fn derive(
@@ -311,7 +311,7 @@ mod tests {
                 let Some(source) = operands.first() else {
                     continue;
                 };
-                if !matches!(layout.ty(source.get()).kind, Kind::Array { .. }) {
+                if !matches!(layout.ty(source.get()).kind, LayoutKind::Array { .. }) {
                     continue;
                 }
                 let from = layout.slot(source.get()) + super::super::layout::ARRAY_OWNER;
@@ -321,7 +321,7 @@ mod tests {
                 results[site] = Some((
                     from,
                     to,
-                    consuming[site] && owners.can_finish_source(&flow, &guards, site, from),
+                    consuming[site] && owners.can_finish_consumed_source(site, from),
                 ));
                 if *operation == P::MatrixIndexedReplace {
                     retirements[site] =

@@ -1,0 +1,1480 @@
+{
+  "resolution": 0.005,
+  "resamples": 8000,
+  "interval": "90% paired block bootstrap, stratified by run and control/candidate order",
+  "scope": "Per-case estimates; fresh same-worker follow-up remains separate.",
+  "cases": {
+    "empty": {
+      "forward": {
+        "estimate": -0.013971461028334686,
+        "lower": -0.021684619013587758,
+        "upper": -0.006077558678533657
+      },
+      "reverse": {
+        "estimate": 0.007871420700003018,
+        "lower": -0.004380501702731743,
+        "upper": 0.021330541174868545
+      },
+      "combined": {
+        "estimate": -0.0031098433507729117,
+        "lower": -0.010538630472300858,
+        "upper": 0.004657196761891802
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "one-stored": {
+      "forward": {
+        "estimate": -0.005577677654300506,
+        "lower": -0.01315787646746347,
+        "upper": 0.001802166027461194
+      },
+      "reverse": {
+        "estimate": 0.007202413855846412,
+        "lower": 0.00019155157167793924,
+        "upper": 0.014266188353405651
+      },
+      "combined": {
+        "estimate": 0.0007919681226089548,
+        "lower": -0.0044346529615043595,
+        "upper": 0.005889542608303211
+      },
+      "decision": "inconclusive"
+    },
+    "seven-stored-prefix": {
+      "forward": {
+        "estimate": -0.005076882857709242,
+        "lower": -0.012336119864510997,
+        "upper": 0.0024214304585314927
+      },
+      "reverse": {
+        "estimate": -0.023571343762298858,
+        "lower": -0.031439456735251614,
+        "upper": -0.01575594648313583
+      },
+      "combined": {
+        "estimate": -0.014367491236682128,
+        "lower": -0.019673582301368286,
+        "upper": -0.009145969691193967
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "eight-literals": {
+      "forward": {
+        "estimate": 0.0029735945328543956,
+        "lower": 0.0003132816957871487,
+        "upper": 0.005548229254212611
+      },
+      "reverse": {
+        "estimate": -0.0032344313633179134,
+        "lower": -0.00632381342067978,
+        "upper": 0.0006094969610936918
+      },
+      "combined": {
+        "estimate": -0.00013523650339719584,
+        "lower": -0.0022359657887986994,
+        "upper": 0.002177227558421313
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "eight-overlap": {
+      "forward": {
+        "estimate": -0.0009483796894227403,
+        "lower": -0.004651674436391917,
+        "upper": 0.002728554035983599
+      },
+      "reverse": {
+        "estimate": -0.0015779780215188222,
+        "lower": -0.005832633160535283,
+        "upper": 0.0026298978287606634
+      },
+      "combined": {
+        "estimate": -0.0012632284673982364,
+        "lower": -0.0040195120012401775,
+        "upper": 0.0015083855276116775
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "320-overlap": {
+      "forward": {
+        "estimate": 3.238740281097385e-05,
+        "lower": -0.001577310720794478,
+        "upper": 0.0016214307143971318
+      },
+      "reverse": {
+        "estimate": 0.0019865427419996085,
+        "lower": -0.0007098447683544507,
+        "upper": 0.004499304704519647
+      },
+      "combined": {
+        "estimate": 0.0010089882132779948,
+        "lower": -0.0005654222607361925,
+        "upper": 0.0025370890414344593
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "eight-literals-prefix": {
+      "forward": {
+        "estimate": 0.0033907661974423853,
+        "lower": 0.0009921326711279654,
+        "upper": 0.005897347886952842
+      },
+      "reverse": {
+        "estimate": -0.006634909040314385,
+        "lower": -0.009146064474865767,
+        "upper": -0.0040341113768870285
+      },
+      "combined": {
+        "estimate": -0.001634656184505201,
+        "lower": -0.003402250588562472,
+        "upper": 0.0001771010909987769
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "128-biased-dynamic": {
+      "forward": {
+        "estimate": 0.014492190591111509,
+        "lower": 0.012479034855514604,
+        "upper": 0.016722327903191392
+      },
+      "reverse": {
+        "estimate": 0.004339534817794588,
+        "lower": 0.002008499828562327,
+        "upper": 0.006491050831654688
+      },
+      "combined": {
+        "estimate": 0.00940309825884822,
+        "lower": 0.00786491339524198,
+        "upper": 0.010913501364862244
+      },
+      "decision": "slowdown above resolution"
+    },
+    "32-high-entropy-stored": {
+      "forward": {
+        "estimate": 0.004941108877459799,
+        "lower": 0.0015252922594630736,
+        "upper": 0.008686618427331538
+      },
+      "reverse": {
+        "estimate": -0.010059670802406107,
+        "lower": -0.012131671576419256,
+        "upper": -0.007886263483387501
+      },
+      "combined": {
+        "estimate": -0.0025874814569711857,
+        "lower": -0.004594778772764152,
+        "upper": -0.0004593610073256871
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "16384-distribution-change": {
+      "forward": {
+        "estimate": 0.026860068270103676,
+        "lower": 0.023435607582362072,
+        "upper": 0.030283116950370337
+      },
+      "reverse": {
+        "estimate": 0.02994558187041174,
+        "lower": 0.027653628533019337,
+        "upper": 0.03224917237516345
+      },
+      "combined": {
+        "estimate": 0.028401667887573145,
+        "lower": 0.026343504795736772,
+        "upper": 0.030442802934366187
+      },
+      "decision": "slowdown above resolution"
+    },
+    "33027-periodic-window": {
+      "forward": {
+        "estimate": -0.0025164975836042824,
+        "lower": -0.004162464112981823,
+        "upper": -0.0008715361734850102
+      },
+      "reverse": {
+        "estimate": -0.004444118486898074,
+        "lower": -0.007426889082738031,
+        "upper": -0.0016117838661421358
+      },
+      "combined": {
+        "estimate": -0.0034807741227813604,
+        "lower": -0.005207768017317593,
+        "upper": -0.0017865104083478744
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "random-64": {
+      "forward": {
+        "estimate": -0.0030929147977843963,
+        "lower": -0.008612043360960553,
+        "upper": 0.002360069441492252
+      },
+      "reverse": {
+        "estimate": -0.0047006670335983936,
+        "lower": -0.008632805262231869,
+        "upper": -0.0007130946106307379
+      },
+      "combined": {
+        "estimate": -0.0038971152881621673,
+        "lower": -0.0072841045935806426,
+        "upper": -0.00043237415637231713
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "random-256": {
+      "forward": {
+        "estimate": -0.011420646515187372,
+        "lower": -0.013557569877573061,
+        "upper": -0.009140911917395633
+      },
+      "reverse": {
+        "estimate": -0.006002144373984719,
+        "lower": -0.009105592458690248,
+        "upper": -0.0029404274585155266
+      },
+      "combined": {
+        "estimate": -0.008715097724142473,
+        "lower": -0.01056468530457555,
+        "upper": -0.006761401162197478
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "random-1024": {
+      "forward": {
+        "estimate": -0.006846862580062396,
+        "lower": -0.00868050589670788,
+        "upper": -0.005122082135770478
+      },
+      "reverse": {
+        "estimate": -0.004243198273758186,
+        "lower": -0.006013263711296957,
+        "upper": -0.0024588024101344086
+      },
+      "combined": {
+        "estimate": -0.005545882535720081,
+        "lower": -0.006798007432805231,
+        "upper": -0.004324057594037312
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "repeated-1024": {
+      "forward": {
+        "estimate": -0.002749009471912922,
+        "lower": -0.004954573316325317,
+        "upper": -0.0008281665438647501
+      },
+      "reverse": {
+        "estimate": -0.0012422490321013502,
+        "lower": -0.004058812912697385,
+        "upper": 0.0012962745047604418
+      },
+      "combined": {
+        "estimate": -0.0019959136103994135,
+        "lower": -0.003701205561871701,
+        "upper": -0.00036416863875377015
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "random-32769": {
+      "forward": {
+        "estimate": -0.001904713454300322,
+        "lower": -0.004531880409907485,
+        "upper": 0.0008076907531500144
+      },
+      "reverse": {
+        "estimate": -0.0020918449202306233,
+        "lower": -0.005044493694534635,
+        "upper": 0.0008080341053007256
+      },
+      "combined": {
+        "estimate": -0.001998283573303228,
+        "lower": -0.004012524851585431,
+        "upper": -2.3828138851822445e-05
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "repeated-32769": {
+      "forward": {
+        "estimate": -0.0008830054176681701,
+        "lower": -0.003489827300568904,
+        "upper": 0.0018186773658004363
+      },
+      "reverse": {
+        "estimate": 0.0011542931485364338,
+        "lower": -0.002162822662709729,
+        "upper": 0.004549342484537311
+      },
+      "combined": {
+        "estimate": 0.00013512511248436887,
+        "lower": -0.002054201653478138,
+        "upper": 0.00227804863697334
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "reymont-prefix-1024": {
+      "forward": {
+        "estimate": 0.006301060626900723,
+        "lower": 0.003805735176389602,
+        "upper": 0.008641553711382421
+      },
+      "reverse": {
+        "estimate": 0.010548316182266149,
+        "lower": 0.008402004322779266,
+        "upper": 0.01308427383978561
+      },
+      "combined": {
+        "estimate": 0.008422452342738529,
+        "lower": 0.0067151746541431745,
+        "upper": 0.01012134048708968
+      },
+      "decision": "slowdown above resolution"
+    },
+    "reymont-prefix-16384": {
+      "forward": {
+        "estimate": 0.0013574479079794255,
+        "lower": 0.000118772702199621,
+        "upper": 0.002545049731207616
+      },
+      "reverse": {
+        "estimate": -0.001749532813014154,
+        "lower": -0.002902304605480799,
+        "upper": -0.0005261618949778946
+      },
+      "combined": {
+        "estimate": -0.0001972493560000732,
+        "lower": -0.0010302410577698318,
+        "upper": 0.0006852210122463287
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "reymont-prefix-32769": {
+      "forward": {
+        "estimate": 0.0024865085143170873,
+        "lower": 0.0011408952662788074,
+        "upper": 0.004075791464779099
+      },
+      "reverse": {
+        "estimate": 0.0018948103439835329,
+        "lower": 0.0005075571058184014,
+        "upper": 0.003581023688834062
+      },
+      "combined": {
+        "estimate": 0.0021906157614697275,
+        "lower": 0.0011900497221457584,
+        "upper": 0.0033507940777199874
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "heldout-window-32767": {
+      "forward": {
+        "estimate": 0.0024367105144333934,
+        "lower": 0.0013459496909720148,
+        "upper": 0.003656841595211846
+      },
+      "reverse": {
+        "estimate": 0.0011527915074351913,
+        "lower": -0.0004081497036096948,
+        "upper": 0.002643956268959302
+      },
+      "combined": {
+        "estimate": 0.0017945453240677534,
+        "lower": 0.0008614729992060255,
+        "upper": 0.0027727618743103033
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "heldout-window-32768": {
+      "forward": {
+        "estimate": 0.002344872159312228,
+        "lower": 0.001575485580004088,
+        "upper": 0.0030483982913731555
+      },
+      "reverse": {
+        "estimate": 0.0009397643750499451,
+        "lower": -0.0009551028291970853,
+        "upper": 0.002403735844518806
+      },
+      "combined": {
+        "estimate": 0.0016420718808098922,
+        "lower": 0.0006583449583925649,
+        "upper": 0.0024769403127620215
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "heldout-slides-65537": {
+      "forward": {
+        "estimate": 0.0014038888134886296,
+        "lower": 1.3610049394818802e-05,
+        "upper": 0.003130999391676381
+      },
+      "reverse": {
+        "estimate": -0.005646286648628096,
+        "lower": -0.020610767938772145,
+        "upper": 0.0026850571498380216
+      },
+      "combined": {
+        "estimate": -0.002127425266032934,
+        "lower": -0.009601165113398036,
+        "upper": 0.0022961781538797243
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "heldout-random-65537": {
+      "forward": {
+        "estimate": -0.0007743428134783237,
+        "lower": -0.0025827861795634233,
+        "upper": 0.001017859219558881
+      },
+      "reverse": {
+        "estimate": -0.00019019973348588515,
+        "lower": -0.002218549205076248,
+        "upper": 0.0019820903258234157
+      },
+      "combined": {
+        "estimate": -0.00048231394695541496,
+        "lower": -0.0018748155543055756,
+        "upper": 0.0009002318732584946
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "heldout-mixed-131073": {
+      "forward": {
+        "estimate": 0.01342241797586241,
+        "lower": 0.012440602516991639,
+        "upper": 0.01434379367409
+      },
+      "reverse": {
+        "estimate": 0.013354458104844369,
+        "lower": 0.012611543362955224,
+        "upper": 0.014083781760541703
+      },
+      "combined": {
+        "estimate": 0.01338843747066254,
+        "lower": 0.012772934377144107,
+        "upper": 0.01399532421485028
+      },
+      "decision": "slowdown above resolution"
+    },
+    "prefix-natural-1024": {
+      "forward": {
+        "estimate": 0.008207481651186121,
+        "lower": 0.0065835562528022695,
+        "upper": 0.009792777256258933
+      },
+      "reverse": {
+        "estimate": 0.007900837833057173,
+        "lower": 0.0067012500234842065,
+        "upper": 0.009083780982524159
+      },
+      "combined": {
+        "estimate": 0.008054148082228263,
+        "lower": 0.007062604846648224,
+        "upper": 0.009060592833953773
+      },
+      "decision": "slowdown above resolution"
+    },
+    "prefix-natural-4096": {
+      "forward": {
+        "estimate": 0.0019159449905181702,
+        "lower": -0.001204024692348371,
+        "upper": 0.005000470172685345
+      },
+      "reverse": {
+        "estimate": -0.0020762440833939078,
+        "lower": -0.005193743816631402,
+        "upper": 0.0011285926309991812
+      },
+      "combined": {
+        "estimate": -8.214190480948513e-05,
+        "lower": -0.0022954628460811755,
+        "upper": 0.002142152343800774
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-natural-8192": {
+      "forward": {
+        "estimate": 0.0037341087476516766,
+        "lower": 0.0010854127614026154,
+        "upper": 0.0064264296538902865
+      },
+      "reverse": {
+        "estimate": -0.000960034161713863,
+        "lower": -0.00304726730673055,
+        "upper": 0.001118210650929763
+      },
+      "combined": {
+        "estimate": 0.001384286732109885,
+        "lower": -0.00023764707484630332,
+        "upper": 0.00313443378893008
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-natural-16384": {
+      "forward": {
+        "estimate": 0.0006045217430570293,
+        "lower": -0.0008618766775533304,
+        "upper": 0.002042035626486749
+      },
+      "reverse": {
+        "estimate": -0.002841699156797328,
+        "lower": -0.00403028313268694,
+        "upper": -0.0016664493345638354
+      },
+      "combined": {
+        "estimate": -0.0011200749252529008,
+        "lower": -0.002058194840348526,
+        "upper": -0.00019039799949627234
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-natural-32767": {
+      "forward": {
+        "estimate": 0.0026852790853029163,
+        "lower": 0.0018865814346360477,
+        "upper": 0.0034771294251616514
+      },
+      "reverse": {
+        "estimate": 0.00026108531487323283,
+        "lower": -0.0012213936465019781,
+        "upper": 0.0015787534206213039
+      },
+      "combined": {
+        "estimate": 0.0014724486909820644,
+        "lower": 0.0006141807883996986,
+        "upper": 0.0022464909432802216
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-natural-32768": {
+      "forward": {
+        "estimate": 0.002475648413754028,
+        "lower": 0.0017025656570546222,
+        "upper": 0.0032662318449652172
+      },
+      "reverse": {
+        "estimate": 0.0011839687322381387,
+        "lower": 0.0004885113262431684,
+        "upper": 0.0018768850266137616
+      },
+      "combined": {
+        "estimate": 0.0018296003993423238,
+        "lower": 0.0013210688392786274,
+        "upper": 0.0023604037027740166
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-natural-32769": {
+      "forward": {
+        "estimate": 0.002472429325999226,
+        "lower": 0.0009200712057693128,
+        "upper": 0.004314526259945328
+      },
+      "reverse": {
+        "estimate": 0.0010307852071100854,
+        "lower": -0.0008113604340442837,
+        "upper": 0.002687090695386196
+      },
+      "combined": {
+        "estimate": 0.0017513479285586886,
+        "lower": 0.0005364567018486532,
+        "upper": 0.0029868285480521006
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-natural-33027": {
+      "forward": {
+        "estimate": 0.0025270782648352252,
+        "lower": 0.0017779748767019488,
+        "upper": 0.0033019827299838322
+      },
+      "reverse": {
+        "estimate": 0.0016243932739463673,
+        "lower": 0.0008105032132679213,
+        "upper": 0.002460144542435261
+      },
+      "combined": {
+        "estimate": 0.002075634125347836,
+        "lower": 0.00151150976766945,
+        "upper": 0.00262376787196672
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-natural-65535": {
+      "forward": {
+        "estimate": 0.0010271736743190374,
+        "lower": 0.00033060025848530294,
+        "upper": 0.001755528594445055
+      },
+      "reverse": {
+        "estimate": -0.002019743596910706,
+        "lower": -0.002791519478515636,
+        "upper": -0.0012171699203127329
+      },
+      "combined": {
+        "estimate": -0.0004974460012837634,
+        "lower": -0.0010143804920799138,
+        "upper": 2.882491578359847e-05
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-natural-65536": {
+      "forward": {
+        "estimate": 0.000192178437196322,
+        "lower": -0.0008033614274856049,
+        "upper": 0.0011006236133432878
+      },
+      "reverse": {
+        "estimate": -0.0016312290220870107,
+        "lower": -0.002558668476354109,
+        "upper": -0.0005960932514454953
+      },
+      "combined": {
+        "estimate": -0.0007199411936286149,
+        "lower": -0.0014085307231153088,
+        "upper": -2.0418124363263956e-05
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-natural-65537": {
+      "forward": {
+        "estimate": -0.00029887830443886543,
+        "lower": -0.0036164515884107296,
+        "upper": 0.001826521947979165
+      },
+      "reverse": {
+        "estimate": -0.0015796252854836101,
+        "lower": -0.002133524237979856,
+        "upper": -0.0010280144680530068
+      },
+      "combined": {
+        "estimate": -0.0009394570268503877,
+        "lower": -0.0026495828101186225,
+        "upper": 0.00019897146167702218
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-natural-131072": {
+      "forward": {
+        "estimate": 0.0007849734202378666,
+        "lower": 0.00017740518322151289,
+        "upper": 0.0013999365070134218
+      },
+      "reverse": {
+        "estimate": 0.000548596470342666,
+        "lower": -0.0008929469205067875,
+        "upper": 0.0019243124535823775
+      },
+      "combined": {
+        "estimate": 0.0006667779656863715,
+        "lower": -0.00012738642318899096,
+        "upper": 0.0014000403914244952
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-natural-262144": {
+      "forward": {
+        "estimate": 0.0015052882534747347,
+        "lower": 0.0006463093845596735,
+        "upper": 0.0021559060506153305
+      },
+      "reverse": {
+        "estimate": -0.0010175709593869264,
+        "lower": -0.0032192684312014608,
+        "upper": 0.0007509061490749147
+      },
+      "combined": {
+        "estimate": 0.00024306323836897903,
+        "lower": -0.0009672352597569489,
+        "upper": 0.001229673380208185
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-natural-1048576": {
+      "forward": {
+        "estimate": 0.0015369411916603681,
+        "lower": 0.001018712929568455,
+        "upper": 0.002175407725972578
+      },
+      "reverse": {
+        "estimate": 0.0007502846054143752,
+        "lower": -0.0007928299070399936,
+        "upper": 0.002061638599467397
+      },
+      "combined": {
+        "estimate": 0.001143535633322701,
+        "lower": 0.00033372826347277673,
+        "upper": 0.0018695164752615678
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-random-1024": {
+      "forward": {
+        "estimate": -0.004301212303395863,
+        "lower": -0.005895069103828976,
+        "upper": -0.002686978392232753
+      },
+      "reverse": {
+        "estimate": -0.003116854465452956,
+        "lower": -0.004918007580563155,
+        "upper": -0.0013426315939265576
+      },
+      "combined": {
+        "estimate": -0.003709209375131417,
+        "lower": -0.004892082866318592,
+        "upper": -0.0024939454431691654
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-random-4096": {
+      "forward": {
+        "estimate": 0.0004339247641163002,
+        "lower": -0.0065346134081989415,
+        "upper": 0.00728886637467463
+      },
+      "reverse": {
+        "estimate": 0.00011546825535746486,
+        "lower": -0.008079458942448103,
+        "upper": 0.008624778651015408
+      },
+      "combined": {
+        "estimate": 0.000274683836399614,
+        "lower": -0.005213848111320751,
+        "upper": 0.005859093436662688
+      },
+      "decision": "inconclusive"
+    },
+    "prefix-random-8192": {
+      "forward": {
+        "estimate": 0.0065156623991227125,
+        "lower": 0.001686802994497194,
+        "upper": 0.011477196879775331
+      },
+      "reverse": {
+        "estimate": -0.006930228968596075,
+        "lower": -0.011755378109479908,
+        "upper": -0.0023289458964119714
+      },
+      "combined": {
+        "estimate": -0.00022988722495875802,
+        "lower": -0.003675074637010556,
+        "upper": 0.0033141842806030386
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-random-16384": {
+      "forward": {
+        "estimate": -0.0057332071700821885,
+        "lower": -0.009288631119118484,
+        "upper": -0.002343661309352596
+      },
+      "reverse": {
+        "estimate": -0.00461125819121011,
+        "lower": -0.009147930855880615,
+        "upper": 0.000511894542116309
+      },
+      "combined": {
+        "estimate": -0.0051723908449099465,
+        "lower": -0.008117776014375133,
+        "upper": -0.0021421013946548717
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-random-32767": {
+      "forward": {
+        "estimate": -0.0018775057167742526,
+        "lower": -0.00466619926518419,
+        "upper": 0.0008941875946189004
+      },
+      "reverse": {
+        "estimate": -0.0037358319336067147,
+        "lower": -0.005952592203462448,
+        "upper": -0.0015038759450042294
+      },
+      "combined": {
+        "estimate": -0.002807101712295923,
+        "lower": -0.00463129252228478,
+        "upper": -0.001026881153522785
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-random-32768": {
+      "forward": {
+        "estimate": 0.00035414178971659993,
+        "lower": -0.002402258122489398,
+        "upper": 0.003128943394369088
+      },
+      "reverse": {
+        "estimate": -0.0027884822210985094,
+        "lower": -0.00597363913566773,
+        "upper": 0.00045369301091424674
+      },
+      "combined": {
+        "estimate": -0.0012184062316057398,
+        "lower": -0.003331323512086759,
+        "upper": 0.0009616364973854541
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-random-32769": {
+      "forward": {
+        "estimate": -0.0015311865961368243,
+        "lower": -0.003991480573597772,
+        "upper": 0.0008864393267231652
+      },
+      "reverse": {
+        "estimate": -0.005206198093526071,
+        "lower": -0.008192519295181278,
+        "upper": -0.002146246771921878
+      },
+      "combined": {
+        "estimate": -0.0033703862662545214,
+        "lower": -0.005339629937426094,
+        "upper": -0.0013712852737184367
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-random-33027": {
+      "forward": {
+        "estimate": -0.002498491632092259,
+        "lower": -0.0052992297561582635,
+        "upper": 0.00029008645112260645
+      },
+      "reverse": {
+        "estimate": -0.00041044931324207834,
+        "lower": -0.003719527483709517,
+        "upper": 0.0030021727717239877
+      },
+      "combined": {
+        "estimate": -0.00145501625673361,
+        "lower": -0.0035896799726552464,
+        "upper": 0.0007505168881782875
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-random-65535": {
+      "forward": {
+        "estimate": -0.002004332994385183,
+        "lower": -0.0034136691180030043,
+        "upper": -0.0006340298104504649
+      },
+      "reverse": {
+        "estimate": -0.0005671761098894335,
+        "lower": -0.0024885243306120852,
+        "upper": 0.0013590612070306651
+      },
+      "combined": {
+        "estimate": -0.0012860130620397925,
+        "lower": -0.002463735123635402,
+        "upper": -9.802923812873843e-05
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-random-65536": {
+      "forward": {
+        "estimate": -0.0013698041090438595,
+        "lower": -0.002897038998618817,
+        "upper": 0.0001586975327061424
+      },
+      "reverse": {
+        "estimate": -0.0008438996458348669,
+        "lower": -0.0026011487909846087,
+        "upper": 0.0009381956720766471
+      },
+      "combined": {
+        "estimate": -0.0011068864876864204,
+        "lower": -0.0022710228048744563,
+        "upper": 7.240997144952743e-05
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-random-65537": {
+      "forward": {
+        "estimate": -0.002624851514555937,
+        "lower": -0.004873988329492596,
+        "upper": -0.000497611403385112
+      },
+      "reverse": {
+        "estimate": -0.001953359757635331,
+        "lower": -0.0038402691000891664,
+        "upper": -5.994261317365801e-05
+      },
+      "combined": {
+        "estimate": -0.00228916212806074,
+        "lower": -0.0037695827490326073,
+        "upper": -0.0008433349912070343
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-random-131072": {
+      "forward": {
+        "estimate": -0.00036985775624576167,
+        "lower": -0.0015823229786776638,
+        "upper": 0.0008573779677691906
+      },
+      "reverse": {
+        "estimate": -0.00010415810994435226,
+        "lower": -0.001495028353100225,
+        "upper": 0.0013261076579265119
+      },
+      "combined": {
+        "estimate": -0.0002370167597248729,
+        "lower": -0.0011924804666731958,
+        "upper": 0.0006794777623848614
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-random-262144": {
+      "forward": {
+        "estimate": 0.0011800126372212283,
+        "lower": 8.380938299223928e-05,
+        "upper": 0.002326091976654343
+      },
+      "reverse": {
+        "estimate": -0.0009920369890239478,
+        "lower": -0.001743602988353743,
+        "upper": -0.0002595038122806814
+      },
+      "combined": {
+        "estimate": 9.339815439912691e-05,
+        "lower": -0.0005730855905701215,
+        "upper": 0.0007654249431825466
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-random-1048576": {
+      "forward": {
+        "estimate": 0.00019557802424352566,
+        "lower": -0.0002504756655349327,
+        "upper": 0.0006596650077623778
+      },
+      "reverse": {
+        "estimate": -0.00044025447139872664,
+        "lower": -0.002295379777561668,
+        "upper": 0.0012910040970970371
+      },
+      "combined": {
+        "estimate": -0.00012238876513226415,
+        "lower": -0.001052837108856619,
+        "upper": 0.0007735510549120583
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-periodic-1024": {
+      "forward": {
+        "estimate": -0.0025750148457884814,
+        "lower": -0.0041848468675091954,
+        "upper": -0.0009063015611355807
+      },
+      "reverse": {
+        "estimate": 0.004423361550511817,
+        "lower": 0.0008542807296998411,
+        "upper": 0.00856393973175451
+      },
+      "combined": {
+        "estimate": 0.0009180568273621237,
+        "lower": -0.0010574134150926895,
+        "upper": 0.0030614405735329697
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-periodic-4096": {
+      "forward": {
+        "estimate": -0.01784874303236994,
+        "lower": -0.023673481956537068,
+        "upper": -0.012062807105895912
+      },
+      "reverse": {
+        "estimate": -0.01074944173675696,
+        "lower": -0.018273902131164643,
+        "upper": -0.0035963563431077317
+      },
+      "combined": {
+        "estimate": -0.014305483806380304,
+        "lower": -0.01896434875119124,
+        "upper": -0.009754939310028132
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-periodic-8192": {
+      "forward": {
+        "estimate": -0.005520635821674391,
+        "lower": -0.009682031697779148,
+        "upper": -0.0013439882589224572
+      },
+      "reverse": {
+        "estimate": -0.003161137109604084,
+        "lower": -0.006380157195950531,
+        "upper": 3.4048270071806996e-05
+      },
+      "combined": {
+        "estimate": -0.004341585404167736,
+        "lower": -0.006979138714747535,
+        "upper": -0.0017825495306276196
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-periodic-16384": {
+      "forward": {
+        "estimate": -0.00036998725847914304,
+        "lower": -0.003811402109482165,
+        "upper": 0.0029057005958228466
+      },
+      "reverse": {
+        "estimate": -0.0030120073676321857,
+        "lower": -0.00646224358773706,
+        "upper": 0.00036742865086414334
+      },
+      "combined": {
+        "estimate": -0.0016918713251719009,
+        "lower": -0.004096519526882392,
+        "upper": 0.0007296868812434187
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-periodic-32767": {
+      "forward": {
+        "estimate": 0.0015609290426743527,
+        "lower": -0.0009104841729206115,
+        "upper": 0.004008784038108892
+      },
+      "reverse": {
+        "estimate": 0.00011325240249671076,
+        "lower": -0.0029191416430133232,
+        "upper": 0.0030953780641120865
+      },
+      "combined": {
+        "estimate": 0.000836828970704584,
+        "lower": -0.001133328885626339,
+        "upper": 0.002794824121884254
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-periodic-32768": {
+      "forward": {
+        "estimate": 0.0002452040095053398,
+        "lower": -0.002591161344278503,
+        "upper": 0.0031211902704639805
+      },
+      "reverse": {
+        "estimate": -0.0007120392869486292,
+        "lower": -0.0030892740261624363,
+        "upper": 0.0015756704330858184
+      },
+      "combined": {
+        "estimate": -0.00023353220481103776,
+        "lower": -0.0020891796370960947,
+        "upper": 0.0015521483997089636
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-periodic-32769": {
+      "forward": {
+        "estimate": 0.0005916128279788158,
+        "lower": -0.0022965924034196172,
+        "upper": 0.0035908512651110502
+      },
+      "reverse": {
+        "estimate": -0.0002654752483548517,
+        "lower": -0.004637627498894958,
+        "upper": 0.004022221189564412
+      },
+      "combined": {
+        "estimate": 0.0001629769797828473,
+        "lower": -0.0024712561513926534,
+        "upper": 0.00274875878170433
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-periodic-33027": {
+      "forward": {
+        "estimate": -0.003917182789311191,
+        "lower": -0.007656873778170259,
+        "upper": -0.00035522241401297894
+      },
+      "reverse": {
+        "estimate": 0.00030214193537925205,
+        "lower": -0.0027473295476747595,
+        "upper": 0.0033644721056016458
+      },
+      "combined": {
+        "estimate": -0.0018097497967238807,
+        "lower": -0.004224887252622378,
+        "upper": 0.0005652355444691892
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-periodic-65535": {
+      "forward": {
+        "estimate": -0.0008305357347094811,
+        "lower": -0.0026696329125148743,
+        "upper": 0.0010642142583550118
+      },
+      "reverse": {
+        "estimate": -0.0012341540052985822,
+        "lower": -0.003794523740613731,
+        "upper": 0.001319543942798207
+      },
+      "combined": {
+        "estimate": -0.001032365254511669,
+        "lower": -0.0026589703409022336,
+        "upper": 0.0005463456627305963
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-periodic-65536": {
+      "forward": {
+        "estimate": -0.0020518087569583177,
+        "lower": -0.004016358647546681,
+        "upper": -4.197333004318793e-05
+      },
+      "reverse": {
+        "estimate": 3.936362116085945e-05,
+        "lower": -0.0022227958466368714,
+        "upper": 0.002294909818038482
+      },
+      "combined": {
+        "estimate": -0.0010067697438685963,
+        "lower": -0.0025072498367594287,
+        "upper": 0.0005186240398222797
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-periodic-65537": {
+      "forward": {
+        "estimate": -0.00034428465683411513,
+        "lower": -0.002941945834987081,
+        "upper": 0.0021928579932686265
+      },
+      "reverse": {
+        "estimate": 0.0007323776492891287,
+        "lower": -0.001979194459226008,
+        "upper": 0.003344957083222022
+      },
+      "combined": {
+        "estimate": 0.0001939016241137015,
+        "lower": -0.001634354177070696,
+        "upper": 0.002021265248914883
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-periodic-131072": {
+      "forward": {
+        "estimate": 0.0010644391771965633,
+        "lower": -0.0012083937307520998,
+        "upper": 0.0031320753669046297
+      },
+      "reverse": {
+        "estimate": 0.0007811832031550114,
+        "lower": -0.0008912240727656506,
+        "upper": 0.002515344994858726
+      },
+      "combined": {
+        "estimate": 0.0009228011701789551,
+        "lower": -0.00047653539207948015,
+        "upper": 0.0022765239641748813
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-periodic-262144": {
+      "forward": {
+        "estimate": 0.0023890273821016716,
+        "lower": 0.0013801897486651615,
+        "upper": 0.0034108630045350807
+      },
+      "reverse": {
+        "estimate": 2.1117727441843925e-05,
+        "lower": -0.0017416444647273543,
+        "upper": 0.001558914752863405
+      },
+      "combined": {
+        "estimate": 0.001204372523598396,
+        "lower": 0.0002093797924398455,
+        "upper": 0.0021500531105216325
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-periodic-1048576": {
+      "forward": {
+        "estimate": 0.0018616815042711288,
+        "lower": 0.0011992729022454185,
+        "upper": 0.002495997871156286
+      },
+      "reverse": {
+        "estimate": 0.0026958122520217564,
+        "lower": 0.001877449961344757,
+        "upper": 0.0035973706756307067
+      },
+      "combined": {
+        "estimate": 0.002278660104115593,
+        "lower": 0.0017511032832031592,
+        "upper": 0.0028275548621126134
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-repeated-1024": {
+      "forward": {
+        "estimate": -0.00035184384259978607,
+        "lower": -0.0016071531724517474,
+        "upper": 0.0009292453446154703
+      },
+      "reverse": {
+        "estimate": 0.003129903143691104,
+        "lower": 0.0009386672224060977,
+        "upper": 0.005744975997186819
+      },
+      "combined": {
+        "estimate": 0.0013875164310479526,
+        "lower": 0.00012983550487821738,
+        "upper": 0.0028152940582752972
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-repeated-4096": {
+      "forward": {
+        "estimate": 0.002320708280441286,
+        "lower": -0.003702776106565331,
+        "upper": 0.00831924324485911
+      },
+      "reverse": {
+        "estimate": 0.0016400864347472233,
+        "lower": -0.005266238745861074,
+        "upper": 0.008611852512504292
+      },
+      "combined": {
+        "estimate": 0.001980339566280298,
+        "lower": -0.002598456112687053,
+        "upper": 0.006622274699641828
+      },
+      "decision": "inconclusive"
+    },
+    "prefix-repeated-8192": {
+      "forward": {
+        "estimate": 0.0032434093370148354,
+        "lower": -0.0009165337083320013,
+        "upper": 0.00776247153894305
+      },
+      "reverse": {
+        "estimate": 5.3945555183121385e-05,
+        "lower": -0.004814926319763324,
+        "upper": 0.004748272005896226
+      },
+      "combined": {
+        "estimate": 0.0016474079533752573,
+        "lower": -0.0015874537116511434,
+        "upper": 0.004839397285794078
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-repeated-16384": {
+      "forward": {
+        "estimate": -0.000869873061585924,
+        "lower": -0.004598560747949509,
+        "upper": 0.0025925267843425193
+      },
+      "reverse": {
+        "estimate": -0.004648733257524906,
+        "lower": -0.0074789192227116,
+        "upper": -0.001889600570717631
+      },
+      "combined": {
+        "estimate": -0.002761093073119003,
+        "lower": -0.005071007082872114,
+        "upper": -0.00048194813921920154
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-repeated-32767": {
+      "forward": {
+        "estimate": -0.0009799671150886313,
+        "lower": -0.003638547731227959,
+        "upper": 0.001661297864193223
+      },
+      "reverse": {
+        "estimate": -0.006079318217617202,
+        "lower": -0.00882254628309298,
+        "upper": -0.003356446925867451
+      },
+      "combined": {
+        "estimate": -0.0035329046078693693,
+        "lower": -0.00545255613306006,
+        "upper": -0.0016816363481528818
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-repeated-32768": {
+      "forward": {
+        "estimate": -0.0012974859819799844,
+        "lower": -0.004302839984903106,
+        "upper": 0.0016294799423588469
+      },
+      "reverse": {
+        "estimate": -0.004039791557270189,
+        "lower": -0.006886403313673073,
+        "upper": -0.0014616842713804923
+      },
+      "combined": {
+        "estimate": -0.0026695813153668757,
+        "lower": -0.004731724069613308,
+        "upper": -0.0007136363098442233
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-repeated-32769": {
+      "forward": {
+        "estimate": 0.0007655634883849682,
+        "lower": -0.0018945218220167703,
+        "upper": 0.003452798835378079
+      },
+      "reverse": {
+        "estimate": -0.0010899133252113558,
+        "lower": -0.004953400398640562,
+        "upper": 0.0024477986595894397
+      },
+      "combined": {
+        "estimate": -0.0001626053375847203,
+        "lower": -0.0025449407763119547,
+        "upper": 0.0021182087065101385
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-repeated-33027": {
+      "forward": {
+        "estimate": -0.0010260039194568416,
+        "lower": -0.004288849748860679,
+        "upper": 0.0021656323479428696
+      },
+      "reverse": {
+        "estimate": -0.002851929124871533,
+        "lower": -0.0059716757998619086,
+        "upper": 8.477346638091632e-05
+      },
+      "combined": {
+        "estimate": -0.0019393840822433672,
+        "lower": -0.004184588790151156,
+        "upper": 0.00022523532545792868
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-repeated-65535": {
+      "forward": {
+        "estimate": 0.0019291907577512202,
+        "lower": -0.0008121691111657725,
+        "upper": 0.0046022271447869745
+      },
+      "reverse": {
+        "estimate": 0.0007003184860827627,
+        "lower": -0.001021157311349219,
+        "upper": 0.0023464829680992505
+      },
+      "combined": {
+        "estimate": 0.001314566103871817,
+        "lower": -0.0002910539904744658,
+        "upper": 0.002889824219427961
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-repeated-65536": {
+      "forward": {
+        "estimate": 0.0008650465625639203,
+        "lower": -0.0011893440387445997,
+        "upper": 0.0029028402272897047
+      },
+      "reverse": {
+        "estimate": 0.0018404511745102603,
+        "lower": -0.00022702147306208342,
+        "upper": 0.003936340204618194
+      },
+      "combined": {
+        "estimate": 0.0013526301024211485,
+        "lower": -0.00012623837049929865,
+        "upper": 0.0028175774702410283
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-repeated-65537": {
+      "forward": {
+        "estimate": 0.002083587907439677,
+        "lower": -0.00013532252297765446,
+        "upper": 0.004324528287066309
+      },
+      "reverse": {
+        "estimate": -0.0006581189216106065,
+        "lower": -0.003746015215000842,
+        "upper": 0.0024892771205804465
+      },
+      "combined": {
+        "estimate": 0.000711795542154281,
+        "lower": -0.0012062075588601395,
+        "upper": 0.0026328604462184657
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-repeated-131072": {
+      "forward": {
+        "estimate": 0.0018910915482968083,
+        "lower": -0.0003654430000865627,
+        "upper": 0.0039696159642097495
+      },
+      "reverse": {
+        "estimate": 8.234430402542792e-05,
+        "lower": -0.0014701063625516264,
+        "upper": 0.0016683606576488597
+      },
+      "combined": {
+        "estimate": 0.0009863093833699654,
+        "lower": -0.0003516264423697457,
+        "upper": 0.0023060602056772517
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-repeated-262144": {
+      "forward": {
+        "estimate": 0.001969133289712266,
+        "lower": 0.0009328444211478271,
+        "upper": 0.0030343334393228005
+      },
+      "reverse": {
+        "estimate": 0.0013450750897481267,
+        "lower": -9.959816662075127e-06,
+        "upper": 0.0029249097924068934
+      },
+      "combined": {
+        "estimate": 0.0016570555891854966,
+        "lower": 0.0007812046266155726,
+        "upper": 0.002584393410936414
+      },
+      "decision": "bounded at resolution in the two full orders"
+    },
+    "prefix-repeated-1048576": {
+      "forward": {
+        "estimate": 0.0010959116900910448,
+        "lower": 0.000493530401640907,
+        "upper": 0.0016817815203133968
+      },
+      "reverse": {
+        "estimate": 0.000612483561942323,
+        "lower": -8.141544717177318e-05,
+        "upper": 0.0012794193401182152
+      },
+      "combined": {
+        "estimate": 0.0008541684381040415,
+        "lower": 0.00040924699855238167,
+        "upper": 0.0013066622074247025
+      },
+      "decision": "bounded at resolution in the two full orders"
+    }
+  },
+  "followup_cases": [
+    "128-biased-dynamic",
+    "16384-distribution-change",
+    "320-overlap",
+    "empty",
+    "heldout-mixed-131073",
+    "one-stored",
+    "prefix-natural-1024",
+    "prefix-periodic-1024",
+    "prefix-random-4096",
+    "prefix-repeated-4096",
+    "reymont-prefix-1024",
+    "seven-stored-prefix"
+  ]
+}

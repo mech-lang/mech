@@ -1,0 +1,60 @@
+{
+  "reference_sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+  "candidate_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+  "reference_text_bytes": 71768,
+  "candidate_text_bytes": 71192,
+  "root_instruction_bytes": 50632,
+  "root_frame_bytes": 3728,
+  "relocations": 498,
+  "groups": [
+    {
+      "candidate": "0x963c",
+      "copy_words": 21,
+      "shared_copy": "0x987c",
+      "continuation": "0x98d0",
+      "fallthrough_branch_replaces_terminal_branch": true
+    },
+    {
+      "candidate": "0x96cc",
+      "copy_words": 21,
+      "shared_copy": "0x987c",
+      "continuation": "0x98d0",
+      "fallthrough_branch_replaces_terminal_branch": true
+    },
+    {
+      "candidate": "0x9738",
+      "copy_words": 21,
+      "shared_copy": "0x987c",
+      "continuation": "0x98d0",
+      "fallthrough_branch_replaces_terminal_branch": true
+    },
+    {
+      "candidate": "0x9818",
+      "copy_words": 21,
+      "shared_copy": "0x987c",
+      "continuation": "0x98d0",
+      "fallthrough_branch_replaces_terminal_branch": true
+    },
+    {
+      "candidate": "0xc140",
+      "copy_words": 6,
+      "shared_copy": "0xc688",
+      "continuation": "0xc6a0",
+      "fallthrough_branch_replaces_terminal_branch": true
+    },
+    {
+      "candidate": "0xcd34",
+      "copy_words": 7,
+      "shared_copy": "0xcd74",
+      "continuation": "0xcd90",
+      "fallthrough_branch_replaces_terminal_branch": true
+    },
+    {
+      "candidate": "0xd9c0",
+      "copy_words": 55,
+      "shared_copy": "0xde38",
+      "continuation": "0xdf14",
+      "fallthrough_branch_replaces_terminal_branch": true
+    }
+  ]
+}

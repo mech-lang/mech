@@ -1,0 +1,22 @@
+{
+  "source_pin": "e8b2bb4f2d8c44390e9a67dfe054c6ff40341249",
+  "orders": [
+    [
+      "plain",
+      "time"
+    ],
+    [
+      "time",
+      "plain"
+    ],
+    [
+      "time",
+      "plain"
+    ],
+    [
+      "plain",
+      "time"
+    ]
+  ],
+  "census_after_orders": true
+}

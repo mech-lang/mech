@@ -1,0 +1,14 @@
+{
+  "actor": "mech-fresh-owner-counts",
+  "seconds": {
+    "frontend": 3.975806707981974,
+    "native": 2.225890666246414,
+    "link": 0.04724229220300913,
+    "total": 6.249836166854948,
+    "parse": 3.5239946250000003
+  },
+  "encoder_sha256": "c809f6ce78e3d9d2a9e7df5686764ecc47089869610636cd0dd2c6f485dc243d",
+  "encoder_bytes": 159960,
+  "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/profile/mech-fresh-owner-counts/compressor",
+  "executable_sha256": "a4ddd1849a8b7e9f707df272fe814dbc2b7da09add2f302cd2e711270ccd3970"
+}

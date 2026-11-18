@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/linked-recheck/worker-checks/general-byte-read/mech-worker",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/linked-recheck/worker-checks/general-byte-read/metadata.json",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "complete_smokes": 162,
+  "verified": true,
+  "worker_sha256": "149d0c2cb7d2794d180863d12a3953492d0ddb28b3c6b1f05b4cd14c8d5cbf03",
+  "metadata_sha256": "bb1e9dcde194691d6f70f584a64f1e90ffcfd4ece9513fe7745df3156484acf9"
+}

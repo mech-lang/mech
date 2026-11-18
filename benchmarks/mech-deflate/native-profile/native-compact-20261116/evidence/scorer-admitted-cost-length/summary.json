@@ -1,0 +1,337 @@
+{
+  "current_pr_base": "8c7cec1199fa1348e364c2052d9ec82b0934754e",
+  "candidate_text_bytes": 71128,
+  "same_binary_control_text_bytes": 71096,
+  "maintained_text_bytes": 71192,
+  "evidence": "evidence/scorer-admitted-cost-length/README.md",
+  "checked": {
+    "commands": {
+      "failures": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/checks/linked-proofs/check-linked-error-exits.py",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/checks/worker-checks/maintained",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/checks/worker-checks/cost-latch-control",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/checks/worker-checks/cost-split-placed"
+      ],
+      "stack": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/checks/linked-proofs/check-layout-stack.py",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/checks/worker-checks/maintained",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/checks/worker-checks/cost-latch-control",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/checks/worker-checks/cost-split-placed"
+      ]
+    },
+    "peak_stack_bytes": {
+      "maintained": 5280,
+      "cost-latch-control": 5280,
+      "cost-split-placed": 5280
+    },
+    "matches_success_observations": 162,
+    "checked_failure_cases": [
+      "empty",
+      "one-stored",
+      "seven-stored-prefix",
+      "prefix-periodic-4096",
+      "prefix-repeated-16384",
+      "heldout-mixed-131073"
+    ]
+  },
+  "placed_counts": {
+    "case": "prefix-natural-8192",
+    "roles": {
+      "cost-latch-control": {
+        "calls": 6,
+        "counts": {
+          "instructions": 7523934,
+          "pacibsp": 6,
+          "stp": 36,
+          "stack_stores": 10458,
+          "mov": 441924,
+          "sub": 559218,
+          "ldr": 898086,
+          "payload_loads": 1066446,
+          "stur": 10422,
+          "b": 189864,
+          "branches": 1176852,
+          "add": 1267578,
+          "cmp": 943968,
+          "b.eq": 453948,
+          "b.hs": 312744,
+          "lsr": 136056,
+          "ldrb": 86904,
+          "and": 188574,
+          "b.hi": 90372,
+          "subs": 224820,
+          "b.ls": 86904,
+          "csel": 443604,
+          "orr": 323124,
+          "str": 49218,
+          "payload_stores": 49218,
+          "ldur": 124494,
+          "stack_loads": 43074,
+          "cbz": 43020,
+          "lsl": 83748,
+          "adrp": 43020,
+          "dup.4s": 64872,
+          "movi.16b": 6036,
+          "mov.16b": 75420,
+          "add.4s": 122184,
+          "uzp1.4s": 40728,
+          "rev64.4s": 40728,
+          "umin.4s": 40728,
+          "cmhi.4s": 40728,
+          "bsl.16b": 46764,
+          "uminv.4s": 12072,
+          "mov.s": 12072,
+          "cmeq.4s": 6036,
+          "neg": 3468,
+          "ccmp": 10404,
+          "ldp": 36,
+          "retab": 6
+        },
+        "raw_sha256": "b3f23e241b13db83c71b304ab5002fb6eb9be51b203575cad1c6e157740eff6d",
+        "object_sha256": "d0f6f40124bb9dcd17db355630f70d9c9605c58cc71f3bc2464642c6cae00049"
+      },
+      "cost-split-placed": {
+        "calls": 6,
+        "counts": {
+          "instructions": 7483578,
+          "pacibsp": 6,
+          "stp": 36,
+          "stack_stores": 10458,
+          "mov": 441924,
+          "sub": 559218,
+          "ldr": 898086,
+          "payload_loads": 1066446,
+          "stur": 10422,
+          "b": 192528,
+          "branches": 1179516,
+          "add": 1267578,
+          "cmp": 943968,
+          "b.eq": 444354,
+          "b.hs": 312744,
+          "lsr": 136056,
+          "ldrb": 86904,
+          "and": 188574,
+          "b.hi": 90372,
+          "subs": 224820,
+          "b.ls": 86904,
+          "csel": 443604,
+          "orr": 323124,
+          "str": 49218,
+          "payload_stores": 49218,
+          "cbz": 43020,
+          "lsl": 83748,
+          "adrp": 43020,
+          "dup.4s": 64872,
+          "movi.16b": 6036,
+          "mov.16b": 75420,
+          "ldur": 81474,
+          "add.4s": 122184,
+          "uzp1.4s": 40728,
+          "rev64.4s": 40728,
+          "umin.4s": 40728,
+          "cmhi.4s": 40728,
+          "bsl.16b": 46764,
+          "neg": 3468,
+          "ccmp": 10404,
+          "b.ne": 9594,
+          "uminv.4s": 12072,
+          "mov.s": 12072,
+          "cmeq.4s": 6036,
+          "stack_loads": 54,
+          "ldp": 36,
+          "retab": 6
+        },
+        "raw_sha256": "4e5202322fccedb39224ba026729b1ceaad422da14f994779a0ef4e0119822f3",
+        "object_sha256": "2915ab48181675abdce712cbb6299e32e62f1729ea52bf25f4a626aab9c22497"
+      }
+    },
+    "fewer_stack_loads": 43020
+  },
+  "screen": {
+    "kind": "focus",
+    "policy_version": 3,
+    "decision": "Unresolved",
+    "preserves_peer_wins": true,
+    "both_targets_win": false,
+    "runs": [
+      {
+        "order": "forward",
+        "focus_ratios_vs_libdeflate": {
+          "320-overlap": {
+            "mech-control": 0.9892143843935296,
+            "mech-experiment": 0.9904105095093443,
+            "roc": 10.914549060008197,
+            "libdeflate": 1.0
+          },
+          "prefix-natural-4096": {
+            "mech-control": 1.0912946928659337,
+            "mech-experiment": 1.089633820285257,
+            "roc": 1.7087938853429974,
+            "libdeflate": 1.0
+          },
+          "prefix-natural-8192": {
+            "mech-control": 0.9970241210953432,
+            "mech-experiment": 0.9942596594281112,
+            "roc": 1.2424283410290822,
+            "libdeflate": 1.0
+          },
+          "prefix-periodic-1024": {
+            "mech-control": 0.9711111992045629,
+            "mech-experiment": 0.9728453149856167,
+            "roc": 7.295838475322268,
+            "libdeflate": 1.0
+          },
+          "prefix-random-1024": {
+            "mech-control": 0.9631071286173075,
+            "mech-experiment": 0.9648920988480659,
+            "roc": 9.34575828845335,
+            "libdeflate": 1.0
+          }
+        },
+        "wins": {
+          "roc": {
+            "mech-control": 15,
+            "mech-experiment": 15
+          },
+          "libdeflate": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          }
+        },
+        "losses": {
+          "roc": [],
+          "libdeflate": []
+        },
+        "receipts": "admitted-cost-focus-forward"
+      },
+      {
+        "order": "reverse",
+        "focus_ratios_vs_libdeflate": {
+          "320-overlap": {
+            "libdeflate": 1.0,
+            "roc": 10.891645487547274,
+            "mech-experiment": 0.9883094408548995,
+            "mech-control": 0.9858078915562648
+          },
+          "prefix-natural-4096": {
+            "libdeflate": 1.0,
+            "roc": 1.701806883399721,
+            "mech-experiment": 1.092179529653444,
+            "mech-control": 1.095082653128008
+          },
+          "prefix-natural-8192": {
+            "libdeflate": 1.0,
+            "roc": 1.2443106733987568,
+            "mech-experiment": 1.0010090920189587,
+            "mech-control": 1.0001641305216342
+          },
+          "prefix-periodic-1024": {
+            "libdeflate": 1.0,
+            "roc": 7.297794932513402,
+            "mech-experiment": 0.9716429229081547,
+            "mech-control": 0.9728416389447602
+          },
+          "prefix-random-1024": {
+            "libdeflate": 1.0,
+            "roc": 9.354127938843527,
+            "mech-experiment": 0.9609682758934245,
+            "mech-control": 0.9597363840035354
+          }
+        },
+        "wins": {
+          "roc": {
+            "mech-control": 15,
+            "mech-experiment": 15
+          },
+          "libdeflate": {
+            "mech-control": 12,
+            "mech-experiment": 12
+          }
+        },
+        "losses": {
+          "roc": [],
+          "libdeflate": []
+        },
+        "receipts": "admitted-cost-focus-reverse"
+      }
+    ],
+    "rejected": [],
+    "unresolved": [
+      "both complete timing orders are required"
+    ]
+  },
+  "paired_runtime": {
+    "320-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "admitted-cost-focus-forward": {
+          "estimate": 0.0012091667232962955,
+          "lower": -0.00019831907161704798,
+          "upper": 0.0026088000156707647
+        },
+        "admitted-cost-focus-reverse": {
+          "estimate": 0.002537562663132542,
+          "lower": 0.00020052076264143182,
+          "upper": 0.005317686931263221
+        }
+      },
+      "combined": {
+        "estimate": 0.0018731445261717106,
+        "lower": 0.0004938775156955177,
+        "upper": 0.003437373663973897
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-4096": {
+      "decision": "bounded",
+      "runs": {
+        "admitted-cost-focus-forward": {
+          "estimate": -0.001521928578535392,
+          "lower": -0.005131032388211332,
+          "upper": 0.002313868735804192
+        },
+        "admitted-cost-focus-reverse": {
+          "estimate": -0.0026510542069781984,
+          "lower": -0.0068086900221761,
+          "upper": 0.0014654106115123966
+        }
+      },
+      "combined": {
+        "estimate": -0.0020866510915653613,
+        "lower": -0.004842446054933114,
+        "upper": 0.0007043256040502044
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "bounded",
+      "runs": {
+        "admitted-cost-focus-forward": {
+          "estimate": -0.0027727129251344795,
+          "lower": -0.006182153357459752,
+          "upper": 0.0007205998061554642
+        },
+        "admitted-cost-focus-reverse": {
+          "estimate": 0.0008448228361117582,
+          "lower": -0.0023531551969754316,
+          "upper": 0.004179835431834977
+        }
+      },
+      "combined": {
+        "estimate": -0.0009655824448387973,
+        "lower": -0.0033129477144598907,
+        "upper": 0.0014712674904429068
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    }
+  },
+  "full_qualification": "pending",
+  "source_adopted": false
+}

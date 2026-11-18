@@ -1,10 +1,21 @@
 //! Check the all-thread allocator window and report empty-window overhead.
 mod measurement;
-use std::alloc::{GlobalAlloc, Layout, System};
+use std::alloc::System;
+use std::hint::black_box;
+use std::mem::MaybeUninit;
 use std::sync::{Arc, Barrier};
 
 #[global_allocator]
 static ALLOCATOR: measurement::Tracked<System> = measurement::Tracked(System);
+
+#[repr(C, align(16))]
+struct TestBlock {
+    marker: u8,
+    _spare: [MaybeUninit<u8>; 1023],
+}
+
+const _: () = assert!(std::mem::size_of::<TestBlock>() == 1024);
+const _: () = assert!(std::mem::align_of::<TestBlock>() == 16);
 
 fn main() {
     let ready = Arc::new(Barrier::new(5));
@@ -15,20 +26,16 @@ fn main() {
             let (ready, allocated, release) = (ready.clone(), allocated.clone(), release.clone());
             std::thread::spawn(move || {
                 ready.wait();
-                let layout = Layout::from_size_align(1024, 16).unwrap();
-                let pointers: [_; 3] = std::array::from_fn(|_| {
-                    // SAFETY: each nonnull block has the matching size/alignment;
-                    // workers retain the blocks until the release barrier.
-                    let pointer = unsafe { ALLOCATOR.alloc(layout) };
-                    assert!(!pointer.is_null());
-                    unsafe { pointer.write_volatile(7) };
-                    pointer
+                let blocks: [_; 3] = std::array::from_fn(|_| {
+                    black_box(Box::new(TestBlock {
+                        marker: 7,
+                        _spare: [MaybeUninit::uninit(); 1023],
+                    }))
                 });
                 allocated.wait();
                 release.wait();
-                for pointer in pointers {
-                    assert_eq!(unsafe { pointer.read_volatile() }, 7);
-                    unsafe { ALLOCATOR.dealloc(pointer, layout) };
+                for block in blocks {
+                    assert_eq!(black_box(&*block).marker, 7);
                 }
             })
         })

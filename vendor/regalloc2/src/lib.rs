@@ -10,8 +10,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-#![allow(dead_code)]
-#![allow(clippy::all)]
+#![allow(dead_code, reason = "keep the vendored allocator helpers used across feature selections and diagnostics")]
+#![allow(clippy::all, reason = "preserve the upstream Clippy settings for the vendored allocator")]
 #![no_std]
 
 #[cfg(feature = "fuzzing")]

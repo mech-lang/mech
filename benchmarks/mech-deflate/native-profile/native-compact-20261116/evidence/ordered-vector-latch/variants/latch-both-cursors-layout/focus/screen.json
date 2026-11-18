@@ -1,0 +1,103 @@
+{
+  "kind": "focus",
+  "policy_decision": "Unresolved",
+  "runs": [
+    {
+      "order": "forward",
+      "cases": {
+        "prefix-natural-8192": {
+          "mech-control": 1.0303540296985088,
+          "mech-experiment": 0.995664923120468
+        },
+        "320-overlap": {
+          "mech-control": 0.9930892879209227,
+          "mech-experiment": 0.988528523502067
+        },
+        "random-1024": {
+          "mech-control": 0.9557923185582572,
+          "mech-experiment": 0.9564444883948587
+        },
+        "prefix-periodic-1024": {
+          "mech-control": 0.9880195008694662,
+          "mech-experiment": 0.9797464977290605
+        },
+        "prefix-natural-4096": {
+          "mech-control": 1.1167359734458573,
+          "mech-experiment": 1.0855906995914566
+        }
+      },
+      "lost_cases": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "gained_cases": {
+        "roc": [],
+        "libdeflate": [
+          "prefix-natural-8192"
+        ]
+      },
+      "wins": {
+        "roc": {
+          "mech-control": 15,
+          "mech-experiment": 15
+        },
+        "libdeflate": {
+          "mech-control": 12,
+          "mech-experiment": 13
+        }
+      }
+    },
+    {
+      "order": "reverse",
+      "cases": {
+        "prefix-natural-8192": {
+          "mech-control": 1.0429988638979888,
+          "mech-experiment": 1.0018441343666182
+        },
+        "320-overlap": {
+          "mech-control": 1.0009324321562532,
+          "mech-experiment": 1.019917152957976
+        },
+        "random-1024": {
+          "mech-control": 0.9868671512274573,
+          "mech-experiment": 0.9894024909067528
+        },
+        "prefix-periodic-1024": {
+          "mech-control": 1.0723966728957253,
+          "mech-experiment": 1.0211997067835203
+        },
+        "prefix-natural-4096": {
+          "mech-control": 1.1330695505815458,
+          "mech-experiment": 1.0929735427809035
+        }
+      },
+      "lost_cases": {
+        "roc": [],
+        "libdeflate": [
+          "prefix-random-1024"
+        ]
+      },
+      "gained_cases": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "wins": {
+        "roc": {
+          "mech-control": 15,
+          "mech-experiment": 15
+        },
+        "libdeflate": {
+          "mech-control": 10,
+          "mech-experiment": 9
+        }
+      }
+    }
+  ],
+  "rejected": [],
+  "unresolved": [
+    "scorer-20261117-latch-both-cursors-layout-focus-reverse: focused losses against libdeflate: prefix-random-1024",
+    "both complete timing orders are required"
+  ],
+  "achieves_target": false,
+  "preserves_peer_wins": false
+}

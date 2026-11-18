@@ -1,0 +1,146 @@
+{
+  "executable_file_breakdown": {
+    "header and load commands": 1880,
+    "__TEXT,__text": 129900,
+    "__TEXT,__stubs": 468,
+    "__TEXT,__init_offsets": 4,
+    "__TEXT,__cstring": 3969,
+    "__TEXT,__const": 2656,
+    "__TEXT,__unwind_info": 1152,
+    "__DATA_CONST,__got": 352,
+    "__DATA_CONST,__const": 4856,
+    "__DATA,__data": 5712,
+    "__DATA,__thread_vars": 48,
+    "__DATA,__thread_data": 8,
+    "chained fixups": 848,
+    "exports trie": 6016,
+    "function starts": 680,
+    "symbols": 8880,
+    "indirect symbols": 332,
+    "symbol names": 11432,
+    "signature": 1752,
+    "padding and other unassigned bytes": 29223
+  },
+  "encoder_object_file_breakdown": {
+    "header and load commands": 648,
+    "__TEXT,__text": 37080,
+    "__TEXT,__literal8": 88,
+    "__TEXT,__literal16": 768,
+    "__TEXT,__const": 1726,
+    "__LD,__compact_unwind": 1408,
+    "section relocations": 4480,
+    "symbols": 2080,
+    "symbol names": 2216,
+    "padding and other unassigned bytes": 1634
+  },
+  "linked_text": {
+    "by_family": {
+      "allocator": 91988,
+      "encoder": 37080,
+      "benchmark adapter objects": 568,
+      "fixed language or encoder runtime": 264,
+      "text padding and unassigned bytes": 0
+    },
+    "by_object": {
+      "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o": 91988,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-cold-tails-current/warmup/libdeflate/encoder.o": 37080,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-adapter.o": 568,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-arm.o": 164,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-alloc.o": 100
+    },
+    "largest_symbols_by_family": {
+      "benchmark adapter objects": [
+        [
+          568,
+          "_main"
+        ]
+      ],
+      "encoder": [
+        [
+          8008,
+          "_deflate_optimize_and_flush_block"
+        ],
+        [
+          5220,
+          "_deflate_compress_lazy2"
+        ],
+        [
+          4672,
+          "_deflate_flush_block"
+        ],
+        [
+          3996,
+          "_deflate_compress_lazy"
+        ],
+        [
+          2936,
+          "_deflate_compress_near_optimal"
+        ],
+        [
+          2304,
+          "_deflate_compress_greedy"
+        ],
+        [
+          1828,
+          "_deflate_compress_fastest"
+        ],
+        [
+          1780,
+          "_deflate_compute_true_cost"
+        ]
+      ],
+      "fixed language or encoder runtime": [
+        [
+          164,
+          "_libdeflate_init_arm_cpu_features"
+        ],
+        [
+          68,
+          "_libdeflate_aligned_malloc"
+        ],
+        [
+          20,
+          "_libdeflate_set_memory_allocator"
+        ],
+        [
+          12,
+          "_libdeflate_aligned_free"
+        ]
+      ],
+      "allocator": [
+        [
+          2180,
+          "_mi_segments_page_alloc"
+        ],
+        [
+          2152,
+          "__mi_vsnprintf"
+        ],
+        [
+          1852,
+          "__mi_stats_print"
+        ],
+        [
+          1632,
+          "_mi_segment_reclaim"
+        ],
+        [
+          1544,
+          "_mi_segment_alloc"
+        ],
+        [
+          1396,
+          "_mi_segment_span_allocate"
+        ],
+        [
+          1264,
+          "_mi_debug_show_arenas"
+        ],
+        [
+          1232,
+          "__mi_os_alloc_huge_os_pages"
+        ]
+      ]
+    }
+  }
+}

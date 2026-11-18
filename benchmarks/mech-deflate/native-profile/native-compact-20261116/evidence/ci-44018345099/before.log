@@ -1,0 +1,8 @@
+unsafe boundary audit failed: prohibited code exists outside the exact allowlist: benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/fresh-owner-counts/counts/matrix/matrix-worker.rs
+11:unsafe extern "C" {
+13:        context: *mut std::ffi::c_void,
+14:        input: *const u64,
+15:        output: *mut u64,
+97:        let status = unsafe {
+99:                (&mut heap as *mut Heap).cast(),
+105:            Some(unsafe { heap.take_u8(output) }.expect("sole final output ownership"))

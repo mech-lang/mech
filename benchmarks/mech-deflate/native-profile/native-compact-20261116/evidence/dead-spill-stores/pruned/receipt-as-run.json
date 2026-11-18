@@ -1,0 +1,19 @@
+{
+  "object_text_bytes": 71944,
+  "object_text_x_roc": 1.2469495285635053,
+  "object_text_x_libdeflate": 1.7499513524031913,
+  "roc_object_text_bytes": 57696,
+  "libdeflate_object_text_bytes": 41112,
+  "root_code_bytes": 51428,
+  "root_frame_bytes": 3744,
+  "source_blocks": 8223,
+  "root_direct_calls": 372,
+  "emit_seconds": 1.784843707922846,
+  "peak_resident_bytes": 218054656,
+  "object_sha256": "1285cc558622d3b17649aaa7bbdbf96cf84ed869bc52723764a9bd14f50577cf",
+  "metadata_sha256": "ab229a4c8c50a09e7ba369ceebb1b79cb950f5edfac85ea4a3b247c0ac92feb9",
+  "linked_text_bytes": 474868,
+  "worker_sha256": "ba2cb3ee06212671e3424e7e71c3620d79cb27485c7276361567baff072f4fb8",
+  "verified_calls": 162,
+  "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/dead-spill-stores-pruned-qualification.json"
+}

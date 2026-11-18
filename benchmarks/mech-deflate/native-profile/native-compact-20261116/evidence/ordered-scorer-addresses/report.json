@@ -1,0 +1,393 @@
+{
+  "baseline_reference_head": "197ad8ff1272a9f411bd56f14f08efabba2553cd",
+  "exact_check_results": {
+    "preserve": {
+      "command": [
+        "/private/tmp/mech-ordered-scorer.JpuxMQ/preserve/mech-worker",
+        "/private/tmp/mech-ordered-scorer.JpuxMQ/preserve/metadata.json",
+        "/private/tmp/mech-ordered-scorer.JpuxMQ/preserve/fixtures.json"
+      ],
+      "complete_smokes": 162,
+      "verified": true,
+      "worker_sha256": "6e60047970ac9730f77247a820f29ec8e2048f552f16810bf28ab254fd5b1b5e",
+      "metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+    },
+    "shrink": {
+      "command": [
+        "/private/tmp/mech-ordered-scorer.JpuxMQ/shrink/mech-worker",
+        "/private/tmp/mech-ordered-scorer.JpuxMQ/shrink/metadata.json",
+        "/private/tmp/mech-ordered-scorer.JpuxMQ/shrink/fixtures.json"
+      ],
+      "complete_smokes": 162,
+      "verified": true,
+      "worker_sha256": "420a101b4d5a67957ece6461233fbef488be312c0e6ad73442d7ac21e1b592af",
+      "metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+    }
+  },
+  "encoder_text_bytes": {
+    "control": 71768,
+    "preserve": 71768,
+    "shrink": 71704
+  },
+  "encoder_text_x_roc": 1.242789794786467,
+  "encoder_text_x_libdeflate": 1.933764832793959,
+  "timings": {
+    "forward": {
+      "timed_calls_all_actors": 641280,
+      "ratios_to_libdeflate": {
+        "empty": {
+          "mech-control": 0.006690870746686388,
+          "mech-experiment": 0.006900322237415046
+        },
+        "one-stored": {
+          "mech-control": 0.006801463011189803,
+          "mech-experiment": 0.0070437530920452445
+        },
+        "seven-stored-prefix": {
+          "mech-control": 0.007266445773527297,
+          "mech-experiment": 0.007387804299887458
+        },
+        "320-overlap": {
+          "mech-control": 0.9929120347420021,
+          "mech-experiment": 0.9913981587223387
+        },
+        "random-64": {
+          "mech-control": 0.5064610406146877,
+          "mech-experiment": 0.5030915926081726
+        },
+        "prefix-natural-4096": {
+          "mech-control": 1.11895417555245,
+          "mech-experiment": 1.102383112841697
+        },
+        "prefix-natural-8192": {
+          "mech-control": 1.0317330023000533,
+          "mech-experiment": 1.0153932429045422
+        },
+        "prefix-natural-16384": {
+          "mech-control": 0.9382012461948565,
+          "mech-experiment": 0.9214860482097023
+        },
+        "prefix-natural-32769": {
+          "mech-control": 0.8858236630705325,
+          "mech-experiment": 0.8735794381260115
+        },
+        "prefix-random-4096": {
+          "mech-control": 1.6109964294084032,
+          "mech-experiment": 1.6079993439407823
+        },
+        "prefix-repeated-32769": {
+          "mech-control": 0.748308383355003,
+          "mech-experiment": 0.7512735726573272
+        }
+      }
+    },
+    "reverse": {
+      "timed_calls_all_actors": 641280,
+      "ratios_to_libdeflate": {
+        "prefix-repeated-32769": {
+          "mech-experiment": 0.7452550504819828,
+          "mech-control": 0.7475539878572888
+        },
+        "prefix-random-4096": {
+          "mech-experiment": 1.590897530121221,
+          "mech-control": 1.6244370563449408
+        },
+        "prefix-natural-32769": {
+          "mech-experiment": 0.872869398303954,
+          "mech-control": 0.8837336583985383
+        },
+        "prefix-natural-16384": {
+          "mech-experiment": 0.9255350193998091,
+          "mech-control": 0.939731456120815
+        },
+        "prefix-natural-8192": {
+          "mech-experiment": 1.0220073700789163,
+          "mech-control": 1.0378776641107832
+        },
+        "prefix-natural-4096": {
+          "mech-experiment": 1.110280319256916,
+          "mech-control": 1.126631847869222
+        },
+        "random-64": {
+          "mech-experiment": 0.506831489592361,
+          "mech-control": 0.5054878668999592
+        },
+        "320-overlap": {
+          "mech-experiment": 0.9914374862238254,
+          "mech-control": 0.9939192801828687
+        },
+        "seven-stored-prefix": {
+          "mech-experiment": 0.007239954656138738,
+          "mech-control": 0.0072837471687771296
+        },
+        "one-stored": {
+          "mech-experiment": 0.006858274417803427,
+          "mech-control": 0.00691207290186929
+        },
+        "empty": {
+          "mech-experiment": 0.00674296059106763,
+          "mech-control": 0.006720566823796411
+        }
+      }
+    }
+  },
+  "decision": "Reject",
+  "rejected": [
+    "empty: established slowdown above the 0.5% resolution",
+    "one-stored: established slowdown above the 0.5% resolution"
+  ],
+  "unresolved": [
+    "both complete timing orders are required",
+    "seven-stored-prefix: combined and individual run bounds conflict: shrink-focus-forward"
+  ],
+  "cases": {
+    "empty": {
+      "decision": "regression",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": 0.03130407067456553,
+          "lower": 0.023602018857879825,
+          "upper": 0.03897763480760541
+        },
+        "shrink-focus-reverse": {
+          "estimate": 0.0033321247832740486,
+          "lower": -0.0060013234566529405,
+          "upper": 0.012513874650330159
+        }
+      },
+      "combined": {
+        "estimate": 0.017221954406977824,
+        "lower": 0.011304197992044962,
+        "upper": 0.02329305624531064
+      },
+      "adverse_runs": [
+        "shrink-focus-forward"
+      ],
+      "duplicate_controls": []
+    },
+    "one-stored": {
+      "decision": "regression",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": 0.03562322995167633,
+          "lower": 0.02688167136224129,
+          "upper": 0.04465670490839968
+        },
+        "shrink-focus-reverse": {
+          "estimate": -0.007783263404428031,
+          "lower": -0.016666223318356654,
+          "upper": 0.0007962407224249013
+        }
+      },
+      "combined": {
+        "estimate": 0.013687674565108887,
+        "lower": 0.007577216923274399,
+        "upper": 0.020002508413362152
+      },
+      "adverse_runs": [
+        "shrink-focus-forward"
+      ],
+      "duplicate_controls": []
+    },
+    "seven-stored-prefix": {
+      "decision": "unresolved",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": 0.016701222322787812,
+          "lower": 0.009181981434892128,
+          "upper": 0.024512109076510802
+        },
+        "shrink-focus-reverse": {
+          "estimate": -0.006012360344702095,
+          "lower": -0.013988695370642512,
+          "upper": 0.00200767417325709
+        }
+      },
+      "combined": {
+        "estimate": 0.005280283409201392,
+        "lower": -0.0004093309710747617,
+        "upper": 0.01080688615010894
+      },
+      "adverse_runs": [
+        "shrink-focus-forward"
+      ],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": -0.0015246829192241407,
+          "lower": -0.0038948090824946213,
+          "upper": 0.0008876173703180612
+        },
+        "shrink-focus-reverse": {
+          "estimate": -0.002496977378873888,
+          "lower": -0.004234843621600759,
+          "upper": -0.000919436852504063
+        }
+      },
+      "combined": {
+        "estimate": -0.0020109485567183505,
+        "lower": -0.003472283670270304,
+        "upper": -0.0005603508850965389
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "bounded",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": -0.006652926358216127,
+          "lower": -0.012937057457015122,
+          "upper": -0.00045858494246442394
+        },
+        "shrink-focus-reverse": {
+          "estimate": 0.0026580711039454474,
+          "lower": -0.00428493293631349,
+          "upper": 0.009696434974825197
+        }
+      },
+      "combined": {
+        "estimate": -0.0020082862095397447,
+        "lower": -0.006615206761136805,
+        "upper": 0.0026841151144034736
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-4096": {
+      "decision": "bounded",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": -0.014809420325521017,
+          "lower": -0.01861010576788491,
+          "upper": -0.011069918650751465
+        },
+        "shrink-focus-reverse": {
+          "estimate": -0.014513639609275764,
+          "lower": -0.01696765228676489,
+          "upper": -0.012106262258294698
+        }
+      },
+      "combined": {
+        "estimate": -0.014661541065898454,
+        "lower": -0.016912659623146364,
+        "upper": -0.012449053284473988
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "bounded",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": -0.015837197568638883,
+          "lower": -0.018018533102901024,
+          "upper": -0.013508904408077615
+        },
+        "shrink-focus-reverse": {
+          "estimate": -0.015291102776996301,
+          "lower": -0.016697115839533483,
+          "upper": -0.013851443140915243
+        }
+      },
+      "combined": {
+        "estimate": -0.015564188039623228,
+        "lower": -0.016821050212939004,
+        "upper": -0.014193515708094462
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-16384": {
+      "decision": "bounded",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": -0.017816218058702815,
+          "lower": -0.018706010117653493,
+          "upper": -0.016973268526111696
+        },
+        "shrink-focus-reverse": {
+          "estimate": -0.015106908073087677,
+          "lower": -0.016570157725581458,
+          "upper": -0.013329477291374348
+        }
+      },
+      "combined": {
+        "estimate": -0.016462495968439184,
+        "lower": -0.017333533363212195,
+        "upper": -0.015488946076133159
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-32769": {
+      "decision": "bounded",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": -0.013822417999174719,
+          "lower": -0.01585297125008933,
+          "upper": -0.01234026965370616
+        },
+        "shrink-focus-reverse": {
+          "estimate": -0.012293590938102339,
+          "lower": -0.013169788313373787,
+          "upper": -0.011231332275747463
+        }
+      },
+      "combined": {
+        "estimate": -0.013058300498261288,
+        "lower": -0.014167851234941242,
+        "upper": -0.012117559857862115
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-4096": {
+      "decision": "bounded",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": -0.001860392371398012,
+          "lower": -0.006366504274097684,
+          "upper": 0.0024942337858848695
+        },
+        "shrink-focus-reverse": {
+          "estimate": -0.020646861072712408,
+          "lower": -0.02775756925459505,
+          "upper": -0.011008514208732278
+        }
+      },
+      "combined": {
+        "estimate": -0.011298246275085022,
+        "lower": -0.015706656720244405,
+        "upper": -0.006055242660116811
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-32769": {
+      "decision": "bounded",
+      "runs": {
+        "shrink-focus-forward": {
+          "estimate": 0.003962523163284493,
+          "lower": 0.0020525423452690816,
+          "upper": 0.005979721584885134
+        },
+        "shrink-focus-reverse": {
+          "estimate": -0.0030752793947302903,
+          "lower": -0.004705267852474604,
+          "upper": -0.0014597814625780803
+        }
+      },
+      "combined": {
+        "estimate": 0.00043743327742329363,
+        "lower": -0.0008400405751595175,
+        "upper": 0.0017237174030073632
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    }
+  }
+}

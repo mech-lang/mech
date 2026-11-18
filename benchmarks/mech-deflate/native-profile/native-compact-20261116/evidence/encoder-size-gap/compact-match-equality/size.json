@@ -1,0 +1,14 @@
+{
+  "encoder_bytes": 65276,
+  "bytes_saved": 240,
+  "encoder": "1ab76d3a6064fa1af82afb7f07fa021f514301d2100def23b2b4d6945bd49858",
+  "worker": "792f63292b32ad062448c3344442c795c41bbaa263ff86ef803d10a692b56891",
+  "root_bytes": 48544,
+  "fixed_failure_groups": [],
+  "changed_symbols": {
+    "_mech_compact_numeric_475_vector": [
+      6464,
+      6224
+    ]
+  }
+}

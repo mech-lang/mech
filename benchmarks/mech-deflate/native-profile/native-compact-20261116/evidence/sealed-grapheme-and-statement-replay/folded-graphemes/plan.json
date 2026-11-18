@@ -1,0 +1,55 @@
+{
+  "parser_source": "cebfd544a69880e537b05be21235df956a611f0e",
+  "orders": [
+    [
+      "control",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "control"
+    ],
+    [
+      "candidate",
+      "control"
+    ],
+    [
+      "control",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "control"
+    ],
+    [
+      "control",
+      "candidate"
+    ],
+    [
+      "control",
+      "candidate"
+    ],
+    [
+      "candidate",
+      "control"
+    ]
+  ],
+  "actors": {
+    "control": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/sealed-literal-batch/control/parser",
+      "sha256": "edc2fcba5533155b86246b74981a3f95450b94416f7de3926a335d89f0309dc9"
+    },
+    "candidate": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/sealed-literal-batch/folded-grapheme/candidate/parser",
+      "sha256": "c9bec23f15b167f53f2990bbecef1d29e03cc69c63f3a001094c61dc490bd004"
+    }
+  },
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "exact_report": {
+    "events": 718353,
+    "parser_steps": 3967302,
+    "source_bytes": 243209,
+    "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+    "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+  }
+}

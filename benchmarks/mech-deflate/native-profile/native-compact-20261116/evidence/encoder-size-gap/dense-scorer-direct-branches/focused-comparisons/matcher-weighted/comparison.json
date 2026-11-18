@@ -1,0 +1,17 @@
+{
+  "initial_encoder_text_bytes": 66240,
+  "candidate_encoder_text_bytes": 66224,
+  "changed_atoms": [
+    "_mech_compact_numeric_475_vector"
+  ],
+  "object_sha256": "6813e832e7d99fa78261fa591b8db2c441d657281ddae4914b875c5d9d22fda8",
+  "checked_evidence": [
+    "origins",
+    "source_error_origins",
+    "all_path_initialization_proved",
+    "guarded_consuming_sites",
+    "owner_transfer_sites",
+    "buffer_result_sites",
+    "prechange_retirement_sites"
+  ]
+}

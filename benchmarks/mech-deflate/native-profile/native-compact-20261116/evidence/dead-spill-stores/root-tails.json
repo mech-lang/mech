@@ -1,0 +1,261 @@
+{
+  "symbol": "_mech_compact_closed_checked",
+  "root_instruction_bytes": 51448,
+  "reachable_instruction_bytes": 51448,
+  "block_classes": {
+    "conditional": 1609,
+    "fallthrough": 677,
+    "jump": 1100,
+    "terminal": 3
+  },
+  "conditional_instruction_bytes": 29776,
+  "exact_terminal_suffix_opportunity_bytes": 648,
+  "terminal_suffix_groups": 33,
+  "largest_groups": [
+    {
+      "bytes": 252,
+      "suffix_instructions": 22,
+      "copies": 4,
+      "examples": [
+        38568,
+        38712,
+        38820,
+        39044
+      ]
+    },
+    {
+      "bytes": 120,
+      "suffix_instructions": 6,
+      "copies": 7,
+      "examples": [
+        20652,
+        20696,
+        20740,
+        20780,
+        20820,
+        20856
+      ]
+    },
+    {
+      "bytes": 56,
+      "suffix_instructions": 8,
+      "copies": 3,
+      "examples": [
+        21592,
+        64756,
+        64864
+      ]
+    },
+    {
+      "bytes": 20,
+      "suffix_instructions": 2,
+      "copies": 6,
+      "examples": [
+        20924,
+        20956,
+        20984,
+        21012,
+        21036,
+        21060
+      ]
+    },
+    {
+      "bytes": 28,
+      "suffix_instructions": 2,
+      "copies": 8,
+      "examples": [
+        55068,
+        55236,
+        55268,
+        55300,
+        55332,
+        55364
+      ]
+    },
+    {
+      "bytes": 24,
+      "suffix_instructions": 3,
+      "copies": 4,
+      "examples": [
+        45104,
+        45128,
+        45160,
+        45184
+      ]
+    },
+    {
+      "bytes": 20,
+      "suffix_instructions": 2,
+      "copies": 6,
+      "examples": [
+        66780,
+        66800,
+        66812,
+        67000,
+        67108,
+        67144
+      ]
+    },
+    {
+      "bytes": 20,
+      "suffix_instructions": 2,
+      "copies": 6,
+      "examples": [
+        56720,
+        56788,
+        56820,
+        56852,
+        56884,
+        56916
+      ]
+    },
+    {
+      "bytes": 8,
+      "suffix_instructions": 3,
+      "copies": 2,
+      "examples": [
+        62460,
+        62472
+      ]
+    },
+    {
+      "bytes": 8,
+      "suffix_instructions": 3,
+      "copies": 2,
+      "examples": [
+        52928,
+        52948
+      ]
+    },
+    {
+      "bytes": 4,
+      "suffix_instructions": 2,
+      "copies": 2,
+      "examples": [
+        68224,
+        68392
+      ]
+    },
+    {
+      "bytes": 4,
+      "suffix_instructions": 2,
+      "copies": 2,
+      "examples": [
+        67248,
+        67280
+      ]
+    },
+    {
+      "bytes": 4,
+      "suffix_instructions": 2,
+      "copies": 2,
+      "examples": [
+        64484,
+        64500
+      ]
+    },
+    {
+      "bytes": 4,
+      "suffix_instructions": 2,
+      "copies": 2,
+      "examples": [
+        64276,
+        64296
+      ]
+    },
+    {
+      "bytes": 4,
+      "suffix_instructions": 2,
+      "copies": 2,
+      "examples": [
+        63264,
+        63284
+      ]
+    },
+    {
+      "bytes": 4,
+      "suffix_instructions": 2,
+      "copies": 2,
+      "examples": [
+        62988,
+        63016
+      ]
+    },
+    {
+      "bytes": 4,
+      "suffix_instructions": 2,
+      "copies": 2,
+      "examples": [
+        61732,
+        61752
+      ]
+    },
+    {
+      "bytes": 4,
+      "suffix_instructions": 2,
+      "copies": 2,
+      "examples": [
+        59676,
+        59692
+      ]
+    },
+    {
+      "bytes": 4,
+      "suffix_instructions": 2,
+      "copies": 2,
+      "examples": [
+        59468,
+        59484
+      ]
+    },
+    {
+      "bytes": 4,
+      "suffix_instructions": 2,
+      "copies": 2,
+      "examples": [
+        59020,
+        59040
+      ]
+    },
+    {
+      "bytes": 4,
+      "suffix_instructions": 2,
+      "copies": 2,
+      "examples": [
+        58056,
+        58072
+      ]
+    },
+    {
+      "bytes": 4,
+      "suffix_instructions": 2,
+      "copies": 2,
+      "examples": [
+        57964,
+        57984
+      ]
+    },
+    {
+      "bytes": 4,
+      "suffix_instructions": 2,
+      "copies": 2,
+      "examples": [
+        56608,
+        56628
+      ]
+    },
+    {
+      "bytes": 4,
+      "suffix_instructions": 2,
+      "copies": 2,
+      "examples": [
+        55716,
+        55732
+      ]
+    }
+  ],
+  "root_instruction_x_roc": 0.891708264004437,
+  "reachable_instruction_x_roc": 0.891708264004437,
+  "conditional_instruction_x_roc": 0.5160843039378813,
+  "exact_terminal_suffix_opportunity_x_roc": 0.011231281198003328
+}

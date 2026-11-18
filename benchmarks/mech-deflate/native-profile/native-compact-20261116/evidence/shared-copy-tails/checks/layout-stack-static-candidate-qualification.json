@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-text-reductions.yYja14/static-candidate/layout-stack-worker",
+    "/private/tmp/mech-text-reductions.yYja14/static-candidate/metadata.json",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "complete_smokes": 162,
+  "verified": true,
+  "worker_sha256": "875feadf813e0d60f6e49e0ab72dfc360ddbb85792146cdba21529c03a921285",
+  "metadata_sha256": "2a727450ecb1d87e341760878894b7f4188c5abdd9c5a2bee1cf3bb79a66280d"
+}

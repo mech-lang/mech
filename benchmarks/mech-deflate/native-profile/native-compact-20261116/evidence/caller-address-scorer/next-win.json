@@ -1,0 +1,539 @@
+{
+  "floor_libdeflate": 62,
+  "target_libdeflate": 63,
+  "floor_roc": 81,
+  "order_ranked_remaining_losses": [
+    {
+      "case": "prefix-natural-8192",
+      "x_libdeflate": {
+        "forward": 0.9975787609315162,
+        "reverse": 1.0055485593999691
+      },
+      "worst_order_reduction_needed": 0.005517942766762096
+    },
+    {
+      "case": "prefix-natural-4096",
+      "x_libdeflate": {
+        "forward": 1.0900574340815983,
+        "reverse": 1.0965166705560796
+      },
+      "worst_order_reduction_needed": 0.08802116114398228
+    },
+    {
+      "case": "16384-distribution-change",
+      "x_libdeflate": {
+        "forward": 1.3785451853689419,
+        "reverse": 1.385893791486007
+      },
+      "worst_order_reduction_needed": 0.2784439860086517
+    },
+    {
+      "case": "prefix-random-1048576",
+      "x_libdeflate": {
+        "forward": 1.386731725512492,
+        "reverse": 1.3885869836987592
+      },
+      "worst_order_reduction_needed": 0.2798434583217003
+    },
+    {
+      "case": "prefix-random-262144",
+      "x_libdeflate": {
+        "forward": 1.404872282422154,
+        "reverse": 1.40340040245457
+      },
+      "worst_order_reduction_needed": 0.2881915228081159
+    },
+    {
+      "case": "prefix-random-131072",
+      "x_libdeflate": {
+        "forward": 1.423580462336992,
+        "reverse": 1.4146878656451303
+      },
+      "worst_order_reduction_needed": 0.29754585254817967
+    },
+    {
+      "case": "prefix-random-65537",
+      "x_libdeflate": {
+        "forward": 1.4671530609396926,
+        "reverse": 1.4630042569260764
+      },
+      "worst_order_reduction_needed": 0.3184078562604007
+    },
+    {
+      "case": "prefix-random-65535",
+      "x_libdeflate": {
+        "forward": 1.463931468127586,
+        "reverse": 1.467177292826502
+      },
+      "worst_order_reduction_needed": 0.3184191134300408
+    },
+    {
+      "case": "prefix-random-65536",
+      "x_libdeflate": {
+        "forward": 1.4678178586395618,
+        "reverse": 1.466498890003039
+      },
+      "worst_order_reduction_needed": 0.31871656001866333
+    },
+    {
+      "case": "heldout-random-65537",
+      "x_libdeflate": {
+        "forward": 1.482485808671294,
+        "reverse": 1.4900315457124367
+      },
+      "worst_order_reduction_needed": 0.32887326924218596
+    },
+    {
+      "case": "reymont-prefix-1024",
+      "x_libdeflate": {
+        "forward": 1.4904602524704411,
+        "reverse": 1.4917630581829155
+      },
+      "worst_order_reduction_needed": 0.32965225642597795
+    },
+    {
+      "case": "prefix-natural-1024",
+      "x_libdeflate": {
+        "forward": 1.49116636996875,
+        "reverse": 1.4929159641420224
+      },
+      "worst_order_reduction_needed": 0.33016993319198706
+    },
+    {
+      "case": "prefix-random-33027",
+      "x_libdeflate": {
+        "forward": 1.5202882334866676,
+        "reverse": 1.5233259204477003
+      },
+      "worst_order_reduction_needed": 0.3435416632928405
+    },
+    {
+      "case": "prefix-random-32769",
+      "x_libdeflate": {
+        "forward": 1.5173162305245207,
+        "reverse": 1.5305532436133504
+      },
+      "worst_order_reduction_needed": 0.3466414813252843
+    },
+    {
+      "case": "random-32769",
+      "x_libdeflate": {
+        "forward": 1.516236307999463,
+        "reverse": 1.5346945708849147
+      },
+      "worst_order_reduction_needed": 0.3484045496926508
+    },
+    {
+      "case": "prefix-random-32768",
+      "x_libdeflate": {
+        "forward": 1.5269129362988434,
+        "reverse": 1.535753163779206
+      },
+      "worst_order_reduction_needed": 0.34885369368917074
+    },
+    {
+      "case": "prefix-random-32767",
+      "x_libdeflate": {
+        "forward": 1.5259731796314207,
+        "reverse": 1.5371815425726376
+      },
+      "worst_order_reduction_needed": 0.34945875141956684
+    },
+    {
+      "case": "prefix-random-16384",
+      "x_libdeflate": {
+        "forward": 1.6098286240403874,
+        "reverse": 1.6287488880294099
+      },
+      "worst_order_reduction_needed": 0.386031814143014
+    },
+    {
+      "case": "prefix-random-4096",
+      "x_libdeflate": {
+        "forward": 1.6334551823699086,
+        "reverse": 1.633882449509117
+      },
+      "worst_order_reduction_needed": 0.3879608656666582
+    },
+    {
+      "case": "prefix-random-8192",
+      "x_libdeflate": {
+        "forward": 1.6384617079734747,
+        "reverse": 1.6315362086561995
+      },
+      "worst_order_reduction_needed": 0.3896714246457146
+    }
+  ],
+  "attribution_case": "prefix-natural-4096",
+  "trace_sha256": "d526997c27a35223a31e457cac5cb424f266a172ab40d2404942298e01852faa",
+  "instrumented_object_sha256": "5ce90c8ce5f1702e2f061231d4c9821627f8d072a36e753c2d249c459648f4c5",
+  "scorer_calls": 5,
+  "scorer_instructions": 3472745,
+  "blocks_by_dynamic_instructions": [
+    {
+      "address": "0x22e8",
+      "visits": 70480,
+      "instructions": [
+        [
+          "ldr",
+          "w14, [x9, x27, lsl #2]"
+        ],
+        [
+          "ldr",
+          "w23, [x28, #-0x8]!"
+        ],
+        [
+          "add",
+          "w14, w22, w14"
+        ],
+        [
+          "add",
+          "w14, w14, w23"
+        ],
+        [
+          "cmp",
+          "w14, w25"
+        ],
+        [
+          "csel",
+          "x25, x14, x25, lo"
+        ],
+        [
+          "orr",
+          "w23, w27, w21, lsl #9"
+        ],
+        [
+          "add",
+          "x27, x27, #0x1"
+        ],
+        [
+          "csel",
+          "x26, x23, x26, lo"
+        ],
+        [
+          "subs",
+          "x7, x7, #0x1"
+        ],
+        [
+          "b.eq",
+          "0x21d0"
+        ]
+      ]
+    },
+    {
+      "address": "0x2318",
+      "visits": 24210,
+      "instructions": [
+        [
+          "add",
+          "x7, x9, #0xc"
+        ],
+        [
+          "lsl",
+          "x14, x25, #2"
+        ],
+        [
+          "ldr",
+          "q28, [x7, x14]"
+        ],
+        [
+          "sub",
+          "x7, x0, #0x3"
+        ],
+        [
+          "add",
+          "x7, x11, x7, lsl #3"
+        ],
+        [
+          "sub",
+          "x7, x7, x25, lsl #3"
+        ],
+        [
+          "ldur",
+          "q29, [x7, #-0x18]"
+        ],
+        [
+          "ldur",
+          "q30, [x7, #-0x8]"
+        ],
+        [
+          "add",
+          "x7, x25, #0x4"
+        ],
+        [
+          "dup.4s",
+          "v31, w22"
+        ],
+        [
+          "add.4s",
+          "v28, v31, v28"
+        ],
+        [
+          "uzp1.4s",
+          "v29, v30, v29"
+        ],
+        [
+          "rev64.4s",
+          "v29, v29"
+        ],
+        [
+          "add.4s",
+          "v29, v28, v29"
+        ],
+        [
+          "umin.4s",
+          "v28, v29, v0"
+        ],
+        [
+          "cmhi.4s",
+          "v24, v0, v29"
+        ],
+        [
+          "dup.4s",
+          "v29, w25"
+        ],
+        [
+          "ldr",
+          "q30, 0x24d0"
+        ],
+        [
+          "add.4s",
+          "v29, v29, v30"
+        ],
+        [
+          "bsl.16b",
+          "v24, v29, v5"
+        ],
+        [
+          "mov",
+          "x25, x7"
+        ],
+        [
+          "mov.16b",
+          "v0, v28"
+        ],
+        [
+          "mov.16b",
+          "v5, v24"
+        ],
+        [
+          "b",
+          "0x2284"
+        ]
+      ]
+    },
+    {
+      "address": "0x221c",
+      "visits": 32015,
+      "instructions": [
+        [
+          "add",
+          "x27, x28, #0x1"
+        ],
+        [
+          "ldr",
+          "w25, [x9, x27, lsl #2]"
+        ],
+        [
+          "sub",
+          "x14, x0, x27"
+        ],
+        [
+          "ldr",
+          "x27, [x11, x14, lsl #3]"
+        ],
+        [
+          "add",
+          "w14, w22, w25"
+        ],
+        [
+          "add",
+          "w27, w14, w27"
+        ],
+        [
+          "cmp",
+          "w27, w23"
+        ],
+        [
+          "csel",
+          "x25, x27, x23, lo"
+        ],
+        [
+          "add",
+          "w14, w28, #0x1"
+        ],
+        [
+          "orr",
+          "w14, w14, w21, lsl #9"
+        ],
+        [
+          "csel",
+          "x26, x14, x26, lo"
+        ],
+        [
+          "cmp",
+          "x7, #0x1"
+        ],
+        [
+          "b.eq",
+          "0x21d0"
+        ]
+      ]
+    },
+    {
+      "address": "0x21f0",
+      "visits": 35565,
+      "instructions": [
+        [
+          "lsr",
+          "x21, x24, #16"
+        ],
+        [
+          "ldrb",
+          "w7, [x5, w21, uxtw]"
+        ],
+        [
+          "ldr",
+          "w22, [x3, x7, lsl #2]"
+        ],
+        [
+          "and",
+          "x24, x24, #0xffff"
+        ],
+        [
+          "sub",
+          "x7, x24, #0x3"
+        ],
+        [
+          "cmp",
+          "x7, #0xff"
+        ],
+        [
+          "b.hi",
+          "0x2494"
+        ]
+      ]
+    },
+    {
+      "address": "0x21a4",
+      "visits": 17265,
+      "instructions": [
+        [
+          "and",
+          "x7, x15, #0xffff"
+        ],
+        [
+          "sub",
+          "x19, x13, x7"
+        ],
+        [
+          "add",
+          "w7, w21, w22"
+        ],
+        [
+          "mov",
+          "w23, w7"
+        ],
+        [
+          "mov",
+          "w7, #0x1"
+        ],
+        [
+          "orr",
+          "w26, w7, w20, lsl #9"
+        ],
+        [
+          "mov",
+          "x28, #0x2"
+        ],
+        [
+          "cmp",
+          "x19, x13"
+        ],
+        [
+          "b.eq",
+          "0x2378"
+        ]
+      ]
+    },
+    {
+      "address": "0x21d8",
+      "visits": 35565,
+      "instructions": [
+        [
+          "add",
+          "x20, x20, #0x1"
+        ],
+        [
+          "cmp",
+          "x20, x13"
+        ],
+        [
+          "b.eq",
+          "0x2378"
+        ]
+      ]
+    },
+    {
+      "address": "0x2250",
+      "visits": 12600,
+      "instructions": [
+        [
+          "add",
+          "x27, x28, #0x2"
+        ],
+        [
+          "sub",
+          "x14, x0, #0x3"
+        ],
+        [
+          "add",
+          "x14, x11, x14, lsl #3"
+        ],
+        [
+          "sub",
+          "x23, x28, #0x2"
+        ],
+        [
+          "sub",
+          "x28, x14, x23, lsl #3"
+        ],
+        [
+          "sub",
+          "x7, x7, #0x1"
+        ],
+        [
+          "b",
+          "0x22e8"
+        ]
+      ]
+    },
+    {
+      "address": "0x2378",
+      "visits": 17265,
+      "instructions": [
+        [
+          "orr",
+          "x13, x23, x26, lsl #32"
+        ],
+        [
+          "str",
+          "x13, [x11, x0, lsl #3]"
+        ],
+        [
+          "and",
+          "x7, x15, #0xffff"
+        ],
+        [
+          "cmp",
+          "x7, #0x0"
+        ],
+        [
+          "b.ne",
+          "0x23c4"
+        ]
+      ]
+    }
+  ],
+  "estimated_scope": "Dynamic scorer instructions only. Obtain exclusive time and a separate matched candidate."
+}

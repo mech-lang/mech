@@ -1,5 +1,5 @@
 //! One physical fixed-element layout for native loads, stores and comparisons.
-use super::layout::{Kind, Type};
+use super::layout::{LayoutKind, Type};
 use crate::native_artifact::{NativeCompileError, compiler::backend};
 use cranelift_codegen::ir::{InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::FunctionBuilder;
@@ -19,11 +19,11 @@ pub(super) fn load(
     ty: &Type,
 ) -> Result<Vec<Value>, NativeCompileError> {
     match &ty.kind {
-        Kind::Utf8 => Ok(vec![
+        LayoutKind::Utf8 => Ok(vec![
             b.ins().load(types::I64, MemFlags::new(), address, 0),
             b.ins().load(types::I64, MemFlags::new(), address, 8),
         ]),
-        Kind::Scalar { bytes, signed, .. } => {
+        LayoutKind::Scalar { bytes, signed, .. } => {
             let ty = native(*bytes)?;
             let value = if *signed && *bytes < 8 {
                 let value = b.ins().load(ty, MemFlags::new(), address, 0);
@@ -39,7 +39,7 @@ pub(super) fn load(
             };
             Ok(vec![value])
         }
-        Kind::Product(fields) => {
+        LayoutKind::Product(fields) => {
             let mut result = vec![];
             for field in fields {
                 let at = field
@@ -65,11 +65,11 @@ pub(super) fn store(
         return Err(backend("compact packed store semantic width mismatch"));
     }
     match &ty.kind {
-        Kind::Utf8 => {
+        LayoutKind::Utf8 => {
             b.ins().store(MemFlags::new(), values[0], address, 0);
             b.ins().store(MemFlags::new(), values[1], address, 8);
         }
-        Kind::Scalar { bytes, .. } => {
+        LayoutKind::Scalar { bytes, .. } => {
             let value = if *bytes == 8 {
                 values[0]
             } else {
@@ -77,7 +77,7 @@ pub(super) fn store(
             };
             b.ins().store(MemFlags::new(), value, address, 0);
         }
-        Kind::Product(fields) => {
+        LayoutKind::Product(fields) => {
             for field in fields {
                 let at = field
                     .packed_offset

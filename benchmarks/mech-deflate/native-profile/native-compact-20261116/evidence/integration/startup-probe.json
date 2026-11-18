@@ -1,0 +1,65 @@
+{
+  "scope": "usage-error path only; not source compilation or a runtime score",
+  "rows": [
+    {
+      "binary": "prior_frontend",
+      "seconds": 0.03040854213759303,
+      "exit": 101
+    },
+    {
+      "binary": "integrated_frontend",
+      "seconds": 1.6101677920669317,
+      "exit": 101
+    },
+    {
+      "binary": "prior_emitter",
+      "seconds": 0.06482962518930435,
+      "exit": 1
+    },
+    {
+      "binary": "integrated_emitter",
+      "seconds": 1.5822590421885252,
+      "exit": 1
+    },
+    {
+      "binary": "integrated_emitter",
+      "seconds": 0.018466957844793797,
+      "exit": 1
+    },
+    {
+      "binary": "prior_emitter",
+      "seconds": 0.007897667121142149,
+      "exit": 1
+    },
+    {
+      "binary": "integrated_frontend",
+      "seconds": 0.011174166109412909,
+      "exit": 101
+    },
+    {
+      "binary": "prior_frontend",
+      "seconds": 0.005692207720130682,
+      "exit": 101
+    },
+    {
+      "binary": "prior_frontend",
+      "seconds": 0.00536379124969244,
+      "exit": 101
+    },
+    {
+      "binary": "integrated_frontend",
+      "seconds": 0.008516124915331602,
+      "exit": 101
+    },
+    {
+      "binary": "prior_emitter",
+      "seconds": 0.004512874875217676,
+      "exit": 1
+    },
+    {
+      "binary": "integrated_emitter",
+      "seconds": 0.008732292335480452,
+      "exit": 1
+    }
+  ]
+}

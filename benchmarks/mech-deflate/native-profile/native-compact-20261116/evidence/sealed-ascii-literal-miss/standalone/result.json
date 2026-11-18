@@ -1,0 +1,47 @@
+{
+  "plan_sha256": "b232d4300b4663545d81c5ae36b9248763df1d170963fa4de6c3725a36cbe6ce",
+  "warmup": {
+    "control": 0.814101834,
+    "ascii-miss": 0.823989709
+  },
+  "trials": [
+    {
+      "control": 0.81420475,
+      "ascii-miss": 0.784605916
+    },
+    {
+      "ascii-miss": 0.78351725,
+      "control": 0.814273334
+    },
+    {
+      "ascii-miss": 0.796170292,
+      "control": 0.846699459
+    },
+    {
+      "control": 0.867888083,
+      "ascii-miss": 0.840434875
+    },
+    {
+      "control": 0.870128917,
+      "ascii-miss": 0.839242
+    },
+    {
+      "ascii-miss": 0.848511333,
+      "control": 0.875323958
+    },
+    {
+      "ascii-miss": 0.855096541,
+      "control": 0.876468333
+    },
+    {
+      "control": 0.87847975,
+      "ascii-miss": 0.852479625
+    }
+  ],
+  "median_seconds": {
+    "control": 0.8690085,
+    "ascii-miss": 0.8398384375000001
+  },
+  "candidate_x": 0.9664354290701095,
+  "paired_save_ms": 28.526021000000014
+}

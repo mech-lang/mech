@@ -9,10 +9,8 @@
 // which means we'll always detect truly dead code, otherwise if this is only
 // built for one platform we don't have to worry too much about trimming
 // everything down.
-#![cfg_attr(
-    not(feature = "all-arch"),
-    allow(dead_code, reason = "see comment above")
-)]
+#![allow(dead_code, reason = "target-specific helpers are unused in single-target builds")]
+#![cfg_attr(feature = "all-arch", deny(dead_code))]
 
 #[cfg_attr(not(feature = "std"), macro_use)]
 extern crate alloc;

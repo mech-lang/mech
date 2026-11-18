@@ -1,0 +1,58 @@
+{
+  "policy_version": 1,
+  "compiler_parent": "cf0984ac50e7a1d7e4da47380f42e582d15f1fb0",
+  "objective": "encoder_text_bytes",
+  "frozen_fixture_inventory_sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4",
+  "artifacts": {
+    "mech-control": {
+      "program.o": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+      "metadata.json": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+      "mech-worker": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41",
+      "runtime_receipt_sha256": "abc4ef1f4e4d8773b92719363f131fe1cce7be94eb905fdd3b3468a5ccf3c72e",
+      "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+    },
+    "mech-experiment": {
+      "program.o": "463a3a0d275548b9be6f646cd9f978f6c929b58c9779b88e2d22183019b0b99a",
+      "metadata.json": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab",
+      "mech-worker": "2920b25d6874cb954f872d64c5ca1fd4a175d865f1347fb63ecd39b59562bf7b",
+      "runtime_receipt_sha256": "30ffe5ae7583f8023c5d3e22bbeb4d059a69d67d265ec85f54c717ed59fd53d3",
+      "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+    },
+    "roc": {
+      "worker_sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+    },
+    "libdeflate": {
+      "worker_sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2"
+    }
+  },
+  "timing_boundary": "Complete compress-into call, including heap cleanup.",
+  "environment": {
+    "cpu": "Apple M1, same host as the pinned full runs",
+    "kernel": "24.6.0",
+    "machine": "arm64",
+    "clock": "Rust Instant on Darwin, pinned peer workers"
+  },
+  "runs": [
+    {
+      "order": "forward",
+      "kind": "full",
+      "cases": 81,
+      "blocks_per_case": 96
+    },
+    {
+      "order": "reverse",
+      "kind": "full",
+      "cases": 81,
+      "blocks_per_case": 96
+    }
+  ],
+  "max_peak_stack_bytes": 5296,
+  "additional_checks": [
+    "linked checked errors and semantic origins",
+    "all fixture aliases and independent inflation",
+    "extra matrix shapes",
+    "stack high-water",
+    "diagnostic resource observations"
+  ],
+  "earlier_focused_plan_sha256": "fe3c327284de85bd07f52626ef182961c5d95ab195dc7f17d246b18da3ab2ac0"
+}

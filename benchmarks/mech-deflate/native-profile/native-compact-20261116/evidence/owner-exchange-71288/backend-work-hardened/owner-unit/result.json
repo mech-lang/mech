@@ -1,0 +1,32 @@
+{
+  "build": [
+    "rustc",
+    "+nightly-2026-03-03",
+    "--edition=2024",
+    "--test",
+    "-L",
+    "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps",
+    "-o",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/owner-unit/tests",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/owner-unit/owner.rs",
+    "--extern",
+    "cranelift_codegen=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libcranelift_codegen-b991cc47e96c83d1.rlib",
+    "--extern",
+    "cranelift_frontend=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libcranelift_frontend-446b2e0bf0cefebc.rlib",
+    "--extern",
+    "cranelift_module=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libcranelift_module-5a2946ff15834a50.rlib",
+    "--extern",
+    "cranelift_jit=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libcranelift_jit-cbc64804b391e2aa.rlib"
+  ],
+  "run": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/owner-unit/tests",
+    "--test-threads=1"
+  ],
+  "sources": {
+    "inlining.rs": "eb8b5a4730b6e1b868d85d09a43d7884b1bde59459e10778dd6c04eaca41e44a",
+    "owner_retirement.rs": "3065413fe769ffcf3b73efb5b5089963663ed50ffe80aca67c77f448c3ecc7b7",
+    "owner_retirement/exchange.rs": "d59f9cb07eb7d0b6148b78e37a76ee19da080ba7c5194e0db3711cc0e04c5aef",
+    "owner_retirement/exchange/exchange_tests.rs": "1a577dd5476b82a68d96a41a5fb7171702e7393a54136c5fe9e33f9f8bded776"
+  },
+  "result": "\nrunning 2 tests\ntest native_artifact::program::compact::owner_retirement::exchange::exchange_tests::preserves_nullable_exchange_order_overflow_and_checked_continuations ... ok\ntest native_artifact::program::compact::owner_retirement::tests::shares_only_when_both_successes_keep_the_same_continuation_words ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n"
+}

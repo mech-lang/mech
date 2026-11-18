@@ -1,0 +1,21 @@
+{
+  "base": "ed99ade92836761bebd2f7357bf46817204433d4",
+  "files": {
+    "hosts/gpu/src/native_artifact/codegen/common/ssa_words.rs": {
+      "baseline": "fe6803c242a630d6a89f7ff724e6360a128dec8463e9d7fed60c2333a1c6d006",
+      "probe": "b0390c9d11b53018e9f3bb211cc513b87a461218c5fd4db967fdc97e2759b3ac"
+    },
+    "hosts/gpu/src/native_artifact/codegen/common/ssa_words_tests.rs": {
+      "baseline": "0bafc41fb6187fb6b960f18ca6448f4d01ae35916052bf23921120f8b2bd778b",
+      "probe": "ecebe83ed3107ce216a688b9dfda1763ac7c72018821811a07ace9b7ec154280"
+    },
+    "hosts/gpu/src/native_artifact/program/compact/emit.rs": {
+      "baseline": "7ff97d65d2aa1791a618a52e427b3e77dbc02b72e492a14bbbfba819ef28494a",
+      "probe": "355ac4c2ed7ff252937504cde18125d91787b32b8fd9732df70525cbb4ce9a93"
+    },
+    "hosts/gpu/src/native_artifact/program/compiler.rs": {
+      "baseline": "c3543861e845b7a685f8385c65d9f6a2a853f442a5143a4c7e6bc8621ec20861",
+      "probe": "ef9a678dad7007846b5aa592c0eac9832d5aceaa2acde45a794005e67d6da6e2"
+    }
+  }
+}

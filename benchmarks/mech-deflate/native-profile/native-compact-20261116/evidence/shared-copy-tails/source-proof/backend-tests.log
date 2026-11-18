@@ -1,0 +1,23 @@
+   Compiling cranelift-codegen-meta v0.131.3 (/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/vendor/cranelift-codegen-meta)
+   Compiling regalloc2 v0.15.2 (/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/vendor/regalloc2)
+   Compiling cranelift-codegen v0.131.3 (/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/vendor/cranelift-codegen)
+    Finished `test` profile [unoptimized] target(s) in 16.50s
+     Running unittests src/lib.rs (.qualification/native-size-20261117/backend-tests/debug/deps/cranelift_codegen-30846478190c648c)
+
+running 13 tests
+test isa::aarch64::cold_epilogues_tests::clearing_a_function_resets_the_sharing_hint ... ok
+test isa::aarch64::cold_tails::tests::cold_tail_branches_retain_the_signed_arm64_limits ... ok
+test isa::aarch64::cold_epilogues_tests::single_instruction_epilogue_keeps_its_return ... ok
+test isa::aarch64::cold_epilogues_tests::machine_cfg_info_keeps_the_original_return_blocks ... ok
+test isa::aarch64::cold_epilogues_tests::out_of_range_returns_emit_another_epilogue ... ok
+test isa::aarch64::cold_tails::tests::cold_tails_keep_branch_targets_inside_otherwise_shared_suffixes ... ok
+test isa::aarch64::cold_epilogues_tests::large_frame_keeps_saved_register_restores_and_authenticated_return ... ok
+test isa::aarch64::cold_epilogues_tests::other_target_or_calling_convention_keeps_its_returns ... ok
+test isa::aarch64::cold_tails::tests::cold_tails_remap_dispatch_and_metadata_without_merging_origins ... ok
+test isa::aarch64::cold_tails::tests::exact_frame_copies_share_a_fallthrough_with_recorded_control_flow ... ok
+test isa::aarch64::cold_tails::tests::cold_tails_require_recorded_deferred_traps_and_decline_unsupported_relocations ... ok
+test isa::aarch64::cold_epilogues_tests::sharing_keeps_the_success_return_and_prologue_unwind ... ok
+test isa::aarch64::cold_epilogues_tests::debug_tags_and_value_labels_keep_the_original_return_blocks ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 197 filtered out; finished in 0.02s
+

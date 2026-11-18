@@ -1,0 +1,18 @@
+[
+  "empty",
+  "one-stored",
+  "seven-stored-prefix",
+  "eight-overlap",
+  "random-64",
+  "random-1024",
+  "prefix-random-1024",
+  "320-overlap",
+  "prefix-periodic-1024",
+  "prefix-natural-4096",
+  "prefix-natural-8192",
+  "prefix-natural-16384",
+  "reymont-prefix-32769",
+  "heldout-mixed-131073",
+  "prefix-periodic-262144",
+  "prefix-random-1048576"
+]

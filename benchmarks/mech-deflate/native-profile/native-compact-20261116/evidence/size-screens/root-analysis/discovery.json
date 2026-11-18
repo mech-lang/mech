@@ -1,0 +1,277 @@
+{
+  "existing_region_blocks": 314,
+  "ranked": [
+    [
+      {
+        "entry": 8827,
+        "continuation": 196,
+        "origin": 176,
+        "blocks": 30,
+        "work": 25
+      },
+      {
+        "entry": 8882,
+        "continuation": 209,
+        "origin": 189,
+        "blocks": 30,
+        "work": 25
+      },
+      {
+        "entry": 8937,
+        "continuation": 222,
+        "origin": 202,
+        "blocks": 30,
+        "work": 25
+      },
+      {
+        "entry": 8992,
+        "continuation": 235,
+        "origin": 215,
+        "blocks": 30,
+        "work": 25
+      },
+      {
+        "entry": 9102,
+        "continuation": 261,
+        "origin": 241,
+        "blocks": 30,
+        "work": 25
+      }
+    ],
+    [
+      {
+        "entry": 183,
+        "continuation": 195,
+        "origin": 176,
+        "blocks": 30,
+        "work": 25
+      },
+      {
+        "entry": 196,
+        "continuation": 208,
+        "origin": 189,
+        "blocks": 30,
+        "work": 25
+      },
+      {
+        "entry": 209,
+        "continuation": 221,
+        "origin": 202,
+        "blocks": 30,
+        "work": 25
+      },
+      {
+        "entry": 222,
+        "continuation": 234,
+        "origin": 215,
+        "blocks": 30,
+        "work": 25
+      },
+      {
+        "entry": 248,
+        "continuation": 260,
+        "origin": 241,
+        "blocks": 30,
+        "work": 25
+      }
+    ],
+    [
+      {
+        "entry": 182,
+        "continuation": 8879,
+        "origin": 176,
+        "blocks": 30,
+        "work": 25
+      },
+      {
+        "entry": 195,
+        "continuation": 8934,
+        "origin": 189,
+        "blocks": 30,
+        "work": 25
+      },
+      {
+        "entry": 208,
+        "continuation": 8989,
+        "origin": 202,
+        "blocks": 30,
+        "work": 25
+      },
+      {
+        "entry": 221,
+        "continuation": 9044,
+        "origin": 215,
+        "blocks": 30,
+        "work": 25
+      },
+      {
+        "entry": 247,
+        "continuation": 9154,
+        "origin": 241,
+        "blocks": 30,
+        "work": 25
+      }
+    ],
+    [
+      {
+        "entry": 8833,
+        "continuation": 8879,
+        "origin": 176,
+        "blocks": 21,
+        "work": 20
+      },
+      {
+        "entry": 8888,
+        "continuation": 8934,
+        "origin": 189,
+        "blocks": 21,
+        "work": 20
+      },
+      {
+        "entry": 8943,
+        "continuation": 8989,
+        "origin": 202,
+        "blocks": 21,
+        "work": 20
+      },
+      {
+        "entry": 8998,
+        "continuation": 9044,
+        "origin": 215,
+        "blocks": 21,
+        "work": 20
+      },
+      {
+        "entry": 9108,
+        "continuation": 9154,
+        "origin": 241,
+        "blocks": 21,
+        "work": 20
+      }
+    ],
+    [
+      {
+        "entry": 8833,
+        "continuation": 196,
+        "origin": 176,
+        "blocks": 23,
+        "work": 20
+      },
+      {
+        "entry": 8888,
+        "continuation": 209,
+        "origin": 189,
+        "blocks": 23,
+        "work": 20
+      },
+      {
+        "entry": 8943,
+        "continuation": 222,
+        "origin": 202,
+        "blocks": 23,
+        "work": 20
+      },
+      {
+        "entry": 8998,
+        "continuation": 235,
+        "origin": 215,
+        "blocks": 23,
+        "work": 20
+      },
+      {
+        "entry": 9108,
+        "continuation": 261,
+        "origin": 241,
+        "blocks": 23,
+        "work": 20
+      }
+    ],
+    [
+      {
+        "entry": 8824,
+        "continuation": 8882,
+        "origin": 176,
+        "blocks": 34,
+        "work": 25
+      },
+      {
+        "entry": 8934,
+        "continuation": 8992,
+        "origin": 202,
+        "blocks": 34,
+        "work": 25
+      },
+      {
+        "entry": 9099,
+        "continuation": 9157,
+        "origin": 241,
+        "blocks": 34,
+        "work": 25
+      }
+    ],
+    [
+      {
+        "entry": 8827,
+        "continuation": 208,
+        "origin": 176,
+        "blocks": 60,
+        "work": 50
+      },
+      {
+        "entry": 8937,
+        "continuation": 234,
+        "origin": 202,
+        "blocks": 60,
+        "work": 50
+      }
+    ],
+    [
+      {
+        "entry": 183,
+        "continuation": 8934,
+        "origin": 176,
+        "blocks": 60,
+        "work": 50
+      },
+      {
+        "entry": 209,
+        "continuation": 9044,
+        "origin": 202,
+        "blocks": 60,
+        "work": 50
+      }
+    ],
+    [
+      {
+        "entry": 8876,
+        "continuation": 8934,
+        "origin": 189,
+        "blocks": 35,
+        "work": 32
+      },
+      {
+        "entry": 8986,
+        "continuation": 9044,
+        "origin": 215,
+        "blocks": 35,
+        "work": 32
+      }
+    ],
+    [
+      {
+        "entry": 8632,
+        "continuation": 144,
+        "origin": 120,
+        "blocks": 28,
+        "work": 20
+      },
+      {
+        "entry": 8738,
+        "continuation": 176,
+        "origin": 152,
+        "blocks": 28,
+        "work": 20
+      }
+    ]
+  ]
+}

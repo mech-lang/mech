@@ -1,0 +1,24 @@
+{
+  "working_directory": "/private/tmp/mech-shared-cold-epilogues.2L6obP",
+  "benchmark_command": [
+    "python3",
+    "-B",
+    ".qualification/benchmark-matrix-size-variants.py",
+    "cranelift-owner-all-cleanup",
+    "--reference",
+    "cranelift-continuation-registers-word-pages",
+    "--focus-only",
+    "--both-orders",
+    "--case-set",
+    ".qualification/cranelift-inlining-adverse-cases.json"
+  ],
+  "object_reproduction": [
+    "python3",
+    "benchmarks/mech-deflate/native-profile/native-compact-20261116/size_screens.py",
+    "/tmp/owner-cleanup-screen",
+    "--emitter",
+    "/tmp/native-baseline/compiler/release/emit_compact_size",
+    "--case",
+    "combinations--owners-cleanup"
+  ]
+}

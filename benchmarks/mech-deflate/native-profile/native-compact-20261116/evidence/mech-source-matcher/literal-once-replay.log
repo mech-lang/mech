@@ -1,0 +1,79 @@
+{
+  "decision": "Unresolved",
+  "rejected": [],
+  "unresolved": [
+    "both complete timing orders are required",
+    "empty: regression bound or duplicate-control repeatability unresolved",
+    "seven-stored-prefix: regression bound or duplicate-control repeatability unresolved",
+    "random-64: regression bound or duplicate-control repeatability unresolved",
+    "prefix-natural-4096: regression bound or duplicate-control repeatability unresolved",
+    "prefix-random-1024: regression bound or duplicate-control repeatability unresolved",
+    "prefix-random-8192: regression bound or duplicate-control repeatability unresolved"
+  ],
+  "runs": [
+    {
+      "id": "mech-ordinary-literal-once-qual-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 13,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 12,
+            "mech-experiment": 12
+          },
+          "precision_supported_wins": {
+            "mech-control": 12,
+            "mech-experiment": 12
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 4,
+            "mech-experiment": 4
+          },
+          "precision_supported_wins": {
+            "mech-control": 4,
+            "mech-experiment": 4
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "mech-ordinary-literal-once-qual-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 13,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 12,
+            "mech-experiment": 12
+          },
+          "precision_supported_wins": {
+            "mech-control": 12,
+            "mech-experiment": 12
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 4,
+            "mech-experiment": 4
+          },
+          "precision_supported_wins": {
+            "mech-control": 4,
+            "mech-experiment": 4
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    }
+  ]
+}

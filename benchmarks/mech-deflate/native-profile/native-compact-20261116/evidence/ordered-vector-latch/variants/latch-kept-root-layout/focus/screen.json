@@ -1,0 +1,102 @@
+{
+  "kind": "focus",
+  "policy_decision": "Unresolved",
+  "runs": [
+    {
+      "order": "forward",
+      "cases": {
+        "prefix-natural-8192": {
+          "mech-control": 1.03165566477978,
+          "mech-experiment": 0.9940896767340838
+        },
+        "320-overlap": {
+          "mech-control": 0.9896728306774643,
+          "mech-experiment": 0.987278261024408
+        },
+        "random-1024": {
+          "mech-control": 0.955899597209929,
+          "mech-experiment": 0.9565949450042424
+        },
+        "prefix-periodic-1024": {
+          "mech-control": 0.9826892535818986,
+          "mech-experiment": 0.9732363042692586
+        },
+        "prefix-natural-4096": {
+          "mech-control": 1.1238537269173599,
+          "mech-experiment": 1.0865779386397183
+        }
+      },
+      "lost_cases": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "gained_cases": {
+        "roc": [],
+        "libdeflate": [
+          "prefix-natural-8192"
+        ]
+      },
+      "wins": {
+        "roc": {
+          "mech-control": 15,
+          "mech-experiment": 15
+        },
+        "libdeflate": {
+          "mech-control": 12,
+          "mech-experiment": 13
+        }
+      }
+    },
+    {
+      "order": "reverse",
+      "cases": {
+        "prefix-natural-8192": {
+          "mech-control": 1.036388645166234,
+          "mech-experiment": 0.9995973133069753
+        },
+        "320-overlap": {
+          "mech-control": 0.993349668000349,
+          "mech-experiment": 0.9858990613321369
+        },
+        "random-1024": {
+          "mech-control": 0.9575970235684234,
+          "mech-experiment": 0.9553663360391688
+        },
+        "prefix-periodic-1024": {
+          "mech-control": 0.9903397364551604,
+          "mech-experiment": 0.9808160974206336
+        },
+        "prefix-natural-4096": {
+          "mech-control": 1.1324902651768074,
+          "mech-experiment": 1.0931629521978137
+        }
+      },
+      "lost_cases": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "gained_cases": {
+        "roc": [],
+        "libdeflate": [
+          "prefix-natural-8192"
+        ]
+      },
+      "wins": {
+        "roc": {
+          "mech-control": 15,
+          "mech-experiment": 15
+        },
+        "libdeflate": {
+          "mech-control": 12,
+          "mech-experiment": 13
+        }
+      }
+    }
+  ],
+  "rejected": [],
+  "unresolved": [
+    "both complete timing orders are required"
+  ],
+  "achieves_target": true,
+  "preserves_peer_wins": true
+}

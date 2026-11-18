@@ -1,0 +1,170 @@
+{
+  "ci-unittest": {
+    "command": [
+      "python3",
+      "-B",
+      "-m",
+      "unittest",
+      "tests.ci.test_ci_impact",
+      "tests.ci.test_ci_full_contract",
+      "tests.ci.test_ci_test_inventory",
+      "scripts.tests.test_native_macos_ci",
+      "tests.browser.harness.test_chrome_session",
+      "tests.browser.harness.test_completion_server"
+    ],
+    "exit": 0,
+    "log_sha256": "41775263b9ef32aec2910463cc8f40c181f81ec989447996591a712b644c9ca0"
+  },
+  "qualification": {
+    "command": [
+      "python3",
+      "-B",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/tests/test_qualify.py"
+    ],
+    "exit": 0,
+    "log_sha256": "d225da1e9ff40e996b97963c5c128cb90f15751152e2efd183556f8ee845b889"
+  },
+  "check-unsafe-boundaries": {
+    "command": [
+      "bash",
+      "scripts/check-unsafe-boundaries.sh"
+    ],
+    "exit": 1,
+    "log_sha256": "261cc5989403203d37e6d5b39e46b32673e22fd78b0563623cf67719393cb4dd"
+  },
+  "check-production-resident-routing": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/check-production-resident-routing.py"
+    ],
+    "exit": 0,
+    "log_sha256": "6037dec83ee3d62591bdad44e790f830bb52fd5648a265e477742eb2439ede74",
+    "recovered_view_inputs": [
+      "docs/getting-started/build-and-run.mec",
+      "docs/reference/commands/run.mec",
+      "docs/guides/native-applications.mec"
+    ]
+  },
+  "check-warning-policy": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/check-warning-policy.py"
+    ],
+    "exit": 0,
+    "log_sha256": "43c902f13e02413a527c9f0483cd12052c5d4ebd3a92d08a609163e3a3defade"
+  },
+  "check-interactive-architecture": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/check-interactive-architecture.py"
+    ],
+    "exit": 0,
+    "log_sha256": "8e2e00e8f25968db3929bd65578493134a68d444b0530855255e8b761a058a63",
+    "recovered_view_inputs": []
+  },
+  "check-compiler-planning-quarantine": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/check-compiler-planning-quarantine.py"
+    ],
+    "exit": 0,
+    "log_sha256": "4ce1a78bb9f46c0901030ee01d8ca6783aa4566f47ad04fd9372f3d1699579b0"
+  },
+  "check-runtime-factory-safety": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/check-runtime-factory-safety.py"
+    ],
+    "exit": 0,
+    "log_sha256": "ba4db7e441c5a49526056f1e2736e4e4317579acd5d14b2bb65e254b6a99118e"
+  },
+  "check-value-execution-boundary": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/check-value-execution-boundary.py"
+    ],
+    "exit": 0,
+    "log_sha256": "107784183c3f950cea9ff499df6ff4ac59374ae3607f81615b58697f806a4ad4",
+    "recovered_view_inputs": []
+  },
+  "check-value-system-contract": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/check-value-system-contract.py"
+    ],
+    "exit": 0,
+    "log_sha256": "710dc3c3cd1762f3aaff1c671c8a5eb1ba13eda81a3de957b6ac0601dd7bee30",
+    "recovered_view_inputs": []
+  },
+  "check-no-retired-value-system": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/check-no-retired-value-system.py"
+    ],
+    "exit": 1,
+    "log_sha256": "d6ce01dd61a912cbf88ab0be1967c3fe36ef007dfedf94f6a5fc4695892ee7d8",
+    "recovered_view_inputs": []
+  },
+  "check-type-memory-boundary": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/check-type-memory-boundary.py"
+    ],
+    "exit": 0,
+    "log_sha256": "8963997e58d67ca97dac9487eb7b984945bccebd3504a5d9a95c8f5d96f365d0"
+  },
+  "check-type-system": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/check-type-system.py"
+    ],
+    "exit": 0,
+    "log_sha256": "ea243d073bd4358ef286a54247fb852ce41a92482137300ea99537eae4e45d38"
+  },
+  "check-semantic-type-authority": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/check-semantic-type-authority.py"
+    ],
+    "exit": 0,
+    "log_sha256": "2cf6b925054aa478bf7dc750ea5fea44312ae29d59b7a26ed98d8078c897132e"
+  },
+  "check-memory-planner": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/check-memory-planner.py"
+    ],
+    "exit": 0,
+    "log_sha256": "2735714dbcdd449212ec8780a49a1a43192230a72984043cced9b311807f251a"
+  },
+  "check-memory-runtime": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/check-memory-runtime.py"
+    ],
+    "exit": 0,
+    "log_sha256": "0b66ce89f3e8d72fa0cd91e51007a7a3c72a511c29feaa32ceba110951cd076a"
+  },
+  "check-bytecode-v1-format": {
+    "command": [
+      "python3",
+      "-B",
+      "scripts/check-bytecode-v1-format.py"
+    ],
+    "exit": 0,
+    "log_sha256": "dc6a96e0e0030c3e7df8a9964a985505122893dce31ca7f43aa3541a36e7f338"
+  }
+}

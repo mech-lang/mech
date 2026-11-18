@@ -1,0 +1,227 @@
+{
+  "object_sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+  "encoder_text_bytes": 71768,
+  "checked_root_extent_bytes": 51264,
+  "libdeflate_text_bytes": 37080,
+  "root_share_of_encoder_text": 0.7143016386133095,
+  "symbol_extents_include_alignment": true,
+  "text_symbols": [
+    {
+      "names": [
+        "_mech_compact_closed_checked"
+      ],
+      "offset": 17824,
+      "bytes": 51264
+    },
+    {
+      "names": [
+        "_mech_compact_numeric_475_vector"
+      ],
+      "offset": 0,
+      "bytes": 6768
+    },
+    {
+      "names": [
+        "_mech_compact_numeric_3009"
+      ],
+      "offset": 6768,
+      "bytes": 1584
+    },
+    {
+      "names": [
+        "_mech_compact_numeric_3009_no_growth"
+      ],
+      "offset": 9504,
+      "bytes": 1376
+    },
+    {
+      "names": [
+        "_mech_compact_numeric_3009_no_growth_composed"
+      ],
+      "offset": 8352,
+      "bytes": 1152
+    },
+    {
+      "names": [
+        "_mech_compact_numeric_4173"
+      ],
+      "offset": 10880,
+      "bytes": 960
+    },
+    {
+      "names": [
+        "_mech_compact_numeric_3447_grouped"
+      ],
+      "offset": 11840,
+      "bytes": 720
+    },
+    {
+      "names": [
+        "_mech_compact_checked_layout_continuation_44070"
+      ],
+      "offset": 71120,
+      "bytes": 648
+    },
+    {
+      "names": [
+        "_mech_compact_numeric_3447"
+      ],
+      "offset": 12560,
+      "bytes": 624
+    },
+    {
+      "names": [
+        "_mech_compact_numeric_6633"
+      ],
+      "offset": 13568,
+      "bytes": 544
+    },
+    {
+      "names": [
+        "_mech_compact_numeric_5895"
+      ],
+      "offset": 14112,
+      "bytes": 416
+    },
+    {
+      "names": [
+        "_mech_compact_numeric_3956_vector"
+      ],
+      "offset": 13184,
+      "bytes": 384
+    },
+    {
+      "names": [
+        "_mech_compact_closed_v2"
+      ],
+      "offset": 17088,
+      "bytes": 384
+    },
+    {
+      "names": [
+        "_mech_compact_numeric_2821"
+      ],
+      "offset": 15120,
+      "bytes": 368
+    },
+    {
+      "names": [
+        "_mech_compact_numeric_362"
+      ],
+      "offset": 16048,
+      "bytes": 336
+    },
+    {
+      "names": [
+        "_mech_compact_checked_layout_continuation_9112"
+      ],
+      "offset": 70160,
+      "bytes": 336
+    },
+    {
+      "names": [
+        "_mech_compact_checked_layout_continuation_9562"
+      ],
+      "offset": 70496,
+      "bytes": 320
+    },
+    {
+      "names": [
+        "_mech_compact_numeric_4799"
+      ],
+      "offset": 14816,
+      "bytes": 304
+    },
+    {
+      "names": [
+        "_mech_compact_numeric_2821_vector"
+      ],
+      "offset": 15488,
+      "bytes": 304
+    },
+    {
+      "names": [
+        "_mech_compact_checked_layout_16147"
+      ],
+      "offset": 69248,
+      "bytes": 304
+    },
+    {
+      "names": [
+        "_mech_compact_checked_layout_13100"
+      ],
+      "offset": 69552,
+      "bytes": 304
+    },
+    {
+      "names": [
+        "_mech_compact_checked_layout_10939"
+      ],
+      "offset": 69856,
+      "bytes": 304
+    },
+    {
+      "names": [
+        "_mech_compact_checked_layout_continuation_21031"
+      ],
+      "offset": 70816,
+      "bytes": 304
+    },
+    {
+      "names": [
+        "_mech_compact_numeric_3872"
+      ],
+      "offset": 14528,
+      "bytes": 288
+    },
+    {
+      "names": [
+        "_mech_compact_numeric_362_vector"
+      ],
+      "offset": 16384,
+      "bytes": 288
+    },
+    {
+      "names": [
+        "_mech_compact_numeric_8026"
+      ],
+      "offset": 15792,
+      "bytes": 256
+    },
+    {
+      "names": [
+        "_mech_compact_word_collection_10"
+      ],
+      "offset": 16672,
+      "bytes": 256
+    },
+    {
+      "names": [
+        "_mech_compact_expand_capacity_preserving"
+      ],
+      "offset": 17472,
+      "bytes": 176
+    },
+    {
+      "names": [
+        "_mech_compact_append_backing_byte_consume"
+      ],
+      "offset": 17648,
+      "bytes": 176
+    },
+    {
+      "names": [
+        "_mech_compact_matrix_word"
+      ],
+      "offset": 16928,
+      "bytes": 160
+    },
+    {
+      "names": [
+        "_mech_compact_unsigned_dot_product"
+      ],
+      "offset": 69088,
+      "bytes": 160
+    }
+  ]
+}

@@ -1,0 +1,1585 @@
+{
+  "source_pin": "b05241855264df7df861994ef125e5dfb678bc81",
+  "arms": {
+    "latch-control": {
+      "text_bytes": 71048,
+      "text_change": -144,
+      "worker_sha256": "8f3d97ca2d684ac60fa0910fa3124816edff0468639587a823fd342425b477a2",
+      "exact_checks": 162,
+      "object_sha256": "4fc883f9245d29542c1c642369cf3fe9a1799361963c998a3c96be65b2fbce98"
+    },
+    "latch-test": {
+      "text_bytes": 71048,
+      "text_change": -144,
+      "worker_sha256": "261b233de84b16814227bc1a54dc36dfb7679ff0971ce2e4f3fbf5af22e935f5",
+      "exact_checks": 162,
+      "object_sha256": "cf22449c6fdb3569ec8aa533553fe816986336fc847c5f4a350712b3da528d9b",
+      "counts": {
+        "prefix-natural-4096": {
+          "instructions": 3451895,
+          "pacibsp": 5,
+          "stp": 30,
+          "stack_stores": 3525,
+          "mov": 188115,
+          "sub": 244730,
+          "ldr": 398025,
+          "payload_loads": 482010,
+          "stur": 3495,
+          "cmp": 407530,
+          "b.ne": 38905,
+          "branches": 549805,
+          "str": 20535,
+          "payload_stores": 20535,
+          "ldur": 65700,
+          "stack_loads": 17310,
+          "add": 577485,
+          "ldp": 30,
+          "retab": 5,
+          "b.hs": 133420,
+          "lsr": 56045,
+          "cbz": 17265,
+          "lsl": 41475,
+          "and": 78015,
+          "orr": 147005,
+          "adrp": 17265,
+          "b.eq": 159700,
+          "b": 125010,
+          "ldrb": 35565,
+          "b.hi": 35565,
+          "subs": 106045,
+          "b.ls": 36725,
+          "csel": 208540,
+          "dup.4s": 38410,
+          "movi.16b": 3550,
+          "mov.16b": 44870,
+          "add.4s": 72630,
+          "uzp1.4s": 24210,
+          "rev64.4s": 24210,
+          "umin.4s": 24210,
+          "cmhi.4s": 24210,
+          "bsl.16b": 27760,
+          "uminv.4s": 7100,
+          "mov.s": 7100,
+          "cmeq.4s": 3550,
+          "neg": 1160,
+          "ccmp": 3480,
+          "b.lo": 3215
+        },
+        "prefix-natural-8192": {
+          "instructions": 7590822,
+          "pacibsp": 6,
+          "stp": 36,
+          "stack_stores": 10458,
+          "mov": 441924,
+          "sub": 559218,
+          "ldr": 898086,
+          "payload_loads": 1066446,
+          "stur": 10422,
+          "cmp": 943968,
+          "b.ne": 95640,
+          "branches": 1243740,
+          "str": 49218,
+          "payload_stores": 49218,
+          "ldur": 124494,
+          "stack_loads": 43074,
+          "add": 1267578,
+          "ldp": 36,
+          "retab": 6,
+          "b.hs": 306612,
+          "lsr": 136056,
+          "cbz": 43020,
+          "lsl": 83748,
+          "and": 188574,
+          "orr": 323124,
+          "adrp": 43020,
+          "b.eq": 358308,
+          "b": 256752,
+          "ldrb": 86904,
+          "b.hi": 86904,
+          "subs": 224820,
+          "b.ls": 90372,
+          "csel": 443604,
+          "dup.4s": 64872,
+          "movi.16b": 6036,
+          "mov.16b": 75420,
+          "add.4s": 122184,
+          "uzp1.4s": 40728,
+          "rev64.4s": 40728,
+          "umin.4s": 40728,
+          "cmhi.4s": 40728,
+          "bsl.16b": 46764,
+          "uminv.4s": 12072,
+          "mov.s": 12072,
+          "cmeq.4s": 6036,
+          "neg": 3468,
+          "ccmp": 10404,
+          "b.lo": 6132
+        },
+        "reymont-prefix-32769": {
+          "instructions": 27332515,
+          "pacibsp": 10,
+          "stp": 60,
+          "stack_stores": 21630,
+          "mov": 1635715,
+          "sub": 2104410,
+          "ldr": 3292095,
+          "payload_loads": 3819420,
+          "stur": 21570,
+          "cmp": 3670220,
+          "b.ne": 327265,
+          "branches": 4662805,
+          "str": 163955,
+          "payload_stores": 163955,
+          "ldur": 299860,
+          "stack_loads": 156330,
+          "add": 4784230,
+          "ldp": 60,
+          "retab": 10,
+          "b.hs": 1162545,
+          "lsr": 547580,
+          "cbz": 156240,
+          "lsl": 228035,
+          "and": 721790,
+          "orr": 1181885,
+          "adrp": 156240,
+          "b.eq": 1398155,
+          "b": 836345,
+          "ldrb": 383735,
+          "b.hi": 383735,
+          "subs": 854195,
+          "b.ls": 390915,
+          "csel": 1697590,
+          "dup.4s": 114995,
+          "movi.16b": 10800,
+          "mov.16b": 132790,
+          "add.4s": 215385,
+          "uzp1.4s": 71795,
+          "rev64.4s": 71795,
+          "umin.4s": 71795,
+          "cmhi.4s": 71795,
+          "bsl.16b": 82595,
+          "uminv.4s": 21600,
+          "mov.s": 21600,
+          "cmeq.4s": 10800,
+          "neg": 7180,
+          "ccmp": 21540,
+          "b.lo": 7605
+        },
+        "prefix-natural-32769": {
+          "instructions": 27332515,
+          "pacibsp": 10,
+          "stp": 60,
+          "stack_stores": 21630,
+          "mov": 1635715,
+          "sub": 2104410,
+          "ldr": 3292095,
+          "payload_loads": 3819420,
+          "stur": 21570,
+          "cmp": 3670220,
+          "b.ne": 327265,
+          "branches": 4662805,
+          "str": 163955,
+          "payload_stores": 163955,
+          "ldur": 299860,
+          "stack_loads": 156330,
+          "add": 4784230,
+          "ldp": 60,
+          "retab": 10,
+          "b.hs": 1162545,
+          "lsr": 547580,
+          "cbz": 156240,
+          "lsl": 228035,
+          "and": 721790,
+          "orr": 1181885,
+          "adrp": 156240,
+          "b.eq": 1398155,
+          "b": 836345,
+          "ldrb": 383735,
+          "b.hi": 383735,
+          "subs": 854195,
+          "b.ls": 390915,
+          "csel": 1697590,
+          "dup.4s": 114995,
+          "movi.16b": 10800,
+          "mov.16b": 132790,
+          "add.4s": 215385,
+          "uzp1.4s": 71795,
+          "rev64.4s": 71795,
+          "umin.4s": 71795,
+          "cmhi.4s": 71795,
+          "bsl.16b": 82595,
+          "uminv.4s": 21600,
+          "mov.s": 21600,
+          "cmeq.4s": 10800,
+          "neg": 7180,
+          "ccmp": 21540,
+          "b.lo": 7605
+        }
+      }
+    },
+    "latch-test-deferred": {
+      "text_bytes": 71096,
+      "text_change": -96,
+      "worker_sha256": "7b71b14d5211df714569a0ccd4fd89909009ed0a3ff53feacc11dd8120b7462e",
+      "exact_checks": 162,
+      "object_sha256": "b0ea3e8c3bd39cf82b2bd440727dc0759b723fcf2a763f7134693839020485c2",
+      "counts": {
+        "prefix-natural-4096": {
+          "instructions": 3441885,
+          "pacibsp": 5,
+          "stp": 30,
+          "stack_stores": 3525,
+          "mov": 188115,
+          "sub": 244730,
+          "ldr": 398025,
+          "payload_loads": 482010,
+          "stur": 3495,
+          "cmp": 407530,
+          "b.ne": 38905,
+          "branches": 549805,
+          "str": 20535,
+          "payload_stores": 20535,
+          "ldur": 65700,
+          "stack_loads": 17310,
+          "add": 577485,
+          "ldp": 30,
+          "retab": 5,
+          "b.hs": 133420,
+          "lsr": 56045,
+          "cbz": 17265,
+          "lsl": 41475,
+          "and": 78015,
+          "orr": 147005,
+          "adrp": 17265,
+          "b.eq": 159700,
+          "b": 125010,
+          "ldrb": 35565,
+          "b.hi": 35565,
+          "subs": 106045,
+          "b.ls": 36725,
+          "csel": 208540,
+          "dup.4s": 38410,
+          "movi.16b": 3550,
+          "mov.16b": 44870,
+          "add.4s": 51970,
+          "uzp1.4s": 24210,
+          "rev64.4s": 24210,
+          "umin.4s": 24210,
+          "cmhi.4s": 24210,
+          "bsl.16b": 27760,
+          "uminv.4s": 7100,
+          "mov.s": 7100,
+          "cmeq.4s": 7100,
+          "mvn.16b": 3550,
+          "and.16b": 3550,
+          "neg": 1160,
+          "ccmp": 3480,
+          "b.lo": 3215
+        },
+        "prefix-natural-8192": {
+          "instructions": 7574238,
+          "pacibsp": 6,
+          "stp": 36,
+          "stack_stores": 10458,
+          "mov": 441924,
+          "sub": 559218,
+          "ldr": 898086,
+          "payload_loads": 1066446,
+          "stur": 10422,
+          "cmp": 943968,
+          "b.ne": 95640,
+          "branches": 1243740,
+          "str": 49218,
+          "payload_stores": 49218,
+          "ldur": 124494,
+          "stack_loads": 43074,
+          "add": 1267578,
+          "ldp": 36,
+          "retab": 6,
+          "b.hs": 306612,
+          "lsr": 136056,
+          "cbz": 43020,
+          "lsl": 83748,
+          "and": 188574,
+          "orr": 323124,
+          "adrp": 43020,
+          "b.eq": 358308,
+          "b": 256752,
+          "ldrb": 86904,
+          "b.hi": 86904,
+          "subs": 224820,
+          "b.ls": 90372,
+          "csel": 443604,
+          "dup.4s": 64872,
+          "movi.16b": 6036,
+          "mov.16b": 75420,
+          "add.4s": 87492,
+          "uzp1.4s": 40728,
+          "rev64.4s": 40728,
+          "umin.4s": 40728,
+          "cmhi.4s": 40728,
+          "bsl.16b": 46764,
+          "uminv.4s": 12072,
+          "mov.s": 12072,
+          "cmeq.4s": 12072,
+          "mvn.16b": 6036,
+          "and.16b": 6036,
+          "neg": 3468,
+          "ccmp": 10404,
+          "b.lo": 6132
+        },
+        "reymont-prefix-32769": {
+          "instructions": 27303920,
+          "pacibsp": 10,
+          "stp": 60,
+          "stack_stores": 21630,
+          "mov": 1635715,
+          "sub": 2104410,
+          "ldr": 3292095,
+          "payload_loads": 3819420,
+          "stur": 21570,
+          "cmp": 3670220,
+          "b.ne": 327265,
+          "branches": 4662805,
+          "str": 163955,
+          "payload_stores": 163955,
+          "ldur": 299860,
+          "stack_loads": 156330,
+          "add": 4784230,
+          "ldp": 60,
+          "retab": 10,
+          "b.hs": 1162545,
+          "lsr": 547580,
+          "cbz": 156240,
+          "lsl": 228035,
+          "and": 721790,
+          "orr": 1181885,
+          "adrp": 156240,
+          "b.eq": 1398155,
+          "b": 836345,
+          "ldrb": 383735,
+          "b.hi": 383735,
+          "subs": 854195,
+          "b.ls": 390915,
+          "csel": 1697590,
+          "dup.4s": 114995,
+          "movi.16b": 10800,
+          "mov.16b": 132790,
+          "add.4s": 154390,
+          "uzp1.4s": 71795,
+          "rev64.4s": 71795,
+          "umin.4s": 71795,
+          "cmhi.4s": 71795,
+          "bsl.16b": 82595,
+          "uminv.4s": 21600,
+          "mov.s": 21600,
+          "cmeq.4s": 21600,
+          "mvn.16b": 10800,
+          "and.16b": 10800,
+          "neg": 7180,
+          "ccmp": 21540,
+          "b.lo": 7605
+        },
+        "prefix-natural-32769": {
+          "instructions": 27303920,
+          "pacibsp": 10,
+          "stp": 60,
+          "stack_stores": 21630,
+          "mov": 1635715,
+          "sub": 2104410,
+          "ldr": 3292095,
+          "payload_loads": 3819420,
+          "stur": 21570,
+          "cmp": 3670220,
+          "b.ne": 327265,
+          "branches": 4662805,
+          "str": 163955,
+          "payload_stores": 163955,
+          "ldur": 299860,
+          "stack_loads": 156330,
+          "add": 4784230,
+          "ldp": 60,
+          "retab": 10,
+          "b.hs": 1162545,
+          "lsr": 547580,
+          "cbz": 156240,
+          "lsl": 228035,
+          "and": 721790,
+          "orr": 1181885,
+          "adrp": 156240,
+          "b.eq": 1398155,
+          "b": 836345,
+          "ldrb": 383735,
+          "b.hi": 383735,
+          "subs": 854195,
+          "b.ls": 390915,
+          "csel": 1697590,
+          "dup.4s": 114995,
+          "movi.16b": 10800,
+          "mov.16b": 132790,
+          "add.4s": 154390,
+          "uzp1.4s": 71795,
+          "rev64.4s": 71795,
+          "umin.4s": 71795,
+          "cmhi.4s": 71795,
+          "bsl.16b": 82595,
+          "uminv.4s": 21600,
+          "mov.s": 21600,
+          "cmeq.4s": 21600,
+          "mvn.16b": 10800,
+          "and.16b": 10800,
+          "neg": 7180,
+          "ccmp": 21540,
+          "b.lo": 7605
+        }
+      }
+    },
+    "latch-both-cursors": {
+      "text_bytes": 71064,
+      "text_change": -128,
+      "worker_sha256": "b0d141e4f65f5b174c8c0ff4ea3d6df059ef8e859455b631ccdcd79296ce81db",
+      "exact_checks": 162,
+      "object_sha256": "290584329406e2e68318628b01442e56b7fdf26390e46b7fdbf15881a076b7f1",
+      "counts": {
+        "prefix-natural-4096": {
+          "instructions": 3438335,
+          "pacibsp": 5,
+          "stp": 30,
+          "stack_stores": 3525,
+          "mov": 188115,
+          "sub": 248280,
+          "ldr": 398025,
+          "payload_loads": 482010,
+          "stur": 3495,
+          "cmp": 407530,
+          "b.ne": 38905,
+          "branches": 549805,
+          "str": 20535,
+          "payload_stores": 20535,
+          "ldur": 65700,
+          "stack_loads": 17310,
+          "add": 584585,
+          "ldp": 30,
+          "retab": 5,
+          "b.hs": 133420,
+          "lsr": 56045,
+          "cbz": 17265,
+          "lsl": 17265,
+          "and": 78015,
+          "orr": 147005,
+          "adrp": 17265,
+          "b.eq": 159700,
+          "b": 125010,
+          "ldrb": 35565,
+          "b.hi": 35565,
+          "subs": 106045,
+          "b.ls": 36725,
+          "csel": 208540,
+          "dup.4s": 38410,
+          "movi.16b": 3550,
+          "mov.16b": 44870,
+          "add.4s": 72630,
+          "uzp1.4s": 24210,
+          "rev64.4s": 24210,
+          "umin.4s": 24210,
+          "cmhi.4s": 24210,
+          "bsl.16b": 27760,
+          "uminv.4s": 7100,
+          "mov.s": 7100,
+          "cmeq.4s": 3550,
+          "neg": 1160,
+          "ccmp": 3480,
+          "b.lo": 3215
+        },
+        "prefix-natural-8192": {
+          "instructions": 7568202,
+          "pacibsp": 6,
+          "stp": 36,
+          "stack_stores": 10458,
+          "mov": 441924,
+          "sub": 565254,
+          "ldr": 898086,
+          "payload_loads": 1066446,
+          "stur": 10422,
+          "cmp": 943968,
+          "b.ne": 95640,
+          "branches": 1243740,
+          "str": 49218,
+          "payload_stores": 49218,
+          "ldur": 124494,
+          "stack_loads": 43074,
+          "add": 1279650,
+          "ldp": 36,
+          "retab": 6,
+          "b.hs": 306612,
+          "lsr": 136056,
+          "cbz": 43020,
+          "lsl": 43020,
+          "and": 188574,
+          "orr": 323124,
+          "adrp": 43020,
+          "b.eq": 358308,
+          "b": 256752,
+          "ldrb": 86904,
+          "b.hi": 86904,
+          "subs": 224820,
+          "b.ls": 90372,
+          "csel": 443604,
+          "dup.4s": 64872,
+          "movi.16b": 6036,
+          "mov.16b": 75420,
+          "add.4s": 122184,
+          "uzp1.4s": 40728,
+          "rev64.4s": 40728,
+          "umin.4s": 40728,
+          "cmhi.4s": 40728,
+          "bsl.16b": 46764,
+          "uminv.4s": 12072,
+          "mov.s": 12072,
+          "cmeq.4s": 6036,
+          "neg": 3468,
+          "ccmp": 10404,
+          "b.lo": 6132
+        },
+        "reymont-prefix-32769": {
+          "instructions": 27293120,
+          "pacibsp": 10,
+          "stp": 60,
+          "stack_stores": 21630,
+          "mov": 1635715,
+          "sub": 2115210,
+          "ldr": 3292095,
+          "payload_loads": 3819420,
+          "stur": 21570,
+          "cmp": 3670220,
+          "b.ne": 327265,
+          "branches": 4662805,
+          "str": 163955,
+          "payload_stores": 163955,
+          "ldur": 299860,
+          "stack_loads": 156330,
+          "add": 4805830,
+          "ldp": 60,
+          "retab": 10,
+          "b.hs": 1162545,
+          "lsr": 547580,
+          "cbz": 156240,
+          "lsl": 156240,
+          "and": 721790,
+          "orr": 1181885,
+          "adrp": 156240,
+          "b.eq": 1398155,
+          "b": 836345,
+          "ldrb": 383735,
+          "b.hi": 383735,
+          "subs": 854195,
+          "b.ls": 390915,
+          "csel": 1697590,
+          "dup.4s": 114995,
+          "movi.16b": 10800,
+          "mov.16b": 132790,
+          "add.4s": 215385,
+          "uzp1.4s": 71795,
+          "rev64.4s": 71795,
+          "umin.4s": 71795,
+          "cmhi.4s": 71795,
+          "bsl.16b": 82595,
+          "uminv.4s": 21600,
+          "mov.s": 21600,
+          "cmeq.4s": 10800,
+          "neg": 7180,
+          "ccmp": 21540,
+          "b.lo": 7605
+        },
+        "prefix-natural-32769": {
+          "instructions": 27293120,
+          "pacibsp": 10,
+          "stp": 60,
+          "stack_stores": 21630,
+          "mov": 1635715,
+          "sub": 2115210,
+          "ldr": 3292095,
+          "payload_loads": 3819420,
+          "stur": 21570,
+          "cmp": 3670220,
+          "b.ne": 327265,
+          "branches": 4662805,
+          "str": 163955,
+          "payload_stores": 163955,
+          "ldur": 299860,
+          "stack_loads": 156330,
+          "add": 4805830,
+          "ldp": 60,
+          "retab": 10,
+          "b.hs": 1162545,
+          "lsr": 547580,
+          "cbz": 156240,
+          "lsl": 156240,
+          "and": 721790,
+          "orr": 1181885,
+          "adrp": 156240,
+          "b.eq": 1398155,
+          "b": 836345,
+          "ldrb": 383735,
+          "b.hi": 383735,
+          "subs": 854195,
+          "b.ls": 390915,
+          "csel": 1697590,
+          "dup.4s": 114995,
+          "movi.16b": 10800,
+          "mov.16b": 132790,
+          "add.4s": 215385,
+          "uzp1.4s": 71795,
+          "rev64.4s": 71795,
+          "umin.4s": 71795,
+          "cmhi.4s": 71795,
+          "bsl.16b": 82595,
+          "uminv.4s": 21600,
+          "mov.s": 21600,
+          "cmeq.4s": 10800,
+          "neg": 7180,
+          "ccmp": 21540,
+          "b.lo": 7605
+        }
+      }
+    },
+    "latch-test-layout": {
+      "text_bytes": 71048,
+      "text_change": -144,
+      "worker_sha256": "f85c2d22432d289585e8175ba45e7fe167412e62d128d7b250e053c68fa29574",
+      "exact_checks": 162,
+      "object_sha256": "d6ff96b5ce76b6f643dfb51a966eb2ca6e8d866b5f4acf4b535a11f903683224",
+      "focus": {
+        "kind": "focus",
+        "policy_decision": "Unresolved",
+        "runs": [
+          {
+            "order": "forward",
+            "cases": {
+              "prefix-natural-8192": {
+                "mech-control": 1.0337837827664869,
+                "mech-experiment": 0.9960489428516297
+              },
+              "320-overlap": {
+                "mech-control": 0.9925295682869097,
+                "mech-experiment": 0.9879093785542284
+              },
+              "random-1024": {
+                "mech-control": 0.9551214340811995,
+                "mech-experiment": 0.95526114293136
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 0.9867482840720463,
+                "mech-experiment": 0.9798824662164166
+              },
+              "prefix-natural-4096": {
+                "mech-control": 1.1196374740455075,
+                "mech-experiment": 1.087249196945844
+              }
+            },
+            "lost_cases": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "gained_cases": {
+              "roc": [],
+              "libdeflate": [
+                "prefix-natural-8192"
+              ]
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 15
+              },
+              "libdeflate": {
+                "mech-control": 12,
+                "mech-experiment": 13
+              }
+            }
+          },
+          {
+            "order": "reverse",
+            "cases": {
+              "prefix-natural-8192": {
+                "mech-control": 1.0372940885194681,
+                "mech-experiment": 0.9996743473056516
+              },
+              "320-overlap": {
+                "mech-control": 0.9923639101132669,
+                "mech-experiment": 0.9885419891527634
+              },
+              "random-1024": {
+                "mech-control": 0.9546718859599915,
+                "mech-experiment": 0.9583918073056482
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 0.9816401631014268,
+                "mech-experiment": 0.9751677189233319
+              },
+              "prefix-natural-4096": {
+                "mech-control": 1.130948843368929,
+                "mech-experiment": 1.0956482653872819
+              }
+            },
+            "lost_cases": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "gained_cases": {
+              "roc": [],
+              "libdeflate": [
+                "prefix-natural-8192"
+              ]
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 15
+              },
+              "libdeflate": {
+                "mech-control": 12,
+                "mech-experiment": 13
+              }
+            }
+          }
+        ],
+        "rejected": [],
+        "unresolved": [
+          "both complete timing orders are required"
+        ],
+        "achieves_target": true,
+        "preserves_peer_wins": true
+      },
+      "full": {
+        "kind": "full",
+        "policy_decision": "Reject",
+        "runs": [
+          {
+            "order": "forward",
+            "cases": {
+              "prefix-natural-8192": {
+                "mech-control": 1.0314212972899337,
+                "mech-experiment": 0.9977937158138925
+              },
+              "320-overlap": {
+                "mech-control": 0.9900077525537303,
+                "mech-experiment": 0.987196593390887
+              },
+              "random-1024": {
+                "mech-control": 0.9576626611439866,
+                "mech-experiment": 0.9569402039388718
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 1.0217153892745048,
+                "mech-experiment": 1.0049220853449163
+              },
+              "prefix-natural-4096": {
+                "mech-control": 1.126684177283621,
+                "mech-experiment": 1.0917659736785512
+              }
+            },
+            "lost_cases": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "gained_cases": {
+              "roc": [],
+              "libdeflate": [
+                "prefix-natural-8192"
+              ]
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 81,
+                "mech-experiment": 81
+              },
+              "libdeflate": {
+                "mech-control": 60,
+                "mech-experiment": 61
+              }
+            },
+            "wins_mech_experiment": {
+              "roc": 81,
+              "libdeflate": 61
+            }
+          },
+          {
+            "order": "reverse",
+            "cases": {
+              "prefix-natural-8192": {
+                "mech-control": 1.0410705279956667,
+                "mech-experiment": 1.004357367047131
+              },
+              "320-overlap": {
+                "mech-control": 0.9938304192320795,
+                "mech-experiment": 0.9935582528927039
+              },
+              "random-1024": {
+                "mech-control": 0.9566784551361256,
+                "mech-experiment": 0.9564668354147337
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 0.9795893039907649,
+                "mech-experiment": 0.9702297912566209
+              },
+              "prefix-natural-4096": {
+                "mech-control": 1.1273534981067628,
+                "mech-experiment": 1.093499193887094
+              }
+            },
+            "lost_cases": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "gained_cases": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 81,
+                "mech-experiment": 81
+              },
+              "libdeflate": {
+                "mech-control": 61,
+                "mech-experiment": 61
+              }
+            },
+            "wins_mech_experiment": {
+              "roc": 81,
+              "libdeflate": 61
+            }
+          }
+        ],
+        "rejected": [
+          "scorer-20261117-latch-test-layout-full-reverse: missed required libdeflate wins: prefix-natural-8192"
+        ],
+        "unresolved": [
+          "scorer-20261117-latch-test-layout-full-forward: libdeflate floor 62 missed (control 60, candidate 61)",
+          "scorer-20261117-latch-test-layout-full-reverse: libdeflate floor 62 missed (control 61, candidate 61)"
+        ],
+        "achieves_target": false,
+        "preserves_peer_wins": true
+      },
+      "win_set_audit": {
+        "forward": {
+          "missed_high_water_cases": [
+            "prefix-periodic-1024"
+          ],
+          "new_wins_beyond_high_water": [],
+          "affected_libdeflate_ratios": {
+            "prefix-periodic-1024": {
+              "mech-control": 1.0217153892745048,
+              "mech-experiment": 1.0049220853449163,
+              "roc": 7.884247783691839,
+              "libdeflate": 1.0
+            }
+          }
+        },
+        "reverse": {
+          "missed_high_water_cases": [
+            "prefix-natural-8192"
+          ],
+          "new_wins_beyond_high_water": [],
+          "affected_libdeflate_ratios": {
+            "prefix-natural-8192": {
+              "libdeflate": 1.0,
+              "roc": 1.2480751840853432,
+              "mech-experiment": 1.004357367047131,
+              "mech-control": 1.0410705279956667
+            }
+          }
+        }
+      },
+      "checked": {
+        "commands": {
+          "failures": [
+            "/opt/homebrew/opt/python@3.14/bin/python3.14",
+            "-B",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-test-layout/checks/linked-proofs/check-linked-error-exits.py",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-test-layout/checks/worker-checks/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-test-layout/checks/worker-checks/latch-test-layout"
+          ],
+          "stack": [
+            "/opt/homebrew/opt/python@3.14/bin/python3.14",
+            "-B",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-test-layout/checks/linked-proofs/check-layout-stack.py",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-test-layout/checks/worker-checks/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-test-layout/checks/worker-checks/latch-test-layout"
+          ]
+        },
+        "peak_stack_bytes": {
+          "control": 5280,
+          "latch-test-layout": 5280
+        },
+        "matches_success_observations": 162,
+        "checked_failure_cases": [
+          "empty",
+          "one-stored",
+          "seven-stored-prefix",
+          "prefix-periodic-4096",
+          "prefix-repeated-16384",
+          "heldout-mixed-131073"
+        ]
+      }
+    },
+    "latch-test-deferred-layout": {
+      "text_bytes": 71096,
+      "text_change": -96,
+      "worker_sha256": "ef8334c416bf993ddf8ef79923abf6c52bc311fa33c45f6070f2bf58b29d5fe0",
+      "exact_checks": 162,
+      "object_sha256": "f13d6c07308b2de19664900b9ee6bc16c30ca4ac30b8c8ee9360884b167b5576",
+      "focus": {
+        "kind": "focus",
+        "policy_decision": "Unresolved",
+        "runs": [
+          {
+            "order": "forward",
+            "cases": {
+              "prefix-natural-8192": {
+                "mech-control": 1.0323920299402403,
+                "mech-experiment": 1.004589950933387
+              },
+              "320-overlap": {
+                "mech-control": 0.9938881128501583,
+                "mech-experiment": 0.9912132605670136
+              },
+              "random-1024": {
+                "mech-control": 0.9574637779649757,
+                "mech-experiment": 0.9568515769391677
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 0.987597709830361,
+                "mech-experiment": 0.9797396272150499
+              },
+              "prefix-natural-4096": {
+                "mech-control": 1.1263612808958154,
+                "mech-experiment": 1.0989731508284932
+              }
+            },
+            "lost_cases": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "gained_cases": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 15
+              },
+              "libdeflate": {
+                "mech-control": 12,
+                "mech-experiment": 12
+              }
+            }
+          },
+          {
+            "order": "reverse",
+            "cases": {
+              "prefix-natural-8192": {
+                "mech-control": 1.0370982310399648,
+                "mech-experiment": 1.0048248524219898
+              },
+              "320-overlap": {
+                "mech-control": 0.989137819594725,
+                "mech-experiment": 0.9875039207188737
+              },
+              "random-1024": {
+                "mech-control": 0.9550156773331339,
+                "mech-experiment": 0.95500171726046
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 0.980618900008962,
+                "mech-experiment": 0.9709396550095816
+              },
+              "prefix-natural-4096": {
+                "mech-control": 1.1247325040611216,
+                "mech-experiment": 1.0991736488563324
+              }
+            },
+            "lost_cases": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "gained_cases": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 15
+              },
+              "libdeflate": {
+                "mech-control": 12,
+                "mech-experiment": 12
+              }
+            }
+          }
+        ],
+        "rejected": [],
+        "unresolved": [
+          "both complete timing orders are required"
+        ],
+        "achieves_target": false,
+        "preserves_peer_wins": true
+      }
+    },
+    "latch-kept-root-layout": {
+      "text_bytes": 71096,
+      "text_change": -96,
+      "worker_sha256": "93bac0605cdad991dc0a6a5fe3eb236dda77b8bbf61e854c1f2be2e75d1d9b7c",
+      "exact_checks": 162,
+      "object_sha256": "d0f6f40124bb9dcd17db355630f70d9c9605c58cc71f3bc2464642c6cae00049",
+      "focus": {
+        "kind": "focus",
+        "policy_decision": "Unresolved",
+        "runs": [
+          {
+            "order": "forward",
+            "cases": {
+              "prefix-natural-8192": {
+                "mech-control": 1.03165566477978,
+                "mech-experiment": 0.9940896767340838
+              },
+              "320-overlap": {
+                "mech-control": 0.9896728306774643,
+                "mech-experiment": 0.987278261024408
+              },
+              "random-1024": {
+                "mech-control": 0.955899597209929,
+                "mech-experiment": 0.9565949450042424
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 0.9826892535818986,
+                "mech-experiment": 0.9732363042692586
+              },
+              "prefix-natural-4096": {
+                "mech-control": 1.1238537269173599,
+                "mech-experiment": 1.0865779386397183
+              }
+            },
+            "lost_cases": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "gained_cases": {
+              "roc": [],
+              "libdeflate": [
+                "prefix-natural-8192"
+              ]
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 15
+              },
+              "libdeflate": {
+                "mech-control": 12,
+                "mech-experiment": 13
+              }
+            }
+          },
+          {
+            "order": "reverse",
+            "cases": {
+              "prefix-natural-8192": {
+                "mech-control": 1.036388645166234,
+                "mech-experiment": 0.9995973133069753
+              },
+              "320-overlap": {
+                "mech-control": 0.993349668000349,
+                "mech-experiment": 0.9858990613321369
+              },
+              "random-1024": {
+                "mech-control": 0.9575970235684234,
+                "mech-experiment": 0.9553663360391688
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 0.9903397364551604,
+                "mech-experiment": 0.9808160974206336
+              },
+              "prefix-natural-4096": {
+                "mech-control": 1.1324902651768074,
+                "mech-experiment": 1.0931629521978137
+              }
+            },
+            "lost_cases": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "gained_cases": {
+              "roc": [],
+              "libdeflate": [
+                "prefix-natural-8192"
+              ]
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 15
+              },
+              "libdeflate": {
+                "mech-control": 12,
+                "mech-experiment": 13
+              }
+            }
+          }
+        ],
+        "rejected": [],
+        "unresolved": [
+          "both complete timing orders are required"
+        ],
+        "achieves_target": true,
+        "preserves_peer_wins": true
+      },
+      "full": {
+        "kind": "full",
+        "policy_decision": "Unresolved",
+        "runs": [
+          {
+            "order": "forward",
+            "cases": {
+              "prefix-natural-8192": {
+                "mech-control": 1.0313432030880254,
+                "mech-experiment": 0.9928620054444651
+              },
+              "320-overlap": {
+                "mech-control": 0.9877138675223992,
+                "mech-experiment": 0.983585376542585
+              },
+              "random-1024": {
+                "mech-control": 0.9557959841525392,
+                "mech-experiment": 0.9550707545765775
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 0.9830207523179444,
+                "mech-experiment": 0.9740188201430172
+              },
+              "prefix-natural-4096": {
+                "mech-control": 1.1201920832507875,
+                "mech-experiment": 1.0847754662824598
+              }
+            },
+            "lost_cases": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "gained_cases": {
+              "roc": [],
+              "libdeflate": [
+                "prefix-natural-8192"
+              ]
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 81,
+                "mech-experiment": 81
+              },
+              "libdeflate": {
+                "mech-control": 61,
+                "mech-experiment": 62
+              }
+            },
+            "wins_mech_experiment": {
+              "roc": 81,
+              "libdeflate": 62
+            }
+          },
+          {
+            "order": "reverse",
+            "cases": {
+              "prefix-natural-8192": {
+                "mech-control": 1.0370430346984105,
+                "mech-experiment": 0.9986553870075251
+              },
+              "320-overlap": {
+                "mech-control": 1.0176944563651014,
+                "mech-experiment": 1.0915171790865454
+              },
+              "random-1024": {
+                "mech-control": 0.9752486052657341,
+                "mech-experiment": 0.9561102246246692
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 0.9860423789545281,
+                "mech-experiment": 0.9771573538409735
+              },
+              "prefix-natural-4096": {
+                "mech-control": 1.1238461900724022,
+                "mech-experiment": 1.0925553668733654
+              }
+            },
+            "lost_cases": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "gained_cases": {
+              "roc": [],
+              "libdeflate": [
+                "prefix-natural-8192"
+              ]
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 81,
+                "mech-experiment": 81
+              },
+              "libdeflate": {
+                "mech-control": 60,
+                "mech-experiment": 61
+              }
+            },
+            "wins_mech_experiment": {
+              "roc": 81,
+              "libdeflate": 61
+            }
+          }
+        ],
+        "rejected": [],
+        "unresolved": [
+          "scorer-20261117-latch-kept-root-layout-full-reverse: libdeflate floor 62 missed (control 60, candidate 61)"
+        ],
+        "achieves_target": true,
+        "preserves_peer_wins": true
+      },
+      "win_set_audit": {
+        "forward": {
+          "missed_high_water_cases": [],
+          "new_wins_beyond_high_water": [],
+          "affected_libdeflate_ratios": {}
+        },
+        "reverse": {
+          "missed_high_water_cases": [
+            "320-overlap"
+          ],
+          "new_wins_beyond_high_water": [],
+          "affected_libdeflate_ratios": {
+            "320-overlap": {
+              "libdeflate": 1.0,
+              "roc": 10.272430643059034,
+              "mech-experiment": 1.0915171790865454,
+              "mech-control": 1.0176944563651014
+            }
+          }
+        }
+      },
+      "checked": {
+        "commands": {
+          "failures": [
+            "/opt/homebrew/opt/python@3.14/bin/python3.14",
+            "-B",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-kept-root-layout/checks/linked-proofs/check-linked-error-exits.py",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-kept-root-layout/checks/worker-checks/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-kept-root-layout/checks/worker-checks/latch-kept-root-layout"
+          ],
+          "stack": [
+            "/opt/homebrew/opt/python@3.14/bin/python3.14",
+            "-B",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-kept-root-layout/checks/linked-proofs/check-layout-stack.py",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-kept-root-layout/checks/worker-checks/control",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-kept-root-layout/checks/worker-checks/latch-kept-root-layout"
+          ]
+        },
+        "peak_stack_bytes": {
+          "control": 5280,
+          "latch-kept-root-layout": 5280
+        },
+        "matches_success_observations": 162,
+        "checked_failure_cases": [
+          "empty",
+          "one-stored",
+          "seven-stored-prefix",
+          "prefix-periodic-4096",
+          "prefix-repeated-16384",
+          "heldout-mixed-131073"
+        ]
+      }
+    },
+    "latch-both-cursors-layout": {
+      "text_bytes": 71112,
+      "text_change": -80,
+      "worker_sha256": "ec881c9c3bd3d747aca23cb150fdfb4fd28cb84d4fd0e0b9991d65b98f93ed85",
+      "exact_checks": 162,
+      "object_sha256": "e03a091a4b5c39bdaa266e438a0cd939265a00ef75160a4c607674fce22e1e57",
+      "focus": {
+        "kind": "focus",
+        "policy_decision": "Unresolved",
+        "runs": [
+          {
+            "order": "forward",
+            "cases": {
+              "prefix-natural-8192": {
+                "mech-control": 1.0303540296985088,
+                "mech-experiment": 0.995664923120468
+              },
+              "320-overlap": {
+                "mech-control": 0.9930892879209227,
+                "mech-experiment": 0.988528523502067
+              },
+              "random-1024": {
+                "mech-control": 0.9557923185582572,
+                "mech-experiment": 0.9564444883948587
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 0.9880195008694662,
+                "mech-experiment": 0.9797464977290605
+              },
+              "prefix-natural-4096": {
+                "mech-control": 1.1167359734458573,
+                "mech-experiment": 1.0855906995914566
+              }
+            },
+            "lost_cases": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "gained_cases": {
+              "roc": [],
+              "libdeflate": [
+                "prefix-natural-8192"
+              ]
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 15
+              },
+              "libdeflate": {
+                "mech-control": 12,
+                "mech-experiment": 13
+              }
+            }
+          },
+          {
+            "order": "reverse",
+            "cases": {
+              "prefix-natural-8192": {
+                "mech-control": 1.0429988638979888,
+                "mech-experiment": 1.0018441343666182
+              },
+              "320-overlap": {
+                "mech-control": 1.0009324321562532,
+                "mech-experiment": 1.019917152957976
+              },
+              "random-1024": {
+                "mech-control": 0.9868671512274573,
+                "mech-experiment": 0.9894024909067528
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 1.0723966728957253,
+                "mech-experiment": 1.0211997067835203
+              },
+              "prefix-natural-4096": {
+                "mech-control": 1.1330695505815458,
+                "mech-experiment": 1.0929735427809035
+              }
+            },
+            "lost_cases": {
+              "roc": [],
+              "libdeflate": [
+                "prefix-random-1024"
+              ]
+            },
+            "gained_cases": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 15
+              },
+              "libdeflate": {
+                "mech-control": 10,
+                "mech-experiment": 9
+              }
+            }
+          }
+        ],
+        "rejected": [],
+        "unresolved": [
+          "scorer-20261117-latch-both-cursors-layout-focus-reverse: focused losses against libdeflate: prefix-random-1024",
+          "both complete timing orders are required"
+        ],
+        "achieves_target": false,
+        "preserves_peer_wins": false
+      }
+    }
+  },
+  "full_runs": [
+    "latch-test-layout",
+    "latch-kept-root-layout"
+  ],
+  "policy": "qualification-policy-v3.json",
+  "evidence": "evidence/ordered-vector-latch/README.md",
+  "overlap_quarters": {
+    "focus-forward": {
+      "observations_sha256": "d6470dc2b147a88e025d122bc65d20e73ad926c1d8b6ddb001e16c0c63d4e9b6",
+      "paired_x_libdeflate": {
+        "mech-control": 0.9896728306774643,
+        "mech-experiment": 0.987278261024408,
+        "roc": 10.749795944998905,
+        "libdeflate": 1.0
+      },
+      "median_block_seconds_by_quarter": [
+        {
+          "mech-control": 2.7433968749999998e-05,
+          "mech-experiment": 2.7421921875e-05,
+          "roc": 0.00029760771875,
+          "libdeflate": 2.7846375e-05
+        },
+        {
+          "mech-control": 2.75140625e-05,
+          "mech-experiment": 2.7423859375e-05,
+          "roc": 0.0002989726328125,
+          "libdeflate": 2.76848671875e-05
+        },
+        {
+          "mech-control": 2.7405312499999997e-05,
+          "mech-experiment": 2.7331390624999997e-05,
+          "roc": 0.0002993202734375,
+          "libdeflate": 2.76102578125e-05
+        },
+        {
+          "mech-control": 2.76354609375e-05,
+          "mech-experiment": 2.7576859375e-05,
+          "roc": 0.0002974759375,
+          "libdeflate": 2.7754945312500003e-05
+        }
+      ]
+    },
+    "focus-reverse": {
+      "observations_sha256": "08c5de3a2086250e9feed09484d9cfe6afccf2b2d375673a391a1feaaacd5017",
+      "paired_x_libdeflate": {
+        "libdeflate": 1.0,
+        "roc": 10.828457409533748,
+        "mech-experiment": 0.9858990613321369,
+        "mech-control": 0.993349668000349
+      },
+      "median_block_seconds_by_quarter": [
+        {
+          "mech-control": 2.74758984375e-05,
+          "mech-experiment": 2.7303749999999998e-05,
+          "roc": 0.000300299109375,
+          "libdeflate": 2.76588671875e-05
+        },
+        {
+          "mech-control": 2.7461570312499998e-05,
+          "mech-experiment": 2.7314124999999998e-05,
+          "roc": 0.000300228234375,
+          "libdeflate": 2.76129609375e-05
+        },
+        {
+          "mech-control": 2.75090859375e-05,
+          "mech-experiment": 2.7266265625e-05,
+          "roc": 0.0002999241484375,
+          "libdeflate": 2.7635085937499998e-05
+        },
+        {
+          "mech-control": 2.75133515625e-05,
+          "mech-experiment": 2.72978671875e-05,
+          "roc": 0.000300074875,
+          "libdeflate": 2.76094140625e-05
+        }
+      ]
+    },
+    "full-forward": {
+      "observations_sha256": "cf3e5a182ec7efe4dec5e185476a20437cd9f838bd96455c8f02cb7ca3363997",
+      "paired_x_libdeflate": {
+        "mech-control": 0.9877138675223992,
+        "mech-experiment": 0.983585376542585,
+        "roc": 10.888858100225354,
+        "libdeflate": 1.0
+      },
+      "median_block_seconds_by_quarter": [
+        {
+          "mech-control": 2.7456671875e-05,
+          "mech-experiment": 2.73642890625e-05,
+          "roc": 0.0003005846015625,
+          "libdeflate": 2.7712515625e-05
+        },
+        {
+          "mech-control": 2.7421203125000002e-05,
+          "mech-experiment": 2.7408195312499998e-05,
+          "roc": 0.0003004234375,
+          "libdeflate": 2.7650062500000002e-05
+        },
+        {
+          "mech-control": 2.741278125e-05,
+          "mech-experiment": 2.73903125e-05,
+          "roc": 0.0003007734453125,
+          "libdeflate": 2.7645546875e-05
+        },
+        {
+          "mech-control": 2.7430304687500002e-05,
+          "mech-experiment": 2.7231109375e-05,
+          "roc": 0.00031371876562499997,
+          "libdeflate": 2.81784765625e-05
+        }
+      ]
+    },
+    "full-reverse": {
+      "observations_sha256": "e9c3332834be73d685d7bd42c9ca6d851a192c560d25f0b21711070c74cb74e6",
+      "paired_x_libdeflate": {
+        "libdeflate": 1.0,
+        "roc": 10.272430643059034,
+        "mech-experiment": 1.0915171790865454,
+        "mech-control": 1.0176944563651014
+      },
+      "median_block_seconds_by_quarter": [
+        {
+          "mech-control": 3.15273203125e-05,
+          "mech-experiment": 3.5087515625e-05,
+          "roc": 0.0003227842109375,
+          "libdeflate": 2.94836875e-05
+        },
+        {
+          "mech-control": 2.7808304687499998e-05,
+          "mech-experiment": 2.8576859375e-05,
+          "roc": 0.0003183317265625,
+          "libdeflate": 2.89384609375e-05
+        },
+        {
+          "mech-control": 2.812078125e-05,
+          "mech-experiment": 2.87532578125e-05,
+          "roc": 0.000314979875,
+          "libdeflate": 2.884959375e-05
+        },
+        {
+          "mech-control": 2.88902421875e-05,
+          "mech-experiment": 2.83383046875e-05,
+          "roc": 0.0003170309296875,
+          "libdeflate": 2.96917265625e-05
+        }
+      ]
+    }
+  },
+  "runtime_sample": {
+    "libdeflate": {
+      "independent validation": 85.5,
+      "libdeflate compression": 2150.5,
+      "other worker and idle": 40.5
+    },
+    "current": {
+      "checked encoder and runtime": 252.0,
+      "independent validation": 61.0,
+      "match collection": 610.0,
+      "ordered scorer": 1089.5,
+      "other numeric phase": 238.5,
+      "other worker and idle": 11.5
+    },
+    "bottom-tested": {
+      "checked encoder and runtime": 293.5,
+      "independent validation": 78.5,
+      "match collection": 581.5,
+      "ordered scorer": 1086.5,
+      "other numeric phase": 222.0,
+      "other worker and idle": 10.0
+    }
+  }
+}

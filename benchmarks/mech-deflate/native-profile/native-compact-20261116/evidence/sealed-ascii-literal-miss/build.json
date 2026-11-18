@@ -1,0 +1,30 @@
+{
+  "base": "d03f097b06c8386822a8063de9826715a9c1e897",
+  "source_sha256": {
+    "src/syntax/src/document/parser/literal_scan.rs": "6a5b37ece69129088a36022544b38448a96c4d4e5e1fc1ba41d34b04e78c0e14",
+    "src/syntax/src/document/parser/canonical/base/continuation.rs": "38a4b129096aae568f8e20a332f5928d02181c3f3a5730f014ca53f2237fec80"
+  },
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ascii-literal-miss/production/rebuild",
+    "--variant",
+    "frame-copies",
+    "--compiler-opt-level",
+    "3",
+    "--direct-source",
+    "--preselect-root-inlining",
+    "--skip-refused-general-ssa",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target"
+  ],
+  "compiler_sha256": "9b3dd2ebae981a27c4890484a1e203b19633313920e628db83240fe1da04c77d",
+  "reference_plan_sha256": "3c6e6c7c257de34c5b8613d13739c526acd17cb7e6880232982a4166941067a8",
+  "artifact_sha256": {
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "parser_local_measurement_sha256": "fd1faec1441f5def54b2d50f05a3e2743f90811e602951300c27dfa4d3f9e754"
+}

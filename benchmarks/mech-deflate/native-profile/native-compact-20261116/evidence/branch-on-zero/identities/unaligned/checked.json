@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/branch-on-zero-native/final-candidate/mech-worker",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/branch-on-zero-native/final-candidate/metadata.json",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "complete_smokes": 162,
+  "verified": true,
+  "worker_sha256": "433164cc7a10056057e039f06999c5368739c845fd9bfac10b8816c2e114c6b4",
+  "metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+}

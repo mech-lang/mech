@@ -1,0 +1,71 @@
+[
+  {
+    "label": "cranelift-fresh-owner-counts-control",
+    "flags": [],
+    "object_text_bytes": 72520,
+    "object_text_x_roc": 1.256932889628397,
+    "object_text_x_libdeflate": 1.9557713052858683,
+    "roc_object_text_bytes": 57696,
+    "libdeflate_object_text_bytes": 37080,
+    "root_code_bytes": 52008,
+    "root_frame_bytes": 3744,
+    "source_blocks": 8223,
+    "root_direct_calls": 372,
+    "emit_seconds": 3.5998861673288047,
+    "peak_resident_bytes": 226836480,
+    "object_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+    "metadata_sha256": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+    "linked_text_bytes": 475444,
+    "worker_sha256": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6",
+    "verified_calls": 162,
+    "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-fresh-owner-counts-control-native-final-candidate-qualification.json"
+  },
+  {
+    "label": "cranelift-fresh-owner-counts",
+    "flags": [
+      "MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS=1"
+    ],
+    "object_text_bytes": 72344,
+    "object_text_x_roc": 1.2538824181919024,
+    "object_text_x_libdeflate": 1.951024811218986,
+    "roc_object_text_bytes": 57696,
+    "libdeflate_object_text_bytes": 37080,
+    "root_code_bytes": 51840,
+    "root_frame_bytes": 3744,
+    "source_blocks": 8223,
+    "root_direct_calls": 372,
+    "emit_seconds": 2.248684249818325,
+    "peak_resident_bytes": 226590720,
+    "object_sha256": "c809f6ce78e3d9d2a9e7df5686764ecc47089869610636cd0dd2c6f485dc243d",
+    "metadata_sha256": "f78b82fbd6dec22d84d92700b74f6a28871b0963c2f8e2acd07359aefc7f08a0",
+    "linked_text_bytes": 475268,
+    "worker_sha256": "4374799309e26e3b85b84e8ac9dc796eac15621a52b1851c6cdb61c3126c4db7",
+    "verified_calls": 162,
+    "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-fresh-owner-counts-native-final-candidate-qualification.json"
+  },
+  {
+    "label": "cranelift-fresh-owner-counts-cleanup",
+    "flags": [
+      "MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS=1",
+      "MECH_COMPACT_PROVE_BACKING_OWNERS=all",
+      "MECH_COMPACT_FINISH_CFG_CLEANUP=1"
+    ],
+    "object_text_bytes": 72024,
+    "object_text_x_roc": 1.2483361064891847,
+    "object_text_x_libdeflate": 1.9423948220064724,
+    "roc_object_text_bytes": 57696,
+    "libdeflate_object_text_bytes": 37080,
+    "root_code_bytes": 51516,
+    "root_frame_bytes": 3808,
+    "source_blocks": 8223,
+    "root_direct_calls": 371,
+    "emit_seconds": 2.449782875366509,
+    "peak_resident_bytes": 226525184,
+    "object_sha256": "7f4eb5824b335f991d2a51be1d5277b9f04ac37992e679d42c413a5edeb24c02",
+    "metadata_sha256": "1246e2726abdd65eea62a9d02af8c2511f354b6b9e1436dc15ecc39f7f1eca78",
+    "linked_text_bytes": 474948,
+    "worker_sha256": "8819a7e0a414c0eb06d264d26ee41ec33b303600abd0b2d7a9ec3af72e841389",
+    "verified_calls": 162,
+    "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-fresh-owner-counts-cleanup-native-final-candidate-qualification.json"
+  }
+]

@@ -1,0 +1,106 @@
+{
+  "objective": "encoder_text_bytes",
+  "policy_version": 1,
+  "policy_sha256": "1889b824a300e5b2c5c8bfb40aea1652cb525cb740152706ec5bf72543bce984",
+  "measurement_host": "Apple M1",
+  "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+  "contract": "Level 12 compress-into invocation through private heap cleanup.",
+  "fixture_inventory_sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4",
+  "driver_sha256": "6196caed870690822070c43f4315ccad5884fdbbef224e16707563bb0dff2e6c",
+  "timer_sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a",
+  "compilers": {
+    "emit_compact_size": "4e4db1a5e2521a232d89a7b4f3b67afd878b4ebfe41902e96e56731addb5c35e",
+    "compile_profile": "fac755132fdc01a28fce1347e2ba96041281ebf6283bb3bb02be31d2538779db"
+  },
+  "actors": {
+    "mech-control": {
+      "metadata.json": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+      "program.o": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+      "mech-worker": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41",
+      "runtime.json": "4fce4568af04371d2a9c0e68d533638948f48661c450cda54d864a760165522c"
+    },
+    "mech-experiment": {
+      "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+      "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+      "mech-worker": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+      "runtime.json": "07fe8915c21dfa165ec9ecd6d52c3328041c8d016a631db35d6e853da4f12dc6"
+    },
+    "roc": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/roc-worker",
+        "/private/tmp/mech-wide-tier-round270-20261110/full-image/original/metadata.json",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+      ],
+      "binary_sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+      "metadata_sha256": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee",
+      "original_command": [
+        "/private/tmp/mech-matched-comparison-round224-20261109/reference-worker",
+        "/private/tmp/mech-wide-tier-round270-20261110/full-image/original/metadata.json",
+        "/private/tmp/mech-pr973-merged-compression-20261112/fixtures.json"
+      ]
+    },
+    "libdeflate": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/libdeflate-worker",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+      ],
+      "binary_sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "original_command": [
+        "/private/tmp/mech-wide-tier-round270-20261110/libdeflate-comparison/libdeflate-worker",
+        "/private/tmp/mech-pr973-merged-compression-20261112/fixtures.json"
+      ]
+    }
+  },
+  "optional_full_suite_trigger": "Continue from both focused orders after screening for established per-case regressions.",
+  "runs": [
+    {
+      "id": "branch-on-zero-aligned-focus-zero-branch-cases",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "branch-on-zero-aligned-focus-zero-branch-cases-reverse",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "branch-on-zero-aligned-full",
+      "kind": "full",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "branch-on-zero-aligned-full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "blocks_per_case": 96
+    }
+  ],
+  "focus_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "eight-overlap",
+    "random-64",
+    "random-1024",
+    "prefix-random-1024",
+    "320-overlap",
+    "prefix-periodic-1024",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-natural-16384",
+    "reymont-prefix-32769",
+    "heldout-mixed-131073",
+    "prefix-periodic-262144",
+    "prefix-random-1048576"
+  ],
+  "unaligned_plan_sha256": "17a37694084410c7f58874ef608b06512e8a0f3d89b5a11c3258869a54090c58",
+  "placement_diagnostic": {
+    "before": "_mech_compact_unsigned_dot_product",
+    "padding_bytes": 16,
+    "input_object_sha256": "029718fbdb5802fe5a176458c04d5408f2d785756d507b5be86024fba9bc1a5d",
+    "object_text_symbol_residues_restored": 31
+  }
+}

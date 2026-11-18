@@ -1,0 +1,862 @@
+{
+  "scope": "Descriptive comparison of two completed campaigns. All recorded blocks remain in the v1 verdict.",
+  "historical_71768_actor": "mech-experiment",
+  "source_71768_actor": "mech-control",
+  "historical_plan_sha256": "98cbea5220c92cec03b3755bff56e6259a7759cde5b9710705d923a0ffd95889",
+  "historical_full_replay_sha256": "a3cc06495a60758541635fccf13119408d48226131f321ad0cdc44b46d61a2d7",
+  "source_plan_sha256": "336512937eb48474889042f87af88d648fc54b98292305b26607fc392b9b09af",
+  "source_full_replay_sha256": "77ec7ea342f8078763c3edfdd6fe5b44b6951d335ed080a9ccd8e37ef0ac8725",
+  "artifact_verification": {
+    "mech-control": {
+      "sha256": {
+        "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+        "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+        "runtime.json": "c610f88fe1d61546a7d8e74352f07a4ac175d571dc6816faff3a778f302b115a",
+        "mech-worker": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9"
+      },
+      "encoder_text_bytes": 71768
+    },
+    "mech-experiment": {
+      "sha256": {
+        "program.o": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+        "metadata.json": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
+        "runtime.json": "04bb4b72588601a16c5d3b3af86f31d26679a706585b1de415d3907edfa11bd7",
+        "mech-worker": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a"
+      },
+      "encoder_text_bytes": 71192
+    },
+    "roc": {
+      "worker": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+      "metadata": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee",
+      "metadata_bytes_rehashed": false
+    },
+    "libdeflate": {
+      "worker": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "metadata": null
+    }
+  },
+  "matching_71768_object_worker_and_receipts": {
+    "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+    "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+    "runtime.json": "c610f88fe1d61546a7d8e74352f07a4ac175d571dc6816faff3a778f302b115a",
+    "mech-worker": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9"
+  },
+  "matching_peers": {
+    "roc": {
+      "worker": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+      "metadata": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee"
+    },
+    "libdeflate": {
+      "worker": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "metadata": null
+    }
+  },
+  "matching_fixture_content_sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+  "matching_plan_reference_sha256": {
+    "policy": "1889b824a300e5b2c5c8bfb40aea1652cb525cb740152706ec5bf72543bce984",
+    "timer": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a",
+    "as_run_inventory": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4",
+    "pinned_peers": "db5a289d7a929176e5a1c9efbff5f69702596b0dccba9f2cace86d78cc18902d"
+  },
+  "matching_environment_sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+  "matching_contract_sha256": "f8d0b099053f18375d9b2122fd993d7a34cc8cffab47bd7c3fd9a7e8a9ed58d7",
+  "orders": {
+    "forward": {
+      "peers": {
+        "roc": {
+          "absolute_named_case_floor": 81,
+          "old_71768_wins": 81,
+          "old_71768_precision_supported_wins": 81,
+          "new_control_and_candidate": {
+            "point_estimate_wins": {
+              "mech-control": 81,
+              "mech-experiment": 81
+            },
+            "precision_supported_wins": {
+              "mech-control": 80,
+              "mech-experiment": 79
+            },
+            "lost_cases": [],
+            "gained_cases": [],
+            "distinct_contract_point_estimate_wins": {
+              "mech-control": 74,
+              "mech-experiment": 74
+            },
+            "distinct_contract_precision_supported_wins": {
+              "mech-control": 73,
+              "mech-experiment": 72
+            }
+          },
+          "new_point_wins_above_floor": {
+            "mech-control": 0,
+            "mech-experiment": 0
+          },
+          "new_point_wins_without_precision": {
+            "mech-control": [
+              "prefix-periodic-4096"
+            ],
+            "mech-experiment": [
+              "prefix-periodic-4096",
+              "prefix-periodic-16384"
+            ]
+          },
+          "same_71768_worker_losses_across_campaigns": [],
+          "same_71768_worker_gains_across_campaigns": [],
+          "changed_case_ratios": {}
+        },
+        "libdeflate": {
+          "absolute_named_case_floor": 61,
+          "old_71768_wins": 61,
+          "old_71768_precision_supported_wins": 61,
+          "new_control_and_candidate": {
+            "point_estimate_wins": {
+              "mech-control": 57,
+              "mech-experiment": 57
+            },
+            "precision_supported_wins": {
+              "mech-control": 57,
+              "mech-experiment": 57
+            },
+            "lost_cases": [],
+            "gained_cases": [],
+            "distinct_contract_point_estimate_wins": {
+              "mech-control": 51,
+              "mech-experiment": 51
+            },
+            "distinct_contract_precision_supported_wins": {
+              "mech-control": 51,
+              "mech-experiment": 51
+            }
+          },
+          "new_point_wins_above_floor": {
+            "mech-control": -4,
+            "mech-experiment": -4
+          },
+          "new_point_wins_without_precision": {
+            "mech-control": [],
+            "mech-experiment": []
+          },
+          "same_71768_worker_losses_across_campaigns": [
+            "prefix-periodic-1024",
+            "prefix-periodic-16384",
+            "prefix-periodic-4096",
+            "prefix-periodic-8192"
+          ],
+          "same_71768_worker_gains_across_campaigns": [],
+          "changed_case_ratios": {
+            "prefix-periodic-1024": {
+              "old_71768": 0.9856510446891286,
+              "new_71768": 1.4206616729239931,
+              "new_71192": 1.374478287595057
+            },
+            "prefix-periodic-16384": {
+              "old_71768": 0.8591993709017731,
+              "new_71768": 1.8444545021331478,
+              "new_71192": 2.2451559616656254
+            },
+            "prefix-periodic-4096": {
+              "old_71768": 0.9338558857528412,
+              "new_71768": 3.516874137735568,
+              "new_71192": 3.6825939598889263
+            },
+            "prefix-periodic-8192": {
+              "old_71768": 0.9010980934333416,
+              "new_71768": 1.536800389265857,
+              "new_71192": 1.4352566559284203
+            }
+          }
+        }
+      },
+      "completed": {
+        "cases": 81,
+        "balanced_blocks_per_case": 96,
+        "timed_calls": 982656,
+        "reference_capacity_matches": 81,
+        "libdeflate_exact_bytes_cases": 81,
+        "fresh_compression_all_cases": true,
+        "all_outputs_independently_inflated": true,
+        "all_input_and_output_aliases_preserved": true
+      },
+      "paired_wall_time_diagnostic": {
+        "prefix-periodic-1024": {
+          "order_position": 54,
+          "all_blocks_per_campaign_and_order": 96,
+          "old_71768_and_peers": {
+            "mech-experiment": {
+              "median_call_us": 44.291,
+              "median_block_mean_us": 44.013960937499995,
+              "p90_block_mean_us": 44.5228125,
+              "maximum_block_mean_us": 63.290359375
+            },
+            "roc": {
+              "median_call_us": 323.0,
+              "median_block_mean_us": 324.0719609375,
+              "p90_block_mean_us": 325.69196875,
+              "maximum_block_mean_us": 387.66403125
+            },
+            "libdeflate": {
+              "median_call_us": 45.666,
+              "median_block_mean_us": 44.895484374999995,
+              "p90_block_mean_us": 45.458312500000005,
+              "maximum_block_mean_us": 48.6796875
+            }
+          },
+          "new_control_candidate_and_peers": {
+            "mech-control": {
+              "median_call_us": 44.75,
+              "median_block_mean_us": 44.202507812499995,
+              "p90_block_mean_us": 305.96546875,
+              "maximum_block_mean_us": 768.888046875
+            },
+            "mech-experiment": {
+              "median_call_us": 44.792,
+              "median_block_mean_us": 44.3330078125,
+              "p90_block_mean_us": 333.610671875,
+              "maximum_block_mean_us": 560.7708125
+            },
+            "roc": {
+              "median_call_us": 325.16700000000003,
+              "median_block_mean_us": 323.513359375,
+              "p90_block_mean_us": 419.73109375,
+              "maximum_block_mean_us": 610.408875
+            },
+            "libdeflate": {
+              "median_call_us": 45.75,
+              "median_block_mean_us": 45.2171171875,
+              "p90_block_mean_us": 61.604781249999995,
+              "maximum_block_mean_us": 90.454453125
+            }
+          },
+          "new_blocks_gt_2x_same_actor_historical_median": {
+            "mech-control": 23,
+            "mech-experiment": 22,
+            "roc": 0,
+            "libdeflate": 1
+          },
+          "new_blocks_with_two_or_more_actors_gt_2x": 21,
+          "new_blocks_with_all_actors_gt_2x": 0
+        },
+        "prefix-periodic-16384": {
+          "order_position": 57,
+          "all_blocks_per_campaign_and_order": 96,
+          "old_71768_and_peers": {
+            "mech-experiment": {
+              "median_call_us": 258.396,
+              "median_block_mean_us": 258.396,
+              "p90_block_mean_us": 265.959,
+              "maximum_block_mean_us": 273.458
+            },
+            "roc": {
+              "median_call_us": 767.2085,
+              "median_block_mean_us": 767.2085,
+              "p90_block_mean_us": 776.167,
+              "maximum_block_mean_us": 855.875
+            },
+            "libdeflate": {
+              "median_call_us": 300.3125,
+              "median_block_mean_us": 300.3125,
+              "p90_block_mean_us": 305.209,
+              "maximum_block_mean_us": 327.792
+            }
+          },
+          "new_control_candidate_and_peers": {
+            "mech-control": {
+              "median_call_us": 704.375,
+              "median_block_mean_us": 704.375,
+              "p90_block_mean_us": 1792.667,
+              "maximum_block_mean_us": 12858.209
+            },
+            "mech-experiment": {
+              "median_call_us": 956.4994999999999,
+              "median_block_mean_us": 956.4994999999999,
+              "p90_block_mean_us": 2578.833,
+              "maximum_block_mean_us": 4321.125
+            },
+            "roc": {
+              "median_call_us": 910.1455,
+              "median_block_mean_us": 910.1455,
+              "p90_block_mean_us": 1413.708,
+              "maximum_block_mean_us": 2234.208
+            },
+            "libdeflate": {
+              "median_call_us": 366.479,
+              "median_block_mean_us": 366.479,
+              "p90_block_mean_us": 731.167,
+              "maximum_block_mean_us": 1099.584
+            }
+          },
+          "new_blocks_gt_2x_same_actor_historical_median": {
+            "mech-control": 66,
+            "mech-experiment": 72,
+            "roc": 8,
+            "libdeflate": 19
+          },
+          "new_blocks_with_two_or_more_actors_gt_2x": 61,
+          "new_blocks_with_all_actors_gt_2x": 1
+        },
+        "prefix-periodic-4096": {
+          "order_position": 55,
+          "all_blocks_per_campaign_and_order": 96,
+          "old_71768_and_peers": {
+            "mech-experiment": {
+              "median_call_us": 94.3335,
+              "median_block_mean_us": 94.3335,
+              "p90_block_mean_us": 99.125,
+              "maximum_block_mean_us": 128.208
+            },
+            "roc": {
+              "median_call_us": 427.3125,
+              "median_block_mean_us": 427.3125,
+              "p90_block_mean_us": 436.125,
+              "maximum_block_mean_us": 445.75
+            },
+            "libdeflate": {
+              "median_call_us": 101.646,
+              "median_block_mean_us": 101.646,
+              "p90_block_mean_us": 103.167,
+              "maximum_block_mean_us": 119.917
+            }
+          },
+          "new_control_candidate_and_peers": {
+            "mech-control": {
+              "median_call_us": 245.6665,
+              "median_block_mean_us": 245.6665,
+              "p90_block_mean_us": 3373.0409999999997,
+              "maximum_block_mean_us": 6166.625
+            },
+            "mech-experiment": {
+              "median_call_us": 385.6045,
+              "median_block_mean_us": 385.6045,
+              "p90_block_mean_us": 2756.208,
+              "maximum_block_mean_us": 5549.333
+            },
+            "roc": {
+              "median_call_us": 494.79150000000004,
+              "median_block_mean_us": 494.79150000000004,
+              "p90_block_mean_us": 697.417,
+              "maximum_block_mean_us": 1058.708
+            },
+            "libdeflate": {
+              "median_call_us": 118.625,
+              "median_block_mean_us": 118.625,
+              "p90_block_mean_us": 162.958,
+              "maximum_block_mean_us": 309.792
+            }
+          },
+          "new_blocks_gt_2x_same_actor_historical_median": {
+            "mech-control": 51,
+            "mech-experiment": 55,
+            "roc": 3,
+            "libdeflate": 2
+          },
+          "new_blocks_with_two_or_more_actors_gt_2x": 38,
+          "new_blocks_with_all_actors_gt_2x": 0
+        },
+        "prefix-periodic-8192": {
+          "order_position": 56,
+          "all_blocks_per_campaign_and_order": 96,
+          "old_71768_and_peers": {
+            "mech-experiment": {
+              "median_call_us": 157.5835,
+              "median_block_mean_us": 157.5835,
+              "p90_block_mean_us": 164.584,
+              "maximum_block_mean_us": 184.167
+            },
+            "roc": {
+              "median_call_us": 556.5210000000001,
+              "median_block_mean_us": 556.5210000000001,
+              "p90_block_mean_us": 566.0,
+              "maximum_block_mean_us": 632.75
+            },
+            "libdeflate": {
+              "median_call_us": 175.6045,
+              "median_block_mean_us": 175.6045,
+              "p90_block_mean_us": 178.0,
+              "maximum_block_mean_us": 198.0
+            }
+          },
+          "new_control_candidate_and_peers": {
+            "mech-control": {
+              "median_call_us": 181.29149999999998,
+              "median_block_mean_us": 181.29149999999998,
+              "p90_block_mean_us": 2301.75,
+              "maximum_block_mean_us": 3614.709
+            },
+            "mech-experiment": {
+              "median_call_us": 182.72950000000003,
+              "median_block_mean_us": 182.72950000000003,
+              "p90_block_mean_us": 1704.8339999999998,
+              "maximum_block_mean_us": 3388.584
+            },
+            "roc": {
+              "median_call_us": 610.6245,
+              "median_block_mean_us": 610.6245,
+              "p90_block_mean_us": 729.916,
+              "maximum_block_mean_us": 16039.792000000001
+            },
+            "libdeflate": {
+              "median_call_us": 192.4795,
+              "median_block_mean_us": 192.4795,
+              "p90_block_mean_us": 242.375,
+              "maximum_block_mean_us": 1859.75
+            }
+          },
+          "new_blocks_gt_2x_same_actor_historical_median": {
+            "mech-control": 26,
+            "mech-experiment": 25,
+            "roc": 1,
+            "libdeflate": 2
+          },
+          "new_blocks_with_two_or_more_actors_gt_2x": 16,
+          "new_blocks_with_all_actors_gt_2x": 0
+        },
+        "reymont-prefix-16384": {
+          "order_position": 19,
+          "all_blocks_per_campaign_and_order": 96,
+          "old_71768_and_peers": {
+            "mech-experiment": {
+              "median_call_us": 2030.7705,
+              "median_block_mean_us": 2030.7705,
+              "p90_block_mean_us": 2045.5,
+              "maximum_block_mean_us": 2081.792
+            },
+            "roc": {
+              "median_call_us": 2172.9165000000003,
+              "median_block_mean_us": 2172.9165000000003,
+              "p90_block_mean_us": 2190.375,
+              "maximum_block_mean_us": 2212.5
+            },
+            "libdeflate": {
+              "median_call_us": 2153.1245,
+              "median_block_mean_us": 2153.1245,
+              "p90_block_mean_us": 2169.417,
+              "maximum_block_mean_us": 2205.417
+            }
+          },
+          "new_control_candidate_and_peers": {
+            "mech-control": {
+              "median_call_us": 2024.3954999999999,
+              "median_block_mean_us": 2024.3954999999999,
+              "p90_block_mean_us": 2031.625,
+              "maximum_block_mean_us": 2046.666
+            },
+            "mech-experiment": {
+              "median_call_us": 2023.2914999999998,
+              "median_block_mean_us": 2023.2914999999998,
+              "p90_block_mean_us": 2030.1249999999998,
+              "maximum_block_mean_us": 2042.125
+            },
+            "roc": {
+              "median_call_us": 2170.625,
+              "median_block_mean_us": 2170.625,
+              "p90_block_mean_us": 2183.292,
+              "maximum_block_mean_us": 2193.1670000000004
+            },
+            "libdeflate": {
+              "median_call_us": 2152.3955,
+              "median_block_mean_us": 2152.3955,
+              "p90_block_mean_us": 2165.4159999999997,
+              "maximum_block_mean_us": 2196.542
+            }
+          },
+          "new_blocks_gt_2x_same_actor_historical_median": {
+            "mech-control": 0,
+            "mech-experiment": 0,
+            "roc": 0,
+            "libdeflate": 0
+          },
+          "new_blocks_with_two_or_more_actors_gt_2x": 0,
+          "new_blocks_with_all_actors_gt_2x": 0
+        }
+      }
+    },
+    "reverse": {
+      "peers": {
+        "roc": {
+          "absolute_named_case_floor": 81,
+          "old_71768_wins": 81,
+          "old_71768_precision_supported_wins": 81,
+          "new_control_and_candidate": {
+            "point_estimate_wins": {
+              "mech-control": 81,
+              "mech-experiment": 81
+            },
+            "precision_supported_wins": {
+              "mech-control": 81,
+              "mech-experiment": 81
+            },
+            "lost_cases": [],
+            "gained_cases": [],
+            "distinct_contract_point_estimate_wins": {
+              "mech-control": 74,
+              "mech-experiment": 74
+            },
+            "distinct_contract_precision_supported_wins": {
+              "mech-control": 74,
+              "mech-experiment": 74
+            }
+          },
+          "new_point_wins_above_floor": {
+            "mech-control": 0,
+            "mech-experiment": 0
+          },
+          "new_point_wins_without_precision": {
+            "mech-control": [],
+            "mech-experiment": []
+          },
+          "same_71768_worker_losses_across_campaigns": [],
+          "same_71768_worker_gains_across_campaigns": [],
+          "changed_case_ratios": {}
+        },
+        "libdeflate": {
+          "absolute_named_case_floor": 61,
+          "old_71768_wins": 61,
+          "old_71768_precision_supported_wins": 61,
+          "new_control_and_candidate": {
+            "point_estimate_wins": {
+              "mech-control": 60,
+              "mech-experiment": 61
+            },
+            "precision_supported_wins": {
+              "mech-control": 60,
+              "mech-experiment": 61
+            },
+            "lost_cases": [],
+            "gained_cases": [
+              "reymont-prefix-16384"
+            ],
+            "distinct_contract_point_estimate_wins": {
+              "mech-control": 54,
+              "mech-experiment": 55
+            },
+            "distinct_contract_precision_supported_wins": {
+              "mech-control": 54,
+              "mech-experiment": 55
+            }
+          },
+          "new_point_wins_above_floor": {
+            "mech-control": -1,
+            "mech-experiment": 0
+          },
+          "new_point_wins_without_precision": {
+            "mech-control": [],
+            "mech-experiment": []
+          },
+          "same_71768_worker_losses_across_campaigns": [
+            "reymont-prefix-16384"
+          ],
+          "same_71768_worker_gains_across_campaigns": [],
+          "changed_case_ratios": {
+            "reymont-prefix-16384": {
+              "old_71768": 0.9421104175744381,
+              "new_71768": 1.0267729210447505,
+              "new_71192": 0.9561237265164221
+            }
+          }
+        }
+      },
+      "completed": {
+        "cases": 81,
+        "balanced_blocks_per_case": 96,
+        "timed_calls": 982656,
+        "reference_capacity_matches": 81,
+        "libdeflate_exact_bytes_cases": 81,
+        "fresh_compression_all_cases": true,
+        "all_outputs_independently_inflated": true,
+        "all_input_and_output_aliases_preserved": true
+      },
+      "paired_wall_time_diagnostic": {
+        "prefix-periodic-1024": {
+          "order_position": 28,
+          "all_blocks_per_campaign_and_order": 96,
+          "old_71768_and_peers": {
+            "mech-experiment": {
+              "median_call_us": 44.125,
+              "median_block_mean_us": 43.818304687499996,
+              "p90_block_mean_us": 44.3306875,
+              "maximum_block_mean_us": 45.772140625
+            },
+            "roc": {
+              "median_call_us": 324.70799999999997,
+              "median_block_mean_us": 326.40627343750003,
+              "p90_block_mean_us": 327.617828125,
+              "maximum_block_mean_us": 331.1354375
+            },
+            "libdeflate": {
+              "median_call_us": 45.667,
+              "median_block_mean_us": 45.00521875,
+              "p90_block_mean_us": 45.512375,
+              "maximum_block_mean_us": 46.370484375000004
+            }
+          },
+          "new_control_candidate_and_peers": {
+            "libdeflate": {
+              "median_call_us": 45.375,
+              "median_block_mean_us": 44.731812500000004,
+              "p90_block_mean_us": 45.53846875,
+              "maximum_block_mean_us": 47.619156249999996
+            },
+            "roc": {
+              "median_call_us": 322.834,
+              "median_block_mean_us": 324.2864296875,
+              "p90_block_mean_us": 326.352859375,
+              "maximum_block_mean_us": 338.929703125
+            },
+            "mech-experiment": {
+              "median_call_us": 44.291,
+              "median_block_mean_us": 43.900718749999996,
+              "p90_block_mean_us": 44.456390625,
+              "maximum_block_mean_us": 63.682375
+            },
+            "mech-control": {
+              "median_call_us": 44.208,
+              "median_block_mean_us": 43.842132812500004,
+              "p90_block_mean_us": 44.656875,
+              "maximum_block_mean_us": 50.033203125
+            }
+          },
+          "new_blocks_gt_2x_same_actor_historical_median": {
+            "mech-control": 0,
+            "mech-experiment": 0,
+            "roc": 0,
+            "libdeflate": 0
+          },
+          "new_blocks_with_two_or_more_actors_gt_2x": 0,
+          "new_blocks_with_all_actors_gt_2x": 0
+        },
+        "prefix-periodic-16384": {
+          "order_position": 25,
+          "all_blocks_per_campaign_and_order": 96,
+          "old_71768_and_peers": {
+            "mech-experiment": {
+              "median_call_us": 258.54200000000003,
+              "median_block_mean_us": 258.54200000000003,
+              "p90_block_mean_us": 263.541,
+              "maximum_block_mean_us": 268.875
+            },
+            "roc": {
+              "median_call_us": 767.1460000000001,
+              "median_block_mean_us": 767.1460000000001,
+              "p90_block_mean_us": 777.209,
+              "maximum_block_mean_us": 793.417
+            },
+            "libdeflate": {
+              "median_call_us": 299.916,
+              "median_block_mean_us": 299.916,
+              "p90_block_mean_us": 302.709,
+              "maximum_block_mean_us": 308.709
+            }
+          },
+          "new_control_candidate_and_peers": {
+            "libdeflate": {
+              "median_call_us": 300.229,
+              "median_block_mean_us": 300.229,
+              "p90_block_mean_us": 304.333,
+              "maximum_block_mean_us": 319.625
+            },
+            "roc": {
+              "median_call_us": 766.1045,
+              "median_block_mean_us": 766.1045,
+              "p90_block_mean_us": 779.625,
+              "maximum_block_mean_us": 812.167
+            },
+            "mech-experiment": {
+              "median_call_us": 254.66699999999997,
+              "median_block_mean_us": 254.66699999999997,
+              "p90_block_mean_us": 260.916,
+              "maximum_block_mean_us": 291.167
+            },
+            "mech-control": {
+              "median_call_us": 254.14600000000002,
+              "median_block_mean_us": 254.14600000000002,
+              "p90_block_mean_us": 259.666,
+              "maximum_block_mean_us": 279.292
+            }
+          },
+          "new_blocks_gt_2x_same_actor_historical_median": {
+            "mech-control": 0,
+            "mech-experiment": 0,
+            "roc": 0,
+            "libdeflate": 0
+          },
+          "new_blocks_with_two_or_more_actors_gt_2x": 0,
+          "new_blocks_with_all_actors_gt_2x": 0
+        },
+        "prefix-periodic-4096": {
+          "order_position": 27,
+          "all_blocks_per_campaign_and_order": 96,
+          "old_71768_and_peers": {
+            "mech-experiment": {
+              "median_call_us": 94.021,
+              "median_block_mean_us": 94.021,
+              "p90_block_mean_us": 98.625,
+              "maximum_block_mean_us": 121.667
+            },
+            "roc": {
+              "median_call_us": 423.66650000000004,
+              "median_block_mean_us": 423.66650000000004,
+              "p90_block_mean_us": 436.042,
+              "maximum_block_mean_us": 452.45799999999997
+            },
+            "libdeflate": {
+              "median_call_us": 101.58300000000001,
+              "median_block_mean_us": 101.58300000000001,
+              "p90_block_mean_us": 103.25,
+              "maximum_block_mean_us": 116.0
+            }
+          },
+          "new_control_candidate_and_peers": {
+            "libdeflate": {
+              "median_call_us": 102.0415,
+              "median_block_mean_us": 102.0415,
+              "p90_block_mean_us": 103.542,
+              "maximum_block_mean_us": 111.375
+            },
+            "roc": {
+              "median_call_us": 424.2915,
+              "median_block_mean_us": 424.2915,
+              "p90_block_mean_us": 432.791,
+              "maximum_block_mean_us": 452.666
+            },
+            "mech-experiment": {
+              "median_call_us": 93.02099999999999,
+              "median_block_mean_us": 93.02099999999999,
+              "p90_block_mean_us": 96.291,
+              "maximum_block_mean_us": 114.417
+            },
+            "mech-control": {
+              "median_call_us": 93.0,
+              "median_block_mean_us": 93.0,
+              "p90_block_mean_us": 95.958,
+              "maximum_block_mean_us": 102.375
+            }
+          },
+          "new_blocks_gt_2x_same_actor_historical_median": {
+            "mech-control": 0,
+            "mech-experiment": 0,
+            "roc": 0,
+            "libdeflate": 0
+          },
+          "new_blocks_with_two_or_more_actors_gt_2x": 0,
+          "new_blocks_with_all_actors_gt_2x": 0
+        },
+        "prefix-periodic-8192": {
+          "order_position": 26,
+          "all_blocks_per_campaign_and_order": 96,
+          "old_71768_and_peers": {
+            "mech-experiment": {
+              "median_call_us": 157.2085,
+              "median_block_mean_us": 157.2085,
+              "p90_block_mean_us": 163.834,
+              "maximum_block_mean_us": 174.25
+            },
+            "roc": {
+              "median_call_us": 556.667,
+              "median_block_mean_us": 556.667,
+              "p90_block_mean_us": 567.4169999999999,
+              "maximum_block_mean_us": 612.584
+            },
+            "libdeflate": {
+              "median_call_us": 175.22899999999998,
+              "median_block_mean_us": 175.22899999999998,
+              "p90_block_mean_us": 178.834,
+              "maximum_block_mean_us": 199.75
+            }
+          },
+          "new_control_candidate_and_peers": {
+            "libdeflate": {
+              "median_call_us": 175.5625,
+              "median_block_mean_us": 175.5625,
+              "p90_block_mean_us": 179.667,
+              "maximum_block_mean_us": 190.667
+            },
+            "roc": {
+              "median_call_us": 558.812,
+              "median_block_mean_us": 558.812,
+              "p90_block_mean_us": 568.2919999999999,
+              "maximum_block_mean_us": 603.5
+            },
+            "mech-experiment": {
+              "median_call_us": 156.06300000000002,
+              "median_block_mean_us": 156.06300000000002,
+              "p90_block_mean_us": 160.292,
+              "maximum_block_mean_us": 174.792
+            },
+            "mech-control": {
+              "median_call_us": 155.75,
+              "median_block_mean_us": 155.75,
+              "p90_block_mean_us": 161.208,
+              "maximum_block_mean_us": 182.958
+            }
+          },
+          "new_blocks_gt_2x_same_actor_historical_median": {
+            "mech-control": 0,
+            "mech-experiment": 0,
+            "roc": 0,
+            "libdeflate": 0
+          },
+          "new_blocks_with_two_or_more_actors_gt_2x": 0,
+          "new_blocks_with_all_actors_gt_2x": 0
+        },
+        "reymont-prefix-16384": {
+          "order_position": 63,
+          "all_blocks_per_campaign_and_order": 96,
+          "old_71768_and_peers": {
+            "mech-experiment": {
+              "median_call_us": 2031.1460000000002,
+              "median_block_mean_us": 2031.1460000000002,
+              "p90_block_mean_us": 2044.708,
+              "maximum_block_mean_us": 2062.375
+            },
+            "roc": {
+              "median_call_us": 2174.8749999999995,
+              "median_block_mean_us": 2174.8749999999995,
+              "p90_block_mean_us": 2187.75,
+              "maximum_block_mean_us": 2248.417
+            },
+            "libdeflate": {
+              "median_call_us": 2158.2290000000003,
+              "median_block_mean_us": 2158.2290000000003,
+              "p90_block_mean_us": 2170.083,
+              "maximum_block_mean_us": 2189.042
+            }
+          },
+          "new_control_candidate_and_peers": {
+            "libdeflate": {
+              "median_call_us": 2166.7915000000003,
+              "median_block_mean_us": 2166.7915000000003,
+              "p90_block_mean_us": 4683.5,
+              "maximum_block_mean_us": 7380.375
+            },
+            "roc": {
+              "median_call_us": 2182.75,
+              "median_block_mean_us": 2182.75,
+              "p90_block_mean_us": 5654.708,
+              "maximum_block_mean_us": 7259.5419999999995
+            },
+            "mech-experiment": {
+              "median_call_us": 2044.042,
+              "median_block_mean_us": 2044.042,
+              "p90_block_mean_us": 5235.542,
+              "maximum_block_mean_us": 6705.584
+            },
+            "mech-control": {
+              "median_call_us": 2036.1670000000001,
+              "median_block_mean_us": 2036.1670000000001,
+              "p90_block_mean_us": 5297.790999999999,
+              "maximum_block_mean_us": 7723.792
+            }
+          },
+          "new_blocks_gt_2x_same_actor_historical_median": {
+            "mech-control": 24,
+            "mech-experiment": 19,
+            "roc": 23,
+            "libdeflate": 20
+          },
+          "new_blocks_with_two_or_more_actors_gt_2x": 26,
+          "new_blocks_with_all_actors_gt_2x": 6
+        }
+      }
+    }
+  }
+}

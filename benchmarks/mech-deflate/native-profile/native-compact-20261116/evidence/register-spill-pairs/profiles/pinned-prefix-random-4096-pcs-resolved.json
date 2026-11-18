@@ -1,0 +1,189 @@
+{
+  "artifact": "runtime-matchfinder-20261117/pinned",
+  "profile_worker_sha256": "834e2753c60a4ad98fdec393ca5807cabbc26d495e29603febd611494f438f89",
+  "object_sha256": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+  "metadata_sha256": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+  "link": [
+    "rustc",
+    "+nightly-2026-03-03",
+    "--edition=2024",
+    "-C",
+    "opt-level=3",
+    "-D",
+    "warnings",
+    "-L",
+    "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/worker-pc-probe.rs",
+    "-o",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/runtime-matchfinder-20261117/pinned/pc-profile-worker-resolved",
+    "-C",
+    "link-arg=/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+    "-C",
+    "link-arg=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/runtime-matchfinder-20261117/pinned/program.o",
+    "--extern",
+    "mech_gpu=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+    "--extern",
+    "mech_engine=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+    "--extern",
+    "serde=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+    "--extern",
+    "serde_json=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+    "--extern",
+    "miniz_oxide=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+    "-L",
+    "dependency=/private/tmp/mech-pr973-merged-compression-20261112/reduction-loop-registers-335e58a455/backend",
+    "--remap-path-prefix",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link=/private/tmp/mech-pr973-merged-compression-20261112/matcher-min-select-dd33fb316f/read-temporary-root-bbc8791a5a/parity-short-lowering-7bd03fbb1f/parity-next/terminal-final",
+    "--remap-path-prefix",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/pinned_allocator.rs=/private/tmp/mech-child-prepayment-round163-20261105/pinned_allocator.rs"
+  ],
+  "timed_calls_per_case": 3072,
+  "intervals_us": [
+    277,
+    431
+  ],
+  "llvm_object_sha256": null,
+  "link_provenance": {
+    "cargo_lock_sha256": "5f459d7ee1c728711491a29fa99c60612f70caea56a3e65a86fcb61c8c191e89",
+    "source_names_sha256": "cad4275e3ab75be26a361c4344a15c82de26f4387d73bf6747cee7a695c6b59e",
+    "rebuilt_dependencies": {
+      "mech_engine": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+        "sha256": "cf7c761b1fbdb3d826b5d7567f19826bd0f2760702d8c339d41acc48a531fa72"
+      },
+      "miniz_oxide": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+        "sha256": "681adce5cb63aef90b398ba24c2c9ef63c9a250f4af390a66e565bb36860d2e3"
+      },
+      "serde": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+        "sha256": "0fc5a0b797b01f523da9fd29f9184c5daee786ee94473382affda36988699e69"
+      },
+      "serde_json": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+        "sha256": "018358533052906b7d779bab7102411044fd334bd97ffc1d53208e02b4f0f26b"
+      }
+    }
+  },
+  "cases": {
+    "prefix-random-4096": {
+      "total": 6153,
+      "symbols": {
+        "_mech_compact_release_nullable": 1,
+        "_mech_compact_numeric_475_vector": 805,
+        "_mech_compact_numeric_3009_no_growth": 35,
+        "_mech_compact_numeric_4173": 10,
+        "_mech_compact_numeric_3447_grouped": 12,
+        "_mech_compact_numeric_3956_vector": 12,
+        "_mech_compact_numeric_6633": 1,
+        "_mech_compact_numeric_5895": 5,
+        "_mech_compact_numeric_3872": 2,
+        "_mech_compact_numeric_2821_vector": 7,
+        "_mech_compact_closed_checked": 32,
+        "libsystem_kernel.dylib mach_absolute_time": 2,
+        "libsystem_kernel.dylib __mmap": 20,
+        "libsystem_kernel.dylib __munmap": 5203,
+        "libsystem_platform.dylib __bzero": 1,
+        "libdyld.dylib _tlv_get_addr": 2,
+        "libsystem_platform.dylib _platform_memset": 1,
+        "libsystem_platform.dylib _platform_memmove": 2
+      },
+      "offsets": {
+        "_mech_compact_release_nullable": {
+          "0": 1
+        },
+        "_mech_compact_numeric_475_vector": {
+          "480": 1,
+          "820": 1,
+          "976": 1,
+          "1024": 799,
+          "1052": 2,
+          "1136": 1
+        },
+        "_mech_compact_numeric_3009_no_growth": {
+          "504": 15,
+          "516": 6,
+          "520": 1,
+          "524": 2,
+          "532": 10,
+          "636": 1
+        },
+        "_mech_compact_numeric_4173": {
+          "68": 1,
+          "256": 1,
+          "432": 1,
+          "444": 1,
+          "552": 1,
+          "576": 1,
+          "660": 3,
+          "680": 1
+        },
+        "_mech_compact_numeric_3447_grouped": {
+          "116": 2,
+          "220": 1,
+          "392": 3,
+          "484": 3,
+          "596": 1,
+          "608": 1,
+          "616": 1
+        },
+        "_mech_compact_numeric_3956_vector": {
+          "92": 1,
+          "108": 1,
+          "124": 3,
+          "132": 2,
+          "160": 2,
+          "172": 2,
+          "196": 1
+        },
+        "_mech_compact_numeric_6633": {
+          "152": 1
+        },
+        "_mech_compact_numeric_5895": {
+          "136": 2,
+          "188": 1,
+          "204": 1,
+          "268": 1
+        },
+        "_mech_compact_numeric_3872": {
+          "92": 2
+        },
+        "_mech_compact_numeric_2821_vector": {
+          "72": 3,
+          "144": 1,
+          "172": 1,
+          "192": 2
+        },
+        "_mech_compact_closed_checked": {
+          "14848": 1,
+          "21084": 1,
+          "23748": 1,
+          "24272": 1,
+          "24300": 2,
+          "24348": 1,
+          "24388": 2,
+          "24412": 1,
+          "24664": 2,
+          "24832": 1,
+          "25064": 1,
+          "25172": 1,
+          "25808": 1,
+          "26896": 1,
+          "26912": 1,
+          "26928": 1,
+          "26960": 1,
+          "27020": 1,
+          "28408": 1,
+          "28596": 1,
+          "28940": 1,
+          "29276": 1,
+          "29292": 1,
+          "29596": 1,
+          "29816": 2,
+          "31408": 1,
+          "44736": 2
+        }
+      }
+    }
+  }
+}

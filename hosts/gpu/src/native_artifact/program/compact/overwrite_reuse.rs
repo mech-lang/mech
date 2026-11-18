@@ -4,7 +4,7 @@ use super::{
     arrays::{self, Arrays},
     flow::Flow,
     guards::Guards,
-    layout::{ARRAY_OWNER, Kind, Layout},
+    layout::{ARRAY_OWNER, Layout, LayoutKind},
     owner_flow::OwnerFlow,
     recipes::Recipe,
 };
@@ -375,7 +375,7 @@ impl Analysis<'_> {
         let scratch = self.layout.ty(source.get());
         if scratch != self.layout.ty(result.get())
             || scratch != self.layout.ty(emptied.get())
-            || !matches!(scratch.kind, Kind::Array { .. })
+            || !matches!(scratch.kind, LayoutKind::Array { .. })
             || self
                 .owners
                 .live_at_entry(exit, self.layout.slot(source.get()) + ARRAY_OWNER)
@@ -491,10 +491,10 @@ impl Analysis<'_> {
                 .project_home(value, tail, iteration)
                 .ok_or("external input is not projected")?;
             let ty = self.layout.ty(value);
-            let Kind::Array { element } = &ty.kind else {
+            let LayoutKind::Array { element } = &ty.kind else {
                 return Err("modified nonarray field");
             };
-            let Kind::Scalar {
+            let LayoutKind::Scalar {
                 bytes,
                 signed: false,
                 float: false,

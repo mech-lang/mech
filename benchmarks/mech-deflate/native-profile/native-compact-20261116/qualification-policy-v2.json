@@ -1,0 +1,52 @@
+{
+  "version": 2,
+  "fixture_inventory_sha256": "b6de359f4e8e5fa47c9ebed9474954f6e7b809e08d4f3b36193412492c4d9490",
+  "named_cases": 81,
+  "distinct_contracts": 74,
+  "peer_win_floors": {
+    "roc": 81,
+    "libdeflate": 61
+  },
+  "runtime_resolution": 0.005,
+  "bootstrap_coverage": 0.9,
+  "bootstrap_resamples": 8000,
+  "checked_failures": {
+    "empty": {
+      "status": 103426,
+      "origin": 23,
+      "node": 0,
+      "local": 0
+    },
+    "one-stored": {
+      "status": 103426,
+      "origin": 69,
+      "node": 0,
+      "local": 10
+    },
+    "seven-stored-prefix": {
+      "status": 103426,
+      "origin": 69,
+      "node": 0,
+      "local": 10
+    },
+    "prefix-periodic-4096": {
+      "status": 103426,
+      "origin": 7164,
+      "node": 0,
+      "local": 41
+    },
+    "prefix-repeated-16384": {
+      "status": 103426,
+      "origin": 7164,
+      "node": 0,
+      "local": 41
+    },
+    "heldout-mixed-131073": {
+      "status": 103426,
+      "origin": 7164,
+      "node": 0,
+      "local": 41
+    }
+  },
+  "require_case_nonregression": false
+}

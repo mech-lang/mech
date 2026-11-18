@@ -1,0 +1,10 @@
+{
+  "cases": 10,
+  "balanced_blocks_per_case": 96,
+  "timed_calls": 493056,
+  "reference_capacity_matches": 10,
+  "libdeflate_exact_bytes_cases": 10,
+  "fresh_compression_all_cases": true,
+  "all_outputs_independently_inflated": true,
+  "all_input_and_output_aliases_preserved": true
+}

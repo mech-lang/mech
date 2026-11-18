@@ -1,0 +1,7 @@
+{
+  "base": "d03f097b06c8386822a8063de9826715a9c1e897",
+  "source_sha256": {
+    "src/syntax/src/document/parser/literal_scan.rs": "6a5b37ece69129088a36022544b38448a96c4d4e5e1fc1ba41d34b04e78c0e14",
+    "src/syntax/src/document/parser/canonical/base/continuation.rs": "38a4b129096aae568f8e20a332f5928d02181c3f3a5730f014ca53f2237fec80"
+  }
+}

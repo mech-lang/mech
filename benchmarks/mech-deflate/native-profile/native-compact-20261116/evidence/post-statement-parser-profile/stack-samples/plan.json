@@ -1,0 +1,29 @@
+{
+  "scope": "Independent 1 ms stack captures of the unmodified standalone parser with statement replay.",
+  "host": {
+    "platform": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "architecture": "arm64"
+  },
+  "pin": "e8b2bb4f2d8c44390e9a67dfe054c6ff40341249",
+  "syntax_blob_count": 165,
+  "source": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "probe": "/private/tmp/mech-post-statement-profile.1tm8ucah/sampler-probe",
+  "probe_sha256": "2e9fb60133f14c6a7dbe5e816d316633142a32d770d0468ee57844ff75305fa4",
+  "sample_count": 4,
+  "sampler_lead_time_ms": 400,
+  "sample_duration_seconds": 2,
+  "sample_interval_ms": 1,
+  "minimum_canonical_parser_samples_per_capture": 600,
+  "hot_family_fraction": 0.05,
+  "hot_family_minimum_repetitions": 3,
+  "candidate_standalone_measurement": "Eight balanced pairs, at least 2% lower paired median and six faster pairs.",
+  "outputs": {
+    "events": 718353,
+    "parse_seconds": 0.919682375,
+    "parser_steps": 3967302,
+    "source_bytes": 243209,
+    "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+    "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+  }
+}

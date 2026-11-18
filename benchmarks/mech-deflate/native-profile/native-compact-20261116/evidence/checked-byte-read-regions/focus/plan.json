@@ -1,0 +1,129 @@
+{
+  "objective": "encoder_text_bytes",
+  "review_commit": "d1a9ae0c3f4f8945ddd11fd3903edd6aaab089e2",
+  "focus_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "320-overlap",
+    "random-64",
+    "random-1024",
+    "prefix-random-1024",
+    "prefix-random-4096",
+    "prefix-random-8192",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-natural-16384",
+    "prefix-periodic-1024",
+    "prefix-periodic-4096",
+    "heldout-mixed-131073"
+  ],
+  "runs": [
+    {
+      "id": "checked-byte-read-regions-v2-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "checked-byte-read-regions-v2-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96
+    }
+  ],
+  "policy": {
+    "path": "native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification-policy-v2.json",
+    "sha256": "c20bf6a87dd4da719f81200f9259945848d65c1f805e96e44aea3a7aa7b0cd2b"
+  },
+  "timer": {
+    "path": "compare-library.py",
+    "sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a"
+  },
+  "driver": {
+    "path": "current-roadmap/checked-root-census/focus.py",
+    "sha256": "4a8ea80530cd0caa7766e39e710d343dab5c6ff82b54ce5f31814c4f6862c87d"
+  },
+  "as_run_inventory": {
+    "path": "fixtures.json",
+    "sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+  },
+  "pinned_peers": {
+    "path": "pinned-peers/pins.json",
+    "sha256": "db5a289d7a929176e5a1c9efbff5f69702596b0dccba9f2cace86d78cc18902d"
+  },
+  "fixture_content_sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+  "bindings": {
+    "mech-control": {
+      "program.o": {
+        "path": "current-roadmap/checked-root-census/checks/worker-checks/control/program.o",
+        "sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b"
+      },
+      "metadata.json": {
+        "path": "current-roadmap/checked-root-census/checks/worker-checks/control/metadata.json",
+        "sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+      },
+      "runtime.json": {
+        "path": "current-roadmap/checked-root-census/checks/worker-checks/control/runtime.json",
+        "sha256": "852f8d3cbfc76bd30de2318b52036c44f7929b483ea2647dee60f2a19e577c02"
+      },
+      "mech-worker": {
+        "path": "current-roadmap/checked-root-census/checks/worker-checks/control/mech-worker",
+        "sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9"
+      }
+    },
+    "mech-experiment": {
+      "program.o": {
+        "path": "current-roadmap/checked-root-census/checks/worker-checks/general-byte-read/program.o",
+        "sha256": "1ba5b62ab2f54deaa2b34ea1d97a635458a09dd981e471789e6bd94fedd15460"
+      },
+      "metadata.json": {
+        "path": "current-roadmap/checked-root-census/checks/worker-checks/general-byte-read/metadata.json",
+        "sha256": "bb1e9dcde194691d6f70f584a64f1e90ffcfd4ece9513fe7745df3156484acf9"
+      },
+      "runtime.json": {
+        "path": "current-roadmap/checked-root-census/checks/worker-checks/general-byte-read/runtime.json",
+        "sha256": "e401fc7933509717a1efbd93687a33fe4e067d5e4b1314b7b4d4039da820384e"
+      },
+      "mech-worker": {
+        "path": "current-roadmap/checked-root-census/checks/worker-checks/general-byte-read/mech-worker",
+        "sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9"
+      }
+    }
+  },
+  "identities": {
+    "mech-control": {
+      "worker": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+      "metadata": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+    },
+    "mech-experiment": {
+      "worker": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+      "metadata": "bb1e9dcde194691d6f70f584a64f1e90ffcfd4ece9513fe7745df3156484acf9"
+    },
+    "roc": {
+      "worker": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+      "metadata": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee"
+    },
+    "libdeflate": {
+      "worker": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "metadata": null
+    },
+    "environment_sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+    "contract_sha256": "3b2a80c2abe8bfdd5375692114bd12f5b7f53380dfbef28ba79325e380064feb"
+  },
+  "policy_version": 2,
+  "expected_scope": "Focused runtime screen. Both complete orders are required for promotion.",
+  "qualification_driver": {
+    "path": "source-frame-copy-tails/full-timing.py",
+    "sha256": "f9fa19f1ef9876ee3484a339b619889ba94027cf35a76fa355e12813cea31d07"
+  },
+  "linked_proof": {
+    "path": "current-roadmap/checked-root-census/checks/linked-proofs/result.json",
+    "sha256": "f29ce35cca35da1ccbfdadcadf4411643f7960dd0ddbc7bc7f5e6a45782d677d"
+  },
+  "source_screen": {
+    "path": "current-roadmap/checked-root-census/screen/summary.json",
+    "sha256": "4ae3bed9e2e9c330ae9c11db2e890437e52c169a08e2b7986a63a3e2f2f47778"
+  },
+  "max_peak_stack_bytes": 5280
+}

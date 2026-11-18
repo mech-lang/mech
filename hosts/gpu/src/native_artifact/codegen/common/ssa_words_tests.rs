@@ -28,7 +28,8 @@ fn ssa_home_spills_and_reloads_keep_the_boundary_memory_region() {
             let initial = b.ins().iconst(types::I64, 41);
             b.def_var(variable, initial);
             let words = Words {
-                variables: BTreeMap::from([(3, (variable, flags))]),
+                variables: BTreeMap::from([(3, (Home::Variable(variable), flags))]),
+                literal_write: Cell::new(false),
                 native_extent_slots: BTreeMap::new(),
                 native_extent_values: RefCell::new(BTreeMap::new()),
             };
@@ -61,4 +62,41 @@ fn ssa_home_spills_and_reloads_keep_the_boundary_memory_region() {
             "a spill in another region cannot invalidate the boundary's cached load"
         );
     }
+}
+
+#[test]
+fn entry_literal_needs_no_merge_parameter_and_flags_unexpected_writes() {
+    let mut function = Function::new();
+    let mut context = FunctionBuilderContext::new();
+    let mut builder = FunctionBuilder::new(&mut function, &mut context);
+    let entry = builder.create_block();
+    let alternative = builder.create_block();
+    let merge = builder.create_block();
+    builder.switch_to_block(entry);
+    let literal = builder.ins().iconst(types::I64, 41);
+    let condition =
+        builder
+            .ins()
+            .icmp_imm(cranelift_codegen::ir::condcodes::IntCC::Equal, literal, 0);
+    let words = Words {
+        variables: BTreeMap::from([(0, (Home::Literal(literal), MemFlags::new()))]),
+        literal_write: Cell::new(false),
+        native_extent_slots: BTreeMap::new(),
+        native_extent_values: RefCell::new(BTreeMap::new()),
+    };
+    builder.ins().brif(condition, alternative, &[], merge, &[]);
+    builder.switch_to_block(alternative);
+    builder.ins().jump(merge, &[]);
+    builder.switch_to_block(merge);
+
+    assert_eq!(words.read(&mut builder, 0), literal);
+    assert!(builder.block_params(merge).is_empty());
+    assert!(!words.attempted_literal_write());
+    let changed = builder.ins().iconst(types::I64, 42);
+    words.write(&mut builder, 0, changed);
+    assert!(words.attempted_literal_write());
+
+    builder.ins().return_(&[]);
+    builder.seal_all_blocks();
+    builder.finalize();
 }

@@ -1,0 +1,22 @@
+--- a/src/syntax/src/document/parser/mod.rs
++++ b/src/syntax/src/document/parser/mod.rs
+@@ -888,0 +889 @@
++    let started = std::time::Instant::now();
+@@ -889,0 +891,2 @@
++    eprintln!("parser-stage: grammar {}", started.elapsed().as_nanos());
++    let started = std::time::Instant::now();
+@@ -890,0 +894 @@
++    eprintln!("parser-stage: finalization-and-cache {}", started.elapsed().as_nanos());
+@@ -911,0 +916 @@
++    let started = std::time::Instant::now();
+@@ -913,0 +919,2 @@
++    eprintln!("parser-stage: final-tree {}", started.elapsed().as_nanos());
++    let started = std::time::Instant::now();
+@@ -948,0 +956,2 @@
++    eprintln!("parser-stage: diagnostics {}", started.elapsed().as_nanos());
++    let started = std::time::Instant::now();
+@@ -951,0 +961,2 @@
++    eprintln!("parser-stage: snapshot-index {}", started.elapsed().as_nanos());
++    let started = std::time::Instant::now();
+@@ -952,0 +964 @@
++    eprintln!("parser-stage: restart-index {}", started.elapsed().as_nanos());

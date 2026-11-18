@@ -1,0 +1,1259 @@
+{
+  "pinned_archives": {
+    "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+    "dump/source-cfg.json": "d24007e2a49c55f28dbf32304fecc81a864e5723284cd12c02f48fd14c889ad4",
+    "mech-worker": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9"
+  },
+  "reconstructed_sites": 8223,
+  "reachable_sites": 8078,
+  "plan_values": 5690,
+  "strict_pure_products": {
+    "analysis": "fixed point",
+    "fixed_point_site_visits": 12210,
+    "tracked_scalar_words": 178,
+    "barrier_sites": 1088,
+    "counts": {
+      "copy": {
+        "reachable_sites": 1086,
+        "all_words": 4711,
+        "candidate_sites": 35,
+        "candidate_words": 111
+      },
+      "pack": {
+        "reachable_sites": 325,
+        "all_words": 4392,
+        "candidate_sites": 32,
+        "candidate_words": 106
+      },
+      "tail-latch": {
+        "reachable_sites": 56,
+        "all_words": 1126
+      },
+      "tail-seed": {
+        "reachable_sites": 56,
+        "all_words": 1126
+      }
+    },
+    "declines": {
+      "copy": {
+        "mixed product with plain scalar siblings": 153,
+        "single scalar": 752,
+        "protected shape": 146
+      },
+      "pack": {
+        "mixed product with plain scalar siblings": 264,
+        "protected shape": 29
+      },
+      "tail-latch": {
+        "mixed product with plain scalar siblings": 54,
+        "protected shape": 2
+      },
+      "tail-seed": {
+        "mixed product with plain scalar siblings": 54,
+        "protected shape": 2
+      }
+    },
+    "shapes": [
+      {
+        "operation": "copy",
+        "shape": "all-scalar product",
+        "metric": "scalar_words",
+        "count": 111
+      },
+      {
+        "operation": "copy",
+        "shape": "all-scalar product",
+        "metric": "sites",
+        "count": 35
+      },
+      {
+        "operation": "copy",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 574
+      },
+      {
+        "operation": "copy",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 153
+      },
+      {
+        "operation": "copy",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "copy",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 146
+      },
+      {
+        "operation": "copy",
+        "shape": "single scalar",
+        "metric": "scalar_words",
+        "count": 752
+      },
+      {
+        "operation": "copy",
+        "shape": "single scalar",
+        "metric": "sites",
+        "count": 752
+      },
+      {
+        "operation": "pack",
+        "shape": "all-scalar product",
+        "metric": "scalar_words",
+        "count": 106
+      },
+      {
+        "operation": "pack",
+        "shape": "all-scalar product",
+        "metric": "sites",
+        "count": 32
+      },
+      {
+        "operation": "pack",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 776
+      },
+      {
+        "operation": "pack",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 264
+      },
+      {
+        "operation": "pack",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "pack",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 29
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 218
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 54
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 2
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 218
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 54
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 2
+      }
+    ],
+    "omissions": []
+  },
+  "strict_with_single_word_copies": {
+    "analysis": "fixed point",
+    "fixed_point_site_visits": 12491,
+    "tracked_scalar_words": 627,
+    "barrier_sites": 1088,
+    "counts": {
+      "copy": {
+        "reachable_sites": 1086,
+        "all_words": 4711,
+        "candidate_sites": 782,
+        "candidate_words": 858
+      },
+      "pack": {
+        "reachable_sites": 325,
+        "all_words": 4392,
+        "candidate_sites": 32,
+        "candidate_words": 106
+      },
+      "tail-latch": {
+        "reachable_sites": 56,
+        "all_words": 1126
+      },
+      "tail-seed": {
+        "reachable_sites": 56,
+        "all_words": 1126
+      }
+    },
+    "declines": {
+      "copy": {
+        "mixed product with plain scalar siblings": 153,
+        "protected shape": 146,
+        "synthetic/checked boundary": 5
+      },
+      "pack": {
+        "mixed product with plain scalar siblings": 264,
+        "protected shape": 29
+      },
+      "tail-latch": {
+        "mixed product with plain scalar siblings": 54,
+        "protected shape": 2
+      },
+      "tail-seed": {
+        "mixed product with plain scalar siblings": 54,
+        "protected shape": 2
+      }
+    },
+    "shapes": [
+      {
+        "operation": "copy",
+        "shape": "all-scalar product",
+        "metric": "scalar_words",
+        "count": 111
+      },
+      {
+        "operation": "copy",
+        "shape": "all-scalar product",
+        "metric": "sites",
+        "count": 35
+      },
+      {
+        "operation": "copy",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 574
+      },
+      {
+        "operation": "copy",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 153
+      },
+      {
+        "operation": "copy",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "copy",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 146
+      },
+      {
+        "operation": "copy",
+        "shape": "single scalar",
+        "metric": "scalar_words",
+        "count": 752
+      },
+      {
+        "operation": "copy",
+        "shape": "single scalar",
+        "metric": "sites",
+        "count": 752
+      },
+      {
+        "operation": "pack",
+        "shape": "all-scalar product",
+        "metric": "scalar_words",
+        "count": 106
+      },
+      {
+        "operation": "pack",
+        "shape": "all-scalar product",
+        "metric": "sites",
+        "count": 32
+      },
+      {
+        "operation": "pack",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 776
+      },
+      {
+        "operation": "pack",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 264
+      },
+      {
+        "operation": "pack",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "pack",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 29
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 218
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 54
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 2
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 218
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 54
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 2
+      }
+    ],
+    "omissions": []
+  },
+  "protected_siblings_sensitivity": {
+    "analysis": "fixed point",
+    "fixed_point_site_visits": 12287,
+    "tracked_scalar_words": 1603,
+    "barrier_sites": 1088,
+    "counts": {
+      "copy": {
+        "reachable_sites": 1086,
+        "all_words": 4711,
+        "candidate_sites": 186,
+        "candidate_words": 668,
+        "sites_with_omissions": 5,
+        "omitted_reads": 10
+      },
+      "pack": {
+        "reachable_sites": 325,
+        "all_words": 4392,
+        "candidate_sites": 294,
+        "candidate_words": 868,
+        "sites_with_omissions": 2,
+        "omitted_reads": 4
+      },
+      "tail-latch": {
+        "reachable_sites": 56,
+        "all_words": 1126,
+        "candidate_sites": 54,
+        "candidate_words": 218
+      },
+      "tail-seed": {
+        "reachable_sites": 56,
+        "all_words": 1126,
+        "candidate_sites": 54,
+        "candidate_words": 218
+      }
+    },
+    "declines": {
+      "copy": {
+        "single scalar": 752,
+        "protected shape": 146,
+        "synthetic/checked boundary": 2
+      },
+      "pack": {
+        "synthetic/checked boundary": 2,
+        "protected shape": 29
+      },
+      "tail-latch": {
+        "protected shape": 2
+      },
+      "tail-seed": {
+        "protected shape": 2
+      }
+    },
+    "shapes": [
+      {
+        "operation": "copy",
+        "shape": "all-scalar product",
+        "metric": "scalar_words",
+        "count": 111
+      },
+      {
+        "operation": "copy",
+        "shape": "all-scalar product",
+        "metric": "sites",
+        "count": 35
+      },
+      {
+        "operation": "copy",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 574
+      },
+      {
+        "operation": "copy",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 153
+      },
+      {
+        "operation": "copy",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "copy",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 146
+      },
+      {
+        "operation": "copy",
+        "shape": "single scalar",
+        "metric": "scalar_words",
+        "count": 752
+      },
+      {
+        "operation": "copy",
+        "shape": "single scalar",
+        "metric": "sites",
+        "count": 752
+      },
+      {
+        "operation": "pack",
+        "shape": "all-scalar product",
+        "metric": "scalar_words",
+        "count": 106
+      },
+      {
+        "operation": "pack",
+        "shape": "all-scalar product",
+        "metric": "sites",
+        "count": 32
+      },
+      {
+        "operation": "pack",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 776
+      },
+      {
+        "operation": "pack",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 264
+      },
+      {
+        "operation": "pack",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "pack",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 29
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 218
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 54
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 2
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 218
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 54
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 2
+      }
+    ],
+    "omissions": [
+      {
+        "site": 25,
+        "origin": {
+          "block": 2,
+          "local": 2,
+          "node": 0
+        },
+        "kind": "pack",
+        "output": 1435,
+        "omit": [
+          6,
+          7
+        ],
+        "owner_transfer": true,
+        "owner_retirement": true
+      },
+      {
+        "site": 26,
+        "origin": {
+          "block": 2,
+          "local": null,
+          "node": 0
+        },
+        "kind": "copy",
+        "output": 1432,
+        "omit": [
+          6,
+          7
+        ],
+        "owner_transfer": true,
+        "owner_retirement": true
+      },
+      {
+        "site": 90,
+        "origin": {
+          "block": 11,
+          "local": 0,
+          "node": 0
+        },
+        "kind": "pack",
+        "output": 1470,
+        "omit": [
+          6,
+          7
+        ],
+        "owner_transfer": true,
+        "owner_retirement": true
+      },
+      {
+        "site": 91,
+        "origin": {
+          "block": 11,
+          "local": null,
+          "node": 0
+        },
+        "kind": "copy",
+        "output": 1469,
+        "omit": [
+          6,
+          7
+        ],
+        "owner_transfer": true,
+        "owner_retirement": true
+      },
+      {
+        "site": 96,
+        "origin": {
+          "block": 4,
+          "local": null,
+          "node": 0
+        },
+        "kind": "copy",
+        "output": 1441,
+        "omit": [
+          6,
+          7
+        ],
+        "owner_transfer": true,
+        "owner_retirement": true
+      },
+      {
+        "site": 97,
+        "origin": {
+          "block": 3,
+          "local": 2,
+          "node": 0
+        },
+        "kind": "copy",
+        "output": 1438,
+        "omit": [
+          6,
+          7
+        ],
+        "owner_transfer": true,
+        "owner_retirement": true
+      },
+      {
+        "site": 98,
+        "origin": {
+          "block": 3,
+          "local": null,
+          "node": 0
+        },
+        "kind": "copy",
+        "output": 1432,
+        "omit": [
+          6,
+          7
+        ],
+        "owner_transfer": true,
+        "owner_retirement": true
+      }
+    ]
+  },
+  "source_only_product_sensitivity": {
+    "analysis": "fixed point",
+    "fixed_point_site_visits": 8420,
+    "tracked_scalar_words": 178,
+    "barrier_sites": 0,
+    "counts": {
+      "copy": {
+        "reachable_sites": 1086,
+        "all_words": 4711,
+        "candidate_sites": 35,
+        "candidate_words": 111
+      },
+      "pack": {
+        "reachable_sites": 325,
+        "all_words": 4392,
+        "candidate_sites": 32,
+        "candidate_words": 106,
+        "sites_with_omissions": 1,
+        "omitted_reads": 3
+      },
+      "tail-latch": {
+        "reachable_sites": 56,
+        "all_words": 1126
+      },
+      "tail-seed": {
+        "reachable_sites": 56,
+        "all_words": 1126
+      }
+    },
+    "declines": {
+      "copy": {
+        "mixed product with plain scalar siblings": 153,
+        "single scalar": 752,
+        "protected shape": 146
+      },
+      "pack": {
+        "mixed product with plain scalar siblings": 264,
+        "protected shape": 29
+      },
+      "tail-latch": {
+        "mixed product with plain scalar siblings": 54,
+        "protected shape": 2
+      },
+      "tail-seed": {
+        "mixed product with plain scalar siblings": 54,
+        "protected shape": 2
+      }
+    },
+    "shapes": [
+      {
+        "operation": "copy",
+        "shape": "all-scalar product",
+        "metric": "scalar_words",
+        "count": 111
+      },
+      {
+        "operation": "copy",
+        "shape": "all-scalar product",
+        "metric": "sites",
+        "count": 35
+      },
+      {
+        "operation": "copy",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 574
+      },
+      {
+        "operation": "copy",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 153
+      },
+      {
+        "operation": "copy",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "copy",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 146
+      },
+      {
+        "operation": "copy",
+        "shape": "single scalar",
+        "metric": "scalar_words",
+        "count": 752
+      },
+      {
+        "operation": "copy",
+        "shape": "single scalar",
+        "metric": "sites",
+        "count": 752
+      },
+      {
+        "operation": "pack",
+        "shape": "all-scalar product",
+        "metric": "scalar_words",
+        "count": 106
+      },
+      {
+        "operation": "pack",
+        "shape": "all-scalar product",
+        "metric": "sites",
+        "count": 32
+      },
+      {
+        "operation": "pack",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 776
+      },
+      {
+        "operation": "pack",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 264
+      },
+      {
+        "operation": "pack",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "pack",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 29
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 218
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 54
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 2
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 218
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 54
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 2
+      }
+    ],
+    "omissions": [
+      {
+        "site": 6982,
+        "origin": {
+          "block": 33,
+          "local": 71,
+          "node": 0
+        },
+        "kind": "pack",
+        "output": 4975,
+        "omit": [
+          0,
+          1,
+          2
+        ],
+        "owner_transfer": false,
+        "owner_retirement": false
+      }
+    ]
+  },
+  "source_only_protected_siblings_sensitivity": {
+    "analysis": "fixed point",
+    "fixed_point_site_visits": 23658,
+    "tracked_scalar_words": 1634,
+    "barrier_sites": 0,
+    "counts": {
+      "copy": {
+        "reachable_sites": 1086,
+        "all_words": 4711,
+        "candidate_sites": 188,
+        "candidate_words": 685,
+        "sites_with_omissions": 8,
+        "omitted_reads": 16
+      },
+      "pack": {
+        "reachable_sites": 325,
+        "all_words": 4392,
+        "candidate_sites": 296,
+        "candidate_words": 882,
+        "sites_with_omissions": 4,
+        "omitted_reads": 9
+      },
+      "tail-latch": {
+        "reachable_sites": 56,
+        "all_words": 1126,
+        "candidate_sites": 54,
+        "candidate_words": 218
+      },
+      "tail-seed": {
+        "reachable_sites": 56,
+        "all_words": 1126,
+        "candidate_sites": 54,
+        "candidate_words": 218
+      }
+    },
+    "declines": {
+      "copy": {
+        "single scalar": 752,
+        "protected shape": 146
+      },
+      "pack": {
+        "protected shape": 29
+      },
+      "tail-latch": {
+        "protected shape": 2
+      },
+      "tail-seed": {
+        "protected shape": 2
+      }
+    },
+    "shapes": [
+      {
+        "operation": "copy",
+        "shape": "all-scalar product",
+        "metric": "scalar_words",
+        "count": 111
+      },
+      {
+        "operation": "copy",
+        "shape": "all-scalar product",
+        "metric": "sites",
+        "count": 35
+      },
+      {
+        "operation": "copy",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 574
+      },
+      {
+        "operation": "copy",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 153
+      },
+      {
+        "operation": "copy",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "copy",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 146
+      },
+      {
+        "operation": "copy",
+        "shape": "single scalar",
+        "metric": "scalar_words",
+        "count": 752
+      },
+      {
+        "operation": "copy",
+        "shape": "single scalar",
+        "metric": "sites",
+        "count": 752
+      },
+      {
+        "operation": "pack",
+        "shape": "all-scalar product",
+        "metric": "scalar_words",
+        "count": 106
+      },
+      {
+        "operation": "pack",
+        "shape": "all-scalar product",
+        "metric": "sites",
+        "count": 32
+      },
+      {
+        "operation": "pack",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 776
+      },
+      {
+        "operation": "pack",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 264
+      },
+      {
+        "operation": "pack",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "pack",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 29
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 218
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 54
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "tail-latch",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 2
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "scalar_words",
+        "count": 218
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "mixed product with plain scalar siblings",
+        "metric": "sites",
+        "count": 54
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "protected shape",
+        "metric": "scalar_words",
+        "count": 0
+      },
+      {
+        "operation": "tail-seed",
+        "shape": "protected shape",
+        "metric": "sites",
+        "count": 2
+      }
+    ],
+    "omissions": [
+      {
+        "site": 25,
+        "origin": {
+          "block": 2,
+          "local": 2,
+          "node": 0
+        },
+        "kind": "pack",
+        "output": 1435,
+        "omit": [
+          6,
+          7
+        ],
+        "owner_transfer": true,
+        "owner_retirement": true
+      },
+      {
+        "site": 26,
+        "origin": {
+          "block": 2,
+          "local": null,
+          "node": 0
+        },
+        "kind": "copy",
+        "output": 1432,
+        "omit": [
+          6,
+          7
+        ],
+        "owner_transfer": true,
+        "owner_retirement": true
+      },
+      {
+        "site": 90,
+        "origin": {
+          "block": 11,
+          "local": 0,
+          "node": 0
+        },
+        "kind": "pack",
+        "output": 1470,
+        "omit": [
+          6,
+          7
+        ],
+        "owner_transfer": true,
+        "owner_retirement": true
+      },
+      {
+        "site": 91,
+        "origin": {
+          "block": 11,
+          "local": null,
+          "node": 0
+        },
+        "kind": "copy",
+        "output": 1469,
+        "omit": [
+          6,
+          7
+        ],
+        "owner_transfer": true,
+        "owner_retirement": true
+      },
+      {
+        "site": 96,
+        "origin": {
+          "block": 4,
+          "local": null,
+          "node": 0
+        },
+        "kind": "copy",
+        "output": 1441,
+        "omit": [
+          6,
+          7
+        ],
+        "owner_transfer": true,
+        "owner_retirement": true
+      },
+      {
+        "site": 97,
+        "origin": {
+          "block": 3,
+          "local": 2,
+          "node": 0
+        },
+        "kind": "copy",
+        "output": 1438,
+        "omit": [
+          6,
+          7
+        ],
+        "owner_transfer": true,
+        "owner_retirement": true
+      },
+      {
+        "site": 98,
+        "origin": {
+          "block": 3,
+          "local": null,
+          "node": 0
+        },
+        "kind": "copy",
+        "output": 1432,
+        "omit": [
+          6,
+          7
+        ],
+        "owner_transfer": true,
+        "owner_retirement": true
+      },
+      {
+        "site": 2776,
+        "origin": {
+          "block": 291,
+          "local": 19,
+          "node": 0
+        },
+        "kind": "pack",
+        "output": 2943,
+        "omit": [
+          15,
+          50
+        ],
+        "owner_transfer": true,
+        "owner_retirement": true
+      },
+      {
+        "site": 2777,
+        "origin": {
+          "block": 291,
+          "local": null,
+          "node": 0
+        },
+        "kind": "copy",
+        "output": 2815,
+        "omit": [
+          15,
+          50
+        ],
+        "owner_transfer": true,
+        "owner_retirement": true
+      },
+      {
+        "site": 2778,
+        "origin": {
+          "block": 59,
+          "local": null,
+          "node": 0
+        },
+        "kind": "copy",
+        "output": 1632,
+        "omit": [
+          15,
+          50
+        ],
+        "owner_transfer": true,
+        "owner_retirement": true
+      },
+      {
+        "site": 2779,
+        "origin": {
+          "block": 33,
+          "local": 7,
+          "node": 0
+        },
+        "kind": "copy",
+        "output": 1629,
+        "omit": [
+          15,
+          50
+        ],
+        "owner_transfer": true,
+        "owner_retirement": true
+      },
+      {
+        "site": 6982,
+        "origin": {
+          "block": 33,
+          "local": 71,
+          "node": 0
+        },
+        "kind": "pack",
+        "output": 4975,
+        "omit": [
+          0,
+          1,
+          2
+        ],
+        "owner_transfer": false,
+        "owner_retirement": false
+      }
+    ]
+  }
+}

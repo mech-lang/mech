@@ -1,0 +1,654 @@
+{
+  "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/sealed-literal-batch/parser-release/linked-folded-graphemes-and-statement-replay/worker-checks/maintained": {
+    "empty": {
+      "0": 1520,
+      "1": 1520
+    },
+    "one-stored": {
+      "0": 1520,
+      "1": 1520
+    },
+    "seven-stored-prefix": {
+      "0": 1520,
+      "1": 1520
+    },
+    "eight-literals": {
+      "0": 4736,
+      "1": 4736
+    },
+    "eight-overlap": {
+      "0": 4736,
+      "1": 4736
+    },
+    "320-overlap": {
+      "0": 4736,
+      "1": 4736
+    },
+    "eight-literals-prefix": {
+      "0": 4736,
+      "1": 4736
+    },
+    "128-biased-dynamic": {
+      "0": 4736,
+      "1": 4736
+    },
+    "32-high-entropy-stored": {
+      "0": 4736,
+      "1": 4736
+    },
+    "16384-distribution-change": {
+      "0": 4736,
+      "1": 4736
+    },
+    "33027-periodic-window": {
+      "0": 4736,
+      "1": 4736
+    },
+    "random-64": {
+      "0": 4736,
+      "1": 4736
+    },
+    "random-256": {
+      "0": 4736,
+      "1": 4736
+    },
+    "random-1024": {
+      "0": 4736,
+      "1": 4736
+    },
+    "repeated-1024": {
+      "0": 4736,
+      "1": 4736
+    },
+    "random-32769": {
+      "0": 4736,
+      "1": 4736
+    },
+    "repeated-32769": {
+      "0": 4736,
+      "1": 4736
+    },
+    "reymont-prefix-1024": {
+      "0": 4736,
+      "1": 4736
+    },
+    "reymont-prefix-16384": {
+      "0": 4736,
+      "1": 4736
+    },
+    "reymont-prefix-32769": {
+      "0": 4736,
+      "1": 4736
+    },
+    "heldout-window-32767": {
+      "0": 4736,
+      "1": 4736
+    },
+    "heldout-window-32768": {
+      "0": 4736,
+      "1": 4736
+    },
+    "heldout-slides-65537": {
+      "0": 4736,
+      "1": 4736
+    },
+    "heldout-random-65537": {
+      "0": 4752,
+      "1": 4736
+    },
+    "heldout-mixed-131073": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-natural-1024": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-natural-4096": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-natural-8192": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-natural-16384": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-natural-32767": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-natural-32768": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-natural-32769": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-natural-33027": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-natural-65535": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-natural-65536": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-natural-65537": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-natural-131072": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-natural-262144": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-natural-1048576": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-random-1024": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-random-4096": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-random-8192": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-random-16384": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-random-32767": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-random-32768": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-random-32769": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-random-33027": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-random-65535": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-random-65536": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-random-65537": {
+      "0": 4752,
+      "1": 4736
+    },
+    "prefix-random-131072": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-random-262144": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-random-1048576": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-periodic-1024": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-periodic-4096": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-periodic-8192": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-periodic-16384": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-periodic-32767": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-periodic-32768": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-periodic-32769": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-periodic-33027": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-periodic-65535": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-periodic-65536": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-periodic-65537": {
+      "0": 4752,
+      "1": 4736
+    },
+    "prefix-periodic-131072": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-periodic-262144": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-periodic-1048576": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-repeated-1024": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-repeated-4096": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-repeated-8192": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-repeated-16384": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-repeated-32767": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-repeated-32768": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-repeated-32769": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-repeated-33027": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-repeated-65535": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-repeated-65536": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-repeated-65537": {
+      "0": 4752,
+      "1": 4736
+    },
+    "prefix-repeated-131072": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-repeated-262144": {
+      "0": 4736,
+      "1": 4736
+    },
+    "prefix-repeated-1048576": {
+      "0": 4736,
+      "1": 4736
+    }
+  },
+  "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/sealed-literal-batch/parser-release/linked-folded-graphemes-and-statement-replay/worker-checks/folded-graphemes-and-statement-replay": {
+    "empty": {
+      "0": 1520,
+      "1": 1520
+    },
+    "one-stored": {
+      "0": 1520,
+      "1": 1520
+    },
+    "seven-stored-prefix": {
+      "0": 1520,
+      "1": 1520
+    },
+    "eight-literals": {
+      "0": 4624,
+      "1": 4624
+    },
+    "eight-overlap": {
+      "0": 4624,
+      "1": 4624
+    },
+    "320-overlap": {
+      "0": 4624,
+      "1": 4624
+    },
+    "eight-literals-prefix": {
+      "0": 4624,
+      "1": 4624
+    },
+    "128-biased-dynamic": {
+      "0": 4624,
+      "1": 4624
+    },
+    "32-high-entropy-stored": {
+      "0": 4624,
+      "1": 4624
+    },
+    "16384-distribution-change": {
+      "0": 4624,
+      "1": 4624
+    },
+    "33027-periodic-window": {
+      "0": 4624,
+      "1": 4624
+    },
+    "random-64": {
+      "0": 4624,
+      "1": 4624
+    },
+    "random-256": {
+      "0": 4624,
+      "1": 4624
+    },
+    "random-1024": {
+      "0": 4624,
+      "1": 4624
+    },
+    "repeated-1024": {
+      "0": 4624,
+      "1": 4624
+    },
+    "random-32769": {
+      "0": 4624,
+      "1": 4624
+    },
+    "repeated-32769": {
+      "0": 4624,
+      "1": 4624
+    },
+    "reymont-prefix-1024": {
+      "0": 4624,
+      "1": 4624
+    },
+    "reymont-prefix-16384": {
+      "0": 4624,
+      "1": 4624
+    },
+    "reymont-prefix-32769": {
+      "0": 4624,
+      "1": 4624
+    },
+    "heldout-window-32767": {
+      "0": 4624,
+      "1": 4624
+    },
+    "heldout-window-32768": {
+      "0": 4624,
+      "1": 4624
+    },
+    "heldout-slides-65537": {
+      "0": 4624,
+      "1": 4624
+    },
+    "heldout-random-65537": {
+      "0": 4640,
+      "1": 4624
+    },
+    "heldout-mixed-131073": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-natural-1024": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-natural-4096": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-natural-8192": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-natural-16384": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-natural-32767": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-natural-32768": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-natural-32769": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-natural-33027": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-natural-65535": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-natural-65536": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-natural-65537": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-natural-131072": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-natural-262144": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-natural-1048576": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-random-1024": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-random-4096": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-random-8192": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-random-16384": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-random-32767": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-random-32768": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-random-32769": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-random-33027": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-random-65535": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-random-65536": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-random-65537": {
+      "0": 4640,
+      "1": 4624
+    },
+    "prefix-random-131072": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-random-262144": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-random-1048576": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-periodic-1024": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-periodic-4096": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-periodic-8192": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-periodic-16384": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-periodic-32767": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-periodic-32768": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-periodic-32769": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-periodic-33027": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-periodic-65535": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-periodic-65536": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-periodic-65537": {
+      "0": 4640,
+      "1": 4624
+    },
+    "prefix-periodic-131072": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-periodic-262144": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-periodic-1048576": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-repeated-1024": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-repeated-4096": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-repeated-8192": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-repeated-16384": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-repeated-32767": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-repeated-32768": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-repeated-32769": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-repeated-33027": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-repeated-65535": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-repeated-65536": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-repeated-65537": {
+      "0": 4640,
+      "1": 4624
+    },
+    "prefix-repeated-131072": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-repeated-262144": {
+      "0": 4624,
+      "1": 4624
+    },
+    "prefix-repeated-1048576": {
+      "0": 4624,
+      "1": 4624
+    }
+  }
+}

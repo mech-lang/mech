@@ -107,6 +107,39 @@ class CanonicalCliEvidenceTests(unittest.TestCase):
             with self.assertRaises((ValueError, FileNotFoundError)):
                 CI.case_evidence(root)
 
+    def test_complete_counts_match_the_exact_selection_inventories(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evidence = root / "cases"
+            evidence.mkdir()
+            self.evidence_fixture(evidence)
+            self.pin_fixture(root)
+            CI.pin_executables(root)
+            for stage in CI.STAGES:
+                self.write_json(root / f"{stage}.summary.json", {
+                    "stage": stage, "reason": "exit", "command_exit_status": 0,
+                    "owned_group_cleanup": "complete",
+                })
+            for stage, names in (("unit-selection", CI.UNIT_NAMES),
+                                 ("public-selection", CI.PUBLIC_NAMES)):
+                (root / f"canonical-cli-{stage}.log").write_text(
+                    "".join(f"{name}: test\n" for name in sorted(names)), encoding="utf-8",
+                )
+            unit_log = root / "canonical-cli-unit-contracts.log"
+            public_log = root / "canonical-cli-public-qualification.log"
+            for log, names in ((unit_log, CI.UNIT_NAMES), (public_log, CI.PUBLIC_NAMES)):
+                log.write_text(
+                    f"test result: ok. {len(names)} passed; 0 failed; 0 ignored;\n",
+                    encoding="utf-8",
+                )
+            CI.complete(root, evidence)
+            unit_log.write_text(
+                f"test result: ok. {len(CI.UNIT_NAMES) - 1} passed; 0 failed; 0 ignored;\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(ValueError, "wrong execution counts"):
+                CI.complete(root, evidence)
+
     def test_launch_policies_and_failed_child_outcomes_cannot_disappear(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

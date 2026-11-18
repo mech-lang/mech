@@ -1,0 +1,476 @@
+{
+  "runs": [
+    {
+      "id": "terminal-owner-cold-origins-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 9,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 9,
+            "mech-experiment": 9
+          },
+          "precision_supported_wins": {
+            "mech-control": 9,
+            "mech-experiment": 9
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 6,
+            "mech-experiment": 6
+          },
+          "precision_supported_wins": {
+            "mech-control": 5,
+            "mech-experiment": 6
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "terminal-owner-cold-origins-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 9,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 9,
+            "mech-experiment": 9
+          },
+          "precision_supported_wins": {
+            "mech-control": 9,
+            "mech-experiment": 9
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 6,
+            "mech-experiment": 6
+          },
+          "precision_supported_wins": {
+            "mech-control": 5,
+            "mech-experiment": 6
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    }
+  ],
+  "cases": {
+    "empty": {
+      "decision": "regression",
+      "runs": {
+        "terminal-owner-cold-origins-focus-forward": {
+          "estimate": 0.02058663710800035,
+          "lower": 0.012715554634466386,
+          "upper": 0.02828479230277492
+        },
+        "terminal-owner-cold-origins-focus-reverse": {
+          "estimate": 0.026919731376089162,
+          "lower": 0.019526651952038288,
+          "upper": 0.0342230368509886
+        }
+      },
+      "combined": {
+        "estimate": 0.02374828704373111,
+        "lower": 0.018340591041048793,
+        "upper": 0.029149906592773167
+      },
+      "adverse_runs": [
+        "terminal-owner-cold-origins-focus-forward",
+        "terminal-owner-cold-origins-focus-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "one-stored": {
+      "decision": "unresolved",
+      "runs": {
+        "terminal-owner-cold-origins-focus-forward": {
+          "estimate": -0.0033509572065920645,
+          "lower": -0.011173315170399212,
+          "upper": 0.0047266646262504874
+        },
+        "terminal-owner-cold-origins-focus-reverse": {
+          "estimate": 0.013370611844759406,
+          "lower": 0.0056245335203251035,
+          "upper": 0.021037933724796565
+        }
+      },
+      "combined": {
+        "estimate": 0.004975049585834057,
+        "lower": -0.0005962636877439031,
+        "upper": 0.01058514338633798
+      },
+      "adverse_runs": [
+        "terminal-owner-cold-origins-focus-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "seven-stored-prefix": {
+      "decision": "bounded",
+      "runs": {
+        "terminal-owner-cold-origins-focus-forward": {
+          "estimate": -0.0552247968265106,
+          "lower": -0.06269418202999322,
+          "upper": -0.04769116562208364
+        },
+        "terminal-owner-cold-origins-focus-reverse": {
+          "estimate": -0.04749889889231729,
+          "lower": -0.05472502712990879,
+          "upper": -0.039738518032550796
+        }
+      },
+      "combined": {
+        "estimate": -0.051369713048342924,
+        "lower": -0.05665960668159664,
+        "upper": -0.0461772128716752
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "terminal-owner-cold-origins-focus-forward": {
+          "estimate": -0.00148695430243162,
+          "lower": -0.004589549510946589,
+          "upper": 0.0016380646608533667
+        },
+        "terminal-owner-cold-origins-focus-reverse": {
+          "estimate": -0.0017733975197358198,
+          "lower": -0.004923782120443865,
+          "upper": 0.0010459149636126153
+        }
+      },
+      "combined": {
+        "estimate": -0.0016301861840450904,
+        "lower": -0.0038438071187135714,
+        "upper": 0.0005210191039315415
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "unresolved",
+      "runs": {
+        "terminal-owner-cold-origins-focus-forward": {
+          "estimate": 0.005255030588774412,
+          "lower": 0.0013325622453310704,
+          "upper": 0.009568004269674413
+        },
+        "terminal-owner-cold-origins-focus-reverse": {
+          "estimate": 0.003363411151554585,
+          "lower": 0.0002940167234839475,
+          "upper": 0.006739474054296757
+        }
+      },
+      "combined": {
+        "estimate": 0.004308775511203455,
+        "lower": 0.0017896369748300334,
+        "upper": 0.00698564507792887
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-4096": {
+      "decision": "bounded",
+      "runs": {
+        "terminal-owner-cold-origins-focus-forward": {
+          "estimate": -0.00186723123697774,
+          "lower": -0.004797402069173451,
+          "upper": 0.0010269868754051448
+        },
+        "terminal-owner-cold-origins-focus-reverse": {
+          "estimate": -0.0018551248939328024,
+          "lower": -0.0038885730050151057,
+          "upper": 0.00013598840454331906
+        }
+      },
+      "combined": {
+        "estimate": -0.0018611780838099223,
+        "lower": -0.0036264802911537553,
+        "upper": -0.00013891876810057102
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "bounded",
+      "runs": {
+        "terminal-owner-cold-origins-focus-forward": {
+          "estimate": 0.0017792555275890631,
+          "lower": -0.00020115344317539474,
+          "upper": 0.0039324139828917914
+        },
+        "terminal-owner-cold-origins-focus-reverse": {
+          "estimate": 0.0007963281024672142,
+          "lower": -0.0005230430789211482,
+          "upper": 0.002073829909757574
+        }
+      },
+      "combined": {
+        "estimate": 0.001287671202054863,
+        "lower": 9.3929836472606e-05,
+        "upper": 0.0025114132491843577
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-4096": {
+      "decision": "bounded",
+      "runs": {
+        "terminal-owner-cold-origins-focus-forward": {
+          "estimate": -0.011548663327716424,
+          "lower": -0.014659373244747087,
+          "upper": -0.00853689999210372
+        },
+        "terminal-owner-cold-origins-focus-reverse": {
+          "estimate": 0.004739773032255146,
+          "lower": -0.0005357033890214247,
+          "upper": 0.01023324647286672
+        }
+      },
+      "combined": {
+        "estimate": -0.003437723139422033,
+        "lower": -0.006560611592370202,
+        "upper": -0.00020291693492269225
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-32769": {
+      "decision": "bounded",
+      "runs": {
+        "terminal-owner-cold-origins-focus-forward": {
+          "estimate": -0.0009168667945544939,
+          "lower": -0.002161076576872256,
+          "upper": 0.0003715127800623108
+        },
+        "terminal-owner-cold-origins-focus-reverse": {
+          "estimate": -0.0005682929016488369,
+          "lower": -0.0030487212787955187,
+          "upper": 0.0019483892202085684
+        }
+      },
+      "combined": {
+        "estimate": -0.0007425950473582965,
+        "lower": -0.002127967560058841,
+        "upper": 0.0006520710872177649
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    }
+  },
+  "scope": "90% per-case paired bootstrap, stratified by run and actor order",
+  "equivalent_named_cases": [
+    [
+      "33027-periodic-window",
+      "prefix-periodic-33027"
+    ],
+    [
+      "prefix-repeated-1024",
+      "repeated-1024"
+    ],
+    [
+      "prefix-repeated-32769",
+      "repeated-32769"
+    ],
+    [
+      "prefix-natural-1024",
+      "reymont-prefix-1024"
+    ],
+    [
+      "prefix-natural-16384",
+      "reymont-prefix-16384"
+    ],
+    [
+      "prefix-natural-32769",
+      "reymont-prefix-32769"
+    ],
+    [
+      "heldout-window-32767",
+      "prefix-natural-32767"
+    ]
+  ],
+  "peak_private_payload_bytes": {},
+  "decision": "Reject",
+  "rejected": [
+    "empty: established slowdown above the 0.5% resolution"
+  ],
+  "unresolved": [
+    "both complete timing orders are required",
+    "one-stored: combined and individual run bounds conflict: terminal-owner-cold-origins-focus-reverse",
+    "random-64: regression bound or duplicate-control repeatability unresolved"
+  ],
+  "plan": {
+    "path": "terminal-owner-publication/terminal-owner-cold-origins/plan.json",
+    "sha256": "500398de21ff6096bbe3134b830ced5c5e83d426397acfeabbde1629d2ff8de2"
+  },
+  "receipts": {
+    "terminal-owner-cold-origins-focus-forward": {
+      "id": "terminal-owner-cold-origins-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "terminal-owner-publication/terminal-owner-cold-origins/canonical-pins/terminal-owner-cold-origins-focus-forward.json",
+        "sha256": "efff162cff473568fa35d57aaaf53f462457851a8ba1904d98a0f421e737f9f1"
+      },
+      "original_pins": {
+        "path": "terminal-owner-cold-origins-focus-forward/pins.json",
+        "sha256": "54821f7003477857f5ee0cf47abfe715fbb2784ea3eb8dfca6094ab7a320b1bd"
+      },
+      "summary": {
+        "path": "terminal-owner-cold-origins-focus-forward/summary.json",
+        "sha256": "e14e00f5ec2cc2fcbe7b45231e39623bcef9ee05780b82897b2a50ea30a24a6b"
+      },
+      "complete": {
+        "path": "terminal-owner-cold-origins-focus-forward/complete.json",
+        "sha256": "167e08617f6f0ee6239ea3afff2e3dcfdaa35a9134d9d808263ec88f18461ee5"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "terminal-owner-cold-origins-focus-forward/320-overlap/observations.json.gz",
+          "sha256": "1d8fe064a53471aa2ee42283c7c7fa5a683d6646f43a82f6557d0cd6cd233658"
+        },
+        "empty": {
+          "path": "terminal-owner-cold-origins-focus-forward/empty/observations.json.gz",
+          "sha256": "1cee75d078e1ba443144072a17072ac63a7d7887ac50170894beb90278affc8a"
+        },
+        "one-stored": {
+          "path": "terminal-owner-cold-origins-focus-forward/one-stored/observations.json.gz",
+          "sha256": "3da01c0cf92e6313495380bdcad6af51351df74cdeca9af10637693e84dff1b9"
+        },
+        "prefix-natural-4096": {
+          "path": "terminal-owner-cold-origins-focus-forward/prefix-natural-4096/observations.json.gz",
+          "sha256": "442e3b27aa970af4568bd3d6ba9fffe98ceda98e558f3cdce849cc4b5825188b"
+        },
+        "prefix-natural-8192": {
+          "path": "terminal-owner-cold-origins-focus-forward/prefix-natural-8192/observations.json.gz",
+          "sha256": "fd133674504b5782d4159d2ea16783d7e61cf1b593cd2e1ad2a1d1af69e3719e"
+        },
+        "prefix-random-4096": {
+          "path": "terminal-owner-cold-origins-focus-forward/prefix-random-4096/observations.json.gz",
+          "sha256": "b5e97015517859d0149bc2f151405f098088eebab360736027c7df5f00848856"
+        },
+        "prefix-repeated-32769": {
+          "path": "terminal-owner-cold-origins-focus-forward/prefix-repeated-32769/observations.json.gz",
+          "sha256": "b8fa71190c039f355f04f1e00d7803ae3ba9d0a769bb93d12d366e226ba501a7"
+        },
+        "random-64": {
+          "path": "terminal-owner-cold-origins-focus-forward/random-64/observations.json.gz",
+          "sha256": "a49becb4a146d889d0b822bf40ac75def8bbea6516f6b9421ee66fa494081a27"
+        },
+        "seven-stored-prefix": {
+          "path": "terminal-owner-cold-origins-focus-forward/seven-stored-prefix/observations.json.gz",
+          "sha256": "b912225ac7297e76f515b93b82534e0aa050c32d9d0b64d0e78a46e6d8d555a0"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "terminal-owner-cold-origins-focus-forward/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "terminal-owner-cold-origins-focus-forward/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "terminal-owner-cold-origins-focus-forward/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "terminal-owner-cold-origins-focus-forward/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    },
+    "terminal-owner-cold-origins-focus-reverse": {
+      "id": "terminal-owner-cold-origins-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "terminal-owner-publication/terminal-owner-cold-origins/canonical-pins/terminal-owner-cold-origins-focus-reverse.json",
+        "sha256": "efff162cff473568fa35d57aaaf53f462457851a8ba1904d98a0f421e737f9f1"
+      },
+      "original_pins": {
+        "path": "terminal-owner-cold-origins-focus-reverse/pins.json",
+        "sha256": "54821f7003477857f5ee0cf47abfe715fbb2784ea3eb8dfca6094ab7a320b1bd"
+      },
+      "summary": {
+        "path": "terminal-owner-cold-origins-focus-reverse/summary.json",
+        "sha256": "3c22b79fbe69c10d367a6a365210a88686c27c5c96bb49dd50fa61711913e980"
+      },
+      "complete": {
+        "path": "terminal-owner-cold-origins-focus-reverse/complete.json",
+        "sha256": "167e08617f6f0ee6239ea3afff2e3dcfdaa35a9134d9d808263ec88f18461ee5"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "terminal-owner-cold-origins-focus-reverse/320-overlap/observations.json.gz",
+          "sha256": "7d67390ad2c7c08adf202e9cf7de87c71d98154fa574815425ed242a5d74a3e1"
+        },
+        "empty": {
+          "path": "terminal-owner-cold-origins-focus-reverse/empty/observations.json.gz",
+          "sha256": "45115aeae296f86b1e9a1d737d1e68fd9f5716532575c797a316c2b54fb02bf3"
+        },
+        "one-stored": {
+          "path": "terminal-owner-cold-origins-focus-reverse/one-stored/observations.json.gz",
+          "sha256": "6f088968b0d233ce68f4a32994a05329a039c7637f8439a1a0a29ec10fded319"
+        },
+        "prefix-natural-4096": {
+          "path": "terminal-owner-cold-origins-focus-reverse/prefix-natural-4096/observations.json.gz",
+          "sha256": "7b517a040c04b26cb49ee35d9f6ab22f68fbb048463dfc9643ba78614dc13867"
+        },
+        "prefix-natural-8192": {
+          "path": "terminal-owner-cold-origins-focus-reverse/prefix-natural-8192/observations.json.gz",
+          "sha256": "f7b2a7c07975c5a96d98b232f64a2652518f0039e20015e744a470e04c0c79d1"
+        },
+        "prefix-random-4096": {
+          "path": "terminal-owner-cold-origins-focus-reverse/prefix-random-4096/observations.json.gz",
+          "sha256": "776b8ea42b238451702dda56943847abe150af41a3a990602f54fd125b604e24"
+        },
+        "prefix-repeated-32769": {
+          "path": "terminal-owner-cold-origins-focus-reverse/prefix-repeated-32769/observations.json.gz",
+          "sha256": "460a86dedbb25518a03ca59b2cb11ec001f4e8fd97454135344a5f43793790b7"
+        },
+        "random-64": {
+          "path": "terminal-owner-cold-origins-focus-reverse/random-64/observations.json.gz",
+          "sha256": "8df7b213e952f7de7daa00dec872694733b03ed973e4fc5eb6a44f58019d94b1"
+        },
+        "seven-stored-prefix": {
+          "path": "terminal-owner-cold-origins-focus-reverse/seven-stored-prefix/observations.json.gz",
+          "sha256": "4b5d51d950e42c2b89be2b6463b0d3a2857abbb40953add26e3812b5a0e8f176"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "terminal-owner-cold-origins-focus-reverse/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "terminal-owner-cold-origins-focus-reverse/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "terminal-owner-cold-origins-focus-reverse/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "terminal-owner-cold-origins-focus-reverse/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    }
+  }
+}

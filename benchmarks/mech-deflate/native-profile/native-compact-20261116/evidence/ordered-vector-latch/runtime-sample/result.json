@@ -1,0 +1,1283 @@
+{
+  "plan_sha256": "aabc4c5943460ad7ec72b1617bfc14e2adf86f914456c0173c277f39879b3c67",
+  "captures": [
+    {
+      "role": "libdeflate",
+      "raw_sha256": "8ce9468e99b0c1baca468469c58fe064275d11498325765ebe1f79f3bc4ade32",
+      "warmup_count": 25,
+      "checks": [
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "fresh compressor, distinct output allocation and prefix copy, raw compression, compressor free; preparation, validation and previous-output drop excluded",
+          "capacity": 4101,
+          "case": "prefix-natural-4096",
+          "independent_inflation": true,
+          "input_alias_unchanged": true,
+          "input_bytes": 4096,
+          "level": 12,
+          "matches_reference_bytes": true,
+          "output_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+          "prefix_bytes": 0,
+          "profile": false,
+          "raw_bytes": 983,
+          "reference_capacity": 4101,
+          "runtime_input": true,
+          "sample": 0,
+          "seconds": 0.000366375,
+          "version": "1.26",
+          "warmup": true
+        },
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "fresh compressor, distinct output allocation and prefix copy, raw compression, compressor free; preparation, validation and previous-output drop excluded",
+          "capacity": 4101,
+          "case": "prefix-natural-4096",
+          "independent_inflation": true,
+          "input_alias_unchanged": true,
+          "input_bytes": 4096,
+          "level": 12,
+          "matches_reference_bytes": true,
+          "output_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+          "prefix_bytes": 0,
+          "profile": true,
+          "raw_bytes": 983,
+          "reference_capacity": 4101,
+          "runtime_input": true,
+          "sample": 1,
+          "seconds": 0.00034275,
+          "version": "1.26",
+          "warmup": false
+        }
+      ],
+      "sample_counts": {
+        "libdeflate compression": 2161,
+        "other worker and idle": 28,
+        "independent validation": 86
+      },
+      "leaves": [
+        [
+          "libdeflate compression",
+          "deflate_find_min_cost_path",
+          1523
+        ],
+        [
+          "libdeflate compression",
+          "deflate_compress_near_optimal",
+          450
+        ],
+        [
+          "libdeflate compression",
+          "deflate_make_huffman_code",
+          68
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core15decompress_fast",
+          35
+        ],
+        [
+          "libdeflate compression",
+          "_platform_memset_pattern16",
+          32
+        ],
+        [
+          "libdeflate compression",
+          "deflate_optimize_and_flush_block",
+          31
+        ],
+        [
+          "libdeflate compression",
+          "deflate_flush_block",
+          26
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree",
+          17
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core8transfer",
+          16
+        ],
+        [
+          "libdeflate compression",
+          "deflate_precompute_huffman_header",
+          14
+        ],
+        [
+          "other worker and idle",
+          "deflate_make_huffman_code",
+          13
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress",
+          13
+        ],
+        [
+          "libdeflate compression",
+          "OUTLINED_FUNCTION_10",
+          10
+        ],
+        [
+          "independent validation",
+          "_platform_memset",
+          3
+        ],
+        [
+          "other worker and idle",
+          "_platform_memcmp",
+          3
+        ],
+        [
+          "libdeflate compression",
+          "_platform_memset",
+          2
+        ],
+        [
+          "libdeflate compression",
+          "_platform_memmove",
+          2
+        ],
+        [
+          "libdeflate compression",
+          "deflate_compute_true_cost",
+          2
+        ],
+        [
+          "other worker and idle",
+          "mi_segment_span_allocate",
+          2
+        ],
+        [
+          "other worker and idle",
+          "_RNCINvCsifA6KkFEdIB_17libdeflate_worker3runNtNtNtCsgirOGyZpP7g_3std2io5stdio9StdinLockEs0_0B4_",
+          2
+        ],
+        [
+          "other worker and idle",
+          "_platform_memmove",
+          2
+        ],
+        [
+          "other worker and idle",
+          "_RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtBc_6string6StringNtNtCsibhWAaDYcoJ_10serde_json5value5ValueNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB3M_11VacantEntryB1D_B1Y_E12insert_entry0ECsifA6KkFEdIB_17libdeflate_worker",
+          2
+        ],
+        [
+          "libdeflate compression",
+          "__bzero",
+          1
+        ],
+        [
+          "other worker and idle",
+          "libdeflate_alloc_compressor_ex",
+          1
+        ],
+        [
+          "other worker and idle",
+          "mi_segment_span_free",
+          1
+        ],
+        [
+          "independent validation",
+          "_platform_memset_pattern16",
+          1
+        ],
+        [
+          "independent validation",
+          "_RINvNvMs2_NtCsgKscDXrlV49_5alloc7raw_vecINtB8_11RawVecInnerpE7reserve21do_reserve_and_handleNtNtBa_5alloc6GlobalECselbn9KGBQg0_11miniz_oxide",
+          1
+        ],
+        [
+          "other worker and idle",
+          "mach_absolute_time",
+          1
+        ],
+        [
+          "other worker and idle",
+          "mi_free",
+          1
+        ]
+      ]
+    },
+    {
+      "role": "current",
+      "raw_sha256": "e618a4dfac3e5b9344a64905288f26e51290b61f28e02b3b8fab10fa7b89b79b",
+      "warmup_count": 25,
+      "checks": [
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 4101,
+          "case": "prefix-natural-4096",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 12324,
+          "input_alias_unchanged": true,
+          "input_bytes": 4096,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 97,
+          "peak_private_payload_bytes": 4783952,
+          "prefix_bytes": 0,
+          "profile": false,
+          "raw_bytes": 983,
+          "requested_payload_bytes": 4830205,
+          "sample": 0,
+          "seconds": 0.001200417,
+          "warmup": true,
+          "zeroed_bytes": 4773188
+        },
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 4101,
+          "case": "prefix-natural-4096",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 12324,
+          "input_alias_unchanged": true,
+          "input_bytes": 4096,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 97,
+          "peak_private_payload_bytes": 4783952,
+          "prefix_bytes": 0,
+          "profile": true,
+          "raw_bytes": 983,
+          "requested_payload_bytes": 4830205,
+          "sample": 1,
+          "seconds": 0.001126584,
+          "warmup": false,
+          "zeroed_bytes": 4773188
+        }
+      ],
+      "sample_counts": {
+        "ordered scorer": 1082,
+        "match collection": 604,
+        "checked encoder and runtime": 252,
+        "other numeric phase": 243,
+        "independent validation": 64,
+        "other worker and idle": 10
+      },
+      "leaves": [
+        [
+          "ordered scorer",
+          "mech_compact_numeric_3009_no_growth_composed",
+          1082
+        ],
+        [
+          "match collection",
+          "mech_compact_numeric_475_vector",
+          604
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_closed_checked",
+          129
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_3447_grouped",
+          52
+        ],
+        [
+          "checked encoder and runtime",
+          "__munmap",
+          49
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_3956_vector",
+          49
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_4173",
+          35
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_checked_layout_continuation_44070",
+          30
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_5895",
+          29
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_2821_vector",
+          28
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_362_vector",
+          24
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_3872",
+          20
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core15decompress_fast",
+          20
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core8transfer",
+          15
+        ],
+        [
+          "checked encoder and runtime",
+          "__bzero",
+          14
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree",
+          13
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress",
+          9
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_6633",
+          6
+        ],
+        [
+          "checked encoder and runtime",
+          "_tlv_get_addr",
+          4
+        ],
+        [
+          "checked encoder and runtime",
+          "mi_free",
+          4
+        ],
+        [
+          "independent validation",
+          "_platform_memmove",
+          4
+        ],
+        [
+          "checked encoder and runtime",
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap7release",
+          3
+        ],
+        [
+          "checked encoder and runtime",
+          "_platform_memset",
+          3
+        ],
+        [
+          "other worker and idle",
+          "_platform_memcmp",
+          3
+        ],
+        [
+          "checked encoder and runtime",
+          "mi_find_page",
+          2
+        ],
+        [
+          "checked encoder and runtime",
+          "mi_malloc",
+          2
+        ],
+        [
+          "checked encoder and runtime",
+          "__mmap",
+          2
+        ],
+        [
+          "checked encoder and runtime",
+          "_mi_malloc_generic",
+          2
+        ],
+        [
+          "independent validation",
+          "_platform_memset",
+          2
+        ],
+        [
+          "other worker and idle",
+          "_platform_memmove",
+          2
+        ]
+      ]
+    },
+    {
+      "role": "bottom-tested",
+      "raw_sha256": "e6c0f0e6fedc43504a149d2da1e8b535bc0127dd61f354bacac93bd86eff1356",
+      "warmup_count": 25,
+      "checks": [
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 4101,
+          "case": "prefix-natural-4096",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 12324,
+          "input_alias_unchanged": true,
+          "input_bytes": 4096,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 97,
+          "peak_private_payload_bytes": 4783952,
+          "prefix_bytes": 0,
+          "profile": false,
+          "raw_bytes": 983,
+          "requested_payload_bytes": 4830205,
+          "sample": 0,
+          "seconds": 0.000477334,
+          "warmup": true,
+          "zeroed_bytes": 4773188
+        },
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 4101,
+          "case": "prefix-natural-4096",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 12324,
+          "input_alias_unchanged": true,
+          "input_bytes": 4096,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 97,
+          "peak_private_payload_bytes": 4783952,
+          "prefix_bytes": 0,
+          "profile": true,
+          "raw_bytes": 983,
+          "requested_payload_bytes": 4830205,
+          "sample": 1,
+          "seconds": 0.0004965,
+          "warmup": false,
+          "zeroed_bytes": 4773188
+        }
+      ],
+      "sample_counts": {
+        "ordered scorer": 1097,
+        "match collection": 551,
+        "checked encoder and runtime": 289,
+        "other numeric phase": 227,
+        "independent validation": 87,
+        "other worker and idle": 12
+      },
+      "leaves": [
+        [
+          "ordered scorer",
+          "mech_compact_numeric_3009_no_growth_composed",
+          1097
+        ],
+        [
+          "match collection",
+          "mech_compact_numeric_475_vector",
+          551
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_closed_checked",
+          170
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_3447_grouped",
+          48
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_checked_layout_continuation_44070",
+          42
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_3956_vector",
+          38
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_362_vector",
+          32
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_2821_vector",
+          32
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core15decompress_fast",
+          30
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_3872",
+          27
+        ],
+        [
+          "checked encoder and runtime",
+          "__munmap",
+          26
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_4173",
+          22
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree",
+          21
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_5895",
+          18
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core8transfer",
+          18
+        ],
+        [
+          "checked encoder and runtime",
+          "__bzero",
+          17
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress",
+          10
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_6633",
+          9
+        ],
+        [
+          "checked encoder and runtime",
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate",
+          6
+        ],
+        [
+          "checked encoder and runtime",
+          "_platform_memmove",
+          4
+        ],
+        [
+          "checked encoder and runtime",
+          "_platform_memset",
+          4
+        ],
+        [
+          "checked encoder and runtime",
+          "mi_free",
+          3
+        ],
+        [
+          "independent validation",
+          "_platform_memmove",
+          3
+        ],
+        [
+          "other worker and idle",
+          "_platform_memcmp",
+          3
+        ],
+        [
+          "checked encoder and runtime",
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap7release",
+          2
+        ],
+        [
+          "checked encoder and runtime",
+          "_mi_malloc_generic",
+          2
+        ],
+        [
+          "other worker and idle",
+          "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE6insertCs2fnfepAsUKT_11mech_worker",
+          2
+        ],
+        [
+          "other worker and idle",
+          "_RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtBc_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB3M_11VacantEntryB1D_B1Y_E12insert_entry0ECs2fnfepAsUKT_11mech_worker",
+          2
+        ],
+        [
+          "checked encoder and runtime",
+          "mach_absolute_time",
+          1
+        ],
+        [
+          "checked encoder and runtime",
+          "mi_segment_span_allocate",
+          1
+        ]
+      ]
+    },
+    {
+      "role": "bottom-tested",
+      "raw_sha256": "aec929adba8d6b4b4fee7e165bcbd3427203ea646e4def5687fbe32e8de894e3",
+      "warmup_count": 25,
+      "checks": [
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 4101,
+          "case": "prefix-natural-4096",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 12324,
+          "input_alias_unchanged": true,
+          "input_bytes": 4096,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 97,
+          "peak_private_payload_bytes": 4783952,
+          "prefix_bytes": 0,
+          "profile": false,
+          "raw_bytes": 983,
+          "requested_payload_bytes": 4830205,
+          "sample": 0,
+          "seconds": 0.000410167,
+          "warmup": true,
+          "zeroed_bytes": 4773188
+        },
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 4101,
+          "case": "prefix-natural-4096",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 12324,
+          "input_alias_unchanged": true,
+          "input_bytes": 4096,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 97,
+          "peak_private_payload_bytes": 4783952,
+          "prefix_bytes": 0,
+          "profile": true,
+          "raw_bytes": 983,
+          "requested_payload_bytes": 4830205,
+          "sample": 1,
+          "seconds": 0.000400375,
+          "warmup": false,
+          "zeroed_bytes": 4773188
+        }
+      ],
+      "sample_counts": {
+        "ordered scorer": 1076,
+        "match collection": 612,
+        "checked encoder and runtime": 298,
+        "other numeric phase": 217,
+        "independent validation": 70,
+        "other worker and idle": 8
+      },
+      "leaves": [
+        [
+          "ordered scorer",
+          "mech_compact_numeric_3009_no_growth_composed",
+          1076
+        ],
+        [
+          "match collection",
+          "mech_compact_numeric_475_vector",
+          612
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_closed_checked",
+          168
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_2821_vector",
+          51
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_3956_vector",
+          41
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_checked_layout_continuation_44070",
+          41
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_3447_grouped",
+          40
+        ],
+        [
+          "checked encoder and runtime",
+          "__munmap",
+          31
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_4173",
+          26
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core15decompress_fast",
+          23
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_5895",
+          20
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core8transfer",
+          19
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_3872",
+          16
+        ],
+        [
+          "checked encoder and runtime",
+          "__bzero",
+          15
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree",
+          15
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_362_vector",
+          14
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress",
+          8
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_6633",
+          7
+        ],
+        [
+          "checked encoder and runtime",
+          "__mmap",
+          6
+        ],
+        [
+          "checked encoder and runtime",
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate",
+          5
+        ],
+        [
+          "checked encoder and runtime",
+          "_platform_memset",
+          4
+        ],
+        [
+          "checked encoder and runtime",
+          "mi_find_page",
+          4
+        ],
+        [
+          "checked encoder and runtime",
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap7release",
+          4
+        ],
+        [
+          "checked encoder and runtime",
+          "_platform_memmove",
+          3
+        ],
+        [
+          "independent validation",
+          "_platform_memmove",
+          3
+        ],
+        [
+          "checked encoder and runtime",
+          "mach_absolute_time",
+          2
+        ],
+        [
+          "checked encoder and runtime",
+          "_mi_malloc_generic",
+          2
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_4799",
+          2
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_release_two",
+          2
+        ],
+        [
+          "other worker and idle",
+          "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE6insertCs2fnfepAsUKT_11mech_worker",
+          2
+        ]
+      ]
+    },
+    {
+      "role": "current",
+      "raw_sha256": "dba07817eca083e7e3036ea685df3a89b9c946320f40c286439f9cca28306454",
+      "warmup_count": 25,
+      "checks": [
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 4101,
+          "case": "prefix-natural-4096",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 12324,
+          "input_alias_unchanged": true,
+          "input_bytes": 4096,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 97,
+          "peak_private_payload_bytes": 4783952,
+          "prefix_bytes": 0,
+          "profile": false,
+          "raw_bytes": 983,
+          "requested_payload_bytes": 4830205,
+          "sample": 0,
+          "seconds": 0.000436375,
+          "warmup": true,
+          "zeroed_bytes": 4773188
+        },
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+          "capacity": 4101,
+          "case": "prefix-natural-4096",
+          "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+          "exact_reference": true,
+          "independent_inflation": true,
+          "initialized_bytes_copied": 12324,
+          "input_alias_unchanged": true,
+          "input_bytes": 4096,
+          "nonreturned_private_bytes_at_return": 0,
+          "payload_allocation_requests": 97,
+          "peak_private_payload_bytes": 4783952,
+          "prefix_bytes": 0,
+          "profile": true,
+          "raw_bytes": 983,
+          "requested_payload_bytes": 4830205,
+          "sample": 1,
+          "seconds": 0.000417333,
+          "warmup": false,
+          "zeroed_bytes": 4773188
+        }
+      ],
+      "sample_counts": {
+        "ordered scorer": 1097,
+        "match collection": 616,
+        "checked encoder and runtime": 252,
+        "other numeric phase": 234,
+        "independent validation": 58,
+        "other worker and idle": 13
+      },
+      "leaves": [
+        [
+          "ordered scorer",
+          "mech_compact_numeric_3009_no_growth_composed",
+          1097
+        ],
+        [
+          "match collection",
+          "mech_compact_numeric_475_vector",
+          616
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_closed_checked",
+          142
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_3447_grouped",
+          62
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_3956_vector",
+          43
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_2821_vector",
+          36
+        ],
+        [
+          "checked encoder and runtime",
+          "__bzero",
+          27
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_checked_layout_continuation_44070",
+          27
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_5895",
+          26
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core15decompress_fast",
+          24
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_4173",
+          22
+        ],
+        [
+          "checked encoder and runtime",
+          "__munmap",
+          18
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_362_vector",
+          17
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_3872",
+          16
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree",
+          12
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_6633",
+          9
+        ],
+        [
+          "checked encoder and runtime",
+          "_platform_memset",
+          7
+        ],
+        [
+          "checked encoder and runtime",
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate",
+          7
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core8transfer",
+          7
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress",
+          7
+        ],
+        [
+          "checked encoder and runtime",
+          "__mmap",
+          5
+        ],
+        [
+          "independent validation",
+          "_platform_memset",
+          5
+        ],
+        [
+          "other worker and idle",
+          "_RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtBc_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB3M_11VacantEntryB1D_B1Y_E12insert_entry0ECs2fnfepAsUKT_11mech_worker",
+          4
+        ],
+        [
+          "other numeric phase",
+          "mech_compact_numeric_4799",
+          3
+        ],
+        [
+          "checked encoder and runtime",
+          "mi_free",
+          3
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_free",
+          3
+        ],
+        [
+          "independent validation",
+          "_platform_memmove",
+          3
+        ],
+        [
+          "checked encoder and runtime",
+          "mi_zalloc",
+          2
+        ],
+        [
+          "checked encoder and runtime",
+          "mech_compact_release_two",
+          2
+        ],
+        [
+          "checked encoder and runtime",
+          "_RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap7release",
+          2
+        ]
+      ]
+    },
+    {
+      "role": "libdeflate",
+      "raw_sha256": "aa8289546ee66bc30d8b23140d7d93b16c402f4f5a04bc2bcf0408040bc74679",
+      "warmup_count": 25,
+      "checks": [
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "fresh compressor, distinct output allocation and prefix copy, raw compression, compressor free; preparation, validation and previous-output drop excluded",
+          "capacity": 4101,
+          "case": "prefix-natural-4096",
+          "independent_inflation": true,
+          "input_alias_unchanged": true,
+          "input_bytes": 4096,
+          "level": 12,
+          "matches_reference_bytes": true,
+          "output_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+          "prefix_bytes": 0,
+          "profile": false,
+          "raw_bytes": 983,
+          "reference_capacity": 4101,
+          "runtime_input": true,
+          "sample": 0,
+          "seconds": 0.000359125,
+          "version": "1.26",
+          "warmup": true
+        },
+        {
+          "borrowed_output_alias_unchanged": true,
+          "boundary": "fresh compressor, distinct output allocation and prefix copy, raw compression, compressor free; preparation, validation and previous-output drop excluded",
+          "capacity": 4101,
+          "case": "prefix-natural-4096",
+          "independent_inflation": true,
+          "input_alias_unchanged": true,
+          "input_bytes": 4096,
+          "level": 12,
+          "matches_reference_bytes": true,
+          "output_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+          "prefix_bytes": 0,
+          "profile": true,
+          "raw_bytes": 983,
+          "reference_capacity": 4101,
+          "runtime_input": true,
+          "sample": 1,
+          "seconds": 0.000349875,
+          "version": "1.26",
+          "warmup": false
+        }
+      ],
+      "sample_counts": {
+        "libdeflate compression": 2140,
+        "other worker and idle": 53,
+        "independent validation": 85
+      },
+      "leaves": [
+        [
+          "libdeflate compression",
+          "deflate_find_min_cost_path",
+          1536
+        ],
+        [
+          "libdeflate compression",
+          "deflate_compress_near_optimal",
+          398
+        ],
+        [
+          "libdeflate compression",
+          "deflate_make_huffman_code",
+          72
+        ],
+        [
+          "libdeflate compression",
+          "deflate_optimize_and_flush_block",
+          43
+        ],
+        [
+          "libdeflate compression",
+          "_platform_memset_pattern16",
+          38
+        ],
+        [
+          "other worker and idle",
+          "deflate_make_huffman_code",
+          33
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core15decompress_fast",
+          31
+        ],
+        [
+          "libdeflate compression",
+          "deflate_flush_block",
+          24
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core8transfer",
+          21
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress",
+          15
+        ],
+        [
+          "libdeflate compression",
+          "deflate_precompute_huffman_header",
+          13
+        ],
+        [
+          "independent validation",
+          "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree",
+          12
+        ],
+        [
+          "libdeflate compression",
+          "OUTLINED_FUNCTION_10",
+          9
+        ],
+        [
+          "libdeflate compression",
+          "_platform_memset",
+          6
+        ],
+        [
+          "other worker and idle",
+          "_platform_memcmp",
+          5
+        ],
+        [
+          "other worker and idle",
+          "libdeflate_alloc_compressor_ex",
+          4
+        ],
+        [
+          "other worker and idle",
+          "_RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtBc_6string6StringNtNtCsibhWAaDYcoJ_10serde_json5value5ValueNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB3M_11VacantEntryB1D_B1Y_E12insert_entry0ECsifA6KkFEdIB_17libdeflate_worker",
+          4
+        ],
+        [
+          "independent validation",
+          "_platform_memset",
+          2
+        ],
+        [
+          "other worker and idle",
+          "mi_free",
+          2
+        ],
+        [
+          "libdeflate compression",
+          "_platform_memmove",
+          1
+        ],
+        [
+          "other worker and idle",
+          "mi_segment_span_allocate",
+          1
+        ],
+        [
+          "independent validation",
+          "_platform_memset_pattern16",
+          1
+        ],
+        [
+          "independent validation",
+          "mi_find_page",
+          1
+        ],
+        [
+          "independent validation",
+          "_mi_heap_realloc_zero",
+          1
+        ],
+        [
+          "independent validation",
+          "_platform_memmove",
+          1
+        ],
+        [
+          "other worker and idle",
+          "_RNvMs6_NtNtNtNtCsgKscDXrlV49_5alloc11collections5btree3map5entryINtB5_11VacantEntryNtNtBd_6string6StringNtNtCsibhWAaDYcoJ_10serde_json5value5ValueE12insert_entryCsifA6KkFEdIB_17libdeflate_worker",
+          1
+        ],
+        [
+          "other worker and idle",
+          "mach_absolute_time",
+          1
+        ],
+        [
+          "other worker and idle",
+          "_RNCINvCsifA6KkFEdIB_17libdeflate_worker3runNtNtNtCsgirOGyZpP7g_3std2io5stdio9StdinLockEs0_0B4_",
+          1
+        ],
+        [
+          "other worker and idle",
+          "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCsibhWAaDYcoJ_10serde_json5value5ValueE6insertCsifA6KkFEdIB_17libdeflate_worker",
+          1
+        ]
+      ]
+    }
+  ],
+  "median_samples": {
+    "libdeflate": {
+      "independent validation": 85.5,
+      "libdeflate compression": 2150.5,
+      "other worker and idle": 40.5
+    },
+    "current": {
+      "checked encoder and runtime": 252.0,
+      "independent validation": 61.0,
+      "match collection": 610.0,
+      "ordered scorer": 1089.5,
+      "other numeric phase": 238.5,
+      "other worker and idle": 11.5
+    },
+    "bottom-tested": {
+      "checked encoder and runtime": 293.5,
+      "independent validation": 78.5,
+      "match collection": 581.5,
+      "ordered scorer": 1086.5,
+      "other numeric phase": 222.0,
+      "other worker and idle": 10.0
+    }
+  },
+  "untimed": true
+}

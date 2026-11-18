@@ -1,0 +1,413 @@
+{
+  "compiler_source_commit": "2b930a8dfa0f085d46d68bc6593bd182b58f26a2",
+  "published_compiler_branch_commit": "217575382aa4e0292b9b549b9207c8061e0d4ac1",
+  "emitter_sha256": "b63eeb1fb8e4522a84b7016ec63ca8e0da2c92511be640f66f0ba9b98bc100b8",
+  "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+  "baseline": {
+    "object_text_bytes": 72520,
+    "root_code_bytes": 52008,
+    "root_frame_bytes": 3744,
+    "root_direct_calls": 372,
+    "object_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+    "metadata_sha256": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+  },
+  "size_denominators": {
+    "roc": 57696,
+    "libdeflate": 37080
+  },
+  "measurement_scope": "Static object size, compiler metadata, one emission timing and peak memory observation per configuration. No candidate was linked or runtime-qualified. Metadata call counts are not a census of final relocated calls. Root frame is not complete call-stack high-water.",
+  "cases": [
+    {
+      "name": "regions--family-0",
+      "flag_overrides": {
+        "MECH_COMPACT_CONTINUATION_WINDOWS": "661:662:662,889:890:890,1283:12930:1288,1339:1340:1344,1792:1793:1801,1850:1851:1859,10613:660:660,11381:901:901,12529:1282:1286,12808:1362:1366,14074:1791:1799,14357:1873:1881;35847:7155:7271,36182:7262:7382,37817:7806:7940,38036:7865:8000;8827:196:176,8882:209:189,8937:222:202,8992:235:215,9102:261:241"
+      },
+      "expected": {
+        "object_sha256": "155d1324b4088d38f2fc0604dac663042d89419043224a5e07aabd3da88ea6be",
+        "metadata_sha256": "30f6cee0e085e996558a7f9409f649dcfd74ccb473abbd5fa31cdb2d2ee57543",
+        "object_text_bytes": 73500,
+        "root_code_bytes": 52244,
+        "root_frame_bytes": 3920,
+        "root_direct_calls": 367
+      },
+      "recorded_evidence": "evidence/size-screens/regions/family-0",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "regions--family-1",
+      "flag_overrides": {
+        "MECH_COMPACT_CONTINUATION_WINDOWS": "661:662:662,889:890:890,1283:12930:1288,1339:1340:1344,1792:1793:1801,1850:1851:1859,10613:660:660,11381:901:901,12529:1282:1286,12808:1362:1366,14074:1791:1799,14357:1873:1881;35847:7155:7271,36182:7262:7382,37817:7806:7940,38036:7865:8000;183:195:176,196:208:189,209:221:202,222:234:215,248:260:241"
+      },
+      "expected": {
+        "object_sha256": "658dc3a6b83716a33dfec3d77998ae8c495cfd722846387a1b2dc2b9e3b6890b",
+        "metadata_sha256": "e3afc66f9cbdf07dc9ec71c7bd577d12436a00fecb7101ba05206d003d19a21f",
+        "object_text_bytes": 73524,
+        "root_code_bytes": 52272,
+        "root_frame_bytes": 3920,
+        "root_direct_calls": 367
+      },
+      "recorded_evidence": "evidence/size-screens/regions/family-1",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "regions--family-2",
+      "flag_overrides": {
+        "MECH_COMPACT_CONTINUATION_WINDOWS": "661:662:662,889:890:890,1283:12930:1288,1339:1340:1344,1792:1793:1801,1850:1851:1859,10613:660:660,11381:901:901,12529:1282:1286,12808:1362:1366,14074:1791:1799,14357:1873:1881;35847:7155:7271,36182:7262:7382,37817:7806:7940,38036:7865:8000;182:8879:176,195:8934:189,208:8989:202,221:9044:215,247:9154:241"
+      },
+      "expected": {
+        "object_sha256": "bc7932b83ce1fdcfa0b9c11af2a875fd3a8f4d0fbaeb7e80d154d359e7d0cefb",
+        "metadata_sha256": "14db951d7f286c27b8d0eb10e952fd779b52a608a7f090eab37c7ed116287525",
+        "object_text_bytes": 73532,
+        "root_code_bytes": 52272,
+        "root_frame_bytes": 3904,
+        "root_direct_calls": 368
+      },
+      "recorded_evidence": "evidence/size-screens/regions/family-2",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "regions--family-3",
+      "flag_overrides": {
+        "MECH_COMPACT_CONTINUATION_WINDOWS": "661:662:662,889:890:890,1283:12930:1288,1339:1340:1344,1792:1793:1801,1850:1851:1859,10613:660:660,11381:901:901,12529:1282:1286,12808:1362:1366,14074:1791:1799,14357:1873:1881;35847:7155:7271,36182:7262:7382,37817:7806:7940,38036:7865:8000;8833:8879:176,8888:8934:189,8943:8989:202,8998:9044:215,9108:9154:241"
+      },
+      "expected": {
+        "object_sha256": "a9ac604076267fff7e622fdb0a110b9307a29f91c400dbf0654221d628c29083",
+        "metadata_sha256": "7ffe981361b30546bd47f09b0a94ce0e0705334a951fbae489850c8964a9585b",
+        "object_text_bytes": 72920,
+        "root_code_bytes": 52152,
+        "root_frame_bytes": 3840,
+        "root_direct_calls": 372
+      },
+      "recorded_evidence": "evidence/size-screens/regions/family-3",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "regions--family-4",
+      "flag_overrides": {
+        "MECH_COMPACT_CONTINUATION_WINDOWS": "661:662:662,889:890:890,1283:12930:1288,1339:1340:1344,1792:1793:1801,1850:1851:1859,10613:660:660,11381:901:901,12529:1282:1286,12808:1362:1366,14074:1791:1799,14357:1873:1881;35847:7155:7271,36182:7262:7382,37817:7806:7940,38036:7865:8000;8833:196:176,8888:209:189,8943:222:202,8998:235:215,9108:261:241"
+      },
+      "expected": {
+        "object_sha256": "4ae9d2a8a7a0e2a41f161d72a4d63446afa935dace35e9f9b530c917d4aa63f8",
+        "metadata_sha256": "2ffd9c5cbfd2fe4e3065d16c2f750130f8fab810a1ee3690162e495810502eee",
+        "object_text_bytes": 73204,
+        "root_code_bytes": 52440,
+        "root_frame_bytes": 3888,
+        "root_direct_calls": 372
+      },
+      "recorded_evidence": "evidence/size-screens/regions/family-4",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "regions--family-5",
+      "flag_overrides": {
+        "MECH_COMPACT_CONTINUATION_WINDOWS": "661:662:662,889:890:890,1283:12930:1288,1339:1340:1344,1792:1793:1801,1850:1851:1859,10613:660:660,11381:901:901,12529:1282:1286,12808:1362:1366,14074:1791:1799,14357:1873:1881;35847:7155:7271,36182:7262:7382,37817:7806:7940,38036:7865:8000;8824:8882:176,8934:8992:202,9099:9157:241"
+      },
+      "expected": {
+        "object_sha256": "cf4effbad2d62782ce6f7fb438773bf00ad28de19f70db17ca0cd19fda2f9592",
+        "metadata_sha256": "eda3f0bf7d97b4bdf4978957962f4c2a791be7445bb62f7d88083f1f4bb0a031",
+        "object_text_bytes": 72924,
+        "root_code_bytes": 52040,
+        "root_frame_bytes": 3840,
+        "root_direct_calls": 370
+      },
+      "recorded_evidence": "evidence/size-screens/regions/family-5",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "regions--family-6",
+      "flag_overrides": {
+        "MECH_COMPACT_CONTINUATION_WINDOWS": "661:662:662,889:890:890,1283:12930:1288,1339:1340:1344,1792:1793:1801,1850:1851:1859,10613:660:660,11381:901:901,12529:1282:1286,12808:1362:1366,14074:1791:1799,14357:1873:1881;35847:7155:7271,36182:7262:7382,37817:7806:7940,38036:7865:8000;8827:208:176,8937:234:202"
+      },
+      "expected": {
+        "object_sha256": "bd393f887826863d05380f70fa1ff5d68012645bb1ef046cfa4b913e115dcb88",
+        "metadata_sha256": "26e8aa14c4749db11e0290e9c859a49c4de028a385ae68d5f1fbdc4c651bfa89",
+        "object_text_bytes": 73244,
+        "root_code_bytes": 52036,
+        "root_frame_bytes": 4032,
+        "root_direct_calls": 366
+      },
+      "recorded_evidence": "evidence/size-screens/regions/family-6",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "regions--family-7",
+      "flag_overrides": {
+        "MECH_COMPACT_CONTINUATION_WINDOWS": "661:662:662,889:890:890,1283:12930:1288,1339:1340:1344,1792:1793:1801,1850:1851:1859,10613:660:660,11381:901:901,12529:1282:1286,12808:1362:1366,14074:1791:1799,14357:1873:1881;35847:7155:7271,36182:7262:7382,37817:7806:7940,38036:7865:8000;183:8934:176,209:9044:202"
+      },
+      "expected": {
+        "object_sha256": "f3f4116efda2ace0cbce1f43851396b79122e657990284f0c94cb4debff1a005",
+        "metadata_sha256": "cb62641d1ae790b4454107821a9214926de743be4a00461a3b43211590c6dd09",
+        "object_text_bytes": 73252,
+        "root_code_bytes": 52036,
+        "root_frame_bytes": 4032,
+        "root_direct_calls": 366
+      },
+      "recorded_evidence": "evidence/size-screens/regions/family-7",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "regions--family-8",
+      "flag_overrides": {
+        "MECH_COMPACT_CONTINUATION_WINDOWS": "661:662:662,889:890:890,1283:12930:1288,1339:1340:1344,1792:1793:1801,1850:1851:1859,10613:660:660,11381:901:901,12529:1282:1286,12808:1362:1366,14074:1791:1799,14357:1873:1881;35847:7155:7271,36182:7262:7382,37817:7806:7940,38036:7865:8000;8876:8934:189,8986:9044:215"
+      },
+      "expected": {
+        "object_sha256": "fc5bd06a66af199cec4d7f726402e176be7b82be9bbbff5a7c32838d58a7b9eb",
+        "metadata_sha256": "c5397829bf546b8edbd6e0633b05e5661915fe98278d951390d67d41ee5e7f99",
+        "object_text_bytes": 73320,
+        "root_code_bytes": 51464,
+        "root_frame_bytes": 3696,
+        "root_direct_calls": 370
+      },
+      "recorded_evidence": "evidence/size-screens/regions/family-8",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "regions--family-9",
+      "flag_overrides": {
+        "MECH_COMPACT_CONTINUATION_WINDOWS": "661:662:662,889:890:890,1283:12930:1288,1339:1340:1344,1792:1793:1801,1850:1851:1859,10613:660:660,11381:901:901,12529:1282:1286,12808:1362:1366,14074:1791:1799,14357:1873:1881;35847:7155:7271,36182:7262:7382,37817:7806:7940,38036:7865:8000;8632:144:120,8738:176:152"
+      },
+      "expected": {
+        "object_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "metadata_sha256": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+        "object_text_bytes": 72520,
+        "root_code_bytes": 52008,
+        "root_frame_bytes": 3744,
+        "root_direct_calls": 372
+      },
+      "recorded_evidence": "evidence/size-screens/regions/family-9",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "policies--owner-all",
+      "flag_overrides": {
+        "MECH_COMPACT_PROVE_BACKING_OWNERS": "all"
+      },
+      "expected": {
+        "object_sha256": "e6a670623be4d7b10ea796d5b22f4c26bdfd4394300a6b0fa982c8685631bcb9",
+        "metadata_sha256": "d67ff6da1a0e98dfd039091f53602f3549ea040d51fa9fbd9f0734626fa00c6e",
+        "object_text_bytes": 72344,
+        "root_code_bytes": 50956,
+        "root_frame_bytes": 3568,
+        "root_direct_calls": 372
+      },
+      "recorded_evidence": "evidence/size-screens/policies/owner-all",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "policies--owner-ranges",
+      "flag_overrides": {
+        "MECH_COMPACT_PROVE_BACKING_OWNERS": "ranges"
+      },
+      "expected": {
+        "object_sha256": "172a40de486b0c53ecfb94ce383ac9036f17b12b84f632005421ded5d04f6ce0",
+        "metadata_sha256": "a7475b28e0db9f41184e6db3358efbee2358489566c47d1b79411010899a1424",
+        "object_text_bytes": 72392,
+        "root_code_bytes": 51880,
+        "root_frame_bytes": 3744,
+        "root_direct_calls": 372
+      },
+      "recorded_evidence": "evidence/size-screens/policies/owner-ranges",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "policies--inline-outside-loops",
+      "flag_overrides": {
+        "MECH_COMPACT_INLINE_SINGLE_CALLS": "outside-loops"
+      },
+      "expected": {
+        "object_sha256": "fd2b9367876325a532da3ed03b8b9351f276cd81cf424ad591ad18a7b79ac451",
+        "metadata_sha256": "933ee0320157663737827f6a50dc5407d0842f1b1749ea7bc128147fc8198068",
+        "object_text_bytes": 72600,
+        "root_code_bytes": 51212,
+        "root_frame_bytes": 3536,
+        "root_direct_calls": 372
+      },
+      "recorded_evidence": "evidence/size-screens/policies/inline-outside-loops",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "policies--inline-none",
+      "flag_overrides": {
+        "MECH_COMPACT_INLINE_SINGLE_CALLS": null
+      },
+      "expected": {
+        "object_sha256": "fd2b9367876325a532da3ed03b8b9351f276cd81cf424ad591ad18a7b79ac451",
+        "metadata_sha256": "933ee0320157663737827f6a50dc5407d0842f1b1749ea7bc128147fc8198068",
+        "object_text_bytes": 72600,
+        "root_code_bytes": 51212,
+        "root_frame_bytes": 3536,
+        "root_direct_calls": 372
+      },
+      "recorded_evidence": "evidence/size-screens/policies/inline-none",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "policies--thread-routes",
+      "flag_overrides": {
+        "MECH_COMPACT_ROOT_FLOW_PASSES": "equal,identity,thread"
+      },
+      "expected": {
+        "object_sha256": "aaf45ffd7b2e3aeac58e38b8b989adf3c0434d166309a780ed3023e179f3822f",
+        "metadata_sha256": "c41a7a84a7e4ab15326d1d57080c5aa247240d2c3fb9b4bc0212e83884bcc3b0",
+        "object_text_bytes": 72648,
+        "root_code_bytes": 52144,
+        "root_frame_bytes": 3760,
+        "root_direct_calls": 372
+      },
+      "recorded_evidence": "evidence/size-screens/policies/thread-routes",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "policies--predicate-routes",
+      "flag_overrides": {
+        "MECH_COMPACT_ROOT_FLOW_PASSES": "equal,identity,predicates"
+      },
+      "expected": {
+        "object_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "metadata_sha256": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+        "object_text_bytes": 72520,
+        "root_code_bytes": 52008,
+        "root_frame_bytes": 3744,
+        "root_direct_calls": 372
+      },
+      "recorded_evidence": "evidence/size-screens/policies/predicate-routes",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "policies--final-cleanup",
+      "flag_overrides": {
+        "MECH_COMPACT_FINISH_CFG_CLEANUP": "1"
+      },
+      "expected": {
+        "object_sha256": "81fec8bfde4374523be145511e1f80d9e5f3c7b74fbf4be0803986997d372d50",
+        "metadata_sha256": "05aad5ff8a16485f1c283d2083d539a953691a6105c2b6cd25e945696bb2fab1",
+        "object_text_bytes": 72264,
+        "root_code_bytes": 51752,
+        "root_frame_bytes": 3760,
+        "root_direct_calls": 371
+      },
+      "recorded_evidence": "evidence/size-screens/policies/final-cleanup",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "policies--continuation-registers-6",
+      "flag_overrides": {
+        "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "6"
+      },
+      "expected": {
+        "object_sha256": "ddf45b958b4256cd7b64f41af0b964cfdfa0f7747ed3f4a13070e2fb53ec48f9",
+        "metadata_sha256": "de3c4a53eff75c96cea4af9377db7be47ab90c23ee7cbae55170c6dfed4f7cf0",
+        "object_text_bytes": 72088,
+        "root_code_bytes": 51684,
+        "root_frame_bytes": 3856,
+        "root_direct_calls": 369
+      },
+      "recorded_evidence": "evidence/size-screens/policies/continuation-registers-6",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "combinations--owners-cleanup",
+      "flag_overrides": {
+        "MECH_COMPACT_FINISH_CFG_CLEANUP": "1",
+        "MECH_COMPACT_PROVE_BACKING_OWNERS": "all"
+      },
+      "expected": {
+        "object_sha256": "e87a38bed8ed0f033836b2dfc826cdd9dad4d105f1f4f511582a40f0253d0f2b",
+        "metadata_sha256": "013998f49b3f4a4e2d8cecafb66a99029ad0eb256e9fc39532050550f6a7f6cb",
+        "object_text_bytes": 72136,
+        "root_code_bytes": 51620,
+        "root_frame_bytes": 3792,
+        "root_direct_calls": 371
+      },
+      "recorded_evidence": "evidence/size-screens/combinations/owners-cleanup",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "combinations--ranges-cleanup",
+      "flag_overrides": {
+        "MECH_COMPACT_FINISH_CFG_CLEANUP": "1",
+        "MECH_COMPACT_PROVE_BACKING_OWNERS": "ranges"
+      },
+      "expected": {
+        "object_sha256": "eb573de482834f97535dd5e974cfeba5d22c77bf069c8f394e00c372f6719004",
+        "metadata_sha256": "33f74f5c1c4ec406b94d27158dcda0192c58d3250dfc317ff8279a15231ea5c0",
+        "object_text_bytes": 72248,
+        "root_code_bytes": 51744,
+        "root_frame_bytes": 3760,
+        "root_direct_calls": 371
+      },
+      "recorded_evidence": "evidence/size-screens/combinations/ranges-cleanup",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "combinations--owners-inline-4879",
+      "flag_overrides": {
+        "MECH_COMPACT_INLINE_SYMBOLS": "mech_compact_numeric_4879",
+        "MECH_COMPACT_PROVE_BACKING_OWNERS": "all"
+      },
+      "expected": {
+        "object_sha256": "a2092b3d6b68a5a6988c86bb78d2374d44c8e387dc18d448c739dba7fb3fb490",
+        "metadata_sha256": "5c34a40103257d4c75e6eb03091659c363f3cf8f6c2fd2d1db95313e2d044b89",
+        "object_text_bytes": 72168,
+        "root_code_bytes": 51312,
+        "root_frame_bytes": 3680,
+        "root_direct_calls": 372
+      },
+      "recorded_evidence": "evidence/size-screens/combinations/owners-inline-4879",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "combinations--owners-inline-4673",
+      "flag_overrides": {
+        "MECH_COMPACT_INLINE_SYMBOLS": "mech_compact_numeric_4673_vector",
+        "MECH_COMPACT_PROVE_BACKING_OWNERS": "all"
+      },
+      "expected": {
+        "object_sha256": "e6a670623be4d7b10ea796d5b22f4c26bdfd4394300a6b0fa982c8685631bcb9",
+        "metadata_sha256": "d67ff6da1a0e98dfd039091f53602f3549ea040d51fa9fbd9f0734626fa00c6e",
+        "object_text_bytes": 72344,
+        "root_code_bytes": 50956,
+        "root_frame_bytes": 3568,
+        "root_direct_calls": 372
+      },
+      "recorded_evidence": "evidence/size-screens/combinations/owners-inline-4673",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "combinations--owners-cleanup-cold",
+      "flag_overrides": {
+        "MECH_COMPACT_FINISH_CFG_CLEANUP": "1",
+        "MECH_COMPACT_PROVE_BACKING_OWNERS": "all",
+        "MECH_COMPACT_SHARE_COLD_TAILS": "1"
+      },
+      "expected": {
+        "object_sha256": "2fc90190a967185918f3219619de0fbd1540c12574f47a6dcc5fa075c731bc4a",
+        "metadata_sha256": "d24c29e3748d63c9fe79b533e85d5438571b14e1360d4eaa326498bec3457580",
+        "object_text_bytes": 71768,
+        "root_code_bytes": 51264,
+        "root_frame_bytes": 3792,
+        "root_direct_calls": 371
+      },
+      "recorded_evidence": "evidence/size-screens/combinations/owners-cleanup-cold",
+      "runtime_qualification": "not run; static screen only"
+    },
+    {
+      "name": "combinations--ranges-cleanup-cold",
+      "flag_overrides": {
+        "MECH_COMPACT_FINISH_CFG_CLEANUP": "1",
+        "MECH_COMPACT_PROVE_BACKING_OWNERS": "ranges",
+        "MECH_COMPACT_SHARE_COLD_TAILS": "1"
+      },
+      "expected": {
+        "object_sha256": "077a4515c94342b0cfb1cf8574a125cd21ec25e584edc0a1422c00d4f3f2a724",
+        "metadata_sha256": "2029317eb72bafbe4d715e2a9604ce83416de90ffae442463d3364134be47620",
+        "object_text_bytes": 71816,
+        "root_code_bytes": 51304,
+        "root_frame_bytes": 3760,
+        "root_direct_calls": 371
+      },
+      "recorded_evidence": "evidence/size-screens/combinations/ranges-cleanup-cold",
+      "runtime_qualification": "not run; static screen only"
+    }
+  ]
+}

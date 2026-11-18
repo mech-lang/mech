@@ -1,0 +1,22 @@
+{
+  "purpose": "Preserve native function alignment residues with 64 bytes less emitted text.",
+  "runs": [
+    "both complete orders of the focused list"
+  ],
+  "cases": [
+    "prefix-natural-65535",
+    "prefix-natural-65536",
+    "prefix-natural-65537",
+    "prefix-natural-262144",
+    "prefix-natural-8192",
+    "prefix-random-4096",
+    "prefix-random-1048576",
+    "seven-stored-prefix",
+    "random-64"
+  ],
+  "symbols_moved_relative_to_control": [],
+  "control_worker_sha256": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41",
+  "paired_worker_sha256": "2920b25d6874cb954f872d64c5ca1fd4a175d865f1347fb63ecd39b59562bf7b",
+  "restored_worker_sha256": "775b12ba2e8c54a3a153504833df4601307ae691cd6bb31ecd57d16c78960b91",
+  "bootstrap": "same 0.5% resolution and 90% paired intervals as the original screen"
+}

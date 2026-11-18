@@ -1,15 +1,25 @@
 //! Compile the same checked numeric plan under an explicit entry contract.
 use super::super::{
+    arrays::ArrayImports,
     checked_region_discovery, checked_traversals,
     phase_bodies::{PhaseBodies, define_body, define_prepared_body, prepare_body},
+    phase_layout,
 };
 use super::*;
 use crate::native_artifact::{
-    codegen::control::CfgCleanup,
-    program::codegen::{numeric_compact, wide_equal},
+    codegen::{common::unsigned_guard_facts, control::CfgCleanup, options::OptimizationPass},
+    program::{
+        codegen::{numeric_compact, wide_equal},
+        prepare::{readonly_numeric::Proof, tail::Region},
+    },
 };
 use cfg_cleanup::composed_reads::{Admission, Capture, DenseTables, Literal, View};
-use cranelift_codegen::{Context, ir::Signature, isa::TargetIsa};
+use cranelift_codegen::{
+    Context,
+    ir::{self, Signature},
+    isa::TargetIsa,
+};
+use std::sync::mpsc;
 
 pub(super) struct Composed {
     pub function: FuncId,
@@ -23,6 +33,7 @@ pub(super) struct Compiled {
     pub summary: serde_json::Value,
     pub code: Vec<u8>,
     pub composed: Option<Composed>,
+    pub packed_input: Option<Vec<usize>>,
 }
 type FinishReport = Box<
     dyn FnOnce(
@@ -40,6 +51,7 @@ struct Details {
     entry_bounds: Vec<(usize, u64, bool)>,
     finish_report: FinishReport,
     composed: Option<Composed>,
+    packed_input: Option<Vec<usize>>,
     vcode_path: Option<std::path::PathBuf>,
 }
 pub(super) struct Pending {
@@ -57,7 +69,11 @@ pub(super) struct DeferredGeneral {
     private: bool,
     input: SummaryInput,
 }
-pub(super) enum GeneralPending {
+pub(super) struct GeneralPending {
+    job: GeneralJob,
+    prepared_ir: Option<mpsc::Receiver<ir::Function>>,
+}
+enum GeneralJob {
     Ready(Pending),
     Deferred {
         ticket: super::super::compile_jobs::Ticket<(Context, PhaseCleanup)>,
@@ -65,7 +81,17 @@ pub(super) enum GeneralPending {
         input: SummaryInput,
     },
 }
+pub(super) enum VectorCompilation {
+    Equivalent(Prepared),
+    Pending(Pending),
+}
 impl General {
+    pub(super) fn function(&self) -> FuncId {
+        match self {
+            Self::Ready(ready) => ready.details.function,
+            Self::Deferred(ready) => ready.input.function,
+        }
+    }
     pub(super) fn entry_bounds(&self) -> &[(usize, u64, bool)] {
         match self {
             Self::Ready(ready) => ready.entry_bounds(),
@@ -85,9 +111,23 @@ impl General {
     pub(super) fn start(
         self,
         pool: &super::super::compile_jobs::Pool,
+        compare_vector_ir: bool,
     ) -> Result<GeneralPending, NativeCompileError> {
-        match self {
-            Self::Ready(ready) => ready.start(pool).map(GeneralPending::Ready),
+        let (sender, prepared_ir) = if compare_vector_ir {
+            let (sender, receiver) = mpsc::channel();
+            (Some(sender), Some(receiver))
+        } else {
+            (None, None)
+        };
+        let job = match self {
+            Self::Ready(ready) => {
+                if let Some(sender) = sender
+                    && !ready.context.want_disasm
+                {
+                    let _ = sender.send(ready.context.func.clone());
+                }
+                GeneralJob::Ready(ready.start(pool)?)
+            }
             Self::Deferred(ready) => {
                 let DeferredGeneral {
                     mut context,
@@ -115,16 +155,22 @@ impl General {
                         true,
                     )?;
                     prepare_body(isa, &mut context)?;
+                    // Send the input before lowering so different vector bodies can still
+                    // start machine compilation while the general job is running.
+                    if let Some(sender) = sender {
+                        let _ = sender.send(context.func.clone());
+                    }
                     let context = super::super::compile_jobs::compile(context, isa)?;
                     Ok((context, cleanup))
                 })?;
-                Ok(GeneralPending::Deferred {
+                GeneralJob::Deferred {
                     ticket,
                     report,
                     input,
-                })
+                }
             }
-        }
+        };
+        Ok(GeneralPending { job, prepared_ir })
     }
 }
 impl DeferredGeneral {
@@ -156,10 +202,31 @@ impl DeferredGeneral {
     }
 }
 impl GeneralPending {
-    pub(super) fn finish<M: Module>(self, module: &mut M) -> Result<Compiled, NativeCompileError> {
-        match self {
-            Self::Ready(pending) => pending.finish(module),
-            Self::Deferred {
+    pub(super) fn start_vector(
+        &mut self,
+        vector: Prepared,
+        pool: &super::super::compile_jobs::Pool,
+    ) -> Result<VectorCompilation, NativeCompileError> {
+        // Compare the whole function, including its signature, effects, source locations,
+        // external names, and target layout hints. Both jobs use the same ISA and control plane.
+        if !vector.context.want_disasm
+            && let Some(receiver) = self.prepared_ir.take()
+            && receiver
+                .recv()
+                .is_ok_and(|general| general == vector.context.func)
+        {
+            return Ok(VectorCompilation::Equivalent(vector));
+        }
+        vector.start(pool).map(VectorCompilation::Pending)
+    }
+
+    pub(super) fn finish<M: Module>(
+        self,
+        module: &mut M,
+    ) -> Result<(Compiled, Context), NativeCompileError> {
+        match self.job {
+            GeneralJob::Ready(pending) => pending.finish_with_context(module),
+            GeneralJob::Deferred {
                 ticket,
                 report,
                 input,
@@ -176,8 +243,27 @@ impl GeneralPending {
                     None,
                 );
                 super::super::compile_jobs::publish(module, details.function, &context)?;
-                details.finish(context)
+                Ok((details.finish(&context)?, context))
             }
+        }
+    }
+}
+
+impl VectorCompilation {
+    pub(super) fn finish<M: Module>(
+        self,
+        module: &mut M,
+        general: &Context,
+    ) -> Result<Compiled, NativeCompileError> {
+        match self {
+            Self::Equivalent(vector) => {
+                // Keep the vector's own guard and cleanup metadata. Its declaration was
+                // replayed for stable IDs, and the identical body will never be selected.
+                let compiled = vector.details.finish(general)?;
+                eprintln!("compact vector code reused: {}", compiled.summary["symbol"]);
+                Ok(compiled)
+            }
+            Self::Pending(pending) => pending.finish(module),
         }
     }
 }
@@ -205,7 +291,7 @@ impl Prepared {
             bodies,
         )?;
         self.details.function = function;
-        let mut compiled = self.details.finish(self.context)?;
+        let mut compiled = self.details.finish(&self.context)?;
         compiled.summary["symbol"] = serde_json::json!(target);
         Ok(compiled)
     }
@@ -221,13 +307,21 @@ impl Prepared {
 }
 impl Pending {
     pub(super) fn finish<M: Module>(self, module: &mut M) -> Result<Compiled, NativeCompileError> {
+        self.finish_with_context(module)
+            .map(|(compiled, _)| compiled)
+    }
+
+    fn finish_with_context<M: Module>(
+        self,
+        module: &mut M,
+    ) -> Result<(Compiled, Context), NativeCompileError> {
         let context = self.ticket.wait()?;
         super::super::compile_jobs::publish(module, self.details.function, &context)?;
-        self.details.finish(context)
+        Ok((self.details.finish(&context)?, context))
     }
 }
 impl Details {
-    fn finish(self, context: Context) -> Result<Compiled, NativeCompileError> {
+    fn finish(self, context: &Context) -> Result<Compiled, NativeCompileError> {
         let compiled = context
             .compiled_code()
             .ok_or_else(|| backend("compact numeric phase lacks code"))?;
@@ -238,13 +332,18 @@ impl Details {
                 .ok_or_else(|| backend("phase VCode diagnostic was not emitted"))?;
             std::fs::write(path, text).map_err(backend)?;
         }
-        let summary = (self.finish_report)(compiled, &self.entry_bounds)?;
+        let mut summary = (self.finish_report)(compiled, &self.entry_bounds)?;
+        if let Some(words) = &self.packed_input {
+            summary["input_words"] = serde_json::json!(words.len());
+            summary["packed_input_words"] = serde_json::json!(words);
+        }
         Ok(Compiled {
             function: self.function,
             entry_bounds: self.entry_bounds,
             summary,
             code: compiled.buffer.data().to_vec(),
             composed: self.composed,
+            packed_input: self.packed_input,
         })
     }
 }
@@ -257,6 +356,8 @@ pub(super) fn define<M: Module>(
     input_words: usize,
     output_words: usize,
     fixed_count: usize,
+    selected_output: Option<&BTreeSet<usize>>,
+    pack_input: bool,
     vectors: Option<&VectorContract>,
     private: Option<&PrivatePhase>,
     no_growth: Option<&NoGrowth>,
@@ -273,6 +374,8 @@ pub(super) fn define<M: Module>(
         input_words,
         output_words,
         fixed_count,
+        selected_output,
+        pack_input,
         vectors,
         private,
         no_growth,
@@ -292,6 +395,8 @@ pub(super) fn prepare<M: Module>(
     input_words: usize,
     output_words: usize,
     fixed_count: usize,
+    selected_output: Option<&BTreeSet<usize>>,
+    pack_input: bool,
     vectors: Option<&VectorContract>,
     private: Option<&PrivatePhase>,
     no_growth: Option<&NoGrowth>,
@@ -308,6 +413,8 @@ pub(super) fn prepare<M: Module>(
         input_words,
         output_words,
         fixed_count,
+        selected_output,
+        pack_input,
         vectors,
         private,
         no_growth,
@@ -330,6 +437,8 @@ pub(super) fn prepare_general<M: Module>(
     input_words: usize,
     output_words: usize,
     fixed_count: usize,
+    selected_output: Option<&BTreeSet<usize>>,
+    pack_input: bool,
     vectors: Option<&VectorContract>,
     private: Option<&PrivatePhase>,
     no_growth: Option<&NoGrowth>,
@@ -347,6 +456,8 @@ pub(super) fn prepare_general<M: Module>(
         input_words,
         output_words,
         fixed_count,
+        selected_output,
+        pack_input,
         vectors,
         private,
         no_growth,
@@ -358,6 +469,78 @@ pub(super) fn prepare_general<M: Module>(
     )
 }
 
+fn general_ir_observed() -> bool {
+    [
+        "MECH_COMPACT_PHASE_CONTROLLER_WINDOWS",
+        "MECH_INSPECT_PHASE_CLIF",
+        "MECH_INSPECT_PHASE_VCODE",
+        "MECH_COMPACT_FAILURE_DIR",
+    ]
+    .iter()
+    .any(|name| std::env::var_os(name).is_some())
+}
+
+pub(super) fn refused_general_ssa_unobserved() -> bool {
+    !general_ir_observed()
+        && [
+            "MECH_COMPACT_DUMP_LLVM_DIRECTORY",
+            "MECH_TRAVERSAL_FLOOR_DIAGNOSTIC",
+            "MECH_COMPACT_SHARE_NUMERIC_ERROR_TAILS",
+        ]
+        .iter()
+        .all(|name| std::env::var_os(name).is_none())
+}
+
+fn phase_signature<M: Module>(module: &M) -> Signature {
+    let mut signature = module.make_signature();
+    signature.params = vec![AbiParam::new(types::I64); 3];
+    signature.returns = vec![AbiParam::new(types::I64); 2];
+    signature
+}
+
+fn declare_phase<M: Module>(
+    module: &mut M,
+    symbol: &str,
+    signature: &Signature,
+) -> Result<FuncId, NativeCompileError> {
+    let function = module
+        .declare_function(symbol, Linkage::Local, signature)
+        .map_err(backend)?;
+    eprintln!("compact-stage: numeric phase {symbol}");
+    Ok(function)
+}
+
+pub(super) fn declare_refused_general<M: Module>(
+    module: &mut M,
+    header: usize,
+) -> Result<FuncId, NativeCompileError> {
+    let signature = phase_signature(module);
+    // The retained vector and the root still use the original module IDs.
+    // Reserve the same imports and local declaration as phase_ir.
+    ArrayImports::declare(module, false)?;
+    let symbol = format!("mech_compact_numeric_{header}");
+    let function = declare_phase(module, &symbol, &signature)?;
+    eprintln!("compact-stage: skipped general numeric SSA {symbol}");
+    Ok(function)
+}
+
+fn entry_bounds(proof: &Proof, bounds: &[(usize, u64)]) -> Vec<(usize, u64, bool)> {
+    bounds
+        .iter()
+        .map(|&(array, minimum)| (array, minimum, proof.arrays[array].appends))
+        .collect()
+}
+
+pub(super) fn refused_general_bounds(
+    code: CodePlan<'_>,
+    region: &Region,
+    private: &PrivatePhase,
+) -> Option<Vec<(usize, u64, bool)>> {
+    let proof = region.numeric.as_ref()?;
+    let bounds = numeric_compact::private_checked_child_bounds(code, region, private)?;
+    Some(entry_bounds(proof, &bounds))
+}
+
 fn prepare_impl<M: Module>(
     module: &mut M,
     prepared: &PreparedNativeProgram,
@@ -366,6 +549,8 @@ fn prepare_impl<M: Module>(
     input_words: usize,
     output_words: usize,
     fixed_count: usize,
+    selected_output: Option<&BTreeSet<usize>>,
+    pack_input: bool,
     vectors: Option<&VectorContract>,
     private: Option<&PrivatePhase>,
     no_growth: Option<&NoGrowth>,
@@ -385,9 +570,7 @@ fn prepare_impl<M: Module>(
         .ok_or_else(|| backend("phase lacks checked numeric proof"))?;
     let controls = CompilationControls::new(OptimizationOptions::default());
     let symbol = format!("mech_compact_numeric_{header}{suffix}");
-    let mut signature = module.make_signature();
-    signature.params = vec![AbiParam::new(types::I64); 3];
-    signature.returns = vec![AbiParam::new(types::I64); 2];
+    let signature = phase_signature(module);
     let error_origin_base = bodies.is_some().then_some(header);
     let (mut context, report) = phase_ir(
         module,
@@ -399,13 +582,11 @@ fn prepare_impl<M: Module>(
         vectors,
         private,
         no_growth,
+        selected_output,
         false,
         error_origin_base,
     )?;
-    let function = module
-        .declare_function(&symbol, Linkage::Local, &signature)
-        .map_err(backend)?;
-    eprintln!("compact-stage: numeric phase {symbol}");
+    let function = declare_phase(module, &symbol, &signature)?;
     if let Err(error) = context.verify(module.isa()) {
         if let Some(path) = std::env::var_os("MECH_COMPACT_FAILURE_DIR") {
             let root = std::path::PathBuf::from(path);
@@ -428,27 +609,17 @@ fn prepare_impl<M: Module>(
         && proof.arrays.iter().all(|array| !array.appends)
         && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little;
     if defer_general
+        && !pack_input
         && bodies.is_none()
-        && std::env::var_os("MECH_COMPACT_PHASE_CONTROLLER_WINDOWS").is_none()
+        && !general_ir_observed()
         && vectors.is_none()
         && no_growth.is_none()
         && literal_views.is_empty()
         && !possible_histogram
-        && [
-            "MECH_INSPECT_PHASE_CLIF",
-            "MECH_INSPECT_PHASE_VCODE",
-            "MECH_COMPACT_FAILURE_DIR",
-        ]
-        .iter()
-        .all(|name| std::env::var_os(name).is_none())
     {
         let input = SummaryInput {
             function,
-            entry_bounds: report
-                .phase_entry_bounds
-                .iter()
-                .map(|&(array, minimum)| (array, minimum, proof.arrays[array].appends))
-                .collect(),
+            entry_bounds: entry_bounds(proof, &report.phase_entry_bounds),
             header,
             exit: region.tail.exit(),
             symbol,
@@ -457,6 +628,10 @@ fn prepare_impl<M: Module>(
             fixed_count,
             actual_unit_append_growth: true,
             checked_regions: None,
+            selected_output_words: selected_output.map(BTreeSet::len),
+            packed_input: None,
+            unsigned_guards: 0,
+            packed_halfword_stores: 0,
         };
         return Ok(General::Deferred(DeferredGeneral {
             context,
@@ -484,6 +659,8 @@ fn prepare_impl<M: Module>(
         && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
         && std::env::var_os("MECH_PACK_PRIVATE_HALFWORD_READS").is_some();
     let reuse_lengths = std::env::var_os("MECH_REUSE_ADMITTED_VIEW_LENGTHS").is_some();
+    let pack_halfword_stores = std::env::var_os("MECH_PACK_PRIVATE_HALFWORD_STORES");
+    let mut paired_halfword_stores = None;
     if (pack_halfwords || reuse_lengths)
         && !observe
         && cleanup.enabled
@@ -514,12 +691,13 @@ fn prepare_impl<M: Module>(
             }
             if !floors.is_empty() {
                 context.flowgraph();
-                let packed = cfg_cleanup::packed_halfword_reads::fold(
+                let (packed, stores) = cfg_cleanup::packed_halfword_reads::fold(
                     &mut context.func,
                     &context.cfg,
                     &context.domtree,
                     &floors,
                 );
+                paired_halfword_stores = Some(stores);
                 if packed != 0 {
                     context.verify(module.isa()).map_err(backend)?;
                     if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
@@ -813,6 +991,7 @@ fn prepare_impl<M: Module>(
                         vectors,
                         private,
                         no_growth,
+                        selected_output,
                         true,
                         error_origin_base,
                     )?;
@@ -928,6 +1107,9 @@ fn prepare_impl<M: Module>(
                 let id = module
                     .declare_function(&name, Linkage::Local, &signature)
                     .map_err(backend)?;
+                if !observe && module.isa().name() == "aarch64" {
+                    phase_layout::apply(&mut candidate, &name).map_err(backend)?;
+                }
                 let inspect_path = std::env::var_os("MECH_INSPECT_PHASE_CLIF")
                     .map(std::path::PathBuf::from)
                     .filter(|path| path.file_stem().is_some_and(|stem| stem == name.as_str()));
@@ -958,6 +1140,63 @@ fn prepare_impl<M: Module>(
             }
         }
     }
+    let packed_halfword_stores = if pack_halfword_stores.is_some()
+        && let Some(stores) = paired_halfword_stores
+    {
+        context.compute_cfg();
+        let packed = stores.fold(&mut context.func, &context.cfg);
+        if packed != 0 {
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        packed
+    } else {
+        0
+    };
+    let extrema = std::env::var_os("MECH_PRIVATE_VECTOR_PROVE_UNSIGNED_EXTREMA").is_some();
+    let unsigned_guards = if !observe
+        && cleanup.enabled
+        && private.is_some()
+        && vectors.is_some()
+        && controls.enabled(OptimizationPass::UnsignedGuardFacts)
+        && (extrema || std::env::var_os("MECH_PRIVATE_VECTOR_UNSIGNED_GUARDS").is_some())
+    {
+        let removed = unsigned_guard_facts::optimize_with_ranges(
+            &mut context,
+            &[],
+            controls.enabled(OptimizationPass::ModularUnsignedRanges),
+            extrema,
+        );
+        if removed != 0 {
+            let isa = module.isa();
+            context
+                .prune_unreachable_and_remove_constant_phis(isa)
+                .map_err(backend)?;
+            context.verify(isa).map_err(backend)?;
+        }
+        removed
+    } else {
+        0
+    };
+    if !observe
+        && private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_COMPACT_SKIP_EMPTY_JUMPS")
+            .is_some_and(|scope| scope == "vector" || scope == "all")
+    {
+        let count = cfg_cleanup::empty_jumps::forward(&mut context.func);
+        if count != 0 {
+            let isa = module.isa();
+            context.flowgraph();
+            context.eliminate_unreachable_code(isa).map_err(backend)?;
+            context.verify(isa).map_err(backend)?;
+        }
+        eprintln!("{symbol} forwarded empty jumps: {count}");
+    }
+    let packed_input = if pack_input {
+        phase_storage::pack_used_input_words(&mut context.func, input_words)
+    } else {
+        None
+    };
     if let Some(path) = std::env::var_os("MECH_INSPECT_PHASE_CLIF") {
         let path = std::path::PathBuf::from(path);
         if path.file_stem().is_some_and(|name| name == symbol.as_str()) {
@@ -1000,12 +1239,16 @@ fn prepare_impl<M: Module>(
     } else {
         None
     };
+    context.func.forward_spill_reloads = !observe
+        && private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_COMPACT_FORWARD_PHASE_SPILLS")
+            .is_some_and(|phase| phase == symbol.as_str());
+    if !observe && vectors.is_some() && module.isa().name() == "aarch64" {
+        phase_layout::apply(&mut context, &symbol).map_err(backend)?;
+    }
     prepare_body(module.isa(), &mut context)?;
-    let entry_bounds = report
-        .phase_entry_bounds
-        .iter()
-        .map(|&(array, minimum)| (array, minimum, proof.arrays[array].appends))
-        .collect::<Vec<_>>();
+    let entry_bounds = entry_bounds(proof, &report.phase_entry_bounds);
     Ok(General::Ready(finish_preparation(
         context,
         &report,
@@ -1021,6 +1264,10 @@ fn prepare_impl<M: Module>(
             fixed_count,
             actual_unit_append_growth: no_growth.is_none(),
             checked_regions,
+            selected_output_words: selected_output.map(BTreeSet::len),
+            packed_input,
+            unsigned_guards,
+            packed_halfword_stores,
         },
         future_write_hints,
         histogram,
@@ -1040,6 +1287,10 @@ pub(super) struct SummaryInput {
     fixed_count: usize,
     actual_unit_append_growth: bool,
     checked_regions: Option<serde_json::Value>,
+    selected_output_words: Option<usize>,
+    packed_input: Option<Vec<usize>>,
+    unsigned_guards: usize,
+    packed_halfword_stores: usize,
 }
 
 fn finish_preparation(
@@ -1063,6 +1314,10 @@ fn finish_preparation(
         fixed_count,
         actual_unit_append_growth,
         checked_regions,
+        selected_output_words,
+        packed_input,
+        unsigned_guards,
+        packed_halfword_stores,
     } = input;
     let PhaseCleanup {
         bit_counts,
@@ -1088,6 +1343,15 @@ fn finish_preparation(
         "actual_unit_append_growth":actual_unit_append_growth,"unique_writable_owner_gate":true,"cleanup":cleanup});
         if let Some(checked_regions) = checked_regions {
             summary["checked_regions"] = checked_regions;
+        }
+        if let Some(words) = selected_output_words {
+            summary["selected_success_words"] = serde_json::json!(words);
+        }
+        if unsigned_guards != 0 {
+            summary["unsigned_guards"] = serde_json::json!(unsigned_guards);
+        }
+        if packed_halfword_stores != 0 {
+            summary["packed_halfword_stores"] = serde_json::json!(packed_halfword_stores);
         }
         summary["bit_counts"] = serde_json::json!(bit_counts);
         if let Some(hint) = future_write_hints.first() {
@@ -1139,10 +1403,15 @@ fn finish_preparation(
             entry_bounds,
             finish_report,
             composed,
+            packed_input,
             vcode_path,
         },
     }
 }
+
+#[cfg(all(test, target_arch = "aarch64"))]
+#[path = "phase_layout_tests.rs"]
+mod phase_layout_tests;
 
 fn phase_ir<M: Module>(
     module: &mut M,
@@ -1154,6 +1423,7 @@ fn phase_ir<M: Module>(
     vectors: Option<&VectorContract>,
     private: Option<&PrivatePhase>,
     no_growth: Option<&NoGrowth>,
+    selected_output: Option<&BTreeSet<usize>>,
     countdown: bool,
     error_origin_base: Option<usize>,
 ) -> Result<(Context, numeric_compact::Report), NativeCompileError> {
@@ -1181,7 +1451,8 @@ fn phase_ir<M: Module>(
             Some(&storage),
             private,
             no_growth,
-        )?;
+        )?
+        .with_selected_output(selected_output);
         let native = if let Some(base) = error_origin_base {
             native.with_error_origin_base(base)
         } else {
@@ -1239,10 +1510,15 @@ fn optimize_phase(
     {
         cfg_cleanup::optimize(controls, context, isa)?;
     }
-    let equality = crate::native_artifact::program::codegen::wide_equal::optimize(
+    let compact_equality = private
+        && vectors.is_some()
+        && std::env::var_os("MECH_COMPACT_SHORT_EQUALITY_PHASE")
+            .is_some_and(|target| target == symbol);
+    let equality = wide_equal::optimize(
         context,
         &word_loops.compact_word_loops,
         private && vectors.is_some() && std::env::var_os("MECH_REUSE_EQUALITY_PREFIX").is_some(),
+        !compact_equality,
     );
     // Named experimental condition: growth state is absent from this callee.
     let threaded = if no_growth.is_some()
@@ -1267,11 +1543,23 @@ fn optimize_phase(
             eprintln!("{symbol} checked append run: {outcome:?}");
         }
     }
-    if no_growth.is_some() && std::env::var_os("MECH_NARROW_MASKED_ARITHMETIC").is_some() {
+    let narrow_fixed = (private && vectors.is_some())
+        .then(|| std::env::var_os("MECH_NARROW_PRIVATE_ARITHMETIC"))
+        .flatten();
+    if narrow_fixed.is_some()
+        || (no_growth.is_some() && std::env::var_os("MECH_NARROW_MASKED_ARITHMETIC").is_some())
+    {
         let narrowed =
             crate::native_artifact::program::codegen::low_word::narrow(&mut context.func);
+        let shifts = if narrow_fixed.is_some_and(|mode| mode == "shifts") {
+            crate::native_artifact::program::codegen::low_word::narrow_masked_shifts(
+                &mut context.func,
+            )
+        } else {
+            0
+        };
         if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
-            eprintln!("{symbol} low-word operations: {narrowed}");
+            eprintln!("{symbol} low-word operations: {narrowed} arithmetic, {shifts} shifts");
         }
     }
     // A completed ordered reduction names its own selected continuation.
@@ -1345,11 +1633,15 @@ fn optimize_phase(
             eprintln!("{symbol} repeated bounds checks: {changed}");
         }
     }
-    if private && vectors.is_some() && std::env::var_os("MECH_DEFER_EXIT_PACKET_WORDS").is_some() {
+    if private
+        && vectors.is_some()
+        && let Some(mode) = std::env::var_os("MECH_DEFER_EXIT_PACKET_WORDS")
+    {
         let changed = super::phase_storage::sink_exit_packet_words(
             &mut context.func,
             input_words,
             output_words,
+            mode == "multiple",
         );
         if changed != 0 {
             context.verify(isa).map_err(backend)?;
@@ -1373,8 +1665,11 @@ fn optimize_phase(
             eprintln!("{symbol} proved scalar spans: {changed}");
         }
     }
-    if private && vectors.is_some() && std::env::var_os("MECH_PROVE_PACKED_BASE_SPANS").is_some() {
-        let proved = cfg_cleanup::prove_packed_bases(controls, context, isa)?;
+    if private
+        && vectors.is_some()
+        && let Some(mode) = std::env::var_os("MECH_PROVE_PACKED_BASE_SPANS")
+    {
+        let proved = cfg_cleanup::prove_packed_bases(controls, context, isa, mode == "offsets")?;
         if proved != 0 && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!("{symbol} proved packed base spans: {proved}");
         }

@@ -1,0 +1,401 @@
+{
+  "machine": "Apple M1",
+  "scope": "Fresh encoder source through final executable link; compilers, runtimes, and adapters prebuilt",
+  "mech_compiler_build": "Rust opt-level 1 throughout, no PGO; frontend, native emitter, runtime and adapters identical for both variants; only MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS is enabled for the candidate",
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "frontends": {
+    "mech-control": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/native_compact_frontend",
+      "sha256": "9fc8d2135a8c5251d7af9acd12af5bd0b2f06f0d2ea4b9452d8273f2de984d82"
+    },
+    "mech-fresh-owner-counts": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/baseline-build/compiler/release/native_compact_frontend",
+      "sha256": "9fc8d2135a8c5251d7af9acd12af5bd0b2f06f0d2ea4b9452d8273f2de984d82"
+    }
+  },
+  "emitter_sha256": "100d6d2cd78a24f1b0fdd91a8f8e616dfec6e18c03bc6d91dbb701bd49080ae7",
+  "runtime_sha256": "147fef325ee8f2ac03e7385ba9ae1465e3e1dc3fdbe9c559b6ced2db683fc673",
+  "roc_compiler_sha256": "28467784aa83637d8a5aa70e074e627d5469449c4a6a1f068dd0b5cfb9819b9b",
+  "roc_source_sha256": "e2a7a543f4fb8863e1dd3f98d62a5a29a12d16cb3fa2db1960e8d55af0d0c2f1",
+  "c_source_sha256": "a46dae12f2020b68d20c965ae43f9710e3e792bf77f3ca4611582f8d8d0c9541",
+  "warmup": [
+    {
+      "actor": "mech-control",
+      "seconds": {
+        "frontend": 4.056139166932553,
+        "native": 2.305300791747868,
+        "link": 0.05622849985957146,
+        "total": 6.418272582814097,
+        "parse": 3.524427458
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/warmup/mech-control/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "mech-fresh-owner-counts",
+      "seconds": {
+        "frontend": 3.977581666316837,
+        "native": 2.2300400412641466,
+        "link": 0.03897008299827576,
+        "total": 6.247147957794368,
+        "parse": 3.5304049170000003
+      },
+      "encoder_sha256": "c809f6ce78e3d9d2a9e7df5686764ecc47089869610636cd0dd2c6f485dc243d",
+      "encoder_bytes": 159960,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/warmup/mech-fresh-owner-counts/compressor",
+      "executable_sha256": "a4ddd1849a8b7e9f707df272fe814dbc2b7da09add2f302cd2e711270ccd3970"
+    },
+    {
+      "actor": "roc",
+      "seconds": {
+        "compile": 3.2812403328716755,
+        "link": 0.03676141565665603,
+        "total": 3.318335499614477
+      },
+      "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+      "encoder_bytes": 88808,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/warmup/roc/compressor",
+      "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+    },
+    {
+      "actor": "libdeflate",
+      "seconds": {
+        "compile": 0.6012022499926388,
+        "link": 0.036332042422145605,
+        "total": 0.637784166727215
+      },
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+      "encoder_bytes": 52128,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/warmup/libdeflate/compressor",
+      "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+    }
+  ],
+  "trials": [
+    {
+      "actor": "mech-control",
+      "seconds": {
+        "frontend": 3.9922557496465743,
+        "native": 2.2231001667678356,
+        "link": 0.04664683295413852,
+        "total": 6.262570334132761,
+        "parse": 3.543224667
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/order-1/mech-control/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "mech-fresh-owner-counts",
+      "seconds": {
+        "frontend": 3.970956292003393,
+        "native": 2.2305451249703765,
+        "link": 0.040843917056918144,
+        "total": 6.242926999926567,
+        "parse": 3.518032834
+      },
+      "encoder_sha256": "c809f6ce78e3d9d2a9e7df5686764ecc47089869610636cd0dd2c6f485dc243d",
+      "encoder_bytes": 159960,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/order-1/mech-fresh-owner-counts/compressor",
+      "executable_sha256": "a4ddd1849a8b7e9f707df272fe814dbc2b7da09add2f302cd2e711270ccd3970"
+    },
+    {
+      "actor": "libdeflate",
+      "seconds": {
+        "compile": 0.45396604109555483,
+        "link": 0.03383566718548536,
+        "total": 0.48805316677317023
+      },
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+      "encoder_bytes": 52128,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/order-1/libdeflate/compressor",
+      "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+    },
+    {
+      "actor": "roc",
+      "seconds": {
+        "compile": 2.949156875256449,
+        "link": 0.03480504173785448,
+        "total": 2.984316375106573
+      },
+      "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+      "encoder_bytes": 88808,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/order-1/roc/compressor",
+      "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+    },
+    {
+      "actor": "mech-fresh-owner-counts",
+      "seconds": {
+        "frontend": 3.97118683392182,
+        "native": 2.2342659579589963,
+        "link": 0.040207166224718094,
+        "total": 6.246224124915898,
+        "parse": 3.518944875
+      },
+      "encoder_sha256": "c809f6ce78e3d9d2a9e7df5686764ecc47089869610636cd0dd2c6f485dc243d",
+      "encoder_bytes": 159960,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/order-2/mech-fresh-owner-counts/compressor",
+      "executable_sha256": "a4ddd1849a8b7e9f707df272fe814dbc2b7da09add2f302cd2e711270ccd3970"
+    },
+    {
+      "actor": "roc",
+      "seconds": {
+        "compile": 2.949639792088419,
+        "link": 0.03326462488621473,
+        "total": 2.98323266627267
+      },
+      "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+      "encoder_bytes": 88808,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/order-2/roc/compressor",
+      "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+    },
+    {
+      "actor": "mech-control",
+      "seconds": {
+        "frontend": 3.967621207702905,
+        "native": 2.227517290972173,
+        "link": 0.04602754209190607,
+        "total": 6.241712250281125,
+        "parse": 3.519490417
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/order-2/mech-control/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "libdeflate",
+      "seconds": {
+        "compile": 0.44580495823174715,
+        "link": 0.03311012499034405,
+        "total": 0.47916737478226423
+      },
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+      "encoder_bytes": 52128,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/order-2/libdeflate/compressor",
+      "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+    },
+    {
+      "actor": "roc",
+      "seconds": {
+        "compile": 2.94689550017938,
+        "link": 0.03422637516632676,
+        "total": 2.981442416086793
+      },
+      "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+      "encoder_bytes": 88808,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/order-3/roc/compressor",
+      "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+    },
+    {
+      "actor": "libdeflate",
+      "seconds": {
+        "compile": 0.44623804185539484,
+        "link": 0.03490191698074341,
+        "total": 0.4814411671832204
+      },
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+      "encoder_bytes": 52128,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/order-3/libdeflate/compressor",
+      "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+    },
+    {
+      "actor": "mech-fresh-owner-counts",
+      "seconds": {
+        "frontend": 3.974930625408888,
+        "native": 2.2310679159127176,
+        "link": 0.04015425033867359,
+        "total": 6.2467537093907595,
+        "parse": 3.527537375
+      },
+      "encoder_sha256": "c809f6ce78e3d9d2a9e7df5686764ecc47089869610636cd0dd2c6f485dc243d",
+      "encoder_bytes": 159960,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/order-3/mech-fresh-owner-counts/compressor",
+      "executable_sha256": "a4ddd1849a8b7e9f707df272fe814dbc2b7da09add2f302cd2e711270ccd3970"
+    },
+    {
+      "actor": "mech-control",
+      "seconds": {
+        "frontend": 3.9628877909854054,
+        "native": 2.2231936249881983,
+        "link": 0.03968354221433401,
+        "total": 6.226345957722515,
+        "parse": 3.517339416
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/order-3/mech-control/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "libdeflate",
+      "seconds": {
+        "compile": 0.4481411250308156,
+        "link": 0.03408933384343982,
+        "total": 0.4824835411272943
+      },
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+      "encoder_bytes": 52128,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/order-4/libdeflate/compressor",
+      "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+    },
+    {
+      "actor": "mech-control",
+      "seconds": {
+        "frontend": 4.000691666267812,
+        "native": 2.3234737082384527,
+        "link": 0.04918458266183734,
+        "total": 6.373903082683682,
+        "parse": 3.518796
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/order-4/mech-control/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "roc",
+      "seconds": {
+        "compile": 3.1805162909440696,
+        "link": 0.037868582643568516,
+        "total": 3.2187640839256346
+      },
+      "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+      "encoder_bytes": 88808,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/order-4/roc/compressor",
+      "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+    },
+    {
+      "actor": "mech-fresh-owner-counts",
+      "seconds": {
+        "frontend": 4.0091280420310795,
+        "native": 2.2373987496830523,
+        "link": 0.04798062518239021,
+        "total": 6.295089082792401,
+        "parse": 3.542683042
+      },
+      "encoder_sha256": "c809f6ce78e3d9d2a9e7df5686764ecc47089869610636cd0dd2c6f485dc243d",
+      "encoder_bytes": 159960,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/order-4/mech-fresh-owner-counts/compressor",
+      "executable_sha256": "a4ddd1849a8b7e9f707df272fe814dbc2b7da09add2f302cd2e711270ccd3970"
+    }
+  ],
+  "diagnostic_profiles_excluded_from_medians": [
+    {
+      "actor": "mech-control",
+      "seconds": {
+        "frontend": 3.992472874931991,
+        "native": 2.2347537497989833,
+        "link": 0.041033665649592876,
+        "total": 6.269114667084068,
+        "parse": 3.538652875
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/profile/mech-control/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+    },
+    {
+      "actor": "mech-fresh-owner-counts",
+      "seconds": {
+        "frontend": 3.975806707981974,
+        "native": 2.225890666246414,
+        "link": 0.04724229220300913,
+        "total": 6.249836166854948,
+        "parse": 3.5239946250000003
+      },
+      "encoder_sha256": "c809f6ce78e3d9d2a9e7df5686764ecc47089869610636cd0dd2c6f485dc243d",
+      "encoder_bytes": 159960,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/profile/mech-fresh-owner-counts/compressor",
+      "executable_sha256": "a4ddd1849a8b7e9f707df272fe814dbc2b7da09add2f302cd2e711270ccd3970"
+    },
+    {
+      "actor": "roc",
+      "seconds": {
+        "compile": 2.984169250354171,
+        "link": 0.03412591619417071,
+        "total": 3.018627665936947
+      },
+      "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+      "encoder_bytes": 88808,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/profile/roc/compressor",
+      "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+    },
+    {
+      "actor": "libdeflate",
+      "seconds": {
+        "compile": 0.5556530831381679,
+        "link": 0.03349029226228595,
+        "total": 0.5894314590841532
+      },
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+      "encoder_bytes": 52128,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/profile/libdeflate/compressor",
+      "executable_sha256": "f875e1ef7621d1d3d0f089223b8e3145e9e363bf784e2e2c3d270a6218eab461"
+    }
+  ],
+  "medians": {
+    "mech-control": {
+      "frontend": 3.9799384786747396,
+      "native": 2.2253554579801857,
+      "link": 0.046337187523022294,
+      "total": 6.252141292206943,
+      "parse": 3.5191432085
+    },
+    "mech-fresh-owner-counts": {
+      "frontend": 3.973058729665354,
+      "native": 2.232666936935857,
+      "link": 0.04052554164081812,
+      "total": 6.246488917153329,
+      "parse": 3.523241125
+    },
+    "roc": {
+      "compile": 2.949398333672434,
+      "link": 0.03451570845209062,
+      "total": 2.9837745206896216
+    },
+    "libdeflate": {
+      "compile": 0.4471895834431052,
+      "link": 0.03396250051446259,
+      "total": 0.48196235415525734
+    }
+  },
+  "sizes": {
+    "mech-control": {
+      "emitted_text_bytes": 72520,
+      "encoder_file_bytes": 160136,
+      "linked_text_bytes": 475444,
+      "executable_file_bytes": 956056,
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c"
+    },
+    "mech-fresh-owner-counts": {
+      "emitted_text_bytes": 72344,
+      "encoder_file_bytes": 159960,
+      "linked_text_bytes": 475268,
+      "executable_file_bytes": 956056,
+      "encoder_sha256": "c809f6ce78e3d9d2a9e7df5686764ecc47089869610636cd0dd2c6f485dc243d"
+    },
+    "roc": {
+      "emitted_text_bytes": 57696,
+      "encoder_file_bytes": 79160,
+      "linked_text_bytes": 150416,
+      "executable_file_bytes": 230600,
+      "encoder_sha256": "56bdcd935d0814afc2b587a83374164c51c09491d86295d0f26f87a95fc7a6a4"
+    },
+    "libdeflate": {
+      "emitted_text_bytes": 37080,
+      "encoder_file_bytes": 52128,
+      "linked_text_bytes": 129900,
+      "executable_file_bytes": 210168,
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726"
+    }
+  },
+  "byte_identical": [
+    "canonical bytecode across both variants",
+    "native object, complete metadata and executable within all five builds of each variant"
+  ],
+  "verified_exact_calls": 324,
+  "runtime_score_scope": "Separate pinned-worker runtime evidence is required. These newly linked workers pass correctness checks; this command does not measure peer runtime wins."
+}

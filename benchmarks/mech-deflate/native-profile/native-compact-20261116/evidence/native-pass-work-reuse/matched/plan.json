@@ -1,0 +1,115 @@
+{
+  "scope": "Measured source through the final link with compiler, runtimes and adapters prebuilt.",
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+  "orders": [
+    [
+      "mech-retained-control",
+      "mech-retained-work-reuse",
+      "libdeflate",
+      "mech-smaller-control",
+      "roc",
+      "mech-smaller-work-reuse"
+    ],
+    [
+      "mech-retained-work-reuse",
+      "mech-smaller-control",
+      "mech-retained-control",
+      "mech-smaller-work-reuse",
+      "libdeflate",
+      "roc"
+    ],
+    [
+      "mech-smaller-control",
+      "mech-smaller-work-reuse",
+      "mech-retained-work-reuse",
+      "roc",
+      "mech-retained-control",
+      "libdeflate"
+    ],
+    [
+      "mech-smaller-work-reuse",
+      "roc",
+      "mech-smaller-control",
+      "libdeflate",
+      "mech-retained-work-reuse",
+      "mech-retained-control"
+    ],
+    [
+      "roc",
+      "libdeflate",
+      "mech-smaller-work-reuse",
+      "mech-retained-control",
+      "mech-smaller-control",
+      "mech-retained-work-reuse"
+    ],
+    [
+      "libdeflate",
+      "mech-retained-control",
+      "roc",
+      "mech-retained-work-reuse",
+      "mech-smaller-work-reuse",
+      "mech-smaller-control"
+    ]
+  ],
+  "frontend_sha256": "e6ce34300f990bba956fafd68505fd7d762ce5804ba0ce5c46791e5a7503a3db",
+  "emitters": {
+    "control": "1dfaef4f798106603f688ebe26b6c55302be6396ec728fede8f2a66229364bf1",
+    "work-reuse": "d4b5489e24f8885ce8ff8d0da097878c4c57f1d15bbc83544c400062e089e10b"
+  },
+  "fixed_link_inputs_sha256": {
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o": "1b6e950ff93408fa6284e0776b89c96651b5acd777886218f49cf194854b9f08",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o": "2989566133b0370c8ea77ed3b47892802953c66ebdfe53d22f213be77d0f5b8a",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o": "aab09b59adc9c149fc8a95985321b4b9050343ff82677db48d78adea5468def1",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o": "0280dc79a2b6540d7780669dd3bacbe029d703a02288b868039fe1c42ed9faa0",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o": "173484728ecf0d3d0ecb44d83ef51885f8c505e8261599b06b18b94b728d6348",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o": "2f7a950c577ae2d1d8e0896f7d5c29155e14969641104faeb254bc2145696dee",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o": "8be740e77d0499ff4a4f797b98f787b8a313ca43693de0eb314bbcbf0a9b0625",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o": "7e93d3372bf056ef43b6c5976475badd4a91c2dbb910dade459ff5d155a75fee",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o": "46f2369e237d21eb54df0a3a896df9e85f058d9995832ca2c4fa3fd744ff836f",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib": "cf7c761b1fbdb3d826b5d7567f19826bd0f2760702d8c339d41acc48a531fa72",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib": "681adce5cb63aef90b398ba24c2c9ef63c9a250f4af390a66e565bb36860d2e3",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib": "16b8438e6f5f59a90f3d74f336b08bad0ebadd3deec8bdea22ed9f038b01aa66",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib": "018358533052906b7d779bab7102411044fd334bd97ffc1d53208e02b4f0f26b",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib": "ca45269b345a238b00e1d97eeeb574757f7ef471ace321acf30fe9a0e1c15607",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib": "800d30b205987becff08e9e5728a4266fb800c80277e0a4266ce82e489e0c5ab",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib": "e40c8a46803bec6bd3d37da1a2a64ffe17629b6d0e59f95a722ecb9f523f2906",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib": "0fc5a0b797b01f523da9fd29f9184c5daee786ee94473382affda36988699e69",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib": "ce4beec370b82ef8fece07618b1c472f6788a05c9e02abee34a65ae701ce4b2f",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib": "147fef325ee8f2ac03e7385ba9ae1465e3e1dc3fdbe9c559b6ced2db683fc673",
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib": "46a8b96af68bffec4b672e0e1b313cbb0b8acbb3986cbbbc540d3af792add80a",
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib": "9457a9dce8410f3baa9527a9aa689543a43943cab95c6dedc065694b91cf3fd1",
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib": "f442d7f651482fe6b38e2a2072940161751581b31ef831de4b5df15eeecb25ec",
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib": "fc4155d58cb7bc9a678f0a3017d0e6ffbd4858d42e3bbd9364917d6a2f8009a6",
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib": "da87a46d18a885051e75c7d9d026ed29b54b44136dab17ee85609d2d0962e528",
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib": "d0568214714ff3be9323af1b28e8175892143dec2b7609d1126a0883aeef065c",
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib": "47be81c02e28bf715e456aab595f068563c1535fe35cb1b4f9519a2bc3d8f0cd",
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib": "e3ff5cfa3e74983dd4e97d9f77c2762f4f4d7a250e1cf691d49c0a67f1abefec",
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib": "56bc01cd4c9b171d39be14a0e1192b518751028343c8f1dd671c113b49c7cd9d",
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib": "9e21107ecaa00672f3194f98869487f2ad8fd459f767d085f609ab3dd6365133",
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib": "d0aeb5f93d9b9d47e536b17002c409f463f19b1b00427a9077afb0b90c93d3aa",
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib": "5b809be1ee09a462774671bc7082f1a4ec163bc51e737ee69857c1fdab90361b",
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib": "08fc499c8fc79cec3f46ab308bf642000a1138f833a4d163728f85e1ab61841d",
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib": "be144dd62c8bd0809b52a68ce00a19bd5f176e5fd63d2a8382981569227169c1",
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib": "557cb1d168794e9b71dc20fbf1d2278f968e734b9325f4a6cfd1818ac4bdf08d",
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib": "4f2b2d6094787846734903193fff0196be69f2ccb711c21919033b85e2c579a6",
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib": "de4a0069fd6e41b1a26cd71d4f6fe2023a4c8f97a783dfde9a093f359f38819d",
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib": "e6360c3fcce374fa4b431ff0779d84607887f5da5968c9fad9c85879227c143e",
+    "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib": "a5eaa845f058253a29b85cced64a5beee01975435acdaa52d954e88c15d14e92",
+    "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/roc-adapter.o": "7567812162e059ec9523877850964d398f4079478c756779af1d9c9a1720459a",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-adapter.o": "ee304afa56e7b91b8b26e50b45d3e2660e97a2494f66a6b6d92ead0419cacca2",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-alloc.o": "d54cc202e299bcd92c533638846c979348dc9a5b947c95f150d31434e9ba232d",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-arm.o": "1294dffb8fc3dcde0298edcb15c2314e630c17cdb9f7f1b7de1790cb27aaa7ad"
+  },
+  "case_pins": {
+    "retained": {
+      "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+    },
+    "smaller": {
+      "program.o": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+      "metadata.json": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb"
+    }
+  }
+}

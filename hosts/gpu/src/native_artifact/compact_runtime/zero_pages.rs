@@ -5,6 +5,8 @@ mod platform {
     use super::*;
     use std::{ffi::c_void, sync::OnceLock};
 
+    const MINIMUM_MAPPING_PAGES: usize = 64;
+
     unsafe extern "C" {
         fn getpagesize() -> i32;
         fn mmap(
@@ -29,7 +31,12 @@ mod platform {
             // SAFETY: the system query has no pointer arguments.
             usize::try_from(unsafe { getpagesize() }).unwrap()
         });
-        if layout.size() < page_bytes * 4 || layout.align() > page_bytes {
+        let minimum = if layout.align() == 4 {
+            16
+        } else {
+            MINIMUM_MAPPING_PAGES
+        };
+        if layout.size() < page_bytes * minimum || layout.align() > page_bytes {
             return Ok(None);
         }
         #[cfg(test)]
@@ -52,6 +59,11 @@ mod platform {
         }
     }
 
+    #[cfg(test)]
+    pub fn minimum_mapping_bytes() -> usize {
+        usize::try_from(unsafe { getpagesize() }).unwrap() * MINIMUM_MAPPING_PAGES
+    }
+
     pub unsafe fn release(pointer: *mut u8, bytes: usize) -> Result<(), u64> {
         // SAFETY: the caller owns this exact live mmap result and its byte size.
         if unsafe { munmap(pointer.cast(), bytes) } == 0 {
@@ -67,6 +79,9 @@ pub(super) use platform::{release, reserve};
 
 #[cfg(all(test, target_os = "macos"))]
 pub(super) use platform::DENY;
+
+#[cfg(all(test, target_os = "macos"))]
+pub(super) use platform::minimum_mapping_bytes;
 
 #[cfg(not(target_os = "macos"))]
 pub fn reserve(_: Layout) -> Result<Option<NonNull<u8>>, u64> {

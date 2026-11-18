@@ -1,0 +1,148 @@
+{
+  "scope": "Static size and root frame screen on the pinned bytecode, with the retained native recipe plus the listed overrides.",
+  "size_denominators": {
+    "roc": 57696,
+    "libdeflate": 37080
+  },
+  "cases": [
+    {
+      "name": "continuation-widths--width-4",
+      "flag_overrides": {
+        "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "4"
+      },
+      "expected": {
+        "object_sha256": "1746d51933d1bb8674de38d72ca31c3148ab6cfe00dbef43ca2731de070a74a8",
+        "metadata_sha256": "5e0718d4b2dfe58cc41add6aeef62d6b220738b7e8d1628212f04d3a515a0011",
+        "object_text_bytes": 72312,
+        "root_code_bytes": 51032,
+        "root_frame_bytes": 3632,
+        "root_direct_calls": 369
+      },
+      "recorded_evidence": "evidence/continuation-widths/static/width-4"
+    },
+    {
+      "name": "continuation-widths--width-6",
+      "flag_overrides": {
+        "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "6"
+      },
+      "expected": {
+        "object_sha256": "ddf45b958b4256cd7b64f41af0b964cfdfa0f7747ed3f4a13070e2fb53ec48f9",
+        "metadata_sha256": "de3c4a53eff75c96cea4af9377db7be47ab90c23ee7cbae55170c6dfed4f7cf0",
+        "object_text_bytes": 72088,
+        "root_code_bytes": 51684,
+        "root_frame_bytes": 3856,
+        "root_direct_calls": 369
+      },
+      "recorded_evidence": "evidence/continuation-widths/static/width-6"
+    },
+    {
+      "name": "continuation-widths--width-8",
+      "flag_overrides": {
+        "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "8"
+      },
+      "expected": {
+        "object_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "metadata_sha256": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+        "object_text_bytes": 72520,
+        "root_code_bytes": 52008,
+        "root_frame_bytes": 3744,
+        "root_direct_calls": 372
+      },
+      "recorded_evidence": "evidence/continuation-widths/static/width-8"
+    },
+    {
+      "name": "continuation-widths--width-10",
+      "flag_overrides": {
+        "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "10"
+      },
+      "expected": {
+        "object_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "metadata_sha256": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+        "object_text_bytes": 72520,
+        "root_code_bytes": 52008,
+        "root_frame_bytes": 3744,
+        "root_direct_calls": 372
+      },
+      "recorded_evidence": "evidence/continuation-widths/static/width-10"
+    },
+    {
+      "name": "continuation-widths--width-12",
+      "flag_overrides": {
+        "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "12"
+      },
+      "expected": {
+        "object_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "metadata_sha256": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+        "object_text_bytes": 72520,
+        "root_code_bytes": 52008,
+        "root_frame_bytes": 3744,
+        "root_direct_calls": 372
+      },
+      "recorded_evidence": "evidence/continuation-widths/static/width-12"
+    },
+    {
+      "name": "continuation-widths--width-14",
+      "flag_overrides": {
+        "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "14"
+      },
+      "expected": {
+        "object_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "metadata_sha256": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+        "object_text_bytes": 72520,
+        "root_code_bytes": 52008,
+        "root_frame_bytes": 3744,
+        "root_direct_calls": 372
+      },
+      "recorded_evidence": "evidence/continuation-widths/static/width-14"
+    },
+    {
+      "name": "continuation-widths--width-16-owners-cold",
+      "flag_overrides": {
+        "MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS": "1",
+        "MECH_COMPACT_SHARE_COLD_TAILS": "1"
+      },
+      "expected": {
+        "object_sha256": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+        "metadata_sha256": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+        "object_text_bytes": 71960,
+        "root_code_bytes": 51448,
+        "root_frame_bytes": 3744,
+        "root_direct_calls": 372
+      },
+      "recorded_evidence": "evidence/continuation-widths/static/width-16-owners-cold"
+    },
+    {
+      "name": "continuation-widths--width-6-owners",
+      "flag_overrides": {
+        "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "6",
+        "MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS": "1"
+      },
+      "expected": {
+        "object_sha256": "53e942b7b6d4faff2719a88e872b68793991e61b952ff7c77d90b9f707bd8a5c",
+        "metadata_sha256": "f0817ce85bf8e90746c191634dbca1fb6b51fe6cd450613d8f492875fff4dc54",
+        "object_text_bytes": 72072,
+        "root_code_bytes": 51680,
+        "root_frame_bytes": 3840,
+        "root_direct_calls": 369
+      },
+      "recorded_evidence": "evidence/continuation-widths/static/width-6-owners"
+    },
+    {
+      "name": "continuation-widths--width-6-owners-cold",
+      "flag_overrides": {
+        "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "6",
+        "MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS": "1",
+        "MECH_COMPACT_SHARE_COLD_TAILS": "1"
+      },
+      "expected": {
+        "object_sha256": "b79459e0e371fbc858a60d02d46a1821119e9b8f6023ef925042fb5f4073c290",
+        "metadata_sha256": "da726b4bfdbb542090d60c119d612138c4dba63413c42d91fa8e025fde6a34c0",
+        "object_text_bytes": 71720,
+        "root_code_bytes": 51316,
+        "root_frame_bytes": 3840,
+        "root_direct_calls": 369
+      },
+      "recorded_evidence": "evidence/continuation-widths/static/width-6-owners-cold"
+    }
+  ]
+}

@@ -497,6 +497,7 @@ probestack_strategy = "outline"
 bb_padding_log2_minus_one = 0
 log2_min_function_alignment = 0
 regalloc_checker = false
+enable_regalloc_spill_pairs = false
 regalloc_verbose_logs = false
 enable_alias_analysis = true
 enable_verifier = true

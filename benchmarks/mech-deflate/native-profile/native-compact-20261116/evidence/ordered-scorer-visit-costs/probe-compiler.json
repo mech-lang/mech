@@ -1,0 +1,33 @@
+{
+  "base": "d03f097b06c8386822a8063de9826715a9c1e897",
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/composed_reads.rs": "990a47f44809852a9548ade1b30bd7841c79a7af0de133ca8faa9072e0a6bb0d",
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": "abb1251fe2891cfba243b5a9776d9788d2e3e525f6d30637619e65f04e356baa",
+    "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "4735b8dd7a3424dcc4ee2d71081c4bd4a8a66fa83d5fcf73aab74f2012f99790",
+    "hosts/gpu/src/native_artifact/program/compact/phase_storage.rs": "18bee498ef074a4076f4bb22c87ebdfb020cab5f4a421a0f007045ad1062e88d",
+    "hosts/gpu/src/native_artifact/program/compact/phases.rs": "adaf5da3d14e590556db242a05c221e6ccb6e5168875febb4632840ba83f9beb",
+    "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs": "a2f7e3e813d46bde096f9fe52490c398abe54a946f461f35eb6389fd13c337ff"
+  },
+  "compiler_sha256": "83e3b25d05044eac932356a2571a0538e0e355487eb49808911c8b9ee9fd1e65",
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ordered-scorer/probe-compiler/disabled",
+    "--variant",
+    "frame-copies",
+    "--compiler-opt-level",
+    "3",
+    "--direct-source",
+    "--preselect-root-inlining",
+    "--skip-refused-general-ssa",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target"
+  ],
+  "disabled_artifacts": {
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+  },
+  "patch_sha256": "3d38fe4c0f043ba73da0515b7f3098fa6e26919bbe4250810b25ef987f309336"
+}

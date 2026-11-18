@@ -1,0 +1,127 @@
+{
+  "objective": "isolate the effect of linked stub and constant placement on the smaller encoder",
+  "full_screen_trigger": "A source-emitted artifact must reproduce the vetted layout. Screen for per-case regressions and peer win preservation before full timing.",
+  "focus_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "320-overlap",
+    "prefix-periodic-1024",
+    "random-64",
+    "random-1024",
+    "prefix-random-1024",
+    "prefix-random-4096",
+    "prefix-random-8192",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-natural-16384",
+    "heldout-window-32767",
+    "heldout-mixed-131073",
+    "prefix-random-1048576"
+  ],
+  "runs": [
+    {
+      "id": "cold-origin-page-candidate-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "cold-origin-page-candidate-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "cold-origin-page-candidate-full-forward",
+      "kind": "full",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "cold-origin-page-candidate-full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "blocks_per_case": 96
+    }
+  ],
+  "policy": {
+    "path": "native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification-policy-v1.json",
+    "sha256": "1889b824a300e5b2c5c8bfb40aea1652cb525cb740152706ec5bf72543bce984"
+  },
+  "timer": {
+    "path": "compare-library.py",
+    "sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a"
+  },
+  "driver": {
+    "path": "cold-origin-packing/timing-aligned.py",
+    "sha256": "9474c61cbeee235d90d03c55369cdc950de6a962f55f746e56d2319cee45f8db"
+  },
+  "as_run_inventory": {
+    "path": "fixtures.json",
+    "sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+  },
+  "pinned_peers": {
+    "path": "pinned-peers/pins.json",
+    "sha256": "db5a289d7a929176e5a1c9efbff5f69702596b0dccba9f2cace86d78cc18902d"
+  },
+  "fixture_content_sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+  "bindings": {
+    "mech-control": {
+      "program.o": {
+        "path": "cold-origin-page-control-native/final-candidate/program.o",
+        "sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b"
+      },
+      "metadata.json": {
+        "path": "cold-origin-page-control-native/final-candidate/metadata.json",
+        "sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+      },
+      "runtime.json": {
+        "path": "cold-origin-page-control-native/final-candidate/runtime.json",
+        "sha256": "89962f9487a196a30156824039c4c4ed396e312f4186b2123ef268e6c34f38b1"
+      },
+      "mech-worker": {
+        "path": "cold-origin-page-control-native/final-candidate/mech-worker",
+        "sha256": "170c54b53ede22be06d3920d854b8115f219f1be6f4ae0a84767f5c0ca3e9eb4"
+      }
+    },
+    "mech-experiment": {
+      "program.o": {
+        "path": "cold-origin-page-candidate-native/final-candidate/program.o",
+        "sha256": "66899f7928c031d7e9e882149f8d428c1b13ca22f1ca50ccdbefad8cb07d706a"
+      },
+      "metadata.json": {
+        "path": "cold-origin-page-candidate-native/final-candidate/metadata.json",
+        "sha256": "0aac5b222891e6ca9d4ed88e85597cdef1ef46d9f405648436a18f5d2820d37b"
+      },
+      "runtime.json": {
+        "path": "cold-origin-page-candidate-native/final-candidate/runtime.json",
+        "sha256": "5dbd8b05d2482ca4b91d5bf71c367b26a01d12bf5fa411c176027d694e1436d7"
+      },
+      "mech-worker": {
+        "path": "cold-origin-page-candidate-native/final-candidate/mech-worker",
+        "sha256": "1485608640f5fd03c32c544bc28e990280fb3101fce01aa50eb37115a92d650a"
+      }
+    }
+  },
+  "identities": {
+    "mech-control": {
+      "worker": "170c54b53ede22be06d3920d854b8115f219f1be6f4ae0a84767f5c0ca3e9eb4",
+      "metadata": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+    },
+    "mech-experiment": {
+      "worker": "1485608640f5fd03c32c544bc28e990280fb3101fce01aa50eb37115a92d650a",
+      "metadata": "0aac5b222891e6ca9d4ed88e85597cdef1ef46d9f405648436a18f5d2820d37b"
+    },
+    "roc": {
+      "worker": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+      "metadata": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee"
+    },
+    "libdeflate": {
+      "worker": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "metadata": null
+    },
+    "environment_sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+    "contract_sha256": "f8d0b099053f18375d9b2122fd993d7a34cc8cffab47bd7c3fd9a7e8a9ed58d7"
+  }
+}

@@ -16,7 +16,7 @@ mod document_assignment;
 #[path = "document_fsms.rs"]
 pub(super) mod document_fsms;
 #[path = "document_functions.rs"]
-mod document_functions;
+pub(super) mod document_functions;
 #[path = "document_imports.rs"]
 mod document_imports;
 #[path = "document_types.rs"]
@@ -2339,6 +2339,7 @@ impl OrderedDocumentScope {
         builder.input_by_name = self.input_by_name.clone();
         builder.input_declarations = self.input_declarations.clone();
         builder.declared_kinds = self.declared_kinds.clone();
+        builder.document_function_plans.clear();
         builder.declared_variants = self.declared_variants.clone();
         builder.bindings = self.bindings.clone();
         builder.scope_definitions = self.scope_definitions.clone();

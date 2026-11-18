@@ -1,0 +1,302 @@
+{
+  "schema_version": 1,
+  "decision": "Reject for encoder-size objective",
+  "decision_basis": "No decrease in text, root code, frame, or residual scalar copies.",
+  "scope": "Untimed Apple M1 diagnostic Cranelift source emit and fixed-runtime link",
+  "base": "b72b7419b39b22765fe1eed6b5c636e63964b905",
+  "compiler_sha256": "99974757324a37669ac6d94d2830a65186639aa507a5d51c490679461979ed5b",
+  "patch_sha256": "4b0ffd7e36b7a87e471764696f2c805c2748b6a4d6f6b815a4aebecd7fb9f7b4",
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "comparison": {
+    "retained_recipe_reproduced": true,
+    "matched_pair": [
+      "control",
+      "candidate"
+    ],
+    "omitted_from_both": "MECH_COMPACT_ROOT_TAIL_PROFILE",
+    "only_flag_difference": {
+      "MECH_COMPACT_COALESCE_SPILL_SLOTS": "1"
+    },
+    "roc_encoder_text_bytes": 57696,
+    "libdeflate_encoder_text_bytes": 37080
+  },
+  "artifacts": {
+    "published": {
+      "sizes": {
+        "encoder_text_bytes": 71192,
+        "object_bytes": 158808,
+        "root_code_bytes": 50632,
+        "root_frame_bytes": 3728,
+        "encoder_text_x_roc": 1.2339156960621187,
+        "encoder_text_x_libdeflate": 1.9199568500539375
+      },
+      "hashes": {
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+        "program.o": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+        "metadata.json": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
+        "mech-worker": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a"
+      },
+      "correctness": {
+        "command": [
+          "/private/tmp/mech-root-transport.A9Qtzt/trial/published/mech-worker",
+          "/private/tmp/mech-root-transport.A9Qtzt/trial/published/metadata.json",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+        ],
+        "exact_calls": 162,
+        "fixture_inventory_sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+      },
+      "spill_statistics": []
+    },
+    "control": {
+      "sizes": {
+        "encoder_text_bytes": 71144,
+        "object_bytes": 158760,
+        "root_code_bytes": 50632,
+        "root_frame_bytes": 3728,
+        "encoder_text_x_roc": 1.233083749306711,
+        "encoder_text_x_libdeflate": 1.9186623516720605
+      },
+      "hashes": {
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+        "program.o": "616cbf48e832c82e3a6df407b0197bd36a6c8a92d7dd57c43b1fd4be52ec3932",
+        "metadata.json": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
+        "mech-worker": "17d31e83416e0961c7369ac9caddde1c3883ab7fd0739da35331cf33915e61f0"
+      },
+      "correctness": {
+        "command": [
+          "/private/tmp/mech-root-transport.A9Qtzt/trial/control/mech-worker",
+          "/private/tmp/mech-root-transport.A9Qtzt/trial/control/metadata.json",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+        ],
+        "exact_calls": 162,
+        "fixture_inventory_sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+      },
+      "spill_statistics": []
+    },
+    "candidate": {
+      "sizes": {
+        "encoder_text_bytes": 71144,
+        "object_bytes": 158760,
+        "root_code_bytes": 50632,
+        "root_frame_bytes": 3728,
+        "encoder_text_x_roc": 1.233083749306711,
+        "encoder_text_x_libdeflate": 1.9186623516720605
+      },
+      "hashes": {
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+        "program.o": "c64db1fb09106027f92e8312f201ce3237f9399d451035d2339b0dc4f5ff429e",
+        "metadata.json": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
+        "mech-worker": "7e2c99959806469bbbc0dd7e17f088cf80292e4a0af37f7a71cb6b90c999a0e1"
+      },
+      "correctness": {
+        "command": [
+          "/private/tmp/mech-root-transport.A9Qtzt/trial/candidate/mech-worker",
+          "/private/tmp/mech-root-transport.A9Qtzt/trial/candidate/metadata.json",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+        ],
+        "exact_calls": 162,
+        "fixture_inventory_sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+      },
+      "spill_statistics": [
+        "compact spill affinity: 0 slots, 0 candidate edges, 0 preferred assignments",
+        "compact spill affinity: 1 slots, 0 candidate edges, 0 preferred assignments",
+        "compact spill affinity: 273 slots, 163 candidate edges, 0 preferred assignments"
+      ]
+    }
+  },
+  "root_machine_census": {
+    "published": {
+      "root_memory_instructions": {
+        "str": 915,
+        "ldr": 2542,
+        "stur": 4,
+        "ldur": 37
+      },
+      "consecutive_scalar_stack_copies": 304
+    },
+    "control": {
+      "root_memory_instructions": {
+        "str": 915,
+        "ldr": 2542,
+        "stur": 4,
+        "ldur": 37
+      },
+      "consecutive_scalar_stack_copies": 304
+    },
+    "candidate": {
+      "root_memory_instructions": {
+        "str": 915,
+        "ldr": 2542,
+        "stur": 4,
+        "ldur": 37
+      },
+      "consecutive_scalar_stack_copies": 304
+    }
+  },
+  "root_binary_diff": {
+    "changed_word_counts": {
+      "integer_sp_displacements": 433,
+      "local_unconditional_branch_offsets": 1
+    },
+    "slot_renumbering": [
+      {
+        "before": 3592,
+        "after": 3584,
+        "uses": 74
+      },
+      {
+        "before": 3624,
+        "after": 3616,
+        "uses": 58
+      },
+      {
+        "before": 3608,
+        "after": 3600,
+        "uses": 48
+      },
+      {
+        "before": 3616,
+        "after": 3608,
+        "uses": 44
+      },
+      {
+        "before": 3600,
+        "after": 3592,
+        "uses": 34
+      },
+      {
+        "before": 3584,
+        "after": 3576,
+        "uses": 32
+      },
+      {
+        "before": 3576,
+        "after": 3568,
+        "uses": 32
+      },
+      {
+        "before": 3552,
+        "after": 3544,
+        "uses": 18
+      },
+      {
+        "before": 3528,
+        "after": 3520,
+        "uses": 12
+      },
+      {
+        "before": 3536,
+        "after": 3528,
+        "uses": 10
+      },
+      {
+        "before": 3480,
+        "after": 3472,
+        "uses": 8
+      },
+      {
+        "before": 3472,
+        "after": 3464,
+        "uses": 8
+      },
+      {
+        "before": 3464,
+        "after": 3456,
+        "uses": 6
+      },
+      {
+        "before": 3568,
+        "after": 3560,
+        "uses": 5
+      },
+      {
+        "before": 1512,
+        "after": 1528,
+        "uses": 4
+      },
+      {
+        "before": 1504,
+        "after": 1520,
+        "uses": 4
+      },
+      {
+        "before": 1472,
+        "after": 1504,
+        "uses": 4
+      },
+      {
+        "before": 1456,
+        "after": 1472,
+        "uses": 4
+      },
+      {
+        "before": 3544,
+        "after": 3536,
+        "uses": 4
+      },
+      {
+        "before": 3488,
+        "after": 3480,
+        "uses": 4
+      },
+      {
+        "before": 3456,
+        "after": 3448,
+        "uses": 4
+      },
+      {
+        "before": 3512,
+        "after": 3504,
+        "uses": 3
+      },
+      {
+        "before": 3496,
+        "after": 3488,
+        "uses": 3
+      },
+      {
+        "before": 3504,
+        "after": 3496,
+        "uses": 3
+      },
+      {
+        "before": 3448,
+        "after": 3440,
+        "uses": 3
+      },
+      {
+        "before": 3560,
+        "after": 3552,
+        "uses": 2
+      },
+      {
+        "before": 3520,
+        "after": 3512,
+        "uses": 2
+      }
+    ],
+    "other_words": [
+      {
+        "root_offset": 50592,
+        "control": "0x17fffbe4",
+        "candidate": "0x17fffbe9"
+      }
+    ]
+  },
+  "affinity_trace": {
+    "root_candidate_edge_occurrences": 163,
+    "root_preferred_assignments": 0,
+    "root_spill_slots": 273,
+    "allocator_check": "Passed before and after existing AArch64 spill forwarding",
+    "witness": "Spill-set order assigns the earlier endpoint before testing each retained hint. Because each endpoint comes from an allocated spill bundle, its earlier spill slot must be assigned. A retained hint is accepted if the slot has no occupied interval that overlaps its destination footprint. Zero acceptances means each retained hint met an occupied interval. The edge count includes repetitions and precedes the four-choice limit.",
+    "unresolved": "This run did not log which occupant intersects a candidate, whether the conservative hull or boundary extension contributed, or how many hints the cap omitted."
+  },
+  "runtime_performance": "Untested for the two changed-layout worker hashes",
+  "commands_and_flags": "/private/tmp/mech-root-transport.A9Qtzt/trial/summary.json",
+  "proof_inputs": {
+    "construct.py": "ca6bfa720788d8c9c155f8fcbdc8ce2ca98f2d05fa625f5f3c401d43985678ac",
+    "screen.py": "d90bdc3d375415e11a36d169d588ed2222941a2e9e911271274afe2a3b160a66",
+    "compare-copies.py": "5475ae71e0773e231e6c69c4c6e9e29812ac0cf433dbaeeffb7bf1c30ec8684d",
+    "precise-spill-affinity.patch": "4b0ffd7e36b7a87e471764696f2c805c2748b6a4d6f6b815a4aebecd7fb9f7b4"
+  }
+}

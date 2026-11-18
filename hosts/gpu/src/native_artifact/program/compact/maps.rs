@@ -3,7 +3,7 @@
 //! allocate/COW backing storage, move initialized bytes, or free storage.
 use super::{
     arrays::{self, Arrays},
-    layout::{Kind, Layout},
+    layout::{Layout, LayoutKind},
     packed, strings,
 };
 use crate::native_artifact::codegen::common::ssa_words::Words;
@@ -144,7 +144,10 @@ pub(super) fn emit(
     }
     if op == P::StringHistogram {
         arity(operands, 1)?;
-        if !matches!(layout.ty(operands[0].get()).element()?.kind, Kind::Utf8) {
+        if !matches!(
+            layout.ty(operands[0].get()).element()?.kind,
+            LayoutKind::Utf8
+        ) {
             return Err(backend(
                 "native String histogram requires immutable UTF8 elements",
             ));
@@ -153,7 +156,7 @@ pub(super) fn emit(
         let fields = entry.fields()?;
         if !matches!(
             fields[1].ty.kind,
-            Kind::Scalar {
+            LayoutKind::Scalar {
                 bytes: 8,
                 signed: false,
                 float: false
@@ -224,7 +227,7 @@ pub(super) fn emit(
         arrays::write(words, b, layout.slot(output.get()), &view);
         return Ok(());
     }
-    if !matches!(layout.ty(operands[1].get()).kind, Kind::Utf8) {
+    if !matches!(layout.ty(operands[1].get()).kind, LayoutKind::Utf8) {
         return Err(backend("native Map key requires UTF8"));
     }
     let key = arrays::read(words, b, layout, operands[1]);
@@ -255,7 +258,7 @@ pub(super) fn emit(
             }
             let missing = b.ins().bxor_imm(present, 1);
             let length = add(b, source[1], missing, error);
-            let capacity = Arrays::grown_capacity(b, source[2], length, stride, error);
+            let capacity = arrays.grown_capacity(b, source[2], length, stride, error);
             let mut view =
                 super::map_index::writable(arrays, b, &source, consume, capacity, entry, error)?;
             insert_space(arrays, b, &view, at, present, stride);

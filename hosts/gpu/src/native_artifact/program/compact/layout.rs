@@ -10,7 +10,7 @@ pub(super) const ARRAY_WORDS: usize = 6;
 pub(super) const ARRAY_OWNER: usize = 5;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(super) enum Kind {
+pub(super) enum LayoutKind {
     /// Immutable UTF8 bytes borrowed for the complete native invocation.
     /// Constants borrow their Object data; input spans borrow admitted input
     /// storage. Neither a managed String nor an owner token enters this ABI.
@@ -47,7 +47,7 @@ pub(super) struct Variant {
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct Type {
-    pub kind: Kind,
+    pub kind: LayoutKind,
     pub words: usize,
     // Array leaves are concrete owner references, never canonical identities.
     // Tagged payloads use disjoint logical lanes; inactive owners are zero.
@@ -73,7 +73,7 @@ fn integer(width: IntegerWidth, signed: bool) -> Result<Type, NativeCompileError
         }
     };
     Ok(Type {
-        kind: Kind::Scalar {
+        kind: LayoutKind::Scalar {
             bytes,
             signed,
             float: false,
@@ -88,7 +88,7 @@ impl Type {
     pub fn derive(body: &SchemaBody) -> Result<Arc<Self>, NativeCompileError> {
         let result = match body {
             SchemaBody::String => Self {
-                kind: Kind::Utf8,
+                kind: LayoutKind::Utf8,
                 words: 2,
                 owners: vec![],
                 packed_bytes: Some(16),
@@ -100,7 +100,7 @@ impl Type {
             SchemaBody::IntegerInterval(interval) => return Self::derive(&interval.base_body()),
             SchemaBody::Id | SchemaBody::Index => integer(IntegerWidth::W64, false)?,
             SchemaBody::FloatingPoint(FloatWidth::W64) => Self {
-                kind: Kind::Scalar {
+                kind: LayoutKind::Scalar {
                     bytes: 8,
                     signed: false,
                     float: true,
@@ -134,7 +134,7 @@ impl Type {
                     });
                 }
                 Self {
-                    kind: Kind::Tagged(result),
+                    kind: LayoutKind::Tagged(result),
                     words,
                     owners,
                     packed_bytes: None,
@@ -156,7 +156,7 @@ impl Type {
                     ));
                 }
                 Self {
-                    kind: Kind::SortedMap { entry },
+                    kind: LayoutKind::SortedMap { entry },
                     words: ARRAY_WORDS,
                     owners: vec![ARRAY_OWNER],
                     packed_bytes: None,
@@ -177,7 +177,7 @@ impl Type {
                     ));
                 }
                 Self {
-                    kind: Kind::Array { element },
+                    kind: LayoutKind::Array { element },
                     words: ARRAY_WORDS,
                     owners: vec![ARRAY_OWNER],
                     packed_bytes: None,
@@ -225,7 +225,7 @@ impl Type {
         }
         let packed_bytes = packed.map(|n| align(n, alignment)).transpose()?;
         Ok(Arc::new(Self {
-            kind: Kind::Product(result),
+            kind: LayoutKind::Product(result),
             words,
             owners,
             packed_bytes,
@@ -235,7 +235,7 @@ impl Type {
     pub(super) fn leaves(self: &Arc<Self>) -> Vec<(usize, Arc<Type>)> {
         fn visit(ty: &Arc<Type>, base: usize, out: &mut Vec<(usize, Arc<Type>)>) {
             match &ty.kind {
-                Kind::Product(fields) => {
+                LayoutKind::Product(fields) => {
                     for field in fields {
                         visit(&field.ty, base + field.offset, out);
                     }
@@ -262,40 +262,40 @@ impl Type {
     }
     pub fn fields(&self) -> Result<&[Field], NativeCompileError> {
         match &self.kind {
-            Kind::Product(fields) => Ok(fields),
+            LayoutKind::Product(fields) => Ok(fields),
             _ => Err(backend("compact operation requires product fields")),
         }
     }
     pub fn element(&self) -> Result<&Arc<Type>, NativeCompileError> {
         match &self.kind {
-            Kind::Array { element } => Ok(element),
+            LayoutKind::Array { element } => Ok(element),
             _ => Err(backend("compact operation requires an array view")),
         }
     }
     pub fn map_entry(&self) -> Result<&Arc<Type>, NativeCompileError> {
         match &self.kind {
-            Kind::SortedMap { entry } => Ok(entry),
+            LayoutKind::SortedMap { entry } => Ok(entry),
             _ => Err(backend("compact operation requires a native Map")),
         }
     }
     pub fn summary(&self) -> serde_json::Value {
         let kind = match &self.kind {
-            Kind::Utf8 => {
+            LayoutKind::Utf8 => {
                 serde_json::json!({"utf8":"immutable invocation borrow","lanes":["pointer","byte_length"]})
             }
-            Kind::Scalar {
+            LayoutKind::Scalar {
                 bytes,
                 signed,
                 float,
             } => serde_json::json!({"scalar_bytes":bytes,"signed":signed,"float":float}),
-            Kind::Product(fields) => {
+            LayoutKind::Product(fields) => {
                 serde_json::json!({"product":fields.iter().map(|f|serde_json::json!({"name":f.name,"offset":f.offset,"packed_offset":f.packed_offset,"type":f.ty.summary()})).collect::<Vec<_>>()})
             }
-            Kind::Tagged(variants) => {
+            LayoutKind::Tagged(variants) => {
                 serde_json::json!({"tagged":variants.iter().map(|v|serde_json::json!({"name":v.name,"offset":v.offset,"payload":v.ty.as_ref().map(|t|t.summary())})).collect::<Vec<_>>()})
             }
-            Kind::Array { element } => serde_json::json!({"array_element":element.summary()}),
-            Kind::SortedMap { entry } => {
+            LayoutKind::Array { element } => serde_json::json!({"array_element":element.summary()}),
+            LayoutKind::SortedMap { entry } => {
                 serde_json::json!({"sorted_map_entry":entry.summary(),"lanes":["entries","count","entry_capacity","index","index_mask","owner"]})
             }
         };
@@ -323,7 +323,7 @@ impl Layout {
                 schemas.push((body, Arc::clone(&layout)));
                 layout
             };
-            if matches!(layout.kind, Kind::Scalar { .. }) {
+            if matches!(layout.kind, LayoutKind::Scalar { .. }) {
                 base.push(value)
             } else {
                 base.push(words);

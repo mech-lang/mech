@@ -1,0 +1,40 @@
+{
+  "commands": {
+    "failures": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-B",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/linked-proofs/check-linked-error-exits.py",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/control",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/vector-8",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/vector-4",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/vector-12",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/paired-scalar"
+    ],
+    "stack": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-B",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/linked-proofs/check-layout-stack.py",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/control",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/vector-8",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/vector-4",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/vector-12",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/paired-scalar"
+    ]
+  },
+  "peak_stack_bytes": {
+    "control": 5280,
+    "vector-8": 5280,
+    "vector-4": 5280,
+    "vector-12": 5280,
+    "paired-scalar": 5280
+  },
+  "matches_success_observations": 162,
+  "checked_failure_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "prefix-periodic-4096",
+    "prefix-repeated-16384",
+    "heldout-mixed-131073"
+  ]
+}

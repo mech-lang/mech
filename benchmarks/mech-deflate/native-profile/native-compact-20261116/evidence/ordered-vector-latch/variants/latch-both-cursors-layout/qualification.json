@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-both-cursors-layout/bound/mech-worker",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-vector-latch/latch-both-cursors-layout/bound/metadata.json",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "complete_smokes": 162,
+  "verified": true,
+  "worker_sha256": "ec881c9c3bd3d747aca23cb150fdfb4fd28cb84d4fd0e0b9991d65b98f93ed85",
+  "metadata_sha256": "6d4ba488ba643beac7001f1f41e1165c410544f90038ec825e67625db91b7f78"
+}

@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/direct-source-20261117/matched/warmup/mech-smaller-direct/compressor",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/direct-source-20261117/matched/warmup/mech-smaller-direct/native/metadata.json",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "complete_smokes": 162,
+  "verified": true,
+  "worker_sha256": "e90fab83d27230725e5218a6fddefe8fb1a94878ce4ccd22f226837c180abf7e",
+  "metadata_sha256": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb"
+}

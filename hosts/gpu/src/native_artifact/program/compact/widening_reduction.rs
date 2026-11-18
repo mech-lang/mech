@@ -5,7 +5,7 @@ use super::{
     arrays::Arrays,
     constants::Initial,
     flow::Flow,
-    layout::{ARRAY_WORDS, Kind, Layout},
+    layout::{ARRAY_WORDS, Layout, LayoutKind},
     owner_flow::OwnerFlow,
     recipes::Recipe,
 };
@@ -246,7 +246,7 @@ pub(super) fn derive(
                 (ty.words == ARRAY_WORDS).then_some(slot)
             };
             let arrays = [array_slot(4)?, array_slot(1)?];
-            let unsigned_word = Kind::Scalar {
+            let unsigned_word = LayoutKind::Scalar {
                 bytes: 8,
                 signed: false,
                 float: false,

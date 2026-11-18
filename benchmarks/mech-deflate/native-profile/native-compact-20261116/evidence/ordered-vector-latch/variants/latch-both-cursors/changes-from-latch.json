@@ -1,0 +1,30 @@
+{
+  "prefix-natural-4096": {
+    "instructions": -13560,
+    "branches": 0,
+    "stack_loads": 0,
+    "stack_stores": 0,
+    "payload_loads": 0
+  },
+  "prefix-natural-8192": {
+    "instructions": -22620,
+    "branches": 0,
+    "stack_loads": 0,
+    "stack_stores": 0,
+    "payload_loads": 0
+  },
+  "reymont-prefix-32769": {
+    "instructions": -39395,
+    "branches": 0,
+    "stack_loads": 0,
+    "stack_stores": 0,
+    "payload_loads": 0
+  },
+  "prefix-natural-32769": {
+    "instructions": -39395,
+    "branches": 0,
+    "stack_loads": 0,
+    "stack_stores": 0,
+    "payload_loads": 0
+  }
+}

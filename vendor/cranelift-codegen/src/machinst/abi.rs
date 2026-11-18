@@ -110,7 +110,7 @@ use crate::{ir, isa};
 use crate::{machinst::*, trace};
 use alloc::boxed::Box;
 use core::marker::PhantomData;
-use regalloc2::{MachineEnv, PReg, PRegSet};
+use regalloc2::{Edit, MachineEnv, PReg, PRegSet};
 use smallvec::smallvec;
 
 /// A small vector of instructions (with some reasonable size); appropriate for
@@ -412,6 +412,11 @@ pub trait ABIMachineSpec {
 
     /// Generate a store to the stack.
     fn gen_store_stack(mem: StackAMode, from_reg: Reg, ty: Type) -> Self::I;
+
+    /// Combine two consecutive register-allocation edits at one emission point.
+    fn gen_spill_pair(_frame: &FrameLayout, _first: &Edit, _second: &Edit) -> Option<Self::I> {
+        None
+    }
 
     /// Generate a move.
     fn gen_move(to_reg: Writable<Reg>, from_reg: Reg, ty: Type) -> Self::I;

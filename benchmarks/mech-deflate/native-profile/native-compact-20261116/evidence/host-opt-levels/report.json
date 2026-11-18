@@ -1,0 +1,483 @@
+{
+  "compiler_source_before_profile_tooling": "9cf94256315362201a897e9a4e0365b6442dac62",
+  "comparison": "Fresh Mech, Roc, and libdeflate source-to-executable builds with fixed prebuilt dependencies on Apple M1.",
+  "complete_medians_seconds": {
+    "mech-retained-opt1": {
+      "frontend": 3.373121791984886,
+      "native": 2.219451125478372,
+      "link": 0.04222945845685899,
+      "total": 5.639999999431893,
+      "parse": 2.9269243955
+    },
+    "mech-retained-opt3": {
+      "frontend": 2.950160250067711,
+      "native": 1.7650063540786505,
+      "link": 0.04245277098380029,
+      "total": 4.757086249999702,
+      "parse": 2.6182284165
+    },
+    "mech-smaller-opt1": {
+      "frontend": 3.374834771035239,
+      "native": 2.2256987711880356,
+      "link": 0.04209654172882438,
+      "total": 5.643951791338623,
+      "parse": 2.9283917500000003
+    },
+    "mech-smaller-opt3": {
+      "frontend": 2.9515255209989846,
+      "native": 1.770076958462596,
+      "link": 0.04188139527104795,
+      "total": 4.76478589582257,
+      "parse": 2.6202550625
+    },
+    "roc": {
+      "compile": 2.949865083443001,
+      "link": 0.0356738748960197,
+      "total": 2.9855489167384803
+    },
+    "libdeflate": {
+      "compile": 0.4477434584405273,
+      "link": 0.03434966620989144,
+      "total": 0.48162462492473423
+    }
+  },
+  "complete_sizes_bytes": {
+    "mech-retained-opt1": {
+      "encoder_text_bytes": 72520,
+      "encoder_file_bytes": 160136,
+      "linked_text_bytes": 475444,
+      "executable_file_bytes": 956056
+    },
+    "mech-retained-opt3": {
+      "encoder_text_bytes": 72520,
+      "encoder_file_bytes": 160136,
+      "linked_text_bytes": 475444,
+      "executable_file_bytes": 956056
+    },
+    "mech-smaller-opt1": {
+      "encoder_text_bytes": 71960,
+      "encoder_file_bytes": 159576,
+      "linked_text_bytes": 474884,
+      "executable_file_bytes": 956056
+    },
+    "mech-smaller-opt3": {
+      "encoder_text_bytes": 71960,
+      "encoder_file_bytes": 159576,
+      "linked_text_bytes": 474884,
+      "executable_file_bytes": 956056
+    },
+    "roc": {
+      "encoder_text_bytes": 57696,
+      "encoder_file_bytes": 79160,
+      "linked_text_bytes": 150416,
+      "executable_file_bytes": 230600
+    },
+    "libdeflate": {
+      "encoder_text_bytes": 37080,
+      "encoder_file_bytes": 52128,
+      "linked_text_bytes": 129900,
+      "executable_file_bytes": 210168
+    }
+  },
+  "ratios": {
+    "mech-retained-opt1": {
+      "total_range_seconds": [
+        5.628816499840468,
+        5.71222341619432
+      ],
+      "total_x_roc": 1.889099846199549,
+      "total_x_libdeflate": 11.710364685595723,
+      "encoder_text_x_roc": 1.256932889628397,
+      "encoder_text_x_libdeflate": 1.9557713052858683
+    },
+    "mech-retained-opt3": {
+      "total_range_seconds": [
+        4.752250500023365,
+        4.773213665932417
+      ],
+      "total_x_roc": 1.593370727683977,
+      "total_x_libdeflate": 9.877165750698719,
+      "encoder_text_x_roc": 1.256932889628397,
+      "encoder_text_x_libdeflate": 1.9557713052858683
+    },
+    "mech-smaller-opt1": {
+      "total_range_seconds": [
+        5.63906383421272,
+        5.663872790988535
+      ],
+      "total_x_roc": 1.8904234861789757,
+      "total_x_libdeflate": 11.718569814034383,
+      "encoder_text_x_roc": 1.2472268441486412,
+      "encoder_text_x_libdeflate": 1.9406688241639698
+    },
+    "mech-smaller-opt3": {
+      "total_range_seconds": [
+        4.760336208157241,
+        4.785458500031382
+      ],
+      "total_x_roc": 1.5959496992693025,
+      "total_x_libdeflate": 9.893152569944249,
+      "encoder_text_x_roc": 1.2472268441486412,
+      "encoder_text_x_libdeflate": 1.9406688241639698
+    },
+    "roc": {
+      "total_range_seconds": [
+        2.9746351670473814,
+        3.4128402918577194
+      ],
+      "total_x_roc": 1.0,
+      "total_x_libdeflate": 6.198912518655055,
+      "encoder_text_x_roc": 1.0,
+      "encoder_text_x_libdeflate": 1.5559870550161812
+    },
+    "libdeflate": {
+      "total_range_seconds": [
+        0.48067912505939603,
+        0.4893542919307947
+      ],
+      "total_x_roc": 0.16131861790121935,
+      "total_x_libdeflate": 1.0,
+      "encoder_text_x_roc": 0.6426788685524126,
+      "encoder_text_x_libdeflate": 1.0
+    }
+  },
+  "profile_effect": {
+    "retained": {
+      "ratio_of_complete_medians": 0.843455008950155,
+      "paired_complete_ratios": [
+        0.8427684700886372,
+        0.843053812692207,
+        0.8330180129735367,
+        0.8437386538715882,
+        0.8479959625736065,
+        0.8435201411724924
+      ],
+      "median_seconds_without_parser": 2.139559833499702
+    },
+    "smaller": {
+      "ratio_of_complete_medians": 0.8442286667180171,
+      "paired_complete_ratios": [
+        0.8450938988486867,
+        0.8445320473287053,
+        0.8438551466977988,
+        0.8472340035417603,
+        0.8404737153933155,
+        0.8465932736152243
+      ],
+      "median_seconds_without_parser": 2.1453035205649393
+    }
+  },
+  "instrumented_builds": {
+    "mech-retained-opt1": {
+      "phase_peak_rss_bytes": {
+        "frontend": 390135808,
+        "native": 216350720,
+        "link": 59473920
+      },
+      "phase_job_counts": [
+        "compact-compile-jobs: workers=2 submitted=23 cleanup=2"
+      ],
+      "ordered_marker_spans_seconds": [
+        [
+          "canonical lowering",
+          "preparation",
+          0.026784374844282866
+        ],
+        [
+          "preparation",
+          "native module",
+          0.19452066719532013
+        ],
+        [
+          "native module",
+          "typed layout",
+          0.42179733281955123
+        ],
+        [
+          "typed layout",
+          "source CFG",
+          0.22656316682696342
+        ],
+        [
+          "source CFG",
+          "finalize SSA",
+          0.2848771661520004
+        ],
+        [
+          "finalize SSA",
+          "CFG cleanup",
+          0.0544747500680387
+        ],
+        [
+          "CFG cleanup",
+          "machine code",
+          0.762871041893959
+        ],
+        [
+          "machine code",
+          "machine code complete",
+          0.21984495827928185
+        ]
+      ],
+      "before_first_native_marker_seconds": 0.15246104216203094,
+      "after_last_native_marker_seconds": 0.016297041904181242
+    },
+    "mech-retained-opt3": {
+      "phase_peak_rss_bytes": {
+        "frontend": 382222336,
+        "native": 217825280,
+        "link": 59326464
+      },
+      "phase_job_counts": [
+        "compact-compile-jobs: workers=2 submitted=23 cleanup=2"
+      ],
+      "ordered_marker_spans_seconds": [
+        [
+          "canonical lowering",
+          "preparation",
+          0.019155416637659073
+        ],
+        [
+          "preparation",
+          "native module",
+          0.14739704225212336
+        ],
+        [
+          "native module",
+          "typed layout",
+          0.3105713748373091
+        ],
+        [
+          "typed layout",
+          "source CFG",
+          0.16585704125463963
+        ],
+        [
+          "source CFG",
+          "finalize SSA",
+          0.18945608381181955
+        ],
+        [
+          "finalize SSA",
+          "CFG cleanup",
+          0.04165741614997387
+        ],
+        [
+          "CFG cleanup",
+          "machine code",
+          0.627277874853462
+        ],
+        [
+          "machine code",
+          "machine code complete",
+          0.18442191695794463
+        ]
+      ],
+      "before_first_native_marker_seconds": 0.1341033331118524,
+      "after_last_native_marker_seconds": 0.013847624883055687
+    },
+    "mech-smaller-opt1": {
+      "phase_peak_rss_bytes": {
+        "frontend": 390021120,
+        "native": 226607104,
+        "link": 59359232
+      },
+      "phase_job_counts": [
+        "compact-compile-jobs: workers=2 submitted=23 cleanup=2"
+      ],
+      "ordered_marker_spans_seconds": [
+        [
+          "canonical lowering",
+          "preparation",
+          0.02391454065218568
+        ],
+        [
+          "preparation",
+          "native module",
+          0.17569487541913986
+        ],
+        [
+          "native module",
+          "typed layout",
+          0.3719257917255163
+        ],
+        [
+          "typed layout",
+          "source CFG",
+          0.20645995810627937
+        ],
+        [
+          "source CFG",
+          "finalize SSA",
+          0.25119525007903576
+        ],
+        [
+          "finalize SSA",
+          "CFG cleanup",
+          0.05396204208955169
+        ],
+        [
+          "CFG cleanup",
+          "machine code",
+          0.7670099576935172
+        ],
+        [
+          "machine code",
+          "machine code complete",
+          0.2226973338983953
+        ]
+      ],
+      "before_first_native_marker_seconds": 0.14256029203534126,
+      "after_last_native_marker_seconds": 0.015408875420689583
+    },
+    "mech-smaller-opt3": {
+      "phase_peak_rss_bytes": {
+        "frontend": 382189568,
+        "native": 217776128,
+        "link": 59244544
+      },
+      "phase_job_counts": [
+        "compact-compile-jobs: workers=2 submitted=23 cleanup=2"
+      ],
+      "ordered_marker_spans_seconds": [
+        [
+          "canonical lowering",
+          "preparation",
+          0.018015583977103233
+        ],
+        [
+          "preparation",
+          "native module",
+          0.13952674996107817
+        ],
+        [
+          "native module",
+          "typed layout",
+          0.3039753749035299
+        ],
+        [
+          "typed layout",
+          "source CFG",
+          0.16654079128056765
+        ],
+        [
+          "source CFG",
+          "finalize SSA",
+          0.19065304193645716
+        ],
+        [
+          "finalize SSA",
+          "CFG cleanup",
+          0.04210866708308458
+        ],
+        [
+          "CFG cleanup",
+          "machine code",
+          0.6363264159299433
+        ],
+        [
+          "machine code",
+          "machine code complete",
+          0.1869189590215683
+        ]
+      ],
+      "before_first_native_marker_seconds": 0.0862065409310162,
+      "after_last_native_marker_seconds": 0.012613332830369473
+    },
+    "roc": {
+      "phase_peak_rss_bytes": {
+        "compile": 394264576,
+        "link": 38780928
+      }
+    },
+    "libdeflate": {
+      "phase_peak_rss_bytes": {
+        "compile": 78528512,
+        "link": 38928384
+      }
+    }
+  },
+  "opt3_same_benchmark_worker_rebuilds": {
+    "default": {
+      "sha256": {
+        "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+        "mech-worker": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6"
+      },
+      "verified_exact_calls": 162,
+      "recorded_named_case_wins_both_orders": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          61,
+          61
+        ]
+      },
+      "encoder_text_bytes": 72520,
+      "encoder_text_x_roc": 1.256932889628397,
+      "encoder_text_x_libdeflate": 1.9557713052858683,
+      "root_frame_bytes": 3744,
+      "recorded_peak_stack_bytes": 5296,
+      "numeric_phase_count": 14,
+      "general_machine_functions_omitted": 1,
+      "vector_alternatives_built": 14,
+      "vector_alternatives_selected": 5,
+      "decision": "Retained pinned baseline"
+    },
+    "smaller": {
+      "sha256": {
+        "program.o": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+        "metadata.json": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+        "mech-worker": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41"
+      },
+      "verified_exact_calls": 162,
+      "recorded_named_case_wins_both_orders": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          61,
+          61
+        ]
+      },
+      "encoder_text_bytes": 71960,
+      "encoder_text_x_roc": 1.2472268441486412,
+      "encoder_text_x_libdeflate": 1.9406688241639698,
+      "root_frame_bytes": 3744,
+      "recorded_peak_stack_bytes": 5296,
+      "numeric_phase_count": 14,
+      "general_machine_functions_omitted": 1,
+      "vector_alternatives_built": 14,
+      "vector_alternatives_selected": 5,
+      "decision": "Unresolved repeatability, opt-in"
+    }
+  },
+  "compiler_construction_seconds_and_caches": {
+    "control-rebuild": {
+      "seconds": 0.44485683320090175,
+      "compiled_and_cached_counts": {
+        "cached": 182
+      }
+    },
+    "optimized-rebuild": {
+      "seconds": 1300.532764666248,
+      "compiled_and_cached_counts": {
+        "rebuilt": 182
+      }
+    },
+    "optimized-fixed-allocator": {
+      "seconds": 5.9761619172059,
+      "compiled_and_cached_counts": {
+        "cached": 177,
+        "rebuilt": 5
+      }
+    }
+  },
+  "construction_scope": "The opt-level-1 check used an existing Cargo cache. The initial clean opt-level-3 construction also optimized the C allocator and is excluded from the timed comparison. The final opt-level-3 build reused independent compiled crates and rebuilt the allocator and its dependents. A matched cold construction comparison remains open.",
+  "profile_scope": "Native marker spans include all intervening work. The cleanup span includes subsequent passes. The machine-code span includes the initial root and its optional inlining candidate.",
+  "runtime_scope": "Benchmark workers match the recorded binaries. These compile-time trials carry their existing runtime receipts forward by exact identity.",
+  "reproduction": "Use rebuild.py --compiler-opt-level 3 --target-dir <separate-directory>. The unchanged default level is 1. timing.json contains complete timed commands and fixed input hashes. The historical measurement paths are preserved."
+}

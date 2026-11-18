@@ -1,0 +1,54 @@
+{
+  "candidate_encoder_sha256": "2119a086053e1cfeeb386e5bf993939f8ddc4182378cccd1ba3cdfef2deb126f",
+  "control_encoder_sha256": "461a1037862c610618f61d08a500825ac9e9e2a4a618caa0164758ad4827d2ed",
+  "cases": {
+    "prefix-natural-4096": {
+      "control": {
+        "instructions": 1670020,
+        "branches": 287788,
+        "b": 23615,
+        "stack_loads": 145957,
+        "stack_stores": 71402
+      },
+      "candidate": {
+        "instructions": 1642466,
+        "branches": 291953,
+        "b": 27780,
+        "stack_loads": 143044,
+        "stack_stores": 39683
+      }
+    },
+    "prefix-natural-8192": {
+      "control": {
+        "instructions": 3448168,
+        "branches": 596214,
+        "b": 50443,
+        "stack_loads": 297288,
+        "stack_stores": 144295
+      },
+      "candidate": {
+        "instructions": 3392587,
+        "branches": 604564,
+        "b": 58793,
+        "stack_loads": 291523,
+        "stack_stores": 80364
+      }
+    },
+    "320-overlap": {
+      "control": {
+        "instructions": 65882,
+        "branches": 13457,
+        "b": 1673,
+        "stack_loads": 4521,
+        "stack_stores": 2911
+      },
+      "candidate": {
+        "instructions": 64909,
+        "branches": 13455,
+        "b": 1671,
+        "stack_loads": 4519,
+        "stack_stores": 1940
+      }
+    }
+  }
+}

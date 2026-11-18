@@ -1,0 +1,2924 @@
+{
+  "plan_sha256": "aa444e8a6ebf3baf15dc39bdb35568b3371f8211598e7bdf090521b759476d47",
+  "captures": [
+    {
+      "raw_sha256": "83e013549b503e6aca02b4676a8af4bc29204b5494b295ade7b126181fd5b5fe",
+      "phase_seconds_instrumented": {
+        "parse": 1.151287083,
+        "catalog": 0.101626,
+        "frontend": 0.354125208,
+        "artifact": 0.009176709,
+        "encode": 0.003478583,
+        "native": 1.984460333
+      },
+      "stack_counts": {
+        "constant-phi-removal": 181,
+        "native-cleanup": 289,
+        "verifier": 128,
+        "register-allocation": 72,
+        "native-emitter": 295,
+        "cranelift-egraphs": 12,
+        "ssa-construction": 193,
+        "guard-closure": 88,
+        "ownership-guards": 51,
+        "guarded-ownership-search": 16,
+        "tail-provenance": 46,
+        "thread-wait": 87,
+        "tail-exit-liveness": 52,
+        "parser": 514,
+        "source-semantics": 119,
+        "catalog": 1,
+        "other": 10
+      },
+      "hot_leaves": {
+        "constant-phi-removal": [
+          [
+            "_RNvNtCsi36YpTlOqiH_17cranelift_codegen20remove_constant_phis23do_remove_constant_phis",
+            40
+          ],
+          [
+            "_RNvMs8_NtCsi36YpTlOqiH_17cranelift_codegen8verifierNtB5_8Verifier3run",
+            37
+          ],
+          [
+            "_RNvMs6_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph9value_def",
+            10
+          ],
+          [
+            "_RNvMs_NtCs4EMTQjjiagM_17cranelift_bforest4pathINtB4_4PathINtNtB6_3map8MapTypesNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities4InstNtB1g_5BlockEE9next_nodeB1k_",
+            8
+          ],
+          [
+            "_RNvMs_NtCs4EMTQjjiagM_17cranelift_bforest4pathINtB4_4PathINtNtB6_3map8MapTypesNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities4InstNtB1g_5BlockEE4nextB1k_",
+            7
+          ],
+          [
+            "_platform_memmove",
+            5
+          ],
+          [
+            "_RINvNtNtNtCsgDHHaSskbIF_4core4iter8adapters5chain17and_then_or_clearINtB2_5ChainINtNtB4_6copied6CopiedINtNtNtB8_5slice4iter4IterNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5ValueEEINtNtB4_7flatten7FlatMapIB1D_NtNtB26_12instructions9BlockCallEINtNtB4_10filter_map9FilterMapINtNtB4_3map3MapB1C_NCNvMB3u_B3s_4args0ENCNCNvMsb_NtB26_3dfgNtB5h_13DataFlowGraph11inst_values00ENCB5b_0EEB22_NvYB14_NtNtNtB6_6traits8iterator8Iterator4nextEB28_",
+            5
+          ],
+          [
+            "_RNvMs8_NtCsi36YpTlOqiH_17cranelift_codegen8verifierNtB5_8Verifier20typecheck_block_call",
+            5
+          ],
+          [
+            "_RNvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph12ctrl_typevar",
+            5
+          ],
+          [
+            "_RNvMs2_NtCsi36YpTlOqiH_17cranelift_codegen14dominator_treeNtB5_13DominatorTree7compute",
+            5
+          ],
+          [
+            "_RNvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph9inst_args",
+            5
+          ],
+          [
+            "_RNvMsf_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir12instructionsNtB5_17OperandConstraint7resolve",
+            4
+          ]
+        ],
+        "native-cleanup": [
+          [
+            "_RNvMs2_NtCsi36YpTlOqiH_17cranelift_codegen14dominator_treeNtB5_13DominatorTree7compute",
+            25
+          ],
+          [
+            "_RNvMNtNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen11cfg_cleanup15identity_routes5route5reachNtB2_12Reachability9reachable",
+            21
+          ],
+          [
+            "_RNvXs7_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir6layoutNtB5_5InstsNtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator4next",
+            16
+          ],
+          [
+            "_RNvMs6_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph19resolve_all_aliases",
+            16
+          ],
+          [
+            "_RINvXs4_NtNtCsgKscDXrlV49_5alloc3vec9into_iterINtB6_8IntoIterNtNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen11cfg_cleanup14threaded_edges5route4EdgeENtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator8try_folduNCINvNvB2K_8find_map5checkBX_NtBZ_4PlanQNCNvB11_8optimizes0_0E0INtNtNtB2S_3ops12control_flow11ControlFlowB4i_EEB1b_",
+            13
+          ],
+          [
+            "_RNvMNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen11cfg_cleanup11word_rangesNtB2_5Facts5range",
+            12
+          ],
+          [
+            "<deduplicated_symbol>",
+            8
+          ],
+          [
+            "_RNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen11cfg_cleanup10local_phis8simplify",
+            8
+          ],
+          [
+            "_RNvNtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfg21maybe_resolve_aliases",
+            7
+          ],
+          [
+            "_RNvMs6_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph20resolve_alias_chains",
+            7
+          ],
+          [
+            "_platform_memmove",
+            6
+          ],
+          [
+            "mi_free",
+            6
+          ]
+        ],
+        "verifier": [
+          [
+            "_RNvMs8_NtCsi36YpTlOqiH_17cranelift_codegen8verifierNtB5_8Verifier3run",
+            29
+          ],
+          [
+            "_RNvMs2_NtCsi36YpTlOqiH_17cranelift_codegen14dominator_treeNtB5_13DominatorTree7compute",
+            12
+          ],
+          [
+            "_RINvNtNtNtCsgDHHaSskbIF_4core4iter8adapters5chain17and_then_or_clearINtB2_5ChainINtNtB4_6copied6CopiedINtNtNtB8_5slice4iter4IterNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5ValueEEINtNtB4_7flatten7FlatMapIB1D_NtNtB26_12instructions9BlockCallEINtNtB4_10filter_map9FilterMapINtNtB4_3map3MapB1C_NCNvMB3u_B3s_4args0ENCNCNvMsb_NtB26_3dfgNtB5h_13DataFlowGraph11inst_values00ENCB5b_0EEB22_NvYB14_NtNtNtB6_6traits8iterator8Iterator4nextEB28_",
+            7
+          ],
+          [
+            "_RNvMs6_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph9value_def",
+            6
+          ],
+          [
+            "_RNvMs_NtCs4EMTQjjiagM_17cranelift_bforest4pathINtB4_4PathINtNtB6_3set8SetTypesNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5BlockEE4nextB1k_",
+            5
+          ],
+          [
+            "_RNvMs_NtCs4EMTQjjiagM_17cranelift_bforest4pathINtB4_4PathINtNtB6_3map8MapTypesNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities4InstNtB1g_5BlockEE5firstB1k_",
+            5
+          ],
+          [
+            "_RNvMs8_NtCsi36YpTlOqiH_17cranelift_codegen8verifierNtB5_8Verifier15encodable_as_bb",
+            5
+          ],
+          [
+            "_RNvMs_NtCsi36YpTlOqiH_17cranelift_codegen9flowgraphNtB4_16ControlFlowGraph13compute_block",
+            4
+          ],
+          [
+            "_RNvMs4_NtCs4EMTQjjiagM_17cranelift_bforest3mapINtB5_12MapCursorMutNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities4InstNtB14_5BlockuE6insertB18_",
+            4
+          ],
+          [
+            "_RNvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph12inst_results",
+            4
+          ],
+          [
+            "_RNvMs_NtCs4EMTQjjiagM_17cranelift_bforest4pathINtB4_4PathINtNtB6_3map8MapTypesNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities4InstNtB1g_5BlockEE4nextB1k_",
+            4
+          ],
+          [
+            "_RNvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph9inst_args",
+            3
+          ]
+        ],
+        "register-allocation": [
+          [
+            "_RNvMNtCse19Bd0sbMQY_9regalloc23ionINtNtB2_15data_structures3EnvINtNtNtCsi36YpTlOqiH_17cranelift_codegen8machinst5vcode5VCodeNtNtNtNtNtNtB16_3isa7aarch645lower4isle14generated_code5MInstEE3runB16_",
+            16
+          ],
+          [
+            "_RNvMNtNtCse19Bd0sbMQY_9regalloc23ion7processINtNtB4_15data_structures3EnvINtNtNtCsi36YpTlOqiH_17cranelift_codegen8machinst5vcode5VCodeNtNtNtNtNtNtB1g_3isa7aarch645lower4isle14generated_code5MInstEE29try_to_allocate_bundle_to_regB1g_",
+            6
+          ],
+          [
+            "_RNvMs3_NtCs9dlmMgijtDC_9hashbrown3mapINtB5_7HashMapNtNtNtCse19Bd0sbMQY_9regalloc23ion15data_structures15LiveBundleIndexuINtNtCsgDHHaSskbIF_4core4hash18BuildHasherDefaultNtCs6POTPiJQVS5_10rustc_hash8FxHasherEE6insertCsi36YpTlOqiH_17cranelift_codegen",
+            5
+          ],
+          [
+            "_RNvMNtCse19Bd0sbMQY_9regalloc23ionINtNtB2_15data_structures3EnvINtNtNtCsi36YpTlOqiH_17cranelift_codegen8machinst5vcode5VCodeNtNtNtNtNtNtB16_3isa7aarch645lower4isle14generated_code5MInstEE4initB16_",
+            5
+          ],
+          [
+            "_RINvMsd_NtNtNtCsgKscDXrlV49_5alloc11collections5btree8navigateINtNtB8_4node7NodeRefNtNtB11_6marker5ImmutNtNtNtCse19Bd0sbMQY_9regalloc23ion15data_structures12LiveRangeKeyNtB1G_14LiveRangeIndexNtB1l_14LeafOrInternalE30find_leaf_edges_spanning_rangeB1E_INtNtNtCsgDHHaSskbIF_4core3ops5range9RangeFromB1E_EECsi36YpTlOqiH_17cranelift_codegen",
+            3
+          ],
+          [
+            "_RINvMs6_NtCs9dlmMgijtDC_9hashbrown3rawINtB6_8RawTableTNtNtCse19Bd0sbMQY_9regalloc25index5BlockNtBU_10AllocationEE6insertNCINvNtB8_3map11make_hasherBQ_B1u_INtNtCsgDHHaSskbIF_4core4hash18BuildHasherDefaultNtCs6POTPiJQVS5_10rustc_hash8FxHasherEE0ECsi36YpTlOqiH_17cranelift_codegen",
+            3
+          ],
+          [
+            "_RNvXs4_NtNtCsi36YpTlOqiH_17cranelift_codegen8machinst5vcodeINtB5_5VCodeNtNtNtNtNtNtB9_3isa7aarch645lower4isle14generated_code5MInstENtCse19Bd0sbMQY_9regalloc28Function11block_predsB9_",
+            3
+          ],
+          [
+            "_RNvMs0_NtCse19Bd0sbMQY_9regalloc28indexsetNtB5_8IndexSet10union_with",
+            3
+          ],
+          [
+            "_RNvMs3_NtCsgKscDXrlV49_5alloc7raw_vecINtB5_6RawVecNtCse19Bd0sbMQY_9regalloc210AllocationE8grow_oneCsi36YpTlOqiH_17cranelift_codegen",
+            2
+          ],
+          [
+            "_platform_memset",
+            2
+          ],
+          [
+            "_RINvNtNtNtNtCsgDHHaSskbIF_4core5slice4sort6shared9smallsort18small_sort_generalNtNvMNtNtCse19Bd0sbMQY_9regalloc23ion5movesINtNtB1m_15data_structures3EnvpE34apply_allocations_and_insert_moves14InterBlockDestNCINvMB8_SB1f_20sort_unstable_by_keyyNvMs_B1h_B1f_3keyE0ECsi36YpTlOqiH_17cranelift_codegen",
+            2
+          ],
+          [
+            "_RNvMs9_NtNtCsgKscDXrlV49_5alloc11collections11binary_heapINtB5_10BinaryHeapNtNtNtCse19Bd0sbMQY_9regalloc23ion15data_structures14PrioQueueEntryE3popCsi36YpTlOqiH_17cranelift_codegen",
+            2
+          ]
+        ],
+        "native-emitter": [
+          [
+            "<deduplicated_symbol>",
+            14
+          ],
+          [
+            "_platform_memmove",
+            13
+          ],
+          [
+            "_RNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7codegen7control4planNtB2_8CodePlan8constant",
+            10
+          ],
+          [
+            "_RNvXs_NtNtCsi36YpTlOqiH_17cranelift_codegen3isa7aarch64NtB4_14AArch64BackendNtB6_9TargetIsa16compile_function",
+            7
+          ],
+          [
+            "_RNCNvNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen17numeric_traversal7analyze0Bb_",
+            7
+          ],
+          [
+            "_RNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact18checked_traversals11region_body7prepare",
+            6
+          ],
+          [
+            "_RNvMs2_NtCsi36YpTlOqiH_17cranelift_codegen14dominator_treeNtB5_13DominatorTree7compute",
+            6
+          ],
+          [
+            "_RNvMNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfg7compactNtB4_13DataFlowGraph14compact_values",
+            6
+          ],
+          [
+            "mi_malloc_aligned",
+            6
+          ],
+          [
+            "_RNvMs6_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph20resolve_alias_chains",
+            5
+          ],
+          [
+            "_RNvNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen15numeric_compact4emit",
+            5
+          ],
+          [
+            "mi_free",
+            5
+          ]
+        ],
+        "cranelift-egraphs": [
+          [
+            "_RNvMs0_NtNtCsi36YpTlOqiH_17cranelift_codegen6egraph9elaborateNtB5_10Elaborator9elaborate",
+            3
+          ],
+          [
+            "_RNvXs_NtNtNtCsgDHHaSskbIF_4core4iter8adapters5chainINtB4_5ChainIBO_INtNtB6_6copied6CopiedINtNtNtBa_5slice4iter4IterNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5ValueEEINtNtB6_7flatten7FlatMapIB1q_NtNtB1T_12instructions9BlockCallEINtNtB6_10filter_map9FilterMapINtNtB6_3map3MapB1p_NCNvMB3h_B3f_4args0ENCNCNvMsb_NtB1T_3dfgNtB54_13DataFlowGraph11inst_values00ENCB4Y_0EEIB2N_INtNtBa_6option8IntoIterNtB1R_14ExceptionTableEIB3N_IB1q_NtNtB1T_15exception_table26InternalExceptionTableItemENCNvMB70_NtB70_18ExceptionTableData8contexts0ENCB4Y_s_0EENtNtNtB8_6traits8iterator8Iterator4nextB1V_",
+            2
+          ],
+          [
+            "_RNvMs0_NtCsi36YpTlOqiH_17cranelift_codegen6egraphNtB5_10EgraphPass3run",
+            2
+          ],
+          [
+            "_RINvMsA_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir12instructionsNtB6_15InstructionData4hashNtCs6POTPiJQVS5_10rustc_hash8FxHasherEBa_",
+            1
+          ],
+          [
+            "_RNvMs_NtCsi36YpTlOqiH_17cranelift_codegen6egraphNtB4_11OptimizeCtx17insert_pure_enode",
+            1
+          ],
+          [
+            "_RINvXs3_NtNtCs5EyKIwZf8sU_22wasmtime_internal_core5alloc11try_collectINtNtB8_3vec6TryVecINtNtCs4XvccimpNIk_16cranelift_bitset6scalar12ScalarBitSetjEEINtB6_9TryExtendB1o_E10try_extendINtNtNtNtCsgDHHaSskbIF_4core4iter8adapters4take4TakeINtNtNtB31_7sources6repeat6RepeatB1o_EEECsi36YpTlOqiH_17cranelift_codegen",
+            1
+          ],
+          [
+            "_RINvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB6_13DataFlowGraph15map_inst_valuesNCNvMs0_NtBa_6egraphNtB1x_10EgraphPass24remove_pure_and_optimize0EBa_",
+            1
+          ],
+          [
+            "_platform_memmove",
+            1
+          ]
+        ],
+        "ssa-construction": [
+          [
+            "_RNvMs3_NtCsazO3RSR91Qs_18cranelift_frontend3ssaNtB5_10SSABuilder16use_var_nonlocal",
+            75
+          ],
+          [
+            "_RINvMs6_NtCs3odSxwvi1jy_9hashbrown3rawINtB6_8RawTableTNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5BlockINtNtCs5Ew7WWvzWQi_16cranelift_entity13packed_option12PackedOptionNtBS_5ValueEEE14reserve_rehashNCINvNtB8_3map11make_hasherBQ_B1L_NtCs6POTPiJQVS5_10rustc_hash13FxBuildHasherE0ECsazO3RSR91Qs_18cranelift_frontend",
+            16
+          ],
+          [
+            "_RNvMs1_NtCs3odSxwvi1jy_9hashbrown3mapINtB5_7HashMapNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5BlockINtNtCs5Ew7WWvzWQi_16cranelift_entity13packed_option12PackedOptionNtBP_5ValueENtCs6POTPiJQVS5_10rustc_hash13FxBuildHasherE6insertCsazO3RSR91Qs_18cranelift_frontend",
+            16
+          ],
+          [
+            "_RNvMs3_NtCsazO3RSR91Qs_18cranelift_frontend3ssaNtB5_10SSABuilder17run_state_machine",
+            14
+          ],
+          [
+            "_RNvMNtCsazO3RSR91Qs_18cranelift_frontend3ssaNtB2_12VariableDefs6insert",
+            10
+          ],
+          [
+            "_RNvNtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfg21maybe_resolve_aliases",
+            10
+          ],
+          [
+            "_RNvMsc_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph18remove_block_param",
+            10
+          ],
+          [
+            "_RNvMsc_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph18append_block_param",
+            6
+          ],
+          [
+            "_RNvMs4_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir6layoutNtB5_6Layout10inst_block",
+            6
+          ],
+          [
+            "_platform_memmove",
+            5
+          ],
+          [
+            "_RNvMs2_NtCs5Ew7WWvzWQi_16cranelift_entity4listINtB5_8ListPoolNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5ValueE4freeB13_",
+            5
+          ],
+          [
+            "mi_page_free_list_extend",
+            3
+          ]
+        ],
+        "guard-closure": [
+          [
+            "_RNvMs3_NtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5stateNtB5_5State5close",
+            77
+          ],
+          [
+            "_RINvNtNtNtNtCsgDHHaSskbIF_4core5slice4sort8unstable9quicksort9quicksortmNvYmNtNtBa_3cmp10PartialOrd2ltECs3RAEEkehQ9p_11mech_engine",
+            2
+          ],
+          [
+            "madvise",
+            1
+          ],
+          [
+            "_mi_malloc_generic",
+            1
+          ],
+          [
+            "_tlv_get_addr",
+            1
+          ],
+          [
+            "_RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growCs3RAEEkehQ9p_11mech_engine",
+            1
+          ],
+          [
+            "_RINvMs4_NtNtNtNtCsgKscDXrlV49_5alloc11collections5btree3map5entryINtB6_5EntryTmRSThmEEjE14or_insert_withNCNvMs0_NtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5stateNtB1M_13RelationIndex3news_0EB1W_",
+            1
+          ],
+          [
+            "mi_find_page",
+            1
+          ],
+          [
+            "_RNvCsfBzVIH1HIC6_7___rustc35___rust_no_alloc_shim_is_unstable_v2",
+            1
+          ],
+          [
+            "_RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growCsRfHOWuUYb2_9mech_core",
+            1
+          ],
+          [
+            "OUTLINED_FUNCTION_0",
+            1
+          ]
+        ],
+        "ownership-guards": [
+          [
+            "_RNvMs3_NtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5stateNtB5_5State5merge",
+            26
+          ],
+          [
+            "_RNvMs3_NtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5stateNtB5_5State6define",
+            4
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5state5StateEBS_",
+            4
+          ],
+          [
+            "mi_free",
+            2
+          ],
+          [
+            "_tlv_get_addr",
+            2
+          ],
+          [
+            "<deduplicated_symbol>",
+            2
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            1
+          ],
+          [
+            "_RNvMsB_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtNtB7_3vec3VecyEE8make_mutCsjNXmloPV5Eo_8mech_gpu",
+            1
+          ],
+          [
+            "_RNvMNtNtNtNtCs3RAEEkehQ9p_11mech_engine15native_artifact16fusion_semantics5facts10predicatesNtB4_18NativeProgramFacts20boolean_branch_edges",
+            1
+          ],
+          [
+            "mi_find_page.cold.1",
+            1
+          ],
+          [
+            "_RNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guardsNtB2_6Guards6derive",
+            1
+          ],
+          [
+            "_platform_memmove",
+            1
+          ]
+        ],
+        "guarded-ownership-search": [
+          [
+            "_RNvMs_NtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact10owner_flowNtB4_9OwnerFlow6derive",
+            9
+          ],
+          [
+            "_RNvMs_NtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact10owner_flowNtB4_9OwnerFlow20last_use_with_guards",
+            1
+          ],
+          [
+            "_platform_memmove",
+            1
+          ],
+          [
+            "_platform_memcmp",
+            1
+          ],
+          [
+            "_RNvMNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact10owner_flow12read_borrowsNtB4_9OwnerFlow18borrow_read_copies",
+            1
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            1
+          ],
+          [
+            "_RNvNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact14private_chains6derive",
+            1
+          ],
+          [
+            "__bzero",
+            1
+          ]
+        ],
+        "tail-provenance": [
+          [
+            "_RNvMNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits12reachabilityNtB2_12Reachability4walk",
+            5
+          ],
+          [
+            "_RNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits15boundary_values",
+            3
+          ],
+          [
+            "_RNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits12fresh_values",
+            3
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            3
+          ],
+          [
+            "mach_boottime_usec",
+            2
+          ],
+          [
+            "_platform_memmove",
+            2
+          ],
+          [
+            "_RNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric8versions4pass",
+            2
+          ],
+          [
+            "<deduplicated_symbol>",
+            2
+          ],
+          [
+            "_RNvMNtNtNtNtCs3RAEEkehQ9p_11mech_engine15native_artifact16fusion_semantics5facts10predicatesNtB4_18NativeProgramFacts20boolean_branch_edges",
+            2
+          ],
+          [
+            "_RNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13numeric_phaseNtB2_6Forest16derive_inventory",
+            2
+          ],
+          [
+            "_RNvNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13numeric_phase22mutation_needs_funding",
+            2
+          ],
+          [
+            "_RNCINvNtNtCs3RAEEkehQ9p_11mech_engine15native_artifact20iteration_validation11check_scopeNtNtB6_7program25NativeProgramArtifactPlanEs2_0B8_",
+            2
+          ]
+        ],
+        "thread-wait": [
+          [
+            "__ulock_wait",
+            69
+          ],
+          [
+            "semaphore_wait_trap",
+            18
+          ]
+        ],
+        "tail-exit-liveness": [
+          [
+            "_RNvNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits8liveness19live_before_indexed",
+            11
+          ],
+          [
+            "_RINvMsV_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB6_14ExtractIfInnermNtNtB8_7set_val9SetValZSTNtNtNtCsgDHHaSskbIF_4core3ops5range9RangeFullE4nextNCNvXsj_NtB8_3setINtB2C_9ExtractIfmB1F_NCINvMsc_B2C_INtB2C_8BTreeSetmE6retainNCNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits10live_querys2_0E0ENtNtNtNtB1L_4iter6traits8iterator8Iterator4next0NtNtBc_5alloc6GlobalEB3X_",
+            7
+          ],
+          [
+            "_RNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits10live_query",
+            6
+          ],
+          [
+            "<deduplicated_symbol>",
+            5
+          ],
+          [
+            "_RNvNtNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits8liveness5point5solve",
+            5
+          ],
+          [
+            "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapmNtNtB7_7set_val9SetValZSTE6insertCsjNXmloPV5Eo_8mech_gpu",
+            3
+          ],
+          [
+            "_platform_memmove",
+            2
+          ],
+          [
+            "OUTLINED_FUNCTION_10",
+            1
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            1
+          ],
+          [
+            "_RNvXNtNtCsgKscDXrlV49_5alloc3vec21spec_from_iter_nestedINtB4_3VecTmjEEINtB2_18SpecFromIterNestedB11_INtNtNtNtCsgDHHaSskbIF_4core4iter8adapters7flatten7FlatMapINtNtB1F_9enumerate9EnumerateINtNtNtB1J_5slice4iter4IterINtNtNtNtB6_11collections5btree3set8BTreeSetmEEEINtNtB1F_3map3MapINtB3t_4ItermENCNCNvNtNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits8liveness5point5solve00ENCB4L_0EE9from_iterB51_",
+            1
+          ],
+          [
+            "_RINvNtNtNtNtCsgDHHaSskbIF_4core5slice4sort8unstable9quicksort9quicksortTmjENvYB17_NtNtBa_3cmp10PartialOrd2ltECsjNXmloPV5Eo_8mech_gpu",
+            1
+          ],
+          [
+            "_RNvXNtNtCsgKscDXrlV49_5alloc3vec21spec_from_iter_nestedINtB4_3VecmEINtB2_18SpecFromIterNestedmINtNtNtNtCsgDHHaSskbIF_4core4iter8adapters6filter6FilterINtNtB1z_6copied6CopiedINtNtB1z_7flatten7FlattenINtNtNtB1D_5slice4iter4IterINtNtNtNtB6_11collections5btree3set8BTreeSetmEEEENCNvNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits11definitions8selected0EE9from_iterB4E_",
+            1
+          ]
+        ],
+        "parser": [
+          [
+            "_RNvMNtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation7advance",
+            52
+          ],
+          [
+            "_platform_memmove",
+            25
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation7advance",
+            23
+          ],
+          [
+            "_RNvMs3_NtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser10tree_cacheNtB7_6Parser18advance_tree_cache",
+            20
+          ],
+          [
+            "<deduplicated_symbol>",
+            17
+          ],
+          [
+            "_RNvXNvMs1_NtNtCs7n6wMvN6r1k_11mech_syntax8document17retained_sequenceINtB8_16RetainedSequencepE11into_valuesINtB2_5OwnedNtNtBa_5green12GreenElementENtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator4nextCs3RAEEkehQ9p_11mech_engine",
+            14
+          ],
+          [
+            "_RNvMs0_NtNtCs7n6wMvN6r1k_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+            12
+          ],
+          [
+            "_tlv_get_addr",
+            12
+          ],
+          [
+            "mi_free",
+            12
+          ],
+          [
+            "_RNvMNtNtCs7n6wMvN6r1k_11mech_syntax8document3redNtB2_10SyntaxNode20children_with_tokens",
+            12
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            11
+          ],
+          [
+            "_RNvMs7_NtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE9chunk_mutBb_",
+            9
+          ]
+        ],
+        "source-semantics": [
+          [
+            "_RNvNtCsRfHOWuUYb2_9mech_core9dimension34canonicalize_dimension_environment",
+            16
+          ],
+          [
+            "_platform_memmove",
+            16
+          ],
+          [
+            "_RNvNtNtCs3RAEEkehQ9p_11mech_engine16source_semantics8frontend18embed_schema_draft",
+            11
+          ],
+          [
+            "_RNvXse_NtCsgKscDXrlV49_5alloc5boxedINtB5_3BoxSNtNtCsRfHOWuUYb2_9mech_core9dimension29DimensionParameterDeclarationENtNtCsgDHHaSskbIF_4core5clone5Clone5cloneCs3RAEEkehQ9p_11mech_engine",
+            9
+          ],
+          [
+            "_RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_9enumerate9EnumerateINtNtNtBc_5slice4iter4IterNtNtCsRfHOWuUYb2_9mech_core9dimension29DimensionParameterDeclarationEENCNvMs1_NtNtB1T_11type_system8resolvedNtB35_12ResolvedType16from_schema_body0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB4d_8for_each4callB1P_NCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB5t_3VecB1P_E14extend_trustedBN_E0E0EB1T_",
+            5
+          ],
+          [
+            "_RNvMNtNtNtCs3RAEEkehQ9p_11mech_engine16source_semantics8frontend15dimension_remapNtB2_9Remapping6insert",
+            4
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNtCsgKscDXrlV49_5alloc5boxed3BoxSNtNtCsRfHOWuUYb2_9mech_core9dimension29DimensionParameterDeclarationEECs3RAEEkehQ9p_11mech_engine",
+            4
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            3
+          ],
+          [
+            "mi_malloc_aligned",
+            3
+          ],
+          [
+            "<deduplicated_symbol>",
+            3
+          ],
+          [
+            "mi_free",
+            2
+          ],
+          [
+            "_mi_heap_realloc_zero",
+            2
+          ]
+        ],
+        "catalog": [
+          [
+            "lookUpImpOrForward",
+            1
+          ]
+        ],
+        "other": [
+          [
+            "write",
+            3
+          ],
+          [
+            "close",
+            1
+          ],
+          [
+            "_RINvXNvNtNtCsRfHOWuUYb2_9mech_core8snapshot5drafts0_1__NtB5_14ValueDataDraftNtNtCs7kfUsYZEjdg_10serde_core3ser9Serialize9serializeQINtNtCsfkUFGNTRj9C_10serde_json3ser10SerializerQINtNtCsgKscDXrlV49_5alloc3vec3VechEEECs3RAEEkehQ9p_11mech_engine",
+            1
+          ],
+          [
+            "_platform_memmove",
+            1
+          ],
+          [
+            "_RINvXNtNtCsfkUFGNTRj9C_10serde_json5value3serNtB5_5ValueNtNtCs7kfUsYZEjdg_10serde_core3ser9Serialize9serializeQINtNtB7_3ser10SerializerQINtNtCsgKscDXrlV49_5alloc3vec3VechEEECsdyqBZrrus0C_15compile_profile",
+            1
+          ],
+          [
+            "<deduplicated_symbol>",
+            1
+          ],
+          [
+            "mi_free",
+            1
+          ],
+          [
+            "_RNvMs4_NtCs5dk4s2rDkQY_20unicode_segmentation8graphemeNtB5_14GraphemeCursor17grapheme_category",
+            1
+          ]
+        ]
+      },
+      "threads": {
+        "unlabeled": {
+          "thread-wait": 2154,
+          "other": 1
+        },
+        "compile-profile": {
+          "constant-phi-removal": 181,
+          "native-cleanup": 289,
+          "verifier": 128,
+          "register-allocation": 72,
+          "native-emitter": 295,
+          "cranelift-egraphs": 12,
+          "ssa-construction": 193,
+          "guard-closure": 88,
+          "ownership-guards": 51,
+          "guarded-ownership-search": 16,
+          "tail-provenance": 46,
+          "thread-wait": 87,
+          "tail-exit-liveness": 52,
+          "parser": 514,
+          "source-semantics": 119,
+          "catalog": 1,
+          "other": 10
+        },
+        "mech-compile-0": {
+          "thread-wait": 1257,
+          "register-allocation": 7,
+          "native-emitter": 5,
+          "constant-phi-removal": 2,
+          "verifier": 3,
+          "cranelift-egraphs": 1
+        },
+        "mech-compile-1": {
+          "thread-wait": 1259,
+          "native-cleanup": 6,
+          "constant-phi-removal": 2,
+          "native-emitter": 5,
+          "cranelift-egraphs": 2,
+          "register-allocation": 1
+        },
+        "mech-stdlib-source-catalog": {
+          "catalog": 69
+        }
+      }
+    },
+    {
+      "raw_sha256": "010211a9452378b4d2e83b1aef4361cfb6d6f0007cb4ced4017990fc71d5b586",
+      "phase_seconds_instrumented": {
+        "parse": 1.055768,
+        "catalog": 0.083548667,
+        "frontend": 0.338703833,
+        "artifact": 0.008547542,
+        "encode": 0.004489792,
+        "native": 1.915346042
+      },
+      "stack_counts": {
+        "constant-phi-removal": 146,
+        "native-cleanup": 264,
+        "register-allocation": 7,
+        "verifier": 82,
+        "ssa-construction": 198,
+        "native-emitter": 246,
+        "guard-closure": 82,
+        "ownership-guards": 62,
+        "guarded-ownership-search": 18,
+        "cranelift-egraphs": 3,
+        "thread-wait": 83,
+        "tail-exit-liveness": 55,
+        "tail-provenance": 39,
+        "parser": 797,
+        "source-semantics": 121,
+        "other": 6
+      },
+      "hot_leaves": {
+        "constant-phi-removal": [
+          [
+            "_RNvNtCsi36YpTlOqiH_17cranelift_codegen20remove_constant_phis23do_remove_constant_phis",
+            25
+          ],
+          [
+            "_RNvMs8_NtCsi36YpTlOqiH_17cranelift_codegen8verifierNtB5_8Verifier3run",
+            21
+          ],
+          [
+            "_RNvMs2_NtCsi36YpTlOqiH_17cranelift_codegen14dominator_treeNtB5_13DominatorTree7compute",
+            9
+          ],
+          [
+            "_RNvMs6_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph9value_def",
+            9
+          ],
+          [
+            "_RINvMs0_NtCs4EMTQjjiagM_17cranelift_bforest3mapINtB6_3MapNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities4InstNtBV_5BlockE6retainNCNvMs_NtBZ_9flowgraphNtB2d_16ControlFlowGraph27invalidate_block_successors0EBZ_",
+            7
+          ],
+          [
+            "_RNvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph35non_tail_call_or_try_call_signature",
+            4
+          ],
+          [
+            "_RNvMse_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir12instructionsNtB5_12ValueTypeSet8contains",
+            4
+          ],
+          [
+            "_RNvMs_NtCs4EMTQjjiagM_17cranelift_bforest4pathINtB4_4PathINtNtB6_3map8MapTypesNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities4InstNtB1g_5BlockEE9next_nodeB1k_",
+            4
+          ],
+          [
+            "_RNvMs1_NtCsgKscDXrlV49_5alloc3vecINtB5_3VecNtNtCsi36YpTlOqiH_17cranelift_codegen20remove_constant_phis12BlockSummaryE6resizeBJ_",
+            3
+          ],
+          [
+            "_RINvYINtNtCs4EMTQjjiagM_17cranelift_bforest3set7SetIterNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5BlockENtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator5eq_byB3_NCINvYB3_B1N_2eqB3_E0EBX_",
+            3
+          ],
+          [
+            "_RNvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph15inst_fixed_args",
+            3
+          ],
+          [
+            "_RNvMs8_NtCsi36YpTlOqiH_17cranelift_codegen8verifierNtB5_8Verifier15encodable_as_bb",
+            3
+          ]
+        ],
+        "native-cleanup": [
+          [
+            "_RNvMNtNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen11cfg_cleanup15identity_routes5route5reachNtB2_12Reachability9reachable",
+            20
+          ],
+          [
+            "_RINvXs4_NtNtCsgKscDXrlV49_5alloc3vec9into_iterINtB6_8IntoIterNtNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen11cfg_cleanup14threaded_edges5route4EdgeENtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator8try_folduNCINvNvB2K_8find_map5checkBX_NtBZ_4PlanQNCNvB11_8optimizes0_0E0INtNtNtB2S_3ops12control_flow11ControlFlowB4i_EEB1b_",
+            16
+          ],
+          [
+            "_RNvMs2_NtCsi36YpTlOqiH_17cranelift_codegen14dominator_treeNtB5_13DominatorTree7compute",
+            14
+          ],
+          [
+            "_RNvMs6_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph19resolve_all_aliases",
+            13
+          ],
+          [
+            "_RNvMNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen11cfg_cleanup11word_rangesNtB2_5Facts5range",
+            12
+          ],
+          [
+            "_RNvXs7_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir6layoutNtB5_5InstsNtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator4next",
+            11
+          ],
+          [
+            "_RINvXs1_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtBc_6option8IntoIterNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities4InstENCNvMs_NtB1p_8functionNtB2n_15FunctionStencil16block_successors0ENtNtNtBa_6traits12double_ended19DoubleEndedIterator9try_rfolduNCINvNvMsh_NtB8_7flattenINtB4u_13FlattenCompatppE14iter_try_rfold7flattenIBO_INtNtNtBc_5slice4iter4IterNtNtB1p_12instructions9BlockCallENCNCB2i_00EuINtNtNtBc_3ops12control_flow11ControlFlowNtB1n_5BlockENCINvNvXsj_B4u_B4H_B3j_9try_rfold7flattenB5u_uB6H_NCINvNvB3j_5rfind5checkB7m_QNCNvMs2_NtB1r_14dominator_treeNtB8X_13DominatorTree21compute_spanning_tree0E0E0E0B6H_EB1r_",
+            10
+          ],
+          [
+            "_platform_memmove",
+            10
+          ],
+          [
+            "_RNvMs6_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph20resolve_alias_chains",
+            10
+          ],
+          [
+            "_RNvNtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfg21maybe_resolve_aliases",
+            9
+          ],
+          [
+            "_RNvMs_NtCsi36YpTlOqiH_17cranelift_codegen9flowgraphNtB4_16ControlFlowGraph13compute_block",
+            9
+          ],
+          [
+            "_RNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen11cfg_cleanup10local_phis8simplify",
+            8
+          ]
+        ],
+        "register-allocation": [
+          [
+            "_RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growCsi36YpTlOqiH_17cranelift_codegen",
+            1
+          ],
+          [
+            "mi_page_free_list_extend",
+            1
+          ],
+          [
+            "OUTLINED_FUNCTION_40",
+            1
+          ],
+          [
+            "_RNvMNtCse19Bd0sbMQY_9regalloc23ionINtNtB2_15data_structures3EnvINtNtNtCsi36YpTlOqiH_17cranelift_codegen8machinst5vcode5VCodeNtNtNtNtNtNtB16_3isa7aarch645lower4isle14generated_code5MInstEE4initB16_",
+            1
+          ],
+          [
+            "_RNvMs3_NtCsgKscDXrlV49_5alloc7raw_vecINtB5_6RawVecNtCse19Bd0sbMQY_9regalloc210AllocationE8grow_oneCsi36YpTlOqiH_17cranelift_codegen",
+            1
+          ],
+          [
+            "_RNvMNtNtCse19Bd0sbMQY_9regalloc23ion7processINtNtB4_15data_structures3EnvINtNtNtCsi36YpTlOqiH_17cranelift_codegen8machinst5vcode5VCodeNtNtNtNtNtNtB1g_3isa7aarch645lower4isle14generated_code5MInstEE29try_to_allocate_bundle_to_regB1g_",
+            1
+          ],
+          [
+            "_RNvXs4_NtNtCsi36YpTlOqiH_17cranelift_codegen8machinst5vcodeINtB5_5VCodeNtNtNtNtNtNtB9_3isa7aarch645lower4isle14generated_code5MInstENtCse19Bd0sbMQY_9regalloc28Function11block_predsB9_",
+            1
+          ]
+        ],
+        "verifier": [
+          [
+            "_RNvMs8_NtCsi36YpTlOqiH_17cranelift_codegen8verifierNtB5_8Verifier3run",
+            14
+          ],
+          [
+            "_RNvMs2_NtCsi36YpTlOqiH_17cranelift_codegen14dominator_treeNtB5_13DominatorTree7compute",
+            10
+          ],
+          [
+            "_RNvMs6_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph9value_def",
+            5
+          ],
+          [
+            "_RINvNtNtNtCsgDHHaSskbIF_4core4iter8adapters5chain17and_then_or_clearINtB2_5ChainINtNtB4_6copied6CopiedINtNtNtB8_5slice4iter4IterNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5ValueEEINtNtB4_7flatten7FlatMapIB1D_NtNtB26_12instructions9BlockCallEINtNtB4_10filter_map9FilterMapINtNtB4_3map3MapB1C_NCNvMB3u_B3s_4args0ENCNCNvMsb_NtB26_3dfgNtB5h_13DataFlowGraph11inst_values00ENCB5b_0EEB22_NvYB14_NtNtNtB6_6traits8iterator8Iterator4nextEB28_",
+            4
+          ],
+          [
+            "_RNvMs_NtCs4EMTQjjiagM_17cranelift_bforest4pathINtB4_4PathINtNtB6_3set8SetTypesNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5BlockEE4nextB1k_",
+            4
+          ],
+          [
+            "_RNvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph9inst_args",
+            4
+          ],
+          [
+            "_RNvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph12ctrl_typevar",
+            4
+          ],
+          [
+            "_RNvMs6_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph17value_is_attached",
+            3
+          ],
+          [
+            "_RNvMs8_NtCsi36YpTlOqiH_17cranelift_codegen8verifierNtB5_8Verifier12verify_value",
+            3
+          ],
+          [
+            "_RNvMsf_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir12instructionsNtB5_17OperandConstraint7resolve",
+            3
+          ],
+          [
+            "_RNvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph35non_tail_call_or_try_call_signature",
+            2
+          ],
+          [
+            "_RINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB6_3VecNtNtCsi36YpTlOqiH_17cranelift_codegen14dominator_tree14TraversalEventE16extend_desugaredINtNtNtNtCsgDHHaSskbIF_4core4iter8adapters3map3MapINtNtB2b_6filter6FilterINtNtB2b_3rev3RevINtNtB2b_7flatten7FlatMapINtNtB2f_6option8IntoIterNtNtNtBK_2ir8entities4InstEIB27_INtNtNtB2f_5slice4iter4IterNtNtB4q_12instructions9BlockCallENCNCNvMs_NtB4q_8functionNtB5Z_15FunctionStencil16block_successors00ENCB5U_0EENCNvMs2_BI_NtBI_13DominatorTree21compute_spanning_tree0ENCB77_s_0EEBK_",
+            2
+          ]
+        ],
+        "ssa-construction": [
+          [
+            "_RNvMs3_NtCsazO3RSR91Qs_18cranelift_frontend3ssaNtB5_10SSABuilder16use_var_nonlocal",
+            80
+          ],
+          [
+            "_RINvMs6_NtCs3odSxwvi1jy_9hashbrown3rawINtB6_8RawTableTNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5BlockINtNtCs5Ew7WWvzWQi_16cranelift_entity13packed_option12PackedOptionNtBS_5ValueEEE14reserve_rehashNCINvNtB8_3map11make_hasherBQ_B1L_NtCs6POTPiJQVS5_10rustc_hash13FxBuildHasherE0ECsazO3RSR91Qs_18cranelift_frontend",
+            25
+          ],
+          [
+            "_RNvMNtCsazO3RSR91Qs_18cranelift_frontend3ssaNtB2_12VariableDefs6insert",
+            19
+          ],
+          [
+            "_RNvMs1_NtCs3odSxwvi1jy_9hashbrown3mapINtB5_7HashMapNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5BlockINtNtCs5Ew7WWvzWQi_16cranelift_entity13packed_option12PackedOptionNtBP_5ValueENtCs6POTPiJQVS5_10rustc_hash13FxBuildHasherE6insertCsazO3RSR91Qs_18cranelift_frontend",
+            14
+          ],
+          [
+            "_RNvMs3_NtCsazO3RSR91Qs_18cranelift_frontend3ssaNtB5_10SSABuilder17run_state_machine",
+            10
+          ],
+          [
+            "_RNvNtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfg21maybe_resolve_aliases",
+            5
+          ],
+          [
+            "mi_page_free_list_extend",
+            5
+          ],
+          [
+            "_RNvMsc_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph18append_block_param",
+            4
+          ],
+          [
+            "_RNvMs4_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir6layoutNtB5_6Layout10inst_block",
+            4
+          ],
+          [
+            "_platform_memmove",
+            4
+          ],
+          [
+            "_RNvMs3_NtCs5Ew7WWvzWQi_16cranelift_entity4listINtB5_10EntityListNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5ValueE4pushB16_",
+            3
+          ],
+          [
+            "_RNvMsc_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph18remove_block_param",
+            3
+          ]
+        ],
+        "native-emitter": [
+          [
+            "_platform_memmove",
+            13
+          ],
+          [
+            "<deduplicated_symbol>",
+            11
+          ],
+          [
+            "_RNvNtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfg21maybe_resolve_aliases",
+            10
+          ],
+          [
+            "_RNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7codegen7control4planNtB2_8CodePlan8constant",
+            8
+          ],
+          [
+            "_RNvMs2_NtCsi36YpTlOqiH_17cranelift_codegen14dominator_treeNtB5_13DominatorTree7compute",
+            7
+          ],
+          [
+            "_RNvNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7codegen6common16boolean_branches16boolean_constant",
+            7
+          ],
+          [
+            "write",
+            6
+          ],
+          [
+            "_RNvMNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfg7compactNtB4_13DataFlowGraph14compact_values",
+            5
+          ],
+          [
+            "_RINvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen15traversal_facts5entry6statesRNCNvNtB6_17numeric_traversal7analyze0EBc_",
+            5
+          ],
+          [
+            "_RNCNvNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen17numeric_traversal7analyze0Bb_",
+            5
+          ],
+          [
+            "_RNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact18checked_traversals11region_body7prepare",
+            4
+          ],
+          [
+            "__findenv_locked",
+            4
+          ]
+        ],
+        "guard-closure": [
+          [
+            "_RNvMs3_NtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5stateNtB5_5State5close",
+            77
+          ],
+          [
+            "_RINvNtNtNtNtCsgDHHaSskbIF_4core5slice4sort8unstable9quicksort9quicksortmNvYmNtNtBa_3cmp10PartialOrd2ltECs3RAEEkehQ9p_11mech_engine",
+            3
+          ],
+          [
+            "_platform_memmove",
+            1
+          ],
+          [
+            "_RNvXs_NtNtCsgKscDXrlV49_5alloc3vec21spec_from_iter_nestedINtB6_3VecTmNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5state10ExpressionEEINtB4_18SpecFromIterNestedB13_INtNtNtNtCsgDHHaSskbIF_4core4iter8adapters3map3MapINtNtNtNtB8_11collections5btree3map4ItermB15_ENCNvMs0_B17_NtB17_13RelationIndex3new0EE9from_iterB1h_",
+            1
+          ]
+        ],
+        "ownership-guards": [
+          [
+            "_RNvMs3_NtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5stateNtB5_5State5merge",
+            40
+          ],
+          [
+            "_RNvMs3_NtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5stateNtB5_5State6define",
+            5
+          ],
+          [
+            "mi_free",
+            4
+          ],
+          [
+            "_RNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guardsNtB2_6Guards6derive",
+            3
+          ],
+          [
+            "_RNvMs3_NtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5stateNtB5_5State6assume",
+            2
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            1
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5state5StateEBS_",
+            1
+          ],
+          [
+            "_RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_9enumerate9EnumerateINtNtNtBc_5slice4iter4IterNtNtNtCs3RAEEkehQ9p_11mech_engine15native_artifact9iteration20NativeIterationBlockEENCNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guardsNtB3g_6Guards6derive0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB4L_8for_each4callINtNtBc_6option6OptionTmjjEENCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB6p_3VecB5O_E14extend_trustedBN_E0E0EB3o_",
+            1
+          ],
+          [
+            "mi_page_free_list_extend",
+            1
+          ],
+          [
+            "_RNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guardsNtB2_6Guards4edge",
+            1
+          ],
+          [
+            "_RNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guardsNtB2_6Guards10successors",
+            1
+          ],
+          [
+            "_RNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guardsNtB2_6Guards7advance",
+            1
+          ]
+        ],
+        "guarded-ownership-search": [
+          [
+            "_RNvMs_NtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact10owner_flowNtB4_9OwnerFlow6derive",
+            11
+          ],
+          [
+            "_RNvMs_NtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact10owner_flowNtB4_9OwnerFlow20last_use_with_guards",
+            3
+          ],
+          [
+            "mi_free",
+            1
+          ],
+          [
+            "mi_zalloc_aligned",
+            1
+          ],
+          [
+            "_RNvMs3_NtCsgKscDXrlV49_5alloc7raw_vecINtB5_6RawVecjE8grow_oneCsaFVcTMpAzQO_6tabled",
+            1
+          ],
+          [
+            "_RINvNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact16owner_retirement5shareNtNtB4_6object14PreparedObjectEBa_",
+            1
+          ]
+        ],
+        "cranelift-egraphs": [
+          [
+            "_RINvMs6_NtCs2uR9DRdg5K_9hashbrown3rawINtB6_8RawTableINtNtCsi36YpTlOqiH_17cranelift_codegen7ctxhash10BucketDataTNtNtNtBT_2ir5types4TypeNtNtB1P_12instructions15InstructionDataEINtNtBT_15scoped_hash_map3ValINtNtCsgDHHaSskbIF_4core6option6OptionNtNtB1P_8entities5ValueEEEE6insertNCINvMs1_BR_INtBR_10CtxHashMapB1K_B2M_E6insertNtNtBT_6egraph10GVNContextEs_0EBT_",
+            1
+          ],
+          [
+            "_RNvXs2_NtCsi36YpTlOqiH_17cranelift_codegen4optsNtB5_16InstDataEtorIterNtNtB5_14generated_code11ContextIter4next",
+            1
+          ],
+          [
+            "_RNvMs_NtCsi36YpTlOqiH_17cranelift_codegen6egraphNtB4_11OptimizeCtx17insert_pure_enode",
+            1
+          ]
+        ],
+        "thread-wait": [
+          [
+            "__ulock_wait",
+            64
+          ],
+          [
+            "semaphore_wait_trap",
+            19
+          ]
+        ],
+        "tail-exit-liveness": [
+          [
+            "_RNvNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits8liveness19live_before_indexed",
+            11
+          ],
+          [
+            "_RINvMsV_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB6_14ExtractIfInnermNtNtB8_7set_val9SetValZSTNtNtNtCsgDHHaSskbIF_4core3ops5range9RangeFullE4nextNCNvXsj_NtB8_3setINtB2C_9ExtractIfmB1F_NCINvMsc_B2C_INtB2C_8BTreeSetmE6retainNCNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits10live_querys2_0E0ENtNtNtNtB1L_4iter6traits8iterator8Iterator4next0NtNtBc_5alloc6GlobalEB3X_",
+            9
+          ],
+          [
+            "<deduplicated_symbol>",
+            9
+          ],
+          [
+            "mi_malloc_aligned",
+            4
+          ],
+          [
+            "_RINvNtNtNtNtCsgDHHaSskbIF_4core5slice4sort8unstable9quicksort9quicksortmNvYmNtNtBa_3cmp10PartialOrd2ltECs3RAEEkehQ9p_11mech_engine",
+            4
+          ],
+          [
+            "_RNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits10live_query",
+            3
+          ],
+          [
+            "_platform_memmove",
+            2
+          ],
+          [
+            "_RNvXNtNtCsgKscDXrlV49_5alloc3vec21spec_from_iter_nestedINtB4_3VecTmjEEINtB2_18SpecFromIterNestedB11_INtNtNtNtCsgDHHaSskbIF_4core4iter8adapters7flatten7FlatMapINtNtB1F_9enumerate9EnumerateINtNtNtB1J_5slice4iter4IterINtNtNtNtB6_11collections5btree3set8BTreeSetmEEEINtNtB1F_3map3MapINtB3t_4ItermENCNCNvNtNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits8liveness5point5solve00ENCB4L_0EE9from_iterB51_",
+            2
+          ],
+          [
+            "_RNvNtNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits8liveness5point5solve",
+            2
+          ],
+          [
+            "OUTLINED_FUNCTION_28",
+            1
+          ],
+          [
+            "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapmNtNtB7_7set_val9SetValZSTE6insertCsjNXmloPV5Eo_8mech_gpu",
+            1
+          ],
+          [
+            "OUTLINED_FUNCTION_0",
+            1
+          ]
+        ],
+        "tail-provenance": [
+          [
+            "<deduplicated_symbol>",
+            4
+          ],
+          [
+            "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapmNtNtB7_7set_val9SetValZSTE6insertCsjNXmloPV5Eo_8mech_gpu",
+            3
+          ],
+          [
+            "_RNvXsk_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_4IterjNtNtB7_7set_val9SetValZSTENtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator4nextCsjNXmloPV5Eo_8mech_gpu",
+            3
+          ],
+          [
+            "_RNvMNtNtNtNtCs3RAEEkehQ9p_11mech_engine15native_artifact16fusion_semantics5facts10predicatesNtB4_18NativeProgramFacts20boolean_branch_edges",
+            3
+          ],
+          [
+            "_RNvMNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits12reachabilityNtB2_12Reachability4walk",
+            3
+          ],
+          [
+            "_RNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits15boundary_values",
+            2
+          ],
+          [
+            "_RNvNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13numeric_phase22mutation_needs_funding",
+            2
+          ],
+          [
+            "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapjNtNtB7_7set_val9SetValZSTE6insertCsjNXmloPV5Eo_8mech_gpu",
+            2
+          ],
+          [
+            "_RNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13numeric_phaseNtB2_6Forest16derive_inventory",
+            1
+          ],
+          [
+            "madvise",
+            1
+          ],
+          [
+            "_RNvMs1_NtNtNtCs3RAEEkehQ9p_11mech_engine15native_artifact16fusion_semantics5factsNtB5_18NativeProgramFacts18control_successors",
+            1
+          ],
+          [
+            "_RNvXNtNtCsgKscDXrlV49_5alloc3vec21spec_from_iter_nestedINtB4_3VecTTmINtNtCsgDHHaSskbIF_4core6option6OptionjEEbEEINtB2_18SpecFromIterNestedB11_INtNtNtNtB19_4iter8adapters3map3MapINtNtB2l_6filter6FilterINtNtB2l_9enumerate9EnumerateINtNtNtB19_5slice4iter4IterNtNtNtCs3RAEEkehQ9p_11mech_engine15native_artifact13buffer_frames22NativeBufferFrameFieldEENCNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric8versions4passs5_0ENCB5B_s6_0EE9from_iterB5N_",
+            1
+          ]
+        ],
+        "parser": [
+          [
+            "_RNvMNtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation7advance",
+            92
+          ],
+          [
+            "_platform_memmove",
+            51
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation7advance",
+            36
+          ],
+          [
+            "_RNvMNtNtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical14recursive_core10precedence12continuationNtB2_12Continuation7advance",
+            28
+          ],
+          [
+            "_RNvMs0_NtNtCs7n6wMvN6r1k_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+            24
+          ],
+          [
+            "_RNvXNvMs1_NtNtCs7n6wMvN6r1k_11mech_syntax8document17retained_sequenceINtB8_16RetainedSequencepE11into_valuesINtB2_5OwnedNtNtBa_5green12GreenElementENtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator4nextCs3RAEEkehQ9p_11mech_engine",
+            21
+          ],
+          [
+            "<deduplicated_symbol>",
+            18
+          ],
+          [
+            "mi_free",
+            17
+          ],
+          [
+            "_tlv_get_addr",
+            16
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical9operators12continuationNtB2_12Continuation7advance",
+            16
+          ],
+          [
+            "_RNvNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical13terminal_spec19fixed_terminal_spec",
+            15
+          ],
+          [
+            "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtNtCs7n6wMvN6r1k_11mech_syntax8document3ids7TokenIdNtNtB1b_5index11TokenRecordE6insertB1d_",
+            14
+          ]
+        ],
+        "source-semantics": [
+          [
+            "_platform_memmove",
+            19
+          ],
+          [
+            "_RNvNtCsRfHOWuUYb2_9mech_core9dimension34canonicalize_dimension_environment",
+            16
+          ],
+          [
+            "_RNvXse_NtCsgKscDXrlV49_5alloc5boxedINtB5_3BoxSNtNtCsRfHOWuUYb2_9mech_core9dimension29DimensionParameterDeclarationENtNtCsgDHHaSskbIF_4core5clone5Clone5cloneCs3RAEEkehQ9p_11mech_engine",
+            7
+          ],
+          [
+            "_RNvNtNtCs3RAEEkehQ9p_11mech_engine16source_semantics8frontend18embed_schema_draft",
+            5
+          ],
+          [
+            "_RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_9enumerate9EnumerateINtNtNtBc_5slice4iter4IterNtNtCsRfHOWuUYb2_9mech_core9dimension29DimensionParameterDeclarationEENCNvMs1_NtNtB1T_11type_system8resolvedNtB35_12ResolvedType16from_schema_body0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB4d_8for_each4callB1P_NCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB5t_3VecB1P_E14extend_trustedBN_E0E0EB1T_",
+            4
+          ],
+          [
+            "_RNvNtNtNtNtCs3RAEEkehQ9p_11mech_engine16source_semantics8frontend17document_lowering18document_functions14calls_function",
+            3
+          ],
+          [
+            "mi_free",
+            3
+          ],
+          [
+            "_RNvMNtNtNtCs3RAEEkehQ9p_11mech_engine16source_semantics8frontend15dimension_remapNtB2_9Remapping6insert",
+            3
+          ],
+          [
+            "madvise",
+            3
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNtCsgKscDXrlV49_5alloc5boxed3BoxSNtNtCsRfHOWuUYb2_9mech_core9dimension29DimensionParameterDeclarationEECs3RAEEkehQ9p_11mech_engine",
+            3
+          ],
+          [
+            "_RNvNtNtCs3HfYkfTWLeN_4sha26sha25612aarch64_sha28compress",
+            3
+          ],
+          [
+            "_RNvNtNtCs28m67QO8KC5_4sha26sha2564soft8compress",
+            3
+          ]
+        ],
+        "other": [
+          [
+            "_RINvNtCsfkUFGNTRj9C_10serde_json3ser18format_escaped_strQINtNtCsgKscDXrlV49_5alloc3vec3VechENtB2_16CompactFormatterECs3RAEEkehQ9p_11mech_engine",
+            2
+          ],
+          [
+            "_RNvNtNtCsRfHOWuUYb2_9mech_core8snapshot10validation35canonical_data_to_draft_with_target",
+            1
+          ],
+          [
+            "_RNvCsllhYiLSeTVu_9crc32fast4hash",
+            1
+          ],
+          [
+            "write",
+            1
+          ],
+          [
+            "close",
+            1
+          ]
+        ]
+      },
+      "threads": {
+        "unlabeled": {
+          "thread-wait": 2209
+        },
+        "compile-profile": {
+          "constant-phi-removal": 146,
+          "native-cleanup": 264,
+          "register-allocation": 7,
+          "verifier": 82,
+          "ssa-construction": 198,
+          "native-emitter": 246,
+          "guard-closure": 82,
+          "ownership-guards": 62,
+          "guarded-ownership-search": 18,
+          "cranelift-egraphs": 3,
+          "thread-wait": 83,
+          "tail-exit-liveness": 55,
+          "tail-provenance": 39,
+          "parser": 797,
+          "source-semantics": 121,
+          "other": 6
+        },
+        "mech-compile-0": {
+          "thread-wait": 1035,
+          "native-cleanup": 9,
+          "constant-phi-removal": 4,
+          "verifier": 3,
+          "register-allocation": 3,
+          "native-emitter": 4
+        },
+        "mech-compile-1": {
+          "thread-wait": 1036,
+          "register-allocation": 8,
+          "native-emitter": 5,
+          "cranelift-egraphs": 5,
+          "verifier": 3,
+          "constant-phi-removal": 1
+        },
+        "mech-stdlib-source-catalog": {
+          "catalog": 63,
+          "other": 1
+        }
+      }
+    },
+    {
+      "raw_sha256": "bee6930741954b4fb8a2e50618cc630a3eb1ad7b2a6d585b63133efa6f1cd7a8",
+      "phase_seconds_instrumented": {
+        "parse": 1.073471042,
+        "catalog": 0.093037125,
+        "frontend": 0.3525245,
+        "artifact": 0.008544292,
+        "encode": 0.00345225,
+        "native": 1.933189459
+      },
+      "stack_counts": {
+        "constant-phi-removal": 136,
+        "native-cleanup": 241,
+        "register-allocation": 14,
+        "verifier": 74,
+        "ssa-construction": 207,
+        "native-emitter": 245,
+        "guard-closure": 98,
+        "ownership-guards": 49,
+        "guarded-ownership-search": 15,
+        "cranelift-egraphs": 3,
+        "tail-provenance": 37,
+        "thread-wait": 86,
+        "tail-exit-liveness": 51,
+        "parser": 808,
+        "source-semantics": 124,
+        "other": 6
+      },
+      "hot_leaves": {
+        "constant-phi-removal": [
+          [
+            "_RNvNtCsi36YpTlOqiH_17cranelift_codegen20remove_constant_phis23do_remove_constant_phis",
+            33
+          ],
+          [
+            "_RNvMs8_NtCsi36YpTlOqiH_17cranelift_codegen8verifierNtB5_8Verifier3run",
+            26
+          ],
+          [
+            "_RNvMs_NtCs4EMTQjjiagM_17cranelift_bforest4pathINtB4_4PathINtNtB6_3map8MapTypesNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities4InstNtB1g_5BlockEE4nextB1k_",
+            9
+          ],
+          [
+            "_RNvMs2_NtCsi36YpTlOqiH_17cranelift_codegen14dominator_treeNtB5_13DominatorTree7compute",
+            6
+          ],
+          [
+            "_RNvMsc_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir12instructionsNtB5_15InstructionData12analyze_call",
+            6
+          ],
+          [
+            "_platform_memmove",
+            4
+          ],
+          [
+            "_RNvMs8_NtCsi36YpTlOqiH_17cranelift_codegen8verifierNtB5_8Verifier15encodable_as_bb",
+            4
+          ],
+          [
+            "_RNvMs6_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph9value_def",
+            4
+          ],
+          [
+            "_RNvMs_NtCs4EMTQjjiagM_17cranelift_bforest4pathINtB4_4PathINtNtB6_3map8MapTypesNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities4InstNtB1g_5BlockEE9next_nodeB1k_",
+            4
+          ],
+          [
+            "_RNvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph9inst_args",
+            3
+          ],
+          [
+            "_RNvMse_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir12instructionsNtB5_12ValueTypeSet8contains",
+            3
+          ],
+          [
+            "_RNvMsf_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir12instructionsNtB5_17OperandConstraint7resolve",
+            2
+          ]
+        ],
+        "native-cleanup": [
+          [
+            "_RNvXs7_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir6layoutNtB5_5InstsNtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator4next",
+            16
+          ],
+          [
+            "_RNvMs2_NtCsi36YpTlOqiH_17cranelift_codegen14dominator_treeNtB5_13DominatorTree7compute",
+            14
+          ],
+          [
+            "_RNvMNtNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen11cfg_cleanup15identity_routes5route5reachNtB2_12Reachability9reachable",
+            14
+          ],
+          [
+            "_RNvMs6_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph19resolve_all_aliases",
+            14
+          ],
+          [
+            "_RNvMNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen11cfg_cleanup11word_rangesNtB2_5Facts5range",
+            13
+          ],
+          [
+            "<deduplicated_symbol>",
+            12
+          ],
+          [
+            "_RNvNtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfg21maybe_resolve_aliases",
+            8
+          ],
+          [
+            "_RINvXs4_NtNtCsgKscDXrlV49_5alloc3vec9into_iterINtB6_8IntoIterNtNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen11cfg_cleanup14threaded_edges5route4EdgeENtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator8try_folduNCINvNvB2K_8find_map5checkBX_NtBZ_4PlanQNCNvB11_8optimizes0_0E0INtNtNtB2S_3ops12control_flow11ControlFlowB4i_EEB1b_",
+            7
+          ],
+          [
+            "_RINvXs1_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtBc_6option8IntoIterNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities4InstENCNvMs_NtB1p_8functionNtB2n_15FunctionStencil16block_successors0ENtNtNtBa_6traits12double_ended19DoubleEndedIterator9try_rfolduNCINvNvMsh_NtB8_7flattenINtB4u_13FlattenCompatppE14iter_try_rfold7flattenIBO_INtNtNtBc_5slice4iter4IterNtNtB1p_12instructions9BlockCallENCNCB2i_00EuINtNtNtBc_3ops12control_flow11ControlFlowNtB1n_5BlockENCINvNvXsj_B4u_B4H_B3j_9try_rfold7flattenB5u_uB6H_NCINvNvB3j_5rfind5checkB7m_QNCNvMs2_NtB1r_14dominator_treeNtB8X_13DominatorTree21compute_spanning_tree0E0E0E0B6H_EB1r_",
+            6
+          ],
+          [
+            "_RNvMs_NtCs4EMTQjjiagM_17cranelift_bforest4pathINtB4_4PathINtNtB6_3map8MapTypesNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities4InstNtB1g_5BlockEE4nextB1k_",
+            4
+          ],
+          [
+            "_RINvXs4_NtNtCsgKscDXrlV49_5alloc3vec9into_iterINtB6_8IntoIterNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5ValueENtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator4folduNCINvNtNtB1Z_8adapters3map8map_foldBX_juNCNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen11cfg_cleanup13boolean_words6derives0_0NCINvNvB1T_8for_each4calljNCINvMsj_B8_INtB8_3VecjE14extend_trustedINtB2Z_3MapBI_B3y_EE0E0E0EB3M_",
+            4
+          ],
+          [
+            "_RNvMsc_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph12block_params",
+            4
+          ]
+        ],
+        "register-allocation": [
+          [
+            "mi_malloc_aligned",
+            3
+          ],
+          [
+            "_platform_memmove",
+            2
+          ],
+          [
+            "mi_find_page",
+            1
+          ],
+          [
+            "_mi_heap_realloc_zero",
+            1
+          ],
+          [
+            "_RNvMNtCse19Bd0sbMQY_9regalloc23ionINtNtB2_15data_structures3EnvINtNtNtCsi36YpTlOqiH_17cranelift_codegen8machinst5vcode5VCodeNtNtNtNtNtNtB16_3isa7aarch645lower4isle14generated_code5MInstEE4initB16_",
+            1
+          ],
+          [
+            "_RINvNtNtNtNtCsgDHHaSskbIF_4core5slice4sort6shared9smallsort25insertion_sort_shift_leftNtNvMNtNtCse19Bd0sbMQY_9regalloc23ion5movesINtNtB1t_15data_structures3EnvpE34apply_allocations_and_insert_moves14InterBlockDestNCINvMB8_SB1m_20sort_unstable_by_keyyNvMs_B1o_B1m_3keyE0ECsi36YpTlOqiH_17cranelift_codegen",
+            1
+          ],
+          [
+            "_RNvMs_NtNtCse19Bd0sbMQY_9regalloc23ion13reg_traversalNtB4_16RegTraversalIter3new",
+            1
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeSNtNtNtCse19Bd0sbMQY_9regalloc23ion15data_structures10LiveBundleECsi36YpTlOqiH_17cranelift_codegen",
+            1
+          ],
+          [
+            "_RNvMs_NtNtCs3nyiNgzix6p_14allocator_api26stable3vecINtB4_3VecNtNtNtCse19Bd0sbMQY_9regalloc23ion15data_structures18LiveRangeListEntryNtB13_4BumpE6insertCsi36YpTlOqiH_17cranelift_codegen",
+            1
+          ],
+          [
+            "_RNvXs4_NtNtCsi36YpTlOqiH_17cranelift_codegen8machinst5vcodeINtB5_5VCodeNtNtNtNtNtNtB9_3isa7aarch645lower4isle14generated_code5MInstENtCse19Bd0sbMQY_9regalloc28Function12block_paramsB9_",
+            1
+          ],
+          [
+            "_RINvMs6_NtCs3odSxwvi1jy_9hashbrown3rawINtB6_8RawTableTNtNtCse19Bd0sbMQY_9regalloc25index5BlockuEE14reserve_rehashNCINvNtB8_3map11make_hasherBQ_uNtCs6POTPiJQVS5_10rustc_hash13FxBuildHasherE0ECsi36YpTlOqiH_17cranelift_codegen",
+            1
+          ]
+        ],
+        "verifier": [
+          [
+            "_RNvMs8_NtCsi36YpTlOqiH_17cranelift_codegen8verifierNtB5_8Verifier3run",
+            18
+          ],
+          [
+            "_RNvMs2_NtCsi36YpTlOqiH_17cranelift_codegen14dominator_treeNtB5_13DominatorTree7compute",
+            5
+          ],
+          [
+            "_RNvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph19compute_result_type",
+            5
+          ],
+          [
+            "_RNvMs8_NtCsi36YpTlOqiH_17cranelift_codegen8verifierNtB5_8Verifier15encodable_as_bb",
+            4
+          ],
+          [
+            "_RNvMs6_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph9value_def",
+            4
+          ],
+          [
+            "_RNvMs4_NtCs4EMTQjjiagM_17cranelift_bforest3mapINtB5_12MapCursorMutNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities4InstNtB14_5BlockuE6insertB18_",
+            3
+          ],
+          [
+            "_RNvNtCsi36YpTlOqiH_17cranelift_codegen8verifier25verify_context_dominators",
+            3
+          ],
+          [
+            "_RINvMs8_NtCsi36YpTlOqiH_17cranelift_codegen8verifierNtB6_8Verifier12verify_blockNtNtNtB8_2ir8entities4InstEB8_",
+            2
+          ],
+          [
+            "_RINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB6_3VecNtNtCsi36YpTlOqiH_17cranelift_codegen14dominator_tree14TraversalEventE16extend_desugaredINtNtNtNtCsgDHHaSskbIF_4core4iter8adapters3map3MapINtNtB2b_6filter6FilterINtNtB2b_3rev3RevINtNtB2b_7flatten7FlatMapINtNtB2f_6option8IntoIterNtNtNtBK_2ir8entities4InstEIB27_INtNtNtB2f_5slice4iter4IterNtNtB4q_12instructions9BlockCallENCNCNvMs_NtB4q_8functionNtB5Z_15FunctionStencil16block_successors00ENCB5U_0EENCNvMs2_BI_NtBI_13DominatorTree21compute_spanning_tree0ENCB77_s_0EEBK_",
+            2
+          ],
+          [
+            "_RNvMsc_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir12instructionsNtB5_15InstructionData12analyze_call",
+            2
+          ],
+          [
+            "_RNvMs_NtCs4EMTQjjiagM_17cranelift_bforest4pathINtB4_4PathINtNtB6_3map8MapTypesNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities4InstNtB1g_5BlockEE4nextB1k_",
+            2
+          ],
+          [
+            "_RINvYINtNtCs4EMTQjjiagM_17cranelift_bforest3set7SetIterNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5BlockENtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator5eq_byB3_NCINvYB3_B1N_2eqB3_E0EBX_",
+            2
+          ]
+        ],
+        "ssa-construction": [
+          [
+            "_RNvMs3_NtCsazO3RSR91Qs_18cranelift_frontend3ssaNtB5_10SSABuilder16use_var_nonlocal",
+            83
+          ],
+          [
+            "_RINvMs6_NtCs3odSxwvi1jy_9hashbrown3rawINtB6_8RawTableTNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5BlockINtNtCs5Ew7WWvzWQi_16cranelift_entity13packed_option12PackedOptionNtBS_5ValueEEE14reserve_rehashNCINvNtB8_3map11make_hasherBQ_B1L_NtCs6POTPiJQVS5_10rustc_hash13FxBuildHasherE0ECsazO3RSR91Qs_18cranelift_frontend",
+            21
+          ],
+          [
+            "_RNvMNtCsazO3RSR91Qs_18cranelift_frontend3ssaNtB2_12VariableDefs6insert",
+            16
+          ],
+          [
+            "_RNvMs3_NtCsazO3RSR91Qs_18cranelift_frontend3ssaNtB5_10SSABuilder17run_state_machine",
+            15
+          ],
+          [
+            "_RNvMs3_NtCs5Ew7WWvzWQi_16cranelift_entity4listINtB5_10EntityListNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5ValueE4pushB16_",
+            13
+          ],
+          [
+            "_RNvNtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfg21maybe_resolve_aliases",
+            11
+          ],
+          [
+            "_RNvMs1_NtCs3odSxwvi1jy_9hashbrown3mapINtB5_7HashMapNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5BlockINtNtCs5Ew7WWvzWQi_16cranelift_entity13packed_option12PackedOptionNtBP_5ValueENtCs6POTPiJQVS5_10rustc_hash13FxBuildHasherE6insertCsazO3RSR91Qs_18cranelift_frontend",
+            8
+          ],
+          [
+            "_RNvMsc_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph18remove_block_param",
+            6
+          ],
+          [
+            "_RNvMsc_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph18append_block_param",
+            5
+          ],
+          [
+            "_RNvMs0_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir6layoutNtB5_6Layout15assign_inst_seq",
+            4
+          ],
+          [
+            "_platform_memmove",
+            3
+          ],
+          [
+            "_RNvMs4_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir6layoutNtB5_6Layout10inst_block",
+            3
+          ]
+        ],
+        "native-emitter": [
+          [
+            "<deduplicated_symbol>",
+            14
+          ],
+          [
+            "_platform_memmove",
+            12
+          ],
+          [
+            "_RNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7codegen7control4planNtB2_8CodePlan8constant",
+            9
+          ],
+          [
+            "_RNvMs2_NtCsi36YpTlOqiH_17cranelift_codegen14dominator_treeNtB5_13DominatorTree7compute",
+            7
+          ],
+          [
+            "write",
+            6
+          ],
+          [
+            "_RNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact18checked_traversals11region_body7prepare",
+            6
+          ],
+          [
+            "_RNvNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen15numeric_compact4emit",
+            6
+          ],
+          [
+            "_RINvNtNtCs3RAEEkehQ9p_11mech_engine15native_artifact20iteration_validation11check_scopeNtNtB4_7program25NativeProgramArtifactPlanEB6_",
+            6
+          ],
+          [
+            "_RNvMNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfg7compactNtB4_13DataFlowGraph14compact_values",
+            5
+          ],
+          [
+            "_RNvNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7codegen6common16boolean_branches16boolean_constant",
+            5
+          ],
+          [
+            "__findenv_locked",
+            4
+          ],
+          [
+            "_tlv_get_addr",
+            4
+          ]
+        ],
+        "guard-closure": [
+          [
+            "_RNvMs3_NtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5stateNtB5_5State5close",
+            88
+          ],
+          [
+            "_RINvNtNtNtNtCsgDHHaSskbIF_4core5slice4sort8unstable9quicksort9quicksortmNvYmNtNtBa_3cmp10PartialOrd2ltECs3RAEEkehQ9p_11mech_engine",
+            4
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            1
+          ],
+          [
+            "_RNvMs0_NtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5stateNtB5_13RelationIndex3new",
+            1
+          ],
+          [
+            "_RNvMNtNtNtNtCsgirOGyZpP7g_3std3sys4sync4once5queueNtB2_4Once4call",
+            1
+          ],
+          [
+            "mi_malloc_aligned",
+            1
+          ],
+          [
+            "_RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growCsRfHOWuUYb2_9mech_core",
+            1
+          ],
+          [
+            "_tlv_get_addr",
+            1
+          ]
+        ],
+        "ownership-guards": [
+          [
+            "_RNvMs3_NtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5stateNtB5_5State5merge",
+            31
+          ],
+          [
+            "mi_malloc_aligned",
+            3
+          ],
+          [
+            "_RNvMs3_NtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5stateNtB5_5State6assume",
+            2
+          ],
+          [
+            "_RNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guardsNtB2_6Guards10successors",
+            2
+          ],
+          [
+            "_RNvMs3_NtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5stateNtB5_5State6define",
+            1
+          ],
+          [
+            "mi_find_page.cold.1",
+            1
+          ],
+          [
+            "_RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_9enumerate9EnumerateINtNtNtBc_5slice4iter4IterNtNtNtCs3RAEEkehQ9p_11mech_engine15native_artifact9iteration20NativeIterationBlockEENCNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guardsNtB3g_6Guards6derive0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB4L_8for_each4callINtNtBc_6option6OptionTmjjEENCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB6p_3VecB5O_E14extend_trustedBN_E0E0EB3o_",
+            1
+          ],
+          [
+            "_RNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guardsNtB2_6Guards6derive",
+            1
+          ],
+          [
+            "_platform_memmove",
+            1
+          ],
+          [
+            "_RNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guardsNtB2_6Guards4edge",
+            1
+          ],
+          [
+            "_RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtNtNtCsgirOGyZpP7g_3std4sync9once_lock8OnceLockNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5state13RelationIndexEE9drop_slowB1F_",
+            1
+          ],
+          [
+            "_RINvNvXs0_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB8_8BTreeMappppENtNtCsgDHHaSskbIF_4core5clone5Clone5clone13clone_subtreemNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5state10ExpressionNtNtBe_5alloc6GlobalEB2l_",
+            1
+          ]
+        ],
+        "guarded-ownership-search": [
+          [
+            "_RNvMs_NtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact10owner_flowNtB4_9OwnerFlow6derive",
+            7
+          ],
+          [
+            "_RNvMs_NtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact10owner_flowNtB4_9OwnerFlow20last_use_with_guards",
+            3
+          ],
+          [
+            "_RNvCsfBzVIH1HIC6_7___rustc35___rust_no_alloc_shim_is_unstable_v2",
+            1
+          ],
+          [
+            "OUTLINED_FUNCTION_1",
+            1
+          ],
+          [
+            "OUTLINED_FUNCTION_14",
+            1
+          ],
+          [
+            "_platform_memmove",
+            1
+          ],
+          [
+            "_RINvNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact16owner_retirement5shareNtNtB4_6object14PreparedObjectEBa_",
+            1
+          ]
+        ],
+        "cranelift-egraphs": [
+          [
+            "_platform_memmove",
+            1
+          ],
+          [
+            "_RINvMs0_NtCsi36YpTlOqiH_17cranelift_codegen15scoped_hash_mapINtB6_13ScopedHashMapTNtNtNtB8_2ir5types4TypeNtNtB1m_12instructions15InstructionDataEINtNtCsgDHHaSskbIF_4core6option6OptionNtNtB1m_8entities5ValueEE3getNtNtB8_6egraph10GVNContextEB8_",
+            1
+          ],
+          [
+            "_RNvMs0_NtCsi36YpTlOqiH_17cranelift_codegen6egraphNtB5_10EgraphPass3run",
+            1
+          ]
+        ],
+        "tail-provenance": [
+          [
+            "<deduplicated_symbol>",
+            5
+          ],
+          [
+            "_RNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits15boundary_values",
+            3
+          ],
+          [
+            "_RNvMNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits12reachabilityNtB2_12Reachability4walk",
+            3
+          ],
+          [
+            "_RNvMNtNtNtNtCs3RAEEkehQ9p_11mech_engine15native_artifact16fusion_semantics5facts10predicatesNtB4_18NativeProgramFacts20boolean_branch_edges",
+            2
+          ],
+          [
+            "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapmNtNtB7_7set_val9SetValZSTE6insertCsjNXmloPV5Eo_8mech_gpu",
+            2
+          ],
+          [
+            "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapjNtNtB7_7set_val9SetValZSTE6insertCsjNXmloPV5Eo_8mech_gpu",
+            2
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            2
+          ],
+          [
+            "_RNvXNtNtCsgKscDXrlV49_5alloc3vec21spec_from_iter_nestedINtB4_3VecjEINtB2_18SpecFromIterNestedjINtNtNtNtCsgDHHaSskbIF_4core4iter8adapters3map3MapINtNtB1z_6filter6FilterINtNtNtB1D_5slice4iter4IterTBR_jEENCNvMs5_NtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare16readonly_numeric13numeric_frameNtB3l_10FrameWords11field_slots0ENCB3f_s_0EE9from_iterB3v_",
+            1
+          ],
+          [
+            "_RINvMsV_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB6_14ExtractIfInnerjNtNtB8_7set_val9SetValZSTNtNtNtCsgDHHaSskbIF_4core3ops5range9RangeFullE4nextNCNvXsj_NtB8_3setINtB2C_9ExtractIfjB1F_NCINvMsc_B2C_INtB2C_8BTreeSetjE6retainNCNvNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen16readonly_numeric11fresh_wordss_0E0ENtNtNtNtB1L_4iter6traits8iterator8Iterator4next0NtNtBc_5alloc6GlobalEB3V_",
+            1
+          ],
+          [
+            "_RNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits12fresh_values",
+            1
+          ],
+          [
+            "_RNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13numeric_phaseNtB2_6Forest16derive_inventory",
+            1
+          ],
+          [
+            "_RNvXst_NtCsRfHOWuUYb2_9mech_core9dimensionNtB5_13DimensionExprNtNtCsgDHHaSskbIF_4core3cmp9PartialEq2eq",
+            1
+          ]
+        ],
+        "thread-wait": [
+          [
+            "__ulock_wait",
+            68
+          ],
+          [
+            "semaphore_wait_trap",
+            18
+          ]
+        ],
+        "tail-exit-liveness": [
+          [
+            "_RNvNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits8liveness19live_before_indexed",
+            14
+          ],
+          [
+            "_RINvMsV_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB6_14ExtractIfInnermNtNtB8_7set_val9SetValZSTNtNtNtCsgDHHaSskbIF_4core3ops5range9RangeFullE4nextNCNvXsj_NtB8_3setINtB2C_9ExtractIfmB1F_NCINvMsc_B2C_INtB2C_8BTreeSetmE6retainNCNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits10live_querys2_0E0ENtNtNtNtB1L_4iter6traits8iterator8Iterator4next0NtNtBc_5alloc6GlobalEB3X_",
+            7
+          ],
+          [
+            "_platform_memmove",
+            4
+          ],
+          [
+            "<deduplicated_symbol>",
+            4
+          ],
+          [
+            "_RNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits10live_query",
+            4
+          ],
+          [
+            "_RINvXs_NtNtNtCsgDHHaSskbIF_4core4iter8adapters6copiedINtB5_6CopiedINtNtB7_7flatten7FlattenINtNtNtBb_5slice4iter4IterINtNtNtNtCsgKscDXrlV49_5alloc11collections5btree3set8BTreeSetmEEEENtNtNtB9_6traits8iterator8Iterator8try_folduNCINvNvB2U_4find5checkmQNCNvNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits11definitions8selected0E0INtNtNtBb_3ops12control_flow11ControlFlowmEEB4g_",
+            3
+          ],
+          [
+            "mi_page_free_list_extend",
+            2
+          ],
+          [
+            "mi_free",
+            2
+          ],
+          [
+            "_RNvNtNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits8liveness5point5solve",
+            2
+          ],
+          [
+            "mi_page_queue_find_free_ex.cold.1",
+            1
+          ],
+          [
+            "_mi_malloc_generic",
+            1
+          ],
+          [
+            "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapmNtNtB7_7set_val9SetValZSTE6insertCsjNXmloPV5Eo_8mech_gpu",
+            1
+          ]
+        ],
+        "parser": [
+          [
+            "_RNvMNtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation7advance",
+            94
+          ],
+          [
+            "_platform_memmove",
+            60
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation7advance",
+            35
+          ],
+          [
+            "_RNvXNvMs1_NtNtCs7n6wMvN6r1k_11mech_syntax8document17retained_sequenceINtB8_16RetainedSequencepE11into_valuesINtB2_5OwnedNtNtBa_5green12GreenElementENtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator4nextCs3RAEEkehQ9p_11mech_engine",
+            22
+          ],
+          [
+            "_RNvMs0_NtNtCs7n6wMvN6r1k_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+            20
+          ],
+          [
+            "_RNvMs3_NtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser10tree_cacheNtB7_6Parser18advance_tree_cache",
+            20
+          ],
+          [
+            "_RNvMs7_NtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE9chunk_mutBb_",
+            19
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            17
+          ],
+          [
+            "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtNtCs7n6wMvN6r1k_11mech_syntax8document3ids7TokenIdNtNtB1b_5index11TokenRecordE6insertB1d_",
+            16
+          ],
+          [
+            "_tlv_get_addr",
+            15
+          ],
+          [
+            "_RNvMNtNtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical14recursive_core10precedence12continuationNtB2_12Continuation7advance",
+            15
+          ],
+          [
+            "mi_free",
+            15
+          ]
+        ],
+        "source-semantics": [
+          [
+            "_platform_memmove",
+            17
+          ],
+          [
+            "_RNvNtCsRfHOWuUYb2_9mech_core9dimension34canonicalize_dimension_environment",
+            16
+          ],
+          [
+            "_RNvXse_NtCsgKscDXrlV49_5alloc5boxedINtB5_3BoxSNtNtCsRfHOWuUYb2_9mech_core9dimension29DimensionParameterDeclarationENtNtCsgDHHaSskbIF_4core5clone5Clone5cloneCs3RAEEkehQ9p_11mech_engine",
+            9
+          ],
+          [
+            "_RNvNtNtCs3RAEEkehQ9p_11mech_engine16source_semantics8frontend18embed_schema_draft",
+            8
+          ],
+          [
+            "_RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_9enumerate9EnumerateINtNtNtBc_5slice4iter4IterNtNtCsRfHOWuUYb2_9mech_core9dimension29DimensionParameterDeclarationEENCNvMs1_NtNtB1T_11type_system8resolvedNtB35_12ResolvedType16from_schema_body0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB4d_8for_each4callB1P_NCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB5t_3VecB1P_E14extend_trustedBN_E0E0EB1T_",
+            6
+          ],
+          [
+            "mi_free",
+            6
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNtCsgKscDXrlV49_5alloc5boxed3BoxSNtNtCsRfHOWuUYb2_9mech_core9dimension29DimensionParameterDeclarationEECs3RAEEkehQ9p_11mech_engine",
+            5
+          ],
+          [
+            "_RNCNvNtCsRfHOWuUYb2_9mech_core9dimension28canonicalize_constant_bounds0B5_",
+            2
+          ],
+          [
+            "_RNvNtNtNtNtCs3RAEEkehQ9p_11mech_engine16source_semantics8frontend17document_lowering18document_functions14calls_function",
+            2
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            2
+          ],
+          [
+            "_RNvNtCsgDHHaSskbIF_4core3fmt5write",
+            2
+          ],
+          [
+            "_RNvCsfBzVIH1HIC6_7___rustc35___rust_no_alloc_shim_is_unstable_v2",
+            2
+          ]
+        ],
+        "other": [
+          [
+            "write",
+            3
+          ],
+          [
+            "_RINvMs_NtNtNtCsgKscDXrlV49_5alloc11collections5btree6searchINtNtB7_4node7NodeRefNtNtBY_6marker5ImmutNtNtNtCs3RAEEkehQ9p_11mech_engine8artifact5model18OperationReferencemNtB1i_14LeafOrInternalE11search_treeB1A_EB1G_",
+            1
+          ],
+          [
+            "_RINvYQINtNtCsfkUFGNTRj9C_10serde_json3ser10SerializerQINtNtCsgKscDXrlV49_5alloc3vec3VechEENtNtCs7kfUsYZEjdg_10serde_core3ser10Serializer11collect_seqRSNtNtNtCs3RAEEkehQ9p_11mech_engine8artifact8bytecode26WireStructuralMatchPatternEB2v_",
+            1
+          ],
+          [
+            "_RNvXs_NtNtCsgKscDXrlV49_5alloc3vec21spec_from_iter_nestedINtB6_3VecNtNtB8_6string6StringEINtB4_18SpecFromIterNestedB13_INtNtNtNtCsgDHHaSskbIF_4core4iter8adapters3map3MapINtNtNtB22_5slice4iter4IterNtNtCsRfHOWuUYb2_9mech_core9dimension13DimensionExprENvNtNtB3c_11type_system10diagnostic23semantic_dimension_nameEE9from_iterB3c_",
+            1
+          ]
+        ]
+      },
+      "threads": {
+        "unlabeled": {
+          "thread-wait": 2194
+        },
+        "compile-profile": {
+          "constant-phi-removal": 136,
+          "native-cleanup": 241,
+          "register-allocation": 14,
+          "verifier": 74,
+          "ssa-construction": 207,
+          "native-emitter": 245,
+          "guard-closure": 98,
+          "ownership-guards": 49,
+          "guarded-ownership-search": 15,
+          "cranelift-egraphs": 3,
+          "tail-provenance": 37,
+          "thread-wait": 86,
+          "tail-exit-liveness": 51,
+          "parser": 808,
+          "source-semantics": 124,
+          "other": 6
+        },
+        "mech-compile-0": {
+          "thread-wait": 1002,
+          "native-cleanup": 5,
+          "verifier": 2,
+          "constant-phi-removal": 7,
+          "register-allocation": 7,
+          "cranelift-egraphs": 3
+        },
+        "mech-compile-1": {
+          "thread-wait": 1008,
+          "register-allocation": 7,
+          "native-emitter": 4,
+          "cranelift-egraphs": 3,
+          "constant-phi-removal": 2,
+          "verifier": 2
+        },
+        "mech-stdlib-source-catalog": {
+          "catalog": 68
+        }
+      }
+    },
+    {
+      "raw_sha256": "be33b55cf255dd6c525d7860d751aa3c8b5ed4b9b223f45c587c746995b96181",
+      "phase_seconds_instrumented": {
+        "parse": 1.078146125,
+        "catalog": 0.091100209,
+        "frontend": 0.328933541,
+        "artifact": 0.011424667,
+        "encode": 0.004758417,
+        "native": 1.953237209
+      },
+      "stack_counts": {
+        "constant-phi-removal": 145,
+        "native-cleanup": 262,
+        "register-allocation": 8,
+        "verifier": 86,
+        "ssa-construction": 194,
+        "native-emitter": 243,
+        "guard-closure": 82,
+        "ownership-guards": 60,
+        "guarded-ownership-search": 21,
+        "cranelift-egraphs": 1,
+        "tail-provenance": 42,
+        "thread-wait": 85,
+        "tail-exit-liveness": 51,
+        "parser": 809,
+        "source-semantics": 115,
+        "other": 8
+      },
+      "hot_leaves": {
+        "constant-phi-removal": [
+          [
+            "_RNvNtCsi36YpTlOqiH_17cranelift_codegen20remove_constant_phis23do_remove_constant_phis",
+            32
+          ],
+          [
+            "_RNvMs8_NtCsi36YpTlOqiH_17cranelift_codegen8verifierNtB5_8Verifier3run",
+            26
+          ],
+          [
+            "_RNvMs_NtCs4EMTQjjiagM_17cranelift_bforest4pathINtB4_4PathINtNtB6_3map8MapTypesNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities4InstNtB1g_5BlockEE4nextB1k_",
+            10
+          ],
+          [
+            "_RNvMs6_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph9value_def",
+            6
+          ],
+          [
+            "_RNvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph9inst_args",
+            5
+          ],
+          [
+            "_RNvNtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfg21maybe_resolve_aliases",
+            4
+          ],
+          [
+            "_RNvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph12inst_results",
+            4
+          ],
+          [
+            "_RNvXNvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB8_13DataFlowGraph17inst_result_typesNtB2_15InstResultTypesNtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator4next",
+            4
+          ],
+          [
+            "_RNvMsf_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir12instructionsNtB5_17OperandConstraint7resolve",
+            3
+          ],
+          [
+            "_RINvMs6_NtCs3odSxwvi1jy_9hashbrown3rawINtB6_8RawTableTNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5ValueNtNtBW_20remove_constant_phis13AbstractValueEE14reserve_rehashNCINvNtB8_3map11make_hasherBQ_B1L_NtCs6POTPiJQVS5_10rustc_hash13FxBuildHasherE0EBW_",
+            3
+          ],
+          [
+            "_RNvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph33num_expected_results_for_verifier",
+            3
+          ],
+          [
+            "_RNvMs2_NtCsi36YpTlOqiH_17cranelift_codegen14dominator_treeNtB5_13DominatorTree7compute",
+            3
+          ]
+        ],
+        "native-cleanup": [
+          [
+            "_RNvMNtNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen11cfg_cleanup15identity_routes5route5reachNtB2_12Reachability9reachable",
+            17
+          ],
+          [
+            "_RNvMNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen11cfg_cleanup11word_rangesNtB2_5Facts5range",
+            15
+          ],
+          [
+            "_RNvMs2_NtCsi36YpTlOqiH_17cranelift_codegen14dominator_treeNtB5_13DominatorTree7compute",
+            14
+          ],
+          [
+            "_RNvXs7_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir6layoutNtB5_5InstsNtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator4next",
+            13
+          ],
+          [
+            "_RNvMs6_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph19resolve_all_aliases",
+            13
+          ],
+          [
+            "_RINvXs4_NtNtCsgKscDXrlV49_5alloc3vec9into_iterINtB6_8IntoIterNtNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen11cfg_cleanup14threaded_edges5route4EdgeENtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator8try_folduNCINvNvB2K_8find_map5checkBX_NtBZ_4PlanQNCNvB11_8optimizes0_0E0INtNtNtB2S_3ops12control_flow11ControlFlowB4i_EEB1b_",
+            13
+          ],
+          [
+            "_platform_memmove",
+            11
+          ],
+          [
+            "_RNvMs_NtCsi36YpTlOqiH_17cranelift_codegen9flowgraphNtB4_16ControlFlowGraph13compute_block",
+            7
+          ],
+          [
+            "_RNvNtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfg21maybe_resolve_aliases",
+            7
+          ],
+          [
+            "_RNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen11cfg_cleanup11dead_values9eliminate",
+            7
+          ],
+          [
+            "_RNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7codegen11cfg_cleanup10local_phis8simplify",
+            7
+          ],
+          [
+            "_RNvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph9inst_args",
+            7
+          ]
+        ],
+        "register-allocation": [
+          [
+            "_RNvMNtCse19Bd0sbMQY_9regalloc23ionINtNtB2_15data_structures3EnvINtNtNtCsi36YpTlOqiH_17cranelift_codegen8machinst5vcode5VCodeNtNtNtNtNtNtB16_3isa7aarch645lower4isle14generated_code5MInstEE4initB16_",
+            4
+          ],
+          [
+            "mi_malloc_aligned",
+            2
+          ],
+          [
+            "_platform_memmove",
+            1
+          ],
+          [
+            "_RNvMs_NtNtCse19Bd0sbMQY_9regalloc23ion13reg_traversalNtB4_16RegTraversalIter3new",
+            1
+          ]
+        ],
+        "verifier": [
+          [
+            "_RNvMs8_NtCsi36YpTlOqiH_17cranelift_codegen8verifierNtB5_8Verifier3run",
+            17
+          ],
+          [
+            "_RNvNtCsi36YpTlOqiH_17cranelift_codegen8verifier25verify_context_dominators",
+            6
+          ],
+          [
+            "_RNvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph9inst_args",
+            5
+          ],
+          [
+            "_RNvMs2_NtCsi36YpTlOqiH_17cranelift_codegen14dominator_treeNtB5_13DominatorTree7compute",
+            5
+          ],
+          [
+            "_RNvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph12inst_results",
+            5
+          ],
+          [
+            "_RNvMs6_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph9value_def",
+            4
+          ],
+          [
+            "_RINvXs1_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtBc_6option8IntoIterNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities4InstENCNvMs_NtB1p_8functionNtB2n_15FunctionStencil16block_successors0ENtNtNtBa_6traits12double_ended19DoubleEndedIterator9try_rfolduNCINvNvMsh_NtB8_7flattenINtB4u_13FlattenCompatppE14iter_try_rfold7flattenIBO_INtNtNtBc_5slice4iter4IterNtNtB1p_12instructions9BlockCallENCNCB2i_00EuINtNtNtBc_3ops12control_flow11ControlFlowNtB1n_5BlockENCINvNvXsj_B4u_B4H_B3j_9try_rfold7flattenB5u_uB6H_NCINvNvB3j_5rfind5checkB7m_QNCNvMs2_NtB1r_14dominator_treeNtB8X_13DominatorTree21compute_spanning_tree0E0E0E0B6H_EB1r_",
+            4
+          ],
+          [
+            "_RNvMs8_NtCsi36YpTlOqiH_17cranelift_codegen8verifierNtB5_8Verifier20typecheck_block_call",
+            3
+          ],
+          [
+            "_RNvMs_NtCsi36YpTlOqiH_17cranelift_codegen9flowgraphNtB4_16ControlFlowGraph7compute",
+            3
+          ],
+          [
+            "_platform_memmove",
+            3
+          ],
+          [
+            "_RNvMs6_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph17value_is_attached",
+            3
+          ],
+          [
+            "_RNvMs8_NtCsi36YpTlOqiH_17cranelift_codegen8verifierNtB5_8Verifier15encodable_as_bb",
+            2
+          ]
+        ],
+        "ssa-construction": [
+          [
+            "_RNvMs3_NtCsazO3RSR91Qs_18cranelift_frontend3ssaNtB5_10SSABuilder16use_var_nonlocal",
+            88
+          ],
+          [
+            "_RINvMs6_NtCs3odSxwvi1jy_9hashbrown3rawINtB6_8RawTableTNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5BlockINtNtCs5Ew7WWvzWQi_16cranelift_entity13packed_option12PackedOptionNtBS_5ValueEEE14reserve_rehashNCINvNtB8_3map11make_hasherBQ_B1L_NtCs6POTPiJQVS5_10rustc_hash13FxBuildHasherE0ECsazO3RSR91Qs_18cranelift_frontend",
+            27
+          ],
+          [
+            "_RNvMNtCsazO3RSR91Qs_18cranelift_frontend3ssaNtB2_12VariableDefs6insert",
+            16
+          ],
+          [
+            "_RNvMs1_NtCs3odSxwvi1jy_9hashbrown3mapINtB5_7HashMapNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5BlockINtNtCs5Ew7WWvzWQi_16cranelift_entity13packed_option12PackedOptionNtBP_5ValueENtCs6POTPiJQVS5_10rustc_hash13FxBuildHasherE6insertCsazO3RSR91Qs_18cranelift_frontend",
+            11
+          ],
+          [
+            "_RNvMs3_NtCsazO3RSR91Qs_18cranelift_frontend3ssaNtB5_10SSABuilder17run_state_machine",
+            10
+          ],
+          [
+            "_RNvNtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfg21maybe_resolve_aliases",
+            7
+          ],
+          [
+            "_RNvMs3_NtCs5Ew7WWvzWQi_16cranelift_entity4listINtB5_10EntityListNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir8entities5ValueE4pushB16_",
+            6
+          ],
+          [
+            "_platform_memmove",
+            5
+          ],
+          [
+            "mi_page_free_list_extend",
+            4
+          ],
+          [
+            "_RNvMsc_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph18remove_block_param",
+            4
+          ],
+          [
+            "_RNvMsc_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph18append_block_param",
+            4
+          ],
+          [
+            "_RNvMs0_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir6layoutNtB5_6Layout15assign_inst_seq",
+            2
+          ]
+        ],
+        "native-emitter": [
+          [
+            "<deduplicated_symbol>",
+            17
+          ],
+          [
+            "mi_free",
+            8
+          ],
+          [
+            "_platform_memmove",
+            7
+          ],
+          [
+            "_RNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact18checked_traversals11region_body7prepare",
+            7
+          ],
+          [
+            "_RNvNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7codegen6common16boolean_branches16boolean_constant",
+            7
+          ],
+          [
+            "_RNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7codegen7control4planNtB2_8CodePlan8constant",
+            7
+          ],
+          [
+            "_RINvNtNtCs3RAEEkehQ9p_11mech_engine15native_artifact20iteration_validation11check_scopeNtNtB4_7program25NativeProgramArtifactPlanEB6_",
+            7
+          ],
+          [
+            "write",
+            6
+          ],
+          [
+            "_RNvMNtNtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfg7compactNtB4_13DataFlowGraph14compact_values",
+            6
+          ],
+          [
+            "mi_malloc_aligned",
+            6
+          ],
+          [
+            "_RINvMNtNtCsgDHHaSskbIF_4core4cell4onceINtB3_8OnceCellINtNtB7_6result6ResultNtNtNtNtCs3RAEEkehQ9p_11mech_engine15native_artifact16fusion_semantics5facts5GraphReEE8try_initNCINvB2_11get_or_initNCNvMs1_B1d_NtB1d_18NativeProgramFacts5graph0E0zEB1j_",
+            5
+          ],
+          [
+            "_RNvMs2_NtCsi36YpTlOqiH_17cranelift_codegen14dominator_treeNtB5_13DominatorTree7compute",
+            4
+          ]
+        ],
+        "guard-closure": [
+          [
+            "_RNvMs3_NtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5stateNtB5_5State5close",
+            73
+          ],
+          [
+            "_RINvNtNtNtNtCsgDHHaSskbIF_4core5slice4sort8unstable9quicksort9quicksortmNvYmNtNtBa_3cmp10PartialOrd2ltECs3RAEEkehQ9p_11mech_engine",
+            5
+          ],
+          [
+            "mi_find_page.cold.1",
+            1
+          ],
+          [
+            "mi_malloc_aligned",
+            1
+          ],
+          [
+            "_tlv_get_addr",
+            1
+          ],
+          [
+            "_platform_memmove",
+            1
+          ]
+        ],
+        "ownership-guards": [
+          [
+            "_RNvMs3_NtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5stateNtB5_5State5merge",
+            39
+          ],
+          [
+            "_platform_memmove",
+            4
+          ],
+          [
+            "_RNvMs3_NtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5stateNtB5_5State6define",
+            3
+          ],
+          [
+            "_RNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guardsNtB2_6Guards6derive",
+            2
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5state5StateEBS_",
+            2
+          ],
+          [
+            "mi_find_page.cold.1",
+            1
+          ],
+          [
+            "_RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtNtBc_5slice4iter4IterNtNtNtCs3RAEEkehQ9p_11mech_engine15native_artifact9iteration20NativeIterationBlockENCNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guardsNtB2N_6Guards6derives0_0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB4l_8for_each4callINtNtBc_6option6OptionTmNtNtB2N_5state10ExpressionEENCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB6n_3VecB5o_E14extend_trustedBN_E0E0EB2V_",
+            1
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            1
+          ],
+          [
+            "mi_free",
+            1
+          ],
+          [
+            "<deduplicated_symbol>",
+            1
+          ],
+          [
+            "_RNvMsn_NtCsgKscDXrlV49_5alloc4syncINtB5_3ArcINtNtNtNtB7_11collections5btree3map8BTreeMapmNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact6guards5state10ExpressionEE9drop_slowB1B_",
+            1
+          ],
+          [
+            "mi_malloc_aligned",
+            1
+          ]
+        ],
+        "guarded-ownership-search": [
+          [
+            "_RNvMs_NtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact10owner_flowNtB4_9OwnerFlow6derive",
+            9
+          ],
+          [
+            "_RNvMs_NtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact10owner_flowNtB4_9OwnerFlow20last_use_with_guards",
+            6
+          ],
+          [
+            "_RNvXs1_NtNtNtCsgDHHaSskbIF_4core4iter8adapters7flattenINtB5_7FlatMapINtNtNtBb_5slice4iter4ItermEINtNtCsgKscDXrlV49_5alloc3vec3VecjENCNvMs_NtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact10owner_flowNtB2c_9OwnerFlow6derives2_0ENtNtNtB9_6traits8iterator8Iterator4nextB2k_",
+            1
+          ],
+          [
+            "_platform_memcmp",
+            1
+          ],
+          [
+            "mi_heap_malloc_aligned_at",
+            1
+          ],
+          [
+            "_tlv_get_addr",
+            1
+          ],
+          [
+            "_RNvMs_NtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7compact10owner_flowNtB4_9OwnerFlow14retire_on_edge",
+            1
+          ],
+          [
+            "_RNvMsb_NtNtCsi36YpTlOqiH_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph9inst_args",
+            1
+          ]
+        ],
+        "cranelift-egraphs": [
+          [
+            "madvise",
+            1
+          ]
+        ],
+        "tail-provenance": [
+          [
+            "<deduplicated_symbol>",
+            4
+          ],
+          [
+            "_RNvMNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13numeric_phaseNtB2_6Forest16derive_inventory",
+            3
+          ],
+          [
+            "_RNvMNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits12reachabilityNtB2_12Reachability4walk",
+            3
+          ],
+          [
+            "_RNvMs_NtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare4tailNtB4_6Layout6derive",
+            3
+          ],
+          [
+            "_RNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits15boundary_values",
+            2
+          ],
+          [
+            "_tlv_get_addr",
+            2
+          ],
+          [
+            "_RNvMNtNtNtNtCs3RAEEkehQ9p_11mech_engine15native_artifact16fusion_semantics5facts10predicatesNtB4_18NativeProgramFacts20boolean_branch_edges",
+            2
+          ],
+          [
+            "_RNvNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13numeric_phase22mutation_needs_funding",
+            2
+          ],
+          [
+            "_RINvMNtNtCsgDHHaSskbIF_4core4cell4onceINtB3_8OnceCellINtNtB7_6result6ResultINtNtCsgKscDXrlV49_5alloc3vec3VecIB1c_NtNtNtNtCs3RAEEkehQ9p_11mech_engine15native_artifact16fusion_semantics5facts23NativeProgramDefinitionEEReEE8try_initNCINvB2_11get_or_initNCNvMs1_B1P_NtB1P_18NativeProgramFacts16definition_sites0E0zEB1V_",
+            2
+          ],
+          [
+            "_RNvMNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13numeric_phase5atomsNtB2_8Resolver7resolve",
+            1
+          ],
+          [
+            "_RNvXNtNtCsgKscDXrlV49_5alloc3vec21spec_from_iter_nestedINtB4_3VecjEINtB2_18SpecFromIterNestedjINtNtNtNtCsgDHHaSskbIF_4core4iter8adapters10filter_map9FilterMapINtNtB1z_9enumerate9EnumerateINtNtNtB1D_5slice4iter4IterNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare16readonly_numeric5ArrayEENCNvNtNtNtB3w_7codegen17numeric_traversal15checked_updates20independent_carriers0EE9from_iterB3A_",
+            1
+          ],
+          [
+            "mi_page_free_list_extend",
+            1
+          ]
+        ],
+        "thread-wait": [
+          [
+            "__ulock_wait",
+            69
+          ],
+          [
+            "semaphore_wait_trap",
+            16
+          ]
+        ],
+        "tail-exit-liveness": [
+          [
+            "<deduplicated_symbol>",
+            9
+          ],
+          [
+            "_RNvNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits8liveness19live_before_indexed",
+            9
+          ],
+          [
+            "_RNvNtNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits8liveness5point5solve",
+            6
+          ],
+          [
+            "_RNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits10live_query",
+            5
+          ],
+          [
+            "_RINvMsV_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB6_14ExtractIfInnermNtNtB8_7set_val9SetValZSTNtNtNtCsgDHHaSskbIF_4core3ops5range9RangeFullE4nextNCNvXsj_NtB8_3setINtB2C_9ExtractIfmB1F_NCINvMsc_B2C_INtB2C_8BTreeSetmE6retainNCNvNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits10live_querys2_0E0ENtNtNtNtB1L_4iter6traits8iterator8Iterator4next0NtNtBc_5alloc6GlobalEB3X_",
+            4
+          ],
+          [
+            "_platform_memmove",
+            3
+          ],
+          [
+            "mi_malloc_aligned",
+            3
+          ],
+          [
+            "_RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapmNtNtB7_7set_val9SetValZSTE6insertCsjNXmloPV5Eo_8mech_gpu",
+            2
+          ],
+          [
+            "mi_page_free_list_extend",
+            1
+          ],
+          [
+            "_RINvMs_NtNtNtCsgKscDXrlV49_5alloc11collections5btree6removeINtNtB7_4node6HandleINtBY_7NodeRefNtNtBY_6marker3MutmNtNtB7_7set_val9SetValZSTNtB1v_4LeafENtB1v_2KVE14remove_leaf_kvNCINvMsV_NtB7_3mapINtB2W_14ExtractIfInnermB1M_NtNtNtCsgDHHaSskbIF_4core3ops5range9RangeFullE4nextNCNvXsj_NtB7_3setINtB4u_9ExtractIfmB3x_NCINvMsc_B4u_INtB4u_8BTreeSetmE6retainNCNvMs_NtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare11composition6framesNtB5I_6Layout6derivesa_0E0ENtNtNtNtB3D_4iter6traits8iterator8Iterator4next0NtNtBb_5alloc6GlobalE0B8j_EB5S_",
+            1
+          ],
+          [
+            "_RNvXNtNtCsgKscDXrlV49_5alloc3vec21spec_from_iter_nestedINtB4_3VecTmjEEINtB2_18SpecFromIterNestedB11_INtNtNtNtCsgDHHaSskbIF_4core4iter8adapters7flatten7FlatMapINtNtB1F_9enumerate9EnumerateINtNtNtB1J_5slice4iter4IterINtNtNtNtB6_11collections5btree3set8BTreeSetmEEEINtNtB1F_3map3MapINtB3t_4ItermENCNCNvNtNtNtNtNtNtNtCsjNXmloPV5Eo_8mech_gpu15native_artifact7program7prepare13phase_numeric5exits8liveness5point5solve00ENCB4L_0EE9from_iterB51_",
+            1
+          ],
+          [
+            "_RNvMs1_NtNtNtCs3RAEEkehQ9p_11mech_engine15native_artifact16fusion_semantics5factsNtB5_18NativeProgramFacts18control_successors",
+            1
+          ]
+        ],
+        "parser": [
+          [
+            "_RNvMNtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical4base12continuationNtB2_12Continuation7advance",
+            93
+          ],
+          [
+            "_platform_memmove",
+            55
+          ],
+          [
+            "_RNvMs_NtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical8literals12continuationNtB4_12Continuation7advance",
+            34
+          ],
+          [
+            "_RNvMs3_NtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser10tree_cacheNtB7_6Parser18advance_tree_cache",
+            25
+          ],
+          [
+            "_RNvMs0_NtNtCs7n6wMvN6r1k_11mech_syntax8document6sourceNtB5_12TextSnapshot7byte_at",
+            24
+          ],
+          [
+            "mi_free",
+            24
+          ],
+          [
+            "_RINvMs1_NtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser10tree_cacheNtB6_4Sink12advance_modeKb1_EBc_",
+            20
+          ],
+          [
+            "_RNvMNtNtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical14recursive_core10precedence12continuationNtB2_12Continuation7advance",
+            19
+          ],
+          [
+            "_RNvMNtNtNtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser9canonical9operators12continuationNtB2_12Continuation7advance",
+            18
+          ],
+          [
+            "<deduplicated_symbol>",
+            18
+          ],
+          [
+            "_RNvXNvMs1_NtNtCs7n6wMvN6r1k_11mech_syntax8document17retained_sequenceINtB8_16RetainedSequencepE11into_valuesINtB2_5OwnedNtNtBa_5green12GreenElementENtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator4nextCs3RAEEkehQ9p_11mech_engine",
+            18
+          ],
+          [
+            "_RNvMs7_NtNtNtCs7n6wMvN6r1k_11mech_syntax8document6parser7journalINtB5_7JournalNtNtB7_5event5EventE9chunk_mutBb_",
+            17
+          ]
+        ],
+        "source-semantics": [
+          [
+            "_platform_memmove",
+            13
+          ],
+          [
+            "_RNvXse_NtCsgKscDXrlV49_5alloc5boxedINtB5_3BoxSNtNtCsRfHOWuUYb2_9mech_core9dimension29DimensionParameterDeclarationENtNtCsgDHHaSskbIF_4core5clone5Clone5cloneCs3RAEEkehQ9p_11mech_engine",
+            12
+          ],
+          [
+            "_RNvNtCsRfHOWuUYb2_9mech_core9dimension34canonicalize_dimension_environment",
+            11
+          ],
+          [
+            "_RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtB8_9enumerate9EnumerateINtNtNtBc_5slice4iter4IterNtNtCsRfHOWuUYb2_9mech_core9dimension29DimensionParameterDeclarationEENCNvMs1_NtNtB1T_11type_system8resolvedNtB35_12ResolvedType16from_schema_body0ENtNtNtBa_6traits8iterator8Iterator4folduNCINvNvB4d_8for_each4callB1P_NCINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB5t_3VecB1P_E14extend_trustedBN_E0E0EB1T_",
+            9
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNtCsgKscDXrlV49_5alloc5boxed3BoxSNtNtCsRfHOWuUYb2_9mech_core9dimension29DimensionParameterDeclarationEECs3RAEEkehQ9p_11mech_engine",
+            6
+          ],
+          [
+            "_RNvNtNtCs3RAEEkehQ9p_11mech_engine16source_semantics8frontend18embed_schema_draft",
+            5
+          ],
+          [
+            "_RNvNtNtCs3HfYkfTWLeN_4sha26sha25612aarch64_sha28compress",
+            3
+          ],
+          [
+            "_RNvNtNtCs28m67QO8KC5_4sha26sha2564soft8compress",
+            3
+          ],
+          [
+            "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeNtNtCsRfHOWuUYb2_9mech_core9kind_expr8KindExprEBK_",
+            2
+          ],
+          [
+            "mi_free",
+            2
+          ],
+          [
+            "<deduplicated_symbol>",
+            2
+          ],
+          [
+            "_RNvMs0_NtNtCsRfHOWuUYb2_9mech_core6schema19dimension_relationsNtB7_11SchemaDraft28with_dimension_origin_policy",
+            2
+          ]
+        ],
+        "other": [
+          [
+            "write",
+            3
+          ],
+          [
+            "_platform_memmove",
+            2
+          ],
+          [
+            "_RNvNtNtCsRfHOWuUYb2_9mech_core8snapshot10validation35canonical_data_to_draft_with_target",
+            1
+          ],
+          [
+            "_RNvCsllhYiLSeTVu_9crc32fast4hash",
+            1
+          ],
+          [
+            "close",
+            1
+          ]
+        ]
+      },
+      "threads": {
+        "unlabeled": {
+          "thread-wait": 2212
+        },
+        "compile-profile": {
+          "constant-phi-removal": 145,
+          "native-cleanup": 262,
+          "register-allocation": 8,
+          "verifier": 86,
+          "ssa-construction": 194,
+          "native-emitter": 243,
+          "guard-closure": 82,
+          "ownership-guards": 60,
+          "guarded-ownership-search": 21,
+          "cranelift-egraphs": 1,
+          "tail-provenance": 42,
+          "thread-wait": 85,
+          "tail-exit-liveness": 51,
+          "parser": 809,
+          "source-semantics": 115,
+          "other": 8
+        },
+        "mech-compile-0": {
+          "thread-wait": 1018,
+          "native-emitter": 3,
+          "native-cleanup": 5,
+          "verifier": 3,
+          "constant-phi-removal": 8,
+          "cranelift-egraphs": 4,
+          "register-allocation": 4
+        },
+        "mech-compile-1": {
+          "thread-wait": 1029,
+          "register-allocation": 6,
+          "native-emitter": 4,
+          "cranelift-egraphs": 3,
+          "verifier": 2,
+          "constant-phi-removal": 1
+        },
+        "mech-stdlib-source-catalog": {
+          "catalog": 68,
+          "other": 1
+        }
+      }
+    }
+  ],
+  "median_coordinator_samples": {
+    "parser": 802.5,
+    "native-cleanup": 263.0,
+    "native-emitter": 245.5,
+    "ssa-construction": 196.0,
+    "constant-phi-removal": 145.5,
+    "source-semantics": 120.0,
+    "thread-wait": 85.5,
+    "guard-closure": 85.0,
+    "verifier": 84.0,
+    "ownership-guards": 55.5,
+    "tail-exit-liveness": 51.5,
+    "tail-provenance": 40.5,
+    "guarded-ownership-search": 17.0,
+    "register-allocation": 11.0,
+    "other": 7.0,
+    "cranelift-egraphs": 3.0,
+    "catalog": 0.0
+  }
+}

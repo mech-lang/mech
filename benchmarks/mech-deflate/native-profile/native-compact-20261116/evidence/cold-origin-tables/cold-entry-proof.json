@@ -1,0 +1,19 @@
+{
+  "scope": "Successful benchmark calls with a trap at each of the three decoder entries.",
+  "decoder_offsets": [
+    67268,
+    67636,
+    68256
+  ],
+  "linked_smokes": {
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cold-origin-packing/cold-entry-traps/mech-worker",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cold-origin-packed-native/final-candidate/metadata.json",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+    ],
+    "complete_smokes": 162,
+    "verified": true,
+    "worker_sha256": "35c16aef502ad0b8ca42d44d03f3c7bf9331192027f3929a6454202afe40b379",
+    "metadata_sha256": "0aac5b222891e6ca9d4ed88e85597cdef1ef46d9f405648436a18f5d2820d37b"
+  }
+}

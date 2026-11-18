@@ -213,6 +213,10 @@ pub struct EmitResult {
     /// The MachBuffer containing the machine code.
     pub buffer: MachBufferFinalized<Stencil>,
 
+    /// Conservative range containing only the trailing cold blocks, before
+    /// constant-pool finalization. Branch folding may remove its first words.
+    pub(crate) cold_code: Option<core::ops::Range<CodeOffset>>,
+
     /// Offset of each basic block, recorded during emission. Computed
     /// only if `machine_code_cfg_info` is enabled.
     pub bb_offsets: Vec<CodeOffset>,
@@ -886,6 +890,11 @@ impl<I: VCodeInst> VCode<I> {
             self.arrange_fallthrough(&mut final_order);
         }
         final_order.extend(cold_blocks.clone());
+        let pair_spills = flags.enable_regalloc_spill_pairs()
+            && self.debug_value_labels.is_empty()
+            && self.user_stack_maps.is_empty()
+            && self.debug_tags.is_empty()
+            && regalloc.debug_locations.is_empty();
 
         // Compute/save info we need for the prologue: clobbers and
         // number of spillslots.
@@ -951,9 +960,13 @@ impl<I: VCodeInst> VCode<I> {
             n => vec![0; 1 << (n - 1)],
         };
         let mut total_bb_padding = 0;
+        let mut cold_code_start = None;
 
         for (block_order_idx, &block) in final_order.iter().enumerate() {
             trace!("emitting block {:?}", block);
+            if self.block_order.is_cold(block) && cold_code_start.is_none() {
+                cold_code_start = Some(buffer.cur_offset());
+            }
 
             // Call the new block hook for state
             state.on_new_block();
@@ -1019,7 +1032,8 @@ impl<I: VCodeInst> VCode<I> {
                 do_emit(&block_start, &mut disasm, &mut buffer, &mut state);
             }
 
-            for inst_or_edit in regalloc.block_insts_and_edits(&self, block) {
+            let mut operations = regalloc.block_insts_and_edits(&self, block).peekable();
+            while let Some(inst_or_edit) = operations.next() {
                 match inst_or_edit {
                     InstOrEdit::Inst(iix) => {
                         if !self.debug_value_labels.is_empty() {
@@ -1199,7 +1213,19 @@ impl<I: VCodeInst> VCode<I> {
                         }
                     }
 
-                    InstOrEdit::Edit(Edit::Move { from, to }) => {
+                    InstOrEdit::Edit(movement @ Edit::Move { from, to }) => {
+                        if pair_spills
+                            && let Some(InstOrEdit::Edit(next)) = operations.peek()
+                            && let Some(pair) = I::ABIMachineSpec::gen_spill_pair(
+                                self.abi.frame_layout(),
+                                movement,
+                                next,
+                            )
+                        {
+                            operations.next();
+                            do_emit(&pair, &mut disasm, &mut buffer, &mut state);
+                            continue;
+                        }
                         // Create a move/spill/reload instruction and
                         // immediately emit it.
                         match (from.as_reg(), to.as_reg()) {
@@ -1323,6 +1349,7 @@ impl<I: VCodeInst> VCode<I> {
 
         EmitResult {
             buffer: buffer.finish(&self.constants, ctrl_plane),
+            cold_code: cold_code_start.map(|start| start..func_body_len),
             bb_offsets,
             bb_edges,
             disasm: if want_disasm { Some(disasm) } else { None },

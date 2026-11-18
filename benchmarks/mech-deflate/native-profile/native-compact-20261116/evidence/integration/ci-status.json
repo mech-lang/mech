@@ -1,0 +1,230 @@
+{
+  "commit": "2b930a8dfa0f085d46d68bc6593bd182b58f26a2",
+  "run_url": "https://github.com/mech-lang/mech/actions/runs/43963249960",
+  "jobs": [
+    {
+      "id": 133636176745,
+      "name": "Impact",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636688409,
+      "name": "Standard Linux",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636688528,
+      "name": "Static architecture contracts",
+      "status": "completed",
+      "conclusion": "failure",
+      "failed_steps": [
+        "Check formatting and global contracts"
+      ]
+    },
+    {
+      "id": 133636688561,
+      "name": "Static mutation contracts (0)",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636688588,
+      "name": "Browser N-body reference",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636688636,
+      "name": "Static mutation contracts (4)",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636688659,
+      "name": "Standard Windows",
+      "status": "in_progress",
+      "conclusion": null,
+      "failed_steps": []
+    },
+    {
+      "id": 133636688707,
+      "name": "Full source profile",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636688709,
+      "name": "Static mutation contracts (3)",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636688725,
+      "name": "Browser compute build",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636688747,
+      "name": "Static mutation contracts (1)",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636688751,
+      "name": "Static distribution contracts",
+      "status": "completed",
+      "conclusion": "failure",
+      "failed_steps": [
+        "Check static distribution contracts"
+      ]
+    },
+    {
+      "id": 133636688810,
+      "name": "Static mutation contracts (5)",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636688848,
+      "name": "Browser standard canary",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636688960,
+      "name": "Static mutation contracts (2)",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636689168,
+      "name": "Early native plan / Public canonical native CLI",
+      "status": "completed",
+      "conclusion": "failure",
+      "failed_steps": [
+        "Verify public canonical CLI unit selection is exact",
+        "Verify public canonical CLI completion and immutable pins"
+      ]
+    },
+    {
+      "id": 133636689191,
+      "name": "Early native plan / Same-binary native policy controls",
+      "status": "completed",
+      "conclusion": "failure",
+      "failed_steps": [
+        "Execute benchmark policy kernel contracts"
+      ]
+    },
+    {
+      "id": 133636689215,
+      "name": "Early native plan / Canonical hosted native applications",
+      "status": "in_progress",
+      "conclusion": null,
+      "failed_steps": []
+    },
+    {
+      "id": 133636689242,
+      "name": "Owner 4 (mech-compute)",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636689322,
+      "name": "Owner 1 (mech-browser)",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636689341,
+      "name": "Owner 5 (mech-console)",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636689369,
+      "name": "Owner 8 (mech-gpu)",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636689391,
+      "name": "Owner 3 (mech-bytecode)",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636689410,
+      "name": "Owner 6 (mech-core)",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636689425,
+      "name": "Owner 2 (mech-build)",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636689488,
+      "name": "Owner 7 (mech-engine)",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636689491,
+      "name": "Early native plan / Native plan",
+      "status": "in_progress",
+      "conclusion": null,
+      "failed_steps": []
+    },
+    {
+      "id": 133636689526,
+      "name": "Owner 9 (mech-runtime)",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636689640,
+      "name": "Owner 11 (mech-stdlib)",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    },
+    {
+      "id": 133636689731,
+      "name": "Owner 16 (mech-wasm)",
+      "status": "completed",
+      "conclusion": "success",
+      "failed_steps": []
+    }
+  ],
+  "notes": [
+    "This snapshot predates the follow-up test-only fixes.",
+    "The two policy-kernel compilation errors are fixed in the follow-up; Linux execution awaits the next run.",
+    "No whole-stack CI pass is claimed."
+  ]
+}

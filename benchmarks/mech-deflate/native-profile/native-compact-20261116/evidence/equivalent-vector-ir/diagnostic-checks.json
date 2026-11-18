@@ -1,0 +1,119 @@
+{
+  "always_preserved_identities": {
+    "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+    "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+  },
+  "the_historical_machine_code_comparison_discarded": [
+    "mech_compact_numeric_3009_vector",
+    "mech_compact_numeric_3447_vector",
+    "mech_compact_numeric_3872_vector",
+    "mech_compact_numeric_4173_vector",
+    "mech_compact_numeric_4799_vector",
+    "mech_compact_numeric_4879_vector",
+    "mech_compact_numeric_5895_vector",
+    "mech_compact_numeric_6633_vector",
+    "mech_compact_numeric_8026_vector"
+  ],
+  "matched_prepared_ir": [
+    "mech_compact_numeric_3009_vector",
+    "mech_compact_numeric_3872_vector",
+    "mech_compact_numeric_4173_vector",
+    "mech_compact_numeric_4799_vector",
+    "mech_compact_numeric_5895_vector",
+    "mech_compact_numeric_6633_vector",
+    "mech_compact_numeric_8026_vector"
+  ],
+  "compiled_and_discarded_after_comparison": [
+    "mech_compact_numeric_3447_vector",
+    "mech_compact_numeric_4879_vector"
+  ],
+  "disassembly_remains_available": {
+    "symbol": "mech_compact_numeric_3009_vector",
+    "command": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-B",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/probe-literal-reuse.py",
+      "--emit-only",
+      "--native-reference",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-continuation-registers-word-pages-native/final-candidate",
+      "--emitter",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/secondary-checks/diagnostic-vcode",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mecb",
+      "MECH_COMPACT_REUSE_EQUIVALENT_VECTOR_IR=1",
+      "MECH_INSPECT_PHASE_VCODE=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/secondary-checks/mech_compact_numeric_3009_vector.asm"
+    ],
+    "assembly_bytes": 17628,
+    "assembly_sha256": "ee6ebe080e5e81acef7f951367a984afdc3dc0abd8d4fb551f23d5f67014d346",
+    "other_reused_bodies": [
+      "mech_compact_numeric_3872_vector",
+      "mech_compact_numeric_4173_vector",
+      "mech_compact_numeric_4799_vector",
+      "mech_compact_numeric_5895_vector",
+      "mech_compact_numeric_6633_vector",
+      "mech_compact_numeric_8026_vector"
+    ]
+  },
+  "one_worker": {
+    "command": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-B",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/probe-literal-reuse.py",
+      "--emit-only",
+      "--native-reference",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-continuation-registers-word-pages-native/final-candidate",
+      "--emitter",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/secondary-checks/one-worker",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mecb",
+      "MECH_COMPACT_COMPILE_THREADS=1",
+      "MECH_COMPACT_REUSE_EQUIVALENT_VECTOR_IR=1",
+      "MECH_PROFILE_COMPILE_JOBS=1"
+    ],
+    "identical_to_historical_encoder": true,
+    "reused_bodies": [
+      "mech_compact_numeric_3009_vector",
+      "mech_compact_numeric_3872_vector",
+      "mech_compact_numeric_4173_vector",
+      "mech_compact_numeric_4799_vector",
+      "mech_compact_numeric_5895_vector",
+      "mech_compact_numeric_6633_vector",
+      "mech_compact_numeric_8026_vector"
+    ]
+  },
+  "serial_fallback": {
+    "commands": [
+      [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/probe-literal-reuse.py",
+        "--emit-only",
+        "--native-reference",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-continuation-registers-word-pages-native/final-candidate",
+        "--emitter",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/secondary-checks/serial-control",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mecb",
+        "MECH_COMPACT_COMPILE_THREADS=0"
+      ],
+      [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/probe-literal-reuse.py",
+        "--emit-only",
+        "--native-reference",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-continuation-registers-word-pages-native/final-candidate",
+        "--emitter",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/equivalent-vector-phases/secondary-checks/serial-reuse",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mecb",
+        "MECH_COMPACT_COMPILE_THREADS=0",
+        "MECH_COMPACT_REUSE_EQUIVALENT_VECTOR_IR=1"
+      ]
+    ],
+    "identical_between_arms": {
+      "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+    }
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "base": "f96c1d4fdbc2db1f98c84b561a37132d0a7b5961",
+  "production_source_sha256": {
+    "vendor/cranelift-codegen/src/context.rs": "91f9e3df44ed2fa4d8535781c27f4c4dbbb04a56e9c2324472fcea851d12bbff",
+    "vendor/cranelift-codegen/src/verifier/mod.rs": "72fca18a42e87a8b11c091585c4c3a9d3093b5294a278cbc0412d49faf2cde61",
+    "vendor/cranelift-codegen/src/unreachable_code.rs": "fb74796b11908cc02b348aa66a93448498807fc2f626d1e8e76cff0f9c75ad4b",
+    "vendor/cranelift-codegen/src/remove_constant_phis.rs": "7d98583183931b5481700caa4a53af6438ff426e2af6ad41701b96e7f7409592",
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": "c6575df45565e6cbacedd1b26d86d99ae9f8479440afdf0351f622ea40b1e117"
+  },
+  "patch_sha256": "039343c5910259f66fa8a2cd1a7e04f756948f2fb81cbf0c5604e9fa2c0ebc17",
+  "compiler_sha256": "c9a3c242ff7f9265ab8d56fd35b967904503c30d78d23040588ad23ba83cb9af",
+  "build_command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/flowgraph-verification/production/rebuild",
+    "--variant",
+    "frame-copies",
+    "--compiler-opt-level",
+    "3",
+    "--direct-source",
+    "--preselect-root-inlining",
+    "--skip-refused-general-ssa",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target"
+  ],
+  "artifact_sha256": {
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "reference_plan_sha256": "2b2a9cf30d7791e647fa7061dd4938bcd7442ba78151ae194c1aa7faa94b3ed1"
+}

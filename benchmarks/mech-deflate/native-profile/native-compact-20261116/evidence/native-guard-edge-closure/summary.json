@@ -1,0 +1,57 @@
+{
+  "source_pin": "b05241855264df7df861994ef125e5dfb678bc81",
+  "trials": 10,
+  "source_through_link_median_seconds": {
+    "mech-release": 2.531138041988015,
+    "mech-probe-control": 2.535348479170352,
+    "mech-incremental": 2.533870395971462,
+    "roc": 2.980239374563098,
+    "libdeflate": 0.48064202116802335
+  },
+  "paired_ratios": {
+    "mech-release": 1.0018107484429781,
+    "mech-probe-control": 0.9987339270503414,
+    "roc": 0.850246138851018,
+    "libdeflate": 5.270700989852767
+  },
+  "median_saved_ms": {
+    "mech-release": -4.577166400849819,
+    "mech-probe-control": 3.210749477148056
+  },
+  "compiler_phase_medians_ms": {
+    "mech-release": {
+      "parse": 784.0915835,
+      "catalog": 63.84060399999999,
+      "frontend": 225.89335450000002,
+      "artifact": 6.969812500000001,
+      "encode": 2.54525,
+      "native": 1382.1104795
+    },
+    "mech-probe-control": {
+      "parse": 784.5757295,
+      "catalog": 58.833708,
+      "frontend": 225.66714599999997,
+      "artifact": 6.9779374999999995,
+      "encode": 2.5710835,
+      "native": 1394.0389585
+    },
+    "mech-incremental": {
+      "parse": 784.031542,
+      "catalog": 59.0384375,
+      "frontend": 225.70383300000003,
+      "artifact": 6.959000499999999,
+      "encode": 2.575604,
+      "native": 1393.1265625
+    }
+  },
+  "guard_tests": 17,
+  "exact_checks": 162,
+  "artifact_sha256": {
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "worker_sha256": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+  "selected": false,
+  "evidence": "evidence/native-guard-edge-closure/README.md"
+}

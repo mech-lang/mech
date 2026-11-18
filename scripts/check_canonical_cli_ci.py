@@ -17,6 +17,7 @@ UNIT_NAMES = {
         "discovered_runtime_configuration_is_not_native_launch_authority",
         "exact_linked_name_grammar_rejects_before_compilation_without_sanitizing",
         "ordinary_turn_inputs_are_rejected_without_another_execution_route",
+        "explicit_compile_policy_is_strict_and_separate_from_launch_authority",
     )
 }
 PUBLIC_NAMES = {
@@ -174,8 +175,8 @@ def complete(log_dir, evidence):
         completed_summary(log_dir, stage)
     selection(log_dir / "canonical-cli-unit-selection.log", UNIT_NAMES)
     selection(log_dir / "canonical-cli-public-selection.log", PUBLIC_NAMES)
-    passed_count(log_dir / "canonical-cli-unit-contracts.log", 5)
-    passed_count(log_dir / "canonical-cli-public-qualification.log", 3)
+    passed_count(log_dir / "canonical-cli-unit-contracts.log", len(UNIT_NAMES))
+    passed_count(log_dir / "canonical-cli-public-qualification.log", len(PUBLIC_NAMES))
     verify_pins(log_dir)
     case_evidence(evidence)
 

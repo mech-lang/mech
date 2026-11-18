@@ -4,7 +4,7 @@ use super::{
     arrays::Arrays,
     collections::Collections,
     flow::Flow,
-    layout::{Kind, Layout},
+    layout::{Layout, LayoutKind},
     map_index, packed,
 };
 use crate::native_artifact::codegen::common::ssa_words::Words;
@@ -43,7 +43,10 @@ impl Proof {
                     .inputs()
                     .iter()
                     .any(|p| p.value().get() == region.source)
-                || !matches!(layout.ty(region.map_root).kind, Kind::SortedMap { .. })
+                || !matches!(
+                    layout.ty(region.map_root).kind,
+                    LayoutKind::SortedMap { .. }
+                )
             {
                 continue;
             }
@@ -143,7 +146,7 @@ impl State {
         // checked cast is part of the result, not an optional representation.
         let scalar = layout.ty(region.output).element()?;
         let width = match scalar.kind {
-            Kind::Scalar {
+            LayoutKind::Scalar {
                 bytes,
                 signed: false,
                 float: false,
@@ -390,7 +393,7 @@ mod tests {
             );
             builder.symbol("mech_compact_free", runtime::mech_compact_free as *const u8);
             let mut module = cranelift_jit::JITModule::new(builder);
-            let metadata = super::super::define(&mut module, &prepared, false).unwrap();
+            let metadata = super::super::define(&mut module, &prepared, false, false).unwrap();
             assert_eq!(
                 metadata["native_string_classes"].as_array().unwrap().len(),
                 usize::from(classified)

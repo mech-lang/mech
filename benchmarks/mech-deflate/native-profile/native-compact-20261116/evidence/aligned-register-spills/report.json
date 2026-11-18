@@ -1,0 +1,252 @@
+{
+  "source_commit": "0f0ace2c9c29fd619014f0e12a0bd9fd0f7ee63b",
+  "compiler_parent": "0da34baad584c3365642cbd18441e200ab7cf2ca",
+  "base_pr_973_head": "9087b1f07727a9bfcb7c09059f48edaca6dc2301",
+  "host": {
+    "cpu": "Apple M1",
+    "os": "macOS-15.6.1-arm64-arm-64bit-Mach-O",
+    "clock": "Rust Instant on Darwin, with pinned peers",
+    "conditions": "Serial four-actor runs with a fixed runtime, adapters and comparators"
+  },
+  "scope": "Opt-in diagnostic AArch64 Cranelift encoder. Effective flags and source build are pinned.",
+  "default": "Retain the existing default recipe.",
+  "code_identity": {
+    "candidate": {
+      "program.o": "cd7a1938284f04f77f80bb147a256b0b676d2407af11a444bc8893c37896cc6d",
+      "metadata.json": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab",
+      "mech-worker": "775b12ba2e8c54a3a153504833df4601307ae691cd6bb31ecd57d16c78960b91"
+    },
+    "placement_diagnostic": {
+      "program.o": "cd7a1938284f04f77f80bb147a256b0b676d2407af11a444bc8893c37896cc6d",
+      "metadata.json": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab",
+      "mech-worker": "775b12ba2e8c54a3a153504833df4601307ae691cd6bb31ecd57d16c78960b91"
+    },
+    "disabled": {
+      "program.o": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+      "metadata.json": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+      "mech-worker": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41"
+    },
+    "retained": {
+      "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+      "mech-worker": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6"
+    },
+    "checked": {
+      "program.o": "cd7a1938284f04f77f80bb147a256b0b676d2407af11a444bc8893c37896cc6d",
+      "metadata.json": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab",
+      "mech-worker": "775b12ba2e8c54a3a153504833df4601307ae691cd6bb31ecd57d16c78960b91"
+    }
+  },
+  "encoder_text_bytes_saved": 64,
+  "sizes_bytes": {
+    "mech-control": {
+      "encoder_text_bytes": 71960,
+      "encoder_object_bytes": 159576,
+      "build_linked_text_bytes": 474884,
+      "build_executable_bytes": 956056
+    },
+    "mech-experiment": {
+      "encoder_text_bytes": 71896,
+      "encoder_object_bytes": 159512,
+      "build_linked_text_bytes": 474820,
+      "build_executable_bytes": 956056
+    },
+    "roc": {
+      "encoder_text_bytes": 57696,
+      "encoder_object_bytes": 79160,
+      "build_linked_text_bytes": 150416,
+      "build_executable_bytes": 230600
+    },
+    "libdeflate": {
+      "encoder_text_bytes": 37080,
+      "encoder_object_bytes": 52128,
+      "build_linked_text_bytes": 129900,
+      "build_executable_bytes": 210168
+    }
+  },
+  "encoder_text_x": {
+    "roc": 1.2461175818080976,
+    "libdeflate": 1.9389428263214672
+  },
+  "source_through_link_medians_seconds": {
+    "mech-control": {
+      "frontend": 2.7847918539773673,
+      "native": 1.7059934583958238,
+      "link": 0.04106931225396693,
+      "total": 4.536672416608781,
+      "parse": 2.4582934165
+    },
+    "mech-experiment": {
+      "frontend": 2.782767791301012,
+      "native": 1.706825521076098,
+      "link": 0.04071602039039135,
+      "total": 4.533631937112659,
+      "parse": 2.456179354
+    },
+    "roc": {
+      "compile": 2.9515662707854062,
+      "link": 0.03482418740168214,
+      "total": 2.9870766249950975
+    },
+    "libdeflate": {
+      "compile": 0.44655212480574846,
+      "link": 0.03427031240426004,
+      "total": 0.48076085466891527
+    }
+  },
+  "source_through_link_x": {
+    "roc": 1.517748791301964,
+    "libdeflate": 9.430118723444794
+  },
+  "complete_build_paired_change": {
+    "estimate": 0.00045244880312811375,
+    "lower": -0.0008797506170101776,
+    "upper": 0.0017899940764796174
+  },
+  "median_compiler_process_peak_rss_bytes": {
+    "mech-control": {
+      "frontend": 382320640.0,
+      "native": 217849856.0,
+      "link": 59326464.0
+    },
+    "mech-experiment": {
+      "frontend": 382337024.0,
+      "native": 217890816.0,
+      "link": 59547648.0
+    },
+    "roc": {
+      "compile": 391798784.0,
+      "link": 38715392.0
+    },
+    "libdeflate": {
+      "compile": 71516160.0,
+      "link": 38674432.0
+    }
+  },
+  "linked_timing_worker_bytes": 956056,
+  "linked_timing_worker_text_bytes": 474820,
+  "candidate_root_frame_bytes": 3744,
+  "candidate_peak_stack_bytes": 5296,
+  "checked_failure_cases": 6,
+  "exact_linked_calls": 162,
+  "shape_calls": 616,
+  "timed_calls_per_full_order": [
+    982656,
+    982656
+  ],
+  "full_runtime": [
+    {
+      "id": "aligned-register-spills-full",
+      "kind": "full",
+      "order": "forward",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 61,
+            "mech-experiment": 61
+          },
+          "precision_supported_wins": {
+            "mech-control": 61,
+            "mech-experiment": 61
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 55,
+            "mech-experiment": 55
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 55,
+            "mech-experiment": 55
+          }
+        }
+      }
+    },
+    {
+      "id": "aligned-register-spills-full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 61,
+            "mech-experiment": 61
+          },
+          "precision_supported_wins": {
+            "mech-control": 61,
+            "mech-experiment": 61
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 55,
+            "mech-experiment": 55
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 55,
+            "mech-experiment": 55
+          }
+        }
+      }
+    }
+  ],
+  "timing_only_decision": "Reject",
+  "runtime_findings": {
+    "rejected": [
+      "empty: established slowdown above the 0.5% resolution",
+      "seven-stored-prefix: established slowdown above the 0.5% resolution"
+    ],
+    "unresolved": [
+      "one-stored: combined and individual run bounds conflict: aligned-register-spills-full-reverse",
+      "eight-literals: regression bound or duplicate-control repeatability unresolved",
+      "32-high-entropy-stored: combined and individual run bounds conflict: aligned-register-spills-full",
+      "random-64: regression bound or duplicate-control repeatability unresolved",
+      "prefix-natural-1048576: regression bound or duplicate-control repeatability unresolved",
+      "prefix-periodic-4096: regression bound or duplicate-control repeatability unresolved",
+      "prefix-periodic-32769: regression bound or duplicate-control repeatability unresolved"
+    ]
+  },
+  "qualification_boundary": "The legacy timing adapter asserts exact bytes against the fixture but omits per-call output digests in the linked correctness log. This evidence packet records timing and proof outcomes and does not promote the variant."
+}

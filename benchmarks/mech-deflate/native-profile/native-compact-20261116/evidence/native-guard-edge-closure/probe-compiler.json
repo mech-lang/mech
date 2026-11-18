@@ -1,0 +1,32 @@
+{
+  "base": "b05241855264df7df861994ef125e5dfb678bc81",
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/program/compact/guard_state.rs": "3ec1b7fd3f284e8e6dd5c4222010a7dec841b83784aba0bbecc318d7b3716966",
+    "hosts/gpu/src/native_artifact/program/compact/guards.rs": "9b91d827cf128378189b7ed34f8a7be50ba6a235aff2b9a58059794824e7f8bc"
+  },
+  "flag": "MECH_INCREMENTAL_GUARD_EDGE_CLOSURE",
+  "profile": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ordered-vector-cursors/compiler-sample/result.json",
+  "compiler_sha256": "8a8e854ece15755881360c0e6d3ab3787de66631e5d28c48bdeb6743496c4844",
+  "disabled_artifacts": {
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+  },
+  "plan_sha256": "ff748dc8c8eaf95315c0256835a078aea6b7b64b7ff40e0744efa9033f175c98",
+  "patch_sha256": "1034bc999ea23b5cbc5adc40ff269ba178d57973d7f5a7c67d9f9918285233eb",
+  "build_command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/guard-closure-rounds/probe-compiler/disabled",
+    "--variant",
+    "frame-copies",
+    "--compiler-opt-level",
+    "3",
+    "--direct-source",
+    "--preselect-root-inlining",
+    "--skip-refused-general-ssa",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target"
+  ]
+}

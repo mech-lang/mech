@@ -1,0 +1,710 @@
+{
+  "runs": [
+    {
+      "id": "shared-copy-tails-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 17,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "precision_supported_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "precision_supported_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "shared-copy-tails-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 17,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "precision_supported_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "precision_supported_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    }
+  ],
+  "cases": {
+    "empty": {
+      "decision": "bounded",
+      "runs": {
+        "shared-copy-tails-focus-forward": {
+          "estimate": -0.013704235142935617,
+          "lower": -0.021193148751327273,
+          "upper": -0.006207915293225064
+        },
+        "shared-copy-tails-focus-reverse": {
+          "estimate": -0.0165149999607761,
+          "lower": -0.02517124554481598,
+          "upper": -0.0077199430843505334
+        }
+      },
+      "combined": {
+        "estimate": -0.015110620252641538,
+        "lower": -0.02079495367782458,
+        "upper": -0.009355323097932189
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "one-stored": {
+      "decision": "bounded",
+      "runs": {
+        "shared-copy-tails-focus-forward": {
+          "estimate": 0.010642813146209074,
+          "lower": 0.0030248266564834037,
+          "upper": 0.018494947080296642
+        },
+        "shared-copy-tails-focus-reverse": {
+          "estimate": -0.019397775782520665,
+          "lower": -0.02799930975476117,
+          "upper": -0.010723121705491834
+        }
+      },
+      "combined": {
+        "estimate": -0.004490788359754472,
+        "lower": -0.010295490194224821,
+        "upper": 0.0013275076634038374
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "seven-stored-prefix": {
+      "decision": "bounded",
+      "runs": {
+        "shared-copy-tails-focus-forward": {
+          "estimate": -0.016332413170970894,
+          "lower": -0.024143958421766865,
+          "upper": -0.00852279105989684
+        },
+        "shared-copy-tails-focus-reverse": {
+          "estimate": -0.004897697624734021,
+          "lower": -0.012141878181768484,
+          "upper": 0.0026725398071696382
+        }
+      },
+      "combined": {
+        "estimate": -0.010631574980539016,
+        "lower": -0.015997085254208177,
+        "upper": -0.005235053751803442
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "shared-copy-tails-focus-forward": {
+          "estimate": 0.0011443546065303956,
+          "lower": -0.0008302887832866146,
+          "upper": 0.0032096902175140496
+        },
+        "shared-copy-tails-focus-reverse": {
+          "estimate": 0.002043204781681407,
+          "lower": -0.00020332668459055458,
+          "upper": 0.004223446880362358
+        }
+      },
+      "combined": {
+        "estimate": 0.001593678863348158,
+        "lower": 8.739913712485503e-05,
+        "upper": 0.003079678621413784
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "bounded",
+      "runs": {
+        "shared-copy-tails-focus-forward": {
+          "estimate": -0.0042382341246455235,
+          "lower": -0.009957673195440941,
+          "upper": 0.001857875448077806
+        },
+        "shared-copy-tails-focus-reverse": {
+          "estimate": -0.0021748205608489446,
+          "lower": -0.007759548703902275,
+          "upper": 0.0033805446635308822
+        }
+      },
+      "combined": {
+        "estimate": -0.0032070612643659846,
+        "lower": -0.00716865743500017,
+        "upper": 0.0009597888140258082
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "shared-copy-tails-focus-forward": {
+          "estimate": 0.0007723922634046421,
+          "lower": -0.0008327666491667607,
+          "upper": 0.0025048578233188845
+        },
+        "shared-copy-tails-focus-reverse": {
+          "estimate": 0.0017506817935701857,
+          "lower": -0.0005521559228025552,
+          "upper": 0.004273025815240361
+        }
+      },
+      "combined": {
+        "estimate": 0.0012614175479088718,
+        "lower": -0.00012956715494327753,
+        "upper": 0.0027602313637040687
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "reymont-prefix-32769": {
+      "decision": "bounded",
+      "runs": {
+        "shared-copy-tails-focus-forward": {
+          "estimate": -0.001040475775861971,
+          "lower": -0.0023633524249481175,
+          "upper": 0.00033057787397505756
+        },
+        "shared-copy-tails-focus-reverse": {
+          "estimate": 0.0015661341877761803,
+          "lower": -0.00026090562461467126,
+          "upper": 0.003440523335564327
+        }
+      },
+      "combined": {
+        "estimate": 0.00026198012682154825,
+        "lower": -0.0008665045277913563,
+        "upper": 0.001428945858795272
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-mixed-131073": {
+      "decision": "bounded",
+      "runs": {
+        "shared-copy-tails-focus-forward": {
+          "estimate": -0.0006442779652264807,
+          "lower": -0.0013978854746088398,
+          "upper": 0.00012038290180571565
+        },
+        "shared-copy-tails-focus-reverse": {
+          "estimate": 0.00157459874907806,
+          "lower": 3.442349933546751e-06,
+          "upper": 0.003260939598133117
+        }
+      },
+      "combined": {
+        "estimate": 0.0004645452511415904,
+        "lower": -0.00040539668631667247,
+        "upper": 0.0014003680703962296
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-4096": {
+      "decision": "bounded",
+      "runs": {
+        "shared-copy-tails-focus-forward": {
+          "estimate": -0.001893298757186912,
+          "lower": -0.005505894565501213,
+          "upper": 0.0017702471053673285
+        },
+        "shared-copy-tails-focus-reverse": {
+          "estimate": -0.0006313756299781703,
+          "lower": -0.0036555530357452737,
+          "upper": 0.002431750618840267
+        }
+      },
+      "combined": {
+        "estimate": -0.0012625365014434786,
+        "lower": -0.003594729216342518,
+        "upper": 0.001096998932379245
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "bounded",
+      "runs": {
+        "shared-copy-tails-focus-forward": {
+          "estimate": -0.00033533662766604966,
+          "lower": -0.002240417963583652,
+          "upper": 0.00171367537639866
+        },
+        "shared-copy-tails-focus-reverse": {
+          "estimate": 0.0013094237648330065,
+          "lower": -0.0013356638118956488,
+          "upper": 0.004171196709082281
+        }
+      },
+      "combined": {
+        "estimate": 0.0004867055785484631,
+        "lower": -0.0011570531349182067,
+        "upper": 0.0021663986031434934
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-32768": {
+      "decision": "bounded",
+      "runs": {
+        "shared-copy-tails-focus-forward": {
+          "estimate": -0.001339435156146207,
+          "lower": -0.002051227288077495,
+          "upper": -0.0005442626366563008
+        },
+        "shared-copy-tails-focus-reverse": {
+          "estimate": 0.0027269154726081712,
+          "lower": 0.001459069156912296,
+          "upper": 0.0041277855622212645
+        }
+      },
+      "combined": {
+        "estimate": 0.0006916746880678559,
+        "lower": -3.888564397092065e-05,
+        "upper": 0.0015005012667250739
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-262144": {
+      "decision": "bounded",
+      "runs": {
+        "shared-copy-tails-focus-forward": {
+          "estimate": 0.0013112990740178354,
+          "lower": -0.00026583891652742775,
+          "upper": 0.0034740201117802183
+        },
+        "shared-copy-tails-focus-reverse": {
+          "estimate": -0.0013744100551421612,
+          "lower": -0.0024417390313830056,
+          "upper": -0.00028027976738986826
+        }
+      },
+      "combined": {
+        "estimate": -3.245714861177529e-05,
+        "lower": -0.001015077918984142,
+        "upper": 0.0011395905239954818
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "shared-copy-tails-focus-forward": {
+          "estimate": 0.00047159066949586936,
+          "lower": -0.0005940236478483296,
+          "upper": 0.0015136927084771212
+        },
+        "shared-copy-tails-focus-reverse": {
+          "estimate": 0.0008950546355175337,
+          "lower": -0.000625428944185269,
+          "upper": 0.0024494541098134537
+        }
+      },
+      "combined": {
+        "estimate": 0.0006833002525965526,
+        "lower": -0.00027399127700278303,
+        "upper": 0.0016279933439560246
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-4096": {
+      "decision": "unresolved",
+      "runs": {
+        "shared-copy-tails-focus-forward": {
+          "estimate": -0.002667510326847977,
+          "lower": -0.0059402553120062596,
+          "upper": 0.0005824644594238926
+        },
+        "shared-copy-tails-focus-reverse": {
+          "estimate": 0.014585599368609703,
+          "lower": 0.008383618559487882,
+          "upper": 0.02105807573793439
+        }
+      },
+      "combined": {
+        "estimate": 0.005922055531551784,
+        "lower": 0.0023694093494219803,
+        "upper": 0.00946608646632452
+      },
+      "adverse_runs": [
+        "shared-copy-tails-focus-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-random-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "shared-copy-tails-focus-forward": {
+          "estimate": 0.0013522065553466245,
+          "lower": -0.00012034333107058259,
+          "upper": 0.003026035266710636
+        },
+        "shared-copy-tails-focus-reverse": {
+          "estimate": -0.0008891636677869075,
+          "lower": -0.0027906467976687166,
+          "upper": 0.0006390257115063136
+        }
+      },
+      "combined": {
+        "estimate": 0.0002308936213775148,
+        "lower": -0.0009538104160261573,
+        "upper": 0.0013747058993631711
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-1024": {
+      "decision": "bounded",
+      "runs": {
+        "shared-copy-tails-focus-forward": {
+          "estimate": -0.002605894490223415,
+          "lower": -0.00367482476335268,
+          "upper": -0.0015175525239597976
+        },
+        "shared-copy-tails-focus-reverse": {
+          "estimate": 0.00010050839615538543,
+          "lower": -0.0023982852095632,
+          "upper": 0.002514606851895973
+        }
+      },
+      "combined": {
+        "estimate": -0.0012536097729032303,
+        "lower": -0.0025941377133026355,
+        "upper": 7.177118197487786e-05
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-32769": {
+      "decision": "bounded",
+      "runs": {
+        "shared-copy-tails-focus-forward": {
+          "estimate": -0.002191204042603534,
+          "lower": -0.0034765737026603016,
+          "upper": -0.0009428334524259618
+        },
+        "shared-copy-tails-focus-reverse": {
+          "estimate": -0.0004108597706693473,
+          "lower": -0.0030881016297540365,
+          "upper": 0.002321717725285888
+        }
+      },
+      "combined": {
+        "estimate": -0.0013014286260756291,
+        "lower": -0.002719613395785636,
+        "upper": 0.00018340244068526523
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    }
+  },
+  "scope": "90% per-case paired bootstrap, stratified by run and actor order",
+  "equivalent_named_cases": [
+    [
+      "33027-periodic-window",
+      "prefix-periodic-33027"
+    ],
+    [
+      "prefix-repeated-1024",
+      "repeated-1024"
+    ],
+    [
+      "prefix-repeated-32769",
+      "repeated-32769"
+    ],
+    [
+      "prefix-natural-1024",
+      "reymont-prefix-1024"
+    ],
+    [
+      "prefix-natural-16384",
+      "reymont-prefix-16384"
+    ],
+    [
+      "prefix-natural-32769",
+      "reymont-prefix-32769"
+    ],
+    [
+      "heldout-window-32767",
+      "prefix-natural-32767"
+    ]
+  ],
+  "peak_private_payload_bytes": {},
+  "decision": "Unresolved",
+  "rejected": [],
+  "unresolved": [
+    "both complete timing orders are required",
+    "prefix-random-4096: combined and individual run bounds conflict: shared-copy-tails-focus-reverse"
+  ],
+  "plan": {
+    "path": "mech-text-reductions.yYja14/bound-plan/plan.json",
+    "sha256": "5c15f88cfa68479ae00034a82a7a933fe222437ae325621adf6ca52f731b283f"
+  },
+  "receipts": {
+    "shared-copy-tails-focus-forward": {
+      "id": "shared-copy-tails-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "mech-text-reductions.yYja14/bound-plan/canonical-pins/shared-copy-tails-focus-forward.json",
+        "sha256": "5731d4b04d49b2c58ac5f5329886b5de5fee6a180ba17952aa2e87b6f73e72e3"
+      },
+      "original_pins": {
+        "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/pins.json",
+        "sha256": "e65d028904a94e74080ac66867cf0e525231e63521870610d491ee4255aa1e5e"
+      },
+      "summary": {
+        "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/summary.json",
+        "sha256": "9f94f1048f52f111c34fa6d1cfd2fa96a007c748ffac47663c594f610eabc3e9"
+      },
+      "complete": {
+        "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/complete.json",
+        "sha256": "99f853d3840325c9c04561a514bc7ac5dd6ba90176ebeee2323bed3f796f08c5"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/320-overlap/observations.json.gz",
+          "sha256": "d51f970b55d6ad7768a72b33d8627480f62d84651c65ceb225cbfb6f5ac4d609"
+        },
+        "empty": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/empty/observations.json.gz",
+          "sha256": "e15d296f38b1c056487aa40653a2f9eff3fac13cd58b604bc4bee225dbc0b6a8"
+        },
+        "heldout-mixed-131073": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/heldout-mixed-131073/observations.json.gz",
+          "sha256": "149b76232e9b14259e7ddfda5a0675c0838702b6378011b0e3ec5973971b342c"
+        },
+        "one-stored": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/one-stored/observations.json.gz",
+          "sha256": "fe65d948f020acc431f944be9eda0f26e5eea211182913a7cf9cad0af893cc4a"
+        },
+        "prefix-natural-262144": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/prefix-natural-262144/observations.json.gz",
+          "sha256": "dd81b27281628946ca7082abb3b56bafc2468df135f85b7113015106a9082f2e"
+        },
+        "prefix-natural-32768": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/prefix-natural-32768/observations.json.gz",
+          "sha256": "d68395ebcb4daa2a9ed72eba5e13a3823108740f4f65299c7f32aa730aef8c60"
+        },
+        "prefix-natural-4096": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/prefix-natural-4096/observations.json.gz",
+          "sha256": "a9c591199a8c11fdee54053b2161fe19f3109de066c77fb3dd9512f4bb28b9bc"
+        },
+        "prefix-natural-8192": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/prefix-natural-8192/observations.json.gz",
+          "sha256": "889c72e28f09cf575f4afcae9d00213411b5b59af216c2d3eef52f0df6578de7"
+        },
+        "prefix-periodic-1024": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/prefix-periodic-1024/observations.json.gz",
+          "sha256": "961a0812fbda820ba332e93c7270ad2b0b98773c8752edd571159424b07b5960"
+        },
+        "prefix-random-1024": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/prefix-random-1024/observations.json.gz",
+          "sha256": "1a2fab2b308ce51614b371fa1fd269113cbc3529781e244af34bf912bfaff26b"
+        },
+        "prefix-random-1048576": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/prefix-random-1048576/observations.json.gz",
+          "sha256": "ab2484e2f72df220870ca29a571ce784121c1d98c07a078cb741e775cb02b207"
+        },
+        "prefix-random-4096": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/prefix-random-4096/observations.json.gz",
+          "sha256": "06ccb08e711c4ae4ffcbac51407c9c4e1618ff3a84889ced6a8f2f33595fb128"
+        },
+        "prefix-repeated-32769": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/prefix-repeated-32769/observations.json.gz",
+          "sha256": "e058969a65031c92f0c8e1d9ed3dbab0247744eeff7d3a3ef1efc6d9cc56a24c"
+        },
+        "random-1024": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/random-1024/observations.json.gz",
+          "sha256": "05f7917360097cda76fea1bd88c13da39ff7bd072f486ddf9fd94874dfa1a85c"
+        },
+        "random-64": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/random-64/observations.json.gz",
+          "sha256": "14ed361a04eba1c3dd71bcf9d99e9838802f1b0c94c848113abff862a13c2279"
+        },
+        "reymont-prefix-32769": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/reymont-prefix-32769/observations.json.gz",
+          "sha256": "4a019d9abbbc8c013e01e105c6e8d90031d59c84294a6e57d4ca8844e7c9a899"
+        },
+        "seven-stored-prefix": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/seven-stored-prefix/observations.json.gz",
+          "sha256": "90b154b548d32e957bd3351c3b6b3c9dce7e31988e1ce0f3695b162383abbbf5"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-forward/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    },
+    "shared-copy-tails-focus-reverse": {
+      "id": "shared-copy-tails-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "mech-text-reductions.yYja14/bound-plan/canonical-pins/shared-copy-tails-focus-reverse.json",
+        "sha256": "5731d4b04d49b2c58ac5f5329886b5de5fee6a180ba17952aa2e87b6f73e72e3"
+      },
+      "original_pins": {
+        "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/pins.json",
+        "sha256": "e65d028904a94e74080ac66867cf0e525231e63521870610d491ee4255aa1e5e"
+      },
+      "summary": {
+        "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/summary.json",
+        "sha256": "ed22bcfd84d6866a17b2326a56cf02902d2dedad8d5a4b80d3c4488c1952b8ea"
+      },
+      "complete": {
+        "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/complete.json",
+        "sha256": "99f853d3840325c9c04561a514bc7ac5dd6ba90176ebeee2323bed3f796f08c5"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/320-overlap/observations.json.gz",
+          "sha256": "9fe6af0308508e757e009ce7382994038ffb9ce74022b960d31094fa86cc58d9"
+        },
+        "empty": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/empty/observations.json.gz",
+          "sha256": "ba9cb1b8ce63771862b223b564d46fc28da1016c941dfb962c41b11b9277d905"
+        },
+        "heldout-mixed-131073": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/heldout-mixed-131073/observations.json.gz",
+          "sha256": "15786707a90ced6a57a791023c1f328a18d70db269b5248505f9b1cfe03bc1bb"
+        },
+        "one-stored": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/one-stored/observations.json.gz",
+          "sha256": "1890895dad68dc2c2ce14f3859410c0079a2bae8d2949668d08ea8e26477c951"
+        },
+        "prefix-natural-262144": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/prefix-natural-262144/observations.json.gz",
+          "sha256": "e8e92cbf5198f04e888a28a8efc628ddef824a2e5c9ffbee4dd4a7d92c5cf3b3"
+        },
+        "prefix-natural-32768": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/prefix-natural-32768/observations.json.gz",
+          "sha256": "99ac9df013c7ac6fbd18a239cd712d84447a31912662e1d8bcc2d9b43032d3cf"
+        },
+        "prefix-natural-4096": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/prefix-natural-4096/observations.json.gz",
+          "sha256": "a74f6d7002d0b4136728c27d8f3beff5f0696a6fee0b8a968f3e210213c872fa"
+        },
+        "prefix-natural-8192": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/prefix-natural-8192/observations.json.gz",
+          "sha256": "016467e132b18928c810134dc016659b8a494ecfc46db7760d296ca28de48a9e"
+        },
+        "prefix-periodic-1024": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/prefix-periodic-1024/observations.json.gz",
+          "sha256": "ffdad85e3ad7abd3b7368301e4fc0c609347f72bb79cf16f49a0959e1abd4713"
+        },
+        "prefix-random-1024": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/prefix-random-1024/observations.json.gz",
+          "sha256": "2946f89838bbdc95f0c2609c9ef931ce626c4a8bc301dcb8a03f933475aa5fd3"
+        },
+        "prefix-random-1048576": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/prefix-random-1048576/observations.json.gz",
+          "sha256": "b26b365af5bb336b40064eb8974ea89d9bf017485278c185ecd065db7e927c0e"
+        },
+        "prefix-random-4096": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/prefix-random-4096/observations.json.gz",
+          "sha256": "0ff4a78d0d94abda1038031ee6d45f59d15e3dc1e486367dbf911896e17afd9a"
+        },
+        "prefix-repeated-32769": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/prefix-repeated-32769/observations.json.gz",
+          "sha256": "9756890970f36896223fb803dae8cfb22b6a85245cf4759dd7f9a2e74758fcc6"
+        },
+        "random-1024": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/random-1024/observations.json.gz",
+          "sha256": "261fba2068aa5fc8ba32ba984b92bdb2f2d796af711edd5cd239db9c949a2e9c"
+        },
+        "random-64": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/random-64/observations.json.gz",
+          "sha256": "8bad8de9d27e75cfa05342a2d54fa2b568354a3787d455448acfd7d1a4d5e1fe"
+        },
+        "reymont-prefix-32769": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/reymont-prefix-32769/observations.json.gz",
+          "sha256": "370b9ea0eb18b3b2440a240afcee18b1b713dabb79238d51fc3a467cef78bb27"
+        },
+        "seven-stored-prefix": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/seven-stored-prefix/observations.json.gz",
+          "sha256": "d4a79e9980ae60e57c1ce6f5bbeb8602163988bdb30e93ca11292c745819cc9d"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "mech-text-reductions.yYja14/shared-copy-tails-focus-reverse/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,48 @@
+--- a/benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py
++++ b/benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py
+@@ -43,6 +43,7 @@
+         'fresh-owner-counts-cold-tails-paired-spills',
+         'fresh-owner-counts-cold-tails-zero-branches',
+         'frame-copies',
++        'shared-byte-read-layout',
+     ],
+     default='baseline',
+ )
+@@ -115,7 +116,9 @@
+ variant_key=args.variant.replace('-','_')
+ paired_spills=args.variant=='fresh-owner-counts-cold-tails-paired-spills'
+ frame_copies = args.variant == 'frame-copies'
+-zero_branches = args.variant == 'fresh-owner-counts-cold-tails-zero-branches' or frame_copies
++share_byte_reads = args.variant == 'shared-byte-read-layout'
++zero_branches = args.variant in ('fresh-owner-counts-cold-tails-zero-branches',
++                                 'frame-copies', 'shared-byte-read-layout')
+ fresh_owner_cold_tails=args.variant=='fresh-owner-counts-cold-tails' or paired_spills or zero_branches
+ profiles=recipe.get(variant_key+'_profiles',recipe['profiles'])
+ flags['MECH_COMPACT_PHASE_BLOCK_LAYOUT']=';'.join(p['symbol']+'@'+str(here/p['path']) for p in profiles)
+@@ -135,10 +138,14 @@
+     flags['MECH_COMPACT_PAIR_REGISTER_SPILLS'] = '1'
+ if zero_branches:
+     flags['MECH_COMPACT_BRANCH_ON_ZERO'] = '1'
++if zero_branches and not share_byte_reads:
+     tail_profile = 'frame_copies_tail_profile' if frame_copies else 'zero_branches_tail_profile'
+     flags['MECH_COMPACT_ROOT_TAIL_PROFILE'] = str(here / recipe[tail_profile])
+ if frame_copies:
+     flags['MECH_COMPACT_SHARE_FRAME_COPIES'] = '1'
++if share_byte_reads:
++    windows = flags['MECH_COMPACT_CONTINUATION_WINDOWS']
++    flags['MECH_COMPACT_CONTINUATION_WINDOWS'] = windows + ';' + recipe['shared_byte_read_layout_windows']
+ assert not any('LLVM' in key for key in flags)
+ source = here / 'program.mec'
+ frontend = out / 'frontend'
+--- a/benchmarks/mech-deflate/native-profile/native-compact-20261116/recipe.json
++++ b/benchmarks/mech-deflate/native-profile/native-compact-20261116/recipe.json
+@@ -160,5 +160,8 @@
+   "fresh_owner_counts_cold_tails_zero_branches_metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+   "frame_copies_tail_profile": "profiles/checked-root-frame-copies.json",
+   "frame_copies_object_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+-  "frame_copies_metadata_sha256": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
++  "frame_copies_metadata_sha256": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
++  "shared_byte_read_layout_windows": "380:393:385,956:969:964,970:983:978,1036:1049:1046,1050:1063:1060,1289:1302:1300,1303:1316:1314,1491:1504:1503,1505:1518:1517,1580:1593:1594,1594:1607:1608,1800:1813:1815,1814:1827:1829,2016:2029:2031,2066:2079:2081",
++  "shared_byte_read_layout_object_sha256": "1ba5b62ab2f54deaa2b34ea1d97a635458a09dd981e471789e6bd94fedd15460",
++  "shared_byte_read_layout_metadata_sha256": "bb1e9dcde194691d6f70f584a64f1e90ffcfd4ece9513fe7745df3156484acf9"
+ }

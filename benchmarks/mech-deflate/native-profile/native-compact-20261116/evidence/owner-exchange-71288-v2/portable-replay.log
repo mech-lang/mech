@@ -1,0 +1,111 @@
+{
+  "decision": "Reject",
+  "rejected": [
+    "source-owner-exchange-71288-v2-full-reverse: lost previously won libdeflate cases: random-1024"
+  ],
+  "unresolved": [
+    "source-owner-exchange-71288-v2-full-reverse: libdeflate floor 61 missed (control 60, candidate 60)"
+  ],
+  "runs": [
+    {
+      "id": "source-owner-exchange-71288-v2-full-forward",
+      "kind": "full",
+      "order": "forward",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 61,
+            "mech-experiment": 61
+          },
+          "precision_supported_wins": {
+            "mech-control": 60,
+            "mech-experiment": 60
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 55,
+            "mech-experiment": 55
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 54,
+            "mech-experiment": 54
+          }
+        }
+      }
+    },
+    {
+      "id": "source-owner-exchange-71288-v2-full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 60,
+            "mech-experiment": 60
+          },
+          "precision_supported_wins": {
+            "mech-control": 59,
+            "mech-experiment": 59
+          },
+          "lost_cases": [
+            "random-1024"
+          ],
+          "gained_cases": [
+            "320-overlap"
+          ],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 54,
+            "mech-experiment": 54
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 53,
+            "mech-experiment": 53
+          }
+        }
+      }
+    }
+  ]
+}

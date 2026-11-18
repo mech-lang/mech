@@ -1,0 +1,11 @@
+{
+  "compiler_source_base": "cebfd544a69880e537b05be21235df956a611f0e",
+  "compiler_patch_sha256": "ff9d2d9242136d7791ae926bef5f4263368b611996fa9c38b8784ab60a48e447",
+  "compiler_sha256": "4a0cb4066a6268bd9ed00795f33110c12d0107b236a563543854581da2d3d1bb",
+  "artifact_sha256": {
+    "program.o": "76aff98a257b58d14407c14489a7f1f33b015d4deff1fe711ab5f24b94e176dc",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata.json": "b97616e3f1315a111a56597f039deceebae50b6c1ecaffab117b0544db3a2004"
+  },
+  "worker_sha256": "34eecde1cf520aed4b345c9a54c9fa002ad36f49631e12ec9dae927357115c85"
+}

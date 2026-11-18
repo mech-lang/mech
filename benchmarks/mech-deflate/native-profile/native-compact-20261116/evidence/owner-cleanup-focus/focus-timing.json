@@ -1,0 +1,788 @@
+[
+  {
+    "roc_wins": [
+      12,
+      12
+    ],
+    "libdeflate_wins": [
+      8,
+      8
+    ],
+    "candidate_over_control_geometric_mean": 0.9977493794410393,
+    "all_105_gates": true,
+    "verified_full_calls": 714240,
+    "lost_cases_mech_over_roc": [],
+    "gained_cases_mech_over_roc": [],
+    "lost_cases_mech_over_libdeflate": [],
+    "gained_cases_mech_over_libdeflate": [],
+    "pins": {
+      "actors": {
+        "roc": {
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/roc-worker",
+            "/private/tmp/mech-wide-tier-round270-20261110/full-image/original/metadata.json",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+          ],
+          "binary_sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+          "metadata_sha256": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee",
+          "original_command": [
+            "/private/tmp/mech-matched-comparison-round224-20261109/reference-worker",
+            "/private/tmp/mech-wide-tier-round270-20261110/full-image/original/metadata.json",
+            "/private/tmp/mech-pr973-merged-compression-20261112/fixtures.json"
+          ]
+        },
+        "libdeflate": {
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/libdeflate-worker",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+          ],
+          "binary_sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+          "original_command": [
+            "/private/tmp/mech-wide-tier-round270-20261110/libdeflate-comparison/libdeflate-worker",
+            "/private/tmp/mech-pr973-merged-compression-20261112/fixtures.json"
+          ]
+        },
+        "mech-control": {
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-continuation-registers-word-pages-native/final-candidate/mech-worker",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-continuation-registers-word-pages-native/final-candidate/metadata.json",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+          ],
+          "binary_sha256": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6",
+          "metadata_sha256": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+        },
+        "mech-experiment": {
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-owner-all-cleanup-native/final-candidate/mech-worker",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-owner-all-cleanup-native/final-candidate/metadata.json",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+          ],
+          "binary_sha256": "cf9d2f805d516921444cb1f4690b50a3217af0965660824014425a5d6a976afc",
+          "metadata_sha256": "013998f49b3f4a4e2d8cecafb66a99029ad0eb256e9fc39532050550f6a7f6cb"
+        }
+      },
+      "input_inventory_sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4",
+      "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+      "libdeflate_source": {
+        "version": "1.26",
+        "git_revision": "92e6a0db9fa848d742f9eb286c92afc60f2c3dda",
+        "source_archive_sha256": "af56498149827f5a5e3f1ffb653c79c8c75557f3dc2caf6002cac38a59b844b7",
+        "source_bytes": 198808,
+        "source_url": "https://codeload.github.com/ebiggers/libdeflate/tar.gz/92e6a0db9fa848d742f9eb286c92afc60f2c3dda"
+      },
+      "matching_packet_abi": {
+        "symbol": "mech_compact_closed_v2",
+        "inputs": [
+          {
+            "input_offset": 0,
+            "name": "mech-source-input-696e707574",
+            "type": {
+              "kind": {
+                "array_element": {
+                  "kind": {
+                    "float": false,
+                    "scalar_bytes": 1,
+                    "signed": false
+                  },
+                  "owners": [],
+                  "packed_align": 1,
+                  "packed_bytes": 1,
+                  "words": 1
+                }
+              },
+              "owners": [
+                5
+              ],
+              "packed_align": 8,
+              "packed_bytes": null,
+              "words": 6
+            },
+            "value": 0
+          },
+          {
+            "input_offset": 6,
+            "name": "mech-source-input-6f7574707574",
+            "type": {
+              "kind": {
+                "array_element": {
+                  "kind": {
+                    "float": false,
+                    "scalar_bytes": 1,
+                    "signed": false
+                  },
+                  "owners": [],
+                  "packed_align": 1,
+                  "packed_bytes": 1,
+                  "words": 1
+                }
+              },
+              "owners": [
+                5
+              ],
+              "packed_align": 8,
+              "packed_bytes": null,
+              "words": 6
+            },
+            "value": 1
+          }
+        ],
+        "input_words": 12,
+        "output_words": 6,
+        "output_types": [
+          {
+            "kind": {
+              "array_element": {
+                "kind": {
+                  "float": false,
+                  "scalar_bytes": 1,
+                  "signed": false
+                },
+                "owners": [],
+                "packed_align": 1,
+                "packed_bytes": 1,
+                "words": 1
+              }
+            },
+            "owners": [
+              5
+            ],
+            "packed_align": 8,
+            "packed_bytes": null,
+            "words": 6
+          }
+        ]
+      },
+      "level": 12,
+      "native_four_actor_comparison": true,
+      "fresh_libdeflate_compressor_inside_timing": true,
+      "allocator": {
+        "path": "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+        "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+      },
+      "warmup_ms": 200
+    },
+    "per_case": {
+      "prefix-periodic-1024": {
+        "candidate_over_control": 0.9969900266150971,
+        "candidate_over_control_per_24_orders": [
+          0.9975346449551814,
+          0.9930981030686161,
+          1.0053238201073578,
+          0.9920581799100626
+        ],
+        "mech_over_roc": [
+          0.13558327751317015,
+          0.13517517545641758
+        ],
+        "mech_over_libdeflate": [
+          0.9962233010755706,
+          0.993224695453913
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "prefix-random-1048576": {
+        "candidate_over_control": 0.9998622477371865,
+        "candidate_over_control_per_24_orders": [
+          1.0000760095792502,
+          0.9988818809424893,
+          1.0004320605718957,
+          1.0000597254450792
+        ],
+        "mech_over_roc": [
+          0.9786628463836308,
+          0.9785280333620099
+        ],
+        "mech_over_libdeflate": [
+          1.390399749738146,
+          1.390208219026404
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "prefix-random-8192": {
+        "candidate_over_control": 0.992042184208832,
+        "candidate_over_control_per_24_orders": [
+          0.9773991019733888,
+          1.002131020024369,
+          0.992891953026357,
+          0.9959146647974665
+        ],
+        "mech_over_roc": [
+          0.4559163005873444,
+          0.45228820265107955
+        ],
+        "mech_over_libdeflate": [
+          1.6527520359760994,
+          1.6395997397253237
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "prefix-random-1024": {
+        "candidate_over_control": 0.996086271013521,
+        "candidate_over_control_per_24_orders": [
+          0.9994241642228155,
+          0.9925893475027237,
+          0.9952843310037437,
+          0.9970597725758698
+        ],
+        "mech_over_roc": [
+          0.10384350399459494,
+          0.10343708866295374
+        ],
+        "mech_over_libdeflate": [
+          0.9676456519602802,
+          0.9638585491235628
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "prefix-natural-8192": {
+        "candidate_over_control": 1.0008016159947104,
+        "candidate_over_control_per_24_orders": [
+          1.0013249808395577,
+          1.0020536601526246,
+          1.000578924531598,
+          0.9992510449739932
+        ],
+        "mech_over_roc": [
+          0.8324150070474421,
+          0.8330822842313282
+        ],
+        "mech_over_libdeflate": [
+          1.0429528146748481,
+          1.0437888623328198
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "prefix-natural-4096": {
+        "candidate_over_control": 1.001723201524995,
+        "candidate_over_control_per_24_orders": [
+          1.0034573208377517,
+          1.0054119308486495,
+          1.000266991154054,
+          0.9977737034133424
+        ],
+        "mech_over_roc": [
+          0.66184656846734,
+          0.6629870634834357
+        ],
+        "mech_over_libdeflate": [
+          1.1330803314112639,
+          1.1350328571662935
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "repeated-1024": {
+        "candidate_over_control": 0.9986591733552735,
+        "candidate_over_control_per_24_orders": [
+          1.001448857928306,
+          0.9982330506972892,
+          0.9996847598978182,
+          0.9952802603661375
+        ],
+        "mech_over_roc": [
+          0.1284137842072904,
+          0.12824160358387507
+        ],
+        "mech_over_libdeflate": [
+          0.9146326099681553,
+          0.9134062461945743
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "random-1024": {
+        "candidate_over_control": 0.9930780834287511,
+        "candidate_over_control_per_24_orders": [
+          0.9940004511163452,
+          0.9919642337521561,
+          0.992080491736666,
+          0.9942694257350094
+        ],
+        "mech_over_roc": [
+          0.1027945452567451,
+          0.10208300999049844
+        ],
+        "mech_over_libdeflate": [
+          0.9658934440428328,
+          0.9592076102064522
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "320-overlap": {
+        "candidate_over_control": 0.9998262000801447,
+        "candidate_over_control_per_24_orders": [
+          1.002498109541483,
+          0.9947304062069051,
+          1.0022341482431154,
+          0.9998616258502895
+        ],
+        "mech_over_roc": [
+          0.09101137528092013,
+          0.09099555751119034
+        ],
+        "mech_over_libdeflate": [
+          0.9954698545642529,
+          0.9952968419833111
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "seven-stored-prefix": {
+        "candidate_over_control": 0.987716044518534,
+        "candidate_over_control_per_24_orders": [
+          0.986368911321316,
+          0.9945280202476889,
+          0.9816310638542468,
+          0.9883795285917529
+        ],
+        "mech_over_roc": [
+          0.8831730933710581,
+          0.8723242344096594
+        ],
+        "mech_over_libdeflate": [
+          0.007367826958560352,
+          0.007277320900206245
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "one-stored": {
+        "candidate_over_control": 1.006747681936276,
+        "candidate_over_control_per_24_orders": [
+          1.0141441434474496,
+          1.0007961366927578,
+          1.0181220287318908,
+          0.9941167968089784
+        ],
+        "mech_over_roc": [
+          0.7657245891239628,
+          0.7708914551021568
+        ],
+        "mech_over_libdeflate": [
+          0.006788179398180685,
+          0.006833983873685991
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "empty": {
+        "candidate_over_control": 0.99959904714714,
+        "candidate_over_control_per_24_orders": [
+          1.0050011681255928,
+          1.0073844646013443,
+          0.9882358426558212,
+          0.997885970515876
+        ],
+        "mech_over_roc": [
+          0.8514956685706333,
+          0.851154258953122
+        ],
+        "mech_over_libdeflate": [
+          0.006704053841362914,
+          0.0067013658318494885
+        ],
+        "pooled_105": true,
+        "block_105": true
+      }
+    }
+  },
+  {
+    "roc_wins": [
+      12,
+      12
+    ],
+    "libdeflate_wins": [
+      8,
+      8
+    ],
+    "candidate_over_control_geometric_mean": 0.9962775581115823,
+    "all_105_gates": true,
+    "verified_full_calls": 714240,
+    "lost_cases_mech_over_roc": [],
+    "gained_cases_mech_over_roc": [],
+    "lost_cases_mech_over_libdeflate": [],
+    "gained_cases_mech_over_libdeflate": [],
+    "pins": {
+      "actors": {
+        "roc": {
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/roc-worker",
+            "/private/tmp/mech-wide-tier-round270-20261110/full-image/original/metadata.json",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+          ],
+          "binary_sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+          "metadata_sha256": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee",
+          "original_command": [
+            "/private/tmp/mech-matched-comparison-round224-20261109/reference-worker",
+            "/private/tmp/mech-wide-tier-round270-20261110/full-image/original/metadata.json",
+            "/private/tmp/mech-pr973-merged-compression-20261112/fixtures.json"
+          ]
+        },
+        "libdeflate": {
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/libdeflate-worker",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+          ],
+          "binary_sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+          "original_command": [
+            "/private/tmp/mech-wide-tier-round270-20261110/libdeflate-comparison/libdeflate-worker",
+            "/private/tmp/mech-pr973-merged-compression-20261112/fixtures.json"
+          ]
+        },
+        "mech-control": {
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-continuation-registers-word-pages-native/final-candidate/mech-worker",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-continuation-registers-word-pages-native/final-candidate/metadata.json",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+          ],
+          "binary_sha256": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6",
+          "metadata_sha256": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+        },
+        "mech-experiment": {
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-owner-all-cleanup-native/final-candidate/mech-worker",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-owner-all-cleanup-native/final-candidate/metadata.json",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+          ],
+          "binary_sha256": "cf9d2f805d516921444cb1f4690b50a3217af0965660824014425a5d6a976afc",
+          "metadata_sha256": "013998f49b3f4a4e2d8cecafb66a99029ad0eb256e9fc39532050550f6a7f6cb"
+        }
+      },
+      "input_inventory_sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4",
+      "source_sha256": "331e659e92181d803b3d87218effe88f711c2e8ecad9f31838fc50991de1c5c9",
+      "libdeflate_source": {
+        "version": "1.26",
+        "git_revision": "92e6a0db9fa848d742f9eb286c92afc60f2c3dda",
+        "source_archive_sha256": "af56498149827f5a5e3f1ffb653c79c8c75557f3dc2caf6002cac38a59b844b7",
+        "source_bytes": 198808,
+        "source_url": "https://codeload.github.com/ebiggers/libdeflate/tar.gz/92e6a0db9fa848d742f9eb286c92afc60f2c3dda"
+      },
+      "matching_packet_abi": {
+        "symbol": "mech_compact_closed_v2",
+        "inputs": [
+          {
+            "input_offset": 0,
+            "name": "mech-source-input-696e707574",
+            "type": {
+              "kind": {
+                "array_element": {
+                  "kind": {
+                    "float": false,
+                    "scalar_bytes": 1,
+                    "signed": false
+                  },
+                  "owners": [],
+                  "packed_align": 1,
+                  "packed_bytes": 1,
+                  "words": 1
+                }
+              },
+              "owners": [
+                5
+              ],
+              "packed_align": 8,
+              "packed_bytes": null,
+              "words": 6
+            },
+            "value": 0
+          },
+          {
+            "input_offset": 6,
+            "name": "mech-source-input-6f7574707574",
+            "type": {
+              "kind": {
+                "array_element": {
+                  "kind": {
+                    "float": false,
+                    "scalar_bytes": 1,
+                    "signed": false
+                  },
+                  "owners": [],
+                  "packed_align": 1,
+                  "packed_bytes": 1,
+                  "words": 1
+                }
+              },
+              "owners": [
+                5
+              ],
+              "packed_align": 8,
+              "packed_bytes": null,
+              "words": 6
+            },
+            "value": 1
+          }
+        ],
+        "input_words": 12,
+        "output_words": 6,
+        "output_types": [
+          {
+            "kind": {
+              "array_element": {
+                "kind": {
+                  "float": false,
+                  "scalar_bytes": 1,
+                  "signed": false
+                },
+                "owners": [],
+                "packed_align": 1,
+                "packed_bytes": 1,
+                "words": 1
+              }
+            },
+            "owners": [
+              5
+            ],
+            "packed_align": 8,
+            "packed_bytes": null,
+            "words": 6
+          }
+        ]
+      },
+      "level": 12,
+      "native_four_actor_comparison": true,
+      "fresh_libdeflate_compressor_inside_timing": true,
+      "allocator": {
+        "path": "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+        "sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+      },
+      "warmup_ms": 200
+    },
+    "per_case": {
+      "empty": {
+        "candidate_over_control": 0.9950431969868391,
+        "candidate_over_control_per_24_orders": [
+          0.9881959792718054,
+          0.9972493999506266,
+          0.9942854262756443,
+          1.0004831974604431
+        ],
+        "mech_over_roc": [
+          0.8611383087638697,
+          0.8568698158002406
+        ],
+        "mech_over_libdeflate": [
+          0.006780623826614538,
+          0.006747013609999665
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "one-stored": {
+        "candidate_over_control": 0.9801911553601107,
+        "candidate_over_control_per_24_orders": [
+          0.9818970569640932,
+          0.9739816355522696,
+          0.9891743268818189,
+          0.9757836902025188
+        ],
+        "mech_over_roc": [
+          0.7875658251360189,
+          0.7719650560622132
+        ],
+        "mech_over_libdeflate": [
+          0.006944997392630159,
+          0.006807425018255111
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "seven-stored-prefix": {
+        "candidate_over_control": 0.9985700772748356,
+        "candidate_over_control_per_24_orders": [
+          1.0077668845851275,
+          1.0101524179518653,
+          0.9774977880560148,
+          0.9991976819102295
+        ],
+        "mech_over_roc": [
+          0.8757045647243455,
+          0.874452374866716
+        ],
+        "mech_over_libdeflate": [
+          0.007270433150759639,
+          0.007260036993175576
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "320-overlap": {
+        "candidate_over_control": 0.9969149723276427,
+        "candidate_over_control_per_24_orders": [
+          0.9967272738409699,
+          0.995162830730113,
+          0.9969665208549923,
+          0.9988066168752319
+        ],
+        "mech_over_roc": [
+          0.09133725968623026,
+          0.09105548171258095
+        ],
+        "mech_over_libdeflate": [
+          0.9965194166479986,
+          0.9934451266715982
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "random-1024": {
+        "candidate_over_control": 0.9957955312934211,
+        "candidate_over_control_per_24_orders": [
+          0.9964659977108773,
+          0.9941953854087933,
+          0.9977646765639807,
+          0.9947600612438666
+        ],
+        "mech_over_roc": [
+          0.10255899289175996,
+          0.10212778681556833
+        ],
+        "mech_over_libdeflate": [
+          0.960749945703772,
+          0.9567105026222132
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "repeated-1024": {
+        "candidate_over_control": 0.9976321398390371,
+        "candidate_over_control_per_24_orders": [
+          0.9981745359011231,
+          0.9996657168907019,
+          0.9983968035027108,
+          0.9942995917118288
+        ],
+        "mech_over_roc": [
+          0.1289208851833614,
+          0.12861561855541961
+        ],
+        "mech_over_libdeflate": [
+          0.9172693123426772,
+          0.915097346881107
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "prefix-natural-4096": {
+        "candidate_over_control": 0.9980862441342195,
+        "candidate_over_control_per_24_orders": [
+          1.0008388264980392,
+          0.9994879878527406,
+          0.9948559464926894,
+          0.9971726448630674
+        ],
+        "mech_over_roc": [
+          0.6631344547010655,
+          0.6618653772485802
+        ],
+        "mech_over_libdeflate": [
+          1.1284454464483786,
+          1.126285877356025
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "prefix-natural-8192": {
+        "candidate_over_control": 1.0008352491240142,
+        "candidate_over_control_per_24_orders": [
+          1.0015659624431699,
+          1.0027613544850396,
+          0.999677857640833,
+          0.9993397277719056
+        ],
+        "mech_over_roc": [
+          0.8336412349227557,
+          0.8343375330339671
+        ],
+        "mech_over_libdeflate": [
+          1.0324305190569802,
+          1.0332928557436283
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "prefix-random-1024": {
+        "candidate_over_control": 0.9945889043869264,
+        "candidate_over_control_per_24_orders": [
+          0.9970407181022293,
+          0.9952308247007933,
+          0.9930836192901119,
+          0.9930060806822315
+        ],
+        "mech_over_roc": [
+          0.1041502214195755,
+          0.10358665461335138
+        ],
+        "mech_over_libdeflate": [
+          0.9658533759845658,
+          0.9606270510189033
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "prefix-random-8192": {
+        "candidate_over_control": 1.0001345651596503,
+        "candidate_over_control_per_24_orders": [
+          1.0110225489794993,
+          0.9881582342580506,
+          1.0043821655396348,
+          0.997119982343188
+        ],
+        "mech_over_roc": [
+          0.46178052980716566,
+          0.4618426693778826
+        ],
+        "mech_over_libdeflate": [
+          1.6657044171932782,
+          1.6659285629741083
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "prefix-random-1048576": {
+        "candidate_over_control": 1.0004178754947333,
+        "candidate_over_control_per_24_orders": [
+          1.000835873939,
+          1.000031829042313,
+          1.0006235736056655,
+          1.0001804365219096
+        ],
+        "mech_over_roc": [
+          0.9792399590340807,
+          0.9796491594164247
+        ],
+        "mech_over_libdeflate": [
+          1.3906172812023447,
+          1.3911983860867119
+        ],
+        "pooled_105": true,
+        "block_105": true
+      },
+      "prefix-periodic-1024": {
+        "candidate_over_control": 0.9972867129663066,
+        "candidate_over_control_per_24_orders": [
+          0.9918172002358724,
+          1.0007166040773625,
+          0.9961037423132677,
+          1.0005362281103665
+        ],
+        "mech_over_roc": [
+          0.13754507198551752,
+          0.1371718727251508
+        ],
+        "mech_over_libdeflate": [
+          0.9825412339296117,
+          0.9798753175395212
+        ],
+        "pooled_105": true,
+        "block_105": true
+      }
+    }
+  }
+]

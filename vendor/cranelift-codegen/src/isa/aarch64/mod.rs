@@ -22,12 +22,17 @@ use target_lexicon::{Aarch64Architecture, Architecture, OperatingSystem, Triple}
 
 // New backend:
 mod abi;
+mod block_layout;
+mod cold_tails;
 pub mod inst;
 mod lower;
 pub mod settings;
+mod spill_forwarding;
 
 #[cfg(all(test, feature = "unwind"))]
 mod cold_epilogues_tests;
+#[cfg(test)]
+mod zero_branch_tests;
 
 use self::inst::EmitInfo;
 
@@ -75,7 +80,15 @@ impl TargetIsa for AArch64Backend {
         want_disasm: bool,
         ctrl_plane: &mut ControlPlane,
     ) -> CodegenResult<CompiledCodeStencil> {
-        let (vcode, regalloc_result) = self.compile_vcode(func, domtree, ctrl_plane)?;
+        let (vcode, mut regalloc_result) = self.compile_vcode(func, domtree, ctrl_plane)?;
+        if func.forward_spill_reloads {
+            spill_forwarding::forward(&vcode, &mut regalloc_result);
+            if self.flags.regalloc_checker() {
+                let mut checker = regalloc2::checker::Checker::new(&vcode, vcode.abi.machine_env());
+                checker.prepare(&regalloc_result);
+                checker.run().expect("spill forwarding preserves register allocation");
+            }
+        }
 
         // The Apple AArch64 frame and return (including any authentication)
         // are function-wide. Its epilogue emits no separate unwind records.
@@ -86,13 +99,53 @@ impl TargetIsa for AArch64Backend {
                 OperatingSystem::Darwin(_) | OperatingSystem::MacOSX { .. }
             ))
         .then(|| inst::LabelUse::Branch26.max_neg_range());
-        let emit_result = vcode.emit_with_cold_epilogue_sharing(
+        let mut emit_result = vcode.emit_with_cold_epilogue_sharing(
             &regalloc_result,
             want_disasm,
             &self.flags,
             ctrl_plane,
             cold_epilogue_branch_range,
         );
+        if cold_epilogue_branch_range.is_some()
+            && (func.aarch64_share_cold_tails || func.aarch64_share_frame_copies)
+            && !want_disasm
+            && !self.flags.machine_code_cfg_info()
+            && !self.isa_flags.use_bti()
+            && emit_result.value_labels_ranges.is_empty()
+            && func.aarch64_block_layout.is_empty()
+            && let Some(cold) = emit_result.cold_code.clone()
+        {
+            // Unsupported metadata/layouts leave the emitted buffer unchanged.
+            let cold_removed = if func.aarch64_share_cold_tails {
+                cold_tails::apply(&mut emit_result.buffer, cold.clone())
+            } else {
+                Some(0)
+            };
+            if func.aarch64_share_frame_copies
+                && func.dynamic_stack_slots.is_empty()
+                && let Some(cold_removed) = cold_removed
+                && let Ok(cold_removed) = u32::try_from(cold_removed)
+                && let Some(end) = cold.end.checked_sub(cold_removed)
+            {
+                cold_tails::share_frame_copies(&mut emit_result.buffer, cold.start..end);
+            }
+        }
+        if !func.aarch64_block_layout.is_empty() {
+            if want_disasm
+                || self.flags.machine_code_cfg_info()
+                || self.isa_flags.use_bti()
+                || !emit_result.value_labels_ranges.is_empty()
+                || !matches!(func.signature.call_conv, crate::isa::CallConv::AppleAarch64)
+            {
+                return Err(crate::CodegenError::Unsupported("AArch64 block layout metadata".into()));
+            }
+            block_layout::apply(
+                &mut emit_result.buffer,
+                &func.aarch64_block_layout,
+                func.aarch64_block_layout_literal_start,
+            )
+                .ok_or_else(|| crate::CodegenError::Unsupported("AArch64 block layout profile".into()))?;
+        }
         let value_labels_ranges = emit_result.value_labels_ranges;
         let buffer = emit_result.buffer;
 

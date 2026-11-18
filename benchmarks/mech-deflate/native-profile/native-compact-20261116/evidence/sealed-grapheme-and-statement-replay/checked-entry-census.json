@@ -1,0 +1,103 @@
+{
+  "encoder_sha256": "4e9d5ba4767252f5583aa50c2c56b3e320bb7d4a13a075b127fa92e83fb8b2d3",
+  "encoder_text_bytes": 66192,
+  "checked_entry_text_bytes": 49280,
+  "class_bytes": {
+    "instructions": 49280,
+    "stack_memory": 13076,
+    "branches_and_calls": 12400
+  },
+  "disjoint_repeated_region_rows": [
+    {
+      "sites": 51,
+      "instructions_each": 20,
+      "gross_deduplicated_ir": 1000,
+      "entries": [
+        2846,
+        3011,
+        3032,
+        3054,
+        3124,
+        3169,
+        3188,
+        3231,
+        3520,
+        3569,
+        3850,
+        3947,
+        4141,
+        4163,
+        4184,
+        4205,
+        4326,
+        4391,
+        4433,
+        4454,
+        4663,
+        4749,
+        4826,
+        4860,
+        4997,
+        5052,
+        5156,
+        5212,
+        5315,
+        5453,
+        5584,
+        5612,
+        5725,
+        5829,
+        5935,
+        5954,
+        6574,
+        7023,
+        7107,
+        7187,
+        7208,
+        7383,
+        7407,
+        7435,
+        7462,
+        7542,
+        7624,
+        7650,
+        7672,
+        7726,
+        7754
+      ]
+    },
+    {
+      "sites": 15,
+      "instructions_each": 27,
+      "gross_deduplicated_ir": 378,
+      "entries": [
+        380,
+        956,
+        970,
+        1036,
+        1050,
+        1289,
+        1303,
+        1491,
+        1505,
+        1580,
+        1594,
+        1800,
+        1814,
+        2016,
+        2066
+      ]
+    },
+    {
+      "sites": 2,
+      "instructions_each": 16,
+      "gross_deduplicated_ir": 16,
+      "entries": [
+        2835,
+        7523
+      ]
+    }
+  ],
+  "region_shapes_sha256": "b5cccb9657102c544e4548d68c97a54c8c335c7a9aac1214835c24c4bd02df42",
+  "region_report_sha256": "6027e5c6b8649fe0684d47495f4509188f7485ecfa0228230ea6ff25e0a19202"
+}

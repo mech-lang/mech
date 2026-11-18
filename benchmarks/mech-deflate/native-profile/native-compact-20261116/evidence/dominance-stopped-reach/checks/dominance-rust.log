@@ -1,0 +1,10 @@
+
+running 4 tests
+test dominance_matches_original_stopped_reachability ... checked 46890 queries against the original stopped search
+ok
+test reach::tests::every_short_graph_start_and_stop_matches_independent_traversal ... ok
+test reach::tests::memo_reuses_exact_context_and_evicts_without_changing_old_rows ... ok
+test reach::tests::parallel_successors_and_stopped_cycles_match_independent_traversal ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+

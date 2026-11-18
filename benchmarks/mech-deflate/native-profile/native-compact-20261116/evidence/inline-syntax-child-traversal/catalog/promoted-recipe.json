@@ -1,0 +1,34 @@
+{
+  "sources": {
+    "src/syntax/src/document/retained_sequence.rs": "8f6c71cc6232af4a72adfc28d12afd5a17366a89cca83efe2ab0ddc12e4a57aa",
+    "benchmarks/mech-deflate/native-profile/compile_profile.rs": "7f2250066bdcce21a0542d02f3327f41a35b6037e0d265a3779b6f02f3155118",
+    "benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py": "b4d299fc19f2e7608732d4d2eae50c5179c2a27e6f4642f4a1ead9f804f319bb"
+  },
+  "compiler_sha256": "aa481982d6b3a0fc49dc2d956689c61dd88f6b44a826586ed57020723691e2a4",
+  "recipe_sha256": "b4d299fc19f2e7608732d4d2eae50c5179c2a27e6f4642f4a1ead9f804f319bb",
+  "artifacts": {
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "matched_comparison_sha256": "b79046c3c492f8dcc29f6a6e12df5e4fb9c06828b190c2964e18350369f6760b",
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/semantic-body-dispatch/catalog/promoted/rebuild",
+    "--variant",
+    "frame-copies",
+    "--compiler-opt-level",
+    "3",
+    "--direct-source",
+    "--preselect-root-inlining",
+    "--skip-refused-general-ssa",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target"
+  ],
+  "catalog_work_seconds": 0.105063,
+  "supported_mode_flag": "MECH_COMPILE_OVERLAP_SOURCE_CATALOG",
+  "object_text_bytes": 71192,
+  "rebuild_sha256": "0b8fc63a9f166985ef50a61cbac766f10187d54a9aaea74b32e9a06f30b21397"
+}

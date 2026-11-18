@@ -1,0 +1,104 @@
+{
+  "graph_sha256": "f7d66d6cca3e1d1620d81fe10bbc7c39cbbb6e273facf8daa7d96b8f55f1a610",
+  "scan_sha256": "d3d705a78194675a7b92e1c16325dbfbb870aa3c2f305fdb89e46149ae6a012d",
+  "windows": "1534:1776:1544,990:1232:996;8421:8488:82,35080:35147:7042;6390:6474:6523,2174:2258:2208;2670:17461:2707,2303:16060:2336;2600:2645:2620,2391:2436:2409;1780:1843:1815,1271:1332:1300",
+  "families": [
+    [
+      {
+        "entry": 1534,
+        "continuation": 1776,
+        "origin": 1544,
+        "blocks": 173,
+        "work": 137
+      },
+      {
+        "entry": 990,
+        "continuation": 1232,
+        "origin": 996,
+        "blocks": 173,
+        "work": 137
+      }
+    ],
+    [
+      {
+        "entry": 8421,
+        "continuation": 8488,
+        "origin": 82,
+        "blocks": 44,
+        "work": 67
+      },
+      {
+        "entry": 35080,
+        "continuation": 35147,
+        "origin": 7042,
+        "blocks": 44,
+        "work": 67
+      }
+    ],
+    [
+      {
+        "entry": 6390,
+        "continuation": 6474,
+        "origin": 6523,
+        "blocks": 84,
+        "work": 59
+      },
+      {
+        "entry": 2174,
+        "continuation": 2258,
+        "origin": 2208,
+        "blocks": 84,
+        "work": 59
+      }
+    ],
+    [
+      {
+        "entry": 2670,
+        "continuation": 17461,
+        "origin": 2707,
+        "blocks": 78,
+        "work": 57
+      },
+      {
+        "entry": 2303,
+        "continuation": 16060,
+        "origin": 2336,
+        "blocks": 78,
+        "work": 57
+      }
+    ],
+    [
+      {
+        "entry": 2600,
+        "continuation": 2645,
+        "origin": 2620,
+        "blocks": 50,
+        "work": 51
+      },
+      {
+        "entry": 2391,
+        "continuation": 2436,
+        "origin": 2409,
+        "blocks": 50,
+        "work": 51
+      }
+    ],
+    [
+      {
+        "entry": 1780,
+        "continuation": 1843,
+        "origin": 1815,
+        "blocks": 45,
+        "work": 48
+      },
+      {
+        "entry": 1271,
+        "continuation": 1332,
+        "origin": 1300,
+        "blocks": 45,
+        "work": 48
+      }
+    ]
+  ],
+  "weighted_duplicate_operations": 419
+}

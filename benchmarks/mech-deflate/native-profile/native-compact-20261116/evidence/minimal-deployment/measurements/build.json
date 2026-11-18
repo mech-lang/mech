@@ -1,0 +1,247 @@
+{
+  "scope": "Raw level-12 DEFLATE deployment size with a common C file driver and final link",
+  "inputs": {
+    "mech_encoder": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+    "mech_metadata": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+    "mech_runtime": "147fef325ee8f2ac03e7385ba9ae1465e3e1dc3fdbe9c559b6ced2db683fc673",
+    "roc_encoder": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+    "roc_header": "29774c638bfd88af975ae8f13560c7c8529c78b3feb8308ffbadf21651e3e3db",
+    "c_encoder": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+    "c_header": "1bb50a3ff8c6980c1031c0e9bb324cf99df51379fdca77a358644cca841765cc",
+    "c_alloc": "d54cc202e299bcd92c533638846c979348dc9a5b947c95f150d31434e9ba232d",
+    "c_arm": "1294dffb8fc3dcde0298edcb15c2314e630c17cdb9f7f1b7de1790cb27aaa7ad",
+    "mimalloc": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874",
+    "pinned_allocator": "050a1d160cc235d5321866a45840c76b5dadeaac30630cfed17eb19615ded1b6"
+  },
+  "sources": {
+    "bridge.rs": "5f9c3951b4e7834ae3e15c7585ac06cacacd712282dcd2bb389f7e7ef1208484",
+    "build.py": "364e1227e0664c6cd417fb1b5d3bded60473b9034e78a3b7a0cb332ca7b52943",
+    "deploy.h": "b7dffcb327b51e62b7199d5dfa0bc0523846606aada8d28cd465a6bac569d2f0",
+    "libdeflate.c": "dbc8c9a89f588ade58b619cae78dba8a09456756ecf51b1d6cd5a38bbf237a63",
+    "main.c": "0b14928e98bb743f4cd2dd037fd56a22a7b65f682fe1ba54a9e5100effaac9d9",
+    "native_abi.rs": "4326ba05ce274533f10551807668c8ecf4fd2e914bda0ce873e89519f6435f85",
+    "roc.c": "4bc6c66cbd42f9b25f814ed3862b2e70a5f1b7749233cf19fc5f9e7bc9191c37",
+    "verify.py": "54ef122e39e78a885711af85a106c7b0b8d29ce46376b97c47c9183e7b5928ac"
+  },
+  "commands": {
+    "compile-main": [
+      "/usr/bin/clang",
+      "-arch",
+      "arm64",
+      "-mmacosx-version-min=15.0",
+      "-O2",
+      "-std=gnu11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-c",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/source/main.c",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o"
+    ],
+    "compile-roc": [
+      "/usr/bin/clang",
+      "-arch",
+      "arm64",
+      "-mmacosx-version-min=15.0",
+      "-O2",
+      "-std=gnu11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-I",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/published-peer-inputs/peer-inputs/roc-deflate/roc-deflate-671077457ff7ef3a3d44caf715a3fc595addf379/benchmark/echo-clock",
+      "-c",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/source/roc.c",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc.o"
+    ],
+    "compile-libdeflate": [
+      "/usr/bin/clang",
+      "-arch",
+      "arm64",
+      "-mmacosx-version-min=15.0",
+      "-O2",
+      "-std=gnu11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-I",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/libdeflate/libdeflate-92e6a0db9fa848d742f9eb286c92afc60f2c3dda",
+      "-c",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/source/libdeflate.c",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate.o"
+    ],
+    "compile-mech": [
+      "rustc",
+      "+nightly-2026-03-03",
+      "--edition=2024",
+      "--target=aarch64-apple-darwin",
+      "--crate-name",
+      "mech_deploy",
+      "--crate-type=staticlib",
+      "-D",
+      "warnings",
+      "-C",
+      "opt-level=3",
+      "-C",
+      "debuginfo=0",
+      "-C",
+      "codegen-units=1",
+      "-C",
+      "panic=abort",
+      "--print",
+      "native-static-libs",
+      "--extern",
+      "mech_gpu=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/rust/bridge.rs",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a"
+    ],
+    "link-mech": [
+      "/usr/bin/clang",
+      "-arch",
+      "arm64",
+      "-mmacosx-version-min=15.0",
+      "-Wl,-dead_strip",
+      "-Wl,-map,/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/mech.map",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+      "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+      "-lSystem",
+      "-lc",
+      "-lm",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/mech"
+    ],
+    "strip-mech": [
+      "/usr/bin/strip",
+      "-S",
+      "-x",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/mech-stripped"
+    ],
+    "sections-mech-unstripped": [
+      "/usr/bin/size",
+      "-m",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/mech"
+    ],
+    "sections-mech-stripped": [
+      "/usr/bin/size",
+      "-m",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/mech-stripped"
+    ],
+    "link-roc": [
+      "/usr/bin/clang",
+      "-arch",
+      "arm64",
+      "-mmacosx-version-min=15.0",
+      "-Wl,-dead_strip",
+      "-Wl,-map,/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc.map",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc.o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/roc/encoder.a",
+      "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc"
+    ],
+    "strip-roc": [
+      "/usr/bin/strip",
+      "-S",
+      "-x",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc-stripped"
+    ],
+    "sections-roc-unstripped": [
+      "/usr/bin/size",
+      "-m",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc"
+    ],
+    "sections-roc-stripped": [
+      "/usr/bin/size",
+      "-m",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc-stripped"
+    ],
+    "link-libdeflate": [
+      "/usr/bin/clang",
+      "-arch",
+      "arm64",
+      "-mmacosx-version-min=15.0",
+      "-Wl,-dead_strip",
+      "-Wl,-map,/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate.map",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate.o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/libdeflate/encoder.o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-alloc.o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-arm.o",
+      "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate"
+    ],
+    "strip-libdeflate": [
+      "/usr/bin/strip",
+      "-S",
+      "-x",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate-stripped"
+    ],
+    "sections-libdeflate-unstripped": [
+      "/usr/bin/size",
+      "-m",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate"
+    ],
+    "sections-libdeflate-stripped": [
+      "/usr/bin/size",
+      "-m",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate-stripped"
+    ],
+    "clang-version": [
+      "/usr/bin/clang",
+      "--version"
+    ],
+    "rustc-version": [
+      "rustc",
+      "+nightly-2026-03-03",
+      "--version",
+      "--verbose"
+    ],
+    "os-version": [
+      "/usr/bin/sw_vers"
+    ],
+    "machine": [
+      "/usr/bin/uname",
+      "-m"
+    ]
+  },
+  "executables": {
+    "mech": {
+      "unstripped": {
+        "bytes": 668392,
+        "sha256": "3f1e717a9ce70e2c1305935f66c46e08af2ef7ed9a8b792653c1b698382378bd"
+      },
+      "stripped": {
+        "bytes": 575632,
+        "sha256": "04bfb613d9795c8351996674e3fcd030b0b713bae4f84090c20087eb784868b0"
+      }
+    },
+    "roc": {
+      "unstripped": {
+        "bytes": 199680,
+        "sha256": "77faae9d699d51fa9f196fcdcd29d7bc3bd10c3a57bf91f9d2fb66b99e00c34b"
+      },
+      "stripped": {
+        "bytes": 191920,
+        "sha256": "522b13bd48a7fe24b671111101bef9c15a5e15ffd8fa35e4a68458edc6f2a52d"
+      }
+    },
+    "libdeflate": {
+      "unstripped": {
+        "bytes": 161400,
+        "sha256": "b463350f9aa9d318c0a0c32a86d0330841b8abbc8ef094359ccb339b84b7830b"
+      },
+      "stripped": {
+        "bytes": 155760,
+        "sha256": "a307c199dae635ef841e6909410452cf9812ed32a30662cd219799c7925f391d"
+      }
+    }
+  }
+}

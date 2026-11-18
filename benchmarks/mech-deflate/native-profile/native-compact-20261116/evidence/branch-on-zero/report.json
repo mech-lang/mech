@@ -1,0 +1,299 @@
+{
+  "source_commit": "c6f7425eb27284c58a77bc40bc26200e66b414c1",
+  "parent": "7179ed52634902817ca9d1c954fd488322b91f2e",
+  "base_pr_973": "9087b1f07727a9bfcb7c09059f48edaca6dc2301",
+  "scope": "Apple M1 source through final executable link. Compilers, runtimes and adapters prebuilt.",
+  "artifact_identities": {
+    "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+    "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+    "mech-worker": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9"
+  },
+  "encoder_text_saved_bytes": 192,
+  "encoder_text_x": {
+    "roc": 1.2438990571270105,
+    "libdeflate": 1.9354908306364618
+  },
+  "source_through_link_x": {
+    "roc": 1.3451064692978825,
+    "libdeflate": 8.356962178467244
+  },
+  "build_medians": {
+    "mech-control": {
+      "source_to_native": 3.964513916056603,
+      "stage_outputs": 0.0002657705917954445,
+      "link": 0.04824916645884514,
+      "total": 4.013497499981895,
+      "compiler_peak_rss_bytes": 401498112.0,
+      "compiler_phases_seconds": {
+        "parse": 2.1084859165000003,
+        "catalog": 0.068505625,
+        "frontend": 0.23051197950000002,
+        "artifact": 0.007089229,
+        "encode": 0.0026124375,
+        "native": 1.521629271
+      }
+    },
+    "mech-experiment": {
+      "source_to_native": 3.9644130202941597,
+      "stage_outputs": 0.00027108355425298214,
+      "link": 0.04036345798522234,
+      "total": 4.00611072871834,
+      "compiler_peak_rss_bytes": 401481728.0,
+      "compiler_phases_seconds": {
+        "parse": 2.1070028125,
+        "catalog": 0.0684655625,
+        "frontend": 0.2307690625,
+        "artifact": 0.0071102915,
+        "encode": 0.002610583,
+        "native": 1.519041229
+      }
+    },
+    "roc": {
+      "compile": 2.9440491255372763,
+      "link": 0.03430212498642504,
+      "total": 2.978285228833556,
+      "compiler_peak_rss_bytes": 391741440.0
+    },
+    "libdeflate": {
+      "compile": 0.4462289579678327,
+      "link": 0.03334308369085193,
+      "total": 0.47937404084950686,
+      "compiler_peak_rss_bytes": 71507968.0
+    }
+  },
+  "paired_build_fractional_change": {
+    "estimate": -0.002016591387328903,
+    "lower": -0.003655256953196573,
+    "upper": -0.0004020870512192465
+  },
+  "sizes": {
+    "mech-control": {
+      "encoder_text_bytes": 71960,
+      "encoder_object_bytes": 159576,
+      "executable_text_bytes": 474884,
+      "executable_bytes": 956056
+    },
+    "mech-experiment": {
+      "encoder_text_bytes": 71768,
+      "encoder_object_bytes": 159384,
+      "executable_text_bytes": 474692,
+      "executable_bytes": 956056
+    },
+    "roc": {
+      "encoder_text_bytes": 57696,
+      "encoder_object_bytes": 79160,
+      "executable_text_bytes": 150416,
+      "executable_bytes": 230600
+    },
+    "libdeflate": {
+      "encoder_text_bytes": 37080,
+      "encoder_object_bytes": 52128,
+      "executable_text_bytes": 129900,
+      "executable_bytes": 210168
+    }
+  },
+  "root_code_bytes": [
+    51448,
+    51240
+  ],
+  "root_frame_bytes": [
+    3744,
+    3728
+  ],
+  "peak_stack_bytes": [
+    5296,
+    5280
+  ],
+  "peak_runtime_private_payload_bytes": {
+    "mech-control": 10548878,
+    "mech-experiment": 10548878
+  },
+  "root_census": {
+    "smaller": {
+      "root_instructions_including_padding": 12864,
+      "compare_zero_followed_by_equality_branch": 123,
+      "cbz_cbnz": 809,
+      "cmp": 975,
+      "b_eq_ne": 323
+    },
+    "candidate": {
+      "root_instructions_including_padding": 12812,
+      "compare_zero_followed_by_equality_branch": 25,
+      "cbz_cbnz": 908,
+      "cmp": 877,
+      "b_eq_ne": 224
+    }
+  },
+  "compiler_tests": {
+    "passed": 209,
+    "initial_failure": "outdated settings::tests::display_default fixture"
+  },
+  "checked_failure_shapes": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "prefix-periodic-4096",
+    "prefix-repeated-16384",
+    "heldout-mixed-131073"
+  ],
+  "matrix_exact_calls": 616,
+  "all_run_floor_counts": [
+    {
+      "order": "forward",
+      "roc": {
+        "mech-control": 81,
+        "mech-experiment": 81
+      },
+      "libdeflate": {
+        "mech-control": 61,
+        "mech-experiment": 61
+      },
+      "peer_losses": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "peer_gains": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "verified_timed_calls": 982656
+    },
+    {
+      "order": "reverse",
+      "roc": {
+        "mech-control": 81,
+        "mech-experiment": 81
+      },
+      "libdeflate": {
+        "mech-control": 61,
+        "mech-experiment": 61
+      },
+      "peer_losses": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "peer_gains": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "verified_timed_calls": 982656
+    }
+  ],
+  "runtime_timing_only_decision": "Unresolved",
+  "v1_runtime_rejected": [],
+  "v1_runtime_unresolved": [
+    "branch-on-zero-aligned-focus-zero-branch-cases: missing run binding for environment_sha256",
+    "branch-on-zero-aligned-focus-zero-branch-cases: missing run binding for contract_sha256",
+    "branch-on-zero-aligned-focus-zero-branch-cases-reverse: missing run binding for environment_sha256",
+    "branch-on-zero-aligned-focus-zero-branch-cases-reverse: missing run binding for contract_sha256",
+    "distinct-file-duplicate-control: missing repeatability binding for environment_sha256",
+    "distinct-file-duplicate-control: missing repeatability binding for contract_sha256"
+  ],
+  "v1_bound_open_cases": [],
+  "v1_regression_cases": [],
+  "duplicate_control_studies": {
+    "repeatability": {
+      "prefix-random-16384": {
+        "batch": 32,
+        "seconds": 13.693993417080492,
+        "aa": {
+          "estimate": -0.0002313409363129404,
+          "lower": -0.0011056480278259784,
+          "upper": 0.0006382385391834333
+        },
+        "ab": {
+          "estimate": -0.0012825722414347984,
+          "lower": -0.002037097386882958,
+          "upper": -0.0005237465230218952
+        },
+        "median_batch_ms": 11.057708
+      },
+      "prefix-repeated-4096": {
+        "batch": 32,
+        "seconds": 4.375344332773238,
+        "aa": {
+          "estimate": -5.2147125231272184e-06,
+          "lower": -0.000489468155660977,
+          "upper": 0.0004732392454651624
+        },
+        "ab": {
+          "estimate": -0.00024129802312866655,
+          "lower": -0.0007086461446530468,
+          "upper": 0.0002391972271609255
+        },
+        "median_batch_ms": 2.9419155
+      },
+      "prefix-random-4096": {
+        "batch": 32,
+        "seconds": 5.116075207944959,
+        "aa": {
+          "estimate": -0.00013457847409525936,
+          "lower": -0.0008789195661282889,
+          "upper": 0.0006068155096006222
+        },
+        "ab": {
+          "estimate": -0.00026369359030098405,
+          "lower": -0.000849776102326727,
+          "upper": 0.0003304115784479311
+        },
+        "median_batch_ms": 3.6683725000000003
+      }
+    },
+    "bound-repeatability": {
+      "prefix-random-16384": {
+        "batch": 32,
+        "seconds": 13.696306665893644,
+        "aa": {
+          "estimate": 0.001230225604027746,
+          "lower": 0.0002769725490454622,
+          "upper": 0.002204548874269019
+        },
+        "ab": {
+          "estimate": -0.0009889875981659024,
+          "lower": -0.0018017711019884253,
+          "upper": -0.00018841795827984065
+        },
+        "median_batch_ms": 11.061290500000002
+      },
+      "prefix-repeated-4096": {
+        "batch": 32,
+        "seconds": 4.380548333283514,
+        "aa": {
+          "estimate": -0.0005406863161681041,
+          "lower": -0.0010688901903863623,
+          "upper": -1.871907899742009e-05
+        },
+        "ab": {
+          "estimate": -0.0003015159372735665,
+          "lower": -0.0007915248854885037,
+          "upper": 0.00022021129884630675
+        },
+        "median_batch_ms": 2.9430209999999994
+      },
+      "prefix-random-4096": {
+        "batch": 32,
+        "seconds": 5.115619082935154,
+        "aa": {
+          "estimate": 0.00028788569158666455,
+          "lower": -0.00036619747746569065,
+          "upper": 0.0009495994372854533
+        },
+        "ab": {
+          "estimate": 0.000282546370357073,
+          "lower": -0.00045454427384383767,
+          "upper": 0.0010477036832270414
+        },
+        "median_batch_ms": 3.6697494999999996
+      }
+    }
+  },
+  "earlier_unaligned_screen": {
+    "object_text_bytes": 71752,
+    "decision": "Reject",
+    "empty": {
+      "estimate": 0.015601417758420943,
+      "lower": 0.007286222548237742,
+      "upper": 0.02499932050547593
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "actor": "mech-owner-ranges",
+  "seconds": {
+    "frontend": 4.003214833326638,
+    "native": 2.2303467500023544,
+    "link": 0.04774204082787037,
+    "total": 6.282081749755889,
+    "parse": 3.534052166
+  },
+  "encoder_sha256": "172a40de486b0c53ecfb94ce383ac9036f17b12b84f632005421ded5d04f6ce0",
+  "encoder_bytes": 160008,
+  "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-owner-ranges-current/order-2/mech-owner-ranges/compressor",
+  "executable_sha256": "49f5636fd42c951c7ad01d9fa5476d93f0be8ba908c19fb94503f402f2eaefc1"
+}

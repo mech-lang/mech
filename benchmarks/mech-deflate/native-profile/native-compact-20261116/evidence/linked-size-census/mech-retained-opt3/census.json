@@ -1,0 +1,331 @@
+{
+  "executable_file_breakdown": {
+    "header and load commands": 2216,
+    "__TEXT,__text": 475444,
+    "__TEXT,__stubs": 1044,
+    "__TEXT,__stub_helper": 1068,
+    "__TEXT,__gcc_except_tab": 8484,
+    "__TEXT,__const": 115579,
+    "__TEXT,__cstring": 13145,
+    "__TEXT,__unwind_info": 8088,
+    "__TEXT,__eh_frame": 45016,
+    "__DATA_CONST,__got": 56,
+    "__DATA_CONST,__mod_init_func": 8,
+    "__DATA_CONST,__const": 18168,
+    "__DATA,__la_symbol_ptr": 696,
+    "__DATA,__data": 8272,
+    "__DATA,__thread_vars": 192,
+    "__DATA,__thread_data": 40,
+    "rebases": 376,
+    "binding": 128,
+    "lazy binding": 1888,
+    "exports trie": 29688,
+    "function starts": 1744,
+    "symbols": 63024,
+    "indirect symbols": 724,
+    "symbol names": 130040,
+    "signature": 7544,
+    "padding and other unassigned bytes": 23384
+  },
+  "encoder_object_file_breakdown": {
+    "header and load commands": 368,
+    "__TEXT,__text": 72520,
+    "__TEXT,__const": 80040,
+    "section relocations": 3984,
+    "symbols": 1168,
+    "symbol names": 2048,
+    "padding and other unassigned bytes": 8
+  },
+  "linked_text": {
+    "by_family": {
+      "Rust standard libraries": 237384,
+      "encoder": 72520,
+      "allocator": 64000,
+      "benchmark adapter objects": 52156,
+      "JSON and serialization libraries": 29928,
+      "inflation support": 14044,
+      "fixed language or encoder runtime": 5400,
+      "text padding and unassigned bytes": 12
+    },
+    "by_object": {
+      "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib(std-243c6aee4b215ad3.std.bdd3e78e9dcdd1d8-cgu.0.rcgu.o)": 165528,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-cold-tails-current/warmup/mech-control/native/program.o": 72520,
+      "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o": 64000,
+      "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib(core-bde75c546807f175.core.c1d22ed8524e785f-cgu.0.rcgu.o)": 37160,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o": 23340,
+      "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib(rustc_demangle-b3e37f33a642b130.rustc_demangle.cf6becf3a37c342f-cgu.0.rcgu.o)": 23028,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib(miniz_oxide-de9ad10a1ce6fd65.miniz_oxide.a70bd9309d5c932a-cgu.1.rcgu.o)": 12228,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o": 12204,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib(serde_json-59203b754533b18b.serde_json.ab2cf19e8e2333dc-cgu.03.rcgu.o)": 7724,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o": 6892,
+      "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib(gimli-703561917a398fbb.gimli.8118f64a56b11cfa-cgu.0.rcgu.o)": 5472,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib(serde_json-59203b754533b18b.serde_json.ab2cf19e8e2333dc-cgu.00.rcgu.o)": 4652,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib(serde_json-59203b754533b18b.serde_json.ab2cf19e8e2333dc-cgu.04.rcgu.o)": 4544,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib(serde_json-59203b754533b18b.serde_json.ab2cf19e8e2333dc-cgu.07.rcgu.o)": 3624,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib(libmech_gpu_runtime.mech_gpu.5464a02af6bfaf00-cgu.0.rcgu.o)": 3212,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o": 3200,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o": 2952,
+      "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib(alloc-18dda72c6f7ec0d8.alloc.c316d1bac71f694f-cgu.0.rcgu.o)": 2784,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib(serde_json-59203b754533b18b.serde_json.ab2cf19e8e2333dc-cgu.05.rcgu.o)": 2664,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib(serde_json-59203b754533b18b.serde_json.ab2cf19e8e2333dc-cgu.01.rcgu.o)": 2440,
+      "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib(object-5077a2fd15e33084.object.72e341835cb8c698-cgu.0.rcgu.o)": 1868,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o": 1820,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o": 1744,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib(zmij-87bd17fd554c7319.zmij.76272af10c0d355c-cgu.0.rcgu.o)": 1048,
+      "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib(addr2line-6108d313f559a356.addr2line.5891f518ac0130bb-cgu.0.rcgu.o)": 996,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib(serde_core-9868830aaa438a59.serde_core.4b4896fa293ec91b-cgu.0.rcgu.o)": 992,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib(mech_engine-e70033086e54c523.mech_engine.48e724ebfad39bbf-cgu.0.rcgu.o)": 892,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib(serde_json-59203b754533b18b.serde_json.ab2cf19e8e2333dc-cgu.10.rcgu.o)": 820,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib(miniz_oxide-de9ad10a1ce6fd65.miniz_oxide.a70bd9309d5c932a-cgu.3.rcgu.o)": 816,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib(libmech_gpu_runtime.mech_gpu.5464a02af6bfaf00-cgu.1.rcgu.o)": 720,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib(adler2-61136dca6b80b8c7.adler2.85cd6532fea84679-cgu.0.rcgu.o)": 668,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib(itoa-1df8cde65aa3f829.itoa.6c5b48aac69b4cbc-cgu.0.rcgu.o)": 644,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib(libmech_gpu_runtime.mech_gpu.5464a02af6bfaf00-cgu.2.rcgu.o)": 576,
+      "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib(panic_unwind-518d241de9cc5194.panic_unwind.1aaad04d1eb1ca78-cgu.0.rcgu.o)": 548,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib(serde_json-59203b754533b18b.serde_json.ab2cf19e8e2333dc-cgu.08.rcgu.o)": 436,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib(serde_json-59203b754533b18b.serde_json.ab2cf19e8e2333dc-cgu.09.rcgu.o)": 340,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib(miniz_oxide-de9ad10a1ce6fd65.miniz_oxide.a70bd9309d5c932a-cgu.2.rcgu.o)": 332,
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o": 4
+    },
+    "largest_symbols_by_family": {
+      "benchmark adapter objects": [
+        [
+          6088,
+          "__RINvXs5_NtCseHa8un3MfdE_10serde_json2deQINtB6_12DeserializerNtNtB8_4read9SliceReadENtNtCs6sJq4HyP6Vb_10serde_core2de12Deserializer18deserialize_structNtNvXNvCs2fnfepAsUKT_11mech_workers_1__NtB2v_4CaseNtB1l_11Deserialize11deserialize9___VisitorEB2v_"
+        ],
+        [
+          5792,
+          "__RNvCs2fnfepAsUKT_11mech_worker4main"
+        ],
+        [
+          5240,
+          "__RNCINvCs2fnfepAsUKT_11mech_worker3runINtNtNtNtCsgirOGyZpP7g_3std2io8buffered9bufreader9BufReaderNtNtBG_5stdio5StdinEE0B4_"
+        ],
+        [
+          2656,
+          "__RINvXNtNtCseHa8un3MfdE_10serde_json5value2deNtB5_5ValueNtNtCs6sJq4HyP6Vb_10serde_core2de11Deserialize11deserializeQINtNtB7_2de12DeserializerNtNtB7_4read7StrReadEECs2fnfepAsUKT_11mech_worker.llvm.15639477817532575671"
+        ],
+        [
+          2444,
+          "__RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtBc_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB3M_11VacantEntryB1D_B1Y_E12insert_entry0ECs2fnfepAsUKT_11mech_worker"
+        ],
+        [
+          1996,
+          "__RINvXNtNtCseHa8un3MfdE_10serde_json5value2deNtB5_5ValueNtNtCs6sJq4HyP6Vb_10serde_core2de11Deserialize11deserializeQINtNtB7_2de12DeserializerNtNtB7_4read9SliceReadEECs2fnfepAsUKT_11mech_worker.llvm.15639477817532575671"
+        ],
+        [
+          1276,
+          "__RINvXNvXNtNtCseHa8un3MfdE_10serde_json5value2deNtB8_5ValueNtNtCs6sJq4HyP6Vb_10serde_core2de11Deserialize11deserializeNtB3_12ValueVisitorNtBW_7Visitor9visit_mapINtNtBa_2de9MapAccessNtNtBa_4read9SliceReadEECs2fnfepAsUKT_11mech_worker"
+        ],
+        [
+          1276,
+          "__RINvXNvXNtNtCseHa8un3MfdE_10serde_json5value2deNtB8_5ValueNtNtCs6sJq4HyP6Vb_10serde_core2de11Deserialize11deserializeNtB3_12ValueVisitorNtBW_7Visitor9visit_mapINtNtBa_2de9MapAccessNtNtBa_4read7StrReadEECs2fnfepAsUKT_11mech_worker"
+        ]
+      ],
+      "fixed language or encoder runtime": [
+        [
+          952,
+          "__RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate"
+        ],
+        [
+          652,
+          "__RNvCs6g3KqgjKPff_11mech_engine24decode_source_input_name"
+        ],
+        [
+          576,
+          "_mech_compact_finish_byte_appends"
+        ],
+        [
+          532,
+          "__RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8writable"
+        ],
+        [
+          512,
+          "__RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap7release.llvm.2917503953146311762"
+        ],
+        [
+          280,
+          "__RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap15discard_private"
+        ],
+        [
+          212,
+          "_mech_compact_release_four"
+        ],
+        [
+          180,
+          "_mech_compact_release_three"
+        ]
+      ],
+      "inflation support": [
+        [
+          8648,
+          "__RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress"
+        ],
+        [
+          1192,
+          "__RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core15decompress_fast"
+        ],
+        [
+          1136,
+          "__RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core8transfer"
+        ],
+        [
+          1132,
+          "__RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree"
+        ],
+        [
+          816,
+          "__RNvNtCselbn9KGBQg0_11miniz_oxide7inflate23decompress_to_vec_inner"
+        ],
+        [
+          668,
+          "__RNvMCsbue3cjKZed1_6adler2NtB2_7Adler3211write_slice"
+        ],
+        [
+          180,
+          "__RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growCselbn9KGBQg0_11miniz_oxide.llvm.600209492166621739"
+        ],
+        [
+          152,
+          "__RINvNvMs2_NtCsgKscDXrlV49_5alloc7raw_vecINtB8_11RawVecInnerpE7reserve21do_reserve_and_handleNtNtBa_5alloc6GlobalECselbn9KGBQg0_11miniz_oxide"
+        ]
+      ],
+      "JSON and serialization libraries": [
+        [
+          2840,
+          "__RNvXs_NtCseHa8un3MfdE_10serde_json5valueNtB4_5ValueNtNtCsgDHHaSskbIF_4core3fmt7Display3fmt"
+        ],
+        [
+          2228,
+          "__RNvMs3_NtCseHa8un3MfdE_10serde_json4readNtB5_9SliceRead17position_of_index.llvm.5693943806721450204"
+        ],
+        [
+          2012,
+          "__RNvNtCseHa8un3MfdE_10serde_json5error10make_error"
+        ],
+        [
+          1480,
+          "__RINvNtCseHa8un3MfdE_10serde_json4read20parse_unicode_escapeNtB2_9SliceReadEB4_"
+        ],
+        [
+          1048,
+          "__RNvXs_NtCsa8VoaczDjgS_4zmij7privatedNtB4_6Sealed20write_to_zmij_buffer"
+        ],
+        [
+          804,
+          "__RINvXNtNtCseHa8un3MfdE_10serde_json5value3serNtB5_5ValueNtNtCs6sJq4HyP6Vb_10serde_core3ser9Serialize9serializeQINtNtB7_3ser10SerializerQNtNvXs_B5_BH_NtNtCsgDHHaSskbIF_4core3fmt7Display3fmt15WriterFormatterNtB1O_15PrettyFormatterEEB7_.llvm.9324294984727568139"
+        ],
+        [
+          720,
+          "__RNvMs3_NtCseHa8un3MfdE_10serde_json4readNtB5_9SliceRead14skip_to_escape"
+        ],
+        [
+          716,
+          "__RINvYQINtNtCseHa8un3MfdE_10serde_json3ser10SerializerQNtNvXs_NtB9_5valueNtBX_5ValueNtNtCsgDHHaSskbIF_4core3fmt7Display3fmt15WriterFormatterNtB7_15PrettyFormatterENtNtCs6sJq4HyP6Vb_10serde_core3ser10Serializer11collect_seqRINtNtCsgKscDXrlV49_5alloc3vec3VecB18_EEB9_"
+        ]
+      ],
+      "Rust standard libraries": [
+        [
+          9584,
+          "__RNvNtNtNtCsgirOGyZpP7g_3std12backtrace_rs9symbolize5gimli7resolve"
+        ],
+        [
+          7816,
+          "__RNvMs_NtNtNtCsgirOGyZpP7g_3std12backtrace_rs9symbolize5gimliNtB4_7Context3new"
+        ],
+        [
+          7048,
+          "__RNvMs4_NtNtCsb5bltwEJz6w_5gimli4read5dwarfINtB5_4UnitINtNtB7_12endian_slice11EndianSliceNtNtB9_9endianity12LittleEndianEjE3newCsgirOGyZpP7g_3std"
+        ],
+        [
+          6248,
+          "__RINvMNtNtCsgDHHaSskbIF_4core4cell4onceINtB3_8OnceCellINtNtB7_6result6ResultNtNtCs7BsjYuVGje9_9addr2line4line5LinesNtNtCsb5bltwEJz6w_5gimli4read5ErrorEE8try_initNCINvB2_11get_or_initNCINvMB1d_NtB1d_9LazyLines6borrowINtNtB1Q_12endian_slice11EndianSliceNtNtB1S_9endianity12LittleEndianEE0E0zECsgirOGyZpP7g_3std"
+        ],
+        [
+          3892,
+          "__RINvNtNtCsb5bltwEJz6w_5gimli4read4unit15parse_attributeINtNtB4_12endian_slice11EndianSliceNtNtB6_9endianity12LittleEndianEECsgirOGyZpP7g_3std"
+        ],
+        [
+          3752,
+          "__RNvMs1_NtCs7BsjYuVGje9_9addr2line8functionINtB5_8FunctionINtNtNtCsb5bltwEJz6w_5gimli4read12endian_slice11EndianSliceNtNtB10_9endianity12LittleEndianEE14parse_childrenCsgirOGyZpP7g_3std"
+        ],
+        [
+          3296,
+          "__RNvNtNtNtNtNtCsgirOGyZpP7g_3std3sys3pal4unix14stack_overflow11thread_info16set_current_info"
+        ],
+        [
+          3244,
+          "__RNvMsc_NtNtCsb5bltwEJz6w_5gimli4read8rnglistsINtB5_11RngListIterINtNtB7_12endian_slice11EndianSliceNtNtB9_9endianity12LittleEndianEE4nextCsgirOGyZpP7g_3std"
+        ]
+      ],
+      "allocator": [
+        [
+          2180,
+          "_mi_segments_page_alloc"
+        ],
+        [
+          2152,
+          "__mi_vsnprintf"
+        ],
+        [
+          1852,
+          "__mi_stats_print"
+        ],
+        [
+          1632,
+          "_mi_segment_reclaim"
+        ],
+        [
+          1544,
+          "_mi_segment_alloc"
+        ],
+        [
+          1396,
+          "_mi_segment_span_allocate"
+        ],
+        [
+          1232,
+          "__mi_os_alloc_huge_os_pages"
+        ],
+        [
+          1224,
+          "_mi_stats_merge_from"
+        ]
+      ],
+      "encoder": [
+        [
+          52016,
+          "_mech_compact_closed_checked"
+        ],
+        [
+          6768,
+          "_mech_compact_numeric_475_vector"
+        ],
+        [
+          1584,
+          "_mech_compact_numeric_3009"
+        ],
+        [
+          1376,
+          "_mech_compact_numeric_3009_no_growth"
+        ],
+        [
+          1152,
+          "_mech_compact_numeric_3009_no_growth_composed"
+        ],
+        [
+          960,
+          "_mech_compact_numeric_4173"
+        ],
+        [
+          720,
+          "_mech_compact_numeric_3447_grouped"
+        ],
+        [
+          648,
+          "_mech_compact_checked_layout_continuation_44070"
+        ]
+      ]
+    }
+  }
+}

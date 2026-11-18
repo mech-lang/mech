@@ -12,7 +12,7 @@ use mech_engine::native_artifact::{
 use std::collections::BTreeSet;
 #[path = "numeric_checked_updates.rs"]
 mod checked_updates;
-#[path = "producer_element_ranges.rs"]
+#[path = "producer_element_ranges/mod.rs"]
 mod producer_element_ranges;
 
 pub(super) fn producer_reads(

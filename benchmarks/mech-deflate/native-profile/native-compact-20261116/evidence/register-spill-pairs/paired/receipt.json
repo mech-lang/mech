@@ -1,0 +1,19 @@
+{
+  "object_text_bytes": 71864,
+  "object_text_x_roc": 1.2455629506378258,
+  "object_text_x_libdeflate": 1.7480054485308425,
+  "roc_object_text_bytes": 57696,
+  "libdeflate_object_text_bytes": 41112,
+  "root_code_bytes": 51448,
+  "root_frame_bytes": 3744,
+  "source_blocks": 8223,
+  "root_direct_calls": 372,
+  "emit_seconds": 1.7942254999652505,
+  "peak_resident_bytes": 218071040,
+  "object_sha256": "463a3a0d275548b9be6f646cd9f978f6c929b58c9779b88e2d22183019b0b99a",
+  "metadata_sha256": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab",
+  "linked_text_bytes": 474788,
+  "worker_sha256": "2920b25d6874cb954f872d64c5ca1fd4a175d865f1347fb63ecd39b59562bf7b",
+  "verified_calls": 162,
+  "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/spill-pairs-20261117-native-final-candidate-qualification.json"
+}

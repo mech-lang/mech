@@ -1,0 +1,83 @@
+compile-profile: pid=49927 phase=parse
+{"phase":"parse","seconds":1.9692328749999999,"total_seconds":1.969309042}
+{"phase":"catalog","seconds":0.065876375,"total_seconds":2.035289167}
+compile-profile: phase=frontend
+{"phase":"frontend","seconds":0.264534666,"total_seconds":2.299886542}
+{"phase":"artifact","seconds":0.007486958,"total_seconds":2.307461625}
+{"phase":"encode","seconds":0.002715583,"total_seconds":2.322944667}
+compile-profile: phase=native mode=compact
+compact-stage: canonical lowering
+compact-stage: preparation blocks=8210 values=5684
+compact-stage: native module
+compact-stage: numeric phase mech_compact_numeric_475
+compact-stage: numeric phase mech_compact_numeric_475_vector
+compact-stage: numeric phase mech_compact_numeric_2996
+compact-stage: numeric phase mech_compact_numeric_2996_vector
+compact-stage: numeric phase mech_compact_numeric_2996_no_growth
+compact-stage: numeric phase mech_compact_numeric_4160
+compact-stage: numeric phase mech_compact_numeric_4160_vector
+compact-stage: numeric phase mech_compact_numeric_3434
+compact-stage: numeric phase mech_compact_numeric_3434_vector
+compact-stage: numeric phase mech_compact_numeric_3943
+compact-stage: numeric phase mech_compact_numeric_3943_vector
+compact-stage: numeric phase mech_compact_numeric_4866
+compact-stage: numeric phase mech_compact_numeric_4866_vector
+compact-stage: numeric phase mech_compact_numeric_4660
+compact-stage: numeric phase mech_compact_numeric_4660_vector
+compact-stage: numeric phase mech_compact_numeric_6620
+compact-stage: numeric phase mech_compact_numeric_6620_vector
+compact-stage: numeric phase mech_compact_numeric_5882
+compact-stage: numeric phase mech_compact_numeric_5882_vector
+compact-stage: numeric phase mech_compact_numeric_3859
+compact-stage: numeric phase mech_compact_numeric_3859_vector
+compact-stage: numeric phase mech_compact_numeric_4786
+compact-stage: numeric phase mech_compact_numeric_4786_vector
+compact-stage: numeric phase mech_compact_numeric_2808
+compact-stage: numeric phase mech_compact_numeric_2808_vector
+compact-stage: numeric phase mech_compact_numeric_8013
+compact-stage: numeric phase mech_compact_numeric_8013_vector
+compact-stage: numeric phase mech_compact_numeric_362
+compact-stage: numeric phase mech_compact_numeric_362_vector
+compact-stage: typed layout
+compact-stage: flow proof
+compact-stage: operation recipes
+compact-stage: source CFG
+compact-stage: source site 0/8210
+compact-stage: source site 4096/8210
+compact-stage: source site 8192/8210
+compact-stage: finalize SSA
+compact scalar array growth sites shared: 3, backing: 19
+compact-stage: compact values before=1398636
+compact-values: retained=164852
+compact-stage: CFG cleanup
+compact vector 362 array 1 keeps guard: computed geometry at v1398 Result(inst1395, 0)
+compact vector definition v1398 = load.i64 v1+32
+compact vector 475 array 1 proved with 1 current values
+compact vector 475 array 2 keeps guard: computed geometry at v1398 Result(inst1395, 0)
+compact vector definition v1398 = load.i64 v1+32
+compact vector 475 array 3 proved with 12 current values
+compact vector 475 array 4 proved with 23 current values
+compact vector 475 array 5 proved with 13 current values
+compact vector 475 array 6 proved with 23 current values
+compact vector 2808 array 0 keeps guard: computed geometry at v1398 Result(inst1395, 0)
+compact vector definition v1398 = load.i64 v1+32
+compact vector 3943 array 0 proved with 3 current values
+compact vector 4660 array 0 proved with 3 current values
+compact vector 4660 array 1 proved with 3 current values
+compact vector 4660 array 2 proved with 3 current values
+compact unit branches proved: 5
+compact owner retirements shared: 116
+compact root proved carries: 26
+compact root range proofs: 191 unsigned, 0 repeated, 6 windows, 147 reads, 0 spans, 0 packed
+compact root flow proofs: 5 equal arguments, 0 loop edges, 18 identity routes, 0 current predicates
+compact root literal edge arguments: 240 definitions, 1031 parameters removed
+compact parallel join arguments coalesced: 145
+compact fresh owner counts: 20 backings, 20 loads folded
+compact positive backings: 44, owner checks proved: 32
+compact root owner retirement calls trimmed: 70
+compact root paired words: 134
+compact static error returns shared: 183
+compact-stage: machine code
+compact-stage: machine code complete
+{"phase":"native","seconds":1.453950916,"total_seconds":3.7777610839999998}
+{"bytecode_bytes":1032779,"bytecode_sha256":"fa3e05401581c5577241e2df1d40157746b94e005bbbe15434783eb66e3672d4","mode":"compact","object_bytes":178768,"object_sha256":"f196a159e70dc41380fe55bb77dc6f06d32a90cf5748fd91fa4fb8a95605b8e1","phases":[{"phase":"parse","seconds":1.9692328749999999,"total_seconds":1.969309042},{"phase":"catalog","seconds":0.065876375,"total_seconds":2.035289167},{"phase":"frontend","seconds":0.264534666,"total_seconds":2.299886542},{"phase":"artifact","seconds":0.007486958,"total_seconds":2.307461625},{"phase":"encode","seconds":0.002715583,"total_seconds":2.322944667},{"phase":"native","seconds":1.453950916,"total_seconds":3.7777610839999998}],"source_bytes":243201,"source_sha256":"6b8cf093144054997bfe078071158586b4fdaa7cdeee722a25ed51483fc8aa11","total_seconds":3.777844125}

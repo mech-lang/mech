@@ -1,0 +1,152 @@
+{
+  "objective": "Check whether 80 bytes of tail padding resolve the empty-input slowdown while retaining 384 bytes of the text reduction.",
+  "review_commit": "78b064c5bb70937db72db21ebd3ab2fd556816c3",
+  "focus_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "eight-literals",
+    "32-high-entropy-stored",
+    "320-overlap",
+    "random-64",
+    "random-1024",
+    "prefix-random-4096",
+    "prefix-random-8192",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-natural-16384",
+    "prefix-periodic-1024",
+    "prefix-periodic-16384",
+    "heldout-window-32767",
+    "heldout-random-65537",
+    "heldout-mixed-131073",
+    "prefix-random-1048576"
+  ],
+  "runs": [
+    {
+      "id": "source-owner-exchange-71368-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "source-owner-exchange-71368-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96
+    }
+  ],
+  "policy": {
+    "path": "native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification-policy-v1.json",
+    "sha256": "1889b824a300e5b2c5c8bfb40aea1652cb525cb740152706ec5bf72543bce984"
+  },
+  "timer": {
+    "path": "compare-library.py",
+    "sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a"
+  },
+  "driver": {
+    "path": "backend-work-hardened/layout-owner-timing.py",
+    "sha256": "5752d63995af0ccc1b21efcf0205b24f74b17e4cc8981571aeceda0f08aa475b"
+  },
+  "as_run_inventory": {
+    "path": "fixtures.json",
+    "sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+  },
+  "pinned_peers": {
+    "path": "pinned-peers/pins.json",
+    "sha256": "db5a289d7a929176e5a1c9efbff5f69702596b0dccba9f2cace86d78cc18902d"
+  },
+  "fixture_content_sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+  "bindings": {
+    "mech-control": {
+      "program.o": {
+        "path": "backend-work-hardened/worker-checks/size-control/program.o",
+        "sha256": "029718fbdb5802fe5a176458c04d5408f2d785756d507b5be86024fba9bc1a5d"
+      },
+      "metadata.json": {
+        "path": "backend-work-hardened/worker-checks/size-control/metadata.json",
+        "sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+      },
+      "runtime.json": {
+        "path": "backend-work-hardened/worker-checks/size-control/runtime.json",
+        "sha256": "9ead2546a8b5044f9ebf897c473fa8165ce0f7a20f3838615c886513369fef18"
+      },
+      "mech-worker": {
+        "path": "backend-work-hardened/worker-checks/size-control/mech-worker",
+        "sha256": "433164cc7a10056057e039f06999c5368739c845fd9bfac10b8816c2e114c6b4"
+      }
+    },
+    "mech-experiment": {
+      "program.o": {
+        "path": "backend-work-hardened/worker-checks/owner-exchange-padded/program.o",
+        "sha256": "e838e04f9a5c1d019179b608bcd3874e09b69f255fdcc3010ccd351240e1eae9"
+      },
+      "metadata.json": {
+        "path": "backend-work-hardened/worker-checks/owner-exchange-padded/metadata.json",
+        "sha256": "8bd8d79e23d7d736c105358f81f07e666190e5a596eb9c9d033e6ccd9f93ef21"
+      },
+      "runtime.json": {
+        "path": "backend-work-hardened/worker-checks/owner-exchange-padded/runtime.json",
+        "sha256": "ddfcaa9d36aa2e62f0a6a1a3012bbe7ed2bfb02727a66c75d90afd82c0c30f2e"
+      },
+      "mech-worker": {
+        "path": "backend-work-hardened/worker-checks/owner-exchange-padded/mech-worker",
+        "sha256": "2df2496ee60fca5d8ddb0d956339686a2f0007cab509c50cc2f4ce1a3b6625b6"
+      }
+    }
+  },
+  "identities": {
+    "mech-control": {
+      "worker": "433164cc7a10056057e039f06999c5368739c845fd9bfac10b8816c2e114c6b4",
+      "metadata": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+    },
+    "mech-experiment": {
+      "worker": "2df2496ee60fca5d8ddb0d956339686a2f0007cab509c50cc2f4ce1a3b6625b6",
+      "metadata": "8bd8d79e23d7d736c105358f81f07e666190e5a596eb9c9d033e6ccd9f93ef21"
+    },
+    "roc": {
+      "worker": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+      "metadata": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee"
+    },
+    "libdeflate": {
+      "worker": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "metadata": null
+    },
+    "environment_sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+    "contract_sha256": "f8d0b099053f18375d9b2122fd993d7a34cc8cffab47bd7c3fd9a7e8a9ed58d7"
+  },
+  "performance_scope": "focus",
+  "control_scope": "Original unpadded control. The owner candidate adds 80 bytes of padding to match timer-stub residues.",
+  "qualification_driver": {
+    "path": "source-frame-copy-tails/full-timing.py",
+    "sha256": "f9fa19f1ef9876ee3484a339b619889ba94027cf35a76fa355e12813cea31d07"
+  },
+  "source": {
+    "path": "backend-work-hardened/source.json",
+    "sha256": "f21e2b44cff156a22034849239fbb1008be5c70e667bc2ab9abf64290577bcc1"
+  },
+  "linked_proofs": {
+    "path": "backend-work-hardened/linked-proofs/result.json",
+    "sha256": "626ad89d74190685d04bf4c21ce457412765c6992f5e8a18c477f6b47303dacc"
+  },
+  "native_static_screen": {
+    "path": "backend-work-hardened/worker-checks/variants.json",
+    "sha256": "4a92f64d9ed0e48fa65d0a66c44b4276ccec1186bfda11aa915c1f3e07b55ff4"
+  },
+  "original_unpadded_outcome": {
+    "path": "backend-work-hardened/source-owner-exchange-71288-focus/focus-replay.json",
+    "sha256": "03dcde384240f6e535b3623ec041cca76d873dbd105431911d0fb7bb19db4dab"
+  },
+  "padding_profile": {
+    "path": "backend-work-hardened/worker-checks/owner-exchange-padded/checked-root-128-residue.json",
+    "sha256": "6dc39e455ad933032c69ac3de015f0bf903a793e9c23c8f1c66b04d4bd2e5394"
+  },
+  "padding_proof": {
+    "path": "backend-work-hardened/worker-checks/owner-exchange-padded/proof.json",
+    "sha256": "782e28370f60aa430d23feb5d25514b6e7ff2c85e3ec9163a83828c78675e2cd"
+  },
+  "padded_exact_calls": {
+    "path": "backend-work-hardened/worker-checks/owner-exchange-padded/screen-qualification.json",
+    "sha256": "3e530ecf2265665807d308a11848dcbbba74bf90344f07d2d16f6757b2fddd48"
+  }
+}

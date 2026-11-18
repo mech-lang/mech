@@ -1,0 +1,21 @@
+{
+  "decisions": {
+    "bounded at resolution in the two full orders": 73,
+    "inconclusive": 3,
+    "slowdown above resolution": 5
+  },
+  "followup_cases": [
+    "128-biased-dynamic",
+    "16384-distribution-change",
+    "320-overlap",
+    "empty",
+    "heldout-mixed-131073",
+    "one-stored",
+    "prefix-natural-1024",
+    "prefix-periodic-1024",
+    "prefix-random-4096",
+    "prefix-repeated-4096",
+    "reymont-prefix-1024",
+    "seven-stored-prefix"
+  ]
+}

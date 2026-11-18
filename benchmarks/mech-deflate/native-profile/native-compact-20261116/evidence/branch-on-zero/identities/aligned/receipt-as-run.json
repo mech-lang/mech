@@ -1,0 +1,27 @@
+{
+  "object_text_bytes": 71768,
+  "object_text_x_roc": 1.2438990571270105,
+  "object_text_x_libdeflate": 1.9354908306364618,
+  "roc_object_text_bytes": 57696,
+  "libdeflate_object_text_bytes": 37080,
+  "root_code_bytes": 51240,
+  "root_frame_bytes": 3728,
+  "source_blocks": 8223,
+  "root_direct_calls": 372,
+  "emit_seconds": 1.6097964588552713,
+  "peak_resident_bytes": 217645056,
+  "object_sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+  "metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+  "linked_text_bytes": 474692,
+  "worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+  "verified_calls": 162,
+  "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/branch-on-zero-aligned-qualification.json",
+  "matching_linked_symbol_residues_mod_64": 1060,
+  "total_linked_symbols": 1060,
+  "postprocess": {
+    "before": "_mech_compact_unsigned_dot_product",
+    "padding_bytes": 16,
+    "input_object_sha256": "029718fbdb5802fe5a176458c04d5408f2d785756d507b5be86024fba9bc1a5d",
+    "object_text_symbol_residues_restored": 31
+  }
+}

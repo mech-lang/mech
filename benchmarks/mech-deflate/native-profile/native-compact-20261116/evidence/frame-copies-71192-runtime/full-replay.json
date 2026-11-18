@@ -1,0 +1,2681 @@
+{
+  "runs": [
+    {
+      "id": "source-frame-copies-71192-full-forward",
+      "kind": "full",
+      "order": "forward",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 80,
+            "mech-experiment": 79
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 73,
+            "mech-experiment": 72
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 57,
+            "mech-experiment": 57
+          },
+          "precision_supported_wins": {
+            "mech-control": 57,
+            "mech-experiment": 57
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 51,
+            "mech-experiment": 51
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 51,
+            "mech-experiment": 51
+          }
+        }
+      }
+    },
+    {
+      "id": "source-frame-copies-71192-full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 60,
+            "mech-experiment": 61
+          },
+          "precision_supported_wins": {
+            "mech-control": 60,
+            "mech-experiment": 61
+          },
+          "lost_cases": [],
+          "gained_cases": [
+            "reymont-prefix-16384"
+          ],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 54,
+            "mech-experiment": 55
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 54,
+            "mech-experiment": 55
+          }
+        }
+      }
+    }
+  ],
+  "cases": {
+    "empty": {
+      "decision": "unresolved",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": 0.02042774576385442,
+          "lower": 0.013108635307552685,
+          "upper": 0.02804285919087368
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.011784711827136918,
+          "lower": -0.01932205934466935,
+          "upper": -0.003999993026823412
+        }
+      },
+      "combined": {
+        "estimate": 0.0041923614724483915,
+        "lower": -0.0011449375049253918,
+        "upper": 0.00956401361054704
+      },
+      "adverse_runs": [
+        "source-frame-copies-71192-full-forward"
+      ],
+      "duplicate_controls": []
+    },
+    "one-stored": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": 0.01356824351746111,
+          "lower": 0.0045371620534191415,
+          "upper": 0.022535986851742074
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.02624549145009325,
+          "lower": -0.03581495423422798,
+          "upper": -0.017167000211246286
+        }
+      },
+      "combined": {
+        "estimate": -0.006538049622363484,
+        "lower": -0.013155272377433636,
+        "upper": -0.00012693146110898113
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "seven-stored-prefix": {
+      "decision": "unresolved",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0008467878215379088,
+          "lower": -0.008385365065920802,
+          "upper": 0.0069311834446401654
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.0002542456215697264,
+          "lower": -0.008414705450320081,
+          "upper": 0.008306700299299585
+        }
+      },
+      "combined": {
+        "estimate": -0.0005505606340117097,
+        "lower": -0.0060494918210017845,
+        "upper": 0.005052701937524162
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "eight-literals": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.003120329112306197,
+          "lower": -0.006715725547689955,
+          "upper": 0.0004021916205989573
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.005253840640755181,
+          "lower": -0.007838280983966106,
+          "upper": -0.002786453086792262
+        }
+      },
+      "combined": {
+        "estimate": -0.004187656253026084,
+        "lower": -0.006442957838954655,
+        "upper": -0.0019361547464661344
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "eight-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0038989992116715833,
+          "lower": -0.008846768609779176,
+          "upper": 0.0009819487211260025
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.006846900063254613,
+          "lower": -0.011454166283282219,
+          "upper": -0.0019634405372439545
+        }
+      },
+      "combined": {
+        "estimate": -0.0053740417709666755,
+        "lower": -0.00878230739468533,
+        "upper": -0.0019190091029512857
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0007386938411759747,
+          "lower": -0.0026131344430689873,
+          "upper": 0.0009887626189846177
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.001691656298796751,
+          "lower": -0.00308722201982381,
+          "upper": -0.00029332334657228287
+        }
+      },
+      "combined": {
+        "estimate": -0.0012152887252845357,
+        "lower": -0.002413542819499126,
+        "upper": -0.00010313777044124173
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "eight-literals-prefix": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0018669373882518325,
+          "lower": -0.004262002790501818,
+          "upper": 0.0004727986056731748
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.002147615594769392,
+          "lower": -0.0058309277842326646,
+          "upper": 0.001545496839815641
+        }
+      },
+      "combined": {
+        "estimate": -0.0020072863588490586,
+        "lower": -0.004182542653419219,
+        "upper": 0.00015037687599428473
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "128-biased-dynamic": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0030817799794198297,
+          "lower": -0.005121038584541826,
+          "upper": -0.0009798570222060432
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.004125407114484947,
+          "lower": 0.0008560785649562863,
+          "upper": 0.007550148628098885
+        }
+      },
+      "combined": {
+        "estimate": 0.0005153239895991923,
+        "lower": -0.0014148396337074765,
+        "upper": 0.0025264309531127793
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "32-high-entropy-stored": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.003646697882313865,
+          "lower": -0.006504395448240219,
+          "upper": -0.00026302306208536574
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0034638607440575786,
+          "lower": 7.809977122263945e-05,
+          "upper": 0.006516166686553637
+        }
+      },
+      "combined": {
+        "estimate": -9.7739172421063e-05,
+        "lower": -0.0023683957418094703,
+        "upper": 0.0021743401850797817
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "16384-distribution-change": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": 0.0026085831762954204,
+          "lower": -0.0002322521653792542,
+          "upper": 0.005458464049800549
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0009222088546849694,
+          "lower": -0.0009245968733371246,
+          "upper": 0.002713720351312343
+        }
+      },
+      "combined": {
+        "estimate": 0.001765041159594416,
+        "lower": 0.0001069323164173408,
+        "upper": 0.003440624194380515
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "33027-periodic-window": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": 0.002753729042541453,
+          "lower": 0.0005465013316625633,
+          "upper": 0.005128245336715409
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.00221252722185894,
+          "lower": -0.004173031032875585,
+          "upper": -0.0003596984054330399
+        }
+      },
+      "combined": {
+        "estimate": 0.0002675187769591858,
+        "lower": -0.0011695125515855942,
+        "upper": 0.0018034393571588758
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "unresolved",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.00029454542172591136,
+          "lower": -0.006043319886304466,
+          "upper": 0.0056878295453028915
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.00921104600895628,
+          "lower": 0.004118117948245237,
+          "upper": 0.014313830457126198
+        }
+      },
+      "combined": {
+        "estimate": 0.004447005827484807,
+        "lower": 0.0006140307173156945,
+        "upper": 0.008408138492893125
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-256": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0001624021522622643,
+          "lower": -0.0023711870328563256,
+          "upper": 0.0019877699126065185
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.005361488656847158,
+          "lower": -0.010522780602163384,
+          "upper": -0.0014726956362047794
+        }
+      },
+      "combined": {
+        "estimate": -0.0027653335808127677,
+        "lower": -0.005520771595028506,
+        "upper": -0.0004702810416117309
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0018336133241225738,
+          "lower": -0.0029685450961072224,
+          "upper": -0.0007573192526579842
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.004018207952433128,
+          "lower": -0.005651625165454477,
+          "upper": -0.002390567142124711
+        }
+      },
+      "combined": {
+        "estimate": -0.002926508945762296,
+        "lower": -0.003907308051450897,
+        "upper": -0.001936923324459272
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "repeated-1024": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": 0.0021481743934714803,
+          "lower": 0.0002291847059363583,
+          "upper": 0.004306643440961766
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.0016641340165393093,
+          "lower": -0.0024268716282253022,
+          "upper": -0.0009456430590358833
+        }
+      },
+      "combined": {
+        "estimate": 0.0002402039144648871,
+        "lower": -0.0007871383075518379,
+        "upper": 0.0013469510643220328
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-32769": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": 1.8228956074617386e-05,
+          "lower": -0.0020032409988753885,
+          "upper": 0.002085667812133485
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.001476577797010603,
+          "lower": -0.0034137147353916486,
+          "upper": 0.00045321229833672483
+        }
+      },
+      "combined": {
+        "estimate": -0.000729453930221946,
+        "lower": -0.002148306453009119,
+        "upper": 0.0006791894942304033
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "repeated-32769": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0012967468149116534,
+          "lower": -0.0030248059807337357,
+          "upper": 0.0005083727974040109
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.00030440940987075393,
+          "lower": -0.0019900740862963673,
+          "upper": 0.001316416070982207
+        }
+      },
+      "combined": {
+        "estimate": -0.0008007013027129251,
+        "lower": -0.002025378559892599,
+        "upper": 0.0003976100198346266
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "reymont-prefix-1024": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0032001404844791415,
+          "lower": -0.004661442158576334,
+          "upper": -0.0018006143366122718
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.003182095112637451,
+          "lower": -0.007688654882223367,
+          "upper": 0.0011650597909032001
+        }
+      },
+      "combined": {
+        "estimate": -0.003191117839393076,
+        "lower": -0.005594995862952978,
+        "upper": -0.0008600820082370619
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "reymont-prefix-16384": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0004333373837194232,
+          "lower": -0.0012516936714076499,
+          "upper": 0.0003823480993014883
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.0688070293638463,
+          "lower": -0.10724992965618119,
+          "upper": -0.03072824247882211
+        }
+      },
+      "combined": {
+        "estimate": -0.035225700015531936,
+        "lower": -0.055293006664965394,
+        "upper": -0.015551313625528973
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "reymont-prefix-32769": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0013314198767130359,
+          "lower": -0.002689930918518324,
+          "upper": -0.000141977529722781
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0003875580639265408,
+          "lower": -0.00026629950106693556,
+          "upper": 0.0010265548786916323
+        }
+      },
+      "combined": {
+        "estimate": -0.00047230044150170514,
+        "lower": -0.0012081937487612437,
+        "upper": 0.00019458168779462603
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-window-32767": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.001629846859357409,
+          "lower": -0.0026387029056850198,
+          "upper": -0.0006722221461594735
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0016943918867555752,
+          "lower": 0.0003263763361922578,
+          "upper": 0.0031297004239720927
+        }
+      },
+      "combined": {
+        "estimate": 3.089123691735196e-05,
+        "lower": -0.0007907087901027898,
+        "upper": 0.0008821682187725166
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-window-32768": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.00012274203897066904,
+          "lower": -0.0007379737096115946,
+          "upper": 0.0004927143130919465
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0003755769206177373,
+          "lower": -0.000445640821006843,
+          "upper": 0.0010761214338992353
+        }
+      },
+      "combined": {
+        "estimate": 0.0001263864045233376,
+        "lower": -0.00036581974137273043,
+        "upper": 0.0005985136216914988
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-slides-65537": {
+      "decision": "unresolved",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.001356524620973798,
+          "lower": -0.0032449164662915475,
+          "upper": 0.00045333983704454184
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0010528510973046856,
+          "lower": -0.013111035747495614,
+          "upper": 0.013734094378150097
+        }
+      },
+      "combined": {
+        "estimate": -0.00015256250871198418,
+        "lower": -0.007563341840580717,
+        "upper": 0.006313521199039496
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-random-65537": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.00033645303561702367,
+          "lower": -0.0015773361717900114,
+          "upper": 0.0009119060476185936
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.00010731147573539435,
+          "lower": -0.0019341003159115688,
+          "upper": 0.0016999607397520933
+        }
+      },
+      "combined": {
+        "estimate": -0.0002218888203646685,
+        "lower": -0.0013280749660451452,
+        "upper": 0.0008697283958705171
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-mixed-131073": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": 5.979359955943231e-05,
+          "lower": -0.0007399419752970315,
+          "upper": 0.0008348531768374023
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.00010856566191219663,
+          "lower": -0.0005083952619040488,
+          "upper": 0.0007289653099167293
+        }
+      },
+      "combined": {
+        "estimate": 8.417933342164119e-05,
+        "lower": -0.0004203748912914307,
+        "upper": 0.0005818391787055788
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-1024": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.002237135428114212,
+          "lower": -0.004245534514627836,
+          "upper": -0.00035095707796517495
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.004841988051616508,
+          "lower": -0.007980426772151383,
+          "upper": -0.002052594449626688
+        }
+      },
+      "combined": {
+        "estimate": -0.0035404129101461734,
+        "lower": -0.005404486061735381,
+        "upper": -0.0018604912737737456
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-4096": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0022183239194084603,
+          "lower": -0.00556477556837387,
+          "upper": 0.0011081831418890964
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0033213832699841017,
+          "lower": 0.0008248956062548718,
+          "upper": 0.005881674308588991
+        }
+      },
+      "combined": {
+        "estimate": 0.0005476957380006198,
+        "lower": -0.0015555077813891316,
+        "upper": 0.00266305635103814
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": 0.00029212605487027865,
+          "lower": -0.001725418546537738,
+          "upper": 0.002426628989642632
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0007132709036625773,
+          "lower": -0.000547804587152978,
+          "upper": 0.001960332611456117
+        }
+      },
+      "combined": {
+        "estimate": 0.0005026763200326467,
+        "lower": -0.000677832241047116,
+        "upper": 0.0017148504417001664
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-16384": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0003529671927422484,
+          "lower": -0.0012112574783887942,
+          "upper": 0.00048267091918541283
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0042108162231893065,
+          "lower": 0.002287341813823174,
+          "upper": 0.0061532182363917
+        }
+      },
+      "combined": {
+        "estimate": 0.0019263260092858836,
+        "lower": 0.000897647678191893,
+        "upper": 0.00295616283111122
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-32767": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": 0.0019746881015441087,
+          "lower": 0.00045740567986540803,
+          "upper": 0.0037327619401121837
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.00016328014169908478,
+          "lower": -0.0005569531781172143,
+          "upper": 0.0008289410628250504
+        }
+      },
+      "combined": {
+        "estimate": 0.0010685744096636807,
+        "lower": 0.0002512052517678054,
+        "upper": 0.002001301487984497
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-32768": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": 0.002085491383568616,
+          "lower": 0.0007029093769379546,
+          "upper": 0.003508513697457083
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0006657974615138507,
+          "lower": 9.109580064992073e-05,
+          "upper": 0.0012419966237984248
+        }
+      },
+      "combined": {
+        "estimate": 0.0013753928272612903,
+        "lower": 0.0006404986591086459,
+        "upper": 0.0021453279899386057
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-32769": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0002524637095525639,
+          "lower": -0.0019816619760255616,
+          "upper": 0.001719314432977681
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0005946621604546731,
+          "lower": -0.00031089319173915886,
+          "upper": 0.0015045762340069047
+        }
+      },
+      "combined": {
+        "estimate": 0.00017100953801252317,
+        "lower": -0.0008067431720319984,
+        "upper": 0.0012401370542933776
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-33027": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.001110114592480227,
+          "lower": -0.0016422353725363825,
+          "upper": -0.0005779335122902962
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0004086323026264438,
+          "lower": -0.0004789495984059977,
+          "upper": 0.0012209166729388876
+        }
+      },
+      "combined": {
+        "estimate": -0.000351029570147543,
+        "lower": -0.000860314372669202,
+        "upper": 0.0001270082586204424
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-65535": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0010297242655411543,
+          "lower": -0.0019412465833663628,
+          "upper": -0.0002800576109029951
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0007527971460281613,
+          "lower": 0.00033744034862825956,
+          "upper": 0.0011693770323588648
+        }
+      },
+      "combined": {
+        "estimate": -0.00013886078765978915,
+        "lower": -0.0006220136776153851,
+        "upper": 0.000289735878130859
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-65536": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0006947808052291116,
+          "lower": -0.001051127526072837,
+          "upper": -0.00032799171877850863
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0008526106244497456,
+          "lower": 0.00043436166725507874,
+          "upper": 0.0012550624454197301
+        }
+      },
+      "combined": {
+        "estimate": 7.861563065358901e-05,
+        "lower": -0.00019865001273089433,
+        "upper": 0.0003587540747820306
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-65537": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0002493379334229662,
+          "lower": -0.0006968399880765697,
+          "upper": 0.00018912930007086715
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0028206630504070684,
+          "lower": 0.0004071085953016862,
+          "upper": 0.006045105419325347
+        }
+      },
+      "combined": {
+        "estimate": 0.0012844859572569423,
+        "lower": 8.706490925036725e-05,
+        "upper": 0.0028892380284697428
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-131072": {
+      "decision": "unresolved",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": 8.448468329103065e-05,
+          "lower": -0.0007280044940677355,
+          "upper": 0.0011663629253069185
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0033081339120437647,
+          "lower": -0.006539763529803566,
+          "upper": 0.013572658528386627
+        }
+      },
+      "combined": {
+        "estimate": 0.0016950125072903166,
+        "lower": -0.0032775389616533923,
+        "upper": 0.006884479144846578
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-262144": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0001140490095177249,
+          "lower": -0.0040765429477434,
+          "upper": 0.004113215837523443
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.000260639122113826,
+          "lower": -0.001660584452416236,
+          "upper": 0.0021876378909495564
+        }
+      },
+      "combined": {
+        "estimate": 7.327750868446614e-05,
+        "lower": -0.002210130531377974,
+        "upper": 0.002382529389539201
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0033312749126834795,
+          "lower": -0.012079196580770057,
+          "upper": 0.006389978883256653
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.00013392726990180126,
+          "lower": -0.0007487494711884146,
+          "upper": 0.0005702929781155053
+        }
+      },
+      "combined": {
+        "estimate": -0.0017338811890043049,
+        "lower": -0.006195352311025415,
+        "upper": 0.0033315748475848395
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1024": {
+      "decision": "unresolved",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": 0.009701774327154578,
+          "lower": -0.0037136380896996,
+          "upper": 0.03420282381573969
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.007457555214813505,
+          "lower": -0.013324075586518602,
+          "upper": -0.0025707004224878593
+        }
+      },
+      "combined": {
+        "estimate": 0.0010853448106282748,
+        "lower": -0.006967996102148932,
+        "upper": 0.013057689152362606
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-4096": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.012277419345062213,
+          "lower": -0.015519544833037746,
+          "upper": -0.009082953949245853
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.009311013568607862,
+          "lower": 0.0018143794493428178,
+          "upper": 0.017031176402490855
+        }
+      },
+      "combined": {
+        "estimate": -0.0015415486834535752,
+        "lower": -0.005550211635424684,
+        "upper": 0.0026446056342854796
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-8192": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.001986374787155798,
+          "lower": -0.004862270504514488,
+          "upper": 0.0009732025260087429
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.009666968519027153,
+          "lower": -0.015136882956777287,
+          "upper": -0.0040617859153601055
+        }
+      },
+      "combined": {
+        "estimate": -0.005834088838109763,
+        "lower": -0.00895906855316797,
+        "upper": -0.0026909079961841
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-16384": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0046460174886943095,
+          "lower": -0.007775794101940625,
+          "upper": -0.001564116613309463
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.008257293568268098,
+          "lower": 0.003682095316537959,
+          "upper": 0.013367348108264343
+        }
+      },
+      "combined": {
+        "estimate": 0.0017848634059343116,
+        "lower": -0.0010435210685245666,
+        "upper": 0.0046311068768056796
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-32767": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0031201820833417493,
+          "lower": -0.005583380547793948,
+          "upper": -0.0007355964732085329
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.000934804523313959,
+          "lower": -0.0015138809563800537,
+          "upper": 0.0034065988420117765
+        }
+      },
+      "combined": {
+        "estimate": -0.0010947463950111702,
+        "lower": -0.002820405319774566,
+        "upper": 0.0006042542791997452
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-32768": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.00033255051486613674,
+          "lower": -0.003271458255476256,
+          "upper": 0.0028621692315144998
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.00213429357734074,
+          "lower": -0.0009311753223354424,
+          "upper": 0.005223293802220974
+        }
+      },
+      "combined": {
+        "estimate": 0.0009001115506215296,
+        "lower": -0.0012369363151144563,
+        "upper": 0.003131383654759068
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-32769": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.00139829176075279,
+          "lower": -0.003808145588008016,
+          "upper": 0.0010452592542977701
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.0012821414936335929,
+          "lower": -0.004106141068320079,
+          "upper": 0.0015369924863222195
+        }
+      },
+      "combined": {
+        "estimate": -0.0013402183158168768,
+        "lower": -0.0032256791738896062,
+        "upper": 0.0005875480703112501
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-33027": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.003565851927549546,
+          "lower": -0.0055643980528472525,
+          "upper": -0.0015778167071489602
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0007438491638125377,
+          "lower": -0.0017995652813165286,
+          "upper": 0.003257137989077785
+        }
+      },
+      "combined": {
+        "estimate": -0.0014133263555494713,
+        "lower": -0.0029945489058553765,
+        "upper": 0.00020929360236165984
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-65535": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0010078664809289872,
+          "lower": -0.002472144712212243,
+          "upper": 0.0004361782996888941
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.007971680852535856,
+          "lower": -0.021415722242629665,
+          "upper": 0.000613218093604484
+        }
+      },
+      "combined": {
+        "estimate": -0.004495862863210798,
+        "lower": -0.011375346219258287,
+        "upper": -2.288040244113887e-05
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-65536": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.000546924592075837,
+          "lower": -0.001911223887336999,
+          "upper": 0.0007862144077579458
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0008987481250124496,
+          "lower": -0.000991350666207591,
+          "upper": 0.0028041600280714896
+        }
+      },
+      "combined": {
+        "estimate": 0.00017565056618185082,
+        "lower": -0.0009913284215958829,
+        "upper": 0.0013650229094861466
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-65537": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0011968267121870158,
+          "lower": -0.003327675177976386,
+          "upper": 0.0010300863308743136
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.0003834469574560684,
+          "lower": -0.0028106391706064215,
+          "upper": 0.0021523680865094263
+        }
+      },
+      "combined": {
+        "estimate": -0.0007902195985478588,
+        "lower": -0.002420715842022081,
+        "upper": 0.000855529441018632
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-131072": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0013588340734104198,
+          "lower": -0.0022346289177584966,
+          "upper": -0.000515858680321335
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.000573335018238863,
+          "lower": -0.0022242200194361184,
+          "upper": 0.001172584460056303
+        }
+      },
+      "combined": {
+        "estimate": -0.000966161746505656,
+        "lower": -0.0019107994564389053,
+        "upper": -8.461909826618097e-06
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-262144": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.00016134120075017577,
+          "lower": -0.0011099337998866643,
+          "upper": 0.0006813012722528544
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.0009093610286664555,
+          "lower": -0.0023579482134511442,
+          "upper": 0.0006217210333838707
+        }
+      },
+      "combined": {
+        "estimate": -0.0005354210938820492,
+        "lower": -0.0013920282241880466,
+        "upper": 0.0003247366534582241
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.00011901570099992487,
+          "lower": -0.0005523248491162702,
+          "upper": 0.0003209965729027431
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0006070786397558425,
+          "lower": -0.0019553267469519797,
+          "upper": 0.0035358309174060576
+        }
+      },
+      "combined": {
+        "estimate": 0.000243965583829997,
+        "lower": -0.0010344012101832778,
+        "upper": 0.0016922695186791792
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-1024": {
+      "decision": "unresolved",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.03250836297559978,
+          "lower": -0.09534429903554797,
+          "upper": 0.032336653284357864
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.004332804316068639,
+          "lower": -0.000202313995197545,
+          "upper": 0.00979662779819268
+        }
+      },
+      "combined": {
+        "estimate": -0.01425987757164926,
+        "lower": -0.04805520705968391,
+        "upper": 0.018566898285079736
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-4096": {
+      "decision": "unresolved",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": 0.047121340048882576,
+          "lower": -0.23758800030287186,
+          "upper": 0.4415978282757598
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.001012904344120491,
+          "lower": -0.0031697202737315244,
+          "upper": 0.005172698261627362
+        }
+      },
+      "combined": {
+        "estimate": 0.023807586318366436,
+        "lower": -0.13055135836520537,
+        "upper": 0.20581039366672815
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-8192": {
+      "decision": "unresolved",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0660747707032695,
+          "lower": -0.2131604621174078,
+          "upper": 0.10426608630594036
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.0014260949730514616,
+          "lower": -0.004260802154864796,
+          "upper": 0.0014137049683238256
+        }
+      },
+      "combined": {
+        "estimate": -0.034291263774618,
+        "lower": -0.11422205825644127,
+        "upper": 0.05155183415864206
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-16384": {
+      "decision": "regression",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": 0.21724659462678986,
+          "lower": 0.03243383385046039,
+          "upper": 0.4349381116462223
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.002520361202362764,
+          "lower": -0.0003782227220650025,
+          "upper": 0.005548689927411754
+        }
+      },
+      "combined": {
+        "estimate": 0.10467845806714071,
+        "lower": 0.017232996232883657,
+        "upper": 0.19681153371678195
+      },
+      "adverse_runs": [
+        "source-frame-copies-71192-full-forward"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-32767": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.004389492209236678,
+          "lower": -0.006686763949044661,
+          "upper": -0.0019971654503114777
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.002144537522775547,
+          "lower": -0.0033865071664189728,
+          "upper": -0.0009069551867437742
+        }
+      },
+      "combined": {
+        "estimate": -0.00326764690879211,
+        "lower": -0.004609612338035585,
+        "upper": -0.0019311762710588765
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-32768": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.004126362246030912,
+          "lower": -0.005418845898567337,
+          "upper": -0.0028051661476027334
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.0011082610810220217,
+          "lower": -0.0024214977969687634,
+          "upper": 0.0001941966915834925
+        }
+      },
+      "combined": {
+        "estimate": -0.0026184532689456086,
+        "lower": -0.0035726276969687554,
+        "upper": -0.0016904821774427203
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-32769": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0027024653708276336,
+          "lower": -0.00437667791856744,
+          "upper": -0.0009595468337133539
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.0016404444197969381,
+          "lower": -0.0041525056967026686,
+          "upper": 0.0007049101257097234
+        }
+      },
+      "combined": {
+        "estimate": -0.0021715961881959567,
+        "lower": -0.0036644799502908443,
+        "upper": -0.0006904333030502974
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-33027": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.005869174851108161,
+          "lower": -0.007347034243927464,
+          "upper": -0.004344831265719384
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.0002472182572262893,
+          "lower": -0.0027763737466353078,
+          "upper": 0.002215164615404275
+        }
+      },
+      "combined": {
+        "estimate": -0.003062159480921478,
+        "lower": -0.0045434236769617,
+        "upper": -0.0016113748730545163
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-65535": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0016009628705506707,
+          "lower": -0.003118824934064901,
+          "upper": -0.0002262532390937544
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0010074280061407315,
+          "lower": -0.000775716511908775,
+          "upper": 0.002756839043862369
+        }
+      },
+      "combined": {
+        "estimate": -0.00029761814790219,
+        "lower": -0.00144582990789488,
+        "upper": 0.0008296637605047508
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-65536": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0004323145629065994,
+          "lower": -0.0015799218879547494,
+          "upper": 0.0007400804201669331
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0001574216693311925,
+          "lower": -0.001370664556349488,
+          "upper": 0.00165382344360121
+        }
+      },
+      "combined": {
+        "estimate": -0.00013748992636775093,
+        "lower": -0.0010832973135740387,
+        "upper": 0.0008070425897896971
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-65537": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.00027991800058713157,
+          "lower": -0.0015162819203240474,
+          "upper": 0.0009803351511949998
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0016431379560373216,
+          "lower": -0.0008251923945777895,
+          "upper": 0.003969215853901309
+        }
+      },
+      "combined": {
+        "estimate": 0.0006811480244637291,
+        "lower": -0.0006707820709145329,
+        "upper": 0.002023070042185715
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-131072": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0006846818830025247,
+          "lower": -0.0016185763585547797,
+          "upper": 0.0002399169398787926
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.0017229484763469083,
+          "lower": -0.002954011547811053,
+          "upper": -0.0005375318314961852
+        }
+      },
+      "combined": {
+        "estimate": -0.0012039500917828683,
+        "lower": -0.0019893753740716225,
+        "upper": -0.00043974748349551174
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-262144": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0011924888155635527,
+          "lower": -0.002325625477294535,
+          "upper": -0.000269200056662533
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0001922224712891385,
+          "lower": -0.0013955782384397208,
+          "upper": 0.0018902321592000337
+        }
+      },
+      "combined": {
+        "estimate": -0.0005003729702655058,
+        "lower": -0.001485806222294328,
+        "upper": 0.0004618463062573408
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": 0.0008780653519988579,
+          "lower": -0.0015240222936344638,
+          "upper": 0.003503070886106574
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0004311509358387866,
+          "lower": -0.003241693434229642,
+          "upper": 0.004087951929061973
+        }
+      },
+      "combined": {
+        "estimate": 0.0006545831936892732,
+        "lower": -0.0016100967273664502,
+        "upper": 0.00285315608206016
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-1024": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": 0.001744252205338137,
+          "lower": 0.0009350184212590928,
+          "upper": 0.0025495093319092277
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.0010721462152765149,
+          "lower": -0.002013234512278861,
+          "upper": -0.00022601947708633663
+        }
+      },
+      "combined": {
+        "estimate": 0.000335061815120552,
+        "lower": -0.0002717311267804723,
+        "upper": 0.0009383733541556971
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-4096": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.011122852499560243,
+          "lower": -0.014007905954397604,
+          "upper": -0.00810556423492037
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.001605985893066153,
+          "lower": -0.0020838138296339626,
+          "upper": 0.005969109442832465
+        }
+      },
+      "combined": {
+        "estimate": -0.004778783260072861,
+        "lower": -0.007197307024670807,
+        "upper": -0.002094453493093784
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-8192": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.009258402602780436,
+          "lower": -0.011481703698542733,
+          "upper": -0.007112682459106567
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.0038069692631400587,
+          "lower": -0.006468556427940975,
+          "upper": -0.0013176689687154353
+        }
+      },
+      "combined": {
+        "estimate": -0.006536425132650292,
+        "lower": -0.008330870166838644,
+        "upper": -0.004892903136580529
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-16384": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.007030401835317557,
+          "lower": -0.008630987120234246,
+          "upper": -0.005559850217494056
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0010689310429230492,
+          "lower": -0.0005494091145775704,
+          "upper": 0.0028042220678774488
+        }
+      },
+      "combined": {
+        "estimate": -0.002988959844054895,
+        "lower": -0.0041668481248277045,
+        "upper": -0.0018459923480477203
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-32767": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.005569694733735475,
+          "lower": -0.010007240668356343,
+          "upper": -0.00276543230662063
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.0002323581293860455,
+          "lower": -0.0012840133652198826,
+          "upper": 0.0008810071985811962
+        }
+      },
+      "combined": {
+        "estimate": -0.0029045976935165863,
+        "lower": -0.005084548098244102,
+        "upper": -0.0013443535070946089
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-32768": {
+      "decision": "unresolved",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.006964855191147201,
+          "lower": -0.008145975341795175,
+          "upper": -0.0058196454261096875
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.0044766124315408495,
+          "lower": -0.03474206206708075,
+          "upper": 0.028492965981996576
+        }
+      },
+      "combined": {
+        "estimate": -0.005721512183510802,
+        "lower": -0.0215566925683357,
+        "upper": 0.010741827536738802
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-32769": {
+      "decision": "unresolved",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0060510887880229625,
+          "lower": -0.007939042824344211,
+          "upper": -0.004047460366470079
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0072789547957250456,
+          "lower": -0.005371752054840417,
+          "upper": 0.027764955013048764
+        }
+      },
+      "combined": {
+        "estimate": 0.0005917351277437977,
+        "lower": -0.005905981548494754,
+        "upper": 0.01063534110587927
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-33027": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.00616758531804662,
+          "lower": -0.008343538205672685,
+          "upper": -0.0040197990894074165
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.0011250980177914816,
+          "lower": -0.003442326817417407,
+          "upper": 0.0011111125603389116
+        }
+      },
+      "combined": {
+        "estimate": -0.003649531639504988,
+        "lower": -0.005232857124508494,
+        "upper": -0.002106569015860149
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-65535": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0015063845531047004,
+          "lower": -0.002638375804580817,
+          "upper": -0.0003303298655578102
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0003203254557591073,
+          "lower": -0.0009454920081430895,
+          "upper": 0.0015412255053164348
+        }
+      },
+      "combined": {
+        "estimate": -0.0005934469049465596,
+        "lower": -0.0014538419301718397,
+        "upper": 0.0002638598654629565
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-65536": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0019656571678926538,
+          "lower": -0.0034378422215699533,
+          "upper": -0.0004839438039346833
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -7.1552894941318e-06,
+          "lower": -0.0015279711157857312,
+          "upper": 0.0014932873455406614
+        }
+      },
+      "combined": {
+        "estimate": -0.0009868861684250163,
+        "lower": -0.0020291482754447587,
+        "upper": 6.908324817422873e-05
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-65537": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.001145451365790695,
+          "lower": -0.0025640160526433364,
+          "upper": 0.00030279125302978827
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": 0.0010295372779278722,
+          "lower": -0.0005580972983979526,
+          "upper": 0.002621795851468489
+        }
+      },
+      "combined": {
+        "estimate": -5.854840032959441e-05,
+        "lower": -0.001130154147335083,
+        "upper": 0.0010098924021844091
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-131072": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": 0.0010384201530193593,
+          "lower": -0.000209993101256023,
+          "upper": 0.00236221370131795
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.0005306685413626333,
+          "lower": -0.0016163742371667622,
+          "upper": 0.0005505665204841304
+        }
+      },
+      "combined": {
+        "estimate": 0.00025356812897636694,
+        "lower": -0.000566331190095748,
+        "upper": 0.001114269717233718
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-262144": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": -0.0002567422787433937,
+          "lower": -0.0009568512693739484,
+          "upper": 0.00042027875183903163
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.0007280764481067958,
+          "lower": -0.0015099558613319575,
+          "upper": -3.1932149461399995e-05
+        }
+      },
+      "combined": {
+        "estimate": -0.0004924371465936384,
+        "lower": -0.0010074066447401941,
+        "upper": 4.394113788830367e-06
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "source-frame-copies-71192-full-forward": {
+          "estimate": 0.0003100010467103065,
+          "lower": -0.0009587543503724039,
+          "upper": 0.0015103889546546068
+        },
+        "source-frame-copies-71192-full-reverse": {
+          "estimate": -0.001363943837356052,
+          "lower": -0.0026314880808812058,
+          "upper": -0.00024402609700979738
+        }
+      },
+      "combined": {
+        "estimate": -0.0005273218414937331,
+        "lower": -0.0013882096037511893,
+        "upper": 0.0003053055629520518
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    }
+  },
+  "scope": "90% per-case paired bootstrap, stratified by run and actor order",
+  "equivalent_named_cases": [
+    [
+      "33027-periodic-window",
+      "prefix-periodic-33027"
+    ],
+    [
+      "prefix-repeated-1024",
+      "repeated-1024"
+    ],
+    [
+      "prefix-repeated-32769",
+      "repeated-32769"
+    ],
+    [
+      "prefix-natural-1024",
+      "reymont-prefix-1024"
+    ],
+    [
+      "prefix-natural-16384",
+      "reymont-prefix-16384"
+    ],
+    [
+      "prefix-natural-32769",
+      "reymont-prefix-32769"
+    ],
+    [
+      "heldout-window-32767",
+      "prefix-natural-32767"
+    ]
+  ],
+  "peak_private_payload_bytes": {
+    "mech-control": 10548878,
+    "mech-experiment": 10548878
+  },
+  "decision": "Reject",
+  "rejected": [
+    "prefix-periodic-16384: established slowdown above the 0.5% resolution"
+  ],
+  "unresolved": [
+    "source-frame-copies-71192-full-forward: libdeflate floor 61 missed (control 57, candidate 57)",
+    "empty: combined and individual run bounds conflict: source-frame-copies-71192-full-forward",
+    "seven-stored-prefix: regression bound or duplicate-control repeatability unresolved",
+    "random-64: regression bound or duplicate-control repeatability unresolved",
+    "heldout-slides-65537: regression bound or duplicate-control repeatability unresolved",
+    "prefix-natural-131072: regression bound or duplicate-control repeatability unresolved",
+    "prefix-random-1024: regression bound or duplicate-control repeatability unresolved",
+    "prefix-periodic-1024: regression bound or duplicate-control repeatability unresolved",
+    "prefix-periodic-4096: regression bound or duplicate-control repeatability unresolved",
+    "prefix-periodic-8192: regression bound or duplicate-control repeatability unresolved",
+    "prefix-repeated-32768: regression bound or duplicate-control repeatability unresolved",
+    "prefix-repeated-32769: regression bound or duplicate-control repeatability unresolved"
+  ],
+  "plan": {
+    "path": "source-frame-copy-tails/source-frame-copies-71192/plan.json",
+    "sha256": "336512937eb48474889042f87af88d648fc54b98292305b26607fc392b9b09af"
+  },
+  "receipts": {
+    "source-frame-copies-71192-full-forward": {
+      "id": "source-frame-copies-71192-full-forward",
+      "kind": "full",
+      "order": "forward",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "source-frame-copy-tails/source-frame-copies-71192/canonical-pins/source-frame-copies-71192-full-forward.json",
+        "sha256": "ddfa1409de516964a5831e3dab1e0e5a2919bb92796270f5d655fdb0ed269cc7"
+      },
+      "original_pins": {
+        "path": "source-frame-copies-71192-full-forward/pins.json",
+        "sha256": "3d5fd304f9b43758e2e3b675f846ae74e3648bdfcce26a23b75d51c657126ff5"
+      },
+      "summary": {
+        "path": "source-frame-copies-71192-full-forward/summary.json",
+        "sha256": "1718f71cc515b73c344d252fed3cdbe9a0e301971771977c47d0b6099ee0ffbd"
+      },
+      "complete": {
+        "path": "source-frame-copies-71192-full-forward/complete.json",
+        "sha256": "2e54dfa5984a50621e44303a7cbdd811e578a4c88e1b46ef989159527d443c6f"
+      },
+      "observations": {
+        "128-biased-dynamic": {
+          "path": "source-frame-copies-71192-full-forward/128-biased-dynamic/observations.json.gz",
+          "sha256": "9738c66d1f6d5ec70db4251a03f6ed7b5404f62e0c8115300dfbf9df22f17216"
+        },
+        "16384-distribution-change": {
+          "path": "source-frame-copies-71192-full-forward/16384-distribution-change/observations.json.gz",
+          "sha256": "e881f84fa97d5e6a77b5d3ca8ede150856f74001a3d38c71fd0921bada76716d"
+        },
+        "32-high-entropy-stored": {
+          "path": "source-frame-copies-71192-full-forward/32-high-entropy-stored/observations.json.gz",
+          "sha256": "da8e219a0c2b7489b44913c3f236d52e0e456f68ab32a5bc1df1ce47f1a2f451"
+        },
+        "320-overlap": {
+          "path": "source-frame-copies-71192-full-forward/320-overlap/observations.json.gz",
+          "sha256": "16854435862625eaeea49f84117f240d29d9d6a6b4ee6577bc021c633dd6fafa"
+        },
+        "33027-periodic-window": {
+          "path": "source-frame-copies-71192-full-forward/33027-periodic-window/observations.json.gz",
+          "sha256": "c596e364499716eb6d745d5fba9f491e41b49548f5002440c99e21606a1af286"
+        },
+        "eight-literals": {
+          "path": "source-frame-copies-71192-full-forward/eight-literals/observations.json.gz",
+          "sha256": "04da487536bd1bfc5533061e8903156feb339b9d7e48e6dc43a679a5d35435dd"
+        },
+        "eight-literals-prefix": {
+          "path": "source-frame-copies-71192-full-forward/eight-literals-prefix/observations.json.gz",
+          "sha256": "81913297d036393d19b9f306e720a87f0eb1ea0d7bc2f93ef2fcb534cf928989"
+        },
+        "eight-overlap": {
+          "path": "source-frame-copies-71192-full-forward/eight-overlap/observations.json.gz",
+          "sha256": "615f1a6917aae620dbe1d97ac22f954a066ad95554df798ae4dd7a412dfb85ce"
+        },
+        "empty": {
+          "path": "source-frame-copies-71192-full-forward/empty/observations.json.gz",
+          "sha256": "8e35a7800a2eb6caf095cabd89a91831d54631bc908cdf2b46dbcf8b8ef3a0d0"
+        },
+        "heldout-mixed-131073": {
+          "path": "source-frame-copies-71192-full-forward/heldout-mixed-131073/observations.json.gz",
+          "sha256": "b7c64eb2fb095258f74b5e8e0c004fb52d1f3341db904cad63f305883b059e0a"
+        },
+        "heldout-random-65537": {
+          "path": "source-frame-copies-71192-full-forward/heldout-random-65537/observations.json.gz",
+          "sha256": "fb8143216315111b37f513519e352906f6ee7a61d10ee515221d1e65c323bc84"
+        },
+        "heldout-slides-65537": {
+          "path": "source-frame-copies-71192-full-forward/heldout-slides-65537/observations.json.gz",
+          "sha256": "160a701c152f0b06e5e6863fc7384182d6c8c441ff387c4e753fc46aefabe465"
+        },
+        "heldout-window-32767": {
+          "path": "source-frame-copies-71192-full-forward/heldout-window-32767/observations.json.gz",
+          "sha256": "79a1ed00dd44eb561c6decd855f2c94f23dee8c2cf03b4641e7f85156a83b204"
+        },
+        "heldout-window-32768": {
+          "path": "source-frame-copies-71192-full-forward/heldout-window-32768/observations.json.gz",
+          "sha256": "fff0d4fa28a1896761c5ba9fbbfd10b35630cfeaba5a05028f3bc411c746e045"
+        },
+        "one-stored": {
+          "path": "source-frame-copies-71192-full-forward/one-stored/observations.json.gz",
+          "sha256": "271382385ac169e9c2e2579ae290d35c799e36e65266d01ff2c917a4bc584332"
+        },
+        "prefix-natural-1024": {
+          "path": "source-frame-copies-71192-full-forward/prefix-natural-1024/observations.json.gz",
+          "sha256": "0687eb26891f9595428c63864753d89aacfd63ce86f3b7e8ded0a5a787c1b3e3"
+        },
+        "prefix-natural-1048576": {
+          "path": "source-frame-copies-71192-full-forward/prefix-natural-1048576/observations.json.gz",
+          "sha256": "28cef106466034c696ffb0ae33b45e3ed834d377e86d28b13ee3acb3366a9010"
+        },
+        "prefix-natural-131072": {
+          "path": "source-frame-copies-71192-full-forward/prefix-natural-131072/observations.json.gz",
+          "sha256": "9495376cba7fae513e196a93e0b90223cf056121cccead89101d9a69a303987a"
+        },
+        "prefix-natural-16384": {
+          "path": "source-frame-copies-71192-full-forward/prefix-natural-16384/observations.json.gz",
+          "sha256": "7af86ee5d05c0643166b3899df6ae4cb2e0da6b42245d7daa35246cce113352b"
+        },
+        "prefix-natural-262144": {
+          "path": "source-frame-copies-71192-full-forward/prefix-natural-262144/observations.json.gz",
+          "sha256": "dbe9b61b91f80fbd76966f70273e98c4f7ef758b75645fb88ca2483b5756d6de"
+        },
+        "prefix-natural-32767": {
+          "path": "source-frame-copies-71192-full-forward/prefix-natural-32767/observations.json.gz",
+          "sha256": "ea3b34e03a7b974d22440538e5ef67b2b1832fa1ba5f9e4809738eb521d5398a"
+        },
+        "prefix-natural-32768": {
+          "path": "source-frame-copies-71192-full-forward/prefix-natural-32768/observations.json.gz",
+          "sha256": "b2852a9a6b68c9146a747304fa96ee7d9ce74794d37c6f91fd18ecba6368d776"
+        },
+        "prefix-natural-32769": {
+          "path": "source-frame-copies-71192-full-forward/prefix-natural-32769/observations.json.gz",
+          "sha256": "68c8ce01f875e89a376ff1bdb7978d69640c44d8ea248496a583f35dc86e3391"
+        },
+        "prefix-natural-33027": {
+          "path": "source-frame-copies-71192-full-forward/prefix-natural-33027/observations.json.gz",
+          "sha256": "9134731bb12d2dc9c4293596f9940e64456a232ad8fa43fc176c6d2b36cd0dfa"
+        },
+        "prefix-natural-4096": {
+          "path": "source-frame-copies-71192-full-forward/prefix-natural-4096/observations.json.gz",
+          "sha256": "f0cf4abe78688f6681ffca6c988f2e19fb30db7c976f854458d0a2b4ced54339"
+        },
+        "prefix-natural-65535": {
+          "path": "source-frame-copies-71192-full-forward/prefix-natural-65535/observations.json.gz",
+          "sha256": "75efe03d45b200ac5eb883d9096c634d26f7faca2b6b5774f08cf25bc89c912b"
+        },
+        "prefix-natural-65536": {
+          "path": "source-frame-copies-71192-full-forward/prefix-natural-65536/observations.json.gz",
+          "sha256": "1f5ac85984bc975839c1553950caebf8e2ae53ba7710d5072518e9143e268450"
+        },
+        "prefix-natural-65537": {
+          "path": "source-frame-copies-71192-full-forward/prefix-natural-65537/observations.json.gz",
+          "sha256": "5621718ba858b0176c086ad1502ad07fd852fc0190ee7bd171558bf0712fc7f4"
+        },
+        "prefix-natural-8192": {
+          "path": "source-frame-copies-71192-full-forward/prefix-natural-8192/observations.json.gz",
+          "sha256": "d303892dc75d71d20cdf17d8350466520728b6f98ef92c170c7582c063038caa"
+        },
+        "prefix-periodic-1024": {
+          "path": "source-frame-copies-71192-full-forward/prefix-periodic-1024/observations.json.gz",
+          "sha256": "fa262c06ddcfee2a89d0f0797d12c956326848f4ba348ec380eada84745302b7"
+        },
+        "prefix-periodic-1048576": {
+          "path": "source-frame-copies-71192-full-forward/prefix-periodic-1048576/observations.json.gz",
+          "sha256": "e8a360f214d4900f2de75ca8e01517b9b61d0382cc5adf44a942bd1e43770701"
+        },
+        "prefix-periodic-131072": {
+          "path": "source-frame-copies-71192-full-forward/prefix-periodic-131072/observations.json.gz",
+          "sha256": "261abddd936f4cd1383275448b934c3a1f288550fc045d1ac6c82e35c2714740"
+        },
+        "prefix-periodic-16384": {
+          "path": "source-frame-copies-71192-full-forward/prefix-periodic-16384/observations.json.gz",
+          "sha256": "cfce70b3f2109cdc230360fb7ffdb54bae141f17cd5a1ebcb590ab26c1b202ea"
+        },
+        "prefix-periodic-262144": {
+          "path": "source-frame-copies-71192-full-forward/prefix-periodic-262144/observations.json.gz",
+          "sha256": "97b71ba6578720e4a8940c6ecf8f53f662bd22eafffc1d6496295f161bc38844"
+        },
+        "prefix-periodic-32767": {
+          "path": "source-frame-copies-71192-full-forward/prefix-periodic-32767/observations.json.gz",
+          "sha256": "88d224ef63a773b98cba5fd296aa0930eb9c3a6af3163ee56c6505555ef7fb12"
+        },
+        "prefix-periodic-32768": {
+          "path": "source-frame-copies-71192-full-forward/prefix-periodic-32768/observations.json.gz",
+          "sha256": "2a14c9e39b6cd28480e46c2923546cde6ca25723746d06b5f1041583659d55ec"
+        },
+        "prefix-periodic-32769": {
+          "path": "source-frame-copies-71192-full-forward/prefix-periodic-32769/observations.json.gz",
+          "sha256": "006dfe4310f9c31679b4b8d122b461e2f6ccd0b1ed1a1fd453bf6c7045a038b1"
+        },
+        "prefix-periodic-33027": {
+          "path": "source-frame-copies-71192-full-forward/prefix-periodic-33027/observations.json.gz",
+          "sha256": "1686ca974cf33d1552069b613bdf86efe4a19618e734ac49fd3135b6c9ad7b70"
+        },
+        "prefix-periodic-4096": {
+          "path": "source-frame-copies-71192-full-forward/prefix-periodic-4096/observations.json.gz",
+          "sha256": "036a2efa8ce02350eb427fd6d665c06c3eaa233e1f9392dbd866eb1dc710f16a"
+        },
+        "prefix-periodic-65535": {
+          "path": "source-frame-copies-71192-full-forward/prefix-periodic-65535/observations.json.gz",
+          "sha256": "132c53ed0262d36266863333db672776249f08e2c962d18ac3050ff7079171f5"
+        },
+        "prefix-periodic-65536": {
+          "path": "source-frame-copies-71192-full-forward/prefix-periodic-65536/observations.json.gz",
+          "sha256": "67933b1c13f7015a3b6b13884b297ddf17e92f4ba7f12fadcbf20e7447945da8"
+        },
+        "prefix-periodic-65537": {
+          "path": "source-frame-copies-71192-full-forward/prefix-periodic-65537/observations.json.gz",
+          "sha256": "d386f4edb3dfb476b16b9c2c6574e06cf37a9d9384f3e74c4de6f36740007b2b"
+        },
+        "prefix-periodic-8192": {
+          "path": "source-frame-copies-71192-full-forward/prefix-periodic-8192/observations.json.gz",
+          "sha256": "d1e585ec20d8bc4dde6cc20d023f0ba5dd61551e4b1c1f0cfb459999ad1eb19c"
+        },
+        "prefix-random-1024": {
+          "path": "source-frame-copies-71192-full-forward/prefix-random-1024/observations.json.gz",
+          "sha256": "dc3b3ba3da9ba8f8b96e9eb165895d604f1465ee093d4da91120e2369aae4d1f"
+        },
+        "prefix-random-1048576": {
+          "path": "source-frame-copies-71192-full-forward/prefix-random-1048576/observations.json.gz",
+          "sha256": "9573c9c2beba4e764802bd0019db5e6249e71dc5159618a8a66741275fc556b2"
+        },
+        "prefix-random-131072": {
+          "path": "source-frame-copies-71192-full-forward/prefix-random-131072/observations.json.gz",
+          "sha256": "a34609bb2ab18d51d31b99b264dce8697f068872094a1babbd05a2c8adcbbb01"
+        },
+        "prefix-random-16384": {
+          "path": "source-frame-copies-71192-full-forward/prefix-random-16384/observations.json.gz",
+          "sha256": "037b1c1d66b6d5f338c345e8f73be2478e577576046d2628037b228a589741d6"
+        },
+        "prefix-random-262144": {
+          "path": "source-frame-copies-71192-full-forward/prefix-random-262144/observations.json.gz",
+          "sha256": "165b0678eaa4dafaea6c5452fc5b9b14b8630eb409562f7a5eecaf1a2fab49e1"
+        },
+        "prefix-random-32767": {
+          "path": "source-frame-copies-71192-full-forward/prefix-random-32767/observations.json.gz",
+          "sha256": "0aa1475220117bfafdb85cc8ba57080424656ece9a21230b72ace119ec9efc01"
+        },
+        "prefix-random-32768": {
+          "path": "source-frame-copies-71192-full-forward/prefix-random-32768/observations.json.gz",
+          "sha256": "33c3fed26a84d0516f38c823a993a93f9d699359cebda8022b1b2382e053da61"
+        },
+        "prefix-random-32769": {
+          "path": "source-frame-copies-71192-full-forward/prefix-random-32769/observations.json.gz",
+          "sha256": "61d14e6a87453db63137fe4e277bc5126df9bfcc781ea3eecd41ad66ea814fbd"
+        },
+        "prefix-random-33027": {
+          "path": "source-frame-copies-71192-full-forward/prefix-random-33027/observations.json.gz",
+          "sha256": "0ea28a384738b0399f140ad0b57594c3056135f46386250517f6651698d0b7e3"
+        },
+        "prefix-random-4096": {
+          "path": "source-frame-copies-71192-full-forward/prefix-random-4096/observations.json.gz",
+          "sha256": "40e8b7ad6c89f7e966d9c713b6067d52ba450a615200ba4ad4b261a590f03f3c"
+        },
+        "prefix-random-65535": {
+          "path": "source-frame-copies-71192-full-forward/prefix-random-65535/observations.json.gz",
+          "sha256": "fc5d8985bc632511f737349a9265a3878a168a04baebd6fa41174c33793a0da7"
+        },
+        "prefix-random-65536": {
+          "path": "source-frame-copies-71192-full-forward/prefix-random-65536/observations.json.gz",
+          "sha256": "5705c7281360ff88a7774efcd7d67293d3a2342fbf1ac1b0794d66084e9cf5b6"
+        },
+        "prefix-random-65537": {
+          "path": "source-frame-copies-71192-full-forward/prefix-random-65537/observations.json.gz",
+          "sha256": "e85f6ae6d16f38968496c24386fadcfe540ceda058ccfea1ad604f44ce710929"
+        },
+        "prefix-random-8192": {
+          "path": "source-frame-copies-71192-full-forward/prefix-random-8192/observations.json.gz",
+          "sha256": "12b74c900049d11039d22fb13c616b5ca74bfbdea39290ac6ed41e87922019ac"
+        },
+        "prefix-repeated-1024": {
+          "path": "source-frame-copies-71192-full-forward/prefix-repeated-1024/observations.json.gz",
+          "sha256": "027aabc14fc2c4914ad399ae30866be03972ec4072463bfe984328afa0063953"
+        },
+        "prefix-repeated-1048576": {
+          "path": "source-frame-copies-71192-full-forward/prefix-repeated-1048576/observations.json.gz",
+          "sha256": "06149d5c612626894dbe26c53354e4db1a0b3c9082f76b0fd1e1b0cf08dd0f25"
+        },
+        "prefix-repeated-131072": {
+          "path": "source-frame-copies-71192-full-forward/prefix-repeated-131072/observations.json.gz",
+          "sha256": "d8a2f0dcd56f38c3e12808e0a14f3b14c0730318662bcb49f854163d40cb0383"
+        },
+        "prefix-repeated-16384": {
+          "path": "source-frame-copies-71192-full-forward/prefix-repeated-16384/observations.json.gz",
+          "sha256": "434288f29162771ec2a33c8d04325dc5297c5d6a00855d9734e9ef3c0b95b9f1"
+        },
+        "prefix-repeated-262144": {
+          "path": "source-frame-copies-71192-full-forward/prefix-repeated-262144/observations.json.gz",
+          "sha256": "3bde48c2bca202b5b896c140ec43bfea89b04185f8300201291a397b1e91223d"
+        },
+        "prefix-repeated-32767": {
+          "path": "source-frame-copies-71192-full-forward/prefix-repeated-32767/observations.json.gz",
+          "sha256": "33613489271e7ce3e1776e83b9e96815e7b01a42819c17b89e1b40346535b888"
+        },
+        "prefix-repeated-32768": {
+          "path": "source-frame-copies-71192-full-forward/prefix-repeated-32768/observations.json.gz",
+          "sha256": "8362996b575b9dc5e67f650ec723e72a2deef61582cf2acd19579aa4f996a481"
+        },
+        "prefix-repeated-32769": {
+          "path": "source-frame-copies-71192-full-forward/prefix-repeated-32769/observations.json.gz",
+          "sha256": "ed4ff6b75c2ba805c0b171118aa0ae5ac27bc178f8ea07a7d30db98392554048"
+        },
+        "prefix-repeated-33027": {
+          "path": "source-frame-copies-71192-full-forward/prefix-repeated-33027/observations.json.gz",
+          "sha256": "b4e19e32ea02d844b50209bcd2babf3b94ebbb3a71a1992ec1355a4f842a7838"
+        },
+        "prefix-repeated-4096": {
+          "path": "source-frame-copies-71192-full-forward/prefix-repeated-4096/observations.json.gz",
+          "sha256": "19ccd83a27215dee9cdf049c01ba6f1fe171849e819141b7fd79862c56292e32"
+        },
+        "prefix-repeated-65535": {
+          "path": "source-frame-copies-71192-full-forward/prefix-repeated-65535/observations.json.gz",
+          "sha256": "116a3ebb84a9a96813d263a4d2d5b05d7e70c6f054f8369d6e94f2baba23370d"
+        },
+        "prefix-repeated-65536": {
+          "path": "source-frame-copies-71192-full-forward/prefix-repeated-65536/observations.json.gz",
+          "sha256": "93d1d06685e807b4dc81f9735aaf133da385ebea7a4f0520c4ccef0f1a5cbc2a"
+        },
+        "prefix-repeated-65537": {
+          "path": "source-frame-copies-71192-full-forward/prefix-repeated-65537/observations.json.gz",
+          "sha256": "e2fced27056a25c946e5c306161da0b41c6149d5cf90db7f0217a4d5d8b54f2f"
+        },
+        "prefix-repeated-8192": {
+          "path": "source-frame-copies-71192-full-forward/prefix-repeated-8192/observations.json.gz",
+          "sha256": "bb2ded3fdf0aceb35c79aee9b21cdfb0abc0a530a29b09830ea505f14c78bdc6"
+        },
+        "random-1024": {
+          "path": "source-frame-copies-71192-full-forward/random-1024/observations.json.gz",
+          "sha256": "0ae1eb27b03e6351a5213e6f32e9bced2f5b0f46b1fe8c04691d39ffd8fb9c7f"
+        },
+        "random-256": {
+          "path": "source-frame-copies-71192-full-forward/random-256/observations.json.gz",
+          "sha256": "3f219b7638950458933bbaa2768e4281e8c39ae06007857887aaf86bbae9f50f"
+        },
+        "random-32769": {
+          "path": "source-frame-copies-71192-full-forward/random-32769/observations.json.gz",
+          "sha256": "a67d68f2e226f9e90f2158c4df52a1536850becc820f960395dc15c51de4c54c"
+        },
+        "random-64": {
+          "path": "source-frame-copies-71192-full-forward/random-64/observations.json.gz",
+          "sha256": "5fcbb22331747449865604a56fc685b1756ca42401ce909e8034d5c5b0d4987d"
+        },
+        "repeated-1024": {
+          "path": "source-frame-copies-71192-full-forward/repeated-1024/observations.json.gz",
+          "sha256": "597dfaafa32fc500dffc00c5d7f38d07c629d0e9db2923e046466f6bf256ae59"
+        },
+        "repeated-32769": {
+          "path": "source-frame-copies-71192-full-forward/repeated-32769/observations.json.gz",
+          "sha256": "b4f12e5839be5e9d81b98e0d58054d9714c02dc8b563ae67263ca65c0b5f4627"
+        },
+        "reymont-prefix-1024": {
+          "path": "source-frame-copies-71192-full-forward/reymont-prefix-1024/observations.json.gz",
+          "sha256": "cee424856f24e8300ae2c0e03557c223442dc12071c3cb6285819989444c5631"
+        },
+        "reymont-prefix-16384": {
+          "path": "source-frame-copies-71192-full-forward/reymont-prefix-16384/observations.json.gz",
+          "sha256": "0f3cf779d650f500b0c25c50a6a696be03eb3373d870cd3610e51f65cfff8121"
+        },
+        "reymont-prefix-32769": {
+          "path": "source-frame-copies-71192-full-forward/reymont-prefix-32769/observations.json.gz",
+          "sha256": "db608fcfcd1031886c1cf92bb1e90c4de7579a8a874144664352a7b434197871"
+        },
+        "seven-stored-prefix": {
+          "path": "source-frame-copies-71192-full-forward/seven-stored-prefix/observations.json.gz",
+          "sha256": "45b10ec41f8448ee78ed7fe418c0a226e700a51aed346564e0c7109e7b4dd833"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "source-frame-copies-71192-full-forward/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "source-frame-copies-71192-full-forward/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "source-frame-copies-71192-full-forward/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "source-frame-copies-71192-full-forward/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    },
+    "source-frame-copies-71192-full-reverse": {
+      "id": "source-frame-copies-71192-full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "source-frame-copy-tails/source-frame-copies-71192/canonical-pins/source-frame-copies-71192-full-reverse.json",
+        "sha256": "ddfa1409de516964a5831e3dab1e0e5a2919bb92796270f5d655fdb0ed269cc7"
+      },
+      "original_pins": {
+        "path": "source-frame-copies-71192-full-reverse/pins.json",
+        "sha256": "3d5fd304f9b43758e2e3b675f846ae74e3648bdfcce26a23b75d51c657126ff5"
+      },
+      "summary": {
+        "path": "source-frame-copies-71192-full-reverse/summary.json",
+        "sha256": "0824e3cef015a21804534d18a8eac307e023c84c0d3cf5160abd232e50b6c877"
+      },
+      "complete": {
+        "path": "source-frame-copies-71192-full-reverse/complete.json",
+        "sha256": "2e54dfa5984a50621e44303a7cbdd811e578a4c88e1b46ef989159527d443c6f"
+      },
+      "observations": {
+        "128-biased-dynamic": {
+          "path": "source-frame-copies-71192-full-reverse/128-biased-dynamic/observations.json.gz",
+          "sha256": "03dda7ad4657ac009515dd91701d778f355fc765e1aa8310e9de5ed6202bbede"
+        },
+        "16384-distribution-change": {
+          "path": "source-frame-copies-71192-full-reverse/16384-distribution-change/observations.json.gz",
+          "sha256": "730a9aad2987580c1697608fd4323115f856d7b0cadba79cd65642ccab343c3a"
+        },
+        "32-high-entropy-stored": {
+          "path": "source-frame-copies-71192-full-reverse/32-high-entropy-stored/observations.json.gz",
+          "sha256": "fe9d682ee0bd0d6b7b01c3b3833f7cef33a9c59780ae29b9613de696564e1b4a"
+        },
+        "320-overlap": {
+          "path": "source-frame-copies-71192-full-reverse/320-overlap/observations.json.gz",
+          "sha256": "627ce1b19bacc3fbcbb710f44eb7063a107d84dde4bddd4a6aedd881ae733ae8"
+        },
+        "33027-periodic-window": {
+          "path": "source-frame-copies-71192-full-reverse/33027-periodic-window/observations.json.gz",
+          "sha256": "7c59f7995e1df9a6228bfaf613ed5f47a64628e785d3c1c00c611c80f4bc49cc"
+        },
+        "eight-literals": {
+          "path": "source-frame-copies-71192-full-reverse/eight-literals/observations.json.gz",
+          "sha256": "1f3033c5b8b7c5602546614c58f8c2a0f9eba12b8ac63bf5cb7105d95a52e771"
+        },
+        "eight-literals-prefix": {
+          "path": "source-frame-copies-71192-full-reverse/eight-literals-prefix/observations.json.gz",
+          "sha256": "9fcd865b6a4cde6aa1adfe6b6dc2d51eb860d5653dc062bc7dd1660be6d1cbaa"
+        },
+        "eight-overlap": {
+          "path": "source-frame-copies-71192-full-reverse/eight-overlap/observations.json.gz",
+          "sha256": "055f6555d97f14e5d52e6adae8c7d28bd3fd18d18d848192698cb9b6b8020063"
+        },
+        "empty": {
+          "path": "source-frame-copies-71192-full-reverse/empty/observations.json.gz",
+          "sha256": "b903101436a7cb5efacd83cf507e0027397d68aa15362ee3f62a2f3885318613"
+        },
+        "heldout-mixed-131073": {
+          "path": "source-frame-copies-71192-full-reverse/heldout-mixed-131073/observations.json.gz",
+          "sha256": "25c34dd2bf413b85c7322d2c21b607950937d1a45ec1b607d4914fbdcbe659b4"
+        },
+        "heldout-random-65537": {
+          "path": "source-frame-copies-71192-full-reverse/heldout-random-65537/observations.json.gz",
+          "sha256": "0952698008329de2a98850d55d1d4f3b6cf29477283f3e3b7018eea3ed6babff"
+        },
+        "heldout-slides-65537": {
+          "path": "source-frame-copies-71192-full-reverse/heldout-slides-65537/observations.json.gz",
+          "sha256": "fe2ccf65b4149b3240d2318d0de22b0404f5af682d8ec6a971dbdfcef54fa5ba"
+        },
+        "heldout-window-32767": {
+          "path": "source-frame-copies-71192-full-reverse/heldout-window-32767/observations.json.gz",
+          "sha256": "83caae3b663dbec315974d5f6fb046310d8c2a1d63b57e161270a82daacf6898"
+        },
+        "heldout-window-32768": {
+          "path": "source-frame-copies-71192-full-reverse/heldout-window-32768/observations.json.gz",
+          "sha256": "2ada8fd86206ace350a06b6efa1f9daacd5bf293143b60b1c0068ca7d3bf4039"
+        },
+        "one-stored": {
+          "path": "source-frame-copies-71192-full-reverse/one-stored/observations.json.gz",
+          "sha256": "015fa75e10fa3209c9ea63bddc5327e9feab33ff246bd57b86bda1ad5740fa91"
+        },
+        "prefix-natural-1024": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-natural-1024/observations.json.gz",
+          "sha256": "bf6f26d495104489aa5bea4f2d00ee0da74a941479230682800acf398791390f"
+        },
+        "prefix-natural-1048576": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-natural-1048576/observations.json.gz",
+          "sha256": "2b6fd5577cb62e19ee9f37c9f8efe1e60ffcf554386d9ad92116fea9359b6871"
+        },
+        "prefix-natural-131072": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-natural-131072/observations.json.gz",
+          "sha256": "1816bfe6a0ce8f7f03b9b02cc6e20520b11f9a1add18337757d4e32621b91614"
+        },
+        "prefix-natural-16384": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-natural-16384/observations.json.gz",
+          "sha256": "abf581019123a19b74925240613b6336d13a6bf33db7cb7414d50d6874e0fca0"
+        },
+        "prefix-natural-262144": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-natural-262144/observations.json.gz",
+          "sha256": "3a966f083258c5917e52c32ff622b639e50dd6f9d3e1ac4f6d4dfc97f290c626"
+        },
+        "prefix-natural-32767": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-natural-32767/observations.json.gz",
+          "sha256": "01d73e1d7e0b23c25ca1258daa42edd48050cc3c78f6095764b9351d92a0539c"
+        },
+        "prefix-natural-32768": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-natural-32768/observations.json.gz",
+          "sha256": "6df0a34aa2854c016a5eb21a9d2db3d2dffc1aca555b96d133863490a5c9d1a0"
+        },
+        "prefix-natural-32769": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-natural-32769/observations.json.gz",
+          "sha256": "04e1fb88600a842d66ce31909c03448c841fc28ceebce095f9dd69050aa6e78f"
+        },
+        "prefix-natural-33027": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-natural-33027/observations.json.gz",
+          "sha256": "53e2b55924f074b442474f5f7bff9c8cf7c794eaf48949d8c90cc7b167da7019"
+        },
+        "prefix-natural-4096": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-natural-4096/observations.json.gz",
+          "sha256": "cbe9cfc23f45a16b67982485e154bed9fbf2717dbd125d822eb0a9fa62721c16"
+        },
+        "prefix-natural-65535": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-natural-65535/observations.json.gz",
+          "sha256": "8802e63ab40085cabb4a36a0f73a03a5f99dae2aa97f15f5ad00c842070a35a2"
+        },
+        "prefix-natural-65536": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-natural-65536/observations.json.gz",
+          "sha256": "29bd6d53b8a29ac63f476b35f06a57a0828dd9161b7d673bfe159cc4e76aee2b"
+        },
+        "prefix-natural-65537": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-natural-65537/observations.json.gz",
+          "sha256": "b7a2fc6bc3e5117afcaac76e7c0772f16b267aa26eb5fb406562a9d9c2446b1d"
+        },
+        "prefix-natural-8192": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-natural-8192/observations.json.gz",
+          "sha256": "b91b426e77ed6fb6db06094c6bd051ee6fb7b3a8fddf296cb6324e43521b0305"
+        },
+        "prefix-periodic-1024": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-periodic-1024/observations.json.gz",
+          "sha256": "e5cc067667a8b060781c361dfddbd7135020fa23768d1235816cf7e5bb6a9ee4"
+        },
+        "prefix-periodic-1048576": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-periodic-1048576/observations.json.gz",
+          "sha256": "f471f4b02b2bd8bdb24172e9ecfda7ba14f35e65078e73faa49e5665f5d29fa7"
+        },
+        "prefix-periodic-131072": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-periodic-131072/observations.json.gz",
+          "sha256": "5f8b05311dd5e0db9e0b583c8961802f2e471f2dee3319acff71e4298b2bea93"
+        },
+        "prefix-periodic-16384": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-periodic-16384/observations.json.gz",
+          "sha256": "b9d4bcaf3a669fdee07110cb671fc610d00009898be53e8b57e1b9849d29b9c6"
+        },
+        "prefix-periodic-262144": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-periodic-262144/observations.json.gz",
+          "sha256": "f61829e850aee7403f3e18ef62edee27ff6b12025e0d39436b05a0583e43116f"
+        },
+        "prefix-periodic-32767": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-periodic-32767/observations.json.gz",
+          "sha256": "8643d05a6cc5c11f73dee6e65a82dfd643b330f6fd55c78d5c4bbc7b9654d224"
+        },
+        "prefix-periodic-32768": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-periodic-32768/observations.json.gz",
+          "sha256": "732a43c0f126fe8e345c245598f2cdf40d25cbde02e5672a900c77049392806f"
+        },
+        "prefix-periodic-32769": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-periodic-32769/observations.json.gz",
+          "sha256": "ae5017e4e20dda40a8fe11f06da63f680008ed7fe1bc96bbc033c2dcd1d1f6d5"
+        },
+        "prefix-periodic-33027": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-periodic-33027/observations.json.gz",
+          "sha256": "769b2f6c5de65d717bf5ac5ebb24b609b33f573cc08e2b29163ccddff429604e"
+        },
+        "prefix-periodic-4096": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-periodic-4096/observations.json.gz",
+          "sha256": "13399642cd8927c17f3257818c45bcf9fe34e836c6807c94aa437c27a58443af"
+        },
+        "prefix-periodic-65535": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-periodic-65535/observations.json.gz",
+          "sha256": "4af7602705a7a1856f054ce713591a3b371465f181c2cccbe37d05c86f1b0db9"
+        },
+        "prefix-periodic-65536": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-periodic-65536/observations.json.gz",
+          "sha256": "d853c9516e41f1167a94d941550de39ce0c0afa11819509061fbc57baa31636d"
+        },
+        "prefix-periodic-65537": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-periodic-65537/observations.json.gz",
+          "sha256": "a32b881cc2cd66ff7313559b1995cfdb62c3ae38dfc7c1e1e9a6cc1eba55d78c"
+        },
+        "prefix-periodic-8192": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-periodic-8192/observations.json.gz",
+          "sha256": "2dfbd4bd10b0b6e4b5bb579bb2e70b8c4768bcd0af6ecc2e17a49dd5b2e09cd3"
+        },
+        "prefix-random-1024": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-random-1024/observations.json.gz",
+          "sha256": "877d85b8dc992be591c5fed54bdf13bc6793ca0b701cbd38769471e493e3fac9"
+        },
+        "prefix-random-1048576": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-random-1048576/observations.json.gz",
+          "sha256": "bac23172e195b272ba1b1f05fbae75a9d7c0ecd925bc55cc3a37d95d3f096c60"
+        },
+        "prefix-random-131072": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-random-131072/observations.json.gz",
+          "sha256": "cd49bd07eefbb4d0a070c782bd439626648db6428ec88c6fd1b966a2bce4b6c2"
+        },
+        "prefix-random-16384": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-random-16384/observations.json.gz",
+          "sha256": "57972dc17d92ac5b6a65f783a9f29435d1483669976af8f6bd0f947b63795370"
+        },
+        "prefix-random-262144": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-random-262144/observations.json.gz",
+          "sha256": "0def802ed9c69b31c045d35596762d73fa99d969a58ff10893eac93c8ed06b6f"
+        },
+        "prefix-random-32767": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-random-32767/observations.json.gz",
+          "sha256": "55a1012fce133ce24fedb32261228f2551db087b02179a2cd1dca703fd378d35"
+        },
+        "prefix-random-32768": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-random-32768/observations.json.gz",
+          "sha256": "d600195274edd12d29bb6d0cae377b07f7985a803aab1b8c393c144a66b1fda6"
+        },
+        "prefix-random-32769": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-random-32769/observations.json.gz",
+          "sha256": "d48b65d4547c0e01160f93dfed8ec4cb4b0f26e6751256bb8232a650338edd7d"
+        },
+        "prefix-random-33027": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-random-33027/observations.json.gz",
+          "sha256": "dd10bfab3620be54474f9ed1e9404ac687ca3e8127b9eae4991944fcda12663b"
+        },
+        "prefix-random-4096": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-random-4096/observations.json.gz",
+          "sha256": "2634fcb7f527c2755e7536d43c51242c47354e358c6bc81f393080fd7c779413"
+        },
+        "prefix-random-65535": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-random-65535/observations.json.gz",
+          "sha256": "0a10f06444b1281d216a64aa92089157fd95531abff590cb25bba9859210cf6b"
+        },
+        "prefix-random-65536": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-random-65536/observations.json.gz",
+          "sha256": "80c8b435488242d090ade4844576a867b2fe0cf527e5efde6b1a6f8c332212a0"
+        },
+        "prefix-random-65537": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-random-65537/observations.json.gz",
+          "sha256": "2d077adfa63b59d63ce6c958b37acc2c038fde2378c3865010427f4bafd4d795"
+        },
+        "prefix-random-8192": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-random-8192/observations.json.gz",
+          "sha256": "5e9449e2b86d5126761c8633464848d8e81d82d513aa1c50f6f56d21c71fa297"
+        },
+        "prefix-repeated-1024": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-repeated-1024/observations.json.gz",
+          "sha256": "5c2aa24617ddf5b7894ce9f54fc0c03d37262315d92f9e4b068977043d998c15"
+        },
+        "prefix-repeated-1048576": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-repeated-1048576/observations.json.gz",
+          "sha256": "64653ae6924098aa2623d920e1cf0e22fe45cc0930d36d98cba5748687a90d43"
+        },
+        "prefix-repeated-131072": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-repeated-131072/observations.json.gz",
+          "sha256": "8347209a98d08016677a703f128cd26fc7dfbdcf32a6bb7151049b7380bde890"
+        },
+        "prefix-repeated-16384": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-repeated-16384/observations.json.gz",
+          "sha256": "641f610dcafa17455fbb90524fdd2a434af3b261c957bd1b0697816153a08f66"
+        },
+        "prefix-repeated-262144": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-repeated-262144/observations.json.gz",
+          "sha256": "35dc8e341f32d60134fa591f3bc585b7f93dde232d0ae8137c6d00a07a86dd3d"
+        },
+        "prefix-repeated-32767": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-repeated-32767/observations.json.gz",
+          "sha256": "1a979a59a8d7fb56ee4e3863eddd8150734ac9ce7c7072a7cd9e953562a5a7e6"
+        },
+        "prefix-repeated-32768": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-repeated-32768/observations.json.gz",
+          "sha256": "8d0e0a366bd218931b5da5abe59f61ca359b7d875da93de209fdaffed1d9f4d5"
+        },
+        "prefix-repeated-32769": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-repeated-32769/observations.json.gz",
+          "sha256": "35c390597133d5e22439bd220b309f8603bc53abec4780e1b197da1b820d17f0"
+        },
+        "prefix-repeated-33027": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-repeated-33027/observations.json.gz",
+          "sha256": "61cceb08bf5b9430fe3861f9e208805b2a80fa8c55263117aef02254555c615b"
+        },
+        "prefix-repeated-4096": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-repeated-4096/observations.json.gz",
+          "sha256": "febfb6d0f87a26352ca3054d3f036e1bfead7c7b242e29288fe559a3c96092b3"
+        },
+        "prefix-repeated-65535": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-repeated-65535/observations.json.gz",
+          "sha256": "8e3b3e37b89a3d4ca254ca876ef51304bf49533cfa502eab8d92c53915dadf8c"
+        },
+        "prefix-repeated-65536": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-repeated-65536/observations.json.gz",
+          "sha256": "45d5b93e54f134ebb4007143b31c5abd78788d74439d16324acd2098f653b60d"
+        },
+        "prefix-repeated-65537": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-repeated-65537/observations.json.gz",
+          "sha256": "3f8c4943cdbdf17a001104d56c8fff03af56dac19d6c26feae9e0d18c681b787"
+        },
+        "prefix-repeated-8192": {
+          "path": "source-frame-copies-71192-full-reverse/prefix-repeated-8192/observations.json.gz",
+          "sha256": "4e692829ae038696ca3c56b8d7fc9fd13238a4ca30ea9492d23ace1d3da8d628"
+        },
+        "random-1024": {
+          "path": "source-frame-copies-71192-full-reverse/random-1024/observations.json.gz",
+          "sha256": "dc5933efb91d0350dde34309bff4e39541b53ef90e104caf39e8dfa61e264337"
+        },
+        "random-256": {
+          "path": "source-frame-copies-71192-full-reverse/random-256/observations.json.gz",
+          "sha256": "5f7731d2b64290ee70d4c57e3c92d23fbd0fe17d25043e1d68d72f606c100e76"
+        },
+        "random-32769": {
+          "path": "source-frame-copies-71192-full-reverse/random-32769/observations.json.gz",
+          "sha256": "9a29fbceaa83dadb022be65cfdb3e09352b9dd9ac5594cb69871ea521b777551"
+        },
+        "random-64": {
+          "path": "source-frame-copies-71192-full-reverse/random-64/observations.json.gz",
+          "sha256": "09bd40a7ea7f358df420d87a29a97295d6671620362d2786fe2ae136a4164a42"
+        },
+        "repeated-1024": {
+          "path": "source-frame-copies-71192-full-reverse/repeated-1024/observations.json.gz",
+          "sha256": "2e98e7370f3b7d345a191ad59ad371060dcf80c7b18d8df210750685bd10930e"
+        },
+        "repeated-32769": {
+          "path": "source-frame-copies-71192-full-reverse/repeated-32769/observations.json.gz",
+          "sha256": "01fb6c30eedef82ba7776928f7a82f985ffe5cddab1c9071111010533aaaf834"
+        },
+        "reymont-prefix-1024": {
+          "path": "source-frame-copies-71192-full-reverse/reymont-prefix-1024/observations.json.gz",
+          "sha256": "74affd1f841c703d2a1a20225f513ea39c2868f143b235b50ba1210f0aff1f7b"
+        },
+        "reymont-prefix-16384": {
+          "path": "source-frame-copies-71192-full-reverse/reymont-prefix-16384/observations.json.gz",
+          "sha256": "49bb357534ba69453d222ddedaaeaa67e135241f8a07885cb7020044cb093f3a"
+        },
+        "reymont-prefix-32769": {
+          "path": "source-frame-copies-71192-full-reverse/reymont-prefix-32769/observations.json.gz",
+          "sha256": "59837026f965ec55a4b6fa9b31e7ca7fe38bd5205ed686967bb7f2fe44a028d6"
+        },
+        "seven-stored-prefix": {
+          "path": "source-frame-copies-71192-full-reverse/seven-stored-prefix/observations.json.gz",
+          "sha256": "2caab973422b445354da6e6ce775176e674517a9ce53d0ee85ef715815b3452d"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "source-frame-copies-71192-full-reverse/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "source-frame-copies-71192-full-reverse/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "source-frame-copies-71192-full-reverse/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "source-frame-copies-71192-full-reverse/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "changed_atoms": [
+    {
+      "symbol": "_mech_compact_closed_checked",
+      "old_bytes": 52016,
+      "new_bytes": 51696
+    }
+  ],
+  "root_start": 17824,
+  "unchanged_warm_instruction_bytes": 47200,
+  "warm_changes_only_branch_displacements_into_cold_code": 519,
+  "metadata_changes": {
+    "code_bytes": {
+      "old": 52008,
+      "new": 51684
+    }
+  },
+  "native_calls": 10240,
+  "verified_encoder_calls": 162,
+  "object_text_bytes": 72200,
+  "object_text_x_roc": 1.2513865779256794,
+  "object_text_x_libdeflate": 1.9471413160733548,
+  "promoted": false,
+  "runtime_qualification": "pending"
+}

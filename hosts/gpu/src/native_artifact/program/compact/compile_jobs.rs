@@ -1,4 +1,5 @@
 //! Function-local machine compilation, with coordinator-owned Object publication.
+use super::object::DirectRuntimeCalls;
 use crate::native_artifact::{NativeCompileError, compiler::backend};
 use cranelift_codegen::{
     Context,
@@ -20,12 +21,17 @@ pub(super) struct Pool {
     workers: Vec<JoinHandle<()>>,
     submitted: std::cell::Cell<usize>,
     cleanup_submitted: std::cell::Cell<usize>,
+    direct_runtime_calls: DirectRuntimeCalls,
 }
 
 pub(super) struct Ticket<T = Context>(mpsc::Receiver<Result<T, NativeCompileError>>);
 
 impl Pool {
-    pub(super) fn new(isa: OwnedTargetIsa, count: usize) -> Result<Self, NativeCompileError> {
+    pub(super) fn new(
+        isa: OwnedTargetIsa,
+        count: usize,
+        direct_runtime_calls: DirectRuntimeCalls,
+    ) -> Result<Self, NativeCompileError> {
         assert!(count > 0);
         let (queue, jobs) = mpsc::sync_channel::<Job>(count);
         let jobs = Arc::new(Mutex::new(jobs));
@@ -35,6 +41,7 @@ impl Pool {
             workers: Vec::new(),
             submitted: std::cell::Cell::new(0),
             cleanup_submitted: std::cell::Cell::new(0),
+            direct_runtime_calls,
         };
         for index in 0..count {
             let jobs = jobs.clone();
@@ -87,7 +94,12 @@ impl Pool {
         &self,
         module: &M,
     ) -> Result<RecordedModule, NativeCompileError> {
-        RecordedModule::new(module.declarations(), self.isa.clone()).map_err(backend)
+        RecordedModule::new(
+            module.declarations(),
+            self.isa.clone(),
+            self.direct_runtime_calls,
+        )
+        .map_err(backend)
     }
 }
 
@@ -208,7 +220,7 @@ mod tests {
             let (second, mut context) = later(&mut module);
             module.define_function(second, &mut context).unwrap();
         } else {
-            let pool = Pool::new(isa, count).unwrap();
+            let pool = Pool::new(isa, count, DirectRuntimeCalls::default()).unwrap();
             let mut recorded = pool.record(&module).unwrap();
             let (second, context) = later(&mut recorded);
             let (first_job, second_job) = if reverse_submission {
@@ -249,7 +261,7 @@ mod tests {
             .define_function(first, &mut context)
             .unwrap_err()
             .to_string();
-        let pool = Pool::new(isa, 2).unwrap();
+        let pool = Pool::new(isa, 2, DirectRuntimeCalls::default()).unwrap();
         let first_job = pool.submit(body(&mut module, false)).unwrap();
         let mut recorded = pool.record(&module).unwrap();
         let data = recorded.declare_anonymous_data(false, false).unwrap();
@@ -306,7 +318,7 @@ mod tests {
             clean(&mut context, isa.as_ref()).unwrap();
             module.define_function(function, &mut context).unwrap();
         } else {
-            let pool = Pool::new(isa, count).unwrap();
+            let pool = Pool::new(isa, count, DirectRuntimeCalls::default()).unwrap();
             let ticket = pool
                 .submit_work(move |isa| {
                     let ir = clean(&mut context, isa)?;
@@ -334,7 +346,7 @@ mod tests {
     #[test]
     fn typed_cleanup_errors_remain_ordered_by_their_tickets() {
         let (_, isa) = module();
-        let pool = Pool::new(isa, 2).unwrap();
+        let pool = Pool::new(isa, 2, DirectRuntimeCalls::default()).unwrap();
         let first = pool
             .submit_work::<()>(|_| Err(backend("earlier cleanup")))
             .unwrap();
@@ -421,10 +433,15 @@ pub(super) struct RecordedModule {
     isa: OwnedTargetIsa,
     declarations: ModuleDeclarations,
     events: Vec<Event>,
+    direct_runtime_calls: DirectRuntimeCalls,
 }
 
 impl RecordedModule {
-    fn new(source: &ModuleDeclarations, isa: OwnedTargetIsa) -> ModuleResult<Self> {
+    fn new(
+        source: &ModuleDeclarations,
+        isa: OwnedTargetIsa,
+        direct_runtime_calls: DirectRuntimeCalls,
+    ) -> ModuleResult<Self> {
         let mut declarations = ModuleDeclarations::default();
         for (expected, declaration) in source.get_functions() {
             let actual = if let Some(name) = &declaration.name {
@@ -455,6 +472,7 @@ impl RecordedModule {
             isa,
             declarations,
             events: Vec::new(),
+            direct_runtime_calls,
         })
     }
 
@@ -500,6 +518,15 @@ impl RecordedModule {
 }
 
 impl Module for RecordedModule {
+    fn declare_func_in_func(
+        &mut self,
+        id: FuncId,
+        f: &mut cranelift_codegen::ir::Function,
+    ) -> cranelift_codegen::ir::FuncRef {
+        self.direct_runtime_calls
+            .declare_in(&self.declarations, id, f)
+    }
+
     fn isa(&self) -> &dyn cranelift_codegen::isa::TargetIsa {
         self.isa.as_ref()
     }

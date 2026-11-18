@@ -1,0 +1,1228 @@
+{
+  "base": "3cde720cdf8b24d6bc4f1818988479d8eb5ae960",
+  "spill_census": {
+    "case": "prefix-natural-8192",
+    "workers": {
+      "latch-control": {
+        "counts_sha256": "b3f23e241b13db83c71b304ab5002fb6eb9be51b203575cad1c6e157740eff6d",
+        "object_sha256": "d0f6f40124bb9dcd17db355630f70d9c9605c58cc71f3bc2464642c6cae00049",
+        "calls": 6,
+        "stack_loads": 43074,
+        "reload": {
+          "address": "0x2210",
+          "visits": 43020,
+          "instructions": [
+            [
+              "lsr",
+              "x19, x15, #16"
+            ],
+            [
+              "add",
+              "x7, x19, #0x103"
+            ],
+            [
+              "ldur",
+              "x8, [sp, #0x70]"
+            ],
+            [
+              "cmp",
+              "x7, x8"
+            ],
+            [
+              "b.hs",
+              "0x2488"
+            ]
+          ]
+        },
+        "stores": [
+          {
+            "address": "0x2344",
+            "visits": 3468,
+            "instructions": [
+              [
+                "ldr",
+                "x7, [x1, #0x98]"
+              ],
+              [
+                "ldr",
+                "x11, [x1, #0x10]"
+              ],
+              [
+                "ldr",
+                "x5, [x1, #0x20]"
+              ],
+              [
+                "stur",
+                "x5, [sp, #0x68]"
+              ],
+              [
+                "ldr",
+                "x5, [x1, #0x30]"
+              ],
+              [
+                "ldr",
+                "x6, [x1, #0x38]"
+              ],
+              [
+                "ldr",
+                "x10, [x1, #0x50]"
+              ],
+              [
+                "ldr",
+                "x8, [x1, #0x58]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x70]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x78]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x90]"
+              ],
+              [
+                "sub",
+                "x12, x13, #0x1"
+              ],
+              [
+                "mov",
+                "x13, x0"
+              ],
+              [
+                "stur",
+                "x7, [sp, #0x60]"
+              ],
+              [
+                "stur",
+                "x8, [sp, #0x70]"
+              ],
+              [
+                "b",
+                "0x21fc"
+              ]
+            ]
+          },
+          {
+            "address": "0x2080",
+            "visits": 6,
+            "instructions": [
+              [
+                "pacibsp",
+                ""
+              ],
+              [
+                "stp",
+                "x29, x30, [sp, #-0x10]!"
+              ],
+              [
+                "mov",
+                "x29, sp"
+              ],
+              [
+                "stp",
+                "x27, x28, [sp, #-0x10]!"
+              ],
+              [
+                "stp",
+                "x25, x26, [sp, #-0x10]!"
+              ],
+              [
+                "stp",
+                "x23, x24, [sp, #-0x10]!"
+              ],
+              [
+                "stp",
+                "x21, x22, [sp, #-0x10]!"
+              ],
+              [
+                "stp",
+                "x19, x20, [sp, #-0x10]!"
+              ],
+              [
+                "sub",
+                "sp, sp, #0x80"
+              ],
+              [
+                "ldr",
+                "x14, [x1, #0x98]"
+              ],
+              [
+                "stur",
+                "x14, [sp, #0x60]"
+              ],
+              [
+                "ldr",
+                "x4, [x1]"
+              ],
+              [
+                "ldr",
+                "x7, [x1, #0x8]"
+              ],
+              [
+                "ldr",
+                "x11, [x1, #0x10]"
+              ],
+              [
+                "ldr",
+                "x0, [x1, #0x18]"
+              ],
+              [
+                "ldr",
+                "x8, [x1, #0x20]"
+              ],
+              [
+                "stur",
+                "x8, [sp, #0x68]"
+              ],
+              [
+                "ldr",
+                "x13, [x1, #0x28]"
+              ],
+              [
+                "ldr",
+                "x5, [x1, #0x30]"
+              ],
+              [
+                "ldr",
+                "x6, [x1, #0x38]"
+              ],
+              [
+                "ldr",
+                "x3, [x1, #0x40]"
+              ],
+              [
+                "ldr",
+                "x3, [x1, #0x48]"
+              ],
+              [
+                "ldr",
+                "x3, [x1, #0x50]"
+              ],
+              [
+                "ldr",
+                "x8, [x1, #0x58]"
+              ],
+              [
+                "stur",
+                "x8, [sp, #0x70]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x60]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x68]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x70]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x78]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x80]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x88]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x90]"
+              ],
+              [
+                "sub",
+                "x12, x7, #0x1"
+              ],
+              [
+                "mov",
+                "x10, x3"
+              ],
+              [
+                "b",
+                "0x21fc"
+              ]
+            ]
+          }
+        ]
+      },
+      "vector-12": {
+        "counts_sha256": "df3363de8a4c1814bb491ed87dce677d17e8fe4671279a754ff0a294ba58d6f4",
+        "object_sha256": "b1f0e8b852eaa31efaf54fc2e29d77b373fa07847d608101d9d5f5ca552c6ed3",
+        "calls": 6,
+        "stack_loads": 43074,
+        "reload": {
+          "address": "0x2210",
+          "visits": 43020,
+          "instructions": [
+            [
+              "lsr",
+              "x19, x15, #16"
+            ],
+            [
+              "add",
+              "x7, x19, #0x103"
+            ],
+            [
+              "ldur",
+              "x8, [sp, #0x70]"
+            ],
+            [
+              "cmp",
+              "x7, x8"
+            ],
+            [
+              "b.hs",
+              "0x2488"
+            ]
+          ]
+        },
+        "stores": [
+          {
+            "address": "0x239c",
+            "visits": 3468,
+            "instructions": [
+              [
+                "ldr",
+                "x7, [x1, #0x98]"
+              ],
+              [
+                "ldr",
+                "x11, [x1, #0x10]"
+              ],
+              [
+                "ldr",
+                "x5, [x1, #0x20]"
+              ],
+              [
+                "stur",
+                "x5, [sp, #0x68]"
+              ],
+              [
+                "ldr",
+                "x5, [x1, #0x30]"
+              ],
+              [
+                "ldr",
+                "x6, [x1, #0x38]"
+              ],
+              [
+                "ldr",
+                "x10, [x1, #0x50]"
+              ],
+              [
+                "ldr",
+                "x8, [x1, #0x58]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x70]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x78]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x90]"
+              ],
+              [
+                "sub",
+                "x12, x13, #0x1"
+              ],
+              [
+                "mov",
+                "x13, x0"
+              ],
+              [
+                "stur",
+                "x7, [sp, #0x60]"
+              ],
+              [
+                "stur",
+                "x8, [sp, #0x70]"
+              ],
+              [
+                "b",
+                "0x21fc"
+              ]
+            ]
+          },
+          {
+            "address": "0x2080",
+            "visits": 6,
+            "instructions": [
+              [
+                "pacibsp",
+                ""
+              ],
+              [
+                "stp",
+                "x29, x30, [sp, #-0x10]!"
+              ],
+              [
+                "mov",
+                "x29, sp"
+              ],
+              [
+                "stp",
+                "x27, x28, [sp, #-0x10]!"
+              ],
+              [
+                "stp",
+                "x25, x26, [sp, #-0x10]!"
+              ],
+              [
+                "stp",
+                "x23, x24, [sp, #-0x10]!"
+              ],
+              [
+                "stp",
+                "x21, x22, [sp, #-0x10]!"
+              ],
+              [
+                "stp",
+                "x19, x20, [sp, #-0x10]!"
+              ],
+              [
+                "sub",
+                "sp, sp, #0x80"
+              ],
+              [
+                "ldr",
+                "x14, [x1, #0x98]"
+              ],
+              [
+                "stur",
+                "x14, [sp, #0x60]"
+              ],
+              [
+                "ldr",
+                "x4, [x1]"
+              ],
+              [
+                "ldr",
+                "x7, [x1, #0x8]"
+              ],
+              [
+                "ldr",
+                "x11, [x1, #0x10]"
+              ],
+              [
+                "ldr",
+                "x0, [x1, #0x18]"
+              ],
+              [
+                "ldr",
+                "x8, [x1, #0x20]"
+              ],
+              [
+                "stur",
+                "x8, [sp, #0x68]"
+              ],
+              [
+                "ldr",
+                "x13, [x1, #0x28]"
+              ],
+              [
+                "ldr",
+                "x5, [x1, #0x30]"
+              ],
+              [
+                "ldr",
+                "x6, [x1, #0x38]"
+              ],
+              [
+                "ldr",
+                "x3, [x1, #0x40]"
+              ],
+              [
+                "ldr",
+                "x3, [x1, #0x48]"
+              ],
+              [
+                "ldr",
+                "x3, [x1, #0x50]"
+              ],
+              [
+                "ldr",
+                "x8, [x1, #0x58]"
+              ],
+              [
+                "stur",
+                "x8, [sp, #0x70]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x60]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x68]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x70]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x78]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x80]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x88]"
+              ],
+              [
+                "ldr",
+                "x9, [x1, #0x90]"
+              ],
+              [
+                "sub",
+                "x12, x7, #0x1"
+              ],
+              [
+                "mov",
+                "x10, x3"
+              ],
+              [
+                "b",
+                "0x21fc"
+              ]
+            ]
+          }
+        ]
+      },
+      "paired-scalar-unplaced": {
+        "counts_sha256": "ab588108d6bca0da420c0136b9a2e773f9ae1be4b0e642736ae84bd095ef6a70",
+        "object_sha256": "89fd2042370562a591ae2688119c9d156e0c85068745dc5355489c9666a55fe3",
+        "calls": 6,
+        "stack_loads": 259950
+      }
+    }
+  },
+  "duplicate_control_diagnostic": "evidence/ordered-scorer-short-visits/fixed-worker-diagnostic/summary.json",
+  "latch_control_text_bytes": 71096,
+  "unplaced_training_scope": "scorer only, exact executing blocks; timed workers are placed",
+  "control_training_scope": "exact placed scorer",
+  "control_counts_per_call": {
+    "prefix-natural-4096": {
+      "instructions": 684771.0,
+      "branches": 104353.0,
+      "stack_loads": 3462.0
+    },
+    "prefix-natural-8192": {
+      "instructions": 1253989.0,
+      "branches": 196142.0,
+      "stack_loads": 7179.0
+    },
+    "reymont-prefix-32769": {
+      "instructions": 2705372.0,
+      "branches": 438401.0,
+      "stack_loads": 15633.0
+    },
+    "prefix-natural-32769": {
+      "instructions": 2705372.0,
+      "branches": 438401.0,
+      "stack_loads": 15633.0
+    }
+  },
+  "verified_linked_checks": {
+    "commands": {
+      "failures": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/linked-proofs/check-linked-error-exits.py",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/control",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/vector-8",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/vector-4",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/vector-12",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/paired-scalar"
+      ],
+      "stack": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "-B",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/linked-proofs/check-layout-stack.py",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/control",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/vector-8",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/vector-4",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/vector-12",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-short-visits/linked/worker-checks/paired-scalar"
+      ]
+    },
+    "peak_stack_bytes": {
+      "control": 5280,
+      "vector-8": 5280,
+      "vector-4": 5280,
+      "vector-12": 5280,
+      "paired-scalar": 5280
+    },
+    "matches_success_observations": 162,
+    "checked_failure_cases": [
+      "empty",
+      "one-stored",
+      "seven-stored-prefix",
+      "prefix-periodic-4096",
+      "prefix-repeated-16384",
+      "heldout-mixed-131073"
+    ]
+  },
+  "arms": {
+    "vector-4": {
+      "text_bytes": 71096,
+      "text_x": {
+        "roc": 1.2322518025513034,
+        "libdeflate": 1.9173678532901834
+      },
+      "unplaced_per_call": {
+        "prefix-natural-4096": {
+          "instructions": 649406.0,
+          "branches": 93553.0,
+          "stack_loads": 3462.0
+        },
+        "prefix-natural-8192": {
+          "instructions": 1201612.0,
+          "branches": 181509.0,
+          "stack_loads": 7179.0
+        },
+        "reymont-prefix-32769": {
+          "instructions": 2619793.0,
+          "branches": 416753.5,
+          "stack_loads": 15633.0
+        },
+        "prefix-natural-32769": {
+          "instructions": 2619793.0,
+          "branches": 416753.5,
+          "stack_loads": 15633.0
+        }
+      },
+      "placed_per_call": {
+        "prefix-natural-4096": {
+          "instructions": 645557.0,
+          "branches": 89704.0,
+          "stack_loads": 3462.0
+        },
+        "prefix-natural-8192": {
+          "instructions": 1193978.0,
+          "branches": 173875.0,
+          "stack_loads": 7179.0
+        },
+        "reymont-prefix-32769": {
+          "instructions": 2602894.0,
+          "branches": 399854.5,
+          "stack_loads": 15633.0
+        },
+        "prefix-natural-32769": {
+          "instructions": 2602894.0,
+          "branches": 399854.5,
+          "stack_loads": 15633.0
+        }
+      },
+      "focus": {
+        "kind": "focus",
+        "policy_version": 3,
+        "decision": "Unresolved",
+        "preserves_peer_wins": false,
+        "both_targets_win": false,
+        "runs": [
+          {
+            "order": "forward",
+            "focus_ratios_vs_libdeflate": {
+              "320-overlap": {
+                "mech-control": 0.9604105440361512,
+                "mech-experiment": 0.9593332041757996,
+                "roc": 11.001762882938992,
+                "libdeflate": 1.0
+              },
+              "prefix-natural-4096": {
+                "mech-control": 1.0863347963952066,
+                "mech-experiment": 1.152829570043759,
+                "roc": 1.6847788714152199,
+                "libdeflate": 1.0
+              },
+              "prefix-natural-8192": {
+                "mech-control": 0.9928406404593884,
+                "mech-experiment": 1.039720374788532,
+                "roc": 1.2403470143069866,
+                "libdeflate": 1.0
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 0.9738125641819723,
+                "mech-experiment": 0.9698614810054937,
+                "roc": 7.2709267762916605,
+                "libdeflate": 1.0
+              },
+              "prefix-random-1024": {
+                "mech-control": 0.9624923644905445,
+                "mech-experiment": 0.9614551241732125,
+                "roc": 9.32860455589935,
+                "libdeflate": 1.0
+              }
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 15
+              },
+              "libdeflate": {
+                "mech-control": 13,
+                "mech-experiment": 12
+              }
+            },
+            "losses": {
+              "roc": [],
+              "libdeflate": [
+                "prefix-natural-8192"
+              ]
+            },
+            "receipts": "short-visit-vector-4-focus-forward"
+          },
+          {
+            "order": "reverse",
+            "focus_ratios_vs_libdeflate": {
+              "320-overlap": {
+                "libdeflate": 1.0,
+                "roc": 10.912353928839961,
+                "mech-experiment": 0.9855918309174391,
+                "mech-control": 0.9881319365715024
+              },
+              "prefix-natural-4096": {
+                "libdeflate": 1.0,
+                "roc": 1.706925616365158,
+                "mech-experiment": 1.162118690854856,
+                "mech-control": 1.0947957125220467
+              },
+              "prefix-natural-8192": {
+                "libdeflate": 1.0,
+                "roc": 1.2508290922848855,
+                "mech-experiment": 1.0481182942261063,
+                "mech-control": 1.0034573526572774
+              },
+              "prefix-periodic-1024": {
+                "libdeflate": 1.0,
+                "roc": 7.380937378088884,
+                "mech-experiment": 0.9821667250970201,
+                "mech-control": 0.9809182591339761
+              },
+              "prefix-random-1024": {
+                "libdeflate": 1.0,
+                "roc": 9.33849992888683,
+                "mech-experiment": 0.9600064677009951,
+                "mech-control": 0.9611895565980626
+              }
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 15
+              },
+              "libdeflate": {
+                "mech-control": 12,
+                "mech-experiment": 12
+              }
+            },
+            "losses": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "receipts": "short-visit-vector-4-focus-reverse"
+          }
+        ],
+        "rejected": [],
+        "unresolved": [
+          "short-visit-vector-4-focus-forward: focused losses against libdeflate: prefix-natural-8192",
+          "both complete timing orders are required"
+        ]
+      },
+      "peak_stack_bytes": 5280
+    },
+    "vector-8": {
+      "text_bytes": 71096,
+      "text_x": {
+        "roc": 1.2322518025513034,
+        "libdeflate": 1.9173678532901834
+      },
+      "unplaced_per_call": {
+        "prefix-natural-4096": {
+          "instructions": 657677.0,
+          "branches": 99522.0,
+          "stack_loads": 3462.0
+        },
+        "prefix-natural-8192": {
+          "instructions": 1216061.0,
+          "branches": 191622.0,
+          "stack_loads": 7179.0
+        },
+        "reymont-prefix-32769": {
+          "instructions": 2659664.0,
+          "branches": 442769.0,
+          "stack_loads": 15633.0
+        },
+        "prefix-natural-32769": {
+          "instructions": 2659664.0,
+          "branches": 442769.0,
+          "stack_loads": 15633.0
+        }
+      },
+      "placed_per_call": {
+        "prefix-natural-4096": {
+          "instructions": 653358.0,
+          "branches": 95203.0,
+          "stack_loads": 3462.0
+        },
+        "prefix-natural-8192": {
+          "instructions": 1206847.0,
+          "branches": 182408.0,
+          "stack_loads": 7179.0
+        },
+        "reymont-prefix-32769": {
+          "instructions": 2634689.0,
+          "branches": 417794.0,
+          "stack_loads": 15633.0
+        },
+        "prefix-natural-32769": {
+          "instructions": 2634689.0,
+          "branches": 417794.0,
+          "stack_loads": 15633.0
+        }
+      },
+      "focus": {
+        "kind": "focus",
+        "policy_version": 3,
+        "decision": "Unresolved",
+        "preserves_peer_wins": true,
+        "both_targets_win": false,
+        "runs": [
+          {
+            "order": "forward",
+            "focus_ratios_vs_libdeflate": {
+              "320-overlap": {
+                "mech-control": 0.9948863627980835,
+                "mech-experiment": 0.9939983289372699,
+                "roc": 10.907029439404896,
+                "libdeflate": 1.0
+              },
+              "prefix-natural-4096": {
+                "mech-control": 1.087596460286095,
+                "mech-experiment": 1.095978386173413,
+                "roc": 1.6950333432928415,
+                "libdeflate": 1.0
+              },
+              "prefix-natural-8192": {
+                "mech-control": 0.9913403568093566,
+                "mech-experiment": 0.9959290722137156,
+                "roc": 1.2352615208080207,
+                "libdeflate": 1.0
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 0.9909580598489454,
+                "mech-experiment": 0.9924951121264932,
+                "roc": 7.40959584776461,
+                "libdeflate": 1.0
+              },
+              "prefix-random-1024": {
+                "mech-control": 0.9613738232203574,
+                "mech-experiment": 0.9614740788579196,
+                "roc": 9.291686084237384,
+                "libdeflate": 1.0
+              }
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 15
+              },
+              "libdeflate": {
+                "mech-control": 13,
+                "mech-experiment": 13
+              }
+            },
+            "losses": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "receipts": "short-visit-vector-8-focus-forward"
+          },
+          {
+            "order": "reverse",
+            "focus_ratios_vs_libdeflate": {
+              "320-overlap": {
+                "libdeflate": 1.0,
+                "roc": 10.893121466829754,
+                "mech-experiment": 0.9873959134223339,
+                "mech-control": 0.9891167500384084
+              },
+              "prefix-natural-4096": {
+                "libdeflate": 1.0,
+                "roc": 1.6998710966207702,
+                "mech-experiment": 1.1005719115430959,
+                "mech-control": 1.0959489184839257
+              },
+              "prefix-natural-8192": {
+                "libdeflate": 1.0,
+                "roc": 1.2452723869295155,
+                "mech-experiment": 1.0049877094347452,
+                "mech-control": 1.0003474067392961
+              },
+              "prefix-periodic-1024": {
+                "libdeflate": 1.0,
+                "roc": 7.22900974919146,
+                "mech-experiment": 0.9879524547841397,
+                "mech-control": 0.9874357146972871
+              },
+              "prefix-random-1024": {
+                "libdeflate": 1.0,
+                "roc": 9.296647807175063,
+                "mech-experiment": 0.9609578969015191,
+                "mech-control": 0.9592503176651596
+              }
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 15
+              },
+              "libdeflate": {
+                "mech-control": 12,
+                "mech-experiment": 12
+              }
+            },
+            "losses": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "receipts": "short-visit-vector-8-focus-reverse"
+          }
+        ],
+        "rejected": [],
+        "unresolved": [
+          "both complete timing orders are required"
+        ]
+      },
+      "peak_stack_bytes": 5280
+    },
+    "vector-12": {
+      "text_bytes": 71096,
+      "text_x": {
+        "roc": 1.2322518025513034,
+        "libdeflate": 1.9173678532901834
+      },
+      "unplaced_per_call": {
+        "prefix-natural-4096": {
+          "instructions": 671014.0,
+          "branches": 105623.0,
+          "stack_loads": 3462.0
+        },
+        "prefix-natural-8192": {
+          "instructions": 1237028.0,
+          "branches": 200935.0,
+          "stack_loads": 7179.0
+        },
+        "reymont-prefix-32769": {
+          "instructions": 2695346.0,
+          "branches": 457208.0,
+          "stack_loads": 15633.0
+        },
+        "prefix-natural-32769": {
+          "instructions": 2695346.0,
+          "branches": 457208.0,
+          "stack_loads": 15633.0
+        }
+      },
+      "placed_per_call": {
+        "prefix-natural-4096": {
+          "instructions": 662157.0,
+          "branches": 96766.0,
+          "stack_loads": 3462.0
+        },
+        "prefix-natural-8192": {
+          "instructions": 1221356.0,
+          "branches": 185263.0,
+          "stack_loads": 7179.0
+        },
+        "reymont-prefix-32769": {
+          "instructions": 2662815.5,
+          "branches": 424677.5,
+          "stack_loads": 15633.0
+        },
+        "prefix-natural-32769": {
+          "instructions": 2662815.5,
+          "branches": 424677.5,
+          "stack_loads": 15633.0
+        }
+      },
+      "focus": {
+        "kind": "focus",
+        "policy_version": 3,
+        "decision": "Unresolved",
+        "preserves_peer_wins": true,
+        "both_targets_win": true,
+        "runs": [
+          {
+            "order": "forward",
+            "focus_ratios_vs_libdeflate": {
+              "320-overlap": {
+                "mech-control": 0.9894982020204637,
+                "mech-experiment": 0.9886043638457463,
+                "roc": 10.87658610381018,
+                "libdeflate": 1.0
+              },
+              "prefix-natural-4096": {
+                "mech-control": 1.0883094526546828,
+                "mech-experiment": 1.0819454354442906,
+                "roc": 1.7020933354055894,
+                "libdeflate": 1.0
+              },
+              "prefix-natural-8192": {
+                "mech-control": 0.9917592481785109,
+                "mech-experiment": 0.9945368175197414,
+                "roc": 1.2397235937841893,
+                "libdeflate": 1.0
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 0.9787047730084603,
+                "mech-experiment": 0.977823991234148,
+                "roc": 7.277182223585033,
+                "libdeflate": 1.0
+              },
+              "prefix-random-1024": {
+                "mech-control": 0.9619450581852504,
+                "mech-experiment": 0.9617706378904782,
+                "roc": 9.27218186004933,
+                "libdeflate": 1.0
+              }
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 15
+              },
+              "libdeflate": {
+                "mech-control": 13,
+                "mech-experiment": 13
+              }
+            },
+            "losses": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "receipts": "short-visit-vector-12-focus-forward"
+          },
+          {
+            "order": "reverse",
+            "focus_ratios_vs_libdeflate": {
+              "320-overlap": {
+                "libdeflate": 1.0,
+                "roc": 10.796977257098293,
+                "mech-experiment": 0.9870324032001092,
+                "mech-control": 0.9874871495221387
+              },
+              "prefix-natural-4096": {
+                "libdeflate": 1.0,
+                "roc": 1.7112272052474893,
+                "mech-experiment": 1.0888504807547874,
+                "mech-control": 1.0938074709232015
+              },
+              "prefix-natural-8192": {
+                "libdeflate": 1.0,
+                "roc": 1.2499082523350318,
+                "mech-experiment": 0.9985518719337955,
+                "mech-control": 0.9977748417261402
+              },
+              "prefix-periodic-1024": {
+                "libdeflate": 1.0,
+                "roc": 7.291412295094781,
+                "mech-experiment": 0.9786001290071707,
+                "mech-control": 0.9806377006634068
+              },
+              "prefix-random-1024": {
+                "libdeflate": 1.0,
+                "roc": 9.30475911706001,
+                "mech-experiment": 0.9613190642064674,
+                "mech-control": 0.9612155207594454
+              }
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 15
+              },
+              "libdeflate": {
+                "mech-control": 13,
+                "mech-experiment": 13
+              }
+            },
+            "losses": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "receipts": "short-visit-vector-12-focus-reverse"
+          }
+        ],
+        "rejected": [],
+        "unresolved": [
+          "both complete timing orders are required"
+        ]
+      },
+      "peak_stack_bytes": 5280
+    },
+    "paired-scalar": {
+      "text_bytes": 71368,
+      "text_x": {
+        "roc": 1.2369661674986134,
+        "libdeflate": 1.92470334412082
+      },
+      "unplaced_per_call": {
+        "prefix-natural-4096": {
+          "instructions": 769626.0,
+          "branches": 104598.0,
+          "stack_loads": 21149.0
+        },
+        "prefix-natural-8192": {
+          "instructions": 1410491.0,
+          "branches": 200210.0,
+          "stack_loads": 43325.0
+        },
+        "reymont-prefix-32769": {
+          "instructions": 3068679.0,
+          "branches": 458503.0,
+          "stack_loads": 108012.0
+        },
+        "prefix-natural-32769": {
+          "instructions": 3068679.0,
+          "branches": 458503.0,
+          "stack_loads": 108012.0
+        }
+      },
+      "focus": {
+        "kind": "focus",
+        "policy_version": 3,
+        "decision": "Unresolved",
+        "preserves_peer_wins": false,
+        "both_targets_win": false,
+        "runs": [
+          {
+            "order": "forward",
+            "focus_ratios_vs_libdeflate": {
+              "320-overlap": {
+                "mech-control": 0.9907658655640703,
+                "mech-experiment": 0.9895716284145059,
+                "roc": 10.981995646912086,
+                "libdeflate": 1.0
+              },
+              "prefix-natural-4096": {
+                "mech-control": 1.093811752218349,
+                "mech-experiment": 1.0864760544668974,
+                "roc": 1.7085132860323113,
+                "libdeflate": 1.0
+              },
+              "prefix-natural-8192": {
+                "mech-control": 0.9902949726293093,
+                "mech-experiment": 1.0007918314917905,
+                "roc": 1.2377986872466666,
+                "libdeflate": 1.0
+              },
+              "prefix-periodic-1024": {
+                "mech-control": 0.9729306629329659,
+                "mech-experiment": 0.9755412875411044,
+                "roc": 7.31448497922604,
+                "libdeflate": 1.0
+              },
+              "prefix-random-1024": {
+                "mech-control": 0.9614726617247656,
+                "mech-experiment": 0.9623740024199919,
+                "roc": 9.378890114071908,
+                "libdeflate": 1.0
+              }
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 15
+              },
+              "libdeflate": {
+                "mech-control": 13,
+                "mech-experiment": 12
+              }
+            },
+            "losses": {
+              "roc": [],
+              "libdeflate": [
+                "prefix-natural-8192"
+              ]
+            },
+            "receipts": "short-visit-paired-scalar-focus-forward"
+          },
+          {
+            "order": "reverse",
+            "focus_ratios_vs_libdeflate": {
+              "320-overlap": {
+                "libdeflate": 1.0,
+                "roc": 10.855089793191258,
+                "mech-experiment": 0.9886529998078082,
+                "mech-control": 0.9898687583887095
+              },
+              "prefix-natural-4096": {
+                "libdeflate": 1.0,
+                "roc": 1.711355302306905,
+                "mech-experiment": 1.093229985745029,
+                "mech-control": 1.1004649831653472
+              },
+              "prefix-natural-8192": {
+                "libdeflate": 1.0,
+                "roc": 1.251290484606968,
+                "mech-experiment": 1.011152695759625,
+                "mech-control": 1.0054554742393689
+              },
+              "prefix-periodic-1024": {
+                "libdeflate": 1.0,
+                "roc": 7.278823538603646,
+                "mech-experiment": 0.9799894626421672,
+                "mech-control": 0.9836404776327081
+              },
+              "prefix-random-1024": {
+                "libdeflate": 1.0,
+                "roc": 9.279111479995212,
+                "mech-experiment": 0.9581383215542565,
+                "mech-control": 0.9584048614517442
+              }
+            },
+            "wins": {
+              "roc": {
+                "mech-control": 15,
+                "mech-experiment": 15
+              },
+              "libdeflate": {
+                "mech-control": 12,
+                "mech-experiment": 12
+              }
+            },
+            "losses": {
+              "roc": [],
+              "libdeflate": []
+            },
+            "receipts": "short-visit-paired-scalar-focus-reverse"
+          }
+        ],
+        "rejected": [],
+        "unresolved": [
+          "short-visit-paired-scalar-focus-forward: focused losses against libdeflate: prefix-natural-8192",
+          "both complete timing orders are required"
+        ]
+      },
+      "peak_stack_bytes": 5280
+    }
+  },
+  "qualified_runtime_arms": [],
+  "evidence": "evidence/ordered-scorer-short-visits/README.md"
+}

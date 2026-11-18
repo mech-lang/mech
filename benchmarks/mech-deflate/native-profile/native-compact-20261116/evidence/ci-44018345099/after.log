@@ -1,0 +1,187 @@
+unsafe boundary audit failed: prohibited code exists outside the exact allowlist: benchmarks/mech-deflate/native-profile/native-compact-20261116/recorded-runtime/mod.rs
+21:    data: *mut u8,
+83:    first_owner: *mut Owner,
+86:    owners: Vec<*mut Owner>,
+108:    fn owner_at(&self, slot: usize) -> Option<*mut Owner> {
+117:    unsafe fn register(&mut self, owner: *mut Owner) {
+128:        unsafe { (*owner).slot = slot };
+134:            unsafe {
+143:                unsafe {
+183:            unsafe {
+201:                    unsafe { data.cast::<u32>().add(index).write(poison) };
+222:            unsafe { storage.as_ptr().write(owner) };
+228:        unsafe { self.register(owner) };
+247:    unsafe fn release(&mut self, owner: *mut Owner) -> Result<(), u64> {
+253:        let record = unsafe { &*owner };
+266:                let words = unsafe { std::slice::from_raw_parts(data.cast::<u32>(), CACHE_WORDS) };
+277:            unsafe { zero_pages::release(data, bytes)? };
+284:            unsafe { dealloc(data, layout) };
+287:        unsafe { self.retire_record(owner) };
+298:    unsafe fn retire_record(&self, owner: *mut Owner) {
+305:            unsafe { owner.drop_in_place() };
+308:            unsafe { drop(Box::from_raw(owner)) };
+325:        let owner = source[5] as *mut Owner;
+329:            let record = unsafe { &*owner };
+347:            unsafe {
+348:                ptr::copy_nonoverlapping(source[0] as *const u8, result[0] as *mut u8, bytes)
+372:#[unsafe(no_mangle)]
+373:pub unsafe extern "C" fn mech_compact_allocate(
+374:    context: *mut Heap,
+379:    output: *mut u64,
+384:    let result = unsafe { &mut *context }.allocate(
+392:            unsafe { ptr::copy_nonoverlapping(view.as_ptr(), output, 6) };
+401:#[unsafe(no_mangle)]
+402:pub unsafe extern "C" fn mech_compact_writable(
+403:    context: *mut Heap,
+404:    source: *const u64,
+409:    output: *mut u64,
+414:    let view = unsafe { ptr::read(source.cast::<View>()) };
+415:    let result = unsafe { &mut *context }.writable(
+424:            unsafe { ptr::copy_nonoverlapping(view.as_ptr(), output, 6) };
+433:#[unsafe(no_mangle)]
+434:pub unsafe extern "C" fn mech_compact_free(context: *mut Heap, owner: *mut Owner) -> u64 {
+438:    match unsafe { (&mut *context).release(owner) } {
+448:#[unsafe(no_mangle)]
+449:pub unsafe extern "C" fn mech_compact_release_owner(context: *mut Heap, owner: *mut Owner) -> u64 {
+450:    let references = unsafe { &mut (*owner).references };
+453:        unsafe { mech_compact_free(context, owner) }
+466:#[unsafe(no_mangle)]
+467:pub unsafe extern "C" fn mech_compact_writable_scalar(
+468:    context: *mut Heap,
+475:    output: *mut u64,
+481:    let result = unsafe { &mut *context }.writable(
+490:            unsafe {
+528:#[unsafe(no_mangle)]
+529:pub unsafe extern "C" fn mech_compact_allocate_backing(
+530:    context: *mut Heap,
+539:    unsafe { &mut *context }
+550:#[unsafe(no_mangle)]
+551:pub unsafe extern "C" fn mech_compact_writable_scalar_backing(
+552:    context: *mut Heap,
+566:    unsafe { &mut *context }
+578:unsafe fn release_owners(context: *mut Heap, owners: &[*mut Owner]) -> u64 {
+582:            let status = unsafe { mech_compact_release_owner(context, owner) };
+594:#[unsafe(no_mangle)]
+595:pub unsafe extern "C" fn mech_compact_release_nullable(
+596:    context: *mut Heap,
+597:    owner: *mut Owner,
+599:    unsafe { release_owners(context, &[owner]) }
+605:#[unsafe(no_mangle)]
+606:pub unsafe extern "C" fn mech_compact_release_two(
+607:    context: *mut Heap,
+608:    first: *mut Owner,
+609:    second: *mut Owner,
+611:    unsafe { release_owners(context, &[first, second]) }
+617:#[unsafe(no_mangle)]
+618:pub unsafe extern "C" fn mech_compact_release_three(
+619:    context: *mut Heap,
+620:    first: *mut Owner,
+621:    second: *mut Owner,
+622:    third: *mut Owner,
+624:    unsafe { release_owners(context, &[first, second, third]) }
+630:#[unsafe(no_mangle)]
+631:pub unsafe extern "C" fn mech_compact_release_four(
+632:    context: *mut Heap,
+633:    first: *mut Owner,
+634:    second: *mut Owner,
+635:    third: *mut Owner,
+636:    fourth: *mut Owner,
+638:    unsafe { release_owners(context, &[first, second, third, fourth]) }
+650:        let owner = output[5] as *mut Owner;
+653:        assert_ne!(scratch[5] as *mut Owner, owner);
+654:        unsafe {
+655:            (output[0] as *mut u8).write(17);
+661:        assert_eq!(unsafe { moved.take_u8(output) }, Err(INVALID));
+662:        unsafe { (*owner).references = 1 };
+663:        let published = unsafe { moved.take_u8(output) }.unwrap();
+667:        assert_eq!(retry[5] as *mut Owner, address);
+677:        let owner = result[5] as *mut Owner;
+682:        let scratch_owner = scratch[5] as *mut Owner;
+684:        unsafe {
+685:            (result[0] as *mut u8).write(17);
+690:        assert_eq!(unsafe { heap.take_u8(result) }, Err(INVALID));
+692:        unsafe { (*owner).references = 1 };
+693:        let published = unsafe { heap.take_u8(result) }.unwrap();
+700:        assert_eq!(heap.owner_at(0), Some(next[5] as *mut Owner));
+712:        unsafe {
+713:            (original[0] as *mut u64).write(17);
+714:            (original[0] as *mut u64).add(1).write(29);
+715:            (*(original[5] as *mut Owner)).references = 2;
+723:        unsafe {
+724:            (copy[0] as *mut u64).write(99);
+725:            assert_eq!((original[0] as *const u64).read(), 17);
+728:        unsafe {
+729:            (*(original[5] as *mut Owner)).references = 1;
+741:        unsafe {
+742:            assert_eq!((tree[0] as *const u16).add(262143).read(), 0);
+743:            assert_eq!((cache[0] as *const u32).add(1500512).read(), 0);
+754:        unsafe {
+755:            (*(source[5] as *mut Owner)).references = 1;
+765:        unsafe {
+766:            (*(source[5] as *mut Owner)).references = 2;
+779:        unsafe {
+780:            (source[0] as *mut u8).write(17);
+781:            (source[0] as *mut u8).add(1).write(29);
+782:            (*(source[5] as *mut Owner)).references = 2;
+789:        let status = unsafe {
+803:        unsafe {
+804:            assert_eq!((source[0] as *const u8).read(), 17);
+805:            assert_eq!((source[0] as *const u8).add(1).read(), 29);
+806:            assert_eq!((*(source[5] as *const Owner)).references, 2);
+808:        let status = unsafe {
+826:    pub unsafe fn take_u8(&mut self, view: View) -> Result<Vec<u8>, u64> {
+831:        let owner = owner as *mut Owner;
+835:        let record = unsafe { &*owner };
+857:        unsafe { self.retire_record(owner) };
+861:            unsafe { Vec::from_raw_parts(pointer as *mut u8, length as usize, capacity as usize) };
+878:        let words = unsafe { std::slice::from_raw_parts_mut(first[0] as *mut u16, count) };
+884:        unsafe { (*(first[5] as *mut Owner)).references = 2 };
+887:        unsafe { (copied[0] as *mut u16).write(73) };
+894:            unsafe { std::slice::from_raw_parts(retry[0] as *const u16, count) }
+914:        let old = unsafe { std::slice::from_raw_parts_mut(source[0] as *mut u32, 262144) };
+920:        unsafe { (*(source[5] as *mut Owner)).references = 2 };
+924:        unsafe { (copied[0] as *mut u32).write(99) };
+937:        unsafe { (prior[0] as *mut u32).write(73) };
+943:        assert_eq!(unsafe { (prior[0] as *const u32).read() }, 73);
+945:        assert_eq!(unsafe { (retry[0] as *const u32).add(1500512).read() }, 0);
+956:        unsafe {
+957:            (output[0] as *mut u8).write(42);
+958:            (*(output[5] as *mut Owner)).references = 1;
+962:        let published = unsafe { heap.take_u8(output) }.unwrap();
+991:unsafe impl Send for Completed {}
+1004:            unsafe { self.register(owner) };
+1028:#[unsafe(no_mangle)]
+1029:pub unsafe extern "C" fn mech_compact_parallel(
+1030:    context: *mut Heap,
+1032:    input: *const u64,
+1036:    output: *mut u64,
+1063:    let call: unsafe extern "C" fn(*mut Heap, *const u64, *mut u64) -> NativeStatus =
+1064:        unsafe { std::mem::transmute(function) };
+1065:    let packets = unsafe { std::slice::from_raw_parts(input, input_length) };
+1077:                let status = unsafe { call(&mut heap, packet.as_ptr(), destination as *mut u64) };
+1097:    let parent = unsafe { &mut *context };
+1156:        assert_eq!(heap.first_owner, existing[5] as *mut Owner);
+1160:    unsafe extern "C" fn copy_borrow(
+1161:        context: *mut Heap,
+1162:        input: *const u64,
+1163:        output: *mut u64,
+1166:        let packet = unsafe { std::slice::from_raw_parts(input, 4) };
+1167:        let heap = unsafe { &mut *context };
+1174:            unsafe {
+1175:                (view[0] as *mut u64)
+1177:                    .write((packet[0] as *const u64).add(i).read() + packet[1]);
+1180:        unsafe {
+1181:            (*(view[5] as *mut Owner)).references = 1;
+1189:        unsafe {
+1190:            ptr::copy_nonoverlapping(view.as_ptr(), output, 6);
+1207:            let status = unsafe {
+1210:                    copy_borrow as *const () as usize,
+1226:            assert_eq!(parent.first_owner, existing[5] as *mut Owner);
+1228:                assert!(parent.owners.contains(&(view[5] as *mut Owner)));
+1229:                let values = unsafe { std::slice::from_raw_parts(view[0] as *const u64, 3) };
+1231:                assert_eq!(unsafe { (*(view[5] as *const Owner)).references }, 1);
+1259:        let status = unsafe {
+1262:                copy_borrow as *const () as usize,
+1273:        assert_eq!(parent.first_owner, existing[5] as *mut Owner);
+1290:            let status = unsafe {
+1293:                    copy_borrow as *const () as usize,

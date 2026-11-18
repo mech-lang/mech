@@ -1,0 +1,1861 @@
+{
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "compiled_with_opt_level": 3,
+  "removed_flags": [
+    "MECH_COMPACT_INLINE_SINGLE_CALLS",
+    "MECH_COMPACT_INLINE_SYMBOLS"
+  ],
+  "orders": [
+    [
+      "retained",
+      "no-inline"
+    ],
+    [
+      "no-inline",
+      "retained"
+    ],
+    [
+      "retained",
+      "no-inline"
+    ],
+    [
+      "no-inline",
+      "retained"
+    ],
+    [
+      "retained",
+      "no-inline"
+    ],
+    [
+      "no-inline",
+      "retained"
+    ],
+    [
+      "retained",
+      "no-inline"
+    ],
+    [
+      "no-inline",
+      "retained"
+    ]
+  ],
+  "warmup": [
+    {
+      "actor": "retained",
+      "seconds": {
+        "frontend": 3.0722916666418314,
+        "native": 1.779269624967128,
+        "link": 0.043095082975924015,
+        "total": 4.895260415971279
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/warmup/retained/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/warmup/retained/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/warmup/retained/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/warmup/retained/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/warmup/retained/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/warmup/retained/native/program.o"
+          ]
+        ]
+      ]
+    },
+    {
+      "actor": "no-inline",
+      "seconds": {
+        "frontend": 2.966203374788165,
+        "native": 1.6712297918274999,
+        "link": 0.04344858415424824,
+        "total": 4.681498416233808
+      },
+      "encoder_sha256": "fd2b9367876325a532da3ed03b8b9351f276cd81cf424ad591ad18a7b79ac451",
+      "encoder_bytes": 160328,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/warmup/no-inline/compressor",
+      "executable_sha256": "0fde0cfdeda45b8fa28876330a90482d4d1424a767acb03a63982102cd9f0086",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/warmup/no-inline/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/warmup/no-inline/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/warmup/no-inline/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/warmup/no-inline/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/warmup/no-inline/native/program.o"
+          ]
+        ]
+      ]
+    }
+  ],
+  "trials": [
+    {
+      "actor": "retained",
+      "seconds": {
+        "frontend": 2.966559915803373,
+        "native": 1.7726544169709086,
+        "link": 0.041526750195771456,
+        "total": 4.781706999987364
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-1/retained/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-1/retained/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-1/retained/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-1/retained/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-1/retained/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-1/retained/native/program.o"
+          ]
+        ]
+      ]
+    },
+    {
+      "actor": "no-inline",
+      "seconds": {
+        "frontend": 2.957703582942486,
+        "native": 1.672992582898587,
+        "link": 0.042858959175646305,
+        "total": 4.674186250194907
+      },
+      "encoder_sha256": "fd2b9367876325a532da3ed03b8b9351f276cd81cf424ad591ad18a7b79ac451",
+      "encoder_bytes": 160328,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-1/no-inline/compressor",
+      "executable_sha256": "0fde0cfdeda45b8fa28876330a90482d4d1424a767acb03a63982102cd9f0086",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-1/no-inline/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-1/no-inline/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-1/no-inline/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-1/no-inline/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-1/no-inline/native/program.o"
+          ]
+        ]
+      ]
+    },
+    {
+      "actor": "no-inline",
+      "seconds": {
+        "frontend": 2.956911166664213,
+        "native": 1.6745794164016843,
+        "link": 0.04217720776796341,
+        "total": 4.674269875045866
+      },
+      "encoder_sha256": "fd2b9367876325a532da3ed03b8b9351f276cd81cf424ad591ad18a7b79ac451",
+      "encoder_bytes": 160328,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-2/no-inline/compressor",
+      "executable_sha256": "0fde0cfdeda45b8fa28876330a90482d4d1424a767acb03a63982102cd9f0086",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-2/no-inline/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-2/no-inline/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-2/no-inline/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-2/no-inline/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-2/no-inline/native/program.o"
+          ]
+        ]
+      ]
+    },
+    {
+      "actor": "retained",
+      "seconds": {
+        "frontend": 2.9560680417343974,
+        "native": 1.7662423751316965,
+        "link": 0.042303083930164576,
+        "total": 4.765234083868563
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-2/retained/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-2/retained/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-2/retained/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-2/retained/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-2/retained/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-2/retained/native/program.o"
+          ]
+        ]
+      ]
+    },
+    {
+      "actor": "retained",
+      "seconds": {
+        "frontend": 2.960731083061546,
+        "native": 1.7653138749301434,
+        "link": 0.04376649996265769,
+        "total": 4.770414125174284
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-3/retained/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-3/retained/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-3/retained/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-3/retained/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-3/retained/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-3/retained/native/program.o"
+          ]
+        ]
+      ]
+    },
+    {
+      "actor": "no-inline",
+      "seconds": {
+        "frontend": 2.9715111670084298,
+        "native": 1.6743747079744935,
+        "link": 0.05231929197907448,
+        "total": 4.698852166999131
+      },
+      "encoder_sha256": "fd2b9367876325a532da3ed03b8b9351f276cd81cf424ad591ad18a7b79ac451",
+      "encoder_bytes": 160328,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-3/no-inline/compressor",
+      "executable_sha256": "0fde0cfdeda45b8fa28876330a90482d4d1424a767acb03a63982102cd9f0086",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-3/no-inline/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-3/no-inline/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-3/no-inline/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-3/no-inline/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-3/no-inline/native/program.o"
+          ]
+        ]
+      ]
+    },
+    {
+      "actor": "no-inline",
+      "seconds": {
+        "frontend": 2.956939334049821,
+        "native": 1.673388416878879,
+        "link": 0.0440977499820292,
+        "total": 4.67510304087773
+      },
+      "encoder_sha256": "fd2b9367876325a532da3ed03b8b9351f276cd81cf424ad591ad18a7b79ac451",
+      "encoder_bytes": 160328,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-4/no-inline/compressor",
+      "executable_sha256": "0fde0cfdeda45b8fa28876330a90482d4d1424a767acb03a63982102cd9f0086",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-4/no-inline/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-4/no-inline/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-4/no-inline/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-4/no-inline/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-4/no-inline/native/program.o"
+          ]
+        ]
+      ]
+    },
+    {
+      "actor": "retained",
+      "seconds": {
+        "frontend": 2.9591334159485996,
+        "native": 1.7648832499980927,
+        "link": 0.04423104226589203,
+        "total": 4.7688780832104385
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-4/retained/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-4/retained/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-4/retained/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-4/retained/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-4/retained/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-4/retained/native/program.o"
+          ]
+        ]
+      ]
+    },
+    {
+      "actor": "retained",
+      "seconds": {
+        "frontend": 2.9552313750609756,
+        "native": 1.7762762079946697,
+        "link": 0.042578082997351885,
+        "total": 4.774699915666133
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-5/retained/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-5/retained/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-5/retained/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-5/retained/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-5/retained/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-5/retained/native/program.o"
+          ]
+        ]
+      ]
+    },
+    {
+      "actor": "no-inline",
+      "seconds": {
+        "frontend": 2.966248707845807,
+        "native": 1.672511000186205,
+        "link": 0.04927266715094447,
+        "total": 4.6886426247656345
+      },
+      "encoder_sha256": "fd2b9367876325a532da3ed03b8b9351f276cd81cf424ad591ad18a7b79ac451",
+      "encoder_bytes": 160328,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-5/no-inline/compressor",
+      "executable_sha256": "0fde0cfdeda45b8fa28876330a90482d4d1424a767acb03a63982102cd9f0086",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-5/no-inline/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-5/no-inline/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-5/no-inline/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-5/no-inline/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-5/no-inline/native/program.o"
+          ]
+        ]
+      ]
+    },
+    {
+      "actor": "no-inline",
+      "seconds": {
+        "frontend": 2.9577992921695113,
+        "native": 1.6715614167042077,
+        "link": 0.04505170788615942,
+        "total": 4.674969207961112
+      },
+      "encoder_sha256": "fd2b9367876325a532da3ed03b8b9351f276cd81cf424ad591ad18a7b79ac451",
+      "encoder_bytes": 160328,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-6/no-inline/compressor",
+      "executable_sha256": "0fde0cfdeda45b8fa28876330a90482d4d1424a767acb03a63982102cd9f0086",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-6/no-inline/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-6/no-inline/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-6/no-inline/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-6/no-inline/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-6/no-inline/native/program.o"
+          ]
+        ]
+      ]
+    },
+    {
+      "actor": "retained",
+      "seconds": {
+        "frontend": 2.9687340832315385,
+        "native": 1.7638384578749537,
+        "link": 0.03981016622856259,
+        "total": 4.772973250132054
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-6/retained/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-6/retained/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-6/retained/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-6/retained/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-6/retained/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-6/retained/native/program.o"
+          ]
+        ]
+      ]
+    },
+    {
+      "actor": "retained",
+      "seconds": {
+        "frontend": 2.9556934172287583,
+        "native": 1.7663495829328895,
+        "link": 0.042637957725673914,
+        "total": 4.765280542429537
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-7/retained/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-7/retained/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-7/retained/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-7/retained/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-7/retained/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-7/retained/native/program.o"
+          ]
+        ]
+      ]
+    },
+    {
+      "actor": "no-inline",
+      "seconds": {
+        "frontend": 2.955443541985005,
+        "native": 1.671987417154014,
+        "link": 0.0434817923232913,
+        "total": 4.6714983326382935
+      },
+      "encoder_sha256": "fd2b9367876325a532da3ed03b8b9351f276cd81cf424ad591ad18a7b79ac451",
+      "encoder_bytes": 160328,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-7/no-inline/compressor",
+      "executable_sha256": "0fde0cfdeda45b8fa28876330a90482d4d1424a767acb03a63982102cd9f0086",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-7/no-inline/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-7/no-inline/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-7/no-inline/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-7/no-inline/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-7/no-inline/native/program.o"
+          ]
+        ]
+      ]
+    },
+    {
+      "actor": "no-inline",
+      "seconds": {
+        "frontend": 2.9622864169068635,
+        "native": 1.6707777078263462,
+        "link": 0.04224716732278466,
+        "total": 4.675935750361532
+      },
+      "encoder_sha256": "fd2b9367876325a532da3ed03b8b9351f276cd81cf424ad591ad18a7b79ac451",
+      "encoder_bytes": 160328,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-8/no-inline/compressor",
+      "executable_sha256": "0fde0cfdeda45b8fa28876330a90482d4d1424a767acb03a63982102cd9f0086",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-8/no-inline/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-8/no-inline/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-8/no-inline/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-8/no-inline/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-8/no-inline/native/program.o"
+          ]
+        ]
+      ]
+    },
+    {
+      "actor": "retained",
+      "seconds": {
+        "frontend": 3.0649239579215646,
+        "native": 1.7880232082679868,
+        "link": 0.05285833263769746,
+        "total": 4.906407666858286
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-8/retained/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-8/retained/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-8/retained/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-8/retained/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-8/retained/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/order-8/retained/native/program.o"
+          ]
+        ]
+      ]
+    }
+  ],
+  "diagnostics": [
+    {
+      "actor": "retained",
+      "seconds": {
+        "frontend": 2.9693037918768823,
+        "native": 1.7727432916872203,
+        "link": 0.045125083066523075,
+        "total": 4.788151666056365
+      },
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "encoder_bytes": 160136,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/profile/retained/compressor",
+      "executable_sha256": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/profile/retained/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/profile/retained/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/profile/retained/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/profile/retained/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/profile/retained/native/program.o"
+          ]
+        ]
+      ]
+    },
+    {
+      "actor": "no-inline",
+      "seconds": {
+        "frontend": 2.9699907498434186,
+        "native": 1.6770090409554541,
+        "link": 0.04558950010687113,
+        "total": 4.693474625237286
+      },
+      "encoder_sha256": "fd2b9367876325a532da3ed03b8b9351f276cd81cf424ad591ad18a7b79ac451",
+      "encoder_bytes": 160328,
+      "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/profile/no-inline/compressor",
+      "executable_sha256": "0fde0cfdeda45b8fa28876330a90482d4d1424a767acb03a63982102cd9f0086",
+      "commands": [
+        [
+          "frontend",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/profile/no-inline/frontend",
+            "frontend"
+          ]
+        ],
+        [
+          "native",
+          [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/profile/no-inline/frontend/program.mecb",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/profile/no-inline/native"
+          ]
+        ],
+        [
+          "link",
+          [
+            "/usr/bin/cc",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/0-symbols.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/1-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.0.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/2-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.1.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/3-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.2.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/4-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.3.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/5-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/6-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.5.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/7-mech-adapter-check.mech_worker.1a2f03639ab3a77d-cgu.6.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/mech-adapter/8-mech-adapter-check.3dofzbpsepc71qtpcnwom5mq4.rcgu.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/libmech_engine.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libminiz_oxide-de9ad10a1ce6fd65.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libadler2-61136dca6b80b8c7.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_json-59203b754533b18b.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libmemchr-6ab485a0c6ea8a5e.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libitoa-1df8cde65aa3f829.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libzmij-87bd17fd554c7319.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde-2e2802cf1747e1a3.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-host-link/rebuild/target/release/deps/libserde_core-9868830aaa438a59.rlib",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages/libmech_gpu_runtime.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd-243c6aee4b215ad3.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libpanic_unwind-518d241de9cc5194.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libobject-5077a2fd15e33084.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libmemchr-bac8742b61545a4c.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libaddr2line-6108d313f559a356.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libgimli-703561917a398fbb.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcfg_if-a9961d48a71f7a4b.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_demangle-b3e37f33a642b130.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libstd_detect-2db73d61f4fb0c28.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libhashbrown-ad172697b08ccca2.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_alloc-6efd8bf411f3f214.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libminiz_oxide-b275516decb8333a.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libadler2-5c3a2eebc2828d24.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libunwind-667b34e7c6023418.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liblibc-62530c4bc5684221.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/librustc_std_workspace_core-a52a52624e3066f9.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/liballoc-18dda72c6f7ec0d8.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcore-bde75c546807f175.rlib",
+            "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib/rustlib/aarch64-apple-darwin/lib/libcompiler_builtins-20a7c31da0970e26.rlib",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=11.0.0",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/profile/no-inline/compressor",
+            "-Wl,-dead_strip",
+            "-nodefaultlibs",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/root-inlining/profile/no-inline/native/program.o"
+          ]
+        ]
+      ]
+    }
+  ],
+  "medians": {
+    "retained": {
+      "frontend": 2.959932249505073,
+      "native": 1.766295979032293,
+      "link": 0.0426080203615129,
+      "total": 4.771693687653169
+    },
+    "no-inline": {
+      "frontend": 2.9577514375559986,
+      "native": 1.672751791542396,
+      "link": 0.04378977115266025,
+      "total": 4.675036124419421
+    }
+  },
+  "retained_encoder": {
+    "object_text_bytes": 72520,
+    "object_text_x_roc": 1.256932889628397,
+    "object_text_x_libdeflate": 1.763961860284102,
+    "roc_object_text_bytes": 57696,
+    "libdeflate_object_text_bytes": 41112,
+    "root_code_bytes": 52008,
+    "root_frame_bytes": 3744,
+    "source_blocks": 8223,
+    "root_direct_calls": 372,
+    "emit_seconds": 1.7898752498440444,
+    "peak_resident_bytes": 217825280,
+    "object_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+    "metadata_sha256": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+    "linked_text_bytes": 475444,
+    "worker_sha256": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6",
+    "verified_calls": 162,
+    "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels-pinned-opt3-default-qualification.json"
+  },
+  "no_inline_encoder": {
+    "object_text_bytes": 72600,
+    "object_text_x_roc": 1.2583194675540765,
+    "object_text_x_libdeflate": 1.7659077641564507,
+    "roc_object_text_bytes": 57696,
+    "libdeflate_object_text_bytes": 41112,
+    "root_code_bytes": 51212,
+    "root_frame_bytes": 3536,
+    "source_blocks": 8223,
+    "root_direct_calls": 372,
+    "emit_seconds": 1.7025560420006514,
+    "peak_resident_bytes": 216825856,
+    "object_sha256": "fd2b9367876325a532da3ed03b8b9351f276cd81cf424ad591ad18a7b79ac451",
+    "metadata_sha256": "933ee0320157663737827f6a50dc5407d0842f1b1749ea7bc128147fc8198068",
+    "linked_text_bytes": 475524,
+    "worker_sha256": "311ec30069acc62192e522c659f35a95cdf8a79a318cb637d4bada69f599e18e",
+    "verified_calls": 162,
+    "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels-pinned-opt3-no-inline-qualification.json"
+  },
+  "runtime_scope": "Exact output and alias checks. The changed encoder needs its own timing and stack qualification."
+}

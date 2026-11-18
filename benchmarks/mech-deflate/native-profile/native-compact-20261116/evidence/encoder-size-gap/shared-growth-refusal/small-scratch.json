@@ -1,0 +1,38 @@
+{
+  "compiler_sha256": "d80a38b87cb046a5418f2eb60af6a86f808f1bcee033c1d494b5110e9ef9a1b4",
+  "pinned_source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "source_replacement": [
+    "bits/wrapping-add(bt-minimum(n, 304999u64), 258u64)",
+    "bits/wrapping-add(bt-minimum(n, 8u64), 258u64)"
+  ],
+  "both_match_existing_output_contract": 162,
+  "allocation_count_changes": 140,
+  "outputs": {
+    "ordinary-growth": {
+      "source_sha256": "71f3700e260b332db9ec33a4effc470a9c938df760962d4be097b0ca50665386",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/encoder-size-gap/compiler/compile_profile",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/encoder-size-gap/small-scratch/small-scratch.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/encoder-size-gap/small-scratch/ordinary-growth/frontend",
+        "compact"
+      ],
+      "bytecode_sha256": "0a9f6029ea68881467cb53cda64bda747389aaa8dea29d008e417cad8386fe00",
+      "object_sha256": "75e058e3b5fd924b1743a3f4b0bdbd0f74448a645f08278b364f7f6f9fd26c29",
+      "generated_general_scorer": true,
+      "worker_sha256": "3df4d7f16d350d189914c09d2297a390844df76eca2fddb5d4599143eeaa681c"
+    },
+    "checked-growth": {
+      "source_sha256": "71f3700e260b332db9ec33a4effc470a9c938df760962d4be097b0ca50665386",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/encoder-size-gap/compiler/compile_profile",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/encoder-size-gap/small-scratch/small-scratch.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/encoder-size-gap/small-scratch/checked-growth/frontend",
+        "compact"
+      ],
+      "bytecode_sha256": "0a9f6029ea68881467cb53cda64bda747389aaa8dea29d008e417cad8386fe00",
+      "object_sha256": "12fdbcb9b0e4e07992abe2202e9c41d93c48f6a524b2f7722ee7ee44081c09fd",
+      "generated_general_scorer": false,
+      "worker_sha256": "c746c48683f0b4b1da06574f897ca0818f7a317e2dca53b7bf44d88502921dfd"
+    }
+  }
+}

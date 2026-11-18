@@ -1,0 +1,82 @@
+{
+  "base": "cebfd544a69880e537b05be21235df956a611f0e",
+  "files": {
+    "hosts/gpu/src/native_artifact/codegen/common/ssa_direct_homes.rs": {
+      "current": null,
+      "candidate": "15165ae1bd5c89287967336541b3325e9c45a11d3f45ba732038932c55243e65"
+    },
+    "hosts/gpu/src/native_artifact/codegen/common/ssa_words.rs": {
+      "current": "b0390c9d11b53018e9f3bb211cc513b87a461218c5fd4db967fdc97e2759b3ac",
+      "candidate": "064c7f33bab6f77e7c93dd45b2a791cba54c8aad138903f09d418c8bf52d8140"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/composed_reads.rs": {
+      "current": "f0e4d49434fb0b47201273346d5c68b316ce7e8f13fd6b96ee8ec760d2231610",
+      "candidate": "636c334b499e941943af5cef2cdc7d1befa51c697351eada4ca87590a35c952c"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_read_setup.rs": {
+      "current": "367d5dc9ff9bbcf96ca1234dbf64e11195073f86f198b72733f9c00fcf7781a7",
+      "candidate": "c6f112941c0106d39093ed6e5f754d1638a414341e9118f16dfc9414d60b9571"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/cost.rs": {
+      "current": "3ad22e33a46ab74ff7c519b8e2716b83dfbfc9fe5962a01f1ceed3a3e46a28ef",
+      "candidate": "630bb645ef63de10e58a3cd624b22f2164ea81b414c17ff4825e2c40f4e20359"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs": {
+      "current": "e74aea973a1abe309cd37b432d6b1305307c1b5e2e36d984aedc34fd3d0d6965",
+      "candidate": "208be5f2dd5bcea0b2319445331eb766c6c28355cc43636328205f1fc1878651"
+    },
+    "hosts/gpu/src/native_artifact/program/compact/checked_region_body.rs": {
+      "current": "ec76c9ed127738e5b48d83fa9d6dd2a3f63370ae0373932af2eb386dd37ddcb8",
+      "candidate": "550647d398768c121d4960e76e3181219f0816f9a9aca53313e7cfaecde53c1f"
+    },
+    "hosts/gpu/src/native_artifact/program/compact/checked_traversals.rs": {
+      "current": "c7d474d412e2b9140d33be0ddcc82856abf83b08e4b819e189ceeaed4434ed53",
+      "candidate": "ff7e811990e1ba60f092d2efdffee109a7546fa44ac69b5a06ce5ecee0351b43"
+    },
+    "hosts/gpu/src/native_artifact/program/compact/emit.rs": {
+      "current": "355ac4c2ed7ff252937504cde18125d91787b32b8fd9732df70525cbb4ce9a93",
+      "candidate": "9aa9d4ac09a04e5f49e454cdee6f7d8f514fc8c7daf4f3ceacc7acfd3a7d3d52"
+    },
+    "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+      "current": "c49ca05603a8dde1b2d8ee478c15d759ab6e487035bff6b91ab26fa1301058b6",
+      "candidate": "1fda0092565ba797c9b4759986a78fbb879f55f7064917770570f5e98ab96804"
+    },
+    "hosts/gpu/src/native_artifact/program/compact/phase_layout.rs": {
+      "current": "46971269b7835a2416811390dc1a11bbc98c262a2ebccc504c1baef4b67151e9",
+      "candidate": "2845b2c39abf389a001b6ffafebfd74a1e32457f5caa1d17722de8f710f25966"
+    },
+    "hosts/gpu/src/native_artifact/program/compact/phases.rs": {
+      "current": "056453cdf5dd387eb0857c169fc99aaefb85849fe2a3e17e649aff57675e0ea3",
+      "candidate": "338a2608dc13f8834009dd9bb08f2a3fa66394b5333c856cc4827a4869e5d67f"
+    },
+    "hosts/gpu/src/native_artifact/program/compact/private_phase.rs": {
+      "current": "808d514eda4aa95f1c213707fb6750c4df07f42e2bb2c6ae55ad8e2d7e932845",
+      "candidate": "774ef4e52ecb71acaab1dd7fa5a83402e83a640ada4aacffd685e33dfe87cbfb"
+    },
+    "src/syntax/src/document/parser/canonical/base/continuation.rs": {
+      "current": "01224aeb0957c4e264eff51e3c4e1ec470432d618b53395cb5dbac25d49055c0",
+      "candidate": "fe5dab5a7b11ac3014acfefe0cda0634b56fd3b4b17db5ceffb1dd6448964117"
+    },
+    "src/syntax/src/document/parser/canonical/document/definition_replay.rs": {
+      "current": "5c9117e55389f7b136d9f7d2dee12c8ab62dd568cad9ffb3805b4cc3fba912a5",
+      "candidate": "4beae8187f8e4fc919eed69fe5e91b62381812109b4989b7526b167d8a7c01d0"
+    },
+    "vendor/cranelift-codegen/src/ir/function.rs": {
+      "current": "84a7be36b7611b39aeb2d9236ce6787692b1885f1485172cdfbda981a42368dd",
+      "candidate": "45f0a5db26e4e1fea7b79bd3c54bfd06a30c18786d24851d1e4016487cc6411d"
+    },
+    "vendor/cranelift-codegen/src/isa/aarch64/block_layout.rs": {
+      "current": "35338a48ed6fa61a731d7b058a22300762cca8e7fce470a3ff21c296db47d0c7",
+      "candidate": "5b0a51b53fedce09eec1669dc80da48ae47f3fc3333ff825d81da5f25029b45e"
+    },
+    "vendor/cranelift-codegen/src/isa/aarch64/mod.rs": {
+      "current": "94812b6b082fb015a34556710bcb15f27d2b02c041344adb9ec14a9b5aee5eed",
+      "candidate": "94dfc575ff4a1608efb1fdc205625d7265d25f0f7cc44ec9cc9dff904b3ae3fb"
+    }
+  },
+  "patch_sha256": "ff9d2d9242136d7791ae926bef5f4263368b611996fa9c38b8784ab60a48e447",
+  "integrated_parser_files": [
+    "src/syntax/src/document/parser/canonical/base/continuation.rs",
+    "src/syntax/src/document/parser/canonical/document/definition_replay.rs"
+  ]
+}

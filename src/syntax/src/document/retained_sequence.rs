@@ -190,6 +190,13 @@ impl<T: Measured> RetainedSequence<T> {
     pub(crate) fn len(&self) -> usize {
         self.root.as_ref().map_or(0, |node| node.len())
     }
+    #[inline]
+    pub(crate) fn single(&self) -> Option<&T> {
+        match self.root.as_deref() {
+            Some(Node::Leaf(value)) => Some(value),
+            _ => None,
+        }
+    }
     pub(crate) fn get(&self, index: usize) -> Option<&T> {
         self.root.as_ref()?.get(index)
     }
@@ -275,26 +282,29 @@ impl<T: Measured> RetainedSequence<T> {
         T: Clone,
     {
         struct Owned<T> {
-            stack: alloc::vec::Vec<Arc<Node<T>>>,
+            pending: smallvec::SmallVec<[Arc<Node<T>>; 4]>,
         }
         impl<T: Clone> Iterator for Owned<T> {
             type Item = T;
             fn next(&mut self) -> Option<T> {
-                while let Some(node) = self.stack.pop() {
-                    match node.as_ref() {
+                let root = self.pending.pop()?;
+                let mut node = root.as_ref();
+                loop {
+                    match node {
                         Node::Leaf(value) => return Some(value.clone()),
                         Node::Branch { left, right, .. } => {
-                            self.stack.push(right.clone());
-                            self.stack.push(left.clone());
+                            self.pending.push(right.clone());
+                            node = left;
                         }
                     }
                 }
-                None
             }
         }
-        Owned {
-            stack: self.root.into_iter().collect(),
+        let mut pending = smallvec::SmallVec::new();
+        if let Some(root) = self.root {
+            pending.push(root);
         }
+        Owned { pending }
     }
     pub(crate) fn iter_from(&self, mut index: usize) -> impl Iterator<Item = &T> {
         let mut iter = SequenceIter {
@@ -437,6 +447,21 @@ mod tests {
         }
         sequence.truncate(0);
         check(&sequence, &[]);
+    }
+
+    #[test]
+    fn owned_traversal_keeps_order_after_the_parent_is_dropped() {
+        for len in [0, 1, 2, 8, 16, 17, 32, 33, 129] {
+            let expected = (0..len).map(Weighted).collect::<Vec<_>>();
+            let retained = expected.iter().cloned().collect::<RetainedSequence<_>>();
+            let mut owned = retained.clone().into_values();
+            drop(retained);
+            for item in expected {
+                assert_eq!(owned.next(), Some(item));
+            }
+            assert_eq!(owned.next(), None);
+            assert_eq!(owned.next(), None);
+        }
     }
 
     #[test]

@@ -1,0 +1,36 @@
+{
+  "control_bytes": 67672,
+  "families": [
+    {
+      "family": 1,
+      "text_byte_change": 4,
+      "encoder_sha256": "b6773c8eb9a096894f213adc23997512b2569e30b533e763520fe015ce26f2bc"
+    },
+    {
+      "family": 2,
+      "text_byte_change": -8,
+      "encoder_sha256": "053564d555f9b2e041f0e7c86bc1604e3d134d6bad83efa5ca81e827d4ae83ae"
+    },
+    {
+      "family": 3,
+      "text_byte_change": 124,
+      "encoder_sha256": "43ce8cc6391f166c6cf4fb4f641fd8451d52709f94e51b0320b6c75b1d4db8b7"
+    },
+    {
+      "family": 4,
+      "text_byte_change": 352,
+      "encoder_sha256": "cd9ee1f25f2a8e1badf3baa786c2de5c8eb2aff25a878b521ad14b5d98b6ad72"
+    },
+    {
+      "family": 5,
+      "text_byte_change": 288,
+      "encoder_sha256": "e12b69470ee0b39ebecb08e5380fe6916f114365848eae7defe6a43aca75e58e"
+    },
+    {
+      "family": 6,
+      "text_byte_change": 336,
+      "encoder_sha256": "74c63eed091b11def51ab7944d6e0a5bbb6da96ab0f96d49b3934816704a3c3b"
+    }
+  ],
+  "selected": "continuation-family-2"
+}

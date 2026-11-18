@@ -1,0 +1,27 @@
+{
+  "initial_encoder_text_bytes": 66240,
+  "candidate_encoder_text_bytes": 65920,
+  "changed_atoms": [
+    "_mech_compact_checked_layout_10939",
+    "_mech_compact_checked_layout_13100",
+    "_mech_compact_checked_layout_16147",
+    "_mech_compact_checked_layout_continuation_16644",
+    "_mech_compact_checked_layout_continuation_21031",
+    "_mech_compact_checked_layout_continuation_44066",
+    "_mech_compact_checked_layout_continuation_9112",
+    "_mech_compact_checked_layout_continuation_9562",
+    "_mech_compact_closed_checked",
+    "_mech_compact_numeric_3009_no_growth_composed",
+    "_mech_compact_numeric_475_vector"
+  ],
+  "object_sha256": "76c2fac6639381460e081066a36cdc741ab786a1163fd382ef416c4c84abb4e0",
+  "checked_evidence": [
+    "origins",
+    "source_error_origins",
+    "all_path_initialization_proved",
+    "guarded_consuming_sites",
+    "owner_transfer_sites",
+    "buffer_result_sites",
+    "prechange_retirement_sites"
+  ]
+}

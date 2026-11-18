@@ -1,0 +1,399 @@
+{
+  "source_commit": "1f3b7c6826956b81fcb0ac1524a489b263a476df",
+  "base_pr_973_head": "9087b1f07727a9bfcb7c09059f48edaca6dc2301",
+  "compiler_parent": "72b46f303398c2cd70583d38dc2c69316f879d4e",
+  "scope": "Apple M1 encoder source through final link, with compiler, fixed runtime, adapters and allocator prebuilt.",
+  "comparison": {
+    "retained": {
+      "split": {
+        "frontend": 2.4384698956273496,
+        "native": 1.5943480415735394,
+        "link": 0.04019483411684632,
+        "total": 4.07354574999772,
+        "compiler_peak_rss_bytes": 382263296.0,
+        "compiler_phase_seconds": {
+          "parse": 2.1106043335,
+          "catalog": 0.0583010625,
+          "frontend": 0.23452833350000002,
+          "artifact": 0.007116979,
+          "encode": 0.0024090839999999997,
+          "native": 3.96e-07
+        }
+      },
+      "direct": {
+        "source_to_native": 3.9517594585195184,
+        "stage_outputs": 0.0002763334196060896,
+        "link": 0.03990841703489423,
+        "total": 3.991435583680868,
+        "compiler_peak_rss_bytes": 401342464.0,
+        "compiler_phase_seconds": {
+          "parse": 2.1066576875000003,
+          "catalog": 0.061144041999999996,
+          "frontend": 0.2337091875,
+          "artifact": 0.0071290835,
+          "encode": 0.0026060415,
+          "native": 1.5122942495
+        }
+      },
+      "paired_build_seconds": {
+        "estimate": -0.020241744183109645,
+        "lower": -0.02103342961782617,
+        "upper": -0.01945598132364179
+      },
+      "paired_direct_over_split": [
+        0.9798065918274158,
+        0.9804003420272133,
+        0.9794105949717297,
+        0.9822648773354101,
+        0.9773877289845728,
+        0.979285860272314
+      ],
+      "orders_with_lower_direct_build_time": 6,
+      "build_time_reduction_fraction": 0.020156927491706167,
+      "compiler_peak_rss_growth_fraction": 0.04991106444077742,
+      "direct_source_through_link_x": {
+        "roc": 1.3367267505394547,
+        "libdeflate": 8.27555407094398
+      },
+      "encoder_text_x": {
+        "roc": 1.256932889628397,
+        "libdeflate": 1.9557713052858683
+      },
+      "sizes": {
+        "encoder_text_bytes": 72520,
+        "encoder_file_bytes": 160136,
+        "linked_text_bytes": 475444,
+        "executable_file_bytes": 956056
+      },
+      "identities": {
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+        "program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+        "metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+        "mech-worker": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6"
+      },
+      "recorded_win_counts": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          61,
+          61
+        ]
+      }
+    },
+    "smaller": {
+      "split": {
+        "frontend": 2.439205771079287,
+        "native": 1.6045443119946867,
+        "link": 0.040053792065009475,
+        "total": 4.0862754171248525,
+        "compiler_peak_rss_bytes": 382443520.0,
+        "compiler_phase_seconds": {
+          "parse": 2.1115759375,
+          "catalog": 0.058544437500000004,
+          "frontend": 0.2345037915,
+          "artifact": 0.007107645500000001,
+          "encode": 0.0024142295,
+          "native": 3.545e-07
+        }
+      },
+      "direct": {
+        "source_to_native": 3.9556530211120844,
+        "stage_outputs": 0.000272541306912899,
+        "link": 0.042293521109968424,
+        "total": 3.999303625198081,
+        "compiler_peak_rss_bytes": 401408000.0,
+        "compiler_phase_seconds": {
+          "parse": 2.107527792,
+          "catalog": 0.061175729,
+          "frontend": 0.2334909795,
+          "artifact": 0.007115020499999999,
+          "encode": 0.0026228335,
+          "native": 1.5178726249999999
+        }
+      },
+      "paired_build_seconds": {
+        "estimate": -0.01770475266750593,
+        "lower": -0.02208704915756543,
+        "upper": -0.01330281790339527
+      },
+      "paired_direct_over_split": [
+        1.001026340137403,
+        0.9827694824489338,
+        0.9764630363131529,
+        0.9767021838407685,
+        0.9786412828732381,
+        0.9783935720580813
+      ],
+      "orders_with_lower_direct_build_time": 5,
+      "build_time_reduction_fraction": 0.021283879094954772,
+      "compiler_peak_rss_growth_fraction": 0.049587661989932474,
+      "direct_source_through_link_x": {
+        "roc": 1.3393617477353041,
+        "libdeflate": 8.291867099588195
+      },
+      "encoder_text_x": {
+        "roc": 1.2472268441486412,
+        "libdeflate": 1.9406688241639698
+      },
+      "sizes": {
+        "encoder_text_bytes": 71960,
+        "encoder_file_bytes": 159576,
+        "linked_text_bytes": 474884,
+        "executable_file_bytes": 956056
+      },
+      "identities": {
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+        "program.o": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+        "metadata.json": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+        "mech-worker": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41"
+      },
+      "recorded_win_counts": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          61,
+          61
+        ]
+      }
+    }
+  },
+  "peers": {
+    "roc": {
+      "median_seconds": {
+        "compile": 2.952030375599861,
+        "link": 0.03426322853192687,
+        "total": 2.9859771879855543,
+        "compiler_peak_rss_bytes": 391806976.0
+      },
+      "sizes": {
+        "encoder_text_bytes": 57696,
+        "encoder_file_bytes": 79160,
+        "linked_text_bytes": 150416,
+        "executable_file_bytes": 230600
+      }
+    },
+    "libdeflate": {
+      "median_seconds": {
+        "compile": 0.4482119583990425,
+        "link": 0.03404031251557171,
+        "total": 0.4823164164554328,
+        "compiler_peak_rss_bytes": 71516160.0
+      },
+      "sizes": {
+        "encoder_text_bytes": 37080,
+        "encoder_file_bytes": 52128,
+        "linked_text_bytes": 129900,
+        "executable_file_bytes": 210168
+      }
+    }
+  },
+  "profiled_trials": {
+    "roc_report_seconds": {
+      "type_checking": 0.069,
+      "parse_within_type_checking": 0.003,
+      "shared_lowering_and_compile_time_eval": 0.425,
+      "specializing": 1.645,
+      "lir_passes_within_specializing": 1.552,
+      "llvm_ir": 0.013,
+      "llvm_optimize_and_emit": 0.809
+    },
+    "clang_trace_totals_seconds": {
+      "Total ExecuteCompiler": 0.51448,
+      "Total Backend": 0.438041,
+      "Total Optimizer": 0.251016,
+      "Total PassManager<Function>": 0.227803,
+      "Total CodeGenPasses": 0.18589,
+      "Total OptModule": 0.185876,
+      "Total OptFunction": 0.18281,
+      "Total RunPass": 0.1824,
+      "Total ModuleInlinerWrapperPass": 0.160862,
+      "Total ModuleToPostOrderCGSCCPassAdaptor": 0.160546,
+      "Total DevirtSCCRepeatedPass": 0.159858,
+      "Total PassManager<LazyCallGraph::SCC, CGSCCAnalysisManager, LazyCallGraph &, CGSCCUpdateResult &>": 0.159636,
+      "Total CGSCCToFunctionPassAdaptor": 0.150966,
+      "Total ModuleToFunctionPassAdaptor": 0.07776,
+      "Total Frontend": 0.074131,
+      "Total FunctionToLoopPassAdaptor": 0.062291,
+      "Total ParseDeclarationOrFunctionDefinition": 0.055933,
+      "Total PassManager<Loop, LoopAnalysisManager, LoopStandardAnalysisResults &, LPMUpdater &>": 0.050129,
+      "Total ParseFunctionDefinition": 0.046648,
+      "Total ConstraintEliminationPass": 0.034947,
+      "Total InstCombinePass": 0.032456,
+      "Total RunLoopPass": 0.027408,
+      "Total IndVarSimplifyPass": 0.017763,
+      "Total GVNPass": 0.014809,
+      "Total SLPVectorizerPass": 0.01286,
+      "Total LoopVectorizePass": 0.00952,
+      "Total LoopUnrollPass": 0.009396,
+      "Total SimplifyCFGPass": 0.007697,
+      "Total LICMPass": 0.006719,
+      "Total InlinerPass": 0.006385,
+      "Total AlwaysInlinerPass": 0.005825,
+      "Total CorrelatedValuePropagationPass": 0.005628,
+      "Total EarlyCSEPass": 0.005412,
+      "Total LoopIdiomRecognizePass": 0.005391,
+      "Total LoopDeletionPass": 0.005124,
+      "Total LoopRotatePass": 0.005033,
+      "Total BlockFrequencyAnalysis": 0.004541,
+      "Total LoopLoadEliminationPass": 0.004407,
+      "Total CodeGen Function": 0.004289,
+      "Total JumpThreadingPass": 0.003681,
+      "Total SROAPass": 0.003634,
+      "Total BranchProbabilityAnalysis": 0.003306,
+      "Total AAManager": 0.003202,
+      "Total SCCPPass": 0.003061,
+      "Total MemorySSAAnalysis": 0.002687,
+      "Total LoopFullUnrollPass": 0.002576,
+      "Total DSEPass": 0.002561,
+      "Total LoopSimplifyPass": 0.002447,
+      "Total EvaluateForOverflow": 0.002442,
+      "Total IPSCCPPass": 0.002402,
+      "Total LoopAnalysis": 0.002144,
+      "Total LCSSAPass": 0.002056,
+      "Total EvaluateAsRValue": 0.001857,
+      "Total GlobalOptPass": 0.001625,
+      "Total PostOrderFunctionAttrsPass": 0.001598,
+      "Total BDCEPass": 0.001593,
+      "Total CalledValuePropagationPass": 0.001543,
+      "Total ADCEPass": 0.001498,
+      "Total DominatorTreeAnalysis": 0.001281,
+      "Total ReassociatePass": 0.00123,
+      "Total EvaluateAsBooleanCondition": 0.001162,
+      "Total LoopInstSimplifyPass": 0.001056,
+      "Total isIntegerConstantExpr": 0.000929,
+      "Total EvaluateAsInt": 0.000854,
+      "Total InstSimplifyPass": 0.000781,
+      "Total MemCpyOptPass": 0.000766,
+      "Total SimpleLoopUnswitchPass": 0.000744,
+      "Total PostDominatorTreeAnalysis": 0.0007,
+      "Total ScalarEvolutionAnalysis": 0.000658,
+      "Total LoopSimplifyCFGPass": 0.000637,
+      "Total TailCallElimPass": 0.000598,
+      "Total HotColdSplittingPass": 0.000585,
+      "Total BasicAA": 0.000566,
+      "Total InferAlignmentPass": 0.000469,
+      "Total TargetIRAnalysis": 0.000438,
+      "Total AggressiveInstCombinePass": 0.000357,
+      "Total LowerMatrixIntrinsicsPass": 0.000286,
+      "Total VectorCombinePass": 0.000254,
+      "Total AssumptionAnalysis": 0.000214,
+      "Total FunctionAnalysisManagerCGSCCProxy": 0.000184,
+      "Total EvaluateKnownConstInt": 0.000182,
+      "Total InnerAnalysisManagerProxy<CGSCCAnalysisManager, Module>": 0.000167,
+      "Total LazyCallGraphAnalysis": 0.000166,
+      "Total CallGraphAnalysis": 0.000157,
+      "Total LowerConstantIntrinsicsPass": 0.000138,
+      "Total RequireAnalysisPass<llvm::GlobalsAA, llvm::Module, llvm::AnalysisManager<Module>>": 0.000134,
+      "Total GlobalsAA": 0.000131,
+      "Total ReversePostOrderFunctionAttrsPass": 0.000129,
+      "Total EvaluateKnownConstIntCheckOverflow": 0.000122,
+      "Total RequireAnalysisPass<llvm::ShouldNotRunFunctionPassesAnalysis, llvm::Function, llvm::AnalysisManager<Function>>": 0.000111,
+      "Total LowerExpectIntrinsicPass": 0.000108,
+      "Total RecomputeGlobalsAAPass": 0.000107,
+      "Total WarnMissedTransformationsPass": 9.2e-05,
+      "Total Float2IntPass": 8.6e-05,
+      "Total InferFunctionAttrsPass": 8.2e-05,
+      "Total LoopDistributePass": 8.2e-05,
+      "Total DivRemPairsPass": 7.2e-05,
+      "Total CGProfilePass": 6.9e-05,
+      "Total InjectTLIMappings": 5.8e-05,
+      "Total LibCallsShrinkWrapPass": 5.7e-05,
+      "Total GlobalDCEPass": 4.6e-05,
+      "Total OuterAnalysisManagerProxy<FunctionAnalysisManager, Loop, LoopStandardAnalysisResults &>": 4.6e-05,
+      "Total LoopIdiomVectorizePass": 4.5e-05,
+      "Total TargetLibraryAnalysis": 4.3e-05,
+      "Total AnnotationRemarksPass": 4.2e-05,
+      "Total DeadArgumentEliminationPass": 3.5e-05,
+      "Total MergedLoadStoreMotionPass": 3.3e-05,
+      "Total OuterAnalysisManagerProxy<ModuleAnalysisManager, Function>": 2.3e-05,
+      "Total MemoryDependenceAnalysis": 2e-05,
+      "Total OptimizationRemarkEmitterAnalysis": 2e-05,
+      "Total DemandedBitsAnalysis": 2e-05,
+      "Total PromotePass": 2e-05,
+      "Total ScopedNoAliasAA": 1.9e-05,
+      "Total TypeBasedAA": 1.8e-05,
+      "Total InnerAnalysisManagerProxy<LoopAnalysisManager, Function>": 1.8e-05,
+      "Total EntryExitInstrumenterPass": 1.7e-05,
+      "Total LazyValueAnalysis": 1.4e-05,
+      "Total MoveAutoInitPass": 1.3e-05,
+      "Total EvaluateAsInitializer": 1.3e-05,
+      "Total OpenMPOptCGSCCPass": 1.3e-05,
+      "Total CoroSplitPass": 1.2e-05,
+      "Total CoroElidePass": 1.1e-05,
+      "Total Source": 9e-06,
+      "Total AlignmentFromAssumptionsPass": 9e-06,
+      "Total OuterAnalysisManagerProxy<ModuleAnalysisManager, LazyCallGraph::SCC, LazyCallGraph &>": 8e-06,
+      "Total SpeculativeExecutionPass": 8e-06,
+      "Total InvalidateAnalysisPass<llvm::ShouldNotRunFunctionPassesAnalysis>": 7e-06,
+      "Total ConstantMergePass": 6e-06,
+      "Total InvalidateAnalysisPass<llvm::AAManager>": 6e-06,
+      "Total ShouldNotRunFunctionPassesAnalysis": 6e-06,
+      "Total RelLookupTableConverterPass": 4e-06,
+      "Total LoopSinkPass": 4e-06,
+      "Total LoopAccessAnalysis": 3e-06,
+      "Total ShouldRunExtraVectorPasses": 1e-06,
+      "Total ShouldRunExtraSimpleLoopUnswitch": 1e-06,
+      "Total OpenMPOptPass": 1e-06,
+      "Total PerformPendingInstantiations": 1e-06,
+      "Total Annotation2MetadataPass": 1e-06,
+      "Total CoroEarlyPass": 1e-06,
+      "Total InnerAnalysisManagerProxy<FunctionAnalysisManager, Module>": 0.0,
+      "Total CoroCleanupPass": 0.0,
+      "Total ForceFunctionAttrsPass": 0.0,
+      "Total EliminateAvailableExternallyPass": 0.0,
+      "Total ProfileSummaryAnalysis": 0.0,
+      "Total InlineAdvisorAnalysis": 0.0,
+      "Total RequireAnalysisPass<llvm::ProfileSummaryAnalysis, llvm::Module, llvm::AnalysisManager<Module>>": 0.0
+    }
+  },
+  "recipe_checks": {
+    "baseline": {
+      "object_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "metadata_sha256": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+      "object_text_bytes": 72520
+    },
+    "cold-tails": {
+      "object_sha256": "f2ece3b24fce42f0f7b4dd97b37d55c68214b55979d3836f023d61cd894041d8",
+      "metadata_sha256": "a6c057d339ef1d7f88d84b7bd9fe6f08a536e91025dbca6ea353c08ff8f16e02",
+      "object_text_bytes": 72200
+    },
+    "owner-ranges": {
+      "object_sha256": "172a40de486b0c53ecfb94ce383ac9036f17b12b84f632005421ded5d04f6ce0",
+      "metadata_sha256": "a7475b28e0db9f41184e6db3358efbee2358489566c47d1b79411010899a1424",
+      "object_text_bytes": 72392
+    },
+    "fresh-owner-counts": {
+      "object_sha256": "c809f6ce78e3d9d2a9e7df5686764ecc47089869610636cd0dd2c6f485dc243d",
+      "metadata_sha256": "f78b82fbd6dec22d84d92700b74f6a28871b0963c2f8e2acd07359aefc7f08a0",
+      "object_text_bytes": 72344
+    },
+    "fresh-owner-counts-cleanup": {
+      "object_sha256": "7f4eb5824b335f991d2a51be1d5277b9f04ac37992e679d42c413a5edeb24c02",
+      "metadata_sha256": "1246e2726abdd65eea62a9d02af8c2511f354b6b9e1436dc15ecc39f7f1eca78",
+      "object_text_bytes": 72024
+    },
+    "fresh-owner-counts-cold-tails": {
+      "object_sha256": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+      "metadata_sha256": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+      "object_text_bytes": 71960
+    },
+    "fresh-owner-counts-cold-tails-paired-spills": {
+      "object_sha256": "cd7a1938284f04f77f80bb147a256b0b676d2407af11a444bc8893c37896cc6d",
+      "metadata_sha256": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab",
+      "object_text_bytes": 71896
+    }
+  },
+  "recipe_worker_sha256": "e527d47b287f1002e29b9670cbe2a6eeff5edc6601bf75bf74a5c686ecae3ab7",
+  "historical_aligned_worker_sha256": "775b12ba2e8c54a3a153504833df4601307ae691cd6bb31ecd57d16c78960b91",
+  "historical_smaller_diagnostic_root_frame_bytes": 3744,
+  "historical_smaller_measured_stack_high_water_bytes": 5296,
+  "earlier_exact_call_peak_private_payload_bytes": 10548878,
+  "verified_exact_calls": 1134,
+  "qualification": "Opt-in build change on exact reference outputs. The older size candidates keep their prior decisions.",
+  "raw_trials": "matched/timing.json.gz",
+  "predeclared_plan": "matched/plan.json"
+}

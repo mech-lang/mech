@@ -13,7 +13,7 @@ use cranelift_codegen::ir::{
     Opcode, Value, ValueDef, types,
 };
 use std::collections::BTreeSet;
-#[path = "wide_equal_prefix.rs"]
+#[path = "wide_equal_prefix/mod.rs"]
 mod prefix;
 #[path = "wide_equal_reuse.rs"]
 mod reuse;
@@ -458,18 +458,26 @@ fn apply(
     cert: &Certificate,
     change: Change,
     state: Option<SavedInterval>,
+    wide_tier: bool,
 ) -> Option<(usize, reuse::State, Value)> {
     let check = f.dfg.make_block();
     let initial = f.dfg.append_block_param(check, types::I64);
-    let wide = f.dfg.make_block();
-    let wide_at = f.dfg.append_block_param(wide, types::I64);
-    let advance = f.dfg.make_block();
+    let wide = wide_tier.then(|| {
+        let body = f.dfg.make_block();
+        let at = f.dfg.append_block_param(body, types::I64);
+        (body, at, f.dfg.make_block())
+    });
     let short_check = f.dfg.make_block();
     let short_initial = f.dfg.append_block_param(short_check, types::I64);
     let short_wide = f.dfg.make_block();
     let short_at = f.dfg.append_block_param(short_wide, types::I64);
     let short_advance = f.dfg.make_block();
-    for block in [check, wide, advance, short_check, short_wide, short_advance] {
+    f.layout.append_block(check);
+    if let Some((body, _, advance)) = wide {
+        f.layout.append_block(body);
+        f.layout.append_block(advance);
+    }
+    for block in [short_check, short_wide, short_advance] {
         f.layout.append_block(block);
     }
     // The capture gate establishes initial <= limit. Once an immutable group
@@ -503,56 +511,60 @@ fn apply(
         }
         None => initial,
     };
-    let remaining = c.ins().isub(change.limit, initial);
-    let last_wide = c.ins().iadd_imm(change.limit, -64);
-    let enough = c
-        .ins()
-        .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, 64);
-    c.ins().brif(
-        enough,
-        wide,
-        &[BlockArg::Value(initial)],
-        short_check,
-        &[BlockArg::Value(initial)],
-    );
-    c.goto_bottom(wide);
     let flags = MemFlags::new().with_endianness(Endianness::Little);
-    let left = c.ins().iadd(change.bases[0], wide_at);
-    let right = c.ins().iadd(change.bases[1], wide_at);
-    // A failed group restarts at the same scalar word. The certificate
-    // excludes effects and observable intermediate state from the cycle.
-    let mut combined = None;
-    for offset in [0, 16, 32, 48] {
-        let a = c.ins().load(types::I64X2, flags, left, offset);
-        let b = c.ins().load(types::I64X2, flags, right, offset);
-        let difference = c.ins().bxor(a, b);
-        combined = Some(match combined {
-            Some(previous) => c.ins().bor(previous, difference),
-            None => difference,
-        });
+    if let Some((body, wide_at, advance)) = wide {
+        let remaining = c.ins().isub(change.limit, initial);
+        let last_wide = c.ins().iadd_imm(change.limit, -64);
+        let enough = c
+            .ins()
+            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, 64);
+        c.ins().brif(
+            enough,
+            body,
+            &[BlockArg::Value(initial)],
+            short_check,
+            &[BlockArg::Value(initial)],
+        );
+        c.goto_bottom(body);
+        let left = c.ins().iadd(change.bases[0], wide_at);
+        let right = c.ins().iadd(change.bases[1], wide_at);
+        // A failed group restarts at the same scalar word. The certificate
+        // excludes effects and observable intermediate state from the cycle.
+        let mut combined = None;
+        for offset in [0, 16, 32, 48] {
+            let a = c.ins().load(types::I64X2, flags, left, offset);
+            let b = c.ins().load(types::I64X2, flags, right, offset);
+            let difference = c.ins().bxor(a, b);
+            combined = Some(match combined {
+                Some(previous) => c.ins().bor(previous, difference),
+                None => difference,
+            });
+        }
+        let differs = any_bits(&mut c, combined.unwrap());
+        c.ins().brif(
+            differs,
+            cert.header,
+            &[BlockArg::Value(wide_at)],
+            advance,
+            &[],
+        );
+        c.goto_bottom(advance);
+        // Entry proves limit >= 64 and wide_at <= limit - 64. The same
+        // comparison at the latch proves the next complete group readable.
+        let next = c.ins().iadd_imm(wide_at, 64);
+        let enough = c
+            .ins()
+            .icmp(IntCC::UnsignedLessThanOrEqual, next, last_wide);
+        c.ins().brif(
+            enough,
+            body,
+            &[BlockArg::Value(next)],
+            short_check,
+            &[BlockArg::Value(next)],
+        );
+    } else {
+        c.ins().jump(short_check, &[BlockArg::Value(initial)]);
     }
-    let differs = any_bits(&mut c, combined.unwrap());
-    c.ins().brif(
-        differs,
-        cert.header,
-        &[BlockArg::Value(wide_at)],
-        advance,
-        &[],
-    );
-    c.goto_bottom(advance);
-    // Entry proves limit >= 64 and wide_at <= limit - 64. The same
-    // comparison at the latch proves the next complete group readable.
-    let next = c.ins().iadd_imm(wide_at, 64);
-    let enough = c
-        .ins()
-        .icmp(IntCC::UnsignedLessThanOrEqual, next, last_wide);
-    c.ins().brif(
-        enough,
-        wide,
-        &[BlockArg::Value(next)],
-        short_check,
-        &[BlockArg::Value(next)],
-    );
 
     c.goto_bottom(short_check);
     let remaining = c.ins().isub(change.limit, short_initial);
@@ -609,6 +621,7 @@ pub(in crate::native_artifact) fn optimize(
     context: &mut Context,
     certificates: &[Certificate],
     reuse_prefix: bool,
+    wide_tier: bool,
 ) -> Outcome {
     let mut outcome = Outcome::default();
     let mut continuations = std::collections::BTreeMap::new();
@@ -660,7 +673,8 @@ pub(in crate::native_artifact) fn optimize(
         if let Some(SavedInterval::Long(state, _)) = &saved {
             state.record_words(&mut context.func, cert, &change);
         }
-        if let Some((header, state, end)) = apply(&mut context.func, cert, change, saved) {
+        if let Some((header, state, end)) = apply(&mut context.func, cert, change, saved, wide_tier)
+        {
             continuations.insert(header, (state, end));
             outcome.prefixes.push((cert.source_header, header));
         }

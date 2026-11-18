@@ -1,0 +1,19 @@
+{
+  "object_text_bytes": 71896,
+  "object_text_x_roc": 1.2461175818080976,
+  "object_text_x_libdeflate": 1.9389428263214672,
+  "roc_object_text_bytes": 57696,
+  "libdeflate_object_text_bytes": 37080,
+  "root_code_bytes": 51448,
+  "root_frame_bytes": 3744,
+  "source_blocks": 8223,
+  "root_direct_calls": 372,
+  "emit_seconds": 4.5451453337445855,
+  "peak_resident_bytes": 823672832,
+  "object_sha256": "cd7a1938284f04f77f80bb147a256b0b676d2407af11a444bc8893c37896cc6d",
+  "metadata_sha256": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab",
+  "linked_text_bytes": 474820,
+  "worker_sha256": "775b12ba2e8c54a3a153504833df4601307ae691cd6bb31ecd57d16c78960b91",
+  "verified_calls": 162,
+  "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/aligned-register-spills-20261117-checked-qualification.json"
+}

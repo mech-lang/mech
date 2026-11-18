@@ -1,0 +1,35 @@
+{
+  "objective": "Reduce exact checked-root text by sharing existing fallthrough copy sequences with no additional executed transfers.",
+  "scope": "Focused diagnostic screen. The v1 thresholds and both actor orders are unchanged.",
+  "cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "320-overlap",
+    "random-64",
+    "random-1024",
+    "prefix-periodic-1024",
+    "prefix-random-1024",
+    "prefix-random-4096",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-natural-32768",
+    "reymont-prefix-32769",
+    "prefix-repeated-32769",
+    "heldout-mixed-131073",
+    "prefix-natural-262144",
+    "prefix-random-1048576"
+  ],
+  "orders": [
+    "forward",
+    "reverse"
+  ],
+  "blocks_per_case": 96,
+  "baseline_object_sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+  "baseline_worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+  "candidate_object_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+  "candidate_metadata_sha256": "2a727450ecb1d87e341760878894b7f4188c5abdd9c5a2bee1cf3bb79a66280d",
+  "fixture_inventory_sha256": "b6de359f4e8e5fa47c9ebed9474954f6e7b809e08d4f3b36193412492c4d9490",
+  "policy_sha256": "1889b824a300e5b2c5c8bfb40aea1652cb525cb740152706ec5bf72543bce984",
+  "notes": "The complete acquisition plan binds the fixed-runtime linked candidate and has its own digest before the first observation."
+}

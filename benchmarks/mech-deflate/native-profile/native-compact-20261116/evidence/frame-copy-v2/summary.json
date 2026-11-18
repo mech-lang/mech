@@ -1,0 +1,96 @@
+{
+  "source_pin": "e8b2bb4f2d8c44390e9a67dfe054c6ff40341249",
+  "encoder_text_bytes": 71192,
+  "encoder_text_x_roc": 1.2339156960621187,
+  "encoder_text_x_libdeflate": 1.9199568500539375,
+  "case_scope": "Full",
+  "relative_to_fixed_encoder": 0.9919741388919853,
+  "stack_peaks_bytes": {
+    "control": 5280,
+    "shared-frame-copies": 5280
+  },
+  "focused_orders": [
+    {
+      "order": "forward",
+      "mech-control": [
+        13,
+        11
+      ],
+      "mech-experiment": [
+        13,
+        11
+      ],
+      "lost_cases": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "gained_cases": {
+        "roc": [],
+        "libdeflate": []
+      }
+    },
+    {
+      "order": "reverse",
+      "mech-control": [
+        13,
+        11
+      ],
+      "mech-experiment": [
+        13,
+        11
+      ],
+      "lost_cases": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "gained_cases": {
+        "roc": [],
+        "libdeflate": []
+      }
+    }
+  ],
+  "full_orders": [
+    {
+      "order": "forward",
+      "mech-control": [
+        81,
+        61
+      ],
+      "mech-experiment": [
+        81,
+        61
+      ],
+      "lost_cases": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "gained_cases": {
+        "roc": [],
+        "libdeflate": []
+      }
+    },
+    {
+      "order": "reverse",
+      "mech-control": [
+        81,
+        61
+      ],
+      "mech-experiment": [
+        81,
+        61
+      ],
+      "lost_cases": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "gained_cases": {
+        "roc": [],
+        "libdeflate": []
+      }
+    }
+  ],
+  "runtime_decision": "Retain",
+  "used_in_deployment_comparison": true,
+  "unresolved": [],
+  "rejected": []
+}

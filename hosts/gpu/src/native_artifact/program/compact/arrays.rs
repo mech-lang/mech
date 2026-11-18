@@ -1,8 +1,11 @@
 //! Concrete typed array operations. Calls are allocation, initialized copying
 //! and final deallocation, never canonical binding or per-operation dispatch.
 use super::{
-    layout::{Kind, Layout, Type},
+    array_growth::{BackingResults, BackingSite, CapacityGrowth, GrowthSite},
+    indexed_stores::{IndexedStore, IndexedStores},
+    layout::{Layout, LayoutKind, Type},
     packed,
+    recipes::Recipe,
 };
 use crate::native_artifact::codegen::common::ssa_words::Words;
 use crate::native_artifact::{
@@ -11,11 +14,11 @@ use crate::native_artifact::{
 };
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{
-    AbiParam, Block, FuncRef, InstBuilder, MemFlags, StackSlot, StackSlotData, StackSlotKind,
-    Value, types,
+    AbiParam, Block, FuncRef, Inst, InstBuilder, MemFlags, StackSlot, StackSlotData, StackSlotKind,
+    Value, ValueDef, types,
 };
 use cranelift_frontend::FunctionBuilder;
-use cranelift_module::{Linkage, Module};
+use cranelift_module::{FuncId, Linkage, Module};
 use mech_engine::native_artifact::{NativeCollectionPrimitive as P, NativeMatchValue as V};
 
 pub(super) const BOUNDS: u64 = 0x19401;
@@ -25,31 +28,44 @@ pub(in crate::native_artifact) struct Arrays {
     writable: FuncRef,
     writable_scalar: Option<FuncRef>,
     free: FuncRef,
+    release_groups: Option<[FuncRef; 2]>,
     memmove: FuncRef,
     source: StackSlot,
     result: StackSlot,
     pub heap: Value,
+    pub(super) capacity_growth: Option<CapacityGrowth>,
+    indexed_stores: Option<IndexedStores>,
+    pub(super) pack_le_stores: Option<super::le_scalar_stores::Packing>,
     retirement_observer: Option<FuncRef>,
     forward_view_geometry: bool,
+    register_backing: bool,
 }
-fn import<M: Module>(
+
+fn declare_import<M: Module>(
     module: &mut M,
-    b: &mut FunctionBuilder<'_>,
     name: &str,
     parameters: usize,
-) -> Result<FuncRef, NativeCompileError> {
+    returns: usize,
+) -> Result<FuncId, NativeCompileError> {
     let mut signature = module.make_signature();
     signature.params = vec![AbiParam::new(types::I64); parameters];
-    signature.returns = vec![AbiParam::new(types::I64)];
-    let id = module
+    signature.returns = vec![AbiParam::new(types::I64); returns];
+    module
         .declare_function(name, Linkage::Import, &signature)
-        .map_err(backend)?;
-    Ok(module.declare_func_in_func(id, b.func))
+        .map_err(backend)
 }
 fn success(b: &mut FunctionBuilder<'_>, status: Value, error: Block) {
     let next = b.create_block();
     b.ins().brif(status, error, &[status.into()], next, &[]);
     b.switch_to_block(next);
+}
+fn backing_result(b: &mut FunctionBuilder<'_>, call: Inst, error: Block) -> (Value, Value) {
+    let [data, owner_or_status] = b.inst_results(call).try_into().expect("two backing words");
+    let next = b.create_block();
+    b.ins()
+        .brif(data, next, &[], error, &[owner_or_status.into()]);
+    b.switch_to_block(next);
+    (data, owner_or_status)
 }
 fn checked_add(b: &mut FunctionBuilder<'_>, left: Value, right: Value, error: Block) -> Value {
     let (sum, overflow) = b.ins().uadd_overflow(left, right);
@@ -84,7 +100,7 @@ fn same_elements(left: &Type, right: &Type) -> Result<(), NativeCompileError> {
 }
 fn unsigned(ty: &Type) -> Result<(), NativeCompileError> {
     match ty.kind {
-        Kind::Scalar {
+        LayoutKind::Scalar {
             signed: false,
             float: false,
             ..
@@ -96,11 +112,85 @@ fn unsigned(ty: &Type) -> Result<(), NativeCompileError> {
 }
 fn integer_element(ty: &Type) -> bool {
     match &ty.kind {
-        Kind::Scalar { float: false, .. } => true,
-        Kind::Product(fields) => fields.iter().all(|f| integer_element(&f.ty)),
+        LayoutKind::Scalar { float: false, .. } => true,
+        LayoutKind::Product(fields) => fields.iter().all(|f| integer_element(&f.ty)),
         _ => false,
     }
 }
+pub(super) struct ArrayImports {
+    allocate: FuncId,
+    writable: FuncId,
+    writable_scalar: Option<FuncId>,
+    free: FuncId,
+    release_groups: Option<[FuncId; 2]>,
+    memmove: FuncId,
+    retirement_observer: Option<FuncId>,
+    forward_view_geometry: bool,
+    register_backing: bool,
+}
+
+impl ArrayImports {
+    pub(super) fn declare<M: Module>(
+        module: &mut M,
+        observe: bool,
+    ) -> Result<Self, NativeCompileError> {
+        let forward_view_geometry =
+            std::env::var_os("MECH_COMPACT_FORWARD_VIEW_GEOMETRY").is_some();
+        let register_backing = forward_view_geometry
+            && module.isa().default_call_conv() == cranelift_codegen::isa::CallConv::AppleAarch64
+            && cfg!(all(target_arch = "aarch64", target_os = "macos"))
+            && std::env::var_os("MECH_COMPACT_REGISTER_BACKING").is_some();
+        let allocate = if register_backing {
+            declare_import(module, "mech_compact_allocate_backing", 5, 2)?
+        } else {
+            declare_import(module, "mech_compact_allocate", 6, 1)?
+        };
+        let writable_scalar = if register_backing {
+            Some(declare_import(
+                module,
+                "mech_compact_writable_scalar_backing",
+                7,
+                2,
+            )?)
+        } else if forward_view_geometry
+            && std::env::var_os("MECH_COMPACT_PACK_WRITABLE_STORAGE").is_some()
+        {
+            Some(declare_import(
+                module,
+                "mech_compact_writable_scalar",
+                8,
+                1,
+            )?)
+        } else {
+            None
+        };
+        let release_groups =
+            if !observe && std::env::var_os("MECH_COMPACT_GROUP_RETIREMENTS").is_some() {
+                Some([
+                    declare_import(module, "mech_compact_release_two", 3, 1)?,
+                    declare_import(module, "mech_compact_release_four", 5, 1)?,
+                ])
+            } else {
+                None
+            };
+        Ok(Self {
+            allocate,
+            writable: declare_import(module, "mech_compact_writable", 7, 1)?,
+            writable_scalar,
+            free: declare_import(module, "mech_compact_free", 2, 1)?,
+            release_groups,
+            memmove: declare_import(module, "memmove", 3, 1)?,
+            retirement_observer: if observe {
+                Some(declare_import(module, "mech_compact_phase_observe", 3, 1)?)
+            } else {
+                None
+            },
+            forward_view_geometry,
+            register_backing,
+        })
+    }
+}
+
 impl Arrays {
     pub fn new<M: Module>(
         module: &mut M,
@@ -108,18 +198,21 @@ impl Arrays {
         heap: Value,
         observe: bool,
     ) -> Result<Self, NativeCompileError> {
-        let forward_view_geometry =
-            std::env::var_os("MECH_COMPACT_FORWARD_VIEW_GEOMETRY").is_some();
-        let pack_writable_storage = forward_view_geometry
-            && std::env::var_os("MECH_COMPACT_PACK_WRITABLE_STORAGE").is_some();
+        let imports = ArrayImports::declare(module, observe)?;
+        let allocate = module.declare_func_in_func(imports.allocate, b.func);
+        let writable_scalar = imports
+            .writable_scalar
+            .map(|id| module.declare_func_in_func(id, b.func));
+        let release_groups = imports
+            .release_groups
+            .map(|ids| ids.map(|id| module.declare_func_in_func(id, b.func)));
         Ok(Self {
-            allocate: import(module, b, "mech_compact_allocate", 6)?,
-            writable: import(module, b, "mech_compact_writable", 7)?,
-            writable_scalar: pack_writable_storage
-                .then(|| import(module, b, "mech_compact_writable_scalar", 8))
-                .transpose()?,
-            free: import(module, b, "mech_compact_free", 2)?,
-            memmove: import(module, b, "memmove", 3)?,
+            allocate,
+            writable: module.declare_func_in_func(imports.writable, b.func),
+            writable_scalar,
+            free: module.declare_func_in_func(imports.free, b.func),
+            release_groups,
+            memmove: module.declare_func_in_func(imports.memmove, b.func),
             source: b.create_sized_stack_slot(StackSlotData::new(
                 StackSlotKind::ExplicitSlot,
                 48,
@@ -131,13 +224,55 @@ impl Arrays {
                 3,
             )),
             heap,
-            forward_view_geometry,
-            retirement_observer: if observe {
-                Some(import(module, b, "mech_compact_phase_observe", 3)?)
-            } else {
-                None
-            },
+            capacity_growth: None,
+            indexed_stores: None,
+            pack_le_stores: None,
+            forward_view_geometry: imports.forward_view_geometry,
+            register_backing: imports.register_backing,
+            retirement_observer: imports
+                .retirement_observer
+                .map(|id| module.declare_func_in_func(id, b.func)),
         })
+    }
+
+    /// Keep the common sufficient-capacity test in each append. The rest of
+    /// the capacity policy is identical for all power-of-two scalar strides.
+    pub(super) fn share_capacity_growth<M: Module>(
+        &mut self,
+        module: &mut M,
+        b: &mut FunctionBuilder<'_>,
+        preserve_registers: bool,
+        combined_backing: Option<BackingResults>,
+    ) -> Result<(), NativeCompileError> {
+        self.capacity_growth = Some(CapacityGrowth::declare(
+            module,
+            b,
+            preserve_registers,
+            combined_backing.filter(|_| self.register_backing),
+        )?);
+        Ok(())
+    }
+
+    pub(super) fn share_indexed_stores<M: Module>(
+        &mut self,
+        module: &mut M,
+        b: &mut FunctionBuilder<'_>,
+        layout: &Layout,
+        actions: &[Recipe],
+        consuming: &[bool],
+        outline_reuse: bool,
+    ) -> Result<(), NativeCompileError> {
+        if self.register_backing {
+            self.indexed_stores = Some(IndexedStores::declare(
+                module,
+                b,
+                layout,
+                actions,
+                consuming,
+                outline_reuse,
+            )?);
+        }
+        Ok(())
     }
     pub fn retain(&self, b: &mut FunctionBuilder<'_>, owner: Value) {
         let yes = b.create_block();
@@ -187,18 +322,51 @@ impl Arrays {
         slots: &[usize],
         error: Block,
     ) {
-        for &at in slots {
-            let owner = words.read(b, at);
+        for group in slots.chunks(if self.release_groups.is_some() { 4 } else { 1 }) {
             let zero = b.ins().iconst(types::I64, 0);
-            words.write(b, at, zero);
-            self.release(b, owner, error);
+            let mut owners = [zero; 4];
+            for (owner, &slot) in owners.iter_mut().zip(group) {
+                *owner = words.read(b, slot);
+                words.write(b, slot, zero);
+            }
+            if let Some([two, four]) = self.release_groups.filter(|_| group.len() > 1) {
+                // These SSA lanes cannot be observed from the error return.
+                // The helper performs their actual retirements in original order.
+                let any = owners[..group.len()]
+                    .iter()
+                    .copied()
+                    .reduce(|a, c| b.ins().bor(a, c))
+                    .expect("at least two retirements");
+                let present = b.create_block();
+                let done = b.create_block();
+                b.ins().brif(any, present, &[], done, &[]);
+                b.switch_to_block(present);
+                let [a, c, d, e] = owners;
+                let call = if group.len() == 2 {
+                    b.ins().call(two, &[self.heap, a, c])
+                } else {
+                    b.ins().call(four, &[self.heap, a, c, d, e])
+                };
+                let status = b.inst_results(call)[0];
+                success(b, status, error);
+                b.ins().jump(done, &[]);
+                b.switch_to_block(done);
+            } else {
+                self.release(b, owners[0], error);
+            }
         }
     }
-    fn result(&self, b: &mut FunctionBuilder<'_>, geometry: Option<[Value; 3]>) -> Vec<Value> {
+    fn result(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        geometry: Option<[Value; 3]>,
+        capacity: Option<Value>,
+    ) -> Vec<Value> {
         (0..6)
             .map(|i| {
                 let known = match i {
                     1 => geometry.map(|lanes| lanes[0]),
+                    2 => capacity,
                     3 => geometry.map(|lanes| lanes[1]),
                     4 => geometry.map(|lanes| lanes[2]),
                     _ => None,
@@ -221,6 +389,15 @@ impl Arrays {
         let stride = b.ins().iconst(types::I64, stride as i64);
         let align = b.ins().iconst(types::I64, element.packed_align as i64);
         let zeroed = b.ins().iconst(types::I64, i64::from(zeroed));
+        if self.register_backing {
+            let call = b
+                .ins()
+                .call(self.allocate, &[self.heap, capacity, stride, align, zeroed]);
+            let (data, owner) = backing_result(b, call, error);
+            let zero = b.ins().iconst(types::I64, 0);
+            let one = b.ins().iconst(types::I64, 1);
+            return Ok(vec![data, zero, capacity, one, zero, owner]);
+        }
         let out = b.ins().stack_addr(types::I64, self.result, 0);
         let call = b.ins().call(
             self.allocate,
@@ -235,7 +412,49 @@ impl Arrays {
             let one = b.ins().iconst(types::I64, 1);
             [zero, one, zero]
         });
-        Ok(self.result(b, geometry))
+        Ok(self.result(b, geometry, self.forward_view_geometry.then_some(capacity)))
+    }
+
+    /// The source is dead on the collection's successful continuation, and
+    /// the total pointwise traversal reads a word before writing its result
+    /// to the same position. Preserve the original allocation geometry.
+    pub(super) fn pointwise_destination(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        source: &[Value],
+        capacity: Value,
+        element: &Type,
+        error: Block,
+    ) -> Result<Vec<Value>, NativeCompileError> {
+        let inspect = b.create_block();
+        let allocate = b.create_block();
+        let done = b.create_block();
+        b.append_block_param(done, types::I64);
+        b.append_block_param(done, types::I64);
+        let owner = source[5];
+        let present = b.ins().icmp_imm(IntCC::NotEqual, owner, 0);
+        let capacity_matches = b.ins().icmp(IntCC::Equal, source[2], capacity);
+        let can_inspect = b.ins().band(present, capacity_matches);
+        b.ins().brif(can_inspect, inspect, &[], allocate, &[]);
+        b.switch_to_block(inspect);
+        let references = b.ins().load(types::I64, MemFlags::new(), owner, 0);
+        let exclusive = b.ins().icmp_imm(IntCC::Equal, references, 1);
+        b.ins().brif(
+            exclusive,
+            done,
+            &[source[0].into(), owner.into()],
+            allocate,
+            &[],
+        );
+        b.switch_to_block(allocate);
+        let fresh = self.allocate(b, capacity, element, false, error)?;
+        b.ins().jump(done, &[fresh[0].into(), fresh[5].into()]);
+        b.switch_to_block(done);
+        let data = b.block_params(done)[0];
+        let owner = b.block_params(done)[1];
+        let zero = b.ins().iconst(types::I64, 0);
+        let one = b.ins().iconst(types::I64, 1);
+        Ok(vec![data, zero, capacity, one, zero, owner])
     }
     pub(super) fn writable(
         &self,
@@ -246,13 +465,29 @@ impl Arrays {
         element: &Type,
         error: Block,
     ) -> Result<Vec<Value>, NativeCompileError> {
+        self.writable_backing(b, view, consume, minimum, element, error, None)
+    }
+
+    fn writable_backing(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        view: &[Value],
+        consume: bool,
+        minimum: Value,
+        element: &Type,
+        error: Block,
+        indexed: Option<IndexedStore>,
+    ) -> Result<Vec<Value>, NativeCompileError> {
+        let source_block = b.current_block().unwrap();
         let done = b.create_block();
         for _ in 0..6 {
             b.append_block_param(done, types::I64);
         }
         let fallback = b.create_block();
-        if consume {
-            let inspect = b.create_block();
+        let inspect = consume.then(|| b.create_block());
+        let fits = if let Some(inspect) =
+            inspect.filter(|_| indexed.is_none_or(|site| !site.outline_reuse))
+        {
             b.ins().brif(view[5], inspect, &[], fallback, &[]);
             b.switch_to_block(inspect);
             let references = b.ins().load(types::I64, MemFlags::new(), view[5], 0);
@@ -268,30 +503,52 @@ impl Arrays {
                 fallback,
                 &[],
             );
+            let ValueDef::Result(fits, _) = b.func.dfg.value_def(fits) else {
+                unreachable!("scalar capacity comparison")
+            };
+            Some(fits)
         } else {
             b.ins().jump(fallback, &[]);
-        }
+            None
+        };
         b.switch_to_block(fallback);
         let stride = element
             .packed_bytes
             .ok_or_else(|| backend("compact writable backing requires a fixed element stride"))?;
-        let out = b.ins().stack_addr(types::I64, self.result, 0);
         let scalar = self.writable_scalar.filter(|_| {
-            matches!(element.kind, Kind::Scalar { .. })
+            matches!(element.kind, LayoutKind::Scalar { .. })
                 && element.packed_align == stride
                 && matches!(stride, 1 | 2 | 4 | 8)
         });
-        let call = if let Some(scalar) = scalar {
+        let call = if let Some(store) = indexed {
+            debug_assert!(
+                consume && minimum == view[2] && self.register_backing && scalar.is_some()
+            );
+            b.ins().call(
+                store.helper,
+                &[
+                    self.heap,
+                    view[0],
+                    view[1],
+                    view[2],
+                    view[5],
+                    store.offset,
+                    store.value,
+                ],
+            )
+        } else if let Some(scalar) = scalar {
             let layout = b
                 .ins()
                 .iconst(types::I64, 2 * stride as i64 + i64::from(consume));
-            b.ins().call(
-                scalar,
-                &[
-                    self.heap, view[0], view[1], view[2], view[5], minimum, layout, out,
-                ],
-            )
+            let mut arguments = vec![
+                self.heap, view[0], view[1], view[2], view[5], minimum, layout,
+            ];
+            if !self.register_backing {
+                arguments.push(b.ins().stack_addr(types::I64, self.result, 0));
+            }
+            b.ins().call(scalar, &arguments)
         } else {
+            let out = b.ins().stack_addr(types::I64, self.result, 0);
             let stride = b.ins().iconst(types::I64, stride as i64);
             let align = b.ins().iconst(types::I64, element.packed_align as i64);
             let consume = b.ins().iconst(types::I64, i64::from(consume));
@@ -304,15 +561,45 @@ impl Arrays {
                 &[self.heap, source, consume, minimum, stride, align, out],
             )
         };
-        let status = b.inst_results(call)[0];
-        success(b, status, error);
         // Both the reused and copied writable views retain this geometry.
         let geometry = self
             .forward_view_geometry
             .then_some([view[1], view[3], view[4]]);
-        let result = self.result(b, geometry);
+        // Successful writable backing has capacity max(old capacity, minimum)
+        // and a valid source has length at most capacity.
+        let capacity = (self.forward_view_geometry && (minimum == view[1] || minimum == view[2]))
+            .then_some(view[2]);
+        let result = if self.register_backing && scalar.is_some() {
+            let (data, owner) = backing_result(b, call, error);
+            let capacity = capacity.unwrap_or_else(|| b.ins().umax(view[2], minimum));
+            if let Some(growth) = &self.capacity_growth
+                && capacity != view[2]
+                && let ValueDef::Result(capacity, _) = b.func.dfg.value_def(capacity)
+            {
+                growth.record_backing(
+                    b,
+                    source_block,
+                    minimum,
+                    view[2],
+                    stride,
+                    error,
+                    BackingSite {
+                        call,
+                        fits,
+                        capacity,
+                        fallback,
+                        consume,
+                    },
+                );
+            }
+            vec![data, view[1], capacity, view[3], view[4], owner]
+        } else {
+            let status = b.inst_results(call)[0];
+            success(b, status, error);
+            self.result(b, geometry, capacity)
+        };
         b.ins().jump(
-            done,
+            indexed.map_or(done, |store| store.finish),
             &result.iter().copied().map(Into::into).collect::<Vec<_>>(),
         );
         b.switch_to_block(done);
@@ -339,7 +626,7 @@ impl Arrays {
         let element = Type::derive(&mech_core::SchemaBody::UnsignedInteger(integer))?;
         let one = b.ins().iconst(types::I64, 1);
         let needed = checked_add(b, view[1], one, error);
-        let capacity = Self::grown_capacity(b, view[2], needed, width as usize, error);
+        let capacity = self.grown_capacity(b, view[2], needed, width as usize, error);
         let result = self.writable(b, view, true, capacity, &element, error)?;
         // The phase owns the unique caller reference during this synchronous
         // call. Establish the replacement before releasing its previous owner.
@@ -363,6 +650,7 @@ impl Arrays {
         b.switch_to_block(done);
     }
     pub(super) fn grown_capacity(
+        &self,
         b: &mut FunctionBuilder<'_>,
         capacity: Value,
         needed: Value,
@@ -375,13 +663,29 @@ impl Arrays {
         let grow = b.create_block();
         let done = b.create_block();
         b.append_block_param(done, types::I64);
-        b.ins().brif(enough, done, &[capacity.into()], grow, &[]);
+        let choose_growth = b.ins().brif(enough, done, &[capacity.into()], grow, &[]);
         b.switch_to_block(grow);
         let initial = b.create_block();
         let nonzero = b.create_block();
         let grown = b.create_block();
         b.append_block_param(grown, types::I64);
-        b.ins().brif(capacity, nonzero, &[], initial, &[]);
+        let branch = b.ins().brif(capacity, nonzero, &[], initial, &[]);
+        if let Some(growth) = self
+            .capacity_growth
+            .as_ref()
+            .filter(|_| matches!(width, 1 | 2 | 4 | 8))
+        {
+            growth.record(GrowthSite {
+                choose_growth,
+                enough,
+                growth: branch,
+                capacity,
+                needed,
+                shift: width.trailing_zeros(),
+                done,
+                error,
+            });
+        }
         b.switch_to_block(initial);
         let first = b.ins().iconst(types::I64, (64 / width) as i64);
         b.ins().jump(grown, &[first.into()]);
@@ -427,7 +731,7 @@ impl Arrays {
         let one = b.ins().iconst(types::I64, 1);
         let length = checked_add(b, view[1], one, error);
         let capacity =
-            Self::grown_capacity(b, view[2], length, element.packed_bytes.unwrap(), error);
+            self.grown_capacity(b, view[2], length, element.packed_bytes.unwrap(), error);
         self.append_at_capacity(b, view, values, element, consume, length, capacity, error)
     }
     fn append_at_capacity(
@@ -663,7 +967,16 @@ impl Arrays {
                     }
                     self.retire(b, words, &[slot], error);
                 }
-                let out = self.writable(b, &view, consume, view[2], element, error)?;
+                let indexed = self
+                    .indexed_stores
+                    .as_ref()
+                    .filter(|_| consume)
+                    .and_then(|stores| stores.store(element, bytes, &values, done));
+                let out =
+                    self.writable_backing(b, &view, consume, view[2], element, error, indexed)?;
+                // A shared fallback stores after acquiring its backing and
+                // jumps to the original result. Only the inline reuse reaches
+                // this store when the fallback has been shared.
                 let address = b.ins().iadd(out[0], bytes);
                 packed::store(b, address, element, &values)?;
                 b.ins().jump(
@@ -684,21 +997,26 @@ impl Arrays {
                 let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, count, 8);
                 guard(b, valid, error, INVALID);
                 let length = checked_add(b, view[1], count, error);
-                let capacity = Self::grown_capacity(b, view[2], length, width, error);
+                let capacity = self.grown_capacity(b, view[2], length, width, error);
                 let mut out = self.writable(b, &view, consume, capacity, element, error)?;
-                for i in 0..8 {
-                    let selected = b.ins().icmp_imm(IntCC::UnsignedGreaterThan, count, i);
-                    let put = b.create_block();
-                    let next = b.create_block();
-                    b.ins().brif(selected, put, &[], next, &[]);
-                    b.switch_to_block(put);
-                    let value = b.ins().ushr_imm(value, i * 8);
-                    let value = b.ins().ireduce(types::I8, value);
-                    let at = b.ins().iadd_imm(view[1], i);
-                    let address = b.ins().iadd(out[0], at);
-                    b.ins().store(MemFlags::new(), value, address, 0);
-                    b.ins().jump(next, &[]);
-                    b.switch_to_block(next);
+                if let Some(packing) = self.pack_le_stores {
+                    let address = b.ins().iadd(out[0], view[1]);
+                    super::le_scalar_stores::store(b, address, value, count, packing);
+                } else {
+                    for i in 0..8 {
+                        let selected = b.ins().icmp_imm(IntCC::UnsignedGreaterThan, count, i);
+                        let put = b.create_block();
+                        let next = b.create_block();
+                        b.ins().brif(selected, put, &[], next, &[]);
+                        b.switch_to_block(put);
+                        let value = b.ins().ushr_imm(value, i * 8);
+                        let value = b.ins().ireduce(types::I8, value);
+                        let at = b.ins().iadd_imm(view[1], i);
+                        let address = b.ins().iadd(out[0], at);
+                        b.ins().store(MemFlags::new(), value, address, 0);
+                        b.ins().jump(next, &[]);
+                        b.switch_to_block(next);
+                    }
                 }
                 out[1] = length;
                 out[3] = one;
@@ -729,7 +1047,7 @@ impl Arrays {
                     out[1] = view[1];
                     out
                 } else {
-                    let capacity = Self::grown_capacity(b, view[2], length, width, error);
+                    let capacity = self.grown_capacity(b, view[2], length, width, error);
                     self.writable(b, &view, consume, capacity, element, error)?
                 };
                 let at = b.ins().imul_imm(view[1], width as i64);

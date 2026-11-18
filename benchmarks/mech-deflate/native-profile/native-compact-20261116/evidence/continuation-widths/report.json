@@ -1,0 +1,406 @@
+{
+  "benchmark_machine": "Apple M1",
+  "retained_recipe": "baseline",
+  "size_denominators": {
+    "roc": 57696,
+    "libdeflate": 37080
+  },
+  "static_results": [
+    {
+      "name": "width-4",
+      "flag_overrides": {
+        "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "4"
+      },
+      "object_text_bytes": 72312,
+      "object_text_x_roc": 1.2533277870216306,
+      "object_text_x_libdeflate": 1.9501618122977347,
+      "roc_object_text_bytes": 57696,
+      "libdeflate_object_text_bytes": 37080,
+      "root_code_bytes": 51032,
+      "root_frame_bytes": 3632,
+      "source_blocks": 8223,
+      "root_direct_calls": 369,
+      "emit_seconds": 2.2384529998525977,
+      "peak_resident_bytes": 226131968,
+      "object_sha256": "1746d51933d1bb8674de38d72ca31c3148ab6cfe00dbef43ca2731de070a74a8",
+      "metadata_sha256": "5e0718d4b2dfe58cc41add6aeef62d6b220738b7e8d1628212f04d3a515a0011"
+    },
+    {
+      "name": "width-6",
+      "flag_overrides": {
+        "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "6"
+      },
+      "object_text_bytes": 72088,
+      "object_text_x_roc": 1.2494453688297282,
+      "object_text_x_libdeflate": 1.9441208198489752,
+      "roc_object_text_bytes": 57696,
+      "libdeflate_object_text_bytes": 37080,
+      "root_code_bytes": 51684,
+      "root_frame_bytes": 3856,
+      "source_blocks": 8223,
+      "root_direct_calls": 369,
+      "emit_seconds": 2.2272939584217966,
+      "peak_resident_bytes": 226689024,
+      "object_sha256": "ddf45b958b4256cd7b64f41af0b964cfdfa0f7747ed3f4a13070e2fb53ec48f9",
+      "metadata_sha256": "de3c4a53eff75c96cea4af9377db7be47ab90c23ee7cbae55170c6dfed4f7cf0"
+    },
+    {
+      "name": "width-8",
+      "flag_overrides": {
+        "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "8"
+      },
+      "object_text_bytes": 72520,
+      "object_text_x_roc": 1.256932889628397,
+      "object_text_x_libdeflate": 1.9557713052858683,
+      "roc_object_text_bytes": 57696,
+      "libdeflate_object_text_bytes": 37080,
+      "root_code_bytes": 52008,
+      "root_frame_bytes": 3744,
+      "source_blocks": 8223,
+      "root_direct_calls": 372,
+      "emit_seconds": 2.2395979166030884,
+      "peak_resident_bytes": 226607104,
+      "object_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "metadata_sha256": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+    },
+    {
+      "name": "width-10",
+      "flag_overrides": {
+        "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "10"
+      },
+      "object_text_bytes": 72520,
+      "object_text_x_roc": 1.256932889628397,
+      "object_text_x_libdeflate": 1.9557713052858683,
+      "roc_object_text_bytes": 57696,
+      "libdeflate_object_text_bytes": 37080,
+      "root_code_bytes": 52008,
+      "root_frame_bytes": 3744,
+      "source_blocks": 8223,
+      "root_direct_calls": 372,
+      "emit_seconds": 2.2173966667614877,
+      "peak_resident_bytes": 226607104,
+      "object_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "metadata_sha256": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+    },
+    {
+      "name": "width-12",
+      "flag_overrides": {
+        "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "12"
+      },
+      "object_text_bytes": 72520,
+      "object_text_x_roc": 1.256932889628397,
+      "object_text_x_libdeflate": 1.9557713052858683,
+      "roc_object_text_bytes": 57696,
+      "libdeflate_object_text_bytes": 37080,
+      "root_code_bytes": 52008,
+      "root_frame_bytes": 3744,
+      "source_blocks": 8223,
+      "root_direct_calls": 372,
+      "emit_seconds": 2.214157082606107,
+      "peak_resident_bytes": 226607104,
+      "object_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "metadata_sha256": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+    },
+    {
+      "name": "width-14",
+      "flag_overrides": {
+        "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "14"
+      },
+      "object_text_bytes": 72520,
+      "object_text_x_roc": 1.256932889628397,
+      "object_text_x_libdeflate": 1.9557713052858683,
+      "roc_object_text_bytes": 57696,
+      "libdeflate_object_text_bytes": 37080,
+      "root_code_bytes": 52008,
+      "root_frame_bytes": 3744,
+      "source_blocks": 8223,
+      "root_direct_calls": 372,
+      "emit_seconds": 2.2214279999025166,
+      "peak_resident_bytes": 226607104,
+      "object_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+      "metadata_sha256": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3"
+    },
+    {
+      "name": "width-16-owners-cold",
+      "flag_overrides": {
+        "MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS": "1",
+        "MECH_COMPACT_SHARE_COLD_TAILS": "1"
+      },
+      "object_text_bytes": 71960,
+      "object_text_x_roc": 1.2472268441486412,
+      "object_text_x_libdeflate": 1.9406688241639698,
+      "roc_object_text_bytes": 57696,
+      "libdeflate_object_text_bytes": 37080,
+      "root_code_bytes": 51448,
+      "root_frame_bytes": 3744,
+      "source_blocks": 8223,
+      "root_direct_calls": 372,
+      "emit_seconds": 2.249885540921241,
+      "peak_resident_bytes": 226623488,
+      "object_sha256": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+      "metadata_sha256": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb"
+    },
+    {
+      "name": "width-6-owners",
+      "flag_overrides": {
+        "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "6",
+        "MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS": "1"
+      },
+      "object_text_bytes": 72072,
+      "object_text_x_roc": 1.2491680532445923,
+      "object_text_x_libdeflate": 1.9436893203883494,
+      "roc_object_text_bytes": 57696,
+      "libdeflate_object_text_bytes": 37080,
+      "root_code_bytes": 51680,
+      "root_frame_bytes": 3840,
+      "source_blocks": 8223,
+      "root_direct_calls": 369,
+      "emit_seconds": 2.222218499984592,
+      "peak_resident_bytes": 226672640,
+      "object_sha256": "53e942b7b6d4faff2719a88e872b68793991e61b952ff7c77d90b9f707bd8a5c",
+      "metadata_sha256": "f0817ce85bf8e90746c191634dbca1fb6b51fe6cd450613d8f492875fff4dc54"
+    },
+    {
+      "name": "width-6-owners-cold",
+      "flag_overrides": {
+        "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "6",
+        "MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS": "1",
+        "MECH_COMPACT_SHARE_COLD_TAILS": "1"
+      },
+      "object_text_bytes": 71720,
+      "object_text_x_roc": 1.243067110371603,
+      "object_text_x_libdeflate": 1.9341963322545848,
+      "roc_object_text_bytes": 57696,
+      "libdeflate_object_text_bytes": 37080,
+      "root_code_bytes": 51316,
+      "root_frame_bytes": 3840,
+      "source_blocks": 8223,
+      "root_direct_calls": 369,
+      "emit_seconds": 2.2246098341420293,
+      "peak_resident_bytes": 226738176,
+      "object_sha256": "b79459e0e371fbc858a60d02d46a1821119e9b8f6023ef925042fb5f4073c290",
+      "metadata_sha256": "da726b4bfdbb542090d60c119d612138c4dba63413c42d91fa8e025fde6a34c0"
+    }
+  ],
+  "runtime": {
+    "width-6-owners-cold": {
+      "object_text_bytes": 71720,
+      "object_text_x_roc": 1.243067110371603,
+      "object_text_x_libdeflate": 1.9341963322545848,
+      "roc_object_text_bytes": 57696,
+      "libdeflate_object_text_bytes": 37080,
+      "root_code_bytes": 51316,
+      "root_frame_bytes": 3840,
+      "source_blocks": 8223,
+      "root_direct_calls": 369,
+      "emit_seconds": 2.2286445829086006,
+      "peak_resident_bytes": 226672640,
+      "object_sha256": "b79459e0e371fbc858a60d02d46a1821119e9b8f6023ef925042fb5f4073c290",
+      "metadata_sha256": "da726b4bfdbb542090d60c119d612138c4dba63413c42d91fa8e025fde6a34c0",
+      "linked_text_bytes": 474644,
+      "worker_sha256": "9c7b8281ab8c2356192a399adbeea92d2eabb419b36844f3dc28a61a4317c7c1",
+      "verified_calls": 162,
+      "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-width-6-owners-cold-native-final-candidate-qualification.json",
+      "runtime_runs": [
+        {
+          "name": "focus",
+          "cases": 15,
+          "roc_wins": [
+            15,
+            15
+          ],
+          "libdeflate_wins": [
+            13,
+            11
+          ],
+          "libdeflate_lost_cases": [
+            "prefix-periodic-1024",
+            "320-overlap"
+          ],
+          "libdeflate_gained_cases": [],
+          "candidate_over_control_geometric_mean": 1.0080682765526754,
+          "timed_calls": 739584
+        },
+        {
+          "name": "focus-reverse",
+          "cases": 15,
+          "roc_wins": [
+            15,
+            15
+          ],
+          "libdeflate_wins": [
+            13,
+            11
+          ],
+          "libdeflate_lost_cases": [
+            "320-overlap",
+            "prefix-periodic-1024"
+          ],
+          "libdeflate_gained_cases": [],
+          "candidate_over_control_geometric_mean": 1.0085260064900425,
+          "timed_calls": 739584
+        }
+      ],
+      "decision": "Rejected after the same two libdeflate losses in both focused orders."
+    },
+    "width-16-owners-cold": {
+      "object_text_bytes": 71960,
+      "object_text_x_roc": 1.2472268441486412,
+      "object_text_x_libdeflate": 1.9406688241639698,
+      "roc_object_text_bytes": 57696,
+      "libdeflate_object_text_bytes": 37080,
+      "root_code_bytes": 51448,
+      "root_frame_bytes": 3744,
+      "source_blocks": 8223,
+      "root_direct_calls": 372,
+      "emit_seconds": 2.228371791075915,
+      "peak_resident_bytes": 226590720,
+      "object_sha256": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+      "metadata_sha256": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+      "linked_text_bytes": 474884,
+      "worker_sha256": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41",
+      "verified_calls": 162,
+      "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-width-16-owners-cold-native-final-candidate-qualification.json",
+      "peak_stack_bytes": 5296,
+      "checked_failure_cases": 6,
+      "uncertainty_at_half_percent": {
+        "bounded at resolution in the two full orders": 77,
+        "inconclusive": 4
+      },
+      "sustained_slowdowns": {},
+      "runtime_runs": [
+        {
+          "name": "focus",
+          "cases": 15,
+          "roc_wins": [
+            15,
+            15
+          ],
+          "libdeflate_wins": [
+            13,
+            13
+          ],
+          "libdeflate_lost_cases": [],
+          "libdeflate_gained_cases": [],
+          "candidate_over_control_geometric_mean": 0.9965750942822116,
+          "timed_calls": 739584
+        },
+        {
+          "name": "focus-reverse",
+          "cases": 15,
+          "roc_wins": [
+            15,
+            15
+          ],
+          "libdeflate_wins": [
+            13,
+            13
+          ],
+          "libdeflate_lost_cases": [],
+          "libdeflate_gained_cases": [],
+          "candidate_over_control_geometric_mean": 0.9993621508053979,
+          "timed_calls": 739584
+        },
+        {
+          "name": "full",
+          "cases": 81,
+          "roc_wins": [
+            81,
+            81
+          ],
+          "libdeflate_wins": [
+            61,
+            61
+          ],
+          "libdeflate_lost_cases": [],
+          "libdeflate_gained_cases": [],
+          "candidate_over_control_geometric_mean": 0.9971221252324791,
+          "timed_calls": 982656
+        },
+        {
+          "name": "full-reverse",
+          "cases": 81,
+          "roc_wins": [
+            81,
+            81
+          ],
+          "libdeflate_wins": [
+            61,
+            61
+          ],
+          "libdeflate_lost_cases": [],
+          "libdeflate_gained_cases": [],
+          "candidate_over_control_geometric_mean": 0.9974880027186899,
+          "timed_calls": 982656
+        }
+      ],
+      "longer_followup": "repeatability/results.json",
+      "longer_followup_resolved": [
+        "prefix-repeated-4096"
+      ],
+      "remaining_repeatability_cases": [
+        "one-stored",
+        "random-64",
+        "seven-stored-prefix"
+      ],
+      "decision": "Opt-in pending repeatability of the remaining cases."
+    }
+  },
+  "same_source_complete_build_medians": {
+    "mech-control": {
+      "frontend": 3.378721166867763,
+      "native": 2.217448896029964,
+      "link": 0.04061027057468891,
+      "total": 5.637521249707788,
+      "parse": 2.931928313
+    },
+    "mech-fresh-owner-counts-cold-tails": {
+      "frontend": 3.3781203129328787,
+      "native": 2.2320791876409203,
+      "link": 0.040863499976694584,
+      "total": 5.653993250103667,
+      "parse": 2.930992583
+    },
+    "roc": {
+      "compile": 2.9576821874361485,
+      "link": 0.03442545817233622,
+      "total": 2.992055916460231
+    },
+    "libdeflate": {
+      "compile": 0.44627706217579544,
+      "link": 0.033750541508197784,
+      "total": 0.48055202048271894
+    }
+  },
+  "exact_complete_build_sizes": {
+    "mech-control": {
+      "emitted_text_bytes": 72520,
+      "encoder_file_bytes": 160136,
+      "linked_text_bytes": 475444,
+      "executable_file_bytes": 956056,
+      "encoder_sha256": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c"
+    },
+    "mech-fresh-owner-counts-cold-tails": {
+      "emitted_text_bytes": 71960,
+      "encoder_file_bytes": 159576,
+      "linked_text_bytes": 474884,
+      "executable_file_bytes": 956056,
+      "encoder_sha256": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd"
+    },
+    "roc": {
+      "emitted_text_bytes": 57696,
+      "encoder_file_bytes": 79160,
+      "linked_text_bytes": 150416,
+      "executable_file_bytes": 230600,
+      "encoder_sha256": "56bdcd935d0814afc2b587a83374164c51c09491d86295d0f26f87a95fc7a6a4"
+    },
+    "libdeflate": {
+      "emitted_text_bytes": 37080,
+      "encoder_file_bytes": 52128,
+      "linked_text_bytes": 129900,
+      "executable_file_bytes": 210168,
+      "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726"
+    }
+  },
+  "review_variant": "fresh-owner-counts-cold-tails"
+}

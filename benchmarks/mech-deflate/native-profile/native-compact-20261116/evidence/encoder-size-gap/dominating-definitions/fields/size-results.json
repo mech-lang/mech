@@ -1,0 +1,116 @@
+{
+  "direct-fields": {
+    "selected_role": "direct-fields-rebound",
+    "bytes": 68488,
+    "selected_words": 6831,
+    "native_proofs_equal": {
+      "origins": true,
+      "source_error_origins": true,
+      "numeric_phases": true,
+      "layout_checked_controllers": true,
+      "checked_continuations": false,
+      "all_path_initialization_proved": true
+    },
+    "window_participation": {
+      "layout_checked_controllers": {
+        "control": [
+          11,
+          9,
+          4
+        ],
+        "first": [
+          11,
+          9,
+          4
+        ],
+        "rebound": [
+          11,
+          9,
+          4
+        ]
+      },
+      "checked_continuations": {
+        "control": [
+          2,
+          4,
+          2,
+          4
+        ],
+        "first": [
+          2,
+          4,
+          2,
+          2
+        ],
+        "rebound": [
+          2,
+          4,
+          2,
+          2
+        ]
+      }
+    },
+    "first_bytes": 68488,
+    "ssa": [
+      "compact-stage: compact values before=874132",
+      "compact-values: retained=124901"
+    ]
+  },
+  "direct-fields-and-scalars": {
+    "selected_role": "direct-fields-and-scalars-rebound",
+    "bytes": 68424,
+    "selected_words": 9302,
+    "native_proofs_equal": {
+      "origins": true,
+      "source_error_origins": true,
+      "numeric_phases": true,
+      "layout_checked_controllers": true,
+      "checked_continuations": false,
+      "all_path_initialization_proved": true
+    },
+    "window_participation": {
+      "layout_checked_controllers": {
+        "control": [
+          11,
+          9,
+          4
+        ],
+        "first": [
+          11,
+          9,
+          4
+        ],
+        "rebound": [
+          11,
+          9,
+          4
+        ]
+      },
+      "checked_continuations": {
+        "control": [
+          2,
+          4,
+          2,
+          4
+        ],
+        "first": [
+          2,
+          4,
+          2,
+          2
+        ],
+        "rebound": [
+          2,
+          4,
+          2,
+          2
+        ]
+      }
+    },
+    "first_bytes": 68424,
+    "ssa": [
+      "compact-stage: compact values before=831612",
+      "compact-values: retained=122168"
+    ]
+  }
+}

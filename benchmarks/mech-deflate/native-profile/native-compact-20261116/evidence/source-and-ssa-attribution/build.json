@@ -1,0 +1,51 @@
+{
+  "base": "3cde720cdf8b24d6bc4f1818988479d8eb5ae960",
+  "sources": {
+    "src/engine/src/source_semantics/frontend.rs": {
+      "original": "aceb0924a373e81eadd63fca6b6638bf41ff3b8b15f2340c34c7d7cd7a9a8d52",
+      "attribution": "98a028aa2676c0d4826b03583eed16ed4d77c45fa3d75ba3bf1c2df8b439f05e"
+    },
+    "src/engine/src/source_semantics/document_lowering.rs": {
+      "original": "39d03876fc646808425371edeec77d6ebd47cb50cd9c531e25cfef7187073747",
+      "attribution": "db056a671769ca89ab6314654ab2c85704e51a387bf4b7dd484c5d5307f66167"
+    },
+    "src/stdlib/src/catalog.rs": {
+      "original": "e117481c1aecc438d57931e77da10a48196b1cd20036f0d6913091f0f906513d",
+      "attribution": "f01347d2eb953cf647a79b1fd1bb1b9f160f9912abb353f4904df5d246d7c3a3"
+    },
+    "vendor/cranelift-frontend/src/ssa.rs": {
+      "original": "c6e146761f78faeeae93634299a75cac8b71532d8f74772b711a55f0e1250deb",
+      "attribution": "b8115ae14857cf94ae80b4a340f7e1e8a973563b260f94ed381658682718cb65"
+    },
+    "hosts/gpu/src/native_artifact/codegen/common/ssa_words.rs": {
+      "original": "fe6803c242a630d6a89f7ff724e6360a128dec8463e9d7fed60c2333a1c6d006",
+      "attribution": "e75db6f562eb751386ffdaaae36b3d825098805556b3e9f2c2640d10e9ecf7be"
+    },
+    "hosts/gpu/src/native_artifact/program/compact/emit.rs": {
+      "original": "7ff97d65d2aa1791a618a52e427b3e77dbc02b72e492a14bbbfba819ef28494a",
+      "attribution": "fc877bde7300e2e8338981c048b6d27dcebdc9f4bfb655fc6002831c51819131"
+    }
+  },
+  "artifacts": {
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "compiler_sha256": "9448315c56cb05fdc9e3f49c2f11a2d154077ab30bc5fef9bc556f651f7a4f02",
+  "patch_sha256": "d0267d63636c109788ab9b82150c6a5f2976471ef4d0227cd77172fe48d70a97",
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/semantic-and-ssa-attribution/compiler/disabled",
+    "--variant",
+    "frame-copies",
+    "--compiler-opt-level",
+    "3",
+    "--direct-source",
+    "--preselect-root-inlining",
+    "--skip-refused-general-ssa",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target"
+  ]
+}

@@ -1,0 +1,24 @@
+optimized function with verifier=true
+function u0:0() fast {
+block0:
+    jump block1
+
+block1:
+    return
+}
+
+standalone legalize invalidates graphs with verifier=true
+invalid return rejected:
+- inst1 (return): arguments of return must match function signature
+- inst2 (return): arguments of return must match function signature
+
+optimized function with verifier=false
+function u0:0() fast {
+block0:
+    jump block1
+
+block1:
+    return
+}
+
+standalone legalize invalidates graphs with verifier=false

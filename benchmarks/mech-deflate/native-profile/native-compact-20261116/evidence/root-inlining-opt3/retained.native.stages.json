@@ -1,0 +1,178 @@
+[
+  [
+    0.08836970804259181,
+    "compact-stage: canonical lowering"
+  ],
+  [
+    0.1063852496445179,
+    "compact-stage: preparation blocks=8223 values=5690"
+  ],
+  [
+    0.24596924986690283,
+    "compact-stage: native module"
+  ],
+  [
+    0.2960415417328477,
+    "compact-stage: numeric phase mech_compact_numeric_475"
+  ],
+  [
+    0.32922337483614683,
+    "compact-stage: numeric phase mech_compact_numeric_475_vector"
+  ],
+  [
+    0.4322111248038709,
+    "compact-stage: numeric phase mech_compact_numeric_3009"
+  ],
+  [
+    0.4395318329334259,
+    "compact-stage: numeric phase mech_compact_numeric_3009_vector"
+  ],
+  [
+    0.4554773326963186,
+    "compact-stage: numeric phase mech_compact_numeric_3009_no_growth"
+  ],
+  [
+    0.4845262076705694,
+    "compact-stage: numeric phase mech_compact_numeric_4173"
+  ],
+  [
+    0.4897583327256143,
+    "compact-stage: numeric phase mech_compact_numeric_4173_vector"
+  ],
+  [
+    0.4956998326815665,
+    "compact-stage: numeric phase mech_compact_numeric_3447"
+  ],
+  [
+    0.5003237496130168,
+    "compact-stage: numeric phase mech_compact_numeric_3447_vector"
+  ],
+  [
+    0.505109874997288,
+    "compact-stage: numeric phase mech_compact_numeric_3956"
+  ],
+  [
+    0.5064237075857818,
+    "compact-stage: numeric phase mech_compact_numeric_3956_vector"
+  ],
+  [
+    0.5103915827348828,
+    "compact-stage: numeric phase mech_compact_numeric_4879"
+  ],
+  [
+    0.5140637499280274,
+    "compact-stage: numeric phase mech_compact_numeric_4879_vector"
+  ],
+  [
+    0.5174192916601896,
+    "compact-stage: numeric phase mech_compact_numeric_4673"
+  ],
+  [
+    0.5197979579679668,
+    "compact-stage: numeric phase mech_compact_numeric_4673_vector"
+  ],
+  [
+    0.5223643747158349,
+    "compact-stage: numeric phase mech_compact_numeric_6633"
+  ],
+  [
+    0.524904124904424,
+    "compact-stage: numeric phase mech_compact_numeric_6633_vector"
+  ],
+  [
+    0.5280173327773809,
+    "compact-stage: numeric phase mech_compact_numeric_5895"
+  ],
+  [
+    0.5303957075811923,
+    "compact-stage: numeric phase mech_compact_numeric_5895_vector"
+  ],
+  [
+    0.5332514578476548,
+    "compact-stage: numeric phase mech_compact_numeric_3872"
+  ],
+  [
+    0.5352503326721489,
+    "compact-stage: numeric phase mech_compact_numeric_3872_vector"
+  ],
+  [
+    0.5374852078966796,
+    "compact-stage: numeric phase mech_compact_numeric_4799"
+  ],
+  [
+    0.538934082724154,
+    "compact-stage: numeric phase mech_compact_numeric_4799_vector"
+  ],
+  [
+    0.5407450827769935,
+    "compact-stage: numeric phase mech_compact_numeric_2821"
+  ],
+  [
+    0.542344749905169,
+    "compact-stage: numeric phase mech_compact_numeric_2821_vector"
+  ],
+  [
+    0.5441273748874664,
+    "compact-stage: numeric phase mech_compact_numeric_8026"
+  ],
+  [
+    0.545321624726057,
+    "compact-stage: numeric phase mech_compact_numeric_8026_vector"
+  ],
+  [
+    0.5468078330159187,
+    "compact-stage: numeric phase mech_compact_numeric_362"
+  ],
+  [
+    0.5479821669869125,
+    "compact-stage: numeric phase mech_compact_numeric_362_vector"
+  ],
+  [
+    0.5494005419313908,
+    "compact-stage: typed layout"
+  ],
+  [
+    0.5494042919017375,
+    "compact-stage: flow proof"
+  ],
+  [
+    0.55176154198125,
+    "compact-stage: operation recipes"
+  ],
+  [
+    0.7160309166647494,
+    "compact-stage: source CFG"
+  ],
+  [
+    0.7160371248610318,
+    "compact-stage: source site 0/8223"
+  ],
+  [
+    0.7659965418279171,
+    "compact-stage: source site 4096/8223"
+  ],
+  [
+    0.8811959577724338,
+    "compact-stage: source site 8192/8223"
+  ],
+  [
+    0.9049155828543007,
+    "compact-stage: finalize SSA"
+  ],
+  [
+    0.9347016247920692,
+    "compact-stage: compact values before=1399985"
+  ],
+  [
+    0.9466029168106616,
+    "compact-stage: CFG cleanup"
+  ],
+  [
+    1.56989570800215,
+    "compact-stage: machine code"
+  ],
+  [
+    1.7543129166588187,
+    "compact-stage: machine code complete"
+  ]
+]

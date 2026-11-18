@@ -1,0 +1,2 @@
+ld: warning: object file (/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o) was built for newer 'macOS' version (15.0) than being linked (11.0)
+ld: warning: no platform load command found in '/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-fresh-owner-counts-current/order-3/mech-control/native/program.o', assuming: macOS

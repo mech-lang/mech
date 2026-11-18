@@ -2,6 +2,7 @@
 use super::{Candidate, Traversal, inputs};
 use cranelift_codegen::{
     dominator_tree::DominatorTree,
+    entity::SecondaryMap,
     ir::{
         Block, BlockCall, Constant, DynamicStackSlot, ExceptionTable, FuncRef, Function,
         GlobalValue, Immediate, JumpTable, SigRef, SourceLoc, StackSlot, Value, ValueDef,
@@ -89,10 +90,32 @@ impl InstructionMapper for RegionInstructions<'_> {
     }
 }
 
+pub(super) struct BlockOrder {
+    layout: SecondaryMap<Block, usize>,
+    reverse_postorder: SecondaryMap<Block, usize>,
+}
+
+impl BlockOrder {
+    pub(super) fn new(source: &Function, dominance: &DominatorTree) -> Self {
+        fn ranks(blocks: impl Iterator<Item = Block>) -> SecondaryMap<Block, usize> {
+            let mut ranks = SecondaryMap::new();
+            for (rank, block) in blocks.enumerate() {
+                ranks[block] = rank;
+            }
+            ranks
+        }
+        Self {
+            layout: ranks(source.layout.blocks()),
+            reverse_postorder: ranks(dominance.cfg_postorder().iter().rev().copied()),
+        }
+    }
+}
+
 pub(super) fn prepare(
     source: &Function,
     traversal: &Traversal,
     dominance: &DominatorTree,
+    order: &BlockOrder,
 ) -> Option<(Function, Traversal)> {
     if source.stack_limit.is_some()
         || source.preferred_fallthrough.is_some()
@@ -120,11 +143,17 @@ pub(super) fn prepare(
     let mut blocks = BTreeMap::new();
     let mut values = BTreeMap::new();
     let exits = traversal.candidate.exits();
-    for block in source
-        .layout
-        .blocks()
-        .filter(|b| traversal.blocks.contains(b) || exits.contains(&Some(*b)))
-    {
+    let mut region_blocks = traversal.blocks.iter().copied().collect::<Vec<_>>();
+    let mut with_exits = region_blocks.clone();
+    with_exits.extend(
+        exits
+            .into_iter()
+            .flatten()
+            .filter(|&b| source.layout.is_block_inserted(b) && !traversal.blocks.contains(&b)),
+    );
+    with_exits.sort_unstable_by_key(|&block| order.layout[block]);
+    with_exits.dedup();
+    for block in with_exits {
         let local = seed.dfg.make_block();
         blocks.insert(block, local);
         seed.layout.append_block(local);
@@ -162,12 +191,8 @@ pub(super) fn prepare(
 
     // Definitions precede uses in reverse postorder. Keep the source layout
     // order in the seed, independently of when each instruction is copied.
-    for &block in dominance
-        .cfg_postorder()
-        .iter()
-        .rev()
-        .filter(|b| traversal.blocks.contains(b))
-    {
+    region_blocks.sort_unstable_by_key(|&block| order.reverse_postorder[block]);
+    for block in region_blocks {
         let local_block = blocks[&block];
         for inst in source.layout.block_insts(block) {
             if source.dfg.user_stack_map_entries(inst).is_some()
@@ -213,6 +238,7 @@ pub(super) fn prepare(
             ..candidate
         },
         blocks: traversal.blocks.iter().map(|b| blocks[b]).collect(),
+        retained_returns: Default::default(),
         inputs: traversal.inputs.iter().copied().map(value).collect(),
         input_roles,
         outputs: traversal.outputs.iter().copied().map(value).collect(),
@@ -230,6 +256,8 @@ pub(super) fn prepare(
             .collect(),
         live_captures: Vec::new(),
         packed_inputs: traversal.packed_inputs,
+        register_inputs: false,
+        register_outputs: traversal.register_outputs,
         return_error_origin: traversal.return_error_origin,
         constants: traversal.constants.iter().copied().map(value).collect(),
         slots: traversal.slots.clone(),

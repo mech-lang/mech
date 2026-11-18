@@ -1,0 +1,1878 @@
+{
+  "orders": [
+    [
+      "control",
+      "combined"
+    ],
+    [
+      "combined",
+      "control"
+    ],
+    [
+      "control",
+      "combined"
+    ],
+    [
+      "combined",
+      "control"
+    ],
+    [
+      "control",
+      "combined"
+    ],
+    [
+      "combined",
+      "control"
+    ]
+  ],
+  "results": {
+    "tests/fixtures/syntax-source-boundary/executable.mec": {
+      "source_sha256": "234df112c12f48f73f62b12ae26a25c6292fcdf9529d71fefa4c0cc21875dbd7",
+      "bytecode_sha256": "bf7dbbdbadd0b2a8981d79d1b3dbca9df8f81e83f4d20d4572c75ee37bd25b3c",
+      "warmup": {
+        "control": {
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/executable/warmup-control",
+            "frontend"
+          ],
+          "bytecode_sha256": "bf7dbbdbadd0b2a8981d79d1b3dbca9df8f81e83f4d20d4572c75ee37bd25b3c",
+          "phases": [
+            {
+              "phase": "parse",
+              "seconds": 0.001189792,
+              "total_seconds": 0.001227
+            },
+            {
+              "phase": "catalog",
+              "seconds": 0.059947541,
+              "total_seconds": 0.061231333
+            },
+            {
+              "phase": "frontend",
+              "seconds": 0.000195708,
+              "total_seconds": 0.061507166
+            },
+            {
+              "phase": "artifact",
+              "seconds": 3.45e-05,
+              "total_seconds": 0.061590291
+            },
+            {
+              "phase": "encode",
+              "seconds": 3.7875e-05,
+              "total_seconds": 0.061675541
+            },
+            {
+              "phase": "native",
+              "seconds": 1.67e-07,
+              "total_seconds": 0.06189725
+            }
+          ],
+          "total_seconds": 0.061945291
+        },
+        "combined": {
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/executable/warmup-combined",
+            "frontend"
+          ],
+          "bytecode_sha256": "bf7dbbdbadd0b2a8981d79d1b3dbca9df8f81e83f4d20d4572c75ee37bd25b3c",
+          "phases": [
+            {
+              "phase": "parse",
+              "seconds": 0.001093667,
+              "total_seconds": 0.001116666
+            },
+            {
+              "phase": "catalog",
+              "seconds": 0.058010666,
+              "total_seconds": 0.059181083
+            },
+            {
+              "phase": "frontend",
+              "seconds": 0.000195125,
+              "total_seconds": 0.059453708
+            },
+            {
+              "phase": "artifact",
+              "seconds": 3.4167e-05,
+              "total_seconds": 0.059536791
+            },
+            {
+              "phase": "encode",
+              "seconds": 3.65e-05,
+              "total_seconds": 0.059620291
+            },
+            {
+              "phase": "native",
+              "seconds": 8.3e-08,
+              "total_seconds": 0.059812625
+            }
+          ],
+          "total_seconds": 0.059858708
+        }
+      },
+      "trials": [
+        {
+          "control": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/executable/order-1-control",
+              "frontend"
+            ],
+            "bytecode_sha256": "bf7dbbdbadd0b2a8981d79d1b3dbca9df8f81e83f4d20d4572c75ee37bd25b3c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001191375,
+                "total_seconds": 0.0012245
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.0602035,
+                "total_seconds": 0.061483584
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000198417,
+                "total_seconds": 0.061758167
+              },
+              {
+                "phase": "artifact",
+                "seconds": 3.4625e-05,
+                "total_seconds": 0.061840875
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.7084e-05,
+                "total_seconds": 0.0619245
+              },
+              {
+                "phase": "native",
+                "seconds": 1.66e-07,
+                "total_seconds": 0.062142959
+              }
+            ],
+            "total_seconds": 0.062189209
+          },
+          "combined": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/executable/order-1-combined",
+              "frontend"
+            ],
+            "bytecode_sha256": "bf7dbbdbadd0b2a8981d79d1b3dbca9df8f81e83f4d20d4572c75ee37bd25b3c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001086958,
+                "total_seconds": 0.001110333
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.058138708,
+                "total_seconds": 0.059302667
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000200416,
+                "total_seconds": 0.059578292
+              },
+              {
+                "phase": "artifact",
+                "seconds": 3.4292e-05,
+                "total_seconds": 0.059661958
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.8166e-05,
+                "total_seconds": 0.059747375
+              },
+              {
+                "phase": "native",
+                "seconds": 1.67e-07,
+                "total_seconds": 0.059955
+              }
+            ],
+            "total_seconds": 0.060003792
+          }
+        },
+        {
+          "combined": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/executable/order-2-combined",
+              "frontend"
+            ],
+            "bytecode_sha256": "bf7dbbdbadd0b2a8981d79d1b3dbca9df8f81e83f4d20d4572c75ee37bd25b3c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001085583,
+                "total_seconds": 0.001106625
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.058301958,
+                "total_seconds": 0.0594645
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000200459,
+                "total_seconds": 0.059740583
+              },
+              {
+                "phase": "artifact",
+                "seconds": 3.4292e-05,
+                "total_seconds": 0.059822875
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.7375e-05,
+                "total_seconds": 0.059907083
+              },
+              {
+                "phase": "native",
+                "seconds": 1.66e-07,
+                "total_seconds": 0.0601385
+              }
+            ],
+            "total_seconds": 0.060185208
+          },
+          "control": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/executable/order-2-control",
+              "frontend"
+            ],
+            "bytecode_sha256": "bf7dbbdbadd0b2a8981d79d1b3dbca9df8f81e83f4d20d4572c75ee37bd25b3c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001182458,
+                "total_seconds": 0.001205458
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.059845666,
+                "total_seconds": 0.061107042
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000195584,
+                "total_seconds": 0.06137875
+              },
+              {
+                "phase": "artifact",
+                "seconds": 3.5083e-05,
+                "total_seconds": 0.061461958
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.6917e-05,
+                "total_seconds": 0.061545958
+              },
+              {
+                "phase": "native",
+                "seconds": 1.67e-07,
+                "total_seconds": 0.061765
+              }
+            ],
+            "total_seconds": 0.0618105
+          }
+        },
+        {
+          "control": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/executable/order-3-control",
+              "frontend"
+            ],
+            "bytecode_sha256": "bf7dbbdbadd0b2a8981d79d1b3dbca9df8f81e83f4d20d4572c75ee37bd25b3c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001195125,
+                "total_seconds": 0.001218209
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.060102541,
+                "total_seconds": 0.06137175
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000194125,
+                "total_seconds": 0.061638667
+              },
+              {
+                "phase": "artifact",
+                "seconds": 3.5333e-05,
+                "total_seconds": 0.061726167
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.7375e-05,
+                "total_seconds": 0.061811334
+              },
+              {
+                "phase": "native",
+                "seconds": 1.25e-07,
+                "total_seconds": 0.06202975
+              }
+            ],
+            "total_seconds": 0.062076167
+          },
+          "combined": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/executable/order-3-combined",
+              "frontend"
+            ],
+            "bytecode_sha256": "bf7dbbdbadd0b2a8981d79d1b3dbca9df8f81e83f4d20d4572c75ee37bd25b3c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001087042,
+                "total_seconds": 0.001111042
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.058210292,
+                "total_seconds": 0.059371375
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000197375,
+                "total_seconds": 0.059638333
+              },
+              {
+                "phase": "artifact",
+                "seconds": 3.725e-05,
+                "total_seconds": 0.059723833
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.75e-05,
+                "total_seconds": 0.059807167
+              },
+              {
+                "phase": "native",
+                "seconds": 1.67e-07,
+                "total_seconds": 0.060027833
+              }
+            ],
+            "total_seconds": 0.0600735
+          }
+        },
+        {
+          "combined": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/executable/order-4-combined",
+              "frontend"
+            ],
+            "bytecode_sha256": "bf7dbbdbadd0b2a8981d79d1b3dbca9df8f81e83f4d20d4572c75ee37bd25b3c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001100541,
+                "total_seconds": 0.001125042
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.059548917,
+                "total_seconds": 0.060725792
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000227208,
+                "total_seconds": 0.061017125
+              },
+              {
+                "phase": "artifact",
+                "seconds": 3.8208e-05,
+                "total_seconds": 0.061107042
+              },
+              {
+                "phase": "encode",
+                "seconds": 4.1583e-05,
+                "total_seconds": 0.061198917
+              },
+              {
+                "phase": "native",
+                "seconds": 1.66e-07,
+                "total_seconds": 0.061386958
+              }
+            ],
+            "total_seconds": 0.061436042
+          },
+          "control": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/executable/order-4-control",
+              "frontend"
+            ],
+            "bytecode_sha256": "bf7dbbdbadd0b2a8981d79d1b3dbca9df8f81e83f4d20d4572c75ee37bd25b3c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001183125,
+                "total_seconds": 0.001204291
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.059873,
+                "total_seconds": 0.061127791
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000202333,
+                "total_seconds": 0.061401666
+              },
+              {
+                "phase": "artifact",
+                "seconds": 3.4584e-05,
+                "total_seconds": 0.061485041
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.7625e-05,
+                "total_seconds": 0.061569
+              },
+              {
+                "phase": "native",
+                "seconds": 2.5e-07,
+                "total_seconds": 0.061784375
+              }
+            ],
+            "total_seconds": 0.061829958
+          }
+        },
+        {
+          "control": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/executable/order-5-control",
+              "frontend"
+            ],
+            "bytecode_sha256": "bf7dbbdbadd0b2a8981d79d1b3dbca9df8f81e83f4d20d4572c75ee37bd25b3c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001209583,
+                "total_seconds": 0.001233542
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.060274375,
+                "total_seconds": 0.061559625
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000191958,
+                "total_seconds": 0.061825042
+              },
+              {
+                "phase": "artifact",
+                "seconds": 3.4166e-05,
+                "total_seconds": 0.0619075
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.6625e-05,
+                "total_seconds": 0.061990792
+              },
+              {
+                "phase": "native",
+                "seconds": 1.67e-07,
+                "total_seconds": 0.06219175
+              }
+            ],
+            "total_seconds": 0.062238625
+          },
+          "combined": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/executable/order-5-combined",
+              "frontend"
+            ],
+            "bytecode_sha256": "bf7dbbdbadd0b2a8981d79d1b3dbca9df8f81e83f4d20d4572c75ee37bd25b3c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001102417,
+                "total_seconds": 0.001138125
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.058374208,
+                "total_seconds": 0.059565542
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.0002275,
+                "total_seconds": 0.05986625
+              },
+              {
+                "phase": "artifact",
+                "seconds": 4.4042e-05,
+                "total_seconds": 0.059959375
+              },
+              {
+                "phase": "encode",
+                "seconds": 4.7208e-05,
+                "total_seconds": 0.060054125
+              },
+              {
+                "phase": "native",
+                "seconds": 4.2e-08,
+                "total_seconds": 0.060244417
+              }
+            ],
+            "total_seconds": 0.06029125
+          }
+        },
+        {
+          "combined": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/executable/order-6-combined",
+              "frontend"
+            ],
+            "bytecode_sha256": "bf7dbbdbadd0b2a8981d79d1b3dbca9df8f81e83f4d20d4572c75ee37bd25b3c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001100333,
+                "total_seconds": 0.001121916
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.0583135,
+                "total_seconds": 0.059486875
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.0002285,
+                "total_seconds": 0.059788
+              },
+              {
+                "phase": "artifact",
+                "seconds": 4.5e-05,
+                "total_seconds": 0.059881791
+              },
+              {
+                "phase": "encode",
+                "seconds": 4.6125e-05,
+                "total_seconds": 0.059974958
+              },
+              {
+                "phase": "native",
+                "seconds": 1.25e-07,
+                "total_seconds": 0.060163958
+              }
+            ],
+            "total_seconds": 0.060210166
+          },
+          "control": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/executable.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/executable/order-6-control",
+              "frontend"
+            ],
+            "bytecode_sha256": "bf7dbbdbadd0b2a8981d79d1b3dbca9df8f81e83f4d20d4572c75ee37bd25b3c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.0012115,
+                "total_seconds": 0.001234334
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.060208709,
+                "total_seconds": 0.061497959
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000210667,
+                "total_seconds": 0.061784417
+              },
+              {
+                "phase": "artifact",
+                "seconds": 4.1584e-05,
+                "total_seconds": 0.06187475
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.8125e-05,
+                "total_seconds": 0.061960084
+              },
+              {
+                "phase": "native",
+                "seconds": 2.09e-07,
+                "total_seconds": 0.062187042
+              }
+            ],
+            "total_seconds": 0.062234084
+          }
+        }
+      ],
+      "median_frontend_seconds": {
+        "control": 0.062132688000000005,
+        "combined": 0.060197687
+      },
+      "median_parse_seconds": {
+        "control": 0.0011932499999999999,
+        "combined": 0.0010936875
+      }
+    },
+    "tests/fixtures/syntax-source-boundary/resolver-index.mec": {
+      "source_sha256": "11ccc2f7d39922a067027f2abf2e7515c945dddd63133a2dc9dfdb8db8b36790",
+      "bytecode_sha256": "95c4f12802831f1d678aa7e81744a3c2594fb95d168e1b474350be904fcd6565",
+      "warmup": {
+        "control": {
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/resolver-index/warmup-control",
+            "frontend"
+          ],
+          "bytecode_sha256": "95c4f12802831f1d678aa7e81744a3c2594fb95d168e1b474350be904fcd6565",
+          "phases": [
+            {
+              "phase": "parse",
+              "seconds": 0.001809708,
+              "total_seconds": 0.001829875
+            },
+            {
+              "phase": "catalog",
+              "seconds": 0.059969917,
+              "total_seconds": 0.061862584
+            },
+            {
+              "phase": "frontend",
+              "seconds": 0.000137084,
+              "total_seconds": 0.062074167
+            },
+            {
+              "phase": "artifact",
+              "seconds": 3.0417e-05,
+              "total_seconds": 0.062152
+            },
+            {
+              "phase": "encode",
+              "seconds": 3.625e-05,
+              "total_seconds": 0.062234792
+            },
+            {
+              "phase": "native",
+              "seconds": 6.25e-07,
+              "total_seconds": 0.062444125
+            }
+          ],
+          "total_seconds": 0.062490167
+        },
+        "combined": {
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/resolver-index/warmup-combined",
+            "frontend"
+          ],
+          "bytecode_sha256": "95c4f12802831f1d678aa7e81744a3c2594fb95d168e1b474350be904fcd6565",
+          "phases": [
+            {
+              "phase": "parse",
+              "seconds": 0.001761584,
+              "total_seconds": 0.001782292
+            },
+            {
+              "phase": "catalog",
+              "seconds": 0.058249667,
+              "total_seconds": 0.06008475
+            },
+            {
+              "phase": "frontend",
+              "seconds": 0.000124833,
+              "total_seconds": 0.060279667
+            },
+            {
+              "phase": "artifact",
+              "seconds": 2.45e-05,
+              "total_seconds": 0.060351875
+            },
+            {
+              "phase": "encode",
+              "seconds": 3.3e-05,
+              "total_seconds": 0.060441167
+            },
+            {
+              "phase": "native",
+              "seconds": 3.75e-07,
+              "total_seconds": 0.060624292
+            }
+          ],
+          "total_seconds": 0.060673084
+        }
+      },
+      "trials": [
+        {
+          "control": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/resolver-index/order-1-control",
+              "frontend"
+            ],
+            "bytecode_sha256": "95c4f12802831f1d678aa7e81744a3c2594fb95d168e1b474350be904fcd6565",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001871792,
+                "total_seconds": 0.001892
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.0601975,
+                "total_seconds": 0.062143209
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000129292,
+                "total_seconds": 0.0623485
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.9375e-05,
+                "total_seconds": 0.062425625
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.5667e-05,
+                "total_seconds": 0.062507625
+              },
+              {
+                "phase": "native",
+                "seconds": 3.75e-07,
+                "total_seconds": 0.062709959
+              }
+            ],
+            "total_seconds": 0.062755667
+          },
+          "combined": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/resolver-index/order-1-combined",
+              "frontend"
+            ],
+            "bytecode_sha256": "95c4f12802831f1d678aa7e81744a3c2594fb95d168e1b474350be904fcd6565",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.0017565,
+                "total_seconds": 0.001778875
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.058305666,
+                "total_seconds": 0.060139667
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000127167,
+                "total_seconds": 0.0603415
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.7667e-05,
+                "total_seconds": 0.060417625
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.8167e-05,
+                "total_seconds": 0.060502459
+              },
+              {
+                "phase": "native",
+                "seconds": 3.33e-07,
+                "total_seconds": 0.060698917
+              }
+            ],
+            "total_seconds": 0.060745625
+          }
+        },
+        {
+          "combined": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/resolver-index/order-2-combined",
+              "frontend"
+            ],
+            "bytecode_sha256": "95c4f12802831f1d678aa7e81744a3c2594fb95d168e1b474350be904fcd6565",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.0017545,
+                "total_seconds": 0.001774917
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.05858675,
+                "total_seconds": 0.060417625
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000126416,
+                "total_seconds": 0.060612167
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.4542e-05,
+                "total_seconds": 0.060683459
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.475e-05,
+                "total_seconds": 0.06076375
+              },
+              {
+                "phase": "native",
+                "seconds": 2.92e-07,
+                "total_seconds": 0.060951792
+              }
+            ],
+            "total_seconds": 0.060997375
+          },
+          "control": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/resolver-index/order-2-control",
+              "frontend"
+            ],
+            "bytecode_sha256": "95c4f12802831f1d678aa7e81744a3c2594fb95d168e1b474350be904fcd6565",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001805708,
+                "total_seconds": 0.00182475
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.06019225,
+                "total_seconds": 0.062070041
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000144667,
+                "total_seconds": 0.062288416
+              },
+              {
+                "phase": "artifact",
+                "seconds": 3.0708e-05,
+                "total_seconds": 0.062369166
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.6542e-05,
+                "total_seconds": 0.062452541
+              },
+              {
+                "phase": "native",
+                "seconds": 6.25e-07,
+                "total_seconds": 0.062660166
+              }
+            ],
+            "total_seconds": 0.06270625
+          }
+        },
+        {
+          "control": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/resolver-index/order-3-control",
+              "frontend"
+            ],
+            "bytecode_sha256": "95c4f12802831f1d678aa7e81744a3c2594fb95d168e1b474350be904fcd6565",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001799167,
+                "total_seconds": 0.001819208
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.060011791,
+                "total_seconds": 0.061882208
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000127041,
+                "total_seconds": 0.06207825
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.6791e-05,
+                "total_seconds": 0.062152292
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.4e-05,
+                "total_seconds": 0.062232417
+              },
+              {
+                "phase": "native",
+                "seconds": 6.25e-07,
+                "total_seconds": 0.062422792
+              }
+            ],
+            "total_seconds": 0.062469208
+          },
+          "combined": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/resolver-index/order-3-combined",
+              "frontend"
+            ],
+            "bytecode_sha256": "95c4f12802831f1d678aa7e81744a3c2594fb95d168e1b474350be904fcd6565",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001742625,
+                "total_seconds": 0.001770375
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.05826625,
+                "total_seconds": 0.060090209
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.00012825,
+                "total_seconds": 0.060290459
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.4958e-05,
+                "total_seconds": 0.060362375
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.9e-05,
+                "total_seconds": 0.060447625
+              },
+              {
+                "phase": "native",
+                "seconds": 4.17e-07,
+                "total_seconds": 0.060714209
+              }
+            ],
+            "total_seconds": 0.060767042
+          }
+        },
+        {
+          "combined": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/resolver-index/order-4-combined",
+              "frontend"
+            ],
+            "bytecode_sha256": "95c4f12802831f1d678aa7e81744a3c2594fb95d168e1b474350be904fcd6565",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001727375,
+                "total_seconds": 0.001759083
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.058021167,
+                "total_seconds": 0.05983125
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000132667,
+                "total_seconds": 0.060040083
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.4667e-05,
+                "total_seconds": 0.060123417
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.4083e-05,
+                "total_seconds": 0.060204375
+              },
+              {
+                "phase": "native",
+                "seconds": 1.25e-07,
+                "total_seconds": 0.060402917
+              }
+            ],
+            "total_seconds": 0.060448833
+          },
+          "control": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/resolver-index/order-4-control",
+              "frontend"
+            ],
+            "bytecode_sha256": "95c4f12802831f1d678aa7e81744a3c2594fb95d168e1b474350be904fcd6565",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001809208,
+                "total_seconds": 0.001829458
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.060163834,
+                "total_seconds": 0.062048458
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000128708,
+                "total_seconds": 0.062256166
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.5959e-05,
+                "total_seconds": 0.062332291
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.4125e-05,
+                "total_seconds": 0.062413083
+              },
+              {
+                "phase": "native",
+                "seconds": 7.08e-07,
+                "total_seconds": 0.062620166
+              }
+            ],
+            "total_seconds": 0.062669083
+          }
+        },
+        {
+          "control": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/resolver-index/order-5-control",
+              "frontend"
+            ],
+            "bytecode_sha256": "95c4f12802831f1d678aa7e81744a3c2594fb95d168e1b474350be904fcd6565",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001819,
+                "total_seconds": 0.001847666
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.059943875,
+                "total_seconds": 0.06184675
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000127333,
+                "total_seconds": 0.062050083
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.9083e-05,
+                "total_seconds": 0.062127625
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.4583e-05,
+                "total_seconds": 0.062209041
+              },
+              {
+                "phase": "native",
+                "seconds": 6.67e-07,
+                "total_seconds": 0.062443291
+              }
+            ],
+            "total_seconds": 0.062489333
+          },
+          "combined": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/resolver-index/order-5-combined",
+              "frontend"
+            ],
+            "bytecode_sha256": "95c4f12802831f1d678aa7e81744a3c2594fb95d168e1b474350be904fcd6565",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001738875,
+                "total_seconds": 0.001768583
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.058225083,
+                "total_seconds": 0.060045792
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000127333,
+                "total_seconds": 0.060248458
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.5375e-05,
+                "total_seconds": 0.060321083
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.4292e-05,
+                "total_seconds": 0.060401583
+              },
+              {
+                "phase": "native",
+                "seconds": 3.75e-07,
+                "total_seconds": 0.060600917
+              }
+            ],
+            "total_seconds": 0.06064725
+          }
+        },
+        {
+          "combined": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/resolver-index/order-6-combined",
+              "frontend"
+            ],
+            "bytecode_sha256": "95c4f12802831f1d678aa7e81744a3c2594fb95d168e1b474350be904fcd6565",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001747542,
+                "total_seconds": 0.001782458
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.058216166,
+                "total_seconds": 0.06005025
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000134541,
+                "total_seconds": 0.060261
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.5334e-05,
+                "total_seconds": 0.060334416
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.6708e-05,
+                "total_seconds": 0.060418125
+              },
+              {
+                "phase": "native",
+                "seconds": 2.92e-07,
+                "total_seconds": 0.060633958
+              }
+            ],
+            "total_seconds": 0.06068075
+          },
+          "control": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/tests/fixtures/syntax-source-boundary/resolver-index.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/resolver-index/order-6-control",
+              "frontend"
+            ],
+            "bytecode_sha256": "95c4f12802831f1d678aa7e81744a3c2594fb95d168e1b474350be904fcd6565",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001800875,
+                "total_seconds": 0.001822709
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.059974875,
+                "total_seconds": 0.061852292
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000127916,
+                "total_seconds": 0.062057334
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.6e-05,
+                "total_seconds": 0.062130375
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.6375e-05,
+                "total_seconds": 0.062212709
+              },
+              {
+                "phase": "native",
+                "seconds": 6.25e-07,
+                "total_seconds": 0.062421792
+              }
+            ],
+            "total_seconds": 0.062467709
+          }
+        }
+      ],
+      "median_frontend_seconds": {
+        "control": 0.062579208,
+        "combined": 0.0607131875
+      },
+      "median_parse_seconds": {
+        "control": 0.001807458,
+        "combined": 0.0017450834999999999
+      }
+    },
+    "src/syntax/tests/fixtures/document/accepted/unicode.mec": {
+      "source_sha256": "db5abf6c027868e858e5c10551990bd3b87351a9701733e4b15043015aa4f591",
+      "bytecode_sha256": "bce89968c8d1e3a60ae7e7b40ca06168b18a1917a50daaec20bae6f48544677c",
+      "warmup": {
+        "control": {
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/unicode/warmup-control",
+            "frontend"
+          ],
+          "bytecode_sha256": "bce89968c8d1e3a60ae7e7b40ca06168b18a1917a50daaec20bae6f48544677c",
+          "phases": [
+            {
+              "phase": "parse",
+              "seconds": 0.001388417,
+              "total_seconds": 0.00141075
+            },
+            {
+              "phase": "catalog",
+              "seconds": 0.060046875,
+              "total_seconds": 0.061509458
+            },
+            {
+              "phase": "frontend",
+              "seconds": 0.00012575,
+              "total_seconds": 0.061708
+            },
+            {
+              "phase": "artifact",
+              "seconds": 2.4583e-05,
+              "total_seconds": 0.061783417
+            },
+            {
+              "phase": "encode",
+              "seconds": 3.5291e-05,
+              "total_seconds": 0.06186575
+            },
+            {
+              "phase": "native",
+              "seconds": 4.17e-07,
+              "total_seconds": 0.062084333
+            }
+          ],
+          "total_seconds": 0.062130667
+        },
+        "combined": {
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/unicode/warmup-combined",
+            "frontend"
+          ],
+          "bytecode_sha256": "bce89968c8d1e3a60ae7e7b40ca06168b18a1917a50daaec20bae6f48544677c",
+          "phases": [
+            {
+              "phase": "parse",
+              "seconds": 0.001321375,
+              "total_seconds": 0.001351792
+            },
+            {
+              "phase": "catalog",
+              "seconds": 0.058227333,
+              "total_seconds": 0.059631375
+            },
+            {
+              "phase": "frontend",
+              "seconds": 0.000125458,
+              "total_seconds": 0.059829958
+            },
+            {
+              "phase": "artifact",
+              "seconds": 2.4833e-05,
+              "total_seconds": 0.059903125
+            },
+            {
+              "phase": "encode",
+              "seconds": 3.5375e-05,
+              "total_seconds": 0.05998475
+            },
+            {
+              "phase": "native",
+              "seconds": 2.5e-07,
+              "total_seconds": 0.060176208
+            }
+          ],
+          "total_seconds": 0.060222792
+        }
+      },
+      "trials": [
+        {
+          "control": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/unicode/order-1-control",
+              "frontend"
+            ],
+            "bytecode_sha256": "bce89968c8d1e3a60ae7e7b40ca06168b18a1917a50daaec20bae6f48544677c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.0014015,
+                "total_seconds": 0.001423708
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.059901792,
+                "total_seconds": 0.061377625
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000127709,
+                "total_seconds": 0.061579708
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.4542e-05,
+                "total_seconds": 0.061652333
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.6375e-05,
+                "total_seconds": 0.061735542
+              },
+              {
+                "phase": "native",
+                "seconds": 4.58e-07,
+                "total_seconds": 0.061960583
+              }
+            ],
+            "total_seconds": 0.062007625
+          },
+          "combined": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/unicode/order-1-combined",
+              "frontend"
+            ],
+            "bytecode_sha256": "bce89968c8d1e3a60ae7e7b40ca06168b18a1917a50daaec20bae6f48544677c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001312416,
+                "total_seconds": 0.001339667
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.058364,
+                "total_seconds": 0.059757334
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000126,
+                "total_seconds": 0.059959875
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.7375e-05,
+                "total_seconds": 0.060035209
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.5042e-05,
+                "total_seconds": 0.060116292
+              },
+              {
+                "phase": "native",
+                "seconds": 2.5e-07,
+                "total_seconds": 0.060304792
+              }
+            ],
+            "total_seconds": 0.060353709
+          }
+        },
+        {
+          "combined": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/unicode/order-2-combined",
+              "frontend"
+            ],
+            "bytecode_sha256": "bce89968c8d1e3a60ae7e7b40ca06168b18a1917a50daaec20bae6f48544677c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001319041,
+                "total_seconds": 0.001345667
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.058183042,
+                "total_seconds": 0.059579084
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000127542,
+                "total_seconds": 0.059777792
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.5125e-05,
+                "total_seconds": 0.059850875
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.6042e-05,
+                "total_seconds": 0.0599335
+              },
+              {
+                "phase": "native",
+                "seconds": 3.75e-07,
+                "total_seconds": 0.060127209
+              }
+            ],
+            "total_seconds": 0.060173917
+          },
+          "control": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/unicode/order-2-control",
+              "frontend"
+            ],
+            "bytecode_sha256": "bce89968c8d1e3a60ae7e7b40ca06168b18a1917a50daaec20bae6f48544677c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001407875,
+                "total_seconds": 0.001440917
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.059915333,
+                "total_seconds": 0.061409208
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000122833,
+                "total_seconds": 0.061607833
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.4459e-05,
+                "total_seconds": 0.0616805
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.4958e-05,
+                "total_seconds": 0.0617625
+              },
+              {
+                "phase": "native",
+                "seconds": 6.25e-07,
+                "total_seconds": 0.061977625
+              }
+            ],
+            "total_seconds": 0.062024417
+          }
+        },
+        {
+          "control": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/unicode/order-3-control",
+              "frontend"
+            ],
+            "bytecode_sha256": "bce89968c8d1e3a60ae7e7b40ca06168b18a1917a50daaec20bae6f48544677c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001376125,
+                "total_seconds": 0.001406708
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.059986041,
+                "total_seconds": 0.06144475
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000124458,
+                "total_seconds": 0.061642708
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.4334e-05,
+                "total_seconds": 0.061718125
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.5e-05,
+                "total_seconds": 0.061799917
+              },
+              {
+                "phase": "native",
+                "seconds": 4.17e-07,
+                "total_seconds": 0.062015375
+              }
+            ],
+            "total_seconds": 0.062060958
+          },
+          "combined": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/unicode/order-3-combined",
+              "frontend"
+            ],
+            "bytecode_sha256": "bce89968c8d1e3a60ae7e7b40ca06168b18a1917a50daaec20bae6f48544677c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001333334,
+                "total_seconds": 0.001355625
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.0580415,
+                "total_seconds": 0.059449292
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.0001255,
+                "total_seconds": 0.059647917
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.4792e-05,
+                "total_seconds": 0.059721709
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.4209e-05,
+                "total_seconds": 0.059803375
+              },
+              {
+                "phase": "native",
+                "seconds": 3.33e-07,
+                "total_seconds": 0.0600255
+              }
+            ],
+            "total_seconds": 0.060072584
+          }
+        },
+        {
+          "combined": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/unicode/order-4-combined",
+              "frontend"
+            ],
+            "bytecode_sha256": "bce89968c8d1e3a60ae7e7b40ca06168b18a1917a50daaec20bae6f48544677c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001323291,
+                "total_seconds": 0.0013535
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.058283209,
+                "total_seconds": 0.059688
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000125458,
+                "total_seconds": 0.059885458
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.4417e-05,
+                "total_seconds": 0.059957583
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.475e-05,
+                "total_seconds": 0.060039042
+              },
+              {
+                "phase": "native",
+                "seconds": 4.17e-07,
+                "total_seconds": 0.060240208
+              }
+            ],
+            "total_seconds": 0.060286083
+          },
+          "control": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/unicode/order-4-control",
+              "frontend"
+            ],
+            "bytecode_sha256": "bce89968c8d1e3a60ae7e7b40ca06168b18a1917a50daaec20bae6f48544677c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001391875,
+                "total_seconds": 0.001418917
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.059859958,
+                "total_seconds": 0.061330834
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.00012075,
+                "total_seconds": 0.061523375
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.3833e-05,
+                "total_seconds": 0.061594584
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.5e-05,
+                "total_seconds": 0.061675917
+              },
+              {
+                "phase": "native",
+                "seconds": 3.75e-07,
+                "total_seconds": 0.06188975
+              }
+            ],
+            "total_seconds": 0.061935667
+          }
+        },
+        {
+          "control": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/unicode/order-5-control",
+              "frontend"
+            ],
+            "bytecode_sha256": "bce89968c8d1e3a60ae7e7b40ca06168b18a1917a50daaec20bae6f48544677c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.00138975,
+                "total_seconds": 0.001415
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.059896709,
+                "total_seconds": 0.061366167
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000121875,
+                "total_seconds": 0.061557542
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.4083e-05,
+                "total_seconds": 0.061629083
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.5083e-05,
+                "total_seconds": 0.061710292
+              },
+              {
+                "phase": "native",
+                "seconds": 6.66e-07,
+                "total_seconds": 0.061919167
+              }
+            ],
+            "total_seconds": 0.061965333
+          },
+          "combined": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/unicode/order-5-combined",
+              "frontend"
+            ],
+            "bytecode_sha256": "bce89968c8d1e3a60ae7e7b40ca06168b18a1917a50daaec20bae6f48544677c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001323334,
+                "total_seconds": 0.001344708
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.058572167,
+                "total_seconds": 0.059974208
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000127541,
+                "total_seconds": 0.060174166
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.4791e-05,
+                "total_seconds": 0.060246833
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.5083e-05,
+                "total_seconds": 0.060328583
+              },
+              {
+                "phase": "native",
+                "seconds": 3.33e-07,
+                "total_seconds": 0.060514625
+              }
+            ],
+            "total_seconds": 0.060563625
+          }
+        },
+        {
+          "combined": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/unicode/order-6-combined",
+              "frontend"
+            ],
+            "bytecode_sha256": "bce89968c8d1e3a60ae7e7b40ca06168b18a1917a50daaec20bae6f48544677c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001328209,
+                "total_seconds": 0.001349667
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.058090292,
+                "total_seconds": 0.059491667
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000125583,
+                "total_seconds": 0.059689792
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.4833e-05,
+                "total_seconds": 0.059761542
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.4667e-05,
+                "total_seconds": 0.05984175
+              },
+              {
+                "phase": "native",
+                "seconds": 5.83e-07,
+                "total_seconds": 0.061199708
+              }
+            ],
+            "total_seconds": 0.061248583
+          },
+          "control": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/fixed-tools/native_compact_frontend",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/src/syntax/tests/fixtures/document/accepted/unicode.mec",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/parser-queue-snapshot-20261117/small/unicode/order-6-control",
+              "frontend"
+            ],
+            "bytecode_sha256": "bce89968c8d1e3a60ae7e7b40ca06168b18a1917a50daaec20bae6f48544677c",
+            "phases": [
+              {
+                "phase": "parse",
+                "seconds": 0.001387083,
+                "total_seconds": 0.0014095
+              },
+              {
+                "phase": "catalog",
+                "seconds": 0.060342708,
+                "total_seconds": 0.061804041
+              },
+              {
+                "phase": "frontend",
+                "seconds": 0.000125375,
+                "total_seconds": 0.062003458
+              },
+              {
+                "phase": "artifact",
+                "seconds": 2.4333e-05,
+                "total_seconds": 0.062075875
+              },
+              {
+                "phase": "encode",
+                "seconds": 3.5083e-05,
+                "total_seconds": 0.06215775
+              },
+              {
+                "phase": "native",
+                "seconds": 4.17e-07,
+                "total_seconds": 0.062366708
+              }
+            ],
+            "total_seconds": 0.062413541
+          }
+        }
+      ],
+      "median_frontend_seconds": {
+        "control": 0.062016021,
+        "combined": 0.060319896
+      },
+      "median_parse_seconds": {
+        "control": 0.0013908125000000001,
+        "combined": 0.0013233125
+      }
+    }
+  }
+}

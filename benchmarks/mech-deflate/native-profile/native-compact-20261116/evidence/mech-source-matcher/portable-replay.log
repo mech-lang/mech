@@ -1,0 +1,148 @@
+{
+  "label": "literal-once",
+  "decision": "Unresolved",
+  "runs": [
+    {
+      "id": "mech-ordinary-literal-once-qual-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 13,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 12,
+            "mech-experiment": 12
+          },
+          "precision_supported_wins": {
+            "mech-control": 12,
+            "mech-experiment": 12
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 4,
+            "mech-experiment": 4
+          },
+          "precision_supported_wins": {
+            "mech-control": 4,
+            "mech-experiment": 4
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "mech-ordinary-literal-once-qual-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 13,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 12,
+            "mech-experiment": 12
+          },
+          "precision_supported_wins": {
+            "mech-control": 12,
+            "mech-experiment": 12
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 4,
+            "mech-experiment": 4
+          },
+          "precision_supported_wins": {
+            "mech-control": 4,
+            "mech-experiment": 4
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    }
+  ]
+}
+{
+  "label": "literal-run",
+  "decision": "Reject",
+  "runs": [
+    {
+      "id": "mech-ordinary-literal-run-qual-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 13,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 12,
+            "mech-experiment": 11
+          },
+          "precision_supported_wins": {
+            "mech-control": 12,
+            "mech-experiment": 11
+          },
+          "lost_cases": [
+            "heldout-random-65537"
+          ],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 4,
+            "mech-experiment": 3
+          },
+          "precision_supported_wins": {
+            "mech-control": 4,
+            "mech-experiment": 3
+          },
+          "lost_cases": [
+            "prefix-periodic-16384"
+          ],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "mech-ordinary-literal-run-qual-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 13,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 12,
+            "mech-experiment": 11
+          },
+          "precision_supported_wins": {
+            "mech-control": 12,
+            "mech-experiment": 11
+          },
+          "lost_cases": [
+            "heldout-random-65537"
+          ],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 4,
+            "mech-experiment": 3
+          },
+          "precision_supported_wins": {
+            "mech-control": 4,
+            "mech-experiment": 3
+          },
+          "lost_cases": [
+            "prefix-periodic-16384"
+          ],
+          "gained_cases": []
+        }
+      }
+    }
+  ]
+}

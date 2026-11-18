@@ -1,0 +1,2679 @@
+{
+  "control": {
+    "object_sha256": "374cfecee5332c5520ae429e0a2c27eaa7007b3b2f75f346531de202a51b34e1",
+    "object_bytes": 179152,
+    "text_bytes": 91556,
+    "const_bytes": 80040,
+    "composed_cost_code_table_bytes": 65536,
+    "root_body_bytes": 56808,
+    "root_extent_bytes": 56816,
+    "root_stack_bytes": 3664,
+    "root_cleanup_counts": {
+      "before_instructions": 47662,
+      "after_instructions": 21027,
+      "before_blocks": 17953,
+      "after_blocks": 11897
+    },
+    "root_phase_call_storage": {
+      "calls": 14,
+      "input_bytes": 440,
+      "input_output_disjoint": true,
+      "invocation_local": true,
+      "output_bytes": 616,
+      "previous_separate_bytes": 3728,
+      "slots": 2,
+      "synchronous_non_escaping": true
+    },
+    "outlined_phase_extents": 33440,
+    "remaining_text_bytes": 1300,
+    "compiled_phases": 14,
+    "phases": {
+      "475": {
+        "input_words": 55,
+        "output_words": 77,
+        "owners_checked": 6,
+        "extra_entry_bounds": [
+          [
+            0,
+            262144,
+            false
+          ]
+        ],
+        "vector_geometry_guards": [
+          [
+            1,
+            false
+          ],
+          [
+            2,
+            false
+          ],
+          [
+            3,
+            false
+          ],
+          [
+            4,
+            false
+          ],
+          [
+            5,
+            false
+          ],
+          [
+            6,
+            false
+          ]
+        ],
+        "fixed_nested": {
+          "cold_exports": [
+            {
+              "owner_outputs": 7,
+              "scalar_words": 15,
+              "site": 510
+            }
+          ],
+          "loops": [
+            475,
+            914,
+            1001,
+            1020,
+            1426,
+            1549,
+            1568,
+            2185,
+            2315,
+            2389,
+            2521,
+            2600,
+            2686
+          ],
+          "ordinary_funding_guard_unchanged": true,
+          "unique_fixed_writable_gate": true
+        },
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_475_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 11428,
+              "after_instructions": 3604,
+              "before_blocks": 4566,
+              "after_blocks": 2236
+            },
+            "reported_body_bytes": 6748,
+            "emitted_extent_bytes": 6752,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 512
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_475",
+            "compile_cleanup_counts": {
+              "before_instructions": 14000,
+              "after_instructions": 5856,
+              "before_blocks": 5410,
+              "after_blocks": 2979
+            },
+            "reported_body_bytes": 15896,
+            "emitted_extent_bytes": 15904,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 688
+          }
+        }
+      },
+      "3009": {
+        "input_words": 20,
+        "output_words": 12,
+        "owners_checked": 0,
+        "extra_entry_bounds": [
+          [
+            0,
+            258,
+            true
+          ],
+          [
+            2,
+            259,
+            false
+          ]
+        ],
+        "vector_geometry_guards": [
+          [
+            1,
+            false
+          ],
+          [
+            3,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "composed_variant": {
+            "symbol": "_mech_compact_numeric_3009_no_growth_composed",
+            "compile_cleanup_counts": {},
+            "reported_body_bytes": 1152,
+            "emitted_extent_bytes": 1152,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 208
+          },
+          "no_growth_variant": {
+            "symbol": "_mech_compact_numeric_3009_no_growth",
+            "compile_cleanup_counts": {
+              "before_instructions": 2638,
+              "after_instructions": 673,
+              "before_blocks": 1059,
+              "after_blocks": 381
+            },
+            "reported_body_bytes": 1376,
+            "emitted_extent_bytes": 1376,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 224
+          },
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_3009_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 2684,
+              "after_instructions": 717,
+              "before_blocks": 1085,
+              "after_blocks": 407
+            },
+            "reported_body_bytes": 1584,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 256
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_3009",
+            "compile_cleanup_counts": {
+              "before_instructions": 2684,
+              "after_instructions": 717,
+              "before_blocks": 1085,
+              "after_blocks": 407
+            },
+            "reported_body_bytes": 1584,
+            "emitted_extent_bytes": 1584,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 256
+          }
+        }
+      },
+      "4173": {
+        "input_words": 10,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_4173_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 1219,
+              "after_instructions": 463,
+              "before_blocks": 525,
+              "after_blocks": 265
+            },
+            "reported_body_bytes": 952,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 160
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_4173",
+            "compile_cleanup_counts": {
+              "before_instructions": 1219,
+              "after_instructions": 463,
+              "before_blocks": 525,
+              "after_blocks": 265
+            },
+            "reported_body_bytes": 952,
+            "emitted_extent_bytes": 960,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 160
+          }
+        }
+      },
+      "3447": {
+        "input_words": 21,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ],
+          [
+            2,
+            false
+          ],
+          [
+            3,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "grouped_histogram": {
+            "symbol": "_mech_compact_numeric_3447_grouped",
+            "compile_cleanup_counts": {},
+            "reported_body_bytes": 716,
+            "emitted_extent_bytes": 720,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_numeric_3447": 1
+            },
+            "stack_bytes": 176
+          },
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_3447_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 978,
+              "after_instructions": 347,
+              "before_blocks": 409,
+              "after_blocks": 199
+            },
+            "reported_body_bytes": 616,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 144
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_3447",
+            "compile_cleanup_counts": {
+              "before_instructions": 978,
+              "after_instructions": 347,
+              "before_blocks": 409,
+              "after_blocks": 199
+            },
+            "reported_body_bytes": 616,
+            "emitted_extent_bytes": 624,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 144
+          }
+        }
+      },
+      "3956": {
+        "input_words": 8,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ]
+        ],
+        "fixed_nested": {
+          "cold_exports": [],
+          "loops": [
+            3956,
+            3975,
+            4012
+          ],
+          "ordinary_funding_guard_unchanged": true,
+          "unique_fixed_writable_gate": true
+        },
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_3956_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 715,
+              "after_instructions": 219,
+              "before_blocks": 316,
+              "after_blocks": 141
+            },
+            "reported_body_bytes": 376,
+            "emitted_extent_bytes": 384,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_3956",
+            "compile_cleanup_counts": {
+              "before_instructions": 715,
+              "after_instructions": 219,
+              "before_blocks": 316,
+              "after_blocks": 141
+            },
+            "reported_body_bytes": 388,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 128
+          }
+        }
+      },
+      "4879": {
+        "input_words": 18,
+        "output_words": 17,
+        "owners_checked": 2,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ],
+          [
+            2,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_4879_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 744,
+              "after_instructions": 284,
+              "before_blocks": 309,
+              "after_blocks": 160
+            },
+            "reported_body_bytes": 520,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 176
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_4879",
+            "compile_cleanup_counts": {
+              "before_instructions": 744,
+              "after_instructions": 284,
+              "before_blocks": 309,
+              "after_blocks": 160
+            },
+            "reported_body_bytes": 520,
+            "emitted_extent_bytes": 528,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 176
+          }
+        }
+      },
+      "4673": {
+        "input_words": 16,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ],
+          [
+            2,
+            false
+          ]
+        ],
+        "fixed_nested": {
+          "cold_exports": [],
+          "loops": [
+            4673,
+            4711
+          ],
+          "ordinary_funding_guard_unchanged": true,
+          "unique_fixed_writable_gate": true
+        },
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_4673_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 529,
+              "after_instructions": 191,
+              "before_blocks": 224,
+              "after_blocks": 113
+            },
+            "reported_body_bytes": 340,
+            "emitted_extent_bytes": 352,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_4673",
+            "compile_cleanup_counts": {
+              "before_instructions": 529,
+              "after_instructions": 191,
+              "before_blocks": 224,
+              "after_blocks": 113
+            },
+            "reported_body_bytes": 340,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 112
+          }
+        }
+      },
+      "6633": {
+        "input_words": 14,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_6633_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 544,
+              "after_instructions": 226,
+              "before_blocks": 222,
+              "after_blocks": 113
+            },
+            "reported_body_bytes": 536,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 144
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_6633",
+            "compile_cleanup_counts": {
+              "before_instructions": 544,
+              "after_instructions": 226,
+              "before_blocks": 222,
+              "after_blocks": 113
+            },
+            "reported_body_bytes": 536,
+            "emitted_extent_bytes": 544,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 144
+          }
+        }
+      },
+      "5895": {
+        "input_words": 15,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ],
+          [
+            2,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_5895_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 508,
+              "after_instructions": 194,
+              "before_blocks": 207,
+              "after_blocks": 99
+            },
+            "reported_body_bytes": 408,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_5895",
+            "compile_cleanup_counts": {
+              "before_instructions": 508,
+              "after_instructions": 194,
+              "before_blocks": 207,
+              "after_blocks": 99
+            },
+            "reported_body_bytes": 408,
+            "emitted_extent_bytes": 416,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          }
+        }
+      },
+      "3872": {
+        "input_words": 14,
+        "output_words": 12,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_3872_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 404,
+              "after_instructions": 147,
+              "before_blocks": 167,
+              "after_blocks": 80
+            },
+            "reported_body_bytes": 284,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_3872",
+            "compile_cleanup_counts": {
+              "before_instructions": 404,
+              "after_instructions": 147,
+              "before_blocks": 167,
+              "after_blocks": 80
+            },
+            "reported_body_bytes": 284,
+            "emitted_extent_bytes": 288,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          }
+        }
+      },
+      "4799": {
+        "input_words": 12,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_4799_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 400,
+              "after_instructions": 160,
+              "before_blocks": 164,
+              "after_blocks": 89
+            },
+            "reported_body_bytes": 304,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_4799",
+            "compile_cleanup_counts": {
+              "before_instructions": 400,
+              "after_instructions": 160,
+              "before_blocks": 164,
+              "after_blocks": 89
+            },
+            "reported_body_bytes": 304,
+            "emitted_extent_bytes": 304,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          }
+        }
+      },
+      "2821": {
+        "input_words": 13,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_2821_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 384,
+              "after_instructions": 140,
+              "before_blocks": 159,
+              "after_blocks": 75
+            },
+            "reported_body_bytes": 304,
+            "emitted_extent_bytes": 304,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 128
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_2821",
+            "compile_cleanup_counts": {
+              "before_instructions": 394,
+              "after_instructions": 150,
+              "before_blocks": 161,
+              "after_blocks": 77
+            },
+            "reported_body_bytes": 364,
+            "emitted_extent_bytes": 368,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 144
+          }
+        }
+      },
+      "8026": {
+        "input_words": 9,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_8026_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 300,
+              "after_instructions": 117,
+              "before_blocks": 122,
+              "after_blocks": 65
+            },
+            "reported_body_bytes": 244,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_8026",
+            "compile_cleanup_counts": {
+              "before_instructions": 300,
+              "after_instructions": 117,
+              "before_blocks": 122,
+              "after_blocks": 65
+            },
+            "reported_body_bytes": 244,
+            "emitted_extent_bytes": 256,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          }
+        }
+      },
+      "362": {
+        "input_words": 13,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_362_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 274,
+              "after_instructions": 117,
+              "before_blocks": 108,
+              "after_blocks": 60
+            },
+            "reported_body_bytes": 276,
+            "emitted_extent_bytes": 288,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_362",
+            "compile_cleanup_counts": {
+              "before_instructions": 284,
+              "after_instructions": 127,
+              "before_blocks": 110,
+              "after_blocks": 62
+            },
+            "reported_body_bytes": 336,
+            "emitted_extent_bytes": 336,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 128
+          }
+        }
+      }
+    },
+    "homologous_groups": {
+      "collector": 22656,
+      "scorer": 4112
+    },
+    "archived_compile_seconds": 3.910838375,
+    "archived_native_seconds": 1.534218542
+  },
+  "stored-table-slot": {
+    "object_sha256": "477d29c670576c8d934aab87405e7ab0fc46b76ca7abc22843194452cf23971f",
+    "object_bytes": 99336,
+    "text_bytes": 77236,
+    "const_bytes": 14504,
+    "composed_cost_code_table_bytes": 0,
+    "root_body_bytes": 57424,
+    "root_extent_bytes": 57424,
+    "root_stack_bytes": 3136,
+    "root_cleanup_counts": {
+      "before_instructions": 48373,
+      "after_instructions": 21578,
+      "before_blocks": 18142,
+      "after_blocks": 12101
+    },
+    "root_phase_call_storage": {
+      "calls": 18,
+      "input_bytes": 280,
+      "input_output_disjoint": true,
+      "invocation_local": true,
+      "output_bytes": 192,
+      "previous_separate_bytes": 4216,
+      "slots": 2,
+      "synchronous_non_escaping": true
+    },
+    "outlined_phase_extents": 18512,
+    "remaining_text_bytes": 1300,
+    "compiled_phases": 18,
+    "phases": {
+      "940": {
+        "input_words": 35,
+        "output_words": 24,
+        "owners_checked": 2,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ],
+          [
+            2,
+            false
+          ],
+          [
+            3,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_940_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 2759,
+              "after_instructions": 894,
+              "before_blocks": 1077,
+              "after_blocks": 531
+            },
+            "reported_body_bytes": 2368,
+            "emitted_extent_bytes": 2368,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 384
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_940",
+            "compile_cleanup_counts": {
+              "before_instructions": 3659,
+              "after_instructions": 1613,
+              "before_blocks": 1365,
+              "after_blocks": 771
+            },
+            "reported_body_bytes": 4892,
+            "emitted_extent_bytes": 4896,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 432
+          }
+        }
+      },
+      "3061": {
+        "input_words": 16,
+        "output_words": 12,
+        "owners_checked": 0,
+        "extra_entry_bounds": [
+          [
+            0,
+            258,
+            true
+          ],
+          [
+            2,
+            259,
+            false
+          ]
+        ],
+        "vector_geometry_guards": [
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "no_growth_variant": {
+            "symbol": "_mech_compact_numeric_3061_no_growth",
+            "compile_cleanup_counts": {
+              "before_instructions": 2426,
+              "after_instructions": 611,
+              "before_blocks": 974,
+              "after_blocks": 340
+            },
+            "reported_body_bytes": 1280,
+            "emitted_extent_bytes": 1280,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 208
+          },
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_3061_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 2472,
+              "after_instructions": 655,
+              "before_blocks": 1000,
+              "after_blocks": 366
+            },
+            "reported_body_bytes": 1472,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 240
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_3061",
+            "compile_cleanup_counts": {
+              "before_instructions": 2472,
+              "after_instructions": 655,
+              "before_blocks": 1000,
+              "after_blocks": 366
+            },
+            "reported_body_bytes": 1472,
+            "emitted_extent_bytes": 1472,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 240
+          }
+        }
+      },
+      "4182": {
+        "input_words": 10,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_4182_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 1219,
+              "after_instructions": 463,
+              "before_blocks": 525,
+              "after_blocks": 265
+            },
+            "reported_body_bytes": 952,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 160
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_4182",
+            "compile_cleanup_counts": {
+              "before_instructions": 1219,
+              "after_instructions": 463,
+              "before_blocks": 525,
+              "after_blocks": 265
+            },
+            "reported_body_bytes": 952,
+            "emitted_extent_bytes": 960,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 160
+          }
+        }
+      },
+      "3456": {
+        "input_words": 21,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ],
+          [
+            2,
+            false
+          ],
+          [
+            3,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "grouped_histogram": {
+            "symbol": "_mech_compact_numeric_3456_grouped",
+            "compile_cleanup_counts": {},
+            "reported_body_bytes": 716,
+            "emitted_extent_bytes": 720,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_numeric_3456": 1
+            },
+            "stack_bytes": 176
+          },
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_3456_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 978,
+              "after_instructions": 347,
+              "before_blocks": 409,
+              "after_blocks": 199
+            },
+            "reported_body_bytes": 616,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 144
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_3456",
+            "compile_cleanup_counts": {
+              "before_instructions": 978,
+              "after_instructions": 347,
+              "before_blocks": 409,
+              "after_blocks": 199
+            },
+            "reported_body_bytes": 616,
+            "emitted_extent_bytes": 624,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 144
+          }
+        }
+      },
+      "3965": {
+        "input_words": 8,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ]
+        ],
+        "fixed_nested": {
+          "cold_exports": [],
+          "loops": [
+            3965,
+            3984,
+            4021
+          ],
+          "ordinary_funding_guard_unchanged": true,
+          "unique_fixed_writable_gate": true
+        },
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_3965_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 715,
+              "after_instructions": 219,
+              "before_blocks": 316,
+              "after_blocks": 141
+            },
+            "reported_body_bytes": 376,
+            "emitted_extent_bytes": 384,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_3965",
+            "compile_cleanup_counts": {
+              "before_instructions": 715,
+              "after_instructions": 219,
+              "before_blocks": 316,
+              "after_blocks": 141
+            },
+            "reported_body_bytes": 388,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 128
+          }
+        }
+      },
+      "4888": {
+        "input_words": 18,
+        "output_words": 17,
+        "owners_checked": 2,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ],
+          [
+            2,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_4888_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 744,
+              "after_instructions": 284,
+              "before_blocks": 309,
+              "after_blocks": 160
+            },
+            "reported_body_bytes": 520,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 176
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_4888",
+            "compile_cleanup_counts": {
+              "before_instructions": 744,
+              "after_instructions": 284,
+              "before_blocks": 309,
+              "after_blocks": 160
+            },
+            "reported_body_bytes": 520,
+            "emitted_extent_bytes": 528,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 176
+          }
+        }
+      },
+      "4682": {
+        "input_words": 16,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ],
+          [
+            2,
+            false
+          ]
+        ],
+        "fixed_nested": {
+          "cold_exports": [],
+          "loops": [
+            4682,
+            4720
+          ],
+          "ordinary_funding_guard_unchanged": true,
+          "unique_fixed_writable_gate": true
+        },
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_4682_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 529,
+              "after_instructions": 191,
+              "before_blocks": 224,
+              "after_blocks": 113
+            },
+            "reported_body_bytes": 340,
+            "emitted_extent_bytes": 352,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_4682",
+            "compile_cleanup_counts": {
+              "before_instructions": 529,
+              "after_instructions": 191,
+              "before_blocks": 224,
+              "after_blocks": 113
+            },
+            "reported_body_bytes": 340,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 112
+          }
+        }
+      },
+      "6642": {
+        "input_words": 14,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_6642_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 544,
+              "after_instructions": 226,
+              "before_blocks": 222,
+              "after_blocks": 113
+            },
+            "reported_body_bytes": 536,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 144
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_6642",
+            "compile_cleanup_counts": {
+              "before_instructions": 544,
+              "after_instructions": 226,
+              "before_blocks": 222,
+              "after_blocks": 113
+            },
+            "reported_body_bytes": 536,
+            "emitted_extent_bytes": 544,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 144
+          }
+        }
+      },
+      "5904": {
+        "input_words": 15,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ],
+          [
+            2,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_5904_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 508,
+              "after_instructions": 194,
+              "before_blocks": 207,
+              "after_blocks": 99
+            },
+            "reported_body_bytes": 408,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_5904",
+            "compile_cleanup_counts": {
+              "before_instructions": 508,
+              "after_instructions": 194,
+              "before_blocks": 207,
+              "after_blocks": 99
+            },
+            "reported_body_bytes": 408,
+            "emitted_extent_bytes": 416,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          }
+        }
+      },
+      "3881": {
+        "input_words": 14,
+        "output_words": 12,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_3881_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 404,
+              "after_instructions": 147,
+              "before_blocks": 167,
+              "after_blocks": 80
+            },
+            "reported_body_bytes": 284,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_3881",
+            "compile_cleanup_counts": {
+              "before_instructions": 404,
+              "after_instructions": 147,
+              "before_blocks": 167,
+              "after_blocks": 80
+            },
+            "reported_body_bytes": 284,
+            "emitted_extent_bytes": 288,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          }
+        }
+      },
+      "4808": {
+        "input_words": 12,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_4808_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 400,
+              "after_instructions": 160,
+              "before_blocks": 164,
+              "after_blocks": 89
+            },
+            "reported_body_bytes": 304,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_4808",
+            "compile_cleanup_counts": {
+              "before_instructions": 400,
+              "after_instructions": 160,
+              "before_blocks": 164,
+              "after_blocks": 89
+            },
+            "reported_body_bytes": 304,
+            "emitted_extent_bytes": 304,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          }
+        }
+      },
+      "2441": {
+        "input_words": 13,
+        "output_words": 21,
+        "owners_checked": 2,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_2441_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 419,
+              "after_instructions": 185,
+              "before_blocks": 166,
+              "after_blocks": 89
+            },
+            "reported_body_bytes": 440,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 128
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_2441",
+            "compile_cleanup_counts": {
+              "before_instructions": 419,
+              "after_instructions": 185,
+              "before_blocks": 166,
+              "after_blocks": 89
+            },
+            "reported_body_bytes": 440,
+            "emitted_extent_bytes": 448,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 128
+          }
+        }
+      },
+      "2652": {
+        "input_words": 13,
+        "output_words": 21,
+        "owners_checked": 2,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_2652_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 419,
+              "after_instructions": 185,
+              "before_blocks": 166,
+              "after_blocks": 89
+            },
+            "reported_body_bytes": 440,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 128
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_2652",
+            "compile_cleanup_counts": {
+              "before_instructions": 419,
+              "after_instructions": 185,
+              "before_blocks": 166,
+              "after_blocks": 89
+            },
+            "reported_body_bytes": 440,
+            "emitted_extent_bytes": 448,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 128
+          }
+        }
+      },
+      "2873": {
+        "input_words": 13,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_2873_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 384,
+              "after_instructions": 140,
+              "before_blocks": 159,
+              "after_blocks": 75
+            },
+            "reported_body_bytes": 304,
+            "emitted_extent_bytes": 304,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 128
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_2873",
+            "compile_cleanup_counts": {
+              "before_instructions": 394,
+              "after_instructions": 150,
+              "before_blocks": 161,
+              "after_blocks": 77
+            },
+            "reported_body_bytes": 364,
+            "emitted_extent_bytes": 368,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 144
+          }
+        }
+      },
+      "2367": {
+        "input_words": 14,
+        "output_words": 21,
+        "owners_checked": 2,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_2367_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 396,
+              "after_instructions": 182,
+              "before_blocks": 154,
+              "after_blocks": 85
+            },
+            "reported_body_bytes": 452,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 144
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_2367",
+            "compile_cleanup_counts": {
+              "before_instructions": 396,
+              "after_instructions": 182,
+              "before_blocks": 154,
+              "after_blocks": 85
+            },
+            "reported_body_bytes": 452,
+            "emitted_extent_bytes": 464,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 144
+          }
+        }
+      },
+      "2738": {
+        "input_words": 14,
+        "output_words": 21,
+        "owners_checked": 2,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_2738_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 396,
+              "after_instructions": 182,
+              "before_blocks": 154,
+              "after_blocks": 85
+            },
+            "reported_body_bytes": 452,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 144
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_2738",
+            "compile_cleanup_counts": {
+              "before_instructions": 396,
+              "after_instructions": 182,
+              "before_blocks": 154,
+              "after_blocks": 85
+            },
+            "reported_body_bytes": 452,
+            "emitted_extent_bytes": 464,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 144
+          }
+        }
+      },
+      "8035": {
+        "input_words": 9,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_8035_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 300,
+              "after_instructions": 117,
+              "before_blocks": 122,
+              "after_blocks": 65
+            },
+            "reported_body_bytes": 244,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_8035",
+            "compile_cleanup_counts": {
+              "before_instructions": 300,
+              "after_instructions": 117,
+              "before_blocks": 122,
+              "after_blocks": 65
+            },
+            "reported_body_bytes": 244,
+            "emitted_extent_bytes": 256,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          }
+        }
+      },
+      "362": {
+        "input_words": 13,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_362_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 274,
+              "after_instructions": 117,
+              "before_blocks": 108,
+              "after_blocks": 60
+            },
+            "reported_body_bytes": 276,
+            "emitted_extent_bytes": 288,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_362",
+            "compile_cleanup_counts": {
+              "before_instructions": 284,
+              "after_instructions": 127,
+              "before_blocks": 110,
+              "after_blocks": 62
+            },
+            "reported_body_bytes": 336,
+            "emitted_extent_bytes": 336,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 128
+          }
+        }
+      }
+    },
+    "homologous_groups": {
+      "collector_children": 9088,
+      "scorer": 2752
+    },
+    "archived_compile_seconds": 3.750111417,
+    "archived_native_seconds": 1.4011770000000001
+  },
+  "stored-arithmetic-slot": {
+    "object_sha256": "b9f6d8bee31c49ef2e9dfbfad7bedcd30d472af45aa54618e38d2b82c42fe0c9",
+    "object_bytes": 112760,
+    "text_bytes": 90868,
+    "const_bytes": 14504,
+    "composed_cost_code_table_bytes": 0,
+    "root_body_bytes": 56888,
+    "root_extent_bytes": 56896,
+    "root_stack_bytes": 3760,
+    "root_cleanup_counts": {
+      "before_instructions": 47702,
+      "after_instructions": 21055,
+      "before_blocks": 17956,
+      "after_blocks": 11915
+    },
+    "root_phase_call_storage": {
+      "calls": 14,
+      "input_bytes": 440,
+      "input_output_disjoint": true,
+      "invocation_local": true,
+      "output_bytes": 616,
+      "previous_separate_bytes": 3696,
+      "slots": 2,
+      "synchronous_non_escaping": true
+    },
+    "outlined_phase_extents": 32672,
+    "remaining_text_bytes": 1300,
+    "compiled_phases": 14,
+    "phases": {
+      "475": {
+        "input_words": 55,
+        "output_words": 77,
+        "owners_checked": 6,
+        "extra_entry_bounds": [
+          [
+            0,
+            262144,
+            false
+          ]
+        ],
+        "vector_geometry_guards": [
+          [
+            1,
+            false
+          ],
+          [
+            2,
+            false
+          ],
+          [
+            3,
+            false
+          ],
+          [
+            4,
+            false
+          ],
+          [
+            5,
+            false
+          ],
+          [
+            6,
+            false
+          ]
+        ],
+        "fixed_nested": {
+          "cold_exports": [
+            {
+              "owner_outputs": 7,
+              "scalar_words": 15,
+              "site": 510
+            }
+          ],
+          "loops": [
+            475,
+            952,
+            1039,
+            1058,
+            1502,
+            1625,
+            1644,
+            2261,
+            2391,
+            2465,
+            2597,
+            2676,
+            2762
+          ],
+          "ordinary_funding_guard_unchanged": true,
+          "unique_fixed_writable_gate": true
+        },
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_475_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 11811,
+              "after_instructions": 3718,
+              "before_blocks": 4718,
+              "after_blocks": 2306
+            },
+            "reported_body_bytes": 7148,
+            "emitted_extent_bytes": 7152,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 512
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_475",
+            "compile_cleanup_counts": {
+              "before_instructions": 14383,
+              "after_instructions": 5969,
+              "before_blocks": 5562,
+              "after_blocks": 3049
+            },
+            "reported_body_bytes": 16084,
+            "emitted_extent_bytes": 16096,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 688
+          }
+        }
+      },
+      "3085": {
+        "input_words": 16,
+        "output_words": 12,
+        "owners_checked": 0,
+        "extra_entry_bounds": [
+          [
+            0,
+            258,
+            true
+          ],
+          [
+            2,
+            259,
+            false
+          ]
+        ],
+        "vector_geometry_guards": [
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "no_growth_variant": {
+            "symbol": "_mech_compact_numeric_3085_no_growth",
+            "compile_cleanup_counts": {
+              "before_instructions": 2426,
+              "after_instructions": 611,
+              "before_blocks": 974,
+              "after_blocks": 340
+            },
+            "reported_body_bytes": 1280,
+            "emitted_extent_bytes": 1280,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 208
+          },
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_3085_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 2472,
+              "after_instructions": 655,
+              "before_blocks": 1000,
+              "after_blocks": 366
+            },
+            "reported_body_bytes": 1472,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 240
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_3085",
+            "compile_cleanup_counts": {
+              "before_instructions": 2472,
+              "after_instructions": 655,
+              "before_blocks": 1000,
+              "after_blocks": 366
+            },
+            "reported_body_bytes": 1472,
+            "emitted_extent_bytes": 1472,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 240
+          }
+        }
+      },
+      "4206": {
+        "input_words": 10,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_4206_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 1219,
+              "after_instructions": 463,
+              "before_blocks": 525,
+              "after_blocks": 265
+            },
+            "reported_body_bytes": 952,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 160
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_4206",
+            "compile_cleanup_counts": {
+              "before_instructions": 1219,
+              "after_instructions": 463,
+              "before_blocks": 525,
+              "after_blocks": 265
+            },
+            "reported_body_bytes": 952,
+            "emitted_extent_bytes": 960,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 160
+          }
+        }
+      },
+      "3480": {
+        "input_words": 21,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ],
+          [
+            2,
+            false
+          ],
+          [
+            3,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "grouped_histogram": {
+            "symbol": "_mech_compact_numeric_3480_grouped",
+            "compile_cleanup_counts": {},
+            "reported_body_bytes": 716,
+            "emitted_extent_bytes": 720,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_numeric_3480": 1
+            },
+            "stack_bytes": 176
+          },
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_3480_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 978,
+              "after_instructions": 347,
+              "before_blocks": 409,
+              "after_blocks": 199
+            },
+            "reported_body_bytes": 616,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 144
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_3480",
+            "compile_cleanup_counts": {
+              "before_instructions": 978,
+              "after_instructions": 347,
+              "before_blocks": 409,
+              "after_blocks": 199
+            },
+            "reported_body_bytes": 616,
+            "emitted_extent_bytes": 624,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 144
+          }
+        }
+      },
+      "3989": {
+        "input_words": 8,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ]
+        ],
+        "fixed_nested": {
+          "cold_exports": [],
+          "loops": [
+            3989,
+            4008,
+            4045
+          ],
+          "ordinary_funding_guard_unchanged": true,
+          "unique_fixed_writable_gate": true
+        },
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_3989_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 715,
+              "after_instructions": 219,
+              "before_blocks": 316,
+              "after_blocks": 141
+            },
+            "reported_body_bytes": 376,
+            "emitted_extent_bytes": 384,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_3989",
+            "compile_cleanup_counts": {
+              "before_instructions": 715,
+              "after_instructions": 219,
+              "before_blocks": 316,
+              "after_blocks": 141
+            },
+            "reported_body_bytes": 388,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 128
+          }
+        }
+      },
+      "4912": {
+        "input_words": 18,
+        "output_words": 17,
+        "owners_checked": 2,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ],
+          [
+            2,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_4912_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 744,
+              "after_instructions": 284,
+              "before_blocks": 309,
+              "after_blocks": 160
+            },
+            "reported_body_bytes": 520,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 176
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_4912",
+            "compile_cleanup_counts": {
+              "before_instructions": 744,
+              "after_instructions": 284,
+              "before_blocks": 309,
+              "after_blocks": 160
+            },
+            "reported_body_bytes": 520,
+            "emitted_extent_bytes": 528,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 176
+          }
+        }
+      },
+      "4706": {
+        "input_words": 16,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ],
+          [
+            2,
+            false
+          ]
+        ],
+        "fixed_nested": {
+          "cold_exports": [],
+          "loops": [
+            4706,
+            4744
+          ],
+          "ordinary_funding_guard_unchanged": true,
+          "unique_fixed_writable_gate": true
+        },
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_4706_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 529,
+              "after_instructions": 191,
+              "before_blocks": 224,
+              "after_blocks": 113
+            },
+            "reported_body_bytes": 340,
+            "emitted_extent_bytes": 352,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_4706",
+            "compile_cleanup_counts": {
+              "before_instructions": 529,
+              "after_instructions": 191,
+              "before_blocks": 224,
+              "after_blocks": 113
+            },
+            "reported_body_bytes": 340,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 112
+          }
+        }
+      },
+      "6666": {
+        "input_words": 14,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_6666_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 544,
+              "after_instructions": 226,
+              "before_blocks": 222,
+              "after_blocks": 113
+            },
+            "reported_body_bytes": 536,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 144
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_6666",
+            "compile_cleanup_counts": {
+              "before_instructions": 544,
+              "after_instructions": 226,
+              "before_blocks": 222,
+              "after_blocks": 113
+            },
+            "reported_body_bytes": 536,
+            "emitted_extent_bytes": 544,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 144
+          }
+        }
+      },
+      "5928": {
+        "input_words": 15,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ],
+          [
+            2,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_5928_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 508,
+              "after_instructions": 194,
+              "before_blocks": 207,
+              "after_blocks": 99
+            },
+            "reported_body_bytes": 408,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_5928",
+            "compile_cleanup_counts": {
+              "before_instructions": 508,
+              "after_instructions": 194,
+              "before_blocks": 207,
+              "after_blocks": 99
+            },
+            "reported_body_bytes": 408,
+            "emitted_extent_bytes": 416,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          }
+        }
+      },
+      "3905": {
+        "input_words": 14,
+        "output_words": 12,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_3905_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 404,
+              "after_instructions": 147,
+              "before_blocks": 167,
+              "after_blocks": 80
+            },
+            "reported_body_bytes": 284,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_3905",
+            "compile_cleanup_counts": {
+              "before_instructions": 404,
+              "after_instructions": 147,
+              "before_blocks": 167,
+              "after_blocks": 80
+            },
+            "reported_body_bytes": 284,
+            "emitted_extent_bytes": 288,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          }
+        }
+      },
+      "4832": {
+        "input_words": 12,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_4832_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 400,
+              "after_instructions": 160,
+              "before_blocks": 164,
+              "after_blocks": 89
+            },
+            "reported_body_bytes": 304,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_4832",
+            "compile_cleanup_counts": {
+              "before_instructions": 400,
+              "after_instructions": 160,
+              "before_blocks": 164,
+              "after_blocks": 89
+            },
+            "reported_body_bytes": 304,
+            "emitted_extent_bytes": 304,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          }
+        }
+      },
+      "2897": {
+        "input_words": 13,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_2897_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 384,
+              "after_instructions": 140,
+              "before_blocks": 159,
+              "after_blocks": 75
+            },
+            "reported_body_bytes": 304,
+            "emitted_extent_bytes": 304,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 128
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_2897",
+            "compile_cleanup_counts": {
+              "before_instructions": 394,
+              "after_instructions": 150,
+              "before_blocks": 161,
+              "after_blocks": 77
+            },
+            "reported_body_bytes": 364,
+            "emitted_extent_bytes": 368,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 144
+          }
+        }
+      },
+      "8059": {
+        "input_words": 9,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_8059_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 300,
+              "after_instructions": 117,
+              "before_blocks": 122,
+              "after_blocks": 65
+            },
+            "reported_body_bytes": 244,
+            "emitted_extent_bytes": 0,
+            "linked": false,
+            "branch_callers": {},
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_8059",
+            "compile_cleanup_counts": {
+              "before_instructions": 300,
+              "after_instructions": 117,
+              "before_blocks": 122,
+              "after_blocks": 65
+            },
+            "reported_body_bytes": 244,
+            "emitted_extent_bytes": 256,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          }
+        }
+      },
+      "362": {
+        "input_words": 13,
+        "output_words": 11,
+        "owners_checked": 1,
+        "extra_entry_bounds": [],
+        "vector_geometry_guards": [
+          [
+            0,
+            false
+          ],
+          [
+            1,
+            false
+          ]
+        ],
+        "fixed_nested": null,
+        "variants": {
+          "vector_variant": {
+            "symbol": "_mech_compact_numeric_362_vector",
+            "compile_cleanup_counts": {
+              "before_instructions": 274,
+              "after_instructions": 117,
+              "before_blocks": 108,
+              "after_blocks": 60
+            },
+            "reported_body_bytes": 276,
+            "emitted_extent_bytes": 288,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 112
+          },
+          "general": {
+            "symbol": "_mech_compact_numeric_362",
+            "compile_cleanup_counts": {
+              "before_instructions": 284,
+              "after_instructions": 127,
+              "before_blocks": 110,
+              "after_blocks": 62
+            },
+            "reported_body_bytes": 336,
+            "emitted_extent_bytes": 336,
+            "linked": true,
+            "branch_callers": {
+              "_mech_compact_closed_checked": 1
+            },
+            "stack_bytes": 128
+          }
+        }
+      }
+    },
+    "homologous_groups": {
+      "collector": 23248,
+      "scorer": 2752
+    },
+    "archived_compile_seconds": 3.839713375,
+    "archived_native_seconds": 1.527679416
+  }
+}

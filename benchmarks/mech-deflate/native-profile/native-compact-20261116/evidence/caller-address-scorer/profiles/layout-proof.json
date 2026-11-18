@@ -1,0 +1,42 @@
+{
+  "unlaid_scorer": {
+    "extent": 1136,
+    "start": 8336,
+    "sha256": "84f4ed663e47acc0edc869f6168e3b4c2b23fc734f32a47fb93aa657a7d5ee68",
+    "relocations": [
+      [
+        320,
+        108,
+        "_mech_compact_cost_codes_0"
+      ],
+      [
+        316,
+        93,
+        "_mech_compact_cost_codes_0"
+      ]
+    ]
+  },
+  "archived_scorer": {
+    "extent": 1136,
+    "start": 8336,
+    "sha256": "84f4ed663e47acc0edc869f6168e3b4c2b23fc734f32a47fb93aa657a7d5ee68",
+    "relocations": [
+      [
+        320,
+        108,
+        "_mech_compact_cost_codes_0"
+      ],
+      [
+        316,
+        93,
+        "_mech_compact_cost_codes_0"
+      ]
+    ]
+  },
+  "historical_report_sha256": "74f7170b8a2426d8195e20a95a6bf1e738d667c33c2948bd2943f48e7617eb15",
+  "profile_sha256": "61d3c3ae2ebcf8a83890c0621ae012ba0f2bd2d166f08619c31dcc59b3b92364",
+  "constant_pool_targets": [
+    1104,
+    1120
+  ]
+}

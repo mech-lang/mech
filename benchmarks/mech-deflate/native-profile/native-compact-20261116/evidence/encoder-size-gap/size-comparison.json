@@ -1,0 +1,528 @@
+{
+  "comparison_plan_sha256": "8af2bd68a4b76b65089756aa73e95745c1721dd5b71c009b137fcbdce3246564",
+  "toolchain": "Apple clang version 17.0.0 (clang-1700.3.19.1)\nTarget: arm64-apple-darwin24.6.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin",
+  "mech": {
+    "sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "file_bytes": 158808,
+    "text_bytes": 71192,
+    "symbols": {
+      "_mech_compact_numeric_475_vector": {
+        "start": 0,
+        "bytes": 6768
+      },
+      "_mech_compact_numeric_3009": {
+        "start": 6768,
+        "bytes": 1584
+      },
+      "_mech_compact_numeric_3009_no_growth_composed": {
+        "start": 8352,
+        "bytes": 1152
+      },
+      "_mech_compact_numeric_3009_no_growth": {
+        "start": 9504,
+        "bytes": 1376
+      },
+      "_mech_compact_numeric_4173": {
+        "start": 10880,
+        "bytes": 960
+      },
+      "_mech_compact_numeric_3447_grouped": {
+        "start": 11840,
+        "bytes": 720
+      },
+      "_mech_compact_numeric_3447": {
+        "start": 12560,
+        "bytes": 624
+      },
+      "_mech_compact_numeric_3956_vector": {
+        "start": 13184,
+        "bytes": 384
+      },
+      "_mech_compact_numeric_6633": {
+        "start": 13568,
+        "bytes": 544
+      },
+      "_mech_compact_numeric_5895": {
+        "start": 14112,
+        "bytes": 416
+      },
+      "_mech_compact_numeric_3872": {
+        "start": 14528,
+        "bytes": 288
+      },
+      "_mech_compact_numeric_4799": {
+        "start": 14816,
+        "bytes": 304
+      },
+      "_mech_compact_numeric_2821": {
+        "start": 15120,
+        "bytes": 368
+      },
+      "_mech_compact_numeric_2821_vector": {
+        "start": 15488,
+        "bytes": 304
+      },
+      "_mech_compact_numeric_8026": {
+        "start": 15792,
+        "bytes": 256
+      },
+      "_mech_compact_numeric_362": {
+        "start": 16048,
+        "bytes": 336
+      },
+      "_mech_compact_numeric_362_vector": {
+        "start": 16384,
+        "bytes": 288
+      },
+      "_mech_compact_word_collection_10": {
+        "start": 16672,
+        "bytes": 256
+      },
+      "_mech_compact_matrix_word": {
+        "start": 16928,
+        "bytes": 160
+      },
+      "_mech_compact_closed_v2": {
+        "start": 17088,
+        "bytes": 384
+      },
+      "_mech_compact_expand_capacity_preserving": {
+        "start": 17472,
+        "bytes": 176
+      },
+      "_mech_compact_append_backing_byte_consume": {
+        "start": 17648,
+        "bytes": 176
+      },
+      "_mech_compact_closed_checked": {
+        "start": 17824,
+        "bytes": 50688
+      },
+      "_mech_compact_unsigned_dot_product": {
+        "start": 68512,
+        "bytes": 160
+      },
+      "_mech_compact_checked_layout_16147": {
+        "start": 68672,
+        "bytes": 304
+      },
+      "_mech_compact_checked_layout_13100": {
+        "start": 68976,
+        "bytes": 304
+      },
+      "_mech_compact_checked_layout_10939": {
+        "start": 69280,
+        "bytes": 304
+      },
+      "_mech_compact_checked_layout_continuation_9112": {
+        "start": 69584,
+        "bytes": 336
+      },
+      "_mech_compact_checked_layout_continuation_9562": {
+        "start": 69920,
+        "bytes": 320
+      },
+      "_mech_compact_checked_layout_continuation_21031": {
+        "start": 70240,
+        "bytes": 304
+      },
+      "_mech_compact_checked_layout_continuation_44070": {
+        "start": 70544,
+        "bytes": 648
+      }
+    },
+    "sections": {
+      "__TEXT,__text": 71192,
+      "__TEXT,__const": 80040
+    },
+    "source_blocks": 8223,
+    "origins_match_current": true,
+    "checked_root_body": 50632,
+    "checked_root_instruction_classes": {
+      "other or data": 20216,
+      "stack memory": 14088,
+      "conditional control": 6436,
+      "unconditional control": 4408,
+      "other memory": 4004,
+      "call": 1480
+    },
+    "checked_root_stack_frame": 3728
+  },
+  "historical-mech": {
+    "sha256": "c1e45f69790722db38ec923e00b0497525a8e290eb0acd46225c9294f895118b",
+    "file_bytes": 140128,
+    "text_bytes": 55700,
+    "symbols": {
+      "_mech_compact_numeric_475_vector": {
+        "start": 0,
+        "bytes": 5120
+      },
+      "_mech_compact_numeric_3009_no_growth_composed": {
+        "start": 5120,
+        "bytes": 1152
+      },
+      "_mech_compact_numeric_3009_no_growth": {
+        "start": 6272,
+        "bytes": 1408
+      },
+      "_mech_compact_word_collection_10": {
+        "start": 7680,
+        "bytes": 256
+      },
+      "_mech_compact_matrix_word": {
+        "start": 7936,
+        "bytes": 256
+      },
+      "_mech_compact_closed_v2": {
+        "start": 8192,
+        "bytes": 384
+      },
+      "_mech_compact_closed_checked": {
+        "start": 8576,
+        "bytes": 46976
+      },
+      "_mech_compact_unsigned_dot_product": {
+        "start": 55552,
+        "bytes": 148
+      }
+    },
+    "sections": {
+      "__TEXT,__text": 55700,
+      "__TEXT,__const": 80064
+    },
+    "source_blocks": 8223,
+    "origins_match_current": true,
+    "checked_root_body": 46972,
+    "checked_root_instruction_classes": {
+      "other or data": 13644,
+      "stack memory": 12564,
+      "conditional control": 8480,
+      "call": 5880,
+      "unconditional control": 3376,
+      "other memory": 3028
+    },
+    "checked_root_stack_frame": 2368
+  },
+  "peer-rebuilt": {
+    "sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+    "file_bytes": 52128,
+    "text_bytes": 37080,
+    "symbols": {
+      "_libdeflate_alloc_compressor_ex": {
+        "start": 0,
+        "bytes": 1368
+      },
+      "_deflate_compress_fastest": {
+        "start": 1368,
+        "bytes": 1828
+      },
+      "_deflate_compress_greedy": {
+        "start": 3196,
+        "bytes": 2304
+      },
+      "_deflate_compress_lazy": {
+        "start": 5500,
+        "bytes": 3996
+      },
+      "_deflate_compress_lazy2": {
+        "start": 9496,
+        "bytes": 5220
+      },
+      "_deflate_compress_near_optimal": {
+        "start": 14716,
+        "bytes": 2936
+      },
+      "_libdeflate_alloc_compressor": {
+        "start": 17652,
+        "bytes": 12
+      },
+      "_libdeflate_deflate_compress": {
+        "start": 17664,
+        "bytes": 160
+      },
+      "_deflate_compress_none": {
+        "start": 17824,
+        "bytes": 208
+      },
+      "_libdeflate_free_compressor": {
+        "start": 18032,
+        "bytes": 20
+      },
+      "_libdeflate_get_compression_level": {
+        "start": 18052,
+        "bytes": 8
+      },
+      "_libdeflate_deflate_compress_bound": {
+        "start": 18060,
+        "bytes": 68
+      },
+      "_deflate_flush_block": {
+        "start": 18128,
+        "bytes": 4672
+      },
+      "_deflate_make_huffman_code": {
+        "start": 22800,
+        "bytes": 1272
+      },
+      "_deflate_precompute_huffman_header": {
+        "start": 24072,
+        "bytes": 876
+      },
+      "_do_end_block_check": {
+        "start": 24948,
+        "bytes": 396
+      },
+      "_deflate_near_optimal_merge_stats": {
+        "start": 25344,
+        "bytes": 212
+      },
+      "_deflate_optimize_and_flush_block": {
+        "start": 25556,
+        "bytes": 8008
+      },
+      "_deflate_compute_true_cost": {
+        "start": 33564,
+        "bytes": 1780
+      },
+      "_deflate_find_min_cost_path": {
+        "start": 35344,
+        "bytes": 472
+      },
+      "_deflate_make_huffman_code.cold.1": {
+        "start": 35816,
+        "bytes": 52
+      },
+      "_OUTLINED_FUNCTION_0": {
+        "start": 35868,
+        "bytes": 172
+      },
+      "_OUTLINED_FUNCTION_1": {
+        "start": 36040,
+        "bytes": 100
+      },
+      "_OUTLINED_FUNCTION_2": {
+        "start": 36140,
+        "bytes": 36
+      },
+      "_OUTLINED_FUNCTION_3": {
+        "start": 36176,
+        "bytes": 28
+      },
+      "_OUTLINED_FUNCTION_4": {
+        "start": 36204,
+        "bytes": 360
+      },
+      "_OUTLINED_FUNCTION_5": {
+        "start": 36564,
+        "bytes": 48
+      },
+      "_OUTLINED_FUNCTION_6": {
+        "start": 36612,
+        "bytes": 12
+      },
+      "_OUTLINED_FUNCTION_7": {
+        "start": 36624,
+        "bytes": 12
+      },
+      "_OUTLINED_FUNCTION_8": {
+        "start": 36636,
+        "bytes": 40
+      },
+      "_OUTLINED_FUNCTION_9": {
+        "start": 36676,
+        "bytes": 20
+      },
+      "_OUTLINED_FUNCTION_10": {
+        "start": 36696,
+        "bytes": 16
+      },
+      "_OUTLINED_FUNCTION_11": {
+        "start": 36712,
+        "bytes": 52
+      },
+      "_OUTLINED_FUNCTION_12": {
+        "start": 36764,
+        "bytes": 48
+      },
+      "_OUTLINED_FUNCTION_13": {
+        "start": 36812,
+        "bytes": 48
+      },
+      "_OUTLINED_FUNCTION_14": {
+        "start": 36860,
+        "bytes": 48
+      },
+      "_OUTLINED_FUNCTION_15": {
+        "start": 36908,
+        "bytes": 32
+      },
+      "_OUTLINED_FUNCTION_16": {
+        "start": 36940,
+        "bytes": 20
+      },
+      "_OUTLINED_FUNCTION_17": {
+        "start": 36960,
+        "bytes": 20
+      },
+      "_OUTLINED_FUNCTION_18": {
+        "start": 36980,
+        "bytes": 12
+      },
+      "_OUTLINED_FUNCTION_19": {
+        "start": 36992,
+        "bytes": 20
+      },
+      "_OUTLINED_FUNCTION_20": {
+        "start": 37012,
+        "bytes": 20
+      },
+      "_OUTLINED_FUNCTION_21": {
+        "start": 37032,
+        "bytes": 20
+      },
+      "_OUTLINED_FUNCTION_22": {
+        "start": 37052,
+        "bytes": 28
+      }
+    },
+    "sections": {
+      "__TEXT,__text": 37080,
+      "__TEXT,__literal8": 88,
+      "__TEXT,__literal16": 768,
+      "__TEXT,__const": 1726,
+      "__LD,__compact_unwind": 1408
+    },
+    "command": [
+      "/usr/bin/clang",
+      "-arch",
+      "arm64",
+      "-std=gnu11",
+      "-O2",
+      "-DNDEBUG",
+      "-Wall",
+      "-Werror",
+      "-I",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/libdeflate/libdeflate-92e6a0db9fa848d742f9eb286c92afc60f2c3dda",
+      "-c",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/libdeflate/libdeflate-92e6a0db9fa848d742f9eb286c92afc60f2c3dda/lib/deflate_compress.c",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/encoder-size-gap/comparison-inputs/peer-rebuilt/encoder.o"
+    ]
+  },
+  "peer-no-outlining": {
+    "sha256": "51899c338eb031a9ec1373443ff6c04290237b1fc1b840021640bb4c2e9f58d0",
+    "file_bytes": 51360,
+    "text_bytes": 38536,
+    "symbols": {
+      "_libdeflate_alloc_compressor_ex": {
+        "start": 0,
+        "bytes": 1368
+      },
+      "_deflate_compress_fastest": {
+        "start": 1368,
+        "bytes": 1828
+      },
+      "_deflate_compress_greedy": {
+        "start": 3196,
+        "bytes": 2728
+      },
+      "_deflate_compress_lazy": {
+        "start": 5924,
+        "bytes": 4968
+      },
+      "_deflate_compress_lazy2": {
+        "start": 10892,
+        "bytes": 6100
+      },
+      "_deflate_compress_near_optimal": {
+        "start": 16992,
+        "bytes": 3328
+      },
+      "_libdeflate_alloc_compressor": {
+        "start": 20320,
+        "bytes": 12
+      },
+      "_libdeflate_deflate_compress": {
+        "start": 20332,
+        "bytes": 160
+      },
+      "_deflate_compress_none": {
+        "start": 20492,
+        "bytes": 208
+      },
+      "_libdeflate_free_compressor": {
+        "start": 20700,
+        "bytes": 20
+      },
+      "_libdeflate_get_compression_level": {
+        "start": 20720,
+        "bytes": 8
+      },
+      "_libdeflate_deflate_compress_bound": {
+        "start": 20728,
+        "bytes": 68
+      },
+      "_deflate_flush_block": {
+        "start": 20796,
+        "bytes": 4672
+      },
+      "_deflate_make_huffman_code": {
+        "start": 25468,
+        "bytes": 1272
+      },
+      "_deflate_precompute_huffman_header": {
+        "start": 26740,
+        "bytes": 876
+      },
+      "_do_end_block_check": {
+        "start": 27616,
+        "bytes": 396
+      },
+      "_deflate_near_optimal_merge_stats": {
+        "start": 28012,
+        "bytes": 212
+      },
+      "_deflate_optimize_and_flush_block": {
+        "start": 28224,
+        "bytes": 8008
+      },
+      "_deflate_compute_true_cost": {
+        "start": 36232,
+        "bytes": 1780
+      },
+      "_deflate_find_min_cost_path": {
+        "start": 38012,
+        "bytes": 472
+      },
+      "_deflate_make_huffman_code.cold.1": {
+        "start": 38484,
+        "bytes": 52
+      }
+    },
+    "sections": {
+      "__TEXT,__text": 38536,
+      "__TEXT,__literal8": 88,
+      "__TEXT,__literal16": 768,
+      "__TEXT,__const": 1726,
+      "__LD,__compact_unwind": 672
+    },
+    "command": [
+      "/usr/bin/clang",
+      "-mno-outline",
+      "-arch",
+      "arm64",
+      "-std=gnu11",
+      "-O2",
+      "-DNDEBUG",
+      "-Wall",
+      "-Werror",
+      "-I",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/libdeflate/libdeflate-92e6a0db9fa848d742f9eb286c92afc60f2c3dda",
+      "-c",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/libdeflate/libdeflate-92e6a0db9fa848d742f9eb286c92afc60f2c3dda/lib/deflate_compress.c",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/encoder-size-gap/comparison-inputs/peer-no-outlining/encoder.o"
+    ]
+  },
+  "libdeflate_source_sha256": "a46dae12f2020b68d20c965ae43f9710e3e792bf77f3ca4611582f8d8d0c9541"
+}

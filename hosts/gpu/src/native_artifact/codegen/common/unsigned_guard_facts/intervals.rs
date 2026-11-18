@@ -23,6 +23,42 @@ impl Range {
             high: value,
         }
     }
+    fn unsigned_extreme(self, other: Self, opcode: O) -> Option<Self> {
+        match opcode {
+            O::Umin => Some(Self {
+                low: self.low.min(other.low),
+                high: self.high.min(other.high),
+            }),
+            O::Umax => Some(Self {
+                low: self.low.max(other.low),
+                high: self.high.max(other.high),
+            }),
+            _ => None,
+        }
+    }
+}
+
+fn selected_extreme(f: &Function, arg: Value, a: Value, b: Value) -> Option<O> {
+    let (comparison, left, right) = comparison(f, arg, true, 8)?;
+    let matches = |operand: Operand, value| {
+        let value = f.dfg.resolve_aliases(value);
+        operand.value() == Some(value)
+            || operand
+                .constant(f)
+                .is_some_and(|literal| constant(f, value) == Some(literal))
+    };
+    let comparison = if matches(left, a) && matches(right, b) {
+        comparison
+    } else if matches(left, b) && matches(right, a) {
+        comparison.swap_args()
+    } else {
+        return None;
+    };
+    match comparison {
+        IntCC::UnsignedLessThan | IntCC::UnsignedLessThanOrEqual => Some(O::Umin),
+        IntCC::UnsignedGreaterThan | IntCC::UnsignedGreaterThanOrEqual => Some(O::Umax),
+        _ => None,
+    }
 }
 
 pub(super) struct Query<'a> {
@@ -33,6 +69,7 @@ pub(super) struct Query<'a> {
     pub lower: &'a Facts,
     pub at: Block,
     pub modular_addition: bool,
+    pub extrema: bool,
 }
 impl Query<'_> {
     pub fn operand(&self, operand: Operand) -> Range {
@@ -87,7 +124,10 @@ impl Query<'_> {
                     D::Binary { opcode, .. } => {
                         let a = get(0);
                         let b = get(1);
-                        Self::binary(opcode, a, b, bits, self.modular_addition)
+                        self.extrema
+                            .then(|| a.unsigned_extreme(b, opcode))
+                            .flatten()
+                            .or_else(|| Self::binary(opcode, a, b, bits, self.modular_addition))
                     }
                     D::Unary {
                         opcode: O::Uextend, ..
@@ -103,10 +143,16 @@ impl Query<'_> {
                     } => {
                         let a = get(1);
                         let b = get(2);
-                        Some(Range {
-                            low: a.low.min(b.low),
-                            high: a.high.max(b.high),
-                        })
+                        let extreme = self
+                            .extrema
+                            .then(|| selected_extreme(f, args[0], args[1], args[2]))
+                            .flatten();
+                        extreme
+                            .and_then(|opcode| a.unsigned_extreme(b, opcode))
+                            .or(Some(Range {
+                                low: a.low.min(b.low),
+                                high: a.high.max(b.high),
+                            }))
                     }
                     _ => None,
                 };

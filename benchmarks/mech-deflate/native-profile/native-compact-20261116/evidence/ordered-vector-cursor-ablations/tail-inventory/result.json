@@ -1,0 +1,1423 @@
+{
+  "source_pin": "b05241855264df7df861994ef125e5dfb678bc81",
+  "compiler_sha256": "e7d62b39fa6e2e6a36907bbcaeb84fdad6d33d593b45d0f15c1f90e719cae7ac",
+  "artifact_sha256": {
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "summary": {
+    "complete": {
+      "attempts": 51,
+      "hits": 0,
+      "control_ns": 1420540,
+      "reuse_ns": 1221792,
+      "shared_control_ns": 0,
+      "shared_reuse_ns": 0
+    },
+    "scalar-cold": {
+      "attempts": 13,
+      "hits": 0,
+      "control_ns": 120210,
+      "reuse_ns": 119960,
+      "shared_control_ns": 0,
+      "shared_reuse_ns": 0
+    },
+    "fueled": {
+      "attempts": 10,
+      "hits": 10,
+      "control_ns": 194334,
+      "reuse_ns": 208,
+      "shared_control_ns": 194334,
+      "shared_reuse_ns": 208
+    },
+    "hybrid": {
+      "attempts": 6,
+      "hits": 0,
+      "control_ns": 1271167,
+      "reuse_ns": 1263793,
+      "shared_control_ns": 0,
+      "shared_reuse_ns": 0
+    },
+    "intervals": {
+      "attempts": 5,
+      "hits": 0,
+      "control_ns": 282292,
+      "reuse_ns": 234167,
+      "shared_control_ns": 0,
+      "shared_reuse_ns": 0
+    }
+  },
+  "trace_logs_sha256": {
+    "control": "5060feed7aad6ce8b7eb6770182a2abc0f4c16606454256413733a36661dcc17",
+    "reuse": "f7f153d96eceb3ac89ef57c562f4216330c674790991a5f4bef3a5d1b764f5f8"
+  },
+  "paired_trace_rows": {
+    "control": [
+      {
+        "header": 32,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 237583,
+        "sites": 64
+      },
+      {
+        "header": 32,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 375,
+        "sites": 0
+      },
+      {
+        "header": 32,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 11791,
+        "sites": 64
+      },
+      {
+        "header": 32,
+        "mode": "hybrid",
+        "reused": false,
+        "nanoseconds": 23833,
+        "sites": 64
+      },
+      {
+        "header": 32,
+        "mode": "intervals",
+        "reused": false,
+        "nanoseconds": 22500,
+        "sites": 0
+      },
+      {
+        "header": 277,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 125,
+        "sites": 0
+      },
+      {
+        "header": 277,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 167,
+        "sites": 0
+      },
+      {
+        "header": 277,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 83,
+        "sites": 0
+      },
+      {
+        "header": 277,
+        "mode": "hybrid",
+        "reused": false,
+        "nanoseconds": 270458,
+        "sites": 0
+      },
+      {
+        "header": 277,
+        "mode": "intervals",
+        "reused": false,
+        "nanoseconds": 90667,
+        "sites": 62
+      },
+      {
+        "header": 362,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 9792,
+        "sites": 47
+      },
+      {
+        "header": 413,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 7417,
+        "sites": 34
+      },
+      {
+        "header": 475,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 125,
+        "sites": 0
+      },
+      {
+        "header": 475,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 167,
+        "sites": 0
+      },
+      {
+        "header": 475,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 83,
+        "sites": 0
+      },
+      {
+        "header": 475,
+        "mode": "hybrid",
+        "reused": false,
+        "nanoseconds": 667167,
+        "sites": 2267
+      },
+      {
+        "header": 914,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 108625,
+        "sites": 496
+      },
+      {
+        "header": 1426,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 105250,
+        "sites": 497
+      },
+      {
+        "header": 1426,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 52125,
+        "sites": 269
+      },
+      {
+        "header": 1549,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 46375,
+        "sites": 228
+      },
+      {
+        "header": 2185,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 16292,
+        "sites": 81
+      },
+      {
+        "header": 2315,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 13041,
+        "sites": 66
+      },
+      {
+        "header": 2389,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 14084,
+        "sites": 73
+      },
+      {
+        "header": 2521,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 10458,
+        "sites": 54
+      },
+      {
+        "header": 2600,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 13791,
+        "sites": 73
+      },
+      {
+        "header": 2686,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 12333,
+        "sites": 66
+      },
+      {
+        "header": 2821,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 13750,
+        "sites": 73
+      },
+      {
+        "header": 2926,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 333,
+        "sites": 0
+      },
+      {
+        "header": 2926,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 334,
+        "sites": 0
+      },
+      {
+        "header": 2926,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 250,
+        "sites": 0
+      },
+      {
+        "header": 2926,
+        "mode": "hybrid",
+        "reused": false,
+        "nanoseconds": 243584,
+        "sites": 0
+      },
+      {
+        "header": 2926,
+        "mode": "intervals",
+        "reused": false,
+        "nanoseconds": 125459,
+        "sites": 393
+      },
+      {
+        "header": 3009,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 84916,
+        "sites": 398
+      },
+      {
+        "header": 3447,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 37792,
+        "sites": 193
+      },
+      {
+        "header": 3695,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 13500,
+        "sites": 68
+      },
+      {
+        "header": 3786,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 250,
+        "sites": 0
+      },
+      {
+        "header": 3786,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 291,
+        "sites": 0
+      },
+      {
+        "header": 3786,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 167,
+        "sites": 0
+      },
+      {
+        "header": 3786,
+        "mode": "hybrid",
+        "reused": false,
+        "nanoseconds": 43167,
+        "sites": 0
+      },
+      {
+        "header": 3786,
+        "mode": "intervals",
+        "reused": false,
+        "nanoseconds": 32125,
+        "sites": 37
+      },
+      {
+        "header": 3872,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 14375,
+        "sites": 77
+      },
+      {
+        "header": 3956,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 33625,
+        "sites": 152
+      },
+      {
+        "header": 3956,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 250,
+        "sites": 0
+      },
+      {
+        "header": 3956,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 30417,
+        "sites": 152
+      },
+      {
+        "header": 3975,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 24917,
+        "sites": 118
+      },
+      {
+        "header": 3975,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 208,
+        "sites": 0
+      },
+      {
+        "header": 3975,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 21959,
+        "sites": 118
+      },
+      {
+        "header": 4012,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 13042,
+        "sites": 67
+      },
+      {
+        "header": 4173,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 48000,
+        "sites": 247
+      },
+      {
+        "header": 4472,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 38208,
+        "sites": 186
+      },
+      {
+        "header": 4472,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 27584,
+        "sites": 146
+      },
+      {
+        "header": 4550,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 8042,
+        "sites": 40
+      },
+      {
+        "header": 4673,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 21167,
+        "sites": 105
+      },
+      {
+        "header": 4673,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 417,
+        "sites": 0
+      },
+      {
+        "header": 4673,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 18416,
+        "sites": 105
+      },
+      {
+        "header": 4711,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 9125,
+        "sites": 50
+      },
+      {
+        "header": 4799,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 13333,
+        "sites": 74
+      },
+      {
+        "header": 4879,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 27209,
+        "sites": 145
+      },
+      {
+        "header": 5056,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 10458,
+        "sites": 52
+      },
+      {
+        "header": 5113,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 9875,
+        "sites": 52
+      },
+      {
+        "header": 5198,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 51833,
+        "sites": 254
+      },
+      {
+        "header": 5198,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 37708,
+        "sites": 196
+      },
+      {
+        "header": 5269,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 11250,
+        "sites": 58
+      },
+      {
+        "header": 5493,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 15333,
+        "sites": 80
+      },
+      {
+        "header": 5626,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 21083,
+        "sites": 110
+      },
+      {
+        "header": 5743,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 20708,
+        "sites": 110
+      },
+      {
+        "header": 5895,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 17375,
+        "sites": 95
+      },
+      {
+        "header": 6016,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 12709,
+        "sites": 68
+      },
+      {
+        "header": 6154,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 10958,
+        "sites": 59
+      },
+      {
+        "header": 6325,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 13084,
+        "sites": 71
+      },
+      {
+        "header": 6500,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 14958,
+        "sites": 81
+      },
+      {
+        "header": 6633,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 18542,
+        "sites": 100
+      },
+      {
+        "header": 6851,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 14792,
+        "sites": 79
+      },
+      {
+        "header": 6992,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 11458,
+        "sites": 64
+      },
+      {
+        "header": 6992,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 334,
+        "sites": 0
+      },
+      {
+        "header": 6992,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 9584,
+        "sites": 64
+      },
+      {
+        "header": 6992,
+        "mode": "hybrid",
+        "reused": false,
+        "nanoseconds": 22958,
+        "sites": 64
+      },
+      {
+        "header": 6992,
+        "mode": "intervals",
+        "reused": false,
+        "nanoseconds": 11541,
+        "sites": 0
+      },
+      {
+        "header": 7176,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 15208,
+        "sites": 85
+      },
+      {
+        "header": 7285,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 21583,
+        "sites": 118
+      },
+      {
+        "header": 7425,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 104375,
+        "sites": 526
+      },
+      {
+        "header": 7425,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 250,
+        "sites": 0
+      },
+      {
+        "header": 7425,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 101584,
+        "sites": 526
+      },
+      {
+        "header": 7623,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 17208,
+        "sites": 87
+      },
+      {
+        "header": 8026,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 10875,
+        "sites": 54
+      }
+    ],
+    "reuse": [
+      {
+        "header": 32,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 36666,
+        "sites": 64
+      },
+      {
+        "header": 32,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 500,
+        "sites": 0
+      },
+      {
+        "header": 32,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 0,
+        "sites": 64
+      },
+      {
+        "header": 32,
+        "mode": "hybrid",
+        "reused": false,
+        "nanoseconds": 25584,
+        "sites": 64
+      },
+      {
+        "header": 32,
+        "mode": "intervals",
+        "reused": false,
+        "nanoseconds": 12292,
+        "sites": 0
+      },
+      {
+        "header": 277,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 250,
+        "sites": 0
+      },
+      {
+        "header": 277,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 209,
+        "sites": 0
+      },
+      {
+        "header": 277,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 41,
+        "sites": 0
+      },
+      {
+        "header": 277,
+        "mode": "hybrid",
+        "reused": false,
+        "nanoseconds": 264042,
+        "sites": 0
+      },
+      {
+        "header": 277,
+        "mode": "intervals",
+        "reused": false,
+        "nanoseconds": 53625,
+        "sites": 62
+      },
+      {
+        "header": 362,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 12042,
+        "sites": 47
+      },
+      {
+        "header": 413,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 6959,
+        "sites": 34
+      },
+      {
+        "header": 475,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 209,
+        "sites": 0
+      },
+      {
+        "header": 475,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 209,
+        "sites": 0
+      },
+      {
+        "header": 475,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 41,
+        "sites": 0
+      },
+      {
+        "header": 475,
+        "mode": "hybrid",
+        "reused": false,
+        "nanoseconds": 665500,
+        "sites": 2267
+      },
+      {
+        "header": 914,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 108542,
+        "sites": 496
+      },
+      {
+        "header": 1426,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 105208,
+        "sites": 497
+      },
+      {
+        "header": 1426,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 51833,
+        "sites": 269
+      },
+      {
+        "header": 1549,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 46375,
+        "sites": 228
+      },
+      {
+        "header": 2185,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 16166,
+        "sites": 81
+      },
+      {
+        "header": 2315,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 12917,
+        "sites": 66
+      },
+      {
+        "header": 2389,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 13958,
+        "sites": 73
+      },
+      {
+        "header": 2521,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 10250,
+        "sites": 54
+      },
+      {
+        "header": 2600,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 13875,
+        "sites": 73
+      },
+      {
+        "header": 2686,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 12291,
+        "sites": 66
+      },
+      {
+        "header": 2821,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 13708,
+        "sites": 73
+      },
+      {
+        "header": 2926,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 333,
+        "sites": 0
+      },
+      {
+        "header": 2926,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 417,
+        "sites": 0
+      },
+      {
+        "header": 2926,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 42,
+        "sites": 0
+      },
+      {
+        "header": 2926,
+        "mode": "hybrid",
+        "reused": false,
+        "nanoseconds": 241042,
+        "sites": 0
+      },
+      {
+        "header": 2926,
+        "mode": "intervals",
+        "reused": false,
+        "nanoseconds": 125458,
+        "sites": 393
+      },
+      {
+        "header": 3009,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 84625,
+        "sites": 398
+      },
+      {
+        "header": 3447,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 37917,
+        "sites": 193
+      },
+      {
+        "header": 3695,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 13500,
+        "sites": 68
+      },
+      {
+        "header": 3786,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 250,
+        "sites": 0
+      },
+      {
+        "header": 3786,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 292,
+        "sites": 0
+      },
+      {
+        "header": 3786,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 42,
+        "sites": 0
+      },
+      {
+        "header": 3786,
+        "mode": "hybrid",
+        "reused": false,
+        "nanoseconds": 43042,
+        "sites": 0
+      },
+      {
+        "header": 3786,
+        "mode": "intervals",
+        "reused": false,
+        "nanoseconds": 31375,
+        "sites": 37
+      },
+      {
+        "header": 3872,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 14250,
+        "sites": 77
+      },
+      {
+        "header": 3956,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 33125,
+        "sites": 152
+      },
+      {
+        "header": 3956,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 250,
+        "sites": 0
+      },
+      {
+        "header": 3956,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 0,
+        "sites": 152
+      },
+      {
+        "header": 3975,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 25208,
+        "sites": 118
+      },
+      {
+        "header": 3975,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 209,
+        "sites": 0
+      },
+      {
+        "header": 3975,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 0,
+        "sites": 118
+      },
+      {
+        "header": 4012,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 12875,
+        "sites": 67
+      },
+      {
+        "header": 4173,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 48500,
+        "sites": 247
+      },
+      {
+        "header": 4472,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 37875,
+        "sites": 186
+      },
+      {
+        "header": 4472,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 27333,
+        "sites": 146
+      },
+      {
+        "header": 4550,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 8083,
+        "sites": 40
+      },
+      {
+        "header": 4673,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 21375,
+        "sites": 105
+      },
+      {
+        "header": 4673,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 208,
+        "sites": 0
+      },
+      {
+        "header": 4673,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 42,
+        "sites": 105
+      },
+      {
+        "header": 4711,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 9458,
+        "sites": 50
+      },
+      {
+        "header": 4799,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 13542,
+        "sites": 74
+      },
+      {
+        "header": 4879,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 27167,
+        "sites": 145
+      },
+      {
+        "header": 5056,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 10416,
+        "sites": 52
+      },
+      {
+        "header": 5113,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 9542,
+        "sites": 52
+      },
+      {
+        "header": 5198,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 51375,
+        "sites": 254
+      },
+      {
+        "header": 5198,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 37708,
+        "sites": 196
+      },
+      {
+        "header": 5269,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 11541,
+        "sites": 58
+      },
+      {
+        "header": 5493,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 15292,
+        "sites": 80
+      },
+      {
+        "header": 5626,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 21333,
+        "sites": 110
+      },
+      {
+        "header": 5743,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 21209,
+        "sites": 110
+      },
+      {
+        "header": 5895,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 17625,
+        "sites": 95
+      },
+      {
+        "header": 6016,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 12584,
+        "sites": 68
+      },
+      {
+        "header": 6154,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 10959,
+        "sites": 59
+      },
+      {
+        "header": 6325,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 12792,
+        "sites": 71
+      },
+      {
+        "header": 6500,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 14708,
+        "sites": 81
+      },
+      {
+        "header": 6633,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 18500,
+        "sites": 100
+      },
+      {
+        "header": 6851,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 14709,
+        "sites": 79
+      },
+      {
+        "header": 6992,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 11625,
+        "sites": 64
+      },
+      {
+        "header": 6992,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 417,
+        "sites": 0
+      },
+      {
+        "header": 6992,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 0,
+        "sites": 64
+      },
+      {
+        "header": 6992,
+        "mode": "hybrid",
+        "reused": false,
+        "nanoseconds": 24583,
+        "sites": 64
+      },
+      {
+        "header": 6992,
+        "mode": "intervals",
+        "reused": false,
+        "nanoseconds": 11417,
+        "sites": 0
+      },
+      {
+        "header": 7176,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 15708,
+        "sites": 85
+      },
+      {
+        "header": 7285,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 21750,
+        "sites": 118
+      },
+      {
+        "header": 7425,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 104584,
+        "sites": 526
+      },
+      {
+        "header": 7425,
+        "mode": "scalar-cold",
+        "reused": false,
+        "nanoseconds": 375,
+        "sites": 0
+      },
+      {
+        "header": 7425,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 0,
+        "sites": 526
+      },
+      {
+        "header": 7623,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 17583,
+        "sites": 87
+      },
+      {
+        "header": 8026,
+        "mode": "complete",
+        "reused": false,
+        "nanoseconds": 10458,
+        "sites": 54
+      }
+    ]
+  },
+  "shared_attempts": [
+    {
+      "control": {
+        "header": 32,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 11791,
+        "sites": 64
+      },
+      "reuse": {
+        "header": 32,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 0,
+        "sites": 64
+      },
+      "paired_inventory_ns_saved": 11791
+    },
+    {
+      "control": {
+        "header": 277,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 83,
+        "sites": 0
+      },
+      "reuse": {
+        "header": 277,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 41,
+        "sites": 0
+      },
+      "paired_inventory_ns_saved": 42
+    },
+    {
+      "control": {
+        "header": 475,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 83,
+        "sites": 0
+      },
+      "reuse": {
+        "header": 475,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 41,
+        "sites": 0
+      },
+      "paired_inventory_ns_saved": 42
+    },
+    {
+      "control": {
+        "header": 2926,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 250,
+        "sites": 0
+      },
+      "reuse": {
+        "header": 2926,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 42,
+        "sites": 0
+      },
+      "paired_inventory_ns_saved": 208
+    },
+    {
+      "control": {
+        "header": 3786,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 167,
+        "sites": 0
+      },
+      "reuse": {
+        "header": 3786,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 42,
+        "sites": 0
+      },
+      "paired_inventory_ns_saved": 125
+    },
+    {
+      "control": {
+        "header": 3956,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 30417,
+        "sites": 152
+      },
+      "reuse": {
+        "header": 3956,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 0,
+        "sites": 152
+      },
+      "paired_inventory_ns_saved": 30417
+    },
+    {
+      "control": {
+        "header": 3975,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 21959,
+        "sites": 118
+      },
+      "reuse": {
+        "header": 3975,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 0,
+        "sites": 118
+      },
+      "paired_inventory_ns_saved": 21959
+    },
+    {
+      "control": {
+        "header": 4673,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 18416,
+        "sites": 105
+      },
+      "reuse": {
+        "header": 4673,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 42,
+        "sites": 105
+      },
+      "paired_inventory_ns_saved": 18374
+    },
+    {
+      "control": {
+        "header": 6992,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 9584,
+        "sites": 64
+      },
+      "reuse": {
+        "header": 6992,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 0,
+        "sites": 64
+      },
+      "paired_inventory_ns_saved": 9584
+    },
+    {
+      "control": {
+        "header": 7425,
+        "mode": "fueled",
+        "reused": false,
+        "nanoseconds": 101584,
+        "sites": 526
+      },
+      "reuse": {
+        "header": 7425,
+        "mode": "fueled",
+        "reused": true,
+        "nanoseconds": 0,
+        "sites": 526
+      },
+      "paired_inventory_ns_saved": 101584
+    }
+  ]
+}

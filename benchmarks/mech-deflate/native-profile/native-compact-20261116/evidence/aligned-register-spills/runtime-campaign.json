@@ -1,0 +1,902 @@
+{
+  "runs": {
+    "aligned-register-spills-focus-residue-64-cases": {
+      "id": "aligned-register-spills-focus-residue-64-cases",
+      "kind": "focus",
+      "order": "reverse",
+      "pins": {
+        "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases/pins-canonical.json",
+        "sha256": "0de1be360740cece1bde8a6be80c524d47238653a5debc52d7328b40ce886438"
+      },
+      "original_pins": {
+        "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases/pins.json",
+        "sha256": "d1e94893e924f07a175eb4c9e1acac54f49f9abd4b442df4f7a1b457c0c35efd"
+      },
+      "summary": {
+        "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases/summary.json",
+        "sha256": "ac84997cb328162e3c06c6fc05ddacd2fb96b64ebe345e164628a3d8cb347214"
+      },
+      "complete": {
+        "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases/complete.json",
+        "sha256": "dbada3097978c76e9d7be3940709516ab548a0946238e1e1bda5c3f7fcc7dd56"
+      },
+      "observations": {
+        "prefix-natural-262144": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases/prefix-natural-262144/observations.json.gz",
+          "sha256": "b6db562080f6a9607b7b4af3dfa1c087004cd35ed7e288e51530d2095680b00a"
+        },
+        "prefix-natural-65535": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases/prefix-natural-65535/observations.json.gz",
+          "sha256": "11c38165aae7db802f7dbf9a4fac93dda2141ae3d9f1519b8b0fcd250d4011ba"
+        },
+        "prefix-natural-65536": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases/prefix-natural-65536/observations.json.gz",
+          "sha256": "b524fdb9d274f21421e76a36b9423178ba819604c81bc3c7a95b5b6c7a228de1"
+        },
+        "prefix-natural-65537": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases/prefix-natural-65537/observations.json.gz",
+          "sha256": "d730b055130eb6e38835bbf72ad31f2ffa5f6f22d9bf10593f05a0dd7cb15688"
+        },
+        "prefix-natural-8192": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases/prefix-natural-8192/observations.json.gz",
+          "sha256": "bc818a973d2ec9c995ba789d60073faf9147a8ef63b61546295a1cab72a38e5c"
+        },
+        "prefix-random-1048576": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases/prefix-random-1048576/observations.json.gz",
+          "sha256": "d5c25b05376088a3833c4d18a7e7f97626b1982ba6e02dd9cce039ab58441e36"
+        },
+        "prefix-random-4096": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases/prefix-random-4096/observations.json.gz",
+          "sha256": "bc09d8749f4266c5a4a269ada31ff64b81dd530d11503be56cac4a3191db828b"
+        },
+        "random-64": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases/random-64/observations.json.gz",
+          "sha256": "2b02e7570da3045ec24a631898bc2f75e6af02eeca75a06c399b2baf25a91b14"
+        },
+        "seven-stored-prefix": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases/seven-stored-prefix/observations.json.gz",
+          "sha256": "54415f74a290a257aabb713f0e1a3cd58cae2519280fc728728119f208204e7f"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    },
+    "aligned-register-spills-focus-residue-64-cases-reverse": {
+      "id": "aligned-register-spills-focus-residue-64-cases-reverse",
+      "kind": "focus",
+      "order": "forward",
+      "pins": {
+        "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases-reverse/pins-canonical.json",
+        "sha256": "0de1be360740cece1bde8a6be80c524d47238653a5debc52d7328b40ce886438"
+      },
+      "original_pins": {
+        "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases-reverse/pins.json",
+        "sha256": "d1e94893e924f07a175eb4c9e1acac54f49f9abd4b442df4f7a1b457c0c35efd"
+      },
+      "summary": {
+        "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases-reverse/summary.json",
+        "sha256": "855b7e296b65006a3d20589b045fd7e3e9fcc4d4870f5a6a2ef3491c183c85ed"
+      },
+      "complete": {
+        "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases-reverse/complete.json",
+        "sha256": "dbada3097978c76e9d7be3940709516ab548a0946238e1e1bda5c3f7fcc7dd56"
+      },
+      "observations": {
+        "prefix-natural-262144": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases-reverse/prefix-natural-262144/observations.json.gz",
+          "sha256": "71f94a8fe9c5649eb0f4de5ff7c05d2b66cc62130a9e65baddcce638c091ccd5"
+        },
+        "prefix-natural-65535": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases-reverse/prefix-natural-65535/observations.json.gz",
+          "sha256": "174d7fe94c14ccbb1c0755a9dfb217a3d620605fe84ec90cbf6c8def6bb8fb8c"
+        },
+        "prefix-natural-65536": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases-reverse/prefix-natural-65536/observations.json.gz",
+          "sha256": "fba23b98d3165bf3789efd7e694f5045094a10047c196909a125d840b08761a4"
+        },
+        "prefix-natural-65537": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases-reverse/prefix-natural-65537/observations.json.gz",
+          "sha256": "a33434397c70401dd3f74e45710e7d567436fede3a7b2249b136ca2c6f59e12e"
+        },
+        "prefix-natural-8192": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases-reverse/prefix-natural-8192/observations.json.gz",
+          "sha256": "eba0f7f997b577b58fbc1671b774779281bc4e0cf990089ec5dbc6d912c8c2b6"
+        },
+        "prefix-random-1048576": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases-reverse/prefix-random-1048576/observations.json.gz",
+          "sha256": "f81dfe2bb3f4d066cae21194063264d1698db29da4f97be62f8a24dcda95238f"
+        },
+        "prefix-random-4096": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases-reverse/prefix-random-4096/observations.json.gz",
+          "sha256": "d555cb47ec9647ced5593ac74cbe98c1e6aa2fb737f8e4e2c25aeddc87528ddb"
+        },
+        "random-64": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases-reverse/random-64/observations.json.gz",
+          "sha256": "e37ddca7fb69c855516cd572c917621ab3b06f80c9543b56d6711a7dc0c725a7"
+        },
+        "seven-stored-prefix": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases-reverse/seven-stored-prefix/observations.json.gz",
+          "sha256": "a18c06738e570afc5e7268ab5195a06690f4d75f44f7dfe087e1f75c4cd27cae"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases-reverse/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases-reverse/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases-reverse/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-focus-residue-64-cases-reverse/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    },
+    "aligned-register-spills-full": {
+      "id": "aligned-register-spills-full",
+      "kind": "full",
+      "order": "forward",
+      "pins": {
+        "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/pins-canonical.json",
+        "sha256": "0de1be360740cece1bde8a6be80c524d47238653a5debc52d7328b40ce886438"
+      },
+      "original_pins": {
+        "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/pins.json",
+        "sha256": "d1e94893e924f07a175eb4c9e1acac54f49f9abd4b442df4f7a1b457c0c35efd"
+      },
+      "summary": {
+        "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/summary.json",
+        "sha256": "faa38031114c81a956ecac95e40e04564b38e19c353e3deb33617e1bc8c37ba5"
+      },
+      "complete": {
+        "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/complete.json",
+        "sha256": "2e54dfa5984a50621e44303a7cbdd811e578a4c88e1b46ef989159527d443c6f"
+      },
+      "observations": {
+        "128-biased-dynamic": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/128-biased-dynamic/observations.json.gz",
+          "sha256": "c7fcabecb1fcf35aa6fb2e20973a4be63d93967573819dc78919c0bb793f4f2b"
+        },
+        "16384-distribution-change": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/16384-distribution-change/observations.json.gz",
+          "sha256": "cbbf192b0412ae8602adb9a8ccd9a72e8dc8c958be9a05165b809628e01c1ae3"
+        },
+        "32-high-entropy-stored": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/32-high-entropy-stored/observations.json.gz",
+          "sha256": "8b2a2e925c7b4ceb8c05311930be56279924e3e78bf52d16bded2e85f15d3ad1"
+        },
+        "320-overlap": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/320-overlap/observations.json.gz",
+          "sha256": "3fe46bb1be2e5143fcae5113320191e88f8526e32befdcdd4bb85626297f261d"
+        },
+        "33027-periodic-window": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/33027-periodic-window/observations.json.gz",
+          "sha256": "feff717f102de939f23beb78914051ddc936f01acb91ea529fc9d484a8f1e592"
+        },
+        "eight-literals": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/eight-literals/observations.json.gz",
+          "sha256": "0f3f4e2f1dcb9b5fa9d3fbe781b23bac2d455076d403037d2a03735978ed2a2a"
+        },
+        "eight-literals-prefix": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/eight-literals-prefix/observations.json.gz",
+          "sha256": "715f238ada2ac7111dc626aa6efa0ddae48bff37af8252131dade451a4201016"
+        },
+        "eight-overlap": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/eight-overlap/observations.json.gz",
+          "sha256": "0c8b2222e05f8a254c4fd31a0150341252dba330bc24991426124a5fbb79f50a"
+        },
+        "empty": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/empty/observations.json.gz",
+          "sha256": "4eb49cbcf8f66f609065fd939a3df1a52c94d97df16989b803a6654fed6daac8"
+        },
+        "heldout-mixed-131073": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/heldout-mixed-131073/observations.json.gz",
+          "sha256": "b5ea3ef3c772a417125646d24b0c6cc4476d46d82a7989b55e0b03c98704ff27"
+        },
+        "heldout-random-65537": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/heldout-random-65537/observations.json.gz",
+          "sha256": "44cd421cafe40d19011ea94833f93b2cae60aa50d5a6bd1809536d535a6a4808"
+        },
+        "heldout-slides-65537": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/heldout-slides-65537/observations.json.gz",
+          "sha256": "239c3b616c5d2297df64c1b1a914320806c3cdcad4155062f2c7f4161ae9b2f3"
+        },
+        "heldout-window-32767": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/heldout-window-32767/observations.json.gz",
+          "sha256": "d6fd0f6fe73e3ac711563e6317d3827152a93a7dc1c8f4928e4baa1c42173a3c"
+        },
+        "heldout-window-32768": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/heldout-window-32768/observations.json.gz",
+          "sha256": "5456843ffa5f20141f5e9733b11b729bc5c4492237be6fb6a9a1b008a2cfccfd"
+        },
+        "one-stored": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/one-stored/observations.json.gz",
+          "sha256": "741ec38e509e62a80cc1a5de61250dbf546848a0efa0fbc03baa2a1ff36d2374"
+        },
+        "prefix-natural-1024": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-natural-1024/observations.json.gz",
+          "sha256": "6ccfbaa6a7f12893eb0aefa8d005a1f9d3e242ec031645b95eb2d1a7f8e94d8a"
+        },
+        "prefix-natural-1048576": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-natural-1048576/observations.json.gz",
+          "sha256": "10fbb8954bf651d1ef1facd7baba23df76d84b87ea647b21444827801cf29841"
+        },
+        "prefix-natural-131072": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-natural-131072/observations.json.gz",
+          "sha256": "56261f4c4a703c408fa3fae090c1b2d17226774bb9908621dacf9a14032c6009"
+        },
+        "prefix-natural-16384": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-natural-16384/observations.json.gz",
+          "sha256": "dd46676d68c6d468fd71a4e8188d6b05b145cfb5cd671d9d95480c123e699821"
+        },
+        "prefix-natural-262144": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-natural-262144/observations.json.gz",
+          "sha256": "a578d364e2f1a34c1cc7ca43c398beae5746f191731ee8a453003fa41bcfa469"
+        },
+        "prefix-natural-32767": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-natural-32767/observations.json.gz",
+          "sha256": "d5cd8c1e7beba69b38fcfe412b90beea411e4b91aebe202664ac44475589e689"
+        },
+        "prefix-natural-32768": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-natural-32768/observations.json.gz",
+          "sha256": "6d9d0cbd033f3d7984e3e6702a19ae77afa0b2bc96c10ccfee56f5bd161f7119"
+        },
+        "prefix-natural-32769": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-natural-32769/observations.json.gz",
+          "sha256": "e0cfa2b51090c7dc42a01ee8947bacdf0a775cd1262827745100532b4c80e34e"
+        },
+        "prefix-natural-33027": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-natural-33027/observations.json.gz",
+          "sha256": "2a13808f88234547a0b914742d798c0e3400d613e8033df31e4dac733e2a3a90"
+        },
+        "prefix-natural-4096": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-natural-4096/observations.json.gz",
+          "sha256": "ff62120a9c8759024251f8eaa874a5bd827dadafe4cba8acba57c44c00695a77"
+        },
+        "prefix-natural-65535": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-natural-65535/observations.json.gz",
+          "sha256": "792f11fb4b618f306518791464498295a97092e0fb3a959863c456bb00bcc8c3"
+        },
+        "prefix-natural-65536": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-natural-65536/observations.json.gz",
+          "sha256": "b6f7271ec47966ca97427926945ab18985e1fe43c25fe1dc6ef72546776b2e32"
+        },
+        "prefix-natural-65537": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-natural-65537/observations.json.gz",
+          "sha256": "3475e25305c2ec7348149768fbffe8bcd0e756a69c8b42cad8ebf2020e55cc16"
+        },
+        "prefix-natural-8192": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-natural-8192/observations.json.gz",
+          "sha256": "189edd9c8f6e651c545f3cdd2eebe8775167ce202a7d7dc127a61a5b5e040b96"
+        },
+        "prefix-periodic-1024": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-periodic-1024/observations.json.gz",
+          "sha256": "4884824b26c9f4020decef36f4ee96b4a3258ddc5eb802ae167c2fc19a18ec61"
+        },
+        "prefix-periodic-1048576": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-periodic-1048576/observations.json.gz",
+          "sha256": "bb7c55a0fef352f72fee8e43d89d9d8b8662f3cf0c1ddd996be07f3bb2e81321"
+        },
+        "prefix-periodic-131072": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-periodic-131072/observations.json.gz",
+          "sha256": "b34ec26c4059df65e373265468ccd273459582829668bbc6f9bf980af6a1ad49"
+        },
+        "prefix-periodic-16384": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-periodic-16384/observations.json.gz",
+          "sha256": "33e9793ebe90b581a820b9d6ea1f25b41a7f533cddd44d45d9aaf5f01b9e890b"
+        },
+        "prefix-periodic-262144": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-periodic-262144/observations.json.gz",
+          "sha256": "5e46f698e4c326ebe04f5c76ea3bd4629870abcde9c88304e81394a62c6b693f"
+        },
+        "prefix-periodic-32767": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-periodic-32767/observations.json.gz",
+          "sha256": "bbab5ed7f736ac34d03536928be1e47f6dc1773b35a809ee09d73520954fc263"
+        },
+        "prefix-periodic-32768": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-periodic-32768/observations.json.gz",
+          "sha256": "a7962af13da1a363c456e13c2f2fa81b14ee18fb768db19fe23c1114e0410d9e"
+        },
+        "prefix-periodic-32769": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-periodic-32769/observations.json.gz",
+          "sha256": "5e5af2bf6da8820f8ecc86cf1d96d9775fa5686aa815a026432e7b6a05705970"
+        },
+        "prefix-periodic-33027": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-periodic-33027/observations.json.gz",
+          "sha256": "136456e5991c9c5ab25390597548b7978330b08591f4bdb5ec96455c548f392d"
+        },
+        "prefix-periodic-4096": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-periodic-4096/observations.json.gz",
+          "sha256": "346b239e4e6183c29b59198730fd92e438b815bfb12f1aa49042af5d50bb4b3b"
+        },
+        "prefix-periodic-65535": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-periodic-65535/observations.json.gz",
+          "sha256": "f17c98e34c1fdf275e6ba6c9d7a482bf37b11a65e280ac36ff02b85f49d3ac64"
+        },
+        "prefix-periodic-65536": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-periodic-65536/observations.json.gz",
+          "sha256": "7a370f1f4a5f4ea4b30ad25efb26259d3ecdbcee0e5e5b720ed5bb5090d271e3"
+        },
+        "prefix-periodic-65537": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-periodic-65537/observations.json.gz",
+          "sha256": "d5c147a4bd24ff88d95ed040b02fc7a026bdb38e7f55166b9544cd7da825ac4a"
+        },
+        "prefix-periodic-8192": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-periodic-8192/observations.json.gz",
+          "sha256": "9eee5184a46612ee93d3ea70cedf09fb71142ed022de9326461e2d6873f1409e"
+        },
+        "prefix-random-1024": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-random-1024/observations.json.gz",
+          "sha256": "e2d918c838074b3334d9d1daa19882ee48ca3fea9c7595306045b5b335b1ba55"
+        },
+        "prefix-random-1048576": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-random-1048576/observations.json.gz",
+          "sha256": "65624dffdfb5824433b38661b9e0f05c6a1b4da65ad6d9514c7d674bd5805b4d"
+        },
+        "prefix-random-131072": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-random-131072/observations.json.gz",
+          "sha256": "0de0bafd4c51cf24ebbead2eed70dd497b584541c2009eb0dd25d9b6fc231db0"
+        },
+        "prefix-random-16384": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-random-16384/observations.json.gz",
+          "sha256": "fd1c95531d2138b793def7c4b3203289f8f8dc824ac83d7ca3539023cd7c5462"
+        },
+        "prefix-random-262144": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-random-262144/observations.json.gz",
+          "sha256": "b55a50f6adc9f247b7b114b0b11cb593368d1226621a712a9d638f05d520a889"
+        },
+        "prefix-random-32767": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-random-32767/observations.json.gz",
+          "sha256": "688dcb7e6b5bb94649bde52e7743139881364b77f1296036db5b32890321189e"
+        },
+        "prefix-random-32768": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-random-32768/observations.json.gz",
+          "sha256": "6dd78c9739349c4394caf71f7c9a2ebcbf62b579aab938c79ab492cd444472dd"
+        },
+        "prefix-random-32769": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-random-32769/observations.json.gz",
+          "sha256": "85a576720688f98d69cd23b735e6fca274518f55f30c37d51ba3b089bff717ee"
+        },
+        "prefix-random-33027": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-random-33027/observations.json.gz",
+          "sha256": "d6ca724f005de9a4b3671b5d3ffd206dc26ed608f904907a28fefb196901b7a8"
+        },
+        "prefix-random-4096": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-random-4096/observations.json.gz",
+          "sha256": "03b7c7e5b012a882dec1e8ccbd04bc587ca645f8d0d96944f36cd77f01ab890e"
+        },
+        "prefix-random-65535": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-random-65535/observations.json.gz",
+          "sha256": "3e0b414aac6e4b48e10c3a6da3878d5fe35ce86d8f5552c6a24288a575541d44"
+        },
+        "prefix-random-65536": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-random-65536/observations.json.gz",
+          "sha256": "c11235da5633f77561a030cec711c1f12d5a14273c28bf90b532014bd0815042"
+        },
+        "prefix-random-65537": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-random-65537/observations.json.gz",
+          "sha256": "f3a8d131ebe0a76b700a316d6f605cd16e76aaca68aebb194c337a89dbbbf30c"
+        },
+        "prefix-random-8192": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-random-8192/observations.json.gz",
+          "sha256": "741575e105566eff1c85c90dc4d248ca29bc63b407366d2e5565c9cf03533bb6"
+        },
+        "prefix-repeated-1024": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-repeated-1024/observations.json.gz",
+          "sha256": "c5998e7de15c00b34ded85c1c27e557ba963df12453d4c96051b83c8303ed23b"
+        },
+        "prefix-repeated-1048576": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-repeated-1048576/observations.json.gz",
+          "sha256": "fd4130bd55a407057fd59fe87bc1b27364d689405b28b1afe12862534e709c50"
+        },
+        "prefix-repeated-131072": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-repeated-131072/observations.json.gz",
+          "sha256": "f41aeab697643c66a0fb388028f2a121506ec6dfb9f3e93971aae212ee60488c"
+        },
+        "prefix-repeated-16384": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-repeated-16384/observations.json.gz",
+          "sha256": "f7a2c2ea3c1a2b1c4395f7700ed91898b72620d3c13196eb732eebb64ea4e3cb"
+        },
+        "prefix-repeated-262144": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-repeated-262144/observations.json.gz",
+          "sha256": "aeb5bfd919f401312654190d76e757f38d20a184151039d6a2232de1c03b44e6"
+        },
+        "prefix-repeated-32767": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-repeated-32767/observations.json.gz",
+          "sha256": "023c3b9dc1e9ddcb3c2a43083ee44276cd0243c833821b3296842d77c8ec7eca"
+        },
+        "prefix-repeated-32768": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-repeated-32768/observations.json.gz",
+          "sha256": "ae1104d822dc9f6938db4f6627c29cf610d2f48d8601eb6f5a03e75dce3d9821"
+        },
+        "prefix-repeated-32769": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-repeated-32769/observations.json.gz",
+          "sha256": "8e2fbcba78001f96295a25c7cd84f09dbb63e84285713faa988fc7041be9ab60"
+        },
+        "prefix-repeated-33027": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-repeated-33027/observations.json.gz",
+          "sha256": "b6e23fcddffede5ed7faad4004abdb9cbb4eaa2b9c9180b48344b4525774de96"
+        },
+        "prefix-repeated-4096": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-repeated-4096/observations.json.gz",
+          "sha256": "9005339bfbd8b7cb007d126c8a6c623d4b933583e0658ccce32922ec52299cde"
+        },
+        "prefix-repeated-65535": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-repeated-65535/observations.json.gz",
+          "sha256": "539d57865a62bdb355c2ab384627e34fb5332fd787d48645bafcc0a81e9c34a8"
+        },
+        "prefix-repeated-65536": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-repeated-65536/observations.json.gz",
+          "sha256": "a31073d6ad5394a50c0df0a0df341d75abe2b59ce3af8b2e8fa1dbd7b3aca382"
+        },
+        "prefix-repeated-65537": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-repeated-65537/observations.json.gz",
+          "sha256": "ff694096f793983d0c1d25b6c986dc7090c9f0d39725e4c9c9b799124a14e7fe"
+        },
+        "prefix-repeated-8192": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/prefix-repeated-8192/observations.json.gz",
+          "sha256": "2c01365a2317f9d7694761df615d1534d058a6b5223f07631feb83c95f7469a4"
+        },
+        "random-1024": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/random-1024/observations.json.gz",
+          "sha256": "eaf38a54e757aa91efbdf61a63b86dd5a5374633a0ea69fe521ff554f5960163"
+        },
+        "random-256": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/random-256/observations.json.gz",
+          "sha256": "c323876720c7dad650126431d2a74fe6cb24947fca737e7e20f837ddceb67c46"
+        },
+        "random-32769": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/random-32769/observations.json.gz",
+          "sha256": "8e53b4e2910b09efa5ad2d844865370e6e6ee19acd2e6c538c90eee6c3941b32"
+        },
+        "random-64": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/random-64/observations.json.gz",
+          "sha256": "57e16589677d602e2bf7b7f84d71b2a2ec2e9c6bb9f41c7cfa447662ccb90e56"
+        },
+        "repeated-1024": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/repeated-1024/observations.json.gz",
+          "sha256": "1c3b257d31624cb8e0bda4c0b6c94a15968cb1ea97f84549d2ace12a05289633"
+        },
+        "repeated-32769": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/repeated-32769/observations.json.gz",
+          "sha256": "fbe25288cee9b7098580ddedcf4065571ab4d273b65e3f3387e9d7d6f76b1866"
+        },
+        "reymont-prefix-1024": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/reymont-prefix-1024/observations.json.gz",
+          "sha256": "689c093a7218bfb06edc7d1393378343532bc7da8164d43fbbb5a37024d5420d"
+        },
+        "reymont-prefix-16384": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/reymont-prefix-16384/observations.json.gz",
+          "sha256": "779eb568782b1c7f742cfa16eaddcc8aab151f836982c4d9172f0ea67740f4ed"
+        },
+        "reymont-prefix-32769": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/reymont-prefix-32769/observations.json.gz",
+          "sha256": "99905aed88c413842ab36683ed9c7f7b39267f88bdbd7677a7b6b6cbe5300d6c"
+        },
+        "seven-stored-prefix": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/seven-stored-prefix/observations.json.gz",
+          "sha256": "bebce4eb659c32c0aec3059ef3d40e484d4e316f9f50bf37a8002b84dd868334"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    },
+    "aligned-register-spills-full-reverse": {
+      "id": "aligned-register-spills-full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "pins": {
+        "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/pins-canonical.json",
+        "sha256": "0de1be360740cece1bde8a6be80c524d47238653a5debc52d7328b40ce886438"
+      },
+      "original_pins": {
+        "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/pins.json",
+        "sha256": "d1e94893e924f07a175eb4c9e1acac54f49f9abd4b442df4f7a1b457c0c35efd"
+      },
+      "summary": {
+        "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/summary.json",
+        "sha256": "c536d093e14be6b388c0045755d1411dbcfbf42fa9e35938ec68ed2ad01c0ca4"
+      },
+      "complete": {
+        "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/complete.json",
+        "sha256": "2e54dfa5984a50621e44303a7cbdd811e578a4c88e1b46ef989159527d443c6f"
+      },
+      "observations": {
+        "128-biased-dynamic": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/128-biased-dynamic/observations.json.gz",
+          "sha256": "e43b837db6429229d2a5e56cab60109de2e31e26ca5b0520f7558158d4ff10e7"
+        },
+        "16384-distribution-change": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/16384-distribution-change/observations.json.gz",
+          "sha256": "d76b9666bfeb6bf306acb3de434428613e231253930675ac3a06b20f8724d8ef"
+        },
+        "32-high-entropy-stored": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/32-high-entropy-stored/observations.json.gz",
+          "sha256": "f48bca67fbf1f6147ed2614b330fe64d43da69bf054eee8eb716c01834e6c43e"
+        },
+        "320-overlap": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/320-overlap/observations.json.gz",
+          "sha256": "728981f241a5402e1bd9b73572a772de4869bef8880debb4ed6dd393811d8331"
+        },
+        "33027-periodic-window": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/33027-periodic-window/observations.json.gz",
+          "sha256": "cd6c7fcacd518ca255f454333a0e735cd66f179456a7d93e8085dc0e70149e20"
+        },
+        "eight-literals": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/eight-literals/observations.json.gz",
+          "sha256": "8068cd1400d19b8e411b00bd5a2aac59154b6237ed9e3029552082c33452f5ac"
+        },
+        "eight-literals-prefix": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/eight-literals-prefix/observations.json.gz",
+          "sha256": "cdd5fa6e5b6f731eaf5591dca2647087de1776c1c9776d28364ce90c7a76b655"
+        },
+        "eight-overlap": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/eight-overlap/observations.json.gz",
+          "sha256": "43d350551d9109d380cf94c15395ef1aa708cd604d148bc3447c6fd37e67f6b8"
+        },
+        "empty": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/empty/observations.json.gz",
+          "sha256": "ca120770e358298213c8ba68eb205af3ebdaaf0048dde5039ae21680ba1a020a"
+        },
+        "heldout-mixed-131073": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/heldout-mixed-131073/observations.json.gz",
+          "sha256": "289b6f0e1cd0d2cec30a44a38b2ecc255392699d2fd94925f8dd910c85c20e9a"
+        },
+        "heldout-random-65537": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/heldout-random-65537/observations.json.gz",
+          "sha256": "f0ba21e799af208c1ea8cf830fc1a42eb03488d08a0f5e257f8b0af503ecca6f"
+        },
+        "heldout-slides-65537": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/heldout-slides-65537/observations.json.gz",
+          "sha256": "ce81d62142d5eddcb8d3c5a327c1e64cdcf3691ec92bdaecd66ebda06de78ced"
+        },
+        "heldout-window-32767": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/heldout-window-32767/observations.json.gz",
+          "sha256": "36fb796226709702fb494b3a908dd1e4bceeacb682b34388e2f9ed4af57786da"
+        },
+        "heldout-window-32768": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/heldout-window-32768/observations.json.gz",
+          "sha256": "7ab2f2c591201d7d1d87239fd81d2eb02b19709ea6bb77f5d0f6910b38c2d7bf"
+        },
+        "one-stored": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/one-stored/observations.json.gz",
+          "sha256": "59160cfba809f22a5b677b5d35119bc37ef120f0f9f074a09119b62e3d85e8bd"
+        },
+        "prefix-natural-1024": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-natural-1024/observations.json.gz",
+          "sha256": "543a59402ccde8ec155eaf7861c537a9958362fec050ee21ae959d50e498101b"
+        },
+        "prefix-natural-1048576": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-natural-1048576/observations.json.gz",
+          "sha256": "f1edcce24b893de9c9187190a2ddb61452e64d62bc32d33a0edba2280041f83c"
+        },
+        "prefix-natural-131072": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-natural-131072/observations.json.gz",
+          "sha256": "eddca413d457ea79d9f9200b2dc9eab25e85d0768875e2247a9470853b302377"
+        },
+        "prefix-natural-16384": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-natural-16384/observations.json.gz",
+          "sha256": "e341078ff91b9c7e1e4f1a08d4f8bb52b0fa81dd9fb1480fb7c7adab9b3cae18"
+        },
+        "prefix-natural-262144": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-natural-262144/observations.json.gz",
+          "sha256": "882384ae461626421e7eb2017bc0b51d673c08b66d010cb2212c4e29786f60e2"
+        },
+        "prefix-natural-32767": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-natural-32767/observations.json.gz",
+          "sha256": "a3d2c49ba90ed569003b616d21d3eecb1460a69efd48bd91edfa684fb4ad3c65"
+        },
+        "prefix-natural-32768": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-natural-32768/observations.json.gz",
+          "sha256": "0a2123378a138163c93e425864fd2f1e775a92430a4ceb1e960fa090ac7bc54e"
+        },
+        "prefix-natural-32769": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-natural-32769/observations.json.gz",
+          "sha256": "14e26daf8f644621336ee7d6ecac2a298e415f2bea6f8ac4b66d3c212df96216"
+        },
+        "prefix-natural-33027": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-natural-33027/observations.json.gz",
+          "sha256": "49763b2590b7eeb05a5d5a32f772f5c756304f7ee76f657dd489cac2e95fa1d0"
+        },
+        "prefix-natural-4096": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-natural-4096/observations.json.gz",
+          "sha256": "db6defae497adc225184e2fd8570704d63a5b091f713c9ed6e2263eff6e864d6"
+        },
+        "prefix-natural-65535": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-natural-65535/observations.json.gz",
+          "sha256": "bf6b50e33dd9c955905d7b99db7d54179545add21cb19c91297d12a590cd56fb"
+        },
+        "prefix-natural-65536": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-natural-65536/observations.json.gz",
+          "sha256": "940151ce0486710377e89f217fd0c8571f8cd30abb8836bf1c30f2a5f32c03f5"
+        },
+        "prefix-natural-65537": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-natural-65537/observations.json.gz",
+          "sha256": "1566a4c6573ae7223ad337972961bece3a9e13324753ba8a10b7079735606e13"
+        },
+        "prefix-natural-8192": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-natural-8192/observations.json.gz",
+          "sha256": "0126b5e1f93bcdac6ada9a4f76bc41a4d77b166f2a11657233fb16afae4676ad"
+        },
+        "prefix-periodic-1024": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-periodic-1024/observations.json.gz",
+          "sha256": "f1120879c5864c1836198b370e3d0c4d845e5fa92af0fe8253ee57835a740fb6"
+        },
+        "prefix-periodic-1048576": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-periodic-1048576/observations.json.gz",
+          "sha256": "5250c0c80629206013228dcce97d0d01a66df3da19ba3e33ea1176b90306d65c"
+        },
+        "prefix-periodic-131072": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-periodic-131072/observations.json.gz",
+          "sha256": "9e9047b504a5e0e806352b21c6b181f6939ad3c02f70e1ad5060a17e6686d653"
+        },
+        "prefix-periodic-16384": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-periodic-16384/observations.json.gz",
+          "sha256": "4fe4930183fa4855bd6c621d99cb236e73e3093ab15bd142fba6ad329ffdb50e"
+        },
+        "prefix-periodic-262144": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-periodic-262144/observations.json.gz",
+          "sha256": "1aadde76587a4fa7b932ef7e181f922bc5718136bb13eb3df182b3d5328d2078"
+        },
+        "prefix-periodic-32767": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-periodic-32767/observations.json.gz",
+          "sha256": "7305e23e763e0197e8857b2db71d42b09dae2c457811a734bc2e1dd4df4d9354"
+        },
+        "prefix-periodic-32768": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-periodic-32768/observations.json.gz",
+          "sha256": "529d2f75cf7564188326e30e2e9df8963ce987230df087ba698f7d144faf80dd"
+        },
+        "prefix-periodic-32769": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-periodic-32769/observations.json.gz",
+          "sha256": "4a194bf0bd48a31825356d03512046ef86708e22b43741100ae67951d4f02fc7"
+        },
+        "prefix-periodic-33027": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-periodic-33027/observations.json.gz",
+          "sha256": "0ff2ee7d7b1fda9de5ea37994839ed351abcbc97021a2a1ab483e14d76b053a2"
+        },
+        "prefix-periodic-4096": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-periodic-4096/observations.json.gz",
+          "sha256": "73bbc3f40b532f053dcd14233159c857c2a3b86d1bd6f028443be4f766e61f87"
+        },
+        "prefix-periodic-65535": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-periodic-65535/observations.json.gz",
+          "sha256": "a12b23adfbc3113312cbb5a4d4005fb4f8fdcee737dd380cc2e2f1431e0e307a"
+        },
+        "prefix-periodic-65536": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-periodic-65536/observations.json.gz",
+          "sha256": "04850763cfde9ecfdf06c4ead1937fe7f5bc7a31cecfbc17a2f862e6ef5e68be"
+        },
+        "prefix-periodic-65537": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-periodic-65537/observations.json.gz",
+          "sha256": "ffd37740dfcdaa4a84be50129d6a8fcc94fc9e9a175276c6dd365fcd4cd2ed83"
+        },
+        "prefix-periodic-8192": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-periodic-8192/observations.json.gz",
+          "sha256": "58799b811336836824d0b2cb6822103eda5b4c2ea83480f16f75621d68330215"
+        },
+        "prefix-random-1024": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-random-1024/observations.json.gz",
+          "sha256": "4a6d8270f4e54c85cb02ae7b3f111565be6b693148b6b347ce3cfe1f3905f401"
+        },
+        "prefix-random-1048576": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-random-1048576/observations.json.gz",
+          "sha256": "42a835f0e86f6501893a81cbcb33be9f669b79abcfba121888fcabfd27952cc2"
+        },
+        "prefix-random-131072": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-random-131072/observations.json.gz",
+          "sha256": "8cfd10a32bcf213e202aeac30ad2d166efbd6c0c52e323376d7623472030b024"
+        },
+        "prefix-random-16384": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-random-16384/observations.json.gz",
+          "sha256": "ce8bf6282fbf994d56e6f8ead807f5bcd3c846204559f68c2481cdcd78ea5bc9"
+        },
+        "prefix-random-262144": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-random-262144/observations.json.gz",
+          "sha256": "fb237736f3dcf79cd9c31f436eb70a1d160ca1d6c55ad177754df99c59899640"
+        },
+        "prefix-random-32767": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-random-32767/observations.json.gz",
+          "sha256": "937f333f62510dbdf7bbbc48b52b5e7deb62b254988174a09d760bec705eb81d"
+        },
+        "prefix-random-32768": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-random-32768/observations.json.gz",
+          "sha256": "69933d53cb3b1d8ab9a604f3aa1db0aa8ad3f7b729459d6bf844088003d80a52"
+        },
+        "prefix-random-32769": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-random-32769/observations.json.gz",
+          "sha256": "36df51d107f8230e3cac622ca4c2e44c2e7ae9459137588c827c2ad6a0198ae4"
+        },
+        "prefix-random-33027": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-random-33027/observations.json.gz",
+          "sha256": "08dc6c4169709a5ba7af8f99e27394b11e03c574d2e88422189a1e2bb79da96e"
+        },
+        "prefix-random-4096": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-random-4096/observations.json.gz",
+          "sha256": "9b50783c99988aa79d4d44bbffc3addd9952245f76fc8cda0c58d437ac46f890"
+        },
+        "prefix-random-65535": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-random-65535/observations.json.gz",
+          "sha256": "3a24414f662b1341723982ab6c56078f88a98c7d7994064f46d99e37b22c7f31"
+        },
+        "prefix-random-65536": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-random-65536/observations.json.gz",
+          "sha256": "7e5f0b3cda097b2aad8861ea155818a796222e5efcf3bf654e2176be24f7f372"
+        },
+        "prefix-random-65537": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-random-65537/observations.json.gz",
+          "sha256": "ed84ab0ad630ac64dd1c2893c7d4cfc78d6bd2f55e055557a38fd8f09d2d497a"
+        },
+        "prefix-random-8192": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-random-8192/observations.json.gz",
+          "sha256": "8b936fe3db0f8f760c036a1fd57eaf7512b4eb6c9dc1bc1908aff1696e4be92d"
+        },
+        "prefix-repeated-1024": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-repeated-1024/observations.json.gz",
+          "sha256": "ea2477ea216f937d12ae101f944e1e26387495361a96c4ee420313a718dbd167"
+        },
+        "prefix-repeated-1048576": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-repeated-1048576/observations.json.gz",
+          "sha256": "0c9156ec5b5b3a063dddc5bc7a909675ea7f8bfd8072441eb1f19c2f0864ea76"
+        },
+        "prefix-repeated-131072": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-repeated-131072/observations.json.gz",
+          "sha256": "7111bad40534e1d85573713b452312264409a8f0ec6308609ca9789c8b963ed5"
+        },
+        "prefix-repeated-16384": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-repeated-16384/observations.json.gz",
+          "sha256": "f26732a60480d15674aae4caca70ba531dd9f38b5def684044c06c8d94a4d078"
+        },
+        "prefix-repeated-262144": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-repeated-262144/observations.json.gz",
+          "sha256": "e1284d52648934fb876d0e11765c942ce391be9f2cf4484b65c5e8fd697d9c99"
+        },
+        "prefix-repeated-32767": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-repeated-32767/observations.json.gz",
+          "sha256": "748a17937f3f3b226b87c39cd3c210d7ed4ce351cdb66637e3683744e6ab30e6"
+        },
+        "prefix-repeated-32768": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-repeated-32768/observations.json.gz",
+          "sha256": "f2059d3a91486003c4e1b8ae94f67a9439ac63bb4bed4ca97af2c796fc9b9b60"
+        },
+        "prefix-repeated-32769": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-repeated-32769/observations.json.gz",
+          "sha256": "0e2293cb02f2561074c4eb1ebf3315045afa1755c5fdd827f6d0332711a4ebbd"
+        },
+        "prefix-repeated-33027": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-repeated-33027/observations.json.gz",
+          "sha256": "73c925bfa16c1b8c16b043a987721d7c198f615c1d72e3aaf359239def8c6091"
+        },
+        "prefix-repeated-4096": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-repeated-4096/observations.json.gz",
+          "sha256": "c8041787a8f184e49551585710e3d078c6cfb463e196d66d1f626e31be34523c"
+        },
+        "prefix-repeated-65535": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-repeated-65535/observations.json.gz",
+          "sha256": "8d1528c4aaccf912104538d3b51e05a3420bfc33010d0c45347cc4650bd397e1"
+        },
+        "prefix-repeated-65536": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-repeated-65536/observations.json.gz",
+          "sha256": "dbcb7d5c599535be7a99de130202efc7dda97deb4f52845d3467345026ced1a5"
+        },
+        "prefix-repeated-65537": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-repeated-65537/observations.json.gz",
+          "sha256": "afbd7bfee13d7f4a1bacbff3d7923204cdfb88f3e6c9043c47a17924eb4af9d2"
+        },
+        "prefix-repeated-8192": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/prefix-repeated-8192/observations.json.gz",
+          "sha256": "22cf8af23f065f6f8f031aec54647a27b0669f3b2dac1977fab32725aa2a0201"
+        },
+        "random-1024": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/random-1024/observations.json.gz",
+          "sha256": "693915ac2fc47eacb0e853d6995b20390b86e98ab924dc591d5c0cbe774d8ba6"
+        },
+        "random-256": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/random-256/observations.json.gz",
+          "sha256": "a93d34171999530f2cac46101056a9fa0a079a22b4593a97621253f8d2acf3da"
+        },
+        "random-32769": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/random-32769/observations.json.gz",
+          "sha256": "234b88b41171ce91a602f4f4d01ff436dfb301f5e7f9280765ae8fbc7c4f1675"
+        },
+        "random-64": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/random-64/observations.json.gz",
+          "sha256": "af01445041c721a7d3aef40d20e89f51194577906d405f4dc01db06436594cf4"
+        },
+        "repeated-1024": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/repeated-1024/observations.json.gz",
+          "sha256": "f7d656a9bc1451e779218a05bc1d7190ddac3e7463803356dae99933c3719f91"
+        },
+        "repeated-32769": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/repeated-32769/observations.json.gz",
+          "sha256": "46ff4c94eed6e105743c4926f370a85b546ece6564b80bf693bdb8279ee35eba"
+        },
+        "reymont-prefix-1024": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/reymont-prefix-1024/observations.json.gz",
+          "sha256": "2d86301cc32a61124ee1d189aa448ae9cafbe19ec1c00dae1e8e588a6be4f7f7"
+        },
+        "reymont-prefix-16384": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/reymont-prefix-16384/observations.json.gz",
+          "sha256": "c12ac2f5bccde4e99b368a16b6437ad687692cc2da2a604e2ac3182931b405ca"
+        },
+        "reymont-prefix-32769": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/reymont-prefix-32769/observations.json.gz",
+          "sha256": "efc544d41b26dac79b301d07318d847df1308682b18fb9a0afded6c13940be7a"
+        },
+        "seven-stored-prefix": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/seven-stored-prefix/observations.json.gz",
+          "sha256": "f87b1ea2f42aeead10ac753be1952a6d3fdb7233bf6c137b2d6f748fc9f43e08"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "evidence/aligned-register-spills/runs/aligned-register-spills-full-reverse/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    }
+  },
+  "metadata_sha256": {
+    "mech-control": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb",
+    "mech-experiment": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab",
+    "roc": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee"
+  },
+  "duplicate_controls": [],
+  "fixture_inventory_as_run": {
+    "path": "evidence/aligned-register-spills/fixtures-as-run.json",
+    "sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+  },
+  "fixture_content_proof": {
+    "path": "evidence/aligned-register-spills/fixture-content-bindings.json",
+    "sha256": "65e8d1b34902c86431d376388938b56bc2686306b794ec490d2a54ec3bde1aae"
+  }
+}

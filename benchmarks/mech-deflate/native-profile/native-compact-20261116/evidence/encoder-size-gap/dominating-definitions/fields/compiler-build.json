@@ -1,0 +1,68 @@
+{
+  "base": "6fce1ff9ab9caa38805116cbeb0565f135721e6b",
+  "compiler_sha256": "7444e2f20df8b3a34fd5bab33796dd357da3bcd6591396ecfdf3ba56f8a7021b",
+  "source": {
+    "base": "6fce1ff9ab9caa38805116cbeb0565f135721e6b",
+    "files": {
+      "hosts/gpu/src/native_artifact/codegen/common/ssa_direct_homes.rs": {
+        "current": null,
+        "candidate": "15165ae1bd5c89287967336541b3325e9c45a11d3f45ba732038932c55243e65"
+      },
+      "hosts/gpu/src/native_artifact/codegen/common/ssa_words.rs": {
+        "current": "b0390c9d11b53018e9f3bb211cc513b87a461218c5fd4db967fdc97e2759b3ac",
+        "candidate": "064c7f33bab6f77e7c93dd45b2a791cba54c8aad138903f09d418c8bf52d8140"
+      },
+      "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_read_setup.rs": {
+        "current": "367d5dc9ff9bbcf96ca1234dbf64e11195073f86f198b72733f9c00fcf7781a7",
+        "candidate": "c6f112941c0106d39093ed6e5f754d1638a414341e9118f16dfc9414d60b9571"
+      },
+      "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs": {
+        "current": "e74aea973a1abe309cd37b432d6b1305307c1b5e2e36d984aedc34fd3d0d6965",
+        "candidate": "a82a641795919dc1d013335ca8310d8ec237106dda381f5dedbcb2a0a41141f0"
+      },
+      "hosts/gpu/src/native_artifact/program/compact/emit.rs": {
+        "current": "355ac4c2ed7ff252937504cde18125d91787b32b8fd9732df70525cbb4ce9a93",
+        "candidate": "9aa9d4ac09a04e5f49e454cdee6f7d8f514fc8c7daf4f3ceacc7acfd3a7d3d52"
+      },
+      "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+        "current": "c49ca05603a8dde1b2d8ee478c15d759ab6e487035bff6b91ab26fa1301058b6",
+        "candidate": "aa518bb3743a2cb7b6b940f13b3a7c9f04ab383067c18134c8649bb83ce7b0d3"
+      },
+      "hosts/gpu/src/native_artifact/program/compact/phases.rs": {
+        "current": "056453cdf5dd387eb0857c169fc99aaefb85849fe2a3e17e649aff57675e0ea3",
+        "candidate": "1005c9193eb97ce8ae8bd6129c48b8eed7d8479ffb0e22442283aba7004eba71"
+      },
+      "hosts/gpu/src/native_artifact/program/compact/private_phase.rs": {
+        "current": "808d514eda4aa95f1c213707fb6750c4df07f42e2bb2c6ae55ad8e2d7e932845",
+        "candidate": "774ef4e52ecb71acaab1dd7fa5a83402e83a640ada4aacffd685e33dfe87cbfb"
+      }
+    },
+    "options": [
+      "MECH_COMPACT_DIRECT_SCALAR_HOME_CENSUS",
+      "MECH_COMPACT_DIRECT_SCALAR_HOMES",
+      "MECH_COMPACT_PROVE_NONOWNER_FIELDS"
+    ],
+    "patch_sha256": "0d9373d68913230b9d2f1702bf307ace1e9578cde9449115d2cc70d4958602e2"
+  },
+  "disabled_artifacts": {
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/direct-field-homes/compiler/disabled",
+    "--variant",
+    "frame-copies",
+    "--compiler-opt-level",
+    "3",
+    "--direct-source",
+    "--preselect-root-inlining",
+    "--skip-refused-general-ssa",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target"
+  ],
+  "rebuild_sha256": "6d81b223bbbd8205e4c361e6470dd2904b12593b83f2333e309a41fb356b18e4"
+}

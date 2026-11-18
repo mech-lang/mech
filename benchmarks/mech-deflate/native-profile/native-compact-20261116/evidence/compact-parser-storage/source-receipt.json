@@ -1,0 +1,19 @@
+{
+  "parent": "e7e54b488641a4665bdb5221f124ff028ddca5ca",
+  "before": {
+    "document/parser/mod.rs": "eb5dfc4307dab869e5c6b6aea6d5cabab7c4082c36e604e822561100902c5317",
+    "document/parser/tree_cache.rs": "1fa85ba4e771302e2f7a6e221f8f3adb4ea06d52efbcb312ece8c766f6610e12",
+    "document/parser/canonical/literals/mod.rs": "ba3982db3f93a1c49d2db2b051a3c17876cd5badfae32c5278b8d0e67ae493e5",
+    "document/parser/canonical/literals/continuation.rs": "23fa4ca13bdf624df4c3add97fc5a0223c68916e72678f3354029c36714803ec"
+  },
+  "combined": {
+    "document/parser/mod.rs": "7817740c9230ec0e05cf44b65e1b0eb180b08ce52835957e6a8fbcf87b0809f0",
+    "document/parser/tree_cache.rs": "92effdc7206fa4e5891bdbaaf5b108ca9461d64f604a52bbc95c50b1f56c9616",
+    "document/parser/canonical/literals/mod.rs": "826a656770ae90cad24c77379de33166968f30af77a832e0c952afce875033e6",
+    "document/parser/canonical/literals/continuation.rs": "467eabe4dbeb276e3d25971ae5406917a44ffec63c404c4a3e991968c37519d9"
+  },
+  "fixed_compilers": {
+    "emit_compact_size": "5eab2c492d46598819c2cc8253ca1b43823343b00241628dcdbd845dc5a0576f",
+    "native_compact_frontend": "7ad7aa9b422266367568f06cbe4ac1f52346e78b146bba0f23139f8a978619eb"
+  }
+}

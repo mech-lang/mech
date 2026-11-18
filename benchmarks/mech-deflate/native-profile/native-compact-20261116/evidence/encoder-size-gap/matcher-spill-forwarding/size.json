@@ -1,0 +1,9 @@
+{
+  "control_object_sha256": "461a1037862c610618f61d08a500825ac9e9e2a4a618caa0164758ad4827d2ed",
+  "candidate_object_sha256": "2119a086053e1cfeeb386e5bf993939f8ddc4182378cccd1ba3cdfef2deb126f",
+  "control_text_bytes": 65612,
+  "candidate_text_bytes": 65516,
+  "control_matcher_bytes": 6560,
+  "candidate_matcher_bytes": 6464,
+  "worker_sha256": "969329f3dde79b02ad3f13cd540a9e03f5818769b33033827822591e7473e6fa"
+}

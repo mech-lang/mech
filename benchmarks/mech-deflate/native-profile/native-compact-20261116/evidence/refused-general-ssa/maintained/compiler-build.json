@@ -1,0 +1,6 @@
+{
+  "compiler_sha256": "ea5d78bdfae2002011934c5b7809d9b90223cff549ca2743274763d7ebd65630",
+  "object_sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+  "metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+  "reproduction": "backend-work-hardened/recipe-reproduction/rebuild.json"
+}

@@ -1,0 +1,139 @@
+{
+  "empty": {
+    "1": {
+      "aa_stable": false,
+      "candidate_relation": "unresolved AA",
+      "pooled": {
+        "aa": {
+          "estimate": 0.01602848080363084,
+          "lower": 0.013848181118154335,
+          "upper": 0.01825751750391258
+        },
+        "ab": {
+          "estimate": 0.0006286420264642878,
+          "lower": -0.0018855439086438164,
+          "upper": 0.0033763701860931583
+        }
+      }
+    },
+    "256": {
+      "aa_stable": false,
+      "candidate_relation": "unresolved AA",
+      "pooled": {
+        "aa": {
+          "estimate": 0.008475693278292118,
+          "lower": 0.007019696722009083,
+          "upper": 0.010168982296216988
+        },
+        "ab": {
+          "estimate": 0.005634631214705754,
+          "lower": 0.004541142051687652,
+          "upper": 0.00673366739653769
+        }
+      }
+    }
+  },
+  "one-stored": {
+    "1": {
+      "aa_stable": false,
+      "candidate_relation": "unresolved AA",
+      "pooled": {
+        "aa": {
+          "estimate": -0.004303078967661134,
+          "lower": -0.019279018835373196,
+          "upper": 0.010633523099105924
+        },
+        "ab": {
+          "estimate": 0.004845948249009968,
+          "lower": -0.008248331560081756,
+          "upper": 0.017523082998323947
+        }
+      }
+    },
+    "256": {
+      "aa_stable": false,
+      "candidate_relation": "unresolved AA",
+      "pooled": {
+        "aa": {
+          "estimate": 0.017530439266352893,
+          "lower": 0.015202974525156954,
+          "upper": 0.019618407453477982
+        },
+        "ab": {
+          "estimate": 0.0035296808660230106,
+          "lower": 0.0020107615679296753,
+          "upper": 0.005049866412599746
+        }
+      }
+    }
+  },
+  "random-64": {
+    "1": {
+      "aa_stable": false,
+      "candidate_relation": "unresolved AA",
+      "pooled": {
+        "aa": {
+          "estimate": -0.005245885703025199,
+          "lower": -0.012553156901260909,
+          "upper": 0.0019863184964299396
+        },
+        "ab": {
+          "estimate": 0.010561412000041459,
+          "lower": 0.004141732017969302,
+          "upper": 0.01706534251762326
+        }
+      }
+    },
+    "256": {
+      "aa_stable": false,
+      "candidate_relation": "unresolved AA",
+      "pooled": {
+        "aa": {
+          "estimate": -0.01140272479082649,
+          "lower": -0.018241751840668563,
+          "upper": -0.004404197603624982
+        },
+        "ab": {
+          "estimate": 0.002154340799777943,
+          "lower": -0.0038304196258829304,
+          "upper": 0.008138216467124648
+        }
+      }
+    }
+  },
+  "seven-stored-prefix": {
+    "1": {
+      "aa_stable": false,
+      "candidate_relation": "unresolved AA",
+      "pooled": {
+        "aa": {
+          "estimate": -0.0022977232102157075,
+          "lower": -0.004851230953429653,
+          "upper": 0.00018972736863220874
+        },
+        "ab": {
+          "estimate": 0.014511357425092797,
+          "lower": 0.011980774040609266,
+          "upper": 0.017203308622199875
+        }
+      }
+    },
+    "256": {
+      "aa_stable": true,
+      "candidate_relation": "candidate regression",
+      "pooled": {
+        "aa": {
+          "estimate": 0.0010400985453380418,
+          "lower": -0.0007488132384920743,
+          "upper": 0.002778035899103859
+        },
+        "ab": {
+          "estimate": 0.01273967026455014,
+          "lower": 0.01157110071466505,
+          "upper": 0.013884274023284515
+        }
+      }
+    }
+  }
+}
+Verified all four cases, both epochs, 243 smoke calls and the original Unresolved decision.

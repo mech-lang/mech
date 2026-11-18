@@ -59,13 +59,79 @@ pub struct SSABuilder {
     inst_pool: ListPool<Inst>,
 }
 
+// Delay the per-variable hash allocation until a second sparse block
+// needs a cached definition.
+#[derive(Clone, Default)]
+enum SparseDefs {
+    #[default]
+    Empty,
+    One(Block, PackedOption<Value>),
+    Many(FxHashMap<Block, PackedOption<Value>>),
+}
+
+impl SparseDefs {
+    fn get(&self, block: &Block) -> Option<&PackedOption<Value>> {
+        match self {
+            Self::One(at, value) if at == block => Some(value),
+            Self::Many(map) => map.get(block),
+            _ => None,
+        }
+    }
+
+    fn insert(&mut self, block: Block, value: PackedOption<Value>) -> Option<PackedOption<Value>> {
+        match self {
+            Self::Empty => *self = Self::One(block, value),
+            Self::One(at, prior) if *at == block => return Some(mem::replace(prior, value)),
+            Self::One(at, prior) => {
+                let mut map = FxHashMap::default();
+                map.insert(*at, *prior);
+                map.insert(block, value);
+                *self = Self::Many(map);
+            }
+            Self::Many(map) => return map.insert(block, value),
+        }
+        None
+    }
+
+    fn retain(&mut self, mut keep: impl FnMut(&Block, &mut PackedOption<Value>) -> bool) {
+        match self {
+            Self::One(block, value) => {
+                if !keep(block, value) {
+                    *self = Self::Empty;
+                }
+            }
+            Self::Many(map) => map.retain(keep),
+            Self::Empty => {}
+        }
+    }
+
+    fn iter(&self) -> impl Iterator<Item = (&Block, &PackedOption<Value>)> {
+        let one = if let Self::One(block, value) = self {
+            Some((block, value))
+        } else {
+            None
+        };
+        let many = if let Self::Many(map) = self {
+            Some(map.iter())
+        } else {
+            None
+        };
+        one.into_iter().chain(many.into_iter().flatten())
+    }
+
+    #[cfg(test)]
+    fn keys(&self) -> impl Iterator<Item = &Block> {
+        self.iter().map(|(block, _)| block)
+    }
+}
+
 // Most variables have very few queried blocks. Only a sufficiently occupied
 // prefix gains direct storage; its size is bounded by four times the stored
 // facts. Sparse and high block IDs never allocate an entire block arena.
 #[derive(Clone, Default)]
 struct VariableDefs {
     dense: Vec<Option<PackedOption<Value>>>,
-    sparse: FxHashMap<Block, PackedOption<Value>>,
+    sparse: SparseDefs,
     len: usize,
 }
 impl VariableDefs {

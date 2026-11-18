@@ -1,0 +1,10 @@
+
+running 5 tests
+test owner_counts::tests::all_join_paths_must_agree_and_cycles_must_not_assume_initial_counts ... ok
+test owner_counts::tests::fresh_counts_and_exact_retains_keep_their_memory_effects ... ok
+test owner_counts::tests::nonempty_admission_does_not_generalize_to_reused_or_unknown_backings ... ok
+test owner_counts::tests::only_the_reference_count_word_is_a_seed ... ok
+test owner_counts::tests::possible_aliases_and_unknown_calls_stop_count_propagation ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

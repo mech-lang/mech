@@ -1,0 +1,21 @@
+{
+  "proof_scope": "diagnostic compiler candidate",
+  "compiler_sha256": "d80a38b87cb046a5418f2eb60af6a86f808f1bcee033c1d494b5110e9ef9a1b4",
+  "compiled_against": "c2e1b803d82401d28c2aa15dad875bfbfd3e492b",
+  "tested_artifact_sha256": {
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "compressor_source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+  "metadata_sha256": "cddb34c297cab47ba7fba788f1e6328aa1fb73c8af90aa61cf8ee3496266f074",
+  "object_sha256": "87635ffc0308ff8a5eef1592c762207532bf1868f3957aef8a6ab48e9a6b7161",
+  "worker_sha256": "9798d420a3e3783c00a012a25fc386571abc7a6f98fcdff537effbca7937d407",
+  "body_and_relocations_unchanged": [
+    "mech_compact_numeric_475_vector",
+    "mech_compact_numeric_3009_no_growth",
+    "mech_compact_numeric_3009_no_growth_composed"
+  ],
+  "text_bytes": 69528
+}

@@ -1,0 +1,10 @@
+   Compiling mech-compression-native-profile v0.0.0 (/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile)
+    Finished `release` profile [optimized] target(s) in 10.09s
+     Running ../../../hosts/gpu/src/native_artifact/program/compact/cold_tail_tests.rs (.qualification/native-review-pr/baseline-build/compiler/release/deps/native_compact_cold_tails-d45879fb0e034c3b)
+
+running 2 tests
+test cold_tails_preserve_native_calls_stack_values_outputs_and_metadata ... ok
+test unsupported_debug_metadata_and_embedded_literals_are_left_unchanged ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

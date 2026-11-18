@@ -1,0 +1,301 @@
+{
+  "plan_sha256": "8c83aa46c4ca4360a54c1f2b034d1ee8466df193dc7b9ce373d2d0f712b6b8ba",
+  "rows": [
+    {
+      "role": "a-a",
+      "order": "forward",
+      "run": "short-visit-fixed-a-a-forward",
+      "before": {
+        "utc_ns": 1794957215590125000,
+        "load_average": [
+          1.98193359375,
+          2.11572265625,
+          2.0830078125
+        ],
+        "thermal": "Error:Failed to get thermal warning level with error code 0xe00002bc\nError: Failed to get performance warning level with error code 0xe00002bc\nError: No CPU power status with error code 0xe00002bc\n",
+        "thermal_exit": 0
+      },
+      "after": {
+        "utc_ns": 1794957223503759000,
+        "load_average": [
+          1.90283203125,
+          2.09716796875,
+          2.07666015625
+        ],
+        "thermal": "Error:Failed to get thermal warning level with error code 0xe00002bc\nError: Failed to get performance warning level with error code 0xe00002bc\nError: No CPU power status with error code 0xe00002bc\n",
+        "thermal_exit": 0
+      },
+      "ratios": {
+        "320-overlap": {
+          "mech-control": 0.9885732617805821,
+          "mech-experiment": 0.9859740695193931,
+          "roc": 10.756958748084053,
+          "libdeflate": 1.0
+        },
+        "random-1024": {
+          "mech-control": 0.9575232823222193,
+          "mech-experiment": 0.958215880215048,
+          "roc": 9.373474374752966,
+          "libdeflate": 1.0
+        },
+        "prefix-natural-4096": {
+          "mech-control": 1.131508642630237,
+          "mech-experiment": 1.1254326874071368,
+          "roc": 1.7020989942117448,
+          "libdeflate": 1.0
+        },
+        "prefix-natural-8192": {
+          "mech-control": 1.0312525218339084,
+          "mech-experiment": 1.0355596601305195,
+          "roc": 1.2475830065371163,
+          "libdeflate": 1.0
+        },
+        "prefix-random-1024": {
+          "mech-control": 0.9604785342581981,
+          "mech-experiment": 0.9626702269908229,
+          "roc": 9.297126770728024,
+          "libdeflate": 1.0
+        },
+        "prefix-periodic-1024": {
+          "mech-control": 0.9868460176655217,
+          "mech-experiment": 0.9865451619882544,
+          "roc": 7.297270330524926,
+          "libdeflate": 1.0
+        }
+      },
+      "completion": {
+        "cases": 6,
+        "balanced_blocks_per_case": 24,
+        "timed_calls": 24768,
+        "reference_capacity_matches": 6,
+        "libdeflate_exact_bytes_cases": 6,
+        "fresh_compression_all_cases": true,
+        "all_outputs_independently_inflated": true,
+        "all_input_and_output_aliases_preserved": true
+      },
+      "summary_sha256": "73e571fb6926af0c13673dc6c2d04ef308bacf30d4887703777ed65a653e1078"
+    },
+    {
+      "role": "a-b",
+      "order": "forward",
+      "run": "short-visit-fixed-a-b-forward",
+      "before": {
+        "utc_ns": 1794957223510315000,
+        "load_average": [
+          1.90283203125,
+          2.09716796875,
+          2.07666015625
+        ],
+        "thermal": "Error:Failed to get thermal warning level with error code 0xe00002bc\nError: Failed to get performance warning level with error code 0xe00002bc\nError: No CPU power status with error code 0xe00002bc\n",
+        "thermal_exit": 0
+      },
+      "after": {
+        "utc_ns": 1794957231412627000,
+        "load_average": [
+          1.92333984375,
+          2.09375,
+          2.07568359375
+        ],
+        "thermal": "Error:Failed to get thermal warning level with error code 0xe00002bc\nError: Failed to get performance warning level with error code 0xe00002bc\nError: No CPU power status with error code 0xe00002bc\n",
+        "thermal_exit": 0
+      },
+      "ratios": {
+        "320-overlap": {
+          "mech-control": 0.9920305679866585,
+          "mech-experiment": 0.9863231308937629,
+          "roc": 10.856949772767745,
+          "libdeflate": 1.0
+        },
+        "random-1024": {
+          "mech-control": 0.9576606349734027,
+          "mech-experiment": 0.9582495892138271,
+          "roc": 9.413401665307761,
+          "libdeflate": 1.0
+        },
+        "prefix-natural-4096": {
+          "mech-control": 1.1263578297600534,
+          "mech-experiment": 1.0923257534861104,
+          "roc": 1.7020324098541808,
+          "libdeflate": 1.0
+        },
+        "prefix-natural-8192": {
+          "mech-control": 1.0338740720102766,
+          "mech-experiment": 0.9973276883430897,
+          "roc": 1.2456348177967898,
+          "libdeflate": 1.0
+        },
+        "prefix-random-1024": {
+          "mech-control": 0.9614754967786815,
+          "mech-experiment": 0.960888099414958,
+          "roc": 9.384280571836987,
+          "libdeflate": 1.0
+        },
+        "prefix-periodic-1024": {
+          "mech-control": 0.9808995161359976,
+          "mech-experiment": 0.9721091405476153,
+          "roc": 7.3095844297742705,
+          "libdeflate": 1.0
+        }
+      },
+      "completion": {
+        "cases": 6,
+        "balanced_blocks_per_case": 24,
+        "timed_calls": 24768,
+        "reference_capacity_matches": 6,
+        "libdeflate_exact_bytes_cases": 6,
+        "fresh_compression_all_cases": true,
+        "all_outputs_independently_inflated": true,
+        "all_input_and_output_aliases_preserved": true
+      },
+      "summary_sha256": "d2e002dec60ac142f9772bbf29399bfe10efe33f2b06be7ea581544124d336ab"
+    },
+    {
+      "role": "a-b",
+      "order": "reverse",
+      "run": "short-visit-fixed-a-b-reverse",
+      "before": {
+        "utc_ns": 1794957231419641000,
+        "load_average": [
+          1.92333984375,
+          2.09375,
+          2.07568359375
+        ],
+        "thermal": "Error:Failed to get thermal warning level with error code 0xe00002bc\nError: Failed to get performance warning level with error code 0xe00002bc\nError: No CPU power status with error code 0xe00002bc\n",
+        "thermal_exit": 0
+      },
+      "after": {
+        "utc_ns": 1794957239317878000,
+        "load_average": [
+          2.00927734375,
+          2.1083984375,
+          2.0810546875
+        ],
+        "thermal": "Error:Failed to get thermal warning level with error code 0xe00002bc\nError: Failed to get performance warning level with error code 0xe00002bc\nError: No CPU power status with error code 0xe00002bc\n",
+        "thermal_exit": 0
+      },
+      "ratios": {
+        "prefix-periodic-1024": {
+          "libdeflate": 1.0,
+          "roc": 7.284582032952132,
+          "mech-experiment": 0.9766314943261182,
+          "mech-control": 0.9922569792049221
+        },
+        "prefix-random-1024": {
+          "libdeflate": 1.0,
+          "roc": 9.290977303531447,
+          "mech-experiment": 0.9626328537748687,
+          "mech-control": 0.9619173687413844
+        },
+        "prefix-natural-8192": {
+          "libdeflate": 1.0,
+          "roc": 1.2308543767372768,
+          "mech-experiment": 1.0134541539883832,
+          "mech-control": 1.042279387437668
+        },
+        "prefix-natural-4096": {
+          "libdeflate": 1.0,
+          "roc": 1.7102951453888098,
+          "mech-experiment": 1.1013402529327223,
+          "mech-control": 1.1330119616590022
+        },
+        "random-1024": {
+          "libdeflate": 1.0,
+          "roc": 9.377874257158224,
+          "mech-experiment": 0.9553693115351848,
+          "mech-control": 0.9580740330938016
+        },
+        "320-overlap": {
+          "libdeflate": 1.0,
+          "roc": 10.853151731203402,
+          "mech-experiment": 0.9912685655936723,
+          "mech-control": 0.994052176946537
+        }
+      },
+      "completion": {
+        "cases": 6,
+        "balanced_blocks_per_case": 24,
+        "timed_calls": 24768,
+        "reference_capacity_matches": 6,
+        "libdeflate_exact_bytes_cases": 6,
+        "fresh_compression_all_cases": true,
+        "all_outputs_independently_inflated": true,
+        "all_input_and_output_aliases_preserved": true
+      },
+      "summary_sha256": "dab56356658aea4c281d2a245ae7c5c7dae10a09d8360b99c1c1b5bca4d0ac88"
+    },
+    {
+      "role": "a-a",
+      "order": "reverse",
+      "run": "short-visit-fixed-a-a-reverse",
+      "before": {
+        "utc_ns": 1794957239324915000,
+        "load_average": [
+          2.00927734375,
+          2.1083984375,
+          2.0810546875
+        ],
+        "thermal": "Error:Failed to get thermal warning level with error code 0xe00002bc\nError: Failed to get performance warning level with error code 0xe00002bc\nError: No CPU power status with error code 0xe00002bc\n",
+        "thermal_exit": 0
+      },
+      "after": {
+        "utc_ns": 1794957247200125000,
+        "load_average": [
+          2.0009765625,
+          2.10400390625,
+          2.07958984375
+        ],
+        "thermal": "Error:Failed to get thermal warning level with error code 0xe00002bc\nError: Failed to get performance warning level with error code 0xe00002bc\nError: No CPU power status with error code 0xe00002bc\n",
+        "thermal_exit": 0
+      },
+      "ratios": {
+        "prefix-periodic-1024": {
+          "libdeflate": 1.0,
+          "roc": 7.321691259911871,
+          "mech-experiment": 0.9847966713062453,
+          "mech-control": 0.9925469390713598
+        },
+        "prefix-random-1024": {
+          "libdeflate": 1.0,
+          "roc": 9.317838995816617,
+          "mech-experiment": 0.964775367526388,
+          "mech-control": 0.9658801489792672
+        },
+        "prefix-natural-8192": {
+          "libdeflate": 1.0,
+          "roc": 1.2535738873979392,
+          "mech-experiment": 1.044532231792109,
+          "mech-control": 1.0387433763061558
+        },
+        "prefix-natural-4096": {
+          "libdeflate": 1.0,
+          "roc": 1.7129176709844143,
+          "mech-experiment": 1.1336481035726678,
+          "mech-control": 1.1333792953437198
+        },
+        "random-1024": {
+          "libdeflate": 1.0,
+          "roc": 9.387451567814875,
+          "mech-experiment": 0.9570899993260542,
+          "mech-control": 0.9617015441903516
+        },
+        "320-overlap": {
+          "libdeflate": 1.0,
+          "roc": 10.7440018896852,
+          "mech-experiment": 0.9880499671621776,
+          "mech-control": 0.9806249950359472
+        }
+      },
+      "completion": {
+        "cases": 6,
+        "balanced_blocks_per_case": 24,
+        "timed_calls": 24768,
+        "reference_capacity_matches": 6,
+        "libdeflate_exact_bytes_cases": 6,
+        "fresh_compression_all_cases": true,
+        "all_outputs_independently_inflated": true,
+        "all_input_and_output_aliases_preserved": true
+      },
+      "summary_sha256": "1d5d8c5f18ebf97208fab05f155b659baeca45b2ddb61188994f1c946fd2ca52"
+    }
+  ]
+}

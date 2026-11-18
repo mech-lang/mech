@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-owner-ranges-native/final-candidate/mech-worker",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-owner-ranges-native/final-candidate/metadata.json",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "complete_smokes": 162,
+  "verified": true,
+  "worker_sha256": "95b1753ca464c33df09600ec058bdec3b37e950c1612245fa1a19d031d9dbe25",
+  "metadata_sha256": "a7475b28e0db9f41184e6db3358efbee2358489566c47d1b79411010899a1424"
+}

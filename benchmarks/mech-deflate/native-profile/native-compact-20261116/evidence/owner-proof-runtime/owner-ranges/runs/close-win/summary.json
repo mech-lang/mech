@@ -1,0 +1,31 @@
+[
+  {
+    "case": "320-overlap",
+    "input_bytes": 320,
+    "reference_raw_bytes": 7,
+    "libdeflate_raw_bytes": 7,
+    "reference_capacity": 325,
+    "libdeflate_capacity": 325,
+    "libdeflate_same_bytes": true,
+    "raw_stream_sha256": "cca7ccc706b591a5e0bd44ba23191e7f13593264492fc348e8ab31eb04dc978f",
+    "median_seconds": {
+      "mech-control": 2.7875e-05,
+      "mech-experiment": 2.7583e-05,
+      "roc": 0.000299333,
+      "libdeflate": 2.7666e-05
+    },
+    "paired_x_roc": {
+      "mech-control": 0.0917395237995107,
+      "mech-experiment": 0.091987211893382,
+      "roc": 1.0,
+      "libdeflate": 0.09206847273298176
+    },
+    "paired_x_libdeflate": {
+      "mech-control": 0.996427127292259,
+      "mech-experiment": 0.9991173869057718,
+      "roc": 10.861481355297524,
+      "libdeflate": 1.0
+    },
+    "timed_calls": 393216
+  }
+]

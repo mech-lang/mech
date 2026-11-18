@@ -1,0 +1,34 @@
+{
+  "compile_runtime": [
+    "rustc",
+    "+nightly-2026-03-03",
+    "--edition=2024",
+    "-D",
+    "warnings",
+    "--crate-name",
+    "mech_gpu",
+    "--crate-type",
+    "rlib",
+    "-C",
+    "opt-level=3",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/terminal-owner-publication/runtime/runtime-lib.rs",
+    "--remap-path-prefix",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/terminal-owner-publication/runtime=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/scratch-runtime-backends/word-zero-pages",
+    "-o",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/terminal-owner-publication/runtime/libmech_gpu_runtime.rlib"
+  ],
+  "pinned_runtime_sha256": "147fef325ee8f2ac03e7385ba9ae1465e3e1dc3fdbe9c559b6ced2db683fc673",
+  "candidate_runtime_sha256": "7470bed8a706866c9a8e7e17e0d0a666f80f7e2167e61c4b3f32834c7681e2de",
+  "workers": {
+    "terminal-owner-only": {
+      "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+      "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+      "mech-worker": "aac83d01f73bf5af6f1be065eadb4dcc3e0dcd5492633b184e2c5853413c15e7"
+    },
+    "terminal-owner-cold-origins": {
+      "program.o": "66899f7928c031d7e9e882149f8d428c1b13ca22f1ca50ccdbefad8cb07d706a",
+      "metadata.json": "0aac5b222891e6ca9d4ed88e85597cdef1ef46d9f405648436a18f5d2820d37b",
+      "mech-worker": "0ce1a978152adf5ba395b41300e2f56fbae207f13be312151ce7126cb29f8a2e"
+    }
+  }
+}

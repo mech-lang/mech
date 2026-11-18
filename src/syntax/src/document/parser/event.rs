@@ -36,10 +36,10 @@ pub fn sink(
     source: &TextSnapshot,
     ids: &mut IdGenerator,
 ) -> Result<SinkResult, BuildError> {
-    let mut sink = super::tree_cache::Sink::new(events.clone(), 0, events.len());
+    let mut sink = super::tree_cache::Sink::new(0, events.len(), true);
     loop {
         let mut allowance = u64::MAX;
-        if sink.advance(source, events, ids, &mut allowance)? {
+        if sink.advance(source, events, events, ids, &mut allowance)? {
             return Ok(sink.finish());
         }
     }

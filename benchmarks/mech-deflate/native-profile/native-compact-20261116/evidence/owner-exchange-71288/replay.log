@@ -1,0 +1,77 @@
+{
+  "decision": "Reject",
+  "rejected": [
+    "empty: established slowdown above the 0.5% resolution"
+  ],
+  "unresolved": [
+    "both complete timing orders are required",
+    "prefix-natural-16384: combined and individual run bounds conflict: source-owner-exchange-71288-focus-forward",
+    "prefix-random-4096: regression bound or duplicate-control repeatability unresolved"
+  ],
+  "runs": [
+    {
+      "id": "source-owner-exchange-71288-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 19,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 19,
+            "mech-experiment": 19
+          },
+          "precision_supported_wins": {
+            "mech-control": 19,
+            "mech-experiment": 19
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "precision_supported_wins": {
+            "mech-control": 13,
+            "mech-experiment": 12
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "source-owner-exchange-71288-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 19,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 19,
+            "mech-experiment": 19
+          },
+          "precision_supported_wins": {
+            "mech-control": 19,
+            "mech-experiment": 19
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "precision_supported_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    }
+  ]
+}

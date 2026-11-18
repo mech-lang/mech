@@ -1,0 +1,28 @@
+{
+  "compiler_sha256": "cd4df110a8ada70e28ed24670923c3c4ebfda36ab631d9885ed5cfaf2a072b25",
+  "profile_runs": 8,
+  "frontend_samples": {
+    "semantic": 1484,
+    "schema_canonicalization": 103,
+    "schema_embedding": 118,
+    "owned_syntax_children": 187,
+    "eager_nodes_and_tokens": 87,
+    "function_argument_schema": 162
+  },
+  "document_lowering_samples": {
+    "semantic": 1049,
+    "schema_canonicalization": 96,
+    "schema_embedding": 118,
+    "owned_syntax_children": 80,
+    "eager_nodes_and_tokens": 39,
+    "function_argument_schema": 162
+  },
+  "canonicalization_context_samples": {
+    "finalize_schema": 82,
+    "resolve_maintained_call": 5,
+    "conform_schema_draft": 34,
+    "finalize_ref": 42,
+    "from_schema_body": 15,
+    "specialize_annotation_dimensions": 12
+  }
+}

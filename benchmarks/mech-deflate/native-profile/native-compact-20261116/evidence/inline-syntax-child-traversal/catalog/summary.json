@@ -1,0 +1,160 @@
+{
+  "base": "cbcc3a803e59d506bb3d582f885e332e71ee1f53",
+  "source": "ee6f542d82e86557848dde641fb542f09fd9146a",
+  "source_adopted": true,
+  "evidence": "evidence/inline-syntax-child-traversal/catalog/README.md",
+  "candidate": "mech-overlapped-catalog",
+  "syntax_tests": 538,
+  "verified_runtime": {
+    "libdeflate": [
+      61,
+      61
+    ],
+    "roc": [
+      81,
+      81
+    ]
+  },
+  "compiler_sha256": "aa481982d6b3a0fc49dc2d956689c61dd88f6b44a826586ed57020723691e2a4",
+  "artifacts": {
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "median_seconds": {
+    "mech-incumbent": {
+      "source": 2.454499687999487,
+      "link": 0.03412766591645777,
+      "source_through_link": 2.489244374912232,
+      "strip": 0.010384645545855165,
+      "source_through_strip": 2.4997629581484944
+    },
+    "mech-serial-catalog": {
+      "source": 2.454556937329471,
+      "link": 0.03389808279462159,
+      "source_through_link": 2.4904439579695463,
+      "strip": 0.010346812661737204,
+      "source_through_strip": 2.5009725829586387
+    },
+    "mech-overlapped-catalog": {
+      "source": 2.393015562556684,
+      "link": 0.03427572944201529,
+      "source_through_link": 2.4274075210560113,
+      "strip": 0.010356561979278922,
+      "source_through_strip": 2.437876437557861
+    },
+    "roc": {
+      "source": 2.94671529205516,
+      "link": 0.033930208534002304,
+      "source_through_link": 2.980986791430041,
+      "strip": 0.010283583542332053,
+      "source_through_strip": 2.9913974583614618
+    },
+    "libdeflate": {
+      "source": 0.4461153328884393,
+      "link": 0.03334562503732741,
+      "source_through_link": 0.47963662492111325,
+      "strip": 0.010240813018754125,
+      "source_through_strip": 0.49001283291727304
+    }
+  },
+  "compiler_phases_seconds": {
+    "mech-incumbent": {
+      "parse": 0.7822779995,
+      "catalog": 0.0610734585,
+      "frontend": 0.2260608335,
+      "artifact": 0.006973604,
+      "encode": 0.002538521,
+      "native": 1.3490033129999999
+    },
+    "mech-serial-catalog": {
+      "parse": 0.7886031875,
+      "catalog": 0.060558125000000004,
+      "frontend": 0.22095829150000001,
+      "artifact": 0.006973208,
+      "encode": 0.0025520415000000003,
+      "native": 1.3485290415
+    },
+    "mech-overlapped-catalog": {
+      "parse": 0.789398917,
+      "catalog": 1.87085e-05,
+      "frontend": 0.220386417,
+      "artifact": 0.007061813,
+      "encode": 0.002609354,
+      "native": 1.3460588960000002
+    }
+  },
+  "catalog_worker_seconds": {
+    "mech-serial-catalog": 0.0605569165,
+    "mech-overlapped-catalog": 0.0625482505
+  },
+  "time_changes": {
+    "mech-incumbent": {
+      "through_link": {
+        "median": 61.03166611865163,
+        "lower_90": 56.95345904678106,
+        "upper_90": 62.39343760535121
+      },
+      "source_cpu": {
+        "median": -1.4145000000000962,
+        "lower_90": -4.570500000000255,
+        "upper_90": -0.19300000000010975
+      },
+      "ratio": 0.9754941051852364
+    },
+    "mech-serial-catalog": {
+      "through_link": {
+        "median": 60.88310340419412,
+        "lower_90": 58.28620819374919,
+        "upper_90": 62.570500653237104
+      },
+      "source_cpu": {
+        "median": -0.8389999999998121,
+        "lower_90": -2.4260000000002613,
+        "upper_90": 0.17900000000015126
+      },
+      "ratio": 0.9755219737469419
+    },
+    "roc": {
+      "through_link": {
+        "median": 551.6511448659003,
+        "lower_90": 547.1614985726774,
+        "upper_90": 557.5409370940179
+      },
+      "source_cpu": {
+        "median": 474.1905,
+        "lower_90": 472.2529999999998,
+        "upper_90": 479.02250000000015
+      },
+      "ratio": 0.8148325963238942
+    },
+    "libdeflate": {
+      "through_link": {
+        "median": -1947.5791044533253,
+        "lower_90": -1952.1636264398694,
+        "upper_90": -1945.5870003439486
+      },
+      "source_cpu": {
+        "median": -2020.1425,
+        "lower_90": -2022.5720000000003,
+        "upper_90": -2019.339
+      },
+      "ratio": 5.058413039798989
+    }
+  },
+  "encoder_text_bytes": 71192,
+  "linked_worker_sha256": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+  "isolated_iterator": {
+    "through_link": {
+      "median": -0.8732506539672613,
+      "lower_90": -6.351666990667582,
+      "upper_90": 2.4851239286363125
+    },
+    "semantic_frontend": {
+      "median": 5.868625499999988,
+      "lower_90": 5.527708499999992,
+      "upper_90": 6.2187709999999985
+    },
+    "evidence": "evidence/inline-syntax-child-traversal/README.md"
+  }
+}

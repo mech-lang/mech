@@ -1,0 +1,12 @@
+{
+  "actor": "roc",
+  "seconds": {
+    "compile": 3.288715499918908,
+    "link": 0.04137808410450816,
+    "total": 3.330411583185196
+  },
+  "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+  "encoder_bytes": 88808,
+  "executable": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/apple-m1-parser-journal-pages-current/warmup/roc/compressor",
+  "executable_sha256": "27e8c9f0d865bbd4e8bcdda1fa0782b721f657044e208f6526ec01524e204c5b"
+}

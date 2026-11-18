@@ -1,0 +1,724 @@
+{
+  "reported_parse_medians_s": {
+    "mech-phi-verifier": 1.0202926665,
+    "roc": 0.003
+  },
+  "mech_over_roc_reported_intervals": 340.0975555,
+  "warmup": {
+    "mech-phi-verifier": {
+      "seconds": {
+        "source": 2.828053292352706,
+        "link": 0.23079224955290556,
+        "source_through_link": 3.059134541079402,
+        "strip": 0.01211629156023264,
+        "source_through_strip": 3.0714197498746216
+      },
+      "commands": {
+        "source": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/phi-verifier/candidate/compile_profile",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/warmup/mech-phi-verifier/frontend",
+          "compact"
+        ],
+        "link": [
+          "/usr/bin/clang",
+          "-arch",
+          "arm64",
+          "-mmacosx-version-min=15.0",
+          "-Wl,-dead_strip",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/warmup/mech-phi-verifier/frontend/program.o",
+          "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "-o",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/warmup/mech-phi-verifier/compressor"
+        ],
+        "strip": [
+          "/usr/bin/strip",
+          "-S",
+          "-x",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/warmup/mech-phi-verifier/compressor"
+        ]
+      },
+      "phase_peak_rss_bytes": {
+        "source": 395100160,
+        "link": 39321600,
+        "strip": 2359296
+      },
+      "encoder_sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+      "generated_artifacts": {
+        "encoder": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+        "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+        "metadata": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+      },
+      "stripped_executable": {
+        "bytes": 292568,
+        "sha256": "aab979498d394f8f1df17448cd78b7e595b6852133841b05301f621fef880f43"
+      },
+      "compiler_phases": [
+        {
+          "phase": "parse",
+          "seconds": 1.016547167,
+          "total_seconds": 1.01661875
+        },
+        {
+          "phase": "catalog",
+          "seconds": 0.069978041,
+          "total_seconds": 1.086707125
+        },
+        {
+          "phase": "frontend",
+          "seconds": 0.233783625,
+          "total_seconds": 1.320570083
+        },
+        {
+          "phase": "artifact",
+          "seconds": 0.007134333,
+          "total_seconds": 1.3277915
+        },
+        {
+          "phase": "encode",
+          "seconds": 0.002715792,
+          "total_seconds": 1.341898666
+        },
+        {
+          "phase": "native",
+          "seconds": 1.43211325,
+          "total_seconds": 2.77624375
+        }
+      ],
+      "parse_reported_seconds": 1.016547167
+    },
+    "roc": {
+      "seconds": {
+        "source": 3.0551195829175413,
+        "link": 0.03482449986040592,
+        "source_through_link": 3.0903567913919687,
+        "strip": 0.01033983426168561,
+        "source_through_strip": 3.100863208062947
+      },
+      "commands": {
+        "source": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/roc-compiler/roc-d99c7b838fb05bb1047eb0c18d4d06d0f86f345d/zig-out/bin/roc",
+          "build",
+          "--timings",
+          "--no-cache",
+          "--opt=speed",
+          "--jobs=1",
+          "--target=arm64mac",
+          "--output=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/warmup/roc/encoder.a",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/published-peer-inputs/peer-inputs/roc-profile/app.roc"
+        ],
+        "link": [
+          "/usr/bin/clang",
+          "-arch",
+          "arm64",
+          "-mmacosx-version-min=15.0",
+          "-Wl,-dead_strip",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc.o",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/warmup/roc/encoder.a",
+          "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "-o",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/warmup/roc/compressor"
+        ],
+        "strip": [
+          "/usr/bin/strip",
+          "-S",
+          "-x",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/warmup/roc/compressor"
+        ]
+      },
+      "phase_peak_rss_bytes": {
+        "source": 397279232,
+        "link": 38240256,
+        "strip": 2097152
+      },
+      "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+      "generated_artifacts": {
+        "encoder": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2"
+      },
+      "stripped_executable": {
+        "bytes": 191912,
+        "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+      },
+      "compiler_phases": null,
+      "parse_reported_seconds": 0.005,
+      "displayed_parser_phase": "Parsing (summed)                            5ms"
+    }
+  },
+  "trials": [
+    {
+      "mech-phi-verifier": {
+        "seconds": {
+          "source": 2.7850419161841273,
+          "link": 0.03491720836609602,
+          "source_through_link": 2.820312833879143,
+          "strip": 0.01038529071956873,
+          "source_through_strip": 2.8308710418641567
+        },
+        "commands": {
+          "source": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/phi-verifier/candidate/compile_profile",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-1/mech-phi-verifier/frontend",
+            "compact"
+          ],
+          "link": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-1/mech-phi-verifier/frontend/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-1/mech-phi-verifier/compressor"
+          ],
+          "strip": [
+            "/usr/bin/strip",
+            "-S",
+            "-x",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-1/mech-phi-verifier/compressor"
+          ]
+        },
+        "phase_peak_rss_bytes": {
+          "source": 395018240,
+          "link": 39616512,
+          "strip": 2326528
+        },
+        "encoder_sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+        "generated_artifacts": {
+          "encoder": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+          "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+          "metadata": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+        },
+        "stripped_executable": {
+          "bytes": 292568,
+          "sha256": "aab979498d394f8f1df17448cd78b7e595b6852133841b05301f621fef880f43"
+        },
+        "compiler_phases": [
+          {
+            "phase": "parse",
+            "seconds": 1.02225875,
+            "total_seconds": 1.022300792
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.065351375,
+            "total_seconds": 1.087742875
+          },
+          {
+            "phase": "frontend",
+            "seconds": 0.233518209,
+            "total_seconds": 1.3213345
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.0069995,
+            "total_seconds": 1.328417875
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.002574166,
+            "total_seconds": 1.342571875
+          },
+          {
+            "phase": "native",
+            "seconds": 1.4274692500000001,
+            "total_seconds": 2.771424042
+          }
+        ],
+        "parse_reported_seconds": 1.02225875
+      },
+      "roc": {
+        "seconds": {
+          "source": 2.9952529589645565,
+          "link": 0.039511666633188725,
+          "source_through_link": 3.0351267089135945,
+          "strip": 0.010227957740426064,
+          "source_through_strip": 3.0455191670916975
+        },
+        "commands": {
+          "source": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/roc-compiler/roc-d99c7b838fb05bb1047eb0c18d4d06d0f86f345d/zig-out/bin/roc",
+            "build",
+            "--timings",
+            "--no-cache",
+            "--opt=speed",
+            "--jobs=1",
+            "--target=arm64mac",
+            "--output=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-1/roc/encoder.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/published-peer-inputs/peer-inputs/roc-profile/app.roc"
+          ],
+          "link": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-1/roc/encoder.a",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-1/roc/compressor"
+          ],
+          "strip": [
+            "/usr/bin/strip",
+            "-S",
+            "-x",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-1/roc/compressor"
+          ]
+        },
+        "phase_peak_rss_bytes": {
+          "source": 395526144,
+          "link": 38682624,
+          "strip": 2080768
+        },
+        "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+        "generated_artifacts": {
+          "encoder": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2"
+        },
+        "stripped_executable": {
+          "bytes": 191912,
+          "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+        },
+        "compiler_phases": null,
+        "parse_reported_seconds": 0.003,
+        "displayed_parser_phase": "Parsing (summed)                            3ms"
+      }
+    },
+    {
+      "roc": {
+        "seconds": {
+          "source": 2.98447808297351,
+          "link": 0.03435120778158307,
+          "source_through_link": 3.0191900837235153,
+          "strip": 0.010296875145286322,
+          "source_through_strip": 3.0296578747220337
+        },
+        "commands": {
+          "source": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/roc-compiler/roc-d99c7b838fb05bb1047eb0c18d4d06d0f86f345d/zig-out/bin/roc",
+            "build",
+            "--timings",
+            "--no-cache",
+            "--opt=speed",
+            "--jobs=1",
+            "--target=arm64mac",
+            "--output=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-2/roc/encoder.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/published-peer-inputs/peer-inputs/roc-profile/app.roc"
+          ],
+          "link": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-2/roc/encoder.a",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-2/roc/compressor"
+          ],
+          "strip": [
+            "/usr/bin/strip",
+            "-S",
+            "-x",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-2/roc/compressor"
+          ]
+        },
+        "phase_peak_rss_bytes": {
+          "source": 385908736,
+          "link": 38666240,
+          "strip": 2129920
+        },
+        "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+        "generated_artifacts": {
+          "encoder": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2"
+        },
+        "stripped_executable": {
+          "bytes": 191912,
+          "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+        },
+        "compiler_phases": null,
+        "parse_reported_seconds": 0.003,
+        "displayed_parser_phase": "Parsing (summed)                            3ms"
+      },
+      "mech-phi-verifier": {
+        "seconds": {
+          "source": 2.7782167503610253,
+          "link": 0.03625279199331999,
+          "source_through_link": 2.8148612496443093,
+          "strip": 0.010383666958659887,
+          "source_through_strip": 2.8254162496887147
+        },
+        "commands": {
+          "source": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/phi-verifier/candidate/compile_profile",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-2/mech-phi-verifier/frontend",
+            "compact"
+          ],
+          "link": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-2/mech-phi-verifier/frontend/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-2/mech-phi-verifier/compressor"
+          ],
+          "strip": [
+            "/usr/bin/strip",
+            "-S",
+            "-x",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-2/mech-phi-verifier/compressor"
+          ]
+        },
+        "phase_peak_rss_bytes": {
+          "source": 395001856,
+          "link": 39550976,
+          "strip": 2359296
+        },
+        "encoder_sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+        "generated_artifacts": {
+          "encoder": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+          "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+          "metadata": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+        },
+        "stripped_executable": {
+          "bytes": 292568,
+          "sha256": "aab979498d394f8f1df17448cd78b7e595b6852133841b05301f621fef880f43"
+        },
+        "compiler_phases": [
+          {
+            "phase": "parse",
+            "seconds": 1.016293459,
+            "total_seconds": 1.016324375
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.063855375,
+            "total_seconds": 1.080262792
+          },
+          {
+            "phase": "frontend",
+            "seconds": 0.232099959,
+            "total_seconds": 1.312437417
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.007017292,
+            "total_seconds": 1.319539917
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.002555292,
+            "total_seconds": 1.333480167
+          },
+          {
+            "phase": "native",
+            "seconds": 1.428989833,
+            "total_seconds": 2.763839292
+          }
+        ],
+        "parse_reported_seconds": 1.016293459
+      }
+    },
+    {
+      "roc": {
+        "seconds": {
+          "source": 2.988487333059311,
+          "link": 0.03397979214787483,
+          "source_through_link": 3.02280541555956,
+          "strip": 0.010078625287860632,
+          "source_through_strip": 3.0330409156158566
+        },
+        "commands": {
+          "source": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/roc-compiler/roc-d99c7b838fb05bb1047eb0c18d4d06d0f86f345d/zig-out/bin/roc",
+            "build",
+            "--timings",
+            "--no-cache",
+            "--opt=speed",
+            "--jobs=1",
+            "--target=arm64mac",
+            "--output=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-3/roc/encoder.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/published-peer-inputs/peer-inputs/roc-profile/app.roc"
+          ],
+          "link": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-3/roc/encoder.a",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-3/roc/compressor"
+          ],
+          "strip": [
+            "/usr/bin/strip",
+            "-S",
+            "-x",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-3/roc/compressor"
+          ]
+        },
+        "phase_peak_rss_bytes": {
+          "source": 395231232,
+          "link": 38846464,
+          "strip": 2146304
+        },
+        "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+        "generated_artifacts": {
+          "encoder": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2"
+        },
+        "stripped_executable": {
+          "bytes": 191912,
+          "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+        },
+        "compiler_phases": null,
+        "parse_reported_seconds": 0.003,
+        "displayed_parser_phase": "Parsing (summed)                            3ms"
+      },
+      "mech-phi-verifier": {
+        "seconds": {
+          "source": 2.8001597500406206,
+          "link": 0.03715008310973644,
+          "source_through_link": 2.837686167098582,
+          "strip": 0.010375375393778086,
+          "source_through_strip": 2.8482273751869798
+        },
+        "commands": {
+          "source": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/phi-verifier/candidate/compile_profile",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-3/mech-phi-verifier/frontend",
+            "compact"
+          ],
+          "link": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-3/mech-phi-verifier/frontend/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-3/mech-phi-verifier/compressor"
+          ],
+          "strip": [
+            "/usr/bin/strip",
+            "-S",
+            "-x",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-3/mech-phi-verifier/compressor"
+          ]
+        },
+        "phase_peak_rss_bytes": {
+          "source": 395116544,
+          "link": 39272448,
+          "strip": 2342912
+        },
+        "encoder_sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+        "generated_artifacts": {
+          "encoder": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+          "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+          "metadata": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+        },
+        "stripped_executable": {
+          "bytes": 292568,
+          "sha256": "aab979498d394f8f1df17448cd78b7e595b6852133841b05301f621fef880f43"
+        },
+        "compiler_phases": [
+          {
+            "phase": "parse",
+            "seconds": 1.026148833,
+            "total_seconds": 1.026178625
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.064619375,
+            "total_seconds": 1.090890125
+          },
+          {
+            "phase": "frontend",
+            "seconds": 0.232665958,
+            "total_seconds": 1.3236584169999999
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.007073,
+            "total_seconds": 1.330809792
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.002567834,
+            "total_seconds": 1.34500975
+          },
+          {
+            "phase": "native",
+            "seconds": 1.440735375,
+            "total_seconds": 2.786595333
+          }
+        ],
+        "parse_reported_seconds": 1.026148833
+      }
+    },
+    {
+      "mech-phi-verifier": {
+        "seconds": {
+          "source": 2.78457604162395,
+          "link": 0.03837400022894144,
+          "source_through_link": 2.82334104180336,
+          "strip": 0.010767499916255474,
+          "source_through_strip": 2.8342761248350143
+        },
+        "commands": {
+          "source": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/phi-verifier/candidate/compile_profile",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-4/mech-phi-verifier/frontend",
+            "compact"
+          ],
+          "link": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-4/mech-phi-verifier/frontend/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-4/mech-phi-verifier/compressor"
+          ],
+          "strip": [
+            "/usr/bin/strip",
+            "-S",
+            "-x",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-4/mech-phi-verifier/compressor"
+          ]
+        },
+        "phase_peak_rss_bytes": {
+          "source": 395034624,
+          "link": 39272448,
+          "strip": 2359296
+        },
+        "encoder_sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+        "generated_artifacts": {
+          "encoder": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+          "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+          "metadata": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+        },
+        "stripped_executable": {
+          "bytes": 292568,
+          "sha256": "aab979498d394f8f1df17448cd78b7e595b6852133841b05301f621fef880f43"
+        },
+        "compiler_phases": [
+          {
+            "phase": "parse",
+            "seconds": 1.018326583,
+            "total_seconds": 1.018356709
+          },
+          {
+            "phase": "catalog",
+            "seconds": 0.06354725,
+            "total_seconds": 1.082000667
+          },
+          {
+            "phase": "frontend",
+            "seconds": 0.233952083,
+            "total_seconds": 1.3160327920000001
+          },
+          {
+            "phase": "artifact",
+            "seconds": 0.007045,
+            "total_seconds": 1.323154625
+          },
+          {
+            "phase": "encode",
+            "seconds": 0.002556583,
+            "total_seconds": 1.33709425
+          },
+          {
+            "phase": "native",
+            "seconds": 1.430567959,
+            "total_seconds": 2.768888709
+          }
+        ],
+        "parse_reported_seconds": 1.018326583
+      },
+      "roc": {
+        "seconds": {
+          "source": 2.991372541990131,
+          "link": 0.03374266671016812,
+          "source_through_link": 3.025443375110626,
+          "strip": 0.010289082769304514,
+          "source_through_strip": 3.035905874799937
+        },
+        "commands": {
+          "source": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/roc-compiler/roc-d99c7b838fb05bb1047eb0c18d4d06d0f86f345d/zig-out/bin/roc",
+            "build",
+            "--timings",
+            "--no-cache",
+            "--opt=speed",
+            "--jobs=1",
+            "--target=arm64mac",
+            "--output=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-4/roc/encoder.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/published-peer-inputs/peer-inputs/roc-profile/app.roc"
+          ],
+          "link": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-4/roc/encoder.a",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-4/roc/compressor"
+          ],
+          "strip": [
+            "/usr/bin/strip",
+            "-S",
+            "-x",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-root-census/parser-phases/order-4/roc/compressor"
+          ]
+        },
+        "phase_peak_rss_bytes": {
+          "source": 391839744,
+          "link": 38862848,
+          "strip": 2146304
+        },
+        "encoder_sha256": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2",
+        "generated_artifacts": {
+          "encoder": "06d118f26bbaca92b83cae57aa0163ad96330229cf93272bba3e47e79b3892d2"
+        },
+        "stripped_executable": {
+          "bytes": 191912,
+          "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+        },
+        "compiler_phases": null,
+        "parse_reported_seconds": 0.003,
+        "displayed_parser_phase": "Parsing (summed)                            3ms"
+      }
+    }
+  ]
+}

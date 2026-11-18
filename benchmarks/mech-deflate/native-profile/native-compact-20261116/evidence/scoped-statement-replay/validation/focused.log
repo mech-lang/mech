@@ -1,0 +1,8 @@
+
+running 3 tests
+test document::parser::canonical::document::definition_replay::scoped_statement_preserves_busy_witness ... ok
+test document::parser::definition_validation::scoped_statement_finite_and_segmented ... ok
+test document::parser::definition_validation::scoped_statement_full_input ... definition payload Receipt { disabled: false, captures: 117, applies: 117, max_events: 10640, max_payload_bytes: 761856, max_ordinals: 51724, minimum_first_grant: 243218726024 }
+ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 535 filtered out; finished in 5.16s

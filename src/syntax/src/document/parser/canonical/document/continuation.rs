@@ -1,5 +1,6 @@
 //! Owned phases for the canonical document grammar combinators. Recognition and
 //! recovery still use Attempt; scheduling yields without unwinding these phases.
+use super::definition_replay::{Position as DefinitionPosition, Recording as DefinitionRecording};
 use super::*;
 use crate::document::parser::checkpoint::ParserCheckpoint;
 use crate::document::parser::delimiter_scan::{DelimiterProgress, DelimiterScan};
@@ -117,7 +118,11 @@ enum Frame<'g> {
     FenceFallback(Marker),
     Sequence(Sequence<'g>),
     Choice(Choice<'g>),
-    BestChoice(Choice<'g>, Option<(usize, u32)>),
+    BestChoice(
+        Choice<'g>,
+        Option<(usize, u32)>,
+        Option<Box<DefinitionRecording>>,
+    ),
     Optional(ParserCheckpoint, GrammarState),
     Lookahead(ParserCheckpoint, GrammarState, bool, bool),
     Repetition(Repetition<'g>),
@@ -140,6 +145,7 @@ pub(crate) struct Continuation<'g> {
     pub steps: u64,
     pub child_work: u64,
     pub peak_frames: usize,
+    definition_poll: u64,
 }
 
 impl<'g> Continuation<'g> {
@@ -151,6 +157,7 @@ impl<'g> Continuation<'g> {
             steps: 0,
             child_work: 0,
             peak_frames: 1,
+            definition_poll: 0,
         }
     }
     pub fn for_rule(specification: &'g DocumentRule) -> Self {
@@ -266,6 +273,46 @@ impl<'g> Continuation<'g> {
         }
     }
 
+    fn definition_position(&self, input_final: bool, allowance: u64) -> DefinitionPosition {
+        DefinitionPosition {
+            poll: self.definition_poll,
+            steps: self.steps,
+            child_work: self.child_work,
+            allowance,
+            input_final,
+            delimiter: self.state.codeblock_delimiter,
+        }
+    }
+
+    fn record_structural_choice(
+        &self,
+        parser: &mut Parser<'_>,
+        expression: &GrammarExpression,
+        input_final: bool,
+        allowance: u64,
+    ) -> Option<Box<DefinitionRecording>> {
+        let GrammarExpression::Rule(rule) = expression else {
+            return None;
+        };
+        let kind = match *rule {
+            rules::VARIABLE_DEFINE if parser.current_rule() == Some(rules::STATEMENT) => {
+                SyntaxKind::VariableDefine
+            }
+            rules::FUNCTION_DEFINE if parser.current_rule() == Some(rules::MECH_CODE_ALT) => {
+                SyntaxKind::FunctionDefine
+            }
+            rules::STATEMENT if parser.current_rule() == Some(rules::MECH_CODE_ALT) => {
+                SyntaxKind::Statement
+            }
+            _ => return None,
+        };
+        DefinitionRecording::begin(
+            parser,
+            self.definition_position(input_final, allowance),
+            kind,
+        )
+    }
+
     /// The allowance counts grammar-frame transitions. Ordinary rule/recovery
     /// calls still use their existing hard parser limits; converting their own
     /// suspendable phases is required before this becomes the stream API.
@@ -275,6 +322,7 @@ impl<'g> Continuation<'g> {
         input_final: bool,
         allowance: &mut u64,
     ) -> Progress {
+        self.definition_poll = self.definition_poll.saturating_add(1);
         while !self.frames.is_empty()
             || parser.state.resource_found.is_some()
             || parser.state.tree_cache.pending()
@@ -1099,7 +1147,9 @@ impl<'g> Continuation<'g> {
                         self.push(Frame::CallRule(rules::COMMENT));
                     }
                 }
-                Frame::Expression(expression) => self.expression(parser, expression),
+                Frame::Expression(expression) => {
+                    self.expression(parser, expression, input_final, *allowance)
+                }
                 Frame::Builtin(name) => match name {
                     "eof" if parser.is_eof() && !final_input => {
                         self.push(Frame::Builtin(name));
@@ -1329,28 +1379,57 @@ impl<'g> Continuation<'g> {
                         }
                     }
                 }
-                Frame::BestChoice(mut frame, mut selected) => {
-                    if parser.is_halted() {
-                        self.result = Attempt::Committed;
-                        continue;
-                    }
-                    if self.result == Attempt::Committed && selected.is_none() {
-                        continue;
-                    }
-                    if self.result == Attempt::Matched {
+                Frame::BestChoice(mut frame, mut selected, mut definition) => {
+                    let halted = parser.is_halted();
+                    let stop = self.result == Attempt::Committed && selected.is_none();
+                    let mut winner = false;
+                    if !halted && self.result == Attempt::Matched {
                         let consumed = (parser.offset() - frame.checkpoint.cursor.offset).0;
                         if selected.is_none_or(|(_, old)| consumed > old) {
                             selected = Some((frame.index, consumed));
+                            winner = true;
                         }
+                    }
+                    if let Some(recording) = definition.take() {
+                        definition = recording.observe(
+                            parser,
+                            self.definition_position(input_final, *allowance),
+                            winner,
+                        );
+                    }
+                    if halted {
+                        self.result = Attempt::Committed;
+                        continue;
+                    }
+                    if stop {
+                        continue;
                     }
                     frame.index += 1;
                     parser.rewind(frame.checkpoint);
                     self.state = frame.initial;
                     if let Some(item) = frame.items.get(frame.index) {
-                        self.push(Frame::BestChoice(frame, selected));
+                        if definition.is_none() {
+                            definition = self.record_structural_choice(
+                                parser,
+                                item,
+                                input_final,
+                                *allowance,
+                            );
+                        }
+                        self.push(Frame::BestChoice(frame, selected, definition));
                         self.push(Frame::Expression(item));
                     } else if let Some((index, _)) = selected {
-                        self.push(Frame::Expression(&frame.items[index]));
+                        if let Some((steps, child_work)) = definition.and_then(|recording| {
+                            recording
+                                .apply(parser, self.definition_position(input_final, *allowance))
+                        }) {
+                            *allowance -= steps + child_work;
+                            self.steps += steps;
+                            self.child_work += child_work;
+                            self.result = Attempt::Matched;
+                        } else {
+                            self.push(Frame::Expression(&frame.items[index]));
+                        }
                     } else {
                         self.result = Attempt::NoMatch;
                     }
@@ -1442,7 +1521,13 @@ impl<'g> Continuation<'g> {
         Progress::Complete(self.result)
     }
 
-    fn expression(&mut self, parser: &mut Parser<'_>, expression: &'g GrammarExpression) {
+    fn expression(
+        &mut self,
+        parser: &mut Parser<'_>,
+        expression: &'g GrammarExpression,
+        input_final: bool,
+        allowance: u64,
+    ) {
         if parser.is_halted() {
             self.result = Attempt::Committed;
             return;
@@ -1506,7 +1591,9 @@ impl<'g> Continuation<'g> {
                 };
                 if matches!(expression, GrammarExpression::BestChoice(_)) {
                     parser.rewind(frame.checkpoint);
-                    self.push(Frame::BestChoice(frame, None));
+                    let definition =
+                        self.record_structural_choice(parser, &items[0], input_final, allowance);
+                    self.push(Frame::BestChoice(frame, None, definition));
                 } else {
                     self.push(Frame::Choice(frame));
                 }

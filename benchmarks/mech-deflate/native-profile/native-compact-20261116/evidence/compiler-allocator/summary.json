@@ -1,0 +1,49 @@
+{
+  "base_commit": "a6d9624daf661b938c861a90f8aac050d7b67263",
+  "compiled_library_source_commit": "2b930a8dfa0f085d46d68bc6593bd182b58f26a2",
+  "change": "The standalone native_compact_frontend now imports src/compiler_allocator.rs, the same existing mimalloc policy used by src/bin/mech.rs and compact-size/emit.rs. No new dependency or compiler-library change.",
+  "measurement": "Apple M1; fresh source through final executable; compilers, runtime and adapters prebuilt; one excluded warmup per actor; four balanced orders, each actor in each position once. Rust compiler opt-level 1, no PGO. Mech compilation invokes no external LLVM tools.",
+  "medians_seconds": {
+    "mech-control": {
+      "frontend": 4.574643166968599,
+      "native": 2.223367041675374,
+      "link": 0.039953354280442,
+      "total": 6.844956000102684,
+      "parse": 4.063155625
+    },
+    "mech-compiler-allocator": {
+      "frontend": 3.970798416528851,
+      "native": 2.2245958952698857,
+      "link": 0.043010500026866794,
+      "total": 6.240805771201849,
+      "parse": 3.5215171455
+    },
+    "roc": {
+      "compile": 2.9459262078162283,
+      "link": 0.03377668745815754,
+      "total": 2.979821417015046
+    },
+    "libdeflate": {
+      "compile": 0.4459829379338771,
+      "link": 0.033646958880126476,
+      "total": 0.4798828752245754
+    }
+  },
+  "complete_build_improvement_percent": 8.826210554045522,
+  "parse_improvement_percent": 13.330488159680087,
+  "mech_complete_build_x_roc": 2.0943556333833606,
+  "mech_complete_build_x_libdeflate": 13.004852003275339,
+  "encoder_text_bytes": 72520,
+  "encoder_text_x_roc": 1.256932889628397,
+  "encoder_text_x_libdeflate": 1.9557713052858683,
+  "mech_invocations_checked_for_complete_identity": 10,
+  "identical_sha256": {
+    "frontend/program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "native/program.o": "c23c97a40dad5f85305ab660a836790310b455aea37778dbb032da33f4c57b8c",
+    "native/metadata.json": "a0e85df955b3dfdcc14945e44f232a2a35a702c5e8d1dda4f6dfbd57848e0ca3",
+    "compressor": "b03c9d6e8eb5142bd67c49992d0e54aabe8f14e2abdf6d430c662d403b2b5309"
+  },
+  "correctness_calls": 162,
+  "peer_runtime_scope": "No newly measured peer runtime scores. The historical 81/61 evidence remains attached to its original worker. The allocator fix produces byte-identical output to its immediate control.",
+  "compiler_construction_timing": "Excluded from source-to-executable timing. The 5.67-second cached frontend rebuild is not a cold full compiler build."
+}

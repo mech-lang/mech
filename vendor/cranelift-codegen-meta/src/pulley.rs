@@ -10,7 +10,7 @@ struct Inst<'a> {
 macro_rules! define {
     (
         $(
-            $( #[$attr:meta] )*
+            $( #[doc = $description:literal] )*
             $snake_name:ident = $name:ident $( { $( $field:ident : $field_ty:ty ),* } )? ;
         )*
     ) => {

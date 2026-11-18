@@ -81,6 +81,8 @@ name = "numeric_liveness"
 path = "numeric_liveness_tests.rs"
 
 [dev-dependencies]
+cranelift-jit = "=0.131.3"
+cranelift-module = "=0.131.3"
 cranelift-codegen = { version = "0.131.3", default-features = false, features = ["std", "unwind"] }
 cranelift-frontend = { version = "0.131.3", default-features = false, features = ["std"] }
 
@@ -134,3 +136,15 @@ path = "short_literal_proof_tests.rs"
 [[bin]]
 name = "emit_compact_size"
 path = "compact-size/emit.rs"
+
+[[bin]]
+name = "native_compact_frontend"
+path = "native-compact-20261116/frontend.rs"
+
+[[test]]
+name = "native_compact_cold_tails"
+path = "../../../hosts/gpu/src/native_artifact/program/compact/cold_tail_tests.rs"
+
+[[test]]
+name = "fresh_owner_counts"
+path = "fresh_owner_counts_tests.rs"

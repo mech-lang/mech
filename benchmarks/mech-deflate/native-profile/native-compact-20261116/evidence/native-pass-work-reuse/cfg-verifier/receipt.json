@@ -1,0 +1,44 @@
+{
+  "control": {
+    "build": [
+      "rustc",
+      "+nightly-2026-03-03",
+      "--edition=2024",
+      "--crate-name",
+      "cfg_verifier_probe",
+      "-D",
+      "warnings",
+      "-L",
+      "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps",
+      "--extern",
+      "cranelift_codegen=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-pass-profile-20261117/verifier-control/libcranelift_codegen.rlib",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-pass-profile-20261117/cfg-verifier-probe.rs",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-pass-profile-20261117/cfg-verifier/control"
+    ],
+    "library_sha256": "dcb138d146e2394135a5d8b3447a867354f96f9739e2ad2a19548a74dfa5002d",
+    "probe_sha256": "a510a4debfd5b152115159dcf773618bb2eec5c5e3a878c9e84e01e4594a4f10",
+    "output_sha256": "5c6459fe4003e01ede1c23a0c143988a279de68747382f7fae43e36f55dcfd58"
+  },
+  "work-reuse": {
+    "build": [
+      "rustc",
+      "+nightly-2026-03-03",
+      "--edition=2024",
+      "--crate-name",
+      "cfg_verifier_probe",
+      "-D",
+      "warnings",
+      "-L",
+      "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps",
+      "--extern",
+      "cranelift_codegen=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/deps/libcranelift_codegen-b991cc47e96c83d1.rlib",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-pass-profile-20261117/cfg-verifier-probe.rs",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-pass-profile-20261117/cfg-verifier/work-reuse"
+    ],
+    "library_sha256": "0c61e55c3e76ea1c8f9d16f9bd9c8ccb64a8e4d2b445c5d844c32c076f954886",
+    "probe_sha256": "1751c5e8262e0bdbba4dc141d4b347ca9144036b998682db03234d9bfcdb13a5",
+    "output_sha256": "5c6459fe4003e01ede1c23a0c143988a279de68747382f7fae43e36f55dcfd58"
+  }
+}

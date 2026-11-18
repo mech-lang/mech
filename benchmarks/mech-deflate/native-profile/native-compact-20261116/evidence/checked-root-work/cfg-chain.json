@@ -1,0 +1,74 @@
+{
+  "old": {
+    "checked_root_event": 3488,
+    "range_entry_pairs": {
+      "dominating window facts": {
+        "first_graph_pair_events": [
+          4984,
+          4985
+        ],
+        "graph_pair_elapsed_ns": 808208
+      },
+      "selected read bounds": {
+        "first_graph_pair_events": [
+          4999,
+          5000
+        ],
+        "graph_pair_elapsed_ns": 811875
+      },
+      "checked scalar spans": {
+        "first_graph_pair_events": [
+          5014,
+          5015
+        ],
+        "graph_pair_elapsed_ns": 806208
+      },
+      "packed bases": {
+        "first_graph_pair_events": [
+          5016,
+          5017
+        ],
+        "graph_pair_elapsed_ns": 804292
+      }
+    },
+    "unchanged_boundaries_ns": 1612500,
+    "after_pruning_boundaries_ns": 1618083,
+    "total_measured_work_ns": 3230583
+  },
+  "shared": {
+    "checked_root_event": 3476,
+    "range_entry_pairs": {
+      "dominating window facts": {
+        "first_graph_pair_events": [
+          4972,
+          4973
+        ],
+        "graph_pair_elapsed_ns": 808333
+      },
+      "selected read bounds": {
+        "first_graph_pair_events": [
+          4987,
+          4988
+        ],
+        "graph_pair_elapsed_ns": 820459
+      },
+      "checked scalar spans": {
+        "first_graph_pair_events": [
+          5002,
+          5003
+        ],
+        "graph_pair_elapsed_ns": 807334
+      },
+      "packed bases": {
+        "first_graph_pair_events": [
+          5004,
+          5005
+        ],
+        "graph_pair_elapsed_ns": 798625
+      }
+    },
+    "unchanged_boundaries_ns": 1606958,
+    "after_pruning_boundaries_ns": 1627793,
+    "total_measured_work_ns": 3234751
+  }
+}

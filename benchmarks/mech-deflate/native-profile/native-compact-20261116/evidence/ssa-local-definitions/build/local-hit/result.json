@@ -1,0 +1,50 @@
+{
+  "base": "8fb7fa9683a3034866104db196ca5a72d7d312da",
+  "path": "vendor/cranelift-frontend/src/ssa.rs",
+  "source_sha256": "108764d8c18563c2afcc56fee35bd97296f62ef789d25026996df2d2c8a8a4b1",
+  "patch_sha256": "0291daf79fc64cdefa62303750460cd1f02eb36da380cd3502ab39d57f621c42",
+  "sample_sha256": "3866e1b2f1dd49f81397bf1910eb72b7719cfd349d7fc31590a3c78cca426b3d",
+  "build_plan_sha256": "ff748dc8c8eaf95315c0256835a078aea6b7b64b7ff40e0744efa9033f175c98",
+  "compiler_sha256": "4bbdb14e0fd14e0ae70a15e1a5aed6d869ddf98fce81d479bdc9ede4e260411b",
+  "artifacts_sha256": {
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+  },
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ssa-local-and-first/local-hit/build/compiled",
+    "--variant",
+    "frame-copies",
+    "--compiler-opt-level",
+    "3",
+    "--direct-source",
+    "--preselect-root-inlining",
+    "--skip-refused-general-ssa",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target"
+  ],
+  "tests": {
+    "tests_passed": 15,
+    "command": [
+      "rustc",
+      "+nightly-2026-03-03",
+      "--edition=2024",
+      "--test",
+      "-C",
+      "opt-level=2",
+      "-L",
+      "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps",
+      "--extern",
+      "cranelift_codegen=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps/libcranelift_codegen-b991cc47e96c83d1.rlib",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ssa-local-and-first/local-hit/build/test-ssa.rs",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/ssa-local-and-first/local-hit/build/test-ssa"
+    ],
+    "test_harness_sha256": "b634c71f8e8309e0e34a061012316482e59c7c5269d357d19b4c5a0d360779ea",
+    "tests_log_sha256": "bd69cee648f170521663f79c19a3d63501728ebbf77c43abcfb2dbf66af9d951",
+    "dependency_sha256": "2d3978ecb050f06f59025e3912f38c9493d6fb64db34605ad0c90aa70ad4324f"
+  }
+}

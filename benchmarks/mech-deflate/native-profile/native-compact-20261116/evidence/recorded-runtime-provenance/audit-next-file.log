@@ -1,0 +1,5 @@
+unsafe boundary audit failed: prohibited code exists outside the exact allowlist: benchmarks/related-post-gen/check-measurement.rs
+22:                    let pointer = unsafe { ALLOCATOR.alloc(layout) };
+24:                    unsafe { pointer.write_volatile(7) };
+30:                    assert_eq!(unsafe { pointer.read_volatile() }, 7);
+31:                    unsafe { ALLOCATOR.dealloc(pointer, layout) };

@@ -1,0 +1,19 @@
+{
+  "acceptance_resolution": 0.005,
+  "seed": 71960,
+  "order": [
+    "one-stored",
+    "random-64",
+    "prefix-repeated-4096",
+    "seven-stored-prefix"
+  ],
+  "repetitions_per_order": 12,
+  "timer": "worker complete-call elapsed durations",
+  "worker_sha256": {
+    "control": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6",
+    "duplicate-control": "06dfffa92a21f59bf3fe4ef509a75ce6ae5844a79d52507592ac9e7386ce57e6",
+    "candidate": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41"
+  },
+  "distinct_worker_files": 3,
+  "batch_floor": 16
+}

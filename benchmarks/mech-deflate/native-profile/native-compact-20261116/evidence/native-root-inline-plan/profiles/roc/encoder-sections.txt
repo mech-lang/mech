@@ -1,0 +1,21 @@
+encoder.a(roc_app_llvm_arm64mac_speed_17c7dfcc.o):
+Segment : 62408
+	Section (__TEXT, __text): 57696
+	Section (__TEXT, __literal16): 480
+	Section (__TEXT, __const): 2466
+	Section (__DATA, __const): 192
+	Section (__TEXT, __cstring): 74
+	Section (__LD, __compact_unwind): 576
+	Section (__TEXT, __eh_frame): 912
+	total 62396
+total 62408
+encoder.a(roc_static_data_arm64mac.o):
+Segment : 8000
+	Section (__TEXT, __text): 0
+	Section (__DATA, __const): 4240
+	Section (__DWARF, __debug_line): 0
+	Section (__DWARF, __debug_abbrev): 0
+	Section (__DWARF, __debug_info): 0
+	Section (__DATA, __bss): 3760 (zerofill)
+	total 8000
+total 8000

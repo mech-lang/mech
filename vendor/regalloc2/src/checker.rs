@@ -93,7 +93,7 @@
 //! symbol corresponding to the original virtual register specified
 //! for this arg.
 
-#![allow(dead_code)]
+#![allow(dead_code, reason = "keep checker diagnostic state available to optional tracing and verification")]
 
 use crate::{
     Allocation, AllocationKind, Block, Edit, Function, FxHashMap, FxHashSet, Inst, InstOrEdit,

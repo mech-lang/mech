@@ -1,0 +1,24 @@
+{
+  "build": [
+    "rustc",
+    "+nightly-2026-03-03",
+    "--edition=2024",
+    "--test",
+    "-D",
+    "warnings",
+    "-L",
+    "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps",
+    "--extern",
+    "cranelift_codegen=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps/libcranelift_codegen-b991cc47e96c83d1.rlib",
+    "--extern",
+    "cranelift_frontend=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps/libcranelift_frontend-446b2e0bf0cefebc.rlib",
+    "--extern",
+    "cranelift_native=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps/libcranelift_native-36b0d4da98fc8cb6.rlib",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/phi-verifier/check.rs",
+    "-o",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/phi-verifier/check-verifier"
+  ],
+  "code": "8beb5d32006b0a11a2a6517f134c00bcf7f1054d3a699e8adf3d1b86a673c834",
+  "binary": "de7976fc8d42825d30198e6a82662d4a013ed36a4b9733b181ed174810412675",
+  "test_output": "\nrunning 2 tests\ntest a_no_op_phi_sweep_still_verifies_the_pruned_function ... ok\ntest changed_and_unchanged_sweeps_match_the_individual_passes ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n"
+}

@@ -1,0 +1,11 @@
+{
+  "pin": "d1a9ae0c3f4f8945ddd11fd3903edd6aaab089e2",
+  "patch": "3dacd5688a56d3d76477da02850578843c4a099686e6152a9c5dd26e47a6c57a",
+  "production_sources": {
+    "vendor/cranelift-codegen/src/context.rs": "4dc68d865d96fce76ab30b2acad6c64a6922de99445e8e1345d2e9fa999ae24b",
+    "vendor/cranelift-codegen/src/remove_constant_phis.rs": "3f2b66ede999aa7234147005e6d008082b34da4e95bb64ebb537b2771cc42428",
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/mod.rs": "d605f1a43029313fa078e7c71caec1bb09a0494947685fbf5aff39a7ab639868",
+    "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "c49ca05603a8dde1b2d8ee478c15d759ab6e487035bff6b91ab26fa1301058b6",
+    "hosts/gpu/src/native_artifact/program/compact/emit.rs": "9d4e8deea8729a2f23414ba6b6ca53f12289e89b2ce67f47fd9d68a9d1558ae0"
+  }
+}

@@ -235,6 +235,7 @@ impl SemanticBuilder {
             }
         }
         self.declared_kinds = resolved;
+        self.document_function_plans.clear();
         for (name, declaration) in &raw {
             let RawTypeDeclaration::Enum { variants, .. } = declaration else {
                 continue;

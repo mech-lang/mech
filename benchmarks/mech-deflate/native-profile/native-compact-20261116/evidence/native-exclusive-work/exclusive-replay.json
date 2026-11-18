@@ -1,0 +1,4234 @@
+{
+  "materialization_delta_by_thread": {
+    "coordinator": {
+      "graph": {
+        "old": {
+          "count": 36,
+          "inclusive_ns": 5892666,
+          "self_ns": 5892666
+        },
+        "shared": {
+          "count": 35,
+          "inclusive_ns": 5789414,
+          "self_ns": 5789414
+        },
+        "count_change": -1,
+        "self_ns_change": -103252
+      },
+      "definitions": {
+        "old": {
+          "count": 90,
+          "inclusive_ns": 9206041,
+          "self_ns": 9206041
+        },
+        "shared": {
+          "count": 79,
+          "inclusive_ns": 8225245,
+          "self_ns": 8225245
+        },
+        "count_change": -11,
+        "self_ns_change": -980796
+      },
+      "read roles": {
+        "old": {
+          "count": 9,
+          "inclusive_ns": 2459667,
+          "self_ns": 1408250
+        },
+        "shared": {
+          "count": 9,
+          "inclusive_ns": 2475749,
+          "self_ns": 1415414
+        },
+        "count_change": 0,
+        "self_ns_change": 7164
+      },
+      "fusion reads": {
+        "old": {
+          "count": 1,
+          "inclusive_ns": 119666,
+          "self_ns": 119666
+        },
+        "shared": {
+          "count": 1,
+          "inclusive_ns": 118041,
+          "self_ns": 118041
+        },
+        "count_change": 0,
+        "self_ns_change": -1625
+      },
+      "semantic actions": {
+        "old": {
+          "count": 30,
+          "inclusive_ns": 3908415,
+          "self_ns": 3908415
+        },
+        "shared": {
+          "count": 30,
+          "inclusive_ns": 3906501,
+          "self_ns": 3906501
+        },
+        "count_change": 0,
+        "self_ns_change": -1914
+      },
+      "use counts": {
+        "old": {
+          "count": 22,
+          "inclusive_ns": 1430166,
+          "self_ns": 1430166
+        },
+        "shared": {
+          "count": 22,
+          "inclusive_ns": 1455499,
+          "self_ns": 1455499
+        },
+        "count_change": 0,
+        "self_ns_change": 25333
+      },
+      "scalar aggregates": {
+        "old": {
+          "count": 1,
+          "inclusive_ns": 630292,
+          "self_ns": 517625
+        },
+        "shared": {
+          "count": 1,
+          "inclusive_ns": 637500,
+          "self_ns": 523834
+        },
+        "count_change": 0,
+        "self_ns_change": 6209
+      },
+      "direct action outputs": {
+        "old": {
+          "count": 1,
+          "inclusive_ns": 256375,
+          "self_ns": 256375
+        },
+        "shared": {
+          "count": 1,
+          "inclusive_ns": 253500,
+          "self_ns": 253500
+        },
+        "count_change": 0,
+        "self_ns_change": -2875
+      }
+    },
+    "worker-0": {
+      "graph": {
+        "old": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "shared": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "count_change": 0,
+        "self_ns_change": 0
+      },
+      "definitions": {
+        "old": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "shared": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "count_change": 0,
+        "self_ns_change": 0
+      },
+      "read roles": {
+        "old": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "shared": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "count_change": 0,
+        "self_ns_change": 0
+      },
+      "fusion reads": {
+        "old": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "shared": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "count_change": 0,
+        "self_ns_change": 0
+      },
+      "semantic actions": {
+        "old": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "shared": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "count_change": 0,
+        "self_ns_change": 0
+      },
+      "use counts": {
+        "old": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "shared": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "count_change": 0,
+        "self_ns_change": 0
+      },
+      "scalar aggregates": {
+        "old": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "shared": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "count_change": 0,
+        "self_ns_change": 0
+      },
+      "direct action outputs": {
+        "old": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "shared": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "count_change": 0,
+        "self_ns_change": 0
+      }
+    },
+    "worker-1": {
+      "graph": {
+        "old": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "shared": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "count_change": 0,
+        "self_ns_change": 0
+      },
+      "definitions": {
+        "old": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "shared": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "count_change": 0,
+        "self_ns_change": 0
+      },
+      "read roles": {
+        "old": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "shared": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "count_change": 0,
+        "self_ns_change": 0
+      },
+      "fusion reads": {
+        "old": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "shared": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "count_change": 0,
+        "self_ns_change": 0
+      },
+      "semantic actions": {
+        "old": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "shared": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "count_change": 0,
+        "self_ns_change": 0
+      },
+      "use counts": {
+        "old": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "shared": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "count_change": 0,
+        "self_ns_change": 0
+      },
+      "scalar aggregates": {
+        "old": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "shared": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "count_change": 0,
+        "self_ns_change": 0
+      },
+      "direct action outputs": {
+        "old": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "shared": {
+          "count": 0,
+          "inclusive_ns": 0,
+          "self_ns": 0
+        },
+        "count_change": 0,
+        "self_ns_change": 0
+      }
+    }
+  },
+  "unchanged_artifacts": {
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+    "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+    "mech-worker": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9"
+  },
+  "captures": {
+    "old": {
+      "capture_sha256": "492c649c850a9387bd199403e974de31b1a2732c8d14becc33e9a648384d9f03",
+      "compiler_sha256": "5cdfd965ef6e8fe410ccb2bac81b16d139b88fc03f249bb42226c42048f02e5d"
+    },
+    "shared": {
+      "capture_sha256": "eb46c993588567bb9188bc5b9f70876ca1aa1e5339ad5679d4c0807530092532",
+      "compiler_sha256": "aa536c49acd22cd646a6384e091648a79c4c342eadef34df1fcbc3a1bdee089e"
+    }
+  },
+  "old": {
+    "native_wall_elapsed_ns": 1504389083,
+    "compile_receipt_native_ns": 1504389832,
+    "native_unspanned_boundary_ns": 749,
+    "trace_sha256": "75ecfc233df183ed4fd089c894ff8bfd0951c9666264b7f53555b8564c1c3344",
+    "compile_receipt_sha256": "cd8fa6c27ff569ebca0f1ba43eea829dc98ee7131ab5f4c4661a4b41f22e4f51",
+    "threads": {
+      "coordinator": {
+        "elapsed_ns": 1504389083,
+        "exclusive_ns": {
+          "native": 12975836,
+          "native_plan": 17554125,
+          "immutable_facts": 22739204,
+          "semantic_preparation": 293190089,
+          "phase_selection": 531042,
+          "ssa_construction": 276856662,
+          "cranelift_other": 17968876,
+          "cfg_cleanup": 718084622,
+          "coordinator_wait": 18056790,
+          "object_publication": 1486166,
+          "coordination": 69164,
+          "codegen_context": 1069379,
+          "cranelift_optimize": 46819584,
+          "cranelift_lower_codegen": 76987544
+        },
+        "facts": {
+          "graph": {
+            "count": 36,
+            "inclusive_ns": 5892666,
+            "self_ns": 5892666
+          },
+          "definitions": {
+            "count": 90,
+            "inclusive_ns": 9206041,
+            "self_ns": 9206041
+          },
+          "read roles": {
+            "count": 9,
+            "inclusive_ns": 2459667,
+            "self_ns": 1408250
+          },
+          "fusion reads": {
+            "count": 1,
+            "inclusive_ns": 119666,
+            "self_ns": 119666
+          },
+          "semantic actions": {
+            "count": 30,
+            "inclusive_ns": 3908415,
+            "self_ns": 3908415
+          },
+          "use counts": {
+            "count": 22,
+            "inclusive_ns": 1430166,
+            "self_ns": 1430166
+          },
+          "scalar aggregates": {
+            "count": 1,
+            "inclusive_ns": 630292,
+            "self_ns": 517625
+          },
+          "direct action outputs": {
+            "count": 1,
+            "inclusive_ns": 256375,
+            "self_ns": 256375
+          }
+        },
+        "cranelift_passes": {
+          "Control flow graph": {
+            "count": 1487,
+            "inclusive_ns": 57545091,
+            "self_ns": 57545091
+          },
+          "Layout full renumbering": {
+            "count": 156,
+            "inclusive_ns": 288374,
+            "self_ns": 288374
+          },
+          "Verify Cranelift IR": {
+            "count": 796,
+            "inclusive_ns": 314613878,
+            "self_ns": 225219036
+          },
+          "Dominator tree": {
+            "count": 1408,
+            "inclusive_ns": 99206263,
+            "self_ns": 99206263
+          },
+          "Remove unreachable blocks": {
+            "count": 224,
+            "inclusive_ns": 14711749,
+            "self_ns": 14711749
+          },
+          "Remove constant phi-nodes": {
+            "count": 220,
+            "inclusive_ns": 49301390,
+            "self_ns": 49301390
+          },
+          "Loop analysis": {
+            "count": 63,
+            "inclusive_ns": 520661,
+            "self_ns": 520661
+          },
+          "Compilation passes": {
+            "count": 58,
+            "inclusive_ns": 106929666,
+            "self_ns": 8994
+          },
+          "Optimize IR in Context": {
+            "count": 59,
+            "inclusive_ns": 46819584,
+            "self_ns": 5804876
+          },
+          "Egraph based optimizations": {
+            "count": 59,
+            "inclusive_ns": 19443836,
+            "self_ns": 12816051
+          },
+          "Compile for the target ISA": {
+            "count": 58,
+            "inclusive_ns": 76987544,
+            "self_ns": 11360832
+          },
+          "VCode lowering": {
+            "count": 58,
+            "inclusive_ns": 5293126,
+            "self_ns": 5293126
+          },
+          "Register allocation": {
+            "count": 58,
+            "inclusive_ns": 56934083,
+            "self_ns": 56934083
+          },
+          "VCode emission": {
+            "count": 58,
+            "inclusive_ns": 3399503,
+            "self_ns": 3325001
+          },
+          "VCode emission finalization": {
+            "count": 58,
+            "inclusive_ns": 74502,
+            "self_ns": 74502
+          }
+        },
+        "details": [
+          {
+            "category": "cfg_cleanup",
+            "detail": "checked root",
+            "count": 1,
+            "inclusive_ns": 617979667,
+            "self_ns": 266562533
+          },
+          {
+            "category": "cfg_cleanup",
+            "detail": "numeric phase",
+            "count": 27,
+            "inclusive_ns": 111561916,
+            "self_ns": 50888064
+          },
+          {
+            "category": "codegen_context",
+            "detail": "assemble body",
+            "count": 15,
+            "inclusive_ns": 120048543,
+            "self_ns": 1056337
+          },
+          {
+            "category": "codegen_context",
+            "detail": "checked root",
+            "count": 1,
+            "inclusive_ns": 114958458,
+            "self_ns": 13042
+          },
+          {
+            "category": "coordination",
+            "detail": "replay recorded module",
+            "count": 11,
+            "inclusive_ns": 16665,
+            "self_ns": 16665
+          },
+          {
+            "category": "coordination",
+            "detail": "snapshot recorded module declarations",
+            "count": 11,
+            "inclusive_ns": 52499,
+            "self_ns": 52499
+          },
+          {
+            "category": "coordinator_wait",
+            "detail": "close queue and join workers",
+            "count": 1,
+            "inclusive_ns": 465958,
+            "self_ns": 465958
+          },
+          {
+            "category": "coordinator_wait",
+            "detail": "enqueue",
+            "count": 23,
+            "inclusive_ns": 99874,
+            "self_ns": 99874
+          },
+          {
+            "category": "coordinator_wait",
+            "detail": "receive completion",
+            "count": 23,
+            "inclusive_ns": 17490958,
+            "self_ns": 17490958
+          },
+          {
+            "category": "cranelift_lower_codegen",
+            "detail": "Compile for the target ISA",
+            "count": 58,
+            "inclusive_ns": 76987544,
+            "self_ns": 11360832
+          },
+          {
+            "category": "cranelift_optimize",
+            "detail": "Optimize IR in Context",
+            "count": 59,
+            "inclusive_ns": 46819584,
+            "self_ns": 5804876
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Compilation passes",
+            "count": 58,
+            "inclusive_ns": 106929666,
+            "self_ns": 8994
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Control flow graph",
+            "count": 1487,
+            "inclusive_ns": 57545091,
+            "self_ns": 57545091
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Dominator tree",
+            "count": 1408,
+            "inclusive_ns": 99206263,
+            "self_ns": 99206263
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Egraph based optimizations",
+            "count": 59,
+            "inclusive_ns": 19443836,
+            "self_ns": 12816051
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Layout full renumbering",
+            "count": 156,
+            "inclusive_ns": 288374,
+            "self_ns": 288374
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Loop analysis",
+            "count": 63,
+            "inclusive_ns": 520661,
+            "self_ns": 520661
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Register allocation",
+            "count": 58,
+            "inclusive_ns": 56934083,
+            "self_ns": 56934083
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Remove constant phi-nodes",
+            "count": 220,
+            "inclusive_ns": 49301390,
+            "self_ns": 49301390
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Remove unreachable blocks",
+            "count": 224,
+            "inclusive_ns": 14711749,
+            "self_ns": 14711749
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "VCode emission",
+            "count": 58,
+            "inclusive_ns": 3399503,
+            "self_ns": 3325001
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "VCode emission finalization",
+            "count": 58,
+            "inclusive_ns": 74502,
+            "self_ns": 74502
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "VCode lowering",
+            "count": 58,
+            "inclusive_ns": 5293126,
+            "self_ns": 5293126
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Verify Cranelift IR",
+            "count": 796,
+            "inclusive_ns": 314613878,
+            "self_ns": 225219036
+          },
+          {
+            "category": "immutable_facts",
+            "detail": "definitions",
+            "count": 90,
+            "inclusive_ns": 9206041,
+            "self_ns": 9206041
+          },
+          {
+            "category": "immutable_facts",
+            "detail": "direct action outputs",
+            "count": 1,
+            "inclusive_ns": 256375,
+            "self_ns": 256375
+          },
+          {
+            "category": "immutable_facts",
+            "detail": "fusion reads",
+            "count": 1,
+            "inclusive_ns": 119666,
+            "self_ns": 119666
+          },
+          {
+            "category": "immutable_facts",
+            "detail": "graph",
+            "count": 36,
+            "inclusive_ns": 5892666,
+            "self_ns": 5892666
+          },
+          {
+            "category": "immutable_facts",
+            "detail": "read roles",
+            "count": 9,
+            "inclusive_ns": 2459667,
+            "self_ns": 1408250
+          },
+          {
+            "category": "immutable_facts",
+            "detail": "scalar aggregates",
+            "count": 1,
+            "inclusive_ns": 630292,
+            "self_ns": 517625
+          },
+          {
+            "category": "immutable_facts",
+            "detail": "semantic actions",
+            "count": 30,
+            "inclusive_ns": 3908415,
+            "self_ns": 3908415
+          },
+          {
+            "category": "immutable_facts",
+            "detail": "use counts",
+            "count": 22,
+            "inclusive_ns": 1430166,
+            "self_ns": 1430166
+          },
+          {
+            "category": "native",
+            "detail": "artifact through object bytes",
+            "count": 1,
+            "inclusive_ns": 1504389083,
+            "self_ns": 12975836
+          },
+          {
+            "category": "native_plan",
+            "detail": "lower artifact",
+            "count": 1,
+            "inclusive_ns": 18149250,
+            "self_ns": 17554125
+          },
+          {
+            "category": "object_publication",
+            "detail": "finish object",
+            "count": 1,
+            "inclusive_ns": 182000,
+            "self_ns": 182000
+          },
+          {
+            "category": "object_publication",
+            "detail": "machine body and relocations",
+            "count": 15,
+            "inclusive_ns": 1173291,
+            "self_ns": 1173291
+          },
+          {
+            "category": "object_publication",
+            "detail": "publish compiled function",
+            "count": 23,
+            "inclusive_ns": 130875,
+            "self_ns": 130875
+          },
+          {
+            "category": "phase_selection",
+            "detail": "candidate discovery and sort",
+            "count": 1,
+            "inclusive_ns": 188125,
+            "self_ns": 81584
+          },
+          {
+            "category": "phase_selection",
+            "detail": "module setup",
+            "count": 1,
+            "inclusive_ns": 217583,
+            "self_ns": 217583
+          },
+          {
+            "category": "phase_selection",
+            "detail": "phase packets and guarded entries",
+            "count": 21,
+            "inclusive_ns": 328209,
+            "self_ns": 231875
+          },
+          {
+            "category": "semantic_preparation",
+            "detail": "checked root flow and recipes",
+            "count": 1,
+            "inclusive_ns": 160641417,
+            "self_ns": 159636458
+          },
+          {
+            "category": "semantic_preparation",
+            "detail": "prepare native program",
+            "count": 1,
+            "inclusive_ns": 139845667,
+            "self_ns": 130183422
+          },
+          {
+            "category": "semantic_preparation",
+            "detail": "typed layout and operation recipes",
+            "count": 1,
+            "inclusive_ns": 3370209,
+            "self_ns": 3370209
+          },
+          {
+            "category": "ssa_construction",
+            "detail": "checked root",
+            "count": 1,
+            "inclusive_ns": 188198834,
+            "self_ns": 187683835
+          },
+          {
+            "category": "ssa_construction",
+            "detail": "numeric phase",
+            "count": 29,
+            "inclusive_ns": 101364081,
+            "self_ns": 89172827
+          }
+        ]
+      },
+      "worker-0": {
+        "elapsed_ns": 1344312541,
+        "exclusive_ns": {
+          "worker": 12873,
+          "worker_wait": 1330553791,
+          "worker_job": 1044,
+          "worker_compute": 27335,
+          "cfg_cleanup": 7714250,
+          "cranelift_other": 424667,
+          "cranelift_optimize": 2679333,
+          "cranelift_lower_codegen": 2893458,
+          "coordination": 5790
+        },
+        "facts": {
+          "graph": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "definitions": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "read roles": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "fusion reads": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "semantic actions": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "use counts": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "scalar aggregates": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "direct action outputs": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          }
+        },
+        "cranelift_passes": {
+          "Control flow graph": {
+            "count": 119,
+            "inclusive_ns": 857957,
+            "self_ns": 857957
+          },
+          "Dominator tree": {
+            "count": 119,
+            "inclusive_ns": 1185915,
+            "self_ns": 1185915
+          },
+          "Remove unreachable blocks": {
+            "count": 23,
+            "inclusive_ns": 637875,
+            "self_ns": 637875
+          },
+          "Verify Cranelift IR": {
+            "count": 84,
+            "inclusive_ns": 4211245,
+            "self_ns": 2924787
+          },
+          "Remove constant phi-nodes": {
+            "count": 23,
+            "inclusive_ns": 550250,
+            "self_ns": 550250
+          },
+          "Compilation passes": {
+            "count": 11,
+            "inclusive_ns": 5997458,
+            "self_ns": 4208
+          },
+          "Optimize IR in Context": {
+            "count": 11,
+            "inclusive_ns": 2679333,
+            "self_ns": 126586
+          },
+          "Egraph based optimizations": {
+            "count": 11,
+            "inclusive_ns": 1305959,
+            "self_ns": 908417
+          },
+          "Loop analysis": {
+            "count": 11,
+            "inclusive_ns": 27750,
+            "self_ns": 27750
+          },
+          "Compile for the target ISA": {
+            "count": 11,
+            "inclusive_ns": 2893458,
+            "self_ns": 318169
+          },
+          "VCode lowering": {
+            "count": 11,
+            "inclusive_ns": 469832,
+            "self_ns": 469832
+          },
+          "Register allocation": {
+            "count": 11,
+            "inclusive_ns": 1810416,
+            "self_ns": 1810416
+          },
+          "VCode emission": {
+            "count": 11,
+            "inclusive_ns": 295041,
+            "self_ns": 283375
+          },
+          "VCode emission finalization": {
+            "count": 11,
+            "inclusive_ns": 11666,
+            "self_ns": 11666
+          }
+        },
+        "details": [
+          {
+            "category": "cfg_cleanup",
+            "detail": "numeric phase",
+            "count": 2,
+            "inclusive_ns": 7714250,
+            "self_ns": 3594505
+          },
+          {
+            "category": "coordination",
+            "detail": "worker reply",
+            "count": 11,
+            "inclusive_ns": 5790,
+            "self_ns": 5790
+          },
+          {
+            "category": "cranelift_lower_codegen",
+            "detail": "Compile for the target ISA",
+            "count": 11,
+            "inclusive_ns": 2893458,
+            "self_ns": 318169
+          },
+          {
+            "category": "cranelift_optimize",
+            "detail": "Optimize IR in Context",
+            "count": 11,
+            "inclusive_ns": 2679333,
+            "self_ns": 126586
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Compilation passes",
+            "count": 11,
+            "inclusive_ns": 5997458,
+            "self_ns": 4208
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Control flow graph",
+            "count": 119,
+            "inclusive_ns": 857957,
+            "self_ns": 857957
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Dominator tree",
+            "count": 119,
+            "inclusive_ns": 1185915,
+            "self_ns": 1185915
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Egraph based optimizations",
+            "count": 11,
+            "inclusive_ns": 1305959,
+            "self_ns": 908417
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Loop analysis",
+            "count": 11,
+            "inclusive_ns": 27750,
+            "self_ns": 27750
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Register allocation",
+            "count": 11,
+            "inclusive_ns": 1810416,
+            "self_ns": 1810416
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Remove constant phi-nodes",
+            "count": 23,
+            "inclusive_ns": 550250,
+            "self_ns": 550250
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Remove unreachable blocks",
+            "count": 23,
+            "inclusive_ns": 637875,
+            "self_ns": 637875
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "VCode emission",
+            "count": 11,
+            "inclusive_ns": 295041,
+            "self_ns": 283375
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "VCode emission finalization",
+            "count": 11,
+            "inclusive_ns": 11666,
+            "self_ns": 11666
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "VCode lowering",
+            "count": 11,
+            "inclusive_ns": 469832,
+            "self_ns": 469832
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Verify Cranelift IR",
+            "count": 84,
+            "inclusive_ns": 4211245,
+            "self_ns": 2924787
+          },
+          {
+            "category": "worker",
+            "detail": "worker lifetime",
+            "count": 1,
+            "inclusive_ns": 1344312541,
+            "self_ns": 12873
+          },
+          {
+            "category": "worker_compute",
+            "detail": "cleanup",
+            "count": 2,
+            "inclusive_ns": 9940250,
+            "self_ns": 17750
+          },
+          {
+            "category": "worker_compute",
+            "detail": "compile",
+            "count": 9,
+            "inclusive_ns": 3798793,
+            "self_ns": 9585
+          },
+          {
+            "category": "worker_job",
+            "detail": "cleanup",
+            "count": 2,
+            "inclusive_ns": 9942126,
+            "self_ns": 251
+          },
+          {
+            "category": "worker_job",
+            "detail": "compile",
+            "count": 9,
+            "inclusive_ns": 3803751,
+            "self_ns": 793
+          },
+          {
+            "category": "worker_wait",
+            "detail": "queue receive and lock",
+            "count": 12,
+            "inclusive_ns": 1330553791,
+            "self_ns": 1330553791
+          }
+        ]
+      },
+      "worker-1": {
+        "elapsed_ns": 1344329583,
+        "exclusive_ns": {
+          "worker": 9874,
+          "worker_wait": 1326988540,
+          "worker_job": 289796,
+          "worker_compute": 14330,
+          "cranelift_other": 905168,
+          "cranelift_optimize": 6058041,
+          "cranelift_lower_codegen": 10040792,
+          "coordination": 23042
+        },
+        "facts": {
+          "graph": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "definitions": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "read roles": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "fusion reads": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "semantic actions": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "use counts": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "scalar aggregates": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "direct action outputs": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          }
+        },
+        "cranelift_passes": {
+          "Compilation passes": {
+            "count": 12,
+            "inclusive_ns": 17004001,
+            "self_ns": 6917
+          },
+          "Verify Cranelift IR": {
+            "count": 60,
+            "inclusive_ns": 4272164,
+            "self_ns": 2930698
+          },
+          "Control flow graph": {
+            "count": 60,
+            "inclusive_ns": 564796,
+            "self_ns": 564796
+          },
+          "Dominator tree": {
+            "count": 60,
+            "inclusive_ns": 776670,
+            "self_ns": 776670
+          },
+          "Optimize IR in Context": {
+            "count": 12,
+            "inclusive_ns": 6058041,
+            "self_ns": 300167
+          },
+          "Remove unreachable blocks": {
+            "count": 12,
+            "inclusive_ns": 15292,
+            "self_ns": 15292
+          },
+          "Remove constant phi-nodes": {
+            "count": 12,
+            "inclusive_ns": 282750,
+            "self_ns": 282750
+          },
+          "Egraph based optimizations": {
+            "count": 12,
+            "inclusive_ns": 2930542,
+            "self_ns": 2022418
+          },
+          "Loop analysis": {
+            "count": 12,
+            "inclusive_ns": 63501,
+            "self_ns": 63501
+          },
+          "Compile for the target ISA": {
+            "count": 12,
+            "inclusive_ns": 10040792,
+            "self_ns": 731125
+          },
+          "VCode lowering": {
+            "count": 12,
+            "inclusive_ns": 1148041,
+            "self_ns": 1148041
+          },
+          "Register allocation": {
+            "count": 12,
+            "inclusive_ns": 7551793,
+            "self_ns": 7551793
+          },
+          "VCode emission": {
+            "count": 12,
+            "inclusive_ns": 609833,
+            "self_ns": 597207
+          },
+          "VCode emission finalization": {
+            "count": 12,
+            "inclusive_ns": 12626,
+            "self_ns": 12626
+          }
+        },
+        "details": [
+          {
+            "category": "coordination",
+            "detail": "worker reply",
+            "count": 12,
+            "inclusive_ns": 23042,
+            "self_ns": 23042
+          },
+          {
+            "category": "cranelift_lower_codegen",
+            "detail": "Compile for the target ISA",
+            "count": 12,
+            "inclusive_ns": 10040792,
+            "self_ns": 731125
+          },
+          {
+            "category": "cranelift_optimize",
+            "detail": "Optimize IR in Context",
+            "count": 12,
+            "inclusive_ns": 6058041,
+            "self_ns": 300167
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Compilation passes",
+            "count": 12,
+            "inclusive_ns": 17004001,
+            "self_ns": 6917
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Control flow graph",
+            "count": 60,
+            "inclusive_ns": 564796,
+            "self_ns": 564796
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Dominator tree",
+            "count": 60,
+            "inclusive_ns": 776670,
+            "self_ns": 776670
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Egraph based optimizations",
+            "count": 12,
+            "inclusive_ns": 2930542,
+            "self_ns": 2022418
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Loop analysis",
+            "count": 12,
+            "inclusive_ns": 63501,
+            "self_ns": 63501
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Register allocation",
+            "count": 12,
+            "inclusive_ns": 7551793,
+            "self_ns": 7551793
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Remove constant phi-nodes",
+            "count": 12,
+            "inclusive_ns": 282750,
+            "self_ns": 282750
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Remove unreachable blocks",
+            "count": 12,
+            "inclusive_ns": 15292,
+            "self_ns": 15292
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "VCode emission",
+            "count": 12,
+            "inclusive_ns": 609833,
+            "self_ns": 597207
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "VCode emission finalization",
+            "count": 12,
+            "inclusive_ns": 12626,
+            "self_ns": 12626
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "VCode lowering",
+            "count": 12,
+            "inclusive_ns": 1148041,
+            "self_ns": 1148041
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Verify Cranelift IR",
+            "count": 60,
+            "inclusive_ns": 4272164,
+            "self_ns": 2930698
+          },
+          {
+            "category": "worker",
+            "detail": "worker lifetime",
+            "count": 1,
+            "inclusive_ns": 1344329583,
+            "self_ns": 9874
+          },
+          {
+            "category": "worker_compute",
+            "detail": "compile",
+            "count": 12,
+            "inclusive_ns": 17018331,
+            "self_ns": 14330
+          },
+          {
+            "category": "worker_job",
+            "detail": "compile",
+            "count": 12,
+            "inclusive_ns": 17331169,
+            "self_ns": 289796
+          },
+          {
+            "category": "worker_wait",
+            "detail": "queue receive and lock",
+            "count": 13,
+            "inclusive_ns": 1326988540,
+            "self_ns": 1326988540
+          }
+        ]
+      }
+    },
+    "jobs": {
+      "0": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 0,
+          "start_ns": 285947833,
+          "end_ns": 285959625,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 0,
+          "start_ns": 285959667,
+          "end_ns": 297227333,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 2,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 0,
+          "start_ns": 285993875,
+          "end_ns": 297215000,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 2,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 0,
+          "start_ns": 297215000,
+          "end_ns": 297218750,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 34250,
+        "queue_delay_ns_upper": 46042
+      },
+      "1": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 1,
+          "start_ns": 305028042,
+          "end_ns": 305031833,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 1,
+          "start_ns": 318341625,
+          "end_ns": 318342583,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 2,
+          "category": "worker_compute",
+          "detail": "cleanup",
+          "job": 1,
+          "start_ns": 305069000,
+          "end_ns": 313090000,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 2,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 1,
+          "start_ns": 313090042,
+          "end_ns": 313091125,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 37167,
+        "queue_delay_ns_upper": 40958
+      },
+      "2": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 2,
+          "start_ns": 318334000,
+          "end_ns": 318341333,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 2,
+          "start_ns": 318361417,
+          "end_ns": 320328375,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 32,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 2,
+          "start_ns": 318658500,
+          "end_ns": 320318375,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 32,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 2,
+          "start_ns": 320318417,
+          "end_ns": 320322625,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 317167,
+        "queue_delay_ns_upper": 324500
+      },
+      "3": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 3,
+          "start_ns": 357769500,
+          "end_ns": 357777625,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 3,
+          "start_ns": 362824042,
+          "end_ns": 362824875,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 133,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 3,
+          "start_ns": 357815625,
+          "end_ns": 358771250,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 133,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 3,
+          "start_ns": 358771292,
+          "end_ns": 358772000,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 38000,
+        "queue_delay_ns_upper": 46125
+      },
+      "4": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 4,
+          "start_ns": 362818000,
+          "end_ns": 362823542,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 4,
+          "start_ns": 362837000,
+          "end_ns": 363755792,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 62,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 4,
+          "start_ns": 362845125,
+          "end_ns": 363748458,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 62,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 4,
+          "start_ns": 363748500,
+          "end_ns": 363750917,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 21583,
+        "queue_delay_ns_upper": 27125
+      },
+      "5": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 5,
+          "start_ns": 368112042,
+          "end_ns": 368116750,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 5,
+          "start_ns": 372481750,
+          "end_ns": 372482625,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 163,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 5,
+          "start_ns": 368149333,
+          "end_ns": 368826792,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 163,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 5,
+          "start_ns": 368826792,
+          "end_ns": 368827250,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 32583,
+        "queue_delay_ns_upper": 37291
+      },
+      "6": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 6,
+          "start_ns": 372476542,
+          "end_ns": 372481625,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 6,
+          "start_ns": 372493583,
+          "end_ns": 373169333,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 92,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 6,
+          "start_ns": 372501625,
+          "end_ns": 373163833,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 92,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 6,
+          "start_ns": 373163875,
+          "end_ns": 373165375,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 20000,
+        "queue_delay_ns_upper": 25083
+      },
+      "7": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 7,
+          "start_ns": 374509875,
+          "end_ns": 374514333,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 7,
+          "start_ns": 378765917,
+          "end_ns": 378767083,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 193,
+          "category": "worker_compute",
+          "detail": "cleanup",
+          "job": 7,
+          "start_ns": 374545667,
+          "end_ns": 376464917,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 193,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 7,
+          "start_ns": 376464958,
+          "end_ns": 376465500,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 31334,
+        "queue_delay_ns_upper": 35792
+      },
+      "8": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 8,
+          "start_ns": 378761208,
+          "end_ns": 378765750,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 8,
+          "start_ns": 378778625,
+          "end_ns": 379229958,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 122,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 8,
+          "start_ns": 378785458,
+          "end_ns": 379224958,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 122,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 8,
+          "start_ns": 379225000,
+          "end_ns": 379226542,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 19708,
+        "queue_delay_ns_upper": 24250
+      },
+      "9": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 9,
+          "start_ns": 393318083,
+          "end_ns": 393321000,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 9,
+          "start_ns": 395727583,
+          "end_ns": 395728375,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 305,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 9,
+          "start_ns": 393351583,
+          "end_ns": 393807500,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 305,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 9,
+          "start_ns": 393807542,
+          "end_ns": 393807958,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 30583,
+        "queue_delay_ns_upper": 33500
+      },
+      "10": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 10,
+          "start_ns": 395722750,
+          "end_ns": 395727458,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 10,
+          "start_ns": 395737833,
+          "end_ns": 396196667,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 152,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 10,
+          "start_ns": 395745917,
+          "end_ns": 396190417,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 152,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 10,
+          "start_ns": 396190458,
+          "end_ns": 396191833,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 18459,
+        "queue_delay_ns_upper": 23167
+      },
+      "11": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 11,
+          "start_ns": 398397917,
+          "end_ns": 398399833,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 11,
+          "start_ns": 400631542,
+          "end_ns": 400632417,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 335,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 11,
+          "start_ns": 398428000,
+          "end_ns": 398806000,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 335,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 11,
+          "start_ns": 398806000,
+          "end_ns": 398806417,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 28167,
+        "queue_delay_ns_upper": 30083
+      },
+      "12": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 12,
+          "start_ns": 400629750,
+          "end_ns": 400631500,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 12,
+          "start_ns": 400642375,
+          "end_ns": 401031625,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 182,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 12,
+          "start_ns": 400646542,
+          "end_ns": 401026708,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 182,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 12,
+          "start_ns": 401026750,
+          "end_ns": 401028167,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 15042,
+        "queue_delay_ns_upper": 16792
+      },
+      "13": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 13,
+          "start_ns": 402920750,
+          "end_ns": 402924875,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 13,
+          "start_ns": 404812250,
+          "end_ns": 404813000,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 365,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 13,
+          "start_ns": 402955375,
+          "end_ns": 403238958,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 365,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 13,
+          "start_ns": 403239000,
+          "end_ns": 403239542,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 30500,
+        "queue_delay_ns_upper": 34625
+      },
+      "14": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 14,
+          "start_ns": 404810417,
+          "end_ns": 404812167,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 14,
+          "start_ns": 404821500,
+          "end_ns": 405118708,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 212,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 14,
+          "start_ns": 404825292,
+          "end_ns": 405113625,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 212,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 14,
+          "start_ns": 405113625,
+          "end_ns": 405115292,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 13125,
+        "queue_delay_ns_upper": 14875
+      },
+      "15": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 15,
+          "start_ns": 406538792,
+          "end_ns": 406540583,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 15,
+          "start_ns": 407965583,
+          "end_ns": 407966292,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 395,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 15,
+          "start_ns": 406568458,
+          "end_ns": 406857500,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 395,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 15,
+          "start_ns": 406857542,
+          "end_ns": 406858042,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 27875,
+        "queue_delay_ns_upper": 29666
+      },
+      "16": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 16,
+          "start_ns": 407961250,
+          "end_ns": 407965500,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 16,
+          "start_ns": 407975083,
+          "end_ns": 408279000,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 242,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 16,
+          "start_ns": 407978417,
+          "end_ns": 408274792,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 242,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 16,
+          "start_ns": 408274792,
+          "end_ns": 408275958,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 12917,
+        "queue_delay_ns_upper": 17167
+      },
+      "17": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 17,
+          "start_ns": 409819833,
+          "end_ns": 409824417,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 17,
+          "start_ns": 411314083,
+          "end_ns": 411314750,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 425,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 17,
+          "start_ns": 409855000,
+          "end_ns": 410143417,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 425,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 17,
+          "start_ns": 410143417,
+          "end_ns": 410143833,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 30583,
+        "queue_delay_ns_upper": 35167
+      },
+      "18": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 18,
+          "start_ns": 411309333,
+          "end_ns": 411314000,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 18,
+          "start_ns": 411323792,
+          "end_ns": 411602208,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 272,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 18,
+          "start_ns": 411332375,
+          "end_ns": 411598333,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 272,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 18,
+          "start_ns": 411598375,
+          "end_ns": 411599500,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 18375,
+        "queue_delay_ns_upper": 23042
+      },
+      "19": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 19,
+          "start_ns": 412783125,
+          "end_ns": 412787208,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 19,
+          "start_ns": 413968125,
+          "end_ns": 413968875,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 455,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 19,
+          "start_ns": 412817250,
+          "end_ns": 413036875,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 455,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 19,
+          "start_ns": 413036875,
+          "end_ns": 413037208,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 30042,
+        "queue_delay_ns_upper": 34125
+      },
+      "20": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 20,
+          "start_ns": 413966208,
+          "end_ns": 413968042,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 20,
+          "start_ns": 413977125,
+          "end_ns": 414214917,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 302,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 20,
+          "start_ns": 413981000,
+          "end_ns": 414210333,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 302,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 20,
+          "start_ns": 414210375,
+          "end_ns": 414211833,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 12958,
+        "queue_delay_ns_upper": 14792
+      },
+      "21": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 21,
+          "start_ns": 415367250,
+          "end_ns": 415369500,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 21,
+          "start_ns": 416501792,
+          "end_ns": 416502667,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 485,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 21,
+          "start_ns": 415397625,
+          "end_ns": 415648750,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 485,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 21,
+          "start_ns": 415648792,
+          "end_ns": 415649167,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 28125,
+        "queue_delay_ns_upper": 30375
+      },
+      "22": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 22,
+          "start_ns": 416497875,
+          "end_ns": 416501750,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 22,
+          "start_ns": 416511458,
+          "end_ns": 416747250,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 332,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 22,
+          "start_ns": 416515292,
+          "end_ns": 416742917,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 332,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 22,
+          "start_ns": 416742958,
+          "end_ns": 416744375,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 13542,
+        "queue_delay_ns_upper": 17417
+      }
+    },
+    "worker_active_union_ns": 30757374,
+    "worker_sum_elapsed_ns": 30757374,
+    "coordinator_wait_union_ns": 18056790,
+    "coordinator_wait_overlap_worker_ns": 17018331
+  },
+  "shared": {
+    "native_wall_elapsed_ns": 1480738000,
+    "compile_receipt_native_ns": 1480738875,
+    "native_unspanned_boundary_ns": 875,
+    "trace_sha256": "554808a737d756b92125b4930ef4b831e5b8b7069685ae219e7fb7693669fe3b",
+    "compile_receipt_sha256": "72312c8031429839c1b877163f788b13b686ae5786034a9d5931b352092035fa",
+    "threads": {
+      "coordinator": {
+        "elapsed_ns": 1480738000,
+        "exclusive_ns": {
+          "native": 11118287,
+          "native_plan": 17444583,
+          "immutable_facts": 21687448,
+          "semantic_preparation": 296994965,
+          "phase_selection": 528042,
+          "ssa_construction": 280449595,
+          "cranelift_other": 18255787,
+          "cfg_cleanup": 691530332,
+          "coordinator_wait": 18223790,
+          "object_publication": 394337,
+          "coordination": 65290,
+          "codegen_context": 1107375,
+          "cranelift_optimize": 46430212,
+          "cranelift_lower_codegen": 76507957
+        },
+        "facts": {
+          "graph": {
+            "count": 35,
+            "inclusive_ns": 5789414,
+            "self_ns": 5789414
+          },
+          "definitions": {
+            "count": 79,
+            "inclusive_ns": 8225245,
+            "self_ns": 8225245
+          },
+          "read roles": {
+            "count": 9,
+            "inclusive_ns": 2475749,
+            "self_ns": 1415414
+          },
+          "fusion reads": {
+            "count": 1,
+            "inclusive_ns": 118041,
+            "self_ns": 118041
+          },
+          "semantic actions": {
+            "count": 30,
+            "inclusive_ns": 3906501,
+            "self_ns": 3906501
+          },
+          "use counts": {
+            "count": 22,
+            "inclusive_ns": 1455499,
+            "self_ns": 1455499
+          },
+          "scalar aggregates": {
+            "count": 1,
+            "inclusive_ns": 637500,
+            "self_ns": 523834
+          },
+          "direct action outputs": {
+            "count": 1,
+            "inclusive_ns": 253500,
+            "self_ns": 253500
+          }
+        },
+        "cranelift_passes": {
+          "Control flow graph": {
+            "count": 1487,
+            "inclusive_ns": 58030557,
+            "self_ns": 58030557
+          },
+          "Layout full renumbering": {
+            "count": 156,
+            "inclusive_ns": 294745,
+            "self_ns": 294745
+          },
+          "Verify Cranelift IR": {
+            "count": 796,
+            "inclusive_ns": 316841002,
+            "self_ns": 226747728
+          },
+          "Dominator tree": {
+            "count": 1408,
+            "inclusive_ns": 100212646,
+            "self_ns": 100212646
+          },
+          "Remove unreachable blocks": {
+            "count": 224,
+            "inclusive_ns": 14762632,
+            "self_ns": 14762632
+          },
+          "Remove constant phi-nodes": {
+            "count": 220,
+            "inclusive_ns": 49475832,
+            "self_ns": 49475832
+          },
+          "Loop analysis": {
+            "count": 63,
+            "inclusive_ns": 531123,
+            "self_ns": 531123
+          },
+          "Compilation passes": {
+            "count": 58,
+            "inclusive_ns": 106157167,
+            "self_ns": 9291
+          },
+          "Optimize IR in Context": {
+            "count": 59,
+            "inclusive_ns": 46430212,
+            "self_ns": 5510705
+          },
+          "Egraph based optimizations": {
+            "count": 59,
+            "inclusive_ns": 19361086,
+            "self_ns": 12625089
+          },
+          "Compile for the target ISA": {
+            "count": 58,
+            "inclusive_ns": 76507957,
+            "self_ns": 11311630
+          },
+          "VCode lowering": {
+            "count": 58,
+            "inclusive_ns": 5224412,
+            "self_ns": 5224412
+          },
+          "Register allocation": {
+            "count": 58,
+            "inclusive_ns": 56968708,
+            "self_ns": 56968708
+          },
+          "VCode emission": {
+            "count": 58,
+            "inclusive_ns": 3003207,
+            "self_ns": 2933956
+          },
+          "VCode emission finalization": {
+            "count": 58,
+            "inclusive_ns": 69251,
+            "self_ns": 69251
+          }
+        },
+        "details": [
+          {
+            "category": "cfg_cleanup",
+            "detail": "checked root",
+            "count": 1,
+            "inclusive_ns": 589968000,
+            "self_ns": 236788585
+          },
+          {
+            "category": "cfg_cleanup",
+            "detail": "numeric phase",
+            "count": 27,
+            "inclusive_ns": 112440167,
+            "self_ns": 51227398
+          },
+          {
+            "category": "codegen_context",
+            "detail": "assemble body",
+            "count": 15,
+            "inclusive_ns": 119801457,
+            "self_ns": 1097208
+          },
+          {
+            "category": "codegen_context",
+            "detail": "checked root",
+            "count": 1,
+            "inclusive_ns": 113549666,
+            "self_ns": 10167
+          },
+          {
+            "category": "coordination",
+            "detail": "replay recorded module",
+            "count": 11,
+            "inclusive_ns": 16792,
+            "self_ns": 16792
+          },
+          {
+            "category": "coordination",
+            "detail": "snapshot recorded module declarations",
+            "count": 11,
+            "inclusive_ns": 48498,
+            "self_ns": 48498
+          },
+          {
+            "category": "coordinator_wait",
+            "detail": "close queue and join workers",
+            "count": 1,
+            "inclusive_ns": 491959,
+            "self_ns": 491959
+          },
+          {
+            "category": "coordinator_wait",
+            "detail": "enqueue",
+            "count": 23,
+            "inclusive_ns": 89748,
+            "self_ns": 89748
+          },
+          {
+            "category": "coordinator_wait",
+            "detail": "receive completion",
+            "count": 23,
+            "inclusive_ns": 17642083,
+            "self_ns": 17642083
+          },
+          {
+            "category": "cranelift_lower_codegen",
+            "detail": "Compile for the target ISA",
+            "count": 58,
+            "inclusive_ns": 76507957,
+            "self_ns": 11311630
+          },
+          {
+            "category": "cranelift_optimize",
+            "detail": "Optimize IR in Context",
+            "count": 59,
+            "inclusive_ns": 46430212,
+            "self_ns": 5510705
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Compilation passes",
+            "count": 58,
+            "inclusive_ns": 106157167,
+            "self_ns": 9291
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Control flow graph",
+            "count": 1487,
+            "inclusive_ns": 58030557,
+            "self_ns": 58030557
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Dominator tree",
+            "count": 1408,
+            "inclusive_ns": 100212646,
+            "self_ns": 100212646
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Egraph based optimizations",
+            "count": 59,
+            "inclusive_ns": 19361086,
+            "self_ns": 12625089
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Layout full renumbering",
+            "count": 156,
+            "inclusive_ns": 294745,
+            "self_ns": 294745
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Loop analysis",
+            "count": 63,
+            "inclusive_ns": 531123,
+            "self_ns": 531123
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Register allocation",
+            "count": 58,
+            "inclusive_ns": 56968708,
+            "self_ns": 56968708
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Remove constant phi-nodes",
+            "count": 220,
+            "inclusive_ns": 49475832,
+            "self_ns": 49475832
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Remove unreachable blocks",
+            "count": 224,
+            "inclusive_ns": 14762632,
+            "self_ns": 14762632
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "VCode emission",
+            "count": 58,
+            "inclusive_ns": 3003207,
+            "self_ns": 2933956
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "VCode emission finalization",
+            "count": 58,
+            "inclusive_ns": 69251,
+            "self_ns": 69251
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "VCode lowering",
+            "count": 58,
+            "inclusive_ns": 5224412,
+            "self_ns": 5224412
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Verify Cranelift IR",
+            "count": 796,
+            "inclusive_ns": 316841002,
+            "self_ns": 226747728
+          },
+          {
+            "category": "immutable_facts",
+            "detail": "definitions",
+            "count": 79,
+            "inclusive_ns": 8225245,
+            "self_ns": 8225245
+          },
+          {
+            "category": "immutable_facts",
+            "detail": "direct action outputs",
+            "count": 1,
+            "inclusive_ns": 253500,
+            "self_ns": 253500
+          },
+          {
+            "category": "immutable_facts",
+            "detail": "fusion reads",
+            "count": 1,
+            "inclusive_ns": 118041,
+            "self_ns": 118041
+          },
+          {
+            "category": "immutable_facts",
+            "detail": "graph",
+            "count": 35,
+            "inclusive_ns": 5789414,
+            "self_ns": 5789414
+          },
+          {
+            "category": "immutable_facts",
+            "detail": "read roles",
+            "count": 9,
+            "inclusive_ns": 2475749,
+            "self_ns": 1415414
+          },
+          {
+            "category": "immutable_facts",
+            "detail": "scalar aggregates",
+            "count": 1,
+            "inclusive_ns": 637500,
+            "self_ns": 523834
+          },
+          {
+            "category": "immutable_facts",
+            "detail": "semantic actions",
+            "count": 30,
+            "inclusive_ns": 3906501,
+            "self_ns": 3906501
+          },
+          {
+            "category": "immutable_facts",
+            "detail": "use counts",
+            "count": 22,
+            "inclusive_ns": 1455499,
+            "self_ns": 1455499
+          },
+          {
+            "category": "native",
+            "detail": "artifact through object bytes",
+            "count": 1,
+            "inclusive_ns": 1480738000,
+            "self_ns": 11118287
+          },
+          {
+            "category": "native_plan",
+            "detail": "lower artifact",
+            "count": 1,
+            "inclusive_ns": 18035000,
+            "self_ns": 17444583
+          },
+          {
+            "category": "object_publication",
+            "detail": "finish object",
+            "count": 1,
+            "inclusive_ns": 182500,
+            "self_ns": 182500
+          },
+          {
+            "category": "object_publication",
+            "detail": "machine body and relocations",
+            "count": 15,
+            "inclusive_ns": 88709,
+            "self_ns": 88709
+          },
+          {
+            "category": "object_publication",
+            "detail": "publish compiled function",
+            "count": 23,
+            "inclusive_ns": 123128,
+            "self_ns": 123128
+          },
+          {
+            "category": "phase_selection",
+            "detail": "candidate discovery and sort",
+            "count": 1,
+            "inclusive_ns": 189125,
+            "self_ns": 81417
+          },
+          {
+            "category": "phase_selection",
+            "detail": "module setup",
+            "count": 1,
+            "inclusive_ns": 207708,
+            "self_ns": 207708
+          },
+          {
+            "category": "phase_selection",
+            "detail": "phase packets and guarded entries",
+            "count": 21,
+            "inclusive_ns": 336333,
+            "self_ns": 238917
+          },
+          {
+            "category": "semantic_preparation",
+            "detail": "checked root flow and recipes",
+            "count": 1,
+            "inclusive_ns": 163455750,
+            "self_ns": 162430584
+          },
+          {
+            "category": "semantic_preparation",
+            "detail": "prepare native program",
+            "count": 1,
+            "inclusive_ns": 140932375,
+            "self_ns": 131217465
+          },
+          {
+            "category": "semantic_preparation",
+            "detail": "typed layout and operation recipes",
+            "count": 1,
+            "inclusive_ns": 3346916,
+            "self_ns": 3346916
+          },
+          {
+            "category": "ssa_construction",
+            "detail": "checked root",
+            "count": 1,
+            "inclusive_ns": 191211125,
+            "self_ns": 190684089
+          },
+          {
+            "category": "ssa_construction",
+            "detail": "numeric phase",
+            "count": 29,
+            "inclusive_ns": 100909253,
+            "self_ns": 89765506
+          }
+        ]
+      },
+      "worker-0": {
+        "elapsed_ns": 1319648125,
+        "exclusive_ns": {
+          "worker": 7543,
+          "worker_wait": 1302133416,
+          "worker_job": 263997,
+          "worker_compute": 14209,
+          "cranelift_other": 950417,
+          "cranelift_optimize": 6210708,
+          "cranelift_lower_codegen": 10032584,
+          "coordination": 35251
+        },
+        "facts": {
+          "graph": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "definitions": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "read roles": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "fusion reads": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "semantic actions": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "use counts": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "scalar aggregates": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "direct action outputs": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          }
+        },
+        "cranelift_passes": {
+          "Compilation passes": {
+            "count": 12,
+            "inclusive_ns": 17193709,
+            "self_ns": 6667
+          },
+          "Verify Cranelift IR": {
+            "count": 60,
+            "inclusive_ns": 4346833,
+            "self_ns": 2935827
+          },
+          "Control flow graph": {
+            "count": 60,
+            "inclusive_ns": 619878,
+            "self_ns": 619878
+          },
+          "Dominator tree": {
+            "count": 60,
+            "inclusive_ns": 791128,
+            "self_ns": 791128
+          },
+          "Optimize IR in Context": {
+            "count": 12,
+            "inclusive_ns": 6210708,
+            "self_ns": 304874
+          },
+          "Remove unreachable blocks": {
+            "count": 12,
+            "inclusive_ns": 15792,
+            "self_ns": 15792
+          },
+          "Remove constant phi-nodes": {
+            "count": 12,
+            "inclusive_ns": 323458,
+            "self_ns": 323458
+          },
+          "Egraph based optimizations": {
+            "count": 12,
+            "inclusive_ns": 2988376,
+            "self_ns": 2099710
+          },
+          "Loop analysis": {
+            "count": 12,
+            "inclusive_ns": 63791,
+            "self_ns": 63791
+          },
+          "Compile for the target ISA": {
+            "count": 12,
+            "inclusive_ns": 10032584,
+            "self_ns": 758210
+          },
+          "VCode lowering": {
+            "count": 12,
+            "inclusive_ns": 1111291,
+            "self_ns": 1111291
+          },
+          "Register allocation": {
+            "count": 12,
+            "inclusive_ns": 7546040,
+            "self_ns": 7546040
+          },
+          "VCode emission": {
+            "count": 12,
+            "inclusive_ns": 617043,
+            "self_ns": 604127
+          },
+          "VCode emission finalization": {
+            "count": 12,
+            "inclusive_ns": 12916,
+            "self_ns": 12916
+          }
+        },
+        "details": [
+          {
+            "category": "coordination",
+            "detail": "worker reply",
+            "count": 12,
+            "inclusive_ns": 35251,
+            "self_ns": 35251
+          },
+          {
+            "category": "cranelift_lower_codegen",
+            "detail": "Compile for the target ISA",
+            "count": 12,
+            "inclusive_ns": 10032584,
+            "self_ns": 758210
+          },
+          {
+            "category": "cranelift_optimize",
+            "detail": "Optimize IR in Context",
+            "count": 12,
+            "inclusive_ns": 6210708,
+            "self_ns": 304874
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Compilation passes",
+            "count": 12,
+            "inclusive_ns": 17193709,
+            "self_ns": 6667
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Control flow graph",
+            "count": 60,
+            "inclusive_ns": 619878,
+            "self_ns": 619878
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Dominator tree",
+            "count": 60,
+            "inclusive_ns": 791128,
+            "self_ns": 791128
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Egraph based optimizations",
+            "count": 12,
+            "inclusive_ns": 2988376,
+            "self_ns": 2099710
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Loop analysis",
+            "count": 12,
+            "inclusive_ns": 63791,
+            "self_ns": 63791
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Register allocation",
+            "count": 12,
+            "inclusive_ns": 7546040,
+            "self_ns": 7546040
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Remove constant phi-nodes",
+            "count": 12,
+            "inclusive_ns": 323458,
+            "self_ns": 323458
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Remove unreachable blocks",
+            "count": 12,
+            "inclusive_ns": 15792,
+            "self_ns": 15792
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "VCode emission",
+            "count": 12,
+            "inclusive_ns": 617043,
+            "self_ns": 604127
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "VCode emission finalization",
+            "count": 12,
+            "inclusive_ns": 12916,
+            "self_ns": 12916
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "VCode lowering",
+            "count": 12,
+            "inclusive_ns": 1111291,
+            "self_ns": 1111291
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Verify Cranelift IR",
+            "count": 60,
+            "inclusive_ns": 4346833,
+            "self_ns": 2935827
+          },
+          {
+            "category": "worker",
+            "detail": "worker lifetime",
+            "count": 1,
+            "inclusive_ns": 1319648125,
+            "self_ns": 7543
+          },
+          {
+            "category": "worker_compute",
+            "detail": "compile",
+            "count": 12,
+            "inclusive_ns": 17207918,
+            "self_ns": 14209
+          },
+          {
+            "category": "worker_job",
+            "detail": "compile",
+            "count": 12,
+            "inclusive_ns": 17507166,
+            "self_ns": 263997
+          },
+          {
+            "category": "worker_wait",
+            "detail": "queue receive and lock",
+            "count": 13,
+            "inclusive_ns": 1302133416,
+            "self_ns": 1302133416
+          }
+        ]
+      },
+      "worker-1": {
+        "elapsed_ns": 1319637000,
+        "exclusive_ns": {
+          "worker": 20875,
+          "worker_wait": 1305981293,
+          "worker_job": 1041,
+          "worker_compute": 28584,
+          "cfg_cleanup": 7614000,
+          "cranelift_other": 422957,
+          "cranelift_optimize": 2645917,
+          "cranelift_lower_codegen": 2917458,
+          "coordination": 4875
+        },
+        "facts": {
+          "graph": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "definitions": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "read roles": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "fusion reads": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "semantic actions": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "use counts": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "scalar aggregates": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          },
+          "direct action outputs": {
+            "count": 0,
+            "inclusive_ns": 0,
+            "self_ns": 0
+          }
+        },
+        "cranelift_passes": {
+          "Control flow graph": {
+            "count": 119,
+            "inclusive_ns": 830628,
+            "self_ns": 830628
+          },
+          "Dominator tree": {
+            "count": 119,
+            "inclusive_ns": 1180672,
+            "self_ns": 1180672
+          },
+          "Remove unreachable blocks": {
+            "count": 23,
+            "inclusive_ns": 640708,
+            "self_ns": 640708
+          },
+          "Verify Cranelift IR": {
+            "count": 84,
+            "inclusive_ns": 4191041,
+            "self_ns": 2912156
+          },
+          "Remove constant phi-nodes": {
+            "count": 23,
+            "inclusive_ns": 502667,
+            "self_ns": 502667
+          },
+          "Compilation passes": {
+            "count": 11,
+            "inclusive_ns": 5986332,
+            "self_ns": 4624
+          },
+          "Optimize IR in Context": {
+            "count": 11,
+            "inclusive_ns": 2645917,
+            "self_ns": 124713
+          },
+          "Egraph based optimizations": {
+            "count": 11,
+            "inclusive_ns": 1282206,
+            "self_ns": 884374
+          },
+          "Loop analysis": {
+            "count": 11,
+            "inclusive_ns": 28665,
+            "self_ns": 28665
+          },
+          "Compile for the target ISA": {
+            "count": 11,
+            "inclusive_ns": 2917458,
+            "self_ns": 323795
+          },
+          "VCode lowering": {
+            "count": 11,
+            "inclusive_ns": 477956,
+            "self_ns": 477956
+          },
+          "Register allocation": {
+            "count": 11,
+            "inclusive_ns": 1806291,
+            "self_ns": 1806291
+          },
+          "VCode emission": {
+            "count": 11,
+            "inclusive_ns": 309416,
+            "self_ns": 296293
+          },
+          "VCode emission finalization": {
+            "count": 11,
+            "inclusive_ns": 13123,
+            "self_ns": 13123
+          }
+        },
+        "details": [
+          {
+            "category": "cfg_cleanup",
+            "detail": "numeric phase",
+            "count": 2,
+            "inclusive_ns": 7614000,
+            "self_ns": 3573667
+          },
+          {
+            "category": "coordination",
+            "detail": "worker reply",
+            "count": 11,
+            "inclusive_ns": 4875,
+            "self_ns": 4875
+          },
+          {
+            "category": "cranelift_lower_codegen",
+            "detail": "Compile for the target ISA",
+            "count": 11,
+            "inclusive_ns": 2917458,
+            "self_ns": 323795
+          },
+          {
+            "category": "cranelift_optimize",
+            "detail": "Optimize IR in Context",
+            "count": 11,
+            "inclusive_ns": 2645917,
+            "self_ns": 124713
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Compilation passes",
+            "count": 11,
+            "inclusive_ns": 5986332,
+            "self_ns": 4624
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Control flow graph",
+            "count": 119,
+            "inclusive_ns": 830628,
+            "self_ns": 830628
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Dominator tree",
+            "count": 119,
+            "inclusive_ns": 1180672,
+            "self_ns": 1180672
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Egraph based optimizations",
+            "count": 11,
+            "inclusive_ns": 1282206,
+            "self_ns": 884374
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Loop analysis",
+            "count": 11,
+            "inclusive_ns": 28665,
+            "self_ns": 28665
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Register allocation",
+            "count": 11,
+            "inclusive_ns": 1806291,
+            "self_ns": 1806291
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Remove constant phi-nodes",
+            "count": 23,
+            "inclusive_ns": 502667,
+            "self_ns": 502667
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Remove unreachable blocks",
+            "count": 23,
+            "inclusive_ns": 640708,
+            "self_ns": 640708
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "VCode emission",
+            "count": 11,
+            "inclusive_ns": 309416,
+            "self_ns": 296293
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "VCode emission finalization",
+            "count": 11,
+            "inclusive_ns": 13123,
+            "self_ns": 13123
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "VCode lowering",
+            "count": 11,
+            "inclusive_ns": 477956,
+            "self_ns": 477956
+          },
+          {
+            "category": "cranelift_pass",
+            "detail": "Verify Cranelift IR",
+            "count": 84,
+            "inclusive_ns": 4191041,
+            "self_ns": 2912156
+          },
+          {
+            "category": "worker",
+            "detail": "worker lifetime",
+            "count": 1,
+            "inclusive_ns": 1319637000,
+            "self_ns": 20875
+          },
+          {
+            "category": "worker_compute",
+            "detail": "cleanup",
+            "count": 2,
+            "inclusive_ns": 9828333,
+            "self_ns": 17626
+          },
+          {
+            "category": "worker_compute",
+            "detail": "compile",
+            "count": 9,
+            "inclusive_ns": 3800583,
+            "self_ns": 10958
+          },
+          {
+            "category": "worker_job",
+            "detail": "cleanup",
+            "count": 2,
+            "inclusive_ns": 9829708,
+            "self_ns": 249
+          },
+          {
+            "category": "worker_job",
+            "detail": "compile",
+            "count": 9,
+            "inclusive_ns": 3805124,
+            "self_ns": 792
+          },
+          {
+            "category": "worker_wait",
+            "detail": "queue receive and lock",
+            "count": 12,
+            "inclusive_ns": 1305981293,
+            "self_ns": 1305981293
+          }
+        ]
+      }
+    },
+    "jobs": {
+      "0": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 0,
+          "start_ns": 286218667,
+          "end_ns": 286222458,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 0,
+          "start_ns": 286222875,
+          "end_ns": 297565333,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 2,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 0,
+          "start_ns": 286240875,
+          "end_ns": 297555250,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 2,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 0,
+          "start_ns": 297555292,
+          "end_ns": 297557875,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 18417,
+        "queue_delay_ns_upper": 22208
+      },
+      "1": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 1,
+          "start_ns": 305236333,
+          "end_ns": 305240250,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 1,
+          "start_ns": 318435292,
+          "end_ns": 318436500,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 2,
+          "category": "worker_compute",
+          "detail": "cleanup",
+          "job": 1,
+          "start_ns": 305277625,
+          "end_ns": 313186208,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 2,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 1,
+          "start_ns": 313186250,
+          "end_ns": 313186917,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 37375,
+        "queue_delay_ns_upper": 41292
+      },
+      "2": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 2,
+          "start_ns": 318428875,
+          "end_ns": 318434917,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 2,
+          "start_ns": 318465583,
+          "end_ns": 320414125,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 32,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 2,
+          "start_ns": 318732958,
+          "end_ns": 320404542,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 32,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 2,
+          "start_ns": 320404542,
+          "end_ns": 320409167,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 298041,
+        "queue_delay_ns_upper": 304083
+      },
+      "3": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 3,
+          "start_ns": 358307500,
+          "end_ns": 358316292,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 3,
+          "start_ns": 363321417,
+          "end_ns": 363322417,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 133,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 3,
+          "start_ns": 358357750,
+          "end_ns": 359321125,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 133,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 3,
+          "start_ns": 359321125,
+          "end_ns": 359321958,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 41458,
+        "queue_delay_ns_upper": 50250
+      },
+      "4": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 4,
+          "start_ns": 363315250,
+          "end_ns": 363320708,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 4,
+          "start_ns": 363334750,
+          "end_ns": 364286875,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 62,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 4,
+          "start_ns": 363343500,
+          "end_ns": 364278333,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 62,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 4,
+          "start_ns": 364278375,
+          "end_ns": 364282500,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 22792,
+        "queue_delay_ns_upper": 28250
+      },
+      "5": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 5,
+          "start_ns": 368723250,
+          "end_ns": 368725750,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 5,
+          "start_ns": 373157792,
+          "end_ns": 373158708,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 163,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 5,
+          "start_ns": 368754417,
+          "end_ns": 369426667,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 163,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 5,
+          "start_ns": 369426708,
+          "end_ns": 369427042,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 28667,
+        "queue_delay_ns_upper": 31167
+      },
+      "6": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 6,
+          "start_ns": 373152667,
+          "end_ns": 373157667,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 6,
+          "start_ns": 373170125,
+          "end_ns": 373854583,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 92,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 6,
+          "start_ns": 373178208,
+          "end_ns": 373849167,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 92,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 6,
+          "start_ns": 373849167,
+          "end_ns": 373850875,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 20541,
+        "queue_delay_ns_upper": 25541
+      },
+      "7": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 7,
+          "start_ns": 375219917,
+          "end_ns": 375224083,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 7,
+          "start_ns": 378345208,
+          "end_ns": 378346042,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 193,
+          "category": "worker_compute",
+          "detail": "cleanup",
+          "job": 7,
+          "start_ns": 375252917,
+          "end_ns": 377172667,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 193,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 7,
+          "start_ns": 377172708,
+          "end_ns": 377173167,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 28834,
+        "queue_delay_ns_upper": 33000
+      },
+      "8": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 8,
+          "start_ns": 378342333,
+          "end_ns": 378345000,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 8,
+          "start_ns": 378356500,
+          "end_ns": 378809958,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 122,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 8,
+          "start_ns": 378363375,
+          "end_ns": 378803458,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 122,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 8,
+          "start_ns": 378803500,
+          "end_ns": 378805000,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 18375,
+        "queue_delay_ns_upper": 21042
+      },
+      "9": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 9,
+          "start_ns": 392960125,
+          "end_ns": 392966208,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 9,
+          "start_ns": 395408125,
+          "end_ns": 395409000,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 305,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 9,
+          "start_ns": 392998167,
+          "end_ns": 393457375,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 305,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 9,
+          "start_ns": 393457417,
+          "end_ns": 393457833,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 31959,
+        "queue_delay_ns_upper": 38042
+      },
+      "10": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 10,
+          "start_ns": 395406000,
+          "end_ns": 395408000,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 10,
+          "start_ns": 395418958,
+          "end_ns": 395885792,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 152,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 10,
+          "start_ns": 395426333,
+          "end_ns": 395878250,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 152,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 10,
+          "start_ns": 395878292,
+          "end_ns": 395882250,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 18333,
+        "queue_delay_ns_upper": 20333
+      },
+      "11": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 11,
+          "start_ns": 398132125,
+          "end_ns": 398133833,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 11,
+          "start_ns": 400379208,
+          "end_ns": 400379833,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 335,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 11,
+          "start_ns": 398160750,
+          "end_ns": 398535750,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 335,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 11,
+          "start_ns": 398535750,
+          "end_ns": 398536083,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 26917,
+        "queue_delay_ns_upper": 28625
+      },
+      "12": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 12,
+          "start_ns": 400377083,
+          "end_ns": 400379083,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 12,
+          "start_ns": 400390167,
+          "end_ns": 400786292,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 182,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 12,
+          "start_ns": 400393875,
+          "end_ns": 400781583,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 182,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 12,
+          "start_ns": 400781625,
+          "end_ns": 400783167,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 14792,
+        "queue_delay_ns_upper": 16792
+      },
+      "13": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 13,
+          "start_ns": 402594750,
+          "end_ns": 402599000,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 13,
+          "start_ns": 404409958,
+          "end_ns": 404410625,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 365,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 13,
+          "start_ns": 402631042,
+          "end_ns": 402916125,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 365,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 13,
+          "start_ns": 402916167,
+          "end_ns": 402916500,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 32042,
+        "queue_delay_ns_upper": 36292
+      },
+      "14": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 14,
+          "start_ns": 404405375,
+          "end_ns": 404409917,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 14,
+          "start_ns": 404419500,
+          "end_ns": 404731833,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 212,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 14,
+          "start_ns": 404422708,
+          "end_ns": 404724167,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 212,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 14,
+          "start_ns": 404724208,
+          "end_ns": 404728417,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 12791,
+        "queue_delay_ns_upper": 17333
+      },
+      "15": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 15,
+          "start_ns": 406180292,
+          "end_ns": 406182000,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 15,
+          "start_ns": 407631333,
+          "end_ns": 407631958,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 395,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 15,
+          "start_ns": 406209833,
+          "end_ns": 406499042,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 395,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 15,
+          "start_ns": 406499042,
+          "end_ns": 406499542,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 27833,
+        "queue_delay_ns_upper": 29541
+      },
+      "16": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 16,
+          "start_ns": 407626792,
+          "end_ns": 407631250,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 16,
+          "start_ns": 407641083,
+          "end_ns": 407950917,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 242,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 16,
+          "start_ns": 407644792,
+          "end_ns": 407946500,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 242,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 16,
+          "start_ns": 407946500,
+          "end_ns": 407948000,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 13542,
+        "queue_delay_ns_upper": 18000
+      },
+      "17": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 17,
+          "start_ns": 409531042,
+          "end_ns": 409535750,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 17,
+          "start_ns": 411045125,
+          "end_ns": 411045833,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 425,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 17,
+          "start_ns": 409564417,
+          "end_ns": 409854125,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 425,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 17,
+          "start_ns": 409854167,
+          "end_ns": 409854500,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 28667,
+        "queue_delay_ns_upper": 33375
+      },
+      "18": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 18,
+          "start_ns": 411040792,
+          "end_ns": 411045042,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 18,
+          "start_ns": 411055042,
+          "end_ns": 411342708,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 272,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 18,
+          "start_ns": 411062458,
+          "end_ns": 411334625,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 272,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 18,
+          "start_ns": 411334667,
+          "end_ns": 411339042,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 17416,
+        "queue_delay_ns_upper": 21666
+      },
+      "19": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 19,
+          "start_ns": 412545708,
+          "end_ns": 412549708,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 19,
+          "start_ns": 413741333,
+          "end_ns": 413742000,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 455,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 19,
+          "start_ns": 412578208,
+          "end_ns": 412797958,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 455,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 19,
+          "start_ns": 412798000,
+          "end_ns": 412798292,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 28500,
+        "queue_delay_ns_upper": 32500
+      },
+      "20": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 20,
+          "start_ns": 413736958,
+          "end_ns": 413741250,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 20,
+          "start_ns": 413750250,
+          "end_ns": 413992000,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 302,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 20,
+          "start_ns": 413753583,
+          "end_ns": 413984792,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 302,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 20,
+          "start_ns": 413984833,
+          "end_ns": 413988792,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 12333,
+        "queue_delay_ns_upper": 16625
+      },
+      "21": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 21,
+          "start_ns": 415167750,
+          "end_ns": 415169500,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 21,
+          "start_ns": 416303958,
+          "end_ns": 416304750,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 485,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 21,
+          "start_ns": 415196250,
+          "end_ns": 415443250,
+          "thread": "worker-1"
+        },
+        "reply": {
+          "parent": 485,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 21,
+          "start_ns": 415443292,
+          "end_ns": 415443667,
+          "thread": "worker-1"
+        },
+        "queue_delay_ns_lower": 26750,
+        "queue_delay_ns_upper": 28500
+      },
+      "22": {
+        "submit": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "enqueue",
+          "job": 22,
+          "start_ns": 416302167,
+          "end_ns": 416303833,
+          "thread": "coordinator"
+        },
+        "receive": {
+          "parent": 0,
+          "category": "coordinator_wait",
+          "detail": "receive completion",
+          "job": 22,
+          "start_ns": 416313292,
+          "end_ns": 416550875,
+          "thread": "coordinator"
+        },
+        "work": {
+          "parent": 332,
+          "category": "worker_compute",
+          "detail": "compile",
+          "job": 22,
+          "start_ns": 416316792,
+          "end_ns": 416546708,
+          "thread": "worker-0"
+        },
+        "reply": {
+          "parent": 332,
+          "category": "coordination",
+          "detail": "worker reply",
+          "job": 22,
+          "start_ns": 416546750,
+          "end_ns": 416547917,
+          "thread": "worker-0"
+        },
+        "queue_delay_ns_lower": 12959,
+        "queue_delay_ns_upper": 14625
+      }
+    },
+    "worker_active_union_ns": 30836834,
+    "worker_sum_elapsed_ns": 30836834,
+    "coordinator_wait_union_ns": 18223790,
+    "coordinator_wait_overlap_worker_ns": 17207918
+  }
+}

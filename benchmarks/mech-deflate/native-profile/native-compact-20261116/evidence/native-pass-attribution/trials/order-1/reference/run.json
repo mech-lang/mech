@@ -1,0 +1,46 @@
+{
+  "wall_s": 2.666770084295422,
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/unused-error-shells/production/compile_profile",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/native-pass-attribution/observed/order-1/reference/compile",
+    "compact"
+  ],
+  "phases": [
+    {
+      "phase": "parse",
+      "seconds": 0.924187459,
+      "total_seconds": 0.92421975
+    },
+    {
+      "phase": "catalog",
+      "seconds": 0.0584415,
+      "total_seconds": 0.982758666
+    },
+    {
+      "phase": "frontend",
+      "seconds": 0.226117417,
+      "total_seconds": 1.20895025
+    },
+    {
+      "phase": "artifact",
+      "seconds": 0.00697,
+      "total_seconds": 1.216006708
+    },
+    {
+      "phase": "encode",
+      "seconds": 0.00256725,
+      "total_seconds": 1.229818291
+    },
+    {
+      "phase": "native",
+      "seconds": 1.418913167,
+      "total_seconds": 2.6520026249999997
+    }
+  ],
+  "artifacts": {
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  }
+}

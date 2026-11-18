@@ -19,6 +19,17 @@ pub(crate) fn define() -> SettingGroup {
     );
 
     settings.add_bool(
+        "enable_regalloc_spill_pairs",
+        "Pair adjacent integer register allocation stack moves on AArch64.",
+        r#"
+            Emit a load or store pair for consecutive allocator moves to or from
+            adjacent private slots when the pair offset is encodable and the
+            function has no stack or debug observers.
+        "#,
+        false,
+    );
+
+    settings.add_bool(
         "regalloc_verbose_logs",
         "Enable verbose debug logs for regalloc2.",
         r#"

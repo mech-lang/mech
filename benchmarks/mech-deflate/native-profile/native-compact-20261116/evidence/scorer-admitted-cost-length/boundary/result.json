@@ -1,0 +1,61 @@
+{
+  "cases": 102,
+  "entries": 3,
+  "objects_sha256": "f0277d3349c56acb08c9f8df62872199d84dae0f5c095f9327b0de2d903daec2",
+  "source_sha256": "49f9f503d3e57f5e791c34ed7dc700b5018fdc3c809b498e5e7c559080714bfc",
+  "test_sha256": "7fadbffb338d313b7d6c6162c022046c334b257940a8a97427b2b495f0568f4d",
+  "log_sha256": "58d7f871b9fed696b245db6bb06c63e330965de90bf4c4baee9b65171f12edb2",
+  "commands": [
+    [
+      "rustc",
+      "+nightly-2026-03-03",
+      "--edition",
+      "2024",
+      "-C",
+      "opt-level=1",
+      "-L",
+      "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps",
+      "--extern",
+      "serde=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps/libserde-2456c0391d15d182.rlib",
+      "--extern",
+      "cranelift_codegen=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps/libcranelift_codegen-b991cc47e96c83d1.rlib",
+      "--extern",
+      "cranelift_module=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps/libcranelift_module-5a2946ff15834a50.rlib",
+      "--extern",
+      "cranelift_native=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps/libcranelift_native-36b0d4da98fc8cb6.rlib",
+      "--extern",
+      "cranelift_object=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps/libcranelift_object-5c91eb1808e8a1dd.rlib",
+      "--extern",
+      "cranelift_frontend=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps/libcranelift_frontend-446b2e0bf0cefebc.rlib",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/boundary/emitter.rs",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/boundary/emitter"
+    ],
+    [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/boundary/emitter",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/boundary/lookup.o"
+    ],
+    [
+      "/usr/bin/cc",
+      "-std=c11",
+      "-O2",
+      "-Wall",
+      "-Werror",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/boundary/check.c",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/boundary/lookup.o",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/boundary/check"
+    ],
+    [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/boundary/check"
+    ]
+  ],
+  "library_sha256": {
+    "serde": "892b65b2b6472df14403fa183b37a7ae7c8bab099dd6cb04e8369232ed0cbb4c",
+    "cranelift_codegen": "2d3978ecb050f06f59025e3912f38c9493d6fb64db34605ad0c90aa70ad4324f",
+    "cranelift_module": "ef0753e34d4f32a50ab4778058bc2c7fc265dc16f18bd5e380454164ce9d15ab",
+    "cranelift_native": "73267f63aaf82bf14e6987b4dd41ae3860e645e2d667ad7155cf44b5e4ad3b2a",
+    "cranelift_object": "2a378c176340e408c1c234188a1e8379b331d0172c6dd1d076d78398856467f3",
+    "cranelift_frontend": "d94055232efa3b43bed38cd8a29fdecc0575f24e35d9999635af5e9361b22f91"
+  }
+}

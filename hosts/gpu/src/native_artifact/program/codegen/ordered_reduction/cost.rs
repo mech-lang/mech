@@ -14,6 +14,20 @@ pub(super) fn constant(b: &mut FunctionBuilder<'_>, values: [u32; 4]) -> Value {
     b.ins().vconst(types::I32X4, id)
 }
 
+/// Project four packed low words in descending element order. Swapping the
+/// input halves first lets AArch64 use UZP1 followed by REV64, without a
+/// shuffle-table load or a constrained consecutive register pair.
+pub(super) fn reverse_low_words(b: &mut FunctionBuilder<'_>, first: Value, second: Value) -> Value {
+    let low_words = b.func.dfg.immediates.push(ConstantData::from(vec![
+        0u8, 1, 2, 3, 8, 9, 10, 11, 16, 17, 18, 19, 24, 25, 26, 27,
+    ]));
+    let packed = b.ins().shuffle(second, first, low_words);
+    let pairs = b.func.dfg.immediates.push(ConstantData::from(vec![
+        4u8, 5, 6, 7, 0, 1, 2, 3, 12, 13, 14, 15, 8, 9, 10, 11,
+    ]));
+    b.ins().shuffle(packed, packed, pairs)
+}
+
 pub(super) struct Inputs {
     words: BTreeMap<usize, Value>,
     bases: BTreeMap<Window, Value>,
@@ -146,17 +160,24 @@ impl Inputs {
         let first = b.ins().load(types::I8X16, flags, pointer, 0);
         let bytes = if width == 8 {
             let second = b.ins().load(types::I8X16, flags, pointer, 16);
-            let mask = if w.reverse {
-                [24u8, 25, 26, 27, 16, 17, 18, 19, 8, 9, 10, 11, 0, 1, 2, 3]
+            if w.reverse
+                && cfg!(target_arch = "aarch64")
+                && std::env::var_os("MECH_ORDERED_REVERSE_LOW_WORDS").is_some()
+            {
+                reverse_low_words(b, first, second)
             } else {
-                [0u8, 1, 2, 3, 8, 9, 10, 11, 16, 17, 18, 19, 24, 25, 26, 27]
-            };
-            let mask = b
-                .func
-                .dfg
-                .immediates
-                .push(ConstantData::from(mask.to_vec()));
-            b.ins().shuffle(first, second, mask)
+                let mask = if w.reverse {
+                    [24u8, 25, 26, 27, 16, 17, 18, 19, 8, 9, 10, 11, 0, 1, 2, 3]
+                } else {
+                    [0u8, 1, 2, 3, 8, 9, 10, 11, 16, 17, 18, 19, 24, 25, 26, 27]
+                };
+                let mask = b
+                    .func
+                    .dfg
+                    .immediates
+                    .push(ConstantData::from(mask.to_vec()));
+                b.ins().shuffle(first, second, mask)
+            }
         } else if w.reverse {
             let mask = b.func.dfg.immediates.push(ConstantData::from(vec![
                 12u8, 13, 14, 15, 8, 9, 10, 11, 4, 5, 6, 7, 0, 1, 2, 3,

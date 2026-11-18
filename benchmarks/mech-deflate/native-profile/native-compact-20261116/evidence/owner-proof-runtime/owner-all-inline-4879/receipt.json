@@ -1,0 +1,19 @@
+{
+  "object_text_bytes": 72168,
+  "object_text_x_roc": 1.2508319467554077,
+  "object_text_x_libdeflate": 1.9462783171521036,
+  "roc_object_text_bytes": 57696,
+  "libdeflate_object_text_bytes": 37080,
+  "root_code_bytes": 51312,
+  "root_frame_bytes": 3680,
+  "source_blocks": 8223,
+  "root_direct_calls": 372,
+  "emit_seconds": 2.241558250039816,
+  "peak_resident_bytes": 226426880,
+  "object_sha256": "a2092b3d6b68a5a6988c86bb78d2374d44c8e387dc18d448c739dba7fb3fb490",
+  "metadata_sha256": "5c34a40103257d4c75e6eb03091659c363f3cf8f6c2fd2d1db95313e2d044b89",
+  "linked_text_bytes": 475092,
+  "worker_sha256": "d796bff730f76098063a342dccb76e628f14bd4dd446634076b77548588bac11",
+  "verified_calls": 162,
+  "proof": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/cranelift-owner-all-inline-4879-native-final-candidate-qualification.json"
+}

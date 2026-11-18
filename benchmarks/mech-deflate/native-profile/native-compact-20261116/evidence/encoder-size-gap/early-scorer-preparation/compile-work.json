@@ -1,0 +1,983 @@
+{
+  "metadata_only_changes": [
+    "numeric_phases"
+  ],
+  "changed_phase_headers": [
+    3009
+  ],
+  "emitted_encoder_sha256": "6aa84b6f1959257d89790935b17abf47cb195ba728c8fd01d5876281b569d096",
+  "linked_worker_sha256": "50423a79f10e605167e8d98a051239aedb2fba5c9c34bc7ddf96fb64cf9e2d6d",
+  "worker_source_sha256": "edcda2417cce1b5c94fdbc899d67622b77893ba1020d5579ac261b07933ebdd8",
+  "worker_metadata_fields": [
+    "symbol",
+    "inputs",
+    "input_words",
+    "output_words"
+  ],
+  "compiler_phase_artifacts": [
+    {
+      "actual_unit_append_growth": true,
+      "bit_counts": 0,
+      "cleanup": {
+        "adjacent_addresses_reused": 0,
+        "after_blocks": 406,
+        "after_instructions": 712,
+        "before_blocks": 1084,
+        "before_instructions": 2679,
+        "bitwise_constant_branches": 0,
+        "boolean_conditions_simplified": 24,
+        "boolean_phi_values": 5,
+        "constant_branches_removed": 18,
+        "current_predicate_branches": 0,
+        "dead_instructions_removed": 99,
+        "dead_loads_removed": 0,
+        "dead_parameters_removed": 2,
+        "enabled": true,
+        "fixed_point": true,
+        "identity_edges": 2,
+        "known_width_branches_removed": 0,
+        "local_phi_parameters_removed": 59,
+        "local_phi_preheaders": 2,
+        "loop_edges": 2,
+        "neutral_operations_removed": 2,
+        "ordered_capture_spans": 0,
+        "pre_codegen_data_passes": 0,
+        "rounds": 2,
+        "selected_home_constant_operands": 0,
+        "selected_home_merge_parameters": 0,
+        "selected_increment_guards_removed": 0,
+        "selected_range_branches_removed": 2,
+        "unsigned_intervals_combined": 1,
+        "window_bounds_combined": 0
+      },
+      "code_bytes": 1520,
+      "composed_variant": {
+        "admission": {
+          "cache": 1,
+          "cells_per_bank": 256,
+          "costs": 2,
+          "cursor_word": 1,
+          "immutable_code_bytes": 65536,
+          "minimum_costs": 545,
+          "minimum_records": 2048,
+          "second_bias": 14
+        },
+        "code_bytes": 1136,
+        "scratch_bytes": 0,
+        "stack_bytes": 224,
+        "symbol": "mech_compact_numeric_3009_no_growth_composed"
+      },
+      "exit": 3417,
+      "exit_owner_transfers": [
+        [
+          10692,
+          10640
+        ]
+      ],
+      "fixed_length_entry_gate": false,
+      "fixed_writable_capacities": 0,
+      "general_growth_uses_checked_continuation": true,
+      "header": 3009,
+      "input_words": 20,
+      "no_growth_variant": {
+        "actual_unit_append_growth": false,
+        "bit_counts": 0,
+        "cleanup": {
+          "adjacent_addresses_reused": 0,
+          "after_blocks": 380,
+          "after_instructions": 668,
+          "before_blocks": 1058,
+          "before_instructions": 2633,
+          "bitwise_constant_branches": 0,
+          "boolean_conditions_simplified": 24,
+          "boolean_phi_values": 5,
+          "constant_branches_removed": 16,
+          "current_predicate_branches": 0,
+          "dead_instructions_removed": 95,
+          "dead_loads_removed": 0,
+          "dead_parameters_removed": 0,
+          "enabled": true,
+          "fixed_point": true,
+          "identity_edges": 2,
+          "known_width_branches_removed": 0,
+          "local_phi_parameters_removed": 33,
+          "local_phi_preheaders": 2,
+          "loop_edges": 2,
+          "neutral_operations_removed": 2,
+          "ordered_capture_spans": 0,
+          "pre_codegen_data_passes": 0,
+          "rounds": 2,
+          "selected_home_constant_operands": 0,
+          "selected_home_merge_parameters": 0,
+          "selected_increment_guards_removed": 0,
+          "selected_range_branches_removed": 2,
+          "unsigned_intervals_combined": 1,
+          "window_bounds_combined": 0
+        },
+        "code_bytes": 1328,
+        "exit": 3417,
+        "fixed_length_entry_gate": false,
+        "fixed_writable_capacities": 0,
+        "header": 3009,
+        "input_words": 20,
+        "output_words": 12,
+        "phase_entry_bounds": [
+          [
+            0,
+            258,
+            true
+          ],
+          [
+            2,
+            259,
+            false
+          ]
+        ],
+        "private_write_sites": [],
+        "proven_changed_writes": [],
+        "proven_scalar_read_guards": [
+          [
+            3042,
+            1,
+            3105
+          ],
+          [
+            3064,
+            1,
+            3116
+          ],
+          [
+            3087,
+            2,
+            3128
+          ],
+          [
+            3109,
+            0,
+            3139
+          ],
+          [
+            3159,
+            1,
+            3174
+          ],
+          [
+            3182,
+            3,
+            3189
+          ],
+          [
+            3205,
+            2,
+            3202
+          ],
+          [
+            3225,
+            1,
+            3211
+          ],
+          [
+            3269,
+            2,
+            3238
+          ],
+          [
+            3296,
+            0,
+            3254
+          ],
+          [
+            3269,
+            2,
+            3238
+          ],
+          [
+            3296,
+            0,
+            3254
+          ]
+        ],
+        "read_pack_sites": [],
+        "reused_scalar_operands": [
+          [
+            3049,
+            3107,
+            3047,
+            3104
+          ],
+          [
+            3065,
+            3117,
+            3047,
+            3104
+          ],
+          [
+            3069,
+            3115,
+            3047,
+            3104
+          ],
+          [
+            3070,
+            3110,
+            3047,
+            3104
+          ],
+          [
+            3071,
+            3118,
+            3047,
+            3104
+          ],
+          [
+            3119,
+            3143,
+            3092,
+            3127
+          ],
+          [
+            3166,
+            3176,
+            3164,
+            3173
+          ],
+          [
+            3189,
+            3191,
+            3187,
+            3188
+          ],
+          [
+            3226,
+            3212,
+            3164,
+            3173
+          ],
+          [
+            3230,
+            3210,
+            3164,
+            3173
+          ],
+          [
+            3231,
+            3205,
+            3164,
+            3173
+          ],
+          [
+            3232,
+            3213,
+            3164,
+            3173
+          ],
+          [
+            3277,
+            3241,
+            3274,
+            3237
+          ]
+        ],
+        "reused_scalar_reads": [
+          [
+            3064,
+            3047,
+            3104
+          ],
+          [
+            3225,
+            3164,
+            3173
+          ]
+        ],
+        "selected_success_words": 6,
+        "stack_bytes": 224,
+        "symbol": "mech_compact_numeric_3009_no_growth",
+        "threaded_after_growth_isolation": {
+          "candidates": 40,
+          "repair_parameters": 0,
+          "selected_conditions": 0,
+          "threaded_edges": 0
+        },
+        "unique_writable_owner_gate": true,
+        "wider_equal_loops": []
+      },
+      "output_words": 12,
+      "phase_entry_bounds": [
+        [
+          0,
+          258,
+          true
+        ],
+        [
+          2,
+          259,
+          false
+        ]
+      ],
+      "private_write_sites": [],
+      "proven_changed_writes": [],
+      "proven_scalar_read_guards": [
+        [
+          3042,
+          1,
+          3105
+        ],
+        [
+          3064,
+          1,
+          3116
+        ],
+        [
+          3087,
+          2,
+          3128
+        ],
+        [
+          3109,
+          0,
+          3139
+        ],
+        [
+          3159,
+          1,
+          3174
+        ],
+        [
+          3182,
+          3,
+          3189
+        ],
+        [
+          3205,
+          2,
+          3202
+        ],
+        [
+          3225,
+          1,
+          3211
+        ],
+        [
+          3269,
+          2,
+          3238
+        ],
+        [
+          3296,
+          0,
+          3254
+        ],
+        [
+          3269,
+          2,
+          3238
+        ],
+        [
+          3296,
+          0,
+          3254
+        ]
+      ],
+      "read_pack_sites": [],
+      "reused_scalar_operands": [
+        [
+          3049,
+          3107,
+          3047,
+          3104
+        ],
+        [
+          3065,
+          3117,
+          3047,
+          3104
+        ],
+        [
+          3069,
+          3115,
+          3047,
+          3104
+        ],
+        [
+          3070,
+          3110,
+          3047,
+          3104
+        ],
+        [
+          3071,
+          3118,
+          3047,
+          3104
+        ],
+        [
+          3119,
+          3143,
+          3092,
+          3127
+        ],
+        [
+          3166,
+          3176,
+          3164,
+          3173
+        ],
+        [
+          3189,
+          3191,
+          3187,
+          3188
+        ],
+        [
+          3226,
+          3212,
+          3164,
+          3173
+        ],
+        [
+          3230,
+          3210,
+          3164,
+          3173
+        ],
+        [
+          3231,
+          3205,
+          3164,
+          3173
+        ],
+        [
+          3232,
+          3213,
+          3164,
+          3173
+        ],
+        [
+          3277,
+          3241,
+          3274,
+          3237
+        ]
+      ],
+      "reused_scalar_reads": [
+        [
+          3064,
+          3047,
+          3104
+        ],
+        [
+          3225,
+          3164,
+          3173
+        ]
+      ],
+      "selected_success_words": 6,
+      "stack_bytes": 256,
+      "symbol": "mech_compact_numeric_3009",
+      "unique_writable_owner_gate": true,
+      "vector_variant": {
+        "actual_unit_append_growth": true,
+        "bit_counts": 0,
+        "cleanup": {
+          "adjacent_addresses_reused": 0,
+          "after_blocks": 406,
+          "after_instructions": 712,
+          "before_blocks": 1084,
+          "before_instructions": 2679,
+          "bitwise_constant_branches": 0,
+          "boolean_conditions_simplified": 24,
+          "boolean_phi_values": 5,
+          "constant_branches_removed": 18,
+          "current_predicate_branches": 0,
+          "dead_instructions_removed": 99,
+          "dead_loads_removed": 0,
+          "dead_parameters_removed": 2,
+          "enabled": true,
+          "fixed_point": true,
+          "identity_edges": 2,
+          "known_width_branches_removed": 0,
+          "local_phi_parameters_removed": 59,
+          "local_phi_preheaders": 2,
+          "loop_edges": 2,
+          "neutral_operations_removed": 2,
+          "ordered_capture_spans": 0,
+          "pre_codegen_data_passes": 0,
+          "rounds": 2,
+          "selected_home_constant_operands": 0,
+          "selected_home_merge_parameters": 0,
+          "selected_increment_guards_removed": 0,
+          "selected_range_branches_removed": 2,
+          "unsigned_intervals_combined": 1,
+          "window_bounds_combined": 0
+        },
+        "code_bytes": 1520,
+        "exit": 3417,
+        "fixed_length_entry_gate": false,
+        "fixed_writable_capacities": 0,
+        "guard_arrays": [
+          [
+            1,
+            false
+          ],
+          [
+            3,
+            false
+          ]
+        ],
+        "header": 3009,
+        "input_words": 20,
+        "output_words": 12,
+        "phase_entry_bounds": [
+          [
+            0,
+            258,
+            true
+          ],
+          [
+            2,
+            259,
+            false
+          ]
+        ],
+        "private_write_sites": [],
+        "proven_changed_writes": [],
+        "proven_scalar_read_guards": [
+          [
+            3042,
+            1,
+            3105
+          ],
+          [
+            3064,
+            1,
+            3116
+          ],
+          [
+            3087,
+            2,
+            3128
+          ],
+          [
+            3109,
+            0,
+            3139
+          ],
+          [
+            3159,
+            1,
+            3174
+          ],
+          [
+            3182,
+            3,
+            3189
+          ],
+          [
+            3205,
+            2,
+            3202
+          ],
+          [
+            3225,
+            1,
+            3211
+          ],
+          [
+            3269,
+            2,
+            3238
+          ],
+          [
+            3296,
+            0,
+            3254
+          ],
+          [
+            3269,
+            2,
+            3238
+          ],
+          [
+            3296,
+            0,
+            3254
+          ]
+        ],
+        "read_pack_sites": [],
+        "reused_scalar_operands": [
+          [
+            3049,
+            3107,
+            3047,
+            3104
+          ],
+          [
+            3065,
+            3117,
+            3047,
+            3104
+          ],
+          [
+            3069,
+            3115,
+            3047,
+            3104
+          ],
+          [
+            3070,
+            3110,
+            3047,
+            3104
+          ],
+          [
+            3071,
+            3118,
+            3047,
+            3104
+          ],
+          [
+            3119,
+            3143,
+            3092,
+            3127
+          ],
+          [
+            3166,
+            3176,
+            3164,
+            3173
+          ],
+          [
+            3189,
+            3191,
+            3187,
+            3188
+          ],
+          [
+            3226,
+            3212,
+            3164,
+            3173
+          ],
+          [
+            3230,
+            3210,
+            3164,
+            3173
+          ],
+          [
+            3231,
+            3205,
+            3164,
+            3173
+          ],
+          [
+            3232,
+            3213,
+            3164,
+            3173
+          ],
+          [
+            3277,
+            3241,
+            3274,
+            3237
+          ]
+        ],
+        "reused_scalar_reads": [
+          [
+            3064,
+            3047,
+            3104
+          ],
+          [
+            3225,
+            3164,
+            3173
+          ]
+        ],
+        "selected_by_guard": false,
+        "selected_success_words": 6,
+        "stack_bytes": 256,
+        "symbol": "mech_compact_numeric_3009_vector",
+        "unique_writable_owner_gate": true,
+        "wider_equal_loops": []
+      },
+      "wider_equal_loops": []
+    },
+    {
+      "code_bytes": 0,
+      "compilation": "omitted: admitted dense scorer uses checked continuation",
+      "composed_variant": {
+        "admission": {
+          "cache": 1,
+          "cells_per_bank": 256,
+          "costs": 2,
+          "cursor_word": 1,
+          "immutable_code_bytes": 65536,
+          "minimum_costs": 545,
+          "minimum_records": 2048,
+          "second_bias": 14
+        },
+        "code_bytes": 1136,
+        "scratch_bytes": 0,
+        "stack_bytes": 224,
+        "symbol": "mech_compact_numeric_3009_no_growth_composed"
+      },
+      "exit": 3417,
+      "exit_owner_transfers": [
+        [
+          10692,
+          10640
+        ]
+      ],
+      "fixed_length_entry_gate": false,
+      "fixed_writable_capacities": 0,
+      "general_growth_uses_checked_continuation": true,
+      "header": 3009,
+      "input_words": 20,
+      "no_growth_variant": {
+        "actual_unit_append_growth": false,
+        "bit_counts": 0,
+        "cleanup": {
+          "adjacent_addresses_reused": 0,
+          "after_blocks": 380,
+          "after_instructions": 668,
+          "before_blocks": 1058,
+          "before_instructions": 2633,
+          "bitwise_constant_branches": 0,
+          "boolean_conditions_simplified": 24,
+          "boolean_phi_values": 5,
+          "constant_branches_removed": 16,
+          "current_predicate_branches": 0,
+          "dead_instructions_removed": 95,
+          "dead_loads_removed": 0,
+          "dead_parameters_removed": 0,
+          "enabled": true,
+          "fixed_point": true,
+          "identity_edges": 2,
+          "known_width_branches_removed": 0,
+          "local_phi_parameters_removed": 33,
+          "local_phi_preheaders": 2,
+          "loop_edges": 2,
+          "neutral_operations_removed": 2,
+          "ordered_capture_spans": 0,
+          "pre_codegen_data_passes": 0,
+          "rounds": 2,
+          "selected_home_constant_operands": 0,
+          "selected_home_merge_parameters": 0,
+          "selected_increment_guards_removed": 0,
+          "selected_range_branches_removed": 2,
+          "unsigned_intervals_combined": 1,
+          "window_bounds_combined": 0
+        },
+        "code_bytes": 1328,
+        "exit": 3417,
+        "fixed_length_entry_gate": false,
+        "fixed_writable_capacities": 0,
+        "header": 3009,
+        "input_words": 20,
+        "output_words": 12,
+        "phase_entry_bounds": [
+          [
+            0,
+            258,
+            true
+          ],
+          [
+            2,
+            259,
+            false
+          ]
+        ],
+        "private_write_sites": [],
+        "proven_changed_writes": [],
+        "proven_scalar_read_guards": [
+          [
+            3042,
+            1,
+            3105
+          ],
+          [
+            3064,
+            1,
+            3116
+          ],
+          [
+            3087,
+            2,
+            3128
+          ],
+          [
+            3109,
+            0,
+            3139
+          ],
+          [
+            3159,
+            1,
+            3174
+          ],
+          [
+            3182,
+            3,
+            3189
+          ],
+          [
+            3205,
+            2,
+            3202
+          ],
+          [
+            3225,
+            1,
+            3211
+          ],
+          [
+            3269,
+            2,
+            3238
+          ],
+          [
+            3296,
+            0,
+            3254
+          ],
+          [
+            3269,
+            2,
+            3238
+          ],
+          [
+            3296,
+            0,
+            3254
+          ]
+        ],
+        "read_pack_sites": [],
+        "reused_scalar_operands": [
+          [
+            3049,
+            3107,
+            3047,
+            3104
+          ],
+          [
+            3065,
+            3117,
+            3047,
+            3104
+          ],
+          [
+            3069,
+            3115,
+            3047,
+            3104
+          ],
+          [
+            3070,
+            3110,
+            3047,
+            3104
+          ],
+          [
+            3071,
+            3118,
+            3047,
+            3104
+          ],
+          [
+            3119,
+            3143,
+            3092,
+            3127
+          ],
+          [
+            3166,
+            3176,
+            3164,
+            3173
+          ],
+          [
+            3189,
+            3191,
+            3187,
+            3188
+          ],
+          [
+            3226,
+            3212,
+            3164,
+            3173
+          ],
+          [
+            3230,
+            3210,
+            3164,
+            3173
+          ],
+          [
+            3231,
+            3205,
+            3164,
+            3173
+          ],
+          [
+            3232,
+            3213,
+            3164,
+            3173
+          ],
+          [
+            3277,
+            3241,
+            3274,
+            3237
+          ]
+        ],
+        "reused_scalar_reads": [
+          [
+            3064,
+            3047,
+            3104
+          ],
+          [
+            3225,
+            3164,
+            3173
+          ]
+        ],
+        "selected_success_words": 6,
+        "stack_bytes": 224,
+        "symbol": "mech_compact_numeric_3009_no_growth",
+        "threaded_after_growth_isolation": {
+          "candidates": 40,
+          "repair_parameters": 0,
+          "selected_conditions": 0,
+          "threaded_edges": 0
+        },
+        "unique_writable_owner_gate": true,
+        "wider_equal_loops": []
+      },
+      "output_words": 12,
+      "phase_entry_bounds": [
+        [
+          0,
+          258,
+          true
+        ],
+        [
+          2,
+          259,
+          false
+        ]
+      ],
+      "stack_bytes": 0,
+      "symbol": "mech_compact_numeric_3009",
+      "unique_writable_owner_gate": true
+    }
+  ],
+  "removed_general_ir_blocks": 2168,
+  "removed_general_ir_instructions": 5358
+}

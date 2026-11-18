@@ -1,0 +1,11 @@
+{
+  "base": "06f5cb711473e39c5172506c5858e080b0364b43",
+  "compiler_patch_sha256": "4a751d798a08f4f89f6b65c364eef84cff43913cedcd918bbd0023f4bd9da344",
+  "compiler_sha256": "bced0ae35a684e0bfa816f08edc81af43c5f1d3f53093a0d677564430b021c0e",
+  "artifact_sha256": {
+    "program.o": "6aa84b6f1959257d89790935b17abf47cb195ba728c8fd01d5876281b569d096",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata.json": "d2b96451e5e3ad381b4b21f4ec2c6f1b665d9ecbced4509cfbad44e81d5925af"
+  },
+  "matched_worker_sha256": "50423a79f10e605167e8d98a051239aedb2fba5c9c34bc7ddf96fb64cf9e2d6d"
+}

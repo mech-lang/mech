@@ -1,0 +1,54 @@
+{
+  "training": [
+    "prefix-natural-4096",
+    "prefix-natural-16384",
+    "prefix-natural-32769",
+    "prefix-random-1048576",
+    "prefix-periodic-1024"
+  ],
+  "held_out": [
+    "prefix-natural-8192",
+    "prefix-random-4096",
+    "320-overlap"
+  ],
+  "before_score": 176.37310670031107,
+  "after_score": 177.44458730613198,
+  "before_static_fallthroughs": 263,
+  "after_static_fallthroughs": 267,
+  "profile_sha256": "935cb382432ed84e734f29f8787c86d172315af742b8804834ca96bbf4dd2f4a",
+  "training_trace_sha256": "468e521912829530b2d14eacf5139fbaa1448e73bba79f4416a23781da88030c",
+  "predicted_jumps": {
+    "prefix-natural-4096": {
+      "before": 26842.5,
+      "after": 23614.5
+    },
+    "prefix-natural-16384": {
+      "before": 137113.0,
+      "after": 123016.0
+    },
+    "prefix-natural-32769": {
+      "before": 332206,
+      "after": 302417
+    },
+    "prefix-random-1048576": {
+      "before": 2373369,
+      "after": 2369402
+    },
+    "prefix-periodic-1024": {
+      "before": 5751.5,
+      "after": 5743.5
+    },
+    "prefix-natural-8192": {
+      "before": 57039,
+      "after": 50443
+    },
+    "prefix-random-4096": {
+      "before": 8266,
+      "after": 8261
+    },
+    "320-overlap": {
+      "before": 1679.0,
+      "after": 1673.0
+    }
+  }
+}

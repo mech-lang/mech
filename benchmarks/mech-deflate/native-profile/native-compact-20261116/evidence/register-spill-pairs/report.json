@@ -1,0 +1,764 @@
+{
+  "compiler_parent": "cf0984ac50e7a1d7e4da47380f42e582d15f1fb0",
+  "host": "Apple M1, arm64 macOS, Rust opt-level 3, native Cranelift",
+  "scope": "AArch64 integer stack pairing in the diagnostic compact encoder.",
+  "mechanism": "Emit a pair for consecutive register-allocation moves on adjacent eight-byte stack slots. Preserve register-to-slot correspondence, instructions between edit groups, and addressing of the spill area. Check destination uniqueness for loads and preserve ordinary emission for observed stack state or unencodable offsets.",
+  "profile_layout": "Translate pinned block offsets only after verifying all original leaf blocks, branch targets, and unaffected instructions against the prelayout emitted forms. Retain the full profile order.",
+  "bytes": {
+    "control": {
+      "encoder_text": 71960,
+      "encoder_object": 159576,
+      "linked_text": 474884,
+      "linked_executable": 956056,
+      "encoder_text_x_roc": 1.2472268441486412,
+      "encoder_text_x_libdeflate": 1.9406688241639698,
+      "root_frame": 3744,
+      "worker_sha256": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41",
+      "object_sha256": "b22c37545471dbda6b9f743a6f87d0d1983347d9e46c6b28004924acd50046dd",
+      "metadata_sha256": "0581dd98b736dd4f4123d8052e0be608eaa80b3b337a1db6d9880f432d4ba2eb"
+    },
+    "paired": {
+      "encoder_text": 71864,
+      "encoder_object": 159480,
+      "linked_text": 474788,
+      "linked_executable": 956056,
+      "encoder_text_x_roc": 1.2455629506378258,
+      "encoder_text_x_libdeflate": 1.9380798274002158,
+      "root_frame": 3744,
+      "worker_sha256": "2920b25d6874cb954f872d64c5ca1fd4a175d865f1347fb63ecd39b59562bf7b",
+      "object_sha256": "463a3a0d275548b9be6f646cd9f978f6c929b58c9779b88e2d22183019b0b99a",
+      "metadata_sha256": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab"
+    }
+  },
+  "executed_matcher_instructions": {
+    "prefix-random-1048576": {
+      "control": 254842426,
+      "candidate": 246428466,
+      "stack_loads_control": 29824928,
+      "stack_loads_candidate": 26146008,
+      "stack_stores_control": 17876626,
+      "stack_stores_candidate": 13141586,
+      "composed_path_control": null
+    },
+    "prefix-random-4096": {
+      "control": 856997,
+      "candidate": 828331,
+      "stack_loads_control": 114268,
+      "stack_loads_candidate": 101982,
+      "stack_stores_control": 61769,
+      "stack_stores_candidate": 45389,
+      "composed_path_control": null
+    },
+    "prefix-natural-8192": {
+      "control": 3496564,
+      "candidate": 3445433,
+      "stack_loads_control": 271712,
+      "stack_loads_candidate": 253337,
+      "stack_stores_control": 137184,
+      "stack_stores_candidate": 104428,
+      "composed_path_control": 7752576
+    },
+    "prefix-natural-1024": {
+      "control": 311958,
+      "candidate": 305378,
+      "stack_loads_control": 30704,
+      "stack_loads_candidate": 28192,
+      "stack_stores_control": 16117,
+      "stack_stores_candidate": 12049,
+      "composed_path_control": null
+    },
+    "320-overlap": {
+      "control": 67615,
+      "candidate": 66959,
+      "stack_loads_control": 5509,
+      "stack_loads_candidate": 5497,
+      "stack_stores_control": 3245,
+      "stack_stores_candidate": 2601,
+      "composed_path_control": null
+    },
+    "prefix-periodic-1024": {
+      "control": 215667,
+      "candidate": 213398,
+      "stack_loads_control": 17899,
+      "stack_loads_candidate": 17764,
+      "stack_stores_control": 10494,
+      "stack_stores_candidate": 8360,
+      "composed_path_control": null
+    }
+  },
+  "direct_payload_timing": {
+    "empty": {
+      "baseline_microseconds": 0.0415,
+      "instrumented_microseconds": 0.041999999999999996,
+      "backing_microseconds": {
+        "alloc": 0.0,
+        "mmap": 0.0,
+        "dealloc": 0.0,
+        "munmap": 0.0
+      },
+      "successful_calls": 32,
+      "direct_backing_fraction_of_profiled_call": 0.0
+    },
+    "320-overlap": {
+      "baseline_microseconds": 28.250000000000004,
+      "instrumented_microseconds": 30.688000000000002,
+      "backing_microseconds": {
+        "alloc": 6.6665,
+        "mmap": 0.396,
+        "dealloc": 1.125,
+        "munmap": 0.916
+      },
+      "successful_calls": 32,
+      "direct_backing_fraction_of_profiled_call": 0.29664689781021897
+    },
+    "prefix-natural-1024": {
+      "baseline_microseconds": 89.5205,
+      "instrumented_microseconds": 93.1665,
+      "backing_microseconds": {
+        "alloc": 6.857,
+        "mmap": 0.375,
+        "dealloc": 1.253,
+        "munmap": 1.25
+      },
+      "successful_calls": 32,
+      "direct_backing_fraction_of_profiled_call": 0.10449034792548824
+    },
+    "prefix-random-4096": {
+      "baseline_microseconds": 113.1045,
+      "instrumented_microseconds": 116.458,
+      "backing_microseconds": {
+        "alloc": 5.6875,
+        "mmap": 0.375,
+        "dealloc": 1.0205,
+        "munmap": 2.0
+      },
+      "successful_calls": 32,
+      "direct_backing_fraction_of_profiled_call": 0.07799378316646345
+    },
+    "prefix-natural-8192": {
+      "baseline_microseconds": 901.854,
+      "instrumented_microseconds": 913.3955,
+      "backing_microseconds": {
+        "alloc": 7.1415,
+        "mmap": 0.583,
+        "dealloc": 2.267,
+        "munmap": 3.4165
+      },
+      "successful_calls": 32,
+      "direct_backing_fraction_of_profiled_call": 0.014679292814558424
+    },
+    "prefix-random-1048576": {
+      "baseline_microseconds": 28140.437499999996,
+      "instrumented_microseconds": 28244.0835,
+      "backing_microseconds": {
+        "alloc": 14.4965,
+        "mmap": 0.875,
+        "dealloc": 8.126,
+        "munmap": 9.0
+      },
+      "successful_calls": 32,
+      "direct_backing_fraction_of_profiled_call": 0.0011505949555771567
+    }
+  },
+  "complete_build_medians_seconds": {
+    "mech-control": {
+      "frontend": 2.7833116869442165,
+      "native": 1.7031287499703467,
+      "link": 0.04059975012205541,
+      "total": 4.527758833486587,
+      "parse": 2.459005417
+    },
+    "mech-paired": {
+      "frontend": 2.782696229638532,
+      "native": 1.7030601671431214,
+      "link": 0.040798062458634377,
+      "total": 4.527208375744522,
+      "parse": 2.4580496455
+    },
+    "roc": {
+      "compile": 2.946004124591127,
+      "link": 0.03441262501291931,
+      "total": 2.9809097081888467
+    },
+    "libdeflate": {
+      "compile": 0.44591529155150056,
+      "link": 0.034394270507618785,
+      "total": 0.4803129583597183
+    }
+  },
+  "source_through_link_x": {
+    "mech-control": {
+      "roc": 1.5189184768154487,
+      "libdeflate": 9.426684736861993
+    },
+    "mech-paired": {
+      "roc": 1.518733815824023,
+      "libdeflate": 9.425538697113357
+    }
+  },
+  "median_process_rss_bytes": {
+    "mech-control": {
+      "frontend": 382435328.0,
+      "native": 217899008.0,
+      "link": 59416576.0
+    },
+    "mech-paired": {
+      "frontend": 382435328.0,
+      "native": 217882624.0,
+      "link": 59375616.0
+    },
+    "roc": {
+      "compile": 391684096.0,
+      "link": 38658048.0
+    },
+    "libdeflate": {
+      "compile": 71507968.0,
+      "link": 38723584.0
+    }
+  },
+  "qualified_contract_checks": {
+    "exact_encoded_byte_cases": 81,
+    "checked_error_probes": 6,
+    "extra_matrix_exact_calls": 616,
+    "extra_matrix_shapes": 14,
+    "measured_peak_stack_bytes": 5296,
+    "peak_private_payload_bytes": {
+      "mech-control": 10548878,
+      "mech-experiment": 10548878
+    },
+    "regalloc_checker_same_object_metadata_worker": true
+  },
+  "full_runs": [
+    {
+      "id": "spill-pairs-20261117-full",
+      "kind": "full",
+      "order": "forward",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 61,
+            "mech-experiment": 61
+          },
+          "precision_supported_wins": {
+            "mech-control": 61,
+            "mech-experiment": 61
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 55,
+            "mech-experiment": 55
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 55,
+            "mech-experiment": 55
+          }
+        }
+      }
+    },
+    {
+      "id": "spill-pairs-20261117-full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 61,
+            "mech-experiment": 61
+          },
+          "precision_supported_wins": {
+            "mech-control": 60,
+            "mech-experiment": 61
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 55,
+            "mech-experiment": 55
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 54,
+            "mech-experiment": 55
+          }
+        }
+      }
+    }
+  ],
+  "paired_timed_calls_in_two_full_orders": 1965312,
+  "estimated_changes_over_resolution": {
+    "prefix-natural-65535": {
+      "decision": "regression",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.005774380982599858,
+          "lower": 0.004592119288674201,
+          "upper": 0.007126125578876152
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.005749805785622231,
+          "lower": 0.0050060544211685265,
+          "upper": 0.006486366817719524
+        }
+      },
+      "combined": {
+        "estimate": 0.005762093309050975,
+        "lower": 0.005049035156316162,
+        "upper": 0.006546387261316733
+      },
+      "adverse_runs": [
+        "spill-pairs-20261117-full-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-natural-262144": {
+      "decision": "regression",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.005492005720036053,
+          "lower": 0.004784758678864742,
+          "upper": 0.0061807078957094586
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.006491231966878841,
+          "lower": 0.0057699102427126725,
+          "upper": 0.00738956648358724
+        }
+      },
+      "combined": {
+        "estimate": 0.0059914947801533724,
+        "lower": 0.005491734643007673,
+        "upper": 0.006545721529066961
+      },
+      "adverse_runs": [
+        "spill-pairs-20261117-full-reverse"
+      ],
+      "duplicate_controls": []
+    }
+  },
+  "regression_bound_or_repeatability_open": {
+    "empty": {
+      "decision": "unresolved",
+      "runs": {
+        "spill-pairs-20261117-focus-spill-pair-cases": {
+          "estimate": -0.004792125270114078,
+          "lower": -0.01202542135870277,
+          "upper": 0.0023837038560801105
+        },
+        "spill-pairs-20261117-focus-spill-pair-cases-reverse": {
+          "estimate": -0.014574254250680041,
+          "lower": -0.025320644704628914,
+          "upper": -0.004774142736616582
+        },
+        "spill-pairs-20261117-full": {
+          "estimate": -0.007158099809017937,
+          "lower": -0.01565387259007578,
+          "upper": 0.001281401381790337
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.009296899492902133,
+          "lower": 0.0008607262236970392,
+          "upper": 0.017774342844865343
+        }
+      },
+      "combined": {
+        "estimate": 0.0010355895518399105,
+        "lower": -0.005015679972245168,
+        "upper": 0.0071717898719765305
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "unresolved",
+      "runs": {
+        "spill-pairs-20261117-focus-spill-pair-cases": {
+          "estimate": -0.0017653216453208387,
+          "lower": -0.00823520268453437,
+          "upper": 0.004710615792647976
+        },
+        "spill-pairs-20261117-focus-spill-pair-cases-reverse": {
+          "estimate": -0.002314197299613574,
+          "lower": -0.007516196836763189,
+          "upper": 0.003207522287731912
+        },
+        "spill-pairs-20261117-full": {
+          "estimate": 0.010661512904375448,
+          "lower": 0.004373572674388093,
+          "upper": 0.017086601797342782
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": -0.002938652277713283,
+          "lower": -0.008049969832476855,
+          "upper": 0.0022134485221931843
+        }
+      },
+      "combined": {
+        "estimate": 0.0038383984225158763,
+        "lower": -0.00025877219618886116,
+        "upper": 0.007951453812772291
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-slides-65537": {
+      "decision": "unresolved",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.004174308166766227,
+          "lower": 0.0030769560373147264,
+          "upper": 0.005307349242827941
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.004936186100166218,
+          "lower": 0.003985199134290296,
+          "upper": 0.005947777242985008
+        }
+      },
+      "combined": {
+        "estimate": 0.00455517490523305,
+        "lower": 0.003800415126442802,
+        "upper": 0.005309061233165879
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-65536": {
+      "decision": "unresolved",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.0047675964936533255,
+          "lower": 0.0041097716757436675,
+          "upper": 0.005376128442143413
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.005789111195043661,
+          "lower": 0.004880585061655562,
+          "upper": 0.006811776984753326
+        }
+      },
+      "combined": {
+        "estimate": 0.00527822409267964,
+        "lower": 0.004710934023022251,
+        "upper": 0.005856575410021048
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-65537": {
+      "decision": "unresolved",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.004856773872385034,
+          "lower": 0.0039952376173062465,
+          "upper": 0.005743321746804364
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0053831196522500235,
+          "lower": 0.004650943970304633,
+          "upper": 0.006101571152519858
+        }
+      },
+      "combined": {
+        "estimate": 0.005119912308732433,
+        "lower": 0.004553486706071697,
+        "upper": 0.0056932273895162755
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-131072": {
+      "decision": "unresolved",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.005084356763213949,
+          "lower": 0.004334691532220658,
+          "upper": 0.005847175406787919
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0024390795485162986,
+          "lower": -0.0008923538521647956,
+          "upper": 0.004950730051534125
+        }
+      },
+      "combined": {
+        "estimate": 0.0037608467470371387,
+        "lower": 0.002047989617546042,
+        "upper": 0.005105386784894916
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-1048576": {
+      "decision": "unresolved",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": 0.004671127015834831,
+          "lower": 0.003993899815590618,
+          "upper": 0.005150567086371849
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.0049691213566149806,
+          "lower": 0.004282081742751798,
+          "upper": 0.005666030683486589
+        }
+      },
+      "combined": {
+        "estimate": 0.004820113139393678,
+        "lower": 0.004354052424796695,
+        "upper": 0.005253038332598159
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-4096": {
+      "decision": "unresolved",
+      "runs": {
+        "spill-pairs-20261117-full": {
+          "estimate": -0.003179319280403714,
+          "lower": -0.009932622351979115,
+          "upper": 0.004099582504723864
+        },
+        "spill-pairs-20261117-full-reverse": {
+          "estimate": 0.007202119310863786,
+          "lower": -0.0003115946555116711,
+          "upper": 0.014836970249766157
+        }
+      },
+      "combined": {
+        "estimate": 0.001997955184378286,
+        "lower": -0.0030812237535270404,
+        "upper": 0.007265306063769739
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    }
+  },
+  "qualification_decision": "Reject",
+  "decision_scope": "Two established per-case slowdowns under policy v1. Retain the pinned worker and archive this implementation and its raw trials.",
+  "scope_of_measurements": "PC samples identify instruction locations. Direct allocator timers measure calls to allocation/release. Dynamic block counters measure executed instructions. Only the balanced wall-time runs measure runtime effects against peers.",
+  "replay_identity": {
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/host-opt-levels/opt3-cargo/release/emit_compact_size",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-root-inline-plan/recipe-default/frontend/program.mecb",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/runtime-matchfinder-20261117/replay"
+    ],
+    "native_flags": {
+      "MECH_PRIVATE_INDEXED_CHAINS": "1",
+      "MECH_PHASE_OWNER_TRANSFER": "1",
+      "MECH_PHASE_VECTOR_FAST": "1",
+      "MECH_PRIVATE_READ_INTERVALS": "1",
+      "MECH_PHASE_INVARIANT_VIEWS": "1",
+      "MECH_CURRENT_PREDICATES": "1",
+      "MECH_PRIVATE_NESTED_PHASES": "1",
+      "MECH_PHASE_ASSERTION_FLOORS": "1",
+      "MECH_TRAVERSAL_WRITE_BOUNDS": "1",
+      "MECH_WIDE_ANY_BITS": "1",
+      "MECH_WHOLE_PHASE_CAPACITY": "1",
+      "MECH_THREAD_AFTER_GROWTH_ISOLATION": "1",
+      "MECH_DIRECT_ITEM_NO_GROWTH": "1",
+      "MECH_REUSE_SHIFTED_EQUALITY": "1",
+      "MECH_SINGLETON_ORDERED_REDUCTION": "1",
+      "MECH_CHECKED_APPEND_RUN": "1",
+      "MECH_NARROW_MASKED_ARITHMETIC": "1",
+      "MECH_SPLIT_APPEND_DESCRIPTORS": "all",
+      "MECH_PRIVATE_VECTOR_PREDICATES": "1",
+      "MECH_PRIVATE_VECTOR_WIDTHS": "1",
+      "MECH_ORDERED_CAPTURE_SPANS": "1",
+      "MECH_REUSE_EQUALITY_PREFIX": "1",
+      "MECH_ADJACENT_ADDRESSES": "1",
+      "MECH_WIDENING_REDUCTION": "1",
+      "MECH_SHARE_REPEATED_BOUNDS": "1",
+      "MECH_DEFER_EXIT_PACKET_WORDS": "1",
+      "MECH_REUSE_DOMINATING_WINDOW_FACTS": "1",
+      "MECH_PROVE_SCALAR_SPANS": "1",
+      "MECH_COMPOSE_READONLY_LOOKUPS": "1",
+      "MECH_COMPOSE_IMMUTABLE_COST_CODES": "1",
+      "MECH_NARROW_ORDERED_ITEM": "1",
+      "MECH_REUSE_SELECTED_READ_BOUND": "1",
+      "MECH_REVERSE_REDUCTION_CURSOR": "1",
+      "MECH_COALESCE_EQUAL_JOIN_ARGUMENTS": "1",
+      "MECH_GROUP_PACKED_HISTOGRAM": "1",
+      "MECH_REDUCTION_COUNTDOWN": "1",
+      "MECH_ARM64_LOOP_LIVE_RANGES": "1",
+      "MECH_FIRST_PACKED_REVERSE_READ": "1",
+      "MECH_ARM64_CCMP_BRANCH_SELECT": "1",
+      "MECH_FORWARD_SELECTED_CONTINUATIONS": "1",
+      "MECH_NORMALIZE_SELECTED_LOOP_TEST": "1",
+      "MECH_PACK_PRIVATE_HALFWORD_READS": "1",
+      "MECH_REUSE_ADMITTED_VIEW_LENGTHS": "1",
+      "MECH_SHARE_CLAMP_DECISIONS": "1",
+      "MECH_SHORT_CIRCUIT_COMPARISON_BRANCHES": "1",
+      "MECH_FORWARD_ZERO_TRIP_REDUCTIONS": "1",
+      "MECH_PREFETCH_PRIVATE_WRITES": "1",
+      "MECH_SCHEDULE_INDEPENDENT_PRIVATE_READS": "1",
+      "MECH_BORROW_COMPACT_READ_COPIES": "1",
+      "MECH_PREFETCH_SECOND_PRIVATE_WRITE": "1",
+      "MECH_PROVE_PACKED_BASE_SPANS": "1",
+      "MECH_PAIR_CHECKED_APPENDS": "1",
+      "MECH_NORMALIZE_DEFAULTED_READ_SETUP": "1",
+      "MECH_CARRY_REDUCTION_BOUND": "1",
+      "MECH_TERMINAL_BYTE_APPENDS": "1",
+      "MECH_ARM64_SUBTRACT_IMMEDIATE_BRANCH": "1",
+      "MECH_ORDERED_SHORT_NARROW_ORDINAL": "1",
+      "MECH_ORDERED_LAZY_REVERSE_CURSOR": "1",
+      "MECH_EMIT_REDUCTION_FALLTHROUGH": "1",
+      "MECH_ARM64_SUBTRACT_BRANCH": "1",
+      "MECH_COMPACT_REUSE_OVERWRITTEN_RESULT": "1",
+      "MECH_COMPACT_DIRECT_RUNTIME_CALLS": "allocation-and-byte-appends",
+      "MECH_COMPACT_PACK_LARGE_REFUSALS": "1",
+      "MECH_COMPACT_LAYOUT_REGIONS_LAST": "1",
+      "MECH_COMPACT_PREPARE_LAYOUT_REGION_IR": "1",
+      "MECH_COMPACT_ORDER_REGION_CAPTURES": "1",
+      "MECH_COMPACT_BIND_REGION_LITERALS": "1",
+      "MECH_COMPACT_SHARE_PHASE_RELOCATIONS": "1",
+      "MECH_COMPACT_BIND_REGION_INPUT_ROLES": "1",
+      "MECH_COMPACT_FORWARD_VIEW_GEOMETRY": "1",
+      "MECH_COMPACT_VECTOR_FACTS": "1",
+      "MECH_COMPACT_RETURN_REGION_ERROR_ORIGIN": "1",
+      "MECH_COMPACT_ALIGN_REGION_OUTPUTS": "1",
+      "MECH_COMPACT_FOLD_UNIT_BRANCHES": "1",
+      "MECH_COMPACT_PAD_REGION_OUTPUTS": "1",
+      "MECH_COMPACT_SHARE_OWNER_RETIREMENT": "all",
+      "MECH_COMPACT_BIND_REFUSAL_LITERALS": "retry",
+      "MECH_COMPACT_PREPARE_REFUSAL_IR": "1",
+      "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "16",
+      "MECH_COMPACT_DEFINE_TERMINAL_ENTRY_FIRST": "1",
+      "MECH_COMPACT_PAIR_WORDS": "all",
+      "MECH_COMPACT_PAIR_STACK_WORDS": "1",
+      "MECH_COMPACT_ROOT_PROOFS": "all",
+      "MECH_COMPACT_SHARE_COLD_EPILOGUES": "1",
+      "MECH_COMPACT_SHARE_CHECKED_TRAVERSALS": "all",
+      "MECH_COMPACT_SHARE_CONTROLLER_WINDOWS": "2184:2267,2388:2463,2599:2674,2314:2382,2685:2753,31:97",
+      "MECH_COMPACT_REFUSE_GENERAL_VECTORS": "475",
+      "MECH_COMPACT_SHARE_MATRIX_WORDS": "1",
+      "MECH_COMPACT_PACK_WRITABLE_STORAGE": "1",
+      "MECH_COMPACT_GROUP_RETIREMENTS": "1",
+      "MECH_COMPACT_REGISTER_BACKING": "1",
+      "MECH_COMPACT_SHARE_STATIC_ERROR_STATUS": "1",
+      "MECH_PACK_PRIVATE_HALFWORD_STORES": "1",
+      "MECH_COMPACT_FOLD_CHECKED_ADDS": "1",
+      "MECH_COMPACT_LAYOUT_CONTROLLER_WINDOWS": "7924:38293:8064,4936:26390:5013,4877:26199:4952,4796:25856:4868,4684:25398:4753,4347:23993:4404,4262:23588:4318,4250:23517:4306,4020:22497:4070,3880:21853:3925,2716:17358:2731,2713:17340:2728,2633:17036:2647,2631:17020:2645,2424:16259:2436,2422:16243:2434,2349:15958:2360,2346:15940:2357,2085:15099:2094,2050:14995:2059,2011:14879:2020,1991:14817:2000,1245:12406:1250,861:11248:862",
+      "MECH_COMPACT_TRIM_RETIREMENTS": "1",
+      "MECH_COMPACT_SHARE_CAPACITY_GROWTH": "preserve",
+      "MECH_COMPACT_FUSE_WRITABLE_GROWTH": "byte-registers",
+      "MECH_COMPACT_PROVE_BACKING_OWNERS": "direct",
+      "MECH_COMPACT_FUNCTION_ALIGNMENT_LOG2": "4",
+      "MECH_COMPACT_COALESCE_PARALLEL_PHIS": "1",
+      "MECH_COMPACT_ROOT_FLOW_PASSES": "equal,identity",
+      "MECH_COMPACT_INLINE_SINGLE_CALLS": "1",
+      "MECH_COMPACT_INLINE_SYMBOLS": "mech_compact_numeric_4879,mech_compact_numeric_4673_vector",
+      "MECH_COMPACT_LITERAL_EDGE_ARGUMENTS": "fold",
+      "MECH_COMPACT_FORWARD_SPILL_RELOADS": "1",
+      "MECH_COMPACT_COMPILE_THREADS": "2",
+      "MECH_COMPACT_CONTINUATION_WINDOWS": "661:662:662,889:890:890,1283:12930:1288,1339:1340:1344,1792:1793:1801,1850:1851:1859,10613:660:660,11381:901:901,12529:1282:1286,12808:1362:1366,14074:1791:1799,14357:1873:1881;35847:7155:7271,36182:7262:7382,37817:7806:7940,38036:7865:8000",
+      "MECH_COMPACT_REGION_REGISTER_OUTPUTS": "1",
+      "MECH_COMPACT_PHASE_BLOCK_LAYOUT": "mech_compact_numeric_475_vector@/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/runtime-matchfinder-20261117/evidence-draft/mech_compact_numeric_475_vector-paired-block-layout.json;mech_compact_numeric_3956_vector@/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/runtime-matchfinder-20261117/evidence-draft/mech_compact_numeric_3956_vector-paired-block-layout.json",
+      "MECH_COMPACT_SHARE_COLD_TAILS": "1",
+      "MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS": "1",
+      "MECH_COMPACT_PAIR_REGISTER_SPILLS": "1"
+    },
+    "object_sha256": "463a3a0d275548b9be6f646cd9f978f6c929b58c9779b88e2d22183019b0b99a",
+    "metadata_sha256": "a8115b813586ab5e1dbe7df406c4206d665565a2e2566438964e340bff2442ab",
+    "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+  },
+  "placement_diagnostics": {
+    "original_addresses": {
+      "text_bytes": 71960,
+      "text_x_roc": 1.2472268441486412,
+      "text_x_libdeflate": 1.9406688241639698,
+      "worker_sha256": "010adac211abc907ceeaa8e4c606185e300868fd3d7ddaf2cd2453a2dba78529",
+      "native_symbol_count": 40,
+      "diagnostic_only": true,
+      "archive_directory": "original_addresses",
+      "natural_text_intervals": {
+        "prefix-natural-65535": {
+          "estimate": 0.0030438153896776843,
+          "lower": 0.0023541889608742483,
+          "upper": 0.003779999487265595
+        },
+        "prefix-natural-262144": {
+          "estimate": 0.0031055916658233595,
+          "lower": 0.0018032743108888916,
+          "upper": 0.004632185376691522
+        }
+      },
+      "timing_focused_findings": {
+        "rejected": [],
+        "unresolved": [
+          "both complete timing orders are required",
+          "prefix-random-4096: regression bound or duplicate-control repeatability unresolved"
+        ]
+      }
+    },
+    "alignment_modulo_64": {
+      "text_bytes": 71896,
+      "text_x_roc": 1.2461175818080976,
+      "text_x_libdeflate": 1.9389428263214672,
+      "worker_sha256": "775b12ba2e8c54a3a153504833df4601307ae691cd6bb31ecd57d16c78960b91",
+      "native_symbol_count": 40,
+      "diagnostic_only": true,
+      "archive_directory": "alignment_modulo_64",
+      "natural_text_intervals": {
+        "prefix-natural-65535": {
+          "estimate": 0.0014762855136847275,
+          "lower": 0.0008210355537547898,
+          "upper": 0.002133615618715945
+        },
+        "prefix-natural-262144": {
+          "estimate": 0.003408863637650583,
+          "lower": 0.003127977949768823,
+          "upper": 0.00369219853145597
+        }
+      },
+      "timing_focused_findings": {
+        "rejected": [],
+        "unresolved": [
+          "both complete timing orders are required",
+          "random-64: regression bound or duplicate-control repeatability unresolved"
+        ]
+      }
+    }
+  }
+}

@@ -137,8 +137,12 @@ pub(super) fn verify_linked_unwind(root: &[u8], linked: &[u8]) -> Result<()> {
         return Err("partial link did not emit a relocatable Apple AArch64 Object".into());
     }
     for name in ["__compact_unwind", "__eh_frame"] {
-        if root.section_by_name(name).is_some_and(|section| section.size() != 0)
-            && linked.section_by_name(name).is_none_or(|section| section.size() == 0)
+        if root
+            .section_by_name(name)
+            .is_some_and(|section| section.size() != 0)
+            && linked
+                .section_by_name(name)
+                .is_none_or(|section| section.size() == 0)
         {
             return Err(format!("partial link dropped LLVM unwind section {name}"));
         }

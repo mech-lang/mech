@@ -1,0 +1,9 @@
+Executable=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/direct-source-20261117/boundary/aligned-worker
+Identifier=aligned-worker
+Format=Mach-O thin (arm64)
+CodeDirectory v=20400 size=7527 flags=0x20002(adhoc,linker-signed) hashes=232+0 location=embedded
+Signature=adhoc
+Info.plist=not bound
+TeamIdentifier=not set
+Sealed Resources=none
+Internal requirements=none

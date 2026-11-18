@@ -1,0 +1,17 @@
+{
+  "source_path": "hosts/gpu/src/native_artifact/program/codegen/numeric_compact.rs",
+  "plan_sha256": "0beb94bd5d52fad7e06d92dbb72ac143b7395716c453f8626d023ad9fbd4d660",
+  "control_build_seconds": 3.7536431045737118,
+  "shared_build_seconds": 3.7360539785586298,
+  "paired_total_ratio": 0.995785325888962,
+  "paired_native_ratio": 0.9989025952593529,
+  "compiled_input_and_output_sha256": {
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "program.o": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b",
+    "metadata.json": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+    "compressor": "48afe17cee9a6cd9b00e6903d7bfcb5e4047c391cc5df302e3155746e4f2d40e"
+  },
+  "timed_pairs": 8,
+  "timed_compiler_scope": "Uninstrumented",
+  "historical_worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9"
+}

@@ -82,6 +82,19 @@ pub(crate) struct CursorScope {
     context_frontier: bool,
 }
 
+// The active definition trial only observes its first effective raw scan.
+#[derive(Clone, Copy, Default)]
+pub(crate) enum DefinitionRawOrigin {
+    #[default]
+    Off,
+    Waiting,
+    Fresh {
+        at: TextSize,
+        final_end: Option<TextSize>,
+    },
+    Inherited,
+}
+
 /// Input-independent ownership of a live parse. Moving this state never
 /// finalizes events, loses rule/marker context, or replenishes resource fuel.
 pub(crate) struct ParserState {
@@ -92,8 +105,10 @@ pub(crate) struct ParserState {
     events: Journal<Event>,
     tree_cache: tree_cache::TreeCache,
     grapheme_tail: Option<grapheme_scan::GraphemeScan>,
+    definition_raw: DefinitionRawOrigin,
     literal_cache: literal_scan::LiteralCache,
     base_storage: canonical::base::continuation::FrameStorage,
+    literal_storage: canonical::literals::FrameStorage,
     operator_storage: canonical::operators::FrameStorage,
     open_markers: Vec<usize>,
     peak_open_markers: usize,
@@ -144,8 +159,10 @@ impl ParserState {
             events: Journal::default(),
             tree_cache: tree_cache::TreeCache::default(),
             grapheme_tail: None,
+            definition_raw: DefinitionRawOrigin::Off,
             literal_cache: literal_scan::LiteralCache::default(),
             base_storage: canonical::base::continuation::FrameStorage::default(),
+            literal_storage: canonical::literals::FrameStorage::default(),
             operator_storage: canonical::operators::FrameStorage::default(),
             open_markers: Vec::new(),
             peak_open_markers: 0,
@@ -584,6 +601,22 @@ impl<'a> Parser<'a> {
         self.state.rules.len()
     }
 
+    pub(crate) fn observe_definition_raw_origin(&mut self, final_end: Option<TextSize>) {
+        if matches!(self.state.definition_raw, DefinitionRawOrigin::Waiting) {
+            let at = self.offset();
+            self.state.definition_raw = if self
+                .state
+                .grapheme_tail
+                .as_ref()
+                .is_some_and(|tail| tail.resumes_at(at, final_end))
+            {
+                DefinitionRawOrigin::Inherited
+            } else {
+                DefinitionRawOrigin::Fresh { at, final_end }
+            };
+        }
+    }
+
     pub(crate) fn bump_char_raw(&mut self) -> Option<(char, TextRange)> {
         if !self.charge() {
             return None;
@@ -885,6 +918,10 @@ pub(crate) fn parse_canonical_document_with_ids(
     ids: &mut IdGenerator,
 ) -> SyntaxSnapshot {
     let mut parser = Parser::new(&source, LexicalMode::CanonicalSourceFragment, config, ids);
+    // One-shot parsing preserves the logical grants and IDs. Streaming work
+    // reports continue tracking every materialized cache allocation.
+    parser.state.events = Journal::batch();
+    parser.state.tree_cache.one_shot = true;
     parser.set_resource_rule(rules::PARSE);
     canonical::document::parse_document_root(&mut parser);
     let output = parser.finish();
@@ -1054,6 +1091,62 @@ fn leading_indentation(source: &TextSnapshot, range: TextRange) -> u32 {
 mod tests {
     use super::*;
     use crate::document::{DocumentId, ExpectedSyntax, Revision};
+
+    #[test]
+    fn one_shot_cache_accounting_preserves_trees_and_diagnostics() {
+        fn parse(source: TextSnapshot, config: ParseConfig, discard: bool) -> SyntaxSnapshot {
+            let mut ids = IdGenerator::new();
+            let mut parser = Parser::new(
+                &source,
+                LexicalMode::CanonicalSourceFragment,
+                config,
+                &mut ids,
+            );
+            if discard {
+                parser.state.events = Journal::batch();
+            }
+            parser.state.tree_cache.one_shot = discard;
+            parser.set_resource_rule(rules::PARSE);
+            canonical::document::parse_document_root(&mut parser);
+            let output = parser.finish();
+            finish_snapshot(source, output, &mut ids, SyntaxKind::Document)
+        }
+
+        let mut finite = ParseConfig::default();
+        finite.limits.fuel = 230;
+        finite.limits.max_events = 50;
+        for config in [ParseConfig::default(), finite] {
+            for text in [
+                "β := [1, 2, 3]\nβ[1]",
+                "β := [1, (4 + ]\nβ[",
+                "**α** and é\n\nβ := 2\n",
+            ] {
+                let boundary = text.char_indices().nth(8).map_or(text.len(), |(at, _)| at);
+                let source = TextSnapshot::new(DocumentId(827), Revision(0), &text[..boundary])
+                    .unwrap()
+                    .append(&text[boundary..])
+                    .unwrap();
+                let original = parse(source.clone(), config, false);
+                let updated = parse(source, config, true);
+                assert_eq!(original.stats, updated.stats, "{text}");
+                assert_eq!(
+                    format!("{:?}", original.root),
+                    format!("{:?}", updated.root),
+                    "{text}"
+                );
+                assert_eq!(
+                    format!("{:?}", original.diagnostics),
+                    format!("{:?}", updated.diagnostics),
+                    "{text}"
+                );
+                assert_eq!(
+                    format!("{:?}", original.restarts),
+                    format!("{:?}", updated.restarts),
+                    "{text}"
+                );
+            }
+        }
+    }
 
     #[test]
     fn nested_cursor_scope_retains_an_open_embedded_frontier_before_the_document_end() {

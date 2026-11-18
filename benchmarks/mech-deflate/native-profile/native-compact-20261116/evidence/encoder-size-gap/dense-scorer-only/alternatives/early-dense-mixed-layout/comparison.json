@@ -1,0 +1,14 @@
+{
+  "original_text_bytes": 66240,
+  "candidate_text_bytes": 66240,
+  "previous_profile_sha256": "ee151ed4d6bbe630a0677d4488eff45a3df4c2e2106bdff5d4f0dd5c9dd61086",
+  "new_profile_sha256": "f8255c4b4bb29c40af32db8477ac89420a93571be8093e0812db36c29581b9f3",
+  "training_fixtures": [
+    "320-overlap",
+    "prefix-periodic-1024",
+    "prefix-natural-16384",
+    "prefix-natural-65537",
+    "heldout-mixed-131073"
+  ],
+  "other_atoms_identical": 27
+}

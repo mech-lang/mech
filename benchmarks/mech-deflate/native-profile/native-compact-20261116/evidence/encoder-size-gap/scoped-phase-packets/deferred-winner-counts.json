@@ -1,0 +1,150 @@
+{
+  "prefix-natural-4096": {
+    "instructions": {
+      "near": 3408645,
+      "at_exit": 3417570,
+      "change": 8925
+    },
+    "branches": {
+      "near": 523820,
+      "at_exit": 523820,
+      "change": 0
+    },
+    "orr": {
+      "near": 147005,
+      "at_exit": 76525,
+      "change": -70480
+    },
+    "cmp": {
+      "near": 407530,
+      "at_exit": 443095,
+      "change": 35565
+    },
+    "csel": {
+      "near": 208540,
+      "at_exit": 244105,
+      "change": 35565
+    },
+    "stack_loads": {
+      "near": 45,
+      "at_exit": 55,
+      "change": 10
+    },
+    "stack_stores": {
+      "near": 3525,
+      "at_exit": 4690,
+      "change": 1165
+    }
+  },
+  "prefix-natural-8192": {
+    "instructions": {
+      "near": 7483578,
+      "at_exit": 7535028,
+      "change": 51450
+    },
+    "branches": {
+      "near": 1179516,
+      "at_exit": 1179516,
+      "change": 0
+    },
+    "orr": {
+      "near": 323124,
+      "at_exit": 185208,
+      "change": -137916
+    },
+    "cmp": {
+      "near": 943968,
+      "at_exit": 1030872,
+      "change": 86904
+    },
+    "csel": {
+      "near": 443604,
+      "at_exit": 530508,
+      "change": 86904
+    },
+    "stack_loads": {
+      "near": 54,
+      "at_exit": 66,
+      "change": 12
+    },
+    "stack_stores": {
+      "near": 10458,
+      "at_exit": 13932,
+      "change": 3474
+    }
+  },
+  "reymont-prefix-32769": {
+    "instructions": {
+      "near": 26897905,
+      "at_exit": 27223725,
+      "change": 325820
+    },
+    "branches": {
+      "near": 4384435,
+      "at_exit": 4384435,
+      "change": 0
+    },
+    "orr": {
+      "near": 1181885,
+      "at_exit": 711425,
+      "change": -470460
+    },
+    "cmp": {
+      "near": 3670220,
+      "at_exit": 4053955,
+      "change": 383735
+    },
+    "csel": {
+      "near": 1697590,
+      "at_exit": 2081325,
+      "change": 383735
+    },
+    "stack_loads": {
+      "near": 90,
+      "at_exit": 110,
+      "change": 20
+    },
+    "stack_stores": {
+      "near": 21630,
+      "at_exit": 28820,
+      "change": 7190
+    }
+  },
+  "prefix-natural-32769": {
+    "instructions": {
+      "near": 26897905,
+      "at_exit": 27223725,
+      "change": 325820
+    },
+    "branches": {
+      "near": 4384435,
+      "at_exit": 4384435,
+      "change": 0
+    },
+    "orr": {
+      "near": 1181885,
+      "at_exit": 711425,
+      "change": -470460
+    },
+    "cmp": {
+      "near": 3670220,
+      "at_exit": 4053955,
+      "change": 383735
+    },
+    "csel": {
+      "near": 1697590,
+      "at_exit": 2081325,
+      "change": 383735
+    },
+    "stack_loads": {
+      "near": 90,
+      "at_exit": 110,
+      "change": 20
+    },
+    "stack_stores": {
+      "near": 21630,
+      "at_exit": 28820,
+      "change": 7190
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "base": "7a0b3127ce2ec163d3989f706b7ab819901ec0c2",
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "orders": [
+    [
+      "control",
+      "expected",
+      "candidate"
+    ],
+    [
+      "control",
+      "candidate",
+      "expected"
+    ],
+    [
+      "expected",
+      "control",
+      "candidate"
+    ],
+    [
+      "expected",
+      "candidate",
+      "control"
+    ],
+    [
+      "candidate",
+      "control",
+      "expected"
+    ],
+    [
+      "candidate",
+      "expected",
+      "control"
+    ]
+  ],
+  "binaries": {
+    "control": "421d32a8bf0dff0b0de0482ac60d3067f13d93f41ee1c8ca2a19f8fe88e8ef08",
+    "expected": "594dc307412ce27d4bc4b4412a2896e8ce05f6140ab1e67fad405f4c1f2e27f5",
+    "candidate": "0e0c96d7331d9c7a15cb7b3cc062fb60a4627b3ed5c6ff02cfd7ac37e29b36e5"
+  }
+}

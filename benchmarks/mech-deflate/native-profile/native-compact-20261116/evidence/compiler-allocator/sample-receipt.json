@@ -1,0 +1,6 @@
+{
+  "frontend_sha256": "dfe13f93b0b8cd48aad2b8344e63a2d5cb2e6308925b8156d10a1dea8c2c86cd",
+  "compiled_commit": "2b930a8dfa0f085d46d68bc6593bd182b58f26a2",
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "scope": "CPU sampling of the frontend only; not a benchmark timing result"
+}

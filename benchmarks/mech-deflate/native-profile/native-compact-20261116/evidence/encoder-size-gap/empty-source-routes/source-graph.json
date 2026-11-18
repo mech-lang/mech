@@ -1,0 +1,29 @@
+{
+  "forwarded_source_jumps": 1837,
+  "blocks": {
+    "plan": {
+      "control": 11892,
+      "candidate": 10324
+    },
+    "layout": {
+      "control": 11628,
+      "candidate": 10060
+    }
+  },
+  "encoder_text_bytes": {
+    "control": 67464,
+    "candidate": 67656
+  },
+  "controller_windows": [
+    24,
+    24
+  ],
+  "continuation_windows": [
+    16,
+    16
+  ],
+  "checked_root_extent_bytes": {
+    "control": 50016,
+    "candidate": 50208
+  }
+}

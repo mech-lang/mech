@@ -1,0 +1,22 @@
+{
+  ".": {
+    "program.o": "1db070f4af8c9c59e5f215a019b0b3fa7a4959321a88f902ecfc9dabec296057",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata.json": "60807fa320cf8d0449cf43d85c93319bc9ae1f9ab898c00788ccdeb4292fecca"
+  },
+  "control": {
+    "program.o": "f350cbf8fa073dc9d3ef04052ff8b1bb8aae96abfd21dca0d2173a720d6e37d1",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata.json": "1356913e095ec0851dae38830fec4ed0b6d2ea57293701824afa6f0a8308cad3"
+  },
+  "release-calls/free": {
+    "program.o": "2ef8e7f82d87179d428c0a3bd01beaefb886da68cf76c933201876365048ecc5",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata.json": "b2af177f5ed4700ae034bf82269624835e4f7e5be2070b2d51eab94c745e1bc3"
+  },
+  "release-calls/all": {
+    "program.o": "d75f382c1e4c619ac8891c24895a7f0f35c3109b6a48384aade965a093142e48",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata.json": "0a114f3ed9504b50091b830c11c0373a0b7cb13d4e22867134d9cc73b03f62b3"
+  }
+}

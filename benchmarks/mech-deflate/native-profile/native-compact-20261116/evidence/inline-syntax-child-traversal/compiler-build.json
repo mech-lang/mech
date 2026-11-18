@@ -1,0 +1,59 @@
+{
+  "base": "cbcc3a803e59d506bb3d582f885e332e71ee1f53",
+  "source": {
+    "base": "cbcc3a803e59d506bb3d582f885e332e71ee1f53",
+    "source": "src/syntax/src/document/retained_sequence.rs",
+    "control_sha256": "f1018f6d8bf6c7f4dec275638ce87c3141ef0f606e308c88d39a38a1566bf93b",
+    "candidate_sha256": "8f6c71cc6232af4a72adfc28d12afd5a17366a89cca83efe2ab0ddc12e4a57aa",
+    "patch_sha256": "bf7d154a3d29f04bdba0120b10d26571bd12bc66b54013bf84c2a4b825d56e50"
+  },
+  "tests": {
+    "command": [
+      "rustc",
+      "+nightly-2026-03-03",
+      "--edition",
+      "2024",
+      "--test",
+      "-D",
+      "warnings",
+      "-C",
+      "opt-level=2",
+      "-L",
+      "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps",
+      "--extern",
+      "smallvec=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target/release/deps/libsmallvec-7e57ffbad84444a5.rlib",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/semantic-body-dispatch/tests/sequence-tests.rs",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/semantic-body-dispatch/tests/test-sequence"
+    ],
+    "passed": 3,
+    "log_sha256": "51bf7fe6a4d57e50b23c2d8730b8c177eeaa63ffe4e315e2c84f69cfe73f30ce",
+    "smallvec_sha256": "8a72a9d9cf209646fe9192ac8311e73c8a14b39863b359454f1b32ea4b93dae3",
+    "source_sha256": "8f6c71cc6232af4a72adfc28d12afd5a17366a89cca83efe2ab0ddc12e4a57aa",
+    "harness_sha256": "0b3fe422796dd3256cd1eadd8b39ae53e973d354e46082a570d266d04701b773"
+  },
+  "compiler_sha256": "a1bd2749ca7432078632760fdf906e7e58cbf1a5efe245b4942a61c2c34c9f85",
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "-B",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/checkout/benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/semantic-body-dispatch/compiler/rebuilt",
+    "--variant",
+    "frame-copies",
+    "--compiler-opt-level",
+    "3",
+    "--direct-source",
+    "--preselect-root-inlining",
+    "--skip-refused-general-ssa",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/definition-compiler/target"
+  ],
+  "artifacts": {
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "encoder": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+  },
+  "comparison_plan_sha256": "c4b8b2ade8e998e44586bc796f056c53215a8e8c89ee31982b6cb1e0a116908e",
+  "rebuild_sha256": "9d74be155357479b43ea69c1391685ca1637328cb392cd5e499575cdd2267d6c",
+  "compiler_build_log_sha256": "dad615741af3a6e42a92b06f4451aff4c3894406614bd8c623799169aad4c34a"
+}

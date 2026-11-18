@@ -106,7 +106,7 @@ impl Inst {
     /// Create an instruction that loads a constant, using one of several options (MOVZ, MOVN,
     /// logical immediate, or constant pool).
     pub fn load_constant(rd: Writable<Reg>, value: u64) -> SmallVec<[Inst; 4]> {
-        // NB: this is duplicated in `lower/isle.rs` and `inst.isle` right now,
+        // NB: this is duplicated in `lower/isle/mod.rs` and `inst.isle` right now,
         // if modifications are made here before this is deleted after moving to
         // ISLE then those locations should be updated as well.
 

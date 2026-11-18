@@ -1,5 +1,5 @@
 //! Immutable native tables and scalar bits from validated canonical constants.
-use super::layout::{Kind, Layout, Type};
+use super::layout::{Layout, LayoutKind, Type};
 use crate::native_artifact::{NativeCompileError, compiler::backend};
 use cranelift_module::{DataDescription, DataId, Linkage, Module};
 use mech_core::{DimensionExpr, SchemaBody, ValueData};
@@ -40,13 +40,13 @@ fn packed(
     relocations: &mut Vec<(usize, DataId)>,
 ) -> Result<(), NativeCompileError> {
     match &ty.kind {
-        Kind::Scalar { bytes, .. } => {
+        LayoutKind::Scalar { bytes, .. } => {
             let Initial::Bits(value) = values[0] else {
                 return Err(backend("native scalar constant contains a pointer"));
             };
             out[..usize::from(*bytes)].copy_from_slice(&value.to_ne_bytes()[..usize::from(*bytes)]);
         }
-        Kind::Utf8 => {
+        LayoutKind::Utf8 => {
             for (lane, value) in values.iter().enumerate() {
                 match value {
                     Initial::Bits(value) => {
@@ -56,7 +56,7 @@ fn packed(
                 }
             }
         }
-        Kind::Product(fields) => {
+        LayoutKind::Product(fields) => {
             for field in fields {
                 let at = field
                     .packed_offset
@@ -91,7 +91,7 @@ fn flatten<M: Module>(
 ) -> Result<Vec<Initial>, NativeCompileError> {
     let mut out = vec![Initial::Bits(0); ty.words];
     match &ty.kind {
-        Kind::Utf8 => {
+        LayoutKind::Utf8 => {
             let ValueData::String(text) = data else {
                 return Err(backend("native UTF8 constant lost its String payload"));
             };
@@ -113,8 +113,8 @@ fn flatten<M: Module>(
             }
             out[1] = Initial::Bits(bytes.len() as u64);
         }
-        Kind::Scalar { .. } => out[0] = Initial::Bits(scalar(data)?),
-        Kind::Product(fields) => {
+        LayoutKind::Scalar { .. } => out[0] = Initial::Bits(scalar(data)?),
+        LayoutKind::Product(fields) => {
             let items = match data {
                 ValueData::Tuple(v) => v.as_ref(),
                 ValueData::Record(v) => v.fields(),
@@ -133,7 +133,7 @@ fn flatten<M: Module>(
                 out[field.offset..field.offset + values.len()].copy_from_slice(&values);
             }
         }
-        Kind::Tagged(variants) => {
+        LayoutKind::Tagged(variants) => {
             let ValueData::Enum(value) = data else {
                 return Err(backend("compact constant lost enum payload"));
             };
@@ -158,7 +158,7 @@ fn flatten<M: Module>(
                 _ => return Err(backend("compact constant enum payload presence differs")),
             }
         }
-        Kind::SortedMap { entry } => {
+        LayoutKind::SortedMap { entry } => {
             let (ValueData::Map(map), SchemaBody::Map { key, value, .. }) = (data, body) else {
                 return Err(backend("native Map constant lost its typed entries"));
             };
@@ -207,7 +207,7 @@ fn flatten<M: Module>(
                 out[at] = Initial::Bits(n as u64);
             }
         }
-        Kind::Array { element } => {
+        LayoutKind::Array { element } => {
             let ValueData::Matrix(value) = data else {
                 return Err(backend("compact constant lost matrix payload"));
             };

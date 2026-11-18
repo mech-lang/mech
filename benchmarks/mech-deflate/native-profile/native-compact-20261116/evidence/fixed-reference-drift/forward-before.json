@@ -1,0 +1,18 @@
+{
+  "utc_ns": 1794927706918328000,
+  "load_average": [
+    2.5732421875,
+    4.578125,
+    3.98095703125
+  ],
+  "therm": {
+    "exit": 0,
+    "stdout": "Error:Failed to get thermal warning level with error code 0xe00002bc\nError: Failed to get performance warning level with error code 0xe00002bc\nError: No CPU power status with error code 0xe00002bc\n",
+    "stderr": ""
+  },
+  "batt": {
+    "exit": 0,
+    "stdout": "Now drawing from 'AC Power'\n",
+    "stderr": ""
+  }
+}

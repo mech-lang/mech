@@ -1,0 +1,20 @@
+{
+  "protocol": "prepared-slots-batch-clock-diagnostic-v1",
+  "underlying_contract": {
+    "scope": "diagnostic",
+    "level": 12,
+    "boundary": "compress-into invocation through private heap cleanup",
+    "canonical_inventory_sha256": "b6de359f4e8e5fa47c9ebed9474954f6e7b809e08d4f3b36193412492c4d9490"
+  },
+  "interval": "Prepared independent lanes. Clock includes the loop, reusable result writes and each complete invocation through heap drop. Prior outputs stay live through validation. Construction of caller buffers, arguments and output slots, validation and final output release are outside the clock.",
+  "previous_receipt": {
+    "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/bound-71768-runtime/full-and-repeat-replay.json",
+    "sha256": "72690f2a44998957181a552abc942431366817d55d48be2bff33f416b39c6cca"
+  },
+  "previous_clock_quantization": {
+    "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/bound-71768-runtime/clock-quantization.json",
+    "sha256": "9da674352d86f003c47397c1b504cc603be9e585d0566f65479e6c1d14f71580"
+  },
+  "decision_scope": "Diagnostic two-protocol A/A calibration. Qualified scores and decisions stay attached to their original workers and protocol.",
+  "native_encoder_revision": "197ad8ff1272a9f411bd56f14f08efabba2553cd"
+}

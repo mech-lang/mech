@@ -1,0 +1,2105 @@
+{
+  "runs": [
+    {
+      "id": "aligned-register-spills-focus-residue-64-cases",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 9,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 9,
+            "mech-experiment": 9
+          },
+          "precision_supported_wins": {
+            "mech-control": 9,
+            "mech-experiment": 9
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 6,
+            "mech-experiment": 6
+          },
+          "precision_supported_wins": {
+            "mech-control": 6,
+            "mech-experiment": 6
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "aligned-register-spills-focus-residue-64-cases-reverse",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 9,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 9,
+            "mech-experiment": 9
+          },
+          "precision_supported_wins": {
+            "mech-control": 9,
+            "mech-experiment": 9
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 6,
+            "mech-experiment": 6
+          },
+          "precision_supported_wins": {
+            "mech-control": 6,
+            "mech-experiment": 6
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "aligned-register-spills-full",
+      "kind": "full",
+      "order": "forward",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 61,
+            "mech-experiment": 61
+          },
+          "precision_supported_wins": {
+            "mech-control": 61,
+            "mech-experiment": 61
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 55,
+            "mech-experiment": 55
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 55,
+            "mech-experiment": 55
+          }
+        }
+      }
+    },
+    {
+      "id": "aligned-register-spills-full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 61,
+            "mech-experiment": 61
+          },
+          "precision_supported_wins": {
+            "mech-control": 61,
+            "mech-experiment": 61
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 55,
+            "mech-experiment": 55
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 55,
+            "mech-experiment": 55
+          }
+        }
+      }
+    }
+  ],
+  "cases": {
+    "empty": {
+      "decision": "regression",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.013715724286672781,
+          "lower": 0.0009204431261373713,
+          "upper": 0.02957496423290329
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.020385076135228664,
+          "lower": 0.01276482899053999,
+          "upper": 0.028089623867148417
+        }
+      },
+      "combined": {
+        "estimate": 0.017044933375971905,
+        "lower": 0.009327905207147102,
+        "upper": 0.025492283340818434
+      },
+      "adverse_runs": [
+        "aligned-register-spills-full-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "one-stored": {
+      "decision": "unresolved",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.010846082168078919,
+          "lower": -0.019096204530869798,
+          "upper": -0.002321846588051679
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.01736252476317235,
+          "lower": 0.009476158576880778,
+          "upper": 0.025413562351677133
+        }
+      },
+      "combined": {
+        "estimate": 0.003159073738989271,
+        "lower": -0.0025601396192933557,
+        "upper": 0.009150579663239622
+      },
+      "adverse_runs": [
+        "aligned-register-spills-full-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "seven-stored-prefix": {
+      "decision": "regression",
+      "runs": {
+        "aligned-register-spills-focus-residue-64-cases": {
+          "estimate": -0.0008510288994951765,
+          "lower": -0.008257860030274622,
+          "upper": 0.0066444297305348066
+        },
+        "aligned-register-spills-focus-residue-64-cases-reverse": {
+          "estimate": -0.007866081469306119,
+          "lower": -0.026113461530724358,
+          "upper": 0.0058955414766082015
+        },
+        "aligned-register-spills-full": {
+          "estimate": 0.00037410104672663813,
+          "lower": -0.006663435253326577,
+          "upper": 0.007434390868472196
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.02143059105177625,
+          "lower": 0.014989949377674616,
+          "upper": 0.027944543869701022
+        }
+      },
+      "combined": {
+        "estimate": 0.01084752030414915,
+        "lower": 0.0059241578224578095,
+        "upper": 0.015500236967600722
+      },
+      "adverse_runs": [
+        "aligned-register-spills-full-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "eight-literals": {
+      "decision": "unresolved",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.023651067446037066,
+          "lower": 0.0005501926128361756,
+          "upper": 0.04862233899817481
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.0005454230754502465,
+          "lower": -0.0024885441066953007,
+          "upper": 0.0035588353865549927
+        }
+      },
+      "combined": {
+        "estimate": 0.012032306974155693,
+        "lower": 0.0007382936103810245,
+        "upper": 0.02420227439727274
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "eight-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.0025814961852284046,
+          "lower": -0.0010615406426476293,
+          "upper": 0.006345623834040914
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.0006154997253398076,
+          "lower": -0.00458955673105621,
+          "upper": 0.0056688760771648194
+        }
+      },
+      "combined": {
+        "estimate": 0.0015980155834780518,
+        "lower": -0.0016131580438000226,
+        "upper": 0.004757808335968727
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.0009254379405723157,
+          "lower": -0.00292559403502346,
+          "upper": 0.0011451546340475183
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 8.441167195072374e-05,
+          "lower": -0.0017097100516866304,
+          "upper": 0.0019064484583168895
+        }
+      },
+      "combined": {
+        "estimate": -0.00042064066247615717,
+        "lower": -0.0017469997026408057,
+        "upper": 0.0009632606392366849
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "eight-literals-prefix": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.001152910200298063,
+          "lower": -0.0010652298254064663,
+          "upper": 0.0034672027388451543
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.002916030580471962,
+          "lower": -0.00481936720854248,
+          "upper": -0.000988723012459336
+        }
+      },
+      "combined": {
+        "estimate": -0.0008836315531480787,
+        "lower": -0.0023892037647639253,
+        "upper": 0.0006168855707375798
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "128-biased-dynamic": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.001544976123862063,
+          "lower": -0.003522961047861206,
+          "upper": 0.00043818788802796327
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.00561832714487176,
+          "lower": -0.0075143228746733515,
+          "upper": -0.0036950706864207206
+        }
+      },
+      "combined": {
+        "estimate": -0.003583733115240073,
+        "lower": -0.004976111831969665,
+        "upper": -0.0021890469995611284
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "32-high-entropy-stored": {
+      "decision": "unresolved",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.010660996448523363,
+          "lower": 0.007280967268966654,
+          "upper": 0.014383265021140401
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.002497786906322519,
+          "lower": -3.130094967573882e-05,
+          "upper": 0.0053592257358821005
+        }
+      },
+      "combined": {
+        "estimate": 0.006571116341107519,
+        "lower": 0.004402969185394845,
+        "upper": 0.008920071717865907
+      },
+      "adverse_runs": [
+        "aligned-register-spills-full"
+      ],
+      "duplicate_controls": []
+    },
+    "16384-distribution-change": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.01018281815858979,
+          "lower": -0.013545973854920845,
+          "upper": -0.006732428146095537
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0036330471407939324,
+          "lower": -0.005989060255391254,
+          "upper": -0.0012304306205471738
+        }
+      },
+      "combined": {
+        "estimate": -0.006913332402950556,
+        "lower": -0.008961392685056135,
+        "upper": -0.0048189221190461096
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "33027-periodic-window": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.0007554453773290781,
+          "lower": -0.0013319412729787539,
+          "upper": 0.002894278614570256
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.001369973302869587,
+          "lower": -0.0051062226713533,
+          "upper": 0.0023918117726682286
+        }
+      },
+      "combined": {
+        "estimate": -0.000307828812058486,
+        "lower": -0.00249836567987638,
+        "upper": 0.0018549728500323326
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "unresolved",
+      "runs": {
+        "aligned-register-spills-focus-residue-64-cases": {
+          "estimate": -0.002863531183434964,
+          "lower": -0.008202994639857963,
+          "upper": 0.0023668055707952718
+        },
+        "aligned-register-spills-focus-residue-64-cases-reverse": {
+          "estimate": -0.001011798891775717,
+          "lower": -0.006521245167981027,
+          "upper": 0.004562937745221429
+        },
+        "aligned-register-spills-full": {
+          "estimate": 0.004212826263441327,
+          "lower": -0.0010033946858402087,
+          "upper": 0.009549219111749885
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.0009597649598860336,
+          "lower": -0.005089596082378356,
+          "upper": 0.006960103974452458
+        }
+      },
+      "combined": {
+        "estimate": 0.002584976222144153,
+        "lower": -0.001559595156605531,
+        "upper": 0.006565598567624509
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-256": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.004922766010754254,
+          "lower": -0.007214967868729216,
+          "upper": -0.002562001994241836
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0014864938794062477,
+          "lower": -0.003594427042283521,
+          "upper": 0.0006304143503528259
+        }
+      },
+      "combined": {
+        "estimate": -0.0032061106871770217,
+        "lower": -0.004760275825637539,
+        "upper": -0.001622264208542834
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.005474983475650341,
+          "lower": -0.007234068266335325,
+          "upper": -0.0037488308881306054
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0066127735806807975,
+          "lower": -0.008219547359864965,
+          "upper": -0.005059223161973936
+        }
+      },
+      "combined": {
+        "estimate": -0.006044041332941452,
+        "lower": -0.007186643643081192,
+        "upper": -0.0048876943004113604
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "repeated-1024": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.0019599132425089927,
+          "lower": 0.00030135707326039984,
+          "upper": 0.0038191598316223985
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.0007907427936921785,
+          "lower": -0.0008106516238897132,
+          "upper": 0.0024872559712483255
+        }
+      },
+      "combined": {
+        "estimate": 0.0013751573828233443,
+        "lower": 0.0001797294487566603,
+        "upper": 0.002581371160780943
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-32769": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.006100540992044157,
+          "lower": -0.009125044193722287,
+          "upper": -0.0032336784817870168
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.004051498086253824,
+          "lower": -0.006919780577500534,
+          "upper": -0.0011870940934897156
+        }
+      },
+      "combined": {
+        "estimate": -0.005076547038991408,
+        "lower": -0.0071495791468643155,
+        "upper": -0.003067952117725481
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "repeated-32769": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 6.028893097975718e-05,
+          "lower": -0.0024890042657873535,
+          "upper": 0.002794981456574641
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.002585329616222598,
+          "lower": -0.005852197190983177,
+          "upper": 0.0005132782579582162
+        }
+      },
+      "combined": {
+        "estimate": -0.0012633963611835552,
+        "lower": -0.0033304062448483718,
+        "upper": 0.0007947511221582104
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "reymont-prefix-1024": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.0044947895820285355,
+          "lower": -0.005988781292246559,
+          "upper": -0.0030240252520206123
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0018987431930060916,
+          "lower": -0.003805468006740753,
+          "upper": 0.00021080640747417334
+        }
+      },
+      "combined": {
+        "estimate": -0.0031976115216776346,
+        "lower": -0.004417911761949167,
+        "upper": -0.0019238508478631733
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "reymont-prefix-16384": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.002079270190083027,
+          "lower": -0.004585976174887985,
+          "upper": -0.00016772605020221043
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0014934137140054649,
+          "lower": -0.0024613890112773484,
+          "upper": -0.0005117175554852915
+        }
+      },
+      "combined": {
+        "estimate": -0.001786384932298879,
+        "lower": -0.0031343879860247226,
+        "upper": -0.0006923150684453594
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "reymont-prefix-32769": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.001407676543593528,
+          "lower": -0.00293611298161478,
+          "upper": -1.3305945047004109e-05
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -4.117016390692285e-05,
+          "lower": -0.0015492787799195051,
+          "upper": 0.001637421350208168
+        }
+      },
+      "combined": {
+        "estimate": -0.0007246569404538716,
+        "lower": -0.001812026774010933,
+        "upper": 0.0003693744862502957
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-window-32767": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.0004215688901456627,
+          "lower": -0.0013700962163598618,
+          "upper": 0.0005901779612702551
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.00014200957837595674,
+          "lower": -0.0009315272776212469,
+          "upper": 0.0011825179302651367
+        }
+      },
+      "combined": {
+        "estimate": -0.00013981936402229778,
+        "lower": -0.0008684020463407549,
+        "upper": 0.0005917016757968074
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-window-32768": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.00042447386195354486,
+          "lower": -0.0014380799266351385,
+          "upper": 0.0008355902106140789
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0008650697005805341,
+          "lower": -0.0017851826044678054,
+          "upper": 3.914382891290202e-05
+        }
+      },
+      "combined": {
+        "estimate": -0.0006447960625098892,
+        "lower": -0.001347700356955639,
+        "upper": 0.00011742579991347313
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-slides-65537": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.0018486491170950359,
+          "lower": 0.0010166002226199566,
+          "upper": 0.002648866540486905
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.0020922680999586607,
+          "lower": 0.001024950583642159,
+          "upper": 0.003016815493619651
+        }
+      },
+      "combined": {
+        "estimate": 0.001970451204340362,
+        "lower": 0.0013153143524187172,
+        "upper": 0.0025756880736038656
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-random-65537": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.0038219190078503384,
+          "lower": -0.005341215365516683,
+          "upper": -0.0023036806540350785
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0033662172426643933,
+          "lower": -0.005587221679497656,
+          "upper": -0.001264306577444696
+        }
+      },
+      "combined": {
+        "estimate": -0.0035940941769014856,
+        "lower": -0.004942942495119951,
+        "upper": -0.0022876167914341883
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-mixed-131073": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.0011625967787370906,
+          "lower": -0.0023088711224260594,
+          "upper": -6.321747357274088e-05
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.00016240666062750098,
+          "lower": -0.000780019438506474,
+          "upper": 0.00047088351061108646
+        }
+      },
+      "combined": {
+        "estimate": -0.0006626268501233046,
+        "lower": -0.0012883069396041336,
+        "upper": -3.70693518570997e-05
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-1024": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.0033155497951075086,
+          "lower": -0.004834330835801204,
+          "upper": -0.0017323004283221755
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.004259284478147052,
+          "lower": -0.005571128181899532,
+          "upper": -0.002933008082026567
+        }
+      },
+      "combined": {
+        "estimate": -0.0037875288892814662,
+        "lower": -0.004795632150729756,
+        "upper": -0.002780027822140929
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-4096": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.0008735894373017583,
+          "lower": -0.0037730929852257677,
+          "upper": 0.005487676168665523
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.002123454210731568,
+          "lower": -0.006061240384220068,
+          "upper": 0.0017341388018725645
+        }
+      },
+      "combined": {
+        "estimate": -0.0006260558732776866,
+        "lower": -0.003662542504168975,
+        "upper": 0.002396250821649959
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-focus-residue-64-cases": {
+          "estimate": 0.00018723150345523187,
+          "lower": -0.0020597868265350705,
+          "upper": 0.002439690586529597
+        },
+        "aligned-register-spills-focus-residue-64-cases-reverse": {
+          "estimate": 0.001287149573553803,
+          "lower": -0.0009316726716492862,
+          "upper": 0.003538142484766693
+        },
+        "aligned-register-spills-full": {
+          "estimate": -0.002006644595594076,
+          "lower": -0.004204866244281402,
+          "upper": 0.0001223406703609875
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.003335301455455797,
+          "lower": 0.0006773073828190146,
+          "upper": 0.006069301569313179
+        }
+      },
+      "combined": {
+        "estimate": 0.0006607637432485269,
+        "lower": -0.0010117783745537956,
+        "upper": 0.002385626087287651
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-16384": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.002844098349195412,
+          "lower": -0.0040187149422445945,
+          "upper": -0.0017245608199371043
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.000919249244737852,
+          "lower": -0.00013061834245264858,
+          "upper": 0.001984989757453981
+        }
+      },
+      "combined": {
+        "estimate": -0.0009641966074073194,
+        "lower": -0.0017526981988699175,
+        "upper": -0.00018880666962017845
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-32767": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.0019111899127197685,
+          "lower": -0.003208118610594224,
+          "upper": -0.00067324498746546
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0012433491194306923,
+          "lower": -0.00225425921534661,
+          "upper": -0.000318591656969458
+        }
+      },
+      "combined": {
+        "estimate": -0.001577325355566317,
+        "lower": -0.002392794472921622,
+        "upper": -0.0007943591733901023
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-32768": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.0013269744780749493,
+          "lower": -0.0022358121915125873,
+          "upper": -0.00037888248891970733
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.00039162096397449275,
+          "lower": -0.001339468991634729,
+          "upper": 0.0005237981295185268
+        }
+      },
+      "combined": {
+        "estimate": -0.0008594071758595279,
+        "lower": -0.0015122280890806916,
+        "upper": -0.0002013463336899557
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-32769": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.0020896453910933532,
+          "lower": -0.003018580865500553,
+          "upper": -0.0011745471872161017
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0006817314899029148,
+          "lower": -0.0021978488509600824,
+          "upper": 0.0010588190964373467
+        }
+      },
+      "combined": {
+        "estimate": -0.0013859365620422226,
+        "lower": -0.0022602194516484486,
+        "upper": -0.00041650180513352897
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-33027": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.00018088369452229358,
+          "lower": -0.0020693668371961627,
+          "upper": 0.0022938613146989972
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.0012479760376629123,
+          "lower": 0.0005155026661438633,
+          "upper": 0.0019822648509149055
+        }
+      },
+      "combined": {
+        "estimate": 0.000714287631940147,
+        "lower": -0.0004508411098151921,
+        "upper": 0.0018150335336954981
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-65535": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-focus-residue-64-cases": {
+          "estimate": 0.003052493305469639,
+          "lower": 0.0017753048057145282,
+          "upper": 0.004507325221953629
+        },
+        "aligned-register-spills-focus-residue-64-cases-reverse": {
+          "estimate": -0.0006647186392152449,
+          "lower": -0.0011368868863304016,
+          "upper": -0.0001970774983517387
+        },
+        "aligned-register-spills-full": {
+          "estimate": 0.0018205181589279196,
+          "lower": 0.0009804406639706276,
+          "upper": 0.0027423044048981993
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.0021977742446994686,
+          "lower": 0.0012814395450706506,
+          "upper": 0.003050608342088923
+        }
+      },
+      "combined": {
+        "estimate": 0.002009128447215902,
+        "lower": 0.0013765647774590661,
+        "upper": 0.0026371841339529745
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-65536": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-focus-residue-64-cases": {
+          "estimate": 0.0021523679908586058,
+          "lower": 0.0015757713417252628,
+          "upper": 0.0027223380125773744
+        },
+        "aligned-register-spills-focus-residue-64-cases-reverse": {
+          "estimate": -0.0012156870019283117,
+          "lower": -0.003583210019613259,
+          "upper": 0.0006592420010507194
+        },
+        "aligned-register-spills-full": {
+          "estimate": 0.0013937620787745075,
+          "lower": 0.0008773353402244943,
+          "upper": 0.0019490469665985888
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.0020892351742616277,
+          "lower": 0.0002396438353158281,
+          "upper": 0.003725394782374547
+        }
+      },
+      "combined": {
+        "estimate": 0.0017414382712714893,
+        "lower": 0.0008012403900086174,
+        "upper": 0.0026313440214282835
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-65537": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-focus-residue-64-cases": {
+          "estimate": 0.0019397407526631216,
+          "lower": 0.00016504095546321373,
+          "upper": 0.0035066583000513685
+        },
+        "aligned-register-spills-focus-residue-64-cases-reverse": {
+          "estimate": -0.000977021238771636,
+          "lower": -0.0019287899290547639,
+          "upper": -7.473038477345817e-05
+        },
+        "aligned-register-spills-full": {
+          "estimate": 0.0008864778621304747,
+          "lower": 0.0001946565172532555,
+          "upper": 0.0015593497486552366
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.0025438213665487375,
+          "lower": 0.0017481491725472864,
+          "upper": 0.003384799344090972
+        }
+      },
+      "combined": {
+        "estimate": 0.0017148068537302663,
+        "lower": 0.0011918358685114594,
+        "upper": 0.002247119378358642
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-131072": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.003594884366149742,
+          "lower": 0.0030177309390901907,
+          "upper": 0.004167692836714032
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.0007133958647540517,
+          "lower": -0.0001824953118131356,
+          "upper": 0.0017913785493994805
+        }
+      },
+      "combined": {
+        "estimate": 0.002153104473834766,
+        "lower": 0.0016040958073160194,
+        "upper": 0.0027499117073057633
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-262144": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-focus-residue-64-cases": {
+          "estimate": 0.002609372416105149,
+          "lower": 0.0005629668742643812,
+          "upper": 0.004694064474441539
+        },
+        "aligned-register-spills-focus-residue-64-cases-reverse": {
+          "estimate": 0.0038142134495062763,
+          "lower": 0.0034195357437987184,
+          "upper": 0.004223816782833456
+        },
+        "aligned-register-spills-full": {
+          "estimate": 0.003035467865809993,
+          "lower": 0.0025623566845307533,
+          "upper": 0.0035074211304326752
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.0036749155299629077,
+          "lower": 0.0025926850430058046,
+          "upper": 0.005075625418737628
+        }
+      },
+      "combined": {
+        "estimate": 0.003355140757136832,
+        "lower": 0.0027412651844032077,
+        "upper": 0.004082199468727232
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-1048576": {
+      "decision": "unresolved",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.0028140656193176294,
+          "lower": 0.0019208811563307115,
+          "upper": 0.0037936628503076886
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.0053009586340204695,
+          "lower": 0.0036507122103432987,
+          "upper": 0.00731883227038832
+        }
+      },
+      "combined": {
+        "estimate": 0.004056742170869265,
+        "lower": 0.00312057201369198,
+        "upper": 0.005140539140287226
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.006167178275110929,
+          "lower": -0.00816571986602943,
+          "upper": -0.004335740785771591
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.005667979832081338,
+          "lower": -0.008357879645445987,
+          "upper": -0.0025576386889262226
+        }
+      },
+      "combined": {
+        "estimate": -0.005917610388911476,
+        "lower": -0.007657441538509224,
+        "upper": -0.004117130616847708
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-4096": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-focus-residue-64-cases": {
+          "estimate": -0.012023054972945424,
+          "lower": -0.019640407095123935,
+          "upper": -0.004451726068189332
+        },
+        "aligned-register-spills-focus-residue-64-cases-reverse": {
+          "estimate": 0.010437674836810906,
+          "lower": 0.0027492832393656297,
+          "upper": 0.018499394165455207
+        },
+        "aligned-register-spills-full": {
+          "estimate": -0.015343746820423054,
+          "lower": -0.02093390809796214,
+          "upper": -0.009782935039192697
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0015445618396779937,
+          "lower": -0.009437222330511141,
+          "upper": 0.0064061960317987054
+        }
+      },
+      "combined": {
+        "estimate": -0.008468159509884665,
+        "lower": -0.013412333937510512,
+        "upper": -0.003756751119312285
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-8192": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.0035535338207541844,
+          "lower": -0.0018090220327394713,
+          "upper": 0.009185908413528399
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.007560103183096412,
+          "lower": -0.01263057541517254,
+          "upper": -0.0023914103190260105
+        }
+      },
+      "combined": {
+        "estimate": -0.0020187549080352696,
+        "lower": -0.005841791997065249,
+        "upper": 0.0017641532613847932
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-16384": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.014371747660726353,
+          "lower": -0.018531894085028533,
+          "upper": -0.01026171759475436
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.000474383518856869,
+          "lower": -0.005194129255282731,
+          "upper": 0.0046532548015199016
+        }
+      },
+      "combined": {
+        "estimate": -0.007447388527618615,
+        "lower": -0.010591259822364973,
+        "upper": -0.004181159643671828
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-32767": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.005722109717613111,
+          "lower": -0.008420821370156095,
+          "upper": -0.002916109728666738
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0050704588210567225,
+          "lower": -0.007960255183625087,
+          "upper": -0.0021178346943414583
+        }
+      },
+      "combined": {
+        "estimate": -0.005396337638442605,
+        "lower": -0.0073711224344664705,
+        "upper": -0.0033437786092895827
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-32768": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.00588126011680723,
+          "lower": -0.009111790501079686,
+          "upper": -0.0026580293564320012
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.006071409685152629,
+          "lower": -0.008351058446996018,
+          "upper": -0.0037615141530659146
+        }
+      },
+      "combined": {
+        "estimate": -0.005976339447760326,
+        "lower": -0.007935907499708295,
+        "upper": -0.0040038203708047115
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-32769": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.005748142197362194,
+          "lower": -0.008378148945482056,
+          "upper": -0.0030872518827834705
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.004244301588434141,
+          "lower": -0.007186439717285276,
+          "upper": -0.0014349486211574503
+        }
+      },
+      "combined": {
+        "estimate": -0.004996506004495305,
+        "lower": -0.007015562180464285,
+        "upper": -0.0030405448468320273
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-33027": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.005148274319211166,
+          "lower": -0.007333870651905716,
+          "upper": -0.0030073613324280712
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0021575314768846887,
+          "lower": -0.005200500656332707,
+          "upper": 0.0011005988163457214
+        }
+      },
+      "combined": {
+        "estimate": -0.0036540250656905693,
+        "lower": -0.005558277788244692,
+        "upper": -0.0016793025049951504
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-65535": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.004284373053666246,
+          "lower": -0.006025621831249994,
+          "upper": -0.0025215868217886017
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.001827183314379921,
+          "lower": -0.003962587523757888,
+          "upper": 0.0003196451020099911
+        }
+      },
+      "combined": {
+        "estimate": -0.0030565352203215657,
+        "lower": -0.0044210414969168,
+        "upper": -0.0016563398493693038
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-65536": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.0023566904769465324,
+          "lower": -0.00432571196257403,
+          "upper": -0.0004052611420257701
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.003694688798007051,
+          "lower": -0.005690702431849104,
+          "upper": -0.001754548837086034
+        }
+      },
+      "combined": {
+        "estimate": -0.003025914096584037,
+        "lower": -0.004403932268741584,
+        "upper": -0.0016575636439460917
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-65537": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.002423724276599093,
+          "lower": -0.004479017922870088,
+          "upper": -0.00040114973815019717
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.00486877814061859,
+          "lower": -0.007573326404483716,
+          "upper": -0.002438355538268877
+        }
+      },
+      "combined": {
+        "estimate": -0.0036470012297051824,
+        "lower": -0.005301497802299382,
+        "upper": -0.002018175176142223
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-131072": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.003133370687674719,
+          "lower": -0.004110241647626189,
+          "upper": -0.0021916101814093425
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.00230019409377602,
+          "lower": -0.0041369718694783675,
+          "upper": -0.0003149488441175352
+        }
+      },
+      "combined": {
+        "estimate": -0.0027168694000190285,
+        "lower": -0.003751871073115254,
+        "upper": -0.001655913036101464
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-262144": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.0013708571633738176,
+          "lower": -0.0027932910239174547,
+          "upper": 3.7985696490938636e-05
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0006919553471815831,
+          "lower": -0.0019351659116021436,
+          "upper": 0.0006350255978626596
+        }
+      },
+      "combined": {
+        "estimate": -0.0010314639282231752,
+        "lower": -0.001971757278789177,
+        "upper": -6.260847144767823e-05
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-focus-residue-64-cases": {
+          "estimate": -0.0010572028131442535,
+          "lower": -0.0016844468565886395,
+          "upper": -0.0004044825523665807
+        },
+        "aligned-register-spills-focus-residue-64-cases-reverse": {
+          "estimate": -0.0005448411071633519,
+          "lower": -0.001078112556132993,
+          "upper": -1.9236461438199015e-06
+        },
+        "aligned-register-spills-full": {
+          "estimate": -0.0022681122099815765,
+          "lower": -0.0029614326578877304,
+          "upper": -0.0016943106730431534
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.001096610247376506,
+          "lower": -0.001633242988314243,
+          "upper": -0.0005516217928260847
+        }
+      },
+      "combined": {
+        "estimate": -0.0016825330698988505,
+        "lower": -0.0021167008626170603,
+        "upper": -0.001286821385649617
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-1024": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.0007052115968999573,
+          "lower": -0.0006088629398042222,
+          "upper": 0.0020566994184219034
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.002368108211527442,
+          "lower": 0.00039890012454835144,
+          "upper": 0.004410632661630887
+        }
+      },
+      "combined": {
+        "estimate": 0.0015363147813467481,
+        "lower": 0.00034975952060833926,
+        "upper": 0.0027345462003762755
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-4096": {
+      "decision": "unresolved",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.005318627641458962,
+          "lower": -0.011209972133469304,
+          "upper": 0.027423424561909382
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.008783107413207314,
+          "lower": -0.015575086952312578,
+          "upper": -0.001963005460031031
+        }
+      },
+      "combined": {
+        "estimate": -0.0017571406965207759,
+        "lower": -0.010754308463540418,
+        "upper": 0.009491401381502618
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-8192": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.0038274241926046226,
+          "lower": -0.00766868363090667,
+          "upper": -1.1835308616148232e-05
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.010519654926864574,
+          "lower": -0.01574290845430526,
+          "upper": -0.005379034917499248
+        }
+      },
+      "combined": {
+        "estimate": -0.007179178269162367,
+        "lower": -0.010484946552727692,
+        "upper": -0.003971032987517553
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-16384": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.0025348798421144236,
+          "lower": -0.006904752517098545,
+          "upper": 0.001594393755765644
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.0017506304678951423,
+          "lower": -0.0028548817649228786,
+          "upper": 0.006377031804791544
+        }
+      },
+      "combined": {
+        "estimate": -0.000394421290128788,
+        "lower": -0.0035791299652121467,
+        "upper": 0.0027788031586244433
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-32767": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.0051891129080881004,
+          "lower": 0.0028495724934922695,
+          "upper": 0.007512550468616208
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0013104692693741704,
+          "lower": -0.004748974693403962,
+          "upper": 0.0020776600906222686
+        }
+      },
+      "combined": {
+        "estimate": 0.0019340514553403132,
+        "lower": -0.00017460427171578363,
+        "upper": 0.003986496799092798
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-32768": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.0011014935345268206,
+          "lower": -0.0013092550946985915,
+          "upper": 0.0034963018041473948
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.000916007924041562,
+          "lower": -0.0022373381687623706,
+          "upper": 0.00413161800351225
+        }
+      },
+      "combined": {
+        "estimate": 0.0010087464330039708,
+        "lower": -0.0009366693427299566,
+        "upper": 0.003016927330129038
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-32769": {
+      "decision": "unresolved",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.0063060155415441965,
+          "lower": 0.003509194829366402,
+          "upper": 0.009185477018826216
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.0003640855181055169,
+          "lower": -0.002975264464908589,
+          "upper": 0.0035562882721917877
+        }
+      },
+      "combined": {
+        "estimate": 0.0033306518733420276,
+        "lower": 0.0011053778259413338,
+        "upper": 0.005498905776738949
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-33027": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.0038892185532495294,
+          "lower": 0.00047036167155822817,
+          "upper": 0.0072114996534999865
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0022827171200073826,
+          "lower": -0.004828469297542659,
+          "upper": 0.000314605738424234
+        }
+      },
+      "combined": {
+        "estimate": 0.000798492928255401,
+        "lower": -0.0012931863382252828,
+        "upper": 0.002903877497415497
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-65535": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.00085233818148156,
+          "lower": -0.0015293924308682483,
+          "upper": 0.0033210476857448157
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0012472848269036163,
+          "lower": -0.0033314893873246376,
+          "upper": 0.0009169582402961396
+        }
+      },
+      "combined": {
+        "estimate": -0.00019802448379968585,
+        "lower": -0.0018190852132627944,
+        "upper": 0.0014514730888472993
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-65536": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.0013612851613513666,
+          "lower": -0.0012134224114269676,
+          "upper": 0.004010956776355101
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0011592457916873578,
+          "lower": -0.004908461044028534,
+          "upper": 0.0026256190170210747
+        }
+      },
+      "combined": {
+        "estimate": 0.00010022563019629338,
+        "lower": -0.002188039731064073,
+        "upper": 0.0024285779685770947
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-65537": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.002160205507808266,
+          "lower": 1.864308936627701e-05,
+          "upper": 0.004328451700762681
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.001115168865406968,
+          "lower": -0.0038381208683566648,
+          "upper": 0.0016824825586176928
+        }
+      },
+      "combined": {
+        "estimate": 0.0005211780109783959,
+        "lower": -0.0012188699248583124,
+        "upper": 0.0022464788853540085
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-131072": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.0014899063514048905,
+          "lower": -0.0032398584671009534,
+          "upper": 0.0001269897651710039
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0010428145378651443,
+          "lower": -0.0026687306090644736,
+          "upper": 0.0005856400043928733
+        }
+      },
+      "combined": {
+        "estimate": -0.0012663854627034121,
+        "lower": -0.002454165583890555,
+        "upper": -0.0001201951608857943
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-262144": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 8.695369935995956e-05,
+          "lower": -0.0008935758758514822,
+          "upper": 0.0010536147600828105
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0005467962794569736,
+          "lower": -0.00200394905856649,
+          "upper": 0.0008759792873562766
+        }
+      },
+      "combined": {
+        "estimate": -0.00022997150647507958,
+        "lower": -0.0010889662245398002,
+        "upper": 0.0006579853224184529
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.0002867296078725712,
+          "lower": -0.000800452532404683,
+          "upper": 0.0014971958360918691
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.0014483876948643282,
+          "lower": -8.03948561002299e-05,
+          "upper": 0.003256084468320264
+        }
+      },
+      "combined": {
+        "estimate": 0.000867390116379374,
+        "lower": -0.00011864767393510167,
+        "upper": 0.0019284660725431557
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-1024": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.0014826606233404593,
+          "lower": -0.0028535712686676984,
+          "upper": -8.096899752352282e-05
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.00042740295849563736,
+          "lower": -0.0021284077020818915,
+          "upper": 0.001219307471721942
+        }
+      },
+      "combined": {
+        "estimate": -0.0009551711200839197,
+        "lower": -0.002058639719818456,
+        "upper": 0.00011395305504624531
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-4096": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.009548333966377553,
+          "lower": -0.017371134328704074,
+          "upper": -0.0023082604186155375
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.0016541480828602406,
+          "lower": -0.00583228581564077,
+          "upper": 0.009526401743971125
+        }
+      },
+      "combined": {
+        "estimate": -0.003962842179992876,
+        "lower": -0.009347213808714172,
+        "upper": 0.001431795929320634
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-8192": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.002329345392774851,
+          "lower": -0.0017745516741859424,
+          "upper": 0.006926078857051099
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.001158052652997954,
+          "lower": -0.006227630904367065,
+          "upper": 0.004250339385009072
+        }
+      },
+      "combined": {
+        "estimate": 0.0005841270153974509,
+        "lower": -0.0026175784202624452,
+        "upper": 0.0041232092792200525
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-16384": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.0006406736245743172,
+          "lower": -0.0027204209244441335,
+          "upper": 0.003891372281964456
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 2.854480629443934e-05,
+          "lower": -0.002872888202116064,
+          "upper": 0.0029972954233357108
+        }
+      },
+      "combined": {
+        "estimate": 0.00033456239338902627,
+        "lower": -0.0019195059688447147,
+        "upper": 0.0025701770934198898
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-32767": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.0016505342636250475,
+          "lower": -0.001214000203898169,
+          "upper": 0.0043847217666375116
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0003852645851988301,
+          "lower": -0.0027095434547680375,
+          "upper": 0.0019220801387924702
+        }
+      },
+      "combined": {
+        "estimate": 0.0006321171069954001,
+        "lower": -0.0012109428776845288,
+        "upper": 0.0023933139469474174
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-32768": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.0008155861986199886,
+          "lower": -0.0037700114461672873,
+          "upper": 0.0021140740966432148
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.001767254468348689,
+          "lower": -0.001296651853676889,
+          "upper": 0.004778741090759819
+        }
+      },
+      "combined": {
+        "estimate": 0.00047500064787975305,
+        "lower": -0.00166951423863837,
+        "upper": 0.002572470480401323
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-32769": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.002568006752494467,
+          "lower": 3.578977402884931e-06,
+          "upper": 0.005111264830837126
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0037839636343525163,
+          "lower": -0.007384085306884947,
+          "upper": -0.0004467938045890074
+        }
+      },
+      "combined": {
+        "estimate": -0.0006130249628136797,
+        "lower": -0.0028101322414072483,
+        "upper": 0.0015308327898300167
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-33027": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.0023072677415945098,
+          "lower": -0.004862839042963807,
+          "upper": 0.00025616363576164147
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0009720020268734197,
+          "lower": -0.0037653069544368867,
+          "upper": 0.0018285411728813372
+        }
+      },
+      "combined": {
+        "estimate": -0.0016398581170953275,
+        "lower": -0.0035385425140261884,
+        "upper": 0.00029020703090387734
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-65535": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.0008503963778985213,
+          "lower": -0.0012186872976402974,
+          "upper": 0.002989420433454182
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.0006111367641747911,
+          "lower": -0.001676366858979983,
+          "upper": 0.0029010055611413677
+        }
+      },
+      "combined": {
+        "estimate": 0.0007307594206165113,
+        "lower": -0.0008281693892391306,
+        "upper": 0.0023054814953233915
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-65536": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.0011294069314109478,
+          "lower": -0.001221790038930859,
+          "upper": 0.003427333472031835
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.00022494545996298854,
+          "lower": -0.002339592786531286,
+          "upper": 0.0019228354367648581
+        }
+      },
+      "combined": {
+        "estimate": 0.00045200155554003807,
+        "lower": -0.0011348423550381348,
+        "upper": 0.002024284735089976
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-65537": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -0.0013931958252403343,
+          "lower": -0.003921102928891473,
+          "upper": 0.0009637365398527109
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.0002677612927060036,
+          "lower": -0.002763990433638064,
+          "upper": 0.002271754318345698
+        }
+      },
+      "combined": {
+        "estimate": -0.0008306370159417709,
+        "lower": -0.0026098868843704714,
+        "upper": 0.000924339504835503
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-131072": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.00032177308157388396,
+          "lower": -0.0011631185264798782,
+          "upper": 0.0017628373934948094
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.002443383599149529,
+          "lower": -0.004213088024184408,
+          "upper": -0.0007488890407766347
+        }
+      },
+      "combined": {
+        "estimate": -0.0010617620356330182,
+        "lower": -0.0022099432097065774,
+        "upper": 5.9381953550152744e-05
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-262144": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": 0.0008246504208735406,
+          "lower": -0.0009341460069036689,
+          "upper": 0.002933976610865141
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": -0.000678939173872295,
+          "lower": -0.00260514288102065,
+          "upper": 0.000957824227102666
+        }
+      },
+      "combined": {
+        "estimate": 7.257304633934147e-05,
+        "lower": -0.0012424035798423994,
+        "upper": 0.00140055805439121
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-repeated-1048576": {
+      "decision": "bounded",
+      "runs": {
+        "aligned-register-spills-full": {
+          "estimate": -5.011692845913185e-05,
+          "lower": -0.0011678786209942116,
+          "upper": 0.001009295933399601
+        },
+        "aligned-register-spills-full-reverse": {
+          "estimate": 0.0011258980167987431,
+          "lower": -0.00024207924689612081,
+          "upper": 0.0027651839620164154
+        }
+      },
+      "combined": {
+        "estimate": 0.000537717760699552,
+        "lower": -0.0003832024796446287,
+        "upper": 0.0015044918570625843
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    }
+  },
+  "scope": "90% per-case paired bootstrap, stratified by run and actor order",
+  "equivalent_named_cases": [
+    [
+      "33027-periodic-window",
+      "prefix-periodic-33027"
+    ],
+    [
+      "prefix-repeated-1024",
+      "repeated-1024"
+    ],
+    [
+      "prefix-repeated-32769",
+      "repeated-32769"
+    ],
+    [
+      "prefix-natural-1024",
+      "reymont-prefix-1024"
+    ],
+    [
+      "prefix-natural-16384",
+      "reymont-prefix-16384"
+    ],
+    [
+      "prefix-natural-32769",
+      "reymont-prefix-32769"
+    ],
+    [
+      "heldout-window-32767",
+      "prefix-natural-32767"
+    ]
+  ],
+  "peak_private_payload_bytes": {
+    "mech-control": 10548878,
+    "mech-experiment": 10548878
+  },
+  "timing_only_findings": {
+    "rejected": [
+      "empty: established slowdown above the 0.5% resolution",
+      "seven-stored-prefix: established slowdown above the 0.5% resolution"
+    ],
+    "unresolved": [
+      "one-stored: combined and individual run bounds conflict: aligned-register-spills-full-reverse",
+      "eight-literals: regression bound or duplicate-control repeatability unresolved",
+      "32-high-entropy-stored: combined and individual run bounds conflict: aligned-register-spills-full",
+      "random-64: regression bound or duplicate-control repeatability unresolved",
+      "prefix-natural-1048576: regression bound or duplicate-control repeatability unresolved",
+      "prefix-periodic-4096: regression bound or duplicate-control repeatability unresolved",
+      "prefix-periodic-32769: regression bound or duplicate-control repeatability unresolved"
+    ]
+  },
+  "timing_decision": "Reject",
+  "plan_sha256": "a3896bcd85774c1206e478d52d6e5ed43d4b7fe3092f8f535c34e558eb4b9eed",
+  "worker_sha256": {
+    "mech-control": "439a28b3b6ea9aec3254735de80b1c214e0d52a56f3d174fce6dd48681761b41",
+    "mech-experiment": "775b12ba2e8c54a3a153504833df4601307ae691cd6bb31ecd57d16c78960b91",
+    "roc": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+    "libdeflate": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2"
+  },
+  "qualification_scope": "Runtime timing policy only. The linked correctness, proof, and build receipts are reported separately."
+}

@@ -1,0 +1,44 @@
+{
+  "review_parent": "d63fdfa5220ec3a78b7deb93e79b230dabac8357",
+  "compiler_sha256": "e454e68c860ed337075bc2cef123f4e397c279bb983fbff32c9478c49518027f",
+  "maintained_encoder_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+  "encoder_text_bytes": 67464,
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "artifact_sha256": {
+    "program.o": "f350cbf8fa073dc9d3ef04052ff8b1bb8aae96abfd21dca0d2173a720d6e37d1",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata.json": "1356913e095ec0851dae38830fec4ed0b6d2ea57293701824afa6f0a8308cad3"
+  },
+  "worker_sha256": "35783acccf56cfa1701bb349a6ee3d6b7ba27de629cee8871222c378af873df4",
+  "remove_flags": [
+    "MECH_COMPACT_ROOT_TAIL_PROFILE"
+  ],
+  "override_flags": {
+    "MECH_COMPACT_REFUSE_GENERAL_VECTORS": "475,2821,362",
+    "MECH_COMPACT_FIXED_PHASE_PACKET": "refused",
+    "MECH_COMPACT_PACK_PHASE_INPUTS": "1",
+    "MECH_ORDERED_HORIZONTAL_MINIMUM": "1",
+    "MECH_ORDERED_REVERSE_LOW_WORDS": "1",
+    "MECH_ORDERED_VECTOR_LATCH_TEST": "1",
+    "MECH_COMPOSE_SPLIT_COST_LENGTH": "1",
+    "MECH_COMPACT_REFUSE_PHASE_GROWTH": "1",
+    "MECH_COMPACT_SELECT_PHASE_OUTPUT_WORDS": "non-private"
+  },
+  "profiles": [
+    {
+      "symbol": "mech_compact_numeric_3956_vector",
+      "path": "profiles/mech_compact_numeric_3956_vector.json",
+      "sha256": "9d75282ff03f8d4e1382a89d97876f3f195b1548fbff65b63c04cf6f8d6834bc"
+    },
+    {
+      "symbol": "mech_compact_numeric_475_vector",
+      "path": "profiles/mech_compact_numeric_475_vector.json",
+      "sha256": "55bdbe755a0ee2709beb1ba0bd24528e0d0c8cc6d12f99e9f8c00fe56325acc7"
+    },
+    {
+      "symbol": "mech_compact_numeric_3009_no_growth_composed",
+      "path": "profiles/mech_compact_numeric_3009_no_growth_composed.json",
+      "sha256": "df5868a479384a84aebd5b0e3ae2206830a44ce692e96c91d70de35b47d2fbf8"
+    }
+  ]
+}

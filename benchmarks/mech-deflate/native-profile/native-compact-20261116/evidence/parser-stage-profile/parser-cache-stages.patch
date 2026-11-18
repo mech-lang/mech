@@ -1,0 +1,52 @@
+--- a/src/syntax/src/document/parser/mod.rs
++++ b/src/syntax/src/document/parser/mod.rs
+@@ -888,0 +889 @@
++    let started = std::time::Instant::now();
+@@ -889,0 +891,3 @@
++    eprintln!("parser-stage: grammar {}", started.elapsed().as_nanos());
++    tree_cache::print_grammar_cache_profile();
++    let started = std::time::Instant::now();
+@@ -890,0 +895 @@
++    eprintln!("parser-stage: finalization-and-cache {}", started.elapsed().as_nanos());
+@@ -911,0 +917 @@
++    let started = std::time::Instant::now();
+@@ -913,0 +920,2 @@
++    eprintln!("parser-stage: final-tree {}", started.elapsed().as_nanos());
++    let started = std::time::Instant::now();
+@@ -948,0 +957,2 @@
++    eprintln!("parser-stage: diagnostics {}", started.elapsed().as_nanos());
++    let started = std::time::Instant::now();
+@@ -951,0 +962,2 @@
++    eprintln!("parser-stage: snapshot-index {}", started.elapsed().as_nanos());
++    let started = std::time::Instant::now();
+@@ -952,0 +965 @@
++    eprintln!("parser-stage: restart-index {}", started.elapsed().as_nanos());
+--- a/src/syntax/src/document/parser/tree_cache.rs
++++ b/src/syntax/src/document/parser/tree_cache.rs
+@@ -236,0 +237 @@
++        let started = std::time::Instant::now();
+@@ -242,0 +244,4 @@
++        });
++        QUEUING.with(|value| {
++            let (calls, elapsed) = value.get();
++            value.set((calls + 1, elapsed + started.elapsed().as_nanos()));
+@@ -323,0 +329 @@
++        let started = std::time::Instant::now();
+@@ -326,0 +333,4 @@
++        MATERIALIZATION.with(|value| {
++            let (calls, elapsed) = value.get();
++            value.set((calls + 1, elapsed + started.elapsed().as_nanos()));
++        });
+@@ -401,0 +412,12 @@
++
++std::thread_local! {
++    static QUEUING: std::cell::Cell<(u64, u128)> = const { std::cell::Cell::new((0, 0)) };
++    static MATERIALIZATION: std::cell::Cell<(u64, u128)> = const { std::cell::Cell::new((0, 0)) };
++}
++
++pub(super) fn print_grammar_cache_profile() {
++    for (name, stat) in [("queue-requests", &QUEUING), ("advance-cache", &MATERIALIZATION)] {
++        let (calls, nanos) = stat.with(|value| value.get());
++        eprintln!("parser-cache: {name} {calls} {nanos}");
++    }
++}

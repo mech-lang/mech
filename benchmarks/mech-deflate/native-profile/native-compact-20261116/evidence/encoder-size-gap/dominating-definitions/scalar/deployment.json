@@ -1,0 +1,116 @@
+{
+  "medians": {
+    "mech-control-small": {
+      "source": 2.395014979178086,
+      "link": 0.03474533371627331,
+      "source_through_link": 2.429868604056537,
+      "strip": 0.010396354598924518,
+      "source_through_strip": 2.440485104219988
+    },
+    "mech-control-fast": {
+      "source": 2.3475780417211354,
+      "link": 0.0344866665545851,
+      "source_through_link": 2.3826553747057915,
+      "strip": 0.010461167199537158,
+      "source_through_strip": 2.3932603124994785
+    },
+    "mech-direct-small-original-windows": {
+      "source": 2.386554604396224,
+      "link": 0.03475606255233288,
+      "source_through_link": 2.421864500036463,
+      "strip": 0.010495395865291357,
+      "source_through_strip": 2.4325038956012577
+    },
+    "mech-direct-fast-original-windows": {
+      "source": 2.3395697709638625,
+      "link": 0.03480554139241576,
+      "source_through_link": 2.374931312398985,
+      "strip": 0.010508354054763913,
+      "source_through_strip": 2.385639665881172
+    },
+    "roc": {
+      "source": 2.952793854055926,
+      "link": 0.03426493750885129,
+      "source_through_link": 2.9873862077947706,
+      "strip": 0.01037852093577385,
+      "source_through_strip": 2.9979429787490517
+    },
+    "libdeflate": {
+      "source": 0.4459454584866762,
+      "link": 0.033799208234995604,
+      "source_through_link": 0.4799006665125489,
+      "strip": 0.01038404181599617,
+      "source_through_strip": 0.49043483287096024
+    }
+  },
+  "paired_ratios": {
+    "mech-control-small": {
+      "roc": 0.8132556512149322,
+      "libdeflate": 5.057901372861462,
+      "mech-control-small": 1.0,
+      "mech-control-fast": 1.0201751700532018
+    },
+    "mech-control-fast": {
+      "roc": 0.7967790498587325,
+      "libdeflate": 4.958215038030247,
+      "mech-control-small": 0.9802238325244188,
+      "mech-control-fast": 1.0
+    },
+    "mech-direct-small-original-windows": {
+      "roc": 0.8103822621392633,
+      "libdeflate": 5.034491842536916,
+      "mech-control-small": 0.9964046692255448,
+      "mech-control-fast": 1.0167752293388603
+    },
+    "mech-direct-fast-original-windows": {
+      "roc": 0.793952351220408,
+      "libdeflate": 4.939378966858806,
+      "mech-control-small": 0.9766759774063325,
+      "mech-control-fast": 0.9966208855036216
+    }
+  },
+  "phases": {
+    "mech-control-small": {
+      "parse": 0.787158083,
+      "catalog": 2.0478999999999998e-05,
+      "frontend": 0.22517808350000001,
+      "artifact": 0.0069940005,
+      "encode": 0.0025966665,
+      "native": 1.3461885835
+    },
+    "mech-control-fast": {
+      "parse": 0.7867650625,
+      "catalog": 1.7728499999999998e-05,
+      "frontend": 0.22532162449999998,
+      "artifact": 0.0069820625,
+      "encode": 0.0025983335,
+      "native": 1.2993355210000002
+    },
+    "mech-direct-small-original-windows": {
+      "parse": 0.7877517709999999,
+      "catalog": 1.97495e-05,
+      "frontend": 0.2262393125,
+      "artifact": 0.0070515000000000005,
+      "encode": 0.0025971255,
+      "native": 1.3360225
+    },
+    "mech-direct-fast-original-windows": {
+      "parse": 0.787166229,
+      "catalog": 1.95835e-05,
+      "frontend": 0.226091833,
+      "artifact": 0.0070443335,
+      "encode": 0.0025756875,
+      "native": 1.2897047085
+    }
+  },
+  "plan_sha256": "3f3f41cd74045a99ea799ba188c1658fbc30f4850d9a637c04be9bd4d98dd752",
+  "trials": 12,
+  "stripped_executables": {
+    "mech-control-small": 276056,
+    "mech-control-fast": 276056,
+    "mech-direct-small-original-windows": 276056,
+    "mech-direct-fast-original-windows": 276056,
+    "roc": 191912,
+    "libdeflate": 155752
+  }
+}

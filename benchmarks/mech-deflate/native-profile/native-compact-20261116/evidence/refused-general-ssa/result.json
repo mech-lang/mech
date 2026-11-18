@@ -1,0 +1,116 @@
+{
+  "recorded": {
+    "status": 0,
+    "sha256": {
+      "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+      "program.o": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+      "metadata.json": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+    },
+    "skipped": [
+      "mech_compact_numeric_475"
+    ],
+    "entry_bounds": {
+      "mech_compact_numeric_475": [
+        [
+          0,
+          262144,
+          false
+        ]
+      ]
+    }
+  },
+  "assertions-off": {
+    "status": 0,
+    "sha256": {
+      "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+      "program.o": "6e718cc2bb13263759263bb32b8749d8a315368eb4fb3ce5353d8a16b6294e7e",
+      "metadata.json": "72eaf163f37ded8047b12a15dca8e1006c9af851699dc01d25c1f6fb7eb4b862"
+    },
+    "skipped": [
+      "mech_compact_numeric_475"
+    ],
+    "entry_bounds": {
+      "mech_compact_numeric_475": []
+    }
+  },
+  "compare-ir": {
+    "status": 0,
+    "sha256": {
+      "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+      "program.o": "b62b5eba388807b1ee6a35803e1d62d50b387982c61b9a92bcd6b881486165de",
+      "metadata.json": "328f6a2a62440b09e5d28488985ae7ca1bfc81c0f243e693bc981dbd02624741"
+    },
+    "skipped": [],
+    "entry_bounds": {
+      "mech_compact_numeric_475": [
+        [
+          0,
+          262144,
+          false
+        ]
+      ]
+    }
+  },
+  "share-bodies": {
+    "status": 0,
+    "sha256": {
+      "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+      "program.o": "61969768b321ec89f7ee5b613f397699e0b1ef1d5ea296429af178893ba2ac07",
+      "metadata.json": "e15d2d8ac01fd7ede7e7fbe3fb18d94b49223c891b101536a1974634f96a0960"
+    },
+    "skipped": [],
+    "entry_bounds": {}
+  },
+  "keep-general": {
+    "status": 0,
+    "sha256": {
+      "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+      "program.o": "b62b5eba388807b1ee6a35803e1d62d50b387982c61b9a92bcd6b881486165de",
+      "metadata.json": "5a30c3d4b87ed3d47c1495e3f7a64a5c4df98f98ae781c7c857765c3e1dc1663"
+    },
+    "skipped": [],
+    "entry_bounds": {}
+  },
+  "unrequested-refusal": {
+    "status": 0,
+    "sha256": {
+      "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+      "program.o": "716d8356b696be4dfe260044aa556aad5d711d952d70082b7ace028f6c2d511a",
+      "metadata.json": "acb904e50830e55f4103fb0c352c8ada6a71e4e3ac24fa7fb93569278f824d73"
+    },
+    "skipped": [],
+    "entry_bounds": {}
+  },
+  "unavailable-vector": {
+    "status": 101,
+    "diagnostic": [
+      "called `Result::unwrap()` on an `Err` value: Backend(\"geometry refusal needs a selected vector phase for {475}\")"
+    ],
+    "skipped": []
+  },
+  "absent-private-proof": {
+    "status": 101,
+    "diagnostic": [
+      "called `Result::unwrap()` on an `Err` value: Backend(\"geometry refusal needs a selected vector phase for {475}\")"
+    ],
+    "skipped": []
+  },
+  "general-ir-dump": {
+    "status": 0,
+    "sha256": {
+      "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+      "program.o": "b62b5eba388807b1ee6a35803e1d62d50b387982c61b9a92bcd6b881486165de",
+      "metadata.json": "328f6a2a62440b09e5d28488985ae7ca1bfc81c0f243e693bc981dbd02624741"
+    },
+    "skipped": [],
+    "entry_bounds": {
+      "mech_compact_numeric_475": [
+        [
+          0,
+          262144,
+          false
+        ]
+      ]
+    }
+  }
+}

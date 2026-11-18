@@ -1,0 +1,20 @@
+Acquiring terminal-owner-only-focus-forward
+empty {'mech-control': 0.833085, 'mech-experiment': 0.849921, 'roc': 1.0, 'libdeflate': 127.556505} raw bytes 5 / 5
+one-stored {'mech-control': 0.743558, 'mech-experiment': 0.742532, 'roc': 1.0, 'libdeflate': 110.493866} raw bytes 6 / 6
+seven-stored-prefix {'mech-control': 0.881378, 'mech-experiment': 0.840147, 'roc': 1.0, 'libdeflate': 120.546356} raw bytes 12 / 12
+320-overlap {'mech-control': 0.094277, 'mech-experiment': 0.094467, 'roc': 1.0, 'libdeflate': 0.094101} raw bytes 7 / 7
+random-64 {'mech-control': 0.041148, 'mech-experiment': 0.041191, 'roc': 1.0, 'libdeflate': 0.082126} raw bytes 69 / 69
+prefix-natural-4096 {'mech-control': 0.659886, 'mech-experiment': 0.66089, 'roc': 1.0, 'libdeflate': 0.591976} raw bytes 983 / 983
+prefix-natural-8192 {'mech-control': 0.828293, 'mech-experiment': 0.829553, 'roc': 1.0, 'libdeflate': 0.804935} raw bytes 2309 / 2309
+prefix-random-4096 {'mech-control': 0.336677, 'mech-experiment': 0.336712, 'roc': 1.0, 'libdeflate': 0.205701} raw bytes 4101 / 4101
+prefix-repeated-32769 {'mech-control': 0.38363, 'mech-experiment': 0.38394, 'roc': 1.0, 'libdeflate': 0.514568} raw bytes 47 / 47
+Acquiring terminal-owner-only-focus-reverse
+prefix-repeated-32769 {'libdeflate': 0.511907, 'roc': 1.0, 'mech-experiment': 0.384069, 'mech-control': 0.385733} raw bytes 47 / 47
+prefix-random-4096 {'libdeflate': 0.204654, 'roc': 1.0, 'mech-experiment': 0.332217, 'mech-control': 0.337665} raw bytes 4101 / 4101
+prefix-natural-8192 {'libdeflate': 0.800419, 'roc': 1.0, 'mech-experiment': 0.83082, 'mech-control': 0.833353} raw bytes 2309 / 2309
+prefix-natural-4096 {'libdeflate': 0.591108, 'roc': 1.0, 'mech-experiment': 0.668673, 'mech-control': 0.670279} raw bytes 983 / 983
+random-64 {'libdeflate': 0.082866, 'roc': 1.0, 'mech-experiment': 0.042089, 'mech-control': 0.041819} raw bytes 69 / 69
+320-overlap {'libdeflate': 0.095147, 'roc': 1.0, 'mech-experiment': 0.094535, 'mech-control': 0.094759} raw bytes 7 / 7
+seven-stored-prefix {'libdeflate': 120.21458, 'roc': 1.0, 'mech-experiment': 0.836275, 'mech-control': 0.884494} raw bytes 12 / 12
+one-stored {'libdeflate': 113.228466, 'roc': 1.0, 'mech-experiment': 0.768193, 'mech-control': 0.772105} raw bytes 6 / 6
+empty {'libdeflate': 128.441258, 'roc': 1.0, 'mech-experiment': 0.854645, 'mech-control': 0.852276} raw bytes 5 / 5

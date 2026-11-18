@@ -1,0 +1,23 @@
+{
+  "maintained_after_4_syntax": "unsafe boundary audit passed",
+  "next_finding_with_after_8": "unsafe boundary audit failed: prohibited code exists outside the exact allowlist: benchmarks/related-post-gen/hosts/after-8.rs\n104:    let program = unsafe { mech_gpu::native_artifact::LinkedProgramArtifact::from_compiled_module(&LINKED_MODULE, &catalog) }.unwrap();",
+  "historical_source_archive": {
+    "file": "review/recorded-sources/after-4.rs.gz",
+    "verified_sha256": "4ee1604490b1c639f82ba9aaeec1b0e941569b652ae78355ce29c7437d0662c0"
+  },
+  "preserved_compiler_inventory": {
+    "commit": "4cc266ae0d05c69432a4c15ffe99d5e586685647",
+    "files": {
+      "hosts/gpu/src/native_artifact/application/mod.rs": "51e2f9b9245ff5cae2cc141ecc3797db18a7bfa867caca070c150b72ebc3ed2f",
+      "hosts/gpu/src/native_artifact/launch/program.rs": "770c12f8e5310b9af685adee34c03c283cd427ba7e06687654fc13cefdbadbdf",
+      "hosts/gpu/src/native_artifact/mod.rs": "1c4ff787d918007e535b2578797a122c84db176c3d6d7fa5c682d1eb9ab03b38",
+      "hosts/gpu/src/native_artifact/program/application.rs": "82837494b5d4bf7746d4d7dac5f1168033542e0a89ac2abdac2a5e9873782917"
+    }
+  },
+  "timer_contract": "same processing/report/output tail and input/view helpers, with catalog before restore timer",
+  "inherited_archive_mismatch": {
+    "path": "benchmarks/related-post-gen/README.md",
+    "review_manifest_sha256": "ead8d807bb56b9b265aacebb6c17b7efb4dcbc8f2dab4caa8e7c2188351cfb7a",
+    "current_sha256": "d8903c5acd3d8040ddaa4a446deca0152e65c417621bda12eb14d7bb12f3770e"
+  }
+}

@@ -1,0 +1,126 @@
+{
+  "objective": "improve runtime of long ordered scoring while preserving existing wins",
+  "full_screen_trigger": "Target case established improvement and no established focused regressions; inspect scope of any tradeoffs before full timing.",
+  "focus_cases": [
+    "empty",
+    "one-stored",
+    "320-overlap",
+    "prefix-periodic-1024",
+    "random-64",
+    "random-1024",
+    "prefix-random-1024",
+    "prefix-random-4096",
+    "prefix-random-8192",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-natural-16384",
+    "heldout-window-32767",
+    "heldout-mixed-131073",
+    "prefix-random-1048576"
+  ],
+  "runs": [
+    {
+      "id": "ordered-cursors-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "ordered-cursors-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "ordered-cursors-full-forward",
+      "kind": "full",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "ordered-cursors-full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "blocks_per_case": 96
+    }
+  ],
+  "policy": {
+    "path": "native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification-policy-v1.json",
+    "sha256": "1889b824a300e5b2c5c8bfb40aea1652cb525cb740152706ec5bf72543bce984"
+  },
+  "timer": {
+    "path": "compare-library.py",
+    "sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a"
+  },
+  "driver": {
+    "path": "ordered-vector-cursors/timing.py",
+    "sha256": "578c13f6e9dd57f3c0b4d8bdf74c1bd078739ba3449e77323ba05758ac51c890"
+  },
+  "as_run_inventory": {
+    "path": "fixtures.json",
+    "sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+  },
+  "pinned_peers": {
+    "path": "pinned-peers/pins.json",
+    "sha256": "db5a289d7a929176e5a1c9efbff5f69702596b0dccba9f2cace86d78cc18902d"
+  },
+  "fixture_content_sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+  "bindings": {
+    "mech-control": {
+      "program.o": {
+        "path": "native-size-20261117/source-aligned/program.o",
+        "sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b"
+      },
+      "metadata.json": {
+        "path": "native-size-20261117/source-aligned/metadata.json",
+        "sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+      },
+      "runtime.json": {
+        "path": "native-size-20261117/source-aligned/runtime.json",
+        "sha256": "c610f88fe1d61546a7d8e74352f07a4ac175d571dc6816faff3a778f302b115a"
+      },
+      "mech-worker": {
+        "path": "native-size-20261117/source-aligned/mech-worker",
+        "sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9"
+      }
+    },
+    "mech-experiment": {
+      "program.o": {
+        "path": "ordered-cursors-native/final-candidate/program.o",
+        "sha256": "e43ea00603fa9908b8213692678f0689f8083db2489d122d4d199fd350b58396"
+      },
+      "metadata.json": {
+        "path": "ordered-cursors-native/final-candidate/metadata.json",
+        "sha256": "c3ee66b239ec6567957756ceed883b3c9126481489cced78e6b2de8d09570999"
+      },
+      "runtime.json": {
+        "path": "ordered-cursors-native/final-candidate/runtime.json",
+        "sha256": "6f1e20faf2594e1b84d51d9ad203941a5c63f22e7e53cb95bc874b3da11c47fb"
+      },
+      "mech-worker": {
+        "path": "ordered-cursors-native/final-candidate/mech-worker",
+        "sha256": "8cee21af1c28fe6a5a360d15b5c1c123bad3088be5eb4597e2e3d347af0a955f"
+      }
+    }
+  },
+  "identities": {
+    "mech-control": {
+      "worker": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+      "metadata": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+    },
+    "mech-experiment": {
+      "worker": "8cee21af1c28fe6a5a360d15b5c1c123bad3088be5eb4597e2e3d347af0a955f",
+      "metadata": "c3ee66b239ec6567957756ceed883b3c9126481489cced78e6b2de8d09570999"
+    },
+    "roc": {
+      "worker": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+      "metadata": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee"
+    },
+    "libdeflate": {
+      "worker": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "metadata": null
+    },
+    "environment_sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+    "contract_sha256": "f8d0b099053f18375d9b2122fd993d7a34cc8cffab47bd7c3fd9a7e8a9ed58d7"
+  }
+}

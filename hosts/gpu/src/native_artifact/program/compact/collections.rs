@@ -321,7 +321,7 @@ impl Collections {
                     let valid = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
                     guard(b, valid, error, 1);
                     let stride = element.packed_bytes.unwrap();
-                    let capacity = Arrays::grown_capacity(b, view[2], length, stride, error);
+                    let capacity = arrays.grown_capacity(b, view[2], length, stride, error);
                     let mut next = arrays.writable(b, &view, true, capacity, element, error)?;
                     let offset = b.ins().imul_imm(view[1], stride as i64);
                     let destination = b.ins().iadd(next[0], offset);
@@ -382,6 +382,7 @@ impl Collections {
         prepared: &PreparedNativeProgram,
         initial: &BTreeMap<usize, Initial>,
         kernels: &[Kernel],
+        reuse_pointwise_source: bool,
         iteration: u32,
         body: Block,
         exit: Block,
@@ -498,7 +499,13 @@ impl Collections {
                 if element.packed_bytes != Some(kernel.proof.output_width.into()) {
                     return Err(backend("compact word sink differs from its total proof"));
                 }
-                let mut view = arrays.allocate(b, capacity, element, false, error)?;
+                let mut view = if reuse_pointwise_source
+                    && layout.ty(kernel.proof.source).element()? == element
+                {
+                    arrays.pointwise_destination(b, &source, capacity, element, error)?
+                } else {
+                    arrays.allocate(b, capacity, element, false, error)?
+                };
                 kernel.emit(module, b, words, layout, source[0], view[0], count, error)?;
                 view[1] = count;
                 view[4] = count;

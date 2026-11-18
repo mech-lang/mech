@@ -1,0 +1,20 @@
+{
+  "base": "45c1c1427497b13759056b138fbfd2483286fdd1",
+  "portable_backend_tests": {
+    "passed": 12,
+    "failed": 0,
+    "ignored": 0,
+    "host": "Apple M1; generated buffers inspected, not executed",
+    "ci_owner": ".github/workflows/ci-native-plan.yml canonical-policy; runs on Linux",
+    "filter": "isa::aarch64::cold_",
+    "source_sha256": {
+      "vendor/cranelift-codegen/src/isa/aarch64/cold_tails.rs": "2a03505969616526b9e8ef37d20d1e4cbe8f5b7078b7e22e1315267ff083a1a4",
+      "vendor/cranelift-codegen/src/isa/aarch64/cold_tails/tests.rs": "6f5a7d896fc9593ac5aea0e83ceab68203b785c34cb0a5eb650af59d1090b7e6",
+      "vendor/cranelift-codegen/src/isa/aarch64/cold_epilogues_tests.rs": "dee8ca9dba767525624f37b5f030fac00cffb1ae169912f533c2fc4670a87e7d"
+    },
+    "linux_ci": "passed exactly 12 tests in run 43963249960, job 133636689191; later policy-kernel compilation failed on two test-only issues corrected in this follow-up"
+  },
+  "workflow_contracts_passed": 3,
+  "integrated_rebuild": "succeeded at 2b930a8dfa0f085d46d68bc6593bd182b58f26a2; see integrated-rebuild.json",
+  "runtime_wins": "historical baseline only; no new runtime result"
+}

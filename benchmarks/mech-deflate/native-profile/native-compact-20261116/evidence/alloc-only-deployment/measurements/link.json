@@ -1,0 +1,912 @@
+{
+  "scope": "clang invocation, linking prebuilt files and writing executable plus map",
+  "warmup": {
+    "label": "warmup",
+    "order": [
+      "mech-std",
+      "mech-alloc",
+      "roc",
+      "libdeflate"
+    ],
+    "samples": {
+      "mech-std": {
+        "elapsed_ns": 270814958,
+        "sha256": "0b2b7dd27231c0aa638ce6ddbe7eee6613e39b03a0d5ec9a9789342055e1fc00",
+        "file_bytes": 668392,
+        "command": [
+          "/usr/bin/clang",
+          "-arch",
+          "arm64",
+          "-mmacosx-version-min=15.0",
+          "-Wl,-dead_strip",
+          "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/mech-std.map",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+          "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "-lSystem",
+          "-lc",
+          "-lm",
+          "-o",
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/mech-std"
+        ],
+        "log": "mech-std.log"
+      },
+      "mech-alloc": {
+        "elapsed_ns": 35266917,
+        "sha256": "b7622d9ea1e1f2ab595f0ac1d39f90de6cbc3b2cbca4115a7c9a1fbab58983bd",
+        "file_bytes": 301384,
+        "command": [
+          "/usr/bin/clang",
+          "-arch",
+          "arm64",
+          "-mmacosx-version-min=15.0",
+          "-Wl,-dead_strip",
+          "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/mech-alloc.map",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+          "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "-o",
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/mech-alloc"
+        ],
+        "log": "mech-alloc.log"
+      },
+      "roc": {
+        "elapsed_ns": 34127667,
+        "sha256": "77faae9d699d51fa9f196fcdcd29d7bc3bd10c3a57bf91f9d2fb66b99e00c34b",
+        "file_bytes": 199680,
+        "command": [
+          "/usr/bin/clang",
+          "-arch",
+          "arm64",
+          "-mmacosx-version-min=15.0",
+          "-Wl,-dead_strip",
+          "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/roc.map",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc.o",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/roc/encoder.a",
+          "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "-o",
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/roc"
+        ],
+        "log": "roc.log"
+      },
+      "libdeflate": {
+        "elapsed_ns": 34546917,
+        "sha256": "b463350f9aa9d318c0a0c32a86d0330841b8abbc8ef094359ccb339b84b7830b",
+        "file_bytes": 161400,
+        "command": [
+          "/usr/bin/clang",
+          "-arch",
+          "arm64",
+          "-mmacosx-version-min=15.0",
+          "-Wl,-dead_strip",
+          "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/libdeflate.map",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate.o",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/libdeflate/encoder.o",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-alloc.o",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-arm.o",
+          "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+          "-o",
+          "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/libdeflate"
+        ],
+        "log": "libdeflate.log"
+      }
+    }
+  },
+  "blocks": [
+    {
+      "label": 1,
+      "order": [
+        "mech-std",
+        "mech-alloc",
+        "roc",
+        "libdeflate"
+      ],
+      "samples": {
+        "mech-std": {
+          "elapsed_ns": 43713125,
+          "sha256": "0b2b7dd27231c0aa638ce6ddbe7eee6613e39b03a0d5ec9a9789342055e1fc00",
+          "file_bytes": 668392,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/01/mech-std.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/01/mech-std"
+          ],
+          "log": "mech-std.log"
+        },
+        "mech-alloc": {
+          "elapsed_ns": 35105708,
+          "sha256": "b7622d9ea1e1f2ab595f0ac1d39f90de6cbc3b2cbca4115a7c9a1fbab58983bd",
+          "file_bytes": 301384,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/01/mech-alloc.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/01/mech-alloc"
+          ],
+          "log": "mech-alloc.log"
+        },
+        "roc": {
+          "elapsed_ns": 35465583,
+          "sha256": "77faae9d699d51fa9f196fcdcd29d7bc3bd10c3a57bf91f9d2fb66b99e00c34b",
+          "file_bytes": 199680,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/01/roc.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/roc/encoder.a",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/01/roc"
+          ],
+          "log": "roc.log"
+        },
+        "libdeflate": {
+          "elapsed_ns": 33918667,
+          "sha256": "b463350f9aa9d318c0a0c32a86d0330841b8abbc8ef094359ccb339b84b7830b",
+          "file_bytes": 161400,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/01/libdeflate.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/libdeflate/encoder.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-alloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-arm.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/01/libdeflate"
+          ],
+          "log": "libdeflate.log"
+        }
+      }
+    },
+    {
+      "label": 2,
+      "order": [
+        "mech-alloc",
+        "roc",
+        "libdeflate",
+        "mech-std"
+      ],
+      "samples": {
+        "mech-alloc": {
+          "elapsed_ns": 36078458,
+          "sha256": "b7622d9ea1e1f2ab595f0ac1d39f90de6cbc3b2cbca4115a7c9a1fbab58983bd",
+          "file_bytes": 301384,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/02/mech-alloc.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/02/mech-alloc"
+          ],
+          "log": "mech-alloc.log"
+        },
+        "roc": {
+          "elapsed_ns": 33998250,
+          "sha256": "77faae9d699d51fa9f196fcdcd29d7bc3bd10c3a57bf91f9d2fb66b99e00c34b",
+          "file_bytes": 199680,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/02/roc.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/roc/encoder.a",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/02/roc"
+          ],
+          "log": "roc.log"
+        },
+        "libdeflate": {
+          "elapsed_ns": 33319958,
+          "sha256": "b463350f9aa9d318c0a0c32a86d0330841b8abbc8ef094359ccb339b84b7830b",
+          "file_bytes": 161400,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/02/libdeflate.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/libdeflate/encoder.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-alloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-arm.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/02/libdeflate"
+          ],
+          "log": "libdeflate.log"
+        },
+        "mech-std": {
+          "elapsed_ns": 43487083,
+          "sha256": "0b2b7dd27231c0aa638ce6ddbe7eee6613e39b03a0d5ec9a9789342055e1fc00",
+          "file_bytes": 668392,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/02/mech-std.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/02/mech-std"
+          ],
+          "log": "mech-std.log"
+        }
+      }
+    },
+    {
+      "label": 3,
+      "order": [
+        "libdeflate",
+        "mech-std",
+        "mech-alloc",
+        "roc"
+      ],
+      "samples": {
+        "libdeflate": {
+          "elapsed_ns": 34568500,
+          "sha256": "b463350f9aa9d318c0a0c32a86d0330841b8abbc8ef094359ccb339b84b7830b",
+          "file_bytes": 161400,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/03/libdeflate.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/libdeflate/encoder.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-alloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-arm.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/03/libdeflate"
+          ],
+          "log": "libdeflate.log"
+        },
+        "mech-std": {
+          "elapsed_ns": 43683416,
+          "sha256": "0b2b7dd27231c0aa638ce6ddbe7eee6613e39b03a0d5ec9a9789342055e1fc00",
+          "file_bytes": 668392,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/03/mech-std.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/03/mech-std"
+          ],
+          "log": "mech-std.log"
+        },
+        "mech-alloc": {
+          "elapsed_ns": 34713750,
+          "sha256": "b7622d9ea1e1f2ab595f0ac1d39f90de6cbc3b2cbca4115a7c9a1fbab58983bd",
+          "file_bytes": 301384,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/03/mech-alloc.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/03/mech-alloc"
+          ],
+          "log": "mech-alloc.log"
+        },
+        "roc": {
+          "elapsed_ns": 34523875,
+          "sha256": "77faae9d699d51fa9f196fcdcd29d7bc3bd10c3a57bf91f9d2fb66b99e00c34b",
+          "file_bytes": 199680,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/03/roc.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/roc/encoder.a",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/03/roc"
+          ],
+          "log": "roc.log"
+        }
+      }
+    },
+    {
+      "label": 4,
+      "order": [
+        "roc",
+        "libdeflate",
+        "mech-std",
+        "mech-alloc"
+      ],
+      "samples": {
+        "roc": {
+          "elapsed_ns": 34166666,
+          "sha256": "77faae9d699d51fa9f196fcdcd29d7bc3bd10c3a57bf91f9d2fb66b99e00c34b",
+          "file_bytes": 199680,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/04/roc.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/roc/encoder.a",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/04/roc"
+          ],
+          "log": "roc.log"
+        },
+        "libdeflate": {
+          "elapsed_ns": 34657125,
+          "sha256": "b463350f9aa9d318c0a0c32a86d0330841b8abbc8ef094359ccb339b84b7830b",
+          "file_bytes": 161400,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/04/libdeflate.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/libdeflate/encoder.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-alloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-arm.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/04/libdeflate"
+          ],
+          "log": "libdeflate.log"
+        },
+        "mech-std": {
+          "elapsed_ns": 43573458,
+          "sha256": "0b2b7dd27231c0aa638ce6ddbe7eee6613e39b03a0d5ec9a9789342055e1fc00",
+          "file_bytes": 668392,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/04/mech-std.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/04/mech-std"
+          ],
+          "log": "mech-std.log"
+        },
+        "mech-alloc": {
+          "elapsed_ns": 34844250,
+          "sha256": "b7622d9ea1e1f2ab595f0ac1d39f90de6cbc3b2cbca4115a7c9a1fbab58983bd",
+          "file_bytes": 301384,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/04/mech-alloc.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/04/mech-alloc"
+          ],
+          "log": "mech-alloc.log"
+        }
+      }
+    },
+    {
+      "label": 5,
+      "order": [
+        "mech-std",
+        "mech-alloc",
+        "roc",
+        "libdeflate"
+      ],
+      "samples": {
+        "mech-std": {
+          "elapsed_ns": 44656791,
+          "sha256": "0b2b7dd27231c0aa638ce6ddbe7eee6613e39b03a0d5ec9a9789342055e1fc00",
+          "file_bytes": 668392,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/05/mech-std.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/05/mech-std"
+          ],
+          "log": "mech-std.log"
+        },
+        "mech-alloc": {
+          "elapsed_ns": 34953375,
+          "sha256": "b7622d9ea1e1f2ab595f0ac1d39f90de6cbc3b2cbca4115a7c9a1fbab58983bd",
+          "file_bytes": 301384,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/05/mech-alloc.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/05/mech-alloc"
+          ],
+          "log": "mech-alloc.log"
+        },
+        "roc": {
+          "elapsed_ns": 33669792,
+          "sha256": "77faae9d699d51fa9f196fcdcd29d7bc3bd10c3a57bf91f9d2fb66b99e00c34b",
+          "file_bytes": 199680,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/05/roc.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/roc/encoder.a",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/05/roc"
+          ],
+          "log": "roc.log"
+        },
+        "libdeflate": {
+          "elapsed_ns": 33654917,
+          "sha256": "b463350f9aa9d318c0a0c32a86d0330841b8abbc8ef094359ccb339b84b7830b",
+          "file_bytes": 161400,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/05/libdeflate.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/libdeflate/encoder.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-alloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-arm.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/05/libdeflate"
+          ],
+          "log": "libdeflate.log"
+        }
+      }
+    },
+    {
+      "label": 6,
+      "order": [
+        "mech-alloc",
+        "roc",
+        "libdeflate",
+        "mech-std"
+      ],
+      "samples": {
+        "mech-alloc": {
+          "elapsed_ns": 34593000,
+          "sha256": "b7622d9ea1e1f2ab595f0ac1d39f90de6cbc3b2cbca4115a7c9a1fbab58983bd",
+          "file_bytes": 301384,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/06/mech-alloc.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/06/mech-alloc"
+          ],
+          "log": "mech-alloc.log"
+        },
+        "roc": {
+          "elapsed_ns": 34212416,
+          "sha256": "77faae9d699d51fa9f196fcdcd29d7bc3bd10c3a57bf91f9d2fb66b99e00c34b",
+          "file_bytes": 199680,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/06/roc.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/roc/encoder.a",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/06/roc"
+          ],
+          "log": "roc.log"
+        },
+        "libdeflate": {
+          "elapsed_ns": 33745167,
+          "sha256": "b463350f9aa9d318c0a0c32a86d0330841b8abbc8ef094359ccb339b84b7830b",
+          "file_bytes": 161400,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/06/libdeflate.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/libdeflate/encoder.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-alloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-arm.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/06/libdeflate"
+          ],
+          "log": "libdeflate.log"
+        },
+        "mech-std": {
+          "elapsed_ns": 45361917,
+          "sha256": "0b2b7dd27231c0aa638ce6ddbe7eee6613e39b03a0d5ec9a9789342055e1fc00",
+          "file_bytes": 668392,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/06/mech-std.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/06/mech-std"
+          ],
+          "log": "mech-std.log"
+        }
+      }
+    },
+    {
+      "label": 7,
+      "order": [
+        "libdeflate",
+        "mech-std",
+        "mech-alloc",
+        "roc"
+      ],
+      "samples": {
+        "libdeflate": {
+          "elapsed_ns": 33702167,
+          "sha256": "b463350f9aa9d318c0a0c32a86d0330841b8abbc8ef094359ccb339b84b7830b",
+          "file_bytes": 161400,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/07/libdeflate.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/libdeflate/encoder.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-alloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-arm.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/07/libdeflate"
+          ],
+          "log": "libdeflate.log"
+        },
+        "mech-std": {
+          "elapsed_ns": 43718292,
+          "sha256": "0b2b7dd27231c0aa638ce6ddbe7eee6613e39b03a0d5ec9a9789342055e1fc00",
+          "file_bytes": 668392,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/07/mech-std.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/07/mech-std"
+          ],
+          "log": "mech-std.log"
+        },
+        "mech-alloc": {
+          "elapsed_ns": 34593958,
+          "sha256": "b7622d9ea1e1f2ab595f0ac1d39f90de6cbc3b2cbca4115a7c9a1fbab58983bd",
+          "file_bytes": 301384,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/07/mech-alloc.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/07/mech-alloc"
+          ],
+          "log": "mech-alloc.log"
+        },
+        "roc": {
+          "elapsed_ns": 34437542,
+          "sha256": "77faae9d699d51fa9f196fcdcd29d7bc3bd10c3a57bf91f9d2fb66b99e00c34b",
+          "file_bytes": 199680,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/07/roc.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/roc/encoder.a",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/07/roc"
+          ],
+          "log": "roc.log"
+        }
+      }
+    },
+    {
+      "label": 8,
+      "order": [
+        "roc",
+        "libdeflate",
+        "mech-std",
+        "mech-alloc"
+      ],
+      "samples": {
+        "roc": {
+          "elapsed_ns": 34302708,
+          "sha256": "77faae9d699d51fa9f196fcdcd29d7bc3bd10c3a57bf91f9d2fb66b99e00c34b",
+          "file_bytes": 199680,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/08/roc.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/roc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/roc/encoder.a",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/08/roc"
+          ],
+          "log": "roc.log"
+        },
+        "libdeflate": {
+          "elapsed_ns": 33923959,
+          "sha256": "b463350f9aa9d318c0a0c32a86d0330841b8abbc8ef094359ccb339b84b7830b",
+          "file_bytes": 161400,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/08/libdeflate.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/refused-ssa-maintained/matched/warmup/libdeflate/encoder.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-alloc.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-arm.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/08/libdeflate"
+          ],
+          "log": "libdeflate.log"
+        },
+        "mech-std": {
+          "elapsed_ns": 43754541,
+          "sha256": "0b2b7dd27231c0aa638ce6ddbe7eee6613e39b03a0d5ec9a9789342055e1fc00",
+          "file_bytes": 668392,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/08/mech-std.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-lSystem",
+            "-lc",
+            "-lm",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/08/mech-std"
+          ],
+          "log": "mech-std.log"
+        },
+        "mech-alloc": {
+          "elapsed_ns": 34734583,
+          "sha256": "b7622d9ea1e1f2ab595f0ac1d39f90de6cbc3b2cbca4115a7c9a1fbab58983bd",
+          "file_bytes": 301384,
+          "command": [
+            "/usr/bin/clang",
+            "-arch",
+            "arm64",
+            "-mmacosx-version-min=15.0",
+            "-Wl,-dead_strip",
+            "-Wl,-map,/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/08/mech-alloc.map",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/backend-work-hardened/worker-checks/retained/program.o",
+            "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+            "-o",
+            "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/timing/final-links/08/mech-alloc"
+          ],
+          "log": "mech-alloc.log"
+        }
+      }
+    }
+  ],
+  "summary": {
+    "units": "ns/clang invocation",
+    "median": {
+      "mech-std": 43715708.5,
+      "mech-alloc": 34789416.5,
+      "roc": 34257562.0,
+      "libdeflate": 33831917.0
+    },
+    "paired_ratios": {
+      "mech-alloc/mech-std": {
+        "median": 0.7942587451575298,
+        "minimum": 0.7626000462017511,
+        "maximum": 0.8296361933496437
+      },
+      "mech-std/roc": {
+        "median": 1.275431318498834,
+        "minimum": 1.2325505829130174,
+        "maximum": 1.3263162124672465
+      },
+      "mech-alloc/roc": {
+        "median": 1.0118571312449527,
+        "minimum": 0.9898528384546788,
+        "maximum": 1.0611857375011948
+      },
+      "mech-std/libdeflate": {
+        "median": 1.2934890726612573,
+        "minimum": 1.2572727253054026,
+        "maximum": 1.3442492964992587
+      },
+      "mech-alloc/libdeflate": {
+        "median": 1.025792757528744,
+        "minimum": 1.004201802218783,
+        "maximum": 1.082788219600997
+      }
+    }
+  },
+  "exact_reference_binary_sha256": {
+    "mech-std": "3f1e717a9ce70e2c1305935f66c46e08af2ef7ed9a8b792653c1b698382378bd",
+    "mech-alloc": "b06a893cdd9c0bbc83692a03efd3789c9849c5afbb57c7aa6daae5311415c76a",
+    "roc": "77faae9d699d51fa9f196fcdcd29d7bc3bd10c3a57bf91f9d2fb66b99e00c34b",
+    "libdeflate": "b463350f9aa9d318c0a0c32a86d0330841b8abbc8ef094359ccb339b84b7830b"
+  },
+  "all_links_match_reference_binary_sha256": false
+}

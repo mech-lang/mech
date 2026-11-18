@@ -11,7 +11,7 @@ use crate::document::RuleId;
 use crate::document::TextSize;
 use crate::document::parser::grapheme_scan::{GraphemeScan, ScanProgress};
 const OPERATOR_COUNT: usize = EXPRESSION_OPERATOR_RULES.len();
-const MIN_ANALYSIS_ALLOWANCE: u64 = 4096;
+pub(super) const MIN_ANALYSIS_ALLOWANCE: u64 = 4096;
 const MAX_WHITESPACE_PREFIX: u64 = 128;
 const ASCII_HEADS: u128 = ((1_u128 << 127) - 1) ^ ((1_u128 << 32) - 1);
 #[derive(Clone, Copy)]
