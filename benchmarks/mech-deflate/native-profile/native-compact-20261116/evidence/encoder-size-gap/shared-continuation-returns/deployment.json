@@ -1,0 +1,84 @@
+{
+  "medians": {
+    "mech-control-fast": {
+      "source": 2.2696681243833154,
+      "link": 0.036699749529361725,
+      "source_through_link": 2.3056200835853815,
+      "strip": 0.010319395456463099,
+      "source_through_strip": 2.3160715205594897
+    },
+    "mech-shared-terminal-returns": {
+      "source": 2.267325417138636,
+      "link": 0.03482612525112927,
+      "source_through_link": 2.303598416503519,
+      "strip": 0.01027141697704792,
+      "source_through_strip": 2.314102854579687
+    },
+    "mech-continuation-family-2": {
+      "source": 2.2663487498648465,
+      "link": 0.034668437438085675,
+      "source_through_link": 2.3020052080973983,
+      "strip": 0.010254896013066173,
+      "source_through_strip": 2.3124767295084894
+    },
+    "roc": {
+      "source": 2.955495937494561,
+      "link": 0.03455893788486719,
+      "source_through_link": 2.9902064790949225,
+      "strip": 0.0103084163274616,
+      "source_through_strip": 3.000665020663291
+    },
+    "libdeflate": {
+      "source": 0.4461448541842401,
+      "link": 0.03388006263412535,
+      "source_through_link": 0.4805559581145644,
+      "strip": 0.010271396022289991,
+      "source_through_strip": 0.4909435212612152
+    }
+  },
+  "phases": {
+    "mech-control-fast": {
+      "parse": 0.7882132705,
+      "catalog": 2.2771e-05,
+      "frontend": 0.2265731875,
+      "artifact": 0.007000520499999999,
+      "encode": 0.0025890619999999996,
+      "native": 1.218783229
+    },
+    "mech-shared-terminal-returns": {
+      "parse": 0.7891197915,
+      "catalog": 2.05415e-05,
+      "frontend": 0.22660108299999998,
+      "artifact": 0.0070119585,
+      "encode": 0.0025918125,
+      "native": 1.216168063
+    },
+    "mech-continuation-family-2": {
+      "parse": 0.788385083,
+      "catalog": 2.2458500000000002e-05,
+      "frontend": 0.2266316045,
+      "artifact": 0.0069870625,
+      "encode": 0.0025883125,
+      "native": 1.215031396
+    }
+  },
+  "paired_ratios": {
+    "mech-control-fast": {
+      "roc": 0.770737315041487,
+      "libdeflate": 4.7994480761185585,
+      "mech-control-fast": 1.0
+    },
+    "mech-shared-terminal-returns": {
+      "roc": 0.7697546242957517,
+      "libdeflate": 4.796159521152857,
+      "mech-control-fast": 0.9987249861918883
+    },
+    "mech-continuation-family-2": {
+      "roc": 0.7697723010578028,
+      "libdeflate": 4.794052510906207,
+      "mech-control-fast": 0.998486426684635
+    }
+  },
+  "plan_sha256": "683df04f9dbbbde1c755a75861d257020e23b4cd62fe0624f810c33ddeb29bb3",
+  "trials": 10
+}

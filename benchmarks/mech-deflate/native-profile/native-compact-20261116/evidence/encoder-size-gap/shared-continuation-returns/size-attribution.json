@@ -1,0 +1,616 @@
+{
+  "control-fast": {
+    "encoder_sha256": "a3a04c9625efea0f6c25cd1d3a5d1369a87de9fe85961c8e826f70c3450dbd86",
+    "encoder_text": 68424,
+    "checked_entry_text": 50976,
+    "remaining_text": 17448,
+    "checked_continuations": [
+      {
+        "code_bytes": 324,
+        "headers": [
+          9112,
+          18836
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 320,
+        "headers": [
+          9562,
+          10073,
+          20752,
+          22297
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 296,
+        "headers": [
+          21031,
+          22580
+        ],
+        "input_words": 6,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 648,
+        "headers": [
+          44070,
+          44405
+        ],
+        "input_words": 8,
+        "register_output_words": 5,
+        "stack_bytes": 80
+      }
+    ]
+  },
+  "shared-terminal-returns": {
+    "encoder_sha256": "99b0f1f3c8813b926b5dd4e18e4a8d477b6efe2a77e0f8766960459a26e71e17",
+    "encoder_text": 67672,
+    "checked_entry_text": 50224,
+    "remaining_text": 17448,
+    "checked_continuations": [
+      {
+        "code_bytes": 324,
+        "headers": [
+          9112,
+          18836
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 320,
+        "headers": [
+          9562,
+          10073,
+          20752,
+          22297
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 296,
+        "headers": [
+          21031,
+          22580
+        ],
+        "input_words": 6,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 648,
+        "headers": [
+          44070,
+          44405,
+          46040,
+          46259
+        ],
+        "input_words": 8,
+        "register_output_words": 5,
+        "stack_bytes": 80
+      }
+    ]
+  },
+  "additional-continuations": {
+    "encoder_sha256": "6c0c1bb86ae5fefd539c678ad5f313f53135b168161927e45583539dcd0ad0e5",
+    "encoder_text": 68648,
+    "checked_entry_text": 46784,
+    "remaining_text": 21864,
+    "checked_continuations": [
+      {
+        "code_bytes": 324,
+        "headers": [
+          9112,
+          18836
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 320,
+        "headers": [
+          9562,
+          10073,
+          20752,
+          22297
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 296,
+        "headers": [
+          21031,
+          22580
+        ],
+        "input_words": 6,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 648,
+        "headers": [
+          44070,
+          44405,
+          46040,
+          46259
+        ],
+        "input_words": 8,
+        "register_output_words": 5,
+        "stack_bytes": 80
+      },
+      {
+        "aligned_input_words": [
+          25,
+          25
+        ],
+        "code_bytes": 1244,
+        "headers": [
+          9757,
+          9213
+        ],
+        "input_words": 1,
+        "packet_words": [
+          [
+            23,
+            1
+          ],
+          [
+            23,
+            1
+          ]
+        ],
+        "register_output_words": 1,
+        "returns_error_origin": true,
+        "stack_bytes": 176
+      },
+      {
+        "code_bytes": 848,
+        "headers": [
+          16644,
+          43303
+        ],
+        "input_words": 11,
+        "register_output_words": 6,
+        "stack_bytes": 128
+      },
+      {
+        "code_bytes": 532,
+        "headers": [
+          14613,
+          10397
+        ],
+        "input_words": 7,
+        "register_output_words": 1,
+        "stack_bytes": 32
+      },
+      {
+        "code_bytes": 744,
+        "headers": [
+          10893,
+          10526
+        ],
+        "input_words": 8,
+        "register_output_words": 5,
+        "stack_bytes": 112
+      },
+      {
+        "code_bytes": 600,
+        "headers": [
+          10823,
+          10614
+        ],
+        "input_words": 7,
+        "register_output_words": 4,
+        "stack_bytes": 96
+      },
+      {
+        "code_bytes": 408,
+        "headers": [
+          10003,
+          9494
+        ],
+        "input_words": 13,
+        "stack_bytes": 16
+      }
+    ]
+  },
+  "continuation-family-1": {
+    "encoder_sha256": "b6773c8eb9a096894f213adc23997512b2569e30b533e763520fe015ce26f2bc",
+    "encoder_text": 67676,
+    "checked_entry_text": 48976,
+    "remaining_text": 18700,
+    "checked_continuations": [
+      {
+        "code_bytes": 324,
+        "headers": [
+          9112,
+          18836
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 320,
+        "headers": [
+          9562,
+          10073,
+          20752,
+          22297
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 296,
+        "headers": [
+          21031,
+          22580
+        ],
+        "input_words": 6,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 648,
+        "headers": [
+          44070,
+          44405,
+          46040,
+          46259
+        ],
+        "input_words": 8,
+        "register_output_words": 5,
+        "stack_bytes": 80
+      },
+      {
+        "aligned_input_words": [
+          25,
+          25
+        ],
+        "code_bytes": 1244,
+        "headers": [
+          9757,
+          9213
+        ],
+        "input_words": 1,
+        "packet_words": [
+          [
+            23,
+            1
+          ],
+          [
+            23,
+            1
+          ]
+        ],
+        "register_output_words": 1,
+        "returns_error_origin": true,
+        "stack_bytes": 176
+      }
+    ]
+  },
+  "continuation-family-2": {
+    "encoder_sha256": "053564d555f9b2e041f0e7c86bc1604e3d134d6bad83efa5ca81e827d4ae83ae",
+    "encoder_text": 67664,
+    "checked_entry_text": 49360,
+    "remaining_text": 18304,
+    "checked_continuations": [
+      {
+        "code_bytes": 324,
+        "headers": [
+          9112,
+          18836
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 320,
+        "headers": [
+          9562,
+          10073,
+          20752,
+          22297
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 296,
+        "headers": [
+          21031,
+          22580
+        ],
+        "input_words": 6,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 648,
+        "headers": [
+          44070,
+          44405,
+          46040,
+          46259
+        ],
+        "input_words": 8,
+        "register_output_words": 5,
+        "stack_bytes": 80
+      },
+      {
+        "code_bytes": 848,
+        "headers": [
+          16644,
+          43303
+        ],
+        "input_words": 11,
+        "register_output_words": 6,
+        "stack_bytes": 128
+      }
+    ]
+  },
+  "continuation-family-3": {
+    "encoder_sha256": "43ce8cc6391f166c6cf4fb4f641fd8451d52709f94e51b0320b6c75b1d4db8b7",
+    "encoder_text": 67796,
+    "checked_entry_text": 49808,
+    "remaining_text": 17988,
+    "checked_continuations": [
+      {
+        "code_bytes": 324,
+        "headers": [
+          9112,
+          18836
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 320,
+        "headers": [
+          9562,
+          10073,
+          20752,
+          22297
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 296,
+        "headers": [
+          21031,
+          22580
+        ],
+        "input_words": 6,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 648,
+        "headers": [
+          44070,
+          44405,
+          46040,
+          46259
+        ],
+        "input_words": 8,
+        "register_output_words": 5,
+        "stack_bytes": 80
+      },
+      {
+        "code_bytes": 532,
+        "headers": [
+          14613,
+          10397
+        ],
+        "input_words": 7,
+        "register_output_words": 1,
+        "stack_bytes": 32
+      }
+    ]
+  },
+  "continuation-family-4": {
+    "encoder_sha256": "cd9ee1f25f2a8e1badf3baa786c2de5c8eb2aff25a878b521ad14b5d98b6ad72",
+    "encoder_text": 68024,
+    "checked_entry_text": 49824,
+    "remaining_text": 18200,
+    "checked_continuations": [
+      {
+        "code_bytes": 324,
+        "headers": [
+          9112,
+          18836
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 320,
+        "headers": [
+          9562,
+          10073,
+          20752,
+          22297
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 296,
+        "headers": [
+          21031,
+          22580
+        ],
+        "input_words": 6,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 648,
+        "headers": [
+          44070,
+          44405,
+          46040,
+          46259
+        ],
+        "input_words": 8,
+        "register_output_words": 5,
+        "stack_bytes": 80
+      },
+      {
+        "code_bytes": 744,
+        "headers": [
+          10893,
+          10526
+        ],
+        "input_words": 8,
+        "register_output_words": 5,
+        "stack_bytes": 112
+      }
+    ]
+  },
+  "continuation-family-5": {
+    "encoder_sha256": "e12b69470ee0b39ebecb08e5380fe6916f114365848eae7defe6a43aca75e58e",
+    "encoder_text": 67960,
+    "checked_entry_text": 49904,
+    "remaining_text": 18056,
+    "checked_continuations": [
+      {
+        "code_bytes": 324,
+        "headers": [
+          9112,
+          18836
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 320,
+        "headers": [
+          9562,
+          10073,
+          20752,
+          22297
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 296,
+        "headers": [
+          21031,
+          22580
+        ],
+        "input_words": 6,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 648,
+        "headers": [
+          44070,
+          44405,
+          46040,
+          46259
+        ],
+        "input_words": 8,
+        "register_output_words": 5,
+        "stack_bytes": 80
+      },
+      {
+        "code_bytes": 600,
+        "headers": [
+          10823,
+          10614
+        ],
+        "input_words": 7,
+        "register_output_words": 4,
+        "stack_bytes": 96
+      }
+    ]
+  },
+  "continuation-family-6": {
+    "encoder_sha256": "74c63eed091b11def51ab7944d6e0a5bbb6da96ab0f96d49b3934816704a3c3b",
+    "encoder_text": 68008,
+    "checked_entry_text": 50144,
+    "remaining_text": 17864,
+    "checked_continuations": [
+      {
+        "code_bytes": 324,
+        "headers": [
+          9112,
+          18836
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 320,
+        "headers": [
+          9562,
+          10073,
+          20752,
+          22297
+        ],
+        "input_words": 7,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 296,
+        "headers": [
+          21031,
+          22580
+        ],
+        "input_words": 6,
+        "register_output_words": 2,
+        "stack_bytes": 48
+      },
+      {
+        "code_bytes": 648,
+        "headers": [
+          44070,
+          44405,
+          46040,
+          46259
+        ],
+        "input_words": 8,
+        "register_output_words": 5,
+        "stack_bytes": 80
+      },
+      {
+        "code_bytes": 408,
+        "headers": [
+          10003,
+          9494
+        ],
+        "input_words": 13,
+        "stack_bytes": 16
+      }
+    ]
+  }
+}
