@@ -1921,6 +1921,8 @@ fn define_entry<M: Module>(
     if outline_allowed && let Some(schedule) = std::env::var_os("MECH_COMPACT_FINISH_CFG_CLEANUP") {
         let cleanup = if schedule == "ordered" {
             cfg_cleanup::optimize_final_ordered(&controls, &mut context, module.isa())?
+        } else if schedule == "routes" {
+            cfg_cleanup::optimize_final_routes(&controls, &mut context, module.isa())?
         } else {
             cfg_cleanup::optimize(&controls, &mut context, module.isa())?
         };
