@@ -140,6 +140,8 @@ if zero_branches:
 if frame_copies:
     flags['MECH_COMPACT_SHARE_FRAME_COPIES'] = '1'
     flags['MECH_COMPACT_DIRECT_ENTRY_LITERALS'] = '1'
+    if args.direct_source:
+        flags['MECH_COMPILE_OVERLAP_SOURCE_CATALOG'] = '1'
 assert not any('LLVM' in key for key in flags)
 source = here / 'program.mec'
 frontend = out / 'frontend'

@@ -51,7 +51,19 @@ fn run() {
         eprintln!("{row}");
         phases.push(row);
     };
-    let (artifact, catalog) = {
+    let load_catalog = || {
+        let start = Instant::now();
+        let catalog = mech_stdlib::source_catalog();
+        (catalog, start.elapsed().as_secs_f64())
+    };
+    let preload = std::env::var_os("MECH_COMPILE_OVERLAP_SOURCE_CATALOG").and_then(|_| {
+        std::thread::Builder::new()
+            .name("source-catalog-preload".into())
+            .spawn(load_catalog)
+            .ok()
+    });
+    let overlapped_catalog = preload.is_some();
+    let (artifact, catalog, catalog_work_seconds) = {
         eprintln!("compile-profile: pid={} phase=parse", std::process::id());
         let start = Instant::now();
         let parsed = parse_canonical_document(
@@ -62,7 +74,12 @@ fn run() {
         let syntax = DocumentSyntax::cast(parsed.syntax()).unwrap();
         stamp("parse", start);
         let start = Instant::now();
-        let catalog = mech_stdlib::source_catalog();
+        let (catalog, catalog_work_seconds) = match preload {
+            Some(worker) => worker
+                .join()
+                .unwrap_or_else(|payload| std::panic::resume_unwind(payload)),
+            None => load_catalog(),
+        };
         stamp("catalog", start);
         eprintln!("compile-profile: phase=frontend");
         let start = Instant::now();
@@ -73,7 +90,7 @@ fn run() {
         let start = Instant::now();
         let artifact = product.compile_artifact().unwrap();
         stamp("artifact", start);
-        (artifact, catalog)
+        (artifact, catalog, catalog_work_seconds)
     };
     let (bytecode_bytes, bytecode_sha256) = {
         let start = Instant::now();
@@ -108,6 +125,8 @@ fn run() {
     let receipt = serde_json::json!({
         "mode": args[3],
         "phases": phases,
+        "catalog_work_seconds": catalog_work_seconds,
+        "catalog_overlapped_parse": overlapped_catalog,
         "total_seconds": total_seconds,
         "source_bytes": source.len(),
         "source_sha256": hash(source.as_bytes()),
