@@ -4,10 +4,13 @@ These trials compare general scalar lowering, array backing and owner-storage
 changes without changing the MechDeflate source, canonical bytecode, fixtures,
 allocator or the pinned Roc and libdeflate 1.26 level-12 executables.
 
-The latest complete integrated comparison remains **81/81 Roc in both orders,
+The later [shared M1/M3 recipe qualification](integration/confirmation/README.md)
+records **81/81 Roc and 61/81 libdeflate in both complete M3 orders**.
+
+The complete integrated comparison preceding this trial snapshot recorded **81/81 Roc in both orders,
 58/81 libdeflate forward and 60/81 reverse**. Two subsequent completed forward
 orders reached **81/81 Roc and 60/81 libdeflate**; background activity interrupted
-their reverse orders. No new complete pair in this record reaches 61/81
+their reverse orders. No complete pair in this earlier snapshot reaches 61/81
 libdeflate wins in both orders. The earlier 61/81 paired result remains a
 separate historical build.
 
@@ -47,14 +50,14 @@ separate experiments in the archive.
 
 Compiler source for the literal-setup trial is commit `5e91c17df7`. Subsequent
 commit `e981b748cf` integrates the upstream checked heap-call setup changes;
-measurements of that integration are pending in this snapshot.
+its completed shared-recipe measurements are in the later qualification above.
 
 ## Complete evidence package
 
 [Download the verified 355,731,581-byte archive](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/pr995-deflate-m3-win-recovery-20261118-98256dc25c69.tar.gz).
 
 SHA-256: `98256dc25c69b42c145ef899f3657f7b55c82baf364b375ab47fa77989c04d3d`.
-The manifest verifies all 6,922 included members and identifies the preceding
+The manifest verifies all 6,922 payload members and identifies the preceding
 archive by hash. It includes successful, adverse and interrupted trials,
 compiler and runtime source snapshots, exact commands, pinned worker identities,
 proof receipts, profiles and raw observations. Large rebuildable compiler and
