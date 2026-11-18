@@ -247,6 +247,83 @@ fn scalar_literal_slots(
         .collect()
 }
 
+fn single_definition_scalar_homes(
+    layout: &Layout,
+    flow: &Flow,
+    inputs: &BTreeMap<usize, usize>,
+    initial: &BTreeMap<usize, Initial>,
+) -> BTreeSet<usize> {
+    let mut definitions = vec![0u8; layout.types.len()];
+    for (site, written) in flow.defs.iter().enumerate() {
+        if flow.reachable[site] {
+            for &value in written {
+                let count = &mut definitions[value as usize];
+                *count = count.saturating_add(1);
+            }
+        }
+    }
+    layout
+        .types
+        .iter()
+        .enumerate()
+        .filter_map(|(value, ty)| {
+            let slot = layout.base[value];
+            (definitions[value] == 1
+                && ty.owners.is_empty()
+                && matches!(ty.kind, super::layout::LayoutKind::Scalar { .. })
+                && !inputs.contains_key(&slot)
+                && !initial.contains_key(&slot))
+            .then_some(slot)
+        })
+        .collect()
+}
+
+fn nonowner_field_homes(
+    layout: &Layout,
+    flow: &Flow,
+    inputs: &BTreeMap<usize, usize>,
+    initial: &BTreeMap<usize, Initial>,
+) -> BTreeSet<usize> {
+    use super::layout::LayoutKind;
+
+    let mut definitions = vec![0u8; layout.types.len()];
+    for (site, written) in flow.defs.iter().enumerate() {
+        if flow.reachable[site] {
+            for &value in written {
+                let count = &mut definitions[value as usize];
+                *count = count.saturating_add(1);
+            }
+        }
+    }
+    let mut eligible = BTreeSet::new();
+    for (value, ty) in layout.types.iter().enumerate() {
+        if definitions[value] != 1
+            || !matches!(ty.kind, LayoutKind::Product(_) | LayoutKind::Array { .. })
+        {
+            continue;
+        }
+        for (offset, leaf) in ty.leaves() {
+            // Owners and tagged payloads continue through the ordinary word
+            // homes. A geometry word still needs the finalized-CFG proof.
+            if !matches!(
+                leaf.kind,
+                LayoutKind::Scalar { .. } | LayoutKind::Array { .. }
+            ) {
+                continue;
+            }
+            let base = layout.base[value] + offset;
+            eligible.extend((0..leaf.words).filter_map(|lane| {
+                let slot = base + lane;
+                (!leaf.owners.contains(&lane)
+                    && !inputs.contains_key(&slot)
+                    && !initial.contains_key(&slot))
+                .then_some(slot)
+            }));
+        }
+    }
+    eligible
+}
+
 fn define_entry<M: Module>(
     module: &mut M,
     prepared: &PreparedNativeProgram,
@@ -524,6 +601,15 @@ fn define_entry<M: Module>(
     let traversal_stage = std::env::var_os("MECH_COMPACT_SHARE_CHECKED_TRAVERSALS");
     let outline_allowed =
         worker.is_none() && !observe && route_sites.is_empty() && !route_locations;
+    let census_homes = outline_allowed
+        .then(|| std::env::var_os("MECH_COMPACT_DIRECT_SCALAR_HOME_CENSUS"))
+        .flatten();
+    let direct_homes = outline_allowed
+        .then(|| std::env::var("MECH_COMPACT_DIRECT_SCALAR_HOMES").ok())
+        .flatten();
+    if census_homes.is_some() && direct_homes.is_some() {
+        return Err(backend("use one direct scalar home mode at a time"));
+    }
     let forward_empty_source =
         outline_allowed && std::env::var_os("MECH_COMPACT_EMPTY_SOURCE_ROUTES").is_some();
     context.func.forward_spill_reloads =
@@ -649,7 +735,7 @@ fn define_entry<M: Module>(
         let literals = (direct_literals && outline_allowed)
             .then(|| scalar_literal_slots(plan, layout, &flow, &inputs, initial))
             .filter(|literals| !literals.is_empty());
-        let words = if let Some(literals) = &literals {
+        let mut words = if let Some(literals) = &literals {
             eprintln!("compact-stage: direct scalar literals={}", literals.len());
             Words::new_with_entry_literals(
                 &mut b,
@@ -669,6 +755,28 @@ fn define_entry<M: Module>(
                 |_| MemFlags::new(),
             )?
         };
+        if census_homes.is_some() || direct_homes.is_some() {
+            let mut eligible = single_definition_scalar_homes(layout, &flow, &inputs, initial);
+            if std::env::var_os("MECH_COMPACT_PROVE_NONOWNER_FIELDS").is_some() {
+                eligible.extend(nonowner_field_homes(layout, &flow, &inputs, initial));
+            }
+            let selected = if let Some(request) = &direct_homes {
+                let selected = request
+                    .split(',')
+                    .map(str::parse::<usize>)
+                    .collect::<Result<BTreeSet<_>, _>>()
+                    .map_err(backend)?;
+                if !selected.is_subset(&eligible) {
+                    return Err(backend(
+                        "direct scalar home request exceeds typed source eligibility",
+                    ));
+                }
+                selected
+            } else {
+                eligible
+            };
+            words.track_direct_homes(&selected, direct_homes.is_some());
+        }
         if let Some(arrays) = &arrays {
             for &value in &flow.inputs {
                 for &lane in &layout.ty(value).owners {
@@ -1508,6 +1616,25 @@ fn define_entry<M: Module>(
         eprintln!("compact-stage: finalize SSA");
         capacity_growth = arrays.and_then(|arrays| arrays.capacity_growth);
         b.finalize();
+        if census_homes.is_some() || direct_homes.is_some() {
+            let proof = words.prove_tracked_homes(&context.func);
+            let admitted = proof.iter().filter(|home| home.admitted).count();
+            eprintln!("compact direct scalar homes: {admitted}/{}", proof.len());
+            if let Some(path) = &census_homes {
+                let bytes = serde_json::to_vec(&proof).map_err(backend)?;
+                std::fs::write(path, bytes).map_err(backend)?;
+            }
+            if direct_homes.is_some() && admitted != proof.len() {
+                let rejected = proof
+                    .iter()
+                    .filter(|home| !home.admitted)
+                    .map(|home| home.slot);
+                return Err(backend(format!(
+                    "direct scalar home lowering did not prove homes {:?}",
+                    rejected.collect::<Vec<_>>()
+                )));
+            }
+        }
     }
     if let Some(growth) = capacity_growth {
         let (standalone, combined) = growth.replace(&mut context.func);

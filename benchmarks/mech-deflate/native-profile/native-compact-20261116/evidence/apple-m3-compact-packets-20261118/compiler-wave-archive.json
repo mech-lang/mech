@@ -1,0 +1,9 @@
+{
+  "archive": "/private/tmp/pr993-deflate-m3-compiler-wave-20261118-4b8521605d95.tar.gz",
+  "bytes": 246493095,
+  "sha256": "4b8521605d952b884d8d0e5fc0988ce2c93d17a9809bda40ed7480aa0024cecb",
+  "files": 3194,
+  "manifest_sha256": "3b334a3337ac3021fb622396de04463144cf4f884817466f87aeba223f0f4e78",
+  "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/pr993-deflate-m3-compiler-wave-20261118-4b8521605d95.tar.gz",
+  "status": "The target of 81/81 Roc and at least 61/81 libdeflate in both full M3 orders remains unmet."
+}

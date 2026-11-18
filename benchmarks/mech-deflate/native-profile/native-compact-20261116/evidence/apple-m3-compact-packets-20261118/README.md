@@ -42,3 +42,17 @@ The [local build record](local-build.json) preserves the complete linker inputs
 and the [published reproduction check](published-reproduction.json) records the
 cross-machine object identity. Source-build durations in this record are
 diagnostic and are not controlled compilation benchmarks.
+
+
+## Further compiler experiments
+
+[Direct scalar homes and shared checked returns](direct-scalar-homes/README.md)
+reproduce the newer published encoder from source. Their M3 runtime
+qualification remains separate from the complete compact-packet results above.
+
+A [verified evidence archive](compiler-wave-archive.json) preserves the later
+load/writeback, paired-reduction, comparison-scheduling, input-packet and
+matcher-layout experiments, including rejected combinations, source patches,
+full source copies, native correctness tests and raw timing observations.
+Apply this delta after the two archives named in its manifest. The archive
+explicitly records that the complete M3 runtime target is still unmet.

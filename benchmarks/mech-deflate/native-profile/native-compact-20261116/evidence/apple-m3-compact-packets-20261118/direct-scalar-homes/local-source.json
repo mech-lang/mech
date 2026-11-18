@@ -1,0 +1,29 @@
+{
+  "base_commit": "48447677fc2adc3f049ed40f8cd302ee71724084",
+  "files": [
+    {
+      "path": "hosts/gpu/src/native_artifact/codegen/common/ssa_words.rs",
+      "sha256": "064c7f33bab6f77e7c93dd45b2a791cba54c8aad138903f09d418c8bf52d8140"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/codegen/common/ssa_words_tests.rs",
+      "sha256": "1300c33f376ce4ac0f07ba7bf8a586792b56268b47cd36cfb3a2639b6fb47099"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/checked_region_body.rs",
+      "sha256": "550647d398768c121d4960e76e3181219f0816f9a9aca53313e7cfaecde53c1f"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/checked_traversals.rs",
+      "sha256": "ff7e811990e1ba60f092d2efdffee109a7546fa44ac69b5a06ce5ecee0351b43"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/emit.rs",
+      "sha256": "9aa9d4ac09a04e5f49e454cdee6f7d8f514fc8c7daf4f3ceacc7acfd3a7d3d52"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/codegen/common/ssa_direct_homes.rs",
+      "sha256": "15165ae1bd5c89287967336541b3325e9c45a11d3f45ba732038932c55243e65"
+    }
+  ]
+}
