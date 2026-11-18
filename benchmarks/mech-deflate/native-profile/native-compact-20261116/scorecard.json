@@ -12903,6 +12903,45 @@
         "median_paired_seconds_saved": 0.0007520213257521391,
         "faster_paired_trials": 6,
         "evidence": "evidence/encoder-size-gap/dense-scorer-only/deployment.json"
+      },
+      {
+        "name": "Prepare the admitted scorer first",
+        "encoder_text_bytes": 67648,
+        "encoder_sha256": "6aa84b6f1959257d89790935b17abf47cb195ba728c8fd01d5876281b569d096",
+        "compiler_sha256": "1113530b79e1d4ba31241100e379f2f0f0bcad309f9bf074af12acb8230a00a3",
+        "measured_trials": 8,
+        "measurement_plan_sha256": "3eb571fd5292486514e61e3e6d82476ffde0fcbd397c834054fd035e9eaf65ce",
+        "median_seconds": {
+          "source": 2.2447127709165215,
+          "link": 0.035997520899400115,
+          "source_through_link": 2.283205645624548,
+          "strip": 0.01068706251680851,
+          "source_through_strip": 2.2940116666723043
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.7886133959999999,
+          "catalog": 2.14375e-05,
+          "frontend": 0.2261503125,
+          "artifact": 0.0069817505,
+          "encode": 0.0025701455,
+          "native": 1.191126729
+        },
+        "stripped_executable": {
+          "bytes": 276056,
+          "sha256": "38d65b231adaee747a6a0cf5374573a15eef84f4ab010af7cb30402fc98d2ad5"
+        },
+        "median_paired_seconds_saved": 0.018420832697302103,
+        "faster_paired_trials": 8,
+        "paired_ratio_to_session_control": 0.9919920540762046,
+        "paired_ratios": {
+          "roc": 0.7638602411840751,
+          "libdeflate": 4.756873524593089
+        },
+        "encoder_text_ratios": {
+          "roc": 1.1724902939545203,
+          "libdeflate": 1.8243797195253506
+        },
+        "evidence": "evidence/encoder-size-gap/early-scorer-preparation/deployment.json"
       }
     ]
   },
@@ -13020,5 +13059,54 @@
     "peak_stack_bytes": 4640,
     "evidence": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/dense-scorer-only",
     "qualified": false
+  },
+  "early_scorer_preparation": {
+    "build": {
+      "name": "Prepare the admitted scorer first",
+      "encoder_text_bytes": 67648,
+      "encoder_sha256": "6aa84b6f1959257d89790935b17abf47cb195ba728c8fd01d5876281b569d096",
+      "compiler_sha256": "1113530b79e1d4ba31241100e379f2f0f0bcad309f9bf074af12acb8230a00a3",
+      "measured_trials": 8,
+      "measurement_plan_sha256": "3eb571fd5292486514e61e3e6d82476ffde0fcbd397c834054fd035e9eaf65ce",
+      "median_seconds": {
+        "source": 2.2447127709165215,
+        "link": 0.035997520899400115,
+        "source_through_link": 2.283205645624548,
+        "strip": 0.01068706251680851,
+        "source_through_strip": 2.2940116666723043
+      },
+      "source_phase_median_seconds": {
+        "parse": 0.7886133959999999,
+        "catalog": 2.14375e-05,
+        "frontend": 0.2261503125,
+        "artifact": 0.0069817505,
+        "encode": 0.0025701455,
+        "native": 1.191126729
+      },
+      "stripped_executable": {
+        "bytes": 276056,
+        "sha256": "38d65b231adaee747a6a0cf5374573a15eef84f4ab010af7cb30402fc98d2ad5"
+      },
+      "median_paired_seconds_saved": 0.018420832697302103,
+      "faster_paired_trials": 8,
+      "paired_ratio_to_session_control": 0.9919920540762046,
+      "paired_ratios": {
+        "roc": 0.7638602411840751,
+        "libdeflate": 4.756873524593089
+      },
+      "encoder_text_ratios": {
+        "roc": 1.1724902939545203,
+        "libdeflate": 1.8243797195253506
+      },
+      "evidence": "evidence/encoder-size-gap/early-scorer-preparation/deployment.json"
+    },
+    "evidence": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/early-scorer-preparation",
+    "same_worker_sha256": "50423a79f10e605167e8d98a051239aedb2fba5c9c34bc7ddf96fb64cf9e2d6d",
+    "unchanged_runtime_metadata": [
+      "symbol",
+      "inputs",
+      "input_words",
+      "output_words"
+    ]
   }
 }
