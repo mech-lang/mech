@@ -1,0 +1,57 @@
+{
+  "reference_source_commit": "09a1f5c6296d05f663cd4add8ae8d059dc888e34",
+  "orders": [
+    "forward",
+    "reverse"
+  ],
+  "host": "Apple M1",
+  "os_version": "15.6.1",
+  "load_average": [
+    1.984375,
+    2.0419921875,
+    2.1484375
+  ],
+  "purpose": "Compare each source-built byte-identical archived alternative with the maintained frame-copies worker in one cohort. Peer qualification replays are separate.",
+  "relative_resolution": 0.005,
+  "decision_rule": "For both orders, a lower bound beyond the measurement resolution establishes a slowdown. An upper bound at or within that resolution resolves the case up to measurement precision. Anything between these conditions remains unresolved. Any established slowdown or unresolved case leaves a no-sacrifice promotion unsupported.",
+  "interval": {
+    "bootstrap_coverage": 0.9,
+    "bootstrap_resamples": 8000
+  },
+  "fixture_content": {
+    "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/source-frame-copy-tails/source-frame-copies-71192/fixture-content.json",
+    "sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b"
+  },
+  "fixtures": {
+    "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json",
+    "sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+  },
+  "driver_sha256": "e3efeff6619b6db8eca0bdee541901b10c6c481b12d2d54ecd802b2a08d1b8a7",
+  "policy_sha256": "89961956e17485b05457fee6d90e1b124fe09d1d1e6d3770aa5b86873912244c",
+  "actors": {
+    "frame-copies": {
+      "worker": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/source-frame-copy-tails/verified/shared-copies/mech-worker",
+      "worker_sha256": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+      "metadata": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/frame-copies-control/native/metadata.json",
+      "metadata_sha256": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
+      "encoder": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/frame-copies-control/native/program.o",
+      "encoder_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b"
+    },
+    "m1-checked-regions": {
+      "worker": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/m1-checked-regions-verified/archived-closure/mech-worker",
+      "worker_sha256": "969329f3dde79b02ad3f13cd540a9e03f5818769b33033827822591e7473e6fa",
+      "metadata": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/m1-checked-regions-verified/native/metadata.json",
+      "metadata_sha256": "92e16d54c401ea648873396d1aae2f6afed5339590c9a3519ea1530ed7f69ab1",
+      "encoder": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/m1-checked-regions-verified/native/program.o",
+      "encoder_sha256": "2119a086053e1cfeeb386e5bf993939f8ddc4182378cccd1ba3cdfef2deb126f"
+    },
+    "m1-compact-match-equality": {
+      "worker": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/m1-compact-match-equality-verified/archived-closure/mech-worker",
+      "worker_sha256": "792f63292b32ad062448c3344442c795c41bbaa263ff86ef803d10a692b56891",
+      "metadata": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/m1-compact-match-equality-verified/native/metadata.json",
+      "metadata_sha256": "12805d54ebf468a8a2fe27876c82fa67d415215efdfc001fb19c452eea6351ee",
+      "encoder": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/m1-compact-match-equality-verified/native/program.o",
+      "encoder_sha256": "1ab76d3a6064fa1af82afb7f07fa021f514301d2100def23b2b4d6945bd49858"
+    }
+  }
+}

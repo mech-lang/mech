@@ -9,6 +9,7 @@ from rebuild_checks import check_faults, check_successes
 M1_SOURCE_RECIPES = {
     'm1-checked-regions': 'indexed-checked-regions',
     'm1-compact-match-equality': 'compact-match-equality',
+    'm1-shared-release-setup': 'shared-release-setup',
 }
 
 

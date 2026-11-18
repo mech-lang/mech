@@ -1,0 +1,143 @@
+{
+  "scope": "Instruction visits to original match collector blocks; separate counter-instrumented workers",
+  "instrumentation": {
+    "count-matcher-instructions.py": "f4caf1a2fc33bab42261a9a77ae5312fc806760df474346c2087f6b05826d4c9",
+    "outline-compiled-aarch64-root.py": "b5975080b35960a277a44e50f6b86e7abc2ed86c23896288a951dbcc7ae12e4e",
+    "reachability-census.py": "8ee4b4fae0477206de08ee984abd183d4113a52b3f49063e0ada5b0284c26b4a"
+  },
+  "raw_sha256": "993482b837c7ecc4806159e0e5f5c59d8386d0613ca6609b5e8e52620270c586",
+  "roles": {
+    "m1-checked-regions": {
+      "object_sha256": "2119a086053e1cfeeb386e5bf993939f8ddc4182378cccd1ba3cdfef2deb126f",
+      "symbol": "_mech_compact_numeric_475_vector",
+      "cases": {
+        "prefix-random-4096": {
+          "calls": 1,
+          "instructions": 808107,
+          "branches": 129842,
+          "b": 448,
+          "stack_loads": 94115,
+          "stack_stores": 33128,
+          "payload_loads": 25733,
+          "payload_stores": 24716
+        },
+        "prefix-random-8192": {
+          "calls": 1,
+          "instructions": 1647017,
+          "branches": 266290,
+          "b": 1760,
+          "stack_loads": 189655,
+          "stack_stores": 67016,
+          "payload_loads": 52979,
+          "payload_stores": 49678
+        },
+        "prefix-random-1048576": {
+          "calls": 35,
+          "instructions": 242102307,
+          "branches": 42065223,
+          "b": 1498205,
+          "stack_loads": 25947639,
+          "stack_stores": 9698800,
+          "payload_loads": 10198389,
+          "payload_stores": 6811398
+        },
+        "prefix-natural-4096": {
+          "calls": 1,
+          "instructions": 1642466,
+          "branches": 291953,
+          "b": 27780,
+          "stack_loads": 143044,
+          "stack_stores": 39683,
+          "payload_loads": 130214,
+          "payload_stores": 36292
+        },
+        "prefix-natural-8192": {
+          "calls": 1,
+          "instructions": 3392587,
+          "branches": 604564,
+          "b": 58793,
+          "stack_loads": 291523,
+          "stack_stores": 80364,
+          "payload_loads": 269470,
+          "payload_stores": 73968
+        },
+        "320-overlap": {
+          "calls": 1,
+          "instructions": 64909,
+          "branches": 13455,
+          "b": 1671,
+          "stack_loads": 4519,
+          "stack_stores": 1940,
+          "payload_loads": 2392,
+          "payload_stores": 1634
+        }
+      }
+    },
+    "m1-compact-match-equality": {
+      "object_sha256": "1ab76d3a6064fa1af82afb7f07fa021f514301d2100def23b2b4d6945bd49858",
+      "symbol": "_mech_compact_numeric_475_vector",
+      "cases": {
+        "prefix-random-4096": {
+          "calls": 1,
+          "instructions": 824101,
+          "branches": 145836,
+          "b": 16442,
+          "stack_loads": 94115,
+          "stack_stores": 33128,
+          "payload_loads": 25733,
+          "payload_stores": 24716
+        },
+        "prefix-random-8192": {
+          "calls": 1,
+          "instructions": 1678248,
+          "branches": 297521,
+          "b": 32991,
+          "stack_loads": 189655,
+          "stack_stores": 67016,
+          "payload_loads": 52979,
+          "payload_stores": 49678
+        },
+        "prefix-random-1048576": {
+          "calls": 35,
+          "instructions": 245026417,
+          "branches": 45024649,
+          "b": 4457631,
+          "stack_loads": 25947639,
+          "stack_stores": 9698800,
+          "payload_loads": 10186617,
+          "payload_stores": 6811398
+        },
+        "prefix-natural-4096": {
+          "calls": 1,
+          "instructions": 1520090,
+          "branches": 281965,
+          "b": 20617,
+          "stack_loads": 143044,
+          "stack_stores": 39683,
+          "payload_loads": 94214,
+          "payload_stores": 36292
+        },
+        "prefix-natural-8192": {
+          "calls": 1,
+          "instructions": 3138805,
+          "branches": 584944,
+          "b": 43332,
+          "stack_loads": 291523,
+          "stack_stores": 80364,
+          "payload_loads": 193586,
+          "payload_stores": 73968
+        },
+        "320-overlap": {
+          "calls": 1,
+          "instructions": 64016,
+          "branches": 13174,
+          "b": 1677,
+          "stack_loads": 4519,
+          "stack_stores": 1940,
+          "payload_loads": 2392,
+          "payload_stores": 1634
+        }
+      }
+    }
+  }
+}

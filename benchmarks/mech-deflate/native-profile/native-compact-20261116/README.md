@@ -184,7 +184,7 @@ Mech, 2.99608 s Roc and 0.48811 s libdeflate.
 
 ## Source-built M1 reference encoders
 
-From this checkout on Apple AArch64, build either recorded M1 reference with
+From this checkout on Apple AArch64, build a recorded M1 recipe with
 the original Mech source and the pinned compiler toolchain. Each name reads
 its flags and layout profiles from the corresponding archived manifest.
 
@@ -193,6 +193,8 @@ python3 rebuild.py /tmp/mech-m1-checked-regions \
   --variant m1-checked-regions --mimalloc-object /path/to/mimalloc.o
 python3 rebuild.py /tmp/mech-m1-compact-match-equality \
   --variant m1-compact-match-equality --mimalloc-object /path/to/mimalloc.o
+python3 rebuild.py /tmp/mech-m1-shared-release-setup \
+  --variant m1-shared-release-setup --mimalloc-object /path/to/mimalloc.o
 ```
 
 The fixed allocator object enables the final executable link and linked

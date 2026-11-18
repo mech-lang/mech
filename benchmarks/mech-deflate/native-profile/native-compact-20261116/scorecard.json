@@ -14117,15 +14117,20 @@
   },
   "source_built_m1": {
     "host": "Apple M1, macOS 15.6.1, arm64",
-    "source_commit": "09a1f5c6296d05f663cd4add8ae8d059dc888e34",
+    "source_commit": "90d133253a19b1cfdc05051f33f8fb9e468daf01",
     "maintained": {
       "name": "frame-copies",
       "encoder_text_bytes": 71192,
-      "encoder_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b"
+      "encoder_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+      "metadata_sha256": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
+      "executable": {
+        "bytes": 292568,
+        "sha256": "081f873d11cc21af9d4055a2d9b424592d5ddbea0390925ec111dc76cd4204ed"
+      }
     },
     "recipes": {
       "m1-checked-regions": {
-        "status": "source-built opt-in reference",
+        "status": "source-built, opt-in, peer-qualified archived worker",
         "manifest": "evidence/encoder-size-gap/indexed-checked-regions/candidate.json",
         "manifest_sha256": "34d78906b24472206e152b08694306b0b075f5352dea28a3fcab73dfeaf01e17",
         "profile_pins": [
@@ -14145,19 +14150,19 @@
             "sha256": "8e418ddf8a5a88a9a67fc7c1420d4ed0a39202c882233a882a340d4807e8efdb"
           }
         ],
-        "compiler_sha256": "d8905db0cf6e32896957c14f990fe8e381cf00f3a6050351f2abc781f579d4f3",
+        "compiler_sha256": "ea040f64b370f6ec8cadbe36db4884a807748fd6fee31d7f7554068edd2f2a80",
         "toolchain": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
         "encoder_text_bytes": 65516,
         "artifact_sha256": {
           "program.o": "2119a086053e1cfeeb386e5bf993939f8ddc4182378cccd1ba3cdfef2deb126f",
-          "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
-          "metadata.json": "92e16d54c401ea648873396d1aae2f6afed5339590c9a3519ea1530ed7f69ab1"
+          "metadata.json": "92e16d54c401ea648873396d1aae2f6afed5339590c9a3519ea1530ed7f69ab1",
+          "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
         },
         "stripped_deployment": {
           "bytes": 276056,
           "sha256": "eb6336cf3f4896e31380f159dfc483e64309e9455b40f734bc52ad934f3928e6"
         },
-        "source_build_worker_sha256": "eab89ede818444e97d54f74aa1ce24530badcee45c3adf0d8082c9795d51dad4",
+        "source_build_worker_sha256": "aa70892d9ceee20f03c3eafa51bed29d7036317b185a4a8f1be2b54b7cafea85",
         "archive_worker_sha256": "969329f3dde79b02ad3f13cd540a9e03f5818769b33033827822591e7473e6fa",
         "archive_worker_exact_relink": true,
         "workers_checked": {
@@ -14165,8 +14170,8 @@
           "failure_cases": 6,
           "failure_observations": 12,
           "exact_recoveries_after_fault": 12,
-          "recovery_evidence": "evidence/m1-source-built-20261118/m1-checked-regions-linked-recovery.json",
-          "recovery_sha256": "91e4806b5e5d7d69f124ba7b5eb796e14df604b7b2ec1a38ee00996fb2ed479f"
+          "recovery_evidence": "evidence/m1-source-built-20261118/m1-checked-regions-rebased-recovery.json",
+          "recovery_sha256": "5a21da0b29e0475b4557e3d7017044c741611b46fb58cd3cd58d9fb2b15617e2"
         },
         "allocator_object_sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874",
         "archived_runtime": {
@@ -14217,10 +14222,28 @@
             ]
           }
         },
-        "no_runtime_sacrifice_against_maintained": "unverified"
+        "no_runtime_sacrifice_against_maintained": {
+          "status": "opt-in, paired test established runtime slowdowns",
+          "established_slowdowns_by_order": {
+            "forward": 6,
+            "reverse": 7
+          },
+          "unresolved_cases_by_order": {
+            "forward": 3,
+            "reverse": 4
+          },
+          "established_slowdown_both_orders": [
+            "128-biased-dynamic",
+            "16384-distribution-change",
+            "eight-overlap",
+            "heldout-mixed-131073"
+          ]
+        },
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "peak_stack_bytes": 4784
       },
       "m1-compact-match-equality": {
-        "status": "source-built opt-in reference",
+        "status": "source-built, opt-in, peer-qualified archived worker",
         "manifest": "evidence/encoder-size-gap/compact-match-equality/candidate.json",
         "manifest_sha256": "bd51c540629867cdf1c99411d55ef4be30d65e5b6d35fba771fed1bb31f3fb88",
         "profile_pins": [
@@ -14240,19 +14263,19 @@
             "sha256": "a67d413cfbc8860fb0e157b2deff34a81c36423173bf7d50aea6d782ebaea881"
           }
         ],
-        "compiler_sha256": "d8905db0cf6e32896957c14f990fe8e381cf00f3a6050351f2abc781f579d4f3",
+        "compiler_sha256": "ea040f64b370f6ec8cadbe36db4884a807748fd6fee31d7f7554068edd2f2a80",
         "toolchain": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
         "encoder_text_bytes": 65276,
         "artifact_sha256": {
           "program.o": "1ab76d3a6064fa1af82afb7f07fa021f514301d2100def23b2b4d6945bd49858",
-          "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
-          "metadata.json": "12805d54ebf468a8a2fe27876c82fa67d415215efdfc001fb19c452eea6351ee"
+          "metadata.json": "12805d54ebf468a8a2fe27876c82fa67d415215efdfc001fb19c452eea6351ee",
+          "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
         },
         "stripped_deployment": {
           "bytes": 276056,
           "sha256": "0750f36ac8c19e34acc894530c1983084fe432c6483713f9b8844f8f90bb9d82"
         },
-        "source_build_worker_sha256": "0b1cb6de53e2b0334528b1185e2a0254d90bfe5cd3d1e5cf65d6bc791cb138fc",
+        "source_build_worker_sha256": "0f90b9c2517511290ad5ca1459fd0f0d7f475067d8ee5215f2e5a198fdcd64d8",
         "archive_worker_sha256": "792f63292b32ad062448c3344442c795c41bbaa263ff86ef803d10a692b56891",
         "archive_worker_exact_relink": true,
         "workers_checked": {
@@ -14260,8 +14283,8 @@
           "failure_cases": 6,
           "failure_observations": 12,
           "exact_recoveries_after_fault": 12,
-          "recovery_evidence": "evidence/m1-source-built-20261118/m1-compact-match-equality-linked-recovery.json",
-          "recovery_sha256": "1283c96d07540e55d6d8c48f617fa250fff1130cc478414af39637c78ecea970"
+          "recovery_evidence": "evidence/m1-source-built-20261118/m1-compact-match-equality-rebased-recovery.json",
+          "recovery_sha256": "7ced707588d222acfbd905eef701c07aaab76841a2c8fdd371275f107e42f2fa"
         },
         "allocator_object_sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874",
         "archived_runtime": {
@@ -14322,104 +14345,238 @@
             ]
           }
         },
+        "no_runtime_sacrifice_against_maintained": {
+          "status": "opt-in, paired test established runtime slowdowns",
+          "established_slowdowns_by_order": {
+            "forward": 6,
+            "reverse": 7
+          },
+          "unresolved_cases_by_order": {
+            "forward": 3,
+            "reverse": 2
+          },
+          "established_slowdown_both_orders": [
+            "128-biased-dynamic",
+            "16384-distribution-change",
+            "one-stored",
+            "prefix-random-4096",
+            "prefix-random-8192",
+            "seven-stored-prefix"
+          ]
+        },
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "peak_stack_bytes": 4784
+      },
+      "m1-shared-release-setup": {
+        "status": "source-built, opt-in, peer-qualified archived worker",
+        "manifest": "evidence/encoder-size-gap/shared-release-setup/candidate.json",
+        "manifest_sha256": "2c128056e7fbf520c73e818c06ba9a311b6c06640d8017f73ad75c8a315fde60",
+        "profile_pins": [
+          {
+            "symbol": "mech_compact_numeric_3956_vector",
+            "path": "profiles/mech_compact_numeric_3956_vector.json",
+            "sha256": "9d75282ff03f8d4e1382a89d97876f3f195b1548fbff65b63c04cf6f8d6834bc"
+          },
+          {
+            "symbol": "mech_compact_numeric_3009_no_growth_composed",
+            "path": "profiles/mech_compact_numeric_3009_no_growth_composed.json",
+            "sha256": "8e418ddf8a5a88a9a67fc7c1420d4ed0a39202c882233a882a340d4807e8efdb"
+          },
+          {
+            "symbol": "mech_compact_numeric_475_vector",
+            "path": "profiles/mech_compact_numeric_475_vector.json",
+            "sha256": "a67d413cfbc8860fb0e157b2deff34a81c36423173bf7d50aea6d782ebaea881"
+          }
+        ],
+        "compiler_sha256": "ea040f64b370f6ec8cadbe36db4884a807748fd6fee31d7f7554068edd2f2a80",
+        "toolchain": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "encoder_text_bytes": 65036,
+        "artifact_sha256": {
+          "program.o": "06186246e2f3a9a50f90778be101587ec71277bbcf8f4192862c72fc726c4f8f",
+          "metadata.json": "7e37007395174780190f71a2ff56adec3858b5c29b90025e8ad793a4f7a73521",
+          "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+        },
+        "stripped_deployment": {
+          "bytes": 276056,
+          "sha256": "ed21493e1451d162bbe27652cc16aaaf13efdc9a337697ce676efd4fb8b0c271"
+        },
+        "source_build_worker_sha256": "a7af15ee8305d2b61ba6af8bcf07f375f439c9fbb5fa3a39903f2181bac669e1",
+        "archive_worker_sha256": "884e35f4bdacf47e82adc39c5535451eb0a82b271b6c1fdd6419984312d4f61c",
+        "archive_worker_exact_relink": true,
+        "workers_checked": {
+          "success_observations": 162,
+          "failure_cases": 6,
+          "failure_observations": 12,
+          "exact_recoveries_after_fault": 12,
+          "recovery_evidence": "evidence/m1-source-built-20261118/m1-shared-release-setup-rebased-recovery.json",
+          "recovery_sha256": "53b09ba8b16fca6c320a156572f57764cf01d5bc6024996ee642601e06757161"
+        },
+        "allocator_object_sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874",
+        "archived_runtime": {
+          "decision": "Retain",
+          "named_cases": 81,
+          "distinct_contracts": 74,
+          "runs": {
+            "forward": {
+              "point_estimate_wins": {
+                "roc": 81,
+                "libdeflate": 62
+              },
+              "distinct_contract_point_estimate_wins": {
+                "roc": 74,
+                "libdeflate": 56
+              }
+            },
+            "reverse": {
+              "point_estimate_wins": {
+                "roc": 81,
+                "libdeflate": 62
+              },
+              "distinct_contract_point_estimate_wins": {
+                "roc": 74,
+                "libdeflate": 56
+              }
+            }
+          },
+          "evidence": "evidence/encoder-size-gap/shared-release-setup/full-screen.json",
+          "relative_regressions": {
+            "slowdowns": [
+              "empty: established slowdown above the 0.5% resolution",
+              "one-stored: established slowdown above the 0.5% resolution"
+            ],
+            "uncertain": [
+              "seven-stored-prefix: regression bound or duplicate-control repeatability unresolved",
+              "random-64: regression bound or duplicate-control repeatability unresolved",
+              "random-256: regression bound or duplicate-control repeatability unresolved",
+              "random-1024: regression bound or duplicate-control repeatability unresolved",
+              "prefix-random-1024: regression bound or duplicate-control repeatability unresolved",
+              "prefix-repeated-1024: regression bound or duplicate-control repeatability unresolved",
+              "prefix-repeated-8192: regression bound or duplicate-control repeatability unresolved"
+            ]
+          }
+        },
+        "peak_stack_bytes": 4784,
         "no_runtime_sacrifice_against_maintained": "unverified"
       }
     },
     "matched_deployment": {
-      "plan_sha256": "2cad8a6b0ffae2872e1b4bac39a79090881f65811aff1ddbccba2e10b0fb7b97",
+      "plan_sha256": "4e8b691f1b4dc8acbe2b0f8ef7b7c3103cc9f67ac0585f55a0be98412ffdb6ee",
       "medians": {
         "mech-control-frame-copies": {
-          "source": 2.2934651251416653,
-          "link": 0.034899646416306496,
-          "source_through_link": 2.3284297708887607,
-          "strip": 0.010869479039683938,
-          "source_through_strip": 2.339332499774173
+          "source": 2.2858757083304226,
+          "link": 0.03523881267756224,
+          "source_through_link": 2.321470374474302,
+          "strip": 0.010782521218061447,
+          "source_through_strip": 2.3323868955485523
         },
         "mech-m1-checked-regions": {
-          "source": 2.142406771192327,
-          "link": 0.03519287472590804,
-          "source_through_link": 2.178403916535899,
-          "strip": 0.010842333314940333,
-          "source_through_strip": 2.1896051873918623
+          "source": 2.136185917071998,
+          "link": 0.034932479029521346,
+          "source_through_link": 2.1715301868971437,
+          "strip": 0.010796999791637063,
+          "source_through_strip": 2.1825888336170465
         },
         "mech-m1-compact-match-equality": {
-          "source": 2.142147854436189,
-          "link": 0.03531547915190458,
-          "source_through_link": 2.178483603987843,
-          "strip": 0.010961937252432108,
-          "source_through_strip": 2.1896847086027265
+          "source": 2.1369816039223224,
+          "link": 0.035141521133482456,
+          "source_through_link": 2.1726256664842367,
+          "strip": 0.01072860392741859,
+          "source_through_strip": 2.1835944578051567
+        },
+        "mech-m1-shared-release-setup": {
+          "source": 2.140700062038377,
+          "link": 0.035117916064336896,
+          "source_through_link": 2.176336916629225,
+          "strip": 0.010756396222859621,
+          "source_through_strip": 2.18719912529923
         },
         "roc": {
-          "source": 2.9493696454446763,
-          "link": 0.0346092083491385,
-          "source_through_link": 2.984574687667191,
-          "strip": 0.010805103927850723,
-          "source_through_strip": 2.99554756260477
+          "source": 2.9475767919793725,
+          "link": 0.035007854690775275,
+          "source_through_link": 2.9826653958298266,
+          "strip": 0.01079468708485365,
+          "source_through_strip": 2.993796979309991
         },
         "libdeflate": {
-          "source": 0.44594775000587106,
-          "link": 0.034340291284024715,
-          "source_through_link": 0.48076354223303497,
-          "strip": 0.010584791889414191,
-          "source_through_strip": 0.4915045415982604
+          "source": 0.4453344375360757,
+          "link": 0.03468672884628177,
+          "source_through_link": 0.48021093755960464,
+          "strip": 0.010625750059261918,
+          "source_through_strip": 0.4910001663956791
         }
       },
       "phases": {
         "mech-control-frame-copies": {
-          "parse": 0.7151912915,
-          "catalog": 1.6250000000000002e-05,
-          "frontend": 0.21446725,
-          "artifact": 0.006877417,
-          "encode": 0.002567875,
-          "native": 1.3277819165
+          "parse": 0.706574979,
+          "catalog": 1.7687500000000003e-05,
+          "frontend": 0.2173268745,
+          "artifact": 0.0068513125,
+          "encode": 0.0025719585,
+          "native": 1.3263423125
         },
         "mech-m1-checked-regions": {
-          "parse": 0.714986,
-          "catalog": 2.0875e-05,
-          "frontend": 0.2138704585,
-          "artifact": 0.0068548545,
-          "encode": 0.002567354,
-          "native": 1.1777650414999998
+          "parse": 0.706331021,
+          "catalog": 1.89165e-05,
+          "frontend": 0.21678129200000001,
+          "artifact": 0.0068806665,
+          "encode": 0.0025722285,
+          "native": 1.177335979
         },
         "mech-m1-compact-match-equality": {
-          "parse": 0.7152642915,
-          "catalog": 1.74585e-05,
-          "frontend": 0.2137767915,
-          "artifact": 0.006880313,
-          "encode": 0.0025600830000000003,
-          "native": 1.1775465625
+          "parse": 0.7074008545,
+          "catalog": 2.1000000000000002e-05,
+          "frontend": 0.21692306249999999,
+          "artifact": 0.006857561999999999,
+          "encode": 0.0025714795,
+          "native": 1.1772030414999999
+        },
+        "mech-m1-shared-release-setup": {
+          "parse": 0.706394958,
+          "catalog": 1.7646e-05,
+          "frontend": 0.217043875,
+          "artifact": 0.006858728999999999,
+          "encode": 0.00257425,
+          "native": 1.179311583
         }
       },
       "paired_ratios": {
         "mech-control-frame-copies": {
-          "roc": 0.7802595913078411,
-          "libdeflate": 4.843581307444506,
+          "roc": 0.7778638864293554,
+          "libdeflate": 4.834088688726477,
           "mech-control-frame-copies": 1.0
         },
         "mech-m1-checked-regions": {
-          "roc": 0.730336522949426,
-          "libdeflate": 4.534064826404316,
-          "mech-control-frame-copies": 0.9358670431869872
+          "roc": 0.7276688676610589,
+          "libdeflate": 4.523202386300152,
+          "mech-control-frame-copies": 0.9354598541974598
         },
         "mech-m1-compact-match-equality": {
-          "roc": 0.7303444599533053,
-          "libdeflate": 4.533152020692921,
-          "mech-control-frame-copies": 0.9365438697927116
+          "roc": 0.7278916279513544,
+          "libdeflate": 4.523311817332939,
+          "mech-control-frame-copies": 0.9355645526053629
+        },
+        "mech-m1-shared-release-setup": {
+          "roc": 0.7292841838842374,
+          "libdeflate": 4.5316985744333165,
+          "mech-control-frame-copies": 0.9373335112667992
         }
       },
       "source_cpu_seconds": {
-        "mech-control-frame-copies": 2.359921,
-        "mech-m1-checked-regions": 2.2023965,
-        "mech-m1-compact-match-equality": 2.2018744999999997,
-        "roc": 2.9427835,
-        "libdeflate": 0.4425345
+        "mech-control-frame-copies": 2.3608244999999997,
+        "mech-m1-checked-regions": 2.2038335,
+        "mech-m1-compact-match-equality": 2.2045585,
+        "mech-m1-shared-release-setup": 2.2069609999999997,
+        "roc": 2.941489,
+        "libdeflate": 0.441704
       },
       "source_rss_bytes": {
-        "mech-control-frame-copies": 393986048.0,
-        "mech-m1-checked-regions": 392413184.0,
-        "mech-m1-compact-match-equality": 392404992.0,
-        "roc": 396607488.0,
-        "libdeflate": 71532544.0
+        "mech-control-frame-copies": 394117120.0,
+        "mech-m1-checked-regions": 392658944.0,
+        "mech-m1-compact-match-equality": 392658944.0,
+        "mech-m1-shared-release-setup": 392650752.0,
+        "roc": 392863744.0,
+        "libdeflate": 71548928.0
       },
       "stripped_executables": {
         "mech-control-frame-copies": {
@@ -14434,6 +14591,10 @@
           "bytes": 276056,
           "sha256": "0750f36ac8c19e34acc894530c1983084fe432c6483713f9b8844f8f90bb9d82"
         },
+        "mech-m1-shared-release-setup": {
+          "bytes": 276056,
+          "sha256": "ed21493e1451d162bbe27652cc16aaaf13efdc9a337697ce676efd4fb8b0c271"
+        },
         "roc": {
           "bytes": 191912,
           "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
@@ -14445,11 +14606,264 @@
       },
       "paired_ms_vs_frame_copies": {
         "mech-control-frame-copies": 0.0,
-        "mech-m1-checked-regions": -149.2813539225608,
-        "mech-m1-compact-match-equality": -147.59045839309692
+        "mech-m1-checked-regions": -149.8271874152124,
+        "mech-m1-compact-match-equality": -149.63602041825652,
+        "mech-m1-shared-release-setup": -145.3852909617126
       },
-      "trials": 10
+      "trials": 12,
+      "observation_file": {
+        "path": "evidence/m1-source-built-20261118/matched-rebased-observations.json.gz",
+        "sha256": "06608e01485cdc0b9d97dd74fc31b8b33fce1111986c8f7b0a30ed399c49e69a"
+      },
+      "other_seconds_definition": "Remaining complete wall time after per-trial parse, catalog join, frontend, artifact, encode and native phases, including final link, startup and driver overhead.",
+      "seconds_until_target": {
+        "mech-control-frame-copies": {
+          "2.0": 0.32147037447430193,
+          "1.0": 1.321470374474302,
+          "0.45": 1.871470374474302
+        },
+        "mech-m1-checked-regions": {
+          "2.0": 0.17153018689714372,
+          "1.0": 1.1715301868971437,
+          "0.45": 1.7215301868971438
+        },
+        "mech-m1-compact-match-equality": {
+          "2.0": 0.17262566648423672,
+          "1.0": 1.1726256664842367,
+          "0.45": 1.7226256664842368
+        },
+        "mech-m1-shared-release-setup": {
+          "2.0": 0.17633691662922502,
+          "1.0": 1.176336916629225,
+          "0.45": 1.726336916629225
+        }
+      },
+      "other_seconds": {
+        "mech-control-frame-copies": 0.06172731218901073,
+        "mech-m1-checked-regions": 0.06164302148251033,
+        "mech-m1-compact-match-equality": 0.06145154234791872,
+        "mech-m1-shared-release-setup": 0.06166935446315369
+      }
     },
-    "evidence": "evidence/m1-source-built-20261118/result.json"
+    "evidence": "evidence/m1-source-built-20261118/result.json",
+    "previous_matched_snapshot": {
+      "source_commit": "09a1f5c6296d05f663cd4add8ae8d059dc888e34",
+      "summary": {
+        "plan_sha256": "2cad8a6b0ffae2872e1b4bac39a79090881f65811aff1ddbccba2e10b0fb7b97",
+        "medians": {
+          "mech-control-frame-copies": {
+            "source": 2.2934651251416653,
+            "link": 0.034899646416306496,
+            "source_through_link": 2.3284297708887607,
+            "strip": 0.010869479039683938,
+            "source_through_strip": 2.339332499774173
+          },
+          "mech-m1-checked-regions": {
+            "source": 2.142406771192327,
+            "link": 0.03519287472590804,
+            "source_through_link": 2.178403916535899,
+            "strip": 0.010842333314940333,
+            "source_through_strip": 2.1896051873918623
+          },
+          "mech-m1-compact-match-equality": {
+            "source": 2.142147854436189,
+            "link": 0.03531547915190458,
+            "source_through_link": 2.178483603987843,
+            "strip": 0.010961937252432108,
+            "source_through_strip": 2.1896847086027265
+          },
+          "roc": {
+            "source": 2.9493696454446763,
+            "link": 0.0346092083491385,
+            "source_through_link": 2.984574687667191,
+            "strip": 0.010805103927850723,
+            "source_through_strip": 2.99554756260477
+          },
+          "libdeflate": {
+            "source": 0.44594775000587106,
+            "link": 0.034340291284024715,
+            "source_through_link": 0.48076354223303497,
+            "strip": 0.010584791889414191,
+            "source_through_strip": 0.4915045415982604
+          }
+        },
+        "phases": {
+          "mech-control-frame-copies": {
+            "parse": 0.7151912915,
+            "catalog": 1.6250000000000002e-05,
+            "frontend": 0.21446725,
+            "artifact": 0.006877417,
+            "encode": 0.002567875,
+            "native": 1.3277819165
+          },
+          "mech-m1-checked-regions": {
+            "parse": 0.714986,
+            "catalog": 2.0875e-05,
+            "frontend": 0.2138704585,
+            "artifact": 0.0068548545,
+            "encode": 0.002567354,
+            "native": 1.1777650414999998
+          },
+          "mech-m1-compact-match-equality": {
+            "parse": 0.7152642915,
+            "catalog": 1.74585e-05,
+            "frontend": 0.2137767915,
+            "artifact": 0.006880313,
+            "encode": 0.0025600830000000003,
+            "native": 1.1775465625
+          }
+        },
+        "paired_ratios": {
+          "mech-control-frame-copies": {
+            "roc": 0.7802595913078411,
+            "libdeflate": 4.843581307444506,
+            "mech-control-frame-copies": 1.0
+          },
+          "mech-m1-checked-regions": {
+            "roc": 0.730336522949426,
+            "libdeflate": 4.534064826404316,
+            "mech-control-frame-copies": 0.9358670431869872
+          },
+          "mech-m1-compact-match-equality": {
+            "roc": 0.7303444599533053,
+            "libdeflate": 4.533152020692921,
+            "mech-control-frame-copies": 0.9365438697927116
+          }
+        },
+        "source_cpu_seconds": {
+          "mech-control-frame-copies": 2.359921,
+          "mech-m1-checked-regions": 2.2023965,
+          "mech-m1-compact-match-equality": 2.2018744999999997,
+          "roc": 2.9427835,
+          "libdeflate": 0.4425345
+        },
+        "source_rss_bytes": {
+          "mech-control-frame-copies": 393986048.0,
+          "mech-m1-checked-regions": 392413184.0,
+          "mech-m1-compact-match-equality": 392404992.0,
+          "roc": 396607488.0,
+          "libdeflate": 71532544.0
+        },
+        "stripped_executables": {
+          "mech-control-frame-copies": {
+            "bytes": 292568,
+            "sha256": "081f873d11cc21af9d4055a2d9b424592d5ddbea0390925ec111dc76cd4204ed"
+          },
+          "mech-m1-checked-regions": {
+            "bytes": 276056,
+            "sha256": "eb6336cf3f4896e31380f159dfc483e64309e9455b40f734bc52ad934f3928e6"
+          },
+          "mech-m1-compact-match-equality": {
+            "bytes": 276056,
+            "sha256": "0750f36ac8c19e34acc894530c1983084fe432c6483713f9b8844f8f90bb9d82"
+          },
+          "roc": {
+            "bytes": 191912,
+            "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+          },
+          "libdeflate": {
+            "bytes": 155752,
+            "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+          }
+        },
+        "paired_ms_vs_frame_copies": {
+          "mech-control-frame-copies": 0.0,
+          "mech-m1-checked-regions": -149.2813539225608,
+          "mech-m1-compact-match-equality": -147.59045839309692
+        },
+        "trials": 10
+      },
+      "observations": "matched-observations.json.gz"
+    },
+    "maintained_runtime_comparison": {
+      "path": "evidence/m1-source-built-20261118/maintained-runtime/result.json",
+      "sha256": "3ae37bb720dd2b810b97a59a7a69a04382d9f52ab3c79d80887955a4cda57661",
+      "plan_sha256": "5daedea12b6713df719abf29f07aa036a635157f5ff698de23b0d46f8c41c3fc",
+      "driver_sha256": "e3efeff6619b6db8eca0bdee541901b10c6c481b12d2d54ecd802b2a08d1b8a7",
+      "fixture_content_sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+      "replayed_all_intervals": true,
+      "cases": 81,
+      "blocks_per_case": 96,
+      "archive_worker_sha256": {
+        "frame-copies": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+        "m1-checked-regions": "969329f3dde79b02ad3f13cd540a9e03f5818769b33033827822591e7473e6fa",
+        "m1-compact-match-equality": "792f63292b32ad062448c3344442c795c41bbaa263ff86ef803d10a692b56891"
+      },
+      "decision": {
+        "m1-checked-regions": {
+          "status": "opt-in, paired test established runtime slowdowns",
+          "established_slowdowns_by_order": {
+            "forward": 6,
+            "reverse": 7
+          },
+          "unresolved_cases_by_order": {
+            "forward": 3,
+            "reverse": 4
+          },
+          "established_slowdown_both_orders": [
+            "128-biased-dynamic",
+            "16384-distribution-change",
+            "eight-overlap",
+            "heldout-mixed-131073"
+          ]
+        },
+        "m1-compact-match-equality": {
+          "status": "opt-in, paired test established runtime slowdowns",
+          "established_slowdowns_by_order": {
+            "forward": 6,
+            "reverse": 7
+          },
+          "unresolved_cases_by_order": {
+            "forward": 3,
+            "reverse": 2
+          },
+          "established_slowdown_both_orders": [
+            "128-biased-dynamic",
+            "16384-distribution-change",
+            "one-stored",
+            "prefix-random-4096",
+            "prefix-random-8192",
+            "seven-stored-prefix"
+          ]
+        }
+      }
+    },
+    "native_attribution": {
+      "path": "evidence/m1-source-built-20261118/native-attribution/result.json",
+      "sha256": "4d3fdb8972bb288ac3bad05f5e208fa4a3a6d9016b985527c3401c92a0e6babc"
+    },
+    "retirement_cache_experiment": {
+      "path": "evidence/m1-source-built-20261118/native-attribution/guard-transitions.json.gz",
+      "sha256": "7fb2ccdfb8e2f3d401277446725d004c1c5d2a2d2436a1a8f0882776b1c91073",
+      "decision": "reject"
+    },
+    "argument_carrier_samples": {
+      "path": "evidence/m1-source-built-20261118/argument-carrier-samples.json",
+      "sha256": "4f904f8131c310680920220f3d730b3ac39c1d5e6f36adbe6b41a5a446b03f54"
+    },
+    "ci": {
+      "source_commit": "90d133253a19b1cfdc05051f33f8fb9e468daf01",
+      "run": "https://github.com/mech-lang/mech/actions/runs/44344708598",
+      "jobs": {
+        "public_canonical_native_cli": {
+          "id": 134944977787,
+          "conclusion": "success"
+        },
+        "same_binary_native_policy_controls": {
+          "id": 134944977705,
+          "conclusion": "success"
+        },
+        "canonical_hosted_native_applications": {
+          "id": 134944977709,
+          "conclusion": "success"
+        },
+        "static_architecture_contracts": {
+          "id": 134944977436,
+          "conclusion": "failure",
+          "path": "benchmarks/related-post-gen/hosts/after-4.rs",
+          "reason": "Unsafe linked module binding outside the approved boundary"
+        }
+      }
+    }
   }
 }

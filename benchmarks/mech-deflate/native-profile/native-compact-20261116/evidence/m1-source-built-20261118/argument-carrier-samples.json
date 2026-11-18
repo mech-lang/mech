@@ -1,0 +1,132 @@
+{
+  "source_commit": "90d133253a19b1cfdc05051f33f8fb9e468daf01",
+  "compiler_sha256": "ea040f64b370f6ec8cadbe36db4884a807748fd6fee31d7f7554068edd2f2a80",
+  "samples": {
+    "source_semantics": 2125,
+    "function_argument_shape::embed": 229,
+    "carrier_remapping": 170
+  },
+  "non_remapping_leaves": {
+    "_RNvXse_NtCsgKscDXrlV49_5alloc5boxedINtB5_3BoxSNtNtCsaTY2qqkRdQG_9mech_core9dimension29DimensionParameterDeclarationENtNtCsgDHHaSskbIF_4core5clone5Clone5cloneCskF8q1xOIVDE_11mech_engine": 21,
+    "_RNvMs0_NtNtCsaTY2qqkRdQG_9mech_core6schema19dimension_relationsNtB7_11SchemaDraft28with_dimension_origin_policy": 11,
+    "_RNvXst_NtCsaTY2qqkRdQG_9mech_core9dimensionNtB5_13DimensionExprNtNtCsgDHHaSskbIF_4core3cmp9PartialEq2eq": 14,
+    "_RNvMNtNtNtCskF8q1xOIVDE_11mech_engine16source_semantics8frontend15dimension_remapNtB2_9Remapping6insert": 6,
+    "_RINvNtCsgDHHaSskbIF_4core3ptr13drop_in_placeINtNtCsgKscDXrlV49_5alloc5boxed3BoxSNtNtCsaTY2qqkRdQG_9mech_core9dimension29DimensionParameterDeclarationEECskF8q1xOIVDE_11mech_engine": 4,
+    "_RNvNtNtCskF8q1xOIVDE_11mech_engine16source_semantics8frontend20remap_dimension_expr": 3
+  },
+  "trial_count": 12,
+  "approximate_inclusive_ms": 25.917880972235295,
+  "approximate_outside_remapping_ms": 6.6775326522352945,
+  "median_frontend_s_with_sampler": 0.240504354,
+  "observations": [
+    {
+      "samples": {
+        "source_semantics": 182,
+        "function_argument_shape::embed": 20,
+        "carrier_remapping": 17
+      },
+      "sample_sha256": "dec81c79e96661392dfe62b92eabadb9b2aba85cf2503ca20f3da784d6536fc6",
+      "frontend_s": 0.249368875
+    },
+    {
+      "samples": {
+        "source_semantics": 175,
+        "function_argument_shape::embed": 19,
+        "carrier_remapping": 14
+      },
+      "sample_sha256": "5bd6afac2f39229f0a1b7c184a0e170cf47b7dfdaf8b7510474050f8f222ad90",
+      "frontend_s": 0.240608708
+    },
+    {
+      "samples": {
+        "source_semantics": 177,
+        "function_argument_shape::embed": 18,
+        "carrier_remapping": 10
+      },
+      "sample_sha256": "f9cbdc80c76459c8947aa87d037e770e956714cef9ac88b812588ca6dc540e5f",
+      "frontend_s": 0.241972125
+    },
+    {
+      "samples": {
+        "source_semantics": 175,
+        "function_argument_shape::embed": 18,
+        "carrier_remapping": 10
+      },
+      "sample_sha256": "9f0f5d895d43259de3021e4bc7e74e0c7b1fb04fb6be2408245988ad0c28aa86",
+      "frontend_s": 0.240231833
+    },
+    {
+      "samples": {
+        "source_semantics": 175,
+        "function_argument_shape::embed": 19,
+        "carrier_remapping": 17
+      },
+      "sample_sha256": "41e9b1bc50b130d836d92a1c10d248d8cce452300ca1558a8d5803fd30d2d50e",
+      "frontend_s": 0.239572417
+    },
+    {
+      "samples": {
+        "source_semantics": 175,
+        "function_argument_shape::embed": 17,
+        "carrier_remapping": 15
+      },
+      "sample_sha256": "969a5bcc64bda11f0a0675b1862aa6a3c9bbff25fcfa3a4edb5853cfbdb4a7e7",
+      "frontend_s": 0.240027375
+    },
+    {
+      "samples": {
+        "source_semantics": 177,
+        "function_argument_shape::embed": 19,
+        "carrier_remapping": 17
+      },
+      "sample_sha256": "f82b0de3697dfc99f1644893d385d402643d0a027161717c1a8b2f39cfe95787",
+      "frontend_s": 0.23979075
+    },
+    {
+      "samples": {
+        "source_semantics": 175,
+        "function_argument_shape::embed": 21,
+        "carrier_remapping": 16
+      },
+      "sample_sha256": "1cd71d5c7513232e7e1868e13b3af38adc5faa98cc693cd72c6a75ee02a86ac4",
+      "frontend_s": 0.238816042
+    },
+    {
+      "samples": {
+        "source_semantics": 179,
+        "function_argument_shape::embed": 17,
+        "carrier_remapping": 13
+      },
+      "sample_sha256": "0adab9773da97f92bf3a1acd2a091cc456642cbb035f8df365fa46c170f8fbc1",
+      "frontend_s": 0.241076541
+    },
+    {
+      "samples": {
+        "source_semantics": 179,
+        "function_argument_shape::embed": 20,
+        "carrier_remapping": 13
+      },
+      "sample_sha256": "fe2073985f9d49589b4112d9e6f0a79d1562e182a71f8d4811ce976448bbabb7",
+      "frontend_s": 0.243347917
+    },
+    {
+      "samples": {
+        "source_semantics": 178,
+        "function_argument_shape::embed": 21,
+        "carrier_remapping": 17
+      },
+      "sample_sha256": "9c8ec440fd209457f08e9f7e6627acad3681cb5f1d20f7c4bf6dadfea85d7610",
+      "frontend_s": 0.2404
+    },
+    {
+      "samples": {
+        "source_semantics": 178,
+        "function_argument_shape::embed": 20,
+        "carrier_remapping": 11
+      },
+      "sample_sha256": "614e0eb2b92f231a41b20f0ce5e2efce4f8e82935624071e198aa79523c67e80",
+      "frontend_s": 0.242041958
+    }
+  ],
+  "scope": "Inclusive stack samples from exact current compiler; scale gives a rough opportunity estimate."
+}

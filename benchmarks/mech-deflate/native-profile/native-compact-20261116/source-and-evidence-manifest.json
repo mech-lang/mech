@@ -50,8 +50,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/CURRENT.md",
-      "sha256": "6ea6fd289a009bba484551540165d6ea462918c25f887d55f275429b685b5f13",
-      "bytes": 28976
+      "sha256": "4b11c5073260d0c16216db1c4b79d73a00bbabef80c238caca3481c287666917",
+      "bytes": 30399
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/QUALIFICATION.md",
@@ -60,8 +60,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/README.md",
-      "sha256": "23858bd195e24a02e2f8c61c9a0f77fe91e1abcb593dc019ee9de16983e9f29b",
-      "bytes": 37393
+      "sha256": "c0946bd7402c295fe9d48b23fab51247d26c33684073ada3184ce8a4c651bedd",
+      "bytes": 37514
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/REVIEW.md",
@@ -23310,8 +23310,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/result.json",
-      "sha256": "a5f00df7ad5855bcf4b802786f1ded4f98a29521c7fb99f97ca43041ab5fd37a",
-      "bytes": 15044
+      "sha256": "971680e49f5c20cab0ff2776b56ea396980e0dcb39fb8d9603a7f20e37555b90",
+      "bytes": 31322
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/match-cache-offset-slot/PROOF.md",
@@ -42265,8 +42265,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
-      "sha256": "f751acb6e94158bb8a0c27067c89fb5b14d089905993605006ee3d723e01753b",
-      "bytes": 14592
+      "sha256": "cd52d67125bae0a250cbaed3e647c716ec086574e4b07d766fda934b03f6cda6",
+      "bytes": 14647
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild_checks.py",
@@ -42285,8 +42285,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/scorecard.json",
-      "sha256": "29f2d665da6b42f9c41ec46784eab968b9caf410d08bad34820dbe290f4ae2db",
-      "bytes": 499392
+      "sha256": "d2065286c50a6f6b9c0a72c8614442e953a39a3236639fd6a9c326fe44fc52ce",
+      "bytes": 516498
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/size_screens.py",
@@ -43312,6 +43312,126 @@
       "path": "evidence/m1-source-built-20261118/m1-compact-match-equality-linked-recovery.json",
       "sha256": "1283c96d07540e55d6d8c48f617fa250fff1130cc478414af39637c78ecea970",
       "bytes": 12152
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/archive-workers-rebased.json",
+      "sha256": "771358f8df5a13e38527415d187f6314b24a14ed349f46bc8bbb102341a6429d",
+      "bytes": 8888
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/argument-carrier-samples.json",
+      "sha256": "4f904f8131c310680920220f3d730b3ac39c1d5e6f36adbe6b41a5a446b03f54",
+      "bytes": 4751
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/m1-checked-regions-linked-recovery.json",
+      "sha256": "91e4806b5e5d7d69f124ba7b5eb796e14df604b7b2ec1a38ee00996fb2ed479f",
+      "bytes": 12152
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/m1-checked-regions-rebased-recovery.json",
+      "sha256": "5a21da0b29e0475b4557e3d7017044c741611b46fb58cd3cd58d9fb2b15617e2",
+      "bytes": 12215
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/m1-compact-match-equality-linked-recovery.json",
+      "sha256": "1283c96d07540e55d6d8c48f617fa250fff1130cc478414af39637c78ecea970",
+      "bytes": 12152
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/m1-compact-match-equality-rebased-recovery.json",
+      "sha256": "7ced707588d222acfbd905eef701c07aaab76841a2c8fdd371275f107e42f2fa",
+      "bytes": 12215
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/m1-shared-release-setup-rebased-recovery.json",
+      "sha256": "53b09ba8b16fca6c320a156572f57764cf01d5bc6024996ee642601e06757161",
+      "bytes": 12215
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/maintained-runtime/README.md",
+      "sha256": "9236a770a8d4b15d5d05f54d4d2e924c093627e0e304892a2eb881eacd3509bc",
+      "bytes": 2156
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/maintained-runtime/acquire.py",
+      "sha256": "e3efeff6619b6db8eca0bdee541901b10c6c481b12d2d54ecd802b2a08d1b8a7",
+      "bytes": 7703
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/maintained-runtime/case-results.json",
+      "sha256": "028742495e953bc2e2d91608e48c3ab81ac05e00bed8d9b5a532aace703f031d",
+      "bytes": 91343
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/maintained-runtime/forward-balanced-blocks.json.gz",
+      "sha256": "a834d4a8ababa91c624dfede7f9fc448e6f25e0937b064d6522303931123d731",
+      "bytes": 100184
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/maintained-runtime/matcher-blocks.json.gz",
+      "sha256": "993482b837c7ecc4806159e0e5f5c59d8386d0613ca6609b5e8e52620270c586",
+      "bytes": 26808
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/maintained-runtime/matcher-counts.json",
+      "sha256": "0553650eaa4e79ac76fbe765d7afac7177ebf4ab0047b56b6e4973175f4867c0",
+      "bytes": 4398
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/maintained-runtime/plan.json",
+      "sha256": "5daedea12b6713df719abf29f07aa036a635157f5ff698de23b0d46f8c41c3fc",
+      "bytes": 3795
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/maintained-runtime/result.json",
+      "sha256": "3ae37bb720dd2b810b97a59a7a69a04382d9f52ab3c79d80887955a4cda57661",
+      "bytes": 1668
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/maintained-runtime/reverse-balanced-blocks.json.gz",
+      "sha256": "eb27266ebc045af4527919ed69c53b581bbdd86a0a1a075c6752380bc5349950",
+      "bytes": 100061
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/matched-rebased-observations.json.gz",
+      "sha256": "06608e01485cdc0b9d97dd74fc31b8b33fce1111986c8f7b0a30ed399c49e69a",
+      "bytes": 97336
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/native-attribution/README.md",
+      "sha256": "10162742e60021b5fe15fcf07693d3362d69a9a7dd578fb4d34558df448132d6",
+      "bytes": 2041
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/native-attribution/guard-transitions-plan.md",
+      "sha256": "4c1bf730824592adada097dafd62747680b4d6fc7795061f41c59228e4323b00",
+      "bytes": 1113
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/native-attribution/guard-transitions.json.gz",
+      "sha256": "7fb2ccdfb8e2f3d401277446725d004c1c5d2a2d2436a1a8f0882776b1c91073",
+      "bytes": 83066
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/native-attribution/guard-transitions.patch.gz",
+      "sha256": "caef4dcbc90f149bf23717afa9ee8f44996aebf5b323ecd00c67376a2abfa2a6",
+      "bytes": 2391
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/native-attribution/instrumentation.patch.gz",
+      "sha256": "d08b1aff7d2fd8bf2dcc2d2476e70cdbb10747c79e4b745189f3f94123ff91a4",
+      "bytes": 13859
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/native-attribution/observations.json.gz",
+      "sha256": "f83d56e6b920996a444253f6ef2a910cef0e2731fb4096c9949506a2607a371b",
+      "bytes": 153847
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/native-attribution/result.json",
+      "sha256": "4d3fdb8972bb288ac3bad05f5e208fa4a3a6d9016b985527c3401c92a0e6babc",
+      "bytes": 21612
     }
   ]
 }

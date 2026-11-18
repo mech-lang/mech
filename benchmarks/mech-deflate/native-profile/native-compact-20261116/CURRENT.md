@@ -14,27 +14,32 @@ The retained word-scan and current-guard optimization records **81/81 against Ro
 
 ## Source-built Apple M1 references
 
-PR #995 builds the two named M1 references from its integrated compiler source. Both reproduce the archived encoder object, canonical bytecode and complete metadata. The fixed archive link inputs also reproduce both benchmark worker hashes and both stripped deployment hashes. The named command rebuilds its host support and verifies each new worker using 162 success observations, six checked failure cases and 12 exact recovery calls. [Source-built commands](README.md#source-built-m1-reference-encoders) · [Identities and checks](evidence/m1-source-built-20261118/result.json) · [Exact archive worker links](evidence/m1-source-built-20261118/archive-worker-relink.json)
+PR #995's integrated compiler at `90d133253a` builds the three named M1 recipes. Each reproduces its archived encoder object, canonical bytecode and complete metadata. The fixed link inputs reproduce all three benchmark and stripped deployment executables. The named command rebuilds its host support and verifies each new worker using 162 success observations, six checked failure cases and 12 exact recovery calls. [Source-built commands](README.md#source-built-m1-reference-encoders) · [Identities and checks](evidence/m1-source-built-20261118/result.json) · [Exact archive worker links](evidence/m1-source-built-20261118/archive-workers-rebased.json)
 
 | Apple M1 build | Encoder text | Source to link | Source to strip | Source CPU | Source peak RSS |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Mech frame-copies control | 71,192 B | 2.328 s | 2.339 s | 2.360 s | 394.0 MB |
-| Mech checked regions | 65,516 B | 2.178 s | 2.190 s | 2.202 s | 392.4 MB |
-| Mech compact match equality | 65,276 B | 2.178 s | 2.190 s | 2.202 s | 392.4 MB |
-| Roc | 57,696 B | 2.985 s | 2.996 s | 2.943 s | 396.6 MB |
-| libdeflate | 37,080 B | 0.481 s | 0.492 s | 0.443 s | 71.5 MB |
+| Mech frame-copies control | 71,192 B | 2.321 s | 2.332 s | 2.361 s | 394.1 MB |
+| Mech checked regions | 65,516 B | 2.172 s | 2.183 s | 2.204 s | 392.7 MB |
+| Mech compact match equality | 65,276 B | 2.173 s | 2.184 s | 2.205 s | 392.7 MB |
+| Mech shared release setup | 65,036 B | 2.176 s | 2.187 s | 2.207 s | 392.7 MB |
+| Roc | 57,696 B | 2.983 s | 2.994 s | 2.941 s | 392.9 MB |
+| libdeflate | 37,080 B | 0.480 s | 0.491 s | 0.442 s | 71.5 MB |
 
-Ten matched fresh builds use prebuilt deployment support. Compact match equality takes **0.730× Roc** and **4.533× libdeflate** time. Its median paired saving versus frame-copies is **147.6 ms**. The catalog phase records exposed join wait. [Raw trials and compiler phases](evidence/m1-source-built-20261118/matched-observations.json.gz)
+Twelve balanced fresh builds per recipe use prebuilt deployment support. Shared release setup takes **0.729× Roc** and **4.532× libdeflate** time. It saves a paired median **145.4 ms** against frame-copies. Its encoder text is **1.127× Roc** and **1.754× libdeflate**. The stripped executable is 276,056 B and peak native stack is 4,784 B. [Raw trials and compiler phases](evidence/m1-source-built-20261118/matched-rebased-observations.json.gz)
 
-Frame-copies remains the maintained control. For each archived reference worker, the two full orders record 81/81 Roc and 62/81 libdeflate wins, covering 74/74 and 56/74 distinct contracts. The archived per-case regressions are included in the evidence. A fresh paired runtime comparison against frame-copies is pending. [Runtime qualification and regression records](evidence/m1-source-built-20261118/result.json)
+Shared release setup spends 0.706 s parsing, 0.217 s in source semantics, 0.009 s creating and encoding the artifact and 1.179 s in native emission. Exposed catalog wait is 18 µs. The remaining 0.062 s includes 0.035 s of final link. The complete build is 0.176 s above 2.0 s, 1.176 s above 1.0 s and 1.726 s above 0.45 s. [Phase accounting](evidence/m1-source-built-20261118/result.json)
 
-PR #993 also records a 65,036 B opt-in peer-qualified build and a 64,668 B trial whose forward sweep lost a Roc case. [PR #993 M1 results](https://github.com/mech-lang/mech/pull/993)
+Frame-copies remains the maintained control. All three named recipes remain opt-in. Each exact archived worker records 81/81 Roc and 62/81 libdeflate wins in each full order, covering 74/74 and 56/74 distinct contracts. The fresh comparison with frame-copies found four cases with established slowdowns in both orders for checked regions and six for compact match equality. Shared release setup still needs a direct runtime comparison with frame-copies. [Runtime qualification](evidence/m1-source-built-20261118/result.json) · [Paired intervals and matcher diagnosis](evidence/m1-source-built-20261118/maintained-runtime/README.md)
 
-## Earlier Apple M1 matched deployment
+PR #993 also records a 64,668 B trial whose forward sweep lost a Roc case. [PR #993 M1 results](https://github.com/mech-lang/mech/pull/993)
+
+The current native profile attributes the largest traced intervals to root CFG cleanup and phase construction. Retirement-transition caching reuses 3.1% of transitions and adds a paired median 4.7 ms to the complete build. It stays experimental. [Native spans and paired prototype results](evidence/m1-source-built-20261118/native-attribution/README.md)
+
+The public CLI, hosted native applications and same-binary native policy controls passed on the integrated source. Static architecture contracts still fail on the Related Posts linked-module binding in `hosts/after-4.rs`. The earlier hosted checkout timeout occurred before compiler validation. [CI at 90d133253a](https://github.com/mech-lang/mech/actions/runs/44344708598)
+
+## PR #993 matched deployment
 
 PR #993 tracks the qualified LLVM-free MechDeflate build and is stacked on #973. The measurements below use Apple M1, macOS 15.6.1 and arm64.
-
-## Current matched deployment build
 
 | Apple M1 | Mech | Roc | libdeflate |
 | --- | ---: | ---: | ---: |

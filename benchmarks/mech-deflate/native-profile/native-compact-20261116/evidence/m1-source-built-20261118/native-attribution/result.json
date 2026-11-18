@@ -1,0 +1,1117 @@
+{
+  "source_commit": "90d133253a19b1cfdc05051f33f8fb9e468daf01",
+  "host": "Apple M1 macOS 15.6.1 arm64",
+  "scope": "Fresh source to encoder object, coordinator-side exclusive spans",
+  "compiler_sha256": {
+    "control": "ea040f64b370f6ec8cadbe36db4884a807748fd6fee31d7f7554068edd2f2a80",
+    "trace": "edc79df0a7e395824d1f2d096f9290a5ccaff6bd0d31a979bb88689a9fd99db0"
+  },
+  "exact": {
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "program.o": "1ab76d3a6064fa1af82afb7f07fa021f514301d2100def23b2b4d6945bd49858",
+    "metadata.json": "12805d54ebf468a8a2fe27876c82fa67d415215efdfc001fb19c452eea6351ee"
+  },
+  "native_median_s": {
+    "control": 1.179349833,
+    "trace": 1.3159612705
+  },
+  "paired_native_overhead_ms": 136.6114374999999,
+  "coordinator_spans": {
+    "compact.entry": {
+      "inclusive_ms": 809.7803545,
+      "exclusive_ms": 151.626084,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "cleanup.ordered": {
+      "inclusive_ms": 226.562878,
+      "exclusive_ms": 119.568261,
+      "counts": [
+        85,
+        85,
+        85,
+        85
+      ]
+    },
+    "compact.phases": {
+      "inclusive_ms": 209.936354,
+      "exclusive_ms": 113.264197,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "root.machine": {
+      "inclusive_ms": 94.314146,
+      "exclusive_ms": 94.314146,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.native::program::prepare::tail::Layout::derive": {
+      "inclusive_ms": 88.0187505,
+      "exclusive_ms": 88.0187505,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.guards": {
+      "inclusive_ms": 77.27725,
+      "exclusive_ms": 77.27725,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "analysis.verify": {
+      "inclusive_ms": 62.6343335,
+      "exclusive_ms": 62.6343335,
+      "counts": [
+        82,
+        82,
+        82,
+        82
+      ]
+    },
+    "root.owner_lookup": {
+      "inclusive_ms": 45.223083,
+      "exclusive_ms": 45.223083,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "cleanup.identity-routes": {
+      "inclusive_ms": 28.076396,
+      "exclusive_ms": 28.076396,
+      "counts": [
+        32,
+        32,
+        32,
+        32
+      ]
+    },
+    "cleanup.aliases": {
+      "inclusive_ms": 25.022226,
+      "exclusive_ms": 25.022226,
+      "counts": [
+        327,
+        327,
+        327,
+        327
+      ]
+    },
+    "cleanup.boolean-conditions": {
+      "inclusive_ms": 23.868666,
+      "exclusive_ms": 23.868666,
+      "counts": [
+        109,
+        109,
+        109,
+        109
+      ]
+    },
+    "cleanup.loop-edges": {
+      "inclusive_ms": 23.65431,
+      "exclusive_ms": 23.65431,
+      "counts": [
+        31,
+        31,
+        31,
+        31
+      ]
+    },
+    "cleanup.selected-ranges": {
+      "inclusive_ms": 21.137354,
+      "exclusive_ms": 21.137354,
+      "counts": [
+        85,
+        85,
+        85,
+        85
+      ]
+    },
+    "compact.checked_traversals.share_controllers": {
+      "inclusive_ms": 19.2411455,
+      "exclusive_ms": 19.2411455,
+      "counts": [
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    "analysis.prune": {
+      "inclusive_ms": 17.735312,
+      "exclusive_ms": 17.735312,
+      "counts": [
+        5,
+        5,
+        5,
+        5
+      ]
+    },
+    "prepare.lower_native_program_artifact_with_definition_table_limit": {
+      "inclusive_ms": 16.948,
+      "exclusive_ms": 16.948,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "cleanup.after-ordered": {
+      "inclusive_ms": 191.938106,
+      "exclusive_ms": 14.6968955,
+      "counts": [
+        29,
+        29,
+        29,
+        29
+      ]
+    },
+    "cleanup.local-phis": {
+      "inclusive_ms": 14.2704855,
+      "exclusive_ms": 14.2704855,
+      "counts": [
+        85,
+        85,
+        85,
+        85
+      ]
+    },
+    "phase.wait": {
+      "inclusive_ms": 14.210792,
+      "exclusive_ms": 14.210792,
+      "counts": [
+        19,
+        19,
+        19,
+        19
+      ]
+    },
+    "prepare.facts.buffer_frame_owner_layouts": {
+      "inclusive_ms": 13.9715,
+      "exclusive_ms": 13.9715,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "analysis.dominators": {
+      "inclusive_ms": 13.6504505,
+      "exclusive_ms": 13.6504505,
+      "counts": [
+        356,
+        356,
+        356,
+        356
+      ]
+    },
+    "cleanup.demand-liveness": {
+      "inclusive_ms": 13.0868325,
+      "exclusive_ms": 13.0868325,
+      "counts": [
+        85,
+        85,
+        85,
+        85
+      ]
+    },
+    "cleanup.proved-widths": {
+      "inclusive_ms": 12.7752455,
+      "exclusive_ms": 12.7752455,
+      "counts": [
+        117,
+        117,
+        117,
+        117
+      ]
+    },
+    "compact.owners": {
+      "inclusive_ms": 10.615396,
+      "exclusive_ms": 10.615396,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "cleanup.constant-branches": {
+      "inclusive_ms": 10.3032235,
+      "exclusive_ms": 10.3032235,
+      "counts": [
+        111,
+        111,
+        111,
+        111
+      ]
+    },
+    "analysis.phi": {
+      "inclusive_ms": 9.8856455,
+      "exclusive_ms": 9.8856455,
+      "counts": [
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    "analysis.flowgraph": {
+      "inclusive_ms": 9.054895,
+      "exclusive_ms": 9.054895,
+      "counts": [
+        12,
+        12,
+        12,
+        12
+      ]
+    },
+    "compact.checked_traversals.share_continuations": {
+      "inclusive_ms": 8.9747505,
+      "exclusive_ms": 8.9747505,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "analysis.cfg": {
+      "inclusive_ms": 6.883285,
+      "exclusive_ms": 6.883285,
+      "counts": [
+        362,
+        362,
+        362,
+        362
+      ]
+    },
+    "compact.cfg_cleanup.reuse_selected_read_bounds": {
+      "inclusive_ms": 10.6327915,
+      "exclusive_ms": 6.6951045,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "cleanup.early-identities": {
+      "inclusive_ms": 6.499938,
+      "exclusive_ms": 6.499938,
+      "counts": [
+        109,
+        109,
+        109,
+        109
+      ]
+    },
+    "compact.cfg_cleanup.coalesce_equal_join_arguments": {
+      "inclusive_ms": 10.2984375,
+      "exclusive_ms": 5.415334,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "analysis.prune-phi": {
+      "inclusive_ms": 4.9679165,
+      "exclusive_ms": 4.9679165,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.cfg_cleanup.reuse_dominating_window_facts": {
+      "inclusive_ms": 8.851375,
+      "exclusive_ms": 4.8848335,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.composition::Layout::derive": {
+      "inclusive_ms": 4.732104,
+      "exclusive_ms": 4.732104,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.cfg_cleanup.refine_current_predicates": {
+      "inclusive_ms": 5.6984165,
+      "exclusive_ms": 4.1841045,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.unsigned_guard_facts.optimize_with_ranges": {
+      "inclusive_ms": 3.897729,
+      "exclusive_ms": 3.897729,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.native::program::prepare::selected_join::Layout::derive": {
+      "inclusive_ms": 3.827521,
+      "exclusive_ms": 3.827521,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "flow.initialization": {
+      "inclusive_ms": 3.793896,
+      "exclusive_ms": 3.793896,
+      "counts": [
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    "prepare.borrowed_dictionary_values::Layout::derive": {
+      "inclusive_ms": 3.7266455,
+      "exclusive_ms": 3.7266455,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.utf8_reads::Layout::derive": {
+      "inclusive_ms": 3.624021,
+      "exclusive_ms": 3.624021,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.numeric_maps::Layout::derive": {
+      "inclusive_ms": 3.5980625,
+      "exclusive_ms": 3.5980625,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.native::program::prepare::parallel::Layout::derive": {
+      "inclusive_ms": 3.585167,
+      "exclusive_ms": 3.585167,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.plan.validate_current_visits": {
+      "inclusive_ms": 3.402896,
+      "exclusive_ms": 3.402896,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.capacity-calls": {
+      "inclusive_ms": 3.237875,
+      "exclusive_ms": 3.237875,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "cleanup.count-ir": {
+      "inclusive_ms": 3.2063365,
+      "exclusive_ms": 3.2063365,
+      "counts": [
+        199,
+        199,
+        199,
+        199
+      ]
+    },
+    "prepare.prepare_native_program_library_call_with_descriptors": {
+      "inclusive_ms": 3.0461285,
+      "exclusive_ms": 3.0461285,
+      "counts": [
+        974,
+        974,
+        974,
+        974
+      ]
+    },
+    "cleanup.parallel-arguments": {
+      "inclusive_ms": 2.235104,
+      "exclusive_ms": 2.235104,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.vector_guard_facts.fold": {
+      "inclusive_ms": 2.0335,
+      "exclusive_ms": 2.0335,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.PreparedNativeProgram::prepare": {
+      "inclusive_ms": 139.373375,
+      "exclusive_ms": 2.0038475,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.native::program::prepare::map_admission::Layout::derive": {
+      "inclusive_ms": 1.6396875,
+      "exclusive_ms": 1.6396875,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.define": {
+      "inclusive_ms": 1023.8042085,
+      "exclusive_ms": 1.5972085,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "native": {
+      "inclusive_ms": 1181.95575,
+      "exclusive_ms": 1.5669385,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.native::iteration_abi::control_visits": {
+      "inclusive_ms": 1.508416,
+      "exclusive_ms": 1.508416,
+      "counts": [
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    "compact.word-packs": {
+      "inclusive_ms": 1.418479,
+      "exclusive_ms": 1.418479,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "cleanup.unsigned-intervals": {
+      "inclusive_ms": 1.3679765,
+      "exclusive_ms": 1.3679765,
+      "counts": [
+        85,
+        85,
+        85,
+        85
+      ]
+    },
+    "compact.owner_counts.fold": {
+      "inclusive_ms": 0.926271,
+      "exclusive_ms": 0.926271,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.vector_guard_facts.fold_unit_branches": {
+      "inclusive_ms": 0.8342705,
+      "exclusive_ms": 0.8342705,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.backing_owners.fold": {
+      "inclusive_ms": 0.828458,
+      "exclusive_ms": 0.828458,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "cleanup.preheaders": {
+      "inclusive_ms": 0.8147705,
+      "exclusive_ms": 0.8147705,
+      "counts": [
+        85,
+        85,
+        85,
+        85
+      ]
+    },
+    "compact.owner_retirement.share": {
+      "inclusive_ms": 0.8095,
+      "exclusive_ms": 0.8095,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "flow.derive-entry": {
+      "inclusive_ms": 4.6015,
+      "exclusive_ms": 0.807604,
+      "counts": [
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    "prepare.facts.scalar_aggregates": {
+      "inclusive_ms": 0.610875,
+      "exclusive_ms": 0.610875,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.facts.unsigned_buffer_calls": {
+      "inclusive_ms": 0.5383335,
+      "exclusive_ms": 0.5383335,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "root.cleanup": {
+      "inclusive_ms": 407.3173335,
+      "exclusive_ms": 0.487648,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.word_collections::derive": {
+      "inclusive_ms": 0.401333,
+      "exclusive_ms": 0.401333,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.native::program::prepare::borrowed::Layout::derive": {
+      "inclusive_ms": 0.3868125,
+      "exclusive_ms": 0.3868125,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.cfg_cleanup.prove_scalar_spans": {
+      "inclusive_ms": 1.8490835,
+      "exclusive_ms": 0.345979,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.bit_counts.optimize": {
+      "inclusive_ms": 0.3438335,
+      "exclusive_ms": 0.3438335,
+      "counts": [
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    "compact.word-kernels": {
+      "inclusive_ms": 0.240292,
+      "exclusive_ms": 0.240292,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "cleanup.equal-arguments": {
+      "inclusive_ms": 0.2160415,
+      "exclusive_ms": 0.2160415,
+      "counts": [
+        4,
+        4,
+        4,
+        4
+      ]
+    },
+    "cleanup.literal-arguments": {
+      "inclusive_ms": 0.2076045,
+      "exclusive_ms": 0.2076045,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.cfg_cleanup.prove_packed_bases": {
+      "inclusive_ms": 1.645146,
+      "exclusive_ms": 0.1799165,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.word_pairs.fold": {
+      "inclusive_ms": 0.1704375,
+      "exclusive_ms": 0.1704375,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.cfg_cleanup.share_repeated_bounds": {
+      "inclusive_ms": 1.70325,
+      "exclusive_ms": 0.1634165,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "object.write": {
+      "inclusive_ms": 0.1624795,
+      "exclusive_ms": 0.1624795,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.compose_work": {
+      "inclusive_ms": 0.1519165,
+      "exclusive_ms": 0.1519165,
+      "counts": [
+        5,
+        5,
+        5,
+        5
+      ]
+    },
+    "compact.owner_retirement.trim_empty_owners": {
+      "inclusive_ms": 0.1517295,
+      "exclusive_ms": 0.1517295,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.cfg_cleanup.coalesce_literal_join_arguments": {
+      "inclusive_ms": 19.6933745,
+      "exclusive_ms": 0.1143955,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.cold_status.share": {
+      "inclusive_ms": 0.081625,
+      "exclusive_ms": 0.081625,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.cleanup_effects::Layout::derive": {
+      "inclusive_ms": 0.070604,
+      "exclusive_ms": 0.070604,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.call_routes::derive": {
+      "inclusive_ms": 0.0588545,
+      "exclusive_ms": 0.0588545,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.prepare_frame_composition": {
+      "inclusive_ms": 0.0523125,
+      "exclusive_ms": 0.0523125,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.call_cache::Layout::derive": {
+      "inclusive_ms": 0.048417,
+      "exclusive_ms": 0.048417,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.RetirementTables::derive": {
+      "inclusive_ms": 0.045937,
+      "exclusive_ms": 0.045937,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.frame_retirement::FrameRetirements::derive": {
+      "inclusive_ms": 0.030375,
+      "exclusive_ms": 0.030375,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "phase.replay": {
+      "inclusive_ms": 0.0210195,
+      "exclusive_ms": 0.0210195,
+      "counts": [
+        9,
+        9,
+        9,
+        9
+      ]
+    },
+    "prepare.native::program::prepare::line_matrix::Layout::derive": {
+      "inclusive_ms": 0.016896,
+      "exclusive_ms": 0.016896,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.facts.text_line_retention_frontiers": {
+      "inclusive_ms": 0.012729,
+      "exclusive_ms": 0.012729,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.checked_region_discovery.families": {
+      "inclusive_ms": 0.009271,
+      "exclusive_ms": 0.009271,
+      "counts": [
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    "compact.checked_traversals.share": {
+      "inclusive_ms": 0.006833,
+      "exclusive_ms": 0.006833,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.borrowed_map_keys::Layout::derive": {
+      "inclusive_ms": 0.002854,
+      "exclusive_ms": 0.002854,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.dictionary_seed_frames::Layout::derive": {
+      "inclusive_ms": 0.0014165,
+      "exclusive_ms": 0.0014165,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.native::program::prepare::prefix::derive_with_frontiers": {
+      "inclusive_ms": 0.001209,
+      "exclusive_ms": 0.001209,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.cfg_cleanup.forward_identity_routes": {
+      "inclusive_ms": 39.165167,
+      "exclusive_ms": 0.00098,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.cfg_cleanup.optimize": {
+      "inclusive_ms": 218.076042,
+      "exclusive_ms": 0.0009795,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.checked_traversals.controller_candidates": {
+      "inclusive_ms": 0.000896,
+      "exclusive_ms": 0.000896,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.word_pairs.available": {
+      "inclusive_ms": 0.000813,
+      "exclusive_ms": 0.000813,
+      "counts": [
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    "compact.flow": {
+      "inclusive_ms": 4.602354,
+      "exclusive_ms": 0.0008125,
+      "counts": [
+        2,
+        2,
+        2,
+        2
+      ]
+    },
+    "prepare.plan.string_map_regions": {
+      "inclusive_ms": 0.000625,
+      "exclusive_ms": 0.000625,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.cfg_cleanup.coalesce_parallel_join_arguments": {
+      "inclusive_ms": 6.368021,
+      "exclusive_ms": 0.0004585,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.worker_values::derive": {
+      "inclusive_ms": 0.0004165,
+      "exclusive_ms": 0.0004165,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "compact.layouts": {
+      "inclusive_ms": 0.0002915,
+      "exclusive_ms": 0.0002915,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.matrix_map_keys::Layout::derive": {
+      "inclusive_ms": 0.000167,
+      "exclusive_ms": 0.000167,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.generic_dictionary::Layout::derive": {
+      "inclusive_ms": 0.000146,
+      "exclusive_ms": 0.000146,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    "prepare.fixed_key_loops::Layout::derive": {
+      "inclusive_ms": 0.000146,
+      "exclusive_ms": 0.000146,
+      "counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  "root_ir": {
+    "adjacent_addresses_reused": 0,
+    "after_blocks": 10446,
+    "after_instructions": 19281,
+    "before_blocks": 16157,
+    "before_instructions": 42255,
+    "bitwise_constant_branches": 0,
+    "boolean_conditions_simplified": 624,
+    "boolean_phi_values": 1113,
+    "constant_branches_removed": 1702,
+    "current_predicate_branches": 1,
+    "dead_instructions_removed": 10285,
+    "dead_loads_removed": 8,
+    "dead_parameters_removed": 2581,
+    "enabled": true,
+    "fixed_point": true,
+    "identity_edges": 169,
+    "known_width_branches_removed": 3,
+    "local_phi_parameters_removed": 14123,
+    "local_phi_preheaders": 0,
+    "loop_edges": 2,
+    "neutral_operations_removed": 1366,
+    "ordered_capture_spans": 0,
+    "pre_codegen_data_passes": 0,
+    "rounds": 3,
+    "selected_home_constant_operands": 0,
+    "selected_home_merge_parameters": 0,
+    "selected_increment_guards_removed": 0,
+    "selected_range_branches_removed": 103,
+    "unsigned_intervals_combined": 1,
+    "window_bounds_combined": 0,
+    "temporary_values_before_compaction": 831378,
+    "retained_values_after_compaction": 122162
+  },
+  "observations_sha256": "f83d56e6b920996a444253f6ef2a910cef0e2731fb4096c9949506a2607a371b",
+  "instrumentation_sha256": "0a0d4206db571d478573849012aae89825c80c190f50d6ad1139048bd9de967b"
+}
