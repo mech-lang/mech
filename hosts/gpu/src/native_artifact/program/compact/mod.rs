@@ -45,6 +45,7 @@ mod owner_counts;
 mod owner_retirement;
 mod private_chains;
 mod recipes;
+mod release_stubs;
 mod strings;
 mod terminal_appends;
 mod utf8_classes;
