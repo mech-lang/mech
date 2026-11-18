@@ -13254,6 +13254,45 @@
           "sha256": "0750f36ac8c19e34acc894530c1983084fe432c6483713f9b8844f8f90bb9d82"
         },
         "evidence": "evidence/encoder-size-gap/empty-terminal-rewinds/deployment.json"
+      },
+      {
+        "name": "Share owner-release call setup in the checked entry",
+        "encoder_text_bytes": 65036,
+        "encoder_sha256": "06186246e2f3a9a50f90778be101587ec71277bbcf8f4192862c72fc726c4f8f",
+        "compiler_sha256": "a8554ac005c259aaa22e9dc96bf25d01d622db62c4159fb1452cb05d90cda6fd",
+        "measured_trials": 8,
+        "measurement_plan_sha256": "fefb3d4fb9a3f967a178e6d5fc7587621e9cfd38732642a5f5c9ce71f37da366",
+        "median_seconds": {
+          "source": 2.140750437742099,
+          "link": 0.03474504197947681,
+          "source_through_link": 2.175459665711969,
+          "strip": 0.010500791482627392,
+          "source_through_strip": 2.185913332970813
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.7069654375000001,
+          "catalog": 2.02085e-05,
+          "frontend": 0.213473,
+          "artifact": 0.006910354,
+          "encode": 0.002596521,
+          "native": 1.182571042
+        },
+        "paired_ratios": {
+          "roc": 0.7317944694813039,
+          "libdeflate": 4.553014054721491
+        },
+        "encoder_text_ratios": {
+          "roc": 1.127218524681087,
+          "libdeflate": 1.7539374325782093
+        },
+        "paired_ratio_to_session_control": 1.0021257488644846,
+        "median_paired_seconds_saved": -0.00461047887802124,
+        "faster_paired_trials": 3,
+        "stripped_executable": {
+          "bytes": 276056,
+          "sha256": "ed21493e1451d162bbe27652cc16aaaf13efdc9a337697ce676efd4fb8b0c271"
+        },
+        "evidence": "evidence/encoder-size-gap/shared-release-setup/deployment.json"
       }
     ]
   },
@@ -13881,6 +13920,64 @@
         "sha256": "0750f36ac8c19e34acc894530c1983084fe432c6483713f9b8844f8f90bb9d82"
       },
       "evidence": "evidence/encoder-size-gap/empty-terminal-rewinds/deployment.json"
+    }
+  },
+  "shared_release_setup": {
+    "qualified": true,
+    "worker_sha256": "884e35f4bdacf47e82adc39c5535451eb0a82b271b6c1fdd6419984312d4f61c",
+    "peak_stack_bytes": 4784,
+    "evidence": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-release-setup",
+    "build": {
+      "name": "Share owner-release call setup in the checked entry",
+      "encoder_text_bytes": 65036,
+      "encoder_sha256": "06186246e2f3a9a50f90778be101587ec71277bbcf8f4192862c72fc726c4f8f",
+      "compiler_sha256": "a8554ac005c259aaa22e9dc96bf25d01d622db62c4159fb1452cb05d90cda6fd",
+      "measured_trials": 8,
+      "measurement_plan_sha256": "fefb3d4fb9a3f967a178e6d5fc7587621e9cfd38732642a5f5c9ce71f37da366",
+      "median_seconds": {
+        "source": 2.140750437742099,
+        "link": 0.03474504197947681,
+        "source_through_link": 2.175459665711969,
+        "strip": 0.010500791482627392,
+        "source_through_strip": 2.185913332970813
+      },
+      "source_phase_median_seconds": {
+        "parse": 0.7069654375000001,
+        "catalog": 2.02085e-05,
+        "frontend": 0.213473,
+        "artifact": 0.006910354,
+        "encode": 0.002596521,
+        "native": 1.182571042
+      },
+      "paired_ratios": {
+        "roc": 0.7317944694813039,
+        "libdeflate": 4.553014054721491
+      },
+      "encoder_text_ratios": {
+        "roc": 1.127218524681087,
+        "libdeflate": 1.7539374325782093
+      },
+      "paired_ratio_to_session_control": 1.0021257488644846,
+      "median_paired_seconds_saved": -0.00461047887802124,
+      "faster_paired_trials": 3,
+      "stripped_executable": {
+        "bytes": 276056,
+        "sha256": "ed21493e1451d162bbe27652cc16aaaf13efdc9a337697ce676efd4fb8b0c271"
+      },
+      "evidence": "evidence/encoder-size-gap/shared-release-setup/deployment.json"
+    },
+    "runtime": {
+      "decision": "Retain",
+      "wins": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          62,
+          62
+        ]
+      }
     }
   }
 }

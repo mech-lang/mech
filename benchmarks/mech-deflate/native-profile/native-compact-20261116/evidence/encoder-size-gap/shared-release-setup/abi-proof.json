@@ -1,0 +1,13 @@
+{
+  "encoder": "06186246e2f3a9a50f90778be101587ec71277bbcf8f4192862c72fc726c4f8f",
+  "root_entry_heap_slot_offset": 592,
+  "redirected_calls": {
+    "owner": 74,
+    "nullable": 26,
+    "two": 30,
+    "three": 32,
+    "four": 31
+  },
+  "release_entries": 5,
+  "all_stubs_tail_branch_to_original_runtime_entry": true
+}
