@@ -524,6 +524,8 @@ fn define_entry<M: Module>(
     let traversal_stage = std::env::var_os("MECH_COMPACT_SHARE_CHECKED_TRAVERSALS");
     let outline_allowed =
         worker.is_none() && !observe && route_sites.is_empty() && !route_locations;
+    let forward_empty_source =
+        outline_allowed && std::env::var_os("MECH_COMPACT_EMPTY_SOURCE_ROUTES").is_some();
     context.func.forward_spill_reloads =
         outline_allowed && std::env::var_os("MECH_COMPACT_FORWARD_SPILL_RELOADS").is_some();
     context.func.aarch64_share_cold_tails =
@@ -693,12 +695,68 @@ fn define_entry<M: Module>(
             .map(|spec| checked_traversals::controller_candidates(spec, &blocks))
             .transpose()?
             .unwrap_or_default();
+        let mut source_routes = (0..blocks.len()).collect::<Vec<_>>();
+        if forward_empty_source {
+            // These entries are used by generated routes or are proof
+            // boundaries. Leave each of them as a distinct native block.
+            let mut required = BTreeSet::from([flow.entry]);
+            for phase in &phases {
+                required.insert(phase.header);
+                required.extend(phase.destinations());
+            }
+            for pack in &packs {
+                required.extend([pack.first, pack.next as usize]);
+            }
+            for (&header, reduction) in &reductions {
+                required.extend([header, reduction.exit]);
+            }
+            for chain in &chains {
+                required.extend([chain.first(), chain.exit()]);
+            }
+            for proof in &overwrite_reuse {
+                required.extend([proof.initialize, proof.clear, proof.exit]);
+            }
+            for controller in &controllers {
+                required.extend([controller.header, controller.header + controller.span]);
+            }
+
+            // Restrict forwarding to ascending jumps. Reverse enumeration
+            // resolves complete chains without traversing loops or changing
+            // any source edge that carries an owner retirement.
+            let mut forwarded = 0usize;
+            for site in (0..blocks.len()).rev() {
+                if blocks[site].is_none() || flow.complete[site] || required.contains(&site) {
+                    continue;
+                }
+                let block = &plan.blocks()[site];
+                let Term::Scalar(mech_engine::native_artifact::NativeMatchTerminator::Jump(next)) =
+                    block.terminator()
+                else {
+                    continue;
+                };
+                let next = next as usize;
+                if next > site
+                    && matches!(block.action(), Action::Scalar(Scalar::None))
+                    && matches!(actions[site], Recipe::None)
+                    && flow.uses[site].is_empty()
+                    && flow.defs[site].is_empty()
+                    && buffer_results[site].is_none()
+                    && transfers[site].is_empty()
+                    && owner_flow.retire_after(site).is_empty()
+                    && owner_flow.retire_on_edge(site, next).is_empty()
+                {
+                    source_routes[site] = source_routes[next];
+                    forwarded += 1;
+                }
+            }
+            eprintln!("compact source empty jumps forwarded: {forwarded}");
+        }
         let source_blocks = blocks.iter().flatten().copied().collect::<BTreeSet<_>>();
         let mut remaining = vec![0usize; blocks.len()];
         for (site, successors) in flow.successors.iter().enumerate() {
-            if flow.reachable[site] {
+            if flow.reachable[site] && source_routes[site] == site {
                 for next in successors.iter().copied().collect::<BTreeSet<_>>() {
-                    remaining[next] += 1;
+                    remaining[source_routes[next]] += 1;
                 }
             }
         }
@@ -1062,6 +1120,12 @@ fn define_entry<M: Module>(
                 eprintln!("compact-stage: source site {site}/{}", plan.blocks().len());
             }
             let Some(native) = blocks[site] else { continue };
+            if source_routes[site] != site {
+                // Reserve the original unused error-block ID so that later
+                // layout and checked-continuation diagnostics can remap it.
+                b.create_block();
+                continue;
+            }
             b.switch_to_block(native);
             if route_locations {
                 b.set_srcloc(cranelift_codegen::ir::SourceLoc::new(site as u32));
@@ -1273,7 +1337,8 @@ fn define_entry<M: Module>(
                 }
                 let target = |site: u32| {
                     edges.get(&(site as usize)).copied().unwrap_or_else(|| {
-                        blocks[site as usize].expect("proved reachable source successor")
+                        blocks[source_routes[site as usize]]
+                            .expect("proved reachable source successor")
                     })
                 };
                 if let Term::Header {
@@ -1361,7 +1426,7 @@ fn define_entry<M: Module>(
                             &owner_flow.retire_on_edge(site, next),
                             error,
                         );
-                        b.ins().jump(blocks[next].unwrap(), &[]);
+                        b.ins().jump(blocks[source_routes[next]].unwrap(), &[]);
                     }
                 }
             }
@@ -1384,6 +1449,7 @@ fn define_entry<M: Module>(
                 .copied()
                 .collect::<BTreeSet<_>>()
             {
+                let next = source_routes[next];
                 remaining[next] -= 1;
                 if remaining[next] == 0 {
                     b.seal_block(blocks[next].expect("reachable source successor"));
