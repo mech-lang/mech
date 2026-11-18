@@ -30,6 +30,7 @@ pub(super) fn reverse_low_words(b: &mut FunctionBuilder<'_>, first: Value, secon
 
 pub(super) struct Inputs {
     words: BTreeMap<usize, Value>,
+    vector_words: BTreeMap<usize, Value>,
     bases: BTreeMap<Window, Value>,
 }
 
@@ -51,6 +52,7 @@ impl Inputs {
     ) -> Self {
         let mut out = Self {
             words: BTreeMap::new(),
+            vector_words: BTreeMap::new(),
             bases: BTreeMap::new(),
         };
         out.capture(b, words, proof, shadow, cost);
@@ -101,6 +103,14 @@ impl Inputs {
             _ => {}
         }
     }
+    pub(super) fn prepare_vector_words(&mut self, b: &mut FunctionBuilder<'_>) {
+        self.vector_words.extend(
+            self.words
+                .iter()
+                .map(|(&slot, &word)| (slot, b.ins().splat(types::I32X4, word))),
+        );
+    }
+
     pub fn emit(
         &self,
         b: &mut FunctionBuilder<'_>,
@@ -111,7 +121,11 @@ impl Inputs {
     ) -> Value {
         match cost {
             Cost::Constant(value) => constant(b, [*value; 4]),
-            Cost::Word(slot) => b.ins().splat(types::I32X4, self.words[slot]),
+            Cost::Word(slot) => self
+                .vector_words
+                .get(slot)
+                .copied()
+                .unwrap_or_else(|| b.ins().splat(types::I32X4, self.words[slot])),
             Cost::Index => indices,
             Cost::Read(w) => self.read(b, proof, *w, k),
             Cost::Add(a, c) | Cost::And(a, c) | Cost::Or(a, c) | Cost::Xor(a, c) => {
