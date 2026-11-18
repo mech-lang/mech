@@ -13176,6 +13176,45 @@
           "sha256": "eb6336cf3f4896e31380f159dfc483e64309e9455b40f734bc52ad934f3928e6"
         },
         "evidence": "evidence/encoder-size-gap/indexed-checked-regions/deployment.json"
+      },
+      {
+        "name": "Use 16-byte equality groups in the compact matcher",
+        "encoder_text_bytes": 65276,
+        "encoder_sha256": "1ab76d3a6064fa1af82afb7f07fa021f514301d2100def23b2b4d6945bd49858",
+        "compiler_sha256": "0d84a539a6574548702d29b6a2f57ded8a3a72069b8348daeee73e4839fd92f3",
+        "measured_trials": 8,
+        "measurement_plan_sha256": "3664e953cf8103d7ee5f096efc4a83a88d5d9c8e3e4fe19fc4cab76f5b692abd",
+        "median_seconds": {
+          "source": 2.1490894586313516,
+          "link": 0.03452237485907972,
+          "source_through_link": 2.183855958050117,
+          "strip": 0.010551811894401908,
+          "source_through_strip": 2.1946034166030586
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.7177924585,
+          "catalog": 1.6917e-05,
+          "frontend": 0.213717021,
+          "artifact": 0.0069073955,
+          "encode": 0.0025799165,
+          "native": 1.1812198125000002
+        },
+        "paired_ratios": {
+          "roc": 0.7363257116750972,
+          "libdeflate": 4.572686748749564
+        },
+        "encoder_text_ratios": {
+          "roc": 1.1313782584581253,
+          "libdeflate": 1.7604099244875944
+        },
+        "paired_ratio_to_session_control": 0.9994393295264736,
+        "median_paired_seconds_saved": 0.0012265834957361221,
+        "faster_paired_trials": 4,
+        "stripped_executable": {
+          "bytes": 276056,
+          "sha256": "0750f36ac8c19e34acc894530c1983084fe432c6483713f9b8844f8f90bb9d82"
+        },
+        "evidence": "evidence/encoder-size-gap/compact-match-equality/deployment.json"
       }
     ]
   },
@@ -13687,6 +13726,64 @@
         "sha256": "eb6336cf3f4896e31380f159dfc483e64309e9455b40f734bc52ad934f3928e6"
       },
       "evidence": "evidence/encoder-size-gap/indexed-checked-regions/deployment.json"
+    }
+  },
+  "compact_match_equality": {
+    "qualified": true,
+    "worker_sha256": "792f63292b32ad062448c3344442c795c41bbaa263ff86ef803d10a692b56891",
+    "peak_stack_bytes": 4784,
+    "evidence": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality",
+    "build": {
+      "name": "Use 16-byte equality groups in the compact matcher",
+      "encoder_text_bytes": 65276,
+      "encoder_sha256": "1ab76d3a6064fa1af82afb7f07fa021f514301d2100def23b2b4d6945bd49858",
+      "compiler_sha256": "0d84a539a6574548702d29b6a2f57ded8a3a72069b8348daeee73e4839fd92f3",
+      "measured_trials": 8,
+      "measurement_plan_sha256": "3664e953cf8103d7ee5f096efc4a83a88d5d9c8e3e4fe19fc4cab76f5b692abd",
+      "median_seconds": {
+        "source": 2.1490894586313516,
+        "link": 0.03452237485907972,
+        "source_through_link": 2.183855958050117,
+        "strip": 0.010551811894401908,
+        "source_through_strip": 2.1946034166030586
+      },
+      "source_phase_median_seconds": {
+        "parse": 0.7177924585,
+        "catalog": 1.6917e-05,
+        "frontend": 0.213717021,
+        "artifact": 0.0069073955,
+        "encode": 0.0025799165,
+        "native": 1.1812198125000002
+      },
+      "paired_ratios": {
+        "roc": 0.7363257116750972,
+        "libdeflate": 4.572686748749564
+      },
+      "encoder_text_ratios": {
+        "roc": 1.1313782584581253,
+        "libdeflate": 1.7604099244875944
+      },
+      "paired_ratio_to_session_control": 0.9994393295264736,
+      "median_paired_seconds_saved": 0.0012265834957361221,
+      "faster_paired_trials": 4,
+      "stripped_executable": {
+        "bytes": 276056,
+        "sha256": "0750f36ac8c19e34acc894530c1983084fe432c6483713f9b8844f8f90bb9d82"
+      },
+      "evidence": "evidence/encoder-size-gap/compact-match-equality/deployment.json"
+    },
+    "runtime": {
+      "decision": "Retain",
+      "wins": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          62,
+          62
+        ]
+      }
     }
   }
 }

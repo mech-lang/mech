@@ -50,8 +50,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/CURRENT.md",
-      "sha256": "4ee15bb1df62f05bc8919ecc9a07cfd7ee62881557adf53ef9ada3c4746bbac5",
-      "bytes": 24628
+      "sha256": "10d3fb92dabeb558bb23d9c5d48685772c5403ddb2a3fd601c07c2673f4c941a",
+      "bytes": 24790
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/QUALIFICATION.md",
@@ -13377,6 +13377,166 @@
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/checked-layout-refusals/stack.json",
       "sha256": "f0f15710b7e73dcc0b6afa7e3a8ae419d34dc20ba2587f629680ab59b2aadf4c",
       "bytes": 17315
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/README.md",
+      "sha256": "86c8ea52c542f34ad0000354338317d48196872b30fc932c0e6110fa04429de6",
+      "bytes": 2184
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/build-comparison.json.gz",
+      "sha256": "333322b8ad452638b1483391d67c622540ec2536e4a3c30a5016d9db553d82a5",
+      "bytes": 9592
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/build-plan.json.gz",
+      "sha256": "d6f728b438d75525877362f543f1a2f9ba100360835f04493b266a4546aa20e5",
+      "bytes": 54601
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/candidate.json",
+      "sha256": "bd51c540629867cdf1c99411d55ef4be30d65e5b6d35fba771fed1bb31f3fb88",
+      "bytes": 54540
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/checked-failures.json",
+      "sha256": "0631ca51c804be59216987f7b74e3ba701e23558bf6ece24247e62d25e3f0a57",
+      "bytes": 17349
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/compiler-build.json",
+      "sha256": "5c0142f8cac2148320587071814d2903ec0db8f6ae14f344d2077d5ea1b28ac4",
+      "bytes": 5703
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/compiler.patch.gz",
+      "sha256": "e42f934ad3ea0bf488585105fc9927b60ea64adceebcbae331df3a3c3137f187",
+      "bytes": 20686
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/deployment.json",
+      "sha256": "6cf5237fed4500699d9553129667fde1e1970a436442a72ae91949689a20f77b",
+      "bytes": 2582
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/equality-fixture.rs.gz",
+      "sha256": "3bcf2ebad806d97312a3d0932f4a409b36a4c488db60f4cabbaf0502c36e46d9",
+      "bytes": 6316
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/exact-candidate.json.gz",
+      "sha256": "ffb9f2e7b173b097fcbe868c498495fb435f9b12499b240f288907f0bea4a174",
+      "bytes": 31845
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/focus-fixture-content.json",
+      "sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+      "bytes": 22527
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/focus-forward-observations.tar",
+      "sha256": "354d3a373ba5c7c6090d915b14c1b30fc65956f21e72b11bbb15e1e31382a720",
+      "bytes": 5427200
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/focus-plan.json",
+      "sha256": "fc8b340e746946c0476aa90717d2029c443a972dfc9e02b5416d1b47d654b607",
+      "bytes": 5201
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/focus-replay.json.gz",
+      "sha256": "c047c6ced4f8f6dfc28fe33f2a88c31dc8f93fba5fac0e82a898e8fcad345a71",
+      "bytes": 4894
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/focus-reverse-observations.tar",
+      "sha256": "55cdb45d7d50e69cedc85f734f9f4615d8953e7d8fced76be4c5991e25d2dc7b",
+      "bytes": 5416960
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/focus-screen.json",
+      "sha256": "d513f476e4a8233543d8298ddb9ce171d2369b40b544a24e65be25b4a4329069",
+      "bytes": 3124
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/full-fixture-content.json",
+      "sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+      "bytes": 22527
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/full-forward-observations.tar",
+      "sha256": "92c8117b3308b22bbfec1b8106c9b0d478420fcf72c2521f38fb201de59e75a5",
+      "bytes": 9144320
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/full-plan.json",
+      "sha256": "80d35381d479990c9d7ecf0584747657a1c74512564f4772eb05291246eb285b",
+      "bytes": 5192
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/full-replay.json.gz",
+      "sha256": "081db29684fd15c3db8bc8c31e4d9771f599610f573a9327d8bcda9b7636bd3f",
+      "bytes": 19458
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/full-reverse-observations.tar",
+      "sha256": "ba509ebd81179d9b8724cb00d2b43c33bafe36bfc621deb1370b5e4bd211be20",
+      "bytes": 9093120
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/full-screen.json",
+      "sha256": "5799a2b273056588ccd3cc4ec60e0977ed943edc54028e1e018b9f6af9e778d4",
+      "bytes": 3066
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/isolated-equality-tests.log",
+      "sha256": "eeca7a6b15d2b30b4f4d571f160ee3812a35e3a1fc7eae0742fcf0e565d9153f",
+      "bytes": 193
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/linked-checks.json",
+      "sha256": "e8bab38690cd0088b79ff3a3a875f91421d256f281fb1d6bfd068a1de5c30d02",
+      "bytes": 1593
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/profiles/mech_compact_numeric_3009_no_growth_composed.json",
+      "sha256": "8e418ddf8a5a88a9a67fc7c1420d4ed0a39202c882233a882a340d4807e8efdb",
+      "bytes": 499
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/profiles/mech_compact_numeric_3956_vector.json",
+      "sha256": "9d75282ff03f8d4e1382a89d97876f3f195b1548fbff65b63c04cf6f8d6834bc",
+      "bytes": 1063
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/profiles/mech_compact_numeric_475_vector.json",
+      "sha256": "a67d413cfbc8860fb0e157b2deff34a81c36423173bf7d50aea6d782ebaea881",
+      "bytes": 4068
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/replay.py",
+      "sha256": "7c4440a71c7b94332bf703973811a8cebb30cf173034e440d3969b0dced509bb",
+      "bytes": 2076
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/size.json",
+      "sha256": "73bfb1546439e433f7896c6497de760b45cefe681d0b22dd47b7a005d46f2758",
+      "bytes": 364
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/source.json",
+      "sha256": "389025a72d5c30904a8a9dc2268a35578d57a2e06ee30989b13b0a6b0397a097",
+      "bytes": 4345
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/stack.json",
+      "sha256": "c348e3d93a829e755dd4c825de8608411f92e5e8c576fb4b59eede50b88f2036",
+      "bytes": 11555
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/compact-match-equality/verified-replay.json",
+      "sha256": "e520f4fcd2460e4df5002ec44e4e44872979d12233c7e389286a8a9e4eb69233",
+      "bytes": 406
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/README.md",
@@ -41670,8 +41830,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/scorecard.json",
-      "sha256": "e54bda2f88c5c77374ce6229947adc725727963f6f216a7fcbc66e6f43323092",
-      "bytes": 467388
+      "sha256": "0cc96a804748dec3cbe644bb924aa5c1dd144cb499a2d0bbdf7435a5259611a4",
+      "bytes": 471054
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/size_screens.py",
@@ -41960,13 +42120,18 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/codegen/wide_equal.rs",
-      "sha256": "5824a69591cdc51d5a99ec24a94cdf3a461aa47f6e3111d3828416784497ead0",
-      "bytes": 23398
+      "sha256": "05d3027d044563fed950ecffa722c72f268b82337a0c5745f4606cd4ae196112",
+      "bytes": 23976
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/codegen/wide_equal_prefix/mod.rs",
       "sha256": "39c10457f91890165f3143678514141effbc03be891c95c94b2fa2283a4ea621",
       "bytes": 6362
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/wide_equal_tests.rs",
+      "sha256": "a4ce1b81bc58cf1a88342e6ca0fde9e00a851276e2d2de60fea347140dc737bf",
+      "bytes": 14039
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/array_growth.rs",
@@ -42120,8 +42285,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/phase_function.rs",
-      "sha256": "c49ca05603a8dde1b2d8ee478c15d759ab6e487035bff6b91ab26fa1301058b6",
-      "bytes": 64700
+      "sha256": "342a19ffa483f10ed84cbd8e3d363d574e0b9947bea7bac68990ccb72ed1150a",
+      "bytes": 64867
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/phase_layout.rs",
