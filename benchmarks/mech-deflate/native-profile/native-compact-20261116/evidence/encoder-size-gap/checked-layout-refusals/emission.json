@@ -1,0 +1,47 @@
+{
+  "control_text_bytes": 68840,
+  "text_bytes": 68136,
+  "removed": [
+    "_mech_compact_numeric_2821",
+    "_mech_compact_numeric_362"
+  ],
+  "retained": [
+    "_mech_compact_append_backing_byte_consume",
+    "_mech_compact_checked_layout_10939",
+    "_mech_compact_checked_layout_13100",
+    "_mech_compact_checked_layout_16147",
+    "_mech_compact_checked_layout_continuation_21031",
+    "_mech_compact_checked_layout_continuation_44070",
+    "_mech_compact_checked_layout_continuation_9112",
+    "_mech_compact_checked_layout_continuation_9562",
+    "_mech_compact_closed_v2",
+    "_mech_compact_expand_capacity_preserving",
+    "_mech_compact_matrix_word",
+    "_mech_compact_numeric_2821_vector",
+    "_mech_compact_numeric_3009_no_growth",
+    "_mech_compact_numeric_3009_no_growth_composed",
+    "_mech_compact_numeric_3447",
+    "_mech_compact_numeric_3447_grouped",
+    "_mech_compact_numeric_362_vector",
+    "_mech_compact_numeric_3872",
+    "_mech_compact_numeric_3956_vector",
+    "_mech_compact_numeric_4173",
+    "_mech_compact_numeric_475_vector",
+    "_mech_compact_numeric_4799",
+    "_mech_compact_numeric_5895",
+    "_mech_compact_numeric_6633",
+    "_mech_compact_numeric_8026",
+    "_mech_compact_unsigned_dot_product",
+    "_mech_compact_word_collection_10"
+  ],
+  "windows": {
+    "controllers": [
+      24,
+      24
+    ],
+    "continuations": [
+      16,
+      16
+    ]
+  }
+}

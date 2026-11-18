@@ -51,6 +51,35 @@ and **1.00262× libdeflate**. The maintained qualification remains
 on the 71,192 B worker.
 [Compiler patch, exact replay and comparisons](evidence/encoder-size-gap/scoped-phase-packets/README.md)
 
+Reusing the checked continuations for two more geometry refusals emits
+**68,136 B** with **4,768 B** peak stack. The complete orders measured
+**81/81 and 81/81 Roc wins** and **61/81 and 61/81 libdeflate wins**.
+Natural 8 KiB measured **1.00077×** and **1.00198× libdeflate**.
+[Exact replay and complete comparisons](evidence/encoder-size-gap/checked-layout-refusals/README.md)
+
+Keeping the sorter interfaces and trimming other phase results emits
+**67,464 B**. In the complete orders it recorded
+**81/81 and 81/81 Roc wins** and
+**61/81 and 61/81 libdeflate wins**.
+[Source replay and results](evidence/encoder-size-gap/checked-layout-refusals/README.md#preserve-the-private-phase-output-interface)
+
+## MechDeflate compile time by encoder build
+
+Each row measures fresh MechDeflate source through final executable
+link with the same fixed deployment support prebuilt. Ratios use
+Roc and libdeflate trials from the same session.
+
+| Build | Encoder text | MechDeflate build | × Roc | × libdeflate |
+| --- | ---: | ---: | ---: | ---: |
+| [Collector-only packets](evidence/encoder-size-gap/scoped-phase-packets/deployment.json) | 68,840 B | 2.434 s | 0.814× | 5.046× |
+| [Shared layout refusals](evidence/encoder-size-gap/checked-layout-refusals/deployment.json) | 68,136 B | 2.427 s | 0.814× | 5.053× |
+| [One-body preparation](evidence/encoder-size-gap/checked-layout-refusals/single-body-preparation/summary.json) | 68,136 B | 2.421 s | 0.811× | 5.046× |
+| [All-phase output pruning](evidence/encoder-size-gap/checked-layout-refusals/single-body-preparation/summary.json) | 67,512 B | 2.426 s | 0.814× | 5.059× |
+| [Private sorter interfaces](evidence/encoder-size-gap/checked-layout-refusals/non-private-outputs/deployment.json) | 67,464 B | 2.434 s | 0.813× | 5.051× |
+
+Parser, lowering, native compilation and link timings are in the
+machine-readable scorecard.
+
 ## Whole-build budget
 
 | Stage | Current | 2.0 s budget | 1.0 s budget | 0.45 s budget |
