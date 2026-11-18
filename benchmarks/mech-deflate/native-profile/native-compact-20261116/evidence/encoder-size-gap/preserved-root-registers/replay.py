@@ -1,4 +1,4 @@
-"""Regenerate the experimental object using a fresh named-control rebuild."""
+"""Regenerate the qualified smaller object using a fresh control rebuild."""
 from hashlib import sha256
 from pathlib import Path
 import argparse,json,os,subprocess
@@ -20,8 +20,8 @@ command=[original[0],original[1],str(out/'frontend'),'compact']
 env={key:value for key,value in os.environ.items() if not key.startswith('MECH_')}|flags
 with (out/'compile.log').open('w') as log:subprocess.run(command,env=env,stdout=log,stderr=log,check=True)
 artifacts={name:sha(out/'frontend'/name) for name in ('program.o','metadata.json','program.mecb')}
-expected={'program.o':pin['object_sha256'],'metadata.json':pin['metadata_sha256'],'program.mecb':pin['bytecode_sha256']}
-record={'command':command,'flags':flags,'control_source_commit':base['source_commit'],'compiler_sha256':sha(original[0]),'artifacts':artifacts,'matches_archived_candidate':artifacts==expected,'runtime_wins':'not measured by this command; this candidate remains experimental'}
+expected={'program.o':pin['artifact_sha256']['program.o'],'metadata.json':pin['artifact_sha256']['metadata.json'],'program.mecb':pin['artifact_sha256']['program.mecb']}
+record={'command':command,'flags':flags,'control_source_commit':base['source_commit'],'compiler_sha256':sha(original[0]),'artifacts':artifacts,'matches_archived_candidate':artifacts==expected,'runtime_wins':'not measured by this command; qualification is recorded separately'}
 (out/'replay.json').write_text(json.dumps(record,indent=2)+'\n')
 assert artifacts==expected,record
 print('Reproduced the 63,804 B candidate object, complete metadata and canonical bytecode.')

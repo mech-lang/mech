@@ -1,28 +1,49 @@
-# Experimental preserved-register preference for the checked root
+# Qualified 63,804 B preserved-register encoder
 
-**Status: experimental, full 81-case qualification pending.** The maintained named recipe stays at 64,444 B and its existing 81/81 Roc / 62/81 C point wins. This option is disabled by default.
+**The smaller result is selected:** the source-built opt-in recipe is `m1-preserved-root-registers`. It emits **63,804 B**, saving **640 B** from the qualified 64,444 B predecessor. Code size is **1.105865× Roc** and **1.720712× libdeflate**. The checked entry shrinks **47,428 → 46,788 B**. Peak active stack rises **4,656 → 4,848 B**, within the unchanged 5,280 B ceiling. The 64,444 B recipe remains available as an earlier qualified alternative.
 
-Source `6dc64cff731a7388fb1239945b3aa4eaf2ace0ce` adds `MECH_COMPACT_PREFER_PRESERVED_REGS=1` for eligible memory-backed checked roots. On Apple AArch64 it reverses only the existing preferred/nonpreferred integer register sets. The allocatable union, reserved/pinned exclusions, call clobbers, ABI preservation and register-allocation checker are unchanged. The Mech program is unchanged.
+Both complete M1 orders record **81/81 Roc and 62/81 libdeflate point wins**, with **81 and 62 precision-supported wins in each order**. These cover **74/74 and 56/74 distinct contracts**. The unchanged v3 gate returns **Retain**, with no rejected or unresolved peer cases. The direct 64,444 B comparison has **no established slowdowns and seven uncertain cases**; their full intervals remain in the replay. This is a peer-qualified size gain, not a claim that every case improved.
 
-The source-built default reproduces the qualified 64,444 B object, full metadata and canonical bytecode exactly. The option emits **63,804 B**, saving **640 B** entirely from the checked entry (**47,428 → 46,788 B**). Its root frame grows **3,104 → 3,296 B** and measured controller-plus-callee stack grows **4,656 → 4,848 B**, below the unchanged 5,280 B ceiling.
+[Full decision](full-screen.json) · [All per-case intervals](full-replay.json.gz) · [Raw forward observations](full-forward-observations.tar) · [Raw reverse observations](full-reverse-observations.tar)
 
-All five focused native/validation tests pass, including 18 opaque call results retained across imported calls under both allocation preferences and optimization modes, exact outputs, neighboring sentinels and clearing the function attribute. Linked checks pass **162 exact output/decompression/alias observations** and **six checked allocation-failure cases** with matching origins and cleanup. Two earlier harness setup failures are retained: a stale directory binding and a reused result label. Neither was a candidate output failure.
+## Complete build timing
 
-The focused runtime comparison records **15/15 Roc and 13/15 C point wins in both orders**, matching the 64,444 B control with no lost peer cases. The unchanged v3 gate says `Unresolved` solely because both complete timing orders are required. This is not a new full-suite win claim. Full acquisition and complete build timing still need to run before promotion.
+| Same-session Apple M1 build | Encoder text | Source to link | Source to strip | Source CPU | Source peak RSS |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 64,444 B control | 64,444 B | 2.237373 s | 2.248259 s | 2.256837 s | 393.2 MB |
+| Selected preserved registers | 63,804 B | 2.239043 s | 2.249887 s | 2.258899 s | 393.2 MB |
+| Roc | 57,696 B | 2.984684 s | 2.995503 s | 2.940046 s | 395.8 MB |
+| libdeflate | 37,080 B | 0.480820 s | 0.491652 s | 0.443041 s | 76.1 MB |
 
-## Remaining architectural work
+Eight balanced fresh builds per actor use one prebuilt compiler and the same prebuilt deployment support. The selected build takes **0.750372× Roc** and **4.654599× libdeflate** source-to-link time. Its paired median cost is **+1.194 ms** versus 64,444 B, with **3/8 faster** and a paired-trial bootstrap 90% interval of **−6.170 to +12.180 ms**. These data establish neither a compile-time gain nor a slowdown. The size gain is kept. Paired source CPU cost is **+2.852 ms** and native-phase cost **+0.122 ms**.
 
-The original brief already had separate numeric kernels. Existing work shares three checked controller bodies and six continuation bodies across 53 selected sites. The **47,428 B qualified controller remains large**, so the small direct controller with bounded continuation regions is incomplete. The register experiment does not complete that refactor.
+Stripped deployment remains **276,072 B**; the 640 B code saving does not cross a linked-file size boundary. Remaining elapsed gaps are **0.239043 s to 2.0 s**, **1.239043 s to 1.0 s**, and **1.758223 s to this cohort's C build**.
 
-A static census of the exact qualified root finds 11,857 instructions, including 2,106 direct-SP `ldr`, 857 `str`, and 2,084 `mov`. Post-cleanup IR contains seven explicit slots totaling 560 B; native frame size is 3,104 B. A larger structural pilot should extract one substantial checked fallback outside an inner hot loop, using exact live-ins/outs, ownership and resume/error contracts, while retaining hot kernels and the full active-stack ceiling. Root disassembly/IR and before/after region reports are archived here; diagnostics reproduce all three qualified program artifacts exactly.
+Compiler phase medians are **0.707869 s parsing**, **0.220838 s source semantics**, **0.006840 s artifact creation**, **0.002494 s encoding**, and **1.232968 s native emission**. Catalog join wait is **0.000019 s**, with catalog CPU still running during parsing. Link takes **0.035739 s**; strip takes **0.010787 s**. Median per-trial source time outside explicit scopes is **0.028061 s**. Independently calculated medians need not add.
 
-[Candidate and flags](candidate.json) · [Implementation plan](plan.md) · [Default source reproduction](control-reproduction.json) · [Linked checks](linked-checks.json) · [Focus decision](focus-screen.json) · [Raw focus replay](focus-replay.json.gz) · [Qualified-root census](qualified-root-instruction-census.json)
+[Complete measurements](deployment.json) · [Every build timing](build-timings.csv) · [Raw build acquisition](build-comparison.json.gz) · [Inputs and balanced orders](build-plan.json)
 
-From the benchmark packet directory, rebuild the source compiler and regenerate the experimental object:
+## Source and correctness
+
+Compiler source is `6dc64cff731a7388fb1239945b3aa4eaf2ace0ce`, compiler SHA256 `bf4f2ead7fa0f00e9b765cd7ffdaf4f3f3d82ff5ecbf8b9fb06a2282515623a8`. The option reverses only the existing preferred/nonpreferred integer register sets for eligible Apple AArch64 memory-backed checked roots. The allocatable union, pinned/scratch exclusions, call clobbers, ABI preservation and allocation checker are unchanged. It defaults off outside this named recipe. The original Mech program and canonical bytecode are unchanged; no LLVM dependency is added.
+
+All **five focused native/validation tests** pass, including 18 opaque results live across imported calls under both preferences and optimization modes, outputs, sentinels and resetting the function attribute. Linked checks pass **162 exact output/decompression/alias observations** and **six injected allocation-failure cases**, with matching origins and cleanup. The named source command additionally passes **12 exact recovery calls**.
+
+From the benchmark packet directory in a full PR #995 checkout:
 
 ```sh
-python3 -B rebuild.py /tmp/mech-qualified-control --variant m1-literal-frame-cleanup
-python3 -B evidence/encoder-size-gap/preserved-root-registers/replay.py /tmp/mech-qualified-control /tmp/mech-preserved-registers
+python3 -B rebuild.py /tmp/mech-m1-preserved-root-registers \
+  --variant m1-preserved-root-registers --mimalloc-object /path/to/mimalloc.o
 ```
 
-The second command reuses the freshly rebuilt compiler and checks the archived candidate object, complete metadata and bytecode. It does not claim runtime wins. [Verified source replay](source-replay.json)
+The complete runtime qualification belongs to fixed-support worker `5afce59aa83c03df81c693d78e9a65f17df1c88c64a7e04c490c58ecc4fffba0`. The freshly rebuilt host-support worker is `2e0f926c0799786bbd27f8006f9ea9d1cc87c42af9f55975d1159465145b7c48`; its runtime wins are not measured by the rebuild command. Source checks, worker identities and fixed deployment receipts are distinct.
+
+[Recipe, source and profiles](candidate.json) · [Named rebuild receipt](source-rebuild.json) · [Successes](source-successes.json) · [Failures](source-failures.json) · [Recoveries](source-recoveries.json) · [Linked contracts](linked-checks.json) · [Original plan](plan.md)
+
+## Controller architecture remains incomplete
+
+The original brief already had separate numeric kernels. Existing work shares **three controller bodies and six continuation bodies across 53 sites**. The new **46,788 B checked entry remains large**; this allocation change does not complete the planned small direct controller and bounded continuation regions.
+
+The preceding 64,444 B root census finds 11,857 instructions, including 2,106 direct-SP `ldr`, 857 `str`, and 2,084 `mov`. Its IR has seven explicit stack slots totaling 560 B, while its native frame is 3,104 B. These static counts explain the allocation hypothesis; they do not attribute runtime. Original disassembly, IR and region reports are archived. The next structural pilot should extract one substantial checked fallback outside an inner hot loop, retaining exact live-in/out, ownership, partial-work resume and error contracts and total active-stack limits.
+
+The earlier focused `Unresolved` label meant complete timing orders were still required. Both full orders are now complete and return `Retain`. Earlier harness setup errors and all raw focus data remain beside the full evidence. [Initial focused decision](focus-screen.json) · [Validation logs](validation-logs.tar.gz)

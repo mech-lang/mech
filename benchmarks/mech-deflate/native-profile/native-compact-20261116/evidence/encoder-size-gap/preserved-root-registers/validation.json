@@ -1,0 +1,19 @@
+{
+  "focused_native_tests": 5,
+  "test_log": "validation-logs.tar.gz:preserved-register-tests.log",
+  "source_controls_reproduce_all_qualified_artifacts": true,
+  "named_recipe": "m1-preserved-root-registers",
+  "new_source_worker_runtime": "not measured",
+  "source_checks": {
+    "success": 162,
+    "failure_cases": 6,
+    "exact_recoveries": 12
+  },
+  "timing_acquisition": {
+    "balanced_trials": 8,
+    "compiler_and_support": "prebuilt",
+    "fresh_processes": true,
+    "matched_compiler_sha256": "bf4f2ead7fa0f00e9b765cd7ffdaf4f3f3d82ff5ecbf8b9fb06a2282515623a8"
+  },
+  "required_ci": "pending; earlier static audit failure retained separately"
+}

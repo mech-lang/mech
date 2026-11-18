@@ -7370,7 +7370,7 @@
     "checked_chain_estimated_recomputation_seconds": 0.0032,
     "next": "Exact-choice body planning and one further omitted-body investigation"
   },
-  "current_matched_build": "literal_frame_cleanup_m1",
+  "current_matched_build": "preserved_root_registers",
   "scoped_function_replay": {
     "compiler_source": "e9538f71514225abf5ca57a9fc0acab358407167",
     "control_source": "ff7c1dbc9c5059ed84d730b008847c02179fa2cf",
@@ -14224,6 +14224,36 @@
       "encoder_text_bytes": 71192
     },
     "peer_qualified_opt_in": {
+      "recipe": "m1-preserved-root-registers",
+      "source": "6dc64cff731a7388fb1239945b3aa4eaf2ace0ce",
+      "encoder_text_bytes": 63804,
+      "worker": "5afce59aa83c03df81c693d78e9a65f17df1c88c64a7e04c490c58ecc4fffba0",
+      "runtime": {
+        "decision": "Retain",
+        "wins": {
+          "roc": [
+            81,
+            81
+          ],
+          "libdeflate": [
+            62,
+            62
+          ]
+        },
+        "precision_supported_libdeflate": [
+          62,
+          62
+        ]
+      },
+      "no_runtime_sacrifice_against_maintained": "unverified; immediate 64,444 B comparison has no established slowdowns and seven uncertain cases",
+      "evidence": "evidence/encoder-size-gap/preserved-root-registers/README.md"
+    },
+    "rejected": {
+      "encoder_text_bytes": 64668,
+      "qualification": "Reject",
+      "evidence": "evidence/encoder-size-gap/shared-heap-call-screen/README.md"
+    },
+    "previous_peer_qualified_opt_in": {
       "recipe": "m1-literal-frame-cleanup",
       "source": "567f6dcac24b7112ad891d2e24b354a269b86dfd",
       "encoder_text_bytes": 64444,
@@ -14247,11 +14277,6 @@
       },
       "no_runtime_sacrifice_against_maintained": "unverified",
       "evidence": "evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md"
-    },
-    "rejected": {
-      "encoder_text_bytes": 64668,
-      "qualification": "Reject",
-      "evidence": "evidence/encoder-size-gap/shared-heap-call-screen/README.md"
     }
   },
   "source_built_m1": {
@@ -15798,30 +15823,298 @@
     "audit_policy": "unchanged"
   },
   "preserved_root_registers": {
-    "status": "experimental; full qualification and build timing pending",
-    "enabled_in_selected_recipe": false,
+    "status": "source-built opt-in; full both-order peer qualified",
+    "host": "Apple M1, macOS 15.6.1, arm64",
+    "recipe": "m1-preserved-root-registers",
+    "maintained_recipe": "frame-copies",
     "source_commit": "6dc64cff731a7388fb1239945b3aa4eaf2ace0ce",
     "compiler_sha256": "bf4f2ead7fa0f00e9b765cd7ffdaf4f3f3d82ff5ecbf8b9fb06a2282515623a8",
-    "encoder_bytes": 63804,
-    "saved_bytes": 640,
-    "root_bytes": 46788,
-    "root_stack_bytes": 3296,
-    "active_stack_bytes": 4848,
-    "focus": {
-      "roc": [
-        15,
-        15
+    "runtime": {
+      "host": "Apple M1, macOS 15.6.1, arm64",
+      "decision": "Retain",
+      "encoder_bytes": 63804,
+      "encoder_x_roc": 1.105865224625624,
+      "encoder_x_libdeflate": 1.7207119741100323,
+      "root_bytes": 46788,
+      "root_stack_bytes": 3296,
+      "peak_stack_bytes": 4848,
+      "bytes_saved": 640,
+      "worker_sha256": "5afce59aa83c03df81c693d78e9a65f17df1c88c64a7e04c490c58ecc4fffba0",
+      "source_commit": "6dc64cff731a7388fb1239945b3aa4eaf2ace0ce",
+      "compiler_sha256": "bf4f2ead7fa0f00e9b765cd7ffdaf4f3f3d82ff5ecbf8b9fb06a2282515623a8",
+      "wins": [
+        {
+          "id": "preserved-register-root-preserved-full-forward",
+          "kind": "full",
+          "order": "forward",
+          "case_count": 81,
+          "peers": {
+            "roc": {
+              "point_estimate_wins": {
+                "mech-control": 81,
+                "mech-experiment": 81
+              },
+              "precision_supported_wins": {
+                "mech-control": 81,
+                "mech-experiment": 81
+              },
+              "lost_cases": [],
+              "gained_cases": [],
+              "distinct_contract_point_estimate_wins": {
+                "mech-control": 74,
+                "mech-experiment": 74
+              },
+              "distinct_contract_precision_supported_wins": {
+                "mech-control": 74,
+                "mech-experiment": 74
+              }
+            },
+            "libdeflate": {
+              "point_estimate_wins": {
+                "mech-control": 62,
+                "mech-experiment": 62
+              },
+              "precision_supported_wins": {
+                "mech-control": 62,
+                "mech-experiment": 62
+              },
+              "lost_cases": [],
+              "gained_cases": [],
+              "distinct_contract_point_estimate_wins": {
+                "mech-control": 56,
+                "mech-experiment": 56
+              },
+              "distinct_contract_precision_supported_wins": {
+                "mech-control": 56,
+                "mech-experiment": 56
+              }
+            }
+          }
+        },
+        {
+          "id": "preserved-register-root-preserved-full-reverse",
+          "kind": "full",
+          "order": "reverse",
+          "case_count": 81,
+          "peers": {
+            "roc": {
+              "point_estimate_wins": {
+                "mech-control": 81,
+                "mech-experiment": 81
+              },
+              "precision_supported_wins": {
+                "mech-control": 81,
+                "mech-experiment": 81
+              },
+              "lost_cases": [],
+              "gained_cases": [],
+              "distinct_contract_point_estimate_wins": {
+                "mech-control": 74,
+                "mech-experiment": 74
+              },
+              "distinct_contract_precision_supported_wins": {
+                "mech-control": 74,
+                "mech-experiment": 74
+              }
+            },
+            "libdeflate": {
+              "point_estimate_wins": {
+                "mech-control": 62,
+                "mech-experiment": 62
+              },
+              "precision_supported_wins": {
+                "mech-control": 61,
+                "mech-experiment": 62
+              },
+              "lost_cases": [],
+              "gained_cases": [],
+              "distinct_contract_point_estimate_wins": {
+                "mech-control": 56,
+                "mech-experiment": 56
+              },
+              "distinct_contract_precision_supported_wins": {
+                "mech-control": 55,
+                "mech-experiment": 56
+              }
+            }
+          }
+        }
       ],
-      "libdeflate": [
-        13,
-        13
+      "candidate_control_timing_observations": {
+        "slowdowns": [],
+        "uncertain": [
+          "eight-literals-prefix: regression bound or duplicate-control repeatability unresolved",
+          "32-high-entropy-stored: regression bound or duplicate-control repeatability unresolved",
+          "random-256: regression bound or duplicate-control repeatability unresolved",
+          "random-1024: regression bound or duplicate-control repeatability unresolved",
+          "prefix-random-4096: combined and individual run bounds conflict: preserved-register-root-preserved-full-reverse",
+          "prefix-random-8192: regression bound or duplicate-control repeatability unresolved",
+          "prefix-repeated-32769: regression bound or duplicate-control repeatability unresolved"
+        ]
+      },
+      "equivalent_named_cases": [
+        [
+          "33027-periodic-window",
+          "prefix-periodic-33027"
+        ],
+        [
+          "prefix-repeated-1024",
+          "repeated-1024"
+        ],
+        [
+          "prefix-repeated-32769",
+          "repeated-32769"
+        ],
+        [
+          "prefix-natural-1024",
+          "reymont-prefix-1024"
+        ],
+        [
+          "prefix-natural-16384",
+          "reymont-prefix-16384"
+        ],
+        [
+          "prefix-natural-32769",
+          "reymont-prefix-32769"
+        ],
+        [
+          "heldout-window-32767",
+          "prefix-natural-32767"
+        ]
       ],
-      "rejected": [],
-      "unresolved": [
-        "both complete timing orders are required"
-      ]
+      "peak_private_payload_bytes": {
+        "mech-control": 10548878,
+        "mech-experiment": 10548878
+      },
+      "source_successes": 162,
+      "source_failure_cases": 6,
+      "source_exact_recoveries": 12,
+      "stripped_deployment": {
+        "bytes": 276072,
+        "sha256": "95c583c67e0c25c7179a9affe6b3d9ecde604ed0be43f9ec49ab6dc948e66fb5"
+      },
+      "new_source_built_worker_sha256": "2e0f926c0799786bbd27f8006f9ea9d1cc87c42af9f55975d1159465145b7c48",
+      "new_source_built_worker_runtime": "not measured; runtime counts belong to exact archived fixed-support worker"
     },
-    "complete_runtime_wins": "not measured",
+    "matched_deployment": {
+      "plan_sha256": "c4eb8f0db2ceb6532912190c9831b5dac5cb2afb070643a13af68baf5fc7f385",
+      "medians": {
+        "mech-control-reference": {
+          "source": 2.19795947894454,
+          "link": 0.03534158272668719,
+          "source_through_link": 2.2373732707928866,
+          "strip": 0.010671270545572042,
+          "source_through_strip": 2.248259084066376
+        },
+        "mech-preserved": {
+          "source": 2.1992038749158382,
+          "link": 0.03573947958648205,
+          "source_through_link": 2.239042645553127,
+          "strip": 0.010787353850901127,
+          "source_through_strip": 2.24988704174757
+        },
+        "roc": {
+          "source": 2.948637312743813,
+          "link": 0.03487199987284839,
+          "source_through_link": 2.9846838545054197,
+          "strip": 0.010782604571431875,
+          "source_through_strip": 2.9955033336300403
+        },
+        "libdeflate": {
+          "source": 0.44653720827773213,
+          "link": 0.03434793744236231,
+          "source_through_link": 0.480820125201717,
+          "strip": 0.01058766688220203,
+          "source_through_strip": 0.4916517084930092
+        }
+      },
+      "phases": {
+        "mech-control-reference": {
+          "parse": 0.7083735205,
+          "catalog": 2.2521e-05,
+          "frontend": 0.218050104,
+          "artifact": 0.006818687,
+          "encode": 0.002478375,
+          "native": 1.2328076245
+        },
+        "mech-preserved": {
+          "parse": 0.707869458,
+          "catalog": 1.8959e-05,
+          "frontend": 0.22083775,
+          "artifact": 0.006840396,
+          "encode": 0.0024944165,
+          "native": 1.2329680834999999
+        }
+      },
+      "paired_ratios": {
+        "mech-control-reference": {
+          "roc": 0.7476383692731967,
+          "libdeflate": 4.646472684681847,
+          "mech-control-reference": 1.0
+        },
+        "mech-preserved": {
+          "roc": 0.7503716560494375,
+          "libdeflate": 4.654598629233957,
+          "mech-control-reference": 1.0005336115621577
+        }
+      },
+      "source_commit": "6dc64cff731a7388fb1239945b3aa4eaf2ace0ce",
+      "compiler_sha256": "bf4f2ead7fa0f00e9b765cd7ffdaf4f3f3d82ff5ecbf8b9fb06a2282515623a8",
+      "trials": 8,
+      "source_cpu_seconds": {
+        "mech-control-reference": 2.2568374999999996,
+        "mech-preserved": 2.2588989999999995,
+        "roc": 2.9400465,
+        "libdeflate": 0.44304099999999996
+      },
+      "source_rss_bytes": {
+        "mech-control-reference": 393248768.0,
+        "mech-preserved": 393232384.0,
+        "roc": 395796480.0,
+        "libdeflate": 76087296.0
+      },
+      "stripped_executables": {
+        "mech-control-reference": {
+          "bytes": 276072,
+          "sha256": "a2b16eed3f55512674a724a968c39f1d86ed3140d7abf7e084871036555db698"
+        },
+        "mech-preserved": {
+          "bytes": 276072,
+          "sha256": "95c583c67e0c25c7179a9affe6b3d9ecde604ed0be43f9ec49ab6dc948e66fb5"
+        },
+        "roc": {
+          "bytes": 191912,
+          "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+        },
+        "libdeflate": {
+          "bytes": 155752,
+          "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+        }
+      },
+      "paired_ms_preserved_vs_control": 1.1941452976316214,
+      "preserved_faster_than_control": 3,
+      "paired_ms_cost_vs_control": [
+        -15.923581551760435,
+        1.036208588629961,
+        1.3520820066332817,
+        -4.557834472507238,
+        13.916416093707085,
+        16.143207903951406,
+        -7.781499531120062,
+        10.44404087588191
+      ],
+      "paired_median_ms_cost_90_percent_interval": [
+        -6.16966700181365,
+        12.180228484794497
+      ],
+      "paired_source_cpu_ms_cost": 2.8524999999999245,
+      "paired_native_ms_cost": 0.12158350000002205,
+      "explicit_phase_residual_seconds": {
+        "mech-control-reference": 0.02818731180385603,
+        "mech-preserved": 0.028060917349244985
+      }
+    },
+    "source_checks": "evidence/encoder-size-gap/preserved-root-registers/source-rebuild.json",
     "evidence": "evidence/encoder-size-gap/preserved-root-registers/README.md"
   }
 }

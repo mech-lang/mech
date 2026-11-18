@@ -1,5 +1,11 @@
 # Native compact compiler review handoff
 
+The current selected smaller M1 recipe is **`m1-preserved-root-registers`**:
+**63,804 B**, **81/81 Roc and 62/81 libdeflate wins in both complete orders**,
+and **2.239 s** source through final link in its matched build cohort.
+Use [CURRENT.md](CURRENT.md) for current identities, timings and tradeoffs;
+the earlier measurements below remain historical evidence.
+
 This PR contains compiler and parser source, a pinned Mech program, native build
 configuration, measured runtime source, and raw benchmark evidence. It is stacked
 on #973 at `9087b1f07727a9bfcb7c09059f48edaca6dc2301`.
@@ -106,9 +112,10 @@ complete build takes **1.402× Roc** and
 **8.718× libdeflate** time. The pinned benchmark workers
 match byte for byte. [Current parser results](evidence/compact-parser-storage/README.md)
 
-The accepted runtime floors are **81/81 against Roc and 61/81 against libdeflate**.
-62 is an improvement target. The older raw reports retain the former 62 floor;
-that wording is historical. Historical evidence has not been edited.
+The historical cohorts below used floors of 81/81 against Roc and 61/81 against
+libdeflate. The current required floor is **81/81 Roc and 62/81 libdeflate**;
+63 C wins is the next target. [Current results](CURRENT.md) supersede these
+historical summaries. Original evidence remains unchanged.
 
 | Apple M1 evidence | Mech code | × Roc code | × libdeflate code | Runtime qualification |
 | --- | ---: | ---: | ---: | --- |
@@ -201,6 +208,8 @@ python3 rebuild.py /tmp/mech-m1-shared-heap-layout \
   --variant m1-shared-heap-layout --mimalloc-object /path/to/mimalloc.o
 python3 rebuild.py /tmp/mech-m1-literal-frame-cleanup \
   --variant m1-literal-frame-cleanup --mimalloc-object /path/to/mimalloc.o
+python3 rebuild.py /tmp/mech-m1-preserved-root-registers \
+  --variant m1-preserved-root-registers --mimalloc-object /path/to/mimalloc.o
 ```
 
 The fixed allocator object enables the final executable link and linked

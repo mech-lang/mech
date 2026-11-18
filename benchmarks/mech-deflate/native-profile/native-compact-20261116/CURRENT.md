@@ -2,29 +2,26 @@
 
 ## Current Apple M1 result
 
-The opt-in `m1-literal-frame-cleanup` recipe emits **64,444 B**, **1.117× Roc** and **1.738× libdeflate**, with **4,656 B** stack and **276,072 B** stripped deployment. The exact qualified worker retains **81/81 Roc and 62/81 libdeflate point wins in both full orders**, covering 74/74 and 56/74 distinct contracts. Reverse precision supports 61 C wins. Two established control slowdowns and ten uncertain cases remain documented. The maintained frame-copies control remains 71,192 B.
+The selected smaller source-built opt-in recipe is **`m1-preserved-root-registers`**, emitting **63,804 B**: **1.106× Roc** and **1.721× libdeflate**. It saves **640 B** from the earlier qualified 64,444 B recipe. The checked entry is **46,788 B**, peak active stack is **4,848 B** and stripped deployment is **276,072 B**. The maintained frame-copies control remains 71,192 B.
 
-The selected source is `567f6dcac24b7112ad891d2e24b354a269b86dfd`, enabling batched cleanup, immutable loop-use indexing and combined cleanup validation. It reproduces the entire measured compiler from `1201a97b6a` exactly. The source rebuild passes 162 output checks, six injected failures and 12 recoveries; its new host-support worker has a separate identity from the qualified fixed-support worker.
+Both complete M1 orders hold **81/81 Roc and 62/81 libdeflate point wins**, covering **74/74 and 56/74 distinct contracts**. Both orders now support all 81 and 62 wins at the configured precision. V3 returns **Retain** with no rejected or unresolved peer cases. Against 64,444 B there are no established slowdowns and seven uncertain cases; all intervals remain recorded.
 
 | Same-session Apple M1 build | Encoder text | Source to link | Source to strip | Source CPU | Source peak RSS |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| 64,652 B control | 64,652 B | 2.196778 s | 2.207659 s | 2.214722 s | 393.1 MB |
-| Separate verification | 64,444 B | 2.243242 s | 2.254121 s | 2.261760 s | 393.4 MB |
-| Combined verification | 64,444 B | 2.237550 s | 2.248510 s | 2.256515 s | 393.4 MB |
-| Roc | 57,696 B | 2.994681 s | 3.005370 s | 2.949604 s | 392.7 MB |
-| libdeflate | 37,080 B | 0.481723 s | 0.492787 s | 0.444262 s | 71.5 MB |
+| 64,444 B control | 64,444 B | 2.237373 s | 2.248259 s | 2.256837 s | 393.2 MB |
+| Selected preserved registers | 63,804 B | 2.239043 s | 2.249887 s | 2.258899 s | 393.2 MB |
+| Roc | 57,696 B | 2.984684 s | 2.995503 s | 2.940046 s | 395.8 MB |
+| libdeflate | 37,080 B | 0.480820 s | 0.491652 s | 0.443041 s | 76.1 MB |
 
-Ten balanced fresh builds use one compiler and prebuilt deployment support. Combining validation saves a paired **6.570 ms** (8/10 faster; 90% interval **3.576–10.249 ms**) against the same compiler's separate path. Source CPU saves **5.657 ms** and the native phase **3.816 ms**. The selected build takes **0.7464× Roc** and **4.6400× libdeflate** time, and still costs a paired **42.327 ms** versus 64,652 B. The earlier immutable index saved a paired 46.909 ms in its own cohort; these effects should not be added across cohorts.
+Eight balanced fresh builds use one prebuilt compiler and fixed deployment support. The selected build takes **0.7504× Roc** and **4.6546× libdeflate** time. Paired compile cost is **+1.194 ms** (3/8 faster), with a 90% interval **−6.170 to +12.180 ms**. No compile-time gain or slowdown is established; the 640 B size gain is kept. The earlier 64,444 B recipe remains a qualified alternative.
 
-Parsing 0.710195 s; source semantics 0.218262 s; artifact creation 0.006793 s; encoding 0.002485 s; native emission 1.233225 s; catalog join wait 0.000019 s. Link takes 0.036532 s and strip 0.010741 s. The median per-trial source time outside explicit phase scopes is 0.027699 s. Catalog CPU still runs during parsing. Independently computed medians need not add.
+Compiler phase medians are **0.707869 s parsing**, **0.220838 s source semantics**, **0.006840 s artifact creation**, **0.002494 s encoding**, and **1.232968 s native emission**. Catalog join wait is **0.000019 s**, with catalog CPU still running during parsing. Link takes **0.035739 s**; strip takes **0.010787 s**. Median per-trial source time outside explicit scopes is **0.028061 s**. Independently calculated medians need not add.
 
-Remaining elapsed gaps are **0.237550 s to 2.0 s**, **1.237550 s to 1.0 s**, **1.787550 s to 0.45 s**, and **1.755827 s to this cohort's C build**. The checked root is still **47,428 B**, exceeding C's entire 37,080 B encoder by **10,348 B**. Larger construction and transport reductions remain necessary.
+The named source command rebuilds the compiler and passes **162 output checks, six injected failure cases and 12 recoveries**. Compiler source is `6dc64cff73`, binary `bf4f2ead…`. Runtime qualification belongs to the separately linked fixed-support worker `5afce59a…`; the newly rebuilt host-support worker has its own identity and no runtime-win claim.
 
-[Current source, checks and all measurements](evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/combined-verification/README.md) · [Prior indexed cohort](evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/indexed-loop-liveouts/README.md) · [Runtime qualification and earlier size work](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md)
+The small-controller architecture is still incomplete. Three shared controller and six continuation helpers cover 53 selected sites; a **46,788 B controller** remains, exceeding C's entire encoder by **9,708 B**. The remaining total code gap is **26,724 B** and the matched C build-time gap is **1.758223 s**.
 
-## Pending Apple M1 experiment
-
-An optional preserved-register allocation preference emits **63,804 B**, saving **640 B**, with **4,848 B** active stack. Default output remains the qualified 64,444 B. Five focused native/validation tests, 162 linked output/alias observations and six allocation-failure checks pass. Both focused orders retain 15 Roc and 13 C wins; v3 requires complete 81-case orders before qualification. The source option stays disabled in the selected recipe. [Source replay, raw focus data and unfinished controller architecture](evidence/encoder-size-gap/preserved-root-registers/README.md)
+[Current source recipe, complete runtime evidence and build data](evidence/encoder-size-gap/preserved-root-registers/README.md) · [Earlier 64,444 B result](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md)
 
 ## Apple M3 shared M1 recipe
 
