@@ -1,0 +1,14 @@
+{
+  "encoder": {
+    "previous": 67648,
+    "candidate": 66256
+  },
+  "checked_entry": {
+    "previous": 49360,
+    "candidate": 49296
+  },
+  "omitted": {
+    "_mech_compact_numeric_3009_no_growth": 1328
+  },
+  "preserved_atom_count": 27
+}
