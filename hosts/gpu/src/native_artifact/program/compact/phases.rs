@@ -129,6 +129,7 @@ struct NoGrowthAlternative {
     array: usize,
     countdown_slot: usize,
     composed: Option<function::Composed>,
+    refuse_growth: bool,
 }
 
 enum Output {
@@ -373,7 +374,16 @@ impl Phase {
             b.append_block_param(returned, types::I64);
             b.append_block_param(returned, types::I64);
             b.ins().brif(enough, fast, &[], general, &[]);
-            let mut routes = vec![(fast, no_growth.function), (general, self.function)];
+            let mut routes = vec![(fast, no_growth.function)];
+            if no_growth.refuse_growth {
+                // Only the private call packet has been written. The
+                // original typed views and their owners are still current.
+                // Resume the ordinary checked phase before any visits.
+                b.switch_to_block(general);
+                b.ins().jump(fallback, &[]);
+            } else {
+                routes.push((general, self.function));
+            }
             if root_entry && let Some(composed) = &no_growth.composed {
                 let admission = composed.admission;
                 b.switch_to_block(fast);
@@ -748,13 +758,18 @@ pub(super) fn define<M: Module>(
             "geometry refusal requires the unobserved compact entry",
         ));
     }
+    let fixed_packets = std::env::var_os("MECH_COMPACT_FIXED_PHASE_PACKET");
+    let selected_outputs = std::env::var_os("MECH_COMPACT_SELECT_PHASE_OUTPUT_WORDS");
     let mut candidates = Vec::new();
     for (id, region) in closed.regions.iter().enumerate() {
         let Some(proof) = region.numeric.as_ref() else {
             continue;
         };
         let private = if std::env::var_os("MECH_PRIVATE_NESTED_PHASES").is_some() {
-            PrivatePhase::derive(prepared, region, layout)?
+            let compact_packet = fixed_packets.as_deref().is_some_and(|scope| {
+                scope != "refused" || refuse_general.contains(&(region.tail.header() as usize))
+            });
+            PrivatePhase::derive(prepared, region, layout, compact_packet)?
         } else {
             None
         };
@@ -953,8 +968,9 @@ pub(super) fn define<M: Module>(
         // Each synchronous alternative returns to this same reader. Retain
         // the existing packet offsets while selecting only the normal-return
         // words the reader can consume. Failure and handoff have separate layouts.
-        let selected_output = std::env::var_os("MECH_COMPACT_SELECT_PHASE_OUTPUT_WORDS")
-            .is_some()
+        let selected_output = selected_outputs
+            .as_deref()
+            .is_some_and(|scope| scope != "non-private" || private.is_none())
             .then(|| {
                 let mut selected = outputs
                     .iter()
@@ -1002,8 +1018,23 @@ pub(super) fn define<M: Module>(
         } else {
             None
         };
-        let (ready, general_declaration, entry_bounds, vector_contract) =
-            if let Some((bounds, contract)) = source_admission {
+        // A refused geometry can use the checked source continuation
+        // directly. Admit a conservative current-view vector contract without
+        // known length floors and take those floors from the one body we emit.
+        let vector_only = if source_admission.is_none()
+            && skip_refused_general_ssa
+            && omit_general
+            && vector_fast
+            && private.is_none()
+            && std::env::var_os("MECH_COMPACT_PREPARE_REFUSED_VECTOR_ONLY").is_some()
+        {
+            VectorContract::additional(proof, &[]).map(|contract| (Vec::new(), contract))
+        } else {
+            None
+        };
+        let use_vector_bounds = vector_only.is_some();
+        let (ready, general_declaration, mut entry_bounds, vector_contract) =
+            if let Some((bounds, contract)) = source_admission.or(vector_only) {
                 let declaration = function::declare_refused_general(module, header)?;
                 (None, declaration, bounds, Some(contract))
             } else {
@@ -1061,7 +1092,9 @@ pub(super) fn define<M: Module>(
                 None,
                 "_vector",
             )?;
-            if skipped_general_ssa && fast.entry_bounds() != entry_bounds.as_slice() {
+            if use_vector_bounds {
+                entry_bounds = fast.entry_bounds().to_vec();
+            } else if skipped_general_ssa && fast.entry_bounds() != entry_bounds.as_slice() {
                 return Err(backend(
                     "refused phase source bounds differ from its vector body",
                 ));
@@ -1224,7 +1257,15 @@ pub(super) fn define<M: Module>(
             if let Some(composed) = &fast.composed {
                 summary["composed_variant"] = composed.summary.clone();
             }
+            let refuse_growth = !observe
+                && !share_phase_bodies
+                && std::env::var_os("MECH_COMPACT_PROFILE_PHASE_CALLS").is_none()
+                && std::env::var_os("MECH_COMPACT_REFUSE_PHASE_GROWTH").is_some();
+            if refuse_growth {
+                summary["general_growth_uses_checked_continuation"] = serde_json::json!(true);
+            }
             Some(NoGrowthAlternative {
+                refuse_growth,
                 function: fast.function,
                 array: contract.array,
                 composed: fast.composed,

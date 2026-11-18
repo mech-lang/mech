@@ -1,5 +1,7 @@
 //! Normalize selected scalar reads in a composed, admitted no-growth phase.
-use super::composed_reads::{Capture, arm, definition, packet_word, read_comparison, seed_word};
+use super::composed_reads::{
+    Admission, Capture, arm, definition, packet_word, read_comparison, seed_word,
+};
 use super::word_ranges::{constant_offset, literal};
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
 use cranelift_codegen::dominator_tree::DominatorTree;
@@ -147,6 +149,96 @@ pub(in crate::native_artifact) fn optimize(
         changes.narrow_items += 1;
     }
     changes
+}
+
+/// Use the caller's admitted cost extent for prefix reads. A larger index
+/// keeps the original full-length check, including the zero default.
+pub(in crate::native_artifact) fn split_admitted_cost_checks(
+    f: &mut Function,
+    cfg: &ControlFlowGraph,
+    capture: &Capture<'_>,
+    admission: Admission,
+) -> usize {
+    let Some(view) = capture.views.iter().find(|v| v.array == admission.costs) else {
+        return 0;
+    };
+    let Some(offset) = view
+        .length_word
+        .checked_mul(8)
+        .and_then(|n| i32::try_from(n).ok())
+    else {
+        return 0;
+    };
+    let Ok(floor) = i64::try_from(admission.minimum_costs) else {
+        return 0;
+    };
+    let Some(entry) = f.layout.entry_block() else {
+        return 0;
+    };
+    let &[_, input, _] = f.dfg.block_params(entry) else {
+        return 0;
+    };
+    let checks = f
+        .layout
+        .blocks()
+        .filter_map(|block| {
+            let branch = f.layout.last_inst(block)?;
+            let Data::Brif { arg, blocks, .. } = f.dfg.insts[branch] else {
+                return None;
+            };
+            let [yes, no] = blocks;
+            if blocks
+                .iter()
+                .any(|edge| edge.args(&f.dfg.value_lists).next().is_some())
+            {
+                return None;
+            }
+            let compare = read_comparison(f, arg)?;
+            let Data::IntCompare {
+                cond: IntCC::UnsignedLessThan,
+                args: [index, length],
+                ..
+            } = f.dfg.insts[compare]
+            else {
+                return None;
+            };
+            if f.dfg.value_type(index) != types::I64
+                || packet_word(f, cfg, capture.packet_loads, length) != Some(view.length_word)
+                || !matches!(constant_offset(f, index).1, bias if bias > 0 && bias < floor as u64)
+            {
+                return None;
+            }
+            Some((
+                branch,
+                index,
+                yes.block(&f.dfg.value_lists),
+                no.block(&f.dfg.value_lists),
+            ))
+        })
+        .collect::<Vec<_>>();
+    let count = checks.len();
+    for (branch, index, yes, no) in checks {
+        let fallback = f.dfg.make_block();
+        f.layout.append_block(fallback);
+        f.layout.set_cold(fallback);
+        let mut cursor = FuncCursor::new(f).at_inst(branch);
+        let prefix = cursor.ins().icmp_imm(IntCC::UnsignedLessThan, index, floor);
+        cursor
+            .func
+            .dfg
+            .replace(branch)
+            .brif(prefix, yes, &[], fallback, &[]);
+
+        // The caller's immutable input packet supplies the same length that
+        // the original comparison propagated through the loop.
+        cursor.goto_bottom(fallback);
+        let length = cursor
+            .ins()
+            .load(types::I64, MemFlags::new(), input, offset);
+        let fits = cursor.ins().icmp(IntCC::UnsignedLessThan, index, length);
+        cursor.ins().brif(fits, yes, &[], no, &[]);
+    }
+    count
 }
 
 fn minus_one(f: &Function, value: Value) -> Option<Value> {
