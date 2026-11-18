@@ -1,0 +1,8 @@
+{
+  "cpu": "Apple M3",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.2\nBuildVersion:\t\t25C56",
+  "power": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22413411)\t78%; AC attached; not charging present: true",
+  "clock": "Rust Instant in pinned actors",
+  "recorded_at": "2026-11-18T09:30:20.073359+00:00",
+  "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+}

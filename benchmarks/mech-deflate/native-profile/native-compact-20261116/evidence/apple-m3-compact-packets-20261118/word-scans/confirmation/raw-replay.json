@@ -1,0 +1,768 @@
+{
+  "status": "passed",
+  "plan_sha256": "2c56fbfa9751eef2dde94de1eae142338da5a403756ebb0ed9674ba99d91f5c0",
+  "runs": [
+    {
+      "order": "forward",
+      "cases": 81,
+      "timed_calls": 982656,
+      "wins": {
+        "mech-control": {
+          "roc": 81,
+          "libdeflate": 61
+        },
+        "mech-experiment": {
+          "roc": 80,
+          "libdeflate": 60
+        }
+      },
+      "receipt": {
+        "id": "entry-leaf-canonical-word/full/forward",
+        "kind": "full",
+        "order": "forward",
+        "blocks_per_case": 96,
+        "pins": {
+          "path": "entry-leaf-canonical-word/full/forward/pins.json",
+          "sha256": "dd5fcdbe3e483d0ffcc2ec686bc65aa72caed44887a959b3a08f6e9198e05469"
+        },
+        "fixture_inventory": {
+          "path": "entry-leaf-canonical-word/full/fixtures.json",
+          "sha256": "5bfd407e42356ac57c61f858ad9920f1f9bf2e2fce1b2853c50cc20eda186b38"
+        },
+        "summary": {
+          "path": "entry-leaf-canonical-word/full/forward/summary.json",
+          "sha256": "d73cdd1ec864be8806e5b2cc82d4734fbc535cb3e6b937ab956c2303a211d427"
+        },
+        "complete": {
+          "path": "entry-leaf-canonical-word/full/forward/complete.json",
+          "sha256": "2e54dfa5984a50621e44303a7cbdd811e578a4c88e1b46ef989159527d443c6f"
+        },
+        "observations": {
+          "heldout-mixed-131073": {
+            "path": "entry-leaf-canonical-word/full/forward/heldout-mixed-131073/observations.json.gz",
+            "sha256": "9d8cfe500598c53ec60777e89850d921724941084842b0bad995e1fc931eec6b"
+          },
+          "prefix-random-32769": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-random-32769/observations.json.gz",
+            "sha256": "3ada294448a14e9fa09d388690be7d417fa35960ccfd424c62a41371adc755e7"
+          },
+          "prefix-natural-1024": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-natural-1024/observations.json.gz",
+            "sha256": "c7c3d337dd4a8a4bb9377c0fa2193d8a1e0ec2bc52b941bc63d0b38fe8ddf1db"
+          },
+          "prefix-random-32767": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-random-32767/observations.json.gz",
+            "sha256": "62885a517e36cfdb57075370f0078525427947ad19a38443665cd7b422845a76"
+          },
+          "prefix-repeated-1024": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-repeated-1024/observations.json.gz",
+            "sha256": "eea7643515086e90bfeb877c246fbdf32b4826b7056b2995185a7e8162cab032"
+          },
+          "random-1024": {
+            "path": "entry-leaf-canonical-word/full/forward/random-1024/observations.json.gz",
+            "sha256": "0268db3e620599c847e68eb5a74337af781625216e8c2db6a4d95c5882645ddc"
+          },
+          "prefix-repeated-65537": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-repeated-65537/observations.json.gz",
+            "sha256": "977614803140069c66efe92c3b4af1f342bb4c8c55ada71ba3a02edccbe5636d"
+          },
+          "prefix-periodic-4096": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-periodic-4096/observations.json.gz",
+            "sha256": "290150706a29b9ee2e685151a64f9c223075d18b4fe72bee5f290202264e5025"
+          },
+          "prefix-natural-16384": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-natural-16384/observations.json.gz",
+            "sha256": "a49c3cf448e3b6f9ec51da18d50837ca9b9084290a6e7054e1056c02fb87e874"
+          },
+          "prefix-random-33027": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-random-33027/observations.json.gz",
+            "sha256": "f9fe294ed8173bb8e403769b7a0e27f8116d0e1ae345f7f6f61a423863db33db"
+          },
+          "prefix-random-32768": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-random-32768/observations.json.gz",
+            "sha256": "e5d52aef182c83ba83fca9226d9800ddad59dd05f03075d2e9788aba1a9c7808"
+          },
+          "prefix-random-4096": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-random-4096/observations.json.gz",
+            "sha256": "05a70f7c4cf40e3740a714ace758ea8b8c87f2d97817fd4dd93d675a371fad8b"
+          },
+          "prefix-natural-1048576": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-natural-1048576/observations.json.gz",
+            "sha256": "cb3a52588fd30c2550208fb2ea4bb3557931ff103c7335540d520b588b11b824"
+          },
+          "prefix-repeated-65536": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-repeated-65536/observations.json.gz",
+            "sha256": "b3c70a413a0495223e143529d090d2cf168638f71f563624ffdea780cb170abd"
+          },
+          "prefix-repeated-16384": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-repeated-16384/observations.json.gz",
+            "sha256": "a20841dff46ed9f6b4b870d725f3befcc8f3e9292c6f6d418221e27fae914702"
+          },
+          "prefix-periodic-65535": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-periodic-65535/observations.json.gz",
+            "sha256": "70abbad0798751d0c5b3d0e709d8843284b7dedf8d5cd1729163a05b0e13d0d2"
+          },
+          "prefix-random-262144": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-random-262144/observations.json.gz",
+            "sha256": "55166e07a4db851442fd84634d2ce18f911c73e012dacf2b4614be62490e6af1"
+          },
+          "prefix-periodic-1048576": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-periodic-1048576/observations.json.gz",
+            "sha256": "9b3a6682ae1e74b56906ae3bccff509f9a8b236966af8f9b933b36e5ba48c57e"
+          },
+          "prefix-repeated-262144": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-repeated-262144/observations.json.gz",
+            "sha256": "385393df04e9cf1401191ab961b9077541207f0a20b3dadfd4ee1407f6d53d3f"
+          },
+          "eight-literals-prefix": {
+            "path": "entry-leaf-canonical-word/full/forward/eight-literals-prefix/observations.json.gz",
+            "sha256": "9d14fe756b729b371bf6bdee2701581a1b5dfbcfe9915ff88b14bd0d156d931b"
+          },
+          "prefix-natural-65536": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-natural-65536/observations.json.gz",
+            "sha256": "43c6941ccfeab2c89a22ec86ad7b6de3bfc5a1a720102ca38ac4aacffcfde603"
+          },
+          "empty": {
+            "path": "entry-leaf-canonical-word/full/forward/empty/observations.json.gz",
+            "sha256": "10dfbcb1edd34436b9eab637fa968291d92535d84bbe1b32558e7d2689653bd1"
+          },
+          "one-stored": {
+            "path": "entry-leaf-canonical-word/full/forward/one-stored/observations.json.gz",
+            "sha256": "22e4abd7c848306b565b5413094621b5d1c8a8293a8972e8ca8e71a5ede08432"
+          },
+          "repeated-32769": {
+            "path": "entry-leaf-canonical-word/full/forward/repeated-32769/observations.json.gz",
+            "sha256": "01a3b5918f07cc141662d104e674338f8a4dee10f947681dc446e3e5b065c48c"
+          },
+          "prefix-natural-65537": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-natural-65537/observations.json.gz",
+            "sha256": "812d64bdc411399f451538da43f5429a3f353b2601ad1f5c62f7732ee3213b24"
+          },
+          "prefix-natural-4096": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-natural-4096/observations.json.gz",
+            "sha256": "ed6b3b0b03afd18cf749d5c4b325e103b9c896e1900ecbfbc622d49939c3163d"
+          },
+          "prefix-repeated-4096": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-repeated-4096/observations.json.gz",
+            "sha256": "367621b9f80167f8abb633429d6f0585bda4f82037280c50c19d88b2377bef2d"
+          },
+          "320-overlap": {
+            "path": "entry-leaf-canonical-word/full/forward/320-overlap/observations.json.gz",
+            "sha256": "d4ab6837fda0cd198cf84d284c0d6fdd3bd92cfcdb1b561380bb25b0079cf935"
+          },
+          "prefix-periodic-1024": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-periodic-1024/observations.json.gz",
+            "sha256": "443a6f3d4f0e436ba81a21728d02d0704b173047cedf848cc39b2be1e085c422"
+          },
+          "prefix-random-65535": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-random-65535/observations.json.gz",
+            "sha256": "16ea01837ccdf9d20de71f9930d8a2c699a24038d2bb644b9504ba6bac145d92"
+          },
+          "prefix-random-1048576": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-random-1048576/observations.json.gz",
+            "sha256": "a210d35bdfb3df86ba59c45e1c5cd7ab70406d6ebe1f335a8cd8dded9596bc65"
+          },
+          "heldout-slides-65537": {
+            "path": "entry-leaf-canonical-word/full/forward/heldout-slides-65537/observations.json.gz",
+            "sha256": "e98e38c9a4c98b8cd4cfbaaba43e8dd582d4ba82de412c0df31249abf9199485"
+          },
+          "prefix-random-1024": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-random-1024/observations.json.gz",
+            "sha256": "f8e5ef157094abca6609410e4fbec95e83c21506899c70fb8e9b0beb780e832a"
+          },
+          "random-256": {
+            "path": "entry-leaf-canonical-word/full/forward/random-256/observations.json.gz",
+            "sha256": "885cf104b8ee435152727d6fb0f2ee5197550f3cbf55f9882686c44cded160f3"
+          },
+          "random-32769": {
+            "path": "entry-leaf-canonical-word/full/forward/random-32769/observations.json.gz",
+            "sha256": "c441a67256b0278caac3bb99e19171f417d8d8636af2f8f9b9767a1b64e1b45d"
+          },
+          "reymont-prefix-16384": {
+            "path": "entry-leaf-canonical-word/full/forward/reymont-prefix-16384/observations.json.gz",
+            "sha256": "f5761862169787d67b8ee01ad483797559511fad61368c7d3e10faa11d93d380"
+          },
+          "prefix-periodic-32768": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-periodic-32768/observations.json.gz",
+            "sha256": "f88a984b959242989294eccae2bdb915636e2e68b89e39b5265f1a4ea39b9761"
+          },
+          "prefix-periodic-33027": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-periodic-33027/observations.json.gz",
+            "sha256": "f176b98a0cb3f2a2a89d8aa88e5d2b4bccf209392ec2bd064d57c7d12829250e"
+          },
+          "prefix-periodic-131072": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-periodic-131072/observations.json.gz",
+            "sha256": "8f0773d167ba615bbf35874006529283dd6c7460e956670cd256e9213c46bfef"
+          },
+          "prefix-repeated-1048576": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-repeated-1048576/observations.json.gz",
+            "sha256": "c49742ed569fce43f6d87e57250a36b0c80032b55ef858312370753a17e75042"
+          },
+          "prefix-periodic-32769": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-periodic-32769/observations.json.gz",
+            "sha256": "0d4d9a2c0e8cbfdb30e541e253884914b8435edc76730f2f6e74196d46c12b80"
+          },
+          "repeated-1024": {
+            "path": "entry-leaf-canonical-word/full/forward/repeated-1024/observations.json.gz",
+            "sha256": "22aeda5831a8780fe6813428d58c8ecce7a34432d1ad125d84553dce25027453"
+          },
+          "reymont-prefix-1024": {
+            "path": "entry-leaf-canonical-word/full/forward/reymont-prefix-1024/observations.json.gz",
+            "sha256": "e29418c05f8220526490ebf7d35a4131141493c405692298bc8a6276dc8062e8"
+          },
+          "prefix-periodic-32767": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-periodic-32767/observations.json.gz",
+            "sha256": "560627bfc7da4b5022a5d0a42f612b476816bb9f7910a45679ea5c5c630921ef"
+          },
+          "seven-stored-prefix": {
+            "path": "entry-leaf-canonical-word/full/forward/seven-stored-prefix/observations.json.gz",
+            "sha256": "e48775018b74182410e13b77849bed804ff7166b681ad4ca8bc5a5f43a36914b"
+          },
+          "prefix-natural-262144": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-natural-262144/observations.json.gz",
+            "sha256": "04a1e1131ba13d49b14cc25c27baa7fdc67fb4eb512e7b47acf910dda05e86e3"
+          },
+          "prefix-repeated-8192": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-repeated-8192/observations.json.gz",
+            "sha256": "09f930ce253aa5c2c6b488d1720c8ab3d5867c4c3cffe501c98338415cb23a76"
+          },
+          "prefix-periodic-262144": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-periodic-262144/observations.json.gz",
+            "sha256": "955503e2fb85572a141488a8ae956caf098b4e5779a7e89bc034668f1824615c"
+          },
+          "prefix-natural-8192": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-natural-8192/observations.json.gz",
+            "sha256": "737f46aab027c4134f0aedcfe267295cd4b30eda836d8791f5b8605819a7efde"
+          },
+          "prefix-periodic-16384": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-periodic-16384/observations.json.gz",
+            "sha256": "0402097cdb59acb7e192f5c40dc18f13c15ebc80c5569161fb0c5ed71e75ea13"
+          },
+          "prefix-repeated-65535": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-repeated-65535/observations.json.gz",
+            "sha256": "8d5411cc01955e80d310833409b351a3936da0bfbe1be43d567c5f37875ca476"
+          },
+          "prefix-natural-131072": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-natural-131072/observations.json.gz",
+            "sha256": "7f26618ed4fa48eeeebd55d22c561db00e46783a13c453a8a7a5a3a2e342551e"
+          },
+          "33027-periodic-window": {
+            "path": "entry-leaf-canonical-word/full/forward/33027-periodic-window/observations.json.gz",
+            "sha256": "b27b36fc86d1bc4eef5dc00ab5509a70a67f1cfa3544f4de72b1078a4823a778"
+          },
+          "prefix-natural-65535": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-natural-65535/observations.json.gz",
+            "sha256": "bd934de8b8975f1150e60d828730fba86901c14754f2f947fd635f961066d095"
+          },
+          "16384-distribution-change": {
+            "path": "entry-leaf-canonical-word/full/forward/16384-distribution-change/observations.json.gz",
+            "sha256": "655a5e9d655a6c3b69e0ec0ffec374ba308f8e4fcb7e4e4b86d74b1f5610bcfe"
+          },
+          "eight-literals": {
+            "path": "entry-leaf-canonical-word/full/forward/eight-literals/observations.json.gz",
+            "sha256": "ff2126d430022f9554700ec80dd433fed96547181a4f15b186310b5f4df810f6"
+          },
+          "prefix-periodic-65536": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-periodic-65536/observations.json.gz",
+            "sha256": "3992bda3306e0dc4d322a9ab770c04a05d0b761a3f37dd175a46102afe7d27ad"
+          },
+          "heldout-random-65537": {
+            "path": "entry-leaf-canonical-word/full/forward/heldout-random-65537/observations.json.gz",
+            "sha256": "53ca71713d0785fa83cf65272a614eb589221fddcbfc4f68d86eb9150955194c"
+          },
+          "random-64": {
+            "path": "entry-leaf-canonical-word/full/forward/random-64/observations.json.gz",
+            "sha256": "eac43e3e69976e447d3574d0369860ab2d302b56788d2af6547e6cda10bf132c"
+          },
+          "reymont-prefix-32769": {
+            "path": "entry-leaf-canonical-word/full/forward/reymont-prefix-32769/observations.json.gz",
+            "sha256": "1a2085eddc090841cd050a8ce53f67f1cb32b043949c654d768fdcf7fdad8301"
+          },
+          "32-high-entropy-stored": {
+            "path": "entry-leaf-canonical-word/full/forward/32-high-entropy-stored/observations.json.gz",
+            "sha256": "dce703151bd02a2a194b783033b6081dfcad1a473f7ec56dbe1ec187463406bd"
+          },
+          "prefix-periodic-65537": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-periodic-65537/observations.json.gz",
+            "sha256": "ec8f5ba4c83c57d980ddf71cb4766924d317f8df2ad6abe22b70127fa649f7fa"
+          },
+          "prefix-repeated-32767": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-repeated-32767/observations.json.gz",
+            "sha256": "0fa7c3df63efe5d84a883750fd21f59997cc14d1e681f7bda73223adf866bdc3"
+          },
+          "prefix-random-131072": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-random-131072/observations.json.gz",
+            "sha256": "b4801f3935ad7c2a66204845d3b3b25382fa1bb378d2f2ba7e937497e0a86caf"
+          },
+          "prefix-repeated-32769": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-repeated-32769/observations.json.gz",
+            "sha256": "ca501a86432cd149800e7910ebc0c26d65049d805f21e8f50d81d8ec8622ea41"
+          },
+          "prefix-periodic-8192": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-periodic-8192/observations.json.gz",
+            "sha256": "e6e9c14f9b88710e99d8733bbe7af28bd09dd25b0b8ed0b18a0c5ee75791a499"
+          },
+          "eight-overlap": {
+            "path": "entry-leaf-canonical-word/full/forward/eight-overlap/observations.json.gz",
+            "sha256": "59ce1bb7b8e9a07648e6335dfddad782f3c49dd6b3cedbfac4cf0e73dab012a5"
+          },
+          "prefix-random-65537": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-random-65537/observations.json.gz",
+            "sha256": "8c251d7586f76e3f3f51008a1d85c2966d9e49cc3e98fe89d53ab0b1dadb5722"
+          },
+          "prefix-repeated-131072": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-repeated-131072/observations.json.gz",
+            "sha256": "2fdc6c0bdbd830b67f21f7fbe9e06db6d27352caff9e6700153892d3ee89804f"
+          },
+          "prefix-repeated-32768": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-repeated-32768/observations.json.gz",
+            "sha256": "102dd5f5ed2f5b747efd86bc2ec2d41a77731f7b664e64c4b52e4f141dd48ce5"
+          },
+          "prefix-repeated-33027": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-repeated-33027/observations.json.gz",
+            "sha256": "ab3ffcaabfac17d97078135c89d74218d0e01474f37425935e434db0cc3636ef"
+          },
+          "128-biased-dynamic": {
+            "path": "entry-leaf-canonical-word/full/forward/128-biased-dynamic/observations.json.gz",
+            "sha256": "4ba15255fbe7bc323921d3be4a4f5ba6a2448d4b9082c9758c7869796f99f87c"
+          },
+          "prefix-random-8192": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-random-8192/observations.json.gz",
+            "sha256": "3e694cfc517deeb953fe148cc16644438a4a67c2c050ec6d5af4085440b2b0ad"
+          },
+          "prefix-random-65536": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-random-65536/observations.json.gz",
+            "sha256": "edbb45cfe17b34b585a70036782883656cf43a9696d7547d8041acde6efd1e4d"
+          },
+          "prefix-natural-33027": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-natural-33027/observations.json.gz",
+            "sha256": "540040d9c0f47c01259dd0eb09bf7a7e794013b7e8d01be45c798f9e493a33b8"
+          },
+          "prefix-natural-32768": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-natural-32768/observations.json.gz",
+            "sha256": "d0f8ad37448c9393175d1a635a01253df0f83bdb959e2c5ad721c2dca0b6f467"
+          },
+          "prefix-random-16384": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-random-16384/observations.json.gz",
+            "sha256": "e8b96dd61384370c5b6cfa6d78ca7e83207ab9167fd9a3c41d14e1da3c64f812"
+          },
+          "heldout-window-32767": {
+            "path": "entry-leaf-canonical-word/full/forward/heldout-window-32767/observations.json.gz",
+            "sha256": "225887732a3eb569056889b02191085fa9939e53728a58d01ff3a7b11ea86253"
+          },
+          "prefix-natural-32767": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-natural-32767/observations.json.gz",
+            "sha256": "51431a7ca7797fe85b19c88c92878d87b61752684f3f3aacf42229d35ea65ba2"
+          },
+          "prefix-natural-32769": {
+            "path": "entry-leaf-canonical-word/full/forward/prefix-natural-32769/observations.json.gz",
+            "sha256": "77cf8615d4f1b1e16f4f391bf6946c68bd30e7da51cf95853f47a0baa1705a25"
+          },
+          "heldout-window-32768": {
+            "path": "entry-leaf-canonical-word/full/forward/heldout-window-32768/observations.json.gz",
+            "sha256": "7bc3562a1ee74a412466ad51c73d4e4b560938a8a34009de1c505c48390a921b"
+          }
+        },
+        "cleanup": {
+          "mech-control": {
+            "path": "entry-leaf-canonical-word/full/forward/mech-control.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "mech-experiment": {
+            "path": "entry-leaf-canonical-word/full/forward/mech-experiment.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "roc": {
+            "path": "entry-leaf-canonical-word/full/forward/roc.stderr",
+            "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+          },
+          "libdeflate": {
+            "path": "entry-leaf-canonical-word/full/forward/libdeflate.stderr",
+            "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+          }
+        }
+      }
+    },
+    {
+      "order": "reverse",
+      "cases": 81,
+      "timed_calls": 982656,
+      "wins": {
+        "mech-control": {
+          "roc": 81,
+          "libdeflate": 61
+        },
+        "mech-experiment": {
+          "roc": 81,
+          "libdeflate": 57
+        }
+      },
+      "receipt": {
+        "id": "entry-leaf-canonical-word/full/reverse",
+        "kind": "full",
+        "order": "reverse",
+        "blocks_per_case": 96,
+        "pins": {
+          "path": "entry-leaf-canonical-word/full/reverse/pins.json",
+          "sha256": "dd5fcdbe3e483d0ffcc2ec686bc65aa72caed44887a959b3a08f6e9198e05469"
+        },
+        "fixture_inventory": {
+          "path": "entry-leaf-canonical-word/full/fixtures.json",
+          "sha256": "5bfd407e42356ac57c61f858ad9920f1f9bf2e2fce1b2853c50cc20eda186b38"
+        },
+        "summary": {
+          "path": "entry-leaf-canonical-word/full/reverse/summary.json",
+          "sha256": "2336ff7afd97d5d7c86083568ca3a364ef5ab025d6e2fede442b0ab5b4034206"
+        },
+        "complete": {
+          "path": "entry-leaf-canonical-word/full/reverse/complete.json",
+          "sha256": "2e54dfa5984a50621e44303a7cbdd811e578a4c88e1b46ef989159527d443c6f"
+        },
+        "observations": {
+          "heldout-mixed-131073": {
+            "path": "entry-leaf-canonical-word/full/reverse/heldout-mixed-131073/observations.json.gz",
+            "sha256": "da64c8621e134d079634566ddca8a234f88eb168e4426835ef088fc844a3543a"
+          },
+          "prefix-random-32769": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-random-32769/observations.json.gz",
+            "sha256": "1b7d30982f21550b98befe73af5cf9507b96aa4e9ee1a2fc7a3bd61f5c8df7d8"
+          },
+          "prefix-natural-1024": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-natural-1024/observations.json.gz",
+            "sha256": "10f83a4786cfe372679c0b928e696b707a7d21947f4e31355a6350b24bab3be5"
+          },
+          "prefix-random-32767": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-random-32767/observations.json.gz",
+            "sha256": "e862624874a10c09087cfe5e2b169ca89d978549b1806fbc923031a18e415f44"
+          },
+          "prefix-repeated-1024": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-repeated-1024/observations.json.gz",
+            "sha256": "d94231ccf6286a80350356b4b52d6e5e5715e85c6a317fc052e51a4152754289"
+          },
+          "random-1024": {
+            "path": "entry-leaf-canonical-word/full/reverse/random-1024/observations.json.gz",
+            "sha256": "64f50b62f72f6d942ef4ebaf179820047b40a0db002f161aa83c114ca4459808"
+          },
+          "prefix-repeated-65537": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-repeated-65537/observations.json.gz",
+            "sha256": "c08b5851b35c91cfacd2db678674c75235f25827e92de7efdd61b000560d17e3"
+          },
+          "prefix-periodic-4096": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-periodic-4096/observations.json.gz",
+            "sha256": "cf38d93f2856b3bd7e19dae97a46df03600cb777ebf9a57a8446568e0798e49f"
+          },
+          "prefix-natural-16384": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-natural-16384/observations.json.gz",
+            "sha256": "6c23b8ccda2d4d7387692f11bc1128e15129881931f8b5c8842dc76221682137"
+          },
+          "prefix-random-33027": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-random-33027/observations.json.gz",
+            "sha256": "b9efde51572fba940004c3062f2e3183cf1f257b8e90a0d8a1444b9ecf16c93b"
+          },
+          "prefix-random-32768": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-random-32768/observations.json.gz",
+            "sha256": "dd8e576b0a5228256124ae3c15c72e941db228b3e487a804d154a5767e2eb764"
+          },
+          "prefix-random-4096": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-random-4096/observations.json.gz",
+            "sha256": "32b7dd329a01e27c59684f60348356c8df9f25a46c3cbe9f0f33c31329261570"
+          },
+          "prefix-natural-1048576": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-natural-1048576/observations.json.gz",
+            "sha256": "1e0118fb2cd2203b1bb6be7bb0aea4b0d952ad0d6c5f92143ac5d857ef877642"
+          },
+          "prefix-repeated-65536": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-repeated-65536/observations.json.gz",
+            "sha256": "387b1a7a476a7ba5393565a6840a087b1a9faec59abfc068096ed3ff5861d67f"
+          },
+          "prefix-repeated-16384": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-repeated-16384/observations.json.gz",
+            "sha256": "58f15baba75bfda8750236cfa9972658de589504b3a9a0941270f43d7827852a"
+          },
+          "prefix-periodic-65535": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-periodic-65535/observations.json.gz",
+            "sha256": "c7af930740ab6c7c3cadcac0749afe8a27e706a8ca89abbc43a6139db9693eb7"
+          },
+          "prefix-random-262144": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-random-262144/observations.json.gz",
+            "sha256": "700be67229e84bff76823ca7b2d4eb8d32cbe888b9c973209d9496b47dae22d8"
+          },
+          "prefix-periodic-1048576": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-periodic-1048576/observations.json.gz",
+            "sha256": "30a93ae1d442529df143d7950de8361df01f2f0b3dd95654132ca4b4a0ce3841"
+          },
+          "prefix-repeated-262144": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-repeated-262144/observations.json.gz",
+            "sha256": "7a204d8e689ce3836a66cd609be5ce7e067adbb28c0951c407935c340e7d81c5"
+          },
+          "eight-literals-prefix": {
+            "path": "entry-leaf-canonical-word/full/reverse/eight-literals-prefix/observations.json.gz",
+            "sha256": "db13980774ad5da19231b8949cdfe2f7b6a4705df98b4e428e9a73dc89d694a2"
+          },
+          "prefix-natural-65536": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-natural-65536/observations.json.gz",
+            "sha256": "78a288af31c5ac66444b524c8a5d6e37ff431519a467f7201f59ba2b4535f123"
+          },
+          "empty": {
+            "path": "entry-leaf-canonical-word/full/reverse/empty/observations.json.gz",
+            "sha256": "8ed35015a9f895d9407d510aa420b236a166b95d83ced2654de19e09250641bd"
+          },
+          "one-stored": {
+            "path": "entry-leaf-canonical-word/full/reverse/one-stored/observations.json.gz",
+            "sha256": "dba52fbea2649964272938943c62125b453e217fa448f48be8bb67ec9e7861f4"
+          },
+          "repeated-32769": {
+            "path": "entry-leaf-canonical-word/full/reverse/repeated-32769/observations.json.gz",
+            "sha256": "8f626d7b48514f32a466f34d9fb8ae8eacc70661dd1c66a111cef4dab80dd0c9"
+          },
+          "prefix-natural-65537": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-natural-65537/observations.json.gz",
+            "sha256": "efbc47d62d8600f7d812f1770c0b917a89df49503f4a9de2e85543a94b8c2c5f"
+          },
+          "prefix-natural-4096": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-natural-4096/observations.json.gz",
+            "sha256": "085a6af70d8f72c1a0222dd16e21bd0637eee77c4034d752e9e0a394cd2e2d38"
+          },
+          "prefix-repeated-4096": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-repeated-4096/observations.json.gz",
+            "sha256": "c91298be47a4c0f8c8df5cfff39a351f4347202dfb7c02a97d88052e36f1a954"
+          },
+          "320-overlap": {
+            "path": "entry-leaf-canonical-word/full/reverse/320-overlap/observations.json.gz",
+            "sha256": "2936df07551bcb3221ffa1d1aa8aaa412e2a37043689fa7013d988cd10aefce4"
+          },
+          "prefix-periodic-1024": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-periodic-1024/observations.json.gz",
+            "sha256": "e1aef692ac3a25c1a41fce1c6bd9a1a706915a7577d20a02e49db232fb277fe6"
+          },
+          "prefix-random-65535": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-random-65535/observations.json.gz",
+            "sha256": "4b2a71c515155235df7ec9e005ca59d9f469e5c3b81ffe5d966c3af8b3a06585"
+          },
+          "prefix-random-1048576": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-random-1048576/observations.json.gz",
+            "sha256": "f8d37cef62e6baba329c4915fc107e5106c959b3760f6e24f586fcb3a6fc0870"
+          },
+          "heldout-slides-65537": {
+            "path": "entry-leaf-canonical-word/full/reverse/heldout-slides-65537/observations.json.gz",
+            "sha256": "56401547b0e7545593fd82aed9c9da1c7369dad70f235f332558454e51e64f12"
+          },
+          "prefix-random-1024": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-random-1024/observations.json.gz",
+            "sha256": "48bdc4eced8c027c3d71df34f9bcd5e9ed31fce7b6a57f6ebfa63d0abc275a8e"
+          },
+          "random-256": {
+            "path": "entry-leaf-canonical-word/full/reverse/random-256/observations.json.gz",
+            "sha256": "ea07d1cc00c13cf055fe17b9baf7f6df397b6087a74f9388f9d35f7ae35701c0"
+          },
+          "random-32769": {
+            "path": "entry-leaf-canonical-word/full/reverse/random-32769/observations.json.gz",
+            "sha256": "e6eb068bf1f866786e8a3a18109b3995434223663e614b299a8fdc50bfdc0aa2"
+          },
+          "reymont-prefix-16384": {
+            "path": "entry-leaf-canonical-word/full/reverse/reymont-prefix-16384/observations.json.gz",
+            "sha256": "cc2b9faf7696e92f36b5dd7cc0256804b6280b321f1ee8e1c10025f0fbd2d7f9"
+          },
+          "prefix-periodic-32768": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-periodic-32768/observations.json.gz",
+            "sha256": "4d752b32b6cffac673073427bfdca3571d2f7990f7e538429352a2e1cf76947d"
+          },
+          "prefix-periodic-33027": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-periodic-33027/observations.json.gz",
+            "sha256": "0e038978a5436fbfd92ee22aa96666b1438eea0cb1a0c571d3d65650fcabe6fa"
+          },
+          "prefix-periodic-131072": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-periodic-131072/observations.json.gz",
+            "sha256": "55681c71496f08921f8117e70ca4b4e7e9aede119752b40324d380fd183f8131"
+          },
+          "prefix-repeated-1048576": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-repeated-1048576/observations.json.gz",
+            "sha256": "a5c63d5221843bda643d306b4faefadf3ba68a871aa54460f65e4e06d9ecec10"
+          },
+          "prefix-periodic-32769": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-periodic-32769/observations.json.gz",
+            "sha256": "4b06d17c2a448d756664a3b0a8812810759d7772102b6962ab4241ffbfbe18a8"
+          },
+          "repeated-1024": {
+            "path": "entry-leaf-canonical-word/full/reverse/repeated-1024/observations.json.gz",
+            "sha256": "654b7a9ba3389e7c605ada3a9ee9a8ca5d0d3edb2453d07c88fcda6b0610e8e6"
+          },
+          "reymont-prefix-1024": {
+            "path": "entry-leaf-canonical-word/full/reverse/reymont-prefix-1024/observations.json.gz",
+            "sha256": "85521d8aa1c5eb90d683ea69c1c4c984735690f311e6a9501addd5e1d96e042f"
+          },
+          "prefix-periodic-32767": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-periodic-32767/observations.json.gz",
+            "sha256": "9215a43a4c9ac4d3afe7ce461af2f94f60c834820bfc1ce5673393a757cb4e31"
+          },
+          "seven-stored-prefix": {
+            "path": "entry-leaf-canonical-word/full/reverse/seven-stored-prefix/observations.json.gz",
+            "sha256": "3b5c22499900b470f1e0b5a3ed4bfde0ba12fb7bd450e5c2862283dd2165480f"
+          },
+          "prefix-natural-262144": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-natural-262144/observations.json.gz",
+            "sha256": "d9a7812999bfabafd060a125a72362d92ce79cd1fe52d728f3d504e4fc78f3ab"
+          },
+          "prefix-repeated-8192": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-repeated-8192/observations.json.gz",
+            "sha256": "4a0dff016ad64f131da6c89d521f1e2130ccac45381b29a6136606d29c9bb98d"
+          },
+          "prefix-periodic-262144": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-periodic-262144/observations.json.gz",
+            "sha256": "2261ecc41351d233cd4c0538b7c6d71bcb4ffecd0de682b17ff160aeecdbb0fc"
+          },
+          "prefix-natural-8192": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-natural-8192/observations.json.gz",
+            "sha256": "ce3704a5f1e83441c8334ce4f3921aa26c700aca9d9ede57a25c4553beaedaa7"
+          },
+          "prefix-periodic-16384": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-periodic-16384/observations.json.gz",
+            "sha256": "8395f43865167abac75e9bb70a22195ed7424ab9c69f0ca17a47e5447600b823"
+          },
+          "prefix-repeated-65535": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-repeated-65535/observations.json.gz",
+            "sha256": "52bb837016e964cff00ad34e68dfce5a7ae826bbf6335f9bc8fc2785c0884b95"
+          },
+          "prefix-natural-131072": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-natural-131072/observations.json.gz",
+            "sha256": "e413d0b5f06db03ae04bfa8fe30d1e4767392e63a54d613df91659acfe18fc7d"
+          },
+          "33027-periodic-window": {
+            "path": "entry-leaf-canonical-word/full/reverse/33027-periodic-window/observations.json.gz",
+            "sha256": "d57cb1b6b946dafe828dd1f51d41022d6918a63c5e626fb2c442c263a3f2bf36"
+          },
+          "prefix-natural-65535": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-natural-65535/observations.json.gz",
+            "sha256": "e1855a04f66c2d51a7276f441dc18a778bd5abd1d9a9f25e7960f7ff69fce5cb"
+          },
+          "16384-distribution-change": {
+            "path": "entry-leaf-canonical-word/full/reverse/16384-distribution-change/observations.json.gz",
+            "sha256": "bb3a1be005913d5d413c75f18531fa825f4c872e51c009210ff564616b9fee22"
+          },
+          "eight-literals": {
+            "path": "entry-leaf-canonical-word/full/reverse/eight-literals/observations.json.gz",
+            "sha256": "974c8ba5daffaf26d4982b7a02c617d7495ef261b614c0ade3f58728b5eddd0e"
+          },
+          "prefix-periodic-65536": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-periodic-65536/observations.json.gz",
+            "sha256": "1ac7d3dcfb581e15fc2c0963dbe131e647dd6d096650ea31c8c893f874c87236"
+          },
+          "heldout-random-65537": {
+            "path": "entry-leaf-canonical-word/full/reverse/heldout-random-65537/observations.json.gz",
+            "sha256": "d8e82ab37fa1a14c7f12a69e21a4806bb043a45e18f4da2eb4927363d3ecf98e"
+          },
+          "random-64": {
+            "path": "entry-leaf-canonical-word/full/reverse/random-64/observations.json.gz",
+            "sha256": "53714501ba3563ad4a5ea7a3d94b78357a43bdbe50c6b586c8fb3478c64eb684"
+          },
+          "reymont-prefix-32769": {
+            "path": "entry-leaf-canonical-word/full/reverse/reymont-prefix-32769/observations.json.gz",
+            "sha256": "90c0eb0a8e815b4d0ad55bf177267b8e6b71db43a47d270a14c6afb3b67c4183"
+          },
+          "32-high-entropy-stored": {
+            "path": "entry-leaf-canonical-word/full/reverse/32-high-entropy-stored/observations.json.gz",
+            "sha256": "e6598238bcc81b1fff069c3f01d314bb4b3f5642b1c8b71b7bf0d4686210d9f5"
+          },
+          "prefix-periodic-65537": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-periodic-65537/observations.json.gz",
+            "sha256": "99ff48ad777c9a935a34622717bbb8ccc46ad93de9f159cce24678a01adb7cea"
+          },
+          "prefix-repeated-32767": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-repeated-32767/observations.json.gz",
+            "sha256": "fa991bd5e25d508eedaa174ec2a6a82f76fe48a6ba8431451269ab0d321fadac"
+          },
+          "prefix-random-131072": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-random-131072/observations.json.gz",
+            "sha256": "01cf4f0c34d7c74c880cb19492020eb1ae58d3c2d80378b71c2b389b3a17ae4b"
+          },
+          "prefix-repeated-32769": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-repeated-32769/observations.json.gz",
+            "sha256": "5f948db780340b4bc84b3109476c75fadb4b89395191e0be17fbbad7d52b5891"
+          },
+          "prefix-periodic-8192": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-periodic-8192/observations.json.gz",
+            "sha256": "f9e8dbcbdfe13f096a37b4f87cf4087ce80c925fae2bde3fa3269f0d8a0c3cc2"
+          },
+          "eight-overlap": {
+            "path": "entry-leaf-canonical-word/full/reverse/eight-overlap/observations.json.gz",
+            "sha256": "c87086a352fb717463a3c5f3edcb5e68142ad058e774c3960e0fe803dd628f72"
+          },
+          "prefix-random-65537": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-random-65537/observations.json.gz",
+            "sha256": "e6204519202dbb9092173adef25a2a86215f44b17c5c8749a0f1f019e023230b"
+          },
+          "prefix-repeated-131072": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-repeated-131072/observations.json.gz",
+            "sha256": "d5bf6e4e9264f564ef9380e632bb00e234196e3671f690b56c81f1ce7a507a15"
+          },
+          "prefix-repeated-32768": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-repeated-32768/observations.json.gz",
+            "sha256": "0e22906c2f95d6e8f71577e6fd52cd549664e7a59dcf032e23a9a6faca0200ed"
+          },
+          "prefix-repeated-33027": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-repeated-33027/observations.json.gz",
+            "sha256": "762157de4d97c8c44ee41ad6593e0af4a780919b6562b7f40af794a6c8484ce1"
+          },
+          "128-biased-dynamic": {
+            "path": "entry-leaf-canonical-word/full/reverse/128-biased-dynamic/observations.json.gz",
+            "sha256": "d81fbb07fae59fa269daf757af0cc0c283a4fa7131f90cab483e8121d4df98b1"
+          },
+          "prefix-random-8192": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-random-8192/observations.json.gz",
+            "sha256": "bbae07388372755eaea6e672508bd606bc9adf34241ed34dd1c3bd135d7b85bd"
+          },
+          "prefix-random-65536": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-random-65536/observations.json.gz",
+            "sha256": "9c68b56da39f8d58e46073569156d229d8fddd7d50642c3603eb71c7b1521eee"
+          },
+          "prefix-natural-33027": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-natural-33027/observations.json.gz",
+            "sha256": "7c5e86cdd73507b3c4881d8f6b6be7ceeda552074631291b0ad2f04e4d12b581"
+          },
+          "prefix-natural-32768": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-natural-32768/observations.json.gz",
+            "sha256": "0516e8c8265912d3b5272883000da3bdc7ab94a59f959c1d73a7df825b97a9b7"
+          },
+          "prefix-random-16384": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-random-16384/observations.json.gz",
+            "sha256": "f8b036340cc4afa37e9d0aa829ac40bea9d3b3a394fd22dbc193757c3e5fe048"
+          },
+          "heldout-window-32767": {
+            "path": "entry-leaf-canonical-word/full/reverse/heldout-window-32767/observations.json.gz",
+            "sha256": "1f001df79bdbb7775a53220d5f333439dfa94f759cb800c6d868c263071cad20"
+          },
+          "prefix-natural-32767": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-natural-32767/observations.json.gz",
+            "sha256": "87a042b0ef6ee62062cfc431faa209dff42c57f1f96b2888ff12c3464746ad25"
+          },
+          "prefix-natural-32769": {
+            "path": "entry-leaf-canonical-word/full/reverse/prefix-natural-32769/observations.json.gz",
+            "sha256": "02d2911a2cf38fa8fe4a44def953bd2a68f68f3b202fa09c155bdd13b927ecc0"
+          },
+          "heldout-window-32768": {
+            "path": "entry-leaf-canonical-word/full/reverse/heldout-window-32768/observations.json.gz",
+            "sha256": "05c23f1cb6e58e462ee8e1d25c7817b6af418f6586d8cd4efafa554d20d46b0c"
+          }
+        },
+        "cleanup": {
+          "mech-control": {
+            "path": "entry-leaf-canonical-word/full/reverse/mech-control.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "mech-experiment": {
+            "path": "entry-leaf-canonical-word/full/reverse/mech-experiment.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "roc": {
+            "path": "entry-leaf-canonical-word/full/reverse/roc.stderr",
+            "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+          },
+          "libdeflate": {
+            "path": "entry-leaf-canonical-word/full/reverse/libdeflate.stderr",
+            "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+          }
+        }
+      }
+    }
+  ]
+}

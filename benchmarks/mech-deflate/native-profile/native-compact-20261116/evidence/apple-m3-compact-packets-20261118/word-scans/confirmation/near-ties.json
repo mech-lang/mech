@@ -1,0 +1,14 @@
+[
+  {
+    "order": "forward",
+    "case": "prefix-random-1024",
+    "initial_x_libdeflate": 1.002726163650503,
+    "confirmation_x_libdeflate": 0.9941887070065544
+  },
+  {
+    "order": "reverse",
+    "case": "prefix-random-1024",
+    "initial_x_libdeflate": 1.0002646328157319,
+    "confirmation_x_libdeflate": 0.987699860352817
+  }
+]
