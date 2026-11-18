@@ -50,8 +50,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/CURRENT.md",
-      "sha256": "b3e7e70317065f575515064f72dfdbcdb2b359dbb997337458b08c08ac4d7f7c",
-      "bytes": 16275
+      "sha256": "626b9d992b59eb0c5d036b9850a4b4257db95617a3720e6fe331c7c08fd17ec8",
+      "bytes": 16765
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/QUALIFICATION.md",
@@ -12977,6 +12977,41 @@
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/dominance-stopped-reach/report.json",
       "sha256": "c45ed4926d73c8b75f66e98d97a993de498afae3b05ab4f73870a470722d95a3",
       "bytes": 4022
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/README.md",
+      "sha256": "292a6a2628a041d13646d65e0bd599929e468abe1e55a3fda966658007fb7837",
+      "bytes": 5756
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/census.py",
+      "sha256": "aaa1d8fae01c43c9fa50b5913d72e0954465a6251a21eaf4f5bba81de12a8e05",
+      "bytes": 4316
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/control-structure.json",
+      "sha256": "c24354e16ead93717bd0cd6c51fa0abb3ca3479305444b612b12a654da8e8e69",
+      "bytes": 35512
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/linked-size.json",
+      "sha256": "20b0c307440e94207e12e5e34774c9436e4b167af493ab422bf13481df25d24a",
+      "bytes": 4338
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/root-tails.json",
+      "sha256": "59665abd57d8cc085c7141f3a845e5ec12ba397d6a3abfefb34fba9a236f0fa3",
+      "bytes": 4279
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/size-comparison.json",
+      "sha256": "9d0cecb8c8e379a63ce5007914ffe18f9fd94ee9bd751204210baa221592f964",
+      "bytes": 13503
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/size-summary.json",
+      "sha256": "77cf582ed33d4bab640a37ba1bf3ae98279e2bee0dd89cfcbaa7315612f821cd",
+      "bytes": 788
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/equivalent-vector-ir/diagnostic-checks.json",

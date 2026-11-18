@@ -1,0 +1,58 @@
+{
+  "mech-overlapped-catalog": {
+    "command": [
+      "/usr/bin/clang",
+      "-arch",
+      "arm64",
+      "-mmacosx-version-min=15.0",
+      "-Wl,-dead_strip",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+      "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/semantic-body-dispatch/catalog/matched/warmup/mech-overlapped-catalog/frontend/program.o",
+      "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/encoder-size-gap/comparison-inputs/linked-mech-overlapped-catalog/compressor",
+      "-Wl,-map,/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/encoder-size-gap/comparison-inputs/linked-mech-overlapped-catalog/compressor.map"
+    ],
+    "link_map_sha256": "fee4730e87ce04fc0eb3500c928e387723323800db110f5c405e97a1ef6a5a70",
+    "full_linked_text_bytes": 147880,
+    "full_linked_readonly_constant_bytes": 76384,
+    "encoder_text": 71192,
+    "encoder_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "inputs": {
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o": "0479f586428ec6a033e6d7916f308768a5b5c2359e2031cfd3d4a4a4272b7a95",
+      "/private/tmp/mech-root-transport.A9Qtzt/mech-alloc-only/trial/cargo-target/aarch64-apple-darwin/release/libmech_deploy.a": "6c29b7cba9eabe61caa31d406b3a31ceb4f4d1d835048065706eac6735e89ac2",
+      "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+    }
+  },
+  "libdeflate": {
+    "command": [
+      "/usr/bin/clang",
+      "-arch",
+      "arm64",
+      "-mmacosx-version-min=15.0",
+      "-Wl,-dead_strip",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate.o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/semantic-body-dispatch/catalog/matched/warmup/libdeflate/encoder.o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-alloc.o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-arm.o",
+      "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o",
+      "-o",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/encoder-size-gap/comparison-inputs/linked-libdeflate/compressor",
+      "-Wl,-map,/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/encoder-size-gap/comparison-inputs/linked-libdeflate/compressor.map"
+    ],
+    "link_map_sha256": "eb98f53e35c14fc54206cf9075ffa9e000f6f5d7d1566f85b003a4a27401bb65",
+    "full_linked_text_bytes": 98848,
+    "full_linked_readonly_constant_bytes": 2656,
+    "encoder_text": 37072,
+    "encoder_sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+    "inputs": {
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/main.o": "0479f586428ec6a033e6d7916f308768a5b5c2359e2031cfd3d4a4a4272b7a95",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/minimal-deployment/verified/libdeflate.o": "32a2e4546b4c24575ea303c002dbb6934acb0d1adb86d0050a281e9840478007",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-alloc.o": "d54cc202e299bcd92c533638846c979348dc9a5b947c95f150d31434e9ba232d",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/matched-source-builds/setup/libdeflate-arm.o": "1294dffb8fc3dcde0298edcb15c2314e630c17cdb9f7f1b7de1790cb27aaa7ad",
+      "/private/tmp/roc-deflate-repro-20261024/roc-deflate/benchmark/echo-clock/targets/arm64mac/mimalloc.o": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874"
+    }
+  }
+}

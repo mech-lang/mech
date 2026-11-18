@@ -1,0 +1,28 @@
+{
+  "mech_areas": {
+    "checked root extent": 50688,
+    "match collector": 6768,
+    "three scorer entries": 4112,
+    "other helpers and padding": 9624
+  },
+  "peer_areas": {
+    "simple parsers": 13556,
+    "near-optimal parser and optimizer": 13408,
+    "shared block writer and Huffman functions": 7268,
+    "public API and allocation": 1636,
+    "machine outlines": 1212
+  },
+  "peer_opcode_classes": {
+    "other or data": 22528,
+    "other memory": 7348,
+    "conditional control": 2808,
+    "stack memory": 2400,
+    "unconditional control": 1460,
+    "call": 536
+  },
+  "historical_archive_bytecode_matches": true,
+  "historical_root_bodies_coalesced": 16,
+  "historical_root_saving": 3660,
+  "historical_saving_outside_root": 11832,
+  "peer_outlining_net_text_saving": 1456
+}
