@@ -1,0 +1,48 @@
+{
+  "encoder_bytes": 64652,
+  "runtime_decision": "Retain",
+  "peak_stack_bytes": 4784,
+  "wins": [
+    {
+      "order": "forward",
+      "roc": 81,
+      "libdeflate": 62,
+      "distinct_roc": 74,
+      "distinct_libdeflate": 56,
+      "original_losing_case_x_roc": 0.9691181001537073
+    },
+    {
+      "order": "reverse",
+      "roc": 81,
+      "libdeflate": 62,
+      "distinct_roc": 74,
+      "distinct_libdeflate": 56,
+      "original_losing_case_x_roc": 0.9673089450421245
+    }
+  ],
+  "full_rejected": [],
+  "full_unresolved": [],
+  "relative": {
+    "slowdowns": [
+      "reymont-prefix-32769: established slowdown above the 0.5% resolution",
+      "heldout-window-32767: established slowdown above the 0.5% resolution",
+      "heldout-window-32768: established slowdown above the 0.5% resolution",
+      "heldout-slides-65537: established slowdown above the 0.5% resolution",
+      "prefix-natural-8192: established slowdown above the 0.5% resolution",
+      "prefix-natural-32767: established slowdown above the 0.5% resolution",
+      "prefix-natural-32768: established slowdown above the 0.5% resolution",
+      "prefix-natural-32769: established slowdown above the 0.5% resolution",
+      "prefix-natural-33027: established slowdown above the 0.5% resolution",
+      "prefix-natural-65535: established slowdown above the 0.5% resolution",
+      "prefix-natural-65536: established slowdown above the 0.5% resolution",
+      "prefix-natural-65537: established slowdown above the 0.5% resolution",
+      "prefix-natural-131072: established slowdown above the 0.5% resolution",
+      "prefix-natural-262144: established slowdown above the 0.5% resolution",
+      "prefix-natural-1048576: established slowdown above the 0.5% resolution"
+    ],
+    "uncertain": [
+      "prefix-natural-4096: regression bound or duplicate-control repeatability unresolved",
+      "prefix-repeated-4096: regression bound or duplicate-control repeatability unresolved"
+    ]
+  }
+}

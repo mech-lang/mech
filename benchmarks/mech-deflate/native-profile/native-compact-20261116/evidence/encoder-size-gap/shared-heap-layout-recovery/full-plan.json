@@ -1,0 +1,133 @@
+{
+  "objective": "Measure the exact checked worker after keeping shared cold returns in the caller.",
+  "focus_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "320-overlap",
+    "random-64",
+    "random-1024",
+    "prefix-random-1024",
+    "prefix-periodic-1024",
+    "prefix-periodic-4096",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-natural-16384",
+    "prefix-natural-32769",
+    "prefix-random-4096",
+    "heldout-mixed-131073"
+  ],
+  "runs": [
+    {
+      "id": "shared-terminal-heap-match-preserve-full-forward",
+      "kind": "full",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "shared-terminal-heap-match-preserve-full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "blocks_per_case": 96
+    }
+  ],
+  "policy": {
+    "path": "native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification-policy-v3.json",
+    "sha256": "89961956e17485b05457fee6d90e1b124fe09d1d1e6d3770aa5b86873912244c"
+  },
+  "timer": {
+    "path": "compare-library.py",
+    "sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a"
+  },
+  "driver": {
+    "path": "current-roadmap/shared-terminal-returns/runtime.py",
+    "sha256": "c8a78269c77dae65e5490ebeb31eae8b2621e6961c36a27b8958019c404c94d4"
+  },
+  "as_run_inventory": {
+    "path": "fixtures.json",
+    "sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+  },
+  "pinned_peers": {
+    "path": "pinned-peers/pins.json",
+    "sha256": "db5a289d7a929176e5a1c9efbff5f69702596b0dccba9f2cace86d78cc18902d"
+  },
+  "fixture_content_sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+  "bindings": {
+    "mech-control": {
+      "program.o": {
+        "path": "current-roadmap/shared-release-setup/shared-release-setup/bound/program.o",
+        "sha256": "06186246e2f3a9a50f90778be101587ec71277bbcf8f4192862c72fc726c4f8f"
+      },
+      "metadata.json": {
+        "path": "current-roadmap/shared-release-setup/shared-release-setup/bound/metadata.json",
+        "sha256": "7e37007395174780190f71a2ff56adec3858b5c29b90025e8ad793a4f7a73521"
+      },
+      "runtime.json": {
+        "path": "current-roadmap/shared-release-setup/shared-release-setup/bound/runtime.json",
+        "sha256": "ae8d9382396c6ba99b73bcb8d4aa9b8e22f715936a7ac917fb448decb9c67c41"
+      },
+      "mech-worker": {
+        "path": "current-roadmap/shared-release-setup/shared-release-setup/bound/mech-worker",
+        "sha256": "884e35f4bdacf47e82adc39c5535451eb0a82b271b6c1fdd6419984312d4f61c"
+      }
+    },
+    "mech-experiment": {
+      "program.o": {
+        "path": "consolidation-995/heap-match-preserve/bound/program.o",
+        "sha256": "a42f47a761ca918853eea1d411e363a0e1456a7a2cec90d70d66a651f4f51b5e"
+      },
+      "metadata.json": {
+        "path": "consolidation-995/heap-match-preserve/bound/metadata.json",
+        "sha256": "2dbc017e1a5a0f89e669b5caaeb6dbf3d42c30d2ae4161808643c10a7c04f470"
+      },
+      "runtime.json": {
+        "path": "consolidation-995/heap-match-preserve/bound/runtime.json",
+        "sha256": "63476b5dba867ceabdd6b972ed8e90116c11e3d34b387200315b55a14c0d1def"
+      },
+      "mech-worker": {
+        "path": "consolidation-995/heap-match-preserve/bound/mech-worker",
+        "sha256": "de6f455470e6c07a49ecf53a09d178ab41177c1a54ccd810233eee3dbe7cc361"
+      }
+    }
+  },
+  "identities": {
+    "mech-control": {
+      "worker": "884e35f4bdacf47e82adc39c5535451eb0a82b271b6c1fdd6419984312d4f61c",
+      "metadata": "7e37007395174780190f71a2ff56adec3858b5c29b90025e8ad793a4f7a73521"
+    },
+    "mech-experiment": {
+      "worker": "de6f455470e6c07a49ecf53a09d178ab41177c1a54ccd810233eee3dbe7cc361",
+      "metadata": "2dbc017e1a5a0f89e669b5caaeb6dbf3d42c30d2ae4161808643c10a7c04f470"
+    },
+    "roc": {
+      "worker": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+      "metadata": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee"
+    },
+    "libdeflate": {
+      "worker": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "metadata": null
+    },
+    "environment_sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+    "contract_sha256": "73b8d377ff7452010791de0f5155a939cfb7a65a3c46b9bac10a8a06e8f512cb"
+  },
+  "source_pin": "f5df10d5791a54f39253b693abfb3d43ccb03da3",
+  "policy_version": 3,
+  "controller": {
+    "path": "source-frame-copy-tails/full-timing.py",
+    "sha256": "f9fa19f1ef9876ee3484a339b619889ba94027cf35a76fa355e12813cea31d07"
+  },
+  "compiler_build": {
+    "path": "current-roadmap/shared-heap-call-setup/compiler/result.json",
+    "sha256": "02fbbe04b8a8e2d4c14f3f1a8f9ae9421ee38be3ec6bda8a0b1436c404214c8e"
+  },
+  "linked_contract": {
+    "path": "consolidation-995/heap-layout-proof-i3bz3ed1/linked-proofs/result.json",
+    "sha256": "c57f1febc955f9416f34d36154441a620e4ed7439d047340e540baf93fcad96d"
+  },
+  "max_peak_stack_bytes": 5280,
+  "load_average_before": [
+    2.3154296875,
+    2.427734375,
+    2.236328125
+  ]
+}
