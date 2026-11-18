@@ -1,0 +1,282 @@
+{
+  "mapped_windows": "889:890:890,1283:12930:1288,1339:1340:1344,1792:1793:1801,1850:1851:1859,10613:660:660,11381:901:901,12529:1282:1286,12808:1362:1366,14074:1791:1799,14357:1873:1881;35843:7155:7271,36178:7262:7382,37813:7806:7940,38032:7865:8000;8421:8488:82,35076:35143:7042",
+  "families": 3,
+  "original_families": 3,
+  "windows": 17,
+  "original_windows": 17,
+  "aligned_blocks": 9910,
+  "block_counts": [
+    10184,
+    10178
+  ],
+  "report": [
+    {
+      "group": 0,
+      "mapped": 11,
+      "original": 11,
+      "evidence": [
+        {
+          "old": [
+            889,
+            890,
+            890
+          ],
+          "new": [
+            889,
+            890,
+            890
+          ],
+          "entry_reason": "stable-block-id",
+          "end_reason": "stable-block-id"
+        },
+        {
+          "old": [
+            1283,
+            12930,
+            1288
+          ],
+          "new": [
+            1283,
+            12930,
+            1288
+          ],
+          "entry_reason": "stable-block-id",
+          "end_reason": "stable-block-id"
+        },
+        {
+          "old": [
+            1339,
+            1340,
+            1344
+          ],
+          "new": [
+            1339,
+            1340,
+            1344
+          ],
+          "entry_reason": "stable-block-id",
+          "end_reason": "stable-block-id"
+        },
+        {
+          "old": [
+            1792,
+            1793,
+            1801
+          ],
+          "new": [
+            1792,
+            1793,
+            1801
+          ],
+          "entry_reason": "stable-block-id",
+          "end_reason": "stable-block-id"
+        },
+        {
+          "old": [
+            1850,
+            1851,
+            1859
+          ],
+          "new": [
+            1850,
+            1851,
+            1859
+          ],
+          "entry_reason": "stable-block-id",
+          "end_reason": "stable-block-id"
+        },
+        {
+          "old": [
+            10613,
+            660,
+            660
+          ],
+          "new": [
+            10613,
+            660,
+            660
+          ],
+          "entry_reason": "stable-block-id",
+          "end_reason": "stable-block-id"
+        },
+        {
+          "old": [
+            11381,
+            901,
+            901
+          ],
+          "new": [
+            11381,
+            901,
+            901
+          ],
+          "entry_reason": "stable-block-id",
+          "end_reason": "stable-block-id"
+        },
+        {
+          "old": [
+            12529,
+            1282,
+            1286
+          ],
+          "new": [
+            12529,
+            1282,
+            1286
+          ],
+          "entry_reason": "stable-block-id",
+          "end_reason": "stable-block-id"
+        },
+        {
+          "old": [
+            12808,
+            1362,
+            1366
+          ],
+          "new": [
+            12808,
+            1362,
+            1366
+          ],
+          "entry_reason": "stable-block-id",
+          "end_reason": "stable-block-id"
+        },
+        {
+          "old": [
+            14074,
+            1791,
+            1799
+          ],
+          "new": [
+            14074,
+            1791,
+            1799
+          ],
+          "entry_reason": "stable-block-id",
+          "end_reason": "stable-block-id"
+        },
+        {
+          "old": [
+            14357,
+            1873,
+            1881
+          ],
+          "new": [
+            14357,
+            1873,
+            1881
+          ],
+          "entry_reason": "stable-block-id",
+          "end_reason": "stable-block-id"
+        }
+      ]
+    },
+    {
+      "group": 1,
+      "mapped": 4,
+      "original": 4,
+      "evidence": [
+        {
+          "old": [
+            35847,
+            7155,
+            7271
+          ],
+          "new": [
+            35843,
+            7155,
+            7271
+          ],
+          "entry_reason": "layout-neighborhood-16",
+          "end_reason": "stable-block-id"
+        },
+        {
+          "old": [
+            36182,
+            7262,
+            7382
+          ],
+          "new": [
+            36178,
+            7262,
+            7382
+          ],
+          "entry_reason": "layout-neighborhood-16",
+          "end_reason": "stable-block-id"
+        },
+        {
+          "old": [
+            37817,
+            7806,
+            7940
+          ],
+          "new": [
+            37813,
+            7806,
+            7940
+          ],
+          "entry_reason": "layout-neighborhood-16",
+          "end_reason": "stable-block-id"
+        },
+        {
+          "old": [
+            38036,
+            7865,
+            8000
+          ],
+          "new": [
+            38032,
+            7865,
+            8000
+          ],
+          "entry_reason": "layout-neighborhood-16",
+          "end_reason": "stable-block-id"
+        }
+      ]
+    },
+    {
+      "group": 2,
+      "mapped": 2,
+      "original": 2,
+      "evidence": [
+        {
+          "old": [
+            8421,
+            8488,
+            82
+          ],
+          "new": [
+            8421,
+            8488,
+            82
+          ],
+          "entry_reason": "stable-block-id",
+          "end_reason": "stable-block-id"
+        },
+        {
+          "old": [
+            35080,
+            35147,
+            7042
+          ],
+          "entry": null,
+          "end": [
+            35143,
+            "unchanged-layout"
+          ],
+          "base": {
+            "site": 7042
+          },
+          "new": [
+            35076,
+            35143,
+            7042
+          ],
+          "entry_reason": "matching paired region traversal",
+          "end_reason": "mapped end",
+          "aligned_region_blocks": 44
+        }
+      ]
+    }
+  ]
+}

@@ -12864,6 +12864,45 @@
         "median_paired_seconds_saved": 0.006347208051010966,
         "faster_paired_trials": 7,
         "evidence": "evidence/encoder-size-gap/continuation-matcher-layout/deployment.json"
+      },
+      {
+        "name": "Dense scorer with early admission and single-body preparation",
+        "encoder_text_bytes": 66240,
+        "encoder_sha256": "63f7f1d71b0934478e4ce37644c095b2c1bfba0dea0a2f80c733fa6ef7c7fb23",
+        "compiler_sha256": "6dde74e747bd84bb3a0e550a399199b2ff016bc71a08c9a5bb16f37f66e00a2b",
+        "measured_trials": 12,
+        "measurement_plan_sha256": "9ee34d7c3ea9d5898e520209ad2f7f4576563c2b2b3a3d82f67a201c805aef67",
+        "median_seconds": {
+          "source": 2.257971270941198,
+          "link": 0.03473893762566149,
+          "source_through_link": 2.2949926459696144,
+          "strip": 0.010341250104829669,
+          "source_through_strip": 2.3057539586443454
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.7872254375000001,
+          "catalog": 1.69585e-05,
+          "frontend": 0.22551725,
+          "artifact": 0.006948833,
+          "encode": 0.0025562705,
+          "native": 1.20784
+        },
+        "stripped_executable": {
+          "bytes": 276056,
+          "sha256": "76be882b90ad69787f630b9c67a82b7a59267cea2253029cb1f8fc9c8325c1a8"
+        },
+        "paired_ratios": {
+          "roc": 0.7677147583543573,
+          "libdeflate": 4.699206034982358
+        },
+        "encoder_text_ratios": {
+          "roc": 1.1480865224625625,
+          "libdeflate": 1.7864077669902914
+        },
+        "paired_ratio_to_session_control": 0.9996724426061454,
+        "median_paired_seconds_saved": 0.0007520213257521391,
+        "faster_paired_trials": 6,
+        "evidence": "evidence/encoder-size-gap/dense-scorer-only/deployment.json"
       }
     ]
   },
@@ -12923,5 +12962,63 @@
     },
     "worker_sha256": "50423a79f10e605167e8d98a051239aedb2fba5c9c34bc7ddf96fb64cf9e2d6d",
     "peak_stack_bytes": 4752
+  },
+  "dense_scorer_only": {
+    "build": {
+      "name": "Dense scorer with early admission and single-body preparation",
+      "encoder_text_bytes": 66240,
+      "encoder_sha256": "63f7f1d71b0934478e4ce37644c095b2c1bfba0dea0a2f80c733fa6ef7c7fb23",
+      "compiler_sha256": "6dde74e747bd84bb3a0e550a399199b2ff016bc71a08c9a5bb16f37f66e00a2b",
+      "measured_trials": 12,
+      "measurement_plan_sha256": "9ee34d7c3ea9d5898e520209ad2f7f4576563c2b2b3a3d82f67a201c805aef67",
+      "median_seconds": {
+        "source": 2.257971270941198,
+        "link": 0.03473893762566149,
+        "source_through_link": 2.2949926459696144,
+        "strip": 0.010341250104829669,
+        "source_through_strip": 2.3057539586443454
+      },
+      "source_phase_median_seconds": {
+        "parse": 0.7872254375000001,
+        "catalog": 1.69585e-05,
+        "frontend": 0.22551725,
+        "artifact": 0.006948833,
+        "encode": 0.0025562705,
+        "native": 1.20784
+      },
+      "stripped_executable": {
+        "bytes": 276056,
+        "sha256": "76be882b90ad69787f630b9c67a82b7a59267cea2253029cb1f8fc9c8325c1a8"
+      },
+      "paired_ratios": {
+        "roc": 0.7677147583543573,
+        "libdeflate": 4.699206034982358
+      },
+      "encoder_text_ratios": {
+        "roc": 1.1480865224625625,
+        "libdeflate": 1.7864077669902914
+      },
+      "paired_ratio_to_session_control": 0.9996724426061454,
+      "median_paired_seconds_saved": 0.0007520213257521391,
+      "faster_paired_trials": 6,
+      "evidence": "evidence/encoder-size-gap/dense-scorer-only/deployment.json"
+    },
+    "runtime": {
+      "decision": "Reject",
+      "wins": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          62,
+          61
+        ]
+      }
+    },
+    "worker_sha256": "6a4f21936bb8ecad954ea263e4449adf72176656a24775ed9babec090363b403",
+    "peak_stack_bytes": 4640,
+    "evidence": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/dense-scorer-only",
+    "qualified": false
   }
 }

@@ -1,0 +1,105 @@
+{
+  "medians": {
+    "mech-control-early-qualified-control": {
+      "source": 2.2591131874360144,
+      "link": 0.03485435387119651,
+      "source_through_link": 2.2956966462079436,
+      "strip": 0.010246270336210728,
+      "source_through_strip": 2.3061451877001673
+    },
+    "mech-late-dense-costs-control": {
+      "source": 2.2631468125618994,
+      "link": 0.03439085395075381,
+      "source_through_link": 2.3005832079797983,
+      "strip": 0.010268562007695436,
+      "source_through_strip": 2.310958416434005
+    },
+    "mech-early-dense-costs-rebound": {
+      "source": 2.261197354644537,
+      "link": 0.03497214592061937,
+      "source_through_link": 2.301743916468695,
+      "strip": 0.010256333509460092,
+      "source_through_strip": 2.3122083540074527
+    },
+    "mech-early-dense-costs-rebound-one-body": {
+      "source": 2.257971270941198,
+      "link": 0.03473893762566149,
+      "source_through_link": 2.2949926459696144,
+      "strip": 0.010341250104829669,
+      "source_through_strip": 2.3057539586443454
+    },
+    "roc": {
+      "source": 2.950407750438899,
+      "link": 0.03498741635121405,
+      "source_through_link": 2.9870299787726253,
+      "strip": 0.010158208664506674,
+      "source_through_strip": 2.997381187044084
+    },
+    "libdeflate": {
+      "source": 0.4545492494944483,
+      "link": 0.033702520886436105,
+      "source_through_link": 0.48853731248527765,
+      "strip": 0.010112271178513765,
+      "source_through_strip": 0.4989890828728676
+    }
+  },
+  "phases": {
+    "mech-control-early-qualified-control": {
+      "parse": 0.7857668959999999,
+      "catalog": 1.7979e-05,
+      "frontend": 0.2247428125,
+      "artifact": 0.006944521,
+      "encode": 0.0025487295,
+      "native": 1.2126243955
+    },
+    "mech-late-dense-costs-control": {
+      "parse": 0.786169604,
+      "catalog": 2.02085e-05,
+      "frontend": 0.2258275415,
+      "artifact": 0.0069792285,
+      "encode": 0.0025649375,
+      "native": 1.2120225625
+    },
+    "mech-early-dense-costs-rebound": {
+      "parse": 0.786539646,
+      "catalog": 2.075e-05,
+      "frontend": 0.225561125,
+      "artifact": 0.00695725,
+      "encode": 0.0025705625,
+      "native": 1.2117616039999999
+    },
+    "mech-early-dense-costs-rebound-one-body": {
+      "parse": 0.7872254375000001,
+      "catalog": 1.69585e-05,
+      "frontend": 0.22551725,
+      "artifact": 0.006948833,
+      "encode": 0.0025562705,
+      "native": 1.20784
+    }
+  },
+  "paired_ratios": {
+    "mech-control-early-qualified-control": {
+      "roc": 0.7691237336279213,
+      "libdeflate": 4.705796658489952,
+      "mech-control-early-qualified-control": 1.0
+    },
+    "mech-late-dense-costs-control": {
+      "roc": 0.767756003213542,
+      "libdeflate": 4.720732892117752,
+      "mech-control-early-qualified-control": 1.0027318426755296
+    },
+    "mech-early-dense-costs-rebound": {
+      "roc": 0.7695638853842541,
+      "libdeflate": 4.71070704357599,
+      "mech-control-early-qualified-control": 1.0011382020718833
+    },
+    "mech-early-dense-costs-rebound-one-body": {
+      "roc": 0.7677147583543573,
+      "libdeflate": 4.699206034982358,
+      "mech-control-early-qualified-control": 0.9996724426061454
+    }
+  },
+  "plan_sha256": "9ee34d7c3ea9d5898e520209ad2f7f4576563c2b2b3a3d82f67a201c805aef67",
+  "trials": 12,
+  "selected_recipe": "mech-early-dense-costs-rebound-one-body"
+}

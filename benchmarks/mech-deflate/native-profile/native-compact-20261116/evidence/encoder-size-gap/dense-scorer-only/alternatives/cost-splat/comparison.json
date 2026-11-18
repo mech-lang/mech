@@ -1,0 +1,47 @@
+{
+  "compiled_scorer": {
+    "extent": 1136,
+    "start": 6576,
+    "sha256": "ccd4f1b4421df1383995c708cc36fcc21dac8e2944424bfadcf8bf1f88a43d40",
+    "relocations": [
+      [
+        472,
+        108,
+        "_mech_compact_cost_codes_0"
+      ],
+      [
+        468,
+        93,
+        "_mech_compact_cost_codes_0"
+      ]
+    ]
+  },
+  "baseline_scorer": {
+    "extent": 1136,
+    "start": 6576,
+    "sha256": "0777c08041e8d6b7118da557c653adb25e67d5afc1e8ba18d94e30256f654695",
+    "relocations": [
+      [
+        472,
+        108,
+        "_mech_compact_cost_codes_0"
+      ],
+      [
+        468,
+        93,
+        "_mech_compact_cost_codes_0"
+      ]
+    ]
+  },
+  "text_change": 0,
+  "profile_sha256": "a564214212f8b4dd6d61ee67e9100b57e556f60b2bf19ca68c6b7ddf18082635",
+  "allowed_changed_atoms": [
+    "_mech_compact_numeric_3009_no_growth_composed"
+  ],
+  "training_fixtures": [
+    "prefix-natural-16384",
+    "prefix-natural-32769",
+    "prefix-natural-65537",
+    "heldout-mixed-131073"
+  ]
+}
