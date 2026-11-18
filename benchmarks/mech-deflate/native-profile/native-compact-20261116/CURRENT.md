@@ -86,6 +86,9 @@ The single dense scorer with a checked fallback emits **66,240 B**. It won 81/81
 Preparing the admitted scorer first skips two unused native bodies and reproduces the qualified 67,648 B encoder object and worker. The source-to-link median is **2.283 s**.
 [Source replay and matched builds](evidence/encoder-size-gap/early-scorer-preparation/README.md)
 
+The dense scorer with direct branches emits **66,192 B**. Complete orders recorded 81/81 and 81/81 Roc wins, with 62/81 and 62/81 libdeflate wins. V3 returned **Retain**.
+[Source replay and complete observations](evidence/encoder-size-gap/dense-scorer-direct-branches/README.md)
+
 ## MechDeflate compile time by encoder build
 
 Each row measures fresh MechDeflate source through final executable
@@ -111,6 +114,7 @@ Roc and libdeflate trials from the same session.
 | [Shared continuations with matcher fallthroughs](evidence/encoder-size-gap/continuation-matcher-layout/deployment.json) | 67,648 B | 2.301 s | 0.771× | 4.789× |
 | [Dense scorer with early admission and single-body preparation](evidence/encoder-size-gap/dense-scorer-only/deployment.json) | 66,240 B | 2.295 s | 0.768× | 4.699× |
 | [Prepare the admitted scorer first](evidence/encoder-size-gap/early-scorer-preparation/deployment.json) | 67,648 B | 2.283 s | 0.764× | 4.757× |
+| [Checked dense scorer with direct branches](evidence/encoder-size-gap/dense-scorer-direct-branches/deployment.json) | 66,192 B | 2.274 s | 0.762× | 4.721× |
 
 Parser, lowering, native compilation and link timings are in the
 machine-readable scorecard.
@@ -137,7 +141,8 @@ Mech needs **1.833 s** less elapsed time to reach the
 | Fixed comparison reference | **71,768 B** | Opt-in recipe below and exact linked worker `674d88602946…` |
 | Checked-read size candidate | 71,420 B | 5,328 B peak stack. Runtime qualification pending |
 | Earlier owner-exchange size candidate | 71,288 B | Rejected by the v2 runtime gate |
-| Current qualified size recipe | **71,192 B** | Frame copies with compiler source below |
+| Maintained frame-copy recipe | **71,192 B** | Compiler source below |
+| Smallest v3-qualified opt-in build | **66,192 B** | [Compiler patch and source replay](evidence/encoder-size-gap/dense-scorer-direct-branches/README.md) |
 
 ~~~sh
 python3 -B benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py \

@@ -1,0 +1,83 @@
+{
+  "medians": {
+    "mech-control-qualified": {
+      "source": 2.243320187786594,
+      "link": 0.034718292066827416,
+      "source_through_link": 2.278715812601149,
+      "strip": 0.010386604350060225,
+      "source_through_strip": 2.2892701665405184
+    },
+    "mech-direct-zero-matcher": {
+      "source": 2.235887457849458,
+      "link": 0.03838699986226857,
+      "source_through_link": 2.2740854790899903,
+      "strip": 0.010518417228013277,
+      "source_through_strip": 2.2848234795965254
+    },
+    "roc": {
+      "source": 2.9511492918245494,
+      "link": 0.03450427087955177,
+      "source_through_link": 2.986140333348885,
+      "strip": 0.010258708382025361,
+      "source_through_strip": 2.996732853818685
+    },
+    "libdeflate": {
+      "source": 0.44721964560449123,
+      "link": 0.03389650024473667,
+      "source_through_link": 0.4814358535222709,
+      "strip": 0.010466833366081119,
+      "source_through_strip": 0.4923333120532334
+    }
+  },
+  "phases": {
+    "mech-control-qualified": {
+      "parse": 0.78736125,
+      "catalog": 2.06875e-05,
+      "frontend": 0.2258030835,
+      "artifact": 0.007035083500000001,
+      "encode": 0.002577604,
+      "native": 1.193596729
+    },
+    "mech-direct-zero-matcher": {
+      "parse": 0.790417417,
+      "catalog": 2.29165e-05,
+      "frontend": 0.22522852100000001,
+      "artifact": 0.006987458,
+      "encode": 0.0025582705000000002,
+      "native": 1.1837348545
+    }
+  },
+  "paired_ratios": {
+    "mech-control-qualified": {
+      "roc": 0.7628999934824556,
+      "libdeflate": 4.732839976205913,
+      "mech-control-qualified": 1.0
+    },
+    "mech-direct-zero-matcher": {
+      "roc": 0.7616863926417634,
+      "libdeflate": 4.720828183829676,
+      "mech-control-qualified": 0.9985910269741065
+    }
+  },
+  "plan_sha256": "9b43fcac022276a9436a84ec5ded131f62ef2d46eee426e84ed250b05a0bee1b",
+  "trials": 8,
+  "selected": "mech-direct-zero-matcher",
+  "stripped_executables": {
+    "mech-control-qualified": {
+      "bytes": 276056,
+      "sha256": "38d65b231adaee747a6a0cf5374573a15eef84f4ab010af7cb30402fc98d2ad5"
+    },
+    "mech-direct-zero-matcher": {
+      "bytes": 276056,
+      "sha256": "cf7c8a8ccc14fd39e7782006a7151779c85ac01e07e652b9becf24592e43ffee"
+    },
+    "roc": {
+      "bytes": 191912,
+      "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+    },
+    "libdeflate": {
+      "bytes": 155752,
+      "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+    }
+  }
+}
