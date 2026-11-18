@@ -1,0 +1,506 @@
+{
+  "boundary": "Diagnostic instrumented phase intervals, not qualification. Frozen phase instructions; wrappers alter call/return overhead and layout.",
+  "started_at": "2026-11-18T03:57:01.398157+00:00",
+  "timebase": {
+    "numer": 125,
+    "denom": 3
+  },
+  "balanced_orders": [
+    [
+      "probe",
+      "control",
+      "roc"
+    ],
+    [
+      "probe",
+      "roc",
+      "control"
+    ],
+    [
+      "control",
+      "probe",
+      "roc"
+    ],
+    [
+      "control",
+      "roc",
+      "probe"
+    ],
+    [
+      "roc",
+      "probe",
+      "control"
+    ],
+    [
+      "roc",
+      "control",
+      "probe"
+    ]
+  ],
+  "cases": [
+    {
+      "case": "prefix-natural-8192",
+      "median_seconds": {
+        "probe": 0.000607979,
+        "control": 0.000605146,
+        "roc": 0.0006545835
+      },
+      "phase_exclusive_sum_seconds": 0.0005516875000000001,
+      "probe_x_control": 1.0046815148740966,
+      "probe_x_roc": 0.9288028188917076,
+      "unattributed_instrumented_seconds": 5.6291499999999934e-05,
+      "phases": [
+        {
+          "symbol": "mech_compact_numeric_475_vector",
+          "calls": 1.0,
+          "inclusive_seconds": 0.00017541666666666668,
+          "exclusive_seconds": 0.00017541666666666668
+        },
+        {
+          "symbol": "mech_compact_numeric_3009",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_3009_no_growth",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_3009_no_growth_composed",
+          "calls": 6.0,
+          "inclusive_seconds": 0.00032322916666666665,
+          "exclusive_seconds": 0.00032322916666666665
+        },
+        {
+          "symbol": "mech_compact_numeric_4173",
+          "calls": 17.0,
+          "inclusive_seconds": 4.958333333333334e-06,
+          "exclusive_seconds": 4.958333333333334e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_3447",
+          "calls": 5.0,
+          "inclusive_seconds": 2.0729166666666668e-05,
+          "exclusive_seconds": 4.166666666666667e-08
+        },
+        {
+          "symbol": "mech_compact_numeric_3447_grouped",
+          "calls": 5.0,
+          "inclusive_seconds": 2.064583333333333e-05,
+          "exclusive_seconds": 2.064583333333333e-05
+        },
+        {
+          "symbol": "mech_compact_numeric_3956_vector",
+          "calls": 17.0,
+          "inclusive_seconds": 8.875e-06,
+          "exclusive_seconds": 8.875e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_6633",
+          "calls": 1.0,
+          "inclusive_seconds": 1.0416666666666667e-06,
+          "exclusive_seconds": 1.0416666666666667e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_5895",
+          "calls": 4.0,
+          "inclusive_seconds": 2.125e-06,
+          "exclusive_seconds": 2.125e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_3872",
+          "calls": 17.0,
+          "inclusive_seconds": 2.7500000000000004e-06,
+          "exclusive_seconds": 2.7500000000000004e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_4799",
+          "calls": 17.0,
+          "inclusive_seconds": 4.1666666666666667e-07,
+          "exclusive_seconds": 4.1666666666666667e-07
+        },
+        {
+          "symbol": "mech_compact_numeric_2821",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_2821_vector",
+          "calls": 1.0,
+          "inclusive_seconds": 8.083333333333334e-06,
+          "exclusive_seconds": 8.083333333333334e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_8026",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_362",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_362_vector",
+          "calls": 1.0,
+          "inclusive_seconds": 3.625e-06,
+          "exclusive_seconds": 3.625e-06
+        }
+      ]
+    },
+    {
+      "case": "prefix-natural-32769",
+      "median_seconds": {
+        "probe": 0.0031495005,
+        "control": 0.003147479,
+        "roc": 0.0031065005
+      },
+      "phase_exclusive_sum_seconds": 0.0030149166666666666,
+      "probe_x_control": 1.000642260043673,
+      "probe_x_roc": 1.0138419420824172,
+      "unattributed_instrumented_seconds": 0.0001345838333333335,
+      "phases": [
+        {
+          "symbol": "mech_compact_numeric_475_vector",
+          "calls": 2.0,
+          "inclusive_seconds": 0.0013605208333333334,
+          "exclusive_seconds": 0.0013605208333333334
+        },
+        {
+          "symbol": "mech_compact_numeric_3009",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_3009_no_growth",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_3009_no_growth_composed",
+          "calls": 10.0,
+          "inclusive_seconds": 0.0014696041666666668,
+          "exclusive_seconds": 0.0014696041666666668
+        },
+        {
+          "symbol": "mech_compact_numeric_4173",
+          "calls": 28.0,
+          "inclusive_seconds": 8.5e-06,
+          "exclusive_seconds": 8.5e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_3447",
+          "calls": 9.0,
+          "inclusive_seconds": 9.931250000000001e-05,
+          "exclusive_seconds": 1.2500000000000002e-07
+        },
+        {
+          "symbol": "mech_compact_numeric_3447_grouped",
+          "calls": 9.0,
+          "inclusive_seconds": 9.920833333333334e-05,
+          "exclusive_seconds": 9.920833333333334e-05
+        },
+        {
+          "symbol": "mech_compact_numeric_3956_vector",
+          "calls": 28.0,
+          "inclusive_seconds": 1.7979166666666665e-05,
+          "exclusive_seconds": 1.7979166666666665e-05
+        },
+        {
+          "symbol": "mech_compact_numeric_6633",
+          "calls": 2.0,
+          "inclusive_seconds": 2.0833333333333334e-06,
+          "exclusive_seconds": 2.0833333333333334e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_5895",
+          "calls": 7.0,
+          "inclusive_seconds": 7.458333333333334e-06,
+          "exclusive_seconds": 7.458333333333334e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_3872",
+          "calls": 28.0,
+          "inclusive_seconds": 5.3958333333333335e-06,
+          "exclusive_seconds": 5.3958333333333335e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_4799",
+          "calls": 28.0,
+          "inclusive_seconds": 6.666666666666667e-07,
+          "exclusive_seconds": 6.666666666666667e-07
+        },
+        {
+          "symbol": "mech_compact_numeric_2821",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_2821_vector",
+          "calls": 2.0,
+          "inclusive_seconds": 3.2375e-05,
+          "exclusive_seconds": 3.2375e-05
+        },
+        {
+          "symbol": "mech_compact_numeric_8026",
+          "calls": 1.0,
+          "inclusive_seconds": 3.916666666666667e-06,
+          "exclusive_seconds": 3.916666666666667e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_362",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_362_vector",
+          "calls": 2.0,
+          "inclusive_seconds": 6.750000000000001e-06,
+          "exclusive_seconds": 6.750000000000001e-06
+        }
+      ]
+    },
+    {
+      "case": "prefix-natural-65536",
+      "median_seconds": {
+        "probe": 0.007839,
+        "control": 0.007853312500000001,
+        "roc": 0.007603749999999999
+      },
+      "phase_exclusive_sum_seconds": 0.007640083333333334,
+      "probe_x_control": 0.9981775206322172,
+      "probe_x_roc": 1.030938681571593,
+      "unattributed_instrumented_seconds": 0.00019891666666666669,
+      "phases": [
+        {
+          "symbol": "mech_compact_numeric_475_vector",
+          "calls": 3.0,
+          "inclusive_seconds": 0.0032552083333333335,
+          "exclusive_seconds": 0.0032552083333333335
+        },
+        {
+          "symbol": "mech_compact_numeric_3009",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_3009_no_growth",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_3009_no_growth_composed",
+          "calls": 11.0,
+          "inclusive_seconds": 0.004036125,
+          "exclusive_seconds": 0.004036125
+        },
+        {
+          "symbol": "mech_compact_numeric_4173",
+          "calls": 31.0,
+          "inclusive_seconds": 9.666666666666667e-06,
+          "exclusive_seconds": 9.666666666666667e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_3447",
+          "calls": 10.0,
+          "inclusive_seconds": 0.0002229375,
+          "exclusive_seconds": 1.6666666666666668e-07
+        },
+        {
+          "symbol": "mech_compact_numeric_3447_grouped",
+          "calls": 10.0,
+          "inclusive_seconds": 0.00022279166666666668,
+          "exclusive_seconds": 0.00022279166666666668
+        },
+        {
+          "symbol": "mech_compact_numeric_3956_vector",
+          "calls": 31.0,
+          "inclusive_seconds": 2.1333333333333335e-05,
+          "exclusive_seconds": 2.1333333333333335e-05
+        },
+        {
+          "symbol": "mech_compact_numeric_6633",
+          "calls": 2.0,
+          "inclusive_seconds": 2.125e-06,
+          "exclusive_seconds": 2.125e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_5895",
+          "calls": 8.0,
+          "inclusive_seconds": 8.083333333333334e-06,
+          "exclusive_seconds": 8.083333333333334e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_3872",
+          "calls": 31.0,
+          "inclusive_seconds": 6.083333333333334e-06,
+          "exclusive_seconds": 6.083333333333334e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_4799",
+          "calls": 31.0,
+          "inclusive_seconds": 7.5e-07,
+          "exclusive_seconds": 7.5e-07
+        },
+        {
+          "symbol": "mech_compact_numeric_2821",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_2821_vector",
+          "calls": 2.0,
+          "inclusive_seconds": 6.470833333333334e-05,
+          "exclusive_seconds": 6.470833333333334e-05
+        },
+        {
+          "symbol": "mech_compact_numeric_8026",
+          "calls": 1.0,
+          "inclusive_seconds": 3.916666666666667e-06,
+          "exclusive_seconds": 3.916666666666667e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_362",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_362_vector",
+          "calls": 2.0,
+          "inclusive_seconds": 6.708333333333334e-06,
+          "exclusive_seconds": 6.708333333333334e-06
+        }
+      ]
+    },
+    {
+      "case": "random-1024",
+      "median_seconds": {
+        "probe": 2.5333e-05,
+        "control": 2.59165e-05,
+        "roc": 0.000170917
+      },
+      "phase_exclusive_sum_seconds": 1.3416666666666668e-05,
+      "probe_x_control": 0.9774853857581077,
+      "probe_x_roc": 0.14821814096900834,
+      "unattributed_instrumented_seconds": 1.1916333333333331e-05,
+      "phases": [
+        {
+          "symbol": "mech_compact_numeric_475_vector",
+          "calls": 1.0,
+          "inclusive_seconds": 7.25e-06,
+          "exclusive_seconds": 7.25e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_3009",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_3009_no_growth",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_3009_no_growth_composed",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_4173",
+          "calls": 2.0,
+          "inclusive_seconds": 1.0416666666666667e-06,
+          "exclusive_seconds": 1.0416666666666667e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_3447",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_3447_grouped",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_3956_vector",
+          "calls": 2.0,
+          "inclusive_seconds": 2.791666666666667e-06,
+          "exclusive_seconds": 2.791666666666667e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_6633",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_5895",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_3872",
+          "calls": 2.0,
+          "inclusive_seconds": 3.75e-07,
+          "exclusive_seconds": 3.75e-07
+        },
+        {
+          "symbol": "mech_compact_numeric_4799",
+          "calls": 2.0,
+          "inclusive_seconds": 4.166666666666667e-08,
+          "exclusive_seconds": 4.166666666666667e-08
+        },
+        {
+          "symbol": "mech_compact_numeric_2821",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_2821_vector",
+          "calls": 1.0,
+          "inclusive_seconds": 1.0000000000000002e-06,
+          "exclusive_seconds": 1.0000000000000002e-06
+        },
+        {
+          "symbol": "mech_compact_numeric_8026",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_362",
+          "calls": 0.0,
+          "inclusive_seconds": 0.0,
+          "exclusive_seconds": 0.0
+        },
+        {
+          "symbol": "mech_compact_numeric_362_vector",
+          "calls": 1.0,
+          "inclusive_seconds": 8.750000000000001e-07,
+          "exclusive_seconds": 8.750000000000001e-07
+        }
+      ]
+    }
+  ]
+}
