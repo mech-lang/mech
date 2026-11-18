@@ -59,8 +59,10 @@ impl OwnerStorage {
     pub(super) unsafe fn retire(storage: *mut Self, record: *mut Owner) -> bool {
         // SAFETY: the caller retains the exclusive, stable storage loan.
         let first = unsafe { ptr::addr_of_mut!((*storage).records).cast::<Owner>() };
-        let offset = (record as usize).wrapping_sub(first as usize);
-        if offset % size_of::<Owner>() != 0 || offset / size_of::<Owner>() >= RECORDS {
+        // SAFETY: the caller supplies a live record whose logical slot was
+        // checked against this heap's registry before reaching retirement.
+        let slot = unsafe { (*record).slot };
+        if slot >= RECORDS || record != unsafe { first.add(slot) } {
             return false;
         }
         // The caller has validated the owner against the current registered
