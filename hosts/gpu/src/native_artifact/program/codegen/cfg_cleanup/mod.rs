@@ -1016,3 +1016,6 @@ pub(in crate::native_artifact) fn share_repeated_bounds(
     }
     Ok(changed)
 }
+
+#[cfg(test)]
+mod verified_cleanup_tests;
