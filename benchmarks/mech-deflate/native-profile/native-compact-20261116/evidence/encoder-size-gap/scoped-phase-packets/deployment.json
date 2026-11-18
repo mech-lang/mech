@@ -1,0 +1,44 @@
+{
+  "median_seconds": {
+    "mech-maintained": {
+      "source": 2.4033849586267024,
+      "link": 0.03574402048252523,
+      "source_through_link": 2.4432251874823123,
+      "strip": 0.01089693745598197,
+      "source_through_strip": 2.4543007710017264
+    },
+    "mech-smaller": {
+      "source": 2.397912187501788,
+      "link": 0.03548864577896893,
+      "source_through_link": 2.433893291512504,
+      "strip": 0.011193791637197137,
+      "source_through_strip": 2.4449757914990187
+    },
+    "roc": {
+      "source": 2.9527056249789894,
+      "link": 0.035195291973650455,
+      "source_through_link": 2.9880217916797847,
+      "strip": 0.01072685420513153,
+      "source_through_strip": 2.9988998542539775
+    },
+    "libdeflate": {
+      "source": 0.44803893752396107,
+      "link": 0.03437406267039478,
+      "source_through_link": 0.4825719997752458,
+      "strip": 0.010752125643193722,
+      "source_through_strip": 0.4932611451949924
+    }
+  },
+  "paired_ratios": {
+    "mech-maintained": 0.9953689578447138,
+    "mech-smaller": 1.0,
+    "roc": 0.8139979819026038,
+    "libdeflate": 5.045547846685507
+  },
+  "sizes": {
+    "mech-maintained": 292568,
+    "mech-smaller": 276056,
+    "roc": 191912,
+    "libdeflate": 155752
+  }
+}

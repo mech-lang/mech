@@ -1,0 +1,42 @@
+{
+  "review_parent": "d6d844d86a17ac20523bd6193b604443c3c051f2",
+  "compiler_sha256": "976e1bd062c75bab5eb59249216f00dc25e5c7934415066f4192eadae89c178a",
+  "maintained_encoder_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+  "encoder_text_bytes": 68840,
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "artifact_sha256": {
+    "program.o": "1f2b91186059fba397b397e78ee12c88df8112b2b5d5887b17cc73d83addb656",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata.json": "3c88a9783ee81bb936833cbf5c0ac57887624592b2c4b7769a9577bf58b0b240"
+  },
+  "worker_sha256": "714a6f3260842280feb43a8ceb988ae8198c77b151faa56455a46269e23251d0",
+  "remove_flags": [
+    "MECH_COMPACT_ROOT_TAIL_PROFILE"
+  ],
+  "override_flags": {
+    "MECH_COMPACT_FIXED_PHASE_PACKET": "refused",
+    "MECH_COMPACT_PACK_PHASE_INPUTS": "1",
+    "MECH_ORDERED_HORIZONTAL_MINIMUM": "1",
+    "MECH_ORDERED_REVERSE_LOW_WORDS": "1",
+    "MECH_ORDERED_VECTOR_LATCH_TEST": "1",
+    "MECH_COMPOSE_SPLIT_COST_LENGTH": "1",
+    "MECH_COMPACT_REFUSE_PHASE_GROWTH": "1"
+  },
+  "profiles": [
+    {
+      "symbol": "mech_compact_numeric_3956_vector",
+      "path": "profiles/mech_compact_numeric_3956_vector.json",
+      "sha256": "9d75282ff03f8d4e1382a89d97876f3f195b1548fbff65b63c04cf6f8d6834bc"
+    },
+    {
+      "symbol": "mech_compact_numeric_475_vector",
+      "path": "profiles/mech_compact_numeric_475_vector.json",
+      "sha256": "55bdbe755a0ee2709beb1ba0bd24528e0d0c8cc6d12f99e9f8c00fe56325acc7"
+    },
+    {
+      "symbol": "mech_compact_numeric_3009_no_growth_composed",
+      "path": "profiles/mech_compact_numeric_3009_no_growth_composed.json",
+      "sha256": "56d1337c511f9151c64b5d25f1af4a1306d342409712763047eb2234e3fbbbc1"
+    }
+  ]
+}

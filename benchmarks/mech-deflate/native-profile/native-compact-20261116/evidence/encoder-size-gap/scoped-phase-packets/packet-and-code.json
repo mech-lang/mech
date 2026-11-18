@@ -1,0 +1,128 @@
+{
+  "scope": "collector only",
+  "maintained_packet": {
+    "input_bytes": 440,
+    "output_bytes": 616
+  },
+  "trial_packet": {
+    "calls": 14,
+    "input_bytes": 232,
+    "input_output_disjoint": true,
+    "invocation_local": true,
+    "output_bytes": 136,
+    "previous_separate_bytes": 3040,
+    "slots": 2,
+    "synchronous_non_escaping": true
+  },
+  "maintained_root": {
+    "bytes": 50632,
+    "stack": 3728
+  },
+  "trial_root": {
+    "bytes": 50124,
+    "stack": 3072
+  },
+  "phase_state": [
+    {
+      "header": 475,
+      "input_words": 43,
+      "output_words": 17,
+      "private_compact_packet": true,
+      "private_packed_input_words": 29
+    },
+    {
+      "header": 3009,
+      "input_words": 20,
+      "output_words": 12,
+      "private_compact_packet": null,
+      "private_packed_input_words": null
+    },
+    {
+      "header": 4173,
+      "input_words": 10,
+      "output_words": 11,
+      "private_compact_packet": null,
+      "private_packed_input_words": null
+    },
+    {
+      "header": 3447,
+      "input_words": 21,
+      "output_words": 11,
+      "private_compact_packet": null,
+      "private_packed_input_words": null
+    },
+    {
+      "header": 3956,
+      "input_words": 8,
+      "output_words": 11,
+      "private_compact_packet": null,
+      "private_packed_input_words": null
+    },
+    {
+      "header": 4879,
+      "input_words": 18,
+      "output_words": 17,
+      "private_compact_packet": null,
+      "private_packed_input_words": null
+    },
+    {
+      "header": 4673,
+      "input_words": 16,
+      "output_words": 11,
+      "private_compact_packet": null,
+      "private_packed_input_words": null
+    },
+    {
+      "header": 6633,
+      "input_words": 14,
+      "output_words": 11,
+      "private_compact_packet": null,
+      "private_packed_input_words": null
+    },
+    {
+      "header": 5895,
+      "input_words": 15,
+      "output_words": 11,
+      "private_compact_packet": null,
+      "private_packed_input_words": null
+    },
+    {
+      "header": 3872,
+      "input_words": 14,
+      "output_words": 12,
+      "private_compact_packet": null,
+      "private_packed_input_words": null
+    },
+    {
+      "header": 4799,
+      "input_words": 12,
+      "output_words": 11,
+      "private_compact_packet": null,
+      "private_packed_input_words": null
+    },
+    {
+      "header": 2821,
+      "input_words": 13,
+      "output_words": 11,
+      "private_compact_packet": null,
+      "private_packed_input_words": null
+    },
+    {
+      "header": 8026,
+      "input_words": 9,
+      "output_words": 11,
+      "private_compact_packet": null,
+      "private_packed_input_words": null
+    },
+    {
+      "header": 362,
+      "input_words": 13,
+      "output_words": 11,
+      "private_compact_packet": null,
+      "private_packed_input_words": null
+    }
+  ],
+  "placed_text": 68840,
+  "unplaced_text": 68808,
+  "excluded_general_scorer": true
+}
