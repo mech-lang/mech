@@ -1981,6 +1981,13 @@ fn define_entry<M: Module>(
         )
         .map_err(backend)?;
     }
+    if outline_allowed && std::env::var_os("MECH_COMPACT_LITERAL_ALLOCATION_SETUP").is_some() {
+        let count = super::allocation_stubs::specialize(module, &mut context.func)?;
+        if count != 0 {
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        eprintln!("compact root literal allocation setup calls: {count}");
+    }
     let release_stubs = if outline_allowed
         && memory
         && compile_root.is_none()
