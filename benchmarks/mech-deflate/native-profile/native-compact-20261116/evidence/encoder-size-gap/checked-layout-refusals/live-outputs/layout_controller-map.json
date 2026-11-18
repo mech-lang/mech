@@ -1,0 +1,357 @@
+{
+  "mapped_windows": "7924:38285:8064,4936:26382:5013,4877:26191:4952,4796:25848:4868,4684:25390:4753,4347:23990:4404,4262:23585:4318,4250:23514:4306,4020:22494:4070,3880:21853:3925,2716:17358:2731,2713:17340:2728,2633:17036:2647,2631:17020:2645,2424:16259:2436,2422:16243:2434,2349:15958:2360,2346:15940:2357,2085:15099:2094,2050:14995:2059,2011:14879:2020,1991:14817:2000,1245:12406:1250,861:11248:862",
+  "families": 1,
+  "original_families": 1,
+  "windows": 24,
+  "original_windows": 24,
+  "aligned_blocks": 11880,
+  "block_counts": [
+    11892,
+    11886
+  ],
+  "report": [
+    {
+      "group": 0,
+      "mapped": 24,
+      "original": 24,
+      "evidence": [
+        {
+          "old": [
+            7924,
+            38293,
+            8064
+          ],
+          "new": [
+            7924,
+            38285,
+            8064
+          ],
+          "entry_reason": "layout-neighborhood-16",
+          "end_reason": "layout-neighborhood-16"
+        },
+        {
+          "old": [
+            4936,
+            26390,
+            5013
+          ],
+          "new": [
+            4936,
+            26382,
+            5013
+          ],
+          "entry_reason": "cfg-3-parents-True",
+          "end_reason": "layout-neighborhood-16"
+        },
+        {
+          "old": [
+            4877,
+            26199,
+            4952
+          ],
+          "new": [
+            4877,
+            26191,
+            4952
+          ],
+          "entry_reason": "cfg-3-parents-True",
+          "end_reason": "cfg-3-parents-True"
+        },
+        {
+          "old": [
+            4796,
+            25856,
+            4868
+          ],
+          "new": [
+            4796,
+            25848,
+            4868
+          ],
+          "entry_reason": "layout-neighborhood-16",
+          "end_reason": "unchanged-layout"
+        },
+        {
+          "old": [
+            4684,
+            25398,
+            4753
+          ],
+          "new": [
+            4684,
+            25390,
+            4753
+          ],
+          "entry_reason": "layout-neighborhood-16",
+          "end_reason": "layout-neighborhood-16"
+        },
+        {
+          "old": [
+            4347,
+            23993,
+            4404
+          ],
+          "new": [
+            4347,
+            23990,
+            4404
+          ],
+          "entry_reason": "layout-neighborhood-16",
+          "end_reason": "unchanged-layout"
+        },
+        {
+          "old": [
+            4262,
+            23588,
+            4318
+          ],
+          "new": [
+            4262,
+            23585,
+            4318
+          ],
+          "entry_reason": "layout-neighborhood-16",
+          "end_reason": "layout-neighborhood-16"
+        },
+        {
+          "old": [
+            4250,
+            23517,
+            4306
+          ],
+          "new": [
+            4250,
+            23514,
+            4306
+          ],
+          "entry_reason": "layout-neighborhood-16",
+          "end_reason": "layout-neighborhood-16"
+        },
+        {
+          "old": [
+            4020,
+            22497,
+            4070
+          ],
+          "new": [
+            4020,
+            22494,
+            4070
+          ],
+          "entry_reason": "cfg-3-parents-True",
+          "end_reason": "cfg-3-parents-True"
+        },
+        {
+          "old": [
+            3880,
+            21853,
+            3925
+          ],
+          "new": [
+            3880,
+            21853,
+            3925
+          ],
+          "entry_reason": "cfg-3-parents-True",
+          "end_reason": "layout-neighborhood-16"
+        },
+        {
+          "old": [
+            2716,
+            17358,
+            2731
+          ],
+          "new": [
+            2716,
+            17358,
+            2731
+          ],
+          "entry_reason": "unchanged-layout",
+          "end_reason": "unchanged-layout"
+        },
+        {
+          "old": [
+            2713,
+            17340,
+            2728
+          ],
+          "new": [
+            2713,
+            17340,
+            2728
+          ],
+          "entry_reason": "unchanged-layout",
+          "end_reason": "unchanged-layout"
+        },
+        {
+          "old": [
+            2633,
+            17036,
+            2647
+          ],
+          "new": [
+            2633,
+            17036,
+            2647
+          ],
+          "entry_reason": "unchanged-layout",
+          "end_reason": "unchanged-layout"
+        },
+        {
+          "old": [
+            2631,
+            17020,
+            2645
+          ],
+          "new": [
+            2631,
+            17020,
+            2645
+          ],
+          "entry_reason": "unchanged-layout",
+          "end_reason": "unchanged-layout"
+        },
+        {
+          "old": [
+            2424,
+            16259,
+            2436
+          ],
+          "new": [
+            2424,
+            16259,
+            2436
+          ],
+          "entry_reason": "unchanged-layout",
+          "end_reason": "unchanged-layout"
+        },
+        {
+          "old": [
+            2422,
+            16243,
+            2434
+          ],
+          "new": [
+            2422,
+            16243,
+            2434
+          ],
+          "entry_reason": "unchanged-layout",
+          "end_reason": "unchanged-layout"
+        },
+        {
+          "old": [
+            2349,
+            15958,
+            2360
+          ],
+          "new": [
+            2349,
+            15958,
+            2360
+          ],
+          "entry_reason": "unchanged-layout",
+          "end_reason": "unchanged-layout"
+        },
+        {
+          "old": [
+            2346,
+            15940,
+            2357
+          ],
+          "new": [
+            2346,
+            15940,
+            2357
+          ],
+          "entry_reason": "unchanged-layout",
+          "end_reason": "unchanged-layout"
+        },
+        {
+          "old": [
+            2085,
+            15099,
+            2094
+          ],
+          "new": [
+            2085,
+            15099,
+            2094
+          ],
+          "entry_reason": "layout-neighborhood-16",
+          "end_reason": "cfg-3-parents-True"
+        },
+        {
+          "old": [
+            2050,
+            14995,
+            2059
+          ],
+          "new": [
+            2050,
+            14995,
+            2059
+          ],
+          "entry_reason": "unchanged-layout",
+          "end_reason": "layout-neighborhood-16"
+        },
+        {
+          "old": [
+            2011,
+            14879,
+            2020
+          ],
+          "new": [
+            2011,
+            14879,
+            2020
+          ],
+          "entry_reason": "layout-neighborhood-16",
+          "end_reason": "layout-neighborhood-16"
+        },
+        {
+          "old": [
+            1991,
+            14817,
+            2000
+          ],
+          "new": [
+            1991,
+            14817,
+            2000
+          ],
+          "entry_reason": "unchanged-layout",
+          "end_reason": "layout-neighborhood-16"
+        },
+        {
+          "old": [
+            1245,
+            12406,
+            1250
+          ],
+          "new": [
+            1245,
+            12406,
+            1250
+          ],
+          "entry_reason": "layout-neighborhood-16",
+          "end_reason": "layout-neighborhood-16"
+        },
+        {
+          "old": [
+            861,
+            11248,
+            862
+          ],
+          "new": [
+            861,
+            11248,
+            862
+          ],
+          "entry_reason": "layout-neighborhood-16",
+          "end_reason": "layout-neighborhood-16"
+        }
+      ]
+    }
+  ]
+}
