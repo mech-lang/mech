@@ -80,6 +80,9 @@ The 67,664 B encoder won 81/81 and 81/81 Roc cases and 62/81 and 61/81 libdeflat
 The matcher layout emits **67,648 B** with the shared continuations. Complete orders recorded 81/81 and 81/81 against Roc and 62/81 and 62/81 against libdeflate. V3 returned **Retain**.
 [Source replay and runtime results](evidence/encoder-size-gap/continuation-matcher-layout/README.md)
 
+The single dense scorer with a checked fallback emits **66,240 B**. It won 81/81 and 81/81 against Roc and 62/81 and 61/81 against libdeflate. The v3 decision was **Reject**.
+[Source patch, replay and complete results](evidence/encoder-size-gap/dense-scorer-only/README.md)
+
 ## MechDeflate compile time by encoder build
 
 Each row measures fresh MechDeflate source through final executable
@@ -103,6 +106,7 @@ Roc and libdeflate trials from the same session.
 | [Shared cold returns](evidence/encoder-size-gap/shared-continuation-returns/deployment.json) | 67,672 B | 2.304 s | 0.770× | 4.796× |
 | [Shared cold returns with one additional continuation family](evidence/encoder-size-gap/shared-continuation-returns/deployment.json) | 67,664 B | 2.302 s | 0.770× | 4.794× |
 | [Shared continuations with matcher fallthroughs](evidence/encoder-size-gap/continuation-matcher-layout/deployment.json) | 67,648 B | 2.301 s | 0.771× | 4.789× |
+| [Dense scorer with early admission and single-body preparation](evidence/encoder-size-gap/dense-scorer-only/deployment.json) | 66,240 B | 2.295 s | 0.768× | 4.699× |
 
 Parser, lowering, native compilation and link timings are in the
 machine-readable scorecard.
