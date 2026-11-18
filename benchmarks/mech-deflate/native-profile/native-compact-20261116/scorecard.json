@@ -12825,7 +12825,103 @@
         "median_paired_seconds_saved": 0.003487959271296859,
         "faster_paired_trials": 8,
         "evidence": "evidence/encoder-size-gap/shared-continuation-returns/deployment.json"
+      },
+      {
+        "name": "Shared continuations with matcher fallthroughs",
+        "encoder_text_bytes": 67648,
+        "encoder_sha256": "6aa84b6f1959257d89790935b17abf47cb195ba728c8fd01d5876281b569d096",
+        "compiler_sha256": "bced0ae35a684e0bfa816f08edc81af43c5f1d3f53093a0d677564430b021c0e",
+        "measured_trials": 10,
+        "measurement_plan_sha256": "477ab63c51e9e60eece187a9ef4696f17a759666e5bf98ab8e387b174512d121",
+        "median_seconds": {
+          "source": 2.2630996250081807,
+          "link": 0.03564443741925061,
+          "source_through_link": 2.300522874807939,
+          "strip": 0.010453833034262061,
+          "source_through_strip": 2.3113209372386336
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.786576917,
+          "catalog": 1.7749999999999998e-05,
+          "frontend": 0.224913229,
+          "artifact": 0.0070369165000000004,
+          "encode": 0.0025858340000000004,
+          "native": 1.2140561875
+        },
+        "stripped_executable": {
+          "bytes": 276056,
+          "sha256": "38d65b231adaee747a6a0cf5374573a15eef84f4ab010af7cb30402fc98d2ad5"
+        },
+        "paired_ratios": {
+          "roc": 0.7706538572451717,
+          "libdeflate": 4.788964461007479
+        },
+        "encoder_text_ratios": {
+          "roc": 1.1724902939545203,
+          "libdeflate": 1.8243797195253506
+        },
+        "paired_ratio_to_session_control": 0.9972485709838582,
+        "median_paired_seconds_saved": 0.006347208051010966,
+        "faster_paired_trials": 7,
+        "evidence": "evidence/encoder-size-gap/continuation-matcher-layout/deployment.json"
       }
     ]
+  },
+  "continuation_matcher_layout": {
+    "evidence": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout",
+    "build": {
+      "name": "Shared continuations with matcher fallthroughs",
+      "encoder_text_bytes": 67648,
+      "encoder_sha256": "6aa84b6f1959257d89790935b17abf47cb195ba728c8fd01d5876281b569d096",
+      "compiler_sha256": "bced0ae35a684e0bfa816f08edc81af43c5f1d3f53093a0d677564430b021c0e",
+      "measured_trials": 10,
+      "measurement_plan_sha256": "477ab63c51e9e60eece187a9ef4696f17a759666e5bf98ab8e387b174512d121",
+      "median_seconds": {
+        "source": 2.2630996250081807,
+        "link": 0.03564443741925061,
+        "source_through_link": 2.300522874807939,
+        "strip": 0.010453833034262061,
+        "source_through_strip": 2.3113209372386336
+      },
+      "source_phase_median_seconds": {
+        "parse": 0.786576917,
+        "catalog": 1.7749999999999998e-05,
+        "frontend": 0.224913229,
+        "artifact": 0.0070369165000000004,
+        "encode": 0.0025858340000000004,
+        "native": 1.2140561875
+      },
+      "stripped_executable": {
+        "bytes": 276056,
+        "sha256": "38d65b231adaee747a6a0cf5374573a15eef84f4ab010af7cb30402fc98d2ad5"
+      },
+      "paired_ratios": {
+        "roc": 0.7706538572451717,
+        "libdeflate": 4.788964461007479
+      },
+      "encoder_text_ratios": {
+        "roc": 1.1724902939545203,
+        "libdeflate": 1.8243797195253506
+      },
+      "paired_ratio_to_session_control": 0.9972485709838582,
+      "median_paired_seconds_saved": 0.006347208051010966,
+      "faster_paired_trials": 7,
+      "evidence": "evidence/encoder-size-gap/continuation-matcher-layout/deployment.json"
+    },
+    "runtime": {
+      "decision": "Retain",
+      "wins": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          62,
+          62
+        ]
+      }
+    },
+    "worker_sha256": "50423a79f10e605167e8d98a051239aedb2fba5c9c34bc7ddf96fb64cf9e2d6d",
+    "peak_stack_bytes": 4752
   }
 }
