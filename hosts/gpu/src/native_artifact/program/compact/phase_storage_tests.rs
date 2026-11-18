@@ -1,4 +1,4 @@
-use super::{pack_used_input_words, sink_exit_packet_words};
+use super::{pack_used_input_words, qualify_input_packet_loads, sink_exit_packet_words};
 use cranelift_codegen::ir::types::{I32, I64};
 use cranelift_codegen::ir::{AbiParam, Block, Function, Inst, InstBuilder, MemFlags};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
@@ -18,6 +18,47 @@ enum Shape {
     OutputOutside,
     OtherWidth,
     Nonterminal,
+}
+
+#[test]
+fn input_packet_flags_require_the_complete_nonescaping_load_contract() {
+    use cranelift_codegen::ir::InstructionData;
+    let module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+    for shape in [
+        Shape::ExitCopy,
+        Shape::RepeatedCopy,
+        Shape::ExtraUse,
+        Shape::UnusedInput,
+    ] {
+        let mut context = module.make_context();
+        build(&mut context.func, shape);
+        let expected = if shape == Shape::UnusedInput { 2 } else { 1 };
+        assert_eq!(qualify_input_packet_loads(&mut context.func, 2), expected);
+        for block in context.func.layout.blocks() {
+            for inst in context.func.layout.block_insts(block) {
+                if let InstructionData::Load { flags, .. } = context.func.dfg.insts[inst] {
+                    assert!(flags.notrap() && flags.readonly() && flags.aligned());
+                }
+            }
+        }
+        context.verify(module.isa()).unwrap();
+    }
+    for shape in [
+        Shape::InputEscape,
+        Shape::InputWrite,
+        Shape::InputOutside,
+        Shape::OtherWidth,
+    ] {
+        let mut context = module.make_context();
+        build(&mut context.func, shape);
+        let before = context.func.display().to_string();
+        assert_eq!(
+            qualify_input_packet_loads(&mut context.func, 2),
+            0,
+            "{shape:?}"
+        );
+        assert_eq!(context.func.display().to_string(), before);
+    }
 }
 
 fn build(function: &mut Function, shape: Shape) -> (Inst, Inst, Block) {

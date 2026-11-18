@@ -29,7 +29,6 @@ pub(super) struct Composed {
 
 pub(super) struct Compiled {
     pub function: FuncId,
-    pub entry_bounds: Vec<(usize, u64, bool)>,
     pub summary: serde_json::Value,
     pub code: Vec<u8>,
     pub composed: Option<Composed>,
@@ -272,6 +271,17 @@ impl Prepared {
     pub(super) fn entry_bounds(&self) -> &[(usize, u64, bool)] {
         &self.details.entry_bounds
     }
+    pub(super) fn has_dense_composition(&self) -> bool {
+        self.details
+            .composed
+            .as_ref()
+            .is_some_and(|body| body.admission.immutable_code_bytes.is_some())
+    }
+
+    pub(super) fn into_composition(self) -> Option<Composed> {
+        self.details.composed
+    }
+
     pub(super) fn define<M: Module>(
         mut self,
         module: &mut M,
@@ -339,7 +349,6 @@ impl Details {
         }
         Ok(Compiled {
             function: self.function,
-            entry_bounds: self.entry_bounds,
             summary,
             code: compiled.buffer.data().to_vec(),
             composed: self.composed,
@@ -1132,6 +1141,9 @@ fn prepare_impl<M: Module>(
                     .declare_function(&name, Linkage::Local, &signature)
                     .map_err(backend)?;
                 if !observe && module.isa().name() == "aarch64" {
+                    candidate.func.aarch64_branch_on_zero =
+                        admission.immutable_code_bytes.is_some()
+                            && std::env::var_os("MECH_COMPACT_DENSE_BRANCH_ON_ZERO").is_some();
                     phase_layout::apply(&mut candidate, &name).map_err(backend)?;
                 }
                 let inspect_path = std::env::var_os("MECH_INSPECT_PHASE_CLIF")
@@ -1521,6 +1533,9 @@ fn optimize_phase(
     no_growth: Option<&NoGrowth>,
     report_diagnostics: bool,
 ) -> Result<PhaseCleanup, NativeCompileError> {
+    if std::env::var_os("MECH_QUALIFY_PHASE_INPUT_PACKET").is_some() {
+        super::phase_storage::qualify_input_packet_loads(&mut context.func, input_words);
+    }
     // Numeric phases have their own sealed SSA; never match through packets.
     let mut bit_counts =
         crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);

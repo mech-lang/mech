@@ -1,5 +1,6 @@
 //! Reuse comparisons of current unsigned words in the selected dominator
-//! subtree. A wrapping sum is keyed by its two current SSA operands.
+//! subtree. A wrapping sum is keyed by its two current SSA operands. Optional
+//! complement normalization also reuses strict-order and equality decisions.
 use super::super::window_bounds::comparison;
 use super::incoming;
 use cranelift_codegen::dominator_tree::DominatorTree;
@@ -10,7 +11,7 @@ use cranelift_codegen::ir::{
 };
 use std::collections::{BTreeMap, HashMap};
 
-#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 enum Operand {
     Word(Value),
     Sum([Value; 2]),
@@ -41,7 +42,7 @@ struct Relation {
 }
 
 impl Relation {
-    fn of(f: &Function, inst: Inst) -> Option<Self> {
+    fn of(f: &Function, inst: Inst, complements: bool) -> Option<(Self, bool)> {
         let Data::IntCompare {
             cond,
             args: [left, right],
@@ -53,26 +54,48 @@ impl Relation {
         if f.dfg.value_type(left) != types::I64 || f.dfg.value_type(right) != types::I64 {
             return None;
         }
-        let (condition, left, right) = match cond {
-            IntCC::UnsignedLessThan | IntCC::UnsignedLessThanOrEqual => (cond, left, right),
-            IntCC::UnsignedGreaterThan | IntCC::UnsignedGreaterThanOrEqual => {
-                use cranelift_codegen::ir::condcodes::CondCode;
-                (cond.swap_args(), right, left)
+        let (condition, left, right, positive) = if complements {
+            // A selected edge fixes either a predicate or its complement.
+            // Keep immutable SSA operands current; a fresh read or changed
+            // expression has a different key even when storage aliases.
+            match cond {
+                IntCC::UnsignedLessThan => (IntCC::UnsignedLessThan, left, right, true),
+                IntCC::UnsignedGreaterThanOrEqual => (IntCC::UnsignedLessThan, left, right, false),
+                IntCC::UnsignedGreaterThan => (IntCC::UnsignedLessThan, right, left, true),
+                IntCC::UnsignedLessThanOrEqual => (IntCC::UnsignedLessThan, right, left, false),
+                IntCC::Equal => (IntCC::Equal, left, right, true),
+                IntCC::NotEqual => (IntCC::Equal, left, right, false),
+                _ => return None,
             }
-            _ => return None,
+        } else {
+            let (condition, left, right) = match cond {
+                IntCC::UnsignedLessThan | IntCC::UnsignedLessThanOrEqual => (cond, left, right),
+                IntCC::UnsignedGreaterThan | IntCC::UnsignedGreaterThanOrEqual => {
+                    use cranelift_codegen::ir::condcodes::CondCode;
+                    (cond.swap_args(), right, left)
+                }
+                _ => return None,
+            };
+            (condition, left, right, true)
         };
-        let left = Operand::current(f, left);
-        let right = Operand::current(f, right);
-        // The first experiment is confined to recomputed endpoints. Keeping
+        let mut left = Operand::current(f, left);
+        let mut right = Operand::current(f, right);
+        if complements && condition == IntCC::Equal && right < left {
+            core::mem::swap(&mut left, &mut right);
+        }
+        // The original mode is confined to recomputed endpoints. Keeping
         // leaves by SSA identity distinguishes a fresh read from a prior one.
-        if !matches!(left, Operand::Sum(_)) && !matches!(right, Operand::Sum(_)) {
+        if !complements && !matches!(left, Operand::Sum(_)) && !matches!(right, Operand::Sum(_)) {
             return None;
         }
-        Some(Self {
-            condition,
-            left,
-            right,
-        })
+        Some((
+            Self {
+                condition,
+                left,
+                right,
+            },
+            positive,
+        ))
     }
 }
 
@@ -80,6 +103,20 @@ pub(in super::super) fn fold(
     f: &mut Function,
     cfg: &ControlFlowGraph,
     dom: &DominatorTree,
+) -> usize {
+    fold_with_mode(
+        f,
+        cfg,
+        dom,
+        std::env::var_os("MECH_REUSE_COMPLEMENTARY_PREDICATES").is_some(),
+    )
+}
+
+fn fold_with_mode(
+    f: &mut Function,
+    cfg: &ControlFlowGraph,
+    dom: &DominatorTree,
+    complements: bool,
 ) -> usize {
     let Some(entry) = f.layout.entry_block() else {
         return 0;
@@ -109,15 +146,15 @@ pub(in super::super) fn fold(
             Step::Enter(block) => {
                 if let Some((predicate, truth)) = incoming(f, cfg, block)
                     && let Some(test) = comparison(f, predicate)
-                    && let Some(key) = Relation::of(f, test)
+                    && let Some((key, positive)) = Relation::of(f, test, complements)
                 {
-                    steps.push(Step::Restore(key, facts.insert(key, truth)));
+                    steps.push(Step::Restore(key, facts.insert(key, truth == positive)));
                 }
                 for inst in f.layout.block_insts(block) {
-                    if let Some(key) = Relation::of(f, inst)
+                    if let Some((key, positive)) = Relation::of(f, inst, complements)
                         && let Some(&truth) = facts.get(&key)
                     {
-                        edits.push((inst, truth));
+                        edits.push((inst, truth == positive));
                     }
                 }
                 steps.extend(dom.children(block).map(Step::Enter));
@@ -160,3 +197,6 @@ pub(super) fn replace_proved(f: &mut Function, edits: &[(Inst, bool)]) -> usize 
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod complement_tests;

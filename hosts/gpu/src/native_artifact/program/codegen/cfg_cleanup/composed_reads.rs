@@ -85,7 +85,7 @@ struct DenseCodes {
     key: CodeKey,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub(in crate::native_artifact) struct DenseTables(BTreeMap<CodeKey, DataId>);
 
 impl DenseTables {
