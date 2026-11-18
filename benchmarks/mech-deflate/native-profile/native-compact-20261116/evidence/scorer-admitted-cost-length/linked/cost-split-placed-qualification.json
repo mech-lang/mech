@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/checks/worker-checks/cost-split-placed/mech-worker",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-cost-length/checks/worker-checks/cost-split-placed/metadata.json",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "complete_smokes": 162,
+  "verified": true,
+  "worker_sha256": "c7de4e2df36a4121ea455d0bff8b14e27199b22899ae433f22e18d97a333815a",
+  "metadata_sha256": "2aeb03eba7b5129e81b8eae1e237d8bf3d5d51e94b5c454ff297369b42b0ebfa"
+}

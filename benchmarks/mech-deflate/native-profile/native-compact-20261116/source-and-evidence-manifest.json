@@ -50,8 +50,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/CURRENT.md",
-      "sha256": "86458f23299a9259bc0e98acf0dab641e78318c29dbcaba18b5babc23971e88b",
-      "bytes": 15064
+      "sha256": "9b17e4d956a664cf707d23e9bebc599aa78dcaf6e07d21281842ebf8b7350bc0",
+      "bytes": 15748
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/QUALIFICATION.md",
@@ -34179,6 +34179,246 @@
       "bytes": 2976
     },
     {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/README.md",
+      "sha256": "745ca9499a215b4c363e9c284bccc67ba99f2b5316b1f5b0b5627cdb26332b9f",
+      "bytes": 2737
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/boundary/check.c.gz",
+      "sha256": "a5c23cb5608db7c26d5fb35bf24421935ffd7b004942d567235df98dc886f9cb",
+      "bytes": 531
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/boundary/check.log.gz",
+      "sha256": "1d8bd67513ce6883ef72f17bb9f07624dedbbbf29ad1ca27c788f51c06b552b8",
+      "bytes": 198
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/boundary/emitter.rs.gz",
+      "sha256": "5d1e3dcf715e72cd59dbd2f85e761f696fbfa7d35134d759b1fdf67fab925664",
+      "bytes": 4290
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/boundary/result.json",
+      "sha256": "a17f80cbb96af86735f29f5195d6df766c87e3b564eb183fe09ca365266eface",
+      "bytes": 3578
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/boundary.py",
+      "sha256": "b36ceeb540a44cb5b665ede2c666838eb261180db3e1845cf2887e57e596b316",
+      "bytes": 8775
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/build-comparison.json.gz",
+      "sha256": "32f9194c1fb38c5d8f0c4aecae2d8e26b8b2e03c744c07a13c068ed418387a8f",
+      "bytes": 18187
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/build.py",
+      "sha256": "a8d85d461bb5f52fe11f637c211d13f7ea4cce341a6acad1ebeb0c4c5fb71066",
+      "bytes": 3077
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/campaign.py",
+      "sha256": "5acd789b7e118b9c7091ccc5b5b694bd9f35d9c74bf12fdd2c5a76773c1b1334",
+      "bytes": 7504
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/compiler-build-log.jsonl.gz",
+      "sha256": "c8dec6e0ebb4963dfeb4d53c5c0949b37a9f816a0231315d8c49b77240318d74",
+      "bytes": 12952
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/compiler-build.json",
+      "sha256": "5319d82c2bdb25936ef04a8ed8a8326dcfd5f0cdda81eef58475f1e2aaaeafcb",
+      "bytes": 2343
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/compiler.patch.gz",
+      "sha256": "ea3d30ea1ea5e05c3c145f2b9021a36a1ec5d661382680cb073ab7acb511511e",
+      "bytes": 2834
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/control-plan.json",
+      "sha256": "4d15cec32a05b1fbb98ce835df1a03444008bd90bb8cdb7c65b3b1aec6087fad",
+      "bytes": 9390
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/count-placed.py",
+      "sha256": "7ef53e1e20ab741115ed7fc9510627c17fa170c90b44f215cdbda1729def3bbb",
+      "bytes": 2739
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/counts/cost-latch-control-recipe.json.gz",
+      "sha256": "8680a7e44254c004f0202efce6b215418bad0c86da316d4d86194f68938a9a7b",
+      "bytes": 5529
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/counts/cost-latch-control.json.gz",
+      "sha256": "856b2d33edd31fc3ad9382006e33fc07137b298f3fdbdacc7d1481f8738baeec",
+      "bytes": 4473
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/counts/cost-split-placed-recipe.json.gz",
+      "sha256": "7fdaf5eaf76b7c2f70b2c163182b9df5d5b953b04c9b74c23d4e5372281f3b70",
+      "bytes": 5526
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/counts/cost-split-placed.json.gz",
+      "sha256": "16867bcf2e0850de8b4324032502ea17700cd88fc4d2ba09844614b003d8c76d",
+      "bytes": 4515
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/disabled-rebuild.json",
+      "sha256": "aa68941c2fa1047c0790a40400954bee45f36a3c95566de6ea8a8e3a74ef8625",
+      "bytes": 8845
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/focus/contract.json",
+      "sha256": "341552d9dac5ee46aa0bb7cc0ca4d688b7740d069fd7cdcd718a8c6ab33440a9",
+      "bytes": 215
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/focus/environment.json",
+      "sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+      "bytes": 427
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/focus/fixture-content.json",
+      "sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+      "bytes": 22527
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/focus/focus-replay.json.gz",
+      "sha256": "a252db2c499d50332ed8aab3813d7f100e0401c3c071e559ae9b70fdf92dedb9",
+      "bytes": 4828
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/focus/forward.tar.gz",
+      "sha256": "0854e8edbd3765c77e6d1c5cd8f64e2bce70f20a5209eccf8860c05e96060604",
+      "bytes": 3329080
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/focus/plan.json",
+      "sha256": "5e34106d95b9544b77376146af12b18118c25c4c9dea856deeca4bc20cafdbb6",
+      "bytes": 5045
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/focus/plan.sha256",
+      "sha256": "7b3e44f6e68e5db2009c0365b97d8493f31d367a6fdda7015e23ecc39eeffb58",
+      "bytes": 65
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/focus/post-acquisition.json",
+      "sha256": "b589ce6d8b9c18916913592e001569a956d65d052849c4952361078f1880516f",
+      "bytes": 78
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/focus/reverse.tar.gz",
+      "sha256": "650010d999945f85bd2d35a90eeca5e77c24fd4c3eac5c3bc26877ab303c825c",
+      "bytes": 3334345
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/focus/screen.json",
+      "sha256": "b3fc60e07b7548d77845c7cf242c5e22ebf26b81a194caac05460504d3acd8c5",
+      "bytes": 3082
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/linked/checked-failures.json",
+      "sha256": "55a115434982b274d86330a9c630f35dff75c983c0a6cf25383d12604862ae34",
+      "bytes": 25047
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/linked/cost-latch-control-qualification.json",
+      "sha256": "fc64c8b0ab41e7dc2bf565842bab4fe10acd4e362250e964a6009ed35a0bf7c1",
+      "bytes": 641
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/linked/cost-latch-control-smokes.json.gz",
+      "sha256": "bdbbba28117e9944f6626a4a0ba2cc1b5e2c29bbd34a7e32e5c792e8a7988c2c",
+      "bytes": 4144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/linked/cost-split-placed-qualification.json",
+      "sha256": "ec855754af95bdb97faeb320fe227d540e638b4a56d5424386fc93737a5b60cf",
+      "bytes": 639
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/linked/cost-split-placed-smokes.json.gz",
+      "sha256": "bdbbba28117e9944f6626a4a0ba2cc1b5e2c29bbd34a7e32e5c792e8a7988c2c",
+      "bytes": 4144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/linked/maintained-qualification.json",
+      "sha256": "5a4dfcfefb2cef11cd60e5b96570d67c7c49e14869ec2c0f133107252b5b1a61",
+      "bytes": 625
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/linked/maintained-smokes.json.gz",
+      "sha256": "bdbbba28117e9944f6626a4a0ba2cc1b5e2c29bbd34a7e32e5c792e8a7988c2c",
+      "bytes": 4144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/linked/result.json",
+      "sha256": "58bbaad4a793ef37f061b72cb06bd135e811e46608faecd7007d1e7f52de1a29",
+      "bytes": 1692
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/linked/stack.json",
+      "sha256": "8ffb4b5f3314499f8306ed2eacdfd0061c0bbcc9df35a516cb84223ee267553a",
+      "bytes": 17223
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/maintained/profile.json",
+      "sha256": "82f7c567ebf9e274c493fe85709297af12a902d2988811d13cf40919d8650a1c",
+      "bytes": 997
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/maintained/scorer.clif.gz",
+      "sha256": "106dce76005985facc3163d9fc00fa01d75f3a6e921d0552f6f1ab9763cb2e6f",
+      "bytes": 6175
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/placed-counts.json",
+      "sha256": "ac4e5e9048b62d24bca3002d79d95d25bf64486bebbd8ccf751e37067162a675",
+      "bytes": 2876
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/scorer-layout.json",
+      "sha256": "56d1337c511f9151c64b5d25f1af4a1306d342409712763047eb2234e3fbbbc1",
+      "bytes": 457
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/source.json",
+      "sha256": "063627bb4b8da27b61bb68e0ae6ebe445f0ca0d7363279fa472eb85a5a9aaff3",
+      "bytes": 927
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/split-source.log.gz",
+      "sha256": "34b101da1789c4557b047fd80ab2cf7e493a7e3073bdc796c1a0f9a552f0301d",
+      "bytes": 2956
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/split.clif.gz",
+      "sha256": "18adcb597cdfe86ace7389522e4dc8d74fcba6c421946e12d2f03677a7622b07",
+      "bytes": 6233
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/split.vcode.gz",
+      "sha256": "558cd2bdc09ccc6a5f5fc2a85032e7bd7a38c2724dda8e3c0297daa0d040a7e4",
+      "bytes": 3237
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/stage.py",
+      "sha256": "891e633c4d19a61613dcba04298571e842a8bf36b764e673dbe05ea0698471bc",
+      "bytes": 7216
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/scorer-admitted-cost-length/summary.json",
+      "sha256": "4f6b6c75ce736dcd8574253fddb8e3ec107ecab734c1c3637f49d6fae24a587a",
+      "bytes": 10506
+    },
+    {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/sealed-ascii-graphemes/README.md",
       "sha256": "c2ee0fe02e53e60e0f643685f49c7a27eb807db18d8836e29cde9e45931f0531",
       "bytes": 2645
@@ -37990,8 +38230,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/scorecard.json",
-      "sha256": "10985730096c0e48e931e3c93fc87d132992a084ddcfa970f4049a8547128c44",
-      "bytes": 400174
+      "sha256": "f56aea2b393b633c36197874acaf039cdd40c02006dbdc50f6144222afac62a3",
+      "bytes": 411386
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/size_screens.py",
