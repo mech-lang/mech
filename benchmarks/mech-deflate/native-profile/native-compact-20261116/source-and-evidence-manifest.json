@@ -50,8 +50,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/CURRENT.md",
-      "sha256": "10d3fb92dabeb558bb23d9c5d48685772c5403ddb2a3fd601c07c2673f4c941a",
-      "bytes": 24790
+      "sha256": "1ddcd502367906415c44b7ad7733a116be9edf6906e4de659a044e4ce62b5f1f",
+      "bytes": 28469
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/QUALIFICATION.md",
@@ -60,8 +60,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/README.md",
-      "sha256": "30f0a02b099757ffdc7973fca8fb42f0469b41130cfcf4a31e890351b672366b",
-      "bytes": 36103
+      "sha256": "23858bd195e24a02e2f8c61c9a0f77fe91e1abcb593dc019ee9de16983e9f29b",
+      "bytes": 37393
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/REVIEW.md",
@@ -22864,6 +22864,21 @@
       "bytes": 875
     },
     {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/archive-worker-relink.json",
+      "sha256": "5807497051f6fafee115b0949dd37e2f69ad4fa68ce8ba659ba9dac4fbbbbd9b",
+      "bytes": 5388
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/matched-observations.json.gz",
+      "sha256": "38caf45fbb37c7ea2e4ac92f39b681caf106c8aba1b57c34f5633c969a3df143",
+      "bytes": 69171
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/result.json",
+      "sha256": "a5f00df7ad5855bcf4b802786f1ded4f98a29521c7fb99f97ca43041ab5fd37a",
+      "bytes": 15044
+    },
+    {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/match-cache-offset-slot/PROOF.md",
       "sha256": "8d0a61d48e8d7f482255b3d25368d54200c3822d8ff8e3e81c0975ddff636ff9",
       "bytes": 6322
@@ -41815,8 +41830,13 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
-      "sha256": "b4d299fc19f2e7608732d4d2eae50c5179c2a27e6f4642f4a1ead9f804f319bb",
-      "bytes": 11977
+      "sha256": "f751acb6e94158bb8a0c27067c89fb5b14d089905993605006ee3d723e01753b",
+      "bytes": 14592
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild_checks.py",
+      "sha256": "ca22ae3c5b16b2c2449810492e005cba750cf5830067e82d37b1106098e0f9d8",
+      "bytes": 5745
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recipe.json",
@@ -41830,8 +41850,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/scorecard.json",
-      "sha256": "0cc96a804748dec3cbe644bb924aa5c1dd144cb499a2d0bbdf7435a5259611a4",
-      "bytes": 471054
+      "sha256": "f6194c9795a8dbc23373e4b1587d4a116844b0a717f6df26ce3ffca63a0e3020",
+      "bytes": 486848
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/size_screens.py",
@@ -42842,6 +42862,16 @@
       "path": "vendor/regalloc2/src/lib.rs",
       "sha256": "61348b78638227dce909912d357b11d73fdcffb19d521ce9346be9900a2408e5",
       "bytes": 63070
+    },
+    {
+      "path": "evidence/m1-source-built-20261118/m1-checked-regions-linked-recovery.json",
+      "sha256": "91e4806b5e5d7d69f124ba7b5eb796e14df604b7b2ec1a38ee00996fb2ed479f",
+      "bytes": 12152
+    },
+    {
+      "path": "evidence/m1-source-built-20261118/m1-compact-match-equality-linked-recovery.json",
+      "sha256": "1283c96d07540e55d6d8c48f617fa250fff1130cc478414af39637c78ecea970",
+      "bytes": 12152
     }
   ]
 }

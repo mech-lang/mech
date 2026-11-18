@@ -7236,7 +7236,7 @@
     "checked_chain_estimated_recomputation_seconds": 0.0032,
     "next": "Exact-choice body planning and one further omitted-body investigation"
   },
-  "current_matched_build": "source_catalog_overlap",
+  "current_matched_build": "source_built_m1",
   "scoped_function_replay": {
     "compiler_source": "e9538f71514225abf5ca57a9fc0acab358407167",
     "control_source": "ff7c1dbc9c5059ed84d730b008847c02179fa2cf",
@@ -13785,5 +13785,342 @@
         ]
       }
     }
+  },
+  "source_built_m1": {
+    "host": "Apple M1, macOS 15.6.1, arm64",
+    "source_commit": "09a1f5c6296d05f663cd4add8ae8d059dc888e34",
+    "maintained": {
+      "name": "frame-copies",
+      "encoder_text_bytes": 71192,
+      "encoder_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b"
+    },
+    "recipes": {
+      "m1-checked-regions": {
+        "status": "source-built opt-in reference",
+        "manifest": "evidence/encoder-size-gap/indexed-checked-regions/candidate.json",
+        "manifest_sha256": "34d78906b24472206e152b08694306b0b075f5352dea28a3fcab73dfeaf01e17",
+        "profile_pins": [
+          {
+            "symbol": "mech_compact_numeric_3956_vector",
+            "path": "profiles/mech_compact_numeric_3956_vector.json",
+            "sha256": "9d75282ff03f8d4e1382a89d97876f3f195b1548fbff65b63c04cf6f8d6834bc"
+          },
+          {
+            "symbol": "mech_compact_numeric_475_vector",
+            "path": "profiles/mech_compact_numeric_475_vector.json",
+            "sha256": "964c2e70c4cdbc4387dea77f781de3e69b046d775372436a135aa073d277f727"
+          },
+          {
+            "symbol": "mech_compact_numeric_3009_no_growth_composed",
+            "path": "profiles/mech_compact_numeric_3009_no_growth_composed.json",
+            "sha256": "8e418ddf8a5a88a9a67fc7c1420d4ed0a39202c882233a882a340d4807e8efdb"
+          }
+        ],
+        "compiler_sha256": "d8905db0cf6e32896957c14f990fe8e381cf00f3a6050351f2abc781f579d4f3",
+        "toolchain": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+        "encoder_text_bytes": 65516,
+        "artifact_sha256": {
+          "program.o": "2119a086053e1cfeeb386e5bf993939f8ddc4182378cccd1ba3cdfef2deb126f",
+          "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+          "metadata.json": "92e16d54c401ea648873396d1aae2f6afed5339590c9a3519ea1530ed7f69ab1"
+        },
+        "stripped_deployment": {
+          "bytes": 276056,
+          "sha256": "eb6336cf3f4896e31380f159dfc483e64309e9455b40f734bc52ad934f3928e6"
+        },
+        "source_build_worker_sha256": "eab89ede818444e97d54f74aa1ce24530badcee45c3adf0d8082c9795d51dad4",
+        "archive_worker_sha256": "969329f3dde79b02ad3f13cd540a9e03f5818769b33033827822591e7473e6fa",
+        "archive_worker_exact_relink": true,
+        "workers_checked": {
+          "success_observations": 162,
+          "failure_cases": 6,
+          "failure_observations": 12,
+          "exact_recoveries_after_fault": 12,
+          "recovery_evidence": "evidence/m1-source-built-20261118/m1-checked-regions-linked-recovery.json",
+          "recovery_sha256": "91e4806b5e5d7d69f124ba7b5eb796e14df604b7b2ec1a38ee00996fb2ed479f"
+        },
+        "allocator_object_sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874",
+        "archived_runtime": {
+          "decision": "Retain",
+          "named_cases": 81,
+          "distinct_contracts": 74,
+          "runs": {
+            "forward": {
+              "point_estimate_wins": {
+                "roc": 81,
+                "libdeflate": 62
+              },
+              "distinct_contract_point_estimate_wins": {
+                "roc": 74,
+                "libdeflate": 56
+              }
+            },
+            "reverse": {
+              "point_estimate_wins": {
+                "roc": 81,
+                "libdeflate": 62
+              },
+              "distinct_contract_point_estimate_wins": {
+                "roc": 74,
+                "libdeflate": 56
+              }
+            }
+          },
+          "evidence": "evidence/encoder-size-gap/matcher-spill-forwarding/full-screen.json",
+          "relative_regressions": {
+            "slowdowns": [
+              "empty: established slowdown above the 0.5% resolution",
+              "one-stored: established slowdown above the 0.5% resolution",
+              "prefix-natural-32768: established slowdown above the 0.5% resolution",
+              "prefix-natural-131072: established slowdown above the 0.5% resolution",
+              "prefix-natural-1048576: established slowdown above the 0.5% resolution"
+            ],
+            "uncertain": [
+              "32-high-entropy-stored: combined and individual run bounds conflict: shared-terminal-forwarding-trained-full-reverse",
+              "reymont-prefix-32769: regression bound or duplicate-control repeatability unresolved",
+              "heldout-window-32767: regression bound or duplicate-control repeatability unresolved",
+              "heldout-window-32768: regression bound or duplicate-control repeatability unresolved",
+              "prefix-natural-32767: regression bound or duplicate-control repeatability unresolved",
+              "prefix-natural-32769: regression bound or duplicate-control repeatability unresolved",
+              "prefix-natural-33027: regression bound or duplicate-control repeatability unresolved",
+              "prefix-natural-65535: regression bound or duplicate-control repeatability unresolved",
+              "prefix-natural-262144: combined and individual run bounds conflict: shared-terminal-forwarding-trained-full-forward"
+            ]
+          }
+        },
+        "no_runtime_sacrifice_against_maintained": "unverified"
+      },
+      "m1-compact-match-equality": {
+        "status": "source-built opt-in reference",
+        "manifest": "evidence/encoder-size-gap/compact-match-equality/candidate.json",
+        "manifest_sha256": "bd51c540629867cdf1c99411d55ef4be30d65e5b6d35fba771fed1bb31f3fb88",
+        "profile_pins": [
+          {
+            "symbol": "mech_compact_numeric_3956_vector",
+            "path": "profiles/mech_compact_numeric_3956_vector.json",
+            "sha256": "9d75282ff03f8d4e1382a89d97876f3f195b1548fbff65b63c04cf6f8d6834bc"
+          },
+          {
+            "symbol": "mech_compact_numeric_3009_no_growth_composed",
+            "path": "profiles/mech_compact_numeric_3009_no_growth_composed.json",
+            "sha256": "8e418ddf8a5a88a9a67fc7c1420d4ed0a39202c882233a882a340d4807e8efdb"
+          },
+          {
+            "symbol": "mech_compact_numeric_475_vector",
+            "path": "profiles/mech_compact_numeric_475_vector.json",
+            "sha256": "a67d413cfbc8860fb0e157b2deff34a81c36423173bf7d50aea6d782ebaea881"
+          }
+        ],
+        "compiler_sha256": "d8905db0cf6e32896957c14f990fe8e381cf00f3a6050351f2abc781f579d4f3",
+        "toolchain": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)\nbinary: rustc\ncommit-hash: ec818fda361ca216eb186f5cf45131bd9c776bb4\ncommit-date: 2026-03-02\nhost: aarch64-apple-darwin\nrelease: 1.96.0-nightly\nLLVM version: 22.1.0",
+        "encoder_text_bytes": 65276,
+        "artifact_sha256": {
+          "program.o": "1ab76d3a6064fa1af82afb7f07fa021f514301d2100def23b2b4d6945bd49858",
+          "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+          "metadata.json": "12805d54ebf468a8a2fe27876c82fa67d415215efdfc001fb19c452eea6351ee"
+        },
+        "stripped_deployment": {
+          "bytes": 276056,
+          "sha256": "0750f36ac8c19e34acc894530c1983084fe432c6483713f9b8844f8f90bb9d82"
+        },
+        "source_build_worker_sha256": "0b1cb6de53e2b0334528b1185e2a0254d90bfe5cd3d1e5cf65d6bc791cb138fc",
+        "archive_worker_sha256": "792f63292b32ad062448c3344442c795c41bbaa263ff86ef803d10a692b56891",
+        "archive_worker_exact_relink": true,
+        "workers_checked": {
+          "success_observations": 162,
+          "failure_cases": 6,
+          "failure_observations": 12,
+          "exact_recoveries_after_fault": 12,
+          "recovery_evidence": "evidence/m1-source-built-20261118/m1-compact-match-equality-linked-recovery.json",
+          "recovery_sha256": "1283c96d07540e55d6d8c48f617fa250fff1130cc478414af39637c78ecea970"
+        },
+        "allocator_object_sha256": "38c6ec82a41e90a96bb9f1ae2c89058a77909da3fbb69c16e542ae5c858bf874",
+        "archived_runtime": {
+          "decision": "Retain",
+          "named_cases": 81,
+          "distinct_contracts": 74,
+          "runs": {
+            "forward": {
+              "point_estimate_wins": {
+                "roc": 81,
+                "libdeflate": 62
+              },
+              "distinct_contract_point_estimate_wins": {
+                "roc": 74,
+                "libdeflate": 56
+              }
+            },
+            "reverse": {
+              "point_estimate_wins": {
+                "roc": 81,
+                "libdeflate": 62
+              },
+              "distinct_contract_point_estimate_wins": {
+                "roc": 74,
+                "libdeflate": 56
+              }
+            }
+          },
+          "evidence": "evidence/encoder-size-gap/compact-match-equality/full-screen.json",
+          "relative_regressions": {
+            "slowdowns": [
+              "random-1024: established slowdown above the 0.5% resolution",
+              "random-32769: established slowdown above the 0.5% resolution",
+              "heldout-random-65537: established slowdown above the 0.5% resolution",
+              "prefix-random-1024: established slowdown above the 0.5% resolution",
+              "prefix-random-4096: established slowdown above the 0.5% resolution",
+              "prefix-random-8192: established slowdown above the 0.5% resolution",
+              "prefix-random-32767: established slowdown above the 0.5% resolution",
+              "prefix-random-32768: established slowdown above the 0.5% resolution",
+              "prefix-random-32769: established slowdown above the 0.5% resolution",
+              "prefix-random-33027: established slowdown above the 0.5% resolution",
+              "prefix-random-65535: established slowdown above the 0.5% resolution",
+              "prefix-random-65536: established slowdown above the 0.5% resolution",
+              "prefix-random-65537: established slowdown above the 0.5% resolution",
+              "prefix-random-131072: established slowdown above the 0.5% resolution",
+              "prefix-random-262144: established slowdown above the 0.5% resolution",
+              "prefix-random-1048576: established slowdown above the 0.5% resolution"
+            ],
+            "uncertain": [
+              "empty: combined and individual run bounds conflict: shared-terminal-equality-short-only-full-reverse",
+              "one-stored: combined and individual run bounds conflict: shared-terminal-equality-short-only-full-reverse",
+              "eight-literals: regression bound or duplicate-control repeatability unresolved",
+              "128-biased-dynamic: regression bound or duplicate-control repeatability unresolved",
+              "32-high-entropy-stored: regression bound or duplicate-control repeatability unresolved",
+              "random-64: regression bound or duplicate-control repeatability unresolved",
+              "random-256: regression bound or duplicate-control repeatability unresolved",
+              "prefix-random-16384: regression bound or duplicate-control repeatability unresolved"
+            ]
+          }
+        },
+        "no_runtime_sacrifice_against_maintained": "unverified"
+      }
+    },
+    "matched_deployment": {
+      "plan_sha256": "2cad8a6b0ffae2872e1b4bac39a79090881f65811aff1ddbccba2e10b0fb7b97",
+      "medians": {
+        "mech-control-frame-copies": {
+          "source": 2.2934651251416653,
+          "link": 0.034899646416306496,
+          "source_through_link": 2.3284297708887607,
+          "strip": 0.010869479039683938,
+          "source_through_strip": 2.339332499774173
+        },
+        "mech-m1-checked-regions": {
+          "source": 2.142406771192327,
+          "link": 0.03519287472590804,
+          "source_through_link": 2.178403916535899,
+          "strip": 0.010842333314940333,
+          "source_through_strip": 2.1896051873918623
+        },
+        "mech-m1-compact-match-equality": {
+          "source": 2.142147854436189,
+          "link": 0.03531547915190458,
+          "source_through_link": 2.178483603987843,
+          "strip": 0.010961937252432108,
+          "source_through_strip": 2.1896847086027265
+        },
+        "roc": {
+          "source": 2.9493696454446763,
+          "link": 0.0346092083491385,
+          "source_through_link": 2.984574687667191,
+          "strip": 0.010805103927850723,
+          "source_through_strip": 2.99554756260477
+        },
+        "libdeflate": {
+          "source": 0.44594775000587106,
+          "link": 0.034340291284024715,
+          "source_through_link": 0.48076354223303497,
+          "strip": 0.010584791889414191,
+          "source_through_strip": 0.4915045415982604
+        }
+      },
+      "phases": {
+        "mech-control-frame-copies": {
+          "parse": 0.7151912915,
+          "catalog": 1.6250000000000002e-05,
+          "frontend": 0.21446725,
+          "artifact": 0.006877417,
+          "encode": 0.002567875,
+          "native": 1.3277819165
+        },
+        "mech-m1-checked-regions": {
+          "parse": 0.714986,
+          "catalog": 2.0875e-05,
+          "frontend": 0.2138704585,
+          "artifact": 0.0068548545,
+          "encode": 0.002567354,
+          "native": 1.1777650414999998
+        },
+        "mech-m1-compact-match-equality": {
+          "parse": 0.7152642915,
+          "catalog": 1.74585e-05,
+          "frontend": 0.2137767915,
+          "artifact": 0.006880313,
+          "encode": 0.0025600830000000003,
+          "native": 1.1775465625
+        }
+      },
+      "paired_ratios": {
+        "mech-control-frame-copies": {
+          "roc": 0.7802595913078411,
+          "libdeflate": 4.843581307444506,
+          "mech-control-frame-copies": 1.0
+        },
+        "mech-m1-checked-regions": {
+          "roc": 0.730336522949426,
+          "libdeflate": 4.534064826404316,
+          "mech-control-frame-copies": 0.9358670431869872
+        },
+        "mech-m1-compact-match-equality": {
+          "roc": 0.7303444599533053,
+          "libdeflate": 4.533152020692921,
+          "mech-control-frame-copies": 0.9365438697927116
+        }
+      },
+      "source_cpu_seconds": {
+        "mech-control-frame-copies": 2.359921,
+        "mech-m1-checked-regions": 2.2023965,
+        "mech-m1-compact-match-equality": 2.2018744999999997,
+        "roc": 2.9427835,
+        "libdeflate": 0.4425345
+      },
+      "source_rss_bytes": {
+        "mech-control-frame-copies": 393986048.0,
+        "mech-m1-checked-regions": 392413184.0,
+        "mech-m1-compact-match-equality": 392404992.0,
+        "roc": 396607488.0,
+        "libdeflate": 71532544.0
+      },
+      "stripped_executables": {
+        "mech-control-frame-copies": {
+          "bytes": 292568,
+          "sha256": "081f873d11cc21af9d4055a2d9b424592d5ddbea0390925ec111dc76cd4204ed"
+        },
+        "mech-m1-checked-regions": {
+          "bytes": 276056,
+          "sha256": "eb6336cf3f4896e31380f159dfc483e64309e9455b40f734bc52ad934f3928e6"
+        },
+        "mech-m1-compact-match-equality": {
+          "bytes": 276056,
+          "sha256": "0750f36ac8c19e34acc894530c1983084fe432c6483713f9b8844f8f90bb9d82"
+        },
+        "roc": {
+          "bytes": 191912,
+          "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+        },
+        "libdeflate": {
+          "bytes": 155752,
+          "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+        }
+      },
+      "paired_ms_vs_frame_copies": {
+        "mech-control-frame-copies": 0.0,
+        "mech-m1-checked-regions": -149.2813539225608,
+        "mech-m1-compact-match-equality": -147.59045839309692
+      },
+      "trials": 10
+    },
+    "evidence": "evidence/m1-source-built-20261118/result.json"
   }
 }
