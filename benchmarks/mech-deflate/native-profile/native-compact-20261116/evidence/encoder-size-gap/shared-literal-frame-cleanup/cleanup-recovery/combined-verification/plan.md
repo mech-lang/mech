@@ -1,0 +1,11 @@
+# Combine cleanup validation without dropping a contract
+
+Current measured pool: the indexed compiler a9617261 has 150 final-cleanup samples across three complete captures. Verification accounts for 53 (35.3%), graph construction 22 (14.7%). The indexed source-through-link ablation still costs 48.337 ms versus 64,652 B. These samples locate remaining work; they do not establish a saving.
+
+Removed work: two batched route sites run compute_flowgraph_and_cleanup, which validates current IR before/after phi edits when verification is enabled, immediately followed by Context::verify, which rechecks that same unchanged IR and independently checks cached CFG/dominators. Add a combined Context operation that retains cleanup's IR validation and performs the identical independent graph-integrity checks afterward. With verification disabled, retain the unconditional full Context::verify fallback. Keep the original pair behind the off path for same-compiler ablation.
+
+Expected effect: remove only duplicate full IR walks after the current immutable cleanup result. The independent graph reconstruction and cache comparison remain. Expect a modest complete-build saving within the current verification pool, with exact program artifacts and fixed-support worker. No fraction of the entire 53-sample category is promised as the effect.
+
+Correctness boundary: factor existing verifier integrity checks rather than inventing a substitute. The combined method owns the mutable Context across cleanup and its integrity check; no edit can intervene. Preserve the verifier-disabled full fallback, current CFG/domtree validation, all pre/post-phi IR checks, error behavior, resource and runtime proofs. Test both ISA verifier modes on unchanged, pruned, phi-edited and invalid-IR fixtures against the original pair. New tests require no native pointer execution or broader unsafe boundary.
+
+Stopping rule: require focused checks, exact 64,444 B encoder/full metadata/bytecode/worker, then balanced complete source-through-link trials with the original path and current C/Roc. Keep adverse measurements. Do not enable the recipe without measured benefit. If weak or harmful, preserve the result and move to a larger current pool rather than extending the schedule campaign.

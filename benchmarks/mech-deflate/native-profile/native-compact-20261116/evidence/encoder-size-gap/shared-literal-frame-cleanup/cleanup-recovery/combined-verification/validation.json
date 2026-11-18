@@ -1,0 +1,29 @@
+{
+  "source_commit": "567f6dcac24b7112ad891d2e24b354a269b86dfd",
+  "measured_source_commit": "1201a97b6a206f7e17c878f108055c2ef0f02a76",
+  "compiler_sha256": "3bcb51ef0789e65179a7efbaa73dd93e50da4d439b4dbbe4b3cdf874628454ba",
+  "registered_source_reproduces_measured_compiler": true,
+  "focused_tests": {
+    "passed": 19,
+    "failed": 0,
+    "components": {
+      "cleanup_validation": 2,
+      "ssa_builder": 15,
+      "native_cold_tails": 2
+    },
+    "cleanup_contracts": "16 cleanup cases across verifier flags, pruning, phi edits and invalid IR; independent rejection of stale CFG and dominator caches",
+    "same_test_source_registered_in_gpu_owner": true,
+    "log": "validation-logs.tar.gz:cleanup-verification-tests-registered.log",
+    "command": "CARGO_BUILD_JOBS=1 CARGO_PROFILE_RELEASE_OPT_LEVEL=3 CARGO_PROFILE_RELEASE_DEBUG=false CARGO_PROFILE_RELEASE_LTO=false CARGO_PROFILE_RELEASE_CODEGEN_UNITS=16 cargo +nightly-2026-03-03 test --locked --release --config profile.release.package.libmimalloc-sys.opt-level=1 --manifest-path benchmarks/mech-deflate/native-profile/Cargo.toml --target-dir <qualification-target> --test verified_cleanup --test ssa_builder --test native_compact_cold_tails"
+  },
+  "first_setup_attempt": "Test import used a private module path; corrected to the existing public CodegenResult re-export before execution. Original diagnostic is retained.",
+  "source_checks": {
+    "success_observations": 162,
+    "failure_cases": 6,
+    "exact_recoveries": 12
+  },
+  "new_source_worker_sha256": "c101560b7a46707aa2549071e81f1da98deb5232b2f744039972cc7e819f1c4d",
+  "new_source_worker_runtime": "not measured; runtime wins belong to the exact archived fixed-support worker",
+  "ci_checkout_regression": "passed and wired into static CI",
+  "audit_policy": "unchanged"
+}

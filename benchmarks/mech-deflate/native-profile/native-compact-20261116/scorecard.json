@@ -14225,7 +14225,7 @@
     },
     "peer_qualified_opt_in": {
       "recipe": "m1-literal-frame-cleanup",
-      "source": "d49f735b853504725de7b89f81f37bde0298fe05",
+      "source": "567f6dcac24b7112ad891d2e24b354a269b86dfd",
       "encoder_text_bytes": 64444,
       "worker": "f77ad5066a61f30cf67f714e5edc990efe295682e9de1d8bf36ee9a1a93041c6",
       "runtime": {
@@ -15209,8 +15209,8 @@
     "maintained_recipe": "frame-copies",
     "recipe": "m1-literal-frame-cleanup",
     "status": "source-built opt-in, peer-qualified archived worker, compilation tradeoff recorded",
-    "source_commit": "d49f735b853504725de7b89f81f37bde0298fe05",
-    "compiler_sha256": "a96172619c5fce80baf71a5efaa9f0e662d05de68a4f1dd2f7b950008b7caa7c",
+    "source_commit": "567f6dcac24b7112ad891d2e24b354a269b86dfd",
+    "compiler_sha256": "3bcb51ef0789e65179a7efbaa73dd93e50da4d439b4dbbe4b3cdf874628454ba",
     "runtime": {
       "host": "Apple M1, macOS 15.6.1, arm64",
       "source_commit": "4f5a94ac3f0546c99f5f88eb9b500f7bd0266527",
@@ -15322,6 +15322,305 @@
       "precision_note": "Both orders have 62 C point wins. Reverse has 61 precision-supported C wins. The unchanged v3 gate returns Retain."
     },
     "matched_deployment": {
+      "plan_sha256": "f9caaa175b422ec6f7adeb599d829ac4866cb7a1b9cf21a5a6ee6fc5fbe85650",
+      "medians": {
+        "mech-control-reference": {
+          "source": 2.1560461460612714,
+          "link": 0.03534491662867367,
+          "source_through_link": 2.1967783123254776,
+          "strip": 0.010823625605553389,
+          "source_through_strip": 2.2076587919145823
+        },
+        "mech-small-separate": {
+          "source": 2.2032256247475743,
+          "link": 0.038587457966059446,
+          "source_through_link": 2.2432419585529715,
+          "strip": 0.010665124980732799,
+          "source_through_strip": 2.2541211461648345
+        },
+        "mech-small-combined": {
+          "source": 2.1985520210582763,
+          "link": 0.03653214615769684,
+          "source_through_link": 2.2375497499015182,
+          "strip": 0.010740895755589008,
+          "source_through_strip": 2.248509666416794
+        },
+        "roc": {
+          "source": 2.9592214797157794,
+          "link": 0.03478781250305474,
+          "source_through_link": 2.9946814165450633,
+          "strip": 0.010511020431295037,
+          "source_through_strip": 3.0053703747689724
+        },
+        "libdeflate": {
+          "source": 0.4475445623975247,
+          "link": 0.0339846252463758,
+          "source_through_link": 0.4817226454615593,
+          "strip": 0.010610207915306091,
+          "source_through_strip": 0.49278666637837887
+        }
+      },
+      "phases": {
+        "mech-control-reference": {
+          "parse": 0.7113360415,
+          "catalog": 1.95625e-05,
+          "frontend": 0.21841079149999998,
+          "artifact": 0.006822104,
+          "encode": 0.0024891245000000003,
+          "native": 1.1886783545
+        },
+        "mech-small-separate": {
+          "parse": 0.7105575415000001,
+          "catalog": 2.0938000000000002e-05,
+          "frontend": 0.21808479149999999,
+          "artifact": 0.006817729,
+          "encode": 0.0024963535,
+          "native": 1.235794375
+        },
+        "mech-small-combined": {
+          "parse": 0.710194542,
+          "catalog": 1.92495e-05,
+          "frontend": 0.218261604,
+          "artifact": 0.0067926465,
+          "encode": 0.002484938,
+          "native": 1.233225042
+        }
+      },
+      "paired_ratios": {
+        "mech-control-reference": {
+          "roc": 0.732632044052952,
+          "libdeflate": 4.546111624873065,
+          "mech-control-reference": 1.0
+        },
+        "mech-small-separate": {
+          "roc": 0.7492322150089111,
+          "libdeflate": 4.654482396543976,
+          "mech-control-reference": 1.0212764735138569
+        },
+        "mech-small-combined": {
+          "roc": 0.7464280010605169,
+          "libdeflate": 4.639985058818719,
+          "mech-control-reference": 1.0193175867982494
+        }
+      },
+      "source_commit": "1201a97b6a206f7e17c878f108055c2ef0f02a76",
+      "trials": 10,
+      "compiler_sha256": "3bcb51ef0789e65179a7efbaa73dd93e50da4d439b4dbbe4b3cdf874628454ba",
+      "source_cpu_seconds": {
+        "mech-control-reference": 2.214722,
+        "mech-small-separate": 2.2617599999999998,
+        "mech-small-combined": 2.256515,
+        "roc": 2.949604,
+        "libdeflate": 0.44426199999999993
+      },
+      "source_rss_bytes": {
+        "mech-control-reference": 393068544.0,
+        "mech-small-separate": 393428992.0,
+        "mech-small-combined": 393396224.0,
+        "roc": 392716288.0,
+        "libdeflate": 71532544.0
+      },
+      "stripped_executables": {
+        "mech-control-reference": {
+          "bytes": 276072,
+          "sha256": "b8320a30dc61e2392de0b77419f477e7fed07f733dade58badaf3b3ef7f0c3f1"
+        },
+        "mech-small-separate": {
+          "bytes": 276072,
+          "sha256": "a2b16eed3f55512674a724a968c39f1d86ed3140d7abf7e084871036555db698"
+        },
+        "mech-small-combined": {
+          "bytes": 276072,
+          "sha256": "a2b16eed3f55512674a724a968c39f1d86ed3140d7abf7e084871036555db698"
+        },
+        "roc": {
+          "bytes": 191912,
+          "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+        },
+        "libdeflate": {
+          "bytes": 155752,
+          "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+        }
+      },
+      "paired_ms_vs_64652": {
+        "mech-control-reference": 0.0,
+        "mech-small-separate": 46.77308374084532,
+        "mech-small-combined": 42.32722893357277
+      },
+      "paired_ms_combined_vs_separate": -6.570166675373912,
+      "combined_faster_than_separate": 8,
+      "paired_ms_saved_vs_separate": [
+        -19.277958665043116,
+        6.926125381141901,
+        -7.858666125684977,
+        4.46774996817112,
+        3.576167393475771,
+        10.249084327369928,
+        14.743667095899582,
+        6.214207969605923,
+        7.138166110962629,
+        44.83308410272002
+      ],
+      "paired_median_ms_saved_90_percent_interval": [
+        3.576167393475771,
+        10.249084327369928
+      ],
+      "paired_source_cpu_ms_saved_vs_separate": 5.657000000000023,
+      "paired_native_phase_ms_saved_vs_separate": 3.816145499999979,
+      "explicit_phase_residual_seconds": {
+        "mech-control-reference": 0.027401187925268466,
+        "mech-small-separate": 0.02788672901959499,
+        "mech-small-combined": 0.027698791247114496
+      }
+    },
+    "source_checks": "evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/combined-verification/source-rebuild.json",
+    "qualification_worker_sha256": "f77ad5066a61f30cf67f714e5edc990efe295682e9de1d8bf36ee9a1a93041c6",
+    "new_source_built_worker_sha256": "c101560b7a46707aa2549071e81f1da98deb5232b2f744039972cc7e819f1c4d",
+    "new_source_built_worker_runtime": "not measured; complete runtime evidence belongs to the exact archived worker",
+    "evidence": "evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md",
+    "previous_matched_deployment": {
+      "plan_sha256": "22e1c0dc5cd819883d0f959d28ce0fc471f971b33c99eb6ad3f24e78959eff3d",
+      "medians": {
+        "mech-control-layout": {
+          "source": 2.133932374883443,
+          "link": 0.035258312011137605,
+          "source_through_link": 2.1698648545425385,
+          "strip": 0.010738125070929527,
+          "source_through_strip": 2.180719666648656
+        },
+        "mech-full-cleanup": {
+          "source": 2.2448817915283144,
+          "link": 0.035067707765847445,
+          "source_through_link": 2.2801337705459446,
+          "strip": 0.010698729660362005,
+          "source_through_strip": 2.2909605836030096
+        },
+        "mech-route-cleanup": {
+          "source": 2.22736170864664,
+          "link": 0.03506025020033121,
+          "source_through_link": 2.2631266247481108,
+          "strip": 0.010647166753187776,
+          "source_through_strip": 2.2739771041087806
+        },
+        "roc": {
+          "source": 2.9421565004158765,
+          "link": 0.0348731039557606,
+          "source_through_link": 2.9772843124810606,
+          "strip": 0.010589520446956158,
+          "source_through_strip": 2.9881219789385796
+        },
+        "libdeflate": {
+          "source": 0.44543685438111424,
+          "link": 0.0347031457349658,
+          "source_through_link": 0.4803968130145222,
+          "strip": 0.010776521638035774,
+          "source_through_strip": 0.4913476041983813
+        }
+      },
+      "phases": {
+        "mech-control-layout": {
+          "parse": 0.706819917,
+          "catalog": 2.15205e-05,
+          "frontend": 0.2127949165,
+          "artifact": 0.0068127085,
+          "encode": 0.0025061455,
+          "native": 1.1791391249999998
+        },
+        "mech-full-cleanup": {
+          "parse": 0.706847792,
+          "catalog": 1.71455e-05,
+          "frontend": 0.2122068125,
+          "artifact": 0.0068177705000000005,
+          "encode": 0.0024990625,
+          "native": 1.2903197915
+        },
+        "mech-route-cleanup": {
+          "parse": 0.7063435419999999,
+          "catalog": 1.74795e-05,
+          "frontend": 0.21269147900000002,
+          "artifact": 0.0068488335,
+          "encode": 0.0024902295,
+          "native": 1.272847271
+        }
+      },
+      "paired_ratios": {
+        "mech-control-layout": {
+          "roc": 0.7286102010294158,
+          "libdeflate": 4.516781493666979,
+          "mech-control-layout": 1.0
+        },
+        "mech-full-cleanup": {
+          "roc": 0.7660968170027928,
+          "libdeflate": 4.747718791110966,
+          "mech-control-layout": 1.051084625523059
+        },
+        "mech-route-cleanup": {
+          "roc": 0.7603374932498232,
+          "libdeflate": 4.715772288625235,
+          "mech-control-layout": 1.0437373505923202
+        }
+      },
+      "source_commit": "caa8b22ac5cd4d7c3cf30b5c97f78fd786fe5c16",
+      "compiler_sha256": "c66c37500b0d519a04f1219d617b90075b8f612f76f636310e7fcfe28b7dc107",
+      "trials": 10,
+      "candidate_schedule": "batched-routes",
+      "source_cpu_seconds": {
+        "mech-control-layout": 2.198015,
+        "mech-full-cleanup": 2.309317,
+        "mech-route-cleanup": 2.2918719999999997,
+        "roc": 2.935612,
+        "libdeflate": 0.4420035
+      },
+      "source_rss_bytes": {
+        "mech-control-layout": 392495104.0,
+        "mech-full-cleanup": 392790016.0,
+        "mech-route-cleanup": 392806400.0,
+        "roc": 392200192.0,
+        "libdeflate": 71540736.0
+      },
+      "stripped_executables": {
+        "mech-control-layout": {
+          "bytes": 276072,
+          "sha256": "b8320a30dc61e2392de0b77419f477e7fed07f733dade58badaf3b3ef7f0c3f1"
+        },
+        "mech-full-cleanup": {
+          "bytes": 276072,
+          "sha256": "a2b16eed3f55512674a724a968c39f1d86ed3140d7abf7e084871036555db698"
+        },
+        "mech-route-cleanup": {
+          "bytes": 276072,
+          "sha256": "a2b16eed3f55512674a724a968c39f1d86ed3140d7abf7e084871036555db698"
+        },
+        "roc": {
+          "bytes": 191912,
+          "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+        },
+        "libdeflate": {
+          "bytes": 155752,
+          "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+        }
+      },
+      "paired_ms_vs_64652": {
+        "mech-control-layout": 0.0,
+        "mech-full-cleanup": 110.79958290793002,
+        "mech-route-cleanup": 94.83489557169378
+      },
+      "paired_ms_routes_vs_full": -17.20004132948816,
+      "routes_faster_than_full": 8
+    },
+    "indexed_loop_live_outs": {
+      "enabled": true,
+      "paired_ms_saved": 46.908688032999635,
+      "paired_90_percent_interval_ms": [
+        41.4295420050621,
+        60.082166688516736
+      ],
+      "faster_trials": 9,
+      "trials": 10,
+      "exact_runtime_worker": true,
+      "evidence": "evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/indexed-loop-liveouts/README.md"
+    },
+    "previous_indexed_matched_deployment": {
       "plan_sha256": "aeb9735e4021f1a0e2ac693396a104d2666165994426ac40aa959dca603696ed",
       "medians": {
         "mech-control-reference": {
@@ -15475,166 +15774,27 @@
       },
       "scope": "Fresh-process source through final link and stripping; compiler and fixed deployment support prebuilt; Apple M1, macOS 15.6.1, arm64. All five actors acquired serially in ten balanced orders; one warmup per actor excluded."
     },
-    "source_checks": "evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/indexed-loop-liveouts/source-rebuild.json",
-    "qualification_worker_sha256": "f77ad5066a61f30cf67f714e5edc990efe295682e9de1d8bf36ee9a1a93041c6",
-    "new_source_built_worker_sha256": "c0334d84410a20727043d217154132a9448652210233b69c135478221a0a2e34",
-    "new_source_built_worker_runtime": "not measured; complete runtime evidence belongs to the exact archived worker",
-    "evidence": "evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md",
-    "previous_matched_deployment": {
-      "plan_sha256": "22e1c0dc5cd819883d0f959d28ce0fc471f971b33c99eb6ad3f24e78959eff3d",
-      "medians": {
-        "mech-control-layout": {
-          "source": 2.133932374883443,
-          "link": 0.035258312011137605,
-          "source_through_link": 2.1698648545425385,
-          "strip": 0.010738125070929527,
-          "source_through_strip": 2.180719666648656
-        },
-        "mech-full-cleanup": {
-          "source": 2.2448817915283144,
-          "link": 0.035067707765847445,
-          "source_through_link": 2.2801337705459446,
-          "strip": 0.010698729660362005,
-          "source_through_strip": 2.2909605836030096
-        },
-        "mech-route-cleanup": {
-          "source": 2.22736170864664,
-          "link": 0.03506025020033121,
-          "source_through_link": 2.2631266247481108,
-          "strip": 0.010647166753187776,
-          "source_through_strip": 2.2739771041087806
-        },
-        "roc": {
-          "source": 2.9421565004158765,
-          "link": 0.0348731039557606,
-          "source_through_link": 2.9772843124810606,
-          "strip": 0.010589520446956158,
-          "source_through_strip": 2.9881219789385796
-        },
-        "libdeflate": {
-          "source": 0.44543685438111424,
-          "link": 0.0347031457349658,
-          "source_through_link": 0.4803968130145222,
-          "strip": 0.010776521638035774,
-          "source_through_strip": 0.4913476041983813
-        }
-      },
-      "phases": {
-        "mech-control-layout": {
-          "parse": 0.706819917,
-          "catalog": 2.15205e-05,
-          "frontend": 0.2127949165,
-          "artifact": 0.0068127085,
-          "encode": 0.0025061455,
-          "native": 1.1791391249999998
-        },
-        "mech-full-cleanup": {
-          "parse": 0.706847792,
-          "catalog": 1.71455e-05,
-          "frontend": 0.2122068125,
-          "artifact": 0.0068177705000000005,
-          "encode": 0.0024990625,
-          "native": 1.2903197915
-        },
-        "mech-route-cleanup": {
-          "parse": 0.7063435419999999,
-          "catalog": 1.74795e-05,
-          "frontend": 0.21269147900000002,
-          "artifact": 0.0068488335,
-          "encode": 0.0024902295,
-          "native": 1.272847271
-        }
-      },
-      "paired_ratios": {
-        "mech-control-layout": {
-          "roc": 0.7286102010294158,
-          "libdeflate": 4.516781493666979,
-          "mech-control-layout": 1.0
-        },
-        "mech-full-cleanup": {
-          "roc": 0.7660968170027928,
-          "libdeflate": 4.747718791110966,
-          "mech-control-layout": 1.051084625523059
-        },
-        "mech-route-cleanup": {
-          "roc": 0.7603374932498232,
-          "libdeflate": 4.715772288625235,
-          "mech-control-layout": 1.0437373505923202
-        }
-      },
-      "source_commit": "caa8b22ac5cd4d7c3cf30b5c97f78fd786fe5c16",
-      "compiler_sha256": "c66c37500b0d519a04f1219d617b90075b8f612f76f636310e7fcfe28b7dc107",
-      "trials": 10,
-      "candidate_schedule": "batched-routes",
-      "source_cpu_seconds": {
-        "mech-control-layout": 2.198015,
-        "mech-full-cleanup": 2.309317,
-        "mech-route-cleanup": 2.2918719999999997,
-        "roc": 2.935612,
-        "libdeflate": 0.4420035
-      },
-      "source_rss_bytes": {
-        "mech-control-layout": 392495104.0,
-        "mech-full-cleanup": 392790016.0,
-        "mech-route-cleanup": 392806400.0,
-        "roc": 392200192.0,
-        "libdeflate": 71540736.0
-      },
-      "stripped_executables": {
-        "mech-control-layout": {
-          "bytes": 276072,
-          "sha256": "b8320a30dc61e2392de0b77419f477e7fed07f733dade58badaf3b3ef7f0c3f1"
-        },
-        "mech-full-cleanup": {
-          "bytes": 276072,
-          "sha256": "a2b16eed3f55512674a724a968c39f1d86ed3140d7abf7e084871036555db698"
-        },
-        "mech-route-cleanup": {
-          "bytes": 276072,
-          "sha256": "a2b16eed3f55512674a724a968c39f1d86ed3140d7abf7e084871036555db698"
-        },
-        "roc": {
-          "bytes": 191912,
-          "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
-        },
-        "libdeflate": {
-          "bytes": 155752,
-          "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
-        }
-      },
-      "paired_ms_vs_64652": {
-        "mech-control-layout": 0.0,
-        "mech-full-cleanup": 110.79958290793002,
-        "mech-route-cleanup": 94.83489557169378
-      },
-      "paired_ms_routes_vs_full": -17.20004132948816,
-      "routes_faster_than_full": 8
-    },
-    "indexed_loop_live_outs": {
+    "combined_cleanup_verification": {
       "enabled": true,
-      "paired_ms_saved": 46.908688032999635,
+      "paired_ms_saved": 6.570166675373912,
       "paired_90_percent_interval_ms": [
-        41.4295420050621,
-        60.082166688516736
+        3.576167393475771,
+        10.249084327369928
       ],
-      "faster_trials": 9,
+      "faster_trials": 8,
       "trials": 10,
-      "exact_runtime_worker": true,
-      "evidence": "evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/indexed-loop-liveouts/README.md"
+      "runtime_worker_unchanged": true,
+      "registered_source_reproduces_measured_compiler": true,
+      "evidence": "evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/combined-verification/README.md"
     }
   },
   "current_ci": {
-    "commit": "3fcb5bf4f894cb7e848554c95eeebe321f74df01",
-    "run": "https://github.com/mech-lang/mech/actions/runs/44393821950",
-    "impact": "passed; shallow sparse checkout and exact comparison fetch regression tested",
-    "public_canonical_cli": "passed",
-    "linux_and_windows": "passed",
-    "browser_standard": "passed",
-    "engine_gpu_syntax_owners": "passed",
-    "static_architecture": "failed: M3 archived ABI oracle has raw native calls outside the exact allowlist",
-    "remaining_native_jobs": "native plan in progress at this record",
-    "audit_policy": "unchanged",
-    "hosted_applications": "passed",
-    "same_binary_policy": "passed"
+    "commit": "72691d0265bbb5e180b1f108a4f74687ef3d8cd1",
+    "run": "https://github.com/mech-lang/mech/actions/runs/44400014842",
+    "impact": "passed",
+    "gpu_owner": "passed",
+    "static_architecture": "failed: archived M3 ABI oracle has raw native calls outside exact allowlist",
+    "remaining_native_jobs": "in progress when recorded",
+    "audit_policy": "unchanged"
   }
 }

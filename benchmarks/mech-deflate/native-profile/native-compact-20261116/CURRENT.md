@@ -2,23 +2,25 @@
 
 ## Current Apple M1 result
 
-The smallest peer-qualified opt-in source recipe is **64,444 B**, or **1.117× Roc** and **1.738× libdeflate**. It saves **208 B** from the 64,652 B recipe and uses **4,656 B** peak stack. Both full orders record **81/81 Roc and 62/81 libdeflate point wins**, covering 74/74 and 56/74 distinct contracts. Reverse precision supports 61 C wins. The replay retains two established control slowdowns and ten uncertain cases. The maintained frame-copies control remains 71,192 B.
+The opt-in `m1-literal-frame-cleanup` recipe emits **64,444 B**, **1.117× Roc** and **1.738× libdeflate**, with **4,656 B** stack and **276,072 B** stripped deployment. The exact qualified worker retains **81/81 Roc and 62/81 libdeflate point wins in both full orders**, covering 74/74 and 56/74 distinct contracts. Reverse precision supports 61 C wins. Two established control slowdowns and ten uncertain cases remain documented. The maintained frame-copies control remains 71,192 B.
 
-The selected `m1-literal-frame-cleanup` recipe uses batched final cleanup and `MECH_COMPACT_INDEX_LOOP_LIVE_OUTS=1`, built from compiler source `d49f735b853504725de7b89f81f37bde0298fe05`. It reproduces the exact qualified encoder, bytecode, full metadata and fixed-support archived worker. The public rebuild also links a new host-support worker and passes 162 output checks, six injected failure cases and 12 recovery calls. Its new worker identity is recorded separately; runtime wins belong to the exact archived worker.
+The selected source is `567f6dcac24b7112ad891d2e24b354a269b86dfd`, enabling batched cleanup, immutable loop-use indexing and combined cleanup validation. It reproduces the entire measured compiler from `1201a97b6a` exactly. The source rebuild passes 162 output checks, six injected failures and 12 recoveries; its new host-support worker has a separate identity from the qualified fixed-support worker.
 
 | Same-session Apple M1 build | Encoder text | Source to link | Source to strip | Source CPU | Source peak RSS |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Heap-layout control | 64,652 B | 2.189798 s | 2.201042 s | 2.218932 s | 393.0 MB |
-| Original loop traversal | 64,444 B | 2.281106 s | 2.292151 s | 2.308613 s | 393.0 MB |
-| Selected indexed traversal | **64,444 B** | **2.237580 s** | **2.249211 s** | 2.260798 s | 393.0 MB |
-| Roc | 57,696 B | 2.995987 s | 3.007166 s | 2.955014 s | 393.9 MB |
-| libdeflate | 37,080 B | 0.483521 s | 0.494623 s | 0.445641 s | 74.3 MB |
+| 64,652 B control | 64,652 B | 2.196778 s | 2.207659 s | 2.214722 s | 393.1 MB |
+| Separate verification | 64,444 B | 2.243242 s | 2.254121 s | 2.261760 s | 393.4 MB |
+| Combined verification | 64,444 B | 2.237550 s | 2.248510 s | 2.256515 s | 393.4 MB |
+| Roc | 57,696 B | 2.994681 s | 3.005370 s | 2.949604 s | 392.7 MB |
+| libdeflate | 37,080 B | 0.481723 s | 0.492787 s | 0.444262 s | 71.5 MB |
 
-Ten balanced fresh builds per actor use one compiler and the same prebuilt deployment support. Indexing loop live-outs saves a paired median **46.909 ms**, with **9/10 faster** and a per-cohort 90% interval of **41.430–60.082 ms**. The one adverse trial is retained. The selected recipe takes **0.7461× Roc** and **4.6272× libdeflate** source-to-link time. It still costs **48.337 ms**, or **1.0221×**, versus the 64,652 B control. Stripped deployment remains **276,072 B**.
+Ten balanced fresh builds use one compiler and prebuilt deployment support. Combining validation saves a paired **6.570 ms** (8/10 faster; 90% interval **3.576–10.249 ms**) against the same compiler's separate path. Source CPU saves **5.657 ms** and the native phase **3.816 ms**. The selected build takes **0.7464× Roc** and **4.6400× libdeflate** time, and still costs a paired **42.327 ms** versus 64,652 B. The earlier immutable index saved a paired 46.909 ms in its own cohort; these effects should not be added across cohorts.
 
-Selected compiler phases are **0.711901 s parsing**, **0.219357 s source semantics**, **0.009322 s artifact/encoding**, and **1.231053 s native emission**. Catalog join wait is **0.000023 s**, while catalog CPU still runs during parsing. Link takes **0.034775 s**. The median per-trial source time outside the explicit scopes is **0.027522 s**. Phase medians need not sum to the complete median. The remaining elapsed gap is **0.237580 s to 2.0 s**, **1.237580 s to 1.0 s**, **1.787580 s to 0.45 s**, and **1.754059 s to this cohort's C build**.
+Parsing 0.710195 s; source semantics 0.218262 s; artifact creation 0.006793 s; encoding 0.002485 s; native emission 1.233225 s; catalog join wait 0.000019 s. Link takes 0.036532 s and strip 0.010741 s. The median per-trial source time outside explicit phase scopes is 0.027699 s. Catalog CPU still runs during parsing. Independently computed medians need not add.
 
-All **113 control-flow tests** pass, including independent old-traversal and exact-IR comparisons. [Current source, identities, checks and measurements](evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/indexed-loop-liveouts/README.md) · [Every build timing](evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/indexed-loop-liveouts/build-timings.csv) · [Earlier schedule cohorts and runtime tradeoffs](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md)
+Remaining elapsed gaps are **0.237550 s to 2.0 s**, **1.237550 s to 1.0 s**, **1.787550 s to 0.45 s**, and **1.755827 s to this cohort's C build**. The checked root is still **47,428 B**, exceeding C's entire 37,080 B encoder by **10,348 B**. Larger construction and transport reductions remain necessary.
+
+[Current source, checks and all measurements](evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/combined-verification/README.md) · [Prior indexed cohort](evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/indexed-loop-liveouts/README.md) · [Runtime qualification and earlier size work](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md)
 
 ## Apple M3 shared M1 recipe
 
@@ -68,7 +70,7 @@ Both heap recipes are opt-in. [Original trial](evidence/encoder-size-gap/shared-
 
 The current native profile attributes the largest traced intervals to root CFG cleanup and phase construction. Retirement-transition caching reuses 3.1% of transitions and adds a paired median 4.7 ms to the complete build. It stays experimental. [Native spans and paired prototype results](evidence/m1-source-built-20261118/native-attribution/README.md)
 
-The latest published CI run fixes the checkout setup failure: Impact and the public canonical CLI pass, alongside Linux, Windows, browser standard and the engine/GPU/syntax owner checks. Static architecture contracts fail on the M3 archived ABI oracle's raw native calls outside the exact allowlist. Hosted applications and same-binary native policies also pass; the native-plan job was still running when recorded. The audit policy is unchanged. [CI at 3fcb5bf4f8](https://github.com/mech-lang/mech/actions/runs/44393821950). The earlier [90d133253a run](https://github.com/mech-lang/mech/actions/runs/44344708598) passed public CLI, hosted and same-binary policy checks but failed the Related Posts binding audit.
+CI at published head `72691d0265` passes Impact and the GPU owner suite. Its static architecture check fails on the archived M3 ABI oracle's raw native calls outside the exact allowlist; the full log confirms that specific failure. Other native qualification jobs were still running when recorded. The audit policy is unchanged. [Current published-head CI](https://github.com/mech-lang/mech/actions/runs/44400014842). The earlier [3fcb5bf4f8 run](https://github.com/mech-lang/mech/actions/runs/44393821950) passed public CLI, hosted applications, same-binary policies, Linux, Windows and browser standard checks. The new combined-validation source awaits its own CI run.
 
 ## Earlier shared-release matched deployment
 

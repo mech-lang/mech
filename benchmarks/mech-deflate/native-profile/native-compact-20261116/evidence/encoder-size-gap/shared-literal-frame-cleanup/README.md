@@ -58,7 +58,11 @@ Natural 8 KiB remains below C at 0.982943× forward and 0.986542× reverse.
 The previous Roc loss at natural 32,769 B remains a win at 0.961837× and
 0.965623× Roc. Overlap's point ratios are 0.995445× and 0.992121× C.
 
-## Current indexed cleanup result
+## Current combined validation result
+
+The named recipe now also combines cleanup IR validation with independent graph-integrity checks. It saves a paired **6.570 ms** (8/10 faster) while retaining the exact 64,444 B worker. Source to final link is **2.237550 s**, **0.7464× Roc** and **4.6400× libdeflate**. It still costs **42.327 ms** versus 64,652 B. The current source reproduces the entire measured compiler exactly; all 19 focused tests and the 162 success / six failure / 12 recovery source checks pass. [Current source, all measurements and preserved contracts](cleanup-recovery/combined-verification/README.md)
+
+## Earlier indexed cleanup result
 
 The selected source recipe now indexes loop live-out uses once per immutable graph. It retains the exact 64,444 B worker and saves a paired median **46.909 ms** from the original traversal, with 9/10 faster. The new same-cohort source-to-link result is **2.237580 s**, **0.7461× Roc** and **4.6272× libdeflate**. It still costs **48.337 ms** versus the 64,652 B control. The source command also passes 162 successes, six failure cases and 12 recoveries. The compiler identity, all trials, adverse observation, phase accounting and exact worker links are in [the current result](cleanup-recovery/indexed-loop-liveouts/README.md). Earlier cohorts below retain their original measurements.
 
