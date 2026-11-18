@@ -291,6 +291,17 @@ pub(in crate::native_artifact) fn optimize(
     Ok(report)
 }
 
+// Optional compact final cleanup can repeat the ordered CFG/phi/liveness
+// schedule without rerunning the imported source-specialization searches.
+// Every retained fold still derives its facts from the current function.
+pub(in crate::native_artifact) fn optimize_final_ordered(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<CfgCleanup, NativeCompileError> {
+    optimize_ordered(controls, context, isa, true)
+}
+
 // Numeric range proofs still consume exact equality-to-one facts on phi
 // words. Keep that vocabulary until the existing guard pass has finished.
 pub(in crate::native_artifact) fn optimize_before_unsigned_guards(
