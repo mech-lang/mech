@@ -1,0 +1,45 @@
+{
+  "review_parent": "8f0ffe737b94229132fd4abe83eb16a60a7619d3",
+  "compiler_sha256": "9deac774e202c8fd5c5ed933d2f7657a88c60b2e8c40d7ab89c6c54973536bc5",
+  "maintained_encoder_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+  "encoder_text_bytes": 71432,
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "artifact_sha256": {
+    "program.o": "d75f382c1e4c619ac8891c24895a7f0f35c3109b6a48384aade965a093142e48",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata.json": "0a114f3ed9504b50091b830c11c0373a0b7cb13d4e22867134d9cc73b03f62b3"
+  },
+  "worker_sha256": "6c20610040797c1f446a0e8d04c40870cee838aae4e23b6773c945fd52ef0fb6",
+  "profiles": [
+    {
+      "symbol": "mech_compact_numeric_3956_vector",
+      "path": "profiles/mech_compact_numeric_3956_vector.json",
+      "sha256": "9d75282ff03f8d4e1382a89d97876f3f195b1548fbff65b63c04cf6f8d6834bc"
+    },
+    {
+      "symbol": "mech_compact_numeric_475_vector",
+      "path": "profiles/mech_compact_numeric_475_vector.json",
+      "sha256": "55bdbe755a0ee2709beb1ba0bd24528e0d0c8cc6d12f99e9f8c00fe56325acc7"
+    },
+    {
+      "symbol": "mech_compact_numeric_3009_no_growth_composed",
+      "path": "profiles/mech_compact_numeric_3009_no_growth_composed.json",
+      "sha256": "df5868a479384a84aebd5b0e3ae2206830a44ce692e96c91d70de35b47d2fbf8"
+    }
+  ],
+  "remove_flags": [
+    "MECH_COMPACT_ROOT_TAIL_PROFILE"
+  ],
+  "override_flags": {
+    "MECH_COMPACT_REFUSE_GENERAL_VECTORS": "475,2821,362",
+    "MECH_COMPACT_FIXED_PHASE_PACKET": "refused",
+    "MECH_COMPACT_PACK_PHASE_INPUTS": "1",
+    "MECH_ORDERED_HORIZONTAL_MINIMUM": "1",
+    "MECH_ORDERED_REVERSE_LOW_WORDS": "1",
+    "MECH_ORDERED_VECTOR_LATCH_TEST": "1",
+    "MECH_COMPOSE_SPLIT_COST_LENGTH": "1",
+    "MECH_COMPACT_REFUSE_PHASE_GROWTH": "1",
+    "MECH_COMPACT_SELECT_PHASE_OUTPUT_WORDS": "non-private",
+    "MECH_COMPACT_PRESERVING_RELEASE_CALLS": "all"
+  }
+}
