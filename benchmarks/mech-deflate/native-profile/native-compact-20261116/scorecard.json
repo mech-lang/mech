@@ -12552,6 +12552,93 @@
           "libdeflate": 5.0509837542235045
         },
         "evidence": "evidence/encoder-size-gap/checked-layout-refusals/non-private-outputs/deployment.json"
+      },
+      {
+        "name": "Forwarding disabled (control)",
+        "encoder_text_bytes": 67464,
+        "encoder_sha256": "f350cbf8fa073dc9d3ef04052ff8b1bb8aae96abfd21dca0d2173a720d6e37d1",
+        "compiler_sha256": "cbe7db4bccf02366986d39adc7691e768ead1b7b1c4c8e274ce184cc6c852b75",
+        "measured_trials": 10,
+        "measurement_plan_sha256": "cddca899ce9617b9b8a64acc4befff2cdb334d2f5478b12f21ee4156eb8f7b8c",
+        "median_seconds": {
+          "source": 2.3925610419828445,
+          "link": 0.03413718752563,
+          "source_through_link": 2.4269981663674116,
+          "strip": 0.01027745846658945,
+          "source_through_strip": 2.43754631257616
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.7870874999999999,
+          "catalog": 1.99375e-05,
+          "frontend": 0.22662704150000001,
+          "artifact": 0.0070308125,
+          "encode": 0.0025992295000000004,
+          "native": 1.343651479
+        },
+        "paired_ratios": {
+          "roc": 0.8125664659520422,
+          "libdeflate": 5.031771927420564
+        },
+        "paired_ratio_to_session_control": 1.0,
+        "evidence": "evidence/encoder-size-gap/empty-source-routes/deployment.json"
+      },
+      {
+        "name": "Forward empty source jumps",
+        "encoder_text_bytes": 67656,
+        "encoder_sha256": "1db070f4af8c9c59e5f215a019b0b3fa7a4959321a88f902ecfc9dabec296057",
+        "compiler_sha256": "cbe7db4bccf02366986d39adc7691e768ead1b7b1c4c8e274ce184cc6c852b75",
+        "measured_trials": 10,
+        "measurement_plan_sha256": "cddca899ce9617b9b8a64acc4befff2cdb334d2f5478b12f21ee4156eb8f7b8c",
+        "median_seconds": {
+          "source": 2.3475807707291096,
+          "link": 0.036207207944244146,
+          "source_through_link": 2.386758791981265,
+          "strip": 0.010310124838724732,
+          "source_through_strip": 2.39714118745178
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.786982563,
+          "catalog": 1.8792e-05,
+          "frontend": 0.22671760400000002,
+          "artifact": 0.0070520625,
+          "encode": 0.0026055415,
+          "native": 1.2972025625
+        },
+        "paired_ratios": {
+          "roc": 0.7982430645485437,
+          "libdeflate": 4.953312506218055
+        },
+        "paired_ratio_to_session_control": 0.9832629748697254,
+        "evidence": "evidence/encoder-size-gap/empty-source-routes/deployment.json"
+      },
+      {
+        "name": "Register-preserving free wrapper",
+        "encoder_text_bytes": 67992,
+        "encoder_sha256": "2ef8e7f82d87179d428c0a3bd01beaefb886da68cf76c933201876365048ecc5",
+        "compiler_sha256": "9deac774e202c8fd5c5ed933d2f7657a88c60b2e8c40d7ab89c6c54973536bc5",
+        "measured_trials": 10,
+        "measurement_plan_sha256": "cddca899ce9617b9b8a64acc4befff2cdb334d2f5478b12f21ee4156eb8f7b8c",
+        "median_seconds": {
+          "source": 2.410880125593394,
+          "link": 0.03463356266729534,
+          "source_through_link": 2.447286749491468,
+          "strip": 0.010382625041529536,
+          "source_through_strip": 2.457743354141712
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.789207333,
+          "catalog": 2.10625e-05,
+          "frontend": 0.2292235205,
+          "artifact": 0.0070526455,
+          "encode": 0.002606625,
+          "native": 1.3504402295
+        },
+        "paired_ratios": {
+          "roc": 0.8165165729427006,
+          "libdeflate": 5.060266349325083
+        },
+        "paired_ratio_to_session_control": 1.0053393781560853,
+        "evidence": "evidence/encoder-size-gap/empty-source-routes/deployment.json"
       }
     ]
   }
