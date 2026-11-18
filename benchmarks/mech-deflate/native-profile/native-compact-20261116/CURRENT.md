@@ -1,4 +1,24 @@
-# PR #993 current status
+# PR #995 current status
+
+## Current Apple M1 result
+
+The smallest peer-qualified opt-in source recipe is **64,444 B**, or **1.117× Roc** and **1.738× libdeflate**. It saves **208 B** from the 64,652 B recipe and uses **4,656 B** peak stack. Both full orders record **81/81 Roc and 62/81 libdeflate point wins**, covering 74/74 and 56/74 distinct contracts. Reverse precision supports 61 C wins. The replay records two established control slowdowns and ten uncertain cases. The frame-copies control remains 71,192 B.
+
+The named recipe is `m1-literal-frame-cleanup`, with `MECH_COMPACT_FINISH_CFG_CLEANUP=batched-routes`, built from `caa8b22ac5cd4d7c3cf30b5c97f78fd786fe5c16`. It reproduces the exact qualified encoder, bytecode, full metadata and archived worker. The public rebuild also links a new worker and passes 162 output checks, six injected failure cases and 12 recovery calls. Its new worker identity is recorded separately from the benchmark worker.
+
+| Apple M1 build | Encoder text | Source to link | Source to strip | Source CPU | Source peak RSS |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Heap-layout control | 64,652 B | 2.169865 s | 2.180720 s | 2.198015 s | 392.5 MB |
+| Full final cleanup | 64,444 B | 2.280134 s | 2.290961 s | 2.309317 s | 392.8 MB |
+| Batched final cleanup | 64,444 B | 2.263127 s | 2.273977 s | 2.291872 s | 392.8 MB |
+| Roc | 57,696 B | 2.977284 s | 2.988122 s | 2.935612 s | 392.2 MB |
+| libdeflate | 37,080 B | 0.480397 s | 0.491348 s | 0.442003 s | 71.5 MB |
+
+Ten balanced fresh builds per actor use the same prebuilt deployment support. The selected recipe takes **0.7603× Roc** and **4.7158× libdeflate** build time. Batching saves a paired median **17.200 ms** from full cleanup, with 8/10 faster, but still costs **94.835 ms** versus 64,652 B. This is a size win with a compilation-time cost. The stripped deployment stays **276,072 B**.
+
+Compiler phases are 0.706344 s parsing, 0.212691 s source semantics, 0.009339 s artifact/encoding, 0.000017 s catalog join wait and 1.272847 s native emission. The complete build is 0.263127 s above 2.0 s, 1.263127 s above 1.0 s and 1.813127 s above 0.45 s.
+
+[Source, all timings and tradeoffs](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md) · [Raw build comparison](evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/build-comparison.json.gz) · [Source rebuild checks](evidence/encoder-size-gap/shared-literal-frame-cleanup/source-rebuild.json)
 
 ## Apple M3 upstream integration
 
@@ -14,7 +34,7 @@ The retained word-scan and current-guard optimization records **81/81 against Ro
 
 [All 81 timings, both orders, in seconds and comparator multiples](evidence/apple-m3-compact-packets-20261118/word-scans/confirmation/timings.csv) · [Source and reproduction recipe](evidence/apple-m3-compact-packets-20261118/word-scans/README.md)
 
-## Source-built Apple M1 references
+## Earlier source-built Apple M1 references
 
 PR #995's integrated compiler at `90d133253a` builds the three named M1 recipes. Each reproduces its archived encoder object, canonical bytecode and complete metadata. The fixed link inputs reproduce all three benchmark and stripped deployment executables. The named command rebuilds its host support and verifies each new worker using 162 success observations, six checked failure cases and 12 exact recovery calls. [Source-built commands](README.md#source-built-m1-reference-encoders) · [Identities and checks](evidence/m1-source-built-20261118/result.json) · [Exact archive worker links](evidence/m1-source-built-20261118/archive-workers-rebased.json)
 
@@ -44,7 +64,7 @@ The current native profile attributes the largest traced intervals to root CFG c
 
 The public CLI, hosted native applications and same-binary native policy controls passed on the integrated source. Static architecture contracts still fail on the Related Posts linked-module binding in `hosts/after-4.rs`. The earlier hosted checkout timeout occurred before compiler validation. [CI at 90d133253a](https://github.com/mech-lang/mech/actions/runs/44344708598)
 
-## PR #993 matched deployment
+## Earlier shared-release matched deployment
 
 PR #993 tracks the qualified LLVM-free MechDeflate build and is stacked on #973. The measurements below use Apple M1, macOS 15.6.1 and arm64.
 
@@ -63,9 +83,9 @@ An earlier dedicated parser-phase comparison reported **813 ms Mech**
 and **3 ms Roc**. Mech's interval includes indexing and its strict check.
 [Earlier Mech and Roc parser-phase observations](evidence/sealed-ascii-graphemes/README.md)
 
-## Encoder code size
+## Earlier encoder code-size studies
 
-The checked entry accounts for **48,220 B**. The match collector adds **6,224 B**, and the dense scorer adds **1,104 B**. The matched libdeflate object emits **37,080 B**.
+In the earlier 65,612 B checked-address build, the checked entry accounts for **48,220 B**. The match collector adds **6,224 B**, and the dense scorer adds **1,104 B**. The matched libdeflate object emits **37,080 B**.
 [Qualified encoder](evidence/encoder-size-gap/select-checked-default-address/README.md) · [Historical byte attribution](evidence/encoder-size-gap/README.md)
 
 An experimental capacity refusal reuses the checked continuation and
@@ -163,7 +183,7 @@ Roc and libdeflate trials from the same session.
 Parser, lowering, native compilation and link timings are in the
 machine-readable scorecard.
 
-## Whole-build budget
+## Earlier shared-release build budget
 
 | Stage | Current | 2.0 s budget | 1.0 s budget | 0.45 s budget |
 | --- | ---: | ---: | ---: | ---: |
@@ -174,7 +194,7 @@ machine-readable scorecard.
 | Artifact, encoding, link and other work | 0.073 s | 0.07 | 0.06 | 0.05 |
 | **Total** | **2.175 s** | 2.00 | 1.00 | 0.45 |
 
-Mech needs **1.725 s** less elapsed time to reach the
+That shared-release build needs **1.725 s** less elapsed time to reach the
 0.45 s working budget. The phase medians come from the matched measurements above. Catalog work runs during parsing and the table lists the join wait.
 
 ## Which build to use
@@ -188,7 +208,7 @@ The 64,668 B trial lost one Roc case in the forward sweep. Its V3 result is Reje
 | Checked-read size candidate | 71,420 B | 5,328 B peak stack. Runtime qualification pending |
 | Earlier owner-exchange size candidate | 71,288 B | Rejected by the v2 runtime gate |
 | Maintained frame-copy recipe | **71,192 B** | Compiler source below |
-| Smallest v3-qualified opt-in build | **65,036 B** | [Compiler source and replay](evidence/encoder-size-gap/shared-release-setup/README.md) |
+| Smallest v3-qualified opt-in build | **64,444 B** | [Compiler source, timings and tradeoffs](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md) |
 
 ~~~sh
 python3 -B benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py \

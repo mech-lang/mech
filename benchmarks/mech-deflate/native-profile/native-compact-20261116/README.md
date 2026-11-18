@@ -199,6 +199,8 @@ python3 rebuild.py /tmp/mech-m1-shared-heap-setup \
   --variant m1-shared-heap-setup --mimalloc-object /path/to/mimalloc.o
 python3 rebuild.py /tmp/mech-m1-shared-heap-layout \
   --variant m1-shared-heap-layout --mimalloc-object /path/to/mimalloc.o
+python3 rebuild.py /tmp/mech-m1-literal-frame-cleanup \
+  --variant m1-literal-frame-cleanup --mimalloc-object /path/to/mimalloc.o
 ```
 
 The fixed allocator object enables the final executable link and linked

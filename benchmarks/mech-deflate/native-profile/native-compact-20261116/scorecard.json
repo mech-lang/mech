@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "review": {
+  "historical_review": {
     "pr": 993,
     "target_pr": 973,
     "evidence_head": "ee6f542d82e86557848dde641fb542f09fd9146a",
@@ -23,6 +23,22 @@
     "previous_evidence_head": "4b154d273646256d52a3260c1b054f9a1cbd7ab8",
     "integration_scope": "Previous deployment validation run for the variable replay.",
     "latest_deployment_evidence": "evidence/inline-syntax-child-traversal/catalog/README.md"
+  },
+  "review": {
+    "pr": 995,
+    "stacked_on_pr": 993,
+    "original_target_pr": 973,
+    "compiler_source_commit": "caa8b22ac5cd4d7c3cf30b5c97f78fd786fe5c16",
+    "compiler_sha256": "c66c37500b0d519a04f1219d617b90075b8f612f76f636310e7fcfe28b7dc107",
+    "latest_deployment_evidence": "evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md",
+    "host": "Apple M1, macOS 15.6.1, arm64",
+    "local_checks": {
+      "workspace_formatting": "Pass",
+      "warning_policy": "Pass",
+      "rust_module_layout": "Pass",
+      "unsafe_boundary_audit": "Blocked: missing allowlisted benchmarks/mech-deflate/comparison/rust/src/pinned_allocator.rs"
+    },
+    "required_ci": "pending on the next pushed head"
   },
   "historical_default": {
     "variant": "baseline",
@@ -3699,7 +3715,7 @@
     },
     "acquisition": "Recorded historical full orders"
   },
-  "latest_candidate": {
+  "historical_latest_candidate": {
     "name": "shared owner exchange",
     "encoder_text_bytes": 71288,
     "current_implementation_candidate": false,
@@ -7055,6 +7071,124 @@
     "compared_against": "Fixed 71,768-byte reference is also the immediate control",
     "receipt_sha256": "11601ee8ff034fc3804f1866275e7b499ab276433d36c9bb3ecbe46287e3aa27"
   },
+  "latest_candidate": {
+    "name": "shared literal allocation and batched final cleanup",
+    "encoder_text_bytes": 64444,
+    "current_implementation_candidate": true,
+    "opt_in": true,
+    "decision": "Retain",
+    "runtime": {
+      "host": "Apple M1, macOS 15.6.1, arm64",
+      "source_commit": "4f5a94ac3f0546c99f5f88eb9b500f7bd0266527",
+      "compiler_sha256": "76c263ca3ac059b4bf53f36bc3fe6c07bf3b915c01fdf76a96817f49f445bc06",
+      "encoder_bytes": 64444,
+      "encoder_x_roc": 1.1169578480310594,
+      "encoder_x_libdeflate": 1.7379719525350594,
+      "bytes_saved_vs_64652": 208,
+      "runtime_decision": "Retain",
+      "peak_stack_bytes": 4656,
+      "wins": [
+        {
+          "order": "forward",
+          "roc": 81,
+          "libdeflate": 62,
+          "distinct_roc": 74,
+          "distinct_libdeflate": 56,
+          "precision_supported_roc": 81,
+          "precision_supported_libdeflate": 62,
+          "distinct_precision_supported_roc": 74,
+          "distinct_precision_supported_libdeflate": 56,
+          "roc_lost_cases": [],
+          "libdeflate_lost_cases": []
+        },
+        {
+          "order": "reverse",
+          "roc": 81,
+          "libdeflate": 62,
+          "distinct_roc": 74,
+          "distinct_libdeflate": 56,
+          "precision_supported_roc": 81,
+          "precision_supported_libdeflate": 61,
+          "distinct_precision_supported_roc": 74,
+          "distinct_precision_supported_libdeflate": 55,
+          "roc_lost_cases": [],
+          "libdeflate_lost_cases": []
+        }
+      ],
+      "full_rejected": [],
+      "full_unresolved": [],
+      "relative": {
+        "slowdowns": [
+          "empty: established slowdown above the 0.5% resolution",
+          "320-overlap: established slowdown above the 0.5% resolution"
+        ],
+        "uncertain": [
+          "one-stored: combined and individual run bounds conflict: shared-terminal-literal-frame-cleanup-full-forward",
+          "seven-stored-prefix: combined and individual run bounds conflict: shared-terminal-literal-frame-cleanup-full-forward",
+          "random-256: regression bound or duplicate-control repeatability unresolved",
+          "repeated-1024: regression bound or duplicate-control repeatability unresolved",
+          "repeated-32769: regression bound or duplicate-control repeatability unresolved",
+          "prefix-periodic-1024: regression bound or duplicate-control repeatability unresolved",
+          "prefix-periodic-4096: regression bound or duplicate-control repeatability unresolved",
+          "prefix-repeated-1024: regression bound or duplicate-control repeatability unresolved",
+          "prefix-repeated-4096: regression bound or duplicate-control repeatability unresolved",
+          "prefix-repeated-8192: regression bound or duplicate-control repeatability unresolved"
+        ]
+      },
+      "material_control_slowdowns": {
+        "empty": {
+          "decision": "regression",
+          "runs": {
+            "shared-terminal-literal-frame-cleanup-full-forward": {
+              "estimate": 0.049419716331057684,
+              "lower": 0.04199796768261366,
+              "upper": 0.05714321991231475
+            },
+            "shared-terminal-literal-frame-cleanup-full-reverse": {
+              "estimate": -0.0043285566099360295,
+              "lower": -0.012545845224984808,
+              "upper": 0.0038743009464448086
+            }
+          },
+          "combined": {
+            "estimate": 0.0221923711715597,
+            "lower": 0.016809824086666758,
+            "upper": 0.027749626914318037
+          },
+          "adverse_runs": [
+            "shared-terminal-literal-frame-cleanup-full-forward"
+          ],
+          "duplicate_controls": []
+        },
+        "320-overlap": {
+          "decision": "regression",
+          "runs": {
+            "shared-terminal-literal-frame-cleanup-full-forward": {
+              "estimate": 0.010066279414949308,
+              "lower": 0.008176473270284479,
+              "upper": 0.011969496744549835
+            },
+            "shared-terminal-literal-frame-cleanup-full-reverse": {
+              "estimate": 0.009215183427523588,
+              "lower": 0.0019271292785212335,
+              "upper": 0.019925728412707233
+            }
+          },
+          "combined": {
+            "estimate": 0.009640641740275013,
+            "lower": 0.005738162016970305,
+            "upper": 0.015061839611763883
+          },
+          "adverse_runs": [
+            "shared-terminal-literal-frame-cleanup-full-forward"
+          ],
+          "duplicate_controls": []
+        }
+      },
+      "precision_note": "Both orders have 62 C point wins. Reverse has 61 precision-supported C wins. The unchanged v3 gate returns Retain."
+    },
+    "evidence": "evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md"
+  },
   "ordinary_integration": {
     "optimized_path": "explicit diagnostic compact entry",
     "open": [
@@ -7236,7 +7370,7 @@
     "checked_chain_estimated_recomputation_seconds": 0.0032,
     "next": "Exact-choice body planning and one further omitted-body investigation"
   },
-  "current_matched_build": "heap_layout_recovery_m1",
+  "current_matched_build": "literal_frame_cleanup_m1",
   "scoped_function_replay": {
     "compiler_source": "e9538f71514225abf5ca57a9fc0acab358407167",
     "control_source": "ff7c1dbc9c5059ed84d730b008847c02179fa2cf",
@@ -14090,10 +14224,10 @@
       "encoder_text_bytes": 71192
     },
     "peer_qualified_opt_in": {
-      "source": "f5df10d5791a54f39253b693abfb3d43ccb03da3",
-      "evidence": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-release-setup",
-      "encoder_text_bytes": 65036,
-      "worker": "884e35f4bdacf47e82adc39c5535451eb0a82b271b6c1fdd6419984312d4f61c",
+      "recipe": "m1-literal-frame-cleanup",
+      "source": "caa8b22ac5cd4d7c3cf30b5c97f78fd786fe5c16",
+      "encoder_text_bytes": 64444,
+      "worker": "f77ad5066a61f30cf67f714e5edc990efe295682e9de1d8bf36ee9a1a93041c6",
       "runtime": {
         "decision": "Retain",
         "wins": {
@@ -14105,9 +14239,14 @@
             62,
             62
           ]
-        }
+        },
+        "precision_supported_libdeflate": [
+          62,
+          61
+        ]
       },
-      "no_runtime_sacrifice_against_maintained": "unverified"
+      "no_runtime_sacrifice_against_maintained": "unverified",
+      "evidence": "evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md"
     },
     "rejected": {
       "encoder_text_bytes": 64668,
@@ -15064,5 +15203,258 @@
       "trials": 10
     },
     "source_checks": "evidence/encoder-size-gap/shared-heap-layout-recovery/source-rebuild-and-timing.json"
+  },
+  "literal_frame_cleanup_m1": {
+    "host": "Apple M1, macOS 15.6.1, arm64",
+    "maintained_recipe": "frame-copies",
+    "recipe": "m1-literal-frame-cleanup",
+    "status": "source-built opt-in, peer-qualified archived worker, compilation tradeoff recorded",
+    "source_commit": "caa8b22ac5cd4d7c3cf30b5c97f78fd786fe5c16",
+    "compiler_sha256": "c66c37500b0d519a04f1219d617b90075b8f612f76f636310e7fcfe28b7dc107",
+    "runtime": {
+      "host": "Apple M1, macOS 15.6.1, arm64",
+      "source_commit": "4f5a94ac3f0546c99f5f88eb9b500f7bd0266527",
+      "compiler_sha256": "76c263ca3ac059b4bf53f36bc3fe6c07bf3b915c01fdf76a96817f49f445bc06",
+      "encoder_bytes": 64444,
+      "encoder_x_roc": 1.1169578480310594,
+      "encoder_x_libdeflate": 1.7379719525350594,
+      "bytes_saved_vs_64652": 208,
+      "runtime_decision": "Retain",
+      "peak_stack_bytes": 4656,
+      "wins": [
+        {
+          "order": "forward",
+          "roc": 81,
+          "libdeflate": 62,
+          "distinct_roc": 74,
+          "distinct_libdeflate": 56,
+          "precision_supported_roc": 81,
+          "precision_supported_libdeflate": 62,
+          "distinct_precision_supported_roc": 74,
+          "distinct_precision_supported_libdeflate": 56,
+          "roc_lost_cases": [],
+          "libdeflate_lost_cases": []
+        },
+        {
+          "order": "reverse",
+          "roc": 81,
+          "libdeflate": 62,
+          "distinct_roc": 74,
+          "distinct_libdeflate": 56,
+          "precision_supported_roc": 81,
+          "precision_supported_libdeflate": 61,
+          "distinct_precision_supported_roc": 74,
+          "distinct_precision_supported_libdeflate": 55,
+          "roc_lost_cases": [],
+          "libdeflate_lost_cases": []
+        }
+      ],
+      "full_rejected": [],
+      "full_unresolved": [],
+      "relative": {
+        "slowdowns": [
+          "empty: established slowdown above the 0.5% resolution",
+          "320-overlap: established slowdown above the 0.5% resolution"
+        ],
+        "uncertain": [
+          "one-stored: combined and individual run bounds conflict: shared-terminal-literal-frame-cleanup-full-forward",
+          "seven-stored-prefix: combined and individual run bounds conflict: shared-terminal-literal-frame-cleanup-full-forward",
+          "random-256: regression bound or duplicate-control repeatability unresolved",
+          "repeated-1024: regression bound or duplicate-control repeatability unresolved",
+          "repeated-32769: regression bound or duplicate-control repeatability unresolved",
+          "prefix-periodic-1024: regression bound or duplicate-control repeatability unresolved",
+          "prefix-periodic-4096: regression bound or duplicate-control repeatability unresolved",
+          "prefix-repeated-1024: regression bound or duplicate-control repeatability unresolved",
+          "prefix-repeated-4096: regression bound or duplicate-control repeatability unresolved",
+          "prefix-repeated-8192: regression bound or duplicate-control repeatability unresolved"
+        ]
+      },
+      "material_control_slowdowns": {
+        "empty": {
+          "decision": "regression",
+          "runs": {
+            "shared-terminal-literal-frame-cleanup-full-forward": {
+              "estimate": 0.049419716331057684,
+              "lower": 0.04199796768261366,
+              "upper": 0.05714321991231475
+            },
+            "shared-terminal-literal-frame-cleanup-full-reverse": {
+              "estimate": -0.0043285566099360295,
+              "lower": -0.012545845224984808,
+              "upper": 0.0038743009464448086
+            }
+          },
+          "combined": {
+            "estimate": 0.0221923711715597,
+            "lower": 0.016809824086666758,
+            "upper": 0.027749626914318037
+          },
+          "adverse_runs": [
+            "shared-terminal-literal-frame-cleanup-full-forward"
+          ],
+          "duplicate_controls": []
+        },
+        "320-overlap": {
+          "decision": "regression",
+          "runs": {
+            "shared-terminal-literal-frame-cleanup-full-forward": {
+              "estimate": 0.010066279414949308,
+              "lower": 0.008176473270284479,
+              "upper": 0.011969496744549835
+            },
+            "shared-terminal-literal-frame-cleanup-full-reverse": {
+              "estimate": 0.009215183427523588,
+              "lower": 0.0019271292785212335,
+              "upper": 0.019925728412707233
+            }
+          },
+          "combined": {
+            "estimate": 0.009640641740275013,
+            "lower": 0.005738162016970305,
+            "upper": 0.015061839611763883
+          },
+          "adverse_runs": [
+            "shared-terminal-literal-frame-cleanup-full-forward"
+          ],
+          "duplicate_controls": []
+        }
+      },
+      "precision_note": "Both orders have 62 C point wins. Reverse has 61 precision-supported C wins. The unchanged v3 gate returns Retain."
+    },
+    "matched_deployment": {
+      "plan_sha256": "22e1c0dc5cd819883d0f959d28ce0fc471f971b33c99eb6ad3f24e78959eff3d",
+      "medians": {
+        "mech-control-layout": {
+          "source": 2.133932374883443,
+          "link": 0.035258312011137605,
+          "source_through_link": 2.1698648545425385,
+          "strip": 0.010738125070929527,
+          "source_through_strip": 2.180719666648656
+        },
+        "mech-full-cleanup": {
+          "source": 2.2448817915283144,
+          "link": 0.035067707765847445,
+          "source_through_link": 2.2801337705459446,
+          "strip": 0.010698729660362005,
+          "source_through_strip": 2.2909605836030096
+        },
+        "mech-route-cleanup": {
+          "source": 2.22736170864664,
+          "link": 0.03506025020033121,
+          "source_through_link": 2.2631266247481108,
+          "strip": 0.010647166753187776,
+          "source_through_strip": 2.2739771041087806
+        },
+        "roc": {
+          "source": 2.9421565004158765,
+          "link": 0.0348731039557606,
+          "source_through_link": 2.9772843124810606,
+          "strip": 0.010589520446956158,
+          "source_through_strip": 2.9881219789385796
+        },
+        "libdeflate": {
+          "source": 0.44543685438111424,
+          "link": 0.0347031457349658,
+          "source_through_link": 0.4803968130145222,
+          "strip": 0.010776521638035774,
+          "source_through_strip": 0.4913476041983813
+        }
+      },
+      "phases": {
+        "mech-control-layout": {
+          "parse": 0.706819917,
+          "catalog": 2.15205e-05,
+          "frontend": 0.2127949165,
+          "artifact": 0.0068127085,
+          "encode": 0.0025061455,
+          "native": 1.1791391249999998
+        },
+        "mech-full-cleanup": {
+          "parse": 0.706847792,
+          "catalog": 1.71455e-05,
+          "frontend": 0.2122068125,
+          "artifact": 0.0068177705000000005,
+          "encode": 0.0024990625,
+          "native": 1.2903197915
+        },
+        "mech-route-cleanup": {
+          "parse": 0.7063435419999999,
+          "catalog": 1.74795e-05,
+          "frontend": 0.21269147900000002,
+          "artifact": 0.0068488335,
+          "encode": 0.0024902295,
+          "native": 1.272847271
+        }
+      },
+      "paired_ratios": {
+        "mech-control-layout": {
+          "roc": 0.7286102010294158,
+          "libdeflate": 4.516781493666979,
+          "mech-control-layout": 1.0
+        },
+        "mech-full-cleanup": {
+          "roc": 0.7660968170027928,
+          "libdeflate": 4.747718791110966,
+          "mech-control-layout": 1.051084625523059
+        },
+        "mech-route-cleanup": {
+          "roc": 0.7603374932498232,
+          "libdeflate": 4.715772288625235,
+          "mech-control-layout": 1.0437373505923202
+        }
+      },
+      "source_commit": "caa8b22ac5cd4d7c3cf30b5c97f78fd786fe5c16",
+      "compiler_sha256": "c66c37500b0d519a04f1219d617b90075b8f612f76f636310e7fcfe28b7dc107",
+      "trials": 10,
+      "candidate_schedule": "batched-routes",
+      "source_cpu_seconds": {
+        "mech-control-layout": 2.198015,
+        "mech-full-cleanup": 2.309317,
+        "mech-route-cleanup": 2.2918719999999997,
+        "roc": 2.935612,
+        "libdeflate": 0.4420035
+      },
+      "source_rss_bytes": {
+        "mech-control-layout": 392495104.0,
+        "mech-full-cleanup": 392790016.0,
+        "mech-route-cleanup": 392806400.0,
+        "roc": 392200192.0,
+        "libdeflate": 71540736.0
+      },
+      "stripped_executables": {
+        "mech-control-layout": {
+          "bytes": 276072,
+          "sha256": "b8320a30dc61e2392de0b77419f477e7fed07f733dade58badaf3b3ef7f0c3f1"
+        },
+        "mech-full-cleanup": {
+          "bytes": 276072,
+          "sha256": "a2b16eed3f55512674a724a968c39f1d86ed3140d7abf7e084871036555db698"
+        },
+        "mech-route-cleanup": {
+          "bytes": 276072,
+          "sha256": "a2b16eed3f55512674a724a968c39f1d86ed3140d7abf7e084871036555db698"
+        },
+        "roc": {
+          "bytes": 191912,
+          "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+        },
+        "libdeflate": {
+          "bytes": 155752,
+          "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+        }
+      },
+      "paired_ms_vs_64652": {
+        "mech-control-layout": 0.0,
+        "mech-full-cleanup": 110.79958290793002,
+        "mech-route-cleanup": 94.83489557169378
+      },
+      "paired_ms_routes_vs_full": -17.20004132948816,
+      "routes_faster_than_full": 8
+    },
+    "source_checks": "evidence/encoder-size-gap/shared-literal-frame-cleanup/source-rebuild.json",
+    "qualification_worker_sha256": "f77ad5066a61f30cf67f714e5edc990efe295682e9de1d8bf36ee9a1a93041c6",
+    "new_source_built_worker_sha256": "80feaed1a48c118c64cc53b5e259107464bd5bd4c4d4c7f4840ae8b7b12cec63",
+    "new_source_built_worker_runtime": "not measured; complete runtime evidence belongs to the exact archived worker",
+    "evidence": "evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md"
   }
 }

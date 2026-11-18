@@ -12,6 +12,7 @@ M1_SOURCE_RECIPES = {
     'm1-shared-release-setup': 'shared-release-setup',
     'm1-shared-heap-setup': 'shared-heap-call-screen',
     'm1-shared-heap-layout': 'shared-heap-layout-recovery',
+    'm1-literal-frame-cleanup': 'shared-literal-frame-cleanup',
 }
 
 

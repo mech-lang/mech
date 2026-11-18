@@ -1,0 +1,62 @@
+{
+  "all-phase-outputs": {
+    "status": 101,
+    "flags": {
+      "MECH_COMPACT_SELECT_PHASE_OUTPUT_WORDS": "1"
+    },
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/compile_profile",
+      "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/revisit-size-options/all-phase-outputs/frontend",
+      "compact"
+    ]
+  },
+  "direct-continuation-six": {
+    "status": 0,
+    "flags": {
+      "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "6"
+    },
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/compile_profile",
+      "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/revisit-size-options/direct-continuation-six/frontend",
+      "compact"
+    ],
+    "encoder_text_bytes": 64668,
+    "encoder_sha256": "d3eeddcd633a03fac9c4b4fd828873c1d5cca9cae376fa54561547412333ce6a",
+    "metadata_sha256": "7de8c1c0585ab518840dc001b97c726fa6d38e90b3ab699bba92433f18e4e3ce",
+    "bytes_saved": -16
+  },
+  "backing-owner-all": {
+    "status": 0,
+    "flags": {
+      "MECH_COMPACT_PROVE_BACKING_OWNERS": "all"
+    },
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/compile_profile",
+      "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/revisit-size-options/backing-owner-all/frontend",
+      "compact"
+    ],
+    "encoder_text_bytes": 64620,
+    "encoder_sha256": "39c803b14c9b30ed2ec94bd92a1063814ee3d73b4e45bdfafcf5d83413c83f2b",
+    "metadata_sha256": "82696c63bba78a69784a9e47286fe13e7b3703840f157cd97196246eaa231d9d",
+    "bytes_saved": 32
+  },
+  "final-cfg-cleanup": {
+    "status": 0,
+    "flags": {
+      "MECH_COMPACT_FINISH_CFG_CLEANUP": "1"
+    },
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/compile_profile",
+      "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/revisit-size-options/final-cfg-cleanup/frontend",
+      "compact"
+    ],
+    "encoder_text_bytes": 64556,
+    "encoder_sha256": "b06078d253d8916dd2be8da808b268b92f2238bc4931c23c004191dcfda82cc4",
+    "metadata_sha256": "ceaf46cd94dee404835da56892a154e8e51f43dfb5c20e36635b0e57334fdd83",
+    "bytes_saved": 96
+  }
+}

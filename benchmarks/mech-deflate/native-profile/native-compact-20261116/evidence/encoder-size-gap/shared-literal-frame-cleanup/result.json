@@ -1,0 +1,110 @@
+{
+  "host": "Apple M1, macOS 15.6.1, arm64",
+  "source_commit": "4f5a94ac3f0546c99f5f88eb9b500f7bd0266527",
+  "compiler_sha256": "76c263ca3ac059b4bf53f36bc3fe6c07bf3b915c01fdf76a96817f49f445bc06",
+  "encoder_bytes": 64444,
+  "encoder_x_roc": 1.1169578480310594,
+  "encoder_x_libdeflate": 1.7379719525350594,
+  "bytes_saved_vs_64652": 208,
+  "runtime_decision": "Retain",
+  "peak_stack_bytes": 4656,
+  "wins": [
+    {
+      "order": "forward",
+      "roc": 81,
+      "libdeflate": 62,
+      "distinct_roc": 74,
+      "distinct_libdeflate": 56,
+      "precision_supported_roc": 81,
+      "precision_supported_libdeflate": 62,
+      "distinct_precision_supported_roc": 74,
+      "distinct_precision_supported_libdeflate": 56,
+      "roc_lost_cases": [],
+      "libdeflate_lost_cases": []
+    },
+    {
+      "order": "reverse",
+      "roc": 81,
+      "libdeflate": 62,
+      "distinct_roc": 74,
+      "distinct_libdeflate": 56,
+      "precision_supported_roc": 81,
+      "precision_supported_libdeflate": 61,
+      "distinct_precision_supported_roc": 74,
+      "distinct_precision_supported_libdeflate": 55,
+      "roc_lost_cases": [],
+      "libdeflate_lost_cases": []
+    }
+  ],
+  "full_rejected": [],
+  "full_unresolved": [],
+  "relative": {
+    "slowdowns": [
+      "empty: established slowdown above the 0.5% resolution",
+      "320-overlap: established slowdown above the 0.5% resolution"
+    ],
+    "uncertain": [
+      "one-stored: combined and individual run bounds conflict: shared-terminal-literal-frame-cleanup-full-forward",
+      "seven-stored-prefix: combined and individual run bounds conflict: shared-terminal-literal-frame-cleanup-full-forward",
+      "random-256: regression bound or duplicate-control repeatability unresolved",
+      "repeated-1024: regression bound or duplicate-control repeatability unresolved",
+      "repeated-32769: regression bound or duplicate-control repeatability unresolved",
+      "prefix-periodic-1024: regression bound or duplicate-control repeatability unresolved",
+      "prefix-periodic-4096: regression bound or duplicate-control repeatability unresolved",
+      "prefix-repeated-1024: regression bound or duplicate-control repeatability unresolved",
+      "prefix-repeated-4096: regression bound or duplicate-control repeatability unresolved",
+      "prefix-repeated-8192: regression bound or duplicate-control repeatability unresolved"
+    ]
+  },
+  "material_control_slowdowns": {
+    "empty": {
+      "decision": "regression",
+      "runs": {
+        "shared-terminal-literal-frame-cleanup-full-forward": {
+          "estimate": 0.049419716331057684,
+          "lower": 0.04199796768261366,
+          "upper": 0.05714321991231475
+        },
+        "shared-terminal-literal-frame-cleanup-full-reverse": {
+          "estimate": -0.0043285566099360295,
+          "lower": -0.012545845224984808,
+          "upper": 0.0038743009464448086
+        }
+      },
+      "combined": {
+        "estimate": 0.0221923711715597,
+        "lower": 0.016809824086666758,
+        "upper": 0.027749626914318037
+      },
+      "adverse_runs": [
+        "shared-terminal-literal-frame-cleanup-full-forward"
+      ],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "regression",
+      "runs": {
+        "shared-terminal-literal-frame-cleanup-full-forward": {
+          "estimate": 0.010066279414949308,
+          "lower": 0.008176473270284479,
+          "upper": 0.011969496744549835
+        },
+        "shared-terminal-literal-frame-cleanup-full-reverse": {
+          "estimate": 0.009215183427523588,
+          "lower": 0.0019271292785212335,
+          "upper": 0.019925728412707233
+        }
+      },
+      "combined": {
+        "estimate": 0.009640641740275013,
+        "lower": 0.005738162016970305,
+        "upper": 0.015061839611763883
+      },
+      "adverse_runs": [
+        "shared-terminal-literal-frame-cleanup-full-forward"
+      ],
+      "duplicate_controls": []
+    }
+  },
+  "precision_note": "Both orders have 62 C point wins. Reverse has 61 precision-supported C wins. The unchanged v3 gate returns Retain."
+}
