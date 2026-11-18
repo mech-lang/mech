@@ -1,0 +1,41 @@
+{
+  "candidate": "word-complement",
+  "compiler_source_commit": "5f4997a65d3015f901654f8942dc7d7036d69db2",
+  "target_met": true,
+  "basis": {
+    "campaign": "entry-leaf-canonical-word",
+    "scope": "full",
+    "selected_actor": "mech-control",
+    "actor_selection": "The frozen retained encoder; the experimental entry-selected challenger is rejected and is not used for this result."
+  },
+  "counts": [
+    {
+      "order": "forward",
+      "cases": 81,
+      "timed_calls": 982656,
+      "wins": {
+        "roc": 81,
+        "libdeflate": 61
+      }
+    },
+    {
+      "order": "reverse",
+      "cases": 81,
+      "timed_calls": 982656,
+      "wins": {
+        "roc": 81,
+        "libdeflate": 61
+      }
+    }
+  ],
+  "object_sha256": "3fe8a4cd166f3d8cd77d1f93b4f38e62389565e1b56a56d97d29cf1477035dae",
+  "worker_sha256": "3640d5f9d490de5dc83c4d6a321af01d8cefdd35e43f0f67f7c1bacff0a2869e",
+  "earlier_complete_campaign": {
+    "roc_each_order": 81,
+    "libdeflate_each_order": 60
+  },
+  "sensitivity": "An additional libdeflate win is near a tie; no source or native code changed between the initial and confirmation campaigns. Counts must not be attributed to the rejected challenger.",
+  "formal_v3_promotion_claimed": false,
+  "replay_required": false,
+  "raw_replay_status": "passed"
+}

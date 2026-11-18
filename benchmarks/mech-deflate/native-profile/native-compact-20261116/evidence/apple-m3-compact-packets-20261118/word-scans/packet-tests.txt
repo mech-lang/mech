@@ -1,0 +1,9 @@
+
+running 4 tests
+test native_artifact::phase_storage::tests::compact_input_offsets_keep_live_words_and_refuse_escapes ... ok
+test native_artifact::phase_storage::tests::exit_packet_words_keep_selected_results_and_failure_order ... ok
+test native_artifact::phase_storage::tests::exit_packet_words_refuse_escape_extent_width_and_path_changes ... ok
+test native_artifact::phase_storage::tests::input_packet_flags_require_the_complete_nonescaping_load_contract ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

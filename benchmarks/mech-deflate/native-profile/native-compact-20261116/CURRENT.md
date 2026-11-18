@@ -1,5 +1,13 @@
 # PR #993 current status
 
+## Apple M3 source-built comparison
+
+The retained word-scan and current-guard optimization records **81/81 against Roc and 61/81 against libdeflate 1.26 level 12 in both orders** in its [complete M3 confirmation](evidence/apple-m3-compact-packets-20261118/word-scans/confirmation/README.md). The identical executable's initial full campaign records 60 libdeflate wins per order; near-tied cases vary, and the extra net win is not attributed to another compiler change. Encoder text is **64,512 B** and native stack high-water is **4,736 B**, below the unchanged 5,280 B bound. The original Mech source, bytecode, runtime, allocator and peer executables are unchanged. This meets the M3 comparison target, without claiming the separate v3 promotion floor of 62 libdeflate wins.
+
+[All 81 timings, both orders, in seconds and comparator multiples](evidence/apple-m3-compact-packets-20261118/word-scans/confirmation/timings.csv) · [Source and reproduction recipe](evidence/apple-m3-compact-packets-20261118/word-scans/README.md)
+
+## Apple M1 deployment history
+
 Maintained compiler source 1426ea50ba887590c0696f9e3c767a41c5cd847f is on PR #993 stacked on #973.
 These measurements use Apple M1, macOS 15.6.1 and arm64.
 [Machine-readable scorecard](scorecard.json)

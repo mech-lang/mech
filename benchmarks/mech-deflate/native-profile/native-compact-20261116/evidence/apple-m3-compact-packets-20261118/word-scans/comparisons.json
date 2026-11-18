@@ -1,0 +1,388 @@
+[
+  {
+    "candidate": "upstream-67656",
+    "scope": "focus",
+    "order": "forward",
+    "cases": 15,
+    "roc": 14,
+    "libdeflate": 11,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "upstream-67656",
+    "scope": "focus",
+    "order": "reverse",
+    "cases": 15,
+    "roc": 14,
+    "libdeflate": 10,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "upstream-67656",
+    "scope": "full",
+    "order": "forward",
+    "cases": 81,
+    "roc": 78,
+    "libdeflate": 58,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "upstream-67656",
+    "scope": "full",
+    "order": "reverse",
+    "cases": 81,
+    "roc": 76,
+    "libdeflate": 59,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "word-complement",
+    "scope": "focus",
+    "order": "forward",
+    "cases": 15,
+    "roc": 15,
+    "libdeflate": 9,
+    "selected_for_target": true
+  },
+  {
+    "candidate": "word-complement",
+    "scope": "focus",
+    "order": "reverse",
+    "cases": 15,
+    "roc": 15,
+    "libdeflate": 13,
+    "selected_for_target": true
+  },
+  {
+    "candidate": "word-complement",
+    "scope": "full",
+    "order": "forward",
+    "cases": 81,
+    "roc": 81,
+    "libdeflate": 60,
+    "selected_for_target": true
+  },
+  {
+    "candidate": "word-complement",
+    "scope": "full",
+    "order": "reverse",
+    "cases": 81,
+    "roc": 81,
+    "libdeflate": 60,
+    "selected_for_target": true
+  },
+  {
+    "candidate": "direct-word-small-complement",
+    "scope": "full",
+    "order": "forward",
+    "cases": 81,
+    "roc": 80,
+    "libdeflate": 58,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "direct-word-small-complement",
+    "scope": "full",
+    "order": "reverse",
+    "cases": 81,
+    "roc": 80,
+    "libdeflate": 57,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "word-primary-prefetch",
+    "scope": "focus",
+    "order": "forward",
+    "cases": 16,
+    "roc": 16,
+    "libdeflate": 10,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "word-primary-prefetch",
+    "scope": "focus",
+    "order": "reverse",
+    "cases": 16,
+    "roc": 16,
+    "libdeflate": 10,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "direct-word-canonical",
+    "scope": "focus",
+    "order": "forward",
+    "cases": 16,
+    "roc": 16,
+    "libdeflate": 9,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "direct-word-canonical",
+    "scope": "focus",
+    "order": "reverse",
+    "cases": 16,
+    "roc": 16,
+    "libdeflate": 12,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "word-carried-vector-lanes",
+    "scope": "focus",
+    "order": "forward",
+    "cases": 16,
+    "roc": 15,
+    "libdeflate": 12,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "word-carried-vector-lanes",
+    "scope": "focus",
+    "order": "reverse",
+    "cases": 16,
+    "roc": 15,
+    "libdeflate": 9,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "word-encoded-winner",
+    "scope": "focus",
+    "order": "forward",
+    "cases": 16,
+    "roc": 13,
+    "libdeflate": 12,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "word-encoded-winner",
+    "scope": "focus",
+    "order": "reverse",
+    "cases": 16,
+    "roc": 12,
+    "libdeflate": 11,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "word-direct-literals",
+    "scope": "focus",
+    "order": "forward",
+    "cases": 16,
+    "roc": 14,
+    "libdeflate": 11,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "word-direct-literals",
+    "scope": "focus",
+    "order": "reverse",
+    "cases": 16,
+    "roc": 15,
+    "libdeflate": 12,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "word-page-reuse",
+    "scope": "focus",
+    "order": "forward",
+    "cases": 16,
+    "roc": 15,
+    "libdeflate": 13,
+    "selected_for_target": false,
+    "qualification_eligible": false,
+    "reason": "Old physical backing was reset on the next allocation, outside the source release interval."
+  },
+  {
+    "candidate": "word-page-reuse",
+    "scope": "focus",
+    "order": "reverse",
+    "cases": 16,
+    "roc": 15,
+    "libdeflate": 13,
+    "selected_for_target": false,
+    "qualification_eligible": false,
+    "reason": "Old physical backing was reset on the next allocation, outside the source release interval."
+  },
+  {
+    "candidate": "word-release-page-reuse",
+    "scope": "focus",
+    "order": "forward",
+    "cases": 16,
+    "roc": 15,
+    "libdeflate": 12,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "word-release-page-reuse",
+    "scope": "focus",
+    "order": "reverse",
+    "cases": 16,
+    "roc": 15,
+    "libdeflate": 12,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "canonical-word-no-prefetch",
+    "scope": "focus",
+    "order": "forward",
+    "cases": 16,
+    "roc": 15,
+    "libdeflate": 9,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "canonical-word-no-prefetch",
+    "scope": "focus",
+    "order": "reverse",
+    "cases": 16,
+    "roc": 15,
+    "libdeflate": 12,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "adaptive-canonical-word",
+    "scope": "focus",
+    "order": "forward",
+    "cases": 16,
+    "roc": 15,
+    "libdeflate": 11,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "adaptive-canonical-word",
+    "scope": "focus",
+    "order": "reverse",
+    "cases": 16,
+    "roc": 15,
+    "libdeflate": 11,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "adaptive-word-guards",
+    "scope": "focus",
+    "order": "forward",
+    "cases": 16,
+    "roc": 15,
+    "libdeflate": 11,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "adaptive-word-guards",
+    "scope": "focus",
+    "order": "reverse",
+    "cases": 16,
+    "roc": 15,
+    "libdeflate": 9,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "entry-leaf-canonical-word",
+    "scope": "focus",
+    "order": "forward",
+    "cases": 16,
+    "roc": 16,
+    "libdeflate": 12,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "entry-leaf-canonical-word",
+    "scope": "focus",
+    "order": "reverse",
+    "cases": 16,
+    "roc": 16,
+    "libdeflate": 12,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "entry-leaf-canonical-word",
+    "scope": "full",
+    "order": "forward",
+    "cases": 81,
+    "roc": 80,
+    "libdeflate": 60,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "entry-leaf-canonical-word",
+    "scope": "full",
+    "order": "reverse",
+    "cases": 81,
+    "roc": 81,
+    "libdeflate": 57,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "word-page-threshold16",
+    "scope": "focus",
+    "order": "forward",
+    "cases": 16,
+    "roc": 15,
+    "libdeflate": 9,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "word-page-threshold16",
+    "scope": "focus",
+    "order": "reverse",
+    "cases": 16,
+    "roc": 15,
+    "libdeflate": 10,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "word-inline-owner16",
+    "scope": "focus",
+    "order": "forward",
+    "cases": 16,
+    "roc": 15,
+    "libdeflate": 13,
+    "selected_for_target": false,
+    "additional_borrowed_record_bytes": 720
+  },
+  {
+    "candidate": "word-inline-owner16",
+    "scope": "focus",
+    "order": "reverse",
+    "cases": 16,
+    "roc": 15,
+    "libdeflate": 13,
+    "selected_for_target": false,
+    "additional_borrowed_record_bytes": 720
+  },
+  {
+    "candidate": "entry-word-owner16",
+    "scope": "focus",
+    "order": "forward",
+    "cases": 16,
+    "roc": 16,
+    "libdeflate": 13,
+    "selected_for_target": false,
+    "additional_borrowed_record_bytes": 720
+  },
+  {
+    "candidate": "entry-word-owner16",
+    "scope": "focus",
+    "order": "reverse",
+    "cases": 16,
+    "roc": 16,
+    "libdeflate": 13,
+    "selected_for_target": false,
+    "additional_borrowed_record_bytes": 720
+  },
+  {
+    "candidate": "entry-word-owner12",
+    "scope": "focus",
+    "order": "forward",
+    "cases": 16,
+    "roc": 16,
+    "libdeflate": 10,
+    "selected_for_target": false
+  },
+  {
+    "candidate": "entry-word-owner12",
+    "scope": "focus",
+    "order": "reverse",
+    "cases": 16,
+    "roc": 15,
+    "libdeflate": 13,
+    "selected_for_target": false
+  }
+]
