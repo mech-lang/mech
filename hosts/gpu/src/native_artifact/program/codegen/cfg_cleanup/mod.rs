@@ -22,6 +22,7 @@ mod preheaders;
 pub(in crate::native_artifact) mod reduction_bound;
 pub(in crate::native_artifact) mod reduction_rotation;
 mod repeated_bounds;
+mod route_uses;
 pub(in crate::native_artifact) mod selected_continuations;
 mod selected_homes;
 mod selected_increments;

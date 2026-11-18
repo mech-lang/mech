@@ -120,7 +120,7 @@ pub(super) fn optimize(
         return report;
     }
     let known = BTreeMap::new();
-    let uses = route::Uses::new(f);
+    let uses = super::route_uses::Uses::new(f);
     let mut edges = Vec::new();
     for block in f.layout.blocks() {
         if origins.is_some_and(|origins| !origins.contains(&block)) {
@@ -153,6 +153,7 @@ pub(super) fn optimize(
         .into_iter()
         .filter_map(|edge| route::find(f, dom, &uses, edge, known.clone()))
         .collect::<Vec<_>>();
+    drop(uses);
     let targets = plans.iter().map(|p| p.target).collect::<BTreeSet<_>>();
     // Preserve the original dominance of every new transport phi. No other
     // shortcut may bypass its destination, including nested dispatch plans.
