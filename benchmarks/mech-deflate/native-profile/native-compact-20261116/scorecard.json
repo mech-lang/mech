@@ -13020,6 +13020,45 @@
           "sha256": "cf7c8a8ccc14fd39e7782006a7151779c85ac01e07e652b9becf24592e43ffee"
         },
         "evidence": "evidence/sealed-grapheme-and-statement-replay/deployment.json"
+      },
+      {
+        "name": "Shared checked byte reads",
+        "encoder_text_bytes": 65932,
+        "encoder_sha256": "76aff98a257b58d14407c14489a7f1f33b015d4deff1fe711ab5f24b94e176dc",
+        "compiler_sha256": "4a0cb4066a6268bd9ed00795f33110c12d0107b236a563543854581da2d3d1bb",
+        "measured_trials": 8,
+        "measurement_plan_sha256": "50fb495e7f3dc1ec10eda741189a2ccba71d66aabfbb8ebb36a41bf282da1ca5",
+        "median_seconds": {
+          "source": 2.1632988336496055,
+          "link": 0.034380625700578094,
+          "source_through_link": 2.1978529165498912,
+          "strip": 0.010394125478342175,
+          "source_through_strip": 2.208412854000926
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.7193361665,
+          "catalog": 2.02295e-05,
+          "frontend": 0.21973533299999998,
+          "artifact": 0.0069806455,
+          "encode": 0.002587083,
+          "native": 1.1882274585000001
+        },
+        "paired_ratios": {
+          "roc": 0.7368701405798664,
+          "libdeflate": 4.586673732537665
+        },
+        "encoder_text_ratios": {
+          "roc": 1.1427481974486966,
+          "libdeflate": 1.778101402373247
+        },
+        "paired_ratio_to_session_control": 1.0011694008467158,
+        "median_paired_seconds_saved": -0.0025661876425147057,
+        "faster_paired_trials": 1,
+        "stripped_executable": {
+          "bytes": 276056,
+          "sha256": "c3af73611b21b85e465f95827f424a148c4196b0e0afd081ac8ebca29cc06303"
+        },
+        "evidence": "evidence/encoder-size-gap/shared-defaulted-byte-reads/deployment.json"
       }
     ]
   },
@@ -13299,6 +13338,64 @@
           62
         ]
       }
+    }
+  },
+  "shared_defaulted_byte_reads": {
+    "qualified": true,
+    "runtime": {
+      "decision": "Retain",
+      "wins": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          62,
+          62
+        ]
+      }
+    },
+    "peak_stack_bytes": 4720,
+    "worker_sha256": "34eecde1cf520aed4b345c9a54c9fa002ad36f49631e12ec9dae927357115c85",
+    "evidence": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-defaulted-byte-reads",
+    "build": {
+      "name": "Shared checked byte reads",
+      "encoder_text_bytes": 65932,
+      "encoder_sha256": "76aff98a257b58d14407c14489a7f1f33b015d4deff1fe711ab5f24b94e176dc",
+      "compiler_sha256": "4a0cb4066a6268bd9ed00795f33110c12d0107b236a563543854581da2d3d1bb",
+      "measured_trials": 8,
+      "measurement_plan_sha256": "50fb495e7f3dc1ec10eda741189a2ccba71d66aabfbb8ebb36a41bf282da1ca5",
+      "median_seconds": {
+        "source": 2.1632988336496055,
+        "link": 0.034380625700578094,
+        "source_through_link": 2.1978529165498912,
+        "strip": 0.010394125478342175,
+        "source_through_strip": 2.208412854000926
+      },
+      "source_phase_median_seconds": {
+        "parse": 0.7193361665,
+        "catalog": 2.02295e-05,
+        "frontend": 0.21973533299999998,
+        "artifact": 0.0069806455,
+        "encode": 0.002587083,
+        "native": 1.1882274585000001
+      },
+      "paired_ratios": {
+        "roc": 0.7368701405798664,
+        "libdeflate": 4.586673732537665
+      },
+      "encoder_text_ratios": {
+        "roc": 1.1427481974486966,
+        "libdeflate": 1.778101402373247
+      },
+      "paired_ratio_to_session_control": 1.0011694008467158,
+      "median_paired_seconds_saved": -0.0025661876425147057,
+      "faster_paired_trials": 1,
+      "stripped_executable": {
+        "bytes": 276056,
+        "sha256": "c3af73611b21b85e465f95827f424a148c4196b0e0afd081ac8ebca29cc06303"
+      },
+      "evidence": "evidence/encoder-size-gap/shared-defaulted-byte-reads/deployment.json"
     }
   }
 }

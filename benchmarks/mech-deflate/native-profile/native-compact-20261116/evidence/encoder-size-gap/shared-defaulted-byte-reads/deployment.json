@@ -1,0 +1,85 @@
+{
+  "plan_sha256": "50fb495e7f3dc1ec10eda741189a2ccba71d66aabfbb8ebb36a41bf282da1ca5",
+  "medians": {
+    "mech-control-qualified": {
+      "source": 2.1598706042859703,
+      "link": 0.03470183303579688,
+      "source_through_link": 2.195156312547624,
+      "strip": 0.010425187414512038,
+      "source_through_strip": 2.2058644997887313
+    },
+    "mech-byte-outline": {
+      "source": 2.1632988336496055,
+      "link": 0.034380625700578094,
+      "source_through_link": 2.1978529165498912,
+      "strip": 0.010394125478342175,
+      "source_through_strip": 2.208412854000926
+    },
+    "roc": {
+      "source": 2.945981375640258,
+      "link": 0.03438574983738363,
+      "source_through_link": 2.9811057921033353,
+      "strip": 0.010398291982710361,
+      "source_through_strip": 2.9918605003040284
+    },
+    "libdeflate": {
+      "source": 0.4451024164445698,
+      "link": 0.03386906231753528,
+      "source_through_link": 0.47926679183728993,
+      "strip": 0.010375771205872297,
+      "source_through_strip": 0.48994735442101955
+    }
+  },
+  "phases": {
+    "mech-control-qualified": {
+      "parse": 0.719763229,
+      "catalog": 1.9771e-05,
+      "frontend": 0.21970979200000001,
+      "artifact": 0.0069616669999999995,
+      "encode": 0.0025975,
+      "native": 1.1844989795
+    },
+    "mech-byte-outline": {
+      "parse": 0.7193361665,
+      "catalog": 2.02295e-05,
+      "frontend": 0.21973533299999998,
+      "artifact": 0.0069806455,
+      "encode": 0.002587083,
+      "native": 1.1882274585000001
+    }
+  },
+  "paired_ratios": {
+    "mech-control-qualified": {
+      "roc": 0.7362773378900803,
+      "libdeflate": 4.580075579099841,
+      "mech-control-qualified": 1.0
+    },
+    "mech-byte-outline": {
+      "roc": 0.7368701405798664,
+      "libdeflate": 4.586673732537665,
+      "mech-control-qualified": 1.0011694008467158
+    }
+  },
+  "median_paired_ms_saved": -2.5661876425147057,
+  "faster_trials": 1,
+  "trials": 8,
+  "selected": "mech-byte-outline",
+  "stripped_executables": {
+    "mech-control-qualified": {
+      "bytes": 276056,
+      "sha256": "cf7c8a8ccc14fd39e7782006a7151779c85ac01e07e652b9becf24592e43ffee"
+    },
+    "mech-byte-outline": {
+      "bytes": 276056,
+      "sha256": "c3af73611b21b85e465f95827f424a148c4196b0e0afd081ac8ebca29cc06303"
+    },
+    "roc": {
+      "bytes": 191912,
+      "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+    },
+    "libdeflate": {
+      "bytes": 155752,
+      "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+    }
+  }
+}

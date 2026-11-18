@@ -1,0 +1,17 @@
+{
+  "qualified_text_bytes": 66192,
+  "encoder_text_bytes": 65932,
+  "root_before": 49280,
+  "root_after": 48864,
+  "changed_existing_atoms": {
+    "_mech_compact_closed_checked": [
+      49280,
+      48864
+    ]
+  },
+  "new_atoms": [
+    "_mech_compact_checked_layout_continuation_8603"
+  ],
+  "worker_sha256": "34eecde1cf520aed4b345c9a54c9fa002ad36f49631e12ec9dae927357115c85",
+  "flags": "byte-outline"
+}
