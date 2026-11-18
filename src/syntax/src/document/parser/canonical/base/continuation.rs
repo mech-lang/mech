@@ -281,6 +281,63 @@ impl Continuation {
         }
     }
 
+    fn accept_grapheme(
+        &mut self,
+        parser: &mut Parser<'_>,
+        range: Option<TextRange>,
+        kind: Option<SyntaxKind>,
+    ) {
+        self.raw_range = range.and_then(|range| parser.cursor.bump_bytes(range.len().0));
+        self.result = self.raw_range.is_some();
+        if let (Some(range), Some(kind)) = (self.raw_range, kind) {
+            parser.token(kind, range);
+        }
+    }
+
+    fn finish_sealed_grapheme(
+        &mut self,
+        parser: &mut Parser<'_>,
+        kind: Option<SyntaxKind>,
+        allowance: &mut u64,
+        mut scan: GraphemeScan,
+    ) -> Option<Progress> {
+        let before = *allowance;
+        let progress = scan.advance(
+            parser.source(),
+            parser.cursor().context_end(),
+            true,
+            allowance,
+        );
+        self.work += before - *allowance;
+        let range = match progress {
+            ScanProgress::Grapheme(range) => {
+                parser.state.grapheme_tail = Some(scan);
+                (range.end <= parser.cursor().end()).then_some(range)
+            }
+            ScanProgress::End => None,
+            ScanProgress::NeedInput | ScanProgress::NeedsProcessing => {
+                self.scanner(Scanner::Grapheme(scan));
+                self.push(Frame::Grapheme(kind));
+                return Some(if progress == ScanProgress::NeedInput {
+                    Progress::NeedInput
+                } else {
+                    Progress::NeedsProcessing
+                });
+            }
+            ScanProgress::InvalidSource => panic!("base continuation source bounds changed"),
+        };
+        // A completed scan can yield before GraphemeResult. Leave that
+        // frame pending at the exact same allowance boundary.
+        if *allowance == 0 {
+            self.push(Frame::GraphemeResult(range, kind));
+            return Some(Progress::NeedsProcessing);
+        }
+        *allowance -= 1;
+        self.work += 1;
+        self.accept_grapheme(parser, range, kind);
+        None
+    }
+
     pub fn advance(
         &mut self,
         parser: &mut Parser<'_>,
@@ -485,8 +542,16 @@ impl Continuation {
                             .take()
                             .filter(|scan| scan.resumes_at(parser.offset(), end))
                             .unwrap_or_else(|| GraphemeScan::new(parser.offset(), end));
-                        self.scanner(Scanner::Grapheme(scan));
-                        self.push(Frame::Grapheme(kind));
+                        if final_input && *allowance != 0 {
+                            if let Some(pending) =
+                                self.finish_sealed_grapheme(parser, kind, allowance, scan)
+                            {
+                                return pending;
+                            }
+                        } else {
+                            self.scanner(Scanner::Grapheme(scan));
+                            self.push(Frame::Grapheme(kind));
+                        }
                     } else {
                         self.raw_range = None;
                         self.result = false;
@@ -527,12 +592,7 @@ impl Continuation {
                     }
                 }
                 Frame::GraphemeResult(range, kind) => {
-                    self.raw_range =
-                        range.and_then(|range| parser.cursor.bump_bytes(range.len().0));
-                    self.result = self.raw_range.is_some();
-                    if let (Some(range), Some(kind)) = (self.raw_range, kind) {
-                        parser.token(kind, range);
-                    }
+                    self.accept_grapheme(parser, range, kind);
                 }
                 Frame::EscapeAfterSlash => {
                     if self.result {

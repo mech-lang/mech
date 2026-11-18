@@ -89,6 +89,9 @@ Preparing the admitted scorer first skips two unused native bodies and reproduce
 The dense scorer with direct branches emits **66,192 B**. Complete orders recorded 81/81 and 81/81 Roc wins, with 62/81 and 62/81 libdeflate wins. V3 returned **Retain**.
 [Source replay and complete observations](evidence/encoder-size-gap/dense-scorer-direct-branches/README.md)
 
+Folding raw grapheme frames and replaying longer statements builds the exact qualified 66,192 B encoder in **2.195 s** through final link.
+[Parser source and matched evidence](evidence/sealed-grapheme-and-statement-replay/README.md)
+
 ## MechDeflate compile time by encoder build
 
 Each row measures fresh MechDeflate source through final executable
@@ -115,6 +118,7 @@ Roc and libdeflate trials from the same session.
 | [Dense scorer with early admission and single-body preparation](evidence/encoder-size-gap/dense-scorer-only/deployment.json) | 66,240 B | 2.295 s | 0.768× | 4.699× |
 | [Prepare the admitted scorer first](evidence/encoder-size-gap/early-scorer-preparation/deployment.json) | 67,648 B | 2.283 s | 0.764× | 4.757× |
 | [Checked dense scorer with direct branches](evidence/encoder-size-gap/dense-scorer-direct-branches/deployment.json) | 66,192 B | 2.274 s | 0.762× | 4.721× |
+| [Folded grapheme frames and longer statement replay](evidence/sealed-grapheme-and-statement-replay/deployment.json) | 66,192 B | 2.195 s | 0.737× | 4.578× |
 
 Parser, lowering, native compilation and link timings are in the
 machine-readable scorecard.
@@ -123,15 +127,15 @@ machine-readable scorecard.
 
 | Stage | Current | 2.0 s budget | 1.0 s budget | 0.45 s budget |
 | --- | ---: | ---: | ---: | ---: |
-| Parser | 0.789 s | 0.75 | 0.35 | 0.13 |
-| Native preparation through object | 1.191 s | 0.95 | 0.48 | 0.22 |
-| Source semantic frontend | 0.226 s | 0.18 | 0.09 | 0.04 |
+| Parser | 0.719 s | 0.75 | 0.35 | 0.13 |
+| Native preparation through object | 1.185 s | 0.95 | 0.48 | 0.22 |
+| Source semantic frontend | 0.219 s | 0.18 | 0.09 | 0.04 |
 | Catalog join wait | 0.000 s | 0.05 | 0.02 | 0.01 |
-| Artifact, encoding, link and other work | 0.074 s | 0.07 | 0.06 | 0.05 |
-| **Total** | **2.283 s** | 2.00 | 1.00 | 0.45 |
+| Artifact, encoding, link and other work | 0.070 s | 0.07 | 0.06 | 0.05 |
+| **Total** | **2.195 s** | 2.00 | 1.00 | 0.45 |
 
-Mech needs **1.833 s** less elapsed time to reach the
-0.45 s working budget. The phase medians come from the qualified scorer’s matched trials. Catalog work runs during parsing and the table lists the join wait.
+Mech needs **1.745 s** less elapsed time to reach the
+0.45 s working budget. The phase medians come from the latest matched parser builds. Catalog work runs during parsing and the table lists the join wait.
 
 ## Which build to use
 

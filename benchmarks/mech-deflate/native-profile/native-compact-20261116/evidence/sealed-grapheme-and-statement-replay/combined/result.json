@@ -1,0 +1,48 @@
+{
+  "plan_sha256": "9a19cfdb0440fd87bc1c46e83564506e7fa685b072dbaf3610b17461c223fda7",
+  "observations": [
+    {
+      "control": 0.767001333,
+      "candidate": 0.713374959
+    },
+    {
+      "candidate": 0.713380125,
+      "control": 0.767120625
+    },
+    {
+      "candidate": 0.716699541,
+      "control": 0.766012166
+    },
+    {
+      "control": 0.765587042,
+      "candidate": 0.713393667
+    },
+    {
+      "candidate": 0.713216791,
+      "control": 0.765740708
+    },
+    {
+      "control": 0.767343125,
+      "candidate": 0.713295792
+    },
+    {
+      "control": 0.766500166,
+      "candidate": 0.712493167
+    },
+    {
+      "candidate": 0.713032208,
+      "control": 0.766978084
+    }
+  ],
+  "warmup": {
+    "control": 0.768198541,
+    "candidate": 0.763975917
+  },
+  "medians": {
+    "control": 0.766739125,
+    "candidate": 0.7133353755
+  },
+  "paired_save_ms": 53.68343699999995,
+  "faster": 8,
+  "candidate_x": 0.9300141261814514
+}
