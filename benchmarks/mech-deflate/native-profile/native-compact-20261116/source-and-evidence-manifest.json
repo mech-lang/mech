@@ -50,8 +50,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/CURRENT.md",
-      "sha256": "810c8190faf1a6b86b31846c70a92119981f0cd6171c8ede55d8434a3df2dc75",
-      "bytes": 30701
+      "sha256": "e4f2aad2500f7a7f1d16bb8364b8a25af72cd9f2575fe037d30939586fa79554",
+      "bytes": 30843
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/QUALIFICATION.md",
@@ -42285,8 +42285,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/scorecard.json",
-      "sha256": "5b0ab0a7f50fa3b797e9b739696f7f19f371352a92a9944d77aca7cc4bf668f8",
-      "bytes": 519328
+      "sha256": "4e986bdc05741bd7a278854106a677fb1420ff4f4298a2c529bdc78734227b88",
+      "bytes": 524095
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/size_screens.py",
@@ -43435,8 +43435,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/README.md",
-      "sha256": "33ed6e9b3e40dc713a52d150dfb9bbf7e042b29091e786ed199c1faeaca0c510",
-      "bytes": 1883
+      "sha256": "eee4494bd0dc8a0810a42143c03178e8048502e66821c5b3f311260a2ba025d5",
+      "bytes": 3144
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/abi-proof.json",
@@ -43517,6 +43517,16 @@
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/reverse-observations.tar",
       "sha256": "91cecd2a9f655ff091f17b66b91af6e999b76fc3c17bee2a71f239e5ad726998",
       "bytes": 9154560
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/source-rebuild-and-timing.json",
+      "sha256": "1f71c30cdc5dfa9af5e06afee85df9bea93961e4608efa6362c1aede162ca22b",
+      "bytes": 58442
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/matched-build-observations.json.gz",
+      "sha256": "23999499846434999da7d157f5a061ab2cf778de5291a825afbb8548e0c0021c",
+      "bytes": 92523
     }
   ]
 }

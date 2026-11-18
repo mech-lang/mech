@@ -7236,7 +7236,7 @@
     "checked_chain_estimated_recomputation_seconds": 0.0032,
     "next": "Exact-choice body planning and one further omitted-body investigation"
   },
-  "current_matched_build": "source_built_m1",
+  "current_matched_build": "heap_layout_recovery_m1",
   "scoped_function_replay": {
     "compiler_source": "e9538f71514225abf5ca57a9fc0acab358407167",
     "control_source": "ff7c1dbc9c5059ed84d730b008847c02179fa2cf",
@@ -14870,7 +14870,7 @@
     "host": "Apple M1, macOS 15.6.1, arm64",
     "maintained_recipe": "frame-copies",
     "smallest_peer_qualified_recipe": "m1-shared-heap-layout",
-    "status": "opt-in peer-qualified worker",
+    "status": "exact source-built opt-in peer-qualified worker",
     "runtime": {
       "encoder_bytes": 64652,
       "runtime_decision": "Retain",
@@ -14935,6 +14935,134 @@
         }
       ]
     },
-    "evidence": "evidence/encoder-size-gap/shared-heap-layout-recovery/result.json"
+    "evidence": "evidence/encoder-size-gap/shared-heap-layout-recovery/result.json",
+    "source_commit": "0e101e9a1228c8ef45834b847fe072f4107f1f67",
+    "compiler_sha256": "30744a9d26ed1714ed0e392fafbc8dc6e9b8dc3e9161c1dee8e290cf53e7b104",
+    "matched_deployment": {
+      "plan_sha256": "7698bd5583da338504cf7e4dea756dca0b737c1b9bb192e9239836f7f0f2cdb0",
+      "medians": {
+        "mech-control-shared-release": {
+          "source": 2.1387768329586834,
+          "link": 0.035667250165715814,
+          "source_through_link": 2.1758588121738285,
+          "strip": 0.01082522887736559,
+          "source_through_strip": 2.1868691036943346
+        },
+        "mech-m1-shared-heap-setup": {
+          "source": 2.141134874895215,
+          "link": 0.03533725021407008,
+          "source_through_link": 2.1780289583839476,
+          "strip": 0.01084606209769845,
+          "source_through_strip": 2.188958624843508
+        },
+        "mech-m1-shared-heap-layout": {
+          "source": 2.136722083436325,
+          "link": 0.03527131280861795,
+          "source_through_link": 2.1733482498675585,
+          "strip": 0.01084158313460648,
+          "source_through_strip": 2.184339270927012
+        },
+        "roc": {
+          "source": 2.9503374791238457,
+          "link": 0.03504627151414752,
+          "source_through_link": 2.987126874970272,
+          "strip": 0.010857083136215806,
+          "source_through_strip": 2.9980925624258816
+        },
+        "libdeflate": {
+          "source": 0.4459637915715575,
+          "link": 0.034591541858389974,
+          "source_through_link": 0.480938458815217,
+          "strip": 0.010884000221267343,
+          "source_through_strip": 0.4919892705511302
+        }
+      },
+      "phases": {
+        "mech-control-shared-release": {
+          "parse": 0.7062598755,
+          "catalog": 1.79375e-05,
+          "frontend": 0.2143495625,
+          "artifact": 0.0068419375,
+          "encode": 0.0025728125,
+          "native": 1.180408625
+        },
+        "mech-m1-shared-heap-setup": {
+          "parse": 0.7064979375,
+          "catalog": 2.1333e-05,
+          "frontend": 0.2141530835,
+          "artifact": 0.0068662705000000004,
+          "encode": 0.0025749164999999997,
+          "native": 1.1822694585
+        },
+        "mech-m1-shared-heap-layout": {
+          "parse": 0.7061824585,
+          "catalog": 1.7937500000000002e-05,
+          "frontend": 0.2143741665,
+          "artifact": 0.0068811045000000005,
+          "encode": 0.0025729380000000003,
+          "native": 1.1800796665
+        }
+      },
+      "paired_ratios": {
+        "mech-control-shared-release": {
+          "roc": 0.7285416868103682,
+          "libdeflate": 4.528514801751832,
+          "mech-control-shared-release": 1.0
+        },
+        "mech-m1-shared-heap-setup": {
+          "roc": 0.7287465335160899,
+          "libdeflate": 4.52762479137537,
+          "mech-control-shared-release": 1.0011634095620816
+        },
+        "mech-m1-shared-heap-layout": {
+          "roc": 0.7277937868082138,
+          "libdeflate": 4.52177378959844,
+          "mech-control-shared-release": 0.9990418740393743
+        }
+      },
+      "source_cpu_seconds": {
+        "mech-control-shared-release": 2.2036255000000002,
+        "mech-m1-shared-heap-setup": 2.205062,
+        "mech-m1-shared-heap-layout": 2.2030585,
+        "roc": 2.9424475,
+        "libdeflate": 0.442509
+      },
+      "source_rss_bytes": {
+        "mech-control-shared-release": 392593408.0,
+        "mech-m1-shared-heap-setup": 392585216.0,
+        "mech-m1-shared-heap-layout": 392577024.0,
+        "roc": 394682368.0,
+        "libdeflate": 71532544.0
+      },
+      "stripped_executables": {
+        "mech-control-shared-release": {
+          "bytes": 276056,
+          "sha256": "ed21493e1451d162bbe27652cc16aaaf13efdc9a337697ce676efd4fb8b0c271"
+        },
+        "mech-m1-shared-heap-setup": {
+          "bytes": 276072,
+          "sha256": "8c3d728ed3a4554c714c936a130dcebab455a98cfb94e689510377670aa41a61"
+        },
+        "mech-m1-shared-heap-layout": {
+          "bytes": 276072,
+          "sha256": "b8320a30dc61e2392de0b77419f477e7fed07f733dade58badaf3b3ef7f0c3f1"
+        },
+        "roc": {
+          "bytes": 191912,
+          "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+        },
+        "libdeflate": {
+          "bytes": 155752,
+          "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+        }
+      },
+      "paired_ms_vs_shared_release": {
+        "mech-control-shared-release": 0.0,
+        "mech-m1-shared-heap-setup": 2.5299580302089453,
+        "mech-m1-shared-heap-layout": -2.0866254344582558
+      },
+      "trials": 10
+    },
+    "source_checks": "evidence/encoder-size-gap/shared-heap-layout-recovery/source-rebuild-and-timing.json"
   }
 }
