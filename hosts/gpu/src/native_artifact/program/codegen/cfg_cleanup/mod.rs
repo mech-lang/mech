@@ -302,6 +302,21 @@ pub(in crate::native_artifact) fn optimize_final_ordered(
     optimize_ordered(controls, context, isa, true)
 }
 
+// Late compact packet rewrites can expose routes and addresses even after
+// the earlier source range/predicate specialization has reached a fixed point.
+pub(in crate::native_artifact) fn optimize_final_routes(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<CfgCleanup, NativeCompileError> {
+    let mut report = optimize_final_ordered(controls, context, isa)?;
+    report.loop_edges += thread_loop_edges(controls, context, isa)?.threaded_edges;
+    report.identity_edges += forward_identity_routes(controls, context, isa)?.threaded_edges;
+    report.adjacent_addresses_reused += reuse_adjacent_addresses(controls, context, isa)?;
+    (report.after_blocks, report.after_instructions) = counts(&context.func);
+    Ok(report)
+}
+
 // Numeric range proofs still consume exact equality-to-one facts on phi
 // words. Keep that vocabulary until the existing guard pass has finished.
 pub(in crate::native_artifact) fn optimize_before_unsigned_guards(
