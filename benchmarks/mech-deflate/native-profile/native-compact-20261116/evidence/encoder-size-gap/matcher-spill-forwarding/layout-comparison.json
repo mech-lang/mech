@@ -1,0 +1,78 @@
+{
+  "old_trace_sha256": "ca553bff1ddab60d4dd5712d1113e76ce52d5864e482dcd8be4e3fde5a6b911a",
+  "new_trace_sha256": "6e26484767148cd78708889151dfa31e0ebe107ca5c9d44b12c1d4da16773713",
+  "same_ordered_control_flow": true,
+  "training": [
+    "prefix-natural-4096",
+    "prefix-natural-16384",
+    "prefix-natural-32769",
+    "prefix-periodic-1024",
+    "prefix-random-4096"
+  ],
+  "held_out": [
+    "prefix-natural-8192",
+    "320-overlap"
+  ],
+  "prediction": {
+    "forwarding-rebased": {
+      "prefix-natural-4096": {
+        "current_jumps": 23614.5,
+        "jumps": 23614.5
+      },
+      "prefix-natural-16384": {
+        "current_jumps": 123016.0,
+        "jumps": 123016.0
+      },
+      "prefix-natural-32769": {
+        "current_jumps": 302417,
+        "jumps": 302417
+      },
+      "prefix-periodic-1024": {
+        "current_jumps": 5743.5,
+        "jumps": 5743.5
+      },
+      "prefix-random-4096": {
+        "current_jumps": 8261,
+        "jumps": 8261
+      },
+      "prefix-natural-8192": {
+        "current_jumps": 50443,
+        "jumps": 50443
+      },
+      "320-overlap": {
+        "current_jumps": 1673.0,
+        "jumps": 1673.0
+      }
+    },
+    "forwarding-trained": {
+      "prefix-natural-4096": {
+        "current_jumps": 23614.5,
+        "jumps": 27779.5
+      },
+      "prefix-natural-16384": {
+        "current_jumps": 123016.0,
+        "jumps": 143445.0
+      },
+      "prefix-natural-32769": {
+        "current_jumps": 302417,
+        "jumps": 350603
+      },
+      "prefix-periodic-1024": {
+        "current_jumps": 5743.5,
+        "jumps": 5665.5
+      },
+      "prefix-random-4096": {
+        "current_jumps": 8261,
+        "jumps": 448
+      },
+      "prefix-natural-8192": {
+        "current_jumps": 50443,
+        "jumps": 58793
+      },
+      "320-overlap": {
+        "current_jumps": 1673.0,
+        "jumps": 1671.0
+      }
+    }
+  }
+}
