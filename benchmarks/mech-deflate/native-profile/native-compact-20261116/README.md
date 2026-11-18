@@ -182,6 +182,32 @@ cases. A new matched compile-to-deployment comparison gives **3.73555 s**
 Mech, 2.99608 s Roc and 0.48811 s libdeflate.
 [Smaller host, independent timing and reproduction](evidence/alloc-only-deployment/README.md)
 
+## Source-built M1 reference encoders
+
+From this checkout on Apple AArch64, build either recorded M1 reference with
+the original Mech source and the pinned compiler toolchain. Each name reads
+its flags and layout profiles from the corresponding archived manifest.
+
+```sh
+python3 rebuild.py /tmp/mech-m1-checked-regions \
+  --variant m1-checked-regions --mimalloc-object /path/to/mimalloc.o
+python3 rebuild.py /tmp/mech-m1-compact-match-equality \
+  --variant m1-compact-match-equality --mimalloc-object /path/to/mimalloc.o
+```
+
+The fixed allocator object enables the final executable link and linked
+checks. The command verifies the object, canonical bytecode and complete
+metadata, then checks 162 successful observations and two observations of
+each of six allocation-failure cases. Each injected failure is followed by
+an exact recovery call in the same worker. The probes check borrowed inputs,
+failure origins and private heap cleanup. The receipt records the newly
+linked worker hash and the expected archived worker hash.
+
+The named recipes apply to Apple AArch64. Their [M1 comparison](CURRENT.md)
+uses a fixed, prebuilt deployment host and records the runtime qualification
+of each archived worker separately. The `frame-copies` recipe remains the
+71,192-byte maintained control.
+
 ## Preselected root inlining
 
 Use the opt-in AArch64 diagnostic build to skip the first machine compilation

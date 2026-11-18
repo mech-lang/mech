@@ -12,7 +12,25 @@ The retained word-scan and current-guard optimization records **81/81 against Ro
 
 [All 81 timings, both orders, in seconds and comparator multiples](evidence/apple-m3-compact-packets-20261118/word-scans/confirmation/timings.csv) · [Source and reproduction recipe](evidence/apple-m3-compact-packets-20261118/word-scans/README.md)
 
-## Apple M1 matched deployment
+## Source-built Apple M1 references
+
+PR #995 builds the two named M1 references from its integrated compiler source. Both reproduce the archived encoder object, canonical bytecode and complete metadata. The fixed archive link inputs also reproduce both benchmark worker hashes and both stripped deployment hashes. The named command rebuilds its host support and verifies each new worker using 162 success observations, six checked failure cases and 12 exact recovery calls. [Source-built commands](README.md#source-built-m1-reference-encoders) · [Identities and checks](evidence/m1-source-built-20261118/result.json) · [Exact archive worker links](evidence/m1-source-built-20261118/archive-worker-relink.json)
+
+| Apple M1 build | Encoder text | Source to link | Source to strip | Source CPU | Source peak RSS |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Mech frame-copies control | 71,192 B | 2.328 s | 2.339 s | 2.360 s | 394.0 MB |
+| Mech checked regions | 65,516 B | 2.178 s | 2.190 s | 2.202 s | 392.4 MB |
+| Mech compact match equality | 65,276 B | 2.178 s | 2.190 s | 2.202 s | 392.4 MB |
+| Roc | 57,696 B | 2.985 s | 2.996 s | 2.943 s | 396.6 MB |
+| libdeflate | 37,080 B | 0.481 s | 0.492 s | 0.443 s | 71.5 MB |
+
+Ten matched fresh builds use prebuilt deployment support. Compact match equality takes **0.730× Roc** and **4.533× libdeflate** time. Its median paired saving versus frame-copies is **147.6 ms**. The catalog phase records exposed join wait. [Raw trials and compiler phases](evidence/m1-source-built-20261118/matched-observations.json.gz)
+
+Frame-copies remains the maintained control. For each archived reference worker, the two full orders record 81/81 Roc and 62/81 libdeflate wins, covering 74/74 and 56/74 distinct contracts. The archived per-case regressions are included in the evidence. A fresh paired runtime comparison against frame-copies is pending. [Runtime qualification and regression records](evidence/m1-source-built-20261118/result.json)
+
+PR #993 also records a 65,036 B opt-in peer-qualified build and a 64,668 B trial whose forward sweep lost a Roc case. [PR #993 M1 results](https://github.com/mech-lang/mech/pull/993)
+
+## Earlier Apple M1 matched deployment
 
 PR #993 tracks the qualified LLVM-free MechDeflate build and is stacked on #973. The measurements below use Apple M1, macOS 15.6.1 and arm64.
 
