@@ -7,6 +7,8 @@ use std::{io, path::Path};
 struct Profile {
     order: Vec<u32>,
     literal_offset: Option<u32>,
+    #[serde(default)]
+    thread_jumps: bool,
     object_tail: Option<ObjectTail>,
 }
 
@@ -38,6 +40,7 @@ pub(super) fn apply(context: &mut Context, symbol: &str) -> io::Result<()> {
     {
         context.func.aarch64_block_layout = profile.order;
         context.func.aarch64_block_layout_literal_start = profile.literal_offset;
+        context.func.aarch64_block_layout_thread_jumps = profile.thread_jumps;
     }
     Ok(())
 }

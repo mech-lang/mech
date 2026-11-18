@@ -209,6 +209,10 @@ pub struct FunctionStencil {
     /// AArch64 leaf. All references and their readable extents are validated.
     pub aarch64_block_layout_literal_start: Option<u32>,
 
+    /// Let a measured AArch64 layout bypass blocks that only jump.
+    #[cfg_attr(feature = "enable-serde", serde(skip))]
+    pub aarch64_block_layout_thread_jumps: bool,
+
     /// Source locations.
     ///
     /// Track the original source location for each instruction. The source locations are not
@@ -255,6 +259,7 @@ impl FunctionStencil {
         self.aarch64_branch_on_zero = false;
         self.aarch64_block_layout.clear();
         self.aarch64_block_layout_literal_start = None;
+        self.aarch64_block_layout_thread_jumps = false;
         self.srclocs.clear();
         self.debug_tags.clear();
         self.stack_limit = None;
@@ -455,6 +460,7 @@ impl Function {
                 aarch64_branch_on_zero: false,
                 aarch64_block_layout: Vec::new(),
                 aarch64_block_layout_literal_start: None,
+                aarch64_block_layout_thread_jumps: false,
                 srclocs: SecondaryMap::new(),
                 stack_limit: None,
                 debug_tags: DebugTags::default(),

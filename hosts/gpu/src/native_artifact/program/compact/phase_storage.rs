@@ -139,6 +139,29 @@ pub(super) fn input_word_loads(
     Some(loads)
 }
 
+/// Numeric phases receive an initialized, aligned stack input packet from
+/// Slots, separate from their output packet. Its address does not escape the
+/// callee. Preserve this contract in IR so unused packet loads can disappear
+/// and repeated reads need not retain separate register values.
+pub(super) fn qualify_input_packet_loads(
+    function: &mut cranelift_codegen::ir::Function,
+    input_words: usize,
+) -> usize {
+    use cranelift_codegen::ir::InstructionData;
+    let Some(loads) = input_word_loads(function, input_words) else {
+        return 0;
+    };
+    for &(inst, _) in loads.values() {
+        let InstructionData::Load { flags, .. } = &mut function.dfg.insts[inst] else {
+            unreachable!("validated input packet load");
+        };
+        flags.set_notrap();
+        flags.set_readonly();
+        flags.set_aligned();
+    }
+    loads.len()
+}
+
 /// Compact a caller's initialized, nonescaping input slot to the offsets
 /// still read by this body's finalized IR. Return their original word order.
 pub(super) fn pack_used_input_words(

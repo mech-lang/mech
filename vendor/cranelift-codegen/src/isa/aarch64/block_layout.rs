@@ -102,6 +102,7 @@ pub(super) fn apply(
     buffer: &mut MachBufferFinalized<Stencil>,
     layout: &[u32],
     literal_start: Option<u32>,
+    thread_jumps: bool,
 ) -> Option<()> {
     if buffer.data.len() % WORD_BYTES != 0
         || !buffer.call_sites.is_empty()
@@ -236,6 +237,33 @@ pub(super) fn apply(
         return None;
     }
 
+    // The validated leaf has no indirect transfers or interior code
+    // references. A non-entry block containing only B can therefore be
+    // bypassed by rewriting its taken and fallthrough predecessors.
+    let jump_targets = thread_jumps.then(|| {
+        let only_jump = |begin: usize| {
+            (ends[begin] == begin + 1)
+                .then_some(flow[begin])
+                .and_then(|control| match control {
+                    Control::Branch(branch) if branch.bits == 26 => Some(branch.target),
+                    _ => None,
+                })
+        };
+        let mut targets: Vec<_> = (0..original.len()).collect();
+        for &begin in &order[1..] {
+            if let Some(target) = only_jump(begin)
+                && only_jump(target).is_none()
+            {
+                // Resolve one hop. Keeping jumps into jump-only blocks
+                // avoids erasing an unconditional cycle.
+                targets[begin] = target;
+            }
+        }
+        order.retain(|&begin| targets[begin] == begin);
+        targets
+    });
+    let target = |at| jump_targets.as_ref().map_or(at, |targets| targets[at]);
+
     let mut code = Vec::with_capacity(original.len());
     let mut targets = vec![0; original.len()];
     let mut copied = vec![None; original.len()];
@@ -253,18 +281,25 @@ pub(super) fn apply(
             Control::Next | Control::End => {
                 copied[last] = Some(code.len());
                 code.push(original[last]);
-                if matches!(flow[last], Control::Next) && following != Some(end) {
-                    add_jump(&mut code, &mut branches, end);
+                if matches!(flow[last], Control::Next) && following != Some(target(end)) {
+                    add_jump(&mut code, &mut branches, target(end));
                 }
             }
-            Control::Branch(branch) if branch.bits == 26 || branch.target == end => {
-                if following != Some(branch.target) {
-                    add_jump(&mut code, &mut branches, branch.target);
+            Control::Branch(branch) if branch.bits == 26 => {
+                let taken = target(branch.target);
+                if following != Some(taken) {
+                    add_jump(&mut code, &mut branches, taken);
                 }
             }
             Control::Branch(mut branch) => {
-                if following == Some(branch.target) {
-                    branch.target = end;
+                let fallthrough = target(end);
+                branch.target = target(branch.target);
+                if branch.target == fallthrough {
+                    if following != Some(fallthrough) {
+                        add_jump(&mut code, &mut branches, fallthrough);
+                    }
+                } else if following == Some(branch.target) {
+                    branch.target = fallthrough;
                     add_branch(
                         &mut code,
                         &mut branches,
@@ -273,8 +308,8 @@ pub(super) fn apply(
                     );
                 } else {
                     add_branch(&mut code, &mut branches, original[last], branch);
-                    if following != Some(end) {
-                        add_jump(&mut code, &mut branches, end);
+                    if following != Some(fallthrough) {
+                        add_jump(&mut code, &mut branches, fallthrough);
                     }
                 }
             }
@@ -330,4 +365,42 @@ pub(super) fn apply(
     }
     buffer.data = code.into_iter().flat_map(u32::to_le_bytes).collect();
     Some(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::apply;
+    use crate::isa::aarch64::inst::Inst;
+    use crate::machinst::{MachBuffer, VCodeConstants};
+    use alloc::vec::Vec;
+    use cranelift_control::ControlPlane;
+
+    #[test]
+    fn hot_loop_backedge_bypasses_empty_jump_block() {
+        let mut buffer = MachBuffer::<Inst>::new();
+        let instructions = [0x1100_0400, 0x5400_0040, 0x17ff_fffe, 0xd65f_03c0];
+        for word in instructions {
+            buffer.put4(word);
+        }
+        let mut buffer = buffer.finish(&VCodeConstants::default(), &mut ControlPlane::default());
+        // Place the return next to the conditional. The continuing edge
+        // points directly to the loop header and the return falls through.
+        assert_eq!(apply(&mut buffer, &[0, 12, 8], None, true), Some(()));
+        let expected: Vec<_> = [instructions[0], 0x54ff_ffe1, instructions[3]]
+            .into_iter()
+            .flat_map(u32::to_le_bytes)
+            .collect();
+        assert_eq!(buffer.data(), expected);
+    }
+
+    #[test]
+    fn unconditional_cycle_keeps_its_behavior() {
+        let mut buffer = MachBuffer::<Inst>::new();
+        for word in [0x1400_0001, 0x1400_0001, 0x17ff_ffff] {
+            buffer.put4(word);
+        }
+        let mut buffer = buffer.finish(&VCodeConstants::default(), &mut ControlPlane::default());
+        assert_eq!(apply(&mut buffer, &[0, 4, 8], None, true), Some(()));
+        assert_eq!(buffer.data(), 0x1400_0000u32.to_le_bytes());
+    }
 }

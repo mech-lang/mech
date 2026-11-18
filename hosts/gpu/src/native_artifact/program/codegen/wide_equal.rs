@@ -623,7 +623,23 @@ pub(in crate::native_artifact) fn optimize(
     reuse_prefix: bool,
     wide_tier: bool,
 ) -> Outcome {
+    let strategy = std::env::var("MECH_EQUAL_COMPARE_STRATEGY").ok();
+    optimize_with_strategy(context, certificates, reuse_prefix, strategy.as_deref())
+}
+
+fn optimize_with_strategy(
+    context: &mut Context,
+    certificates: &[Certificate],
+    reuse_prefix: bool,
+    strategy: Option<&str>,
+) -> Outcome {
     let mut outcome = Outcome::default();
+    if strategy == Some("word") {
+        // The certified source recurrence already compares admitted U64
+        // words. Avoid speculative vector reads when word comparisons are
+        // selected; all original source checks and operations remain intact.
+        return outcome;
+    }
     let mut continuations = std::collections::BTreeMap::new();
     for (index, cert) in certificates.iter().enumerate() {
         context.compute_cfg();
