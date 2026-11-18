@@ -1,4 +1,4 @@
-//! Share the checked entry's repeated argument setup for ordered owner releases.
+//! Share the checked entry's repeated argument setup for checked heap calls.
 use crate::native_artifact::{NativeCompileError, compiler::backend};
 use cranelift_codegen::{
     binemit::Reloc,
@@ -22,8 +22,8 @@ const RELEASES: [&str; 5] = [
 
 struct Stub {
     function: FuncId,
-    runtime_release: FuncId,
-    owners: u8,
+    target: FuncId,
+    operands: u8,
 }
 
 pub(super) struct ReleaseStubs {
@@ -46,6 +46,9 @@ impl ReleaseStubs {
             return Ok(None);
         };
         let word = AbiParam::new(types::I64);
+        let scope = std::env::var("MECH_COMPACT_SHARE_BACKING_SETUP").ok();
+        let backing = matches!(scope.as_deref(), Some("all" | "backing"));
+        let append = matches!(scope.as_deref(), Some("all" | "append"));
         let calls = root
             .layout
             .blocks()
@@ -65,23 +68,37 @@ impl ReleaseStubs {
                 continue;
             };
             let declaration = module.declarations().get_function_decl(target);
-            let Some(name) = declaration
-                .name
-                .as_deref()
-                .filter(|name| RELEASES.contains(name))
-            else {
+            let Some(name) = declaration.name.as_deref() else {
                 continue;
             };
             let arguments = root.dfg.inst_args(inst);
             let signature = &declaration.signature;
-            let owners = signature.params.len().saturating_sub(1);
-            // Only fixed direct releases with the checked entry's original
-            // heap argument have this private calling convention.
-            if declaration.linkage != Linkage::Import
-                || signature.call_conv != CallConv::AppleAarch64
-                || !(1..=4).contains(&owners)
+            let params = signature.params.len();
+            let returns = match (declaration.linkage, name) {
+                (Linkage::Import, name)
+                    if RELEASES.contains(&name) && (2..=5).contains(&params) =>
+                {
+                    1
+                }
+                (Linkage::Import, "mech_compact_allocate_backing") if backing && params == 5 => 2,
+                (Linkage::Import, "mech_compact_writable_scalar_backing")
+                    if backing && params == 7 =>
+                {
+                    2
+                }
+                (Linkage::Local, "mech_compact_append_backing_byte_consume")
+                    if append && params == 6 =>
+                {
+                    3
+                }
+                _ => continue,
+            };
+            // Keep the target's original argument and result ABI. Only the
+            // same immutable first heap word moves into this private frame.
+            if signature.call_conv != CallConv::AppleAarch64
                 || signature.params.iter().any(|parameter| *parameter != word)
-                || signature.returns.as_slice() != [word]
+                || signature.returns.len() != returns
+                || signature.returns.iter().any(|parameter| *parameter != word)
                 || root.dfg.signatures[root.dfg.ext_funcs[func_ref].signature] != *signature
                 || arguments.len() != signature.params.len()
                 || root.dfg.resolve_aliases(arguments[0]) != heap
@@ -92,7 +109,7 @@ impl ReleaseStubs {
                 (
                     format!("{name}_from_frame"),
                     signature.clone(),
-                    owners as u8,
+                    (params - 1) as u8,
                 )
             });
             replace.push((inst, target));
@@ -111,7 +128,7 @@ impl ReleaseStubs {
             .stack_store(heap, heap_slot, 0);
         let mut imports = BTreeMap::<FuncId, FuncRef>::new();
         let mut stubs = Vec::new();
-        for (target, (name, mut signature, owners)) in targets {
+        for (target, (name, mut signature, operands)) in targets {
             signature.params.remove(0);
             let function = module
                 .declare_function(&name, Linkage::Local, &signature)
@@ -119,9 +136,23 @@ impl ReleaseStubs {
             imports.insert(target, module.declare_func_in_func(function, root));
             stubs.push(Stub {
                 function,
-                runtime_release: target,
-                owners,
+                target: target,
+                operands,
             });
+        }
+        let relocated_backings = stubs
+            .iter()
+            .filter(|stub| {
+                module
+                    .declarations()
+                    .get_function_decl(stub.target)
+                    .name
+                    .as_deref()
+                    .is_some_and(|name| !RELEASES.contains(&name))
+            })
+            .count();
+        if relocated_backings != 0 {
+            eprintln!("compact root shared backing setup: {relocated_backings} additional stubs");
         }
         eprintln!(
             "compact root shared release setup: {} calls in {} stubs",
@@ -129,8 +160,8 @@ impl ReleaseStubs {
             stubs.len()
         );
         for (inst, target) in replace {
-            let owners = root.dfg.inst_args(inst)[1..].to_vec();
-            root.dfg.replace(inst).call(imports[&target], &owners);
+            let operands = root.dfg.inst_args(inst)[1..].to_vec();
+            root.dfg.replace(inst).call(imports[&target], &operands);
         }
         Ok(Some(Self { heap_slot, stubs }))
     }
@@ -156,10 +187,10 @@ impl ReleaseStubs {
             ));
         }
         for stub in self.stubs {
-            let mut code = Vec::with_capacity((usize::from(stub.owners) + 2) * 4);
-            // Shift owner arguments to x1..x4 before restoring x0. The
+            let mut code = Vec::with_capacity((usize::from(stub.operands) + 2) * 4);
+            // Shift the operands into their original registers before restoring x0. The
             // tail branch preserves the original return address and status.
-            for destination in (1..=u32::from(stub.owners)).rev() {
+            for destination in (1..=u32::from(stub.operands)).rev() {
                 let mov = 0xaa00_03e0_u32 | ((destination - 1) << 16) | destination;
                 code.extend(mov.to_le_bytes());
             }
@@ -175,7 +206,7 @@ impl ReleaseStubs {
                     &[ModuleReloc {
                         offset: branch_offset,
                         kind: Reloc::Arm64Call,
-                        name: ModuleRelocTarget::user(0, stub.runtime_release.as_u32()),
+                        name: ModuleRelocTarget::user(0, stub.target.as_u32()),
                         addend: 0,
                     }],
                 )
