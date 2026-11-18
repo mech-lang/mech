@@ -1773,6 +1773,14 @@ fn define_entry<M: Module>(
             "compact pure computation contains an unresolved native call",
         ));
     }
+    if outline_allowed
+        && memory
+        && super::word_pairs::available(module.isa())
+        && std::env::var_os("MECH_COMPACT_SELECT_DEFAULTED_LOADS").is_some()
+    {
+        let folded = cfg_cleanup::defaulted_loads::fold(module, &mut context)?;
+        eprintln!("compact root defaulted loads folded: {folded}");
+    }
     if let Some(folder) = std::env::var_os("MECH_COMPACT_ROUTE_DUMP") {
         std::fs::write(
             std::path::PathBuf::from(folder).join("after-cleanup.clif"),

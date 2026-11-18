@@ -1,0 +1,34 @@
+{
+  "commands": {
+    "failures": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-B",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-defaulted-loads/linked-combined-byte-outline-vector-8/linked-proofs/check-linked-error-exits.py",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-defaulted-loads/linked-combined-byte-outline-vector-8/worker-checks/maintained",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-defaulted-loads/linked-combined-byte-outline-vector-8/worker-checks/combined",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-defaulted-loads/linked-combined-byte-outline-vector-8/worker-checks/byte-outline-vector-8"
+    ],
+    "stack": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-B",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-defaulted-loads/linked-combined-byte-outline-vector-8/linked-proofs/check-layout-stack.py",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-defaulted-loads/linked-combined-byte-outline-vector-8/worker-checks/maintained",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-defaulted-loads/linked-combined-byte-outline-vector-8/worker-checks/combined",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/checked-defaulted-loads/linked-combined-byte-outline-vector-8/worker-checks/byte-outline-vector-8"
+    ]
+  },
+  "peak_stack_bytes": {
+    "maintained": 4720,
+    "combined": 4784,
+    "byte-outline-vector-8": 4720
+  },
+  "matches_success_observations": 162,
+  "checked_failure_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "prefix-periodic-4096",
+    "prefix-repeated-16384",
+    "heldout-mixed-131073"
+  ]
+}
