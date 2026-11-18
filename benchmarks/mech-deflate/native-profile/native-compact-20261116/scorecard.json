@@ -15796,5 +15796,32 @@
     "static_architecture": "failed: archived M3 ABI oracle has raw native calls outside exact allowlist",
     "remaining_native_jobs": "in progress when recorded",
     "audit_policy": "unchanged"
+  },
+  "preserved_root_registers": {
+    "status": "experimental; full qualification and build timing pending",
+    "enabled_in_selected_recipe": false,
+    "source_commit": "6dc64cff731a7388fb1239945b3aa4eaf2ace0ce",
+    "compiler_sha256": "bf4f2ead7fa0f00e9b765cd7ffdaf4f3f3d82ff5ecbf8b9fb06a2282515623a8",
+    "encoder_bytes": 63804,
+    "saved_bytes": 640,
+    "root_bytes": 46788,
+    "root_stack_bytes": 3296,
+    "active_stack_bytes": 4848,
+    "focus": {
+      "roc": [
+        15,
+        15
+      ],
+      "libdeflate": [
+        13,
+        13
+      ],
+      "rejected": [],
+      "unresolved": [
+        "both complete timing orders are required"
+      ]
+    },
+    "complete_runtime_wins": "not measured",
+    "evidence": "evidence/encoder-size-gap/preserved-root-registers/README.md"
   }
 }

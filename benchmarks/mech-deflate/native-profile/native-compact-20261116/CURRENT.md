@@ -22,6 +22,10 @@ Remaining elapsed gaps are **0.237550 s to 2.0 s**, **1.237550 s to 1.0 s**, **1
 
 [Current source, checks and all measurements](evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/combined-verification/README.md) · [Prior indexed cohort](evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/indexed-loop-liveouts/README.md) · [Runtime qualification and earlier size work](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md)
 
+## Pending Apple M1 experiment
+
+An optional preserved-register allocation preference emits **63,804 B**, saving **640 B**, with **4,848 B** active stack. Default output remains the qualified 64,444 B. Five focused native/validation tests, 162 linked output/alias observations and six allocation-failure checks pass. Both focused orders retain 15 Roc and 13 C wins; v3 requires complete 81-case orders before qualification. The source option stays disabled in the selected recipe. [Source replay, raw focus data and unfinished controller architecture](evidence/encoder-size-gap/preserved-root-registers/README.md)
+
 ## Apple M3 shared M1 recipe
 
 The integrated compiler's `m1-shared-heap-layout` recipe records **81/81 Roc and 61/81 libdeflate 1.26 level 12 wins in both complete M3 orders**. Raw-record replay verifies all **1,965,312 timed calls**. The **64,652 B** encoder object, complete metadata and canonical bytecode reproduce the named M1 recipe exactly. Peak native stack is **4,784 B**, below the unchanged 5,280 B limit. Both full orders completed without background-activity rejection.
