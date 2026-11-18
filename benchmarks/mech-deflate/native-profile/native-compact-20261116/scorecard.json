@@ -13059,6 +13059,45 @@
           "sha256": "c3af73611b21b85e465f95827f424a148c4196b0e0afd081ac8ebca29cc06303"
         },
         "evidence": "evidence/encoder-size-gap/shared-defaulted-byte-reads/deployment.json"
+      },
+      {
+        "name": "Select the checked default address",
+        "encoder_text_bytes": 65612,
+        "encoder_sha256": "461a1037862c610618f61d08a500825ac9e9e2a4a618caa0164758ad4827d2ed",
+        "compiler_sha256": "1dc34e820e4d29947a1aa2c629c8f9d4f6459b5580492323bcbd8afa70911445",
+        "measured_trials": 8,
+        "measurement_plan_sha256": "2b07b994cead69f588b6b0055eed4625a3d162ffce19611922ec78ca541a028e",
+        "median_seconds": {
+          "source": 2.168900896096602,
+          "link": 0.036980291828513145,
+          "source_through_link": 2.205189978936687,
+          "strip": 0.01049322891049087,
+          "source_through_strip": 2.2158316874410957
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.720183708,
+          "catalog": 1.7458e-05,
+          "frontend": 0.2233812915,
+          "artifact": 0.006942333,
+          "encode": 0.0025772915,
+          "native": 1.1891374579999998
+        },
+        "paired_ratios": {
+          "roc": 0.739524377737043,
+          "libdeflate": 4.588446336575777
+        },
+        "encoder_text_ratios": {
+          "roc": 1.137201885745979,
+          "libdeflate": 1.7694714131607336
+        },
+        "paired_ratio_to_session_control": 1.0006753183046075,
+        "median_paired_seconds_saved": -0.0014884588308632374,
+        "faster_paired_trials": 3,
+        "stripped_executable": {
+          "bytes": 276056,
+          "sha256": "cde0a4c11b1d29636aa73777dc30639a039965ba1a0bcb00e91e354e25c7a21c"
+        },
+        "evidence": "evidence/encoder-size-gap/select-checked-default-address/deployment.json"
       }
     ]
   },
@@ -13396,6 +13435,64 @@
         "sha256": "c3af73611b21b85e465f95827f424a148c4196b0e0afd081ac8ebca29cc06303"
       },
       "evidence": "evidence/encoder-size-gap/shared-defaulted-byte-reads/deployment.json"
+    }
+  },
+  "select_checked_default_address": {
+    "qualified": true,
+    "runtime": {
+      "decision": "Retain",
+      "wins": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          62,
+          62
+        ]
+      }
+    },
+    "peak_stack_bytes": 4784,
+    "worker_sha256": "e5697cd0126448827e6e16339f938c938bc0da53c9189e79142138744c786b69",
+    "evidence": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/select-checked-default-address",
+    "build": {
+      "name": "Select the checked default address",
+      "encoder_text_bytes": 65612,
+      "encoder_sha256": "461a1037862c610618f61d08a500825ac9e9e2a4a618caa0164758ad4827d2ed",
+      "compiler_sha256": "1dc34e820e4d29947a1aa2c629c8f9d4f6459b5580492323bcbd8afa70911445",
+      "measured_trials": 8,
+      "measurement_plan_sha256": "2b07b994cead69f588b6b0055eed4625a3d162ffce19611922ec78ca541a028e",
+      "median_seconds": {
+        "source": 2.168900896096602,
+        "link": 0.036980291828513145,
+        "source_through_link": 2.205189978936687,
+        "strip": 0.01049322891049087,
+        "source_through_strip": 2.2158316874410957
+      },
+      "source_phase_median_seconds": {
+        "parse": 0.720183708,
+        "catalog": 1.7458e-05,
+        "frontend": 0.2233812915,
+        "artifact": 0.006942333,
+        "encode": 0.0025772915,
+        "native": 1.1891374579999998
+      },
+      "paired_ratios": {
+        "roc": 0.739524377737043,
+        "libdeflate": 4.588446336575777
+      },
+      "encoder_text_ratios": {
+        "roc": 1.137201885745979,
+        "libdeflate": 1.7694714131607336
+      },
+      "paired_ratio_to_session_control": 1.0006753183046075,
+      "median_paired_seconds_saved": -0.0014884588308632374,
+      "faster_paired_trials": 3,
+      "stripped_executable": {
+        "bytes": 276056,
+        "sha256": "cde0a4c11b1d29636aa73777dc30639a039965ba1a0bcb00e91e354e25c7a21c"
+      },
+      "evidence": "evidence/encoder-size-gap/select-checked-default-address/deployment.json"
     }
   }
 }

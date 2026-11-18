@@ -1,0 +1,9 @@
+{
+  "compiler_source_base": "1e95a1634f5f06a6264f90b532dbea28c1391968",
+  "worker_sha256": "e5697cd0126448827e6e16339f938c938bc0da53c9189e79142138744c786b69",
+  "artifact_sha256": {
+    "program.o": "461a1037862c610618f61d08a500825ac9e9e2a4a618caa0164758ad4827d2ed",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata.json": "653b5e80cea4ae3ae8f5b2178d7faff5b1e3e34a0900adaa9ba3ea926ad65a0e"
+  }
+}

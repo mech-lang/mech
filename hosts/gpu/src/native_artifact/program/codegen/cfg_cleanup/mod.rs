@@ -8,6 +8,7 @@ pub(in crate::native_artifact) mod checked_adds;
 pub(in crate::native_artifact) mod composed_reads;
 mod current_predicates;
 mod dead_values;
+pub(in crate::native_artifact) mod defaulted_loads;
 pub(in crate::native_artifact) mod defaulted_read_setup;
 pub(in crate::native_artifact) mod empty_jumps;
 pub(in crate::native_artifact) mod future_store;

@@ -1,28 +1,19 @@
 # PR #993 current status
 
-Maintained compiler source ee6f542d82e86557848dde641fb542f09fd9146a is on PR #993 stacked on #973.
-These measurements use Apple M1, macOS 15.6.1 and arm64.
-[Machine-readable scorecard](scorecard.json)
+PR #993 tracks the qualified LLVM-free MechDeflate build and is stacked on #973. Measurements use Apple M1, macOS 15.6.1 and arm64.
 
 ## Current matched deployment build
 
 | Apple M1 | Mech | Roc | libdeflate |
 | --- | ---: | ---: | ---: |
-| Source through final link | 2.42741 s | 2.98099 s | 0.47964 s |
-| Source through strip | 2.43788 s | 2.99140 s | 0.49001 s |
-| Encoder text | 71,192 B | 57,696 B | 37,080 B |
-| Stripped executable | 292,568 B | 191,912 B | 155,752 B |
+| Source through final link | 2.205 s | 2.982 s | 0.480 s |
+| Source through strip | 2.216 s | 2.993 s | 0.492 s |
+| Encoder text | 65,612 B | 57,696 B | 37,080 B |
+| Stripped executable | 276,056 B | 191,912 B | 155,752 B |
 
-Mech builds in **0.815× Roc** and
-**5.058× libdeflate** time. Its encoder text is
-**1.234× Roc** and **1.920× libdeflate**. Compilers, allocator and fixed
-deployment support are prebuilt. The exact worker carries 81/81 Roc and
-61/81 libdeflate in its current full qualification. Promotions of new
-runtime artifacts require the v3 floor of 62/81 in both orders, with
-63/81 as the next target.
-[Matched measurements](evidence/inline-syntax-child-traversal/catalog/README.md) ·
-[Runtime qualification](evidence/frame-copy-v2/README.md) ·
-[Policy v3](qualification-policy-v3.json)
+Mech builds in **0.740× Roc** and **4.588× libdeflate** time. Encoder text is **1.137× Roc** and **1.769× libdeflate**. Full orders record 81/81 and 81/81 Roc wins, with 62/81 and 62/81 libdeflate wins.
+
+[Matched measurements and source replay](evidence/encoder-size-gap/select-checked-default-address/README.md) · [Scorecard](scorecard.json) · [Policy v3](qualification-policy-v3.json)
 
 An earlier dedicated parser-phase comparison reported **813 ms Mech**
 and **3 ms Roc**. Mech's interval includes indexing and its strict check.
@@ -30,13 +21,8 @@ and **3 ms Roc**. Mech's interval includes indexing and its strict check.
 
 ## Encoder code size
 
-The checked entry accounts for **50,632 B** of body text. The match
-collector adds **6,768 B**, and the three scorer variants occupy
-**4,112 B**. The deployment link retains all **71,192 B** of encoder text.
-The exact libdeflate build emits **37,080 B**. Disabling Clang's machine
-outlining increases it to **38,536 B**. The earlier 62-win Mech encoder
-from identical bytecode occupied **55,700 B**.
-[Byte attribution and replay](evidence/encoder-size-gap/README.md)
+The checked entry accounts for **48,544 B**. The match collector adds **6,560 B**, and the dense scorer adds **1,104 B**. The matched libdeflate object emits **37,080 B**.
+[Qualified encoder](evidence/encoder-size-gap/select-checked-default-address/README.md) · [Historical byte attribution](evidence/encoder-size-gap/README.md)
 
 An experimental capacity refusal reuses the checked continuation and
 emits **69,528 B**. Both focused orders preserve their peer wins.
@@ -123,6 +109,7 @@ Roc and libdeflate trials from the same session.
 | [Checked dense scorer with direct branches](evidence/encoder-size-gap/dense-scorer-direct-branches/deployment.json) | 66,192 B | 2.274 s | 0.762× | 4.721× |
 | [Folded grapheme frames and longer statement replay](evidence/sealed-grapheme-and-statement-replay/deployment.json) | 66,192 B | 2.195 s | 0.737× | 4.578× |
 | [Shared checked byte reads](evidence/encoder-size-gap/shared-defaulted-byte-reads/deployment.json) | 65,932 B | 2.198 s | 0.737× | 4.587× |
+| [Select the checked default address](evidence/encoder-size-gap/select-checked-default-address/deployment.json) | 65,612 B | 2.205 s | 0.740× | 4.588× |
 
 Parser, lowering, native compilation and link timings are in the
 machine-readable scorecard.
@@ -131,15 +118,15 @@ machine-readable scorecard.
 
 | Stage | Current | 2.0 s budget | 1.0 s budget | 0.45 s budget |
 | --- | ---: | ---: | ---: | ---: |
-| Parser | 0.719 s | 0.75 | 0.35 | 0.13 |
-| Native preparation through object | 1.185 s | 0.95 | 0.48 | 0.22 |
-| Source semantic frontend | 0.219 s | 0.18 | 0.09 | 0.04 |
+| Parser | 0.720 s | 0.75 | 0.35 | 0.13 |
+| Native preparation through object | 1.189 s | 0.95 | 0.48 | 0.22 |
+| Source semantic frontend | 0.223 s | 0.18 | 0.09 | 0.04 |
 | Catalog join wait | 0.000 s | 0.05 | 0.02 | 0.01 |
-| Artifact, encoding, link and other work | 0.070 s | 0.07 | 0.06 | 0.05 |
-| **Total** | **2.195 s** | 2.00 | 1.00 | 0.45 |
+| Artifact, encoding, link and other work | 0.073 s | 0.07 | 0.06 | 0.05 |
+| **Total** | **2.205 s** | 2.00 | 1.00 | 0.45 |
 
-Mech needs **1.745 s** less elapsed time to reach the
-0.45 s working budget. The phase medians come from the latest matched parser builds. Catalog work runs during parsing and the table lists the join wait.
+Mech needs **1.755 s** less elapsed time to reach the
+0.45 s working budget. The phase medians come from the matched measurements above. Catalog work runs during parsing and the table lists the join wait.
 
 ## Which build to use
 
@@ -150,7 +137,7 @@ Mech needs **1.745 s** less elapsed time to reach the
 | Checked-read size candidate | 71,420 B | 5,328 B peak stack. Runtime qualification pending |
 | Earlier owner-exchange size candidate | 71,288 B | Rejected by the v2 runtime gate |
 | Maintained frame-copy recipe | **71,192 B** | Compiler source below |
-| Smallest v3-qualified opt-in build | **65,932 B** | [Compiler source and replay](evidence/encoder-size-gap/shared-defaulted-byte-reads/README.md) |
+| Smallest v3-qualified opt-in build | **65,612 B** | [Compiler source and replay](evidence/encoder-size-gap/select-checked-default-address/README.md) |
 
 ~~~sh
 python3 -B benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py \
