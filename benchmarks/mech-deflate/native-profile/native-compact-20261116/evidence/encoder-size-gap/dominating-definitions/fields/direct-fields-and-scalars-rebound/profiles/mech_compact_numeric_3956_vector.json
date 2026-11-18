@@ -1,0 +1,73 @@
+{
+  "old_sha256": "97402dbe30ad9c741baba3a4a0627b78e6c3fb1d043085a211033ef745e2f9a6",
+  "object_bytes": 74016,
+  "root_bytes": 55072,
+  "numeric_replacement": {
+    "header": 3956,
+    "variant": "vector_variant",
+    "code_bytes": 376,
+    "stack_bytes": 112
+  },
+  "diagnostic": "profile-guided private phase block layout",
+  "other_atom_offset_delta": 0,
+  "profiled_cases": [
+    "random-1024",
+    "prefix-random-1024",
+    "prefix-natural-8192",
+    "320-overlap",
+    "prefix-periodic-1024"
+  ],
+  "order": [
+    0,
+    40,
+    84,
+    160,
+    72,
+    76,
+    168,
+    184,
+    188,
+    192,
+    212,
+    220,
+    240,
+    256,
+    276,
+    280,
+    300,
+    304,
+    312,
+    320,
+    288,
+    200,
+    248,
+    92,
+    176,
+    268,
+    328,
+    344,
+    360
+  ],
+  "known_edge_counts": {
+    "random-1024": [
+      38,
+      38
+    ],
+    "prefix-random-1024": [
+      38,
+      38
+    ],
+    "prefix-natural-8192": [
+      38,
+      38
+    ],
+    "320-overlap": [
+      38,
+      38
+    ],
+    "prefix-periodic-1024": [
+      38,
+      38
+    ]
+  }
+}

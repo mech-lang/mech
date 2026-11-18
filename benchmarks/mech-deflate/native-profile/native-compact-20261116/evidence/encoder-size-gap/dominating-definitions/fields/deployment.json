@@ -1,0 +1,91 @@
+{
+  "medians": {
+    "mech-control-fast": {
+      "source": 2.349960708525032,
+      "link": 0.03509875060990453,
+      "source_through_link": 2.3850493335630745,
+      "strip": 0.010565520962700248,
+      "source_through_strip": 2.395825208630413
+    },
+    "mech-direct-fields-rebound": {
+      "source": 2.2879567712079734,
+      "link": 0.03526377072557807,
+      "source_through_link": 2.3228975208476186,
+      "strip": 0.010419083526358008,
+      "source_through_strip": 2.3337418334558606
+    },
+    "mech-direct-fields-and-scalars-rebound": {
+      "source": 2.2691407497040927,
+      "link": 0.03474341658875346,
+      "source_through_link": 2.305353916483,
+      "strip": 0.01038083340972662,
+      "source_through_strip": 2.316015020478517
+    },
+    "roc": {
+      "source": 2.951460854150355,
+      "link": 0.03459508344531059,
+      "source_through_link": 2.9863127707503736,
+      "strip": 0.010409125126898289,
+      "source_through_strip": 2.9968534582294524
+    },
+    "libdeflate": {
+      "source": 0.44636597903445363,
+      "link": 0.03409847943112254,
+      "source_through_link": 0.48089135391637683,
+      "strip": 0.01042743748985231,
+      "source_through_strip": 0.49156337487511337
+    }
+  },
+  "paired_ratios": {
+    "mech-control-fast": {
+      "roc": 0.7981118143375181,
+      "libdeflate": 4.959386452654645,
+      "mech-control-fast": 1.0
+    },
+    "mech-direct-fields-rebound": {
+      "roc": 0.7773396646740518,
+      "libdeflate": 4.834229099125514,
+      "mech-control-fast": 0.9748811779863021
+    },
+    "mech-direct-fields-and-scalars-rebound": {
+      "roc": 0.7710350879639334,
+      "libdeflate": 4.787477375008774,
+      "mech-control-fast": 0.9657110814745942
+    }
+  },
+  "phases": {
+    "mech-control-fast": {
+      "parse": 0.7884904165,
+      "catalog": 1.9542e-05,
+      "frontend": 0.22541377099999999,
+      "artifact": 0.0070120205,
+      "encode": 0.002585958,
+      "native": 1.299313146
+    },
+    "mech-direct-fields-rebound": {
+      "parse": 0.788334959,
+      "catalog": 1.8895500000000002e-05,
+      "frontend": 0.225606646,
+      "artifact": 0.007004875,
+      "encode": 0.002581729,
+      "native": 1.2366306875
+    },
+    "mech-direct-fields-and-scalars-rebound": {
+      "parse": 0.7872740629999999,
+      "catalog": 1.8354500000000002e-05,
+      "frontend": 0.22534749999999998,
+      "artifact": 0.0070438335,
+      "encode": 0.002575875,
+      "native": 1.2185916455
+    }
+  },
+  "plan_sha256": "26e54fc664f199a8434326c9a97eae714b48a4f1fd0b14a46889445db7775b09",
+  "trials": 10,
+  "stripped_executables": {
+    "mech-control-fast": 276056,
+    "mech-direct-fields-rebound": 276056,
+    "mech-direct-fields-and-scalars-rebound": 276056,
+    "roc": 191912,
+    "libdeflate": 155752
+  }
+}
