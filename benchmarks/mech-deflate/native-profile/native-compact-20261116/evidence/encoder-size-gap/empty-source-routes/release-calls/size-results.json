@@ -1,0 +1,21 @@
+{
+  "free": {
+    "encoder_bytes": 67992,
+    "root_bytes": 50160,
+    "wrappers": {
+      "_mech_compact_free_preserving": 384
+    }
+  },
+  "all": {
+    "encoder_bytes": 71432,
+    "root_bytes": 51680,
+    "wrappers": {
+      "_mech_compact_free_preserving": 384,
+      "_mech_compact_release_four_preserving": 384,
+      "_mech_compact_release_nullable_preserving": 384,
+      "_mech_compact_release_owner_preserving": 384,
+      "_mech_compact_release_three_preserving": 384,
+      "_mech_compact_release_two_preserving": 384
+    }
+  }
+}

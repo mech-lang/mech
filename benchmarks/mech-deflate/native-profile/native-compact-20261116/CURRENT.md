@@ -63,6 +63,12 @@ Keeping the sorter interfaces and trimming other phase results emits
 **61/81 and 61/81 libdeflate wins**.
 [Source replay and results](evidence/encoder-size-gap/checked-layout-refusals/README.md#preserve-the-private-phase-output-interface)
 
+Forwarding 1,837 empty source jumps removes 1,568 blocks before native layout. The exact paired build drops from **2.427 s to 2.387 s**.
+The object emits **67,656 B** with **4,672 B** peak stack. In the
+complete orders it records **81/81 and 81/81 Roc wins**
+and **61/81 and 61/81 libdeflate wins**.
+[Compiler patch, build measurements and complete runtime results](evidence/encoder-size-gap/empty-source-routes/README.md)
+
 ## MechDeflate compile time by encoder build
 
 Each row measures fresh MechDeflate source through final executable
@@ -76,6 +82,9 @@ Roc and libdeflate trials from the same session.
 | [One-body preparation](evidence/encoder-size-gap/checked-layout-refusals/single-body-preparation/summary.json) | 68,136 B | 2.421 s | 0.811× | 5.046× |
 | [All-phase output pruning](evidence/encoder-size-gap/checked-layout-refusals/single-body-preparation/summary.json) | 67,512 B | 2.426 s | 0.814× | 5.059× |
 | [Private sorter interfaces](evidence/encoder-size-gap/checked-layout-refusals/non-private-outputs/deployment.json) | 67,464 B | 2.434 s | 0.813× | 5.051× |
+| [Forwarding disabled (control)](evidence/encoder-size-gap/empty-source-routes/deployment.json) | 67,464 B | 2.427 s | 0.813× | 5.032× |
+| [Forward empty source jumps](evidence/encoder-size-gap/empty-source-routes/deployment.json) | 67,656 B | 2.387 s | 0.798× | 4.953× |
+| [Register-preserving free wrapper](evidence/encoder-size-gap/empty-source-routes/deployment.json) | 67,992 B | 2.447 s | 0.817× | 5.060× |
 
 Parser, lowering, native compilation and link timings are in the
 machine-readable scorecard.
