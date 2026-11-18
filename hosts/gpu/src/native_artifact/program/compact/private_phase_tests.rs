@@ -66,7 +66,7 @@ fn private_fixed_nested_contract_leaves_ordinary_funding_refusal_intact() {
         assert!(proof.phase.as_ref().unwrap().checked_children);
         assert_eq!(proof.exits.len(), 2);
         assert!(proof.exits.iter().all(|e| e.kind != ExitKind::Unsupported));
-        let contract = PrivatePhase::derive(&prepared, region, &layout)
+        let contract = PrivatePhase::derive(&prepared, region, &layout, false)
             .unwrap()
             .unwrap();
         assert!(contract.permits(proof));
@@ -87,7 +87,8 @@ fn private_fixed_nested_handoffs_are_exact_current_scalar_and_alias_exports() {
         let layout = Layout::derive(prepared.plan()).unwrap();
         let mut handoffs = 0;
         for region in &prepared.metadata().closed_tails.regions {
-            if let Some(contract) = PrivatePhase::derive(&prepared, region, &layout).unwrap() {
+            if let Some(contract) = PrivatePhase::derive(&prepared, region, &layout, false).unwrap()
+            {
                 let proof = region.numeric.as_ref().unwrap();
                 let shadow = region.shadow.unwrap();
                 let exports = contract.exports(shadow);
@@ -135,7 +136,7 @@ fn private_fixed_nested_contract_declines_growing_storage() {
                 .regions
                 .iter()
                 .all(|region| {
-                    PrivatePhase::derive(&prepared, region, &layout)
+                    PrivatePhase::derive(&prepared, region, &layout, false)
                         .unwrap()
                         .is_none()
                 })
