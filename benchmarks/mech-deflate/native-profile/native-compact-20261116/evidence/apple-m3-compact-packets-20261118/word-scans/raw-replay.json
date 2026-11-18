@@ -1,0 +1,768 @@
+{
+  "status": "passed",
+  "plan_sha256": "1d05ede40a77f83241a3679187b179ff7e40e4192d20ab251a8640bf187bd00f",
+  "runs": [
+    {
+      "order": "forward",
+      "cases": 81,
+      "timed_calls": 982656,
+      "wins": {
+        "mech-control": {
+          "roc": 74,
+          "libdeflate": 57
+        },
+        "mech-experiment": {
+          "roc": 81,
+          "libdeflate": 60
+        }
+      },
+      "receipt": {
+        "id": "word-complement/full/forward",
+        "kind": "full",
+        "order": "forward",
+        "blocks_per_case": 96,
+        "pins": {
+          "path": "word-complement/full/forward/pins.json",
+          "sha256": "e6d62a7716552391782b3dfe1f021c6d243ca50c095f25be68a9b9d92a090345"
+        },
+        "fixture_inventory": {
+          "path": "word-complement/full/fixtures.json",
+          "sha256": "5bfd407e42356ac57c61f858ad9920f1f9bf2e2fce1b2853c50cc20eda186b38"
+        },
+        "summary": {
+          "path": "word-complement/full/forward/summary.json",
+          "sha256": "13a6cbf4a6eead457841b436fe69b51b40da605f9683bd2ba426f296d5cb01ef"
+        },
+        "complete": {
+          "path": "word-complement/full/forward/complete.json",
+          "sha256": "2e54dfa5984a50621e44303a7cbdd811e578a4c88e1b46ef989159527d443c6f"
+        },
+        "observations": {
+          "heldout-mixed-131073": {
+            "path": "word-complement/full/forward/heldout-mixed-131073/observations.json.gz",
+            "sha256": "326b07c5977bf599c6afaa3516008088b9a5f5deb91d42299dd551637fb9dbad"
+          },
+          "prefix-random-32769": {
+            "path": "word-complement/full/forward/prefix-random-32769/observations.json.gz",
+            "sha256": "b642ea8d5193d95e00a8c23923c7ab65e85be0ac2120b74edf7ed4ad4c2a1dab"
+          },
+          "prefix-natural-1024": {
+            "path": "word-complement/full/forward/prefix-natural-1024/observations.json.gz",
+            "sha256": "9f566c2edb1afc13c5667697f178904e27c38ff095c2fec2e65824fbabf331c3"
+          },
+          "prefix-random-32767": {
+            "path": "word-complement/full/forward/prefix-random-32767/observations.json.gz",
+            "sha256": "16d8feafe0a908e5c6f7d214e7b94b75986e8aa817a036aceb7489419aed840e"
+          },
+          "prefix-repeated-1024": {
+            "path": "word-complement/full/forward/prefix-repeated-1024/observations.json.gz",
+            "sha256": "4caa3356a85779d55ee6dc56aab44f6a9509cddadd1100a76cbe73acb5449068"
+          },
+          "random-1024": {
+            "path": "word-complement/full/forward/random-1024/observations.json.gz",
+            "sha256": "602235e16f7b0dd45eef67341cf8abf588dd90caac6cdfdbb6b021c592f7233f"
+          },
+          "prefix-repeated-65537": {
+            "path": "word-complement/full/forward/prefix-repeated-65537/observations.json.gz",
+            "sha256": "5f48e81ee4a4439e131aca8a851fa742593d7adcf05a8a9d218b95c4cdc29e92"
+          },
+          "prefix-periodic-4096": {
+            "path": "word-complement/full/forward/prefix-periodic-4096/observations.json.gz",
+            "sha256": "92a4fb56b5059ae4958431ea376878af97d0ed3cfbf003853880dcc0e1f6ddb6"
+          },
+          "prefix-natural-16384": {
+            "path": "word-complement/full/forward/prefix-natural-16384/observations.json.gz",
+            "sha256": "c96d16a6acb70ab641134613bbc0b243fe11475f1d7ee5a76cc4a7643fa4e487"
+          },
+          "prefix-random-33027": {
+            "path": "word-complement/full/forward/prefix-random-33027/observations.json.gz",
+            "sha256": "67534ff297ea6860b9cecab9089046e0ea12db4c8980c96f47706a3af970689f"
+          },
+          "prefix-random-32768": {
+            "path": "word-complement/full/forward/prefix-random-32768/observations.json.gz",
+            "sha256": "04a5fd47c30c64181ae0eee5132b4461e94e94ecfc228e29cc71489064d56429"
+          },
+          "prefix-random-4096": {
+            "path": "word-complement/full/forward/prefix-random-4096/observations.json.gz",
+            "sha256": "111299c348f08a000d4efbcffd2c0a2da702617dc0f56f5d7a97f57838a4bc96"
+          },
+          "prefix-natural-1048576": {
+            "path": "word-complement/full/forward/prefix-natural-1048576/observations.json.gz",
+            "sha256": "f47f152445559df54af4a89a8d048d4b46c6f72ef1962b8a62f0666a1f19f7fd"
+          },
+          "prefix-repeated-65536": {
+            "path": "word-complement/full/forward/prefix-repeated-65536/observations.json.gz",
+            "sha256": "9ff93144469dadee13df1c73a7f2bfd78559f548f69c449d62c0b77c0cf82d8a"
+          },
+          "prefix-repeated-16384": {
+            "path": "word-complement/full/forward/prefix-repeated-16384/observations.json.gz",
+            "sha256": "8a0d4e7c57f0bee6c99ab01de7ece1176503da80d5430def2478b02e1fac2eb8"
+          },
+          "prefix-periodic-65535": {
+            "path": "word-complement/full/forward/prefix-periodic-65535/observations.json.gz",
+            "sha256": "0de3e611dca74dc6183637b8bda8aee0f05706cbc0c214da22fcfa36c6c35359"
+          },
+          "prefix-random-262144": {
+            "path": "word-complement/full/forward/prefix-random-262144/observations.json.gz",
+            "sha256": "a7f0e39c4023165c154beb420224c7ee0ca1f00ccec58d2d6ed09de5559feea0"
+          },
+          "prefix-periodic-1048576": {
+            "path": "word-complement/full/forward/prefix-periodic-1048576/observations.json.gz",
+            "sha256": "72dd1749cf216a724fc574de104709e11a36fe702c1091384b00e01920b42c5d"
+          },
+          "prefix-repeated-262144": {
+            "path": "word-complement/full/forward/prefix-repeated-262144/observations.json.gz",
+            "sha256": "3d0be392658f653d36b2beb9afb670ddd73859b9f9112fc27b742e1e0b37d3e4"
+          },
+          "eight-literals-prefix": {
+            "path": "word-complement/full/forward/eight-literals-prefix/observations.json.gz",
+            "sha256": "71161e8c2a435743ec35ee9067828452fd7cd190f3aaffdf25957b3c6f2c079c"
+          },
+          "prefix-natural-65536": {
+            "path": "word-complement/full/forward/prefix-natural-65536/observations.json.gz",
+            "sha256": "9ab55cfb7b77c89b1e086513cab3b2e06083bbe19664af3e3080febf2245bdf3"
+          },
+          "empty": {
+            "path": "word-complement/full/forward/empty/observations.json.gz",
+            "sha256": "012781d4999323b4a84e71f4fa4137088d4b61654da342035e5e125d7d38378a"
+          },
+          "one-stored": {
+            "path": "word-complement/full/forward/one-stored/observations.json.gz",
+            "sha256": "b6797e0b80fd7709dd9cc31187904b3be5bc21776807c7d5b57353b7572c7322"
+          },
+          "repeated-32769": {
+            "path": "word-complement/full/forward/repeated-32769/observations.json.gz",
+            "sha256": "042926c60583ac7a3dd66797228902a715f1dcdd7ff24dd651ad71e48879c8c4"
+          },
+          "prefix-natural-65537": {
+            "path": "word-complement/full/forward/prefix-natural-65537/observations.json.gz",
+            "sha256": "4e0e30c98578fa5407232179b6cad6df7a63db2b0c7d39af1b88e176fb835775"
+          },
+          "prefix-natural-4096": {
+            "path": "word-complement/full/forward/prefix-natural-4096/observations.json.gz",
+            "sha256": "8acb6904b6b931d68f00dea93cd7337a994351ab4b02586579cfc51597a712f1"
+          },
+          "prefix-repeated-4096": {
+            "path": "word-complement/full/forward/prefix-repeated-4096/observations.json.gz",
+            "sha256": "410318c28fe7a2cac0d3c9a690ae7a76b8ca793b48ed00aefcc20094765f4c71"
+          },
+          "320-overlap": {
+            "path": "word-complement/full/forward/320-overlap/observations.json.gz",
+            "sha256": "862d6c46a754dc162ece9b8dd5a1fce23d612fe4e0f8fd93d469e44a08825706"
+          },
+          "prefix-periodic-1024": {
+            "path": "word-complement/full/forward/prefix-periodic-1024/observations.json.gz",
+            "sha256": "8811cce396f13a14f801028fd36dca8708361ced8069065b0e07b7be5dd7f750"
+          },
+          "prefix-random-65535": {
+            "path": "word-complement/full/forward/prefix-random-65535/observations.json.gz",
+            "sha256": "2a1c61f4cb35e48c2026e9395cb0600fa49a9e95c3fec1c529b91b7ecaed4ff9"
+          },
+          "prefix-random-1048576": {
+            "path": "word-complement/full/forward/prefix-random-1048576/observations.json.gz",
+            "sha256": "d85244dd3333b00c1cd8e4586181960e8cc5be0f7e17f8a45c10cccf8944a950"
+          },
+          "heldout-slides-65537": {
+            "path": "word-complement/full/forward/heldout-slides-65537/observations.json.gz",
+            "sha256": "91b07720719e44f132e14c3844d87c430bbe7ca6e0e6aa6ce6dd685c958005b3"
+          },
+          "prefix-random-1024": {
+            "path": "word-complement/full/forward/prefix-random-1024/observations.json.gz",
+            "sha256": "1225ec12c89bf537f6a46c6a8d2c14115ad5acc477902a0cd1017f01da6ca43c"
+          },
+          "random-256": {
+            "path": "word-complement/full/forward/random-256/observations.json.gz",
+            "sha256": "de4f1acf72d8952a04ab02ff11de936dc42dbc990b451d042c2ede7df5a7d8a1"
+          },
+          "random-32769": {
+            "path": "word-complement/full/forward/random-32769/observations.json.gz",
+            "sha256": "97e7f5975f1016252b26ce10746ffa07c440e297d449b9b139a481913d9712cd"
+          },
+          "reymont-prefix-16384": {
+            "path": "word-complement/full/forward/reymont-prefix-16384/observations.json.gz",
+            "sha256": "0da0e090248f131503cba5f9d4777f76237c04da32c2b6d4dbb93d22d0fccf8a"
+          },
+          "prefix-periodic-32768": {
+            "path": "word-complement/full/forward/prefix-periodic-32768/observations.json.gz",
+            "sha256": "44bda8647443093aaf74c2bf26dc88b19a6e5bd6a6686fea12e14bbf400d7c8f"
+          },
+          "prefix-periodic-33027": {
+            "path": "word-complement/full/forward/prefix-periodic-33027/observations.json.gz",
+            "sha256": "8cd3944145f23de83bce820b6dc43790edbd8029b27e1b289f7800672771828c"
+          },
+          "prefix-periodic-131072": {
+            "path": "word-complement/full/forward/prefix-periodic-131072/observations.json.gz",
+            "sha256": "4af3a0d9352217b7022f79f727660a08030b5e4107a018737dc798e59f21676e"
+          },
+          "prefix-repeated-1048576": {
+            "path": "word-complement/full/forward/prefix-repeated-1048576/observations.json.gz",
+            "sha256": "b337615eaa2309c1907d1e8d819ead4636ebbeae31f46d5a00b3623c866acce6"
+          },
+          "prefix-periodic-32769": {
+            "path": "word-complement/full/forward/prefix-periodic-32769/observations.json.gz",
+            "sha256": "088a227475b227b8e554288b8712f102d0b722c8ad7004a53614927f063fb3a3"
+          },
+          "repeated-1024": {
+            "path": "word-complement/full/forward/repeated-1024/observations.json.gz",
+            "sha256": "621a2955637493238f437887f092b6e62a9cbe8d08e63dfffd7c1799ca35ce0e"
+          },
+          "reymont-prefix-1024": {
+            "path": "word-complement/full/forward/reymont-prefix-1024/observations.json.gz",
+            "sha256": "a9e0c387b2f7235ca771889cdb9e7ee435213c51d2abc5043737c52103a66085"
+          },
+          "prefix-periodic-32767": {
+            "path": "word-complement/full/forward/prefix-periodic-32767/observations.json.gz",
+            "sha256": "4d5521265c1f33b124df64c4757b0128f99b2e18900ae4edd5739127756b87d7"
+          },
+          "seven-stored-prefix": {
+            "path": "word-complement/full/forward/seven-stored-prefix/observations.json.gz",
+            "sha256": "dc9cb8c2dbc19928a8be98c6fe1e7b4c3c6c19e6a87acd16a98dab60b60e4b68"
+          },
+          "prefix-natural-262144": {
+            "path": "word-complement/full/forward/prefix-natural-262144/observations.json.gz",
+            "sha256": "32ed778e7858f1313cee6067854be7a9ce1582bbb6e72e4e22fda3ae8150027d"
+          },
+          "prefix-repeated-8192": {
+            "path": "word-complement/full/forward/prefix-repeated-8192/observations.json.gz",
+            "sha256": "3470c70e3047fa618c5f71e126f93a994fe2a1effa5c6fb71b6de8efc5d3e7c8"
+          },
+          "prefix-periodic-262144": {
+            "path": "word-complement/full/forward/prefix-periodic-262144/observations.json.gz",
+            "sha256": "d3dbd88f48174e3c2c5d283ffdb2ad62750e44c3eda81eb4db0c3ca99bf38a50"
+          },
+          "prefix-natural-8192": {
+            "path": "word-complement/full/forward/prefix-natural-8192/observations.json.gz",
+            "sha256": "c038b22093ee3a624c61e52e2e11cf834e3b1e96b8f0abcbd2212fe1f86f5022"
+          },
+          "prefix-periodic-16384": {
+            "path": "word-complement/full/forward/prefix-periodic-16384/observations.json.gz",
+            "sha256": "abaf8c6c461bcbda22b8d0c7ea213fcca3b7c695a057854286d68a97c20d0ef0"
+          },
+          "prefix-repeated-65535": {
+            "path": "word-complement/full/forward/prefix-repeated-65535/observations.json.gz",
+            "sha256": "8c6531052b6c4d2ab902f6aee0d699bac0f487ad214e97572a7cf9557ea1716f"
+          },
+          "prefix-natural-131072": {
+            "path": "word-complement/full/forward/prefix-natural-131072/observations.json.gz",
+            "sha256": "4c1ae3d110a0c075e060ba8d21d4e413b2cf53e8622270ff4ca44eb79ef894c0"
+          },
+          "33027-periodic-window": {
+            "path": "word-complement/full/forward/33027-periodic-window/observations.json.gz",
+            "sha256": "fa57c84830517a9c91912883b129db4a38fafd79f0aea77aa14f92ce88428db5"
+          },
+          "prefix-natural-65535": {
+            "path": "word-complement/full/forward/prefix-natural-65535/observations.json.gz",
+            "sha256": "b307a7a4102da211b09262b05257a307a3d07e86e7c4ccf30bf560a650726153"
+          },
+          "16384-distribution-change": {
+            "path": "word-complement/full/forward/16384-distribution-change/observations.json.gz",
+            "sha256": "41eb57eebb50856925da3e765b5a94841e29d491d8fbe882440c2069e78d75b3"
+          },
+          "eight-literals": {
+            "path": "word-complement/full/forward/eight-literals/observations.json.gz",
+            "sha256": "978eacaf8214acf4c2dc0e4fb17b44e98fbc5d1884cb94201fe25fa99bf024bd"
+          },
+          "prefix-periodic-65536": {
+            "path": "word-complement/full/forward/prefix-periodic-65536/observations.json.gz",
+            "sha256": "128d5211191e0443053e2bef89e258d0f88ca1e1c3d496d9ed1f5bdaa7b35457"
+          },
+          "heldout-random-65537": {
+            "path": "word-complement/full/forward/heldout-random-65537/observations.json.gz",
+            "sha256": "a00a9be580b83b58e8b58ab50ee8e883ad299cc7d9ea06e105713090c45d3c86"
+          },
+          "random-64": {
+            "path": "word-complement/full/forward/random-64/observations.json.gz",
+            "sha256": "742c6cf30f7a47f708d65e4d96d30445de6ef3025e4692106f6089a5552bd8ee"
+          },
+          "reymont-prefix-32769": {
+            "path": "word-complement/full/forward/reymont-prefix-32769/observations.json.gz",
+            "sha256": "d96a70c2c6eb59eea8de9b3c5ce8cb668bd11c7a88e13555db6c8ac72a9ae673"
+          },
+          "32-high-entropy-stored": {
+            "path": "word-complement/full/forward/32-high-entropy-stored/observations.json.gz",
+            "sha256": "fd8550033cf4f6f1d6c783bfc54caab69aa0dd5504056c318fc2a45361a02a98"
+          },
+          "prefix-periodic-65537": {
+            "path": "word-complement/full/forward/prefix-periodic-65537/observations.json.gz",
+            "sha256": "64f580a6781671ee9a2f7c549ecd0d76d0db8df3c683ee90594a6c6f3c7b3fb6"
+          },
+          "prefix-repeated-32767": {
+            "path": "word-complement/full/forward/prefix-repeated-32767/observations.json.gz",
+            "sha256": "c02da0c997888bb07f3b48de0b169748843e67adb80d5922f504b1798191b3cb"
+          },
+          "prefix-random-131072": {
+            "path": "word-complement/full/forward/prefix-random-131072/observations.json.gz",
+            "sha256": "e86c543a3b520e257e7069577a14b589d09361d827ee1a6a9fa2dba267807d22"
+          },
+          "prefix-repeated-32769": {
+            "path": "word-complement/full/forward/prefix-repeated-32769/observations.json.gz",
+            "sha256": "bc476c0ad7ce74d94a43543379b3f895b0a127310d431173a9f5c167ec182daa"
+          },
+          "prefix-periodic-8192": {
+            "path": "word-complement/full/forward/prefix-periodic-8192/observations.json.gz",
+            "sha256": "57d67745194bc43edb8966e6041aa1033bebffe4d5db8c03935d0b90d9ee15e2"
+          },
+          "eight-overlap": {
+            "path": "word-complement/full/forward/eight-overlap/observations.json.gz",
+            "sha256": "f2e3a70e036b3b14499f52aefd8fc961d7697c6c79641566d27125e8de097de3"
+          },
+          "prefix-random-65537": {
+            "path": "word-complement/full/forward/prefix-random-65537/observations.json.gz",
+            "sha256": "696271ffbd438936f2f239e4aea532257ffebc96db088e3e117f8432b4f27a5b"
+          },
+          "prefix-repeated-131072": {
+            "path": "word-complement/full/forward/prefix-repeated-131072/observations.json.gz",
+            "sha256": "83446a008a5c9d94298c63933cff0861c3e7ab0741270c233bd9fdaa35845913"
+          },
+          "prefix-repeated-32768": {
+            "path": "word-complement/full/forward/prefix-repeated-32768/observations.json.gz",
+            "sha256": "5e11866f322811f94a66c30d0bd5743d028e176c867f533b0d4c5b98ec0cfed1"
+          },
+          "prefix-repeated-33027": {
+            "path": "word-complement/full/forward/prefix-repeated-33027/observations.json.gz",
+            "sha256": "6e86fa17333c15a514efc8df177c3fa0bf8ed26ae352439991fe29896aabc9c2"
+          },
+          "128-biased-dynamic": {
+            "path": "word-complement/full/forward/128-biased-dynamic/observations.json.gz",
+            "sha256": "ed94a7330996a18cdfe069ec17d4746e534caf201c59d471db26748bc9728cd3"
+          },
+          "prefix-random-8192": {
+            "path": "word-complement/full/forward/prefix-random-8192/observations.json.gz",
+            "sha256": "6cc3bd611e7c71ce8b0c8538af9c582a60e8f2468b5682b494d2a348b0aa93a0"
+          },
+          "prefix-random-65536": {
+            "path": "word-complement/full/forward/prefix-random-65536/observations.json.gz",
+            "sha256": "5f18331764b6755eb470017c40523c36579524d6937a4097d118ffb16dfa4ad6"
+          },
+          "prefix-natural-33027": {
+            "path": "word-complement/full/forward/prefix-natural-33027/observations.json.gz",
+            "sha256": "1327ccad2f3079de5686e7c05131a4649538c62a704b3177c62789b29ce5a649"
+          },
+          "prefix-natural-32768": {
+            "path": "word-complement/full/forward/prefix-natural-32768/observations.json.gz",
+            "sha256": "3e3432430269e6dee29f29d23921e3c638516b929dea6264419ecbd44d629b93"
+          },
+          "prefix-random-16384": {
+            "path": "word-complement/full/forward/prefix-random-16384/observations.json.gz",
+            "sha256": "6d1d7f9615c9ff1a69cc5dcd420bfb3c1f8d8f43d0c6858e21654fc257bc3f13"
+          },
+          "heldout-window-32767": {
+            "path": "word-complement/full/forward/heldout-window-32767/observations.json.gz",
+            "sha256": "edf15c248602459f2ae25d93e970a35233278656e27bd6aa1beacf426a6f542a"
+          },
+          "prefix-natural-32767": {
+            "path": "word-complement/full/forward/prefix-natural-32767/observations.json.gz",
+            "sha256": "146e0264dd8f989d378cde0471d6dd130d99236a78df6bb06fae31111e781f2e"
+          },
+          "prefix-natural-32769": {
+            "path": "word-complement/full/forward/prefix-natural-32769/observations.json.gz",
+            "sha256": "9f83a69b38aacee1307da51f7e60bbb0e105338c6eea31903edf5f0acde39946"
+          },
+          "heldout-window-32768": {
+            "path": "word-complement/full/forward/heldout-window-32768/observations.json.gz",
+            "sha256": "e88e9ccb89bcafa20b6de02b8b34c4cb5e98062abcf2f14826f0c23970f7d42f"
+          }
+        },
+        "cleanup": {
+          "mech-control": {
+            "path": "word-complement/full/forward/mech-control.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "mech-experiment": {
+            "path": "word-complement/full/forward/mech-experiment.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "roc": {
+            "path": "word-complement/full/forward/roc.stderr",
+            "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+          },
+          "libdeflate": {
+            "path": "word-complement/full/forward/libdeflate.stderr",
+            "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+          }
+        }
+      }
+    },
+    {
+      "order": "reverse",
+      "cases": 81,
+      "timed_calls": 982656,
+      "wins": {
+        "mech-control": {
+          "roc": 80,
+          "libdeflate": 61
+        },
+        "mech-experiment": {
+          "roc": 81,
+          "libdeflate": 60
+        }
+      },
+      "receipt": {
+        "id": "word-complement/full/reverse",
+        "kind": "full",
+        "order": "reverse",
+        "blocks_per_case": 96,
+        "pins": {
+          "path": "word-complement/full/reverse/pins.json",
+          "sha256": "e6d62a7716552391782b3dfe1f021c6d243ca50c095f25be68a9b9d92a090345"
+        },
+        "fixture_inventory": {
+          "path": "word-complement/full/fixtures.json",
+          "sha256": "5bfd407e42356ac57c61f858ad9920f1f9bf2e2fce1b2853c50cc20eda186b38"
+        },
+        "summary": {
+          "path": "word-complement/full/reverse/summary.json",
+          "sha256": "98a072d9da4a98b2552584395da55145575f55c18c7ed35a42770c1d26f429c3"
+        },
+        "complete": {
+          "path": "word-complement/full/reverse/complete.json",
+          "sha256": "2e54dfa5984a50621e44303a7cbdd811e578a4c88e1b46ef989159527d443c6f"
+        },
+        "observations": {
+          "heldout-mixed-131073": {
+            "path": "word-complement/full/reverse/heldout-mixed-131073/observations.json.gz",
+            "sha256": "14e47c076327a625c54d2cd2b364db3878248d770fb4de93dab1ba5eadd3281e"
+          },
+          "prefix-random-32769": {
+            "path": "word-complement/full/reverse/prefix-random-32769/observations.json.gz",
+            "sha256": "6458527658d989731a52aa1162daf97a2341001a965347371afa987ccdab1ed4"
+          },
+          "prefix-natural-1024": {
+            "path": "word-complement/full/reverse/prefix-natural-1024/observations.json.gz",
+            "sha256": "9255151ae6ad0fc14d6ff2c25846bff7770566f0a602449b137c65ba636468f4"
+          },
+          "prefix-random-32767": {
+            "path": "word-complement/full/reverse/prefix-random-32767/observations.json.gz",
+            "sha256": "d425ca5def5513e557313d349dcc5b3c7bf2de53daa7004e703892d4d2dbc87c"
+          },
+          "prefix-repeated-1024": {
+            "path": "word-complement/full/reverse/prefix-repeated-1024/observations.json.gz",
+            "sha256": "be859ed6d398ccd2d5b73c5cb24796ec20db224805e9e7cc9cd71469c3acc895"
+          },
+          "random-1024": {
+            "path": "word-complement/full/reverse/random-1024/observations.json.gz",
+            "sha256": "bbdc7a85f3fb69c55ed1a11483e354f2a41088e8d1a0a61d3829f2959411d106"
+          },
+          "prefix-repeated-65537": {
+            "path": "word-complement/full/reverse/prefix-repeated-65537/observations.json.gz",
+            "sha256": "59e81bf01673961ff8f7c68a904e1dba7692a91e3b5b063dd9b532bcc505c13b"
+          },
+          "prefix-periodic-4096": {
+            "path": "word-complement/full/reverse/prefix-periodic-4096/observations.json.gz",
+            "sha256": "3df09b7b61b64e3421ba8623e161feb542c4bc5cf8de25bcb54536e8564fbe15"
+          },
+          "prefix-natural-16384": {
+            "path": "word-complement/full/reverse/prefix-natural-16384/observations.json.gz",
+            "sha256": "f3cde8d5cbeb48fe7241233d3fe5b8e72e202582a95d63052371d74d4e209f6b"
+          },
+          "prefix-random-33027": {
+            "path": "word-complement/full/reverse/prefix-random-33027/observations.json.gz",
+            "sha256": "8418de156deef2da74298189f606c0190ea595603bf8fcc7a508a73ba5798e6d"
+          },
+          "prefix-random-32768": {
+            "path": "word-complement/full/reverse/prefix-random-32768/observations.json.gz",
+            "sha256": "218d6e821dd7b5c1794a948f2bf2a11723c4c78e71fd34c1e9acd9588de98199"
+          },
+          "prefix-random-4096": {
+            "path": "word-complement/full/reverse/prefix-random-4096/observations.json.gz",
+            "sha256": "cf18d59251f49d8134bcfee71410e9c23214d6edc47dc94730aaa5e6b5330f13"
+          },
+          "prefix-natural-1048576": {
+            "path": "word-complement/full/reverse/prefix-natural-1048576/observations.json.gz",
+            "sha256": "722387965351bf4354370774a65e0ea8618d09b5fc74e2bb0f83fb188ed4ae2e"
+          },
+          "prefix-repeated-65536": {
+            "path": "word-complement/full/reverse/prefix-repeated-65536/observations.json.gz",
+            "sha256": "6cb90b4604611a5fa1458ed13355c92f688ff14370ce157567095c10f02a9a97"
+          },
+          "prefix-repeated-16384": {
+            "path": "word-complement/full/reverse/prefix-repeated-16384/observations.json.gz",
+            "sha256": "4fa4f5f6a0b1e46117eab9941db5006c72fd444c344138c8e5c4054cfbfc4bfc"
+          },
+          "prefix-periodic-65535": {
+            "path": "word-complement/full/reverse/prefix-periodic-65535/observations.json.gz",
+            "sha256": "fa3a531c5525ff5ec8fc2f08d6b4a8fec1f1e92ecf2abe61165999cd5ad4f356"
+          },
+          "prefix-random-262144": {
+            "path": "word-complement/full/reverse/prefix-random-262144/observations.json.gz",
+            "sha256": "ad294c80a6a47898368359f76d2c369462c0fbbd00467e8c52b64653c4c5ad54"
+          },
+          "prefix-periodic-1048576": {
+            "path": "word-complement/full/reverse/prefix-periodic-1048576/observations.json.gz",
+            "sha256": "d90ed2f0c1b218553f25f07a5ce721f03187cdd05ffe7f33eff469b1136ab971"
+          },
+          "prefix-repeated-262144": {
+            "path": "word-complement/full/reverse/prefix-repeated-262144/observations.json.gz",
+            "sha256": "88287a42fbb04eabc2235aaf97033ac790ed5df7f6b519f2d7d29f08c9f66fd3"
+          },
+          "eight-literals-prefix": {
+            "path": "word-complement/full/reverse/eight-literals-prefix/observations.json.gz",
+            "sha256": "2cf7888e9488fdc2b527e4022a2b31796a2d9db21263e63310fd1437f0378926"
+          },
+          "prefix-natural-65536": {
+            "path": "word-complement/full/reverse/prefix-natural-65536/observations.json.gz",
+            "sha256": "e3c3178873e894e38bdad7dc274e56da9c58703112527e6ff6d195c26c4a70c4"
+          },
+          "empty": {
+            "path": "word-complement/full/reverse/empty/observations.json.gz",
+            "sha256": "35b0fa851938ecd6c4b2a4c38f1f3af1d8d9d1ed0a9849ddb2b8dba20012e677"
+          },
+          "one-stored": {
+            "path": "word-complement/full/reverse/one-stored/observations.json.gz",
+            "sha256": "09fcfb6d914280ed3f9a4978ef8fd911658dcf15eaead6d92c29d738087ac61d"
+          },
+          "repeated-32769": {
+            "path": "word-complement/full/reverse/repeated-32769/observations.json.gz",
+            "sha256": "6e0d000f7f22aa2ccc31d27f0a17f73a8bf8ede1669a9143a8ff557eeff3b5fe"
+          },
+          "prefix-natural-65537": {
+            "path": "word-complement/full/reverse/prefix-natural-65537/observations.json.gz",
+            "sha256": "3ce09fb5f968e29d22751117aee1dcb38dbe40a6326d1aa6f19b9aa3518a7820"
+          },
+          "prefix-natural-4096": {
+            "path": "word-complement/full/reverse/prefix-natural-4096/observations.json.gz",
+            "sha256": "ef4ce350c3c131e340510401fb43874018fa60c1307def8364ab7d4e778ce712"
+          },
+          "prefix-repeated-4096": {
+            "path": "word-complement/full/reverse/prefix-repeated-4096/observations.json.gz",
+            "sha256": "dc6ddf01839498717a2cee49451d974aee9c7d72a9effab8e71aba55fb5e1506"
+          },
+          "320-overlap": {
+            "path": "word-complement/full/reverse/320-overlap/observations.json.gz",
+            "sha256": "814704f7049577d575df4142c2877c8ec5ec1f995a92577a1943e6f32486ccca"
+          },
+          "prefix-periodic-1024": {
+            "path": "word-complement/full/reverse/prefix-periodic-1024/observations.json.gz",
+            "sha256": "c3202427ebf8409685d2a06dfdf2bfe67f6bbcfd16e749f2664b875865104a7d"
+          },
+          "prefix-random-65535": {
+            "path": "word-complement/full/reverse/prefix-random-65535/observations.json.gz",
+            "sha256": "27a9a8821c89d1fef04c60c87201d1e487b413b97b3f6ca3b5625254e2832e16"
+          },
+          "prefix-random-1048576": {
+            "path": "word-complement/full/reverse/prefix-random-1048576/observations.json.gz",
+            "sha256": "fa41d14439cc4b6fef258d43b3e92dfbcf7442a344d848e8a20b937c337bbd5e"
+          },
+          "heldout-slides-65537": {
+            "path": "word-complement/full/reverse/heldout-slides-65537/observations.json.gz",
+            "sha256": "a29b246575387290a949369fef5ad95709e21f4f8404311bddc3f657ecfc2990"
+          },
+          "prefix-random-1024": {
+            "path": "word-complement/full/reverse/prefix-random-1024/observations.json.gz",
+            "sha256": "a1f653f5f27157c7e8c54b6e3b74dab85c4313de14411246c7f578b755e92678"
+          },
+          "random-256": {
+            "path": "word-complement/full/reverse/random-256/observations.json.gz",
+            "sha256": "f12d4e6e34da9f6b8ceca18aa41e9018be2ab90fab36ceb0902b81c8a5c700f4"
+          },
+          "random-32769": {
+            "path": "word-complement/full/reverse/random-32769/observations.json.gz",
+            "sha256": "320aca5e56b086ad1fabcc14306ad4f01e9c25b0f8923b74039c188c0915ff22"
+          },
+          "reymont-prefix-16384": {
+            "path": "word-complement/full/reverse/reymont-prefix-16384/observations.json.gz",
+            "sha256": "73521a5e7975d904a0d02a00902bee00fa9ed8d69463c8dfee32f5cac79b455d"
+          },
+          "prefix-periodic-32768": {
+            "path": "word-complement/full/reverse/prefix-periodic-32768/observations.json.gz",
+            "sha256": "61082ced7dd8d01c71345dda625cdd330ec9230d88edaa2c18a6703f0991e8fd"
+          },
+          "prefix-periodic-33027": {
+            "path": "word-complement/full/reverse/prefix-periodic-33027/observations.json.gz",
+            "sha256": "bc4a9af8c820060e3e1615d44d0b92907238838cdba2fdaa12afacb970644e06"
+          },
+          "prefix-periodic-131072": {
+            "path": "word-complement/full/reverse/prefix-periodic-131072/observations.json.gz",
+            "sha256": "8b343e082ef14584267de8c8df75ca041aabd98d41ef23d965b92ba6da4ad037"
+          },
+          "prefix-repeated-1048576": {
+            "path": "word-complement/full/reverse/prefix-repeated-1048576/observations.json.gz",
+            "sha256": "23858e8459644d44bd95966ef66783dfaac9d64eed9855cf3d721a65a19ba0ba"
+          },
+          "prefix-periodic-32769": {
+            "path": "word-complement/full/reverse/prefix-periodic-32769/observations.json.gz",
+            "sha256": "e02312942aa2c7ae99e92e8709c2ebf186ea647a3d7e610cbd7d11e74285ace5"
+          },
+          "repeated-1024": {
+            "path": "word-complement/full/reverse/repeated-1024/observations.json.gz",
+            "sha256": "3f9cce8cac49d347e6bc953d6fc4632f9b9b20069cd765828e75e03409e32edf"
+          },
+          "reymont-prefix-1024": {
+            "path": "word-complement/full/reverse/reymont-prefix-1024/observations.json.gz",
+            "sha256": "40d4bc9b4996824747670bd6a64a471cae0f861033f18a7fbba6f45e28768d2f"
+          },
+          "prefix-periodic-32767": {
+            "path": "word-complement/full/reverse/prefix-periodic-32767/observations.json.gz",
+            "sha256": "31c01b8467e0a35065741e8f509a8facb5e12003c9fc8ebaf939723b7b6e5df5"
+          },
+          "seven-stored-prefix": {
+            "path": "word-complement/full/reverse/seven-stored-prefix/observations.json.gz",
+            "sha256": "18f0d1d3f3cb72bd60fede037975e9583063a3366d647c70df92307d180fda58"
+          },
+          "prefix-natural-262144": {
+            "path": "word-complement/full/reverse/prefix-natural-262144/observations.json.gz",
+            "sha256": "c56054a3793d51d9119f473af0ea6b6bbca6b4eba3d4494c01fbed5eab6a8e3c"
+          },
+          "prefix-repeated-8192": {
+            "path": "word-complement/full/reverse/prefix-repeated-8192/observations.json.gz",
+            "sha256": "25c116d14ed2f5b43120763886d3d4bef426d9d51e31a0c8d622d2778b639074"
+          },
+          "prefix-periodic-262144": {
+            "path": "word-complement/full/reverse/prefix-periodic-262144/observations.json.gz",
+            "sha256": "10875ff3cfb6a5293d23f56bc6b7aa0d9101b34630c306a276bf82d0de5595b3"
+          },
+          "prefix-natural-8192": {
+            "path": "word-complement/full/reverse/prefix-natural-8192/observations.json.gz",
+            "sha256": "52a2cb2db2ff854ed3e6c47dcc10d562211f0613d28829983c38a2f201b179a0"
+          },
+          "prefix-periodic-16384": {
+            "path": "word-complement/full/reverse/prefix-periodic-16384/observations.json.gz",
+            "sha256": "41ab89b1fc8a13a039b038397a61d7c926d40c6649470daa9a41a1d30506acb7"
+          },
+          "prefix-repeated-65535": {
+            "path": "word-complement/full/reverse/prefix-repeated-65535/observations.json.gz",
+            "sha256": "4c2ce87a4e59ee2af66bd511c471955f9ccd526896d3e6977deee0ee78d559ed"
+          },
+          "prefix-natural-131072": {
+            "path": "word-complement/full/reverse/prefix-natural-131072/observations.json.gz",
+            "sha256": "fdfb1e380e3d5f094d9f2308f313e1acec991faa05303a0a8f12ae86b95374ed"
+          },
+          "33027-periodic-window": {
+            "path": "word-complement/full/reverse/33027-periodic-window/observations.json.gz",
+            "sha256": "dcee4767ffbca196651f6b60017c52c8de1498e1bc7d0ad21fd76c3a39473d48"
+          },
+          "prefix-natural-65535": {
+            "path": "word-complement/full/reverse/prefix-natural-65535/observations.json.gz",
+            "sha256": "8c67aceb8490b128b557fd1b84cf5b24ecf31103d8aa1778ded795c41d072ba0"
+          },
+          "16384-distribution-change": {
+            "path": "word-complement/full/reverse/16384-distribution-change/observations.json.gz",
+            "sha256": "9ed3774de567b3fa89d1cb181eecb301f05ad958cef8d980d29312c9ea1a4705"
+          },
+          "eight-literals": {
+            "path": "word-complement/full/reverse/eight-literals/observations.json.gz",
+            "sha256": "c718ec541fbc260ff3b4d68421c308b3a14dbfe258f718bd7be9d207deda5043"
+          },
+          "prefix-periodic-65536": {
+            "path": "word-complement/full/reverse/prefix-periodic-65536/observations.json.gz",
+            "sha256": "ecc203cd38fb250e3a2642d8456f11244c4b79e2e6bcd77f190a6629d1d74b7e"
+          },
+          "heldout-random-65537": {
+            "path": "word-complement/full/reverse/heldout-random-65537/observations.json.gz",
+            "sha256": "e97e712948bacf90cc283e4e5b97736c532c89ed33448d54b8903fe2285e2755"
+          },
+          "random-64": {
+            "path": "word-complement/full/reverse/random-64/observations.json.gz",
+            "sha256": "649e22e04c9a890849a898962d23320e5df334c18e04a7ae95fbabdd6dd14432"
+          },
+          "reymont-prefix-32769": {
+            "path": "word-complement/full/reverse/reymont-prefix-32769/observations.json.gz",
+            "sha256": "9e1aa5923dc495be8b3bc2eb692d8b0ebc19f63248c721151bc1457f37d2b91b"
+          },
+          "32-high-entropy-stored": {
+            "path": "word-complement/full/reverse/32-high-entropy-stored/observations.json.gz",
+            "sha256": "6e4a6ed121c008dc1a90328ba55286ae556ec408bbb6b08ba11736a2ff4d4d4b"
+          },
+          "prefix-periodic-65537": {
+            "path": "word-complement/full/reverse/prefix-periodic-65537/observations.json.gz",
+            "sha256": "48dc54b475c4d5b69248e71f8983bdef033fa76dfb8bfe1a0d8a5fb233e7e5ad"
+          },
+          "prefix-repeated-32767": {
+            "path": "word-complement/full/reverse/prefix-repeated-32767/observations.json.gz",
+            "sha256": "3bc02145108d8f820292e3d22a545147f29a771008e08269392b8c49358fc71f"
+          },
+          "prefix-random-131072": {
+            "path": "word-complement/full/reverse/prefix-random-131072/observations.json.gz",
+            "sha256": "7328145e223ef351be5dabd4d64518e11624bfbe1223ba462da3a4cea6c72df1"
+          },
+          "prefix-repeated-32769": {
+            "path": "word-complement/full/reverse/prefix-repeated-32769/observations.json.gz",
+            "sha256": "64d76d2b0f9ff71fb062102759e0079d520966a83e0d6c5e72ec97f3405b1e9b"
+          },
+          "prefix-periodic-8192": {
+            "path": "word-complement/full/reverse/prefix-periodic-8192/observations.json.gz",
+            "sha256": "dc8c77731f351e104821a31fa6adcc140712909ea0df88bc13f199667f4d1dfe"
+          },
+          "eight-overlap": {
+            "path": "word-complement/full/reverse/eight-overlap/observations.json.gz",
+            "sha256": "7a3af50c3722a0764e3f8827b1b430aaade04a87c2135f09e1a2f24667a3cbc3"
+          },
+          "prefix-random-65537": {
+            "path": "word-complement/full/reverse/prefix-random-65537/observations.json.gz",
+            "sha256": "3d561c1d23b2df2f789f8a8b54ae9ab1593634687d4162a0f4594251207568ed"
+          },
+          "prefix-repeated-131072": {
+            "path": "word-complement/full/reverse/prefix-repeated-131072/observations.json.gz",
+            "sha256": "b6107081e82a61d2330a54c531f6997d387e2c3985ec4aaa1815c54b7d7923f7"
+          },
+          "prefix-repeated-32768": {
+            "path": "word-complement/full/reverse/prefix-repeated-32768/observations.json.gz",
+            "sha256": "d67d2b2844af53dcba6f0bc20d1bf17d05dd485c9ac23a66a6937e746ffc27ab"
+          },
+          "prefix-repeated-33027": {
+            "path": "word-complement/full/reverse/prefix-repeated-33027/observations.json.gz",
+            "sha256": "76e4493fe0ff9f7bdb0bde67d1cd6d3ba88c550d88186c24cc5f23ca28b98d95"
+          },
+          "128-biased-dynamic": {
+            "path": "word-complement/full/reverse/128-biased-dynamic/observations.json.gz",
+            "sha256": "dc98882023526a5eb5d1d8aa9c92868331adc1a109839aa8a40963a9a71b5d42"
+          },
+          "prefix-random-8192": {
+            "path": "word-complement/full/reverse/prefix-random-8192/observations.json.gz",
+            "sha256": "7503e4f038220f1b71ac5ac8582157d1ac749af87da952ba3e27fb1e975cd951"
+          },
+          "prefix-random-65536": {
+            "path": "word-complement/full/reverse/prefix-random-65536/observations.json.gz",
+            "sha256": "0cb432f0806f7921fdb09646d14018d7d8a8d9f5ae7fb3344f3a408dbc609c09"
+          },
+          "prefix-natural-33027": {
+            "path": "word-complement/full/reverse/prefix-natural-33027/observations.json.gz",
+            "sha256": "fa26b38f0826555e8515f5610e3fdef13ab0e709482597d6424d6f2c10d80cd2"
+          },
+          "prefix-natural-32768": {
+            "path": "word-complement/full/reverse/prefix-natural-32768/observations.json.gz",
+            "sha256": "08cbf82bc11b95a0f4c37df0fa2cd566be7a82e6a08c36ce227cdbff86052b99"
+          },
+          "prefix-random-16384": {
+            "path": "word-complement/full/reverse/prefix-random-16384/observations.json.gz",
+            "sha256": "9fafe28b17a72ead245b1bb3a558279a7b987ef068b28938069f21dc102eebec"
+          },
+          "heldout-window-32767": {
+            "path": "word-complement/full/reverse/heldout-window-32767/observations.json.gz",
+            "sha256": "a9defc7dabefe11a8d425e363fefa0beab93eb000c86d18420944997667f577f"
+          },
+          "prefix-natural-32767": {
+            "path": "word-complement/full/reverse/prefix-natural-32767/observations.json.gz",
+            "sha256": "cd032b9d5ad9ce19d2fbb1deb25b7420c287f3f450e20dd8d1ae4a3c1843abf7"
+          },
+          "prefix-natural-32769": {
+            "path": "word-complement/full/reverse/prefix-natural-32769/observations.json.gz",
+            "sha256": "cc8bf787cf5cabea832cdb01bb6238f6f81e3640cb05c3b1c28043a7d5e01c9a"
+          },
+          "heldout-window-32768": {
+            "path": "word-complement/full/reverse/heldout-window-32768/observations.json.gz",
+            "sha256": "a9dde181f7f6a56e550d861e24039895528409eac42281cf5d55c53accd8bfc1"
+          }
+        },
+        "cleanup": {
+          "mech-control": {
+            "path": "word-complement/full/reverse/mech-control.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "mech-experiment": {
+            "path": "word-complement/full/reverse/mech-experiment.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "roc": {
+            "path": "word-complement/full/reverse/roc.stderr",
+            "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+          },
+          "libdeflate": {
+            "path": "word-complement/full/reverse/libdeflate.stderr",
+            "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+          }
+        }
+      }
+    }
+  ]
+}
