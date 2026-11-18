@@ -42690,8 +42690,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/mod.rs",
-      "sha256": "22633a7a41c927d1e89eab40d4f700ee54ac941c69da35dcd29febb26d2fba63",
-      "bytes": 4459
+      "sha256": "b1ac3e9a461744a09cf4d07b93fee545f58dccd6adced8c98af2911d3958a483",
+      "bytes": 4481
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/object.rs",
