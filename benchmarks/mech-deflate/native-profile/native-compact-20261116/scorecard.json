@@ -13215,6 +13215,45 @@
           "sha256": "0750f36ac8c19e34acc894530c1983084fe432c6483713f9b8844f8f90bb9d82"
         },
         "evidence": "evidence/encoder-size-gap/compact-match-equality/deployment.json"
+      },
+      {
+        "name": "Skip empty parser transactions for resolved terminal misses",
+        "encoder_text_bytes": 65276,
+        "encoder_sha256": "1ab76d3a6064fa1af82afb7f07fa021f514301d2100def23b2b4d6945bd49858",
+        "compiler_sha256": "b947c11e9d9781349c93308b540ccb5bf2aa7d7c37e5798f8c7b01536a6747b6",
+        "measured_trials": 8,
+        "measurement_plan_sha256": "0675910b5e9a613d1e3fcb9e2113afdf4f0f0f611fcdf9fb82460a6e2caa9632",
+        "median_seconds": {
+          "source": 2.144113020738587,
+          "link": 0.03817060426808894,
+          "source_through_link": 2.181947457836941,
+          "strip": 0.01031039608642459,
+          "source_through_strip": 2.1925577705260366
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.708831541,
+          "catalog": 1.9916499999999998e-05,
+          "frontend": 0.2190753955,
+          "artifact": 0.006891833,
+          "encode": 0.002580229,
+          "native": 1.1791893125000001
+        },
+        "paired_ratios": {
+          "roc": 0.7328489923509945,
+          "libdeflate": 4.54484536417875
+        },
+        "encoder_text_ratios": {
+          "roc": 1.1313782584581253,
+          "libdeflate": 1.7604099244875944
+        },
+        "paired_ratio_to_session_control": 0.9929276041591757,
+        "median_paired_seconds_saved": 0.015529333613812923,
+        "faster_paired_trials": 7,
+        "stripped_executable": {
+          "bytes": 276056,
+          "sha256": "0750f36ac8c19e34acc894530c1983084fe432c6483713f9b8844f8f90bb9d82"
+        },
+        "evidence": "evidence/encoder-size-gap/empty-terminal-rewinds/deployment.json"
       }
     ]
   },
@@ -13784,6 +13823,64 @@
           62
         ]
       }
+    }
+  },
+  "empty_terminal_rewinds": {
+    "qualified": true,
+    "runtime": {
+      "decision": "Retain",
+      "wins": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          62,
+          62
+        ]
+      }
+    },
+    "worker_sha256": "792f63292b32ad062448c3344442c795c41bbaa263ff86ef803d10a692b56891",
+    "peak_stack_bytes": 4784,
+    "evidence": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/empty-terminal-rewinds",
+    "build": {
+      "name": "Skip empty parser transactions for resolved terminal misses",
+      "encoder_text_bytes": 65276,
+      "encoder_sha256": "1ab76d3a6064fa1af82afb7f07fa021f514301d2100def23b2b4d6945bd49858",
+      "compiler_sha256": "b947c11e9d9781349c93308b540ccb5bf2aa7d7c37e5798f8c7b01536a6747b6",
+      "measured_trials": 8,
+      "measurement_plan_sha256": "0675910b5e9a613d1e3fcb9e2113afdf4f0f0f611fcdf9fb82460a6e2caa9632",
+      "median_seconds": {
+        "source": 2.144113020738587,
+        "link": 0.03817060426808894,
+        "source_through_link": 2.181947457836941,
+        "strip": 0.01031039608642459,
+        "source_through_strip": 2.1925577705260366
+      },
+      "source_phase_median_seconds": {
+        "parse": 0.708831541,
+        "catalog": 1.9916499999999998e-05,
+        "frontend": 0.2190753955,
+        "artifact": 0.006891833,
+        "encode": 0.002580229,
+        "native": 1.1791893125000001
+      },
+      "paired_ratios": {
+        "roc": 0.7328489923509945,
+        "libdeflate": 4.54484536417875
+      },
+      "encoder_text_ratios": {
+        "roc": 1.1313782584581253,
+        "libdeflate": 1.7604099244875944
+      },
+      "paired_ratio_to_session_control": 0.9929276041591757,
+      "median_paired_seconds_saved": 0.015529333613812923,
+      "faster_paired_trials": 7,
+      "stripped_executable": {
+        "bytes": 276056,
+        "sha256": "0750f36ac8c19e34acc894530c1983084fe432c6483713f9b8844f8f90bb9d82"
+      },
+      "evidence": "evidence/encoder-size-gap/empty-terminal-rewinds/deployment.json"
     }
   }
 }
