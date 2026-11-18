@@ -1,0 +1,85 @@
+{
+  "plan_sha256": "0675910b5e9a613d1e3fcb9e2113afdf4f0f0f611fcdf9fb82460a6e2caa9632",
+  "medians": {
+    "mech-control-qualified": {
+      "source": 2.1637565207201988,
+      "link": 0.0350680835545063,
+      "source_through_link": 2.19923683302477,
+      "strip": 0.010180749231949449,
+      "source_through_strip": 2.209669458679855
+    },
+    "mech-skip-empty-terminal-rewinds": {
+      "source": 2.144113020738587,
+      "link": 0.03817060426808894,
+      "source_through_link": 2.181947457836941,
+      "strip": 0.01031039608642459,
+      "source_through_strip": 2.1925577705260366
+    },
+    "roc": {
+      "source": 2.941728395409882,
+      "link": 0.034121853997930884,
+      "source_through_link": 2.9785571040119976,
+      "strip": 0.010181499877944589,
+      "source_through_strip": 2.9891494375187904
+    },
+    "libdeflate": {
+      "source": 0.44707114552147686,
+      "link": 0.033506020437926054,
+      "source_through_link": 0.4812926040031016,
+      "strip": 0.010119375539943576,
+      "source_through_strip": 0.4916362289804965
+    }
+  },
+  "phases": {
+    "mech-control-qualified": {
+      "parse": 0.7204063125,
+      "catalog": 2.09585e-05,
+      "frontend": 0.2207345625,
+      "artifact": 0.006923187,
+      "encode": 0.002577021,
+      "native": 1.1801290005
+    },
+    "mech-skip-empty-terminal-rewinds": {
+      "parse": 0.708831541,
+      "catalog": 1.9916499999999998e-05,
+      "frontend": 0.2190753955,
+      "artifact": 0.006891833,
+      "encode": 0.002580229,
+      "native": 1.1791893125000001
+    }
+  },
+  "paired_ratios": {
+    "mech-control-qualified": {
+      "roc": 0.7385613893331981,
+      "libdeflate": 4.59011728694501,
+      "mech-control-qualified": 1.0
+    },
+    "mech-skip-empty-terminal-rewinds": {
+      "roc": 0.7328489923509945,
+      "libdeflate": 4.54484536417875,
+      "mech-control-qualified": 0.9929276041591757
+    }
+  },
+  "median_paired_ms_saved": 15.529333613812923,
+  "faster_trials": 7,
+  "trials": 8,
+  "selected": "mech-skip-empty-terminal-rewinds",
+  "stripped_executables": {
+    "mech-control-qualified": {
+      "bytes": 276056,
+      "sha256": "0750f36ac8c19e34acc894530c1983084fe432c6483713f9b8844f8f90bb9d82"
+    },
+    "mech-skip-empty-terminal-rewinds": {
+      "bytes": 276056,
+      "sha256": "0750f36ac8c19e34acc894530c1983084fe432c6483713f9b8844f8f90bb9d82"
+    },
+    "roc": {
+      "bytes": 191912,
+      "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+    },
+    "libdeflate": {
+      "bytes": 155752,
+      "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+    }
+  }
+}

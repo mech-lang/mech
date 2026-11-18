@@ -158,8 +158,6 @@ impl Continuation {
             self.result = false;
             return;
         }
-        let checkpoint = parser.checkpoint();
-        parser.state.rules.push_canonical(rule);
         if final_input
             && let Some(spec) = fixed
             && spec.spacing == TerminalSpacing::Exact
@@ -186,22 +184,33 @@ impl Continuation {
                     })
             }
         {
-            *allowance -= work + 2;
-            self.work += work + 2;
-            self.result = match end {
-                Some(end) => parser
+            *allowance -= work + 3;
+            self.work += work + 3;
+            if let Some(end) = end {
+                let checkpoint = parser.checkpoint();
+                parser.state.rules.push_canonical(rule);
+                self.result = parser
                     .bump_bytes_token((end - parser.offset()).0, spec.kind)
-                    .is_some(),
-                None => false,
-            };
-            *allowance -= 1;
-            self.work += 1;
-            parser.state.rules.truncate(checkpoint.rule_depth);
-            if !self.result {
-                parser.rewind(checkpoint);
+                    .is_some();
+                parser.state.rules.truncate(checkpoint.rule_depth);
+                if !self.result {
+                    parser.rewind(checkpoint);
+                }
+            } else {
+                // Nothing consumed input, created markers, or emitted a
+                // diagnostic. Record the transient rule depth and the empty
+                // rewind without saving and restoring the parser state.
+                let depth = parser.state.rules.len() + 1;
+                parser.state.rules.note_peak(depth);
+                if !parser.state.resource_finalizing {
+                    parser.state.rewinds += 1;
+                }
+                self.result = false;
             }
             return;
         }
+        let checkpoint = parser.checkpoint();
+        parser.state.rules.push_canonical(rule);
         self.push(Frame::Exit(checkpoint));
         if let Some(spec) = fixed {
             self.push(Frame::Fixed(spec));
