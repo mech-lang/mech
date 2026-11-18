@@ -1,0 +1,65 @@
+{
+  "plan_sha256": "3eb571fd5292486514e61e3e6d82476ffde0fcbd397c834054fd035e9eaf65ce",
+  "medians": {
+    "mech-control-prepared-compile-control": {
+      "source": 2.264778020558879,
+      "link": 0.035016270354390144,
+      "source_through_link": 2.3003269371110946,
+      "strip": 0.01046008337289095,
+      "source_through_strip": 2.3123867912217975
+    },
+    "mech-prepared-compile-one-scorer": {
+      "source": 2.2447127709165215,
+      "link": 0.035997520899400115,
+      "source_through_link": 2.283205645624548,
+      "strip": 0.01068706251680851,
+      "source_through_strip": 2.2940116666723043
+    },
+    "roc": {
+      "source": 2.9518514170777053,
+      "link": 0.03445510379970074,
+      "source_through_link": 2.9859226041007787,
+      "strip": 0.010339708300307393,
+      "source_through_strip": 2.996507833013311
+    },
+    "libdeflate": {
+      "source": 0.44621627102606,
+      "link": 0.03398208296857774,
+      "source_through_link": 0.48044077097438276,
+      "strip": 0.01040093693882227,
+      "source_through_strip": 0.49100608308799565
+    }
+  },
+  "phases": {
+    "mech-control-prepared-compile-control": {
+      "parse": 0.7881688545000001,
+      "catalog": 2.1083500000000002e-05,
+      "frontend": 0.22499922900000002,
+      "artifact": 0.0069986255,
+      "encode": 0.00256475,
+      "native": 1.2130770215000002
+    },
+    "mech-prepared-compile-one-scorer": {
+      "parse": 0.7886133959999999,
+      "catalog": 2.14375e-05,
+      "frontend": 0.2261503125,
+      "artifact": 0.0069817505,
+      "encode": 0.0025701455,
+      "native": 1.191126729
+    }
+  },
+  "paired_ratios": {
+    "mech-control-prepared-compile-control": {
+      "roc": 0.7702687591108563,
+      "libdeflate": 4.78928787128231,
+      "mech-control-prepared-compile-control": 1.0
+    },
+    "mech-prepared-compile-one-scorer": {
+      "roc": 0.7638602411840751,
+      "libdeflate": 4.756873524593089,
+      "mech-control-prepared-compile-control": 0.9919920540762046
+    }
+  },
+  "trials": 8,
+  "selected": "mech-prepared-compile-one-scorer"
+}

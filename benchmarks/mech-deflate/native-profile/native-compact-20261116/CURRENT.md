@@ -83,6 +83,9 @@ The matcher layout emits **67,648 B** with the shared continuations. Complete or
 The single dense scorer with a checked fallback emits **66,240 B**. It won 81/81 and 81/81 against Roc and 62/81 and 61/81 against libdeflate. The v3 decision was **Reject**.
 [Source patch, replay and complete results](evidence/encoder-size-gap/dense-scorer-only/README.md)
 
+Preparing the admitted scorer first skips two unused native bodies and reproduces the qualified 67,648 B encoder object and worker. The source-to-link median is **2.283 s**.
+[Source replay and matched builds](evidence/encoder-size-gap/early-scorer-preparation/README.md)
+
 ## MechDeflate compile time by encoder build
 
 Each row measures fresh MechDeflate source through final executable
@@ -107,6 +110,7 @@ Roc and libdeflate trials from the same session.
 | [Shared cold returns with one additional continuation family](evidence/encoder-size-gap/shared-continuation-returns/deployment.json) | 67,664 B | 2.302 s | 0.770× | 4.794× |
 | [Shared continuations with matcher fallthroughs](evidence/encoder-size-gap/continuation-matcher-layout/deployment.json) | 67,648 B | 2.301 s | 0.771× | 4.789× |
 | [Dense scorer with early admission and single-body preparation](evidence/encoder-size-gap/dense-scorer-only/deployment.json) | 66,240 B | 2.295 s | 0.768× | 4.699× |
+| [Prepare the admitted scorer first](evidence/encoder-size-gap/early-scorer-preparation/deployment.json) | 67,648 B | 2.283 s | 0.764× | 4.757× |
 
 Parser, lowering, native compilation and link timings are in the
 machine-readable scorecard.
@@ -116,14 +120,14 @@ machine-readable scorecard.
 | Stage | Current | 2.0 s budget | 1.0 s budget | 0.45 s budget |
 | --- | ---: | ---: | ---: | ---: |
 | Parser | 0.789 s | 0.75 | 0.35 | 0.13 |
-| Native preparation through object | 1.346 s | 0.95 | 0.48 | 0.22 |
-| Source semantic frontend | 0.220 s | 0.18 | 0.09 | 0.04 |
+| Native preparation through object | 1.191 s | 0.95 | 0.48 | 0.22 |
+| Source semantic frontend | 0.226 s | 0.18 | 0.09 | 0.04 |
 | Catalog join wait | 0.000 s | 0.05 | 0.02 | 0.01 |
-| Artifact, encoding, link and other work | 0.070 s | 0.07 | 0.06 | 0.05 |
-| **Total** | 2.427 s | 2.00 | 1.00 | 0.45 |
+| Artifact, encoding, link and other work | 0.074 s | 0.07 | 0.06 | 0.05 |
+| **Total** | **2.283 s** | 2.00 | 1.00 | 0.45 |
 
-Mech needs **1.977 s** less elapsed time to reach the
-0.45 s working budget. The phase medians come from the same ten matched trials. Catalog work runs during parsing and the table lists the join wait.
+Mech needs **1.833 s** less elapsed time to reach the
+0.45 s working budget. The phase medians come from the qualified scorer’s matched trials. Catalog work runs during parsing and the table lists the join wait.
 
 ## Which build to use
 
