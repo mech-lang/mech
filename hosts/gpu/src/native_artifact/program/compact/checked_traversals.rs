@@ -90,6 +90,7 @@ pub(super) fn controller_candidates(
 struct Traversal {
     candidate: Candidate,
     blocks: BTreeSet<Block>,
+    retained_returns: BTreeSet<Block>,
     inputs: Vec<Value>,
     input_roles: BTreeMap<Inst, Vec<Option<usize>>>,
     outputs: Vec<Value>,
@@ -266,6 +267,31 @@ impl RegionKind {
     }
 }
 
+fn local_cold_return(function: &Function, block: Block, origin_base: i64) -> bool {
+    let Some(end) = function.layout.last_inst(block) else {
+        return false;
+    };
+    if !function.layout.is_cold(block)
+        || function.dfg.insts[end].opcode() != Opcode::Return
+        || function
+            .layout
+            .block_insts(block)
+            .any(|inst| inst != end && function.dfg.insts[inst].opcode() != Opcode::Iconst)
+    {
+        return false;
+    }
+    let [status, origin] = *function.dfg.inst_args(end) else {
+        return false;
+    };
+    let status = function.dfg.resolve_aliases(status);
+    let origin = function.dfg.resolve_aliases(origin);
+    // Both returned words are defined in this block. The enclosing region
+    // still checks all captures, output uses, and the relative error origin.
+    [status, origin].into_iter().all(|value| {
+        function.dfg.value_type(value) == types::I64 && value_block(function, value) == Some(block)
+    }) && bounded_relative_origin(function, origin, origin_base).is_some()
+}
+
 fn plan(
     f: &Function,
     cfg: &ControlFlowGraph,
@@ -328,6 +354,9 @@ fn plan(
         cfg.pred_iter(candidate.exit)
             .all(|pred| blocks.contains(&pred.block))
     });
+    let allow_retained_returns = kind.is_continuation()
+        && std::env::var_os("MECH_COMPACT_KEEP_SHARED_TERMINAL_RETURNS").is_some();
+    let mut retained_returns = BTreeSet::new();
     for &block in &blocks {
         let entry = block == candidate.start;
         if !(entry && controller)
@@ -335,7 +364,15 @@ fn plan(
                 .pred_iter(block)
                 .any(|pred| blocks.contains(&pred.block) == entry)
         {
-            return Err("edge crosses the region entry boundary");
+            if entry
+                || !allow_retained_returns
+                || !local_cold_return(f, block, candidate.origin_base())
+            {
+                return Err("edge crosses the region entry boundary");
+            }
+            // The helper copies the return. Keeping this block in the caller
+            // preserves external edges and their original status and origin.
+            retained_returns.insert(block);
         }
         let definitions = f.dfg.block_params(block).iter().copied().chain(
             f.layout
@@ -486,9 +523,17 @@ fn plan(
             slots.into_iter().collect(),
         )
     };
+    if !retained_returns.is_empty() {
+        eprintln!(
+            "compact checked region {} retains {} shared returns",
+            candidate.header,
+            retained_returns.len()
+        );
+    }
     Ok(Traversal {
         candidate,
         blocks,
+        retained_returns,
         inputs: captures,
         input_roles: BTreeMap::new(),
         outputs,
@@ -983,7 +1028,7 @@ impl Traversal {
                 *arg = root.dfg.replace_block_param(*arg, ty);
             }
         }
-        for &block in &self.blocks {
+        for &block in self.blocks.difference(&self.retained_returns) {
             while let Some(inst) = root.layout.first_inst(block) {
                 if !self.outputs.is_empty() {
                     root.dfg.detach_inst_results(inst);

@@ -213,6 +213,7 @@ pub(super) fn prepare(
             ..candidate
         },
         blocks: traversal.blocks.iter().map(|b| blocks[b]).collect(),
+        retained_returns: Default::default(),
         inputs: traversal.inputs.iter().copied().map(value).collect(),
         input_roles,
         outputs: traversal.outputs.iter().copied().map(value).collect(),
