@@ -354,3 +354,62 @@ fn vector_nonzero_branch_preserves_every_bit_and_normalized_observation() {
     }
     assert_eq!(calls, 1596);
 }
+
+#[test]
+fn equality_scan_strategies_preserve_word_mismatches_and_admitted_tails() {
+    for strategy in ["word", "vector"] {
+        let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+        let (mut context, certificate) = fixture(&module, "normal");
+        let outcome = optimize_with_strategy(&mut context, &[certificate], false, Some(strategy));
+        if strategy == "word" {
+            assert!(outcome.wider.is_empty());
+        } else {
+            assert_eq!(outcome.wider, [7]);
+        }
+        cranelift_codegen::verify_function(&context.func, module.isa()).unwrap();
+        let id = module
+            .declare_function("equality_strategy", Linkage::Local, &context.func.signature)
+            .unwrap();
+        module.define_function(id, &mut context).unwrap();
+        module.finalize_definitions().unwrap();
+        let function: unsafe extern "C" fn(*const u8, *const u8, u64, u64) -> u64 =
+            unsafe { std::mem::transmute(module.get_finalized_function(id)) };
+        for offset in 0..8 {
+            for start in [0, 1, 7, 8, 13] {
+                for limit in [
+                    0, 7, 8, 9, 15, 16, 17, 31, 32, 33, 63, 64, 65, 127, 128, 129, 255, 256, 257,
+                ] {
+                    let left = [0u8; 288];
+                    for mismatch in 0..=264 {
+                        for bit in [1, 128] {
+                            let mut right = [0u8; 288];
+                            if mismatch < 264 {
+                                right[offset + mismatch] = bit;
+                            }
+                            let mut expected = start;
+                            while expected + 8 <= limit {
+                                let at = offset + expected as usize;
+                                if left[at..at + 8] != right[at..at + 8] {
+                                    break;
+                                }
+                                expected += 8;
+                            }
+                            let actual = unsafe {
+                                function(
+                                    left.as_ptr().add(offset),
+                                    right.as_ptr().add(offset),
+                                    start,
+                                    limit,
+                                )
+                            };
+                            assert_eq!(
+                                actual, expected,
+                                "{strategy}, offset={offset}, start={start}, limit={limit}, mismatch={mismatch}"
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

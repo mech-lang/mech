@@ -19,7 +19,7 @@ use crate::native_artifact::{
     compiler::{backend, compiled_stack_bytes, offset},
 };
 use cranelift_codegen::ir::condcodes::IntCC;
-use cranelift_codegen::ir::{AbiParam, Block, FuncRef, InstBuilder, MemFlags, types};
+use cranelift_codegen::ir::{AbiParam, Block, FuncRef, InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{FuncId, Linkage, Module};
 use mech_engine::native_artifact::NativeProgramFacts;
@@ -125,7 +125,7 @@ impl NoGrowth {
     }
 }
 struct NoGrowthAlternative {
-    function: FuncId,
+    function: Option<FuncId>,
     array: usize,
     countdown_slot: usize,
     composed: Option<function::Composed>,
@@ -228,6 +228,66 @@ impl Phase {
         }
     }
 
+    fn growth_admission(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        words: &Words,
+        no_growth: &NoGrowthAlternative,
+    ) -> (Value, Value) {
+        let base = self.arrays[no_growth.array].0;
+        let length = words.read(b, base + 1);
+        let capacity = words.read(b, base + 2);
+        let remaining = words.read(b, no_growth.countdown_slot);
+        let valid = b
+            .ins()
+            .icmp(IntCC::UnsignedLessThanOrEqual, length, capacity);
+        let available = b.ins().isub(capacity, length);
+        let fits = b
+            .ins()
+            .icmp(IntCC::UnsignedLessThanOrEqual, remaining, available);
+        let enough = b.ins().band(valid, fits);
+        (remaining, enough)
+    }
+
+    fn composed_admission(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        words: &Words,
+        composed: &function::Composed,
+        remaining: Value,
+        consider_record_count: bool,
+    ) -> Value {
+        let admission = composed.admission;
+        let cursor = words.read(b, self.inputs[admission.cursor_word]);
+        let cache_length = words.read(b, self.arrays[admission.cache].0 + 1);
+        let cost_length = words.read(b, self.arrays[admission.costs].0 + 1);
+        let nonnegative = b
+            .ins()
+            .icmp(IntCC::UnsignedGreaterThanOrEqual, cursor, remaining);
+        let within = b
+            .ins()
+            .icmp(IntCC::UnsignedLessThanOrEqual, cursor, cache_length);
+        // Dense codes are an immutable object table. The old
+        // record threshold amortizes filling a private cost cache.
+        // Keep the actual cursor, length and cost admission checks.
+        let work = consider_record_count.then(|| {
+            let records = b.ins().isub(cursor, remaining);
+            b.ins().icmp_imm(
+                IntCC::UnsignedGreaterThanOrEqual,
+                records,
+                admission.minimum_records as i64,
+            )
+        });
+        let readable = b.ins().icmp_imm(
+            IntCC::UnsignedGreaterThanOrEqual,
+            cost_length,
+            admission.minimum_costs as i64,
+        );
+        let geometry = b.ins().band(nonnegative, within);
+        let ready = work.map_or(readable, |work| b.ins().band(work, readable));
+        b.ins().band(geometry, ready)
+    }
+
     pub fn emit<M: Module>(
         &self,
         module: &mut M,
@@ -305,6 +365,28 @@ impl Phase {
             let yes = b.ins().iconst(types::I64, 1);
             b.ins().call(observe, &[storage.heap, header, yes]);
         }
+        let dense = self.no_growth.as_ref().and_then(|growth| {
+            (root_entry
+                && growth.function.is_none()
+                && std::env::var_os("MECH_COMPACT_GUARD_DENSE_BEFORE_PACKET").is_some())
+            .then(|| {
+                (
+                    growth,
+                    growth
+                        .composed
+                        .as_ref()
+                        .expect("selected dense composition"),
+                )
+            })
+        });
+        if let Some((growth, composed)) = dense {
+            let (remaining, enough) = self.growth_admission(b, words, growth);
+            let ready = self.composed_admission(b, words, composed, remaining, false);
+            let admitted = b.ins().band(enough, ready);
+            let packet = b.create_block();
+            b.ins().brif(admitted, packet, &[], fallback, &[]);
+            b.switch_to_block(packet);
+        }
         let (input_words, output_words) = self.packet_words();
         let (input, output) = packets.for_call(input_words, output_words)?;
         for (at, &slot) in self.inputs.iter().enumerate() {
@@ -355,26 +437,24 @@ impl Phase {
             } else {
                 None
             };
-        let (status, at) = if let Some(no_growth) = &self.no_growth {
-            let base = self.arrays[no_growth.array].0;
-            let length = words.read(b, base + 1);
-            let capacity = words.read(b, base + 2);
-            let remaining = words.read(b, no_growth.countdown_slot);
-            let valid = b
-                .ins()
-                .icmp(IntCC::UnsignedLessThanOrEqual, length, capacity);
-            let available = b.ins().isub(capacity, length);
-            let fits = b
-                .ins()
-                .icmp(IntCC::UnsignedLessThanOrEqual, remaining, available);
-            let enough = b.ins().band(valid, fits);
+        let (status, at) = if let Some((_, composed)) = dense {
+            let function = module.declare_func_in_func(composed.function, b.func);
+            let call = b.ins().call(function, &[storage.heap, input, out]);
+            let result = b.inst_results(call);
+            (result[0], result[1])
+        } else if let Some(no_growth) = &self.no_growth {
+            let (remaining, enough) = self.growth_admission(b, words, no_growth);
             let fast = b.create_block();
             let general = b.create_block();
             let returned = b.create_block();
             b.append_block_param(returned, types::I64);
             b.append_block_param(returned, types::I64);
             b.ins().brif(enough, fast, &[], general, &[]);
-            let mut routes = vec![(fast, no_growth.function)];
+            let mut routes: Vec<_> = no_growth
+                .function
+                .map(|function| (fast, function))
+                .into_iter()
+                .collect();
             if no_growth.refuse_growth {
                 // Only the private call packet has been written. The
                 // original typed views and their owners are still current.
@@ -385,36 +465,29 @@ impl Phase {
                 routes.push((general, self.function));
             }
             if root_entry && let Some(composed) = &no_growth.composed {
-                let admission = composed.admission;
                 b.switch_to_block(fast);
-                let cursor = words.read(b, self.inputs[admission.cursor_word]);
-                let cache_length = words.read(b, self.arrays[admission.cache].0 + 1);
-                let cost_length = words.read(b, self.arrays[admission.costs].0 + 1);
-                let nonnegative =
-                    b.ins()
-                        .icmp(IntCC::UnsignedGreaterThanOrEqual, cursor, remaining);
-                let within = b
-                    .ins()
-                    .icmp(IntCC::UnsignedLessThanOrEqual, cursor, cache_length);
-                let records = b.ins().isub(cursor, remaining);
-                let work = b.ins().icmp_imm(
-                    IntCC::UnsignedGreaterThanOrEqual,
-                    records,
-                    admission.minimum_records as i64,
+                let ready = self.composed_admission(
+                    b,
+                    words,
+                    composed,
+                    remaining,
+                    no_growth.function.is_some(),
                 );
-                let readable = b.ins().icmp_imm(
-                    IntCC::UnsignedGreaterThanOrEqual,
-                    cost_length,
-                    admission.minimum_costs as i64,
-                );
-                let geometry = b.ins().band(nonnegative, within);
-                let ready = b.ins().band(work, readable);
-                let ready = b.ins().band(geometry, ready);
                 let prepare = b.create_block();
                 let sparse = b.create_block();
                 b.ins().brif(ready, prepare, &[], sparse, &[]);
-                routes[0].0 = sparse;
+                if no_growth.function.is_some() {
+                    routes[0].0 = sparse;
+                } else {
+                    // Only the caller's private packet was initialized.
+                    // Refuse before a phase visit or owner transfer.
+                    b.switch_to_block(sparse);
+                    b.ins().jump(fallback, &[]);
+                }
                 routes.push((prepare, composed.function));
+            } else if no_growth.function.is_none() {
+                b.switch_to_block(fast);
+                b.ins().jump(fallback, &[]);
             }
             for (block, function) in routes {
                 b.switch_to_block(block);
@@ -1006,6 +1079,74 @@ pub(super) fn define<M: Module>(
             && !share_phase_bodies
             && std::env::var_os("MECH_COMPACT_KEEP_REFUSED_PHASE_CODE").is_none();
         let vector_fast = std::env::var_os("MECH_PHASE_VECTOR_FAST").is_some();
+        let literal_views = || -> BTreeMap<_, _> {
+            arrays
+                .iter()
+                .enumerate()
+                .filter_map(|(array, &(base, writable))| {
+                    if writable || proof.arrays[array].appends {
+                        return None;
+                    }
+                    literals.literal(base).map(|literal| (array, literal))
+                })
+                .collect()
+        };
+        let refuse_growth = !observe
+            && !share_phase_bodies
+            && std::env::var_os("MECH_COMPACT_PROFILE_PHASE_CALLS").is_none()
+            && std::env::var_os("MECH_COMPACT_REFUSE_PHASE_GROWTH").is_some();
+        let unobserved_growth = refuse_growth
+            && prepared.metadata().parallel.regions.is_empty()
+            && function::refused_general_ssa_unobserved();
+        let dense_only =
+            unobserved_growth && std::env::var_os("MECH_COMPACT_DENSE_NO_GROWTH_ONLY").is_some();
+        let mut chosen = None;
+        if unobserved_growth
+            && !omit_general
+            && private.is_none()
+            && std::env::var_os("MECH_WHOLE_PHASE_CAPACITY").is_some()
+            && std::env::var_os("MECH_COMPACT_PREPARE_DENSE_FIRST").is_some()
+            && let Some(pool) = pool
+            && let Some(contract) = NoGrowth::derive(prepared, &facts, region)
+        {
+            let literals = literal_views();
+            if !literals.is_empty() {
+                // Keep speculative declarations, definitions and memoized data
+                // IDs together. An unadmitted body leaves the compiler state intact.
+                let mut recorded = pool.record(module)?;
+                let mut tables = dense_tables.clone();
+                let general = function::declare_refused_general(&mut recorded, header)?;
+                let fast = function::prepare(
+                    &mut recorded,
+                    prepared,
+                    id,
+                    observe,
+                    input_words,
+                    output_words,
+                    fixed_count,
+                    selected_output.as_ref(),
+                    false,
+                    None,
+                    None,
+                    Some(&contract),
+                    &literals,
+                    &mut tables,
+                    None,
+                    "_no_growth",
+                );
+                if let Ok(fast) = fast
+                    && fast.has_dense_composition()
+                    && fast
+                        .entry_bounds()
+                        .iter()
+                        .any(|&(array, _, row)| array == contract.array && row)
+                {
+                    recorded.replay(module)?;
+                    dense_tables = tables;
+                    chosen = Some((general, contract, fast));
+                }
+            }
+        }
         let source_admission = if skip_refused_general_ssa && omit_general && vector_fast {
             private
                 .as_ref()
@@ -1034,7 +1175,9 @@ pub(super) fn define<M: Module>(
         };
         let use_vector_bounds = vector_only.is_some();
         let (ready, general_declaration, mut entry_bounds, vector_contract) =
-            if let Some((bounds, contract)) = source_admission.or(vector_only) {
+            if let Some((general, _, fast)) = &chosen {
+                (None, *general, fast.entry_bounds().to_vec(), None)
+            } else if let Some((bounds, contract)) = source_admission.or(vector_only) {
                 let declaration = function::declare_refused_general(module, header)?;
                 (None, declaration, bounds, Some(contract))
             } else {
@@ -1069,7 +1212,9 @@ pub(super) fn define<M: Module>(
         let pack_input = compact_packet
             && refuse_general.contains(&header)
             && std::env::var_os("MECH_COMPACT_PACK_PHASE_INPUTS").is_some();
-        let (general, fast) = if omit_general && let Some(contract) = vector_contract.as_ref() {
+        let (general, fast) = if chosen.is_some() {
+            (None, None)
+        } else if omit_general && let Some(contract) = vector_contract.as_ref() {
             let skipped_general_ssa = ready.is_none();
             // The source proof or the verified general IR supplied the same
             // bounds. No general code or cleanup result is needed here.
@@ -1173,7 +1318,11 @@ pub(super) fn define<M: Module>(
                     "symbol": format!("mech_compact_numeric_{header}"),
                     "phase_entry_bounds": entry_bounds,
                     "code_bytes": 0, "stack_bytes": 0,
-                    "compilation": "omitted: geometry uses checked continuation",
+                    "compilation": if chosen.is_some() {
+                        "omitted: admitted dense scorer uses checked continuation"
+                    } else {
+                        "omitted: geometry uses checked continuation"
+                    },
                     "input_words": input_words, "output_words": output_words,
                     "fixed_writable_capacities": fixed_count,
                     "fixed_length_entry_gate": fixed_count != 0,
@@ -1214,61 +1363,74 @@ pub(super) fn define<M: Module>(
         if refuse_general_vector {
             summary["general_geometry_uses_checked_continuation"] = serde_json::json!(true);
         }
-        let no_growth = if std::env::var_os("MECH_WHOLE_PHASE_CAPACITY").is_some()
-            && vector.is_none()
-            && private.is_none()
-            && let Some(contract) = NoGrowth::derive(prepared, &facts, region)
-            && entry_bounds
-                .iter()
-                .any(|&(array, _, row)| array == contract.array && row)
-        {
-            let literal_views = arrays
-                .iter()
-                .enumerate()
-                .filter_map(|(array, &(base, writable))| {
-                    if writable || proof.arrays[array].appends {
-                        return None;
-                    }
-                    literals.literal(base).map(|literal| (array, literal))
-                })
-                .collect();
-            let fast = function::define(
-                module,
-                prepared,
-                id,
-                observe,
-                input_words,
-                output_words,
-                fixed_count,
-                selected_output.as_ref(),
-                false,
-                None,
-                None,
-                Some(&contract),
-                &literal_views,
-                &mut dense_tables,
-                bodies,
-                "_no_growth",
-            )?;
-            if fast.entry_bounds != entry_bounds {
+        let planned = chosen
+            .map(|(_, contract, ready)| (contract, Some(ready)))
+            .or_else(|| {
+                if std::env::var_os("MECH_WHOLE_PHASE_CAPACITY").is_some()
+                    && vector.is_none()
+                    && private.is_none()
+                    && let Some(contract) = NoGrowth::derive(prepared, &facts, region)
+                    && entry_bounds
+                        .iter()
+                        .any(|&(array, _, row)| array == contract.array && row)
+                {
+                    Some((contract, None))
+                } else {
+                    None
+                }
+            });
+        let no_growth = if let Some((contract, ready)) = planned {
+            let fast = if let Some(ready) = ready {
+                ready
+            } else {
+                function::prepare(
+                    module,
+                    prepared,
+                    id,
+                    observe,
+                    input_words,
+                    output_words,
+                    fixed_count,
+                    selected_output.as_ref(),
+                    false,
+                    None,
+                    None,
+                    Some(&contract),
+                    &literal_views(),
+                    &mut dense_tables,
+                    bodies.as_deref_mut(),
+                    "_no_growth",
+                )?
+            };
+            if fast.entry_bounds() != entry_bounds {
                 return Err(backend("no-growth variant entry bounds differ"));
             }
-            summary["no_growth_variant"] = fast.summary;
-            if let Some(composed) = &fast.composed {
+            let dense_only = dense_only && fast.has_dense_composition();
+            let (function, composed) = if dense_only {
+                summary["no_growth_variant"] = serde_json::json!({
+                    "symbol": format!("mech_compact_numeric_{header}_no_growth"),
+                    "phase_entry_bounds": entry_bounds,
+                    "code_bytes": 0,
+                    "stack_bytes": 0,
+                    "compilation": "omitted: refusals resume the checked continuation",
+                });
+                (None, fast.into_composition())
+            } else {
+                let fast = fast.define(module, bodies)?;
+                summary["no_growth_variant"] = fast.summary;
+                (Some(fast.function), fast.composed)
+            };
+            if let Some(composed) = &composed {
                 summary["composed_variant"] = composed.summary.clone();
             }
-            let refuse_growth = !observe
-                && !share_phase_bodies
-                && std::env::var_os("MECH_COMPACT_PROFILE_PHASE_CALLS").is_none()
-                && std::env::var_os("MECH_COMPACT_REFUSE_PHASE_GROWTH").is_some();
             if refuse_growth {
                 summary["general_growth_uses_checked_continuation"] = serde_json::json!(true);
             }
             Some(NoGrowthAlternative {
                 refuse_growth,
-                function: fast.function,
+                function,
                 array: contract.array,
-                composed: fast.composed,
+                composed,
                 countdown_slot: *bindings
                     .get(&contract.countdown)
                     .ok_or_else(|| backend("no-growth countdown lacks current binding"))?,

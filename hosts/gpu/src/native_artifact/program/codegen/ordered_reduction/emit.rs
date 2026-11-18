@@ -91,7 +91,7 @@ impl Reduction {
         b.switch_to_block(setup);
         let best = words.read(b, self.best);
         let best = b.ins().ireduce(types::I32, best);
-        let inputs = super::cost::Inputs::new(b, words, proof, shadow, &self.cost);
+        let mut inputs = super::cost::Inputs::new(b, words, proof, shadow, &self.cost);
         let key = encoded_winner.map(|(offset, _)| {
             let low = emit_item_low32(b, words, proof, shadow, offset, start, ordinary);
             b.ins().uextend(types::I64, low)
@@ -266,11 +266,17 @@ impl Reduction {
             );
         }
         b.switch_to_block(vector);
+        if std::env::var_os("MECH_ORDERED_VECTOR_HOIST_COST_WORDS").is_some() {
+            inputs.prepare_vector_words(b);
+        }
         let prefix = b.ins().band_imm(remaining, -4);
         let end = b.ins().iadd(start, prefix);
         let costs = b.ins().splat(types::I32X4, best);
         let indices = super::cost::constant(b, [u32::MAX; 4]);
         let lanes = super::cost::constant(b, [0, 1, 2, 3]);
+        let induction_step = std::env::var_os("MECH_ORDERED_VECTOR_CARRY_LANES")
+            .is_some()
+            .then(|| super::cost::constant(b, [4; 4]));
         let test_at_latch = std::env::var_os("MECH_ORDERED_VECTOR_LATCH_TEST").is_some();
         let header = b.create_block();
         let body = (!test_at_latch).then(|| b.create_block());
@@ -282,8 +288,14 @@ impl Reduction {
         for ty in [types::I64, types::I32X4, types::I32X4] {
             b.append_block_param(header, ty);
         }
-        b.ins()
-            .jump(header, &[start.into(), costs.into(), indices.into()]);
+        let mut entry = vec![start.into(), costs.into(), indices.into()];
+        if induction_step.is_some() {
+            b.append_block_param(header, types::I32X4);
+            let first = b.ins().ireduce(types::I32, start);
+            let first = b.ins().splat(types::I32X4, first);
+            entry.push(b.ins().iadd(first, lanes).into());
+        }
+        b.ins().jump(header, &entry);
         b.switch_to_block(header);
         let params = b.block_params(header).to_vec();
         let k = params[0];
@@ -292,15 +304,25 @@ impl Reduction {
             b.ins().brif(more, body, &[], finish, &[]);
             b.switch_to_block(body);
         }
-        let k32 = b.ins().ireduce(types::I32, k);
-        let index = b.ins().splat(types::I32X4, k32);
-        let index = b.ins().iadd(index, lanes);
+        let index = if induction_step.is_some() {
+            params[3]
+        } else {
+            let k32 = b.ins().ireduce(types::I32, k);
+            let index = b.ins().splat(types::I32X4, k32);
+            b.ins().iadd(index, lanes)
+        };
         let cost = inputs.emit(b, proof, &self.cost, k, index);
         let better = b.ins().icmp(IntCC::UnsignedLessThan, cost, params[1]);
         let costs = b.ins().umin(cost, params[1]);
         let indices = b.ins().bitselect(better, index, params[2]);
         let next = b.ins().iadd_imm(k, 4);
-        let next_group = [next.into(), costs.into(), indices.into()];
+        let mut next_group = vec![next.into(), costs.into(), indices.into()];
+        if let Some(step) = induction_step {
+            // The current lanes equal the low 32 bits of k + [0, 1, 2, 3].
+            // Advancing by four preserves that identity and leaves the
+            // admitted window and the scalar remainder bounds unchanged.
+            next_group.push(b.ins().iadd(index, step).into());
+        }
         if test_at_latch {
             // This path admits at least 16 elements. Its rounded prefix
             // contains a full first group, and next never exceeds end.
