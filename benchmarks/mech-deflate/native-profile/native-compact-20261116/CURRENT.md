@@ -28,6 +28,16 @@ An earlier dedicated parser-phase comparison reported **813 ms Mech**
 and **3 ms Roc**. Mech's interval includes indexing and its strict check.
 [Earlier Mech and Roc parser-phase observations](evidence/sealed-ascii-graphemes/README.md)
 
+## Encoder code size
+
+The checked entry accounts for **50,632 B** of body text. The match
+collector adds **6,768 B**, and the three scorer variants occupy
+**4,112 B**. The deployment link retains all **71,192 B** of encoder text.
+The exact libdeflate build emits **37,080 B**. Disabling Clang's machine
+outlining increases it to **38,536 B**. The earlier 62-win Mech encoder
+from identical bytecode occupied **55,700 B**.
+[Byte attribution and replay](evidence/encoder-size-gap/README.md)
+
 ## Whole-build budget
 
 | Stage | Current | 2.0 s budget | 1.0 s budget | 0.45 s budget |
