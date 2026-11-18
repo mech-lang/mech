@@ -1,0 +1,44 @@
+{
+  "source_commit": "6fce1ff9ab9caa38805116cbeb0565f135721e6b",
+  "source_base": "8f0ffe737b94229132fd4abe83eb16a60a7619d3",
+  "base_files": [
+    {
+      "path": "src/syntax/src/document/retained_sequence.rs",
+      "git_blob": "c8bf6a6eb436957fb128538b981d4b899449dc68",
+      "old_sha256": "f1018f6d8bf6c7f4dec275638ce87c3141ef0f606e308c88d39a38a1566bf93b",
+      "new_sha256": "8f6c71cc6232af4a72adfc28d12afd5a17366a89cca83efe2ab0ddc12e4a57aa"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/codegen/common/ssa_words.rs",
+      "git_blob": "fcc9bed22c0dbf54a50cfefbbf9350bc80bab394",
+      "old_sha256": "fe6803c242a630d6a89f7ff724e6360a128dec8463e9d7fed60c2333a1c6d006",
+      "new_sha256": "b0390c9d11b53018e9f3bb211cc513b87a461218c5fd4db967fdc97e2759b3ac"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/codegen/common/ssa_words_tests.rs",
+      "git_blob": "9c4703e4a56f7e88cb3bb17266e2011bd341d8fe",
+      "old_sha256": "0bafc41fb6187fb6b960f18ca6448f4d01ae35916052bf23921120f8b2bd778b",
+      "new_sha256": "ecebe83ed3107ce216a688b9dfda1763ac7c72018821811a07ace9b7ec154280"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/emit.rs",
+      "git_blob": "8ee697cc26ebe3ad579ff572e4bb69cc65d7e49d",
+      "old_sha256": "7ff97d65d2aa1791a618a52e427b3e77dbc02b72e492a14bbbfba819ef28494a",
+      "new_sha256": "355ac4c2ed7ff252937504cde18125d91787b32b8fd9732df70525cbb4ce9a93"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compiler.rs",
+      "git_blob": "f85d9896f4f19edbc95439b95cced87662661d05",
+      "old_sha256": "c3543861e845b7a685f8385c65d9f6a2a853f442a5143a4c7e6bc8621ec20861",
+      "new_sha256": "ef9a678dad7007846b5aa592c0eac9832d5aceaa2acde45a794005e67d6da6e2"
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/compile_profile.rs",
+      "git_blob": "1cbf84b94828d2e4765d2db0d9ac76afe213e108",
+      "old_sha256": "14874e4b87f32998d97780fe9b1afd7829b48d9b24ce88da6ab419b2dc2f0662",
+      "new_sha256": "7f2250066bdcce21a0542d02f3327f41a35b6037e0d265a3779b6f02f3155118"
+    }
+  ],
+  "candidate_patch_sha256": "36f7cd84a01dd49427d094a42d60feed251642f96ff789e82f3afa73bb63cf93",
+  "all_candidate_source_hashes_match_published_pins": true
+}
