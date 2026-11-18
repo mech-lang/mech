@@ -58,7 +58,11 @@ Natural 8 KiB remains below C at 0.982943× forward and 0.986542× reverse.
 The previous Roc loss at natural 32,769 B remains a win at 0.961837× and
 0.965623× Roc. Overlap's point ratios are 0.995445× and 0.992121× C.
 
-## Recovering cleanup work
+## Current indexed cleanup result
+
+The selected source recipe now indexes loop live-out uses once per immutable graph. It retains the exact 64,444 B worker and saves a paired median **46.909 ms** from the original traversal, with 9/10 faster. The new same-cohort source-to-link result is **2.237580 s**, **0.7461× Roc** and **4.6272× libdeflate**. It still costs **48.337 ms** versus the 64,652 B control. The source command also passes 162 successes, six failure cases and 12 recoveries. The compiler identity, all trials, adverse observation, phase accounting and exact worker links are in [the current result](cleanup-recovery/indexed-loop-liveouts/README.md). Earlier cohorts below retain their original measurements.
+
+## Earlier cleanup schedule recovery
 
 The named source recipe selects `MECH_COMPACT_FINISH_CFG_CLEANUP=batched-routes`.
 It reconstructs current CFG and dominance facts for each loop/identity
@@ -67,7 +71,7 @@ runs one ordered finishing sweep and the adjacent-address pass. This
 avoids repeating the broad ordered schedule after each route rewrite.
 Current graph proofs and unconditional SSA verification remain in place.
 
-The selected compiler source is
+The earlier batched-schedule compiler source is
 `caa8b22ac5cd4d7c3cf30b5c97f78fd786fe5c16`. It reproduces all three
 qualified program artifacts and the exact **f77ad506…** linked worker.
 The original runtime qualification was acquired with the compiler at
@@ -86,7 +90,7 @@ emits the same byte count with different code and remains unqualified.
 [Ordered-only screen](cleanup-recovery/ordered-only-screen.json) ·
 [First recovery's matched builds](cleanup-recovery/routes-only/deployment.json)
 
-Ten balanced builds with the selected compiler measure **2.263127 s**
+Ten balanced builds with that earlier compiler measure **2.263127 s**
 through final link and **2.273977 s** through strip. Batching saves a paired
 median **17.200 ms** against the full schedule, with 8/10 faster. It still
 adds **94.835 ms**, or **1.0437×**, versus the 64,652 B control. Code size
@@ -100,7 +104,7 @@ improves while the extra build cost remains a target for further work.
 | Roc | 2.977284 s | 2.988122 s | 2.935612 s | 392.2 MB |
 | libdeflate | 0.480397 s | 0.491348 s | 0.442004 s | 71.5 MB |
 
-The selected recipe takes **0.7603× Roc** and **4.7158× libdeflate**
+That earlier batched recipe takes **0.7603× Roc** and **4.7158× libdeflate**
 build time. Phases are 0.706344 s parsing, 0.212691 s source semantics,
 0.009339 s artifact/encoding, 0.000017 s catalog join wait and 1.272847 s
 native emission. Link takes 0.035060 s. Catalog construction still runs
@@ -163,13 +167,14 @@ Its receipt records the newly linked worker independently of the archived
 benchmark worker. Fixed-support links are used for the runtime qualification
 and the deployment timing above. No LLVM dependency is added.
 
-The command passes **162 success observations, six injected failure cases
-and 12 exact recovery calls**. The new source-built worker is `80feaed1…`;
+The earlier command passed **162 success observations, six injected failure cases
+and 12 exact recovery calls**. That earlier source-built worker is `80feaed1…`;
 its runtime wins are not measured by this command. The complete runtime
 counts above belong to the exact fixed-support `f77ad506…` worker. The
 separate fixed-support link reproduces that worker with the selected compiler.
-[Source rebuild receipt](source-rebuild.json) · [Successes](source-successes.json) ·
-[Failures](source-failures.json) · [Recovery](source-recoveries.json)
+[Earlier source rebuild receipt](source-rebuild.json) · [Earlier successes](source-successes.json) ·
+[Earlier failures](source-failures.json) · [Earlier recovery](source-recoveries.json).
+The selected indexed compiler has its own [complete rebuild and checks](cleanup-recovery/indexed-loop-liveouts/source-rebuild.json).
 
 Workspace formatting, warning policy and Rust module-layout checks pass.
 The local unsafe-boundary check stops at its missing allowlisted historical

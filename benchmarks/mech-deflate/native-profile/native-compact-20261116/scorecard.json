@@ -14225,7 +14225,7 @@
     },
     "peer_qualified_opt_in": {
       "recipe": "m1-literal-frame-cleanup",
-      "source": "caa8b22ac5cd4d7c3cf30b5c97f78fd786fe5c16",
+      "source": "d49f735b853504725de7b89f81f37bde0298fe05",
       "encoder_text_bytes": 64444,
       "worker": "f77ad5066a61f30cf67f714e5edc990efe295682e9de1d8bf36ee9a1a93041c6",
       "runtime": {
@@ -15209,8 +15209,8 @@
     "maintained_recipe": "frame-copies",
     "recipe": "m1-literal-frame-cleanup",
     "status": "source-built opt-in, peer-qualified archived worker, compilation tradeoff recorded",
-    "source_commit": "caa8b22ac5cd4d7c3cf30b5c97f78fd786fe5c16",
-    "compiler_sha256": "c66c37500b0d519a04f1219d617b90075b8f612f76f636310e7fcfe28b7dc107",
+    "source_commit": "d49f735b853504725de7b89f81f37bde0298fe05",
+    "compiler_sha256": "a96172619c5fce80baf71a5efaa9f0e662d05de68a4f1dd2f7b950008b7caa7c",
     "runtime": {
       "host": "Apple M1, macOS 15.6.1, arm64",
       "source_commit": "4f5a94ac3f0546c99f5f88eb9b500f7bd0266527",
@@ -15322,6 +15322,165 @@
       "precision_note": "Both orders have 62 C point wins. Reverse has 61 precision-supported C wins. The unchanged v3 gate returns Retain."
     },
     "matched_deployment": {
+      "plan_sha256": "aeb9735e4021f1a0e2ac693396a104d2666165994426ac40aa959dca603696ed",
+      "medians": {
+        "mech-control-reference": {
+          "source": 2.1546988955233246,
+          "link": 0.035120312590152025,
+          "source_through_link": 2.189797500614077,
+          "strip": 0.010972791351377964,
+          "source_through_strip": 2.2010420833248645
+        },
+        "mech-small-unindexed": {
+          "source": 2.245348020689562,
+          "link": 0.035912333987653255,
+          "source_through_link": 2.281106229638681,
+          "strip": 0.010864334180951118,
+          "source_through_strip": 2.2921512920875102
+        },
+        "mech-small-indexed": {
+          "source": 2.1978258334565908,
+          "link": 0.03477464569732547,
+          "source_through_link": 2.2375796046108007,
+          "strip": 0.010812791530042887,
+          "source_through_strip": 2.2492110626772046
+        },
+        "roc": {
+          "source": 2.9613125626929104,
+          "link": 0.03507339605130255,
+          "source_through_link": 2.9959868958685547,
+          "strip": 0.010881270514801145,
+          "source_through_strip": 3.007166499970481
+        },
+        "libdeflate": {
+          "source": 0.4489888541866094,
+          "link": 0.035165854496881366,
+          "source_through_link": 0.4835210205055773,
+          "strip": 0.010867812437936664,
+          "source_through_strip": 0.49462266615591943
+        }
+      },
+      "phases": {
+        "mech-control-reference": {
+          "parse": 0.711026104,
+          "catalog": 2.0271e-05,
+          "frontend": 0.219971479,
+          "artifact": 0.0068076249999999994,
+          "encode": 0.0024900415,
+          "native": 1.1863306665
+        },
+        "mech-small-unindexed": {
+          "parse": 0.7110415625,
+          "catalog": 1.9916499999999998e-05,
+          "frontend": 0.2188613335,
+          "artifact": 0.006849354,
+          "encode": 0.0024982084999999998,
+          "native": 1.2792278335
+        },
+        "mech-small-indexed": {
+          "parse": 0.7119007079999999,
+          "catalog": 2.26455e-05,
+          "frontend": 0.21935687450000002,
+          "artifact": 0.0068171875,
+          "encode": 0.0025044995,
+          "native": 1.231052583
+        }
+      },
+      "paired_ratios": {
+        "mech-control-reference": {
+          "roc": 0.7296682270384862,
+          "libdeflate": 4.523066134396149,
+          "mech-control-reference": 1.0
+        },
+        "mech-small-unindexed": {
+          "roc": 0.7611827027591798,
+          "libdeflate": 4.718245401232653,
+          "mech-control-reference": 1.0428922280733954
+        },
+        "mech-small-indexed": {
+          "roc": 0.7461232708300588,
+          "libdeflate": 4.627236272551453,
+          "mech-control-reference": 1.022135740341798
+        }
+      },
+      "source_commit": "d49f735b853504725de7b89f81f37bde0298fe05",
+      "trials": 10,
+      "compiler_sha256": "a96172619c5fce80baf71a5efaa9f0e662d05de68a4f1dd2f7b950008b7caa7c",
+      "source_cpu_seconds": {
+        "mech-control-reference": 2.2189315,
+        "mech-small-unindexed": 2.3086130000000002,
+        "mech-small-indexed": 2.2607980000000003,
+        "roc": 2.9550145,
+        "libdeflate": 0.4456405
+      },
+      "source_rss_bytes": {
+        "mech-control-reference": 392962048.0,
+        "mech-small-unindexed": 392953856.0,
+        "mech-small-indexed": 392994816.0,
+        "roc": 393912320.0,
+        "libdeflate": 74293248.0
+      },
+      "stripped_executables": {
+        "mech-control-reference": {
+          "bytes": 276072,
+          "sha256": "b8320a30dc61e2392de0b77419f477e7fed07f733dade58badaf3b3ef7f0c3f1"
+        },
+        "mech-small-unindexed": {
+          "bytes": 276072,
+          "sha256": "a2b16eed3f55512674a724a968c39f1d86ed3140d7abf7e084871036555db698"
+        },
+        "mech-small-indexed": {
+          "bytes": 276072,
+          "sha256": "a2b16eed3f55512674a724a968c39f1d86ed3140d7abf7e084871036555db698"
+        },
+        "roc": {
+          "bytes": 191912,
+          "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+        },
+        "libdeflate": {
+          "bytes": 155752,
+          "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+        }
+      },
+      "paired_ms_vs_64652": {
+        "mech-control-reference": 0.0,
+        "mech-small-unindexed": 93.80062529817224,
+        "mech-small-indexed": 48.336604377254844
+      },
+      "paired_ms_indexed_vs_unindexed": -46.908688032999635,
+      "indexed_faster_than_unindexed": 9,
+      "paired_ms_saved_vs_unindexed": [
+        118.28029155731201,
+        69.34833340346813,
+        -111.60024954006076,
+        41.4295420050621,
+        50.81599997356534,
+        17.909876070916653,
+        47.27008379995823,
+        68.60966654494405,
+        42.02987486496568,
+        46.54729226604104
+      ],
+      "paired_median_ms_saved_90_percent_interval": [
+        41.4295420050621,
+        60.082166688516736
+      ],
+      "bootstrap_note": "20,000 paired-trial bootstrap resamples, fixed seed 9951118; 5th/95th order statistics. Ten balanced trials, one slower candidate trial retained.",
+      "paired_source_cpu_ms_saved_vs_unindexed": 48.24899999999998,
+      "paired_native_phase_ms_saved_vs_unindexed": 49.791020999999986,
+      "explicit_phase_residual_seconds": {
+        "mech-control-reference": 0.02699306185283401,
+        "mech-small-unindexed": 0.027208729496981388,
+        "mech-small-indexed": 0.02752247888877557
+      },
+      "scope": "Fresh-process source through final link and stripping; compiler and fixed deployment support prebuilt; Apple M1, macOS 15.6.1, arm64. All five actors acquired serially in ten balanced orders; one warmup per actor excluded."
+    },
+    "source_checks": "evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/indexed-loop-liveouts/source-rebuild.json",
+    "qualification_worker_sha256": "f77ad5066a61f30cf67f714e5edc990efe295682e9de1d8bf36ee9a1a93041c6",
+    "new_source_built_worker_sha256": "c0334d84410a20727043d217154132a9448652210233b69c135478221a0a2e34",
+    "new_source_built_worker_runtime": "not measured; complete runtime evidence belongs to the exact archived worker",
+    "evidence": "evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md",
+    "previous_matched_deployment": {
       "plan_sha256": "22e1c0dc5cd819883d0f959d28ce0fc471f971b33c99eb6ad3f24e78959eff3d",
       "medians": {
         "mech-control-layout": {
@@ -15451,10 +15610,31 @@
       "paired_ms_routes_vs_full": -17.20004132948816,
       "routes_faster_than_full": 8
     },
-    "source_checks": "evidence/encoder-size-gap/shared-literal-frame-cleanup/source-rebuild.json",
-    "qualification_worker_sha256": "f77ad5066a61f30cf67f714e5edc990efe295682e9de1d8bf36ee9a1a93041c6",
-    "new_source_built_worker_sha256": "80feaed1a48c118c64cc53b5e259107464bd5bd4c4d4c7f4840ae8b7b12cec63",
-    "new_source_built_worker_runtime": "not measured; complete runtime evidence belongs to the exact archived worker",
-    "evidence": "evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md"
+    "indexed_loop_live_outs": {
+      "enabled": true,
+      "paired_ms_saved": 46.908688032999635,
+      "paired_90_percent_interval_ms": [
+        41.4295420050621,
+        60.082166688516736
+      ],
+      "faster_trials": 9,
+      "trials": 10,
+      "exact_runtime_worker": true,
+      "evidence": "evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/indexed-loop-liveouts/README.md"
+    }
+  },
+  "current_ci": {
+    "commit": "3fcb5bf4f894cb7e848554c95eeebe321f74df01",
+    "run": "https://github.com/mech-lang/mech/actions/runs/44393821950",
+    "impact": "passed; shallow sparse checkout and exact comparison fetch regression tested",
+    "public_canonical_cli": "passed",
+    "linux_and_windows": "passed",
+    "browser_standard": "passed",
+    "engine_gpu_syntax_owners": "passed",
+    "static_architecture": "failed: M3 archived ABI oracle has raw native calls outside the exact allowlist",
+    "remaining_native_jobs": "native plan in progress at this record",
+    "audit_policy": "unchanged",
+    "hosted_applications": "passed",
+    "same_binary_policy": "passed"
   }
 }

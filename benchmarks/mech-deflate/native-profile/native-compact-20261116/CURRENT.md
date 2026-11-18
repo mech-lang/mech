@@ -2,23 +2,23 @@
 
 ## Current Apple M1 result
 
-The smallest peer-qualified opt-in source recipe is **64,444 B**, or **1.117× Roc** and **1.738× libdeflate**. It saves **208 B** from the 64,652 B recipe and uses **4,656 B** peak stack. Both full orders record **81/81 Roc and 62/81 libdeflate point wins**, covering 74/74 and 56/74 distinct contracts. Reverse precision supports 61 C wins. The replay records two established control slowdowns and ten uncertain cases. The frame-copies control remains 71,192 B.
+The smallest peer-qualified opt-in source recipe is **64,444 B**, or **1.117× Roc** and **1.738× libdeflate**. It saves **208 B** from the 64,652 B recipe and uses **4,656 B** peak stack. Both full orders record **81/81 Roc and 62/81 libdeflate point wins**, covering 74/74 and 56/74 distinct contracts. Reverse precision supports 61 C wins. The replay retains two established control slowdowns and ten uncertain cases. The maintained frame-copies control remains 71,192 B.
 
-The named recipe is `m1-literal-frame-cleanup`, with `MECH_COMPACT_FINISH_CFG_CLEANUP=batched-routes`, built from `caa8b22ac5cd4d7c3cf30b5c97f78fd786fe5c16`. It reproduces the exact qualified encoder, bytecode, full metadata and archived worker. The public rebuild also links a new worker and passes 162 output checks, six injected failure cases and 12 recovery calls. Its new worker identity is recorded separately from the benchmark worker.
+The selected `m1-literal-frame-cleanup` recipe uses batched final cleanup and `MECH_COMPACT_INDEX_LOOP_LIVE_OUTS=1`, built from compiler source `d49f735b853504725de7b89f81f37bde0298fe05`. It reproduces the exact qualified encoder, bytecode, full metadata and fixed-support archived worker. The public rebuild also links a new host-support worker and passes 162 output checks, six injected failure cases and 12 recovery calls. Its new worker identity is recorded separately; runtime wins belong to the exact archived worker.
 
-| Apple M1 build | Encoder text | Source to link | Source to strip | Source CPU | Source peak RSS |
+| Same-session Apple M1 build | Encoder text | Source to link | Source to strip | Source CPU | Source peak RSS |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Heap-layout control | 64,652 B | 2.169865 s | 2.180720 s | 2.198015 s | 392.5 MB |
-| Full final cleanup | 64,444 B | 2.280134 s | 2.290961 s | 2.309317 s | 392.8 MB |
-| Batched final cleanup | 64,444 B | 2.263127 s | 2.273977 s | 2.291872 s | 392.8 MB |
-| Roc | 57,696 B | 2.977284 s | 2.988122 s | 2.935612 s | 392.2 MB |
-| libdeflate | 37,080 B | 0.480397 s | 0.491348 s | 0.442003 s | 71.5 MB |
+| Heap-layout control | 64,652 B | 2.189798 s | 2.201042 s | 2.218932 s | 393.0 MB |
+| Original loop traversal | 64,444 B | 2.281106 s | 2.292151 s | 2.308613 s | 393.0 MB |
+| Selected indexed traversal | **64,444 B** | **2.237580 s** | **2.249211 s** | 2.260798 s | 393.0 MB |
+| Roc | 57,696 B | 2.995987 s | 3.007166 s | 2.955014 s | 393.9 MB |
+| libdeflate | 37,080 B | 0.483521 s | 0.494623 s | 0.445641 s | 74.3 MB |
 
-Ten balanced fresh builds per actor use the same prebuilt deployment support. The selected recipe takes **0.7603× Roc** and **4.7158× libdeflate** build time. Batching saves a paired median **17.200 ms** from full cleanup, with 8/10 faster, but still costs **94.835 ms** versus 64,652 B. This is a size win with a compilation-time cost. The stripped deployment stays **276,072 B**.
+Ten balanced fresh builds per actor use one compiler and the same prebuilt deployment support. Indexing loop live-outs saves a paired median **46.909 ms**, with **9/10 faster** and a per-cohort 90% interval of **41.430–60.082 ms**. The one adverse trial is retained. The selected recipe takes **0.7461× Roc** and **4.6272× libdeflate** source-to-link time. It still costs **48.337 ms**, or **1.0221×**, versus the 64,652 B control. Stripped deployment remains **276,072 B**.
 
-Compiler phases are 0.706344 s parsing, 0.212691 s source semantics, 0.009339 s artifact/encoding, 0.000017 s catalog join wait and 1.272847 s native emission. The complete build is 0.263127 s above 2.0 s, 1.263127 s above 1.0 s and 1.813127 s above 0.45 s.
+Selected compiler phases are **0.711901 s parsing**, **0.219357 s source semantics**, **0.009322 s artifact/encoding**, and **1.231053 s native emission**. Catalog join wait is **0.000023 s**, while catalog CPU still runs during parsing. Link takes **0.034775 s**. The median per-trial source time outside the explicit scopes is **0.027522 s**. Phase medians need not sum to the complete median. The remaining elapsed gap is **0.237580 s to 2.0 s**, **1.237580 s to 1.0 s**, **1.787580 s to 0.45 s**, and **1.754059 s to this cohort's C build**.
 
-[Source, all timings and tradeoffs](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md) · [Raw build comparison](evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/build-comparison.json.gz) · [Source rebuild checks](evidence/encoder-size-gap/shared-literal-frame-cleanup/source-rebuild.json)
+All **113 control-flow tests** pass, including independent old-traversal and exact-IR comparisons. [Current source, identities, checks and measurements](evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/indexed-loop-liveouts/README.md) · [Every build timing](evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/indexed-loop-liveouts/build-timings.csv) · [Earlier schedule cohorts and runtime tradeoffs](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md)
 
 ## Apple M3 shared M1 recipe
 
@@ -68,7 +68,7 @@ Both heap recipes are opt-in. [Original trial](evidence/encoder-size-gap/shared-
 
 The current native profile attributes the largest traced intervals to root CFG cleanup and phase construction. Retirement-transition caching reuses 3.1% of transitions and adds a paired median 4.7 ms to the complete build. It stays experimental. [Native spans and paired prototype results](evidence/m1-source-built-20261118/native-attribution/README.md)
 
-The public CLI, hosted native applications and same-binary native policy controls passed on the integrated source. Static architecture contracts still fail on the Related Posts linked-module binding in `hosts/after-4.rs`. The earlier hosted checkout timeout occurred before compiler validation. [CI at 90d133253a](https://github.com/mech-lang/mech/actions/runs/44344708598)
+The latest published CI run fixes the checkout setup failure: Impact and the public canonical CLI pass, alongside Linux, Windows, browser standard and the engine/GPU/syntax owner checks. Static architecture contracts fail on the M3 archived ABI oracle's raw native calls outside the exact allowlist. Hosted applications and same-binary native policies also pass; the native-plan job was still running when recorded. The audit policy is unchanged. [CI at 3fcb5bf4f8](https://github.com/mech-lang/mech/actions/runs/44393821950). The earlier [90d133253a run](https://github.com/mech-lang/mech/actions/runs/44344708598) passed public CLI, hosted and same-binary policy checks but failed the Related Posts binding audit.
 
 ## Earlier shared-release matched deployment
 
