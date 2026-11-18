@@ -1,0 +1,116 @@
+diff --git a/hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs b/hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs
+index cde20bc663..43f22793a0 100644
+--- a/hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs
++++ b/hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs
+@@ -60,6 +60,12 @@ impl Reduction {
+         let best = b.ins().ireduce(types::I32, best);
+         let inputs = super::cost::Inputs::new(b, words, proof, shadow, &self.cost);
+         let old_item = carry_item.then(|| words.read(b, self.item));
++        // Item normalization admits only immutable words and pure scalar
++        // operations with a total extension. Carry its winning ordinal and
++        // construct the item once after the reduction. The admitted ordinal
++        // is below U32::MAX, so U64::MAX is a distinct unchanged sentinel,
++        // including when the scalar cursor carries a small forward bias.
++        let defer_item = carry_item && std::env::var_os("MECH_DEFER_ORDERED_ITEM").is_some();
+         let carried = if carry_item { types::I64 } else { types::I32 };
+         let scalar_body = b.create_block();
+         for ty in [types::I64, types::I32, carried] {
+@@ -101,7 +107,11 @@ impl Reduction {
+         b.append_block_param(scalar_finish, carried);
+         let vector = b.create_block();
+         let missing = b.ins().iconst(types::I32, -1);
+-        let initial = old_item.unwrap_or(missing);
++        let initial = if defer_item {
++            b.ins().iconst(types::I64, -1)
++        } else {
++            old_item.unwrap_or(missing)
++        };
+         let long = b
+             .ins()
+             .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, 16);
+@@ -152,7 +162,13 @@ impl Reduction {
+             };
+             let cost = inputs.scalar(b, proof, &self.cost, start, &reads);
+             let less = b.ins().icmp(IntCC::UnsignedLessThan, cost, best);
+-            let selected = if let Some((_, _, index, other)) = cursor {
++            let selected = if defer_item {
++                if let Some((window, _)) = biased {
++                    b.ins().iadd_imm(start, window.delta as i64)
++                } else {
++                    start
++                }
++            } else if let Some((_, _, index, other)) = cursor {
+                 let other = emit_item_low32(b, words, proof, shadow, other, start, ordinary);
+                 let index = b.ins().ireduce(types::I32, index);
+                 let item = b.ins().bor(index, other);
+@@ -170,7 +186,9 @@ impl Reduction {
+                 )
+             };
+             let minimum = b.ins().select(less, cost, best);
+-            let item = b.ins().select(less, selected, old_item);
++            let item = b
++                .ins()
++                .select(less, selected, if defer_item { initial } else { old_item });
+             let one = b.ins().icmp_imm(IntCC::Equal, remaining, 1);
+             let advance = b.create_block();
+             b.ins().brif(
+@@ -265,7 +283,16 @@ impl Reduction {
+         let winners = minimum_splat(b, indices);
+         let minimum = b.ins().extractlane(minima, 0);
+         let winner = b.ins().extractlane(winners, 0);
+-        let carried_value = if let Some(old_item) = old_item {
++        let carried_value = if defer_item {
++            let changed = b.ins().icmp_imm(IntCC::NotEqual, winner, -1);
++            let index = b.ins().uextend(types::I64, winner);
++            let index = if let Some((window, _)) = biased {
++                b.ins().iadd_imm(index, window.delta as i64)
++            } else {
++                index
++            };
++            b.ins().select(changed, index, initial)
++        } else if let Some(old_item) = old_item {
+             let changed = b.ins().icmp_imm(IntCC::NotEqual, winner, -1);
+             let index = b.ins().uextend(types::I64, winner);
+             let selected = emit_item(
+@@ -345,7 +372,9 @@ impl Reduction {
+         } else {
+             b.ins().umin(cost, params[1])
+         };
+-        let selected = if let Some((_, other)) = biased {
++        let selected = if defer_item {
++            params[0]
++        } else if let Some((_, other)) = biased {
+             let other = emit_item_low32(b, words, proof, shadow, other, params[0], ordinary);
+             let index = b.ins().ireduce(types::I32, params[0]);
+             let low = b.ins().bor(index, other);
+@@ -387,7 +416,29 @@ impl Reduction {
+         b.switch_to_block(scalar_finish);
+         let params = b.block_params(scalar_finish).to_vec();
+         let minimum = params[0];
+-        let item = if carry_item {
++        let item = if defer_item {
++            let winner = params[1];
++            let changed = b.ins().icmp_imm(IntCC::NotEqual, winner, -1);
++            let index = if let Some((window, _)) = biased {
++                b.ins().iadd_imm(winner, -(window.delta as i64))
++            } else {
++                winner
++            };
++            // This total item expression reads no indexed memory and cannot
++            // fail. Its sentinel result is discarded on the unchanged route.
++            let selected = emit_item(
++                b,
++                words,
++                proof,
++                shadow,
++                &self.selected,
++                index,
++                ordinary,
++                true,
++            );
++            b.ins()
++                .select(changed, selected, old_item.expect("deferred item capture"))
++        } else if carry_item {
+             params[1]
+         } else {
+             let winner = params[1];
