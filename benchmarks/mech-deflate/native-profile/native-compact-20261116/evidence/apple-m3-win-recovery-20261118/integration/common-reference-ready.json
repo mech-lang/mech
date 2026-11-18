@@ -1,0 +1,44 @@
+{
+  "recipe": "m1-shared-heap-layout",
+  "candidate": "common-m1-shared-heap-layout",
+  "encoder_sha256": "a42f47a761ca918853eea1d411e363a0e1456a7a2cec90d70d66a651f4f51b5e",
+  "metadata_sha256": "2dbc017e1a5a0f89e669b5caaeb6dbf3d42c30d2ae4161808643c10a7c04f470",
+  "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+  "compiler_sha256": "72675cd80a4be625d98fec3b823dbddf6208dd9245ca2616ea99a7715df04834",
+  "recorded_runtime": {
+    "commit": "3ff13b6ab4834770aa422fa26887c7ff8cef6b0e",
+    "directory": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recorded-runtime",
+    "source_sha256": {
+      "mod.rs": "57febc7bc97475eddf6b03dff0fe7b98173ba4c5eeebc976c8b650797ae80710",
+      "terminal_appends.rs": "3cbe6cbe3237d14264649b6e217a2eaeaf9e1f5a43fabb0122401fd62314cbe4",
+      "zero_pages.rs": "066429a89d55c06f139dc915d90e5d4bdf47b446dc87a66dbe8957b23f24ea80"
+    },
+    "build": {
+      "command": [
+        "rustc",
+        "+nightly-2026-03-03",
+        "--edition=2024",
+        "--crate-name",
+        "mech_gpu",
+        "--crate-type=rlib",
+        "-C",
+        "opt-level=3",
+        "/private/tmp/mech-pr993-m3-rebuilt-final/runtime.rs",
+        "-o",
+        "/private/tmp/mech-pr993-m3-rebuilt-final/libmech_gpu_runtime.rlib"
+      ],
+      "seconds": 0.17466808296740055
+    },
+    "rlib_sha256": "4de6d8a4191fb005300ffcd56ba98705fd55a17f5661711f63f05c4547613adc"
+  },
+  "stack_budget": {
+    "native_peak_bytes": 4784,
+    "added_caller_bytes": 0,
+    "native_plus_added_caller_bytes": 4784,
+    "bound_bytes": 5280,
+    "status": "passed"
+  },
+  "exact_output_checks": 162,
+  "checked_failure_classes": 6,
+  "runtime_timing": "Pending guarded M3 acquisition; no M1 scores assigned to M3."
+}

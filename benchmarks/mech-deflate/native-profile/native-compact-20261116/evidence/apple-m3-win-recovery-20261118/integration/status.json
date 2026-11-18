@@ -1,0 +1,131 @@
+{
+  "schema": "mech.m1-m3-source-integration.v1",
+  "shared_branch": "codex/pr993-m3-optimization",
+  "verified_remote_tip": "5f8ef0d2015b4a1db05cfa59fbaa2db126f2f8d5",
+  "combined_compiler_source": "e981b748cf3b3d710432ef48c4bd6badea6ba813",
+  "latest_integrated_m1_source": "0e101e9a1228c8ef45834b847fe072f4107f1f67",
+  "m1_evidence_commit": "06de8a5c18",
+  "m3_literal_setup_commit": "5e91c17df7",
+  "compiler_and_program_shared": true,
+  "m1_encoder_exact_reproduction": true,
+  "newest_enabled_m3_settings_measured_on_m1": false,
+  "single_release_configuration_qualified_on_both_machines": false,
+  "latest_completed_m3_pair": {
+    "roc": {
+      "forward": 81,
+      "reverse": 81
+    },
+    "libdeflate_12": {
+      "forward": 58,
+      "reverse": 60
+    },
+    "cases": 81
+  },
+  "common_reference": "common-reference-ready.json",
+  "combined_candidates": [
+    {
+      "name": "heap-setup-current12",
+      "compiler_sha256": "72675cd80a4be625d98fec3b823dbddf6208dd9245ca2616ea99a7715df04834",
+      "object_sha256": "d9401aa38073ea3ae0d9e8e0ce93639b82b4e01ad8a268dd0dfa72f1e584adc1",
+      "metadata_sha256": "f2adc90de9521b9fff71380c37ffef03fb0138fd4389028d70cd9aa98ce9b5ab",
+      "worker_sha256": "9ad944918fcc10972938e2e70c9d74725ef61e2432163d142eb393d0e8aa2ad8",
+      "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+      "exact_checks": 162,
+      "proof_report_sha256": "97ef3133640257084e75fcc59a58ed217bb0df3bcde09210a755f101ca380f0b",
+      "stack_budget": {
+        "native_peak_bytes": 4672,
+        "added_caller_bytes": 528,
+        "native_plus_added_caller_bytes": 5200,
+        "bound_bytes": 5280,
+        "status": "passed"
+      },
+      "timing_status": "pending"
+    },
+    {
+      "name": "heap-setup-old12",
+      "compiler_sha256": "72675cd80a4be625d98fec3b823dbddf6208dd9245ca2616ea99a7715df04834",
+      "object_sha256": "d9401aa38073ea3ae0d9e8e0ce93639b82b4e01ad8a268dd0dfa72f1e584adc1",
+      "metadata_sha256": "f2adc90de9521b9fff71380c37ffef03fb0138fd4389028d70cd9aa98ce9b5ab",
+      "worker_sha256": "71e54f20c89b75011ea41bde72a43baf46a72db8e6703c1a979e63c8a84ffd08",
+      "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+      "exact_checks": 162,
+      "proof_report_sha256": "06331019827eeb6ce5dbb5071d70f3373073dd57f6b319f0b41cd0531b9bf595",
+      "stack_budget": {
+        "native_peak_bytes": 4672,
+        "added_caller_bytes": 528,
+        "native_plus_added_caller_bytes": 5200,
+        "bound_bytes": 5280,
+        "status": "passed"
+      },
+      "timing_status": "pending"
+    },
+    {
+      "name": "heap-setup-current8",
+      "compiler_sha256": "72675cd80a4be625d98fec3b823dbddf6208dd9245ca2616ea99a7715df04834",
+      "object_sha256": "d9401aa38073ea3ae0d9e8e0ce93639b82b4e01ad8a268dd0dfa72f1e584adc1",
+      "metadata_sha256": "f2adc90de9521b9fff71380c37ffef03fb0138fd4389028d70cd9aa98ce9b5ab",
+      "worker_sha256": "f68939c7182e775a49c98567bca00df009184592f245f6b1084ae0a782665b84",
+      "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+      "exact_checks": 162,
+      "proof_report_sha256": "9961259677134ef71a96a432ac71c1ba2bb11ce913dda49c519da9c605925332",
+      "stack_budget": {
+        "native_peak_bytes": 4672,
+        "added_caller_bytes": 336,
+        "native_plus_added_caller_bytes": 5008,
+        "bound_bytes": 5280,
+        "status": "passed"
+      },
+      "timing_status": "pending"
+    },
+    {
+      "name": "heap-literal-current12",
+      "compiler_sha256": "72675cd80a4be625d98fec3b823dbddf6208dd9245ca2616ea99a7715df04834",
+      "object_sha256": "c8faaf216de9e12d111d1cb8433dde4fbcb952ef997bb5ef7d785553780d35d7",
+      "metadata_sha256": "39c4eba7604294cb91eef3c4fadc6d6ccb7e0f75d6dacdaa2bda5eef5494cd00",
+      "worker_sha256": "c1b3ef3597f877cc47101e3e7368c30e93ca9a83d63ae3d3b67be4f70edc73b4",
+      "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+      "exact_checks": 162,
+      "proof_report_sha256": "1babdb3bb1a8edd1d3a3272fbb0fafe118f80fe61e7ecde841ad1cc8201e45e3",
+      "stack_budget": {
+        "native_peak_bytes": 4704,
+        "added_caller_bytes": 528,
+        "native_plus_added_caller_bytes": 5232,
+        "bound_bytes": 5280,
+        "status": "passed"
+      },
+      "timing_status": "pending"
+    },
+    {
+      "name": "heap-literal-old12",
+      "compiler_sha256": "72675cd80a4be625d98fec3b823dbddf6208dd9245ca2616ea99a7715df04834",
+      "object_sha256": "c8faaf216de9e12d111d1cb8433dde4fbcb952ef997bb5ef7d785553780d35d7",
+      "metadata_sha256": "39c4eba7604294cb91eef3c4fadc6d6ccb7e0f75d6dacdaa2bda5eef5494cd00",
+      "worker_sha256": "3d79c77b9a64610dbd0cf48f26a1dfb859965b84a0247b432e9bda991812fba8",
+      "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+      "exact_checks": 162,
+      "proof_report_sha256": "e4e85ccfcdf1320b938ce24510f6ba61e2ee65fde22d8d5f290668c77f26f3c7",
+      "stack_budget": {
+        "native_peak_bytes": 4704,
+        "added_caller_bytes": 528,
+        "native_plus_added_caller_bytes": 5232,
+        "bound_bytes": 5280,
+        "status": "passed"
+      },
+      "timing_status": "pending"
+    }
+  ],
+  "rejected": [
+    {
+      "candidate": "heap-literal-registry13",
+      "reason": "exceeds unchanged combined stack bound",
+      "stack": {
+        "native_peak_bytes": 4704,
+        "added_caller_bytes": 592,
+        "native_plus_added_caller_bytes": 5296,
+        "bound_bytes": 5280,
+        "status": "rejected"
+      }
+    }
+  ],
+  "next_validation": "Measure the exact named M1 recipe on M3, then qualify the combined settings on both machines. Keep M1 and M3 runtime results separate."
+}
