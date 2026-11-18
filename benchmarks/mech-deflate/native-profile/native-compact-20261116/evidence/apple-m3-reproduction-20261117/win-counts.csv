@@ -1,0 +1,7 @@
+machine,execution,order,roc_wins,libdeflate_wins,cases
+Apple M1,qualified archived executable,forward,81,61,81
+Apple M1,qualified archived executable,reverse,81,61,81
+Apple M3,M3 source rebuild,forward,71,57,81
+Apple M3,M3 source rebuild,reverse,69,58,81
+Apple M3,M1 executable replayed on M3,forward,68,58,81
+Apple M3,M1 executable replayed on M3,reverse,68,57,81

@@ -1,0 +1,9 @@
+{
+  "recorded_at": "2026-11-18T00:37:30.893454+00:00",
+  "phase": "after both accepted timing campaigns",
+  "commands": {
+    "/usr/bin/pmset -g therm": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+    "/usr/bin/pmset -g batt": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22413411)\t78%; AC attached; not charging present: true",
+    "/usr/sbin/sysctl -n machdep.cpu.brand_string": "Apple M3"
+  }
+}
