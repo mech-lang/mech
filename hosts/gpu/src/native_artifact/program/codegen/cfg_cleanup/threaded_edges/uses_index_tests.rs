@@ -130,6 +130,10 @@ fn indexed_loop_routes_select_identical_ir_and_repairs_to_the_original_traversal
             before.func.display().to_string(),
             "{variant}"
         );
+        before.compute_cfg();
+        before.compute_domtree();
+        indexed.compute_cfg();
+        indexed.compute_domtree();
         before.verify(module.isa()).unwrap();
         indexed.verify(module.isa()).unwrap();
     }
