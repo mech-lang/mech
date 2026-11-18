@@ -1,0 +1,8 @@
+{
+  "sha256": "8908ed6b1349acc41a3718a21d96e0d87e7046fde7dad64a7b4bde65f1f020fc",
+  "bytes": 27579449,
+  "verified_payload_members": 553,
+  "parent_archive_sha256": "98256dc25c69b42c145ef899f3657f7b55c82baf364b375ab47fa77989c04d3d",
+  "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/pr995-deflate-shared-integration-20261118-8908ed6b1349.tar.gz",
+  "server_digest_verified": true
+}

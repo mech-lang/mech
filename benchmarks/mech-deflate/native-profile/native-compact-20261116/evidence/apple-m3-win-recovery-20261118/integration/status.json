@@ -127,5 +127,14 @@
       }
     }
   ],
-  "next_validation": "Measure the exact named M1 recipe on M3, then qualify the combined settings on both machines. Keep M1 and M3 runtime results separate."
+  "next_validation": "Measure the exact named M1 recipe on M3, then qualify the combined settings on both machines. Keep M1 and M3 runtime results separate.",
+  "m3_common_reference_validation": {
+    "correctness": "passed",
+    "focused_runs": "complete; 7 Roc / 6 libdeflate forward, 8 Roc / 7 libdeflate reverse, out of 8 cases",
+    "focus_timed_calls_replayed": 199680,
+    "first_full_attempt": "interrupted after 17 completed cases by external rustc at 94.1 percent CPU; not a complete qualification",
+    "retry_policy": "Fresh full acquisition only after the existing native-job and CPU quiet gaps. Retry only background-activity rejections, never clean completed scores. All partial attempts retained.",
+    "timing_qualification": "pending",
+    "merge_status": "not merged; complete shared-configuration M3 validation is required"
+  }
 }
