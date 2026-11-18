@@ -165,6 +165,7 @@ jobs:
             tests.ci.test_ci_impact \
             tests.ci.test_ci_full_contract \
             tests.ci.test_ci_test_inventory \
+            scripts.tests.test_ci_impact_checkout \
             scripts.tests.test_native_macos_ci \
             tests.browser.harness.test_chrome_session \
             tests.browser.harness.test_completion_server
