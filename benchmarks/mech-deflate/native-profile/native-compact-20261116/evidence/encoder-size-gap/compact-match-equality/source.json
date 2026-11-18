@@ -1,0 +1,76 @@
+{
+  "base": "ca0c778e58618c72e6bd13e7df03d3089d4ec2e3",
+  "files": {
+    "hosts/gpu/src/native_artifact/codegen/common/ssa_direct_homes.rs": {
+      "current": null,
+      "candidate": "15165ae1bd5c89287967336541b3325e9c45a11d3f45ba732038932c55243e65"
+    },
+    "hosts/gpu/src/native_artifact/codegen/common/ssa_words.rs": {
+      "current": "b0390c9d11b53018e9f3bb211cc513b87a461218c5fd4db967fdc97e2759b3ac",
+      "candidate": "064c7f33bab6f77e7c93dd45b2a791cba54c8aad138903f09d418c8bf52d8140"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/composed_reads.rs": {
+      "current": "f0e4d49434fb0b47201273346d5c68b316ce7e8f13fd6b96ee8ec760d2231610",
+      "candidate": "636c334b499e941943af5cef2cdc7d1befa51c697351eada4ca87590a35c952c"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_read_setup.rs": {
+      "current": "367d5dc9ff9bbcf96ca1234dbf64e11195073f86f198b72733f9c00fcf7781a7",
+      "candidate": "c6f112941c0106d39093ed6e5f754d1638a414341e9118f16dfc9414d60b9571"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/cost.rs": {
+      "current": "3ad22e33a46ab74ff7c519b8e2716b83dfbfc9fe5962a01f1ceed3a3e46a28ef",
+      "candidate": "630bb645ef63de10e58a3cd624b22f2164ea81b414c17ff4825e2c40f4e20359"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs": {
+      "current": "e74aea973a1abe309cd37b432d6b1305307c1b5e2e36d984aedc34fd3d0d6965",
+      "candidate": "85df97648726d26b074ff1b34b052e2f33242200f9a1c96bc1ce5c100c0f517a"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/wide_equal.rs": {
+      "current": "5824a69591cdc51d5a99ec24a94cdf3a461aa47f6e3111d3828416784497ead0",
+      "candidate": "05d3027d044563fed950ecffa722c72f268b82337a0c5745f4606cd4ae196112"
+    },
+    "hosts/gpu/src/native_artifact/program/codegen/wide_equal_tests.rs": {
+      "current": "02afc3e1c44b4e9855025aedd4dd7704d135115ccf28cb46064896d3528f7101",
+      "candidate": "a4ce1b81bc58cf1a88342e6ca0fde9e00a851276e2d2de60fea347140dc737bf"
+    },
+    "hosts/gpu/src/native_artifact/program/compact/emit.rs": {
+      "current": "48d16aa909287ce87d156fd362c20e64623f1990b5e5e3f7f31b5d2fdfe4f430",
+      "candidate": "b101717b3a20a9579af4c46fa4d053e26439409235d3a381b3bcde805592124f"
+    },
+    "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+      "current": "c49ca05603a8dde1b2d8ee478c15d759ab6e487035bff6b91ab26fa1301058b6",
+      "candidate": "5edc298d272627e1e9e9063799406b82f3b42ed57e82b7af90f6573885b77f23"
+    },
+    "hosts/gpu/src/native_artifact/program/compact/phase_layout.rs": {
+      "current": "46971269b7835a2416811390dc1a11bbc98c262a2ebccc504c1baef4b67151e9",
+      "candidate": "2845b2c39abf389a001b6ffafebfd74a1e32457f5caa1d17722de8f710f25966"
+    },
+    "hosts/gpu/src/native_artifact/program/compact/phases.rs": {
+      "current": "056453cdf5dd387eb0857c169fc99aaefb85849fe2a3e17e649aff57675e0ea3",
+      "candidate": "338a2608dc13f8834009dd9bb08f2a3fa66394b5333c856cc4827a4869e5d67f"
+    },
+    "hosts/gpu/src/native_artifact/program/compact/private_phase.rs": {
+      "current": "808d514eda4aa95f1c213707fb6750c4df07f42e2bb2c6ae55ad8e2d7e932845",
+      "candidate": "774ef4e52ecb71acaab1dd7fa5a83402e83a640ada4aacffd685e33dfe87cbfb"
+    },
+    "vendor/cranelift-codegen/src/ir/function.rs": {
+      "current": "84a7be36b7611b39aeb2d9236ce6787692b1885f1485172cdfbda981a42368dd",
+      "candidate": "45f0a5db26e4e1fea7b79bd3c54bfd06a30c18786d24851d1e4016487cc6411d"
+    },
+    "vendor/cranelift-codegen/src/isa/aarch64/block_layout.rs": {
+      "current": "35338a48ed6fa61a731d7b058a22300762cca8e7fce470a3ff21c296db47d0c7",
+      "candidate": "5b0a51b53fedce09eec1669dc80da48ae47f3fc3333ff825d81da5f25029b45e"
+    },
+    "vendor/cranelift-codegen/src/isa/aarch64/mod.rs": {
+      "current": "94812b6b082fb015a34556710bcb15f27d2b02c041344adb9ec14a9b5aee5eed",
+      "candidate": "94dfc575ff4a1608efb1fdc205625d7265d25f0f7cc44ec9cc9dff904b3ae3fb"
+    }
+  },
+  "patch_sha256": "c1f71b89e51f075c05e5966f56e6e6e42111c7978f712bffa9bd8e85963d94ee",
+  "reused_frontend": [
+    "src/engine/src/source_semantics/document_lowering.rs",
+    "src/engine/src/source_semantics/frontend.rs",
+    "src/engine/src/source_semantics/document_types.rs",
+    "src/engine/src/source_semantics/document_functions.rs"
+  ]
+}

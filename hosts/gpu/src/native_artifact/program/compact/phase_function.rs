@@ -1510,10 +1510,15 @@ fn optimize_phase(
     {
         cfg_cleanup::optimize(controls, context, isa)?;
     }
-    let equality = crate::native_artifact::program::codegen::wide_equal::optimize(
+    let compact_equality = private
+        && vectors.is_some()
+        && std::env::var_os("MECH_COMPACT_SHORT_EQUALITY_PHASE")
+            .is_some_and(|target| target == symbol);
+    let equality = wide_equal::optimize(
         context,
         &word_loops.compact_word_loops,
         private && vectors.is_some() && std::env::var_os("MECH_REUSE_EQUALITY_PREFIX").is_some(),
+        !compact_equality,
     );
     // Named experimental condition: growth state is absent from this callee.
     let threaded = if no_growth.is_some()

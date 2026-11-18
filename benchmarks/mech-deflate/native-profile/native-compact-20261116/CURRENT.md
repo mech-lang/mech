@@ -6,14 +6,14 @@ PR #993 tracks the qualified LLVM-free MechDeflate build and is stacked on #973.
 
 | Apple M1 | Mech | Roc | libdeflate |
 | --- | ---: | ---: | ---: |
-| Source through final link | 2.190 s | 2.979 s | 0.479 s |
-| Source through strip | 2.200 s | 2.990 s | 0.489 s |
-| Encoder text | 65,516 B | 57,696 B | 37,080 B |
+| Source through final link | 2.184 s | 2.970 s | 0.478 s |
+| Source through strip | 2.195 s | 2.980 s | 0.489 s |
+| Encoder text | 65,276 B | 57,696 B | 37,080 B |
 | Stripped executable | 276,056 B | 191,912 B | 155,752 B |
 
-Mech builds in **0.735× Roc** and **4.577× libdeflate** time. Encoder text is **1.136× Roc** and **1.767× libdeflate**. Full orders record 81/81 and 81/81 Roc wins, with 62/81 and 62/81 libdeflate wins.
+Mech builds in **0.736× Roc** and **4.573× libdeflate** time. Encoder text is **1.131× Roc** and **1.760× libdeflate**. Full orders record 81/81 and 81/81 Roc wins, with 62/81 and 62/81 libdeflate wins.
 
-[Matched measurements and source replay](evidence/encoder-size-gap/indexed-checked-regions/README.md) · [Scorecard](scorecard.json) · [Policy v3](qualification-policy-v3.json)
+[Matched measurements and source replay](evidence/encoder-size-gap/compact-match-equality/README.md) · [Scorecard](scorecard.json) · [Policy v3](qualification-policy-v3.json)
 
 An earlier dedicated parser-phase comparison reported **813 ms Mech**
 and **3 ms Roc**. Mech's interval includes indexing and its strict check.
@@ -21,7 +21,7 @@ and **3 ms Roc**. Mech's interval includes indexing and its strict check.
 
 ## Encoder code size
 
-The checked entry accounts for **48,544 B**. The match collector adds **6,464 B**, and the dense scorer adds **1,104 B**. The matched libdeflate object emits **37,080 B**.
+The checked entry accounts for **48,544 B**. The match collector adds **6,224 B**, and the dense scorer adds **1,104 B**. The matched libdeflate object emits **37,080 B**.
 [Qualified encoder](evidence/encoder-size-gap/select-checked-default-address/README.md) · [Historical byte attribution](evidence/encoder-size-gap/README.md)
 
 An experimental capacity refusal reuses the checked continuation and
@@ -112,6 +112,7 @@ Roc and libdeflate trials from the same session.
 | [Select the checked default address](evidence/encoder-size-gap/select-checked-default-address/deployment.json) | 65,612 B | 2.205 s | 0.740× | 4.588× |
 | [Forward match collector spills](evidence/encoder-size-gap/matcher-spill-forwarding/deployment.json) | 65,516 B | 2.201 s | 0.740× | 4.586× |
 | [Index checked region block order](evidence/encoder-size-gap/indexed-checked-regions/deployment.json) | 65,516 B | 2.190 s | 0.735× | 4.577× |
+| [Use 16-byte equality groups in the compact matcher](evidence/encoder-size-gap/compact-match-equality/deployment.json) | 65,276 B | 2.184 s | 0.736× | 4.573× |
 
 Parser, lowering, native compilation and link timings are in the
 machine-readable scorecard.
@@ -120,14 +121,14 @@ machine-readable scorecard.
 
 | Stage | Current | 2.0 s budget | 1.0 s budget | 0.45 s budget |
 | --- | ---: | ---: | ---: | ---: |
-| Parser | 0.719 s | 0.75 | 0.35 | 0.13 |
-| Native preparation through object | 1.184 s | 0.95 | 0.48 | 0.22 |
-| Source semantic frontend | 0.215 s | 0.18 | 0.09 | 0.04 |
+| Parser | 0.718 s | 0.75 | 0.35 | 0.13 |
+| Native preparation through object | 1.181 s | 0.95 | 0.48 | 0.22 |
+| Source semantic frontend | 0.214 s | 0.18 | 0.09 | 0.04 |
 | Catalog join wait | 0.000 s | 0.05 | 0.02 | 0.01 |
 | Artifact, encoding, link and other work | 0.071 s | 0.07 | 0.06 | 0.05 |
-| **Total** | **2.190 s** | 2.00 | 1.00 | 0.45 |
+| **Total** | **2.184 s** | 2.00 | 1.00 | 0.45 |
 
-Mech needs **1.740 s** less elapsed time to reach the
+Mech needs **1.734 s** less elapsed time to reach the
 0.45 s working budget. The phase medians come from the matched measurements above. Catalog work runs during parsing and the table lists the join wait.
 
 ## Which build to use
@@ -139,7 +140,7 @@ Mech needs **1.740 s** less elapsed time to reach the
 | Checked-read size candidate | 71,420 B | 5,328 B peak stack. Runtime qualification pending |
 | Earlier owner-exchange size candidate | 71,288 B | Rejected by the v2 runtime gate |
 | Maintained frame-copy recipe | **71,192 B** | Compiler source below |
-| Smallest v3-qualified opt-in build | **65,516 B** | [Compiler source and replay](evidence/encoder-size-gap/indexed-checked-regions/README.md) |
+| Smallest v3-qualified opt-in build | **65,276 B** | [Compiler source and replay](evidence/encoder-size-gap/compact-match-equality/README.md) |
 
 ~~~sh
 python3 -B benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py \
