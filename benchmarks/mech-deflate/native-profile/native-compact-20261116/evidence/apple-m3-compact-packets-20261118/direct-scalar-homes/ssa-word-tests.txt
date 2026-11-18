@@ -5,4 +5,3 @@ test native_artifact::codegen::words::tests::entry_literal_needs_no_merge_parame
 test native_artifact::codegen::words::tests::ssa_home_spills_and_reloads_keep_the_boundary_memory_region ... ok
 
 test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
-

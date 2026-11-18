@@ -1,0 +1,27 @@
+{
+  "commit": "476963df3f2d38d089a7ae81d5107dccecc41c68",
+  "upstream": "ca0c778e58618c72e6bd13e7df03d3089d4ec2e3",
+  "files": {
+    "hosts/gpu/src/native_artifact/codegen/common/ssa_direct_homes.rs": "15165ae1bd5c89287967336541b3325e9c45a11d3f45ba732038932c55243e65",
+    "hosts/gpu/src/native_artifact/codegen/common/ssa_words.rs": "064c7f33bab6f77e7c93dd45b2a791cba54c8aad138903f09d418c8bf52d8140",
+    "hosts/gpu/src/native_artifact/codegen/common/ssa_words_tests.rs": "1300c33f376ce4ac0f07ba7bf8a586792b56268b47cd36cfb3a2639b6fb47099",
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/composed_reads.rs": "636c334b499e941943af5cef2cdc7d1befa51c697351eada4ca87590a35c952c",
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/current_predicates/relations/complement_tests.rs": "655f317ec492fe9a58ad9068ceb0c56951755d98c49ff3db03f02a6c351e181b",
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/current_predicates/relations/mod.rs": "bc09a5f1a5eabd323daafca0d7d18d18e1634aad4a04ef1188ab9a6b9e279f44",
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_read_setup.rs": "c6f112941c0106d39093ed6e5f754d1638a414341e9118f16dfc9414d60b9571",
+    "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/cost.rs": "630bb645ef63de10e58a3cd624b22f2164ea81b414c17ff4825e2c40f4e20359",
+    "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs": "208be5f2dd5bcea0b2319445331eb766c6c28355cc43636328205f1fc1878651",
+    "hosts/gpu/src/native_artifact/program/codegen/wide_equal.rs": "db4e4e15e7cef845b80935a51acf4bfb69955bfe5891011eec21a448fe7b3252",
+    "hosts/gpu/src/native_artifact/program/codegen/wide_equal_tests.rs": "41edfaddd6247ecea269d3992ced08707b6dacdd58436cd3125e9c9f888631c7",
+    "hosts/gpu/src/native_artifact/program/compact/emit.rs": "b101717b3a20a9579af4c46fa4d053e26439409235d3a381b3bcde805592124f",
+    "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "e9c9596f8255f63051d70390a0d92c2aef33073978873fa549615009b9e107d7",
+    "hosts/gpu/src/native_artifact/program/compact/phase_layout.rs": "2845b2c39abf389a001b6ffafebfd74a1e32457f5caa1d17722de8f710f25966",
+    "hosts/gpu/src/native_artifact/program/compact/phase_storage.rs": "9cc49e6958fe82598f7b0d0358b63b6fb0e1134045867178419be6f29f311a45",
+    "hosts/gpu/src/native_artifact/program/compact/phase_storage_tests.rs": "ffc6b78ce8184bef4500ad950b4b8a8d87584006b6b46df9e718aaf4d21156fd",
+    "hosts/gpu/src/native_artifact/program/compact/phases.rs": "338a2608dc13f8834009dd9bb08f2a3fa66394b5333c856cc4827a4869e5d67f",
+    "hosts/gpu/src/native_artifact/program/compact/private_phase.rs": "774ef4e52ecb71acaab1dd7fa5a83402e83a640ada4aacffd685e33dfe87cbfb",
+    "vendor/cranelift-codegen/src/ir/function.rs": "45f0a5db26e4e1fea7b79bd3c54bfd06a30c18786d24851d1e4016487cc6411d",
+    "vendor/cranelift-codegen/src/isa/aarch64/block_layout.rs": "5b0a51b53fedce09eec1669dc80da48ae47f3fc3333ff825d81da5f25029b45e",
+    "vendor/cranelift-codegen/src/isa/aarch64/mod.rs": "94dfc575ff4a1608efb1fdc205625d7265d25f0f7cc44ec9cc9dff904b3ae3fb"
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "compiler_build": "passed",
+  "upstream_recipe_exact_reproduction": "passed",
+  "public_recipe_exact_reproduction": "passed",
+  "native_backend_tests": 211,
+  "direct_ssa_tests": 3,
+  "phase_packet_tests": 4,
+  "equality_scan_oracle": "passed",
+  "complementary_predicate_oracle": "passed",
+  "linked_success_checks": 162,
+  "checked_failure_cases": 6,
+  "peak_stack_bytes": 4768,
+  "maximum_stack_bytes": 5280,
+  "raw_timed_calls_verified": 1965312,
+  "changed_rust_files_pinned_formatter": "passed",
+  "module_layout": "passed",
+  "warning_policy": "passed"
+}
