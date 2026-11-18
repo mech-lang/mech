@@ -20,13 +20,19 @@ Compiler phases are 0.706344 s parsing, 0.212691 s source semantics, 0.009339 s 
 
 [Source, all timings and tradeoffs](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md) · [Raw build comparison](evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/build-comparison.json.gz) · [Source rebuild checks](evidence/encoder-size-gap/shared-literal-frame-cleanup/source-rebuild.json)
 
-## Apple M3 upstream integration
+## Apple M3 shared M1 recipe
+
+The integrated compiler's `m1-shared-heap-layout` recipe records **81/81 Roc and 61/81 libdeflate 1.26 level 12 wins in both complete M3 orders**. Raw-record replay verifies all **1,965,312 timed calls**. The **64,652 B** encoder object, complete metadata and canonical bytecode reproduce the named M1 recipe exactly. Peak native stack is **4,784 B**, below the unchanged 5,280 B limit. Both full orders completed without background-activity rejection.
+
+[Complete shared-build qualification and source pins](evidence/apple-m3-win-recovery-20261118/integration/confirmation/README.md) · [Every timing in seconds and comparator multiples](evidence/apple-m3-win-recovery-20261118/integration/confirmation/timings.csv)
+
+## Apple M3 earlier upstream integration
 
 The compiler changes are rebased onto `ca0c778e58618c72e6bd13e7df03d3089d4ec2e3`. The combined encoder contains **63,868 B** of text and uses **4,768 B** peak native stack. In the fresh complete comparison, both the previous and rebased M3 executables record **81/81 Roc in both orders, 58/81 libdeflate forward and 60/81 reverse**. The original upstream deployment recipe reproduces its encoder object, complete metadata and bytecode byte for byte with the combined compiler.
 
 [Complete integration results and reproduction](evidence/apple-m3-rebase-20261118/README.md) · [All timings in seconds and comparator multiples](evidence/apple-m3-rebase-20261118/timings.csv)
 
-The latest shared compiler also contains the M1 heap-setup work and the M3 literal-allocation setup pass. It reproduces the named **64,652 B M1 encoder**, complete metadata and bytecode exactly. That common recipe passes the linked M3 correctness, failure, cleanup and stack checks; M3 timing is pending. Five further combined builds are ready. A single final configuration has not yet been qualified on both machines. [Shared-source verification and pending comparisons](evidence/apple-m3-win-recovery-20261118/integration/README.md) · [Recovery trials and completed later orders](evidence/apple-m3-win-recovery-20261118/README.md)
+The shared compiler contains the M1 heap-setup work and the M3 literal-allocation setup pass. The common M1 recipe is now qualified on M3 as recorded above. Five additional combined builds remain experimental and untimed. [Shared-source verification](evidence/apple-m3-win-recovery-20261118/integration/README.md) · [Recovery trials](evidence/apple-m3-win-recovery-20261118/README.md)
 
 ## Apple M3 comparison before upstream integration
 

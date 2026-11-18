@@ -17,7 +17,9 @@ That exact native recipe has also been linked on M3 with the same pinned
 runtime sources and allocator. It passes 162 exact-output, independent
 inflation and borrowed-alias checks, six checked failure classes, cleanup
 checks and the 81-case stack probe. Peak native stack is **4,784 B**, below
-the unchanged 5,280 B limit. Its M3 timing run is pending.
+the unchanged 5,280 B limit. Both complete M3 timing orders now record
+**81/81 Roc and 61/81 libdeflate level 12 wins**.
+[Complete qualification and all timings](confirmation/README.md) ·
 [Common reference](common-reference-ready.json)
 
 The eight-case M3 screen completed in both orders: **7/8 Roc and 6/8
@@ -25,8 +27,9 @@ libdeflate forward**, **8/8 Roc and 7/8 libdeflate reverse**. Raw-record
 replay verifies all **199,680 timed calls**. These focused results do not
 qualify the full 81-case configuration. The first full run stopped after
 17 completed cases when the activity guard observed an external Rust
-compiler at 94.1% CPU. It is retained as an interrupted run. A fresh full
-comparison is queued with the same timing and resource checks.
+compiler at 94.1% CPU. A second interrupted attempt and the first clean,
+complete comparison are retained. Only the clean complete pair qualifies
+the shared recipe.
 [Focused results](m3-focus-result.json) · [Seconds and comparator multiples](m3-focus-timings.csv) ·
 [Raw-record replay](m3-focus-replay.json) · [Full-run rejection](m3-first-full-rejection.json)
 
@@ -38,16 +41,14 @@ Its SHA-256 is `8908ed6b1349acc41a3718a21d96e0d87e7046fde7dad64a7b4bde65f1f020fc
 It is a delta over the preceding recovery archive; unchanged payload is
 retained there. [Archive receipt and parent hash](archive.json)
 
-The existing M1 results and M3 results still describe different build
-configurations. The newest enabled M3 settings have not been measured on
-M1, and a single final configuration has not been qualified on both
-machines. Five combinations of the M1 heap-setup pass and M3 options are
-prepared and correctness-checked for M3. Their timings are pending.
+The named shared recipe is now qualified on both M1 and M3. Additional
+M3-only settings are not selected by this recipe and have not been
+measured on M1. Five combinations of the M1 heap-setup pass and M3 options
+remain prepared and correctness-checked; their timings are pending.
 [Source pins, candidate identities and stack bounds](status.json)
 
-The latest completed M3 pair remains **81/81 Roc in both orders**, with
-**58/81 libdeflate level 12 forward and 60/81 reverse**. The 61/81 target
-has not been requalified. M1 peer scores are not assigned to M3 builds.
+The latest completed M3 pair records **81/81 Roc and 61/81 libdeflate
+level 12 in both orders**. M1 peer scores are not assigned to M3 builds.
 
 ## Reproduce the artifact identity check
 

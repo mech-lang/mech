@@ -1,0 +1,768 @@
+{
+  "status": "passed",
+  "plan_sha256": "bd061f7788fa52db812874ee1d63e2d0614b4eeb4bcd4c12b52f2da4de5079c3",
+  "runs": [
+    {
+      "order": "forward",
+      "cases": 81,
+      "timed_calls": 982656,
+      "wins": {
+        "mech-control": {
+          "roc": 81,
+          "libdeflate": 61
+        },
+        "mech-experiment": {
+          "roc": 81,
+          "libdeflate": 61
+        }
+      },
+      "receipt": {
+        "id": "common-m1-shared-heap-layout-q3/full-guarded/forward",
+        "kind": "full",
+        "order": "forward",
+        "blocks_per_case": 96,
+        "pins": {
+          "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/pins.json",
+          "sha256": "7d541f73ad99dc3380f0936609abbdf5e172dd78d12cdb0e8a5b5c6e911e1307"
+        },
+        "fixture_inventory": {
+          "path": "common-m1-shared-heap-layout-q3/full-guarded/fixtures.json",
+          "sha256": "5bfd407e42356ac57c61f858ad9920f1f9bf2e2fce1b2853c50cc20eda186b38"
+        },
+        "summary": {
+          "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/summary.json",
+          "sha256": "543af0d4518f142ac672f0acf46509701093fbf445f4525669677ac94bcc409d"
+        },
+        "complete": {
+          "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/complete.json",
+          "sha256": "2e54dfa5984a50621e44303a7cbdd811e578a4c88e1b46ef989159527d443c6f"
+        },
+        "observations": {
+          "heldout-mixed-131073": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/heldout-mixed-131073/observations.json.gz",
+            "sha256": "99ad0b0cb558322870fd145568b7a5696fbf38d4b790612e05e8ffce38495804"
+          },
+          "prefix-random-32769": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-random-32769/observations.json.gz",
+            "sha256": "5157842fcd49c17391fa832d82023382b2105b63c6eaaab224919c4a5f4ee0c7"
+          },
+          "prefix-natural-1024": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-natural-1024/observations.json.gz",
+            "sha256": "f0be29e781c759c19a61fa38d4d17e75bb1bd12a908e251553a9ce6b5af4c9ef"
+          },
+          "prefix-random-32767": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-random-32767/observations.json.gz",
+            "sha256": "a7018ffec4f5ccf1c99e74626f0e91e4ed87caae134682cd1bb0f756bbc26082"
+          },
+          "prefix-repeated-1024": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-repeated-1024/observations.json.gz",
+            "sha256": "188acde341cbb4e35ddcad5b1b6c0c0cab2818cb7315023c879189b5931e1fca"
+          },
+          "random-1024": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/random-1024/observations.json.gz",
+            "sha256": "c9b7857cd9a1d1f482451479a6201e8a7c4be175efd27d759e51b3d5efa6c55b"
+          },
+          "prefix-repeated-65537": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-repeated-65537/observations.json.gz",
+            "sha256": "82d3a04e1cc771f20ed77feba211e76f9992b3b162aff1817ed941e7367d828f"
+          },
+          "prefix-periodic-4096": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-periodic-4096/observations.json.gz",
+            "sha256": "e462dea6b9944c017ff491bcc9390d2e39b2a0fbbc59182966ca106a8fcc2456"
+          },
+          "prefix-natural-16384": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-natural-16384/observations.json.gz",
+            "sha256": "ecc894cd1e6e784fa26651c1b5c1c8586e2e99f6377dedb053c56baf7a9ae013"
+          },
+          "prefix-random-33027": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-random-33027/observations.json.gz",
+            "sha256": "3490e9c3575bb89506fd071457b7f308aa34a464dd35de317fd1d61f4b179be7"
+          },
+          "prefix-random-32768": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-random-32768/observations.json.gz",
+            "sha256": "32d4c2aef0f5d838c008daceb2312bc9eb99482ad0467c529343eaf9dbca7c34"
+          },
+          "prefix-random-4096": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-random-4096/observations.json.gz",
+            "sha256": "03282ef1f98d4646e3f8d4e480a1f374b8a265a69c323f2525bc282f9ce48745"
+          },
+          "prefix-natural-1048576": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-natural-1048576/observations.json.gz",
+            "sha256": "9339c42ae771857738e42185d95f236e9010f6a877133b0017521d46d5931b17"
+          },
+          "prefix-repeated-65536": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-repeated-65536/observations.json.gz",
+            "sha256": "d18351c94fd6a4387ab2c12c152d1ab9548fa37e5db82b7098656419511bcb12"
+          },
+          "prefix-repeated-16384": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-repeated-16384/observations.json.gz",
+            "sha256": "b8ccfe8105b3109aeff11a429e83937ba73ee2903f148c49c0edb35643b2edc3"
+          },
+          "prefix-periodic-65535": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-periodic-65535/observations.json.gz",
+            "sha256": "028765389249fb9d0555670c90cd37b26d06912848d0721b8922a2faa26ba517"
+          },
+          "prefix-random-262144": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-random-262144/observations.json.gz",
+            "sha256": "4366349080307dd8510ce0d45aca0883e50aabd206b3b9e9232811a567dc7c70"
+          },
+          "prefix-periodic-1048576": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-periodic-1048576/observations.json.gz",
+            "sha256": "a1c91f8e7a1669709eb9459417c63eb56cbefcf14bd984db8a0d6e73b1442665"
+          },
+          "prefix-repeated-262144": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-repeated-262144/observations.json.gz",
+            "sha256": "b2576d2066da4c107f70d2f3dc868574e96d63d7fc69c922a0c1b37384b833d7"
+          },
+          "eight-literals-prefix": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/eight-literals-prefix/observations.json.gz",
+            "sha256": "f2122fe0cfa4e8cd0cbaf81392ec6f1a6a157a0a7c76f993bcc6461c74a0c31b"
+          },
+          "prefix-natural-65536": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-natural-65536/observations.json.gz",
+            "sha256": "2f7afc60f7855096e28bbc6c91220e717db6d4c94238db367c4565501529105d"
+          },
+          "empty": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/empty/observations.json.gz",
+            "sha256": "14c19136ccbc13c075621c538be3953b2689a8512a60a689ee5c22ba507176f4"
+          },
+          "one-stored": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/one-stored/observations.json.gz",
+            "sha256": "7bfd353b22670a7c78944152684cf3b7e3ac43ad34122bab9f255efc4beb184a"
+          },
+          "repeated-32769": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/repeated-32769/observations.json.gz",
+            "sha256": "aff09113273ee8cb1cb27b56150d6c72358c28a2fc65cfb5f86464b9f13d6375"
+          },
+          "prefix-natural-65537": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-natural-65537/observations.json.gz",
+            "sha256": "7a8a51c4c89807263ea4364e0cb3eaced8e7e8ce1c97c308ccbd5df257f2e7ca"
+          },
+          "prefix-natural-4096": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-natural-4096/observations.json.gz",
+            "sha256": "6787a3f245d2aa4be17c5fe7d1552cb7f4f9419f380c9d995977b538f871729a"
+          },
+          "prefix-repeated-4096": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-repeated-4096/observations.json.gz",
+            "sha256": "2db173f768b6d7a85aa6ce2c60d56755b9edf7d954eb4cb8c73107ea0888313f"
+          },
+          "320-overlap": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/320-overlap/observations.json.gz",
+            "sha256": "3c41be850fdb35c485710a4840c11a773ecd9b2a3019544189764e52a7656ee9"
+          },
+          "prefix-periodic-1024": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-periodic-1024/observations.json.gz",
+            "sha256": "59fd5afb4aeb356eb796b7561cb7eac61d0c951f0ca41a113270cc6255709d9d"
+          },
+          "prefix-random-65535": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-random-65535/observations.json.gz",
+            "sha256": "5d711ed22ab0344cea83e5f22cb741ff1d3dfb2307bada91605153bc041453d0"
+          },
+          "prefix-random-1048576": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-random-1048576/observations.json.gz",
+            "sha256": "05c1378ec4934bf75ad2521aaf76426c90ec13a63d913668bb0489ef0039b226"
+          },
+          "heldout-slides-65537": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/heldout-slides-65537/observations.json.gz",
+            "sha256": "c89e3153bac484e5df528eaa6c28e3d15b26528a2dcad4813c5517447e628f0c"
+          },
+          "prefix-random-1024": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-random-1024/observations.json.gz",
+            "sha256": "aae173fd6b0bdba56461b89efe014dceeedbaf836b291a2a10d96e3233a06451"
+          },
+          "random-256": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/random-256/observations.json.gz",
+            "sha256": "7b13f679523a494634ea42f7586ca479101a06a8379ab4733ef51c0f2c5781d1"
+          },
+          "random-32769": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/random-32769/observations.json.gz",
+            "sha256": "034cc74251206d0d04ef12d953189719cdd86ad001056b8736fe8c447c5d4e91"
+          },
+          "reymont-prefix-16384": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/reymont-prefix-16384/observations.json.gz",
+            "sha256": "4838afaf3538e949767a607ec6df3200010af5ee08b1979dbfd4fba4d4ca05f7"
+          },
+          "prefix-periodic-32768": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-periodic-32768/observations.json.gz",
+            "sha256": "68102c9a89ab2d633f41c49d1fb37528c720c66f912db6c33c5b0ba696e661d4"
+          },
+          "prefix-periodic-33027": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-periodic-33027/observations.json.gz",
+            "sha256": "49057b009138e17dd15e6761b2a53844167c73ee5f27d3bb3f12af9626cee7cd"
+          },
+          "prefix-periodic-131072": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-periodic-131072/observations.json.gz",
+            "sha256": "43012e790423eadda272456883aab9d6ed52ae016d775054d45764788620f818"
+          },
+          "prefix-repeated-1048576": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-repeated-1048576/observations.json.gz",
+            "sha256": "d844bf517a6db87c21d9902efea02a47b0cb826f177d4bdbb5546fefc696e6e2"
+          },
+          "prefix-periodic-32769": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-periodic-32769/observations.json.gz",
+            "sha256": "f0425a2e5bcdfd47b05d5fa24ffb53bf2a00b820ca7b655b6fe013d0ece4ab62"
+          },
+          "repeated-1024": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/repeated-1024/observations.json.gz",
+            "sha256": "7fe9fb27c1ff590e57f1a11b1f5494e86b735a31297b54e54a08c59e350432b9"
+          },
+          "reymont-prefix-1024": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/reymont-prefix-1024/observations.json.gz",
+            "sha256": "bd7daacdf74f25e0bec2bb495d0e6c4bddf04f2aad755b74de94781f5fd0006f"
+          },
+          "prefix-periodic-32767": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-periodic-32767/observations.json.gz",
+            "sha256": "31583c35e1b95a1368a743fc768c9fe6fe824ca325e37728669b68f83437d8cd"
+          },
+          "seven-stored-prefix": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/seven-stored-prefix/observations.json.gz",
+            "sha256": "be0adebe0f39a9995df004b2be67e49a4e2ca817cda5babd3fd6148e78ab4a6d"
+          },
+          "prefix-natural-262144": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-natural-262144/observations.json.gz",
+            "sha256": "f7ccbb65e30c0785a1afeda23c106f1b75653fbf391f4f1c8dd20e290d5b9720"
+          },
+          "prefix-repeated-8192": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-repeated-8192/observations.json.gz",
+            "sha256": "f1477da9c425d8c377d03b804ccdf64c88f812811e91043c4f591e25b7f09d3d"
+          },
+          "prefix-periodic-262144": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-periodic-262144/observations.json.gz",
+            "sha256": "23ba8d683a585e84ad2371da4b051fe321e2fdcb15c771d1ead4cbe3b6aa24cc"
+          },
+          "prefix-natural-8192": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-natural-8192/observations.json.gz",
+            "sha256": "315e5e1f9e1d869bd5a92f240112edfcafd24945f5d2603706ef9c8958823b90"
+          },
+          "prefix-periodic-16384": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-periodic-16384/observations.json.gz",
+            "sha256": "c35dcfc755040408e55368f540e8aacb1cfbfe8c1ce694d113fac582ffa2596f"
+          },
+          "prefix-repeated-65535": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-repeated-65535/observations.json.gz",
+            "sha256": "e2de48e22230b0f0a9e3bc6dde02115ea760b11184ed057cf69c8d645877c4ef"
+          },
+          "prefix-natural-131072": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-natural-131072/observations.json.gz",
+            "sha256": "fbad0ae732e724aba9936ec36abc26b18ac2ddf3af98632a017a0f6a90705b66"
+          },
+          "33027-periodic-window": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/33027-periodic-window/observations.json.gz",
+            "sha256": "c431e5b6d5ec58080381f8e66236f92e79baa1f70ada07227b7a879572bd283d"
+          },
+          "prefix-natural-65535": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-natural-65535/observations.json.gz",
+            "sha256": "c1d7eb715107bf759fbe1c5e12db81917050da493a40ca78030adcbf4ff68d2b"
+          },
+          "16384-distribution-change": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/16384-distribution-change/observations.json.gz",
+            "sha256": "77e34ed8930729d43f8826fea0d341858af9517cdb6440bdc81be451af4f1a08"
+          },
+          "eight-literals": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/eight-literals/observations.json.gz",
+            "sha256": "fd5245f634890390358bb77be7ac235b0c38634e12cde7852ababf0b1832dba3"
+          },
+          "prefix-periodic-65536": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-periodic-65536/observations.json.gz",
+            "sha256": "ee2531cdb66bdefbb315894b47c2f9e4b8985dea3cccb112aefc99b9f6dd04e1"
+          },
+          "heldout-random-65537": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/heldout-random-65537/observations.json.gz",
+            "sha256": "4c0fc52dffa47d658f6b9ddbd684aa607061378b235d7d20109c74cd7cbbe2db"
+          },
+          "random-64": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/random-64/observations.json.gz",
+            "sha256": "3afa00acebd49ccf9640ca7e1324b9146c4287b5674c30ca5ff2d3b9f5c9bcd6"
+          },
+          "reymont-prefix-32769": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/reymont-prefix-32769/observations.json.gz",
+            "sha256": "13c5d91324c12d201c9b4640627cbd24ca0c96c7029b4bdf2161dfd31be3492d"
+          },
+          "32-high-entropy-stored": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/32-high-entropy-stored/observations.json.gz",
+            "sha256": "37b7c4c2707dbef05ed834933f342b5ed75ddb10ad6f981d8559d8a8649267d9"
+          },
+          "prefix-periodic-65537": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-periodic-65537/observations.json.gz",
+            "sha256": "88019d688bc519923c5b7400e2b79bdf594438cff1337861ff820a62fae06eee"
+          },
+          "prefix-repeated-32767": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-repeated-32767/observations.json.gz",
+            "sha256": "9e4b1bceec710d4db4036a58e7abfd544233f6749e2ea019e40655c415620469"
+          },
+          "prefix-random-131072": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-random-131072/observations.json.gz",
+            "sha256": "ec635b61900e8cc78a90a7c658a740d90da57049e4b71b32e0f7011800d72731"
+          },
+          "prefix-repeated-32769": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-repeated-32769/observations.json.gz",
+            "sha256": "651ed99e213faf38bbc51de159551c99dd63724726fe7a6761c5110a60b40c44"
+          },
+          "prefix-periodic-8192": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-periodic-8192/observations.json.gz",
+            "sha256": "27bb2c069e1860cccc54608982336e4910e32989697f6916d126a8e7a0ecdeb4"
+          },
+          "eight-overlap": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/eight-overlap/observations.json.gz",
+            "sha256": "808c0f76b27f522252f86373937c8d55e7f3457e465c66965e872546856bbe94"
+          },
+          "prefix-random-65537": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-random-65537/observations.json.gz",
+            "sha256": "b80cda4206c2c88cbb4931ae4c202ea45ba5f79f88b4adffd6e5f2bd60884772"
+          },
+          "prefix-repeated-131072": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-repeated-131072/observations.json.gz",
+            "sha256": "bd864718ba387e204cd5650f384ea68abb991bc37683722196f82b7bdb0b3614"
+          },
+          "prefix-repeated-32768": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-repeated-32768/observations.json.gz",
+            "sha256": "220de8759fad25c7ec2650ba10dfadad280af1aab9b0fa51fd015334fa93eaef"
+          },
+          "prefix-repeated-33027": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-repeated-33027/observations.json.gz",
+            "sha256": "5b5dfc5957f16ee247cf0ef994d4c0a150b9a70be44023804ea36971ddaaabd6"
+          },
+          "128-biased-dynamic": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/128-biased-dynamic/observations.json.gz",
+            "sha256": "17c13b721ca127728c9e19b99cf5e2a017349446b317cf933198d8dff2500345"
+          },
+          "prefix-random-8192": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-random-8192/observations.json.gz",
+            "sha256": "e0084f7f217688fbe564d87be3f6f609c3f15061b3396d9c2446d17dd3008e97"
+          },
+          "prefix-random-65536": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-random-65536/observations.json.gz",
+            "sha256": "45226af2016b0c0c1c09e500207554829914cac8c99b183b8f4c5dea4759f1d4"
+          },
+          "prefix-natural-33027": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-natural-33027/observations.json.gz",
+            "sha256": "f951c52d09b5fc7d21e0928a07a6b4586aef56fdac29ce9b86583dcbc11b89d0"
+          },
+          "prefix-natural-32768": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-natural-32768/observations.json.gz",
+            "sha256": "fe07fa8294ba9864328b0765fa794e83b43bac83b4d6c05ca5c5d76dd4aa7708"
+          },
+          "prefix-random-16384": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-random-16384/observations.json.gz",
+            "sha256": "994378e3771f84949ceeba35d17818803f46314360bbf4724c77c07af24e6219"
+          },
+          "heldout-window-32767": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/heldout-window-32767/observations.json.gz",
+            "sha256": "55a72a325c3418208e7e0122bf9279cc7bae24b206b510a9df541e10b81afa26"
+          },
+          "prefix-natural-32767": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-natural-32767/observations.json.gz",
+            "sha256": "c4dfd3627438282daa478c679c2df2bc9927ce5e177f3a72b339d32b340e508f"
+          },
+          "prefix-natural-32769": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/prefix-natural-32769/observations.json.gz",
+            "sha256": "f34f64a66cbc02216e9d30804b179dad19a8cb99081e39d0282e27dce5d82698"
+          },
+          "heldout-window-32768": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/heldout-window-32768/observations.json.gz",
+            "sha256": "8d077e02bf270f8e7640ed241ffc1ebb4d120a27c63a0ce7f5abe2a61f919952"
+          }
+        },
+        "cleanup": {
+          "mech-control": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/mech-control.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "mech-experiment": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/mech-experiment.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "roc": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/roc.stderr",
+            "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+          },
+          "libdeflate": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/forward/libdeflate.stderr",
+            "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+          }
+        }
+      }
+    },
+    {
+      "order": "reverse",
+      "cases": 81,
+      "timed_calls": 982656,
+      "wins": {
+        "mech-control": {
+          "roc": 81,
+          "libdeflate": 60
+        },
+        "mech-experiment": {
+          "roc": 81,
+          "libdeflate": 61
+        }
+      },
+      "receipt": {
+        "id": "common-m1-shared-heap-layout-q3/full-guarded/reverse",
+        "kind": "full",
+        "order": "reverse",
+        "blocks_per_case": 96,
+        "pins": {
+          "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/pins.json",
+          "sha256": "7d541f73ad99dc3380f0936609abbdf5e172dd78d12cdb0e8a5b5c6e911e1307"
+        },
+        "fixture_inventory": {
+          "path": "common-m1-shared-heap-layout-q3/full-guarded/fixtures.json",
+          "sha256": "5bfd407e42356ac57c61f858ad9920f1f9bf2e2fce1b2853c50cc20eda186b38"
+        },
+        "summary": {
+          "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/summary.json",
+          "sha256": "a2b6eda2c289b24cba75df2c055d5c1295b7b59b7ee6bb69217ca1847829fc40"
+        },
+        "complete": {
+          "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/complete.json",
+          "sha256": "2e54dfa5984a50621e44303a7cbdd811e578a4c88e1b46ef989159527d443c6f"
+        },
+        "observations": {
+          "heldout-mixed-131073": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/heldout-mixed-131073/observations.json.gz",
+            "sha256": "fa0ae8595a14ac590bf8032927c0e0f5e63050387bfa8100feb6dc698c0109c1"
+          },
+          "prefix-random-32769": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-random-32769/observations.json.gz",
+            "sha256": "8bec8caac6ef81cc21fe2b69bd220ab8fe8b1a508be5959f868f822620824088"
+          },
+          "prefix-natural-1024": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-natural-1024/observations.json.gz",
+            "sha256": "995a99860603251c3b428932f16c671019d9135a7209ac9a9f3f8ab2bf879c71"
+          },
+          "prefix-random-32767": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-random-32767/observations.json.gz",
+            "sha256": "f792c57f0cd33bfdffb36fdd166bd99d4ace1e8cd18174a51b2fd86cdfeb4e59"
+          },
+          "prefix-repeated-1024": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-repeated-1024/observations.json.gz",
+            "sha256": "6b78a8e1c8f77658421740478f24107e7fd037bf6f066a3884b53b702060aa04"
+          },
+          "random-1024": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/random-1024/observations.json.gz",
+            "sha256": "442e88fbae5387742421fd597f48c18e9a078aab07e98281ddd038885e91dd7a"
+          },
+          "prefix-repeated-65537": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-repeated-65537/observations.json.gz",
+            "sha256": "dc62f62d9a9fa62d170634053f25ee7fc813a249919bf03327bba35b3a05ec51"
+          },
+          "prefix-periodic-4096": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-periodic-4096/observations.json.gz",
+            "sha256": "b6b8ad3abb9768c94c673175517f26836b2349efc68135ea4efc188d69a9e55f"
+          },
+          "prefix-natural-16384": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-natural-16384/observations.json.gz",
+            "sha256": "340d6b481fdec1d9f77770d08889c9862881120a995a9e39f73c57b8e25e8846"
+          },
+          "prefix-random-33027": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-random-33027/observations.json.gz",
+            "sha256": "a180be61dbf813ef811995d2c8351931a0136a21bfcecaf0c53e666471db4c9a"
+          },
+          "prefix-random-32768": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-random-32768/observations.json.gz",
+            "sha256": "197f1b6846dc8f62b6700f6897f19e75d50c34753d61734795fa3a3c32d1bdaa"
+          },
+          "prefix-random-4096": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-random-4096/observations.json.gz",
+            "sha256": "990634c255fe9b76c53c9cec16c3489fefea0a46f3c48456c04b1d4222061a01"
+          },
+          "prefix-natural-1048576": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-natural-1048576/observations.json.gz",
+            "sha256": "3fc262cbd89f283596f982269f690d9dd1bb4c85c7f053298aa1616cc678d822"
+          },
+          "prefix-repeated-65536": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-repeated-65536/observations.json.gz",
+            "sha256": "f11421aa931af6506c2f33a78ab764e3aebdf75fae526ac6619c0029f75c1812"
+          },
+          "prefix-repeated-16384": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-repeated-16384/observations.json.gz",
+            "sha256": "5e9a122ebe38a3bbd25e02a2f622e39c73ce5328f8308eb0626d48d163cff6f9"
+          },
+          "prefix-periodic-65535": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-periodic-65535/observations.json.gz",
+            "sha256": "cf17a510dd1d2174aa3cb9c9a5cbfbeb73e1f39051ccee0e32b77523d162ec38"
+          },
+          "prefix-random-262144": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-random-262144/observations.json.gz",
+            "sha256": "e8af2913c88bfd332f4beab1c306f9b88fc167b056a7c5711cc0d2485fc77d69"
+          },
+          "prefix-periodic-1048576": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-periodic-1048576/observations.json.gz",
+            "sha256": "a100846da5605a75200f3222e37b9e3f7372f4bb1e0569c1e477ba0bbc176662"
+          },
+          "prefix-repeated-262144": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-repeated-262144/observations.json.gz",
+            "sha256": "686bb6b34d056b716e7916ced8230a4ad1e2aa4556ae473b46f7a1984ec4d73a"
+          },
+          "eight-literals-prefix": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/eight-literals-prefix/observations.json.gz",
+            "sha256": "528da4c8db595d5b340313d2163cb294c6db2f229becd43e37a33d6142b32eb9"
+          },
+          "prefix-natural-65536": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-natural-65536/observations.json.gz",
+            "sha256": "8314dbe7962f572cfaeeb704656ac01ebcf2bbe868bf7abaaf417d49f7df73e0"
+          },
+          "empty": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/empty/observations.json.gz",
+            "sha256": "d07c12faab684fed040dbd28dbfa03a0ad88d185a0778653418487c25b78f2eb"
+          },
+          "one-stored": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/one-stored/observations.json.gz",
+            "sha256": "a845efe7ad26fb28e73223a32cf93c174dcbdf0598a9e03ed45e8e3c4df33d50"
+          },
+          "repeated-32769": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/repeated-32769/observations.json.gz",
+            "sha256": "2431f413e354585ea45c0248f7f60c4c0b39a2009bfbeac83dfbf6b543c7cbcd"
+          },
+          "prefix-natural-65537": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-natural-65537/observations.json.gz",
+            "sha256": "1c9d5f0409c45a72b2337d1e8548a0e5e93ad919f4ea0d27c4d4a90abbf0c19a"
+          },
+          "prefix-natural-4096": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-natural-4096/observations.json.gz",
+            "sha256": "36e9c13f4e6eadb2ecd682197fdd39ec4d7cef785bd914146952b79d23a23a1d"
+          },
+          "prefix-repeated-4096": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-repeated-4096/observations.json.gz",
+            "sha256": "d8ec1be54d4a5045e0f3b1ff388f6fd82cdc0f734a9e272f536c574af68c4d27"
+          },
+          "320-overlap": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/320-overlap/observations.json.gz",
+            "sha256": "e90bcafa79fc7469567b5804f2b9de8f9e7d475297da3d703ca659ab4106a5f3"
+          },
+          "prefix-periodic-1024": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-periodic-1024/observations.json.gz",
+            "sha256": "11f8575627ee76152109dd1e57c28d4a842b4dfe5afc9076b64056aa0efefab5"
+          },
+          "prefix-random-65535": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-random-65535/observations.json.gz",
+            "sha256": "ad6c10729159cbf8fcb53ac0f4847529cb72b5203d37a8d3939ba37dd56f6f97"
+          },
+          "prefix-random-1048576": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-random-1048576/observations.json.gz",
+            "sha256": "5d6b95e63df0f7ec49fd774f9450caff7c81885701342337d7c2b0512b9ea3e4"
+          },
+          "heldout-slides-65537": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/heldout-slides-65537/observations.json.gz",
+            "sha256": "ad039d520818d32b55aa42a29d039dfdb89a21a592cbba322b821ab1f3f724be"
+          },
+          "prefix-random-1024": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-random-1024/observations.json.gz",
+            "sha256": "029afa4c76e32a54ba489a67c7d2544c3e89eafb90b807885ddad5720c04f79b"
+          },
+          "random-256": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/random-256/observations.json.gz",
+            "sha256": "261699df7a4effaa4f069042403d70f8bac6a0e58d6874f959bd7ea2d495a2cb"
+          },
+          "random-32769": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/random-32769/observations.json.gz",
+            "sha256": "509256daddc4e9286d3d398efb7df5391cb95811f53a021b3ceccfa471589d17"
+          },
+          "reymont-prefix-16384": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/reymont-prefix-16384/observations.json.gz",
+            "sha256": "a16a5cd0c180bf4c1a1e38b480760311f8fb7f5c355c8501a55f7a696679c119"
+          },
+          "prefix-periodic-32768": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-periodic-32768/observations.json.gz",
+            "sha256": "4fc100ee520d749b2d3f66abfbf01a524c0294401c6102f322be8be48f21b9c9"
+          },
+          "prefix-periodic-33027": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-periodic-33027/observations.json.gz",
+            "sha256": "aa96ea135ca1011169ff29ca6993915b48bc2819555b86e6a35965a072bfd9f9"
+          },
+          "prefix-periodic-131072": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-periodic-131072/observations.json.gz",
+            "sha256": "8ccb51a66ad83286bb621671974306f5eb762c1c14141f354818e3961b5a612d"
+          },
+          "prefix-repeated-1048576": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-repeated-1048576/observations.json.gz",
+            "sha256": "249379dfc0a6165b195cd6780f99bfc7a44ad50266ce408bd8e084e92728a993"
+          },
+          "prefix-periodic-32769": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-periodic-32769/observations.json.gz",
+            "sha256": "defeec9f86342518cb9ed9636e0851ec03e2ab464661edba489230d35186cc68"
+          },
+          "repeated-1024": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/repeated-1024/observations.json.gz",
+            "sha256": "4a06ad76b2fe6d76673f4c0f7487a6b45e5ad27290fd9e9c0e2914a1d6948b0e"
+          },
+          "reymont-prefix-1024": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/reymont-prefix-1024/observations.json.gz",
+            "sha256": "abb5b2da5afadeadb1988ada75832407d11c6b8ed507491236267f11a051981b"
+          },
+          "prefix-periodic-32767": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-periodic-32767/observations.json.gz",
+            "sha256": "8b122ede816c1583cbda385b27dd3675723c15c9558d6e5fc020e77c4d58076e"
+          },
+          "seven-stored-prefix": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/seven-stored-prefix/observations.json.gz",
+            "sha256": "cc5ff10cb54b1a00abbe565d5cc27ea909bd2b75c59926df9ec229daeec020d9"
+          },
+          "prefix-natural-262144": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-natural-262144/observations.json.gz",
+            "sha256": "481ce7193e0e91a180f587e677872838ba90bad8eff64c1b980346acf072e5e9"
+          },
+          "prefix-repeated-8192": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-repeated-8192/observations.json.gz",
+            "sha256": "a3664b6b131e05790b607cfaa8629a38f4a8cd273d4f6301ea7bf2810ca3f0c8"
+          },
+          "prefix-periodic-262144": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-periodic-262144/observations.json.gz",
+            "sha256": "0e11f5332e43c2b89deb0915ded34d91842b9eb7a745b32f6cc5a530580790a3"
+          },
+          "prefix-natural-8192": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-natural-8192/observations.json.gz",
+            "sha256": "f144f1e34c0ead1d1d6a4fd14ab24eca802c16b55c8c2808d47fefcdabf87098"
+          },
+          "prefix-periodic-16384": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-periodic-16384/observations.json.gz",
+            "sha256": "cce6ec9e40e4fc3f7a1d395281e6e180686298407a5e0141e02921ad5f92a3a1"
+          },
+          "prefix-repeated-65535": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-repeated-65535/observations.json.gz",
+            "sha256": "76c8d256335451459a09f3aaab8663d85ab9a4a5f1bf05c2e12a5d544bc78c99"
+          },
+          "prefix-natural-131072": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-natural-131072/observations.json.gz",
+            "sha256": "53c819c5b8837bd71dd9d7373a3d023ec18922c1b8c2e5bb9dc108761a979c86"
+          },
+          "33027-periodic-window": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/33027-periodic-window/observations.json.gz",
+            "sha256": "7db1ca1087031bd8c525ffb8b36a6ab6abdc671fb31ff3ea7915af04c9d70c69"
+          },
+          "prefix-natural-65535": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-natural-65535/observations.json.gz",
+            "sha256": "1265342b58c52baf745dbde927c0ce863697ca494f34428e936834eed32c3f94"
+          },
+          "16384-distribution-change": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/16384-distribution-change/observations.json.gz",
+            "sha256": "720d6241a606a185ae0768ae24a4c48b3c10a95d43c6c89233d856a02e99ccb9"
+          },
+          "eight-literals": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/eight-literals/observations.json.gz",
+            "sha256": "c6d27344cc21b018173bb3d091cee7661bb6efb6f0f5c234f3dde4dcf3854621"
+          },
+          "prefix-periodic-65536": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-periodic-65536/observations.json.gz",
+            "sha256": "b1796e7065f93d4bbb7c46b514689df3c3e04bfb5edc59f7444db68d53537c5a"
+          },
+          "heldout-random-65537": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/heldout-random-65537/observations.json.gz",
+            "sha256": "61e7e649409c5b54bcb69332e21a798b5c5b570f9dbcf5d2fd1993e47242ed0c"
+          },
+          "random-64": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/random-64/observations.json.gz",
+            "sha256": "b8cc287127e7513569d90daf095c3b128912a95d87e36427f967215cc468f914"
+          },
+          "reymont-prefix-32769": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/reymont-prefix-32769/observations.json.gz",
+            "sha256": "83b4458f537e4264b1a33df636cd4a26397cc38f21960555b243ee7e3013a8ed"
+          },
+          "32-high-entropy-stored": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/32-high-entropy-stored/observations.json.gz",
+            "sha256": "b77d3c0e8caaa918ab1913404218f6d9bab5b0dc5ec1c935c9620ccc3d04731c"
+          },
+          "prefix-periodic-65537": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-periodic-65537/observations.json.gz",
+            "sha256": "160c3fb9ee745ec871e5363ad306b34e76bcdfe5bb946a1a37beb88250986121"
+          },
+          "prefix-repeated-32767": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-repeated-32767/observations.json.gz",
+            "sha256": "1cb761c094517302f25a54e364065672c2efefcf00b7bac47a9a473e89931529"
+          },
+          "prefix-random-131072": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-random-131072/observations.json.gz",
+            "sha256": "acfd89cb0ce24f10017167c09ee168544795fc0a251a1b7f14ca64d6deb1439f"
+          },
+          "prefix-repeated-32769": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-repeated-32769/observations.json.gz",
+            "sha256": "b95100cefb200883d69d5660e235ae81355b4935fb2dfc3beff2280cc7a2630f"
+          },
+          "prefix-periodic-8192": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-periodic-8192/observations.json.gz",
+            "sha256": "11d04cc74a9a06f2a497a9fbb3ed1e973edd30d4bf1fbe906eaecad41e9e91fe"
+          },
+          "eight-overlap": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/eight-overlap/observations.json.gz",
+            "sha256": "105a26f6f0561d6588f510c43d1e6b777bd54cd213329efc8efc4060e277694e"
+          },
+          "prefix-random-65537": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-random-65537/observations.json.gz",
+            "sha256": "6d5a4ae562d91efa5eb1015d71c5de1917d31e1daff21b53839d26971471043f"
+          },
+          "prefix-repeated-131072": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-repeated-131072/observations.json.gz",
+            "sha256": "2360265187716f24e2cee7086e5316431f76a495f50ad6489d4e78cda8659870"
+          },
+          "prefix-repeated-32768": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-repeated-32768/observations.json.gz",
+            "sha256": "494a58938dc8aecd3a5593710a809986900eec48a38e516e4aa2daa4e598fe4f"
+          },
+          "prefix-repeated-33027": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-repeated-33027/observations.json.gz",
+            "sha256": "9f13c8017a36cbfa804b6dc5a3d9af236feaf5b11b7394c60cda27a30802d495"
+          },
+          "128-biased-dynamic": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/128-biased-dynamic/observations.json.gz",
+            "sha256": "cb29d3f1601f35cc8b013a60bb835caedd32e860d561b1299d4d67d53a703843"
+          },
+          "prefix-random-8192": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-random-8192/observations.json.gz",
+            "sha256": "414727eb2e8533ab9c934d9503b909240a94946be79b64910e3ab94e0c33e9e7"
+          },
+          "prefix-random-65536": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-random-65536/observations.json.gz",
+            "sha256": "5ce23d25e8392db02b3431f131bf2e6eb5ac3ab11f722f9dde96aa111a24e457"
+          },
+          "prefix-natural-33027": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-natural-33027/observations.json.gz",
+            "sha256": "060ed25f8f2628c7c1902d67ace5f6b8153a05ffca8e8519cac8868cd651bb9d"
+          },
+          "prefix-natural-32768": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-natural-32768/observations.json.gz",
+            "sha256": "a9b4859a6fcd3aa62488e17a622778084916666e9710458c4c6a6f6335151d5a"
+          },
+          "prefix-random-16384": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-random-16384/observations.json.gz",
+            "sha256": "a2f3efca7ce09ee04706e2f895b55aec9c208a51cd8661a6d49c67693c62b051"
+          },
+          "heldout-window-32767": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/heldout-window-32767/observations.json.gz",
+            "sha256": "53de5e0a69e351d3a9351ae45577fdd1799d4f1f9c408133d4b8610200f3fdd7"
+          },
+          "prefix-natural-32767": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-natural-32767/observations.json.gz",
+            "sha256": "2ae1a2314a61b2151bba12b0423da09fe328f95ded95037109de2829579385f2"
+          },
+          "prefix-natural-32769": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/prefix-natural-32769/observations.json.gz",
+            "sha256": "a97fad8055b6a0e59bab40903f3bf5a05e54cb60730283bfe47b74eae8a26511"
+          },
+          "heldout-window-32768": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/heldout-window-32768/observations.json.gz",
+            "sha256": "95da8d181a784290030c55d01b7d0f0b7b1510748b4ced8b57975da404241290"
+          }
+        },
+        "cleanup": {
+          "mech-control": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/mech-control.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "mech-experiment": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/mech-experiment.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "roc": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/roc.stderr",
+            "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+          },
+          "libdeflate": {
+            "path": "common-m1-shared-heap-layout-q3/full-guarded/reverse/libdeflate.stderr",
+            "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+          }
+        }
+      }
+    }
+  ]
+}
