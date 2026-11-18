@@ -42690,8 +42690,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/mod.rs",
-      "sha256": "22633a7a41c927d1e89eab40d4f700ee54ac941c69da35dcd29febb26d2fba63",
-      "bytes": 4459
+      "sha256": "b1ac3e9a461744a09cf4d07b93fee545f58dccd6adced8c98af2911d3958a483",
+      "bytes": 4481
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/object.rs",
@@ -43560,8 +43560,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/README.md",
-      "sha256": "33490131b48ee8986b436ca01c3057a0da407ab4f9939e2bf6a822cf431500d9",
-      "bytes": 2800
+      "sha256": "91ad7e744f6a5f055376efd225614a3896ab249977c1cdedae688aaefdeaa686",
+      "bytes": 4139
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/common-reference-ready.json",
@@ -43580,8 +43580,33 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/status.json",
-      "sha256": "d0b082d8acb57c871528c0be569fa230e5c33693e4537cf642f13754a325d1a5",
-      "bytes": 5745
+      "sha256": "44f06d79a395ed4d1338189c1cd6f45414ba954baaf01be712e42f48340425ae",
+      "bytes": 6435
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/m3-first-full-rejection.json",
+      "sha256": "0287ee07bc11fcb43f1b19c9b8561005b3810c3e18d2e60079b12749def42783",
+      "bytes": 402
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/archive.json",
+      "sha256": "9237275979a497db89f1c34f4827f80e5eb7ee8a2d4d2d8caa6dd5941d8634c2",
+      "bytes": 436
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/m3-focus-replay.json",
+      "sha256": "8a57f23bde17ade1413689c934e7fba0dcf9243e1f0526e9d3933e8480026dc5",
+      "bytes": 8542
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/m3-focus-result.json",
+      "sha256": "c16e7ef7b2df38843124e59b9bd7d46acf868e4940697fdb7fa1d8042273f35a",
+      "bytes": 497
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/m3-focus-timings.csv",
+      "sha256": "1a0bd8ed85dcc94e53052f821dd0e6e4982f70520ac57e76fcead554085c472b",
+      "bytes": 1726
     }
   ]
 }

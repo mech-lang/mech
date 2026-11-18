@@ -1,0 +1,32 @@
+[
+  {
+    "order": "forward",
+    "cases": 8,
+    "timed_calls": 99840,
+    "wins": {
+      "mech-control": {
+        "roc": 8,
+        "libdeflate": 7
+      },
+      "mech-experiment": {
+        "roc": 7,
+        "libdeflate": 6
+      }
+    }
+  },
+  {
+    "order": "reverse",
+    "cases": 8,
+    "timed_calls": 99840,
+    "wins": {
+      "mech-control": {
+        "roc": 8,
+        "libdeflate": 6
+      },
+      "mech-experiment": {
+        "roc": 8,
+        "libdeflate": 7
+      }
+    }
+  }
+]

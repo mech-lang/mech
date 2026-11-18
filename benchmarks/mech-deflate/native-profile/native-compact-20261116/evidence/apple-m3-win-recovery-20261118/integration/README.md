@@ -20,6 +20,24 @@ checks and the 81-case stack probe. Peak native stack is **4,784 B**, below
 the unchanged 5,280 B limit. Its M3 timing run is pending.
 [Common reference](common-reference-ready.json)
 
+The eight-case M3 screen completed in both orders: **7/8 Roc and 6/8
+libdeflate forward**, **8/8 Roc and 7/8 libdeflate reverse**. Raw-record
+replay verifies all **199,680 timed calls**. These focused results do not
+qualify the full 81-case configuration. The first full run stopped after
+17 completed cases when the activity guard observed an external Rust
+compiler at 94.1% CPU. It is retained as an interrupted run. A fresh full
+comparison is queued with the same timing and resource checks.
+[Focused results](m3-focus-result.json) · [Seconds and comparator multiples](m3-focus-timings.csv) ·
+[Raw-record replay](m3-focus-replay.json) · [Full-run rejection](m3-first-full-rejection.json)
+
+The source snapshots, compiler and worker identities, prepared combined
+builds, original and corrected replay harnesses, focused observations,
+interrupted observations and guarded retry commands are preserved in the
+[verified 553-payload-member integration archive](https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/pr995-deflate-shared-integration-20261118-8908ed6b1349.tar.gz).
+Its SHA-256 is `8908ed6b1349acc41a3718a21d96e0d87e7046fde7dad64a7b4bde65f1f020fc`.
+It is a delta over the preceding recovery archive; unchanged payload is
+retained there. [Archive receipt and parent hash](archive.json)
+
 The existing M1 results and M3 results still describe different build
 configurations. The newest enabled M3 settings have not been measured on
 M1, and a single final configuration has not been qualified on both

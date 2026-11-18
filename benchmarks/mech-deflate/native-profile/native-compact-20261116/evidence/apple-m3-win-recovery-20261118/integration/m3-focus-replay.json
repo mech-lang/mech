@@ -1,0 +1,184 @@
+{
+  "status": "passed",
+  "plan_sha256": "7446abfc7ab55fa8a0e4b5a3d2e9bb38ed81585a811ff1f05d7f967e49688dcc",
+  "runs": [
+    {
+      "order": "forward",
+      "cases": 8,
+      "timed_calls": 99840,
+      "wins": {
+        "mech-control": {
+          "roc": 8,
+          "libdeflate": 7
+        },
+        "mech-experiment": {
+          "roc": 7,
+          "libdeflate": 6
+        }
+      },
+      "receipt": {
+        "id": "common-m1-shared-heap-layout/focus-guarded/forward",
+        "kind": "focus",
+        "order": "forward",
+        "blocks_per_case": 96,
+        "pins": {
+          "path": "common-m1-shared-heap-layout/focus-guarded/forward/pins.json",
+          "sha256": "91b484fc727fa4c1c54ac3d1733876f6ab316eee4d0b367a28159d74b7fa8e83"
+        },
+        "fixture_inventory": {
+          "path": "common-m1-shared-heap-layout/focus-guarded/fixtures.json",
+          "sha256": "5bfd407e42356ac57c61f858ad9920f1f9bf2e2fce1b2853c50cc20eda186b38"
+        },
+        "summary": {
+          "path": "common-m1-shared-heap-layout/focus-guarded/forward/summary.json",
+          "sha256": "2b393bec012e5973619ffd8eed03b6d9caec0b76d89c3fc9e567e4e5414e724d"
+        },
+        "complete": {
+          "path": "common-m1-shared-heap-layout/focus-guarded/forward/complete.json",
+          "sha256": "e0f559a08864fd25e52169e11d2a7a828c2d29dd40971bc6a31536109632ec83"
+        },
+        "observations": {
+          "random-1024": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/forward/random-1024/observations.json.gz",
+            "sha256": "ac203f021ac46bf9930e74b11c957ba55d146fb7d81a089ae1c4a7a1ce05c184"
+          },
+          "prefix-natural-65536": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/forward/prefix-natural-65536/observations.json.gz",
+            "sha256": "ef23f8c6ea0c3e9157d5aed06d3acf2ebb9a0ab3b189d95e29f8017e8bb67c7f"
+          },
+          "prefix-natural-65537": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/forward/prefix-natural-65537/observations.json.gz",
+            "sha256": "c22eab97681034ba282d98ee93dd97accdac16b45a2e089c75949f4f593dcef4"
+          },
+          "320-overlap": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/forward/320-overlap/observations.json.gz",
+            "sha256": "b9457c676ae602310a8b2f2d9698af6a8df5b7de15b777cd8682843cfba5dda6"
+          },
+          "prefix-periodic-1024": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/forward/prefix-periodic-1024/observations.json.gz",
+            "sha256": "e4374ad231eb25e19f36086fca2f192033816b556f75727850a18851d5b896cc"
+          },
+          "prefix-random-1024": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/forward/prefix-random-1024/observations.json.gz",
+            "sha256": "358f7185c126cbcef7f77e698a84a80ee5e60269e330e5d90dc642dd3dd89ba4"
+          },
+          "prefix-natural-8192": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/forward/prefix-natural-8192/observations.json.gz",
+            "sha256": "9739cb713008174e8007d2cc8eb35a84bcaffa073cd82defbaf98ba10816ec04"
+          },
+          "prefix-natural-65535": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/forward/prefix-natural-65535/observations.json.gz",
+            "sha256": "045f8c8dc70695bb843863f4c46bd08cf2ded4748b58cd2a5624698308f086cb"
+          }
+        },
+        "cleanup": {
+          "mech-control": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/forward/mech-control.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "mech-experiment": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/forward/mech-experiment.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "roc": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/forward/roc.stderr",
+            "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+          },
+          "libdeflate": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/forward/libdeflate.stderr",
+            "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+          }
+        }
+      }
+    },
+    {
+      "order": "reverse",
+      "cases": 8,
+      "timed_calls": 99840,
+      "wins": {
+        "mech-control": {
+          "roc": 8,
+          "libdeflate": 6
+        },
+        "mech-experiment": {
+          "roc": 8,
+          "libdeflate": 7
+        }
+      },
+      "receipt": {
+        "id": "common-m1-shared-heap-layout/focus-guarded/reverse",
+        "kind": "focus",
+        "order": "reverse",
+        "blocks_per_case": 96,
+        "pins": {
+          "path": "common-m1-shared-heap-layout/focus-guarded/reverse/pins.json",
+          "sha256": "91b484fc727fa4c1c54ac3d1733876f6ab316eee4d0b367a28159d74b7fa8e83"
+        },
+        "fixture_inventory": {
+          "path": "common-m1-shared-heap-layout/focus-guarded/fixtures.json",
+          "sha256": "5bfd407e42356ac57c61f858ad9920f1f9bf2e2fce1b2853c50cc20eda186b38"
+        },
+        "summary": {
+          "path": "common-m1-shared-heap-layout/focus-guarded/reverse/summary.json",
+          "sha256": "e028742fe06aeaf3df5f2388b06610aea36b68279d7af67c8b0f30d55af349f9"
+        },
+        "complete": {
+          "path": "common-m1-shared-heap-layout/focus-guarded/reverse/complete.json",
+          "sha256": "e0f559a08864fd25e52169e11d2a7a828c2d29dd40971bc6a31536109632ec83"
+        },
+        "observations": {
+          "random-1024": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/reverse/random-1024/observations.json.gz",
+            "sha256": "974bed8850425a05b2fe9e88c1779b00422753acc71c4d4eae072ebf0ee95ac6"
+          },
+          "prefix-natural-65536": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/reverse/prefix-natural-65536/observations.json.gz",
+            "sha256": "edecb30a295a6bf720cf191afa691087d19fa52072fabd5f685371dc363ab7e4"
+          },
+          "prefix-natural-65537": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/reverse/prefix-natural-65537/observations.json.gz",
+            "sha256": "d478230b87a6cef64c083cc7d00ee8e6594e39bedb914b0493a0bd6ee06c9ae2"
+          },
+          "320-overlap": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/reverse/320-overlap/observations.json.gz",
+            "sha256": "60a6d0c928c6a422f5d149a96b2261604402b1cc852ca587cfe12098bc9b48e9"
+          },
+          "prefix-periodic-1024": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/reverse/prefix-periodic-1024/observations.json.gz",
+            "sha256": "519d5191a355ca3448c36170e7fd5eedbfa3196610991bd9e8942c8b9ba185ab"
+          },
+          "prefix-random-1024": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/reverse/prefix-random-1024/observations.json.gz",
+            "sha256": "83fdacb72721425c331dc7a7186407c61998ae1d7e418e3dedfc99621bc64018"
+          },
+          "prefix-natural-8192": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/reverse/prefix-natural-8192/observations.json.gz",
+            "sha256": "b6aad07ac71d21bde711394502e4bd66d00f638b2aeccdaf5c505b94da65779e"
+          },
+          "prefix-natural-65535": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/reverse/prefix-natural-65535/observations.json.gz",
+            "sha256": "a1f7bcfdf98d95b4273d2c39f64be55dede7fc40e13b221544c5771ed545809a"
+          }
+        },
+        "cleanup": {
+          "mech-control": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/reverse/mech-control.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "mech-experiment": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/reverse/mech-experiment.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "roc": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/reverse/roc.stderr",
+            "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+          },
+          "libdeflate": {
+            "path": "common-m1-shared-heap-layout/focus-guarded/reverse/libdeflate.stderr",
+            "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+          }
+        }
+      }
+    }
+  ]
+}
