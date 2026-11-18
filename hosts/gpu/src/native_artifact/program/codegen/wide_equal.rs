@@ -624,13 +624,20 @@ pub(in crate::native_artifact) fn optimize(
     wide_tier: bool,
 ) -> Outcome {
     let strategy = std::env::var("MECH_EQUAL_COMPARE_STRATEGY").ok();
-    optimize_with_strategy(context, certificates, reuse_prefix, strategy.as_deref())
+    optimize_with_strategy(
+        context,
+        certificates,
+        reuse_prefix,
+        wide_tier,
+        strategy.as_deref(),
+    )
 }
 
 fn optimize_with_strategy(
     context: &mut Context,
     certificates: &[Certificate],
     reuse_prefix: bool,
+    wide_tier: bool,
     strategy: Option<&str>,
 ) -> Outcome {
     let mut outcome = Outcome::default();

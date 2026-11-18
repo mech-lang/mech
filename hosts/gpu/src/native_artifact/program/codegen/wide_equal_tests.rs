@@ -357,10 +357,16 @@ fn vector_nonzero_branch_preserves_every_bit_and_normalized_observation() {
 
 #[test]
 fn equality_scan_strategies_preserve_word_mismatches_and_admitted_tails() {
-    for strategy in ["word", "vector"] {
+    for (strategy, wide_tier) in [("word", true), ("vector", true), ("vector", false)] {
         let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
         let (mut context, certificate) = fixture(&module, "normal");
-        let outcome = optimize_with_strategy(&mut context, &[certificate], false, Some(strategy));
+        let outcome = optimize_with_strategy(
+            &mut context,
+            &[certificate],
+            false,
+            wide_tier,
+            Some(strategy),
+        );
         if strategy == "word" {
             assert!(outcome.wider.is_empty());
         } else {

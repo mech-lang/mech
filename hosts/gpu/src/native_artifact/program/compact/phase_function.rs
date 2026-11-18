@@ -1216,6 +1216,15 @@ fn prepare_impl<M: Module>(
     if !observe
         && private.is_some()
         && vectors.is_some()
+        && std::env::var_os("MECH_COMPACT_SELECT_PHASE_DEFAULTED_LOADS")
+            .is_some_and(|target| target == "all" || target == symbol.as_str())
+    {
+        let folded = cfg_cleanup::defaulted_loads::fold(module, &mut context)?;
+        eprintln!("{symbol} defaulted loads folded: {folded}");
+    }
+    if !observe
+        && private.is_some()
+        && vectors.is_some()
         && std::env::var_os("MECH_COMPACT_SKIP_EMPTY_JUMPS")
             .is_some_and(|scope| scope == "vector" || scope == "all")
     {
