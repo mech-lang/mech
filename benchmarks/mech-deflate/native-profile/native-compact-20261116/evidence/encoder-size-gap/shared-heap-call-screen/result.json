@@ -1,0 +1,103 @@
+{
+  "source_pin": "f5df10d5791a54f39253b693abfb3d43ccb03da3",
+  "host": "Apple M1, arm64",
+  "status": "experimental",
+  "qualification": "Reject",
+  "retained_qualified_encoder": "06186246e2f3a9a50f90778be101587ec71277bbcf8f4192862c72fc726c4f8f",
+  "retained_qualified_worker": "884e35f4bdacf47e82adc39c5535451eb0a82b271b6c1fdd6419984312d4f61c",
+  "encoder": "a747b26a6fc09684222fa85b3f7ca1d3532ec2abb5902fc1e359fbf8fadb6fed",
+  "worker": "2b5ad01cdf276075c93d75957b48da8d0914e256f6ad9414bc3c76403966ba85",
+  "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+  "metadata": "f3f4c90bd48e9d4b5e9aaf40d8d636cf64c45ae5219dfd6f57b513c41223c600",
+  "stack_bytes": 4784,
+  "wins": {
+    "forward": {
+      "point_estimate_wins": {
+        "roc": 80,
+        "libdeflate": 62
+      },
+      "distinct_contract_point_estimate_wins": {
+        "roc": 73,
+        "libdeflate": 56
+      }
+    },
+    "reverse": {
+      "point_estimate_wins": {
+        "roc": 81,
+        "libdeflate": 62
+      },
+      "distinct_contract_point_estimate_wins": {
+        "roc": 74,
+        "libdeflate": 56
+      }
+    }
+  },
+  "lost_cases": [
+    {
+      "roc": [
+        "prefix-natural-32769"
+      ],
+      "libdeflate": []
+    },
+    {
+      "roc": [],
+      "libdeflate": []
+    }
+  ],
+  "candidate_control_timing": {
+    "slowdowns": [],
+    "uncertain": [
+      "one-stored: combined and individual run bounds conflict: shared-terminal-shared-heap-calls-full-reverse",
+      "random-64: regression bound or duplicate-control repeatability unresolved",
+      "reymont-prefix-1024: regression bound or duplicate-control repeatability unresolved",
+      "reymont-prefix-32769: regression bound or duplicate-control repeatability unresolved",
+      "heldout-window-32767: regression bound or duplicate-control repeatability unresolved",
+      "heldout-window-32768: regression bound or duplicate-control repeatability unresolved",
+      "heldout-slides-65537: regression bound or duplicate-control repeatability unresolved",
+      "prefix-natural-32769: regression bound or duplicate-control repeatability unresolved",
+      "prefix-natural-33027: regression bound or duplicate-control repeatability unresolved",
+      "prefix-natural-131072: regression bound or duplicate-control repeatability unresolved",
+      "prefix-periodic-4096: regression bound or duplicate-control repeatability unresolved",
+      "prefix-repeated-4096: regression bound or duplicate-control repeatability unresolved"
+    ]
+  },
+  "build": {
+    "name": "Shared heap call setup screen",
+    "encoder_text_bytes": 64668,
+    "encoder_sha256": "a747b26a6fc09684222fa85b3f7ca1d3532ec2abb5902fc1e359fbf8fadb6fed",
+    "compiler_sha256": "67e7ebf4333ad6b7c40be2dc43d223641d2234cf2348d7800b810fe18d4f117c",
+    "measured_trials": 8,
+    "measurement_plan_sha256": "78d1629e5defb617387c6e2d9285b21ec9f41dc838b700aa8e1a440c969ddeea",
+    "median_seconds": {
+      "source": 2.1483874784316868,
+      "link": 0.03497633314691484,
+      "source_through_link": 2.1834957704413682,
+      "strip": 0.010482062352821231,
+      "source_through_strip": 2.1942315413616598
+    },
+    "source_phase_median_seconds": {
+      "parse": 0.710227583,
+      "catalog": 1.9792e-05,
+      "frontend": 0.214810667,
+      "artifact": 0.006951792,
+      "encode": 0.002593542,
+      "native": 1.1874357500000001
+    },
+    "paired_ratios": {
+      "roc": 0.7325352351572081,
+      "libdeflate": 4.546455863333239
+    },
+    "encoder_text_ratios": {
+      "roc": 1.1208402662229617,
+      "libdeflate": 1.7440129449838189
+    },
+    "paired_ratio_to_session_control": 1.0012613624502382,
+    "median_paired_seconds_saved": -0.0027491042856127024,
+    "faster_paired_trials": 2,
+    "stripped_executable": {
+      "bytes": 276072,
+      "sha256": "8c3d728ed3a4554c714c936a130dcebab455a98cfb94e689510377670aa41a61"
+    },
+    "evidence": "evidence/encoder-size-gap/shared-heap-call-screen/deployment.json"
+  }
+}

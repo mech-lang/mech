@@ -1,0 +1,67 @@
+{
+  "source": "f5df10d5791a54f39253b693abfb3d43ccb03da3",
+  "compiler": "39c040a3f4bcefcebf641131ab0ed1136dc804ef62e9713374b6dc90f63533d5",
+  "encoder": "06186246e2f3a9a50f90778be101587ec71277bbcf8f4192862c72fc726c4f8f",
+  "rows": [
+    {
+      "select-recipes-and-packets": 1435667,
+      "owner-flow": 10601333,
+      "guard-facts": 76509250,
+      "owner-transfers": 21796625,
+      "reductions-and-read-borrows": 420417,
+      "retirement-proof": 43647375,
+      "consumption-proof": 1544000,
+      "buffer-results": 14125,
+      "range-and-flow-proofs": 358121000,
+      "late-cleanups": 56683417
+    },
+    {
+      "select-recipes-and-packets": 1448792,
+      "owner-flow": 10528666,
+      "guard-facts": 76558166,
+      "owner-transfers": 21814791,
+      "reductions-and-read-borrows": 333250,
+      "retirement-proof": 43635625,
+      "consumption-proof": 1537583,
+      "buffer-results": 14208,
+      "range-and-flow-proofs": 359329625,
+      "late-cleanups": 56607583
+    },
+    {
+      "select-recipes-and-packets": 1426000,
+      "owner-flow": 10634583,
+      "guard-facts": 76469458,
+      "owner-transfers": 21803083,
+      "reductions-and-read-borrows": 344125,
+      "retirement-proof": 43693750,
+      "consumption-proof": 1551000,
+      "buffer-results": 14750,
+      "range-and-flow-proofs": 359456292,
+      "late-cleanups": 56613250
+    },
+    {
+      "select-recipes-and-packets": 1430375,
+      "owner-flow": 10555209,
+      "guard-facts": 76454875,
+      "owner-transfers": 21850500,
+      "reductions-and-read-borrows": 354458,
+      "retirement-proof": 43544625,
+      "consumption-proof": 1538083,
+      "buffer-results": 14000,
+      "range-and-flow-proofs": 359516708,
+      "late-cleanups": 56872333
+    }
+  ],
+  "median_ms": {
+    "select-recipes-and-packets": 1.430375,
+    "owner-flow": 10.555209,
+    "guard-facts": 76.469458,
+    "owner-transfers": 21.814791,
+    "reductions-and-read-borrows": 0.344125,
+    "retirement-proof": 43.635625,
+    "consumption-proof": 1.538083,
+    "buffer-results": 0.014208,
+    "range-and-flow-proofs": 359.456292,
+    "late-cleanups": 56.61325
+  }
+}
