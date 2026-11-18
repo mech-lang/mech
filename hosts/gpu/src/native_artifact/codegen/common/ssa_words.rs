@@ -8,15 +8,25 @@ use cranelift_frontend::{FunctionBuilder, Variable};
 use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, BTreeSet};
 
+#[cfg(feature = "canonical-native-program")]
+#[path = "ssa_direct_homes.rs"]
+mod direct_homes;
+
 #[derive(Clone, Copy)]
 enum Home {
     Variable(Variable),
     Literal(Value),
+    #[cfg(feature = "canonical-native-program")]
+    Tracked(u32),
 }
 
 pub(in crate::native_artifact) struct Words {
     variables: BTreeMap<usize, (Home, MemFlags)>,
     literal_write: Cell<bool>,
+    #[cfg(feature = "canonical-native-program")]
+    tracked: RefCell<Vec<direct_homes::Tracked>>,
+    #[cfg(feature = "canonical-native-program")]
+    promote_tracked: bool,
     native_extent_slots: BTreeMap<usize, u64>,
     native_extent_values: RefCell<BTreeMap<Value, u64>>,
 }
@@ -157,6 +167,10 @@ impl Words {
         Ok(Self {
             variables,
             literal_write: Cell::new(false),
+            #[cfg(feature = "canonical-native-program")]
+            tracked: RefCell::new(Vec::new()),
+            #[cfg(feature = "canonical-native-program")]
+            promote_tracked: false,
             native_extent_slots: BTreeMap::new(),
             native_extent_values: RefCell::new(BTreeMap::new()),
         })
@@ -169,6 +183,10 @@ impl Words {
         let value = match self.variables[&slot].0 {
             Home::Variable(variable) => b.use_var(variable),
             Home::Literal(value) => value,
+            #[cfg(feature = "canonical-native-program")]
+            Home::Tracked(index) => {
+                self.tracked.borrow_mut()[index as usize].read(b, self.promote_tracked)
+            }
         };
         if let Some(&upper) = self.native_extent_slots.get(&slot) {
             self.native_extent_values
@@ -203,6 +221,8 @@ impl Words {
         match self.variables[&slot].0 {
             Home::Variable(variable) => b.def_var(variable, value),
             Home::Literal(_) => self.literal_write.set(true),
+            #[cfg(feature = "canonical-native-program")]
+            Home::Tracked(index) => self.tracked.borrow_mut()[index as usize].write(b, value),
         }
     }
     pub(in crate::native_artifact) fn spill_all(

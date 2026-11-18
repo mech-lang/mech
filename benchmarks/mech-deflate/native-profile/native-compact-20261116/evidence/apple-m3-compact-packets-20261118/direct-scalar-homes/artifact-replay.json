@@ -1,0 +1,6 @@
+{
+  "encoder_object_matches": true,
+  "metadata_matches": true,
+  "worker_matches": false,
+  "worker_support": "Linked with the frozen M3 runtime, allocator and worker support used by the control; the upstream worker used a different support build."
+}

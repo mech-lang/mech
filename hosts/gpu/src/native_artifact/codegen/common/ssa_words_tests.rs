@@ -30,6 +30,8 @@ fn ssa_home_spills_and_reloads_keep_the_boundary_memory_region() {
             let words = Words {
                 variables: BTreeMap::from([(3, (Home::Variable(variable), flags))]),
                 literal_write: Cell::new(false),
+                tracked: RefCell::new(Vec::new()),
+                promote_tracked: false,
                 native_extent_slots: BTreeMap::new(),
                 native_extent_values: RefCell::new(BTreeMap::new()),
             };
@@ -81,6 +83,8 @@ fn entry_literal_needs_no_merge_parameter_and_flags_unexpected_writes() {
     let words = Words {
         variables: BTreeMap::from([(0, (Home::Literal(literal), MemFlags::new()))]),
         literal_write: Cell::new(false),
+        tracked: RefCell::new(Vec::new()),
+        promote_tracked: false,
         native_extent_slots: BTreeMap::new(),
         native_extent_values: RefCell::new(BTreeMap::new()),
     };
@@ -99,4 +103,96 @@ fn entry_literal_needs_no_merge_parameter_and_flags_unexpected_writes() {
     builder.ins().return_(&[]);
     builder.seal_all_blocks();
     builder.finalize();
+}
+
+#[test]
+fn direct_homes_require_a_single_definition_before_every_reachable_read() {
+    for direct in [false, true] {
+        for shape in [
+            "dominating",
+            "one-arm",
+            "multiple-writes",
+            "early-read",
+            "unused",
+            "unreachable-read",
+        ] {
+            let mut function = Function::new();
+            function.signature.params.push(AbiParam::new(types::I64));
+            function.signature.returns.push(AbiParam::new(types::I64));
+            let mut context = FunctionBuilderContext::new();
+            let words;
+            {
+                let mut b = FunctionBuilder::new(&mut function, &mut context);
+                let entry = b.create_block();
+                let yes = b.create_block();
+                let merge = b.create_block();
+                b.append_block_params_for_function_params(entry);
+                b.switch_to_block(entry);
+                let condition = b.block_params(entry)[0];
+                let variable = b.declare_var(types::I64);
+                let initial = b.ins().iconst(types::I64, 0);
+                b.def_var(variable, initial);
+                let mut homes = Words {
+                    variables: BTreeMap::from([(0, (Home::Variable(variable), MemFlags::new()))]),
+                    literal_write: Cell::new(false),
+                    tracked: RefCell::new(Vec::new()),
+                    promote_tracked: false,
+                    native_extent_slots: BTreeMap::new(),
+                    native_extent_values: RefCell::new(BTreeMap::new()),
+                };
+                homes.track_direct_homes(&BTreeSet::from([0]), direct);
+                if shape == "early-read" {
+                    homes.read(&mut b, 0);
+                }
+                if shape != "one-arm" {
+                    let value = b.ins().iconst(types::I64, 42);
+                    homes.write(&mut b, 0, value);
+                }
+                if shape == "multiple-writes" {
+                    let value = b.ins().iconst(types::I64, 43);
+                    homes.write(&mut b, 0, value);
+                }
+                b.ins().brif(condition, yes, &[], merge, &[]);
+                b.switch_to_block(yes);
+                if shape == "one-arm" {
+                    let value = b.ins().iconst(types::I64, 42);
+                    homes.write(&mut b, 0, value);
+                }
+                b.ins().jump(merge, &[]);
+                b.switch_to_block(merge);
+                let result = if shape == "unused" || shape == "unreachable-read" {
+                    initial
+                } else {
+                    homes.read(&mut b, 0)
+                };
+                b.ins().return_(&[result]);
+                if shape == "unreachable-read" {
+                    let orphan = b.create_block();
+                    b.switch_to_block(orphan);
+                    let result = homes.read(&mut b, 0);
+                    b.ins().return_(&[result]);
+                }
+                b.seal_all_blocks();
+                b.finalize();
+                words = homes;
+            }
+            let proofs = words.prove_tracked_homes(&function);
+            assert_eq!(proofs.len(), 1);
+            assert_eq!(
+                proofs[0].admitted,
+                shape == "dominating",
+                "{shape}, direct={direct}"
+            );
+            if proofs[0].admitted {
+                cranelift_codegen::verify_function(&function, &cranelift_codegen::settings::Flags::new(cranelift_codegen::settings::builder())).unwrap();
+                assert!(
+                    function
+                        .layout
+                        .blocks()
+                        .all(|block| block == function.layout.entry_block().unwrap()
+                            || function.dfg.block_params(block).is_empty())
+                );
+            }
+        }
+    }
 }
