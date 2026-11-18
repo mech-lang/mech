@@ -1918,8 +1918,12 @@ fn define_entry<M: Module>(
         }
         eprintln!("compact root forwarded empty jumps: {forwarded}");
     }
-    if outline_allowed && std::env::var_os("MECH_COMPACT_FINISH_CFG_CLEANUP").is_some() {
-        let cleanup = cfg_cleanup::optimize(&controls, &mut context, module.isa())?;
+    if outline_allowed && let Some(schedule) = std::env::var_os("MECH_COMPACT_FINISH_CFG_CLEANUP") {
+        let cleanup = if schedule == "ordered" {
+            cfg_cleanup::optimize_final_ordered(&controls, &mut context, module.isa())?
+        } else {
+            cfg_cleanup::optimize(&controls, &mut context, module.isa())?
+        };
         context.verify(module.isa()).map_err(backend)?;
         eprintln!(
             "compact final CFG cleanup: {} to {} instructions, {} to {} blocks",
@@ -1928,6 +1932,10 @@ fn define_entry<M: Module>(
             cleanup.before_blocks,
             cleanup.after_blocks,
         );
+        if let Some(path) = std::env::var_os("MECH_COMPACT_FINISH_CFG_REPORT") {
+            let report = serde_json::to_vec_pretty(&cleanup).map_err(backend)?;
+            std::fs::write(path, report).map_err(backend)?;
+        }
     }
     let stack_pairs = std::env::var_os("MECH_COMPACT_PAIR_STACK_WORDS").is_some();
     if outline_allowed
