@@ -69,6 +69,10 @@ complete orders it records **81/81 and 81/81 Roc wins**
 and **61/81 and 61/81 libdeflate wins**.
 [Compiler patch, build measurements and complete runtime results](evidence/encoder-size-gap/empty-source-routes/README.md)
 
+The dominating-definition experiments emitted an encoder as small as **67,272 B**. The fastest matched source-to-link time was **2.305 s**.
+Scalar and non-owning field definitions measured 81/81 and 81/81 Roc wins and 62/81 and 62/81 libdeflate wins in complete orders. The v3 runtime decision was **Retain**.
+[Source replay and measured results](evidence/encoder-size-gap/dominating-definitions/README.md)
+
 ## MechDeflate compile time by encoder build
 
 Each row measures fresh MechDeflate source through final executable
@@ -85,6 +89,10 @@ Roc and libdeflate trials from the same session.
 | [Forwarding disabled (control)](evidence/encoder-size-gap/empty-source-routes/deployment.json) | 67,464 B | 2.427 s | 0.813× | 5.032× |
 | [Forward empty source jumps](evidence/encoder-size-gap/empty-source-routes/deployment.json) | 67,656 B | 2.387 s | 0.798× | 4.953× |
 | [Register-preserving free wrapper](evidence/encoder-size-gap/empty-source-routes/deployment.json) | 67,992 B | 2.447 s | 0.817× | 5.060× |
+| [Scalar definitions](evidence/encoder-size-gap/dominating-definitions/scalar/deployment.json) | 67,576 B | 2.422 s | 0.810× | 5.034× |
+| [Scalar definitions with forwarded jumps](evidence/encoder-size-gap/dominating-definitions/scalar/deployment.json) | 67,272 B | 2.375 s | 0.794× | 4.939× |
+| [Non-owning field definitions](evidence/encoder-size-gap/dominating-definitions/fields/deployment.json) | 68,488 B | 2.323 s | 0.777× | 4.834× |
+| [Scalar and non-owning field definitions](evidence/encoder-size-gap/dominating-definitions/fields/deployment.json) | 68,424 B | 2.305 s | 0.771× | 4.787× |
 
 Parser, lowering, native compilation and link timings are in the
 machine-readable scorecard.

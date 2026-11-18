@@ -1,0 +1,133 @@
+{
+  "objective": "Measure the exact checked worker after reusing dominating scalar definitions.",
+  "focus_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "320-overlap",
+    "random-64",
+    "random-1024",
+    "prefix-random-1024",
+    "prefix-periodic-1024",
+    "prefix-periodic-4096",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-natural-16384",
+    "prefix-natural-32769",
+    "prefix-random-4096",
+    "heldout-mixed-131073"
+  ],
+  "runs": [
+    {
+      "id": "direct-scalar-direct-small-original-windows-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "direct-scalar-direct-small-original-windows-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96
+    }
+  ],
+  "policy": {
+    "path": "native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification-policy-v3.json",
+    "sha256": "89961956e17485b05457fee6d90e1b124fe09d1d1e6d3770aa5b86873912244c"
+  },
+  "timer": {
+    "path": "compare-library.py",
+    "sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a"
+  },
+  "driver": {
+    "path": "current-roadmap/direct-scalar-homes/runtime.py",
+    "sha256": "d73afb761a88920ac5e2c85335c0220adcf9bf5561699bc7dcea55ce59b12942"
+  },
+  "as_run_inventory": {
+    "path": "fixtures.json",
+    "sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+  },
+  "pinned_peers": {
+    "path": "pinned-peers/pins.json",
+    "sha256": "db5a289d7a929176e5a1c9efbff5f69702596b0dccba9f2cace86d78cc18902d"
+  },
+  "fixture_content_sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+  "bindings": {
+    "mech-control": {
+      "program.o": {
+        "path": "current-roadmap/frame-copy-v2/bound/worker-checks/shared-frame-copies/program.o",
+        "sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b"
+      },
+      "metadata.json": {
+        "path": "current-roadmap/frame-copy-v2/bound/worker-checks/shared-frame-copies/metadata.json",
+        "sha256": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+      },
+      "runtime.json": {
+        "path": "current-roadmap/frame-copy-v2/bound/worker-checks/shared-frame-copies/runtime.json",
+        "sha256": "00a8c16cb7c49fe4c9e4a4b12784e79cc02f6c0c8e57b1f1fbe928bd906f868c"
+      },
+      "mech-worker": {
+        "path": "current-roadmap/frame-copy-v2/bound/worker-checks/shared-frame-copies/mech-worker",
+        "sha256": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a"
+      }
+    },
+    "mech-experiment": {
+      "program.o": {
+        "path": "current-roadmap/direct-scalar-homes/direct-small-original-windows/bound/program.o",
+        "sha256": "c7abbb29c83495877cd5dedb9c35e0b98ccc80fcad3cb1ee3d3b98e9070b229f"
+      },
+      "metadata.json": {
+        "path": "current-roadmap/direct-scalar-homes/direct-small-original-windows/bound/metadata.json",
+        "sha256": "829e4ca5f0134c90927158b3feaade803b59f6c1529ce4a2e580561bb3d9187d"
+      },
+      "runtime.json": {
+        "path": "current-roadmap/direct-scalar-homes/direct-small-original-windows/bound/runtime.json",
+        "sha256": "03660892f37fb8df89c07e80dcd38b0cd1102ccad953e8a25e15e8a615deb593"
+      },
+      "mech-worker": {
+        "path": "current-roadmap/direct-scalar-homes/direct-small-original-windows/bound/mech-worker",
+        "sha256": "12cb266c85f0310accaeb76140c926b6651121306c349d0b6c85cafb9b0986fb"
+      }
+    }
+  },
+  "identities": {
+    "mech-control": {
+      "worker": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+      "metadata": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437"
+    },
+    "mech-experiment": {
+      "worker": "12cb266c85f0310accaeb76140c926b6651121306c349d0b6c85cafb9b0986fb",
+      "metadata": "829e4ca5f0134c90927158b3feaade803b59f6c1529ce4a2e580561bb3d9187d"
+    },
+    "roc": {
+      "worker": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+      "metadata": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee"
+    },
+    "libdeflate": {
+      "worker": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "metadata": null
+    },
+    "environment_sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+    "contract_sha256": "73b8d377ff7452010791de0f5155a939cfb7a65a3c46b9bac10a8a06e8f512cb"
+  },
+  "source_pin": "6fce1ff9ab9caa38805116cbeb0565f135721e6b",
+  "policy_version": 3,
+  "controller": {
+    "path": "source-frame-copy-tails/full-timing.py",
+    "sha256": "f9fa19f1ef9876ee3484a339b619889ba94027cf35a76fa355e12813cea31d07"
+  },
+  "compiler_build": {
+    "path": "current-roadmap/direct-scalar-homes/compiler/result.json",
+    "sha256": "ef9abd11c21ffdc3914e2bf6034d0776ecd3a403af7daa1185c0ef028aad8a4f"
+  },
+  "linked_contract": {
+    "path": "current-roadmap/direct-scalar-homes/linked-direct-fast-original-windows-direct-small-original-windows/linked-proofs/result.json",
+    "sha256": "1ce37bca916df9ab82681c3ef2950f8d25d9cd2c1bd83969f910b3d22685c071"
+  },
+  "max_peak_stack_bytes": 5280,
+  "load_average_before": [
+    2.53076171875,
+    2.216796875,
+    2.11669921875
+  ]
+}

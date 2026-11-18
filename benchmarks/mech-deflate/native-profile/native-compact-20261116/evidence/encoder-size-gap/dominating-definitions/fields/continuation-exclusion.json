@@ -1,0 +1,88 @@
+{
+  "retained_fields": 6811,
+  "excluded_fields": 20,
+  "protected_value_ids": [
+    1025,
+    1031,
+    1070,
+    5143,
+    5144,
+    5146,
+    5150,
+    5151,
+    5152,
+    5153,
+    5206,
+    5217,
+    5218,
+    5222,
+    5223,
+    5224,
+    5225,
+    5539,
+    5541,
+    5542,
+    5546,
+    5547,
+    5548,
+    5549,
+    5573,
+    5577,
+    5578,
+    5582,
+    5583,
+    5584,
+    5585
+  ],
+  "protected_native_regions": [
+    [
+      35847,
+      7155,
+      7271
+    ],
+    [
+      36182,
+      7262,
+      7382
+    ],
+    [
+      37817,
+      7806,
+      7940
+    ],
+    [
+      38036,
+      7865,
+      8000
+    ]
+  ],
+  "region_graph_sha256": "3fc06e01bc30e162e315653592f66e038517300fd0c0c57978e54520acdbea2e",
+  "results": {
+    "fields-outside-continuations": {
+      "encoder_text_bytes": 68488,
+      "read_homes": 6811,
+      "identical_native_proof_metadata": {
+        "origins": true,
+        "source_error_origins": true,
+        "numeric_phases": true,
+        "layout_checked_controllers": true,
+        "checked_continuations": false,
+        "all_path_initialization_proved": true
+      },
+      "same_encoder_sha256": true
+    },
+    "definitions-outside-continuations": {
+      "encoder_text_bytes": 68424,
+      "read_homes": 9282,
+      "identical_native_proof_metadata": {
+        "origins": true,
+        "source_error_origins": true,
+        "numeric_phases": true,
+        "layout_checked_controllers": true,
+        "checked_continuations": false,
+        "all_path_initialization_proved": true
+      },
+      "same_encoder_sha256": true
+    }
+  }
+}

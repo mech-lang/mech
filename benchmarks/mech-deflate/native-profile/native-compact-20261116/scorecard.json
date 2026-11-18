@@ -12639,6 +12639,130 @@
         },
         "paired_ratio_to_session_control": 1.0053393781560853,
         "evidence": "evidence/encoder-size-gap/empty-source-routes/deployment.json"
+      },
+      {
+        "name": "Scalar definitions",
+        "encoder_text_bytes": 67576,
+        "encoder_sha256": "c7abbb29c83495877cd5dedb9c35e0b98ccc80fcad3cb1ee3d3b98e9070b229f",
+        "compiler_sha256": "1e8d76bf28402fada2b6cc2240372c0ff67111f66e1a79cf7eca4091b73ccdae",
+        "measured_trials": 12,
+        "measurement_plan_sha256": "3f3f41cd74045a99ea799ba188c1658fbc30f4850d9a637c04be9bd4d98dd752",
+        "median_seconds": {
+          "source": 2.386554604396224,
+          "link": 0.03475606255233288,
+          "source_through_link": 2.421864500036463,
+          "strip": 0.010495395865291357,
+          "source_through_strip": 2.4325038956012577
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.7877517709999999,
+          "catalog": 1.97495e-05,
+          "frontend": 0.2262393125,
+          "artifact": 0.0070515000000000005,
+          "encode": 0.0025971255,
+          "native": 1.3360225
+        },
+        "paired_ratios": {
+          "roc": 0.8103822621392633,
+          "libdeflate": 5.034491842536916
+        },
+        "paired_ratio_to_session_control": 0.9964046692255448,
+        "median_paired_seconds_saved": 0.00872987462207675,
+        "faster_paired_trials": 8,
+        "evidence": "evidence/encoder-size-gap/dominating-definitions/scalar/deployment.json"
+      },
+      {
+        "name": "Scalar definitions with forwarded jumps",
+        "encoder_text_bytes": 67272,
+        "encoder_sha256": "9f2f4bc2d2ee547200a4ce5fcc1d440d68b948670dde88f3875ff8ecfdd4b223",
+        "compiler_sha256": "1e8d76bf28402fada2b6cc2240372c0ff67111f66e1a79cf7eca4091b73ccdae",
+        "measured_trials": 12,
+        "measurement_plan_sha256": "3f3f41cd74045a99ea799ba188c1658fbc30f4850d9a637c04be9bd4d98dd752",
+        "median_seconds": {
+          "source": 2.3395697709638625,
+          "link": 0.03480554139241576,
+          "source_through_link": 2.374931312398985,
+          "strip": 0.010508354054763913,
+          "source_through_strip": 2.385639665881172
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.787166229,
+          "catalog": 1.95835e-05,
+          "frontend": 0.226091833,
+          "artifact": 0.0070443335,
+          "encode": 0.0025756875,
+          "native": 1.2897047085
+        },
+        "paired_ratios": {
+          "roc": 0.793952351220408,
+          "libdeflate": 4.939378966858806
+        },
+        "paired_ratio_to_session_control": 0.9966208855036216,
+        "median_paired_seconds_saved": 0.008047479670494795,
+        "faster_paired_trials": 10,
+        "evidence": "evidence/encoder-size-gap/dominating-definitions/scalar/deployment.json"
+      },
+      {
+        "name": "Non-owning field definitions",
+        "encoder_text_bytes": 68488,
+        "encoder_sha256": "4b238ff7ce4077cea69e7f9b1d9c20bb4d5a3fc8e4f9e5bb865cc72cf70080af",
+        "compiler_sha256": "7444e2f20df8b3a34fd5bab33796dd357da3bcd6591396ecfdf3ba56f8a7021b",
+        "measured_trials": 10,
+        "measurement_plan_sha256": "26e54fc664f199a8434326c9a97eae714b48a4f1fd0b14a46889445db7775b09",
+        "median_seconds": {
+          "source": 2.2879567712079734,
+          "link": 0.03526377072557807,
+          "source_through_link": 2.3228975208476186,
+          "strip": 0.010419083526358008,
+          "source_through_strip": 2.3337418334558606
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.788334959,
+          "catalog": 1.8895500000000002e-05,
+          "frontend": 0.225606646,
+          "artifact": 0.007004875,
+          "encode": 0.002581729,
+          "native": 1.2366306875
+        },
+        "paired_ratios": {
+          "roc": 0.7773396646740518,
+          "libdeflate": 4.834229099125514
+        },
+        "paired_ratio_to_session_control": 0.9748811779863021,
+        "median_paired_seconds_saved": 0.05974379112012684,
+        "faster_paired_trials": 10,
+        "evidence": "evidence/encoder-size-gap/dominating-definitions/fields/deployment.json"
+      },
+      {
+        "name": "Scalar and non-owning field definitions",
+        "encoder_text_bytes": 68424,
+        "encoder_sha256": "a3a04c9625efea0f6c25cd1d3a5d1369a87de9fe85961c8e826f70c3450dbd86",
+        "compiler_sha256": "7444e2f20df8b3a34fd5bab33796dd357da3bcd6591396ecfdf3ba56f8a7021b",
+        "measured_trials": 10,
+        "measurement_plan_sha256": "26e54fc664f199a8434326c9a97eae714b48a4f1fd0b14a46889445db7775b09",
+        "median_seconds": {
+          "source": 2.2691407497040927,
+          "link": 0.03474341658875346,
+          "source_through_link": 2.305353916483,
+          "strip": 0.01038083340972662,
+          "source_through_strip": 2.316015020478517
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.7872740629999999,
+          "catalog": 1.8354500000000002e-05,
+          "frontend": 0.22534749999999998,
+          "artifact": 0.0070438335,
+          "encode": 0.002575875,
+          "native": 1.2185916455
+        },
+        "paired_ratios": {
+          "roc": 0.7710350879639334,
+          "libdeflate": 4.787477375008774
+        },
+        "paired_ratio_to_session_control": 0.9657110814745942,
+        "median_paired_seconds_saved": 0.08165254187770188,
+        "faster_paired_trials": 10,
+        "evidence": "evidence/encoder-size-gap/dominating-definitions/fields/deployment.json"
       }
     ]
   }
