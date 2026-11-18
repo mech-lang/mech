@@ -1,0 +1,40 @@
+{
+  "archive": "pr993-deflate-m3-execution-study-20261118-2c74ccab24c1.tar.gz",
+  "bytes": 96953640,
+  "sha256": "2c74ccab24c1f5c43238154e661667f34f9f82223f97b368509bd64ef5e6caeb",
+  "files": 1322,
+  "excluded_files": [
+    {
+      "path": "__pycache__/cross-machine-diagnostic.cpython-314.pyc",
+      "reason": "Python bytecode cache",
+      "bytes": 16516
+    },
+    {
+      "path": "reduction-controls/compiler",
+      "reason": "regenerable compiler helper executable",
+      "bytes": 101198360
+    },
+    {
+      "path": "reduction-controls-missing-concrete-storage/compiler",
+      "reason": "regenerable compiler helper executable",
+      "bytes": 101198360
+    },
+    {
+      "path": "reduction-controls-no-buffer-result/compiler",
+      "reason": "regenerable compiler helper executable",
+      "bytes": 101154872
+    }
+  ],
+  "manifest_sha256": "cc930f56d5a866c21c98e921af3ef831c05f0bfe247d64d66b3c6d599bfdba9e",
+  "qualification": "No compiler experiment is promoted; current qualified Mech encoder unchanged",
+  "replay_timed_calls": 11842560,
+  "foundation_archive": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/pr993-deflate-apple-m3-source-rebuild-20261117-20caefffbb31.tar.gz",
+  "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/pr993-deflate-m3-execution-study-20261118-2c74ccab24c1.tar.gz",
+  "verification": {
+    "archive_sha256_verified": true,
+    "every_manifested_file_sha256_verified": true,
+    "manifested_payload_files": 1321,
+    "github_asset_digest": "sha256:2c74ccab24c1f5c43238154e661667f34f9f82223f97b368509bd64ef5e6caeb",
+    "github_asset_size": 96953640
+  }
+}
