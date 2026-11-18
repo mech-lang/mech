@@ -35,6 +35,7 @@ impl PrivatePhase {
         prepared: &PreparedNativeProgram,
         region: &Region,
         layout: &Layout,
+        compact_packet: bool,
     ) -> Result<Option<Self>, NativeCompileError> {
         let Some(proof) = region.numeric.as_ref() else {
             return Ok(None);
@@ -161,8 +162,8 @@ impl PrivatePhase {
                 exports,
             });
         }
-        let compact_packet = std::env::var_os("MECH_COMPACT_FIXED_PHASE_PACKET").is_some()
-            && std::env::var_os("MECH_PHASE_INVARIANT_VIEWS").is_some();
+        let compact_packet =
+            compact_packet && std::env::var_os("MECH_PHASE_INVARIANT_VIEWS").is_some();
         Ok(Some(Self {
             proof,
             compact_packet,

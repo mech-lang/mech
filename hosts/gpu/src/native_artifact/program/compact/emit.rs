@@ -97,6 +97,7 @@ pub(in crate::native_artifact::program) fn define_with_root<M: Module>(
         share_phase_bodies,
         None,
         compile_root,
+        false,
     )
 }
 
@@ -109,23 +110,19 @@ pub(in crate::native_artifact::program) fn define_with_isa<M: Module>(
     threads: usize,
     direct_runtime_calls: super::object::DirectRuntimeCalls,
     compile_root: Option<CompileRoot<'_, M>>,
+    direct_literals: bool,
 ) -> Result<serde_json::Value, NativeCompileError> {
-    if threads == 0 {
-        return match compile_root {
-            Some(compile) => {
-                define_with_root(module, prepared, observe, share_phase_bodies, Some(compile))
-            }
-            None => define(module, prepared, observe, share_phase_bodies),
-        };
-    }
-    let pool = super::compile_jobs::Pool::new(isa, threads, direct_runtime_calls)?;
+    let pool = (threads != 0)
+        .then(|| super::compile_jobs::Pool::new(isa, threads, direct_runtime_calls))
+        .transpose()?;
     define_with_pool(
         module,
         prepared,
         observe,
         share_phase_bodies,
-        Some(&pool),
+        pool.as_ref(),
         compile_root,
+        direct_literals,
     )
 }
 
@@ -136,6 +133,7 @@ fn define_with_pool<M: Module>(
     share_phase_bodies: bool,
     pool: Option<&super::compile_jobs::Pool>,
     compile_root: Option<CompileRoot<'_, M>>,
+    direct_literals: bool,
 ) -> Result<serde_json::Value, NativeCompileError> {
     let plan = prepared.plan();
     let layout = Layout::derive(plan)?;
@@ -193,7 +191,16 @@ fn define_with_pool<M: Module>(
     let mut workers = Vec::new();
     for region in &prepared.metadata().parallel.regions {
         let entry = super::parallel::Entry::derive(plan, region)?;
-        let report = define_entry(module, prepared, observe, &shared, Some(&entry), &[], None)?;
+        let report = define_entry(
+            module,
+            prepared,
+            observe,
+            &shared,
+            Some(&entry),
+            &[],
+            None,
+            false,
+        )?;
         workers.push(super::parallel::Worker::new(
             module, plan, region, entry, report,
         )?);
@@ -206,10 +213,38 @@ fn define_with_pool<M: Module>(
         None,
         &workers,
         compile_root,
+        direct_literals,
     )?;
     report["native_worker_entries"] =
         serde_json::json!(workers.iter().map(|w| &w.report).collect::<Vec<_>>());
     Ok(report)
+}
+
+fn scalar_literal_slots(
+    plan: &mech_engine::native_artifact::NativeProgramArtifactPlan,
+    layout: &Layout,
+    flow: &Flow,
+    inputs: &BTreeMap<usize, usize>,
+    initial: &BTreeMap<usize, Initial>,
+) -> BTreeSet<usize> {
+    let mut written = vec![false; plan.values().len()];
+    for &value in flow.defs.iter().flatten() {
+        written[value as usize] = true;
+    }
+    plan.constants()
+        .iter()
+        .filter_map(|constant| {
+            let value = constant.value().get();
+            let ty = layout.ty(value);
+            let slot = layout.slot(value);
+            (!written[value as usize]
+                && matches!(ty.kind, super::layout::LayoutKind::Scalar { .. })
+                && ty.owners.is_empty()
+                && !inputs.contains_key(&slot)
+                && matches!(initial.get(&slot), Some(Initial::Bits(_))))
+            .then_some(slot)
+        })
+        .collect()
 }
 
 fn define_entry<M: Module>(
@@ -220,6 +255,7 @@ fn define_entry<M: Module>(
     worker: Option<&super::parallel::Entry>,
     workers: &[super::parallel::Worker],
     compile_root: Option<CompileRoot<'_, M>>,
+    direct_literals: bool,
 ) -> Result<serde_json::Value, NativeCompileError> {
     let plan = prepared.plan();
     let endian = module.isa().endianness();
@@ -488,6 +524,8 @@ fn define_entry<M: Module>(
     let traversal_stage = std::env::var_os("MECH_COMPACT_SHARE_CHECKED_TRAVERSALS");
     let outline_allowed =
         worker.is_none() && !observe && route_sites.is_empty() && !route_locations;
+    let forward_empty_source =
+        outline_allowed && std::env::var_os("MECH_COMPACT_EMPTY_SOURCE_ROUTES").is_some();
     context.func.forward_spill_reloads =
         outline_allowed && std::env::var_os("MECH_COMPACT_FORWARD_SPILL_RELOADS").is_some();
     context.func.aarch64_share_cold_tails =
@@ -589,32 +627,48 @@ fn define_entry<M: Module>(
         for (value, ty) in layout.types.iter().enumerate() {
             slots.extend(layout.base[value]..layout.base[value] + ty.words);
         }
-        let words = Words::new_with_regions_and_initial(
-            &mut b,
-            zero,
-            CodePlan::Program(prepared),
-            slots,
-            |b, slot| {
-                let value = if let Some(&at) = inputs.get(&slot) {
-                    b.ins()
-                        .load(types::I64, MemFlags::new(), input, offset(at)?)
-                } else if let Some(initial) = initial.get(&slot) {
-                    match initial {
-                        Initial::Bits(n) => b.ins().iconst(types::I64, *n as i64),
-                        Initial::Table(id) => {
-                            let global = module.declare_data_in_func(*id, b.func);
-                            b.ins().global_value(types::I64, global)
-                        }
+        let initialize = |b: &mut FunctionBuilder<'_>, slot| {
+            let value = if let Some(&at) = inputs.get(&slot) {
+                b.ins()
+                    .load(types::I64, MemFlags::new(), input, offset(at)?)
+            } else if let Some(initial) = initial.get(&slot) {
+                match initial {
+                    Initial::Bits(n) => b.ins().iconst(types::I64, *n as i64),
+                    Initial::Table(id) => {
+                        let global = module.declare_data_in_func(*id, b.func);
+                        b.ins().global_value(types::I64, global)
                     }
-                } else {
-                    zero
-                };
-                // Zero is only a backend SSA seed. Flow independently proves that
-                // every reached source read has an actual input/constant/definition.
-                Ok(Some(value))
-            },
-            |_| MemFlags::new(),
-        )?;
+                }
+            } else {
+                zero
+            };
+            // Zero is only a backend SSA seed. Flow independently proves that
+            // every reached source read has an actual input/constant/definition.
+            Ok(Some(value))
+        };
+        let literals = (direct_literals && outline_allowed)
+            .then(|| scalar_literal_slots(plan, layout, &flow, &inputs, initial))
+            .filter(|literals| !literals.is_empty());
+        let words = if let Some(literals) = &literals {
+            eprintln!("compact-stage: direct scalar literals={}", literals.len());
+            Words::new_with_entry_literals(
+                &mut b,
+                zero,
+                CodePlan::Program(prepared),
+                slots,
+                initialize,
+                literals,
+            )?
+        } else {
+            Words::new_with_regions_and_initial(
+                &mut b,
+                zero,
+                CodePlan::Program(prepared),
+                slots,
+                initialize,
+                |_| MemFlags::new(),
+            )?
+        };
         if let Some(arrays) = &arrays {
             for &value in &flow.inputs {
                 for &lane in &layout.ty(value).owners {
@@ -641,12 +695,68 @@ fn define_entry<M: Module>(
             .map(|spec| checked_traversals::controller_candidates(spec, &blocks))
             .transpose()?
             .unwrap_or_default();
+        let mut source_routes = (0..blocks.len()).collect::<Vec<_>>();
+        if forward_empty_source {
+            // These entries are used by generated routes or are proof
+            // boundaries. Leave each of them as a distinct native block.
+            let mut required = BTreeSet::from([flow.entry]);
+            for phase in &phases {
+                required.insert(phase.header);
+                required.extend(phase.destinations());
+            }
+            for pack in &packs {
+                required.extend([pack.first, pack.next as usize]);
+            }
+            for (&header, reduction) in &reductions {
+                required.extend([header, reduction.exit]);
+            }
+            for chain in &chains {
+                required.extend([chain.first(), chain.exit()]);
+            }
+            for proof in &overwrite_reuse {
+                required.extend([proof.initialize, proof.clear, proof.exit]);
+            }
+            for controller in &controllers {
+                required.extend([controller.header, controller.header + controller.span]);
+            }
+
+            // Restrict forwarding to ascending jumps. Reverse enumeration
+            // resolves complete chains without traversing loops or changing
+            // any source edge that carries an owner retirement.
+            let mut forwarded = 0usize;
+            for site in (0..blocks.len()).rev() {
+                if blocks[site].is_none() || flow.complete[site] || required.contains(&site) {
+                    continue;
+                }
+                let block = &plan.blocks()[site];
+                let Term::Scalar(mech_engine::native_artifact::NativeMatchTerminator::Jump(next)) =
+                    block.terminator()
+                else {
+                    continue;
+                };
+                let next = next as usize;
+                if next > site
+                    && matches!(block.action(), Action::Scalar(Scalar::None))
+                    && matches!(actions[site], Recipe::None)
+                    && flow.uses[site].is_empty()
+                    && flow.defs[site].is_empty()
+                    && buffer_results[site].is_none()
+                    && transfers[site].is_empty()
+                    && owner_flow.retire_after(site).is_empty()
+                    && owner_flow.retire_on_edge(site, next).is_empty()
+                {
+                    source_routes[site] = source_routes[next];
+                    forwarded += 1;
+                }
+            }
+            eprintln!("compact source empty jumps forwarded: {forwarded}");
+        }
         let source_blocks = blocks.iter().flatten().copied().collect::<BTreeSet<_>>();
         let mut remaining = vec![0usize; blocks.len()];
         for (site, successors) in flow.successors.iter().enumerate() {
-            if flow.reachable[site] {
+            if flow.reachable[site] && source_routes[site] == site {
                 for next in successors.iter().copied().collect::<BTreeSet<_>>() {
-                    remaining[next] += 1;
+                    remaining[source_routes[next]] += 1;
                 }
             }
         }
@@ -1010,6 +1120,12 @@ fn define_entry<M: Module>(
                 eprintln!("compact-stage: source site {site}/{}", plan.blocks().len());
             }
             let Some(native) = blocks[site] else { continue };
+            if source_routes[site] != site {
+                // Reserve the original unused error-block ID so that later
+                // layout and checked-continuation diagnostics can remap it.
+                b.create_block();
+                continue;
+            }
             b.switch_to_block(native);
             if route_locations {
                 b.set_srcloc(cranelift_codegen::ir::SourceLoc::new(site as u32));
@@ -1221,7 +1337,8 @@ fn define_entry<M: Module>(
                 }
                 let target = |site: u32| {
                     edges.get(&(site as usize)).copied().unwrap_or_else(|| {
-                        blocks[site as usize].expect("proved reachable source successor")
+                        blocks[source_routes[site as usize]]
+                            .expect("proved reachable source successor")
                     })
                 };
                 if let Term::Header {
@@ -1309,7 +1426,7 @@ fn define_entry<M: Module>(
                             &owner_flow.retire_on_edge(site, next),
                             error,
                         );
-                        b.ins().jump(blocks[next].unwrap(), &[]);
+                        b.ins().jump(blocks[source_routes[next]].unwrap(), &[]);
                     }
                 }
             }
@@ -1332,6 +1449,7 @@ fn define_entry<M: Module>(
                 .copied()
                 .collect::<BTreeSet<_>>()
             {
+                let next = source_routes[next];
                 remaining[next] -= 1;
                 if remaining[next] == 0 {
                     b.seal_block(blocks[next].expect("reachable source successor"));
@@ -1383,6 +1501,9 @@ fn define_entry<M: Module>(
                 serde_json::to_vec_pretty(&data).map_err(backend)?,
             )
             .map_err(backend)?;
+        }
+        if words.attempted_literal_write() {
+            return Err(backend("native lowering wrote an admitted entry literal"));
         }
         eprintln!("compact-stage: finalize SSA");
         capacity_growth = arrays.and_then(|arrays| arrays.capacity_growth);
