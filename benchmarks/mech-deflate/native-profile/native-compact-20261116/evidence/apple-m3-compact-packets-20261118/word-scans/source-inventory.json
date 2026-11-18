@@ -1,0 +1,66 @@
+{
+  "base": "d711949acc",
+  "source_commit": "5f4997a65d3015f901654f8942dc7d7036d69db2",
+  "files": [
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/composed_reads.rs",
+      "sha256": "636c334b499e941943af5cef2cdc7d1befa51c697351eada4ca87590a35c952c"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/current_predicates/relations/complement_tests.rs",
+      "sha256": "655f317ec492fe9a58ad9068ceb0c56951755d98c49ff3db03f02a6c351e181b"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/current_predicates/relations/mod.rs",
+      "sha256": "bc09a5f1a5eabd323daafca0d7d18d18e1634aad4a04ef1188ab9a6b9e279f44"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/cost.rs",
+      "sha256": "630bb645ef63de10e58a3cd624b22f2164ea81b414c17ff4825e2c40f4e20359"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs",
+      "sha256": "208be5f2dd5bcea0b2319445331eb766c6c28355cc43636328205f1fc1878651"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/wide_equal.rs",
+      "sha256": "db4e4e15e7cef845b80935a51acf4bfb69955bfe5891011eec21a448fe7b3252"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/codegen/wide_equal_tests.rs",
+      "sha256": "41edfaddd6247ecea269d3992ced08707b6dacdd58436cd3125e9c9f888631c7"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/phase_function.rs",
+      "sha256": "e9c9596f8255f63051d70390a0d92c2aef33073978873fa549615009b9e107d7"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/phase_layout.rs",
+      "sha256": "2845b2c39abf389a001b6ffafebfd74a1e32457f5caa1d17722de8f710f25966"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/phase_storage.rs",
+      "sha256": "9cc49e6958fe82598f7b0d0358b63b6fb0e1134045867178419be6f29f311a45"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/phase_storage_tests.rs",
+      "sha256": "ffc6b78ce8184bef4500ad950b4b8a8d87584006b6b46df9e718aaf4d21156fd"
+    },
+    {
+      "path": "hosts/gpu/src/native_artifact/program/compact/phases.rs",
+      "sha256": "338a2608dc13f8834009dd9bb08f2a3fa66394b5333c856cc4827a4869e5d67f"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/ir/function.rs",
+      "sha256": "45f0a5db26e4e1fea7b79bd3c54bfd06a30c18786d24851d1e4016487cc6411d"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/isa/aarch64/block_layout.rs",
+      "sha256": "5b0a51b53fedce09eec1669dc80da48ae47f3fc3333ff825d81da5f25029b45e"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/isa/aarch64/mod.rs",
+      "sha256": "94dfc575ff4a1608efb1fdc205625d7265d25f0f7cc44ec9cc9dff904b3ae3fb"
+    }
+  ]
+}

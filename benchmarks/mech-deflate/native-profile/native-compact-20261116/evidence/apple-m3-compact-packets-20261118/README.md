@@ -1,5 +1,13 @@
 # Source-backed compact phase optimization on Apple M3
 
+## Retained M3 result
+
+The [word equality-scan and guard-reuse build](word-scans/README.md) has **64,512 B** of encoder text and a measured **4,736 B** native stack high-water, below the unchanged 5,280 B bound. Its [complete confirmation](word-scans/confirmation/README.md) records **81/81 Roc and 61/81 libdeflate 1.26 level 12 in both orders** with the original source, canonical bytecode, runtime, allocator and peer binaries unchanged. The initial full campaign records 81/81 and 60/81; near-tied libdeflate cases account for the count variation. No improvement is attributed to a rejected challenger.
+
+The confirmation meets the M3 comparison target and does not claim the separate v3 promotion floor. [Confirmation timings in seconds and comparator multiples](word-scans/confirmation/timings.csv) · [Binary recipe](word-scans/recipe.json) · [All screened and full comparisons](word-scans/comparisons.json)
+
+## Earlier compact-packet campaign
+
 Smaller synchronous phase packets, selected output words, checked fallback
 reuse and empty-source route forwarding improve the complete 81-case native
 DEFLATE comparison on Apple M3. The original Mech source and canonical bytecode
@@ -54,5 +62,11 @@ A [verified evidence archive](compiler-wave-archive.json) preserves the later
 load/writeback, paired-reduction, comparison-scheduling, input-packet and
 matcher-layout experiments, including rejected combinations, source patches,
 full source copies, native correctness tests and raw timing observations.
-Apply this delta after the two archives named in its manifest. The archive
-explicitly records that the complete M3 runtime target is still unmet.
+Apply this delta after the two archives named in its manifest. At the time of
+that earlier archive, the complete M3 runtime target remained unmet.
+
+The subsequent [word-scan evidence archive](scan-wave-archive.json) preserves
+the retained encoder's initial and confirmation campaigns, raw-record replay,
+and rejected prefetch and allocation experiments. GitHub's uploaded asset
+matches the recorded SHA-256. The confirmation reaches 81/81 Roc and 61/81
+libdeflate in both orders with the near-tie sensitivity described above.
