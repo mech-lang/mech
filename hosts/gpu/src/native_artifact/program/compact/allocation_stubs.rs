@@ -7,7 +7,7 @@ use cranelift_codegen::ir::{
 use cranelift_module::{Linkage, Module, ModuleReloc, ModuleRelocTarget};
 use std::collections::BTreeMap;
 
-fn constant(f: &Function, value: Value) -> Option<u64> {
+pub(super) fn constant(f: &Function, value: Value) -> Option<u64> {
     let value = f.dfg.resolve_aliases(value);
     let ValueDef::Result(inst, 0) = f.dfg.value_def(value) else {
         return None;
