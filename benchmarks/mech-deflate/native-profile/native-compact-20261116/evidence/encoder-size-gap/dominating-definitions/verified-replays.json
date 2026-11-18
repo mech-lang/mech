@@ -1,0 +1,22 @@
+{
+  "direct-small-original-windows": {
+    "program.o": "c7abbb29c83495877cd5dedb9c35e0b98ccc80fcad3cb1ee3d3b98e9070b229f",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata.json": "829e4ca5f0134c90927158b3feaade803b59f6c1529ce4a2e580561bb3d9187d"
+  },
+  "direct-fast-original-windows": {
+    "program.o": "9f2f4bc2d2ee547200a4ce5fcc1d440d68b948670dde88f3875ff8ecfdd4b223",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata.json": "cfbb1d5a6d6f532b5050dfc123bfb56faef9f3ec5a9ef0095233fecf51863e4e"
+  },
+  "direct-fields-rebound": {
+    "program.o": "4b238ff7ce4077cea69e7f9b1d9c20bb4d5a3fc8e4f9e5bb865cc72cf70080af",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata.json": "99f5a11e4d8e8c693150b3c89d38694e3ea40ce48e13d4986bffb342e613475e"
+  },
+  "direct-fields-and-scalars-rebound": {
+    "program.o": "a3a04c9625efea0f6c25cd1d3a5d1369a87de9fe85961c8e826f70c3450dbd86",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "metadata.json": "cc607739ef7d19a746c5ed43b6b210dae7690eca3584b8e297c5660008efec7e"
+  }
+}

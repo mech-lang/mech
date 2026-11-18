@@ -1,0 +1,11 @@
+{
+  "counts": {
+    "admitted": 2471,
+    "nondominating-definition": 336,
+    "write-count": 32,
+    "unread": 9
+  },
+  "reads": 3511,
+  "object_sha256": "1db070f4af8c9c59e5f215a019b0b3fa7a4959321a88f902ecfc9dabec296057",
+  "census_sha256": "5c9a36742ba5c584f08f571e7b3c80fe4173f42ac460f9550463bbc4cfd5879f"
+}
