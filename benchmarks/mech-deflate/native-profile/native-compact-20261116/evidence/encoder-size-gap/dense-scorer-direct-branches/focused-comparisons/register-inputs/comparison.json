@@ -1,0 +1,25 @@
+{
+  "initial_encoder_text_bytes": 66240,
+  "candidate_encoder_text_bytes": 65952,
+  "changed_atoms": [
+    "_mech_compact_checked_layout_10939",
+    "_mech_compact_checked_layout_13100",
+    "_mech_compact_checked_layout_16147",
+    "_mech_compact_checked_layout_continuation_16644",
+    "_mech_compact_checked_layout_continuation_21031",
+    "_mech_compact_checked_layout_continuation_44066",
+    "_mech_compact_checked_layout_continuation_9112",
+    "_mech_compact_checked_layout_continuation_9562",
+    "_mech_compact_closed_checked"
+  ],
+  "object_sha256": "588a8e559663772d706aab0978a063cbf3eb3cc8a994dc0b7d800e8fbd0d20b0",
+  "checked_evidence": [
+    "origins",
+    "source_error_origins",
+    "all_path_initialization_proved",
+    "guarded_consuming_sites",
+    "owner_transfer_sites",
+    "buffer_result_sites",
+    "prechange_retirement_sites"
+  ]
+}

@@ -1,0 +1,186 @@
+{
+  "source_object_sha256": "8a63871161d44bbaca470a36b0bb201ff020c7966d22cc213ef46d2947abf216",
+  "training": [
+    "prefix-periodic-1024",
+    "prefix-random-1024",
+    "prefix-natural-16384",
+    "prefix-natural-32769",
+    "heldout-mixed-131073"
+  ],
+  "held_out": [
+    "320-overlap",
+    "prefix-natural-8192"
+  ],
+  "trace_sha256": "1594457513f95696b1d2b03faec6f76dc9e5de9c0625883dbb76817f42a9e886",
+  "profile_sha256": "8e418ddf8a5a88a9a67fc7c1420d4ed0a39202c882233a882a340d4807e8efdb",
+  "forwarded_blocks": {
+    "732": 688,
+    "872": 940,
+    "1092": 876
+  },
+  "short_input_weight": 16,
+  "training_selection": {
+    "1": {
+      "prefix-periodic-1024": {
+        "before": 4160,
+        "after": 5044
+      },
+      "prefix-random-1024": {
+        "before": 0,
+        "after": 0
+      },
+      "prefix-natural-16384": {
+        "before": 279750,
+        "after": 56827
+      },
+      "prefix-natural-32769": {
+        "before": 507780,
+        "after": 83805
+      },
+      "heldout-mixed-131073": {
+        "before": 923539,
+        "after": 604939
+      }
+    },
+    "2": {
+      "prefix-periodic-1024": {
+        "before": 4160,
+        "after": 5044
+      },
+      "prefix-random-1024": {
+        "before": 0,
+        "after": 0
+      },
+      "prefix-natural-16384": {
+        "before": 279750,
+        "after": 56827
+      },
+      "prefix-natural-32769": {
+        "before": 507780,
+        "after": 83805
+      },
+      "heldout-mixed-131073": {
+        "before": 923539,
+        "after": 604939
+      }
+    },
+    "4": {
+      "prefix-periodic-1024": {
+        "before": 4160,
+        "after": 5044
+      },
+      "prefix-random-1024": {
+        "before": 0,
+        "after": 0
+      },
+      "prefix-natural-16384": {
+        "before": 279750,
+        "after": 56827
+      },
+      "prefix-natural-32769": {
+        "before": 507780,
+        "after": 83805
+      },
+      "heldout-mixed-131073": {
+        "before": 923539,
+        "after": 604939
+      }
+    },
+    "8": {
+      "prefix-periodic-1024": {
+        "before": 4160,
+        "after": 5044
+      },
+      "prefix-random-1024": {
+        "before": 0,
+        "after": 0
+      },
+      "prefix-natural-16384": {
+        "before": 279750,
+        "after": 56827
+      },
+      "prefix-natural-32769": {
+        "before": 507780,
+        "after": 83805
+      },
+      "heldout-mixed-131073": {
+        "before": 923539,
+        "after": 604939
+      }
+    },
+    "16": {
+      "prefix-periodic-1024": {
+        "before": 4160,
+        "after": 4116
+      },
+      "prefix-random-1024": {
+        "before": 0,
+        "after": 0
+      },
+      "prefix-natural-16384": {
+        "before": 279750,
+        "after": 24905
+      },
+      "prefix-natural-32769": {
+        "before": 507780,
+        "after": 33610
+      },
+      "heldout-mixed-131073": {
+        "before": 923539,
+        "after": 521355
+      }
+    },
+    "32": {
+      "prefix-periodic-1024": {
+        "before": 4160,
+        "after": 4116
+      },
+      "prefix-random-1024": {
+        "before": 0,
+        "after": 0
+      },
+      "prefix-natural-16384": {
+        "before": 279750,
+        "after": 24905
+      },
+      "prefix-natural-32769": {
+        "before": 507780,
+        "after": 33610
+      },
+      "heldout-mixed-131073": {
+        "before": 923539,
+        "after": 521355
+      }
+    }
+  },
+  "predicted_jumps": {
+    "prefix-periodic-1024": {
+      "before": 4160,
+      "after": 4116
+    },
+    "prefix-random-1024": {
+      "before": 0,
+      "after": 0
+    },
+    "prefix-natural-16384": {
+      "before": 279750,
+      "after": 24905
+    },
+    "prefix-natural-32769": {
+      "before": 507780,
+      "after": 33610
+    },
+    "heldout-mixed-131073": {
+      "before": 923539,
+      "after": 521355
+    },
+    "320-overlap": {
+      "before": 1308,
+      "after": 1292
+    },
+    "prefix-natural-8192": {
+      "before": 163872,
+      "after": 20202
+    }
+  }
+}

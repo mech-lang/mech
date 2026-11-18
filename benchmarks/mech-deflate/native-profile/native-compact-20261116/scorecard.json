@@ -12942,6 +12942,45 @@
           "libdeflate": 1.8243797195253506
         },
         "evidence": "evidence/encoder-size-gap/early-scorer-preparation/deployment.json"
+      },
+      {
+        "name": "Checked dense scorer with direct branches",
+        "encoder_text_bytes": 66192,
+        "encoder_sha256": "4e9d5ba4767252f5583aa50c2c56b3e320bb7d4a13a075b127fa92e83fb8b2d3",
+        "compiler_sha256": "3fe38e086baf63eaba48b6c87f82232aa461a82a541d310723f4f51fbbc0cad8",
+        "measured_trials": 8,
+        "measurement_plan_sha256": "9b43fcac022276a9436a84ec5ded131f62ef2d46eee426e84ed250b05a0bee1b",
+        "median_seconds": {
+          "source": 2.235887457849458,
+          "link": 0.03838699986226857,
+          "source_through_link": 2.2740854790899903,
+          "strip": 0.010518417228013277,
+          "source_through_strip": 2.2848234795965254
+        },
+        "source_phase_median_seconds": {
+          "parse": 0.790417417,
+          "catalog": 2.29165e-05,
+          "frontend": 0.22522852100000001,
+          "artifact": 0.006987458,
+          "encode": 0.0025582705000000002,
+          "native": 1.1837348545
+        },
+        "paired_ratios": {
+          "roc": 0.7616863926417634,
+          "libdeflate": 4.720828183829676
+        },
+        "encoder_text_ratios": {
+          "roc": 1.1472545757071548,
+          "libdeflate": 1.7851132686084143
+        },
+        "paired_ratio_to_session_control": 0.9985910269741065,
+        "median_paired_seconds_saved": 0.0032098954543471336,
+        "faster_paired_trials": 4,
+        "stripped_executable": {
+          "bytes": 276056,
+          "sha256": "cf7c8a8ccc14fd39e7782006a7151779c85ac01e07e652b9becf24592e43ffee"
+        },
+        "evidence": "evidence/encoder-size-gap/dense-scorer-direct-branches/deployment.json"
       }
     ]
   },
@@ -13108,5 +13147,63 @@
       "input_words",
       "output_words"
     ]
+  },
+  "dense_scorer_direct_branches": {
+    "build": {
+      "name": "Checked dense scorer with direct branches",
+      "encoder_text_bytes": 66192,
+      "encoder_sha256": "4e9d5ba4767252f5583aa50c2c56b3e320bb7d4a13a075b127fa92e83fb8b2d3",
+      "compiler_sha256": "3fe38e086baf63eaba48b6c87f82232aa461a82a541d310723f4f51fbbc0cad8",
+      "measured_trials": 8,
+      "measurement_plan_sha256": "9b43fcac022276a9436a84ec5ded131f62ef2d46eee426e84ed250b05a0bee1b",
+      "median_seconds": {
+        "source": 2.235887457849458,
+        "link": 0.03838699986226857,
+        "source_through_link": 2.2740854790899903,
+        "strip": 0.010518417228013277,
+        "source_through_strip": 2.2848234795965254
+      },
+      "source_phase_median_seconds": {
+        "parse": 0.790417417,
+        "catalog": 2.29165e-05,
+        "frontend": 0.22522852100000001,
+        "artifact": 0.006987458,
+        "encode": 0.0025582705000000002,
+        "native": 1.1837348545
+      },
+      "paired_ratios": {
+        "roc": 0.7616863926417634,
+        "libdeflate": 4.720828183829676
+      },
+      "encoder_text_ratios": {
+        "roc": 1.1472545757071548,
+        "libdeflate": 1.7851132686084143
+      },
+      "paired_ratio_to_session_control": 0.9985910269741065,
+      "median_paired_seconds_saved": 0.0032098954543471336,
+      "faster_paired_trials": 4,
+      "stripped_executable": {
+        "bytes": 276056,
+        "sha256": "cf7c8a8ccc14fd39e7782006a7151779c85ac01e07e652b9becf24592e43ffee"
+      },
+      "evidence": "evidence/encoder-size-gap/dense-scorer-direct-branches/deployment.json"
+    },
+    "evidence": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/dense-scorer-direct-branches",
+    "qualified": true,
+    "runtime": {
+      "decision": "Retain",
+      "wins": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          62,
+          62
+        ]
+      }
+    },
+    "worker_sha256": "d95861e141f5f26f79fa993f75f53b47da2742e3e836abdc03785331b47504c5",
+    "peak_stack_bytes": 4640
   }
 }
