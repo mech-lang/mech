@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "script_sha256": "20c5ad98b4636afa1722a4d50d53cd8e69de8bcb744784838b21c9130edd6306",
+  "recipe_sha256": "e8bb6f92d26ca0a21731c90a109379389e55750b54ba48083b543183607f2db5",
+  "actual": {
+    "program.o": "1db070f4af8c9c59e5f215a019b0b3fa7a4959321a88f902ecfc9dabec296057",
+    "metadata.json": "60807fa320cf8d0449cf43d85c93319bc9ae1f9ab898c00788ccdeb4292fecca",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+  }
+}

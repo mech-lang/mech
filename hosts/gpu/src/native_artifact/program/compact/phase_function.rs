@@ -1104,6 +1104,30 @@ fn prepare_impl<M: Module>(
                         }
                     }
                 }
+                if admission.immutable_code_bytes.is_some()
+                    && module.isa().name() == "aarch64"
+                    && std::env::var_os("MECH_COMPOSE_SPLIT_COST_LENGTH").is_some()
+                    && let Some(loads) =
+                        phase_storage::input_word_loads(&candidate.func, input_words)
+                {
+                    candidate.flowgraph();
+                    let capture = Capture {
+                        packet_loads: &loads,
+                        header: composed_header,
+                        ..capture
+                    };
+                    let split = cfg_cleanup::defaulted_read_setup::split_admitted_cost_checks(
+                        &mut candidate.func,
+                        &candidate.cfg,
+                        &capture,
+                        admission,
+                    );
+                    if split != 0 {
+                        candidate.flowgraph();
+                        candidate.verify(module.isa()).map_err(backend)?;
+                        eprintln!("{name} split admitted cost checks: {split}");
+                    }
+                }
                 let id = module
                     .declare_function(&name, Linkage::Local, &signature)
                     .map_err(backend)?;
