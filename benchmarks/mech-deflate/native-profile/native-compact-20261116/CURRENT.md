@@ -1,6 +1,6 @@
 # PR #993 current status
 
-Maintained compiler source 4b154d273646256d52a3260c1b054f9a1cbd7ab8 is on PR #993 stacked on #973.
+Maintained compiler source ee6f542d82e86557848dde641fb542f09fd9146a is on PR #993 stacked on #973.
 These measurements use Apple M1, macOS 15.6.1 and arm64.
 [Machine-readable scorecard](scorecard.json)
 
@@ -8,19 +8,19 @@ These measurements use Apple M1, macOS 15.6.1 and arm64.
 
 | Apple M1 | Mech | Roc | libdeflate |
 | --- | ---: | ---: | ---: |
-| Source through final link | 2.49536 s | 2.98725 s | 0.48262 s |
-| Source through strip | 2.50583 s | 2.99772 s | 0.49332 s |
+| Source through final link | 2.42741 s | 2.98099 s | 0.47964 s |
+| Source through strip | 2.43788 s | 2.99140 s | 0.49001 s |
 | Encoder text | 71,192 B | 57,696 B | 37,080 B |
 | Stripped executable | 292,568 B | 191,912 B | 155,752 B |
 
-Mech builds in **0.835× Roc** and
-**5.173× libdeflate** time. Its encoder text is
+Mech builds in **0.815× Roc** and
+**5.058× libdeflate** time. Its encoder text is
 **1.234× Roc** and **1.920× libdeflate**. Compilers, allocator and fixed
 deployment support are prebuilt. The exact worker carries 81/81 Roc and
 61/81 libdeflate in its current full qualification. Promotions of new
 runtime artifacts require the v3 floor of 62/81 in both orders, with
 63/81 as the next target.
-[Matched measurements](evidence/immutable-root-literals/README.md) ·
+[Matched measurements](evidence/inline-syntax-child-traversal/catalog/README.md) ·
 [Runtime qualification](evidence/frame-copy-v2/README.md) ·
 [Policy v3](qualification-policy-v3.json)
 
@@ -32,15 +32,15 @@ and **3 ms Roc**. Mech's interval includes indexing and its strict check.
 
 | Stage | Current | 2.0 s budget | 1.0 s budget | 0.45 s budget |
 | --- | ---: | ---: | ---: | ---: |
-| Parser | 0.784 s | 0.75 | 0.35 | 0.13 |
-| Native preparation through object | 1.349 s | 0.95 | 0.48 | 0.22 |
-| Source semantic frontend | 0.231 s | 0.18 | 0.09 | 0.04 |
-| Catalog initialization | 0.061 s | 0.05 | 0.02 | 0.01 |
+| Parser | 0.789 s | 0.75 | 0.35 | 0.13 |
+| Native preparation through object | 1.346 s | 0.95 | 0.48 | 0.22 |
+| Source semantic frontend | 0.220 s | 0.18 | 0.09 | 0.04 |
+| Catalog join wait | 0.000 s | 0.05 | 0.02 | 0.01 |
 | Artifact, encoding, link and other work | 0.070 s | 0.07 | 0.06 | 0.05 |
-| **Total** | 2.495 s | 2.00 | 1.00 | 0.45 |
+| **Total** | 2.427 s | 2.00 | 1.00 | 0.45 |
 
-Mech needs **2.045 s** less elapsed time to reach the
-0.45 s working budget. The phase medians come from the same ten matched trials.
+Mech needs **1.977 s** less elapsed time to reach the
+0.45 s working budget. The phase medians come from the same ten matched trials. Catalog work runs during parsing and the table lists the join wait.
 
 ## Which build to use
 
@@ -219,6 +219,16 @@ and finishes at **1.00101×** in reverse. The focused comparison keeps
 both overlap wins and every other peer win. The candidate remains
 experimental on the v3 runtime gate.
 [Scorer patch, phase counts and paired observations](evidence/scorer-admitted-cost-length/README.md)
+
+## Source catalog overlap
+
+The owned syntax iterator saves **5.87 ms**
+in semantic lowering. Its isolated through-link interval spans zero.
+Starting catalog construction during parsing brings the matched build
+to **2.427 s**. Enabling overlap in the same compiler saves
+**60.88 ms** through final link.
+The direct frame-copy build uses the measured recipe.
+[Catalog overlap and exact build](evidence/inline-syntax-child-traversal/catalog/README.md)
 
 ## Active work
 
