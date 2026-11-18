@@ -1,0 +1,133 @@
+{
+  "objective": "Measure the exact checked worker after keeping shared cold returns in the caller.",
+  "focus_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "320-overlap",
+    "random-64",
+    "random-1024",
+    "prefix-random-1024",
+    "prefix-periodic-1024",
+    "prefix-periodic-4096",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-natural-16384",
+    "prefix-natural-32769",
+    "prefix-random-4096",
+    "heldout-mixed-131073"
+  ],
+  "runs": [
+    {
+      "id": "shared-terminal-byte-outline-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "shared-terminal-byte-outline-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96
+    }
+  ],
+  "policy": {
+    "path": "native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification-policy-v3.json",
+    "sha256": "89961956e17485b05457fee6d90e1b124fe09d1d1e6d3770aa5b86873912244c"
+  },
+  "timer": {
+    "path": "compare-library.py",
+    "sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a"
+  },
+  "driver": {
+    "path": "current-roadmap/shared-terminal-returns/runtime.py",
+    "sha256": "c8a78269c77dae65e5490ebeb31eae8b2621e6961c36a27b8958019c404c94d4"
+  },
+  "as_run_inventory": {
+    "path": "fixtures.json",
+    "sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+  },
+  "pinned_peers": {
+    "path": "pinned-peers/pins.json",
+    "sha256": "db5a289d7a929176e5a1c9efbff5f69702596b0dccba9f2cace86d78cc18902d"
+  },
+  "fixture_content_sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+  "bindings": {
+    "mech-control": {
+      "program.o": {
+        "path": "current-roadmap/sealed-literal-batch/parser-release/folded-graphemes-and-statement-replay/bound/program.o",
+        "sha256": "4e9d5ba4767252f5583aa50c2c56b3e320bb7d4a13a075b127fa92e83fb8b2d3"
+      },
+      "metadata.json": {
+        "path": "current-roadmap/sealed-literal-batch/parser-release/folded-graphemes-and-statement-replay/bound/metadata.json",
+        "sha256": "9596694e2cf5c1a48a807464cdc7085942792190e1425d58999adeffdb4f1367"
+      },
+      "runtime.json": {
+        "path": "current-roadmap/sealed-literal-batch/parser-release/folded-graphemes-and-statement-replay/bound/runtime.json",
+        "sha256": "fdbe47706d98e30e372a4c16d20e020d6594f06a45015d83581026c2894861e4"
+      },
+      "mech-worker": {
+        "path": "current-roadmap/sealed-literal-batch/parser-release/folded-graphemes-and-statement-replay/bound/mech-worker",
+        "sha256": "d95861e141f5f26f79fa993f75f53b47da2742e3e836abdc03785331b47504c5"
+      }
+    },
+    "mech-experiment": {
+      "program.o": {
+        "path": "current-roadmap/checked-defaulted-loads/byte-outline/bound/program.o",
+        "sha256": "76aff98a257b58d14407c14489a7f1f33b015d4deff1fe711ab5f24b94e176dc"
+      },
+      "metadata.json": {
+        "path": "current-roadmap/checked-defaulted-loads/byte-outline/bound/metadata.json",
+        "sha256": "b97616e3f1315a111a56597f039deceebae50b6c1ecaffab117b0544db3a2004"
+      },
+      "runtime.json": {
+        "path": "current-roadmap/checked-defaulted-loads/byte-outline/bound/runtime.json",
+        "sha256": "3aed80955401450ee339aac1052dd66672d4ca393c0ea12d3bc5bb407ec074d6"
+      },
+      "mech-worker": {
+        "path": "current-roadmap/checked-defaulted-loads/byte-outline/bound/mech-worker",
+        "sha256": "34eecde1cf520aed4b345c9a54c9fa002ad36f49631e12ec9dae927357115c85"
+      }
+    }
+  },
+  "identities": {
+    "mech-control": {
+      "worker": "d95861e141f5f26f79fa993f75f53b47da2742e3e836abdc03785331b47504c5",
+      "metadata": "9596694e2cf5c1a48a807464cdc7085942792190e1425d58999adeffdb4f1367"
+    },
+    "mech-experiment": {
+      "worker": "34eecde1cf520aed4b345c9a54c9fa002ad36f49631e12ec9dae927357115c85",
+      "metadata": "b97616e3f1315a111a56597f039deceebae50b6c1ecaffab117b0544db3a2004"
+    },
+    "roc": {
+      "worker": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+      "metadata": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee"
+    },
+    "libdeflate": {
+      "worker": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "metadata": null
+    },
+    "environment_sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+    "contract_sha256": "73b8d377ff7452010791de0f5155a939cfb7a65a3c46b9bac10a8a06e8f512cb"
+  },
+  "source_pin": "2dcea43bc045b89f423c68ae2c40df6c064fca71",
+  "policy_version": 3,
+  "controller": {
+    "path": "source-frame-copy-tails/full-timing.py",
+    "sha256": "f9fa19f1ef9876ee3484a339b619889ba94027cf35a76fa355e12813cea31d07"
+  },
+  "compiler_build": {
+    "path": "current-roadmap/sealed-literal-batch/parser-release/compiler/result.json",
+    "sha256": "b024ecff8d66d408839fd355d23b4043e301f241bf1ffd6e0087fd768201b86c"
+  },
+  "linked_contract": {
+    "path": "current-roadmap/checked-defaulted-loads/linked-byte-outline/linked-proofs/result.json",
+    "sha256": "715f101a1c2c1740ae16868c0a4e3676d20576fa2c9573ab5dff2569e520fa59"
+  },
+  "max_peak_stack_bytes": 5280,
+  "load_average_before": [
+    2.26220703125,
+    2.25048828125,
+    2.126953125
+  ]
+}

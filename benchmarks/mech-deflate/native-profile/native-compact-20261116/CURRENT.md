@@ -92,6 +92,9 @@ The dense scorer with direct branches emits **66,192 B**. Complete orders record
 Folding raw grapheme frames and replaying longer statements builds the exact qualified 66,192 B encoder in **2.195 s** through final link.
 [Parser source and matched evidence](evidence/sealed-grapheme-and-statement-replay/README.md)
 
+Sharing checked byte reads emits **65,932 B** and builds in **2.198 s** through final link. Both full orders retained 81/81 Roc wins and the 62/81 libdeflate floor.
+[Source replay and benchmarks](evidence/encoder-size-gap/shared-defaulted-byte-reads/README.md)
+
 ## MechDeflate compile time by encoder build
 
 Each row measures fresh MechDeflate source through final executable
@@ -119,6 +122,7 @@ Roc and libdeflate trials from the same session.
 | [Prepare the admitted scorer first](evidence/encoder-size-gap/early-scorer-preparation/deployment.json) | 67,648 B | 2.283 s | 0.764× | 4.757× |
 | [Checked dense scorer with direct branches](evidence/encoder-size-gap/dense-scorer-direct-branches/deployment.json) | 66,192 B | 2.274 s | 0.762× | 4.721× |
 | [Folded grapheme frames and longer statement replay](evidence/sealed-grapheme-and-statement-replay/deployment.json) | 66,192 B | 2.195 s | 0.737× | 4.578× |
+| [Shared checked byte reads](evidence/encoder-size-gap/shared-defaulted-byte-reads/deployment.json) | 65,932 B | 2.198 s | 0.737× | 4.587× |
 
 Parser, lowering, native compilation and link timings are in the
 machine-readable scorecard.
@@ -146,7 +150,7 @@ Mech needs **1.745 s** less elapsed time to reach the
 | Checked-read size candidate | 71,420 B | 5,328 B peak stack. Runtime qualification pending |
 | Earlier owner-exchange size candidate | 71,288 B | Rejected by the v2 runtime gate |
 | Maintained frame-copy recipe | **71,192 B** | Compiler source below |
-| Smallest v3-qualified opt-in build | **66,192 B** | [Compiler patch and source replay](evidence/encoder-size-gap/dense-scorer-direct-branches/README.md) |
+| Smallest v3-qualified opt-in build | **65,932 B** | [Compiler source and replay](evidence/encoder-size-gap/shared-defaulted-byte-reads/README.md) |
 
 ~~~sh
 python3 -B benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py \
