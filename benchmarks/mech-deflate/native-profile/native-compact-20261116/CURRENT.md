@@ -38,6 +38,12 @@ outlining increases it to **38,536 B**. The earlier 62-win Mech encoder
 from identical bytecode occupied **55,700 B**.
 [Byte attribution and replay](evidence/encoder-size-gap/README.md)
 
+An experimental capacity refusal reuses the checked continuation and
+emits **69,528 B**. Both focused orders preserve their peer wins.
+The candidate's peak stack is **5,296 B** and natural 8 KiB still loses
+to libdeflate.
+[Source patch and measured results](evidence/encoder-size-gap/shared-growth-refusal/README.md)
+
 ## Whole-build budget
 
 | Stage | Current | 2.0 s budget | 1.0 s budget | 0.45 s budget |

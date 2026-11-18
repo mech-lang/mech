@@ -50,8 +50,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/CURRENT.md",
-      "sha256": "626b9d992b59eb0c5d036b9850a4b4257db95617a3720e6fe331c7c08fd17ec8",
-      "bytes": 16765
+      "sha256": "18637752df0abdf3ef4decb5174425d3614ea603aef4880f01d288b54e3b0f74",
+      "bytes": 17083
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/QUALIFICATION.md",
@@ -13002,6 +13002,81 @@
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/root-tails.json",
       "sha256": "59665abd57d8cc085c7141f3a845e5ec12ba397d6a3abfefb34fba9a236f0fa3",
       "bytes": 4279
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-growth-refusal/README.md",
+      "sha256": "af31039cf2bd40cbb2b33d26694feb531a27641ec0b4af1865baa45c01756738",
+      "bytes": 2875
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-growth-refusal/candidate.json",
+      "sha256": "32a5bf32bfbf3176b8ca91f8e9a5f6a06f0a03c9256a1cd46c40a08ba276cd9e",
+      "bytes": 1142
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-growth-refusal/compiler.patch.gz",
+      "sha256": "166f9a81bd52a21210c4203021d2f71f871198dbf46ea61c9312ead317991eed",
+      "bytes": 1566
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-growth-refusal/exact-build.json.gz",
+      "sha256": "9bb68e8325f83f01dfd92fa93743e665081ce2552de0a47069675a1ac70d582d",
+      "bytes": 7483
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-growth-refusal/focus-plan.json.gz",
+      "sha256": "da73070ee746e81ff5da3729d2839d6df2b52532337db997f7a29f06eaaece93",
+      "bytes": 1877
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-growth-refusal/focus-replay.json.gz",
+      "sha256": "3da325e83f45309fd9d44faf59a531c0c1f2d1e6986186c68f439e559c452ce1",
+      "bytes": 4834
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-growth-refusal/forward-observations.json.gz",
+      "sha256": "80048998048122b94bf559fa1b689d6a5157d6f558d10ae8f0eebad0ebe6f9be",
+      "bytes": 7254911
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-growth-refusal/growth-study-size.json",
+      "sha256": "41e2d1e6ddf2d02c521d8c440016a752e19da741e56d5102862854643eb3fc0f",
+      "bytes": 2800
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-growth-refusal/linked-contracts.json",
+      "sha256": "e968c761848e2319783f256e80261352bbc21eb2c847bd3236cdbfe953a840cc",
+      "bytes": 1368
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-growth-refusal/linked-deployment.json",
+      "sha256": "f3850860f287776ddfe2656af2facc7f830838a51cc1253836f870902a618c86",
+      "bytes": 1273
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-growth-refusal/replay.py",
+      "sha256": "3775223aa96da715f52243601e8154b1da23db12e94b3bffb1abfb80234111f1",
+      "bytes": 1694
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-growth-refusal/reverse-observations.json.gz",
+      "sha256": "0ab7a84ca9b26688c77bf60dd963d4fa8da818e2c18c3777af26ef6224f49205",
+      "bytes": 7232366
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-growth-refusal/screen.json",
+      "sha256": "8e7ea0aa7e13be20becb3a707a9b1a47a14f7cf7276746a57194c431cab1b3e4",
+      "bytes": 3094
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-growth-refusal/small-scratch.json",
+      "sha256": "6608628b6745cf122242667329fea854a54e2c8ba8a22248f80e402274263a1f",
+      "bytes": 2222
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-growth-refusal/source.json",
+      "sha256": "c6a2f12d0523a87463ec060e2a40a02382934dfb5ae324a5e1ae245fc848287c",
+      "bytes": 439
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/size-comparison.json",

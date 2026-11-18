@@ -1,0 +1,76 @@
+{
+  "compiler/disabled/native": {
+    "object_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+    "encoder_text_bytes": 71192,
+    "checked_root_body_bytes": 50632,
+    "checked_root_stack_frame": 3728,
+    "compiled_phase_set": [
+      "_mech_compact_numeric_475_vector",
+      "_mech_compact_numeric_3009",
+      "_mech_compact_numeric_3009_no_growth_composed",
+      "_mech_compact_numeric_3009_no_growth",
+      "_mech_compact_numeric_4173",
+      "_mech_compact_numeric_3447_grouped",
+      "_mech_compact_numeric_3447",
+      "_mech_compact_numeric_3956_vector",
+      "_mech_compact_numeric_6633",
+      "_mech_compact_numeric_5895",
+      "_mech_compact_numeric_3872",
+      "_mech_compact_numeric_4799",
+      "_mech_compact_numeric_2821",
+      "_mech_compact_numeric_2821_vector",
+      "_mech_compact_numeric_8026",
+      "_mech_compact_numeric_362",
+      "_mech_compact_numeric_362_vector"
+    ]
+  },
+  "unpadded-control/frontend": {
+    "object_sha256": "616cbf48e832c82e3a6df407b0197bd36a6c8a92d7dd57c43b1fd4be52ec3932",
+    "encoder_text_bytes": 71144,
+    "checked_root_body_bytes": 50632,
+    "checked_root_stack_frame": 3728,
+    "compiled_phase_set": [
+      "_mech_compact_numeric_475_vector",
+      "_mech_compact_numeric_3009",
+      "_mech_compact_numeric_3009_no_growth_composed",
+      "_mech_compact_numeric_3009_no_growth",
+      "_mech_compact_numeric_4173",
+      "_mech_compact_numeric_3447_grouped",
+      "_mech_compact_numeric_3447",
+      "_mech_compact_numeric_3956_vector",
+      "_mech_compact_numeric_6633",
+      "_mech_compact_numeric_5895",
+      "_mech_compact_numeric_3872",
+      "_mech_compact_numeric_4799",
+      "_mech_compact_numeric_2821",
+      "_mech_compact_numeric_2821_vector",
+      "_mech_compact_numeric_8026",
+      "_mech_compact_numeric_362",
+      "_mech_compact_numeric_362_vector"
+    ]
+  },
+  "shared-growth-refusal/frontend": {
+    "object_sha256": "87635ffc0308ff8a5eef1592c762207532bf1868f3957aef8a6ab48e9a6b7161",
+    "encoder_text_bytes": 69528,
+    "checked_root_body_bytes": 50604,
+    "checked_root_stack_frame": 3744,
+    "compiled_phase_set": [
+      "_mech_compact_numeric_475_vector",
+      "_mech_compact_numeric_3009_no_growth_composed",
+      "_mech_compact_numeric_3009_no_growth",
+      "_mech_compact_numeric_4173",
+      "_mech_compact_numeric_3447_grouped",
+      "_mech_compact_numeric_3447",
+      "_mech_compact_numeric_3956_vector",
+      "_mech_compact_numeric_6633",
+      "_mech_compact_numeric_5895",
+      "_mech_compact_numeric_3872",
+      "_mech_compact_numeric_4799",
+      "_mech_compact_numeric_2821",
+      "_mech_compact_numeric_2821_vector",
+      "_mech_compact_numeric_8026",
+      "_mech_compact_numeric_362",
+      "_mech_compact_numeric_362_vector"
+    ]
+  }
+}
