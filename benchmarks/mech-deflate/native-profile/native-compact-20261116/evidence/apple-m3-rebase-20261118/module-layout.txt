@@ -1,0 +1,1 @@
+Rust module layout contract passed

@@ -1,0 +1,14 @@
+{
+  "scope": "diagnostic",
+  "level": 12,
+  "timing_boundary": "compress-into invocation through private heap cleanup",
+  "fixture_inventory_sha256": "b6de359f4e8e5fa47c9ebed9474954f6e7b809e08d4f3b36193412492c4d9490",
+  "warmup_ms_per_actor_per_case": 200,
+  "balanced_blocks_per_case": 96,
+  "batch_calls": {
+    "stored_three_cases": 512,
+    "other_inputs_at_most_1024_bytes": 64,
+    "other": 1
+  },
+  "worker_binaries": "Frozen retained 64,512-byte M3 word-scan encoder before rebasing onto ca0c778e58618c72e6bd13e7df03d3089d4ec2e3; previously observed 81/61 in both orders; source-built candidate; unchanged pinned Roc/libdeflate peers."
+}
