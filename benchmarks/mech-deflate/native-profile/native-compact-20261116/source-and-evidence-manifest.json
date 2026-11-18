@@ -50,8 +50,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/CURRENT.md",
-      "sha256": "b8fdff10687e4590c17cad0a5fe0cfbc97b66e0069869601a344e5a8b110ca56",
-      "bytes": 21899
+      "sha256": "1dcc5ae8e706a56846baf85df048ff5ffcf91cc574a110dd28461945d360eecb",
+      "bytes": 22352
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/QUALIFICATION.md",
@@ -13377,6 +13377,196 @@
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/checked-layout-refusals/stack.json",
       "sha256": "f0f15710b7e73dcc0b6afa7e3a8ae419d34dc20ba2587f629680ab59b2aadf4c",
       "bytes": 17315
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/README.md",
+      "sha256": "968a71349e8ddc86dadfb6fadbff0ebbe8c9e0636efe4d227fa8a0e4acf0a190",
+      "bytes": 3161
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/build-comparison.json.gz",
+      "sha256": "561d257a444e33d038fa3b8cc34c477607ff8a8da1e6249e88dc308f391dff70",
+      "bytes": 13937
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/build-plan.json.gz",
+      "sha256": "278f73286947c8b7d0190119a1813eb89e18f5ccbf47e6d8cab17295f8c754bc",
+      "bytes": 80061
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/candidate.json",
+      "sha256": "dd0bf3427d3313d0b01fa82c0bf7899e803de14ca3a9ab1594b5f13a0a1c1efc",
+      "bytes": 53456
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/checked-failures.json",
+      "sha256": "e765790f85660a0161716eee42d1b315e7bfb6e1fce64552299974224e4330f0",
+      "bytes": 17338
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/deployment.json",
+      "sha256": "9d69b1d9ebb87685179149cbf4fdbb64016584aaefab3319ea170aa363f24133",
+      "bytes": 3243
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/exact-candidate.json.gz",
+      "sha256": "04e6a77b964da4b90d2cae5fbc00567923811f53a8a1be803fef02a0b59ff76d",
+      "bytes": 31076
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/first-address-focus.json",
+      "sha256": "1b1f69004382f180fafecb4c7dc58cf738d407fdd287c6970fcee86863a6355f",
+      "bytes": 3462
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/first-address-size.json",
+      "sha256": "46ca059652638ece439ddb9161cbb30e0ea75768e5bdbbed8e1d325a124891ae",
+      "bytes": 4558
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/focus-fixture-content.json",
+      "sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+      "bytes": 22527
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/focus-forward-observations.tar",
+      "sha256": "171e60b5a54cb1226b30df2242e1923829d82d73588ed340e0f53918853074c8",
+      "bytes": 5406720
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/focus-plan.json",
+      "sha256": "db2b64417a3ac10544642c06576e09635825b3398d3c349abc0027085656a59f",
+      "bytes": 5161
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/focus-replay.json.gz",
+      "sha256": "e59ae6b14703fad17cb076b92bd052b1d0f4fab8a501e232e3ccd6dfa7d2b6d1",
+      "bytes": 4899
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/focus-reverse-observations.tar",
+      "sha256": "01e972c740c8d7587bfe1b2a2ef3c40566d44f07f4402692da6cc8657d1a58cb",
+      "bytes": 5396480
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/focus-screen.json",
+      "sha256": "bbe40534d036d4f3cae6a4461c2c70d03084a9c8c506faf388163faff5782d68",
+      "bytes": 3125
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/focused-alternatives.json",
+      "sha256": "7aab8b39142340cab28f0d277b2ead773502ac6ba193101ed33b3aef3849417f",
+      "bytes": 1346
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/full-fixture-content.json",
+      "sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+      "bytes": 22527
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/full-forward-observations.tar",
+      "sha256": "b5f0c41568aa92a70078d7920e11464af5e10969628000d9373d925a68640190",
+      "bytes": 9103360
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/full-plan.json",
+      "sha256": "d39f29bd39e62648ee7f651679ebf69cc47ecb68a631ac19129aa9aac94eba28",
+      "bytes": 5200
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/full-replay.json.gz",
+      "sha256": "8bddb61a31cd810ddf9cdc58244b9a385279a0299e63aa3f8fe7155750591b3b",
+      "bytes": 19328
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/full-reverse-observations.tar",
+      "sha256": "5c135711b8898be92da857077beadd0a30fdf5a78aa1f10f7af25b9c45c7b473",
+      "bytes": 9072640
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/full-screen.json",
+      "sha256": "10ad17b470dfb4af2c229d7d244fe95089dc4fef7fabc2ca0446bdcad988998e",
+      "bytes": 3064
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/held-out-matcher-census.json",
+      "sha256": "e5d15723b6ac73a34f526e3f686a5f45d2a7265a2afd960f4eacd302f31d7550",
+      "bytes": 7294
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/layout-training-counts.json.gz",
+      "sha256": "da4f9ab165b8d0d12f5ab376efbf9c1796729435427f6dbafdda476c2e5c7717",
+      "bytes": 47486
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/linked-checks.json",
+      "sha256": "832791be62c0de253d45a4a02dcd5b5ca71798de4ac80b0c1cb7450c4808cdcc",
+      "bytes": 1545
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/matcher-natural-layout-prediction.json",
+      "sha256": "9061b1cae8840fabb7574af0cb4e7bfc5286a8447f5b7fe8b22d2e6308bc0813",
+      "bytes": 1649
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/matcher_fallthroughs-counts.json.gz",
+      "sha256": "914b5589cc9494f7be107cd6b6a5624a1278b2f35660f1793551f0a8d074d669",
+      "bytes": 15265
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/paired-spill-profile-proof.json",
+      "sha256": "8f471d90753ad3ee69ab6f839f7b354c199a26111f9eecd5623a61f76cc034ed",
+      "bytes": 24910
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/paired-spills-rebased-focus.json",
+      "sha256": "1d000927a74b714ddec98a913d4a1a312c6ef03214e85c282a7f621137c89ef9",
+      "bytes": 3490
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/paired-spills-rebased-size.json",
+      "sha256": "ce512e8834451dc8f2b9daa8a37b66311a417550ef13bfca1e3bfd84e8d14460",
+      "bytes": 4695
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/profiles/mech_compact_numeric_3009_no_growth_composed.json",
+      "sha256": "df5868a479384a84aebd5b0e3ae2206830a44ce692e96c91d70de35b47d2fbf8",
+      "bytes": 477
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/profiles/mech_compact_numeric_3956_vector.json",
+      "sha256": "9d75282ff03f8d4e1382a89d97876f3f195b1548fbff65b63c04cf6f8d6834bc",
+      "bytes": 1063
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/profiles/mech_compact_numeric_475_vector.json",
+      "sha256": "5f47734fd13a7907d6ca93adb6e0224fa7b21b28590aca5d44a3cfe786d02191",
+      "bytes": 4128
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/replay.py",
+      "sha256": "7c4440a71c7b94332bf703973811a8cebb30cf173034e440d3969b0dced509bb",
+      "bytes": 2076
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/shared_continuations-counts.json.gz",
+      "sha256": "51d49a6609a73dc207e109e9b9f5d11ef94a093be14f7d801d17c98f13433ef6",
+      "bytes": 15119
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/size.json",
+      "sha256": "af1cb4f41a02324164789696b3ec319ced3a1644e1cdbf1a7585f42d6e51a4cc",
+      "bytes": 4695
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/stack.json",
+      "sha256": "7415ca0be7ae3aff50b46d0f34308489f2086331d6a6b4a90f5d31a2f458990b",
+      "bytes": 11539
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/continuation-matcher-layout/verified-replay.json",
+      "sha256": "6131694b73fbe7ea4eca6e8d42b2e7ab524a1110e4df78e574ee05b4d00cb9da",
+      "bytes": 625
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/control-structure.json",
@@ -40200,8 +40390,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/scorecard.json",
-      "sha256": "a6143dc0147aaee2805a1a58b56be1b97bae835b1ea2fb7601915f74456899f3",
-      "bytes": 434567
+      "sha256": "9d5364bf768182ff65d12f29b34e3dd7332a4e63f416b4294d1fe00f66e37580",
+      "bytes": 438268
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/size_screens.py",

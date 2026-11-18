@@ -1,0 +1,106 @@
+{
+  "medians": {
+    "mech-control-fast": {
+      "source": 2.26963027077727,
+      "link": 0.03441077074967325,
+      "source_through_link": 2.3043227915186435,
+      "strip": 0.010411916533485055,
+      "source_through_strip": 2.315039333421737
+    },
+    "mech-continuation-family-2": {
+      "source": 2.2624170624185354,
+      "link": 0.034472187515348196,
+      "source_through_link": 2.2984516248106956,
+      "strip": 0.010461583500728011,
+      "source_through_strip": 2.309058978687972
+    },
+    "mech-matcher-natural-layout": {
+      "source": 2.2630996250081807,
+      "link": 0.03564443741925061,
+      "source_through_link": 2.300522874807939,
+      "strip": 0.010453833034262061,
+      "source_through_strip": 2.3113209372386336
+    },
+    "roc": {
+      "source": 2.9551377289462835,
+      "link": 0.034186666598543525,
+      "source_through_link": 2.9893127498216927,
+      "strip": 0.010461208643391728,
+      "source_through_strip": 2.9998733126558363
+    },
+    "libdeflate": {
+      "source": 0.44561799988150597,
+      "link": 0.03387031238526106,
+      "source_through_link": 0.47984520834870636,
+      "strip": 0.010403582826256752,
+      "source_through_strip": 0.4905200412031263
+    }
+  },
+  "phases": {
+    "mech-control-fast": {
+      "parse": 0.787137354,
+      "catalog": 1.87085e-05,
+      "frontend": 0.22522529149999998,
+      "artifact": 0.007059312,
+      "encode": 0.00260625,
+      "native": 1.2198825415
+    },
+    "mech-continuation-family-2": {
+      "parse": 0.787139375,
+      "catalog": 2.11045e-05,
+      "frontend": 0.225130104,
+      "artifact": 0.007051458,
+      "encode": 0.0025957085,
+      "native": 1.214024792
+    },
+    "mech-matcher-natural-layout": {
+      "parse": 0.786576917,
+      "catalog": 1.7749999999999998e-05,
+      "frontend": 0.224913229,
+      "artifact": 0.0070369165000000004,
+      "encode": 0.0025858340000000004,
+      "native": 1.2140561875
+    }
+  },
+  "paired_ratios": {
+    "mech-control-fast": {
+      "roc": 0.771275788547922,
+      "libdeflate": 4.797893016912965,
+      "mech-control-fast": 1.0
+    },
+    "mech-continuation-family-2": {
+      "roc": 0.7697604195698546,
+      "libdeflate": 4.793429090670145,
+      "mech-control-fast": 0.99763425892616
+    },
+    "mech-matcher-natural-layout": {
+      "roc": 0.7706538572451717,
+      "libdeflate": 4.788964461007479,
+      "mech-control-fast": 0.9972485709838582
+    }
+  },
+  "plan_sha256": "477ab63c51e9e60eece187a9ef4696f17a759666e5bf98ab8e387b174512d121",
+  "trials": 10,
+  "stripped_executables": {
+    "mech-control-fast": {
+      "bytes": 276056,
+      "sha256": "2dc1038c0c05fc90d44e26aa15b4a4911c922a22a77f293587b939c8d9b3d42c"
+    },
+    "mech-continuation-family-2": {
+      "bytes": 276056,
+      "sha256": "e170d653fd33343a4fc9c7add44c7ce8f0a8a6bfefc3f6753ec76bfd26b651f3"
+    },
+    "mech-matcher-natural-layout": {
+      "bytes": 276056,
+      "sha256": "38d65b231adaee747a6a0cf5374573a15eef84f4ab010af7cb30402fc98d2ad5"
+    },
+    "roc": {
+      "bytes": 191912,
+      "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+    },
+    "libdeflate": {
+      "bytes": 155752,
+      "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+    }
+  }
+}

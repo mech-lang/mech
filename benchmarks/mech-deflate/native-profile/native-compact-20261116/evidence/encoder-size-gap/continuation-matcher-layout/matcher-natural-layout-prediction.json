@@ -1,0 +1,85 @@
+{
+  "training": [
+    "prefix-natural-4096",
+    "prefix-natural-16384",
+    "prefix-natural-32769",
+    "prefix-random-1048576",
+    "prefix-periodic-1024"
+  ],
+  "held_out": [
+    "prefix-natural-8192",
+    "prefix-random-4096",
+    "320-overlap"
+  ],
+  "raw_object_sha256": "88de2aec028ecaafcadf2d0e74f48215ff453b7da0a7e0c36c341a8427a57593",
+  "previous_profile_sha256": "55bdbe755a0ee2709beb1ba0bd24528e0d0c8cc6d12f99e9f8c00fe56325acc7",
+  "profile_sha256": "5f47734fd13a7907d6ca93adb6e0224fa7b21b28590aca5d44a3cfe786d02191",
+  "predicted_jumps": {
+    "prefix-natural-4096": {
+      "old": 41838.5,
+      "new": 26842.5
+    },
+    "prefix-natural-16384": {
+      "old": 214583.0,
+      "new": 137113.0
+    },
+    "prefix-natural-32769": {
+      "old": 535236,
+      "new": 332206
+    },
+    "prefix-random-1048576": {
+      "old": 1705105,
+      "new": 2373369
+    },
+    "prefix-periodic-1024": {
+      "old": 5672.5,
+      "new": 5751.5
+    },
+    "prefix-natural-8192": {
+      "old": 86324,
+      "new": 57039
+    },
+    "prefix-random-4096": {
+      "old": 341,
+      "new": 8266
+    },
+    "320-overlap": {
+      "old": 1679.0,
+      "new": 1679.0
+    }
+  },
+  "resolved_edges": {
+    "prefix-natural-4096": [
+      591,
+      599
+    ],
+    "prefix-natural-16384": [
+      591,
+      599
+    ],
+    "prefix-natural-32769": [
+      595,
+      599
+    ],
+    "prefix-random-1048576": [
+      599,
+      599
+    ],
+    "prefix-periodic-1024": [
+      591,
+      599
+    ],
+    "prefix-natural-8192": [
+      595,
+      599
+    ],
+    "prefix-random-4096": [
+      599,
+      599
+    ],
+    "320-overlap": [
+      591,
+      599
+    ]
+  }
+}

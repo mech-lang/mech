@@ -77,6 +77,9 @@ Keeping the checked returns available in the caller restores two shared continua
 The 67,664 B encoder won 81/81 and 81/81 Roc cases and 62/81 and 61/81 libdeflate cases in complete orders. V3 returned **Reject**.
 [Compiler replay, size and runtime measurements](evidence/encoder-size-gap/shared-continuation-returns/README.md)
 
+The matcher layout emits **67,648 B** with the shared continuations. Complete orders recorded 81/81 and 81/81 against Roc and 62/81 and 62/81 against libdeflate. V3 returned **Retain**.
+[Source replay and runtime results](evidence/encoder-size-gap/continuation-matcher-layout/README.md)
+
 ## MechDeflate compile time by encoder build
 
 Each row measures fresh MechDeflate source through final executable
@@ -99,6 +102,7 @@ Roc and libdeflate trials from the same session.
 | [Scalar and non-owning field definitions](evidence/encoder-size-gap/dominating-definitions/fields/deployment.json) | 68,424 B | 2.305 s | 0.771× | 4.787× |
 | [Shared cold returns](evidence/encoder-size-gap/shared-continuation-returns/deployment.json) | 67,672 B | 2.304 s | 0.770× | 4.796× |
 | [Shared cold returns with one additional continuation family](evidence/encoder-size-gap/shared-continuation-returns/deployment.json) | 67,664 B | 2.302 s | 0.770× | 4.794× |
+| [Shared continuations with matcher fallthroughs](evidence/encoder-size-gap/continuation-matcher-layout/deployment.json) | 67,648 B | 2.301 s | 0.771× | 4.789× |
 
 Parser, lowering, native compilation and link timings are in the
 machine-readable scorecard.
