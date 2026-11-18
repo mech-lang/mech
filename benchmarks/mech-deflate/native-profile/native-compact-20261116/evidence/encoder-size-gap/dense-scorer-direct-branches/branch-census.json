@@ -1,0 +1,50 @@
+{
+  "earlier": {
+    "object_sha256": "63f7f1d71b0934478e4ce37644c095b2c1bfba0dea0a2f80c733fa6ef7c7fb23",
+    "counts_sha256": "1fc76002c2964672901cc8b871c56b7add4a4c67cbc932dbccf9b69a65cdc6f1",
+    "counts": {
+      "320-overlap": {
+        "instructions": 36372,
+        "b": 1308,
+        "cmp": 4336,
+        "cbz": 20,
+        "cbnz": 0,
+        "b.eq": 1376,
+        "b.ne": 1268
+      },
+      "prefix-natural-8192": {
+        "instructions": 7454886,
+        "b": 163872,
+        "cmp": 943968,
+        "cbz": 43020,
+        "cbnz": 0,
+        "b.eq": 444354,
+        "b.ne": 9594
+      }
+    }
+  },
+  "selected": {
+    "object_sha256": "4e9d5ba4767252f5583aa50c2c56b3e320bb7d4a13a075b127fa92e83fb8b2d3",
+    "counts_sha256": "a7f3d409bbbfc0ac2cf5b566f129c481faf27301eceaea15422820406f805824",
+    "counts": {
+      "320-overlap": {
+        "instructions": 33772,
+        "b": 1292,
+        "cmp": 1752,
+        "cbz": 1312,
+        "cbnz": 1292,
+        "b.eq": 28,
+        "b.ne": 32
+      },
+      "prefix-natural-8192": {
+        "instructions": 7205976,
+        "b": 20202,
+        "cmp": 838728,
+        "cbz": 95640,
+        "cbnz": 52620,
+        "b.eq": 123888,
+        "b.ne": 224820
+      }
+    }
+  }
+}
