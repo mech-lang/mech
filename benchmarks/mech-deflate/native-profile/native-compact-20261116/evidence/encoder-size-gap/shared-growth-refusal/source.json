@@ -1,0 +1,8 @@
+{
+  "base": "c2e1b803d82401d28c2aa15dad875bfbfd3e492b",
+  "path": "hosts/gpu/src/native_artifact/program/compact/phases.rs",
+  "original_sha256": "056453cdf5dd387eb0857c169fc99aaefb85849fe2a3e17e649aff57675e0ea3",
+  "candidate_sha256": "81bf55a30ec6bfc5470cc037353151137a0fae363d08641ff18307223ff6aa9c",
+  "patch_sha256": "c254390f7ca4301946e86a77b31ae50062746d0782cf08c1c342bffee78916b9",
+  "option": "MECH_COMPACT_REFUSE_PHASE_GROWTH"
+}
