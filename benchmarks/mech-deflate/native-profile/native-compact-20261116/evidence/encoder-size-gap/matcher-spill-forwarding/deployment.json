@@ -1,0 +1,85 @@
+{
+  "plan_sha256": "a6aa3aec730e391d3cefe2c63a0dce77f34bbf8048437b4802db9d9a408bc6f8",
+  "medians": {
+    "mech-control-qualified": {
+      "source": 2.1652022500056773,
+      "link": 0.035122582921758294,
+      "source_through_link": 2.200730625074357,
+      "strip": 0.01053483341820538,
+      "source_through_strip": 2.2113944585435092
+    },
+    "mech-forwarding-trained": {
+      "source": 2.1655105834361166,
+      "link": 0.03494004160165787,
+      "source_through_link": 2.2012235205620527,
+      "strip": 0.01046381238847971,
+      "source_through_strip": 2.211994187440723
+    },
+    "roc": {
+      "source": 2.94009599997662,
+      "link": 0.03519293759018183,
+      "source_through_link": 2.9755649170838296,
+      "strip": 0.010418853489682078,
+      "source_through_strip": 2.986216062679887
+    },
+    "libdeflate": {
+      "source": 0.4455664164852351,
+      "link": 0.034105520928278565,
+      "source_through_link": 0.4799091457389295,
+      "strip": 0.010423208586871624,
+      "source_through_strip": 0.4904796665068716
+    }
+  },
+  "phases": {
+    "mech-control-qualified": {
+      "parse": 0.7200233125,
+      "catalog": 1.89995e-05,
+      "frontend": 0.21968274999999998,
+      "artifact": 0.006956375000000001,
+      "encode": 0.0025717500000000003,
+      "native": 1.189784708
+    },
+    "mech-forwarding-trained": {
+      "parse": 0.719961042,
+      "catalog": 1.95835e-05,
+      "frontend": 0.21908958350000002,
+      "artifact": 0.006952812500000001,
+      "encode": 0.0025799374999999998,
+      "native": 1.1911954375
+    }
+  },
+  "paired_ratios": {
+    "mech-control-qualified": {
+      "roc": 0.739724209433984,
+      "libdeflate": 4.583331243474335,
+      "mech-control-qualified": 1.0
+    },
+    "mech-forwarding-trained": {
+      "roc": 0.7395986440743688,
+      "libdeflate": 4.585968634089252,
+      "mech-control-qualified": 1.0002923827355548
+    }
+  },
+  "median_paired_ms_saved": -0.6433960516005754,
+  "faster_trials": 2,
+  "trials": 8,
+  "selected": "mech-forwarding-trained",
+  "stripped_executables": {
+    "mech-control-qualified": {
+      "bytes": 276056,
+      "sha256": "cde0a4c11b1d29636aa73777dc30639a039965ba1a0bcb00e91e354e25c7a21c"
+    },
+    "mech-forwarding-trained": {
+      "bytes": 276056,
+      "sha256": "eb6336cf3f4896e31380f159dfc483e64309e9455b40f734bc52ad934f3928e6"
+    },
+    "roc": {
+      "bytes": 191912,
+      "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+    },
+    "libdeflate": {
+      "bytes": 155752,
+      "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+    }
+  }
+}
