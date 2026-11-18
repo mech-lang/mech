@@ -69,7 +69,14 @@ jobs:
         id: checkout
         with:
           ref: ${{ github.sha }}
-          fetch-depth: 0
+          # The PR integration merge includes its base as a direct parent.
+          # Classification needs commit trees and these three source files.
+          fetch-depth: 2
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/ci/owners.toml
+            /scripts/ci-impact.py
+            /scripts/ci_owners.py
       - name: Record selected checkout identity
         env:
           VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
