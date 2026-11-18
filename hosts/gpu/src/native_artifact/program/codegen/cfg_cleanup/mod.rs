@@ -317,6 +317,63 @@ pub(in crate::native_artifact) fn optimize_final_routes(
     Ok(report)
 }
 
+pub(in crate::native_artifact) fn optimize_final_batched_routes(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+    ordered_finish: bool,
+) -> Result<CfgCleanup, NativeCompileError> {
+    let mut report = optimize_final_ordered(controls, context, isa)?;
+    if !report.enabled {
+        return Ok(report);
+    }
+    // Each search reconstructs its current CFG and dominance facts. Between
+    // rewrites retire unreachable routes/constant phis, retaining valid SSA,
+    // without rerunning every ordered source-range search after each edge.
+    if controls.enabled(OptimizationPass::LoopEdgeThreading) {
+        context.func.dfg.resolve_all_aliases();
+        context.compute_cfg();
+        context.compute_domtree();
+        report.loop_edges =
+            threaded_edges::optimize(&mut context.func, &context.cfg, &context.domtree)
+                .threaded_edges;
+        if report.loop_edges != 0 {
+            context
+                .compute_flowgraph_and_cleanup(isa)
+                .map_err(backend)?;
+            context.verify(isa).map_err(backend)?;
+        }
+    }
+    if controls.enabled(OptimizationPass::IdentityRoutes) {
+        context.func.dfg.resolve_all_aliases();
+        context.compute_cfg();
+        context.compute_domtree();
+        report.identity_edges =
+            identity_routes::optimize(&mut context.func, &context.cfg, &context.domtree, None)
+                .threaded_edges;
+        if report.identity_edges != 0 {
+            context
+                .compute_flowgraph_and_cleanup(isa)
+                .map_err(backend)?;
+            context.verify(isa).map_err(backend)?;
+        }
+    }
+    if report.loop_edges != 0 || report.identity_edges != 0 {
+        if ordered_finish {
+            optimize_final_ordered(controls, context, isa)?;
+        } else if controls.enabled(OptimizationPass::DemandLiveness) {
+            let dead = dead_values::eliminate(&mut context.func);
+            report.dead_parameters_removed += dead.parameters;
+            report.dead_instructions_removed += dead.instructions;
+            report.dead_loads_removed += dead.loads;
+        }
+        context.verify(isa).map_err(backend)?;
+    }
+    report.adjacent_addresses_reused += reuse_adjacent_addresses(controls, context, isa)?;
+    (report.after_blocks, report.after_instructions) = counts(&context.func);
+    Ok(report)
+}
+
 // Numeric range proofs still consume exact equality-to-one facts on phi
 // words. Keep that vocabulary until the existing guard pass has finished.
 pub(in crate::native_artifact) fn optimize_before_unsigned_guards(
