@@ -57,6 +57,8 @@ pub mod flowgraph;
 pub mod inline;
 pub mod ir;
 pub mod isa;
+#[cfg(feature = "construction-census")]
+pub mod construction_census;
 pub mod loop_analysis;
 pub mod print_errors;
 pub mod settings;
