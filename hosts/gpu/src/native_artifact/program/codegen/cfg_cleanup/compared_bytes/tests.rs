@@ -44,9 +44,11 @@ fn compile(
     write_inside: bool,
     advanced: bool,
     admitted: bool,
+    bounded: u8,
 ) -> (
     JITModule,
     unsafe extern "C" fn(*mut u8, u64, u64, u64, u64) -> u64,
+    usize,
     usize,
 ) {
     let mut module = JITModule::new(
@@ -90,12 +92,40 @@ fn compile(
     let transported_index = b.block_params(forwarded)[0];
     // These two names identify the same current dynamic phi. The producer
     // and consumer deliberately use different forwarding layers.
+    let producer_length = if bounded == 2 {
+        b.ins().iadd_imm(args[1], -1)
+    } else {
+        args[1]
+    };
+    if bounded != 0 {
+        let first = b
+            .ins()
+            .icmp(IntCC::UnsignedLessThan, index, producer_length);
+        let second = b
+            .ins()
+            .icmp(IntCC::UnsignedLessThan, args[3], producer_length);
+        let valid = b.ins().band(first, second);
+        let reads = b.create_block();
+        let exit = b.create_block();
+        b.ins().brif(valid, reads, &[], exit, &[]);
+        b.switch_to_block(exit);
+        b.ins().return_(&[args[4]]);
+        b.switch_to_block(reads);
+    }
     let at = b.ins().iadd(pointer, index);
     let at = b.ins().iadd_imm(at, -1);
     let at = b.ins().iadd_imm(at, 1);
     let a = b.ins().uload8(types::I64, MemFlags::new(), at, 0);
     let at = b.ins().iadd(pointer, args[3]);
     let z = b.ins().uload8(types::I64, MemFlags::new(), at, 0);
+    let bounds = if bounded != 0 {
+        vec![
+            BoundedRead::new(b.func, a, 0).unwrap(),
+            BoundedRead::new(b.func, z, 0).unwrap(),
+        ]
+    } else {
+        Vec::new()
+    };
     if write_before {
         let byte = b.ins().iconst(types::I8, 255);
         b.ins().store(MemFlags::new(), byte, pointer, 0);
@@ -135,10 +165,19 @@ fn compile(
             } else {
                 BTreeSet::new()
             },
+            &bounds,
+            &BTreeMap::from([(0, (pointer, producer_length))]),
         )
     } else {
         0
     };
+    let choices = c
+        .func
+        .layout
+        .blocks()
+        .flat_map(|block| c.func.layout.block_insts(block))
+        .filter(|&inst| c.func.dfg.insts[inst].opcode() == Op::Select)
+        .count();
     c.verify(module.isa()).unwrap();
     let id = module
         .declare_function("compared_bytes", Linkage::Local, &c.func.signature)
@@ -147,15 +186,15 @@ fn compile(
     module.finalize_definitions().unwrap();
     // SAFETY: This live finalized module owns the exact signature above.
     let call = unsafe { std::mem::transmute(module.get_finalized_function(id)) };
-    (module, call, reused)
+    (module, call, reused, choices)
 }
 
 #[test]
 fn compared_bytes_keep_later_defaults_payloads_and_different_equal_edge_indices() {
     let mut observations = 0;
     for advanced in [false, true] {
-        let (_old, old, _) = compile(false, false, false, advanced, true);
-        let (_new, new, reused) = compile(true, false, false, advanced, true);
+        let (_old, old, _, _) = compile(false, false, false, advanced, true, 0);
+        let (_new, new, reused, _) = compile(true, false, false, advanced, true, 0);
         assert!(reused > 0);
         for data in [
             [0u8; 8],
@@ -196,8 +235,8 @@ fn compared_bytes_decline_writes_and_absent_immutable_view_authority() {
         (false, true, true),
         (false, false, false),
     ] {
-        let (_old, old, _) = compile(false, before, inside, false, admitted);
-        let (_new, new, reused) = compile(true, before, inside, false, admitted);
+        let (_old, old, _, _) = compile(false, before, inside, false, admitted, 0);
+        let (_new, new, reused, _) = compile(true, before, inside, false, admitted, 0);
         assert_eq!(reused, 0);
         for length in [0, 1, 8] {
             let mut a = [9, 1, 2, 3, 4, 5, 6, 7];
@@ -213,4 +252,50 @@ fn compared_bytes_decline_writes_and_absent_immutable_view_authority() {
             assert_eq!(a, z);
         }
     }
+}
+
+#[test]
+fn compared_bytes_share_only_the_same_admitted_logical_bounds() {
+    let mut observations = 0;
+    for bounded in [1, 2] {
+        for advanced in [false, true] {
+            let (_old, old, _, _) = compile(false, false, false, advanced, true, bounded);
+            let (_new, new, reused, choices) = compile(true, false, false, advanced, true, bounded);
+            assert!(reused > 0);
+            if bounded == 1 {
+                assert_eq!(choices, 0);
+            } else {
+                assert!(choices > 0);
+            }
+            for data in [
+                [0u8; 8],
+                [255; 8],
+                [0, 1, 2, 3, 4, 5, 6, 7],
+                [255, 0, 128, 1, 127, 254, 17, 99],
+            ] {
+                for i in 0..6 {
+                    for j in 0..6 {
+                        for length in [0, 1, 2, 4, 8, u64::MAX] {
+                            for marker in [0, 1, u64::MAX, 0x8000_0000_0000_0000] {
+                                let mut a = data;
+                                let mut z = data;
+                                // SAFETY: Both exact entry signatures are owned by their live
+                                // modules; every possible physical load fits these arrays.
+                                let (x, y) = unsafe {
+                                    (
+                                        old(a.as_mut_ptr(), length, i, j, marker),
+                                        new(z.as_mut_ptr(), length, i, j, marker),
+                                    )
+                                };
+                                assert_eq!(x, y);
+                                assert_eq!(a, z);
+                                observations += 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    assert_eq!(observations, 13824);
 }
