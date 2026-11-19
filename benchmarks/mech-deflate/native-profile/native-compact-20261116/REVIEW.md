@@ -19,7 +19,7 @@ git fetch origin codex/pr993-m3-optimization
 git switch -c codex/review-native-compact origin/codex/pr993-m3-optimization
 ```
 
-The selected M1 recipe is **`m1-immutable-current-reads`**: **63,532 B**, saving **160 B**, with **81/81 Roc and 62/81 libdeflate wins in both complete orders**. Every paired control win and all 81/62 precision-supported wins are retained. Original Mech source and canonical bytecode are unchanged; no LLVM dependency is added. The latest complete-build cohort uses compiler source `7259e858f3fc4a979c89378d3c73f45af4e6151c`.
+The selected M1 recipe is **`m1-immutable-current-reads`**: **63,532 B**, saving **160 B**, with **81/81 Roc and 62/81 libdeflate wins in both complete orders**. Every paired control win and all 81/62 precision-supported wins are retained. Original Mech source and canonical bytecode are unchanged; no LLVM dependency is added. The latest complete-build cohort uses compiler source `546af95af3735591a77455932dc48920a8fc071d`.
 
 Previous source-unit cohort complete build: **2.245045 s**, versus Roc **2.993610 s** and C **0.491877 s**; paired ratios **0.739423× Roc / 4.540212× C**. Eighteen balanced fresh-process orders per actor include final linking with fixed support and compilers prebuilt for every actor. The current minimal compiler is a paired 1.058 ms slower than the earlier compiler producing the identical encoder, 90% interval −8.222 to +19.025 ms: no established change. The repaired unit adds a paired 66.899 ms against its own compiler with the split disabled. No compilation-time improvement is claimed. [All nine actors, phases, raw orders and portable replay](evidence/early-source-unit-repair/README.md).
 
@@ -45,7 +45,7 @@ On 1 MiB, the new collector saves 1.15 million stack loads and 2.10 million stac
 
 ## Main architecture work
 
-The encoder is still **1.713376× C**; the latest selected paired complete build is **4.578593× C**. Its 46,788 B controller exceeds C's entire 37,080 B encoder. The latest selected build spends 705.677 ms parsing, 217.306 ms in semantics and 1,216.669 ms in the native pipeline.
+The encoder is still **1.713376× C**; the latest selected paired complete build is **4.588892× C**. Its 46,788 B controller exceeds C's entire 37,080 B encoder. The latest selected build spends 704.310 ms parsing, 217.042 ms in semantics and 1,215.725 ms in the native pipeline.
 
 The early-unit repair is now in source. Source-relative hints recover extraction across physical unit boundaries; caller-owned ownership homes, shared numeric packets and borrowed private output scratch avoid repeated transport. Root-only register preference brings actual active stack to **5,280 B**. The repaired encoder is **65,948 B**, down 3,608 B from the same-compiler unrepaired experiment but still 2,416 B above the selected encoder. Fourteen source-bound tests and nine scalar success/error probes pass; all 162 output/inflation/alias checks, six failures and 12 recoveries pass. Both allocation modes and the portable published commands reproduce all artifacts.
 
