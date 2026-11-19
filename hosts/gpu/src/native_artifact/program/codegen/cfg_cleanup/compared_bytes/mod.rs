@@ -15,6 +15,8 @@ use cranelift_codegen::{
 use std::collections::{BTreeMap, BTreeSet};
 mod symbols;
 use symbols::{Address, Symbol, Symbols, current};
+mod read_bounds;
+pub(in crate::native_artifact) use read_bounds::BoundedRead;
 
 fn pure(op: Op) -> bool {
     matches!(
@@ -104,6 +106,7 @@ struct Byte {
     value: Value,
     address: Address,
     flags: MemFlags,
+    bounds: Option<(Address, Address)>,
 }
 struct Walk<'a> {
     f: &'a Function,
@@ -128,6 +131,7 @@ struct Plan {
     symbols: Symbols,
     values: Values,
     region: BTreeSet<Block>,
+    proved_bounds: usize,
 }
 
 impl Walk<'_> {
@@ -244,6 +248,7 @@ impl Walk<'_> {
         let mut visited = BTreeSet::new();
         let mut reused = BTreeSet::new();
         let mut joined = None;
+        let mut proved_bounds = 0;
         loop {
             let (block, args) = if let Some(join) = joined.take() {
                 join
@@ -274,6 +279,8 @@ impl Walk<'_> {
                     {
                         return None;
                     }
+                    let admitted = self.admitted(&values, arg, yes.reused[0]);
+                    proved_bounds += usize::from(admitted);
                     let mut merged = Vec::new();
                     let mut differences = 0;
                     for (&a, &b) in yes.args.iter().zip(&no.args) {
@@ -283,7 +290,11 @@ impl Walk<'_> {
                             }
                             differences += 1;
                         }
-                        merged.push(self.symbols.choice(condition, a, b));
+                        merged.push(if admitted {
+                            a
+                        } else {
+                            self.symbols.choice(condition, a, b)
+                        });
                     }
                     if differences != 1 || !reused.insert(yes.reused[0]) {
                         return None;
@@ -302,6 +313,7 @@ impl Walk<'_> {
                             symbols: self.symbols,
                             values,
                             region: visited,
+                            proved_bounds,
                         });
                     }
                     visited.extend(yes.blocks);
@@ -357,11 +369,14 @@ fn repairs(f: &Function, dom: &DominatorTree, plan: &Plan) -> Option<Vec<(Value,
 pub(in crate::native_artifact) fn fold(
     context: &mut Context,
     immutable_bytes: &BTreeSet<Value>,
+    bounded_reads: &[BoundedRead],
+    views: &BTreeMap<usize, (Value, Value)>,
 ) -> usize {
     if immutable_bytes.is_empty() {
         return 0;
     }
     let mut total = 0;
+    let mut proved_bounds = 0;
     for _ in 0..8 {
         context.flowgraph();
         let f = &context.func;
@@ -424,6 +439,9 @@ pub(in crate::native_artifact) fn fold(
                     value,
                     address,
                     flags,
+                    bounds: bounded_reads
+                        .iter()
+                        .find_map(|read| read.keys(f, &context.cfg, value, views)),
                 });
             }
             let Ok(bytes) = <[Byte; 2]>::try_from(bytes) else {
@@ -440,11 +458,13 @@ pub(in crate::native_artifact) fn fold(
                             value: bytes[0].value,
                             address: bytes[0].address.clone(),
                             flags: bytes[0].flags,
+                            bounds: bytes[0].bounds.clone(),
                         },
                         Byte {
                             value: bytes[1].value,
                             address: bytes[1].address.clone(),
                             flags: bytes[1].flags,
+                            bounds: bytes[1].bounds.clone(),
                         },
                     ],
                     symbols: Symbols::default(),
@@ -460,6 +480,7 @@ pub(in crate::native_artifact) fn fold(
         let Some((mut plan, repairs)) = plan else {
             break;
         };
+        proved_bounds += plan.proved_bounds;
         let predecessors = context
             .cfg
             .pred_iter(plan.join)
@@ -517,6 +538,9 @@ pub(in crate::native_artifact) fn fold(
         total += 1;
     }
     context.flowgraph();
+    if !bounded_reads.is_empty() {
+        eprintln!("compared byte source bounds proved: {proved_bounds}");
+    }
     total
 }
 

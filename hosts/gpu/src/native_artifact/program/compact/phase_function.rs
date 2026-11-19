@@ -1261,17 +1261,48 @@ fn prepare_impl<M: Module>(
         // Only current fixed immutable byte views from this sealed caller
         // qualify. The rewrite retains both later index checks and defaults.
         let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
-        let words = private
+        let views = private
             .immutable_fixed_arrays(proof)
             .into_iter()
             .filter(|&array| proof.arrays[array].width == 1)
-            .filter_map(|array| packet.iter().position(|&word| word == proof.view(array)))
-            .collect::<BTreeSet<_>>();
+            .filter_map(|array| {
+                Some((
+                    array,
+                    (
+                        packet.iter().position(|&word| word == proof.view(array))?,
+                        packet
+                            .iter()
+                            .position(|&word| word == proof.view(array) + 1)?,
+                    ),
+                ))
+            })
+            .collect::<BTreeMap<_, _>>();
         let pointers = loads
             .iter()
-            .filter_map(|(&value, &(_, word))| words.contains(&word).then_some(value))
+            .filter_map(|(&value, &(_, word))| {
+                views
+                    .values()
+                    .any(|&(pointer, _)| pointer == word)
+                    .then_some(value)
+            })
             .collect();
-        let reused = cfg_cleanup::compared_bytes::fold(&mut context, &pointers);
+        let current_views = views
+            .into_iter()
+            .filter_map(|(array, (pointer, length))| {
+                let word = |at| {
+                    loads
+                        .iter()
+                        .find_map(|(&value, &(_, word))| (word == at).then_some(value))
+                };
+                Some((array, (word(pointer)?, word(length)?)))
+            })
+            .collect();
+        let reused = cfg_cleanup::compared_bytes::fold(
+            &mut context,
+            &pointers,
+            &report.bounded_byte_reads,
+            &current_views,
+        );
         if reused != 0 {
             context.verify(module.isa()).map_err(backend)?;
             eprintln!("{symbol} reused compared byte pairs: {reused}");
