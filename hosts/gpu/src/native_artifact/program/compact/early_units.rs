@@ -31,6 +31,8 @@ pub(super) struct Split {
     pub boundary: Boundary,
     pub zero_inputs: BTreeSet<usize>,
     pub zero_outputs: BTreeSet<usize>,
+    inout_owners: BTreeMap<usize, usize>,
+    output_scratch: Option<usize>,
     pub root: Unit,
     pub helper: Unit,
     pub function: FuncId,
@@ -341,6 +343,39 @@ impl Split {
             .collect::<BTreeSet<_>>();
         boundary.inputs.retain(|word| !zero_inputs.contains(word));
         boundary.outputs.retain(|word| !zero_outputs.contains(word));
+        // These are original physical ownership lanes, not arbitrary scalar
+        // words or array payloads. The caller initializes each exact packet
+        // position, and this synchronous unit alone reads/writes it. Returning
+        // immediately on error preserves the existing invocation cleanup.
+        let inout_owners = if memory
+            && std::env::var_os("MECH_COMPACT_SOURCE_OWNER_HOMES").is_some()
+        {
+            boundary
+                .inputs
+                .iter()
+                .enumerate()
+                .filter_map(|(at, &word)| {
+                    (owner_words.contains(&word) && boundary.outputs.binary_search(&word).is_ok())
+                        .then_some((word, at))
+                })
+                .collect()
+        } else {
+            BTreeMap::new()
+        };
+        let output_scratch = std::env::var_os("MECH_COMPACT_SOURCE_OUTPUT_SCRATCH").map(|_| {
+            phases
+                .iter()
+                .filter(|phase| {
+                    typed.owners[phase.header] == Some(1)
+                        && phase
+                            .destinations()
+                            .iter()
+                            .all(|&exit| unit_reaches(phase.header, exit))
+                })
+                .map(|phase| phase.packet_words().1)
+                .max()
+                .unwrap_or(0)
+        });
         let mut root_words = graph.root_words(&model.unit_sites(&typed.root_sites), &boundary);
         root_words.extend(&zero_outputs);
         for value in flow.inputs.iter().chain(&flow.outputs) {
@@ -393,6 +428,8 @@ impl Split {
             boundary,
             zero_inputs,
             zero_outputs,
+            inout_owners,
+            output_scratch,
             root,
             helper,
             function,
@@ -409,9 +446,28 @@ impl Split {
             .collect()
     }
     pub fn reserve(&self, b: &mut FunctionBuilder<'_>) -> Result<Slots, NativeCompileError> {
-        Geometry::derive([(self.boundary.inputs.len(), self.boundary.outputs.len())])?
+        Geometry::derive([self.packet_words()])?
             .expect("one early region call")
             .reserve(b)
+    }
+    pub fn packet_words(&self) -> (usize, usize) {
+        (
+            self.boundary.inputs.len(),
+            self.result_words().max(self.output_scratch.unwrap_or(0)),
+        )
+    }
+    pub fn result_words(&self) -> usize {
+        self.boundary.outputs.len() - self.inout_owners.len()
+    }
+    pub fn output_scratch(&self) -> Option<usize> {
+        self.output_scratch
+    }
+    pub fn bind_owner_homes(
+        &self,
+        words: &mut Words,
+        input: Value,
+    ) -> Result<(), NativeCompileError> {
+        words.bind_packet_homes(input, &self.inout_owners)
     }
     pub fn emit_call<M: Module>(
         &self,
@@ -422,8 +478,8 @@ impl Split {
         packet: &Slots,
         exit: Block,
     ) -> Result<(), NativeCompileError> {
-        let (input, output) =
-            packet.for_call(self.boundary.inputs.len(), self.boundary.outputs.len())?;
+        let (input_words, output_words) = self.packet_words();
+        let (input, output) = packet.for_call(input_words, output_words)?;
         for (at, &word) in self.boundary.inputs.iter().enumerate() {
             let value = words.read(b, word);
             b.ins().stack_store(value, input, offset(at)?);
@@ -445,10 +501,18 @@ impl Split {
         b.switch_to_block(failed);
         b.ins().return_(&[status, origin]);
         b.switch_to_block(success);
-        for (at, &word) in self.boundary.outputs.iter().enumerate() {
+        let mut at = 0;
+        for &word in &self.boundary.outputs {
+            let (address, position) = if let Some(&position) = self.inout_owners.get(&word) {
+                (input, position)
+            } else {
+                let position = at;
+                at += 1;
+                (output, position)
+            };
             let value = b
                 .ins()
-                .load(types::I64, MemFlags::new(), output, offset(at)?);
+                .load(types::I64, MemFlags::new(), address, offset(position)?);
             words.write(b, word, value);
         }
         if !self.zero_outputs.is_empty() {
@@ -467,7 +531,13 @@ impl Split {
         output: Value,
         zero: Value,
     ) -> Result<(), NativeCompileError> {
-        for (at, &word) in self.boundary.outputs.iter().enumerate() {
+        for (at, &word) in self
+            .boundary
+            .outputs
+            .iter()
+            .filter(|word| !self.inout_owners.contains_key(word))
+            .enumerate()
+        {
             let value = words.read(b, word);
             b.ins().store(MemFlags::new(), value, output, offset(at)?);
         }
@@ -479,6 +549,9 @@ impl Split {
         serde_json::json!({"source_entry":r.entry,"normal_exit":r.exit,"operations":r.sites.len(),
             "input_word_slots":self.boundary.inputs,"output_word_slots":self.boundary.outputs,
             "constant_zero_input_slots":self.zero_inputs,"constant_zero_output_slots":self.zero_outputs,
+            "inout_owner_homes":self.inout_owners,"physical_packet_words":self.packet_words(),
+            "published_result_words":self.result_words(),"nested_output_scratch_words":self.output_scratch,
+            "inout_owner_contract":"exact initialized input/output owner lanes in invocation-local caller storage; synchronous nonescaping unit, no new retain/release",
             "zero_proof":"all-path physical owner must-zero fixed point including guarded native bypasses; unknown writes kill, joins intersect, copies and clears propagate",
             "root_word_homes":self.root.words.len(),"helper_word_homes":self.helper.words.len(),
             "root_source_blocks":self.root.reachable.iter().filter(|&&v|v).count(),
