@@ -175,3 +175,7 @@ required-features = ["construction-census-serde"]
 [[test]]
 name = "word_boundary"
 path = "word_boundary_tests.rs"
+
+[[test]]
+name = "source_blocks"
+path = "source_blocks_tests.rs"

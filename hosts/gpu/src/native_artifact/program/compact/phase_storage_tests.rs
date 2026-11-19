@@ -5,6 +5,109 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{Linkage, Module, default_libcall_names};
 
+#[cfg(feature = "early-region-emission")]
+#[test]
+fn nested_call_outputs_can_use_a_checked_caller_extent() {
+    for borrowed in [false, true] {
+        let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+        let mut leaf = module.make_context();
+        leaf.func.signature.params = vec![AbiParam::new(I64); 2];
+        let mut frontend = FunctionBuilderContext::new();
+        let mut b = FunctionBuilder::new(&mut leaf.func, &mut frontend);
+        let entry = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let [input, output] = b.block_params(entry).try_into().unwrap();
+        let a = b.ins().load(I64, MemFlags::new(), input, 0);
+        let c = b.ins().load(I64, MemFlags::new(), input, 8);
+        let values = [b.ins().iadd(a, c), b.ins().bxor(a, c), b.ins().isub(a, c)];
+        for (at, value) in values.into_iter().enumerate() {
+            b.ins()
+                .store(MemFlags::new(), value, output, (at * 8) as i32);
+        }
+        b.ins().return_(&[]);
+        b.seal_all_blocks();
+        b.finalize();
+        let leaf_id = module
+            .declare_function("packet_leaf", Linkage::Local, &leaf.func.signature)
+            .unwrap();
+        module.define_function(leaf_id, &mut leaf).unwrap();
+
+        let mut context = module.make_context();
+        context.func.signature.params = vec![AbiParam::new(I64); 3];
+        context.func.signature.returns.push(AbiParam::new(I64));
+        let mut frontend = FunctionBuilderContext::new();
+        let mut b = FunctionBuilder::new(&mut context.func, &mut frontend);
+        let entry = b.create_block();
+        let reject = b.create_block();
+        let call = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let [ok, input, output] = b.block_params(entry).try_into().unwrap();
+        let geometry = super::Geometry::derive([(2, 3)]).unwrap().unwrap();
+        assert!(geometry.reserve_with_output(&mut b, output, 2).is_err());
+        assert!(b.func.sized_stack_slots.is_empty());
+        let slots = if borrowed {
+            geometry.reserve_with_output(&mut b, output, 3).unwrap()
+        } else {
+            geometry.reserve(&mut b).unwrap()
+        };
+        assert_eq!(b.func.sized_stack_slots.len(), if borrowed { 1 } else { 2 });
+        assert!(slots.input_for_call(3, 3).is_err());
+        assert!(slots.output_address(&mut b, 2, 4).is_err());
+        assert!(slots.read_output(&mut b, 3).is_err());
+        if borrowed {
+            assert!(slots.for_call(2, 3).is_err());
+        }
+        b.ins().brif(ok, call, &[], reject, &[]);
+        b.switch_to_block(reject);
+        let failure = b.ins().iconst(I64, 1);
+        b.ins().return_(&[failure]);
+        b.switch_to_block(call);
+        let input_slot = slots.input_for_call(2, 3).unwrap();
+        for at in 0..2 {
+            let value = b.ins().load(I64, MemFlags::new(), input, at * 8);
+            b.ins().stack_store(value, input_slot, at * 8);
+        }
+        let packet = b.ins().stack_addr(I64, input_slot, 0);
+        let out = slots.output_address(&mut b, 2, 3).unwrap();
+        let leaf = module.declare_func_in_func(leaf_id, b.func);
+        b.ins().call(leaf, &[packet, out]);
+        for at in 0..3 {
+            let value = slots.read_output(&mut b, at).unwrap();
+            b.ins()
+                .store(MemFlags::new(), value, output, (at * 8) as i32);
+        }
+        let success = b.ins().iconst(I64, 0);
+        b.ins().return_(&[success]);
+        b.seal_all_blocks();
+        b.finalize();
+        let function = module
+            .declare_function("packet_parent", Linkage::Local, &context.func.signature)
+            .unwrap();
+        module.define_function(function, &mut context).unwrap();
+        module.finalize_definitions().unwrap();
+        type Call = unsafe extern "C" fn(u64, *const u64, *mut u64) -> u64;
+        let call = unsafe {
+            core::mem::transmute::<*const u8, Call>(module.get_finalized_function(function))
+        };
+        for input in [[0u64, 0], [77, 39], [u64::MAX, 1]] {
+            let mut output = [u64::MAX; 3];
+            assert_eq!(unsafe { call(0, input.as_ptr(), output.as_mut_ptr()) }, 1);
+            assert_eq!(output, [u64::MAX; 3]);
+            assert_eq!(unsafe { call(1, input.as_ptr(), output.as_mut_ptr()) }, 0);
+            assert_eq!(
+                output,
+                [
+                    input[0].wrapping_add(input[1]),
+                    input[0] ^ input[1],
+                    input[0].wrapping_sub(input[1])
+                ]
+            );
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Shape {
     ExitCopy,

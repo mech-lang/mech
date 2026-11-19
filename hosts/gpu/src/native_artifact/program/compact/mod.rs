@@ -40,6 +40,8 @@ mod phase_bodies;
 mod phase_layout;
 mod phase_storage;
 mod phases;
+#[cfg(feature = "early-region-emission")]
+mod source_blocks;
 mod vector_guard_facts;
 #[cfg(feature = "early-region-emission")]
 mod word_boundary;

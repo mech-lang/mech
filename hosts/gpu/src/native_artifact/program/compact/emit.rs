@@ -647,8 +647,16 @@ fn define_entry<M: Module>(
             .iter()
             .filter(|p| owns_source(p.initialize) && owns_source(p.clear) && cfg_reachable[p.exit])
             .collect::<Vec<_>>();
-        let phase_geometry =
-            phase_storage::Geometry::derive(phases.iter().map(|p| p.packet_words()))?;
+        let packet_requirements = phases.iter().map(|p| p.packet_words());
+        #[cfg(feature = "early-region-emission")]
+        let share_source_packets = unit.is_some_and(|u| !u.helper)
+            && std::env::var_os("MECH_COMPACT_SHARE_SOURCE_CALL_PACKETS").is_some();
+        #[cfg(feature = "early-region-emission")]
+        let packet_requirements = packet_requirements.chain(
+            unit.filter(|_| share_source_packets)
+                .map(|u| u.split.packet_words()),
+        );
+        let phase_geometry = phase_storage::Geometry::derive(packet_requirements)?;
         let mut inputs = BTreeMap::new();
         let mut input_words = 0;
         let mut ports = vec![];
@@ -742,7 +750,8 @@ fn define_entry<M: Module>(
             outline_allowed && std::env::var_os("MECH_COMPACT_FORWARD_SPILL_RELOADS").is_some();
         context.func.aarch64_prefer_preserved_regs = outline_allowed
             && memory
-            && std::env::var_os("MECH_COMPACT_PREFER_PRESERVED_REGS").is_some();
+            && std::env::var_os("MECH_COMPACT_PREFER_PRESERVED_REGS")
+                .is_some_and(|scope| scope != "root" || !is_helper);
         context.func.aarch64_share_cold_tails =
             outline_allowed && std::env::var_os("MECH_COMPACT_SHARE_COLD_TAILS").is_some();
         context.func.aarch64_share_frame_copies =
@@ -758,6 +767,24 @@ fn define_entry<M: Module>(
         // Native-numbered late windows are not valid after physical units change
         // block allocation. Source-numbered controller proofs remain usable.
         let native_windows_allowed = outline_allowed && !partitioned;
+        #[cfg(feature = "early-region-emission")]
+        let source_controller_windows = outline_allowed
+            .then(|| std::env::var("MECH_COMPACT_SOURCE_CONTROLLER_WINDOWS").ok())
+            .flatten();
+        #[cfg(feature = "early-region-emission")]
+        let source_continuation_windows = outline_allowed
+            .then(|| std::env::var("MECH_COMPACT_SOURCE_CONTINUATION_WINDOWS").ok())
+            .flatten();
+        #[cfg(feature = "early-region-emission")]
+        let source_block_report = outline_allowed
+            .then(|| std::env::var_os("MECH_COMPACT_SOURCE_BLOCK_REPORT"))
+            .flatten();
+        #[cfg(feature = "early-region-emission")]
+        let record_source_blocks = source_controller_windows.is_some()
+            || source_continuation_windows.is_some()
+            || source_block_report.is_some();
+        #[cfg(feature = "early-region-emission")]
+        let mut boundary_blocks = None;
         let controller_windows = (outline_allowed && memory)
             .then(|| std::env::var("MECH_COMPACT_SHARE_CONTROLLER_WINDOWS").ok())
             .flatten();
@@ -848,7 +875,7 @@ fn define_entry<M: Module>(
             let collections = Collections::new(&mut b, plan, zero)?;
             #[cfg(feature = "early-region-emission")]
             let region_packets = unit
-                .filter(|u| !u.helper)
+                .filter(|u| !u.helper && !share_source_packets)
                 .map(|u| u.split.reserve(&mut b))
                 .transpose()?;
             let reuse_state = overwrite_reuse
@@ -856,7 +883,16 @@ fn define_entry<M: Module>(
                 .map(|proof| super::overwrite_reuse::State::declare(module, &mut b, proof, zero))
                 .collect::<Result<Vec<_>, _>>()?;
             let phase_packets = phase_geometry
-                .map(|geometry| geometry.reserve(&mut b))
+                .map(|geometry| {
+                    #[cfg(feature = "early-region-emission")]
+                    if let Some(words) = unit
+                        .filter(|u| u.helper)
+                        .and_then(|u| u.split.output_scratch())
+                    {
+                        return geometry.reserve_with_output(&mut b, output, words);
+                    }
+                    geometry.reserve(&mut b)
+                })
                 .transpose()?;
             let transfer_observer = phases::observer(module, &mut b, observe)?;
             let route_observer = phases::observer(module, &mut b, !route_sites.is_empty())?;
@@ -966,6 +1002,10 @@ fn define_entry<M: Module>(
                 };
                 words.track_direct_homes(&selected, direct_homes.is_some());
             }
+            #[cfg(feature = "early-region-emission")]
+            if let Some(unit) = unit.filter(|u| u.helper) {
+                unit.split.bind_owner_homes(&mut words, input)?;
+            }
             if !is_helper && let Some(arrays) = &arrays {
                 for &value in &flow.inputs {
                     for &lane in &layout.ty(value).owners {
@@ -986,6 +1026,18 @@ fn define_entry<M: Module>(
                 .iter()
                 .map(|&yes| yes.then(|| b.create_block()))
                 .collect::<Vec<_>>();
+            #[cfg(feature = "early-region-emission")]
+            if record_source_blocks {
+                boundary_blocks = Some(super::source_blocks::SourceBlocks::new(
+                    blocks
+                        .iter()
+                        .enumerate()
+                        .map(|(site, block)| {
+                            block.filter(|_| owns_source(site)).map(|b| b.as_u32())
+                        })
+                        .collect(),
+                ));
+            }
             controllers = controller_windows
                 .as_deref()
                 .map(|spec| checked_traversals::controller_candidates(spec, &blocks))
@@ -1424,10 +1476,16 @@ fn define_entry<M: Module>(
                     eprintln!("compact-stage: source site {site}/{}", plan.blocks().len());
                 }
                 let Some(native) = blocks[site] else { continue };
+                #[cfg(feature = "early-region-emission")]
+                let auxiliary_start = b.func.dfg.num_blocks();
                 if source_routes[site] != site {
                     // Reserve the original unused error-block ID so that later
                     // layout and checked-continuation diagnostics can remap it.
                     b.create_block();
+                    #[cfg(feature = "early-region-emission")]
+                    if let Some(boundaries) = &mut boundary_blocks {
+                        boundaries.record(site, auxiliary_start, b.func.dfg.num_blocks());
+                    }
                     continue;
                 }
                 b.switch_to_block(native);
@@ -1440,7 +1498,10 @@ fn define_entry<M: Module>(
                             &mut b,
                             &words,
                             arrays.as_ref().map(|a| a.heap),
-                            region_packets.as_ref().expect("root region packets"),
+                            region_packets
+                                .as_ref()
+                                .or(phase_packets.as_ref())
+                                .expect("root region packets"),
                             blocks[source_routes[exit]].unwrap(),
                         )?;
                         remaining[source_routes[exit]] -= 1;
@@ -1448,12 +1509,18 @@ fn define_entry<M: Module>(
                             b.seal_block(blocks[source_routes[exit]].unwrap());
                         }
                         seal_auxiliary(&mut b, &source_blocks, entry, None, &mut last_layout);
+                        if let Some(boundaries) = &mut boundary_blocks {
+                            boundaries.record(site, auxiliary_start, b.func.dfg.num_blocks());
+                        }
                         continue;
                     }
                     if unit.is_return(site) {
                         unit.split.emit_return(&mut b, &words, output, zero)?;
-                        output_words = unit.split.boundary.outputs.len();
+                        output_words = unit.split.result_words();
                         seal_auxiliary(&mut b, &source_blocks, entry, None, &mut last_layout);
+                        if let Some(boundaries) = &mut boundary_blocks {
+                            boundaries.record(site, auxiliary_start, b.func.dfg.num_blocks());
+                        }
                         continue;
                     }
                 }
@@ -1792,6 +1859,10 @@ fn define_entry<M: Module>(
                     sealed_error,
                     &mut last_layout,
                 );
+                #[cfg(feature = "early-region-emission")]
+                if let Some(boundaries) = &mut boundary_blocks {
+                    boundaries.record(site, auxiliary_start, b.func.dfg.num_blocks());
+                }
             }
             assert!(remaining.iter().all(|&n| n == 0));
             if let Some(folder) = std::env::var_os("MECH_COMPACT_ROUTE_DUMP") {
@@ -1858,6 +1929,52 @@ fn define_entry<M: Module>(
                 }
             }
         }
+        #[cfg(feature = "early-region-emission")]
+        if let Some(folder) = &source_block_report {
+            let folder = std::path::PathBuf::from(folder);
+            std::fs::create_dir_all(&folder).map_err(backend)?;
+            let report = boundary_blocks
+                .as_ref()
+                .expect("requested source block map")
+                .summary();
+            std::fs::write(
+                folder.join(format!("{symbol}.json")),
+                serde_json::to_vec_pretty(&report).map_err(backend)?,
+            )
+            .map_err(backend)?;
+        }
+        #[cfg(feature = "early-region-emission")]
+        let source_families = |specification: &str| -> Result<
+            Vec<Vec<checked_traversals::Candidate>>,
+            NativeCompileError,
+        > {
+            let families = boundary_blocks
+                .as_ref()
+                .expect("requested source block map")
+                .windows(specification)
+                .map_err(backend)?;
+            let base = plan
+                .blocks()
+                .len()
+                .checked_mul(if is_helper { 3 } else { 2 })
+                .ok_or_else(|| backend("source window identity overflows"))?;
+            Ok(families
+                .into_iter()
+                .map(|family| {
+                    family
+                        .into_iter()
+                        .map(|window| checked_traversals::Candidate {
+                            start: cranelift_codegen::ir::Block::from_u32(window.entry),
+                            exit: cranelift_codegen::ir::Block::from_u32(window.exit),
+                            resume: None,
+                            header: base + window.ordinal,
+                            origin_base: Some(window.origin),
+                            span: 0,
+                        })
+                        .collect()
+                })
+                .collect())
+        };
         if let Some(growth) = capacity_growth {
             let (standalone, combined) = growth.replace(&mut context.func);
             if standalone + combined != 0 {
@@ -1946,14 +2063,24 @@ fn define_entry<M: Module>(
             context.flowgraph();
             context.verify(module.isa()).map_err(backend)?;
         }
-        let discovered_controllers = if native_windows_allowed
+        let controller_families = if native_windows_allowed
             && let Ok(windows) = std::env::var("MECH_COMPACT_LAYOUT_CONTROLLER_WINDOWS")
         {
-            let families = super::checked_region_discovery::families(
+            Some(super::checked_region_discovery::families(
                 &context.func,
                 &windows,
                 plan.blocks().len(),
-            )?;
+            )?)
+        } else {
+            None
+        };
+        #[cfg(feature = "early-region-emission")]
+        let controller_families = if let Some(windows) = &source_controller_windows {
+            Some(source_families(windows)?)
+        } else {
+            controller_families
+        };
+        let discovered_controllers = if let Some(families) = controller_families {
             let shared = checked_traversals::share_controllers(
                 module,
                 &mut context.func,
@@ -1987,14 +2114,24 @@ fn define_entry<M: Module>(
             super::checked_region_discovery::report(&context.func, path.as_ref())
                 .map_err(backend)?;
         }
-        let checked_continuations = if native_windows_allowed
+        let continuation_families = if native_windows_allowed
             && let Ok(windows) = std::env::var("MECH_COMPACT_CONTINUATION_WINDOWS")
         {
-            let families = super::checked_region_discovery::families(
+            Some(super::checked_region_discovery::families(
                 &context.func,
                 &windows,
                 plan.blocks().len(),
-            )?;
+            )?)
+        } else {
+            None
+        };
+        #[cfg(feature = "early-region-emission")]
+        let continuation_families = if let Some(windows) = &source_continuation_windows {
+            Some(source_families(windows)?)
+        } else {
+            continuation_families
+        };
+        let checked_continuations = if let Some(families) = continuation_families {
             let shared =
                 checked_traversals::share_continuations(module, &mut context.func, families)?;
             if shared.is_some() {
@@ -2406,7 +2543,14 @@ fn define_entry<M: Module>(
             if let Some(unit) = unit {
                 report["physical_unit"] = serde_json::json!({"kind":if is_helper { "region" } else { "root" },
                 "word_homes":unit.unit().words.len(),"source_entry":cfg_entry,
-                "native_numbered_windows_applied":false});
+                "native_numbered_windows_applied":false,
+                "source_relative_windows_applied":source_controller_windows.is_some() || source_continuation_windows.is_some()});
+                if is_helper && unit.split.output_scratch().is_some() && phase_geometry.is_some() {
+                    report["phase_call_storage"]["slots"] = serde_json::json!(1);
+                    report["phase_call_storage"]["local_slots"] = serde_json::json!(1);
+                    report["phase_call_storage"]["output_borrowed_from_private_source_result"] =
+                        serde_json::json!(true);
+                }
             }
             report["bit_counts"] = serde_json::json!(bit_counts);
             report["native_string_classes"] = serde_json::json!(
