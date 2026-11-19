@@ -16116,5 +16116,28 @@
     },
     "source_checks": "evidence/encoder-size-gap/preserved-root-registers/source-rebuild.json",
     "evidence": "evidence/encoder-size-gap/preserved-root-registers/README.md"
+  },
+  "checked_codebook_phase_experiment": {
+    "status": "experimental; not selected",
+    "evidence": "evidence/encoder-size-gap/checked-codebook-phase/README.md",
+    "encoder_bytes": 64444,
+    "selected_control_bytes": 63804,
+    "code_cost_bytes": 640,
+    "root_bytes": 41336,
+    "phase_bytes": 6008,
+    "peak_native_stack_bytes": 4688,
+    "control_peak_native_stack_bytes": 4848,
+    "source_through_link_seconds": 2.231623937608674,
+    "same_cohort_control_seconds": 2.245294645894319,
+    "paired_saving_ms": 13.999563176184893,
+    "paired_saving_90pct_ms": [
+      12.710354523733258,
+      18.279562471434474
+    ],
+    "faster": 7,
+    "trials": 8,
+    "runtime_wins": "unmeasured; do not inherit any earlier recipe result",
+    "focused_jit_tests": "building",
+    "compiler_sha256": "4e1d5afe0ee1791bfbf4d624ff05a7665f90c5a64e3fb66a6fc08ccf5e4114cb"
   }
 }

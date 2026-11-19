@@ -23,6 +23,25 @@ The small-controller architecture is still incomplete. Three shared controller a
 
 [Current source recipe, complete runtime evidence and build data](evidence/encoder-size-gap/preserved-root-registers/README.md) · [Earlier 64,444 B result](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md)
 
+## Checked codebook phase experiment
+
+The selected result above stays **63,804 B**. A new late checked-phase split
+emits **64,444 B**, a different object from the older qualified literal-frame
+recipe of the same size. Its controller is 41,336 B and its extracted phase is
+6,008 B. The exact linked workers pass 162 output/alias/decompression checks and
+six failure cases, and measured peak native stack falls 4,848 → 4,688 B.
+
+In eight matched fresh builds, source through final link is **2.245295 →
+2.231624 s**. The paired saving is **14.000 ms**, 7/8 faster, with a 90% interval
+of **12.710–18.280 ms saved**. Roc takes 2.997875 s and C 0.483540 s in this
+cohort; the experiment takes 0.74597× Roc and 4.62165× C time. Encoder text is
+1.117× Roc and 1.738× C. This is a measured build/stack gain with a 640 B code
+cost. Its runtime wins are unmeasured and focused JIT tests are building; it
+is **experimental, not selected**. The global plan is still constructed, so
+this late split does not finish the small-controller architecture.
+
+[Source, adverse variants, replay, raw builds and verification](evidence/encoder-size-gap/checked-codebook-phase/README.md)
+
 ## Apple M3 shared M1 recipe
 
 The integrated compiler's `m1-shared-heap-layout` recipe records **81/81 Roc and 61/81 libdeflate 1.26 level 12 wins in both complete M3 orders**. Raw-record replay verifies all **1,965,312 timed calls**. The **64,652 B** encoder object, complete metadata and canonical bytecode reproduce the named M1 recipe exactly. Peak native stack is **4,784 B**, below the unchanged 5,280 B limit. Both full orders completed without background-activity rejection.

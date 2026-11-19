@@ -1,0 +1,46 @@
+{
+  "status": "experimental; not selected",
+  "selected_control_bytes": 63804,
+  "experiment_bytes": 64444,
+  "extra_bytes": 640,
+  "root_bytes": 41336,
+  "phase_bytes": 6008,
+  "native_stack_bytes": {
+    "maintained": 4848,
+    "codebook-core-private-helpers": 4688
+  },
+  "correctness_observations": 162,
+  "checked_failure_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "prefix-periodic-4096",
+    "prefix-repeated-16384",
+    "heldout-mixed-131073"
+  ],
+  "compiler_sha256": "4e1d5afe0ee1791bfbf4d624ff05a7665f90c5a64e3fb66a6fc08ccf5e4114cb",
+  "source_base": "d8faf1969b085de84e5f0e71968c0c56a9f77a05",
+  "source_patch_sha256": "01828cda5588c68cde496269d07dfe340fb5283b41d1248242330ff16d650227",
+  "canonical_bytecode_unchanged": true,
+  "object_sha256": "4f6694cf58f512c5001b78f58b0a388004d2a8df5bd50ba626d19bb0072828fa",
+  "metadata_sha256": "df728914febd9aa62c8e6a429813ab4cd132a8d703eefae34d230be3bcaa06e3",
+  "runtime_wins": "not measured; do not inherit any old 64,444 B recipe result",
+  "matched_build_time": {
+    "control_source_through_link_seconds": 2.245294645894319,
+    "phase_source_through_link_seconds": 2.231623937608674,
+    "paired_saving_ms": 13.999563176184893,
+    "saving_90pct_interval_ms": [
+      12.710354523733258,
+      18.279562471434474
+    ],
+    "faster": 7,
+    "trials": 8,
+    "paired_ratios": {
+      "roc": 0.7459723112822532,
+      "libdeflate": 4.621653737316597,
+      "mech-control-reference": 0.99376651615491
+    }
+  },
+  "focused_jit_tests": "building",
+  "worker_sha256": "a4f60a4a335994e31bb1058dcdd9a2a9f02857168f468c2d1953ad74311ed52b"
+}

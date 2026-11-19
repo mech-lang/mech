@@ -681,6 +681,211 @@ fn direct_refusal_shares_a_bound_used_by_multiple_constants() {
 }
 
 #[test]
+fn single_phase_keeps_live_outs_partial_writes_and_a_bypassed_failure() {
+    let mut module = JITModule::new(jit_builder());
+    let mut context = module.make_context();
+    context.func.signature.params = vec![AbiParam::new(types::I64); 3];
+    context.func.signature.returns = vec![AbiParam::new(types::I64); 2];
+    let id = module
+        .declare_function("single_phase", Linkage::Export, &context.func.signature)
+        .unwrap();
+    let mut builder_context = FunctionBuilderContext::new();
+    let mut b = FunctionBuilder::new(&mut context.func, &mut builder_context);
+    let entry = b.create_block();
+    let start = b.create_block();
+    let exit = b.create_block();
+    let bypass = b.create_block();
+    let failure = b.create_block();
+    b.append_block_params_for_function_params(entry);
+    b.append_block_param(failure, types::I64);
+    b.append_block_param(failure, types::I64);
+    b.switch_to_block(entry);
+    let [enter, reject, input] = *b.block_params(entry) else {
+        unreachable!()
+    };
+    let slot = b.create_sized_stack_slot(StackSlotData::new(StackSlotKind::ExplicitSlot, 8, 3));
+    b.ins().stack_store(input, slot, 0);
+    b.ins().brif(enter, start, &[], bypass, &[]);
+    b.switch_to_block(bypass);
+    let status = b.ins().iconst(types::I64, 7);
+    let origin = b.ins().iconst(types::I64, 11);
+    b.ins().jump(failure, &[status.into(), origin.into()]);
+    b.switch_to_block(start);
+    let old = b.ins().stack_load(types::I64, slot, 0);
+    let advanced = b.ins().iadd_imm(old, 1);
+    b.ins().stack_store(advanced, slot, 0);
+    let live_out = b.ins().iadd_imm(input, 23);
+    let status = b.ins().iconst(types::I64, 19);
+    let origin = b.ins().iconst(types::I64, 73);
+    b.ins()
+        .brif(reject, failure, &[status.into(), origin.into()], exit, &[]);
+    b.switch_to_block(exit);
+    let written = b.ins().stack_load(types::I64, slot, 0);
+    let value = b.ins().iadd(written, live_out);
+    let zero = b.ins().iconst(types::I64, 0);
+    b.ins().return_(&[zero, value]);
+    b.switch_to_block(failure);
+    let [status, origin] = *b.block_params(failure) else {
+        unreachable!()
+    };
+    let written = b.ins().stack_load(types::I64, slot, 0);
+    let observed = b.ins().iadd(origin, written);
+    b.ins().return_(&[status, observed]);
+    b.seal_all_blocks();
+    b.finalize();
+
+    let report = share_phase_regions(
+        &mut module,
+        &mut context.func,
+        vec![vec![Candidate {
+            start,
+            exit,
+            resume: Some(failure),
+            header: 60,
+            origin_base: Some(0),
+            span: 0,
+        }]],
+        CaptureBindings {
+            align_outputs: true,
+            pad_outputs: true,
+            ..CaptureBindings::default()
+        },
+    )
+    .unwrap()
+    .expect("one checked phase is enough to bound compilation");
+    assert_eq!(report[0]["headers"], serde_json::json!([60]));
+    context.verify(module.isa()).unwrap();
+    module.define_function(id, &mut context).unwrap();
+    module.finalize_definitions().unwrap();
+    let run = unsafe {
+        std::mem::transmute::<_, extern "C" fn(u64, u64, u64) -> ResultPair>(
+            module.get_finalized_function(id),
+        )
+    };
+    for input in 0..128 {
+        assert_eq!(run(1, 0, input), ResultPair(0, input * 2 + 24));
+        assert_eq!(run(1, 1, input), ResultPair(19, input + 74));
+        assert_eq!(run(0, 0, input), ResultPair(7, input + 11));
+        assert_eq!(run(0, 1, input), ResultPair(7, input + 11));
+    }
+}
+
+#[cfg(all(target_arch = "aarch64", target_os = "macos"))]
+#[test]
+fn captured_heap_setup_uses_each_phase_frame_and_refuses_a_non_entry_load() {
+    use super::super::release_stubs::ReleaseStubs;
+
+    extern "C" fn release(heap: u64, owner: u64) -> u64 {
+        heap.rotate_left(11).wrapping_add(owner.wrapping_mul(7))
+    }
+
+    let mut jit = jit_builder();
+    jit.symbol("mech_compact_release_owner", release as *const u8);
+    let mut module = JITModule::new(jit);
+    let mut signature = module.make_signature();
+    signature.params = vec![AbiParam::new(types::I64); 2];
+    signature.returns = vec![AbiParam::new(types::I64)];
+    let provider = module
+        .declare_function("mech_compact_release_owner", Linkage::Import, &signature)
+        .unwrap();
+    let mut functions = Vec::new();
+    let mut frames = Vec::new();
+    for (phase, padding, non_entry) in [
+        (60, 64, false),
+        (80, 256, false),
+        (90, 128, false),
+        (100, 64, true),
+    ] {
+        let mut context = module.make_context();
+        context.func.signature.params = vec![AbiParam::new(types::I64); 3];
+        context.func.signature.returns = vec![AbiParam::new(types::I64); 2];
+        let provider = module.declare_func_in_func(provider, &mut context.func);
+        let mut builder_context = FunctionBuilderContext::new();
+        let mut b = FunctionBuilder::new(&mut context.func, &mut builder_context);
+        let entry = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let [capture, input, salt] = *b.block_params(entry) else {
+            unreachable!()
+        };
+        let slot =
+            b.create_sized_stack_slot(StackSlotData::new(StackSlotKind::ExplicitSlot, padding, 3));
+        b.ins().stack_store(input, slot, 0);
+        if non_entry {
+            let body = b.create_block();
+            b.ins().jump(body, &[]);
+            b.switch_to_block(body);
+        }
+        let heap = if padding == 256 || padding == 128 {
+            let offset = if padding == 128 { 8 } else { 0 };
+            let pair = b
+                .ins()
+                .load(types::I128, MemFlags::new().with_notrap(), capture, offset);
+            let (low, high) = b.ins().isplit(pair);
+            if offset == 8 { low } else { high }
+        } else {
+            b.ins().load(types::I64, MemFlags::trusted(), capture, 8)
+        };
+        let owner = b.ins().iadd(input, salt);
+        let first = b.ins().call(provider, &[heap, owner]);
+        let first = b.inst_results(first)[0];
+        let owner = b.ins().bxor(input, salt);
+        let second = b.ins().call(provider, &[heap, owner]);
+        let second = b.inst_results(second)[0];
+        let sum = b.ins().iadd(first, second);
+        let old = b.ins().stack_load(types::I64, slot, 0);
+        let carried = b.ins().iadd(heap, old);
+        b.ins().return_(&[sum, carried]);
+        b.seal_all_blocks();
+        b.finalize();
+        let stubs = ReleaseStubs::prepare_captured(&mut module, &mut context.func, phase).unwrap();
+        assert_eq!(stubs.is_some(), !non_entry);
+        context.verify(module.isa()).unwrap();
+        let id = module
+            .declare_function(
+                &format!("captured_heap_{phase}"),
+                Linkage::Local,
+                &context.func.signature,
+            )
+            .unwrap();
+        module.define_function(id, &mut context).unwrap();
+        let frame = context
+            .compiled_code()
+            .unwrap()
+            .buffer
+            .frame_layout()
+            .unwrap();
+        frames.push(frame.frame_to_fp_offset);
+        if let Some(stubs) = stubs {
+            stubs.define(&mut module, frame).unwrap();
+        }
+        functions.push(id);
+    }
+    assert_ne!(frames[0], frames[1]);
+    module.finalize_definitions().unwrap();
+    for id in functions {
+        let run = unsafe {
+            std::mem::transmute::<_, extern "C" fn(u64, u64, u64) -> ResultPair>(
+                module.get_finalized_function(id),
+            )
+        };
+        for heap in [0, 1, 0x1234_5678_90ab_cdef, u64::MAX] {
+            let capture = [0xdead_beef, heap, 0xface_feed];
+            for input in 0_u64..32 {
+                let salt = input.wrapping_mul(97);
+                let expected = release(heap, input.wrapping_add(salt))
+                    .wrapping_add(release(heap, input ^ salt));
+                assert_eq!(
+                    run(capture.as_ptr() as u64, input, salt),
+                    ResultPair(expected, heap.wrapping_add(input))
+                );
+            }
+            assert_eq!(capture, [0xdead_beef, heap, 0xface_feed]);
+        }
+    }
+}
+
+#[test]
 fn phase_regions_keep_the_value_used_after_success_and_the_shared_failure() {
     let mut module = JITModule::new(jit_builder());
     let mut context = module.make_context();

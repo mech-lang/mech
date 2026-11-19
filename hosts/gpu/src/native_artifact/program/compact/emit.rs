@@ -1965,6 +1965,33 @@ fn define_entry<M: Module>(
     if outline_allowed && let Some(path) = std::env::var_os("MECH_COMPACT_LAYOUT_REGION_REPORT") {
         super::checked_region_discovery::report(&context.func, path.as_ref()).map_err(backend)?;
     }
+    // Split checked phases before allocation/release specializations acquire
+    // dependencies on this function's native frame.
+    let checked_phase_regions = if outline_allowed
+        && let Ok(windows) = std::env::var("MECH_COMPACT_CHECKED_PHASE_WINDOWS")
+    {
+        let families = super::checked_region_discovery::phase_candidates(
+            &context.func,
+            &windows,
+            plan.blocks().len(),
+        )?;
+        let outlined = checked_traversals::share_phase_regions(
+            module,
+            &mut context.func,
+            families,
+            checked_traversals::CaptureBindings::from_environment(),
+        )?;
+        if outlined.is_some() {
+            context.flowgraph();
+            context
+                .eliminate_unreachable_code(module.isa())
+                .map_err(backend)?;
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        outlined
+    } else {
+        None
+    };
     if outline_allowed && std::env::var_os("MECH_COMPACT_SHARE_STATIC_ERROR_STATUS").is_some() {
         context.flowgraph();
         let shared = super::cold_status::share(&mut context.func, &context.cfg);
@@ -2107,6 +2134,9 @@ fn define_entry<M: Module>(
         }
         if let Some(checked_continuations) = checked_continuations {
             report["checked_continuations"] = checked_continuations;
+        }
+        if let Some(checked_phase_regions) = checked_phase_regions {
+            report["checked_phase_regions"] = checked_phase_regions;
         }
         if !overwrite_reuse.is_empty() {
             report["overwrite_result_reuse"] = serde_json::json!(

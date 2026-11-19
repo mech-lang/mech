@@ -5,7 +5,7 @@ use cranelift_codegen::{
     cursor::{Cursor, FuncCursor},
     ir::{
         AbiParam, FuncRef, Function, InstBuilder, InstructionData, Opcode, StackSlot,
-        StackSlotData, StackSlotKind, types,
+        StackSlotData, StackSlotKind, Value, ValueDef, types,
     },
     isa::CallConv,
 };
@@ -46,6 +46,76 @@ impl ReleaseStubs {
         let Some(&heap) = root.dfg.block_params(entry).first() else {
             return Ok(None);
         };
+        Self::prepare_invariant(module, root, heap, None)
+    }
+
+    pub(super) fn prepare_captured<M: Module>(
+        module: &mut M,
+        function: &mut Function,
+        phase: usize,
+    ) -> Result<Option<Self>, NativeCompileError> {
+        let Some(entry) = function.layout.entry_block() else {
+            return Ok(None);
+        };
+        let heap = function.layout.blocks().find_map(|block| {
+            function.layout.block_insts(block).find_map(|inst| {
+                let InstructionData::Call { func_ref, .. } = function.dfg.insts[inst] else {
+                    return None;
+                };
+                let target = super::inlining::module_callee(function, func_ref)?;
+                let declaration = module.declarations().get_function_decl(target);
+                if declaration.linkage != Linkage::Import
+                    || !declaration.name.as_deref().is_some_and(|name| {
+                        RELEASES.contains(&name) || name == "mech_compact_allocate_backing"
+                    })
+                {
+                    return None;
+                }
+                let &heap = function.dfg.inst_args(inst).first()?;
+                let heap = function.dfg.resolve_aliases(heap);
+                // The captured word was already loaded unconditionally before
+                // this phase's control flow. Do not lift a conditional value.
+                let ValueDef::Result(producer, _) = function.dfg.value_def(heap) else {
+                    return None;
+                };
+                let capture_load = match function.dfg.insts[producer].opcode() {
+                    Opcode::Load => true,
+                    Opcode::Isplit => {
+                        let &[pair] = function.dfg.inst_args(producer) else {
+                            return None;
+                        };
+                        let pair = function.dfg.resolve_aliases(pair);
+                        let ValueDef::Result(load, _) = function.dfg.value_def(pair) else {
+                            return None;
+                        };
+                        function.layout.inst_block(load) == Some(entry)
+                            && function.dfg.insts[load].opcode() == Opcode::Load
+                            && function.dfg.value_type(pair) == types::I128
+                    }
+                    _ => false,
+                };
+                (function.layout.inst_block(producer) == Some(entry)
+                    && function.dfg.value_type(heap) == types::I64
+                    && capture_load)
+                    .then_some(heap)
+            })
+        });
+        let Some(heap) = heap else {
+            return Ok(None);
+        };
+        Self::prepare_invariant(module, function, heap, Some(phase))
+    }
+
+    fn prepare_invariant<M: Module>(
+        module: &mut M,
+        root: &mut Function,
+        heap: Value,
+        phase: Option<usize>,
+    ) -> Result<Option<Self>, NativeCompileError> {
+        if module.isa().name() != "aarch64" || root.signature.call_conv != CallConv::AppleAarch64 {
+            return Ok(None);
+        }
+        let entry = root.layout.entry_block().expect("proved entry");
         let word = AbiParam::new(types::I64);
         let scope = std::env::var("MECH_COMPACT_SHARE_BACKING_SETUP").ok();
         let backing = matches!(scope.as_deref(), Some("all" | "backing"));
@@ -129,6 +199,11 @@ impl ReleaseStubs {
                     }
                     None => format!("{name}_from_frame"),
                 };
+                let name = if let Some(phase) = phase {
+                    format!("{name}_phase_{phase}")
+                } else {
+                    name
+                };
                 (name, signature.clone(), (params - 1) as u8)
             });
             replace.push((inst, key));
@@ -141,10 +216,17 @@ impl ReleaseStubs {
             root.create_sized_stack_slot(StackSlotData::new(StackSlotKind::ExplicitSlot, 8, 3));
         // A regular direct branch-and-link keeps the caller's SP. The
         // private stubs read this invariant, invocation-local slot.
-        FuncCursor::new(root)
-            .at_first_inst(entry)
-            .ins()
-            .stack_store(heap, heap_slot, 0);
+        let producer = match root.dfg.value_def(heap) {
+            ValueDef::Result(inst, _) => Some(inst),
+            _ => None,
+        };
+        let cursor = FuncCursor::new(root);
+        let mut cursor = if let Some(producer) = producer {
+            cursor.after_inst(producer)
+        } else {
+            cursor.at_first_inst(entry)
+        };
+        cursor.ins().stack_store(heap, heap_slot, 0);
         let mut imports = BTreeMap::<(FuncId, Option<(u64, bool)>), FuncRef>::new();
         let mut stubs = Vec::new();
         for (key, (name, mut signature, operands)) in targets {
