@@ -1259,7 +1259,8 @@ fn prepare_impl<M: Module>(
         && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
     {
         // Only current fixed immutable byte views from this sealed caller
-        // qualify. The rewrite retains both later index checks and defaults.
+        // qualify. Later defaults remain unless a current source read has
+        // already proved their exact logical bounds.
         let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
         let views = private
             .immutable_fixed_arrays(proof)

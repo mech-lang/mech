@@ -1,6 +1,7 @@
 //! Reuse already compared immutable bytes on an edge to two defaulted reads.
-//! The later bounds predicates and zero defaults remain. Only effect-free
-//! paths are bypassed; no read permission, index bound or work allowance grows.
+//! Later bounds and zero defaults remain unless the original current read
+//! proves those exact logical bounds. Only effect-free paths are bypassed;
+//! no read permission, index bound or work allowance grows.
 use super::window_bounds::comparison;
 use cranelift_codegen::{
     Context,
