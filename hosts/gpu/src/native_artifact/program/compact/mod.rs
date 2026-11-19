@@ -24,8 +24,6 @@ mod constants;
 mod early_regions;
 #[cfg(feature = "early-region-emission")]
 mod early_units;
-#[cfg(feature = "early-region-emission")]
-mod word_boundary;
 mod emit;
 mod flow;
 mod histogram;
@@ -43,6 +41,8 @@ mod phase_layout;
 mod phase_storage;
 mod phases;
 mod vector_guard_facts;
+#[cfg(feature = "early-region-emission")]
+mod word_boundary;
 pub(in crate::native_artifact) use phases::{
     NoGrowth, PRIVATE_HANDOFF, PrivatePhase, VectorContract,
 };
