@@ -1,5 +1,6 @@
 //! Widen an admitted pure equality recurrence through its own loop header.
-//! A mismatch re-enters the scalar header with the exact current position.
+//! Default widening returns mismatches to the scalar header; admitted handoffs
+//! can instead retain the loaded unequal word for its original continuation.
 //! This experiment applies only to compact phases, never ordinary work debits.
 use super::{
     cfg_cleanup::masked_integer_comparison, numeric_loop_windows::Version, numeric_read_packs::Pack,
@@ -517,6 +518,7 @@ fn apply(
     state: Option<SavedInterval>,
     wide_tier: bool,
     direct: Option<mismatch::Handoff>,
+    probe_word: bool,
 ) -> Option<(usize, reuse::State, Value)> {
     let check = f.dfg.make_block();
     let initial = f.dfg.append_block_param(check, types::I64);
@@ -544,6 +546,11 @@ fn apply(
     f.rewrite_branch_destination(change.entry, cert.header, check);
     let mut c = FuncCursor::new(f).at_bottom(check);
     let (initial, forwarded) = advance(&mut c, cert, change, initial, state);
+    let initial = if probe_word && let Some(direct) = &direct {
+        direct.probe_word(&mut c, cert, change, initial)
+    } else {
+        initial
+    };
     let flags = MemFlags::new().with_endianness(Endianness::Little);
     if let Some((body, wide_at, advance)) = wide {
         let remaining = c.ins().isub(change.limit, initial);
@@ -658,6 +665,7 @@ pub(in crate::native_artifact) struct Outcome {
     pub prefixes: Vec<(usize, usize)>,
     pub word_reused: Vec<usize>,
     pub mismatch_forwarded: Vec<usize>,
+    pub word_probed: Vec<usize>,
 }
 
 pub(in crate::native_artifact) fn optimize(
@@ -705,6 +713,8 @@ fn optimize_with_strategy(
             None
         };
         let mut saved = None;
+        let probe_word =
+            direct.is_some() && std::env::var_os("MECH_PROBE_WORD_BEFORE_VECTOR").is_some();
         if reuse_prefix && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             let extent = reuse::extent(context, cert, &change);
             eprintln!(
@@ -750,11 +760,22 @@ fn optimize_with_strategy(
         let forwarded = if word_only {
             word::apply(&mut context.func, cert, change, saved)
         } else {
+            if probe_word {
+                outcome.word_probed.push(cert.source_header);
+            }
             let direct = direct.map(|plan| {
                 outcome.mismatch_forwarded.push(cert.source_header);
                 plan.install(&mut context.func)
             });
-            apply(&mut context.func, cert, change, saved, wide_tier, direct)
+            apply(
+                &mut context.func,
+                cert,
+                change,
+                saved,
+                wide_tier,
+                direct,
+                probe_word,
+            )
         };
         if let Some((header, state, end)) = forwarded {
             continuations.insert(header, (state, end));

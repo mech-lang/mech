@@ -140,10 +140,14 @@ fn fixture(module: &JITModule, variant: &str) -> (Context, Certificate) {
 }
 
 type Entry = unsafe extern "C" fn(*mut u8, *const u8, u64, u64, u64) -> u64;
-fn compile(variant: &str, optimize: bool) -> (JITModule, Entry, bool) {
+fn compile(variant: &str, optimize: bool, probe_word: bool) -> (JITModule, Entry, bool) {
     let mut module = JITModule::new(
         JITBuilder::with_flags(
-            &[("opt_level", "speed"), ("enable_verifier", "true")],
+            &[
+                ("opt_level", "speed"),
+                ("enable_verifier", "true"),
+                ("regalloc_checker", "true"),
+            ],
             default_libcall_names(),
         )
         .unwrap(),
@@ -162,9 +166,23 @@ fn compile(variant: &str, optimize: bool) -> (JITModule, Entry, bool) {
         for block in [check, vector, advance, failed] {
             c.func.layout.append_block(block);
         }
+        let entry = if probe_word {
+            let entry = c.func.dfg.make_block();
+            c.func.dfg.append_block_param(entry, types::I64);
+            c.func.layout.append_block(entry);
+            entry
+        } else {
+            check
+        };
         c.func
-            .rewrite_branch_destination(change.entry, cert.header, check);
-        let mut cursor = FuncCursor::new(&mut c.func).at_bottom(check);
+            .rewrite_branch_destination(change.entry, cert.header, entry);
+        let mut cursor = FuncCursor::new(&mut c.func).at_bottom(entry);
+        if probe_word {
+            let initial = cursor.func.dfg.block_params(entry)[0];
+            let initial = direct.probe_word(&mut cursor, &cert, change, initial);
+            cursor.ins().jump(check, &[initial.into()]);
+            cursor.goto_bottom(check);
+        }
         let left = cursor.ins().isub(change.limit, at);
         let enough = cursor
             .ins()
@@ -201,12 +219,11 @@ fn compile(variant: &str, optimize: bool) -> (JITModule, Entry, bool) {
     (module, entry, eligible)
 }
 
-#[test]
-fn vector_mismatch_preserves_first_byte_bits_tails_positions_and_live_payloads() {
+fn compare_mismatches(probe_word: bool) {
     let mut observations = 0;
     for variant in ["normal", "masked", "reversed", "shared_mismatch"] {
-        let (_old, old, _) = compile(variant, false);
-        let (_new, new, eligible) = compile(variant, true);
+        let (_old, old, _) = compile(variant, false, false);
+        let (_new, new, eligible) = compile(variant, true, probe_word);
         assert!(eligible);
         for offset in [0, 1, 3, 7] {
             for start in [0, 1, 7, 13] {
@@ -262,10 +279,20 @@ fn vector_mismatch_preserves_first_byte_bits_tails_positions_and_live_payloads()
 }
 
 #[test]
+fn vector_mismatch_preserves_first_byte_bits_tails_positions_and_live_payloads() {
+    compare_mismatches(false);
+}
+
+#[test]
+fn first_word_probe_preserves_mismatches_and_the_following_vector_and_scalar_tails() {
+    compare_mismatches(true);
+}
+
+#[test]
 fn vector_mismatch_declines_effects_independently_observed_words_and_unsupported_exits() {
     for variant in ["store", "observed_word", "cross_exit", "extra_entry"] {
-        let (_old, old, _) = compile(variant, false);
-        let (_new, new, eligible) = compile(variant, true);
+        let (_old, old, _) = compile(variant, false, false);
+        let (_new, new, eligible) = compile(variant, true, true);
         assert!(!eligible, "{variant}");
         for limit in [
             0, 7, 8, 15, 16, 17, 63, 64, 65, 127, 128, 129, 255, 256, 257,
