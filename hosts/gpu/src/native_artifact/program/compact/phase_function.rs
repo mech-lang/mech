@@ -1252,6 +1252,32 @@ fn prepare_impl<M: Module>(
         0
     };
     if !observe
+        && vectors.is_some()
+        && prepared.metadata().parallel.regions.is_empty()
+        && std::env::var_os("MECH_REUSE_COMPARED_BYTES").is_some()
+        && let Some(private) = private.filter(|contract| contract.permits(proof))
+        && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
+    {
+        // Only current fixed immutable byte views from this sealed caller
+        // qualify. The rewrite retains both later index checks and defaults.
+        let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
+        let words = private
+            .immutable_fixed_arrays(proof)
+            .into_iter()
+            .filter(|&array| proof.arrays[array].width == 1)
+            .filter_map(|array| packet.iter().position(|&word| word == proof.view(array)))
+            .collect::<BTreeSet<_>>();
+        let pointers = loads
+            .iter()
+            .filter_map(|(&value, &(_, word))| words.contains(&word).then_some(value))
+            .collect();
+        let reused = cfg_cleanup::compared_bytes::fold(&mut context, &pointers);
+        if reused != 0 {
+            context.verify(module.isa()).map_err(backend)?;
+            eprintln!("{symbol} reused compared byte pairs: {reused}");
+        }
+    }
+    if !observe
         && let Some(private) = private.filter(|contract| contract.permits(proof))
         && vectors.is_some()
         && std::env::var_os("MECH_COMPACT_IMMUTABLE_DEFAULTED_READS")
