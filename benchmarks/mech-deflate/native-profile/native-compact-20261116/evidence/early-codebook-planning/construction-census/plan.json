@@ -1,0 +1,16 @@
+{
+  "compiler_sha256": "01e74f08edb76cc1ac4d3259a14592d401486588dcdc5229d6d07981a68d605b",
+  "source_base": "b2992e121ae2cdcae0fdd2436741734b0764d21c",
+  "source_patch_sha256": "0cfc5cd310fad3ecd90d208a1adc82d8d0efeaf28b2644f4599412682969a945",
+  "feature": "construction-census",
+  "purpose": "complete DFG construction work baseline, not latency",
+  "cases": [
+    "selected-63804",
+    "late-codebook-64444"
+  ],
+  "omitted_counters": [
+    "canonical plan and typed proof table allocations",
+    "allocator capacities and scratch maps",
+    "semantic/register liveness"
+  ]
+}

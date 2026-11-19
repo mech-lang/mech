@@ -15,7 +15,7 @@ The selected smaller M1 recipe is **63,804 B**, named
 `m1-sparse-guard-rounds`. It reproduces the same qualified worker as
 `m1-preserved-root-registers` and holds **81/81 Roc and 62/81 libdeflate** in
 both complete orders, with all those wins supported at the configured precision.
-Its matched source-through-final-link build is **2.206 s**, a paired
+Its matched source-through-final-link build is **2.205 s**, a paired
 34 ms saving in eight same-compiler comparisons. The next runtime
 target is 63 C wins. See [CURRENT.md](CURRENT.md) for the full current scorecard.
 
@@ -45,6 +45,23 @@ instructions, allocated/peak SSA, maximum unit, CFG/dominance and validations,
 whole-encoder bytes, complete link-inclusive builds and RSS. Root shrinkage
 alone is insufficient. Preserve the 81/62 individual-win qualification and
 5,280 B stack ceiling for any changed worker.
+
+The experimental source planner now validates that boundary directly from the
+typed plan, assigns operation ownership, separates 20 invariant constants and
+derives **22 input/six output words**. It verifies full cursor/builder scopes
+and passes the existing all-path initializer. Nine focused tests cover the
+planner and complete DFG observer lifecycle, including serialized graphs.
+Early native emission and cross-unit ownership/failure transport remain
+unimplemented. Enable the explicit `early-region-planning` build feature for
+the preview; it is excluded from the ordinary build. The all-unit observer is
+separately gated by `construction-census` and is never a latency measurement.
+
+The all-unit baseline creates 1,407,099 SSA slots, 497,878 instructions and
+174,834 blocks. The largest unit still reaches 831,378 SSA slots. Use total
+work and actual object/worker checks when implementing the next lowering step;
+the new plan is not a claimed size or build-time win. See the evidence's
+`lowering-contract.md` for preserving global source effects across physical
+units without adding retain/release behavior.
 
 The independent semantic priority is sealed complete-input parser execution
 using the same grammar and exact accounting/events/identities/fallback. It has

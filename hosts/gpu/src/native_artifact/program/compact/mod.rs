@@ -20,6 +20,8 @@ mod cold_tail_tests;
 mod collections;
 mod compile_jobs;
 mod constants;
+#[cfg(feature = "early-region-planning")]
+mod early_regions;
 mod emit;
 mod flow;
 mod histogram;
@@ -30,6 +32,8 @@ mod layout;
 mod le_scalar_stores;
 mod packed;
 mod parallel;
+#[cfg(feature = "early-region-planning")]
+mod partition_plan;
 mod phase_bodies;
 mod phase_layout;
 mod phase_storage;

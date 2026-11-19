@@ -25,6 +25,8 @@ use serde_derive::{Deserialize, Serialize};
 use smallvec::SmallVec;
 
 mod compact;
+#[cfg(feature = "construction-census")]
+use crate::construction_census::{self as census, Arena};
 
 /// Storage for instructions within the DFG.
 #[derive(Clone, PartialEq, Hash)]
@@ -55,7 +57,10 @@ pub struct Blocks(PrimaryMap<Block, BlockData>);
 impl Blocks {
     /// Create a new basic block.
     pub fn add(&mut self) -> Block {
-        self.0.push(BlockData::new())
+        let block = self.0.push(BlockData::new());
+        #[cfg(feature = "construction-census")]
+        census::allocate(Arena::Blocks, 1, self.0.len());
+        block
     }
 
     /// Get the total number of basic blocks created in this function, whether they are
@@ -107,8 +112,13 @@ impl IndexMut<Block> for Blocks {
 /// The layout of blocks in the function and of instructions in each block is recorded by the
 /// `Layout` data structure which forms the other half of the function representation.
 ///
-#[derive(Clone, PartialEq, Hash)]
-#[cfg_attr(feature = "enable-serde", derive(Serialize, Deserialize))]
+#[derive(PartialEq, Hash)]
+#[cfg_attr(not(feature = "construction-census"), derive(Clone))]
+#[cfg_attr(feature = "enable-serde", derive(Serialize))]
+#[cfg_attr(
+    all(feature = "enable-serde", not(feature = "construction-census")),
+    derive(Deserialize)
+)]
 pub struct DataFlowGraph {
     /// Data about all of the instructions in the function, including opcodes and operands.
     /// The instructions in this map are not in program order. That is tracked by `Layout`, along
@@ -168,6 +178,87 @@ pub struct DataFlowGraph {
     pub exception_tables: ExceptionTables,
 }
 
+// Serde constructs primary maps directly rather than calling the DFG builders.
+// Account for the completed graph once, retaining the original wire shape.
+#[cfg(all(feature = "enable-serde", feature = "construction-census"))]
+impl<'de> serde::Deserialize<'de> for DataFlowGraph {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        #[serde(rename = "DataFlowGraph")]
+        struct Fields {
+            insts: Insts,
+            results: SecondaryMap<Inst, ValueList>,
+            user_stack_maps: alloc::collections::BTreeMap<Inst, UserStackMapEntryVec>,
+            blocks: Blocks,
+            dynamic_types: DynamicTypes,
+            value_lists: ValueListPool,
+            values: PrimaryMap<Value, ValueDataPacked>,
+            signatures: PrimaryMap<SigRef, Signature>,
+            ext_funcs: PrimaryMap<FuncRef, ExtFuncData>,
+            values_labels: Option<BTreeMap<Value, ValueLabelAssignments>>,
+            constants: ConstantPool,
+            immediates: PrimaryMap<Immediate, ConstantData>,
+            jump_tables: JumpTables,
+            exception_tables: ExceptionTables,
+        }
+        let fields = Fields::deserialize(deserializer)?;
+        let graph = Self {
+            insts: fields.insts,
+            results: fields.results,
+            user_stack_maps: fields.user_stack_maps,
+            blocks: fields.blocks,
+            dynamic_types: fields.dynamic_types,
+            value_lists: fields.value_lists,
+            values: fields.values,
+            signatures: fields.signatures,
+            ext_funcs: fields.ext_funcs,
+            values_labels: fields.values_labels,
+            constants: fields.constants,
+            immediates: fields.immediates,
+            jump_tables: fields.jump_tables,
+            exception_tables: fields.exception_tables,
+        };
+        census::allocate(Arena::Blocks, graph.num_blocks(), graph.num_blocks());
+        census::allocate(Arena::Instructions, graph.num_insts(), graph.num_insts());
+        census::allocate(Arena::Values, graph.num_values(), graph.num_values());
+        Ok(graph)
+    }
+}
+
+#[cfg(feature = "construction-census")]
+impl Clone for DataFlowGraph {
+    fn clone(&self) -> Self {
+        let copy = Self {
+            insts: self.insts.clone(),
+            results: self.results.clone(),
+            user_stack_maps: self.user_stack_maps.clone(),
+            blocks: self.blocks.clone(),
+            dynamic_types: self.dynamic_types.clone(),
+            value_lists: self.value_lists.clone(),
+            values: self.values.clone(),
+            signatures: self.signatures.clone(),
+            ext_funcs: self.ext_funcs.clone(),
+            values_labels: self.values_labels.clone(),
+            constants: self.constants.clone(),
+            immediates: self.immediates.clone(),
+            jump_tables: self.jump_tables.clone(),
+            exception_tables: self.exception_tables.clone(),
+        };
+        census::allocate(Arena::Blocks, copy.num_blocks(), copy.num_blocks());
+        census::allocate(Arena::Instructions, copy.num_insts(), copy.num_insts());
+        census::allocate(Arena::Values, copy.num_values(), copy.num_values());
+        copy
+    }
+}
+#[cfg(feature = "construction-census")]
+impl Drop for DataFlowGraph {
+    fn drop(&mut self) {
+        census::release(Arena::Blocks, self.num_blocks());
+        census::release(Arena::Instructions, self.num_insts());
+        census::release(Arena::Values, self.num_values());
+    }
+}
+
 impl DataFlowGraph {
     /// Create a new empty `DataFlowGraph`.
     pub fn new() -> Self {
@@ -191,6 +282,12 @@ impl DataFlowGraph {
 
     /// Clear everything.
     pub fn clear(&mut self) {
+        #[cfg(feature = "construction-census")]
+        {
+            census::release(Arena::Blocks, self.num_blocks());
+            census::release(Arena::Instructions, self.num_insts());
+            census::release(Arena::Values, self.num_values());
+        }
         self.insts.0.clear();
         self.results.clear();
         self.user_stack_maps.clear();
@@ -347,7 +444,10 @@ impl ExactSizeIterator for Values<'_> {
 impl DataFlowGraph {
     /// Allocate an extended value entry.
     fn make_value(&mut self, data: ValueData) -> Value {
-        self.values.push(data.into())
+        let value = self.values.push(data.into());
+        #[cfg(feature = "construction-census")]
+        census::allocate(Arena::Values, 1, self.values.len());
+        value
     }
 
     /// The number of values defined in this DFG.
@@ -828,7 +928,10 @@ impl DataFlowGraph {
     pub fn make_inst(&mut self, data: InstructionData) -> Inst {
         let n = self.num_insts() + 1;
         self.results.resize(n);
-        self.insts.0.push(data)
+        let inst = self.insts.0.push(data);
+        #[cfg(feature = "construction-census")]
+        census::allocate(Arena::Instructions, 1, self.num_insts());
+        inst
     }
 
     /// Declares a dynamic vector type

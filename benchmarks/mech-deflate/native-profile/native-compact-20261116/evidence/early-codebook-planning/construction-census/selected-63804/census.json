@@ -1,0 +1,24 @@
+{
+  "blocks": {
+    "created": 174834,
+    "maximum_unit": 39624,
+    "peak_resident": 79246,
+    "resident": 0
+  },
+  "cfg_builds": 1335,
+  "dominator_builds": 1242,
+  "full_verifications": 825,
+  "instructions": {
+    "created": 497878,
+    "maximum_unit": 118020,
+    "peak_resident": 229987,
+    "resident": 0
+  },
+  "scope": "all DFG arenas and copies during native compilation; includes retired IDs until compaction; excludes plan/proof tables and allocator capacity; not register liveness or a latency measurement",
+  "values": {
+    "created": 1407099,
+    "maximum_unit": 831378,
+    "peak_resident": 955192,
+    "resident": 0
+  }
+}

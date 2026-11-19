@@ -11,6 +11,8 @@ edition = "2024"
 rust-version = "1.92"
 
 [features]
+early-region-planning = ["canonical-native-program"]
+construction-census = ["canonical-native-program", "cranelift-codegen/construction-census"]
 default = []
 canonical-native-runtime = ["mech-engine/native-artifact", "mech-engine/integer_bits"]
 canonical-native = ["canonical-native-runtime", "aot", "dep:toml_edit"]

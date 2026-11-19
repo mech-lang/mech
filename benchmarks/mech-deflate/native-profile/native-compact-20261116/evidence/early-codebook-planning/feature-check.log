@@ -1,0 +1,41 @@
+    Checking serde_core v1.0.229
+    Checking libc v0.2.189
+    Checking indexmap v2.14.0
+    Checking memchr v2.8.3
+    Checking simba v0.9.1
+    Checking serde v1.0.229
+    Checking cpufeatures v0.3.0
+    Checking serde_json v1.0.151
+    Checking bincode v2.0.1
+    Checking nalgebra v0.34.2
+    Checking sha2 v0.11.0
+    Checking mech-core v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/core)
+    Checking regalloc2 v0.15.2 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/vendor/regalloc2)
+    Checking gimli v0.33.0
+    Checking cranelift-codegen v0.131.3 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/vendor/cranelift-codegen)
+    Checking cpufeatures v0.2.17
+    Checking mech-syntax v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/syntax)
+    Checking sha2 v0.10.9
+    Checking mech-bytecode v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/bytecode)
+    Checking mech-engine v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/engine)
+    Checking cranelift-module v0.131.3
+    Checking mach2 v0.4.3
+    Checking region v3.0.2
+    Checking object v0.39.1
+    Checking cranelift-native v0.131.3
+    Checking wasmtime-internal-jit-icache-coherence v44.0.3
+    Checking toml_edit v0.23.10+spec-1.0.0
+    Checking cranelift-jit v0.131.3
+    Checking cranelift-object v0.131.3
+    Checking libmimalloc-sys v0.1.35
+    Checking mech-compute v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/compute)
+    Checking cranelift-frontend v0.131.3 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/vendor/cranelift-frontend)
+    Checking mech-compare v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/compare)
+    Checking mech-math v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/math)
+    Checking mech-logic v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/logic)
+    Checking mech-range v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/range)
+    Checking mech-gpu v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/hosts/gpu)
+    Checking mech-stdlib v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/stdlib)
+    Checking mimalloc v0.1.39
+    Checking mech-compression-native-profile v0.0.0 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile)
+    Finished `release` profile [optimized] target(s) in 1m 00s

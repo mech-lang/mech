@@ -1,0 +1,15 @@
+{
+  "reproduces_qualified_fixed_support_worker": true,
+  "worker_sha256": "5afce59aa83c03df81c693d78e9a65f17df1c88c64a7e04c490c58ecc4fffba0",
+  "object_sha256": "c5aab01c69ff4ed325b5149d2e1402a59477e5858f52052939d51f7eff699ef8",
+  "metadata_sha256": "c187c6f40d81d45995eaf3313c3282d41aadbd066413d7f44c0775b1c22225fa",
+  "qualification": "exact existing worker identity; not a new runtime timing campaign",
+  "roc_wins": [
+    81,
+    81
+  ],
+  "libdeflate_wins": [
+    62,
+    62
+  ]
+}

@@ -137,6 +137,17 @@ fn define_with_pool<M: Module>(
 ) -> Result<serde_json::Value, NativeCompileError> {
     let plan = prepared.plan();
     let layout = Layout::derive(plan)?;
+    #[cfg(feature = "early-region-planning")]
+    if let Some(windows) = std::env::var_os("MECH_COMPACT_EARLY_REGION_PREVIEW") {
+        let path = std::env::var_os("MECH_COMPACT_EARLY_REGION_REPORT")
+            .ok_or_else(|| backend("early source preview requires an explicit report path"))?;
+        super::early_regions::preview(
+            plan,
+            &layout,
+            &windows.to_string_lossy(),
+            std::path::Path::new(&path),
+        )?;
+    }
     let actions = (0..plan.blocks().len())
         .map(|site| recipes::derive(plan, &layout, site))
         .collect::<Result<Vec<_>, _>>()?;

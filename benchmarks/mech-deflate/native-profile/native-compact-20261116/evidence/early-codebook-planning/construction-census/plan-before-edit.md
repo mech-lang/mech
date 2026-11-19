@@ -1,0 +1,11 @@
+# Count total intermediate construction before changing ownership
+
+Measured pool: the selected 63,804 B root constructs 16,157 layout blocks, 42,255 instructions and 831,378 SSA value slots before compaction. A source pilot has 885 reachable sites and touches 1,578 words inside the global 16,373-word layout. Current snapshots exclude helper construction and repeated copied/optimized functions, so they cannot prove that early splitting removes work.
+
+Work exposed: add a compile-time-only construction census in the shared Cranelift DFG allocation/clone/compaction/clear/drop paths, covering every root/helper and temporary copied body. Count created/resident/peak resident arena slots and maximum per-unit size, plus CFG/dominance construction and full verifier runs. Arena-resident slots include retired IDs until compaction and are not semantic/register liveness. Canonical plan/proof tables and allocator capacities are outside these counters and remain separately measured via total build RSS/time. No default build instrumentation or per-operation runtime dispatch.
+
+Expected effect: no optimization gain is claimed from the observer. It supplies the complete common denominator required to assess the early-region pilot. Require exact generated object, metadata, bytecode and qualified fixed-support worker from the diagnostic build; diagnostic latency is never an optimization measurement. Use the ordinary uninstrumented compiler for every speed claim.
+
+Correctness: observer behind an off-by-default Cargo feature, with no emitted function fields or counters in ordinary builds. Match original DFG clone semantics and account for compaction replacement/clear/drop, including function moves across worker threads. Reset only with no live DFG slots. Test lifecycle balance, clone/compact traffic and cross-thread drop; counters must not change DFG behavior, validation or admission. Do not interpret root shrinkage or resident slots as reduced total work or peak register liveness.
+
+Stopping: capture the actual total baseline and then proceed to typed bounded-region admission/emission. Do not turn instrumentation or other small late passes into the main campaign. Full goal stays 1x C code/build time, at least 81/62 individual peer wins, eventually more C wins. Early changed workers need complete qualification and <=5280 B stack.

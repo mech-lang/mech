@@ -2137,6 +2137,8 @@ impl<'a> Verifier<'a> {
     }
 
     pub fn run(&self, errors: &mut VerifierErrors) -> VerifierStepResult {
+        #[cfg(feature = "construction-census")]
+        crate::construction_census::full_verification();
         self.verify_global_values(errors)?;
         self.typecheck_entry_block_params(errors)?;
         self.check_entry_not_cold(errors)?;

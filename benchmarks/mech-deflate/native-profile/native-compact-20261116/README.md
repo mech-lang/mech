@@ -2,7 +2,7 @@
 
 The current selected M1 compiler recipe is **`m1-sparse-guard-rounds`**:
 **63,804 B**, **81/81 Roc and 62/81 libdeflate wins in both complete orders**,
-and **2.206 s** source through final link in its matched build cohort.
+and **2.205 s** source through final link in its matched build cohort.
 Use [CURRENT.md](CURRENT.md) for current identities, timings and tradeoffs;
 the earlier measurements below remain historical evidence.
 

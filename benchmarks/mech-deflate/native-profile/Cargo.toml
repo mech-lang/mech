@@ -8,12 +8,16 @@ publish = false
 [workspace]
 
 [features]
+early-region-planning = ["mech-gpu/early-region-planning"]
+construction-census = ["mech-gpu/construction-census", "dep:cranelift-codegen"]
+construction-census-serde = ["construction-census", "cranelift-codegen/enable-serde"]
 # Recognized by the exact vendored SSA source in its focused test target.
 std = []
 linked-qualification = ["dep:mech-build"]
 unit-qualification = ["linked-qualification", "dep:mech-runtime"]
 
 [dependencies]
+cranelift-codegen = { version = "=0.131.3", default-features = false, features = ["std", "unwind"], optional = true }
 mech-build = { path = "../../../src/build", default-features = false, features = ["process-supervision"], optional = true }
 mech-runtime = { path = "../../../src/runtime", default-features = false, features = ["compiler", "resident-routing-source"], optional = true }
 # Retain the established compiler/value configuration while selecting only the
@@ -152,3 +156,17 @@ path = "../../../hosts/gpu/src/native_artifact/program/compact/cold_tail_tests.r
 [[test]]
 name = "fresh_owner_counts"
 path = "fresh_owner_counts_tests.rs"
+
+[[test]]
+name = "construction_census"
+path = "construction_census_tests.rs"
+required-features = ["construction-census"]
+
+[[test]]
+name = "partition_plan"
+path = "partition_plan_tests.rs"
+
+[[test]]
+name = "construction_census_serde"
+path = "construction_census_serde_tests.rs"
+required-features = ["construction-census-serde"]

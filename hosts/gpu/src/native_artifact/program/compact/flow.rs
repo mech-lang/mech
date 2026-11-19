@@ -42,6 +42,14 @@ impl Flow {
             None,
         )
     }
+    // Terminators may read a result just produced by this site's action. Only
+    // action reads and genuinely preceding values belong in a unit's live-in.
+    #[cfg(feature = "early-region-planning")]
+    pub(super) fn incoming_uses(&self, site: usize) -> impl Iterator<Item = u32> + '_ {
+        self.uses[site].iter().copied().filter(move |value| {
+            self.action_uses[site].contains(value) || !self.defs[site].contains(value)
+        })
+    }
     pub fn derive_entry(
         plan: &Plan,
         entry: usize,

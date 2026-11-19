@@ -16,32 +16,37 @@ exact worker's qualification; it does not claim a new runtime timing campaign.
 The prior 63,804 B comparison had no established candidate/control slowdowns
 and seven uncertain cases, all retained in its evidence.
 
-| Same-session Apple M1 build | Encoder text | Source to final link | Source through strip | Source CPU | Source peak RSS |
+| Latest same-session Apple M1 build | Encoder text | Source to final link | Source through strip | Source CPU | Source peak RSS |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| Full-scan control | 63,804 B | 2.240604 s | 2.251746 s | 2.263389 s | 392.4 MB |
-| Selected sparse rounds | 63,804 B | **2.205950 s** | **2.217085 s** | 2.229214 s | 392.7 MB |
-| Roc | 57,696 B | 2.977386 s | 2.988315 s | 2.935371 s | 391.7 MB |
-| libdeflate | 37,080 B | 0.480327 s | 0.491054 s | 0.442118 s | 71.5 MB |
+| Prior selected compiler | 63,804 B | 2.207729 s | 2.218989 s | 2.229473 s | 392.7 MB |
+| Current default, preview excluded | 63,804 B | **2.205288 s** | **2.216334 s** | 2.228903 s | 392.1 MB |
+| Roc | 57,696 B | 2.977513 s | 2.988813 s | 2.934162 s | 387.9 MB |
+| libdeflate | 37,080 B | 0.480597 s | 0.491707 s | 0.442477 s | 71.6 MB |
 
-Eight balanced fresh builds use one compiler, fixed support prebuilt for all
-actors, and include final linking. The paired saving is **33.998 ms**, **8/8
-faster**, with a 90% interval **30.849–38.061 ms saved**. The selected recipe
-takes **0.7413× Roc** and **4.5959× libdeflate** build time, and **0.98483×**
-the same-compiler full-scan control. The first eager-index prototype was
-9.011 ms slower; delaying index construction recovered the gain. Both passes
-and raw observations are published. No effects from separate cohorts are added.
+Eight balanced fresh builds include final linking and use fixed support
+prebuilt for every actor. The paired difference is **2.407 ms saved**, 7/8
+faster, with a 90% interval **1.145–6.921 ms saved**. Current build ratios are
+**0.74063× Roc** and **4.58750× C**. This prices the normal compiler after the
+diagnostic/planning source additions, with both experimental features absent.
+It is not an early-emission gain. The first version with dormant preview code
+cost +4.325 ms; isolating that code behind `early-region-planning` recovered
+the cost. Both cohorts and raw observations are retained.
 
-Compiler phase medians are **0.707547 s parsing**, **0.212987 s source
-semantics**, **0.006836 s artifact creation**, **0.002553 s encoding**, and
-**1.212927 s native emission**. Catalog join wait is **0.000019 s**; catalog
-work still runs during parsing. Final link takes **0.035246 s** and strip
-**0.010934 s**. Independently calculated medians need not add.
+The guard scheduler's earlier paired **33.998 ms saving** (8/8 faster) belongs
+to its own cohort. The effects are not added across cohorts. Its source and
+adverse eager-index prototype remain in the [sparse-rounds evidence](evidence/encoder-size-gap/sparse-guard-rounds/README.md).
 
-All **29 focused tests pass**, including both closure schedules against the
+Current phase medians are **0.707378 s parsing**, **0.213160 s source semantics**,
+**0.006847 s artifact creation**, **0.002528 s encoding**, and **1.212155 s
+native emission**. Catalog join wait is 19 microseconds; its work still runs
+during parsing. Final link takes **0.035383 s**, strip **0.010892 s**.
+Independently calculated medians need not add.
+
+The guard scheduler's **29 focused tests pass**, including both closure schedules against the
 original map reference through updates, joins and exhaustive small-state
-expiration. The named source rebuild reproduces the object, full metadata and
+expiration. Its original named source rebuild reproduces the object, full metadata and
 bytecode and passes **162 output checks, six injected failure cases and 12
-recoveries**. Compiler source is `0fb8fec139`, binary `e7bb1050…`. Runtime
+recoveries**. That earlier compiler source is `0fb8fec139`, binary `e7bb1050…`. Runtime
 qualification belongs to fixed-support worker `5afce59a…`; the separately
 rebuilt host-support worker `a3325554…` has its own identity and no runtime-win
 claim. The original Mech source and all runtime admission/accounting behavior
@@ -49,11 +54,38 @@ are unchanged.
 
 The small-controller architecture is still incomplete. A **46,788 B checked
 controller** remains, exceeding C's entire encoder by 9,708 B. The remaining
-total code gap is **26,724 B**; this cohort's median C build-time gap is
-**1.725623 s**. The goal remains 1× libdeflate for code and build time, with
+total code gap is **26,724 B**; the latest cohort's median C build-time gap is
+**1.724691 s**. The goal remains 1× libdeflate for code and build time, with
 at least 81 Roc and 62 C wins and eventually more C wins.
 
 [Selected compiler source, raw builds, exact worker, source checks and verifier](evidence/encoder-size-gap/sparse-guard-rounds/README.md) · [63,804 B runtime qualification and earlier compiler cohort](evidence/encoder-size-gap/preserved-root-registers/README.md) · [Earlier literal-frame 64,444 B option](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md)
+
+## Early construction work now in source
+
+The all-unit DFG census creates **1,407,099 SSA slots, 497,878 instructions and
+174,834 blocks** for the selected encoder. The largest unit still reaches
+**831,378 SSA slots**, and peak resident SSA positions are **955,192**. These
+counts include copies and retired IDs; they are not register liveness. The late
+codebook split reduces later traffic but leaves both SSA peaks unchanged.
+
+The typed pre-SSA preview assigns all 885 reachable codebook operations an
+owner and derives dense local domains. Twenty invariant constants are seeded
+locally, yielding **22 input/six output words**. It proves complete cursor and
+builder scopes and passes the existing all-path initializer. Nine focused
+planner/observer tests pass, including graph copies, compaction, cross-thread
+destruction and serialized imports. The final normal source rebuild passes
+162 success observations, six failure cases and 12 recoveries, and reproduces
+the exact qualified fixed-support worker. Its default compiler is `9bd9442a…`;
+its separately rebuilt host-support worker is `d2fe3ab6…` with no runtime-win
+claim. Observer and preview symbols are absent from the default compiler.
+
+**Early native emission remains unimplemented.** ABI/frame admission,
+word-level retirement captures, source ownership/effect transport, partial
+failures and actual local root/helper lowering are the next work. The preview
+is enabled only by the `early-region-planning` build feature. The independent
+`construction-census` feature produces diagnostics, never latency claims.
+
+[Source, exact-artifact plans, all-unit counters, tests and both normal-build comparisons](evidence/early-codebook-planning/README.md) · [Next lowering contract](evidence/early-codebook-planning/lowering-contract.md)
 
 ## Qualified checked codebook phase alternative
 
