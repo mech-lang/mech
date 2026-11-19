@@ -129,6 +129,7 @@ struct RelationIndex {
     related: Vec<u32>,
     projection_group: Vec<usize>,
     groups: Vec<Vec<u32>>,
+    dependencies: OnceLock<DependencyIndex>,
 }
 impl RelationIndex {
     fn new(expressions: &BTreeMap<u32, Expression>) -> Self {
@@ -166,7 +167,107 @@ impl RelationIndex {
             related,
             projection_group,
             groups,
+            dependencies: OnceLock::new(),
         }
+    }
+    // A round observes only the preceding round's truths. Keep each equation's
+    // inference order and commit the accumulated candidates after all visits.
+    fn infer_row(&self, position: usize, known: &Known, inferred: &mut Vec<(u32, bool)>) {
+        let (out, e) = &self.rows[position];
+        let mut infer = |value, truth| {
+            if !known.contains_key(&value) {
+                inferred.push((value, truth));
+            }
+        };
+        let out = *out;
+        let truth = known.get(&out).copied();
+        match *e {
+            Expression::Copy(a) | Expression::Not(a) => {
+                let invert = matches!(e, Expression::Not(_));
+                if let Some(t) = truth {
+                    infer(a, t ^ invert);
+                }
+                if let Some(&t) = known.get(&a) {
+                    infer(out, t ^ invert);
+                }
+            }
+            Expression::And(a, b) | Expression::Or(a, b) => {
+                let conjunction = matches!(e, Expression::And(..));
+                let left = known.get(&a).copied();
+                let right = known.get(&b).copied();
+                if truth == Some(conjunction) {
+                    infer(a, conjunction);
+                    infer(b, conjunction);
+                } else if truth == Some(!conjunction) {
+                    if left == Some(conjunction) {
+                        infer(b, !conjunction);
+                    }
+                    if right == Some(conjunction) {
+                        infer(a, !conjunction);
+                    }
+                }
+                if left == Some(!conjunction) || right == Some(!conjunction) {
+                    infer(out, !conjunction);
+                } else if left == Some(conjunction) && right == Some(conjunction) {
+                    infer(out, conjunction);
+                }
+            }
+            Expression::Project { .. } => {
+                if let Some(t) = truth {
+                    for &peer in &self.groups[self.projection_group[position]] {
+                        infer(peer, t);
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[derive(Debug)]
+struct DependencyIndex {
+    offsets: Vec<usize>,
+    rows: Vec<usize>,
+}
+impl DependencyIndex {
+    fn new(index: &RelationIndex) -> Self {
+        let mut edges = Vec::with_capacity(index.rows.len() * 3);
+        for (position, (out, expression)) in index.rows.iter().enumerate() {
+            let mut values = [*out; 3];
+            let count = match *expression {
+                Expression::Copy(a) | Expression::Not(a) => {
+                    values[1] = a;
+                    2
+                }
+                Expression::And(a, b) | Expression::Or(a, b) => {
+                    values[1] = a;
+                    values[2] = b;
+                    3
+                }
+                // A projection propagates its output truth to equal peers; it
+                // does not infer from the aggregate source's Boolean truth.
+                Expression::Project { .. } => 1,
+            };
+            for value in &values[..count] {
+                let slot = index.related.binary_search(value).unwrap();
+                edges.push((slot, position));
+            }
+        }
+        edges.sort_unstable();
+        edges.dedup();
+        let mut offsets = vec![0; index.related.len() + 1];
+        for &(slot, _) in &edges {
+            offsets[slot + 1] += 1;
+        }
+        for slot in 1..offsets.len() {
+            offsets[slot] += offsets[slot - 1];
+        }
+        Self {
+            offsets,
+            rows: edges.into_iter().map(|(_, row)| row).collect(),
+        }
+    }
+    fn append(&self, slot: usize, agenda: &mut Vec<usize>) {
+        agenda.extend_from_slice(&self.rows[self.offsets[slot]..self.offsets[slot + 1]]);
     }
 }
 
@@ -178,6 +279,8 @@ pub(crate) struct State {
     expressions: Arc<BTreeMap<u32, Expression>>,
     index: Arc<OnceLock<RelationIndex>>,
     closed: bool,
+    #[cfg(test)]
+    sparse_rounds: Option<bool>,
 }
 impl PartialEq for State {
     fn eq(&self, other: &Self) -> bool {
@@ -245,73 +348,69 @@ impl State {
         }
         changed
     }
+    fn use_sparse_rounds(&self) -> bool {
+        #[cfg(test)]
+        if let Some(enabled) = self.sparse_rounds {
+            return enabled;
+        }
+        static ENABLED: OnceLock<bool> = OnceLock::new();
+        *ENABLED.get_or_init(|| {
+            std::env::var("MECH_GUARD_SPARSE_ROUNDS").is_ok_and(|value| value == "1")
+        })
+    }
     pub(super) fn close(&mut self) {
         if self.closed {
             return;
         }
+        let sparse = self.use_sparse_rounds();
         // Rows and projection peers retain the original ascending-output order,
         // including first-inference priority on contradictory syntactic paths.
         let index = self
             .index
             .get_or_init(|| RelationIndex::new(&self.expressions));
+        // The first scan is cheaper than constructing an inverse index for
+        // closures that cannot infer anything. Pay for dependencies only when
+        // a newly inferred fact actually requires another round.
+        let mut agenda: Option<Vec<usize>> = None;
+        let mut next = Vec::new();
         loop {
             let mut inferred = Vec::new();
-            let mut infer = |value, truth| {
-                if !self.known.contains_key(&value) {
-                    inferred.push((value, truth));
+            if let Some(agenda) = &agenda {
+                for &position in agenda {
+                    index.infer_row(position, &self.known, &mut inferred);
                 }
-            };
-            for (position, (out, e)) in index.rows.iter().enumerate() {
-                let out = *out;
-                let truth = self.known.get(&out).copied();
-                match *e {
-                    Expression::Copy(a) | Expression::Not(a) => {
-                        let invert = matches!(e, Expression::Not(_));
-                        if let Some(t) = truth {
-                            infer(a, t ^ invert);
-                        }
-                        if let Some(&t) = self.known.get(&a) {
-                            infer(out, t ^ invert);
-                        }
-                    }
-                    Expression::And(a, b) | Expression::Or(a, b) => {
-                        let conjunction = matches!(e, Expression::And(..));
-                        let left = self.known.get(&a).copied();
-                        let right = self.known.get(&b).copied();
-                        if truth == Some(conjunction) {
-                            infer(a, conjunction);
-                            infer(b, conjunction);
-                        } else if truth == Some(!conjunction) {
-                            if left == Some(conjunction) {
-                                infer(b, !conjunction);
-                            }
-                            if right == Some(conjunction) {
-                                infer(a, !conjunction);
-                            }
-                        }
-                        if left == Some(!conjunction) || right == Some(!conjunction) {
-                            infer(out, !conjunction);
-                        } else if left == Some(conjunction) && right == Some(conjunction) {
-                            infer(out, conjunction);
-                        }
-                    }
-                    Expression::Project { .. } => {
-                        if let Some(t) = truth {
-                            for &peer in &index.groups[index.projection_group[position]] {
-                                infer(peer, t);
-                            }
-                        }
-                    }
+            } else {
+                for position in 0..index.rows.len() {
+                    index.infer_row(position, &self.known, &mut inferred);
                 }
             }
+            let dependencies = (sparse && !inferred.is_empty()).then(|| {
+                index
+                    .dependencies
+                    .get_or_init(|| DependencyIndex::new(index))
+            });
             let before = self.known.len();
             for (value, truth) in inferred {
                 if !self.known.contains_key(&value) {
                     self.known.insert(value, truth);
+                    if let Some(dependencies) = dependencies {
+                        let slot = index.related.binary_search(&value).unwrap();
+                        dependencies.append(slot, &mut next);
+                    }
                 }
             }
             if self.known.len() == before {
                 break;
+            }
+            if sparse {
+                next.sort_unstable();
+                next.dedup();
+                if let Some(agenda) = &mut agenda {
+                    std::mem::swap(agenda, &mut next);
+                    next.clear();
+                } else {
+                    agenda = Some(std::mem::take(&mut next));
+                }
             }
         }
         self.closed = true;
@@ -568,86 +667,137 @@ mod tests {
 
     #[test]
     fn shared_guard_states_match_the_original_analysis_through_updates_and_joins() {
-        for seed in 0..64u64 {
-            let mut random = seed + 1;
-            let mut actual = vec![State::default(); 4];
-            let mut expected = vec![ReferenceState::default(); 4];
-            for step in 0..1000 {
-                let mut next = || {
-                    random = random
-                        .wrapping_mul(6364136223846793005)
-                        .wrapping_add(1442695040888963407);
-                    (random >> 32) as u32
-                };
-                let current = (next() % 4) as usize;
-                let peer = (next() % 4) as usize;
-                let operation = next() % 12;
-                let output = next() % 12;
-                let a = next() % 12;
-                let b = next() % 12;
-                let truth = next() & 1 != 0;
-                match operation {
-                    0..=4 => {
-                        let expression = match operation {
-                            0 => Expression::Copy(a),
-                            1 => Expression::Not(a),
-                            2 => Expression::And(a, b),
-                            3 => Expression::Or(a, b),
-                            _ => projection(a, b % 3),
-                        };
-                        actual[current].define(&[output], Some(&(output, expression.clone())));
-                        expected[current].define(&[output], Some(&(output, expression)));
+        for sparse_rounds in [false, true] {
+            for seed in 0..64u64 {
+                let mut random = seed + 1;
+                let mut actual = vec![
+                    State {
+                        sparse_rounds: Some(sparse_rounds),
+                        ..State::default()
+                    };
+                    4
+                ];
+                let mut expected = vec![ReferenceState::default(); 4];
+                for step in 0..1000 {
+                    let mut next = || {
+                        random = random
+                            .wrapping_mul(6364136223846793005)
+                            .wrapping_add(1442695040888963407);
+                        (random >> 32) as u32
+                    };
+                    let current = (next() % 4) as usize;
+                    let peer = (next() % 4) as usize;
+                    let operation = next() % 12;
+                    let output = next() % 12;
+                    let a = next() % 12;
+                    let b = next() % 12;
+                    let truth = next() & 1 != 0;
+                    match operation {
+                        0..=4 => {
+                            let expression = match operation {
+                                0 => Expression::Copy(a),
+                                1 => Expression::Not(a),
+                                2 => Expression::And(a, b),
+                                3 => Expression::Or(a, b),
+                                _ => projection(a, b % 3),
+                            };
+                            actual[current].define(&[output], Some(&(output, expression.clone())));
+                            expected[current].define(&[output], Some(&(output, expression)));
+                        }
+                        5 => {
+                            actual[current].define(&[a, b], None);
+                            expected[current].define(&[a, b], None);
+                        }
+                        6 => {
+                            actual[current].assume(a, truth);
+                            expected[current].known.insert(a, truth);
+                        }
+                        7 => {
+                            actual[current].close();
+                            expected[current].close();
+                        }
+                        8 => {
+                            let left = actual[peer].clone();
+                            let right = expected[peer].clone();
+                            assert_eq!(
+                                actual[current].merge(&left),
+                                expected[current].merge(&right)
+                            );
+                        }
+                        9 => {
+                            actual[current] = actual[peer].clone();
+                            expected[current] = expected[peer].clone();
+                        }
+                        10 => {
+                            actual[current].assume(a, truth);
+                            actual[current].close();
+                            expected[current].known.insert(a, truth);
+                            expected[current].close();
+                        }
+                        _ => {
+                            actual[current].define(&[], None);
+                            expected[current].define(&[], None);
+                        }
                     }
-                    5 => {
-                        actual[current].define(&[a, b], None);
-                        expected[current].define(&[a, b], None);
-                    }
-                    6 => {
-                        actual[current].assume(a, truth);
-                        expected[current].known.insert(a, truth);
-                    }
-                    7 => {
-                        actual[current].close();
-                        expected[current].close();
-                    }
-                    8 => {
-                        let left = actual[peer].clone();
-                        let right = expected[peer].clone();
+                    for (actual, expected) in actual.iter().zip(&expected) {
                         assert_eq!(
-                            actual[current].merge(&left),
-                            expected[current].merge(&right)
+                            actual.known.to_map(),
+                            expected.known,
+                            "seed={seed} step={step}"
                         );
+                        assert_eq!(
+                            actual.expressions.as_ref(),
+                            &expected.expressions,
+                            "seed={seed} step={step}"
+                        );
+                        assert_eq!(actual.is_empty(), expected.is_empty());
+                        assert_eq!(actual.truth(a), expected.known.get(&a).copied());
                     }
-                    9 => {
-                        actual[current] = actual[peer].clone();
-                        expected[current] = expected[peer].clone();
-                    }
-                    10 => {
-                        actual[current].assume(a, truth);
-                        actual[current].close();
-                        expected[current].known.insert(a, truth);
-                        expected[current].close();
-                    }
-                    _ => {
-                        actual[current].define(&[], None);
-                        expected[current].define(&[], None);
-                    }
-                }
-                for (actual, expected) in actual.iter().zip(&expected) {
-                    assert_eq!(
-                        actual.known.to_map(),
-                        expected.known,
-                        "seed={seed} step={step}"
-                    );
-                    assert_eq!(
-                        actual.expressions.as_ref(),
-                        &expected.expressions,
-                        "seed={seed} step={step}"
-                    );
-                    assert_eq!(actual.is_empty(), expected.is_empty());
-                    assert_eq!(actual.truth(a), expected.known.get(&a).copied());
                 }
             }
+        }
+    }
+
+    #[test]
+    fn sparse_rounds_preserve_backward_chains_conflicts_and_unrelated_equations() {
+        for sparse_rounds in [false, true] {
+            let expressions = (0..64)
+                .map(|out| (out, Expression::Copy(out + 1)))
+                .chain((1000..1256).map(|out| (out, Expression::Not(8191))))
+                .chain([
+                    (2000, projection(9000, 0)),
+                    (2001, projection(9000, 0)),
+                    (2002, projection(9000, 0)),
+                    (3000, Expression::Copy(3002)),
+                    (3001, Expression::Not(3002)),
+                ])
+                .collect::<BTreeMap<_, _>>();
+            let mut state = State {
+                expressions: Arc::new(expressions.clone()),
+                sparse_rounds: Some(sparse_rounds),
+                ..State::default()
+            };
+            let mut reference = ReferenceState {
+                expressions,
+                ..ReferenceState::default()
+            };
+            for (value, truth) in [
+                (64, true),
+                (2000, true),
+                (2001, false),
+                (3000, true),
+                (3001, true),
+            ] {
+                state.assume(value, truth);
+                reference.known.insert(value, truth);
+            }
+            state.close();
+            reference.close();
+            assert_eq!(state.known.to_map(), reference.known);
+            assert_eq!(state.truth(0), Some(true));
+            assert_eq!(state.truth(2002), Some(true));
+            assert_eq!(state.truth(3002), Some(true));
+            assert_eq!(state.truth(8191), None);
         }
     }
 
@@ -780,6 +930,7 @@ mod tests {
             expressions: state.expressions.clone(),
             closed: state.closed,
             index: Arc::default(),
+            sparse_rounds: state.sparse_rounds,
         };
         assert!(state.index.get().is_some());
         assert!(cold.index.get().is_none());
@@ -788,73 +939,76 @@ mod tests {
 
     #[test]
     fn expiration_matches_full_reclosure_for_every_small_truth_and_definition_subset() {
-        for network in 0..12u32 {
-            let expressions = Arc::new(
-                (0..6u32)
-                    .map(|output| {
-                        let a = (output * 3 + network + 1) % 6;
-                        let b = (output + network + 2) % 6;
-                        let expression = match (output + network) % 5 {
-                            0 => Expression::Copy(a),
-                            1 => Expression::Not(a),
-                            2 => Expression::And(a, b),
-                            3 => Expression::Or(a, b),
-                            _ => projection(a, network % 2),
-                        };
-                        (output, expression)
-                    })
-                    .collect::<BTreeMap<_, _>>(),
-            );
-            for pattern in 0..729usize {
-                let mut state = State {
-                    expressions: expressions.clone(),
-                    ..State::default()
-                };
-                let mut reference = ReferenceState {
-                    known: BTreeMap::new(),
-                    expressions: expressions.as_ref().clone(),
-                };
-                let mut digits = pattern;
-                for value in 0..6 {
-                    if digits % 3 != 0 {
-                        let truth = digits % 3 == 2;
-                        state.assume(value, truth);
-                        reference.known.insert(value, truth);
+        for sparse_rounds in [false, true] {
+            for network in 0..12u32 {
+                let expressions = Arc::new(
+                    (0..6u32)
+                        .map(|output| {
+                            let a = (output * 3 + network + 1) % 6;
+                            let b = (output + network + 2) % 6;
+                            let expression = match (output + network) % 5 {
+                                0 => Expression::Copy(a),
+                                1 => Expression::Not(a),
+                                2 => Expression::And(a, b),
+                                3 => Expression::Or(a, b),
+                                _ => projection(a, network % 2),
+                            };
+                            (output, expression)
+                        })
+                        .collect::<BTreeMap<_, _>>(),
+                );
+                for pattern in 0..729usize {
+                    let mut state = State {
+                        expressions: expressions.clone(),
+                        sparse_rounds: Some(sparse_rounds),
+                        ..State::default()
+                    };
+                    let mut reference = ReferenceState {
+                        known: BTreeMap::new(),
+                        expressions: expressions.as_ref().clone(),
+                    };
+                    let mut digits = pattern;
+                    for value in 0..6 {
+                        if digits % 3 != 0 {
+                            let truth = digits % 3 == 2;
+                            state.assume(value, truth);
+                            reference.known.insert(value, truth);
+                        }
+                        digits /= 3;
                     }
-                    digits /= 3;
-                }
-                state.close();
-                reference.close();
-                assert_eq!(state.known.to_map(), reference.known);
-                for value in 0..8 {
-                    for truth in [false, true] {
+                    state.close();
+                    reference.close();
+                    assert_eq!(state.known.to_map(), reference.known);
+                    for value in 0..8 {
+                        for truth in [false, true] {
+                            let mut actual = state.clone();
+                            let mut expected = reference.clone();
+                            actual.assume(value, truth);
+                            expected.known.insert(value, truth);
+                            actual.close();
+                            expected.close();
+                            assert_eq!(
+                                actual.known.to_map(),
+                                expected.known,
+                                "network={network} pattern={pattern} assumption=({value},{truth})"
+                            );
+                        }
+                    }
+                    for mask in 0..64 {
+                        let defs = (0..6)
+                            .filter(|value| mask & (1 << value) != 0)
+                            .collect::<Vec<_>>();
                         let mut actual = state.clone();
                         let mut expected = reference.clone();
-                        actual.assume(value, truth);
-                        expected.known.insert(value, truth);
-                        actual.close();
-                        expected.close();
+                        actual.define(&defs, None);
+                        expected.define(&defs, None);
                         assert_eq!(
                             actual.known.to_map(),
                             expected.known,
-                            "network={network} pattern={pattern} assumption=({value},{truth})"
+                            "network={network} pattern={pattern} defs={defs:?}"
                         );
+                        assert_eq!(actual.expressions.as_ref(), &expected.expressions);
                     }
-                }
-                for mask in 0..64 {
-                    let defs = (0..6)
-                        .filter(|value| mask & (1 << value) != 0)
-                        .collect::<Vec<_>>();
-                    let mut actual = state.clone();
-                    let mut expected = reference.clone();
-                    actual.define(&defs, None);
-                    expected.define(&defs, None);
-                    assert_eq!(
-                        actual.known.to_map(),
-                        expected.known,
-                        "network={network} pattern={pattern} defs={defs:?}"
-                    );
-                    assert_eq!(actual.expressions.as_ref(), &expected.expressions);
                 }
             }
         }
