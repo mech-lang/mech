@@ -467,7 +467,7 @@ impl Phase {
             b.switch_to_block(packet);
         }
         let (input_words, output_words) = self.packet_words();
-        let (input, output) = packets.for_call(input_words, output_words)?;
+        let input = packets.input_for_call(input_words, output_words)?;
         for (at, &slot) in self.inputs.iter().enumerate() {
             let value = words.read(b, slot);
             b.ins().stack_store(value, input, offset(at)?);
@@ -496,7 +496,7 @@ impl Phase {
             .map(|&slot| words.read(b, slot))
             .collect::<Vec<_>>();
         let input = b.ins().stack_addr(types::I64, input, 0);
-        let out = b.ins().stack_addr(types::I64, output, 0);
+        let out = packets.output_address(b, input_words, output_words)?;
         let phase_timer =
             if root_entry && std::env::var_os("MECH_COMPACT_PROFILE_PHASE_CALLS").is_some() {
                 let mut signature = module.make_signature();
@@ -649,9 +649,7 @@ impl Phase {
                     .outputs
                     .iter()
                     .map(|(_, from)| match *from {
-                        Output::Stack(at) => {
-                            Ok(b.ins().stack_load(types::I64, output, offset(at)?))
-                        }
+                        Output::Stack(at) => packets.read_output(b, at),
                         Output::Word(at) => Ok(words.read(b, at)),
                     })
                     .collect::<Result<Vec<_>, NativeCompileError>>()?;
@@ -727,18 +725,14 @@ impl Phase {
                 continue;
             }
             for lane in 0..6 {
-                let value = b.ins().stack_load(
-                    types::I64,
-                    output,
-                    offset(1 + self.result_words + ordinal * 6 + lane)?,
-                );
+                let value = packets.read_output(b, 1 + self.result_words + ordinal * 6 + lane)?;
                 words.write(b, base + lane, value);
             }
         }
         if self.invariant_views.is_empty() {
             for (slot, source) in &self.outputs {
                 let value = match *source {
-                    Output::Stack(at) => b.ins().stack_load(types::I64, output, offset(at)?),
+                    Output::Stack(at) => packets.read_output(b, at)?,
                     Output::Word(at) => words.read(b, at),
                 };
                 words.write(b, *slot, value);
@@ -750,7 +744,7 @@ impl Phase {
                 .outputs
                 .iter()
                 .map(|(_, source)| match *source {
-                    Output::Stack(at) => Ok(b.ins().stack_load(types::I64, output, offset(at)?)),
+                    Output::Stack(at) => packets.read_output(b, at),
                     Output::Word(at) => Ok(words.read(b, at)),
                 })
                 .collect::<Result<Vec<_>, NativeCompileError>>()?;
