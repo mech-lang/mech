@@ -10,6 +10,9 @@ use std::collections::BTreeMap;
 mod packet_reloads;
 #[path = "append_run_pairs.rs"]
 mod pairs;
+#[path = "append_previous.rs"]
+mod previous;
+pub(in crate::native_artifact) use previous::Hint as Previous;
 #[path = "append_run_trace.rs"]
 mod trace;
 
@@ -128,7 +131,9 @@ struct Trace {
     selector: Value,
     stored: Value,
     previous: Value,
+    append_base: Value,
     append_term: Inst,
+    append_store: Inst,
     continuation: Block,
     seed_checks: Vec<Compare>,
     next: Vec<Value>,
@@ -152,7 +157,8 @@ fn emit(
     trace: Trace,
     reloads: Option<packet_reloads::Reloads>,
     paired: Option<pairs::Pair>,
-) -> usize {
+) -> (usize, Vec<Inst>) {
+    let mut stores = vec![trace.append_store];
     let hot = block(f);
     let mut state = Vec::new();
     let mut incoming = BTreeMap::new();
@@ -216,6 +222,7 @@ fn emit(
             &values,
             hot,
             &args,
+            &mut stores,
         );
     } else {
         cursor.ins().jump(hot, &args);
@@ -245,6 +252,9 @@ fn emit(
                     *value = mapped(&values, source);
                 }
                 cursor.insert_inst(copy);
+                if inst == trace.append_store {
+                    stores.push(copy);
+                }
                 if let Some(result) = result {
                     let value = cursor.func.dfg.first_result(copy);
                     values.insert(result, value);
@@ -282,7 +292,7 @@ fn emit(
         .map(|v| BlockArg::Value(mapped(&values, v)))
         .collect::<Vec<_>>();
     cursor.ins().jump(hot, &args);
-    state.len() + 1
+    (state.len() + 1, stores)
 }
 
 pub(in crate::native_artifact) fn optimize(
@@ -291,9 +301,43 @@ pub(in crate::native_artifact) fn optimize(
     packet: Option<(usize, bool)>,
     pair_appends: bool,
 ) -> Result<(usize, usize, usize, bool), &'static str> {
+    optimize_inner(context, header, packet, pair_appends, None)
+}
+
+pub(in crate::native_artifact) fn optimize_with_previous(
+    context: &mut Context,
+    header: Block,
+    packet: Option<(usize, bool)>,
+    pair_appends: bool,
+    contract: &crate::native_artifact::program::compact::NoGrowth,
+    hint: &mut Option<Previous>,
+) -> Result<(usize, usize, usize, bool), &'static str> {
+    optimize_inner(
+        context,
+        header,
+        packet,
+        pair_appends,
+        contract.permits_append_value_forwarding().then_some(hint),
+    )
+}
+
+fn optimize_inner(
+    context: &mut Context,
+    header: Block,
+    packet: Option<(usize, bool)>,
+    pair_appends: bool,
+    forward_previous: Option<&mut Option<Previous>>,
+) -> Result<(usize, usize, usize, bool), &'static str> {
     context.compute_cfg();
     context.compute_domtree();
     let trace = trace::capture(context, header)?;
+    let previous_load = context
+        .func
+        .dfg
+        .value_def(trace.previous)
+        .inst()
+        .ok_or("previous word has no load definition")?;
+    let append_base = trace.append_base;
     let old_params = context.func.dfg.block_params(header).to_vec();
     let reloads = packet.and_then(|(words, split_shared)| {
         packet_reloads::split(context, header, &trace, words, split_shared)
@@ -313,7 +357,7 @@ pub(in crate::native_artifact) fn optimize(
     } else {
         None
     };
-    let words = emit(
+    let (words, stores) = emit(
         &mut context.func,
         header,
         &old_params,
@@ -323,5 +367,8 @@ pub(in crate::native_artifact) fn optimize(
     );
     context.compute_cfg();
     context.compute_domtree();
+    if let Some(hint) = forward_previous {
+        *hint = Some(Previous::new(previous_load, stores, append_base));
+    }
     Ok((words, count, entry_proved_guards, paired.is_some()))
 }

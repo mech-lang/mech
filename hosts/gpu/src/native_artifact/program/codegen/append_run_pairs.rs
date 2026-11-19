@@ -334,6 +334,7 @@ impl Pair {
         descriptors: &BTreeMap<Value, Value>,
         scalar: Block,
         scalar_args: &[BlockArg],
+        stores: &mut Vec<Inst>,
     ) {
         let [count, cache_cursor, length] =
             [window.count, window.cursor, window.length].map(|i| seed[i]);
@@ -418,8 +419,8 @@ impl Pair {
         let first_word = self.pack(b, first, first_cost);
         let second_word = self.pack(b, second, second_cost);
         let address = indexed(b, output, length, 8);
-        b.ins().store(self.output_flags, first_word, address, 0);
-        b.ins().store(self.output_flags, second_word, address, 8);
+        stores.push(b.ins().store(self.output_flags, first_word, address, 0));
+        stores.push(b.ins().store(self.output_flags, second_word, address, 8));
         let next_count = b.ins().iadd_imm(count, -2);
         let next_length = b.ins().iadd_imm(length, 2);
         let args = [next_count, next_cache, next_length, second_word].map(BlockArg::Value);
