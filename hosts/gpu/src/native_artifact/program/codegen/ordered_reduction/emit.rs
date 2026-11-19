@@ -278,7 +278,9 @@ impl Reduction {
             .is_some()
             .then(|| super::cost::constant(b, [4; 4]));
         let test_at_latch = std::env::var_os("MECH_ORDERED_VECTOR_LATCH_TEST").is_some();
-        let pointer_windows = if std::env::var_os("MECH_ORDERED_VECTOR_CARRY_POINTERS").is_some() {
+        let pointer_scope = std::env::var_os("MECH_ORDERED_VECTOR_CARRY_POINTERS");
+        let carry_end_pointers = pointer_scope.as_deref() != Some(std::ffi::OsStr::new("body"));
+        let pointer_windows = if pointer_scope.is_some() {
             self.reads.as_slice()
         } else {
             &[]
@@ -289,8 +291,10 @@ impl Reduction {
         if test_at_latch {
             b.append_block_param(finish, types::I32X4);
             b.append_block_param(finish, types::I32X4);
-            for _ in pointer_windows {
-                b.append_block_param(finish, types::I64);
+            if carry_end_pointers {
+                for _ in pointer_windows {
+                    b.append_block_param(finish, types::I64);
+                }
             }
         }
         for ty in [types::I64, types::I32X4, types::I32X4] {
@@ -364,8 +368,10 @@ impl Reduction {
             // contains a full first group, and next never exceeds end.
             let more = b.ins().icmp(IntCC::UnsignedLessThan, next, end);
             let mut finished = vec![costs.into(), indices.into()];
-            for &pointer in &next_pointers {
-                finished.push(pointer.into());
+            if carry_end_pointers {
+                for &pointer in &next_pointers {
+                    finished.push(pointer.into());
+                }
             }
             b.ins().brif(more, header, &next_group, finish, &finished);
         } else {
@@ -380,6 +386,7 @@ impl Reduction {
         };
         let end_pointers = pointer_windows
             .iter()
+            .filter(|_| carry_end_pointers)
             .enumerate()
             .map(|(i, &window)| {
                 let pointer = if test_at_latch {
@@ -431,7 +438,9 @@ impl Reduction {
                 .brif(more, remainder, &[], scalar_finish, &finish_args);
             b.switch_to_block(remainder);
             // The vector prefix is nonempty. Seed the cursor at the last
-            // vector candidate's low word, without loading it again.
+            // vector candidate's low word, without loading it again. Body-only
+            // pointers end at the vector loop: rebuilding this address from
+            // the admitted invariant base keeps remainder setup off its backedge.
             let pointer =
                 if let Some((_, pointer)) = end_pointers.iter().find(|(read, _)| *read == window) {
                     b.ins()
