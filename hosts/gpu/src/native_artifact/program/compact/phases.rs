@@ -77,6 +77,7 @@ struct VectorAlternative {
 pub(in crate::native_artifact) struct NoGrowth {
     pub(super) array: usize,
     countdown: usize,
+    append_value_forwarding: bool,
 }
 impl NoGrowth {
     fn derive(
@@ -117,7 +118,32 @@ impl NoGrowth {
             .get(field)
             .copied()
             .flatten()?;
-        Some(Self { array, countdown })
+        let append_value_forwarding = proof.arrays[array].width == 8
+            && proof.actions.iter().all(|(_, action)| {
+                matches!(action,
+                Operation::Append { array: target, .. } if *target == array)
+                    || matches!(
+                        action,
+                        Operation::Aggregate
+                            | Operation::Frame
+                            | Operation::ArrayCopy
+                            | Operation::Length { .. }
+                            | Operation::Read { .. }
+                    )
+            })
+            && proof
+                .frames
+                .iter()
+                .all(|frame| frame.scalar_slots().all(|slot| slot < proof.scalar_words));
+        Some(Self {
+            array,
+            countdown,
+            append_value_forwarding,
+        })
+    }
+
+    pub(in crate::native_artifact) fn permits_append_value_forwarding(&self) -> bool {
+        self.append_value_forwarding
     }
 
     pub(in crate::native_artifact) fn proves_append(&self, array: usize, maximum: usize) -> bool {

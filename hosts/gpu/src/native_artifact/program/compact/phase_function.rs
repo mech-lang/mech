@@ -969,6 +969,7 @@ fn prepare_impl<M: Module>(
         {
             let mut candidate = module.make_context();
             candidate.func = context.func.clone();
+            let mut composed_previous = phase_cleanup.append_previous.clone();
             let capture = Capture {
                 packet_loads: &loads,
                 views: &views,
@@ -1004,7 +1005,7 @@ fn prepare_impl<M: Module>(
                         true,
                         error_origin_base,
                     )?;
-                    optimize_phase(
+                    let fast_cleanup = optimize_phase(
                         &mut fast,
                         &controls,
                         module.isa(),
@@ -1033,6 +1034,7 @@ fn prepare_impl<M: Module>(
                         {
                             composed_header = fast_capture.header;
                             candidate = fast;
+                            composed_previous = fast_cleanup.append_previous;
                         }
                     }
                 }
@@ -1135,6 +1137,42 @@ fn prepare_impl<M: Module>(
                         candidate.flowgraph();
                         candidate.verify(module.isa()).map_err(backend)?;
                         eprintln!("{name} split admitted cost checks: {split}");
+                    }
+                }
+                if module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
+                    && let Some(previous) = &composed_previous
+                    && let Some(output_word) = word_at(proof.view(contract.array))
+                    && let Some(length_word) = word_at(proof.view(contract.array) + 1)
+                    && let Some(loads) =
+                        phase_storage::input_word_loads(&candidate.func, input_words)
+                {
+                    candidate.flowgraph();
+                    let forwarded =
+                        previous.apply(&mut candidate, &loads, output_word, length_word);
+                    if forwarded.is_ok()
+                        && std::env::var_os("MECH_FORWARD_PREVIOUS_CLEANUP").is_some()
+                    {
+                        cfg_cleanup::coalesce_equal_join_arguments(
+                            &controls,
+                            &mut candidate,
+                            module.isa(),
+                        )?;
+                        cfg_cleanup::coalesce_parallel_join_arguments(
+                            &controls,
+                            &mut candidate,
+                            module.isa(),
+                        )?;
+                        cfg_cleanup::optimize_final_ordered(
+                            &controls,
+                            &mut candidate,
+                            module.isa(),
+                        )?;
+                    }
+                    candidate.verify(module.isa()).map_err(backend)?;
+                    if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some()
+                        || std::env::var_os("MECH_APPEND_FORWARD_REPORT").is_some()
+                    {
+                        eprintln!("{name} late previous append forwarding: {forwarded:?}");
                     }
                 }
                 let id = module
@@ -1422,6 +1460,7 @@ fn finish_preparation(
         vector_predicates,
         width_guards,
         window_bounds,
+        append_previous: _,
     } = phase_cleanup;
     let pack_sites = report.read_pack_sites.clone();
     let read_guards = report.proven_scalar_read_guards.clone();
@@ -1577,6 +1616,7 @@ pub(super) struct PhaseCleanup {
     vector_predicates: Option<serde_json::Value>,
     width_guards: usize,
     window_bounds: usize,
+    append_previous: Option<crate::native_artifact::program::codegen::append_run::Previous>,
 }
 
 fn optimize_phase(
@@ -1626,17 +1666,36 @@ fn optimize_phase(
     } else {
         None
     };
+    let mut append_previous = None;
     if no_growth.is_some() && std::env::var_os("MECH_CHECKED_APPEND_RUN").is_some() {
-        let outcome = crate::native_artifact::program::codegen::append_run::optimize(
-            context,
-            word_loops.machine_header,
-            std::env::var_os("MECH_SPLIT_APPEND_DESCRIPTORS")
-                .map(|value| (input_words, value == "all")),
-            report_diagnostics
-                && isa.name() == "aarch64"
-                && isa.endianness() == cranelift_codegen::ir::Endianness::Little
-                && std::env::var_os("MECH_PAIR_CHECKED_APPENDS").is_some(),
-        );
+        let packet = std::env::var_os("MECH_SPLIT_APPEND_DESCRIPTORS")
+            .map(|value| (input_words, value == "all"));
+        let paired = report_diagnostics
+            && isa.name() == "aarch64"
+            && isa.endianness() == cranelift_codegen::ir::Endianness::Little
+            && std::env::var_os("MECH_PAIR_CHECKED_APPENDS").is_some();
+        let outcome = if std::env::var_os("MECH_FORWARD_PREVIOUS_APPEND").is_some()
+            && let Some(contract) = no_growth
+        {
+            crate::native_artifact::program::codegen::append_run::optimize_with_previous(
+                context,
+                word_loops.machine_header,
+                packet,
+                paired,
+                // The private constructor proved this exact append-only phase.
+                // The numeric proof below additionally excludes indexed writes.
+                // Unsupported recurrences retain the checked implementation.
+                contract,
+                &mut append_previous,
+            )
+        } else {
+            crate::native_artifact::program::codegen::append_run::optimize(
+                context,
+                word_loops.machine_header,
+                packet,
+                paired,
+            )
+        };
         if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!("{symbol} checked append run: {outcome:?}");
         }
@@ -1843,5 +1902,6 @@ fn optimize_phase(
         vector_predicates,
         width_guards,
         window_bounds,
+        append_previous,
     })
 }
