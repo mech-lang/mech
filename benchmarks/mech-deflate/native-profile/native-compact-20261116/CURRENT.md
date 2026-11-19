@@ -1,10 +1,14 @@
 # PR #995 current status
 
-**Active objective: earn the 63rd libdeflate runtime win while preserving every existing peer win and all 81 Roc wins.** The qualified score is still **81/81 Roc, 62/81 libdeflate**, with the same 63,532 B encoder. Size and compiler-build improvements do not meet this runtime target. [Latest runtime mechanisms, repairs and raw observations](evidence/previous-dp-cost-20261119/README.md).
+**Active objective: earn the 63rd libdeflate runtime win while preserving every existing peer win and all 81 Roc wins.** The qualified selection remains **63,532 B, 81/81 Roc and 62/81 libdeflate**. No experiment below earns the 63rd win.
 
-Compiler source **`96b1f1ebc6214f57af22636721f8bd5a639bbc5a`** now includes opt-in previous-DP-value forwarding, entry seeding, late cleanup and a narrow-cost repair. Its default reproduces the exact qualified 63,532 B artifacts. The best seeded cleanup discovery probes put natural 4 KiB at about **1.04× libdeflate**, with no new qualified win. Both promising versions and all adverse repairs remain available. [Source, broad discovery, checks, build timings and portable evidence](evidence/previous-dp-cost-20261119/README.md).
+Current compiler implementation **`4ebb148ada9311ec9caa976bd7b87e92345c309f`** adds opt-in reuse of previously compared immutable bytes, retaining the later checked defaults. It includes the general previous-DP-cost forwarding from `96b1f1ebc`. Disabled mode reproduces the exact qualified artifacts. The codec and canonical bytecode are unchanged; no LLVM dependency is added.
 
-Latest matched complete builds from this source are **2.216559 s** for the selected encoder, **2.219409 s** for the 63,548 B wide recurrence, **2.221740 s** for the 63,564 B narrow recurrence, **2.990605 s** for Roc and **0.483321 s** for C. Ten balanced fresh-process orders include final executable linking, with support and compilers prebuilt for every actor. Strip is separate. Selected-build paired ratios are **0.740679× Roc / 4.578593× C**. No new compile-time gain is inferred from historical cohorts.
+The latest clean nineteen-case, two-order discovery panel puts the promising byte candidates at **1.040–1.044× libdeflate** on natural 4 KiB. They remain about 2–3% faster than the same-run retained control, but byte reuse does not establish an additional gain over DP forwarding alone. Narrow/hash combinations lose existing peer wins and remain unselected. The remaining candidate-specific time reduction to parity is approximately **3.8–4.2%**. [Source, all positive/adverse results, raw observations and portable reproduction](evidence/compared-byte-reuse-20261119/README.md).
+
+Latest complete builds: retained **2.217253 s**, byte-wide **2.215713 s**, byte-complements **2.220901 s**, Roc **2.987624 s**, C **0.481916 s**. Ten balanced fresh-process orders include final executable linking, with compilers and support prebuilt equally. Strip is separate; the Mech executable remains **276,072 B** after stripping. Retained paired build ratios are **0.742268× Roc / 4.600109× C**. No established compile-time change is claimed.
+
+The evidence verifies **14 source emissions, 18 runtime orders, ten complete-build orders and 6,912 native test comparisons plus three refusal fixtures**. Every timed candidate passes output/inflation/alias, failure and stack checks. No new full runtime score or recovery campaign is claimed. Earlier DP evidence remains available [here](evidence/previous-dp-cost-20261119/README.md).
 
 ## Previous source-unit cohort
 
