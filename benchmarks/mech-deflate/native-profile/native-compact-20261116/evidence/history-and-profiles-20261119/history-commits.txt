@@ -1,0 +1,80 @@
+388e1087c Add opt-in vector window address continuations and record runtime target probes
+b104d014d Emit the codebook source unit before root SSA and publish complete experimental costs
+228e8fa0d Plan typed codebook ownership before SSA and count total native construction work
+59461e46a Select the faster source-built compiler recipe with the same qualified encoder
+fa4c5a497 Qualify the checked codebook alternative and clarify the selected 63,804-byte recipe
+c697f100f Outline an experimental checked codebook phase and measure its build tradeoff
+d8faf1969 Select the 63,804-byte encoder after complete peer qualification
+91a011c73 Publish the smaller preserved-register experiment and controller census
+0536d370e Publish the checked cleanup validation ablation and source recipe
+567f6dcac Share cleanup verification rejection tests with the GPU owner suite
+d20fbef34 Combine cleanup IR validation with independent graph integrity checks
+72691d026 Qualify immutable loop-use indexing for the compact M1 recipe
+d49f735b8 Refresh graph caches before verifying route comparison fixtures
+1d1abea1b Share immutable use queries with optional loop-route indexing
+05b17faa9 Merge remote-tracking branch 'origin/codex/pr993-m3-optimization' into HEAD
+5c33bb99a Qualify the shared M1 recipe on M3 at 81 Roc and 61 libdeflate wins
+a3e0eee62 Publish the source-built 64444-byte M1 recipe and measured cleanup tradeoffs
+caa8b22ac Batch final route cleanup with fresh graph proofs between rewrites
+d8d34a66a Retain route and address simplification in the shorter final schedule
+b36950e35 Merge remote-tracking branch 'origin/codex/pr993-m3-optimization' into HEAD
+cdf5346a2 Expose ordered final cleanup without repeated specialization searches
+865f19927 Verify the shared M1 encoder with the integrated M3 compiler
+06de8a5c1 Record exact source builds and timings for the recovered heap recipe
+0e101e9a1 Keep checked heap setup sharing and qualify the smaller matcher layout
+a8e891836 Rebuild the qualified release setup and record paired M1 comparisons
+90d133253 Preserve source-built M1 identities and upstream release setup evidence
+a995498d3 Name and verify the source-built M1 encoder recipes
+6b07faeb6 Select safe defaulted reads in compact numeric phases
+4a8bfa963 Record M3 rebase comparison and preserve upstream artifact identity
+052891d35 Record complete M3 DEFLATE confirmation and preserve experiment evidence
+52e05b914 Preserve word equality scans and reuse complementary guards
+822c1dd8c Adopt compact phase packet optimizations and record M3 qualification
+b64de0028 Record the smaller heap call candidate and its Roc loss
+f5df10d57 Share owner-release call setup in the checked entry
+6cd97ac67 Skip empty parser transactions for resolved terminal misses
+7afbb20e3 Select safe defaulted reads in compact numeric phases
+0dde96551 Record M3 rebase comparison and preserve upstream artifact identity
+4b7d5066e Record complete M3 DEFLATE confirmation and preserve experiment evidence
+49c8c3417 Preserve word equality scans and reuse complementary guards
+9465eff46 Adopt compact phase packet optimizations and record M3 qualification
+b10906222 Use 16-byte equality groups in the compact matcher
+ca0c778e5 Index checked region block order
+abf6da632 Reuse match collector spill values
+bc52387f8 Select the checked default address before loading
+1e95a1634 Share the checked defaulted byte-read continuation
+2dcea43bc Fold sealed grapheme polls and replay longer statements
+cebfd544a Recover dense scorer runtime with direct branches
+648a73592 Skip constructing unused scorer variants
+4bc3a5c01 Reuse the checked continuation for dense scorer refusal
+9b5de6f46 Improve match collector fallthroughs for shared continuations
+eac2a6910 Share checked continuations with external cold returns
+06f5cb711 Measure direct SSA reads of dominating MechDeflate definitions
+6fce1ff9a Measure MechDeflate source-route forwarding
+8f0ffe737 Shrink checked encoder phases and track MechDeflate build time
+d63fdfa52 Shrink the checked encoder with collector-only phase packets
+d6d844d86 Measure sharing the checked scorer growth path
+ae1fbea04 Attribute the native encoder size gap against libdeflate
+c2e1b803d Measure and verify catalog overlap through final link
+cbcc3a803 Measure the admitted scorer cost length
+8c7cec119 Measure exact scalar entry literal lowering
+ed99ade92 Price source semantics and provisional SSA
+3cde720cd Record overlap and matched SSA timing results
+8fb7fa968 Record ordered scorer and guard propagation trials
+b05241855 Record literal rejection timings and ordered scorer regressions
+d03f097b0 Record checked scorer size and runtime qualification
+176a80bde Record control-flow reuse, matched builds and next measured targets
+204656da9 Reuse known control flow in adjacent cleanup verifications
+f96c1d4fd Record matched ASCII scanner and native cleanup evidence
+7a0b3127c Count repeated fixed-literal segmentation
+5a6c58163 Record failure-return, frame-copy and parser qualification
+e8b2bb4f2 Record the fixed-encoder halfword mapping rejection
+ca131d29a Record statement replay and matched Roc parser timings
+9abacf0cc Correct the checked-read outline worker binding
+61f012dd1 Record matched verifier reuse and the checked-read outline screen
+fcb818e64 Reuse verification after a no-op constant-phi pass
+d1a9ae0c3 Record matched function-replay build and parser evidence
+ff7c1dbc9 Lead the scorecard with matched deployment measurements
+f68f93c66 Record checked scalar-demand and CFG reuse limits
+3819f8850 Replay checked variable-definition winners in the one-shot parser
+d3c120366 Attribute exclusive native work and record the fixed-worker sentinel study

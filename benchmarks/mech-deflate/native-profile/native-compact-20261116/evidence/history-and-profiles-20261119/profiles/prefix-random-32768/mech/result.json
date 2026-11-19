@@ -1,0 +1,68 @@
+{
+  "case": "prefix-random-32768",
+  "aliases": [
+    "prefix-random-32768"
+  ],
+  "actor": "mech",
+  "worker_sha256": "5afce59aa83c03df81c693d78e9a65f17df1c88c64a7e04c490c58ecc4fffba0",
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/preserved-registers/preserved/bound/mech-worker",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/preserved-registers/preserved/bound/metadata.json",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "sample_exit_code": 0,
+  "sample_sha256": "7c824ed8e7f22e6acc403cf3959d75ae571449318819673a80c5801d89cb3c7b",
+  "verified_calls": [
+    {
+      "borrowed_output_alias_unchanged": true,
+      "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+      "capacity": 32803,
+      "case": "prefix-random-32768",
+      "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+      "exact_reference": true,
+      "independent_inflation": true,
+      "initialized_bytes_copied": 11172,
+      "input_alias_unchanged": true,
+      "input_bytes": 32768,
+      "nonreturned_private_bytes_at_return": 0,
+      "payload_allocation_requests": 79,
+      "peak_private_payload_bytes": 6829919,
+      "prefix_bytes": 0,
+      "profile": false,
+      "raw_bytes": 32773,
+      "requested_payload_bytes": 6871251,
+      "sample": 0,
+      "seconds": 0.000746417,
+      "warmup": true,
+      "zeroed_bytes": 6558460
+    },
+    {
+      "borrowed_output_alias_unchanged": true,
+      "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+      "capacity": 32803,
+      "case": "prefix-random-32768",
+      "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+      "exact_reference": true,
+      "independent_inflation": true,
+      "initialized_bytes_copied": 11172,
+      "input_alias_unchanged": true,
+      "input_bytes": 32768,
+      "nonreturned_private_bytes_at_return": 0,
+      "payload_allocation_requests": 79,
+      "peak_private_payload_bytes": 6829919,
+      "prefix_bytes": 0,
+      "profile": true,
+      "raw_bytes": 32773,
+      "requested_payload_bytes": 6871251,
+      "sample": 1,
+      "seconds": 0.000745916,
+      "warmup": false,
+      "zeroed_bytes": 6558460
+    }
+  ],
+  "load_after": [
+    2.11572265625,
+    1.82568359375,
+    1.9228515625
+  ]
+}

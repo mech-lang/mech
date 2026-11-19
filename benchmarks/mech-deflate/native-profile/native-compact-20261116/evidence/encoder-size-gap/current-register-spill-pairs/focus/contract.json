@@ -1,0 +1,6 @@
+{
+  "scope": "diagnostic",
+  "level": 12,
+  "timing_boundary": "compression through private heap cleanup",
+  "fixture_inventory_sha256": "b6de359f4e8e5fa47c9ebed9474954f6e7b809e08d4f3b36193412492c4d9490"
+}

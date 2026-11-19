@@ -1,0 +1,7 @@
+{
+  "recipe": "m1-register-spill-pairs",
+  "manifest_sha256": "c7afeb2e5360ec868b74f641faab83357cc2fdbae9e50ecffd3e095651106966",
+  "flags_equal_actual_qualified_recipe": true,
+  "profiles_portable": true,
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299"
+}

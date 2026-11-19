@@ -1,0 +1,160 @@
+{
+  "source_commit": "388e1087c401cd3b9f87a31b10652372ab720096",
+  "qualified_reference_worker": "5afce59aa83c03df81c693d78e9a65f17df1c88c64a7e04c490c58ecc4fffba0",
+  "actors": {
+    "mech": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/preserved-registers/preserved/bound/mech-worker",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/preserved-registers/preserved/bound/metadata.json",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+      ],
+      "sha256": "5afce59aa83c03df81c693d78e9a65f17df1c88c64a7e04c490c58ecc4fffba0"
+    },
+    "libdeflate": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/libdeflate-worker",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+      ],
+      "sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2"
+    }
+  },
+  "named_losing_cases": 19,
+  "distinct_contracts": [
+    {
+      "index": 26,
+      "case": "prefix-natural-4096",
+      "aliases": [
+        "prefix-natural-4096"
+      ]
+    },
+    {
+      "index": 25,
+      "case": "prefix-natural-1024",
+      "aliases": [
+        "prefix-natural-1024",
+        "reymont-prefix-1024"
+      ]
+    },
+    {
+      "index": 52,
+      "case": "prefix-random-1048576",
+      "aliases": [
+        "prefix-random-1048576"
+      ]
+    },
+    {
+      "index": 9,
+      "case": "16384-distribution-change",
+      "aliases": [
+        "16384-distribution-change"
+      ]
+    },
+    {
+      "index": 51,
+      "case": "prefix-random-262144",
+      "aliases": [
+        "prefix-random-262144"
+      ]
+    },
+    {
+      "index": 50,
+      "case": "prefix-random-131072",
+      "aliases": [
+        "prefix-random-131072"
+      ]
+    },
+    {
+      "index": 49,
+      "case": "prefix-random-65537",
+      "aliases": [
+        "prefix-random-65537"
+      ]
+    },
+    {
+      "index": 47,
+      "case": "prefix-random-65535",
+      "aliases": [
+        "prefix-random-65535"
+      ]
+    },
+    {
+      "index": 48,
+      "case": "prefix-random-65536",
+      "aliases": [
+        "prefix-random-65536"
+      ]
+    },
+    {
+      "index": 23,
+      "case": "heldout-random-65537",
+      "aliases": [
+        "heldout-random-65537"
+      ]
+    },
+    {
+      "index": 46,
+      "case": "prefix-random-33027",
+      "aliases": [
+        "prefix-random-33027"
+      ]
+    },
+    {
+      "index": 45,
+      "case": "prefix-random-32769",
+      "aliases": [
+        "prefix-random-32769"
+      ]
+    },
+    {
+      "index": 15,
+      "case": "random-32769",
+      "aliases": [
+        "random-32769"
+      ]
+    },
+    {
+      "index": 43,
+      "case": "prefix-random-32767",
+      "aliases": [
+        "prefix-random-32767"
+      ]
+    },
+    {
+      "index": 44,
+      "case": "prefix-random-32768",
+      "aliases": [
+        "prefix-random-32768"
+      ]
+    },
+    {
+      "index": 42,
+      "case": "prefix-random-16384",
+      "aliases": [
+        "prefix-random-16384"
+      ]
+    },
+    {
+      "index": 40,
+      "case": "prefix-random-4096",
+      "aliases": [
+        "prefix-random-4096"
+      ]
+    },
+    {
+      "index": 41,
+      "case": "prefix-random-8192",
+      "aliases": [
+        "prefix-random-8192"
+      ]
+    }
+  ],
+  "scope": "Untimed diagnostic samples from repeated complete compressions. Sampling also sees excluded preparation and validation. Do not multiply fractions by qualified medians to predict elapsed savings. No changed-worker qualification.",
+  "sample_seconds": 3,
+  "interval_ms": 1,
+  "warmup_commands": 24,
+  "load_before": [
+    1.5751953125,
+    1.64111328125,
+    1.88623046875
+  ]
+}

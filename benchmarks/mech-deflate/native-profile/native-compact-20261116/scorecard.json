@@ -7370,7 +7370,7 @@
     "checked_chain_estimated_recomputation_seconds": 0.0032,
     "next": "Exact-choice body planning and one further omitted-body investigation"
   },
-  "current_matched_build": "preserved_root_registers",
+  "current_matched_build": "current_register_spill_pairs",
   "scoped_function_replay": {
     "compiler_source": "e9538f71514225abf5ca57a9fc0acab358407167",
     "control_source": "ff7c1dbc9c5059ed84d730b008847c02179fa2cf",
@@ -14224,6 +14224,45 @@
       "encoder_text_bytes": 71192
     },
     "peer_qualified_opt_in": {
+      "recipe": "m1-register-spill-pairs",
+      "source": "388e1087c401cd3b9f87a31b10652372ab720096",
+      "encoder_text_bytes": 63756,
+      "worker": "c2ffb9aa77320e29c4dc9caeb647afbc130166587a551f168ea5963c3373f63b",
+      "compiler_sha256": "6711160f915f00bb783831fc14f0144ba7949c06ea9df264edd727a62d44e715",
+      "runtime": {
+        "decision": "Retain",
+        "wins": {
+          "roc": [
+            81,
+            81
+          ],
+          "libdeflate": [
+            62,
+            62
+          ]
+        },
+        "precision_supported_libdeflate": [
+          62,
+          62
+        ]
+      },
+      "runtime_tradeoff": "Two established 1KiB slowdowns of0.6-0.9%; all individual peer wins held. See complete v3 replay.",
+      "latest_default_build": {
+        "source_through_final_link_seconds": 2.219958021072671,
+        "paired_ratios": {
+          "roc": 0.7432249118867276,
+          "libdeflate": 4.609545095050551,
+          "mech-control-reference": 0.9996832643542155
+        }
+      },
+      "evidence": "evidence/encoder-size-gap/current-register-spill-pairs/README.md"
+    },
+    "rejected": {
+      "encoder_text_bytes": 64668,
+      "qualification": "Reject",
+      "evidence": "evidence/encoder-size-gap/shared-heap-call-screen/README.md"
+    },
+    "previous_peer_qualified_opt_in": {
       "recipe": "m1-sparse-guard-rounds",
       "source": "0fb8fec13933d53d822c566f3e13dac4009c3dc1",
       "encoder_text_bytes": 63804,
@@ -14262,36 +14301,6 @@
         },
         "evidence": "evidence/early-codebook-planning/default-timing/"
       }
-    },
-    "rejected": {
-      "encoder_text_bytes": 64668,
-      "qualification": "Reject",
-      "evidence": "evidence/encoder-size-gap/shared-heap-call-screen/README.md"
-    },
-    "previous_peer_qualified_opt_in": {
-      "recipe": "m1-literal-frame-cleanup",
-      "source": "567f6dcac24b7112ad891d2e24b354a269b86dfd",
-      "encoder_text_bytes": 64444,
-      "worker": "f77ad5066a61f30cf67f714e5edc990efe295682e9de1d8bf36ee9a1a93041c6",
-      "runtime": {
-        "decision": "Retain",
-        "wins": {
-          "roc": [
-            81,
-            81
-          ],
-          "libdeflate": [
-            62,
-            62
-          ]
-        },
-        "precision_supported_libdeflate": [
-          62,
-          61
-        ]
-      },
-      "no_runtime_sacrifice_against_maintained": "unverified",
-      "evidence": "evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md"
     },
     "same_encoder_previous_compiler_recipe": {
       "recipe": "m1-preserved-root-registers",
@@ -16755,5 +16764,649 @@
     "required_time_cut_percent": 6.7857181449298976,
     "next_win_count": 63,
     "evidence": "evidence/early-codebook-emission/runtime-targets/nearest.json"
+  },
+  "current_register_spill_pairs": {
+    "status": "selected source recipe, fresh both-order runtime qualified",
+    "evidence": "evidence/encoder-size-gap/current-register-spill-pairs/README.md",
+    "result": {
+      "source_commit": "388e1087c401cd3b9f87a31b10652372ab720096",
+      "compiler_sha256": "6711160f915f00bb783831fc14f0144ba7949c06ea9df264edd727a62d44e715",
+      "object_sha256": "348c298469e92fdff8571c098f460c62253160869293bc4c0fa55dba85f757d0",
+      "metadata_sha256": "73575f54a5cbfd7ccaea79dccbed7e69960be8f5958f9b10fd8e902786806fdd",
+      "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+      "worker_sha256": "c2ffb9aa77320e29c4dc9caeb647afbc130166587a551f168ea5963c3373f63b",
+      "decision": "Retain",
+      "encoder_bytes": 63756,
+      "encoder_bytes_saved": 48,
+      "encoder_x_libdeflate": 1.7194174757281553,
+      "encoder_x_roc": 1.1050332778702163,
+      "root_bytes": 46788,
+      "root_stack_bytes": 3296,
+      "peak_stack_bytes": 4848,
+      "source_success_observations": 162,
+      "source_failure_cases": 6,
+      "source_exact_recoveries": 12,
+      "wins": [
+        {
+          "case_count": 81,
+          "order": "forward",
+          "peers": {
+            "roc": {
+              "point_estimate_wins": {
+                "mech-control": 81,
+                "mech-experiment": 81
+              },
+              "precision_supported_wins": {
+                "mech-control": 81,
+                "mech-experiment": 81
+              },
+              "lost_cases": [],
+              "gained_cases": [],
+              "distinct_contract_point_estimate_wins": {
+                "mech-control": 74,
+                "mech-experiment": 74
+              },
+              "distinct_contract_precision_supported_wins": {
+                "mech-control": 74,
+                "mech-experiment": 74
+              }
+            },
+            "libdeflate": {
+              "point_estimate_wins": {
+                "mech-control": 62,
+                "mech-experiment": 62
+              },
+              "precision_supported_wins": {
+                "mech-control": 62,
+                "mech-experiment": 62
+              },
+              "lost_cases": [],
+              "gained_cases": [],
+              "distinct_contract_point_estimate_wins": {
+                "mech-control": 56,
+                "mech-experiment": 56
+              },
+              "distinct_contract_precision_supported_wins": {
+                "mech-control": 56,
+                "mech-experiment": 56
+              }
+            }
+          }
+        },
+        {
+          "case_count": 81,
+          "order": "reverse",
+          "peers": {
+            "roc": {
+              "point_estimate_wins": {
+                "mech-control": 81,
+                "mech-experiment": 81
+              },
+              "precision_supported_wins": {
+                "mech-control": 81,
+                "mech-experiment": 81
+              },
+              "lost_cases": [],
+              "gained_cases": [],
+              "distinct_contract_point_estimate_wins": {
+                "mech-control": 74,
+                "mech-experiment": 74
+              },
+              "distinct_contract_precision_supported_wins": {
+                "mech-control": 74,
+                "mech-experiment": 74
+              }
+            },
+            "libdeflate": {
+              "point_estimate_wins": {
+                "mech-control": 62,
+                "mech-experiment": 62
+              },
+              "precision_supported_wins": {
+                "mech-control": 62,
+                "mech-experiment": 62
+              },
+              "lost_cases": [],
+              "gained_cases": [],
+              "distinct_contract_point_estimate_wins": {
+                "mech-control": 56,
+                "mech-experiment": 56
+              },
+              "distinct_contract_precision_supported_wins": {
+                "mech-control": 56,
+                "mech-experiment": 56
+              }
+            }
+          }
+        }
+      ],
+      "counter_differences": [
+        {
+          "case": "prefix-random-1048576",
+          "calls": 35,
+          "control": {
+            "instructions": 245026411,
+            "pacibsp": 35,
+            "stp": 210,
+            "stack_stores": 9698800,
+            "mov": 26964330,
+            "sub": 6180413,
+            "stur": 9698450,
+            "ldr": 11028493,
+            "payload_loads": 10186617,
+            "str": 3188609,
+            "b": 4457625,
+            "branches": 45024643,
+            "add": 24829388,
+            "cmp": 39105612,
+            "b.lo": 5739640,
+            "eor.16b": 1962,
+            "umaxp.4s": 1962,
+            "mov.d": 1962,
+            "cbnz": 1962,
+            "b.hi": 3586060,
+            "eor": 2097060,
+            "b.eq": 3719953,
+            "rbit": 1962,
+            "clz": 1962,
+            "lsr": 6697913,
+            "b.ls": 3149551,
+            "ldur": 19577552,
+            "stack_loads": 25947639,
+            "b.hs": 13075546,
+            "and": 17582861,
+            "orr": 5240528,
+            "payload_stores": 6811398,
+            "tbz": 3554518,
+            "cset": 3145605,
+            "uxtb": 2097060,
+            "tbnz": 1050527,
+            "ldrb": 4002154,
+            "lsl": 2337776,
+            "strh": 3622929,
+            "ldrh": 1525847,
+            "ccmp": 1531771,
+            "b.ne": 5640716,
+            "movk": 2097117,
+            "mul": 2140930,
+            "prfm": 2097082,
+            "cbz": 1048545,
+            "csel": 1048541,
+            "uxth": 2097082,
+            "umulh": 45840,
+            "ldp": 210,
+            "retab": 35,
+            "msub": 8509,
+            "madd": 2016
+          },
+          "paired": {
+            "instructions": 241346097,
+            "pacibsp": 35,
+            "stp": 210,
+            "stack_stores": 9698800,
+            "mov": 26964330,
+            "sub": 6180413,
+            "stur": 9698450,
+            "ldr": 11028493,
+            "payload_loads": 10186617,
+            "str": 3188609,
+            "b": 4457625,
+            "branches": 45024643,
+            "add": 24829388,
+            "cmp": 39105612,
+            "b.lo": 5739640,
+            "eor.16b": 1962,
+            "umaxp.4s": 1962,
+            "mov.d": 1962,
+            "cbnz": 1962,
+            "b.hi": 3586060,
+            "eor": 2097060,
+            "b.eq": 3719953,
+            "rbit": 1962,
+            "clz": 1962,
+            "lsr": 6697913,
+            "b.ls": 3149551,
+            "ldur": 12216924,
+            "stack_loads": 22267325,
+            "b.hs": 13075546,
+            "and": 17582861,
+            "orr": 5240528,
+            "payload_stores": 6811398,
+            "tbz": 3554518,
+            "cset": 3145605,
+            "uxtb": 2097060,
+            "tbnz": 1050527,
+            "ldrb": 4002154,
+            "lsl": 2337776,
+            "strh": 3622929,
+            "ldrh": 1525847,
+            "ccmp": 1531771,
+            "b.ne": 5640716,
+            "movk": 2097117,
+            "mul": 2140930,
+            "prfm": 2097082,
+            "ldp": 3680524,
+            "cbz": 1048545,
+            "csel": 1048541,
+            "uxth": 2097082,
+            "umulh": 45840,
+            "retab": 35,
+            "msub": 8509,
+            "madd": 2016
+          },
+          "instructions_removed": 3680314,
+          "stack_load_instructions_removed": 3680314
+        },
+        {
+          "case": "prefix-random-4096",
+          "calls": 1,
+          "control": {
+            "instructions": 824100,
+            "pacibsp": 1,
+            "stp": 6,
+            "stack_stores": 33128,
+            "mov": 98249,
+            "sub": 20475,
+            "stur": 33118,
+            "ldr": 41018,
+            "payload_loads": 25733,
+            "str": 12326,
+            "b": 16441,
+            "branches": 145835,
+            "add": 75483,
+            "cmp": 125173,
+            "b.hs": 41612,
+            "ldrb": 8661,
+            "b.lo": 16753,
+            "and": 58061,
+            "lsl": 8238,
+            "ldur": 65953,
+            "stack_loads": 94115,
+            "strh": 12394,
+            "payload_stores": 24716,
+            "ldrh": 4210,
+            "ccmp": 4215,
+            "b.eq": 12659,
+            "b.ne": 16634,
+            "movk": 8188,
+            "mul": 8184,
+            "lsr": 24696,
+            "prfm": 8184,
+            "b.hi": 8854,
+            "orr": 20474,
+            "tbz": 12405,
+            "cset": 12289,
+            "uxtb": 8193,
+            "eor": 8193,
+            "cbz": 4096,
+            "tbnz": 4101,
+            "b.ls": 12280,
+            "csel": 4092,
+            "uxth": 8184,
+            "ldp": 6,
+            "retab": 1
+          },
+          "paired": {
+            "instructions": 811812,
+            "pacibsp": 1,
+            "stp": 6,
+            "stack_stores": 33128,
+            "mov": 98249,
+            "sub": 20475,
+            "stur": 33118,
+            "ldr": 41018,
+            "payload_loads": 25733,
+            "str": 12326,
+            "b": 16441,
+            "branches": 145835,
+            "add": 75483,
+            "cmp": 125173,
+            "b.hs": 41612,
+            "ldrb": 8661,
+            "b.lo": 16753,
+            "and": 58061,
+            "lsl": 8238,
+            "ldur": 41377,
+            "stack_loads": 81827,
+            "strh": 12394,
+            "payload_stores": 24716,
+            "ldrh": 4210,
+            "ccmp": 4215,
+            "b.eq": 12659,
+            "b.ne": 16634,
+            "movk": 8188,
+            "mul": 8184,
+            "lsr": 24696,
+            "prfm": 8184,
+            "b.hi": 8854,
+            "ldp": 12294,
+            "orr": 20474,
+            "tbz": 12405,
+            "cset": 12289,
+            "uxtb": 8193,
+            "eor": 8193,
+            "cbz": 4096,
+            "tbnz": 4101,
+            "b.ls": 12280,
+            "csel": 4092,
+            "uxth": 8184,
+            "retab": 1
+          },
+          "instructions_removed": 12288,
+          "stack_load_instructions_removed": 12288
+        },
+        {
+          "case": "prefix-natural-4096",
+          "calls": 1,
+          "control": {
+            "instructions": 1520054,
+            "pacibsp": 1,
+            "stp": 6,
+            "stack_stores": 39683,
+            "mov": 146885,
+            "sub": 73178,
+            "stur": 39673,
+            "ldr": 75587,
+            "payload_loads": 94214,
+            "str": 16624,
+            "b": 20581,
+            "branches": 281929,
+            "add": 169344,
+            "cmp": 236063,
+            "b.lo": 41081,
+            "eor.16b": 7038,
+            "umaxp.4s": 7038,
+            "mov.d": 7038,
+            "cbnz": 7079,
+            "b.ls": 24965,
+            "b.hi": 16473,
+            "eor": 15508,
+            "b.eq": 27256,
+            "rbit": 5561,
+            "clz": 5561,
+            "lsr": 26701,
+            "ldur": 115744,
+            "stack_loads": 143044,
+            "b.hs": 77418,
+            "and": 94469,
+            "orr": 24159,
+            "payload_stores": 36292,
+            "tbz": 26357,
+            "cset": 17772,
+            "uxtb": 13714,
+            "tbnz": 9621,
+            "ldrb": 34353,
+            "lsl": 15381,
+            "strh": 19672,
+            "ldrh": 11568,
+            "ccmp": 22691,
+            "b.ne": 27006,
+            "movk": 8145,
+            "mul": 8184,
+            "prfm": 8184,
+            "cbz": 4092,
+            "csel": 4092,
+            "uxth": 8184,
+            "ldp": 6,
+            "retab": 1
+          },
+          "paired": {
+            "instructions": 1508125,
+            "pacibsp": 1,
+            "stp": 6,
+            "stack_stores": 39683,
+            "mov": 146885,
+            "sub": 73178,
+            "stur": 39673,
+            "ldr": 75587,
+            "payload_loads": 94214,
+            "str": 16624,
+            "b": 20581,
+            "branches": 281929,
+            "add": 169344,
+            "cmp": 236063,
+            "b.lo": 41081,
+            "eor.16b": 7038,
+            "umaxp.4s": 7038,
+            "mov.d": 7038,
+            "cbnz": 7079,
+            "b.ls": 24965,
+            "b.hi": 16473,
+            "eor": 15508,
+            "b.eq": 27256,
+            "rbit": 5561,
+            "clz": 5561,
+            "lsr": 26701,
+            "ldur": 91886,
+            "stack_loads": 131115,
+            "b.hs": 77418,
+            "and": 94469,
+            "orr": 24159,
+            "payload_stores": 36292,
+            "tbz": 26357,
+            "cset": 17772,
+            "uxtb": 13714,
+            "tbnz": 9621,
+            "ldrb": 34353,
+            "lsl": 15381,
+            "strh": 19672,
+            "ldrh": 11568,
+            "ccmp": 22691,
+            "b.ne": 27006,
+            "movk": 8145,
+            "mul": 8184,
+            "prfm": 8184,
+            "ldp": 11935,
+            "cbz": 4092,
+            "csel": 4092,
+            "uxth": 8184,
+            "retab": 1
+          },
+          "instructions_removed": 11929,
+          "stack_load_instructions_removed": 11929
+        }
+      ],
+      "complete_builds": {
+        "plan_sha256": "3e6e1d469366361f36cab0fb348e521d34da075ad4a78aac372d01c87c2ef551",
+        "medians": {
+          "mech-control-reference": {
+            "source": 2.184789062710479,
+            "link": 0.0359179163351655,
+            "source_through_link": 2.221099062357098,
+            "strip": 0.0108667085878551,
+            "source_through_strip": 2.232102853944525
+          },
+          "mech-current-spill-pairs": {
+            "source": 2.184327041497454,
+            "link": 0.035492500057443976,
+            "source_through_link": 2.219958021072671,
+            "strip": 0.010864895535632968,
+            "source_through_strip": 2.2311455835588276
+          },
+          "roc": {
+            "source": 2.949136145878583,
+            "link": 0.03495137463323772,
+            "source_through_link": 2.9843746665865183,
+            "strip": 0.010764957871288061,
+            "source_through_strip": 2.995336687657982
+          },
+          "libdeflate": {
+            "source": 0.4466365419793874,
+            "link": 0.03465116652660072,
+            "source_through_link": 0.48160252114757895,
+            "strip": 0.010734249837696552,
+            "source_through_strip": 0.49253431241959333
+          }
+        },
+        "phases": {
+          "mech-control-reference": {
+            "parse": 0.709837021,
+            "catalog": 2.1479e-05,
+            "frontend": 0.2187045835,
+            "artifact": 0.0068296245,
+            "encode": 0.002547208,
+            "native": 1.2181235415
+          },
+          "mech-current-spill-pairs": {
+            "parse": 0.7098135415,
+            "catalog": 2.30205e-05,
+            "frontend": 0.21797352050000002,
+            "artifact": 0.006830271,
+            "encode": 0.0025427495,
+            "native": 1.219664521
+          }
+        },
+        "paired_ratios": {
+          "mech-control-reference": {
+            "roc": 0.7439543509658237,
+            "libdeflate": 4.612097410660644,
+            "mech-control-reference": 1.0
+          },
+          "mech-current-spill-pairs": {
+            "roc": 0.7432249118867276,
+            "libdeflate": 4.609545095050551,
+            "mech-control-reference": 0.9996832643542155
+          }
+        },
+        "source_commit": "388e1087c401cd3b9f87a31b10652372ab720096",
+        "compiler_sha256": "6711160f915f00bb783831fc14f0144ba7949c06ea9df264edd727a62d44e715",
+        "trials": 8,
+        "source_cpu_seconds": {
+          "mech-control-reference": 2.2447860000000004,
+          "mech-current-spill-pairs": 2.2448620000000004,
+          "roc": 2.9415995,
+          "libdeflate": 0.44317949999999995
+        },
+        "source_rss_bytes": {
+          "mech-control-reference": 392806400.0,
+          "mech-current-spill-pairs": 393076736.0,
+          "roc": 392519680.0,
+          "libdeflate": 71540736.0
+        },
+        "stripped_executables": {
+          "mech-control-reference": {
+            "bytes": 276072,
+            "sha256": "95c583c67e0c25c7179a9affe6b3d9ecde604ed0be43f9ec49ab6dc948e66fb5"
+          },
+          "mech-current-spill-pairs": {
+            "bytes": 276072,
+            "sha256": "38251de381d9c1e63a927d73bf1bc51483ea1f1b4dc9827ad87d4c1ed6d08f4b"
+          },
+          "roc": {
+            "bytes": 191912,
+            "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+          },
+          "libdeflate": {
+            "bytes": 155752,
+            "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+          }
+        },
+        "paired_ms_pairs_vs_control": -0.7035625167191029,
+        "pairs_faster_than_control": 4,
+        "timing_boundary": "Fresh process, original encoder source through native artifact and final deployment link; fixed support prebuilt for every actor; strip is reported separately."
+      },
+      "runtime_qualification_policy": 3,
+      "recipe": "m1-register-spill-pairs",
+      "limitation": "No new C win. Keep working on remaining collector checks and the scorer canary; instruction-count changes are untimed diagnostics."
+    },
+    "matched_deployment": {
+      "plan_sha256": "3e6e1d469366361f36cab0fb348e521d34da075ad4a78aac372d01c87c2ef551",
+      "medians": {
+        "mech-control-reference": {
+          "source": 2.184789062710479,
+          "link": 0.0359179163351655,
+          "source_through_link": 2.221099062357098,
+          "strip": 0.0108667085878551,
+          "source_through_strip": 2.232102853944525
+        },
+        "mech-current-spill-pairs": {
+          "source": 2.184327041497454,
+          "link": 0.035492500057443976,
+          "source_through_link": 2.219958021072671,
+          "strip": 0.010864895535632968,
+          "source_through_strip": 2.2311455835588276
+        },
+        "roc": {
+          "source": 2.949136145878583,
+          "link": 0.03495137463323772,
+          "source_through_link": 2.9843746665865183,
+          "strip": 0.010764957871288061,
+          "source_through_strip": 2.995336687657982
+        },
+        "libdeflate": {
+          "source": 0.4466365419793874,
+          "link": 0.03465116652660072,
+          "source_through_link": 0.48160252114757895,
+          "strip": 0.010734249837696552,
+          "source_through_strip": 0.49253431241959333
+        }
+      },
+      "phases": {
+        "mech-control-reference": {
+          "parse": 0.709837021,
+          "catalog": 2.1479e-05,
+          "frontend": 0.2187045835,
+          "artifact": 0.0068296245,
+          "encode": 0.002547208,
+          "native": 1.2181235415
+        },
+        "mech-current-spill-pairs": {
+          "parse": 0.7098135415,
+          "catalog": 2.30205e-05,
+          "frontend": 0.21797352050000002,
+          "artifact": 0.006830271,
+          "encode": 0.0025427495,
+          "native": 1.219664521
+        }
+      },
+      "paired_ratios": {
+        "mech-control-reference": {
+          "roc": 0.7439543509658237,
+          "libdeflate": 4.612097410660644,
+          "mech-control-reference": 1.0
+        },
+        "mech-current-spill-pairs": {
+          "roc": 0.7432249118867276,
+          "libdeflate": 4.609545095050551,
+          "mech-control-reference": 0.9996832643542155
+        }
+      },
+      "source_commit": "388e1087c401cd3b9f87a31b10652372ab720096",
+      "compiler_sha256": "6711160f915f00bb783831fc14f0144ba7949c06ea9df264edd727a62d44e715",
+      "trials": 8,
+      "source_cpu_seconds": {
+        "mech-control-reference": 2.2447860000000004,
+        "mech-current-spill-pairs": 2.2448620000000004,
+        "roc": 2.9415995,
+        "libdeflate": 0.44317949999999995
+      },
+      "source_rss_bytes": {
+        "mech-control-reference": 392806400.0,
+        "mech-current-spill-pairs": 393076736.0,
+        "roc": 392519680.0,
+        "libdeflate": 71540736.0
+      },
+      "stripped_executables": {
+        "mech-control-reference": {
+          "bytes": 276072,
+          "sha256": "95c583c67e0c25c7179a9affe6b3d9ecde604ed0be43f9ec49ab6dc948e66fb5"
+        },
+        "mech-current-spill-pairs": {
+          "bytes": 276072,
+          "sha256": "38251de381d9c1e63a927d73bf1bc51483ea1f1b4dc9827ad87d4c1ed6d08f4b"
+        },
+        "roc": {
+          "bytes": 191912,
+          "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+        },
+        "libdeflate": {
+          "bytes": 155752,
+          "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+        }
+      },
+      "paired_ms_pairs_vs_control": -0.7035625167191029,
+      "pairs_faster_than_control": 4,
+      "timing_boundary": "Fresh process, original encoder source through native artifact and final deployment link; fixed support prebuilt for every actor; strip is reported separately."
+    }
   }
 }

@@ -1,0 +1,36 @@
+{
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "variants": [
+    {
+      "mode": "normal",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-runtime-target/vector-pointers/compiler/6711160f915f00bb/compile_profile",
+        "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-runtime-target/retest-register-spills/portable-source-replay/normal/frontend",
+        "compact"
+      ],
+      "compiler_sha256": "6711160f915f00bb783831fc14f0144ba7949c06ea9df264edd727a62d44e715",
+      "artifacts": {
+        "program.o": "348c298469e92fdff8571c098f460c62253160869293bc4c0fa55dba85f757d0",
+        "metadata.json": "73575f54a5cbfd7ccaea79dccbed7e69960be8f5958f9b10fd8e902786806fdd",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      }
+    },
+    {
+      "mode": "checked",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-runtime-target/vector-pointers/compiler/6711160f915f00bb/compile_profile",
+        "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-runtime-target/retest-register-spills/portable-source-replay/checked/frontend",
+        "compact"
+      ],
+      "compiler_sha256": "6711160f915f00bb783831fc14f0144ba7949c06ea9df264edd727a62d44e715",
+      "artifacts": {
+        "program.o": "348c298469e92fdff8571c098f460c62253160869293bc4c0fa55dba85f757d0",
+        "metadata.json": "73575f54a5cbfd7ccaea79dccbed7e69960be8f5958f9b10fd8e902786806fdd",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      }
+    }
+  ],
+  "runtime_wins": "not measured by this replay"
+}

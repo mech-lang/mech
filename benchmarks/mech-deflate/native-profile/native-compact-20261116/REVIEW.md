@@ -11,20 +11,22 @@ git fetch origin codex/pr993-m3-optimization
 git switch -c codex/review-native-compact origin/codex/pr993-m3-optimization
 ```
 
-The selected smaller M1 recipe is **63,804 B**, named
-`m1-sparse-guard-rounds`. It reproduces the same qualified worker as
-`m1-preserved-root-registers` and holds **81/81 Roc and 62/81 libdeflate** in
-both complete orders, with all those wins supported at the configured precision.
-Its earlier matched source-through-final-link build is **2.205 s**. The
-separate guard-scheduler cohort saved a paired 34 ms in eight comparisons. The next runtime
-target is 63 C wins. See [CURRENT.md](CURRENT.md) for the full current scorecard.
+The selected M1 recipe is **63,756 B**, named `m1-register-spill-pairs`.
+Its fresh complete orders hold every prior peer win and **81/81 Roc / 62/81
+libdeflate**, with all wins precision-supported. It saves 48 B from the
+previous 63,804 B encoder by combining allocator spill pairing with current
+packet and spill improvements. Two 1 KiB cases slow 0.6–0.9% and still win,
+which the current policy allows. Its matched complete build is **2.219958 s**,
+**0.74322× Roc / 4.60955× C**, effectively unchanged from its same-compiler
+reference. See the [fresh source recipe and raw qualification](evidence/encoder-size-gap/current-register-spill-pairs/README.md).
+The next runtime milestone remains 63 C wins.
 
 The newer `m1-checked-codebook-phase` recipe is a qualified **64,444 B**
 alternative: it holds the same peer wins and, in its pre-sparse-rounds cohort,
 saves a paired 14 ms of complete
 build time, and uses 160 B less peak stack, at a 640 B encoder cost. It is a
 different object from the earlier 64,444 B literal-frame recipe. The smaller
-63,804 B recipe stays selected. Both named recipes rebuild from this PR's
+63,756 B paired recipe is selected. Both named recipes rebuild from this PR's
 compiler source and the unchanged original Mech program.
 
 Continue reducing emitted code and complete build time toward
@@ -48,7 +50,7 @@ instructions. However, the whole object grows to 69,828 B, complete build takes
 2.277083 s versus 2.209673 s selected in the same ten-trial cohort, and stack
 is 5,808 B versus the 5,280 B ceiling. Correctness, errors and recovery pass;
 full runtime qualification has not been performed. Keep this experiment for
-repair and keep the 63,804 B / 81 Roc / 62 C worker selected.
+repair and keep the qualified 63,756 B / 81 Roc / 62 C paired worker selected.
 
 The next runtime target is **`prefix-natural-4096`**, the closest remaining
 qualified loss to libdeflate. Its paired ratios are 1.04960× and 1.07280×.
@@ -66,7 +68,18 @@ faster reverse in a single-case probe, still 1.06269× / 1.06941× C. Both new
 workers pass outputs, checked failures, recovery and the 4,848 B stack capture;
 neither has full runtime qualification or a new compile-time claim.
 
-Next, remove the ending-pointer transport: the backend currently prepares the
+The current runtime priority comes from the
+[19-mechanism history audit and all-loss profiles](evidence/history-and-profiles-20261119/README.md):
+investigate the shared collector on large random input, retaining natural
+4 KiB as a next-win check. It accounts for 72.5% of encoder samples on 1 MiB
+and still executes 25.95 million stack-load instructions. The first historical
+retest, allocator spill pairing, is now qualified and selected: it saves 48 B
+and 3.68 million executed load instructions on 1 MiB while preserving every
+peer win. Its random-input latency gain is small and inconsistent; branches
+and stores are unchanged. Trace current hot word/root/link checks and their
+source range facts next. Keep the full size, stack and build accounting.
+
+The secondary cursor repair is to remove ending-pointer transport: the backend currently prepares the
 scalar remainder address on every vector iteration. Reuse the admitted
 invariant base on the exit instead, then check the actual source-built code
 and remeasure. Keep the present variants and their adverse results as controls.

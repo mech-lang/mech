@@ -1,0 +1,10 @@
+{
+  "profiles": 36,
+  "named_cases": 19,
+  "distinct_contracts": 18,
+  "load_after": [
+    1.84326171875,
+    1.78173828125,
+    1.90185546875
+  ]
+}

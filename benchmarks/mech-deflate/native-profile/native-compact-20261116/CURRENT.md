@@ -2,6 +2,29 @@
 
 ## Current Apple M1 result
 
+The selected recipe is **`m1-register-spill-pairs`**: **63,756 B encoder text**, **81/81 Roc and 62/81 libdeflate wins in both complete orders**, including all prior individual wins and precision support for all 81/62. The exact fixed-support worker is `c2ffb9aa77320e29c4dc9caeb647afbc130166587a551f168ea5963c3373f63b`. Original Mech source and bytecode remain unchanged; no LLVM dependency is added.
+
+This combines the historical allocator spill-pair feature with current scoped packets, spill forwarding and the sparse guard scheduler. It saves **48 B** from the previous selected encoder. Two 1 KiB cases slow by roughly 0.6–0.9% while retaining their wins; policy v3 accepts them. There is no 63rd C win.
+
+| Actor | Encoder text | Source through final link | Through strip | Stripped executable |
+| --- | ---: | ---: | ---: | ---: |
+| Prior selected, same compiler | 63,804 B | 2.221099 s | 2.232103 s | 276,072 B |
+| Current spill pairs | 63,756 B | 2.219958 s | 2.231146 s | 276,072 B |
+| Roc | 57,696 B | 2.984375 s | 2.995337 s | 191,912 B |
+| libdeflate | 37,080 B | 0.481603 s | 0.492534 s | 155,752 B |
+
+Eight balanced fresh-process builds per actor include final linking with fixed support prebuilt. Mech is **0.74322× Roc** and **4.60955× C** in paired complete-build time. Against the same-compiler reference it is **0.999683×**, 4/8 faster and a paired 0.704 ms reduction; treat time as unchanged. Previous cohort medians below remain historical.
+
+The checked root stays **46,788 B**, frame **3,296 B**, peak active stack **4,848 B**, stripped executable **276,072 B**. Both allocation-checker modes reproduce the candidate. All 162 outputs, six failures and 12 recoveries pass. Fresh complete runtime orders are required and recorded for this new worker.
+
+Current Mech phase medians: **0.709814 s parse**, **0.217974 s semantics**, **0.006830 s artifact**, **0.002543 s encode**, **1.219665 s native**; final link **0.035493 s**. Catalog join wait is 23 microseconds, overlapping catalog work with parsing. Independent medians need not add.
+
+The encoder is **1.719× C / 1.105× Roc**, still **26,676 B** above C. Complete build is still **4.610× C**. Keep working toward 1× libdeflate while preserving every 81 Roc / 62 C win.
+
+[Source recipe, fresh full runtime, matched complete builds, raw data, adverse cases and replay](evidence/encoder-size-gap/current-register-spill-pairs/README.md)
+
+## Previous 63,804 B reference and compiler cohorts
+
 The selected compiler recipe is **`m1-sparse-guard-rounds`**, producing the same
 qualified **63,804 B** encoder as `m1-preserved-root-registers`: **1.106× Roc**
 and **1.721× libdeflate**. The checked entry remains **46,788 B**, peak active
@@ -59,6 +82,28 @@ total code gap is **26,724 B**; the latest cohort's median C build-time gap is
 at least 81 Roc and 62 C wins and eventually more C wins.
 
 [Selected compiler source, raw builds, exact worker, source checks and verifier](evidence/encoder-size-gap/sparse-guard-rounds/README.md) · [63,804 B runtime qualification and earlier compiler cohort](evidence/encoder-size-gap/preserved-root-registers/README.md) · [Earlier literal-frame 64,444 B option](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md)
+
+## History review and runtime priorities
+
+The audit reviews 19 historical mechanisms and profiles the exact prior selected
+63,804 B Mech/C workers on all 19 remaining named C losses, covering 18 distinct
+contracts in 36 useful captures. Large random inputs expose the same hot
+collector: it has 72.5% of Mech's encoder samples on 1 MiB, versus 13.2% in
+scoring. The qualified excess there is 7.652 ms per call; natural 4 KiB's is
+25.8 microseconds. These sample shares are not elapsed phase times.
+
+The current 1 MiB collector trace executes 245.0 million instructions,
+including 25.95 million stack-load instructions. The historical allocator spill-pair
+retest is now qualified and selected above: it removes 3.68 million of those
+load instructions, keeps all peer wins and leaves the branch/store counts
+unchanged. Trace the remaining hot checks and live ranges next.
+
+Prioritize the shared random-input collector path and keep natural 4 KiB as
+the next-win check. Existing integrated mechanisms are distinguished from
+untried repairs. The review snapshots the old worker; the fresh paired recipe
+and current build/size figures are recorded above.
+
+[History, all-loss profiles, remaining costs and next experiments](evidence/history-and-profiles-20261119/README.md)
 
 ## Natural 4 KiB runtime experiment
 

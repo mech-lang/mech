@@ -1,0 +1,4 @@
+selected-current prefix-random-1048576 calls 35 instructions 245026411 branches 45024643 stack loads 25947639 stack stores 9698800
+selected-current prefix-random-4096 calls 1 instructions 824100 branches 145835 stack loads 94115 stack stores 33128
+selected-current prefix-natural-4096 calls 1 instructions 1520054 branches 281929 stack loads 143044 stack stores 39683
+Current matcher counts complete.
