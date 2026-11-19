@@ -1214,6 +1214,41 @@ fn prepare_impl<M: Module>(
         0
     };
     if !observe
+        && let Some(private) = private.filter(|contract| contract.permits(proof))
+        && vectors.is_some()
+        && std::env::var_os("MECH_COMPACT_IMMUTABLE_DEFAULTED_READS")
+            .is_some_and(|target| target == "all" || target == symbol.as_str())
+        && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
+    {
+        let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
+        let views = private
+            .immutable_fixed_arrays(proof)
+            .into_iter()
+            .filter_map(|array| {
+                let pointer_word = packet.iter().position(|&word| word == proof.view(array))?;
+                let length_word = packet
+                    .iter()
+                    .position(|&word| word == proof.view(array) + 1)?;
+                Some(View {
+                    array,
+                    pointer_word,
+                    length_word,
+                    width: proof.arrays[array].width,
+                    literal: None,
+                })
+            })
+            .collect::<Vec<_>>();
+        let rematerialize =
+            std::env::var_os("MECH_COMPACT_REMATERIALIZE_IMMUTABLE_READS").is_some();
+        let (folded, immutable) = cfg_cleanup::defaulted_loads::fold_immutable(
+            module,
+            &mut context,
+            &loads,
+            &views,
+            rematerialize,
+        )?;
+        eprintln!("{symbol} defaulted loads folded: {folded}, immutable: {immutable}");
+    } else if !observe
         && private.is_some()
         && vectors.is_some()
         && std::env::var_os("MECH_COMPACT_SELECT_PHASE_DEFAULTED_LOADS")
