@@ -1,0 +1,18 @@
+{
+  "before-cleanup.clif": {
+    "layout_blocks": 16157,
+    "layout_instructions": 42255,
+    "scope": "root snapshot only; not total constructed work across helpers"
+  },
+  "after-cleanup.clif": {
+    "layout_blocks": 8750,
+    "layout_instructions": 15172,
+    "scope": "root snapshot only; not total constructed work across helpers"
+  },
+  "root_allocated_values_before_compaction": [
+    831378
+  ],
+  "root_retained_values_after_compaction": [
+    122162
+  ]
+}

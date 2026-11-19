@@ -33,6 +33,27 @@ keep the ordinary resource-accounting limitations explicit. The rebuild recipe
 uses no external LLVM executable. Do not substitute old M3/LLVM measurements for
 the current Apple M1 comparisons.
 
+## Current architecture priority
+
+Move the qualified codebook boundary into native planning before root SSA.
+The current [source-boundary discovery and baseline](evidence/early-codebook-planning/README.md)
+maps canonical sites 4119:5031, with 885 reachable sites. Early emission is not
+implemented. Its 44-input/eight-output-word interface is conservative and still
+needs typed constant, ownership, cursor, failure and continuation admission.
+Measure total work across controller plus every helper: constructed blocks and
+instructions, allocated/peak SSA, maximum unit, CFG/dominance and validations,
+whole-encoder bytes, complete link-inclusive builds and RSS. Root shrinkage
+alone is insufficient. Preserve the 81/62 individual-win qualification and
+5,280 B stack ceiling for any changed worker.
+
+The independent semantic priority is sealed complete-input parser execution
+using the same grammar and exact accounting/events/identities/fallback. It has
+not started here. Conservative prepared-helper IR reuse remains a bounded
+secondary opportunity. Guard closure is complete for this step: the repaired
+scheduler saves 34 ms with the exact selected worker, and its adverse first
+version is retained in the evidence. Further small late-pass tuning is not the
+main architecture deliverable.
+
 ## Archived #993 measurements and review notes
 
 The following sections describe earlier builds. Their use of “current,”
