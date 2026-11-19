@@ -13,10 +13,14 @@ use cranelift_codegen::ir::{
     Opcode, Value, ValueDef, types,
 };
 use std::collections::BTreeSet;
+#[path = "wide_equal_mismatch/mod.rs"]
+mod mismatch;
 #[path = "wide_equal_prefix/mod.rs"]
 mod prefix;
 #[path = "wide_equal_reuse.rs"]
 mod reuse;
+#[path = "wide_equal_word.rs"]
+mod word;
 
 pub(in crate::native_artifact) struct Certificate {
     header: Block,
@@ -229,6 +233,7 @@ impl Resolve<'_> {
 }
 
 struct Trace {
+    blocks: BTreeSet<Block>,
     instructions: Vec<Inst>,
     end: Inst,
 }
@@ -246,10 +251,20 @@ fn trace(f: &Function, cert: &Certificate, start: Block, back: bool) -> Option<T
             Data::Jump { destination, .. } => {
                 block = destination.block(&f.dfg.value_lists);
                 if back && block == cert.header {
-                    return Some(Trace { instructions, end });
+                    return Some(Trace {
+                        blocks: seen,
+                        instructions,
+                        end,
+                    });
                 }
             }
-            Data::Brif { .. } if !back => return Some(Trace { instructions, end }),
+            Data::Brif { .. } if !back => {
+                return Some(Trace {
+                    blocks: seen,
+                    instructions,
+                    end,
+                });
+            }
             _ => return None,
         }
     }
@@ -262,6 +277,9 @@ struct Change {
     bases: [Value; 2],
     limit_check: Inst,
     limit_exit: Block,
+    comparison: Inst,
+    mismatch_edge: usize,
+    difference: Value,
 }
 impl Change {
     fn initial(self, f: &Function, cert: &Certificate) -> Option<Value> {
@@ -432,6 +450,9 @@ fn candidate(context: &Context, cert: &Certificate) -> Option<Change> {
         bases: bases.try_into().ok()?,
         limit_check: header.end,
         limit_exit: blocks[1 - body_index].block(&f.dfg.value_lists),
+        comparison: body.end,
+        mismatch_edge: 1 - equal_index,
+        difference,
     })
 }
 
@@ -453,12 +474,49 @@ enum SavedInterval {
     Prefix(reuse::State, u64, prefix::Handoff),
 }
 
+fn advance(
+    c: &mut FuncCursor<'_>,
+    cert: &Certificate,
+    change: Change,
+    initial: Value,
+    state: Option<SavedInterval>,
+) -> (Value, Option<(usize, reuse::State, Value)>) {
+    let mut forwarded = None;
+    let initial = match state {
+        Some(SavedInterval::Long(state, Some(end))) => {
+            state.advance_forwarded(c, &change, initial, end)
+        }
+        Some(SavedInterval::Long(state, None)) => state.advance(c, &change, initial, false),
+        Some(SavedInterval::Prefix(state, width, handoff)) => {
+            let end = state.proved_prefix_end(c, &change, initial);
+            let compare = c.func.dfg.make_block();
+            c.func.layout.append_block(compare);
+            c.ins().brif(
+                end,
+                cert.header,
+                &[BlockArg::Value(change.limit)],
+                compare,
+                &[],
+            );
+            state.record_prefix(c.func, &change, width, end);
+            let header = handoff.header;
+            let parameter = handoff.emit(c.func, end);
+            forwarded = Some((header, state, parameter));
+            c.goto_bottom(compare);
+            initial
+        }
+        None => initial,
+    };
+    (initial, forwarded)
+}
+
 fn apply(
     f: &mut Function,
     cert: &Certificate,
     change: Change,
     state: Option<SavedInterval>,
     wide_tier: bool,
+    direct: Option<mismatch::Handoff>,
 ) -> Option<(usize, reuse::State, Value)> {
     let check = f.dfg.make_block();
     let initial = f.dfg.append_block_param(check, types::I64);
@@ -485,32 +543,7 @@ fn apply(
     // loop. A sub-vector remainder likewise stays in that scalar loop.
     f.rewrite_branch_destination(change.entry, cert.header, check);
     let mut c = FuncCursor::new(f).at_bottom(check);
-    let mut forwarded = None;
-    let initial = match state {
-        Some(SavedInterval::Long(state, Some(end))) => {
-            state.advance_forwarded(&mut c, &change, initial, end)
-        }
-        Some(SavedInterval::Long(state, None)) => state.advance(&mut c, &change, initial, false),
-        Some(SavedInterval::Prefix(state, width, handoff)) => {
-            let end = state.proved_prefix_end(&mut c, &change, initial);
-            let compare = c.func.dfg.make_block();
-            c.func.layout.append_block(compare);
-            c.ins().brif(
-                end,
-                cert.header,
-                &[BlockArg::Value(change.limit)],
-                compare,
-                &[],
-            );
-            state.record_prefix(c.func, &change, width, end);
-            let header = handoff.header;
-            let parameter = handoff.emit(c.func, end);
-            forwarded = Some((header, state, parameter));
-            c.goto_bottom(compare);
-            initial
-        }
-        None => initial,
-    };
+    let (initial, forwarded) = advance(&mut c, cert, change, initial, state);
     let flags = MemFlags::new().with_endianness(Endianness::Little);
     if let Some((body, wide_at, advance)) = wide {
         let remaining = c.ins().isub(change.limit, initial);
@@ -586,13 +619,21 @@ fn apply(
     let b = c.ins().load(types::I64X2, flags, right, 0);
     let difference = c.ins().bxor(a, b);
     let differs = any_bits(&mut c, difference);
-    c.ins().brif(
-        differs,
-        cert.header,
-        &[BlockArg::Value(short_at)],
-        short_advance,
-        &[],
-    );
+    if let Some(direct) = direct {
+        let reuse = c.func.dfg.make_block();
+        c.func.layout.append_block(reuse);
+        c.ins().brif(differs, reuse, &[], short_advance, &[]);
+        c.goto_bottom(reuse);
+        direct.emit16(&mut c, short_at, difference);
+    } else {
+        c.ins().brif(
+            differs,
+            cert.header,
+            &[BlockArg::Value(short_at)],
+            short_advance,
+            &[],
+        );
+    }
     c.goto_bottom(short_advance);
     // Remaining length only decreases, so an exhausted short tier can
     // proceed straight to the scalar remainder at the current position.
@@ -615,6 +656,8 @@ pub(in crate::native_artifact) struct Outcome {
     pub wider: Vec<usize>,
     pub reused: Vec<(usize, usize)>,
     pub prefixes: Vec<(usize, usize)>,
+    pub word_reused: Vec<usize>,
+    pub mismatch_forwarded: Vec<usize>,
 }
 
 pub(in crate::native_artifact) fn optimize(
@@ -653,6 +696,13 @@ fn optimize_with_strategy(
         context.compute_domtree();
         let Some(change) = candidate(context, cert) else {
             continue;
+        };
+        let direct = if strategy != Some("word-reuse")
+            && std::env::var_os("MECH_REUSE_VECTOR_MISMATCH").is_some()
+        {
+            mismatch::plan(context, cert, change)
+        } else {
+            None
         };
         let mut saved = None;
         if reuse_prefix && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
@@ -696,14 +746,27 @@ fn optimize_with_strategy(
         if let Some(SavedInterval::Long(state, _)) = &saved {
             state.record_words(&mut context.func, cert, &change);
         }
-        if let Some((header, state, end)) = apply(&mut context.func, cert, change, saved, wide_tier)
-        {
+        let word_only = strategy == Some("word-reuse");
+        let forwarded = if word_only {
+            word::apply(&mut context.func, cert, change, saved)
+        } else {
+            let direct = direct.map(|plan| {
+                outcome.mismatch_forwarded.push(cert.source_header);
+                plan.install(&mut context.func)
+            });
+            apply(&mut context.func, cert, change, saved, wide_tier, direct)
+        };
+        if let Some((header, state, end)) = forwarded {
             continuations.insert(header, (state, end));
             outcome.prefixes.push((cert.source_header, header));
         }
-        outcome.wider.push(cert.source_header);
+        if word_only {
+            outcome.word_reused.push(cert.source_header);
+        } else {
+            outcome.wider.push(cert.source_header);
+        }
     }
-    if !outcome.wider.is_empty() {
+    if !outcome.wider.is_empty() || !outcome.word_reused.is_empty() {
         context.compute_cfg();
         context.compute_domtree();
     }

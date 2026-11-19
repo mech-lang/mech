@@ -1561,6 +1561,12 @@ fn finish_preparation(
         if window_bounds != 0 {
             summary["shared_window_bounds"] = serde_json::json!(window_bounds);
         }
+        if !equality.mismatch_forwarded.is_empty() {
+            summary["forwarded_vector_mismatches"] = serde_json::json!(equality.mismatch_forwarded);
+        }
+        if !equality.word_reused.is_empty() {
+            summary["word_reuse_loops"] = serde_json::json!(equality.word_reused);
+        }
         if !equality.reused.is_empty() {
             summary["reused_shifted_equality_loops"] = serde_json::json!(equality.reused);
         }
