@@ -1,7 +1,10 @@
 # One substantial checked codebook phase
 
 **Qualified build-speed alternative, not selected.** The selected M1 encoder remains the fully
-qualified **63,804 B** `m1-preserved-root-registers` recipe. This experiment
+qualified **63,804 B** encoder. The current compiler recipe is
+`m1-sparse-guard-rounds`, with the same emitted worker as
+`m1-preserved-root-registers`, the control measured in this earlier cohort.
+The separate 14 ms and 34 ms gains have not been measured together. This experiment
 emits **64,444 B**, 640 B more. Its object is `4f6694cf…`; it is a different
 build from the earlier qualified 64,444 B literal-frame recipe.
 

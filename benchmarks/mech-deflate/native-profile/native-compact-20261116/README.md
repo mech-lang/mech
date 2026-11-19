@@ -1,8 +1,8 @@
 # Native compact compiler review handoff
 
-The current selected smaller M1 recipe is **`m1-preserved-root-registers`**:
+The current selected M1 compiler recipe is **`m1-sparse-guard-rounds`**:
 **63,804 B**, **81/81 Roc and 62/81 libdeflate wins in both complete orders**,
-and **2.239 s** source through final link in its matched build cohort.
+and **2.206 s** source through final link in its matched build cohort.
 Use [CURRENT.md](CURRENT.md) for current identities, timings and tradeoffs;
 the earlier measurements below remain historical evidence.
 
@@ -213,6 +213,8 @@ python3 rebuild.py /tmp/mech-m1-preserved-root-registers \
   --variant m1-preserved-root-registers --mimalloc-object /path/to/mimalloc.o
 python3 rebuild.py /tmp/mech-m1-checked-codebook-phase \
   --variant m1-checked-codebook-phase --mimalloc-object /path/to/mimalloc.o
+python3 rebuild.py /tmp/mech-m1-sparse-guard-rounds \
+  --variant m1-sparse-guard-rounds --mimalloc-object /path/to/mimalloc.o
 ```
 
 The fixed allocator object enables the final executable link and linked
@@ -228,7 +230,10 @@ uses a fixed, prebuilt deployment host and records the runtime qualification
 of each archived worker separately. The `frame-copies` recipe remains the
 71,192-byte maintained control.
 
-`m1-preserved-root-registers` is the selected **63,804 B** recipe.
+`m1-sparse-guard-rounds` is the selected compiler recipe for the same
+**63,804 B** encoder as `m1-preserved-root-registers`. It saves a paired
+34 ms of complete build time with identical object, metadata, bytecode and
+fixed-support benchmark worker.
 `m1-checked-codebook-phase` is a separately qualified **64,444 B** build-speed
 alternative. Both hold 81/81 Roc and 62/81 libdeflate in both complete M1
 orders. The latter is a different object from the older 64,444 B

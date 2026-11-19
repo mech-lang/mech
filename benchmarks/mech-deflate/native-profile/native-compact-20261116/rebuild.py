@@ -15,6 +15,7 @@ M1_SOURCE_RECIPES = {
     'm1-literal-frame-cleanup': 'shared-literal-frame-cleanup',
     'm1-preserved-root-registers': 'preserved-root-registers',
     'm1-checked-codebook-phase': 'checked-codebook-phase',
+    'm1-sparse-guard-rounds': 'sparse-guard-rounds',
 }
 
 

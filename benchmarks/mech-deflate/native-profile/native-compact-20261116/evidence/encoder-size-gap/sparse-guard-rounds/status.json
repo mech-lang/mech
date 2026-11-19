@@ -1,0 +1,53 @@
+{
+  "status": "selected compiler recipe for the unchanged qualified 63,804 B encoder",
+  "recipe": "m1-sparse-guard-rounds",
+  "source_commit": "0fb8fec13933d53d822c566f3e13dac4009c3dc1",
+  "compiler_sha256": "e7bb105011a9632bc5d1033494bc46f6d883f21e989df4a9e72757d3f0384eb1",
+  "encoder_bytes": 63804,
+  "root_bytes": 46788,
+  "root_frame_bytes": 3296,
+  "peak_native_stack_bytes": 4848,
+  "stripped_executable_bytes": 276072,
+  "artifact_sha256": {
+    "encoder": "c5aab01c69ff4ed325b5149d2e1402a59477e5858f52052939d51f7eff699ef8",
+    "metadata": "c187c6f40d81d45995eaf3313c3282d41aadbd066413d7f44c0775b1c22225fa",
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+  },
+  "worker_sha256": "5afce59aa83c03df81c693d78e9a65f17df1c88c64a7e04c490c58ecc4fffba0",
+  "runtime_wins": {
+    "roc": [
+      81,
+      81
+    ],
+    "libdeflate": [
+      62,
+      62
+    ]
+  },
+  "runtime_qualification": "byte-identical 5afce59a worker from preserved-root-registers; not a new runtime timing campaign",
+  "paired_saving_ms": 33.998083556070924,
+  "saving_90pct_interval_ms": [
+    30.849208822473884,
+    38.060583639889956
+  ],
+  "faster": 8,
+  "trials": 8,
+  "source_through_final_link_seconds": 2.2059500210452825,
+  "source_through_strip_seconds": 2.2170851253904402,
+  "paired_build_ratios": {
+    "roc": 0.7413141381880202,
+    "libdeflate": 4.595896217536195,
+    "mech-control-reference": 0.9848256296971922
+  },
+  "focused_tests": {
+    "passed": 29,
+    "failed": 0
+  },
+  "named_source_checks": {
+    "verified_exact_calls": 162,
+    "failure_cases": 6,
+    "exact_recoveries": 12,
+    "worker_sha256": "a3325554db4684e1e9d6228c8278fcade68adb5e7b07838e573d375efb19b8ce",
+    "runtime_wins": "not measured for the fresh host-support worker"
+  }
+}

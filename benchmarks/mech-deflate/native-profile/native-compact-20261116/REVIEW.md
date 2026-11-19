@@ -12,13 +12,16 @@ git switch -c codex/review-native-compact origin/codex/pr993-m3-optimization
 ```
 
 The selected smaller M1 recipe is **63,804 B**, named
-`m1-preserved-root-registers`. It holds **81/81 Roc and 62/81 libdeflate** in
+`m1-sparse-guard-rounds`. It reproduces the same qualified worker as
+`m1-preserved-root-registers` and holds **81/81 Roc and 62/81 libdeflate** in
 both complete orders, with all those wins supported at the configured precision.
-Its matched source-through-final-link build is **2.239 s**. The next runtime
+Its matched source-through-final-link build is **2.206 s**, a paired
+34 ms saving in eight same-compiler comparisons. The next runtime
 target is 63 C wins. See [CURRENT.md](CURRENT.md) for the full current scorecard.
 
 The newer `m1-checked-codebook-phase` recipe is a qualified **64,444 B**
-alternative: it holds the same peer wins, saves a paired 14 ms of complete
+alternative: it holds the same peer wins and, in its pre-sparse-rounds cohort,
+saves a paired 14 ms of complete
 build time, and uses 160 B less peak stack, at a 640 B encoder cost. It is a
 different object from the earlier 64,444 B literal-frame recipe. The smaller
 63,804 B recipe stays selected. Both named recipes rebuild from this PR's

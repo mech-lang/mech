@@ -1,0 +1,9 @@
+{
+  "command": "MECH_GUARD_SPARSE_ROUNDS=1 <qualification>/guard-sparse-tests --test-threads=1",
+  "source_sha256": "7be3c03de1e3546973a926761836ac4f1218db2cd6e8d3fc774a10229396c119",
+  "passed": 29,
+  "failed": 0,
+  "gpu_compilation": "not needed for pure state tests; standalone test includes production source directly",
+  "differential_tests": "both scan modes against original map oracle",
+  "log": "tests.log"
+}

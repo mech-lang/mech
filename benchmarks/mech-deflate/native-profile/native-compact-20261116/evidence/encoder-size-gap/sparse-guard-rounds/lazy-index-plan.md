@@ -1,0 +1,5 @@
+# Repair eager dependency construction
+
+The first complete same-compiler campaign preserves all 63,804 B artifacts but costs a paired 9.011 ms (90% interval +1.231 to +14.215 ms; 2/8 faster). Source CPU rises 12.920 ms at the medians. The prototype constructs a dependency index on every previously unclosed relation set, before learning whether any new fact exists. This is paid even for a closure with no inferred facts. No new runtime win or build gain is claimed.
+
+Keep one original full scan first. Only construct the immutable inverse index if that scan infers at least one new fact and thus needs a second round. Later rounds visit only equations affected by newly inserted facts, in the original sorted/batched order. This removes eager index construction, initial known-value scanning and agenda sorting from no-inference closures. It trades away first-round inactive-row skipping. Preserve reference-equivalence, exact artifact identities and full build comparison. Stop this mechanism if this bounded repair does not establish a meaningful gain; retain both passes and raw observations as adverse evidence.

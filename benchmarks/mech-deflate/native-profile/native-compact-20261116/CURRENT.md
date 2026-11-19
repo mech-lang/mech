@@ -2,26 +2,58 @@
 
 ## Current Apple M1 result
 
-The selected smaller source-built opt-in recipe is **`m1-preserved-root-registers`**, emitting **63,804 B**: **1.106× Roc** and **1.721× libdeflate**. It saves **640 B** from the earlier qualified 64,444 B recipe. The checked entry is **46,788 B**, peak active stack is **4,848 B** and stripped deployment is **276,072 B**. The maintained frame-copies control remains 71,192 B.
+The selected compiler recipe is **`m1-sparse-guard-rounds`**, producing the same
+qualified **63,804 B** encoder as `m1-preserved-root-registers`: **1.106× Roc**
+and **1.721× libdeflate**. The checked entry remains **46,788 B**, peak active
+stack **4,848 B**, and stripped deployment **276,072 B**. The maintained
+frame-copies control remains 71,192 B.
 
-Both complete M1 orders hold **81/81 Roc and 62/81 libdeflate point wins**, covering **74/74 and 56/74 distinct contracts**. Both orders now support all 81 and 62 wins at the configured precision. V3 returns **Retain** with no rejected or unresolved peer cases. Against 64,444 B there are no established slowdowns and seven uncertain cases; all intervals remain recorded.
+The newly linked fixed-support benchmark worker is byte-for-byte identical to
+`5afce59a…`, which holds **81/81 Roc and 62/81 libdeflate wins in both complete
+M1 orders**, covering 74 and 56 distinct contracts. Both orders support all
+those wins at the configured precision. This compiler-only change reuses that
+exact worker's qualification; it does not claim a new runtime timing campaign.
+The prior 63,804 B comparison had no established candidate/control slowdowns
+and seven uncertain cases, all retained in its evidence.
 
-| Same-session Apple M1 build | Encoder text | Source to link | Source to strip | Source CPU | Source peak RSS |
+| Same-session Apple M1 build | Encoder text | Source to final link | Source through strip | Source CPU | Source peak RSS |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| 64,444 B control | 64,444 B | 2.237373 s | 2.248259 s | 2.256837 s | 393.2 MB |
-| Selected preserved registers | 63,804 B | 2.239043 s | 2.249887 s | 2.258899 s | 393.2 MB |
-| Roc | 57,696 B | 2.984684 s | 2.995503 s | 2.940046 s | 395.8 MB |
-| libdeflate | 37,080 B | 0.480820 s | 0.491652 s | 0.443041 s | 76.1 MB |
+| Full-scan control | 63,804 B | 2.240604 s | 2.251746 s | 2.263389 s | 392.4 MB |
+| Selected sparse rounds | 63,804 B | **2.205950 s** | **2.217085 s** | 2.229214 s | 392.7 MB |
+| Roc | 57,696 B | 2.977386 s | 2.988315 s | 2.935371 s | 391.7 MB |
+| libdeflate | 37,080 B | 0.480327 s | 0.491054 s | 0.442118 s | 71.5 MB |
 
-Eight balanced fresh builds use one prebuilt compiler and fixed deployment support. The selected build takes **0.7504× Roc** and **4.6546× libdeflate** time. Paired compile cost is **+1.194 ms** (3/8 faster), with a 90% interval **−6.170 to +12.180 ms**. No compile-time gain or slowdown is established; the 640 B size gain is kept. The earlier 64,444 B recipe remains a qualified alternative.
+Eight balanced fresh builds use one compiler, fixed support prebuilt for all
+actors, and include final linking. The paired saving is **33.998 ms**, **8/8
+faster**, with a 90% interval **30.849–38.061 ms saved**. The selected recipe
+takes **0.7413× Roc** and **4.5959× libdeflate** build time, and **0.98483×**
+the same-compiler full-scan control. The first eager-index prototype was
+9.011 ms slower; delaying index construction recovered the gain. Both passes
+and raw observations are published. No effects from separate cohorts are added.
 
-Compiler phase medians are **0.707869 s parsing**, **0.220838 s source semantics**, **0.006840 s artifact creation**, **0.002494 s encoding**, and **1.232968 s native emission**. Catalog join wait is **0.000019 s**, with catalog CPU still running during parsing. Link takes **0.035739 s**; strip takes **0.010787 s**. Median per-trial source time outside explicit scopes is **0.028061 s**. Independently calculated medians need not add.
+Compiler phase medians are **0.707547 s parsing**, **0.212987 s source
+semantics**, **0.006836 s artifact creation**, **0.002553 s encoding**, and
+**1.212927 s native emission**. Catalog join wait is **0.000019 s**; catalog
+work still runs during parsing. Final link takes **0.035246 s** and strip
+**0.010934 s**. Independently calculated medians need not add.
 
-The named source command rebuilds the compiler and passes **162 output checks, six injected failure cases and 12 recoveries**. Compiler source is `6dc64cff73`, binary `bf4f2ead…`. Runtime qualification belongs to the separately linked fixed-support worker `5afce59a…`; the newly rebuilt host-support worker has its own identity and no runtime-win claim.
+All **29 focused tests pass**, including both closure schedules against the
+original map reference through updates, joins and exhaustive small-state
+expiration. The named source rebuild reproduces the object, full metadata and
+bytecode and passes **162 output checks, six injected failure cases and 12
+recoveries**. Compiler source is `0fb8fec139`, binary `e7bb1050…`. Runtime
+qualification belongs to fixed-support worker `5afce59a…`; the separately
+rebuilt host-support worker `a3325554…` has its own identity and no runtime-win
+claim. The original Mech source and all runtime admission/accounting behavior
+are unchanged.
 
-The small-controller architecture is still incomplete. Three shared controller and six continuation helpers cover 53 selected sites; a **46,788 B controller** remains, exceeding C's entire encoder by **9,708 B**. The remaining total code gap is **26,724 B** and the matched C build-time gap is **1.758223 s**.
+The small-controller architecture is still incomplete. A **46,788 B checked
+controller** remains, exceeding C's entire encoder by 9,708 B. The remaining
+total code gap is **26,724 B**; this cohort's median C build-time gap is
+**1.725623 s**. The goal remains 1× libdeflate for code and build time, with
+at least 81 Roc and 62 C wins and eventually more C wins.
 
-[Current source recipe, complete runtime evidence and build data](evidence/encoder-size-gap/preserved-root-registers/README.md) · [Earlier 64,444 B result](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md)
+[Selected compiler source, raw builds, exact worker, source checks and verifier](evidence/encoder-size-gap/sparse-guard-rounds/README.md) · [63,804 B runtime qualification and earlier compiler cohort](evidence/encoder-size-gap/preserved-root-registers/README.md) · [Earlier literal-frame 64,444 B option](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md)
 
 ## Qualified checked codebook phase alternative
 
@@ -36,7 +68,8 @@ In eight matched fresh builds, source through final link is **2.245295 →
 of **12.710–18.280 ms saved**. Roc takes 2.997875 s and C 0.483540 s in this
 cohort; the experiment takes 0.74597× Roc and 4.62165× C time. Encoder text is
 1.117× Roc and 1.738× C. This is a measured build/stack gain with a 640 B code
-cost. It independently holds **81/81 Roc and 62/81 libdeflate in both complete
+cost in its earlier, pre-sparse-rounds compiler cohort. The 14 ms and newer
+34 ms effects have not been measured together and are not added. It independently holds **81/81 Roc and 62/81 libdeflate in both complete
 orders**, all supported at the configured precision, with no lost peer wins.
 V3 returns Retain. There are no established candidate/control slowdowns and
 eight uncertain timing cases. All 15 focused checked-region JIT tests pass.
@@ -251,7 +284,7 @@ The 64,668 B trial lost one Roc case in the forward sweep. Its V3 result is Reje
 | Checked-read size candidate | 71,420 B | 5,328 B peak stack. Runtime qualification pending |
 | Earlier owner-exchange size candidate | 71,288 B | Rejected by the v2 runtime gate |
 | Maintained frame-copy recipe | **71,192 B** | Compiler source below |
-| Selected smallest v3-qualified opt-in build | **63,804 B** | [Preserved-root-register source recipe and complete qualification](evidence/encoder-size-gap/preserved-root-registers/README.md) |
+| Selected smallest v3-qualified encoder and faster compiler recipe | **63,804 B** | [Sparse-rounds source recipe and exact qualified worker](evidence/encoder-size-gap/sparse-guard-rounds/README.md) |
 | Earlier qualified literal-frame option | 64,444 B | [Source, timings and tradeoffs](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md) |
 | Qualified faster checked-codebook alternative | 64,444 B | [Separate object, source and complete qualification](evidence/encoder-size-gap/checked-codebook-phase/README.md) |
 
