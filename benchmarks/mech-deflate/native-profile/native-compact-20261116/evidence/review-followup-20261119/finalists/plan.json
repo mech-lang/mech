@@ -1,0 +1,97 @@
+{
+  "cases": [
+    "empty",
+    "eight-overlap",
+    "320-overlap",
+    "prefix-periodic-1024",
+    "prefix-natural-1024",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-random-1024",
+    "prefix-random-4096",
+    "prefix-random-8192",
+    "prefix-random-16384",
+    "prefix-random-32767",
+    "prefix-random-32768",
+    "prefix-random-32769",
+    "prefix-random-65535",
+    "prefix-random-65536",
+    "prefix-random-65537",
+    "prefix-random-1048576",
+    "16384-distribution-change"
+  ],
+  "actors": [
+    "mech-control",
+    "mech-experiment",
+    "mech-vector",
+    "roc",
+    "libdeflate"
+  ],
+  "orders": [
+    "forward",
+    "reverse"
+  ],
+  "blocks_per_case": 120,
+  "timer": {
+    "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/compare-library.py",
+    "sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a"
+  },
+  "source_driver_sha256": "f5ffadd55e5458943c8eb42fdf495526a03e0d9846871090441d0c7c93276bc6",
+  "bindings": {
+    "mech-control": {
+      "mech-worker": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/placement/immutable-profiled/bound/mech-worker",
+        "sha256": "834c7a7e423a69c46483a3dae74d9450949fdf142b5ad2dede894e0da3ca8693"
+      },
+      "metadata.json": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/placement/immutable-profiled/bound/metadata.json",
+        "sha256": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d"
+      },
+      "program.o": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/placement/immutable-profiled/bound/program.o",
+        "sha256": "cf15343f1f01089d427122ce51a91ef6fa7b70ef89c50ca4db20901a8d2cefd9"
+      },
+      "runtime.json": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/placement/immutable-profiled/bound/runtime.json",
+        "sha256": "d01749f831970e3aeccec1492fbf5a694120b4f47b3d160093d549298925b044"
+      }
+    },
+    "mech-experiment": {
+      "mech-worker": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/word-current-complements-profiled/bound/mech-worker",
+        "sha256": "fab303151eca902a95986488684102fc1707ec7f8df1324ebfd9c55543cfc368"
+      },
+      "metadata.json": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/word-current-complements-profiled/bound/metadata.json",
+        "sha256": "7fde06333316d799a072ce0feae484ef98368ae8b34ac19d14458b463160af43"
+      },
+      "program.o": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/word-current-complements-profiled/bound/program.o",
+        "sha256": "6ee8da67494c577646a9601511c2a8e633d5a707b2de0332e3256dad37805b46"
+      },
+      "runtime.json": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/word-current-complements-profiled/bound/runtime.json",
+        "sha256": "31f0a718575e255e1a378d456c5d41c20136f73a8da74ff1319f1cc3ea54d877"
+      }
+    },
+    "mech-vector": {
+      "mech-worker": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/vector-mismatch-narrow-profiled/bound/mech-worker",
+        "sha256": "64c966754f5367b0ca0db31f0625519c880b57f2906fa414e5993f68eda56677"
+      },
+      "metadata.json": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/vector-mismatch-narrow-profiled/bound/metadata.json",
+        "sha256": "ea056022fc2fc34787c25bfa485bebd0e6f569f8d4f9cb7662354e501cb59ba6"
+      },
+      "program.o": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/vector-mismatch-narrow-profiled/bound/program.o",
+        "sha256": "e1b2c45f5abecfc65a1b2ee6163ed23b43d84c5476c51459ea1e433ff7ef275e"
+      },
+      "runtime.json": {
+        "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/vector-mismatch-narrow-profiled/bound/runtime.json",
+        "sha256": "c40a107ad4df3d0f30aa55f24888cebbc6aac197fb8a128cdef7b220fa50ebc5"
+      }
+    }
+  },
+  "scope": "All five actors in every block; all 120 permutations per case. Both case orders. Pairwise runtime precision only; no full-score or win promotion."
+}

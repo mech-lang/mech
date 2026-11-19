@@ -1,3 +1,5 @@
+**Follow-up:** the word/complement candidate is now fully qualified at 63,388 B with all 81/62 point and confidence wins held. [Full qualification and selection](../encoder-size-gap/word-complement-current-read-study/README.md). The discovery record below preserves the earlier state and estimates.
+
 # Vector mismatch forwarding and word-comparison repairs
 
 **Qualified selection: 63,532 B, 81/81 Roc and 62/81 libdeflate. No new promotion or 63rd win is claimed.** The next milestone is an additional C win while preserving every previous individual peer win; the eventual goal remains 1× libdeflate performance.

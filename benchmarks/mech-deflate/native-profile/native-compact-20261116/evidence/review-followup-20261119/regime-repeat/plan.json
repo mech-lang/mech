@@ -1,0 +1,76 @@
+{
+  "candidate_worker_sha256": "3625b0427631d818f3a6731202e75eca70f3ab0551b9ef74e4fbae802d2fb6e5",
+  "control_worker_sha256": "834c7a7e423a69c46483a3dae74d9450949fdf142b5ad2dede894e0da3ca8693",
+  "timer_sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a",
+  "source_driver_sha256": "12135d9abf6449339629a74ffe137ffa6088ec8a1842e94b3053fa6b73c04937",
+  "cases": [
+    "empty",
+    "eight-overlap",
+    "320-overlap",
+    "prefix-periodic-1024",
+    "prefix-natural-1024",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-random-1024",
+    "prefix-random-4096",
+    "prefix-random-8192",
+    "prefix-random-16384",
+    "prefix-random-32767",
+    "prefix-random-32768",
+    "prefix-random-32769",
+    "prefix-random-65535",
+    "prefix-random-65536",
+    "prefix-random-65537",
+    "prefix-random-1048576",
+    "16384-distribution-change"
+  ],
+  "order": "reverse",
+  "blocks_per_case": 24,
+  "adverse_original_diagnosis": {
+    "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/vector-mismatch-clean-panel-word-reuse-complements-profiled-reverse",
+    "case": "prefix-random-1048576",
+    "worker_sha256": "3625b0427631d818f3a6731202e75eca70f3ab0551b9ef74e4fbae802d2fb6e5",
+    "observations_sha256": "4afdb2030871b86f9690d2ccd3a669ebacc00a2d80cdfbac7bb230d69bc850a1",
+    "all_blocks_mech_x_roc": 1.0153144397854954,
+    "segments": {
+      "stable_first_14": {
+        "blocks": [
+          1,
+          14
+        ],
+        "median_seconds": {
+          "libdeflate": 0.020320417,
+          "mech-control": 0.027686896000000003,
+          "roc": 0.0288052915,
+          "mech-experiment": 0.0276352915
+        }
+      },
+      "transition_block": {
+        "blocks": [
+          15,
+          15
+        ],
+        "median_seconds": {
+          "mech-control": 0.027623583,
+          "libdeflate": 0.020214625,
+          "roc": 0.030642333,
+          "mech-experiment": 0.060216834
+        }
+      },
+      "later_blocks": {
+        "blocks": [
+          16,
+          24
+        ],
+        "median_seconds": {
+          "mech-control": 0.05886525,
+          "libdeflate": 0.041952042,
+          "mech-experiment": 0.057866333,
+          "roc": 0.05493
+        }
+      }
+    },
+    "decision": "Unresolved timing regime change; retain all24 blocks and repeat the affected reverse order with the exact same worker. No compiler regression or preserved Roc win is inferred from segmented data. This is the word-reuse alternative, not the qualified word-current candidate."
+  },
+  "scope": "Repeat original worker and complete affected 19-case reverse order, all 24 blocks retained in original and repeat. This secondary candidate differs from word-current/complement."
+}

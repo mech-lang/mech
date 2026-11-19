@@ -1,0 +1,13 @@
+{
+  "exit_code": 0,
+  "seconds": 1856.4089729171246,
+  "test_log_sha256": "334eccc5c1fe4d9e5a2a31dafe939436fe339d319d1bfa944ee72c4d28ca8bda",
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/program/codegen/wide_equal.rs": "0b0ba2dc549bd41f72566ce207d65964b4d32ef34091eaa616c227d33f669bd5",
+    "hosts/gpu/src/native_artifact/program/codegen/wide_equal_word.rs": "5e965d2fe69f64caadf4af6a64fa8bc4cfc677dd3ebc831ff041154378c90bd7",
+    "hosts/gpu/src/native_artifact/program/codegen/wide_equal_tests.rs": "c44ba6803bbeacc21cce171fb776a74c5eca45513b317b233a30d26a1ab7a12c",
+    "hosts/gpu/src/native_artifact/program/codegen/wide_equal_mismatch/mod.rs": "4cb3eb628369dc3ded013705b6138eadad56041c619ff667b05c700751ea7566",
+    "hosts/gpu/src/native_artifact/program/codegen/wide_equal_mismatch/tests.rs": "31094dbf3ff7a3fee15abd8bef0ca437d88e384a9352354b12118f5166f05745",
+    "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "b65a5214dac9dfc9a850b3539b962ed8fbecea12c4f3250ca34071bb45f1f70f"
+  }
+}

@@ -1,0 +1,295 @@
+function u0:0(i64, i64, i64) -> i64, i64 apple_aarch64 {
+    ss0 = explicit_slot 48, align = 8
+    ss1 = explicit_slot 48, align = 8
+    sig0 = (i64, i64, i64, i64, i64) -> i64, i64 apple_aarch64
+    sig1 = (i64, i64, i64, i64, i64, i64, i64) -> i64, i64 apple_aarch64
+    sig2 = (i64, i64, i64) -> i64 apple_aarch64
+    sig3 = (i64, i64, i64, i64, i64) -> i64 apple_aarch64
+    sig4 = (i64, i64, i64, i64, i64, i64, i64) -> i64 apple_aarch64
+    sig5 = (i64, i64) -> i64 apple_aarch64
+    sig6 = (i64, i64, i64) -> i64 apple_aarch64
+    fn0 = colocated u0:0 sig0
+    fn1 = colocated u0:1 sig1
+    fn2 = colocated u0:2 sig2
+    fn3 = colocated u0:3 sig3
+    fn4 = colocated u0:4 sig4
+    fn5 = u0:5 sig5
+    fn6 = u0:6 sig6
+
+block0(v0: i64, v1: i64, v2: i64):
+    v3 = iconst.i64 0
+    v5 = load.i64 v1+88
+    v6 = load.i64 v1+96
+    v8 = iconst.i64 0
+    v9 = iconst.i64 1
+    v10 = iconst.i64 1
+    v11 = iconst.i64 0
+    v14 = load.i64 v1
+    v15 = load.i64 v1+8
+    v16 = load.i64 v1+16
+    v17 = load.i64 v1+24
+    v18 = load.i64 v1+32
+    v19 = load.i64 v1+40
+    v20 = load.i64 v1+48
+    v21 = load.i64 v1+56
+    v22 = load.i64 v1+64
+    v23 = load.i64 v1+72
+    v24 = load.i64 v1+80
+    jump block6(v16)
+
+block6(v284: i64):
+    jump block8
+
+block7:
+    jump block6(v256)
+
+block8:
+    jump block10
+
+block10:
+    jump block11
+
+block11:
+    jump block12
+
+block12:
+    jump block13
+
+block13:
+    jump block14
+
+block14:
+    jump block15
+
+block15:
+    jump block16
+
+block16:
+    v58 = icmp.i64 ult v284, v15
+    jump block17
+
+block17:
+    v391 = band_imm.i8 v58, 1
+    brif v391, block20, block2
+
+block18(v317: i64):
+    jump block68
+
+block20:
+    jump block21
+
+block21:
+    v75 = iadd.i64 v14, v284
+    v76 = icmp uge v75, v14
+    v77 = iconst.i64 1
+    brif v76, block95, block94
+
+block95:
+    jump block22
+
+block94 cold:
+    v78 = iconst.i64 2837
+    store v78, v2  ; v78 = 2837
+    jump block5(v77)  ; v77 = 1
+
+block22:
+    jump block23
+
+block23:
+    jump block25
+
+block24:
+    jump block41
+
+block25:
+    jump block26
+
+block26:
+    jump block27
+
+block27:
+    jump block28
+
+block28:
+    jump block29
+
+block29:
+    v99 = icmp.i64 ult v75, v18
+    jump block30
+
+block30:
+    v392 = band_imm.i8 v99, 1
+    brif v392, block33, block32
+
+block31(v294: i64):
+    jump block40
+
+block32:
+    jump block38
+
+block33:
+    jump block34
+
+block34:
+    v116 = iadd.i64 v75, v10  ; v10 = 1
+    jump block35
+
+block35:
+    v121 = iadd_imm.i64 v116, -1
+    v126 = iadd.i64 v17, v121
+    v127 = uload8.i64 v126
+    jump block36
+
+block36:
+    jump block31(v127)
+
+block38:
+    jump block39
+
+block39:
+    jump block31(v11)  ; v11 = 0
+
+block40:
+    jump block24
+
+block41:
+    jump block42
+
+block42:
+    jump block43
+
+block43:
+    jump block45
+
+block44:
+    jump block61
+
+block45:
+    jump block46
+
+block46:
+    jump block47
+
+block47:
+    jump block48
+
+block48:
+    jump block49
+
+block49:
+    v165 = icmp.i64 ult v294, v22
+    jump block50
+
+block50:
+    v393 = band_imm.i8 v165, 1
+    brif v393, block53, block52
+
+block51(v307: i64):
+    jump block60
+
+block52:
+    jump block58
+
+block53:
+    jump block54
+
+block54:
+    v181 = iadd.i64 v294, v10  ; v10 = 1
+    jump block55
+
+block55:
+    v186 = iadd_imm.i64 v181, -1
+    v189 = imul_imm v186, 4
+    v191 = iadd.i64 v21, v189
+    v192 = uload32 v191
+    jump block56
+
+block56:
+    jump block51(v192)
+
+block58:
+    jump block59
+
+block59:
+    jump block51(v8)  ; v8 = 0
+
+block60:
+    jump block44
+
+block61:
+    v211 = iadd.i64 v307, v9  ; v9 = 1
+    v212 = icmp_imm ule v211, 0xffff_ffff
+    v213 = iconst.i64 1
+    brif v212, block136, block135
+
+block136:
+    jump block62
+
+block135 cold:
+    v214 = iconst.i64 2879
+    store v214, v2  ; v214 = 2879
+    jump block5(v213)  ; v213 = 1
+
+block62:
+    v217 = iadd.i64 v294, v10  ; v10 = 1
+    jump block63
+
+block63:
+    v222 = iadd_imm.i64 v217, -1
+    v223 = icmp ult v222, v22
+    brif v223, block139, block140
+
+block140 cold:
+    v224 = iconst.i64 0x0001_9301
+    jump block138
+
+block139:
+    v227 = imul_imm.i64 v222, 4
+    v229 = iadd.i64 v21, v227
+    jump block142
+
+block142:
+    v231 = ireduce.i32 v211
+    store v231, v229
+    jump block141
+
+block141:
+    jump block64
+
+block138 cold:
+    v232 = iconst.i64 2881
+    store v232, v2  ; v232 = 2881
+    jump block5(v224)  ; v224 = 0x0001_9301
+
+block64:
+    jump block18(v284)
+
+block68:
+    jump block71
+
+block71:
+    jump block72
+
+block72:
+    v256 = iadd.i64 v317, v10  ; v10 = 1
+    jump block152
+
+block152:
+    jump block73
+
+block73:
+    jump block74
+
+block74:
+    jump block7
+
+block5(v27: i64) cold:
+    jump block1(v27)
+
+block2:
+    return v3, v3  ; v3 = 0, v3 = 0
+
+block1(v4: i64) cold:
+    v281 = load.i64 v2
+    return v4, v281
+}

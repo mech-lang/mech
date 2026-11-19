@@ -1,0 +1,6 @@
+{
+  "derived_from": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/count-packet-matcher.py",
+  "derived_from_sha256": "229deca4a3460a7124e005623f07abf017d6fe689d98add11f28b65d907fe1d2",
+  "counter_source_sha256": "5dbe3792b2f7892d39a3ef6442060e5476cf5e72b85475ef50abb79f773e3ba0",
+  "scope": "Untimed diagnostic block counts on exact selected histogram body. No latency inference."
+}

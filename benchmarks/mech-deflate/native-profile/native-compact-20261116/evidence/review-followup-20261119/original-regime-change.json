@@ -1,0 +1,46 @@
+{
+  "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/vector-mismatch-clean-panel-word-reuse-complements-profiled-reverse",
+  "case": "prefix-random-1048576",
+  "worker_sha256": "3625b0427631d818f3a6731202e75eca70f3ab0551b9ef74e4fbae802d2fb6e5",
+  "observations_sha256": "4afdb2030871b86f9690d2ccd3a669ebacc00a2d80cdfbac7bb230d69bc850a1",
+  "all_blocks_mech_x_roc": 1.0153144397854954,
+  "segments": {
+    "stable_first_14": {
+      "blocks": [
+        1,
+        14
+      ],
+      "median_seconds": {
+        "libdeflate": 0.020320417,
+        "mech-control": 0.027686896000000003,
+        "roc": 0.0288052915,
+        "mech-experiment": 0.0276352915
+      }
+    },
+    "transition_block": {
+      "blocks": [
+        15,
+        15
+      ],
+      "median_seconds": {
+        "mech-control": 0.027623583,
+        "libdeflate": 0.020214625,
+        "roc": 0.030642333,
+        "mech-experiment": 0.060216834
+      }
+    },
+    "later_blocks": {
+      "blocks": [
+        16,
+        24
+      ],
+      "median_seconds": {
+        "mech-control": 0.05886525,
+        "libdeflate": 0.041952042,
+        "mech-experiment": 0.057866333,
+        "roc": 0.05493
+      }
+    }
+  },
+  "decision": "Unresolved timing regime change; retain all24 blocks and repeat the affected reverse order with the exact same worker. No compiler regression or preserved Roc win is inferred from segmented data. This is the word-reuse alternative, not the qualified word-current candidate."
+}
