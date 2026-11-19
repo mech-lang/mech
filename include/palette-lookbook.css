@@ -7,6 +7,12 @@
   box-sizing: border-box;
 }
 
+html, body {
+  color-scheme: dark;
+  color: var(--mech-text-body, hsl(206 24% 90%));
+  background: var(--mech-canvas, #0c1013);
+}
+
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 90px;
@@ -15,8 +21,6 @@ html {
 body {
   min-width: 320px;
   margin: 0;
-  color: var(--mech-text-body);
-  background: var(--mech-canvas);
   font-family: Lato, "Helvetica Neue", Arial, sans-serif;
   font-size: 16px;
   font-weight: 400;

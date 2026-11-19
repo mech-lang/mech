@@ -55,8 +55,9 @@ html, body {
   margin: 0;
   padding: 0;
   font-family: Inter, system-ui, sans-serif;
-  color: var(--text-primary);
-  background: var(--bg-primary);
+  color-scheme: dark;
+  color: var(--text-primary, #f3f3e6);
+  background: var(--bg-primary, #0c1013);
   scroll-behavior: smooth;
   scrollbar-color: var(--mech-scrollbar) transparent;
   scrollbar-width: thin;
