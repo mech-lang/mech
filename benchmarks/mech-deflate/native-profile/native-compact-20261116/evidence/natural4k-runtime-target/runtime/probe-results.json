@@ -1,0 +1,220 @@
+{
+  "scope": "Single-case diagnostic. Does not establish 81/62 preservation or a new 63rd win.",
+  "load_after": [
+    2.009765625,
+    1.72216796875,
+    1.68505859375
+  ],
+  "runs": [
+    {
+      "role": "control-default-scorer-layout",
+      "order": "forward",
+      "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-scorer-default-control-default-scorer-layout-forward",
+      "summary_sha256": "f367c3165a0ae7587f3947bcd56a0c946dc4a001acf0901981819a65a84cbe2e",
+      "result": {
+        "case": "prefix-natural-4096",
+        "input_bytes": 4096,
+        "reference_raw_bytes": 983,
+        "libdeflate_raw_bytes": 983,
+        "reference_capacity": 4101,
+        "libdeflate_capacity": 4101,
+        "libdeflate_same_bytes": true,
+        "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "median_seconds": {
+          "mech-control": 0.000418542,
+          "mech-experiment": 0.0004272085,
+          "roc": 0.000660229,
+          "libdeflate": 0.00038989600000000004
+        },
+        "paired_x_roc": {
+          "mech-control": 0.6355508100520159,
+          "mech-experiment": 0.6473002844483807,
+          "roc": 1.0,
+          "libdeflate": 0.5929225873346314
+        },
+        "paired_x_libdeflate": {
+          "mech-control": 1.0718950898953121,
+          "mech-experiment": 1.0917112929669177,
+          "roc": 1.6865608114126773,
+          "libdeflate": 1.0
+        },
+        "timed_calls": 384
+      }
+    },
+    {
+      "role": "control-default-scorer-layout",
+      "order": "reverse",
+      "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-scorer-default-control-default-scorer-layout-reverse",
+      "summary_sha256": "bbaf58617f6d77ea676de4d1f19e08df72790f4afe6e528f4aeebf0882982cca",
+      "result": {
+        "case": "prefix-natural-4096",
+        "input_bytes": 4096,
+        "reference_raw_bytes": 983,
+        "libdeflate_raw_bytes": 983,
+        "reference_capacity": 4101,
+        "libdeflate_capacity": 4101,
+        "libdeflate_same_bytes": true,
+        "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "median_seconds": {
+          "libdeflate": 0.0003929165,
+          "roc": 0.0006654375,
+          "mech-experiment": 0.0004288545,
+          "mech-control": 0.0004178125
+        },
+        "paired_x_roc": {
+          "libdeflate": 0.5840515972664019,
+          "roc": 1.0,
+          "mech-experiment": 0.6448108857729764,
+          "mech-control": 0.6299404538011765
+        },
+        "paired_x_libdeflate": {
+          "libdeflate": 1.0,
+          "roc": 1.7121774937015928,
+          "mech-experiment": 1.1040306863142786,
+          "mech-control": 1.0785698673705424
+        },
+        "timed_calls": 384
+      }
+    },
+    {
+      "role": "deferred-default-scorer-layout",
+      "order": "forward",
+      "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-scorer-default-deferred-default-scorer-layout-forward",
+      "summary_sha256": "e4dca92fcbcaab541d959f5e673c242cad07dcb89cffd4bcecf6fe88e0ded3f6",
+      "result": {
+        "case": "prefix-natural-4096",
+        "input_bytes": 4096,
+        "reference_raw_bytes": 983,
+        "libdeflate_raw_bytes": 983,
+        "reference_capacity": 4101,
+        "libdeflate_capacity": 4101,
+        "libdeflate_same_bytes": true,
+        "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "median_seconds": {
+          "mech-control": 0.0004161245,
+          "mech-experiment": 0.000425979,
+          "roc": 0.000661125,
+          "libdeflate": 0.0003910415
+        },
+        "paired_x_roc": {
+          "mech-control": 0.6262929188895264,
+          "mech-experiment": 0.6424881869357523,
+          "roc": 1.0,
+          "libdeflate": 0.5884730219430151
+        },
+        "paired_x_libdeflate": {
+          "mech-control": 1.064267851772776,
+          "mech-experiment": 1.0917886852559364,
+          "roc": 1.6993132441283523,
+          "libdeflate": 1.0
+        },
+        "timed_calls": 384
+      }
+    },
+    {
+      "role": "deferred-default-scorer-layout",
+      "order": "reverse",
+      "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-scorer-default-deferred-default-scorer-layout-reverse",
+      "summary_sha256": "9ddb58e32fa7180bbc780da19a8bf552e85947c9cc9b4a56797d584164a4f604",
+      "result": {
+        "case": "prefix-natural-4096",
+        "input_bytes": 4096,
+        "reference_raw_bytes": 983,
+        "libdeflate_raw_bytes": 983,
+        "reference_capacity": 4101,
+        "libdeflate_capacity": 4101,
+        "libdeflate_same_bytes": true,
+        "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "median_seconds": {
+          "libdeflate": 0.000392229,
+          "roc": 0.0006625625,
+          "mech-experiment": 0.0004271665,
+          "mech-control": 0.000418292
+        },
+        "paired_x_roc": {
+          "libdeflate": 0.5857395113693816,
+          "roc": 1.0,
+          "mech-experiment": 0.6424739857766121,
+          "mech-control": 0.6303213953877835
+        },
+        "paired_x_libdeflate": {
+          "libdeflate": 1.0,
+          "roc": 1.7072435452785695,
+          "mech-experiment": 1.0968595652265165,
+          "mech-control": 1.0761121337267745
+        },
+        "timed_calls": 384
+      }
+    },
+    {
+      "role": "encoded-default-scorer-layout",
+      "order": "forward",
+      "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-scorer-default-encoded-default-scorer-layout-forward",
+      "summary_sha256": "a1c6722a943f29bbd7ee59723c8fcb32a7cbdf7c70719e71e860f2efd760f722",
+      "result": {
+        "case": "prefix-natural-4096",
+        "input_bytes": 4096,
+        "reference_raw_bytes": 983,
+        "libdeflate_raw_bytes": 983,
+        "reference_capacity": 4101,
+        "libdeflate_capacity": 4101,
+        "libdeflate_same_bytes": true,
+        "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "median_seconds": {
+          "mech-control": 0.000414958,
+          "mech-experiment": 0.000434083,
+          "roc": 0.000662979,
+          "libdeflate": 0.000389896
+        },
+        "paired_x_roc": {
+          "mech-control": 0.6228430380177424,
+          "mech-experiment": 0.6535021053023742,
+          "roc": 1.0,
+          "libdeflate": 0.5869000250451665
+        },
+        "paired_x_libdeflate": {
+          "mech-control": 1.0612421391016464,
+          "mech-experiment": 1.1134811337792705,
+          "roc": 1.7038677071500248,
+          "libdeflate": 1.0
+        },
+        "timed_calls": 384
+      }
+    },
+    {
+      "role": "encoded-default-scorer-layout",
+      "order": "reverse",
+      "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-scorer-default-encoded-default-scorer-layout-reverse",
+      "summary_sha256": "e01f717df224a3b576d5a828a84418fe5d65ec84203d9b900382025942ccb162",
+      "result": {
+        "case": "prefix-natural-4096",
+        "input_bytes": 4096,
+        "reference_raw_bytes": 983,
+        "libdeflate_raw_bytes": 983,
+        "reference_capacity": 4101,
+        "libdeflate_capacity": 4101,
+        "libdeflate_same_bytes": true,
+        "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "median_seconds": {
+          "libdeflate": 0.00039012499999999996,
+          "roc": 0.0006627285,
+          "mech-experiment": 0.000433229,
+          "mech-control": 0.000416521
+        },
+        "paired_x_roc": {
+          "libdeflate": 0.5827550156823763,
+          "roc": 1.0,
+          "mech-experiment": 0.6523687018220296,
+          "mech-control": 0.6274316147240514
+        },
+        "paired_x_libdeflate": {
+          "libdeflate": 1.0,
+          "roc": 1.7159869466400923,
+          "mech-experiment": 1.1194561767231452,
+          "mech-control": 1.0766644607757876
+        },
+        "timed_calls": 384
+      }
+    }
+  ]
+}

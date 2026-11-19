@@ -119,6 +119,18 @@ impl Inputs {
         k: Value,
         indices: Value,
     ) -> Value {
+        self.emit_with_pointers(b, proof, cost, k, indices, &[])
+    }
+
+    pub(super) fn emit_with_pointers(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        proof: &Proof,
+        cost: &Cost,
+        k: Value,
+        indices: Value,
+        pointers: &[(Window, Value)],
+    ) -> Value {
         match cost {
             Cost::Constant(value) => constant(b, [*value; 4]),
             Cost::Word(slot) => self
@@ -127,10 +139,16 @@ impl Inputs {
                 .copied()
                 .unwrap_or_else(|| b.ins().splat(types::I32X4, self.words[slot])),
             Cost::Index => indices,
-            Cost::Read(w) => self.read(b, proof, *w, k),
+            Cost::Read(w) => {
+                let pointer = pointers
+                    .iter()
+                    .find_map(|(window, pointer)| (window == w).then_some(*pointer))
+                    .unwrap_or_else(|| self.pointer(b, proof, *w, k));
+                self.read_at(b, proof, *w, pointer)
+            }
             Cost::Add(a, c) | Cost::And(a, c) | Cost::Or(a, c) | Cost::Xor(a, c) => {
-                let a = self.emit(b, proof, a, k, indices);
-                let c = self.emit(b, proof, c, k, indices);
+                let a = self.emit_with_pointers(b, proof, a, k, indices, pointers);
+                let c = self.emit_with_pointers(b, proof, c, k, indices, pointers);
                 match cost {
                     Cost::Add(..) => b.ins().iadd(a, c),
                     Cost::And(..) => b.ins().band(a, c),
@@ -160,8 +178,13 @@ impl Inputs {
             b.ins().iadd(base, offset)
         }
     }
-    fn read(&self, b: &mut FunctionBuilder<'_>, proof: &Proof, w: Window, k: Value) -> Value {
-        let pointer = self.pointer(b, proof, w, k);
+    fn read_at(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        proof: &Proof,
+        w: Window,
+        pointer: Value,
+    ) -> Value {
         let width = proof.arrays[w.array].width;
         let pointer = if w.reverse {
             b.ins().iadd_imm(pointer, -3 * width as i64)

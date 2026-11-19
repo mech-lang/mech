@@ -1,0 +1,293 @@
+{
+  "selected": false,
+  "new_qualified_runtime_win": false,
+  "qualified_reference": {
+    "worker_sha256": "5afce59aa83c03df81c693d78e9a65f17df1c88c64a7e04c490c58ecc4fffba0",
+    "encoder_text_bytes": 63804,
+    "roc_wins": 81,
+    "libdeflate_wins": 62,
+    "both_complete_orders": true,
+    "paired_natural4k_mech_over_c": [
+      1.0496045298105714,
+      1.0727969792813548
+    ]
+  },
+  "scope": "Single-case diagnostics, not full 81-case qualification. Ratios use 96 paired balanced blocks. Bootstrap intervals are unadjusted diagnostics, seed20261119, 20000 resamples. Do not promote from these intervals.",
+  "runs": [
+    {
+      "role": "control-default-scorer-layout",
+      "order": "forward",
+      "run": "natural4k-scorer-default-control-default-scorer-layout-forward",
+      "control": {
+        "paired_time_ratio": 1.018487073276491,
+        "diagnostic_90pct_interval": [
+          1.0127711323625008,
+          1.0242993464612016
+        ]
+      },
+      "libdeflate": {
+        "paired_time_ratio": 1.0917112929669177,
+        "diagnostic_90pct_interval": [
+          1.0849337855529235,
+          1.0985211474175265
+        ]
+      },
+      "summary_sha256": "f367c3165a0ae7587f3947bcd56a0c946dc4a001acf0901981819a65a84cbe2e"
+    },
+    {
+      "role": "control-default-scorer-layout",
+      "order": "reverse",
+      "run": "natural4k-scorer-default-control-default-scorer-layout-reverse",
+      "control": {
+        "paired_time_ratio": 1.0236060914679617,
+        "diagnostic_90pct_interval": [
+          1.0197959935241439,
+          1.0273837869036284
+        ]
+      },
+      "libdeflate": {
+        "paired_time_ratio": 1.1040306863142786,
+        "diagnostic_90pct_interval": [
+          1.0976535962747773,
+          1.110759502341703
+        ]
+      },
+      "summary_sha256": "bbaf58617f6d77ea676de4d1f19e08df72790f4afe6e528f4aeebf0882982cca"
+    },
+    {
+      "role": "deferred-default-scorer-layout",
+      "order": "forward",
+      "run": "natural4k-scorer-default-deferred-default-scorer-layout-forward",
+      "control": {
+        "paired_time_ratio": 1.0258589352645748,
+        "diagnostic_90pct_interval": [
+          1.0201582154578062,
+          1.031615670276826
+        ]
+      },
+      "libdeflate": {
+        "paired_time_ratio": 1.0917886852559364,
+        "diagnostic_90pct_interval": [
+          1.086822769386317,
+          1.0967522531315055
+        ]
+      },
+      "summary_sha256": "e4dca92fcbcaab541d959f5e673c242cad07dcb89cffd4bcecf6fe88e0ded3f6"
+    },
+    {
+      "role": "deferred-default-scorer-layout",
+      "order": "reverse",
+      "run": "natural4k-scorer-default-deferred-default-scorer-layout-reverse",
+      "control": {
+        "paired_time_ratio": 1.0192799902997933,
+        "diagnostic_90pct_interval": [
+          1.0152231035617212,
+          1.0232789007580925
+        ]
+      },
+      "libdeflate": {
+        "paired_time_ratio": 1.0968595652265165,
+        "diagnostic_90pct_interval": [
+          1.0906487066897887,
+          1.1034041729883566
+        ]
+      },
+      "summary_sha256": "9ddb58e32fa7180bbc780da19a8bf552e85947c9cc9b4a56797d584164a4f604"
+    },
+    {
+      "role": "encoded-default-scorer-layout",
+      "order": "forward",
+      "run": "natural4k-scorer-default-encoded-default-scorer-layout-forward",
+      "control": {
+        "paired_time_ratio": 1.0492243878685827,
+        "diagnostic_90pct_interval": [
+          1.0423457320303378,
+          1.0563654581041129
+        ]
+      },
+      "libdeflate": {
+        "paired_time_ratio": 1.1134811337792705,
+        "diagnostic_90pct_interval": [
+          1.1067934576477163,
+          1.120323959591612
+        ]
+      },
+      "summary_sha256": "a1c6722a943f29bbd7ee59723c8fcb32a7cbdf7c70719e71e860f2efd760f722"
+    },
+    {
+      "role": "encoded-default-scorer-layout",
+      "order": "reverse",
+      "run": "natural4k-scorer-default-encoded-default-scorer-layout-reverse",
+      "control": {
+        "paired_time_ratio": 1.039744709244442,
+        "diagnostic_90pct_interval": [
+          1.0357846358609324,
+          1.0437861322768862
+        ]
+      },
+      "libdeflate": {
+        "paired_time_ratio": 1.1194561767231452,
+        "diagnostic_90pct_interval": [
+          1.1117499809436617,
+          1.1272630846495175
+        ]
+      },
+      "summary_sha256": "e01f717df224a3b576d5a828a84418fe5d65ec84203d9b900382025942ccb162"
+    },
+    {
+      "role": "deferred-rebased-scorer-layout",
+      "order": "forward",
+      "run": "natural4k-scorer-rebased-deferred-rebased-scorer-layout-forward",
+      "control": {
+        "paired_time_ratio": 1.0087845015902206,
+        "diagnostic_90pct_interval": [
+          1.002487847787393,
+          1.0153193836627896
+        ]
+      },
+      "libdeflate": {
+        "paired_time_ratio": 1.075061073809244,
+        "diagnostic_90pct_interval": [
+          1.0688257419366156,
+          1.0813797556068894
+        ]
+      },
+      "summary_sha256": "f92d204950161bf157d8c3a47bb561c5298c77b287b5a7db0347b8cb0480bf49"
+    },
+    {
+      "role": "deferred-rebased-scorer-layout",
+      "order": "reverse",
+      "run": "natural4k-scorer-rebased-deferred-rebased-scorer-layout-reverse",
+      "control": {
+        "paired_time_ratio": 1.0064983594043801,
+        "diagnostic_90pct_interval": [
+          1.0021785998903863,
+          1.0107026604661515
+        ]
+      },
+      "libdeflate": {
+        "paired_time_ratio": 1.0806391600153493,
+        "diagnostic_90pct_interval": [
+          1.07430856833168,
+          1.08720048995511
+        ]
+      },
+      "summary_sha256": "db045ae3affca2a4a490845572df58b8f29ab0e93d7ab33314b24eb299684d38"
+    },
+    {
+      "role": "pointer-profiled",
+      "order": "forward",
+      "run": "natural4k-pointer-pointer-profiled-forward",
+      "control": {
+        "paired_time_ratio": 0.9996900962205348,
+        "diagnostic_90pct_interval": [
+          0.9945907359753688,
+          1.0049616195487536
+        ]
+      },
+      "libdeflate": {
+        "paired_time_ratio": 1.062688313725839,
+        "diagnostic_90pct_interval": [
+          1.0571333951407462,
+          1.0682328685745144
+        ]
+      },
+      "summary_sha256": "4f6a2b95bb4e9b130e3cb65b3745c3fbc4041a8141479b9bba50923796769746"
+    },
+    {
+      "role": "pointer-profiled",
+      "order": "reverse",
+      "run": "natural4k-pointer-pointer-profiled-reverse",
+      "control": {
+        "paired_time_ratio": 0.9929284117421605,
+        "diagnostic_90pct_interval": [
+          0.9886247697772399,
+          0.9970878289818765
+        ]
+      },
+      "libdeflate": {
+        "paired_time_ratio": 1.069410718185486,
+        "diagnostic_90pct_interval": [
+          1.063201110369936,
+          1.0759941952097205
+        ]
+      },
+      "summary_sha256": "53bed05c1b9d6c81b7854b320ff0ba825c526c491cb1e5b048d9c34c21ba81c0"
+    },
+    {
+      "role": "pointer-lanes-profiled",
+      "order": "forward",
+      "run": "natural4k-pointer-pointer-lanes-profiled-forward",
+      "control": {
+        "paired_time_ratio": 0.9977544105719154,
+        "diagnostic_90pct_interval": [
+          0.9918683521400068,
+          1.0034523196609506
+        ]
+      },
+      "libdeflate": {
+        "paired_time_ratio": 1.060763574244219,
+        "diagnostic_90pct_interval": [
+          1.0553851880942364,
+          1.0660421956517536
+        ]
+      },
+      "summary_sha256": "b649b17c942d794523d27a1ffd9bcfe826aa701b1588b8ab108e811c70cc7910"
+    },
+    {
+      "role": "pointer-lanes-profiled",
+      "order": "reverse",
+      "run": "natural4k-pointer-pointer-lanes-profiled-reverse",
+      "control": {
+        "paired_time_ratio": 1.0002976499380005,
+        "diagnostic_90pct_interval": [
+          0.9962273659222561,
+          1.0042374057492012
+        ]
+      },
+      "libdeflate": {
+        "paired_time_ratio": 1.075061808390172,
+        "diagnostic_90pct_interval": [
+          1.0686546784467357,
+          1.0819933061967881
+        ]
+      },
+      "summary_sha256": "ff3d853df31702e76080c2763df6951838dc786ee1d657851a1e2a29cafeafdb"
+    }
+  ],
+  "normal_compiler_sha256": "6711160f915f00bb783831fc14f0144ba7949c06ea9df264edd727a62d44e715",
+  "source_patch_sha256": "3d48c1b6c61a38893a110037c3f7fe3451328101e0c52005116a379377891ad1",
+  "pointer_validation": {
+    "successes_per_worker": 162,
+    "checked_failures_per_worker": 6,
+    "recoveries_per_worker": 12,
+    "peak_stack_bytes": 4848,
+    "stack_ceiling_bytes": 5280,
+    "jit_test_build": "passed",
+    "full_runtime_orders": "not run",
+    "matched_source_through_link_timing": "not measured for these unselected experiments",
+    "jit_tests": {
+      "configurations": 2,
+      "passed_per_configuration": 15,
+      "failed": 0,
+      "scope": "Original/decoded programs, current 4/8-byte geometry, unaligned low-word loads, vector prefixes/remainders, unsigned wrapping and global ties, exhausted payloads, finite publication and retry."
+    }
+  },
+  "next_repair": "The vector pointer continuation prepares the scalar-remainder address on every vector iteration. Drop that exit-pointer transport and reuse the admitted invariant base for the remainder; remeasure actual source-built artifacts. Preserve these alternatives.",
+  "source_files": {
+    "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/cost.rs": "0ffc6f660ec756efbb8aa3f404e9a6ca733dec63e00826234f30592d28af669a",
+    "hosts/gpu/src/native_artifact/program/codegen/ordered_reduction/emit.rs": "61e947930c7033461297631f115092b6bdab157eb1b122783943c12d844cf47d"
+  },
+  "portable_replay": {
+    "cases": 9,
+    "exact_object_metadata_bytecode": true,
+    "result": "validation/portable-replay.json",
+    "scope": "Emission verification only, not runtime qualification."
+  },
+  "source_checks": {
+    "formatting": "passed",
+    "rust_module_layout": "passed",
+    "warning_policy": "passed",
+    "diff_whitespace": "passed"
+  }
+}

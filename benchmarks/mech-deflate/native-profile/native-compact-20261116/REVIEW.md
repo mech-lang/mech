@@ -58,6 +58,23 @@ The next closest loss needs approximately 25.6%. See the exact
 Preserve every existing qualified peer win; do not assign counts from the
 selected worker to a changed worker.
 
+The new generic `MECH_ORDERED_VECTOR_CARRY_POINTERS` lowering carries immutable
+window addresses through the vector loop. It is off by default. Its disabled
+build reproduces the selected artifacts, and portable replay reproduces all
+nine recorded variants. Pointer-only is roughly unchanged forward and 0.7%
+faster reverse in a single-case probe, still 1.06269× / 1.06941× C. Both new
+workers pass outputs, checked failures, recovery and the 4,848 B stack capture;
+neither has full runtime qualification or a new compile-time claim.
+
+Next, remove the ending-pointer transport: the backend currently prepares the
+scalar remainder address on every vector iteration. Reuse the admitted
+invariant base on the exit instead, then check the actual source-built code
+and remeasure. Keep the present variants and their adverse results as controls.
+The [source and runtime evidence](evidence/natural4k-runtime-target/README.md)
+also records restored temporary harness inputs, fresh peer metadata pins,
+measurement isolation and the delayed-packing layout repair. Do not reject a
+variant merely for a small slowdown if its peer wins remain intact.
+
 For the early unit, profile the additional planning cost, narrow retirement
 state and active scratch, and restore sharing through valid source/unit maps.
 Do not reuse root-numbered layout windows on changed block IDs or discard the

@@ -1,0 +1,32 @@
+{
+  "commands": {
+    "stack": [
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "-B",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-runtime-target/linked-current-pointer-profiled-pointer-lanes-profiled/linked-proofs/check-layout-stack-reuse-probe.py",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-runtime-target/linked-current-pointer-profiled-pointer-lanes-profiled/worker-checks/maintained",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-runtime-target/linked-current-pointer-profiled-pointer-lanes-profiled/worker-checks/pointer-profiled",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-runtime-target/linked-current-pointer-profiled-pointer-lanes-profiled/worker-checks/pointer-lanes-profiled"
+    ]
+  },
+  "peak_stack_bytes": {
+    "maintained": 4848,
+    "pointer-profiled": 4848,
+    "pointer-lanes-profiled": 4848
+  },
+  "matches_success_observations": 162,
+  "checked_failure_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "prefix-periodic-4096",
+    "prefix-repeated-16384",
+    "heldout-mixed-131073"
+  ],
+  "failure_report_sha256": "ca1e4c0a6576eaf1a09ebc41b1f644a1d5f0de9783c145a63a6e08021581ebb5",
+  "stack_probe": {
+    "source": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/preserved-registers/linked-current-preserved/linked-proofs/stack-support/stack.o",
+    "sha256": "47629aa045ac454421a6f8412b9a50fd52eebc76cb4a19191aee9f4c6d7aec22",
+    "scope": "Same prebuilt probe object used for the qualified selected-worker capture. Original temporary C source is missing; this stage resumes with identical probe bytes and validates all actual new workers."
+  }
+}

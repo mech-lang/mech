@@ -1,0 +1,63 @@
+{
+  "worker_sha256": "5afce59aa83c03df81c693d78e9a65f17df1c88c64a7e04c490c58ecc4fffba0",
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/preserved-registers/preserved/bound/mech-worker",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/preserved-registers/preserved/bound/metadata.json",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "sample_exit_code": 0,
+  "sample_sha256": "5bbcf6b9538945d1b3e31294c8782e063020c6e5642e23830b108904a0d49c2f",
+  "verified_calls": [
+    {
+      "borrowed_output_alias_unchanged": true,
+      "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+      "capacity": 4101,
+      "case": "prefix-natural-4096",
+      "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+      "exact_reference": true,
+      "independent_inflation": true,
+      "initialized_bytes_copied": 12324,
+      "input_alias_unchanged": true,
+      "input_bytes": 4096,
+      "nonreturned_private_bytes_at_return": 0,
+      "payload_allocation_requests": 97,
+      "peak_private_payload_bytes": 4783952,
+      "prefix_bytes": 0,
+      "profile": false,
+      "raw_bytes": 983,
+      "requested_payload_bytes": 4830205,
+      "sample": 0,
+      "seconds": 0.000355834,
+      "warmup": true,
+      "zeroed_bytes": 4773188
+    },
+    {
+      "borrowed_output_alias_unchanged": true,
+      "boundary": "complete compact call plus actual heap construction, final allocation transfer and private cleanup; preparation/validation/output slots/drop excluded",
+      "capacity": 4101,
+      "case": "prefix-natural-4096",
+      "contract": "Diagnostic. Ordinary exact resource admission/accounting/publication recovery omitted; not NoLimits or production entry.",
+      "exact_reference": true,
+      "independent_inflation": true,
+      "initialized_bytes_copied": 12324,
+      "input_alias_unchanged": true,
+      "input_bytes": 4096,
+      "nonreturned_private_bytes_at_return": 0,
+      "payload_allocation_requests": 97,
+      "peak_private_payload_bytes": 4783952,
+      "prefix_bytes": 0,
+      "profile": true,
+      "raw_bytes": 983,
+      "requested_payload_bytes": 4830205,
+      "sample": 1,
+      "seconds": 0.000350542,
+      "warmup": false,
+      "zeroed_bytes": 4773188
+    }
+  ],
+  "load_after": [
+    2.0947265625,
+    1.6884765625,
+    1.7158203125
+  ]
+}

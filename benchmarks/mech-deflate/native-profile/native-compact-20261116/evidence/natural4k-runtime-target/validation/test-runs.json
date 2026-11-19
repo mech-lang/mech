@@ -1,0 +1,34 @@
+{
+  "head-pointer": {
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/mech_gpu-b3b0f09228423e85",
+      "ordered_reduction",
+      "--test-threads=1"
+    ],
+    "flags": {
+      "MECH_ORDERED_VECTOR_CARRY_POINTERS": "1"
+    },
+    "exit_code": 0,
+    "seconds_diagnostic": 35.00933949975297
+  },
+  "latch-pointer-and-lanes": {
+    "command": [
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/mech_gpu-b3b0f09228423e85",
+      "ordered_reduction",
+      "--test-threads=1"
+    ],
+    "flags": {
+      "MECH_ORDERED_VECTOR_CARRY_POINTERS": "1",
+      "MECH_ORDERED_VECTOR_CARRY_LANES": "1",
+      "MECH_ORDERED_VECTOR_LATCH_TEST": "1",
+      "MECH_SINGLETON_ORDERED_REDUCTION": "1",
+      "MECH_REVERSE_REDUCTION_CURSOR": "1",
+      "MECH_NARROW_ORDERED_ITEM": "1",
+      "MECH_ORDERED_HORIZONTAL_MINIMUM": "1",
+      "MECH_ORDERED_REVERSE_LOW_WORDS": "1",
+      "MECH_ORDERED_VECTOR_HOIST_COST_WORDS": "1"
+    },
+    "exit_code": 0,
+    "seconds_diagnostic": 27.497097499668598
+  }
+}

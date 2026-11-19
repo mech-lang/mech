@@ -1,0 +1,80 @@
+{
+  "scope": "Single-case diagnostic. Does not establish 81/62 preservation or a new 63rd win.",
+  "load_after": [
+    1.76416015625,
+    1.666015625,
+    1.6591796875
+  ],
+  "runs": [
+    {
+      "role": "deferred-rebased-scorer-layout",
+      "order": "forward",
+      "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-scorer-rebased-deferred-rebased-scorer-layout-forward",
+      "summary_sha256": "f92d204950161bf157d8c3a47bb561c5298c77b287b5a7db0347b8cb0480bf49",
+      "result": {
+        "case": "prefix-natural-4096",
+        "input_bytes": 4096,
+        "reference_raw_bytes": 983,
+        "libdeflate_raw_bytes": 983,
+        "reference_capacity": 4101,
+        "libdeflate_capacity": 4101,
+        "libdeflate_same_bytes": true,
+        "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "median_seconds": {
+          "mech-control": 0.0004173125,
+          "mech-experiment": 0.0004186875,
+          "roc": 0.0006593125,
+          "libdeflate": 0.000391146
+        },
+        "paired_x_roc": {
+          "mech-control": 0.6291327531435732,
+          "mech-experiment": 0.6346593708140228,
+          "roc": 1.0,
+          "libdeflate": 0.5903472707510895
+        },
+        "paired_x_libdeflate": {
+          "mech-control": 1.065699435424064,
+          "mech-experiment": 1.075061073809244,
+          "roc": 1.693918223298832,
+          "libdeflate": 1.0
+        },
+        "timed_calls": 384
+      }
+    },
+    {
+      "role": "deferred-rebased-scorer-layout",
+      "order": "reverse",
+      "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-scorer-rebased-deferred-rebased-scorer-layout-reverse",
+      "summary_sha256": "db045ae3affca2a4a490845572df58b8f29ab0e93d7ab33314b24eb299684d38",
+      "result": {
+        "case": "prefix-natural-4096",
+        "input_bytes": 4096,
+        "reference_raw_bytes": 983,
+        "libdeflate_raw_bytes": 983,
+        "reference_capacity": 4101,
+        "libdeflate_capacity": 4101,
+        "libdeflate_same_bytes": true,
+        "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "median_seconds": {
+          "libdeflate": 0.0003916665,
+          "roc": 0.0006603955,
+          "mech-experiment": 0.000419375,
+          "mech-control": 0.0004164795
+        },
+        "paired_x_roc": {
+          "libdeflate": 0.5882282485727539,
+          "roc": 1.0,
+          "mech-experiment": 0.6356624804349609,
+          "mech-control": 0.6315583870510525
+        },
+        "paired_x_libdeflate": {
+          "libdeflate": 1.0,
+          "roc": 1.7000203618686238,
+          "mech-experiment": 1.0806391600153493,
+          "mech-control": 1.0736621176956946
+        },
+        "timed_calls": 384
+      }
+    }
+  ]
+}

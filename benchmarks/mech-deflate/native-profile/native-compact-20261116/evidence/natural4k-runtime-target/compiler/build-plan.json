@@ -1,0 +1,29 @@
+{
+  "source_parent": "b104d014da5da9b87ef270909507e9bfe35558f8",
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "build",
+    "--locked",
+    "--offline",
+    "--release",
+    "--config",
+    "profile.release.package.libmimalloc-sys.opt-level=1",
+    "--manifest-path",
+    "benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target",
+    "--bin",
+    "compile_profile",
+    "--features",
+    "early-region-emission"
+  ],
+  "environment": {
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+    "CARGO_PROFILE_RELEASE_DEBUG": "false",
+    "CARGO_PROFILE_RELEASE_LTO": "false",
+    "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "16"
+  },
+  "scope": "Warm compiler rebuild for a generic vector-pointer lowering experiment, not clean compiler construction."
+}

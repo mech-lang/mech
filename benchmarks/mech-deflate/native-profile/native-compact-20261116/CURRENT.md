@@ -60,6 +60,24 @@ at least 81 Roc and 62 C wins and eventually more C wins.
 
 [Selected compiler source, raw builds, exact worker, source checks and verifier](evidence/encoder-size-gap/sparse-guard-rounds/README.md) · [63,804 B runtime qualification and earlier compiler cohort](evidence/encoder-size-gap/preserved-root-registers/README.md) · [Earlier literal-frame 64,444 B option](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md)
 
+## Natural 4 KiB runtime experiment
+
+The opt-in vector address continuation is now implemented in compiler source.
+Its disabled path reproduces the selected object, full metadata and bytecode.
+Pointer-only emits **63,820 B** and measures **0.99969× / 0.99293×** the selected
+worker's time on `prefix-natural-4096`, in a fresh single-case paired probe.
+The forward interval overlaps parity; both orders still lose to C at
+**1.06269× / 1.06941×**. This is not a 63rd qualified win or a size win.
+
+Both pointer variants pass 162 outputs, six checked failures, 12 recoveries and
+the stack check at 4,848 B. Full runtime qualification and matched complete
+build timing are not performed for these unselected workers. Keep the variants
+for repair: ending-pointer transport currently adds a remainder-address
+calculation inside each vector iteration. The new evidence also retains the
+delayed-packing attempt after an exact control-graph layout repair.
+
+[Source, all timings, bounds, adverse attempts and portable replay](evidence/natural4k-runtime-target/README.md)
+
 ## Actual early emission experiment
 
 The new `early-region-emission` feature builds the 885-operation codebook unit

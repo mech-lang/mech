@@ -278,12 +278,20 @@ impl Reduction {
             .is_some()
             .then(|| super::cost::constant(b, [4; 4]));
         let test_at_latch = std::env::var_os("MECH_ORDERED_VECTOR_LATCH_TEST").is_some();
+        let pointer_windows = if std::env::var_os("MECH_ORDERED_VECTOR_CARRY_POINTERS").is_some() {
+            self.reads.as_slice()
+        } else {
+            &[]
+        };
         let header = b.create_block();
         let body = (!test_at_latch).then(|| b.create_block());
         let finish = b.create_block();
         if test_at_latch {
             b.append_block_param(finish, types::I32X4);
             b.append_block_param(finish, types::I32X4);
+            for _ in pointer_windows {
+                b.append_block_param(finish, types::I64);
+            }
         }
         for ty in [types::I64, types::I32X4, types::I32X4] {
             b.append_block_param(header, ty);
@@ -294,6 +302,11 @@ impl Reduction {
             let first = b.ins().ireduce(types::I32, start);
             let first = b.ins().splat(types::I32X4, first);
             entry.push(b.ins().iadd(first, lanes).into());
+        }
+        let pointer_base = 3 + usize::from(induction_step.is_some());
+        for &window in pointer_windows {
+            b.append_block_param(header, types::I64);
+            entry.push(inputs.pointer(b, proof, window, start).into());
         }
         b.ins().jump(header, &entry);
         b.switch_to_block(header);
@@ -311,7 +324,16 @@ impl Reduction {
             let index = b.ins().splat(types::I32X4, k32);
             b.ins().iadd(index, lanes)
         };
-        let cost = inputs.emit(b, proof, &self.cost, k, index);
+        let pointers = pointer_windows
+            .iter()
+            .enumerate()
+            .map(|(i, &window)| (window, params[pointer_base + i]))
+            .collect::<Vec<_>>();
+        let cost = if pointers.is_empty() {
+            inputs.emit(b, proof, &self.cost, k, index)
+        } else {
+            inputs.emit_with_pointers(b, proof, &self.cost, k, index, &pointers)
+        };
         let better = b.ins().icmp(IntCC::UnsignedLessThan, cost, params[1]);
         let costs = b.ins().umin(cost, params[1]);
         let indices = b.ins().bitselect(better, index, params[2]);
@@ -323,17 +345,29 @@ impl Reduction {
             // admitted window and the scalar remainder bounds unchanged.
             next_group.push(b.ins().iadd(index, step).into());
         }
+        let next_pointers = pointers
+            .iter()
+            .map(|&(window, pointer)| {
+                // k advances by four. The immutable admitted window stays
+                // the same; only its integer address geometry changes. The
+                // terminal address is carried without dereferencing it.
+                let stride = 4 * i64::from(proof.arrays[window.array].width);
+                b.ins()
+                    .iadd_imm(pointer, if window.reverse { -stride } else { stride })
+            })
+            .collect::<Vec<_>>();
+        for &pointer in &next_pointers {
+            next_group.push(pointer.into());
+        }
         if test_at_latch {
             // This path admits at least 16 elements. Its rounded prefix
             // contains a full first group, and next never exceeds end.
             let more = b.ins().icmp(IntCC::UnsignedLessThan, next, end);
-            b.ins().brif(
-                more,
-                header,
-                &next_group,
-                finish,
-                &[costs.into(), indices.into()],
-            );
+            let mut finished = vec![costs.into(), indices.into()];
+            for &pointer in &next_pointers {
+                finished.push(pointer.into());
+            }
+            b.ins().brif(more, header, &next_group, finish, &finished);
         } else {
             b.ins().jump(header, &next_group);
         }
@@ -344,6 +378,18 @@ impl Reduction {
         } else {
             (params[1], params[2])
         };
+        let end_pointers = pointer_windows
+            .iter()
+            .enumerate()
+            .map(|(i, &window)| {
+                let pointer = if test_at_latch {
+                    b.block_params(finish)[2 + i]
+                } else {
+                    params[pointer_base + i]
+                };
+                (window, pointer)
+            })
+            .collect::<Vec<_>>();
         // The incoming best already occupies every cost lane. A lane records
         // an index only after a strict improvement, so ties with that incoming
         // best retain the missing sentinel. Among improved lanes, reduce the
@@ -386,8 +432,14 @@ impl Reduction {
             b.switch_to_block(remainder);
             // The vector prefix is nonempty. Seed the cursor at the last
             // vector candidate's low word, without loading it again.
-            let previous = b.ins().iadd_imm(end, -1);
-            let pointer = inputs.pointer(b, proof, window, previous);
+            let pointer =
+                if let Some((_, pointer)) = end_pointers.iter().find(|(read, _)| *read == window) {
+                    b.ins()
+                        .iadd_imm(*pointer, i64::from(proof.arrays[window.array].width))
+                } else {
+                    let previous = b.ins().iadd_imm(end, -1);
+                    inputs.pointer(b, proof, window, previous)
+                };
             let mut args = vec![
                 end.into(),
                 minimum.into(),
