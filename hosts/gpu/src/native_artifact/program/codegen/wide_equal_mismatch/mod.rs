@@ -270,6 +270,43 @@ impl Plan {
 }
 
 impl Handoff {
+    /// Probe one admitted word before vector widening. Short mismatches can
+    /// use the scalar continuation without a vector reduction or reload.
+    pub(super) fn probe_word(
+        &self,
+        c: &mut FuncCursor<'_>,
+        cert: &Certificate,
+        change: Change,
+        at: Value,
+    ) -> Value {
+        let load = c.func.dfg.make_block();
+        let unequal = c.func.dfg.make_block();
+        let equal = c.func.dfg.make_block();
+        for block in [load, unequal, equal] {
+            c.func.layout.append_block(block);
+        }
+        // The capture gate proves at <= limit. Subtracting first avoids an
+        // overflowing at + 8; no read occurs unless the full word fits.
+        let remaining = c.ins().isub(change.limit, at);
+        let fits = c
+            .ins()
+            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, 8);
+        c.ins().brif(fits, load, &[], cert.header, &[at.into()]);
+        c.goto_bottom(load);
+        let left = c.ins().iadd(change.bases[0], at);
+        let right = c.ins().iadd(change.bases[1], at);
+        let flags = MemFlags::new().with_endianness(Endianness::Little);
+        let left = c.ins().load(types::I64, flags, left, 0);
+        let right = c.ins().load(types::I64, flags, right, 0);
+        let difference = c.ins().bxor(left, right);
+        c.ins().brif(difference, unequal, &[], equal, &[]);
+        c.goto_bottom(unequal);
+        let args = self.arguments(c, at, difference);
+        c.ins().jump(self.target, &args);
+        c.goto_bottom(equal);
+        c.ins().iadd_imm(at, 8)
+    }
+
     fn arguments(&self, c: &mut FuncCursor<'_>, at: Value, difference: Value) -> Vec<BlockArg> {
         fn emit(
             nodes: &[Node],
