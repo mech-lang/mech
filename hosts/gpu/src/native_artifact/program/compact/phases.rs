@@ -159,6 +159,85 @@ pub(super) struct Phase {
     relative_error_origins: bool,
 }
 impl Phase {
+    #[cfg(feature = "early-region-emission")]
+    pub(super) fn word_effects(
+        &self,
+        owners: &OwnerFlow,
+    ) -> Vec<(usize, super::word_boundary::Effects)> {
+        use super::word_boundary::Effects;
+        let effects =
+            |site: usize, outputs: &[(usize, Output)], output_owners: &[usize], normal: bool| {
+                let mut effect = Effects::default();
+                for &word in &self.inputs {
+                    effect.read(word);
+                }
+                for &(base, _) in &self.arrays {
+                    for word in base..base + 6 {
+                        effect.read(word);
+                    }
+                }
+                for &word in output_owners {
+                    if owners.live_at_entry(self.header, word) {
+                        effect.read(word);
+                    }
+                }
+                // The normal adapter refreshes writable current views before
+                // publishing outputs. Stack results are deliberately opaque here.
+                let mut updated = BTreeSet::new();
+                if normal {
+                    for (array, &(base, writable)) in self.arrays.iter().enumerate() {
+                        if writable && !self.invariant_views.contains(&array) {
+                            for word in base..base + 6 {
+                                effect.write(word);
+                                updated.insert(word);
+                            }
+                        }
+                    }
+                }
+                let parallel = !normal || !self.invariant_views.is_empty();
+                if parallel {
+                    for (_, source) in outputs {
+                        if let Output::Word(source) = *source {
+                            effect.read(source);
+                        }
+                    }
+                }
+                for &(destination, ref source) in outputs {
+                    if !parallel && let Output::Word(source) = *source {
+                        effect.read(source);
+                    }
+                    effect.write(destination);
+                    if let Output::Word(source) = *source
+                        && !updated.contains(&source)
+                    {
+                        effect.copy_lane(destination, source);
+                    }
+                    // In the sequential publication form, a later Word reads the
+                    // refreshed home. Do not claim an incoming-value copy for it.
+                    if !parallel {
+                        updated.insert(destination);
+                    }
+                }
+                if normal && std::env::var_os("MECH_PHASE_OWNER_TRANSFER").is_some() {
+                    for (_, source) in self.owner_transfers(owners) {
+                        effect.clear(source);
+                    }
+                }
+                for word in owners.retire_bypass(self.header, site, output_owners) {
+                    effect.read(word);
+                    effect.clear(word);
+                }
+                (site, effect)
+            };
+        std::iter::once(effects(self.exit, &self.outputs, &self.output_owners, true))
+            .chain(
+                self.private
+                    .iter()
+                    .flat_map(|p| &p.handoffs)
+                    .map(|exit| effects(exit.site, &exit.outputs, &exit.owners, false)),
+            )
+            .collect()
+    }
     pub fn checked_traversal_key(&self) -> Option<FuncId> {
         (self.relative_error_origins && !self.refuse_general_vector).then_some(self.function)
     }

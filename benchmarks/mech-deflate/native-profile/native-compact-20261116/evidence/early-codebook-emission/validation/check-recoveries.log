@@ -1,0 +1,8 @@
+{
+  "cases": 6,
+  "observations": 12,
+  "exact_recoveries": 12,
+  "object_sha256": "f1580f19da704b647e0c179f6cbbee16333af3719794da40a6da6948d52e75a7",
+  "metadata_sha256": "546612e0edd3d13e2d0838d9ebe5e16258dbb2ce54ebc8d435c501b5553f591c",
+  "benchmark_worker_sha256": "499983eacaab509fac55076332b622011efd7810cc7a07620be64eaa3cba1ce2"
+}

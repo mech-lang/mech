@@ -1,6 +1,9 @@
 # Early codebook construction: current baseline and source boundary
 
-**Typed source planning is implemented; early emission is not implemented.** The main architecture
+**Historical planning snapshot:** this evidence predates actual early emission.
+The [new live implementation and measured experiment](../early-codebook-emission/README.md)
+now omit the region's original operations from root SSA. The sections below
+retain the earlier planning-only result and its original acceptance criteria. The main architecture
 task is to avoid constructing the phase's internals in controller SSA, while
 preserving the qualified codebook boundary and reducing total work across all
 units. `plan.md` records the hypothesis, required counters and acceptance gates.

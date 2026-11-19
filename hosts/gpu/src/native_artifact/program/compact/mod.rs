@@ -22,6 +22,10 @@ mod compile_jobs;
 mod constants;
 #[cfg(feature = "early-region-planning")]
 mod early_regions;
+#[cfg(feature = "early-region-emission")]
+mod early_units;
+#[cfg(feature = "early-region-emission")]
+mod word_boundary;
 mod emit;
 mod flow;
 mod histogram;

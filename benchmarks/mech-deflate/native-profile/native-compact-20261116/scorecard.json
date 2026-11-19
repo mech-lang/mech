@@ -16490,7 +16490,7 @@
     }
   },
   "early_codebook_construction": {
-    "status": "typed source planning and complete DFG observer in source; native early emission unimplemented",
+    "status": "actual opt-in early emission implemented; fewer constructed native objects, but larger/slower and above stack ceiling; not selected",
     "evidence": "evidence/early-codebook-planning/README.md",
     "census": {
       "blocks": {
@@ -16650,6 +16650,110 @@
     "default_build_features_absent": [
       "construction-census",
       "early-region-planning"
-    ]
+    ],
+    "current_emission_experiment": {
+      "evidence": "evidence/early-codebook-emission/README.md",
+      "validation": {
+        "source_base": "228e8fa0d1e2900a7ff7ef79518593826eb97c70",
+        "source_patch_gzip_sha256": "e3425e4fb43655c4aee9d7823b696d0ed5d50f4ab7655163dd05dc68df0eb541",
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "normal_compiler_sha256": "4c737bbabe8d86932f4e736546388a0f7f1afad12891736fe45c8c3fdbf3a8b4",
+        "census_compiler_sha256": "9752a11c669bfac96c7c36ba9c479fba695d6cee4aba6c38498cd985933ae0cd",
+        "same_artifacts_with_and_without_counters": true,
+        "focused_tests": {
+          "word_boundary": 10,
+          "source_partition": 7,
+          "pure_native_cases": 9,
+          "failed": 0
+        },
+        "success_observations": 162,
+        "checked_failure_cases": 6,
+        "exact_recoveries": 12,
+        "worker_sha256": "499983eacaab509fac55076332b622011efd7810cc7a07620be64eaa3cba1ce2",
+        "stack_bytes": 5808,
+        "stack_ceiling_bytes": 5280,
+        "stack_pass": false,
+        "full_runtime_qualification": false,
+        "selected": false,
+        "selected_encoder_bytes": 63804,
+        "selected_worker_sha256": "5afce59aa83c03df81c693d78e9a65f17df1c88c64a7e04c490c58ecc4fffba0",
+        "selected_peer_wins": {
+          "roc": [
+            81,
+            81
+          ],
+          "libdeflate": [
+            62,
+            62
+          ]
+        },
+        "artifact_sha256": {
+          "program.o": "f1580f19da704b647e0c179f6cbbee16333af3719794da40a6da6948d52e75a7",
+          "metadata.json": "546612e0edd3d13e2d0838d9ebe5e16258dbb2ce54ebc8d435c501b5553f591c",
+          "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+        },
+        "construction_reduction_percent": {
+          "values": 18.571756500431025,
+          "instructions": 27.653762568340035,
+          "blocks": 26.33011885560017
+        },
+        "largest_ssa_reduction_percent": 16.733784151132213,
+        "whole_encoder_byte_accounting": {
+          "matched_unsplit_root": 53904,
+          "early_root": 48672,
+          "new_helper": 7348,
+          "other_and_alignment_change": 348,
+          "net_increase_vs_matched_unsplit": 2464,
+          "increase_vs_selected": 6024
+        },
+        "current_builds": {
+          "summary": "builds/summary.json",
+          "trials_per_actor": 10,
+          "actors": 5,
+          "source_to_link_seconds": 2.277083291905001
+        },
+        "ordinary_default_feature_check": "passed; early feature is off by default",
+        "default_artifacts_reproduced": {
+          "program.o": "c5aab01c69ff4ed325b5149d2e1402a59477e5858f52052939d51f7eff699ef8",
+          "metadata.json": "c187c6f40d81d45995eaf3313c3282d41aadbd066413d7f44c0775b1c22225fa",
+          "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+        }
+      },
+      "census": {
+        "blocks": {
+          "created": 128800,
+          "maximum_unit": 34366,
+          "peak_resident": 69255,
+          "resident": 0
+        },
+        "cfg_builds": 1147,
+        "dominator_builds": 1106,
+        "full_verifications": 584,
+        "instructions": {
+          "created": 360196,
+          "maximum_unit": 100357,
+          "peak_resident": 191749,
+          "resident": 0
+        },
+        "scope": "all DFG arenas and copies during native compilation; includes retired IDs until compaction; excludes plan/proof tables and allocator capacity; not register liveness or a latency measurement",
+        "values": {
+          "created": 1145776,
+          "maximum_unit": 692257,
+          "peak_resident": 800278,
+          "resident": 0
+        }
+      }
+    }
+  },
+  "next_runtime_target": {
+    "case": "prefix-natural-4096",
+    "qualified_worker_sha256": "5afce59aa83c03df81c693d78e9a65f17df1c88c64a7e04c490c58ecc4fffba0",
+    "paired_mech_over_libdeflate": [
+      1.0496045298105714,
+      1.0727969792813548
+    ],
+    "required_time_cut_percent": 6.7857181449298976,
+    "next_win_count": 63,
+    "evidence": "evidence/early-codebook-emission/runtime-targets/nearest.json"
   }
 }

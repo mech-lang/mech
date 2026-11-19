@@ -15,8 +15,8 @@ The selected smaller M1 recipe is **63,804 B**, named
 `m1-sparse-guard-rounds`. It reproduces the same qualified worker as
 `m1-preserved-root-registers` and holds **81/81 Roc and 62/81 libdeflate** in
 both complete orders, with all those wins supported at the configured precision.
-Its matched source-through-final-link build is **2.205 s**, a paired
-34 ms saving in eight same-compiler comparisons. The next runtime
+Its earlier matched source-through-final-link build is **2.205 s**. The
+separate guard-scheduler cohort saved a paired 34 ms in eight comparisons. The next runtime
 target is 63 C wins. See [CURRENT.md](CURRENT.md) for the full current scorecard.
 
 The newer `m1-checked-codebook-phase` recipe is a qualified **64,444 B**
@@ -33,43 +33,43 @@ keep the ordinary resource-accounting limitations explicit. The rebuild recipe
 uses no external LLVM executable. Do not substitute old M3/LLVM measurements for
 the current Apple M1 comparisons.
 
-## Current architecture priority
+## Current architecture and runtime priorities
 
-Move the qualified codebook boundary into native planning before root SSA.
-The current [source-boundary discovery and baseline](evidence/early-codebook-planning/README.md)
-maps canonical sites 4119:5031, with 885 reachable sites. Early emission is not
-implemented. Its 44-input/eight-output-word interface is conservative and still
-needs typed constant, ownership, cursor, failure and continuation admission.
-Measure total work across controller plus every helper: constructed blocks and
-instructions, allocated/peak SSA, maximum unit, CFG/dominance and validations,
-whole-encoder bytes, complete link-inclusive builds and RSS. Root shrinkage
-alone is insufficient. Preserve the 81/62 individual-win qualification and
-5,280 B stack ceiling for any changed worker.
+Actual early codebook emission is now implemented in `early_units.rs`, using
+one shared global ownership model and a physical word proof that includes
+native bypasses. Build with `early-region-emission` and use the portable
+[early-emission replay](evidence/early-codebook-emission/README.md). This is a
+source implementation another agent can rebase on, rather than a built-object
+handoff. The unchanged original Mech program remains the input.
 
-The experimental source planner now validates that boundary directly from the
-typed plan, assigns operation ownership, separates 20 invariant constants and
-derives **22 input/six output words**. It verifies full cursor/builder scopes
-and passes the existing all-path initializer. Nine focused tests cover the
-planner and complete DFG observer lifecycle, including serialized graphs.
-Early native emission and cross-unit ownership/failure transport remain
-unimplemented. Enable the explicit `early-region-planning` build feature for
-the preview; it is excluded from the ordinary build. The all-unit observer is
-separately gated by `construction-census` and is never a latency measurement.
+The new unit owns 885 operations, with 42 input/27 output words and additional
+proved-zero lanes. Total construction drops 18.6% in SSA slots and 27.7% in
+instructions. However, the whole object grows to 69,828 B, complete build takes
+2.277083 s versus 2.209673 s selected in the same ten-trial cohort, and stack
+is 5,808 B versus the 5,280 B ceiling. Correctness, errors and recovery pass;
+full runtime qualification has not been performed. Keep this experiment for
+repair and keep the 63,804 B / 81 Roc / 62 C worker selected.
 
-The all-unit baseline creates 1,407,099 SSA slots, 497,878 instructions and
-174,834 blocks. The largest unit still reaches 831,378 SSA slots. Use total
-work and actual object/worker checks when implementing the next lowering step;
-the new plan is not a claimed size or build-time win. See the evidence's
-`lowering-contract.md` for preserving global source effects across physical
-units without adding retain/release behavior.
+The next runtime target is **`prefix-natural-4096`**, the closest remaining
+qualified loss to libdeflate. Its paired ratios are 1.04960× and 1.07280×.
+About 6.8% less Mech time would win both orders and raise the count to 63.
+The next closest loss needs approximately 25.6%. See the exact
+[ranking and source summaries](evidence/early-codebook-emission/runtime-targets/nearest.json).
+Preserve every existing qualified peer win; do not assign counts from the
+selected worker to a changed worker.
 
-The independent semantic priority is sealed complete-input parser execution
-using the same grammar and exact accounting/events/identities/fallback. It has
-not started here. Conservative prepared-helper IR reuse remains a bounded
-secondary opportunity. Guard closure is complete for this step: the repaired
-scheduler saves 34 ms with the exact selected worker, and its adverse first
-version is retained in the evidence. Further small late-pass tuning is not the
-main architecture deliverable.
+For the early unit, profile the additional planning cost, narrow retirement
+state and active scratch, and restore sharing through valid source/unit maps.
+Do not reuse root-numbered layout windows on changed block IDs or discard the
+construction gain solely because the first whole artifact is larger. Account
+for all bodies, call setup, spills, stubs and alignment, then measure complete
+builds and the actual worker. Borrowing inactive caller scratch is a possible
+bounded stack repair, with pointer/spill costs still unproved.
+
+The sealed-parser semantic priority and conservative prepared-helper IR reuse
+remain unstarted. Guard closure's measured 34 ms improvement is already in the
+selected recipe. No LLVM dependency is added; ordinary resource-accounting
+limitations are unchanged.
 
 ## Archived #993 measurements and review notes
 

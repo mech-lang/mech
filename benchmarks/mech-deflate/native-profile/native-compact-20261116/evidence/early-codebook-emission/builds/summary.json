@@ -1,0 +1,143 @@
+{
+  "plan_sha256": "e3de85e7091574ab14a87809a63ef71625470a26b27163f88f3bfb8b285968d1",
+  "medians": {
+    "mech-control-reference": {
+      "source": 2.173382333246991,
+      "link": 0.035763812717050314,
+      "source_through_link": 2.2096727916505188,
+      "strip": 0.01110849971882999,
+      "source_through_strip": 2.220990478992462
+    },
+    "mech-matched-unsplit": {
+      "source": 2.175816125003621,
+      "link": 0.03553135343827307,
+      "source_through_link": 2.2127489373087883,
+      "strip": 0.011038187425583601,
+      "source_through_strip": 2.224043062189594
+    },
+    "mech-early-codebook": {
+      "source": 2.2410989375784993,
+      "link": 0.03562354180030525,
+      "source_through_link": 2.277083291905001,
+      "strip": 0.011159208370372653,
+      "source_through_strip": 2.2885441046673805
+    },
+    "roc": {
+      "source": 2.947438083589077,
+      "link": 0.034979062620550394,
+      "source_through_link": 2.9830691874958575,
+      "strip": 0.010936958249658346,
+      "source_through_strip": 2.9944337913766503
+    },
+    "libdeflate": {
+      "source": 0.4461728543974459,
+      "link": 0.034775312757119536,
+      "source_through_link": 0.4813392711803317,
+      "strip": 0.011032312642782927,
+      "source_through_strip": 0.49258991656824946
+    }
+  },
+  "phases": {
+    "mech-control-reference": {
+      "parse": 0.7077270205,
+      "catalog": 1.9771e-05,
+      "frontend": 0.2140645835,
+      "artifact": 0.006838437500000001,
+      "encode": 0.0025188125000000002,
+      "native": 1.2128404165
+    },
+    "mech-matched-unsplit": {
+      "parse": 0.7099031045,
+      "catalog": 2.1000000000000002e-05,
+      "frontend": 0.2130469375,
+      "artifact": 0.006831166,
+      "encode": 0.0025143544999999996,
+      "native": 1.2146590835
+    },
+    "mech-early-codebook": {
+      "parse": 0.7095714165,
+      "catalog": 1.96875e-05,
+      "frontend": 0.212840354,
+      "artifact": 0.0068527085000000005,
+      "encode": 0.0025101665,
+      "native": 1.2783392915
+    }
+  },
+  "paired_ratios": {
+    "mech-control-reference": {
+      "roc": 0.7410022993506392,
+      "libdeflate": 4.593471730447262,
+      "mech-control-reference": 1.0
+    },
+    "mech-matched-unsplit": {
+      "roc": 0.7419613355101802,
+      "libdeflate": 4.600052666584826,
+      "mech-control-reference": 1.0015395910681133
+    },
+    "mech-early-codebook": {
+      "roc": 0.7627961350398864,
+      "libdeflate": 4.730882569125363,
+      "mech-control-reference": 1.0308674573558751
+    }
+  },
+  "comparisons": {
+    "mech-control-reference": {
+      "paired_ms_cost": [
+        54.91499975323677,
+        90.66858375445008,
+        59.89816598594189,
+        63.54966666549444,
+        67.33758375048637,
+        69.76641668006778,
+        69.00975061580539,
+        50.49208365380764,
+        71.74033299088478,
+        76.77912386134267
+      ],
+      "paired_median_ms_cost": 68.17366718314588,
+      "cost_90pct_interval_ms": [
+        59.89816598594189,
+        71.74033299088478
+      ],
+      "faster": 0,
+      "trials": 10
+    },
+    "mech-matched-unsplit": {
+      "paired_ms_cost": [
+        61.56987510621548,
+        89.20716820284724,
+        54.70529105514288,
+        66.03095820173621,
+        64.13387600332499,
+        64.1680839471519,
+        65.41295954957604,
+        65.27554150670767,
+        60.429041273891926,
+        64.98704105615616
+      ],
+      "paired_median_ms_cost": 64.57756250165403,
+      "cost_90pct_interval_ms": [
+        62.281458638608456,
+        65.41295954957604
+      ],
+      "faster": 0,
+      "trials": 10
+    }
+  },
+  "seed": 9951121,
+  "bootstrap_resamples": 20000,
+  "source_cpu_seconds": {
+    "mech-control-reference": 2.231116,
+    "mech-matched-unsplit": 2.2337195000000003,
+    "mech-early-codebook": 2.2984345,
+    "roc": 2.939114,
+    "libdeflate": 0.4425845
+  },
+  "source_rss_bytes": {
+    "mech-control-reference": 392683520.0,
+    "mech-matched-unsplit": 392880128.0,
+    "mech-early-codebook": 387104768.0,
+    "roc": 396042240.0,
+    "libdeflate": 71548928.0
+  }
+}

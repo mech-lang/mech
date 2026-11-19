@@ -12,6 +12,7 @@ rust-version = "1.92"
 
 [features]
 early-region-planning = ["canonical-native-program"]
+early-region-emission = ["early-region-planning"]
 construction-census = ["canonical-native-program", "cranelift-codegen/construction-census"]
 default = []
 canonical-native-runtime = ["mech-engine/native-artifact", "mech-engine/integer_bits"]

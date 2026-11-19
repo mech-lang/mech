@@ -9,6 +9,7 @@ publish = false
 
 [features]
 early-region-planning = ["mech-gpu/early-region-planning"]
+early-region-emission = ["mech-gpu/early-region-emission"]
 construction-census = ["mech-gpu/construction-census", "dep:cranelift-codegen"]
 construction-census-serde = ["construction-census", "cranelift-codegen/enable-serde"]
 # Recognized by the exact vendored SSA source in its focused test target.
@@ -170,3 +171,7 @@ path = "partition_plan_tests.rs"
 name = "construction_census_serde"
 path = "construction_census_serde_tests.rs"
 required-features = ["construction-census-serde"]
+
+[[test]]
+name = "word_boundary"
+path = "word_boundary_tests.rs"

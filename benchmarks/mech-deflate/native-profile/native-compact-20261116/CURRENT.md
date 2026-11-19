@@ -60,32 +60,52 @@ at least 81 Roc and 62 C wins and eventually more C wins.
 
 [Selected compiler source, raw builds, exact worker, source checks and verifier](evidence/encoder-size-gap/sparse-guard-rounds/README.md) · [63,804 B runtime qualification and earlier compiler cohort](evidence/encoder-size-gap/preserved-root-registers/README.md) · [Earlier literal-frame 64,444 B option](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md)
 
-## Early construction work now in source
+## Actual early emission experiment
 
-The all-unit DFG census creates **1,407,099 SSA slots, 497,878 instructions and
-174,834 blocks** for the selected encoder. The largest unit still reaches
-**831,378 SSA slots**, and peak resident SSA positions are **955,192**. These
-counts include copies and retired IDs; they are not register liveness. The late
-codebook split reduces later traffic but leaves both SSA peaks unchanged.
+The new `early-region-emission` feature builds the 885-operation codebook unit
+before root SSA. Its word/effect proof includes guarded numeric bypasses,
+conditional cleanup and copied owner state, while preserving one global source
+ownership model and original failure origins. It adds no boundary retain/release
+operations. The feature is off by default; the selected artifacts reproduce
+exactly when the split is disabled.
 
-The typed pre-SSA preview assigns all 885 reachable codebook operations an
-owner and derives dense local domains. Twenty invariant constants are seeded
-locally, yielding **22 input/six output words**. It proves complete cursor and
-builder scopes and passes the existing all-path initializer. Nine focused
-planner/observer tests pass, including graph copies, compaction, cross-thread
-destruction and serialized imports. The final normal source rebuild passes
-162 success observations, six failure cases and 12 recoveries, and reproduces
-the exact qualified fixed-support worker. Its default compiler is `9bd9442a…`;
-its separately rebuilt host-support worker is `d2fe3ab6…` with no runtime-win
-claim. Observer and preview symbols are absent from the default compiler.
+Total constructed SSA slots fall **1,407,099 → 1,145,776 (18.6%)**, instructions
+**497,878 → 360,196 (27.7%)**, and blocks **174,834 → 128,800 (26.3%)**.
+The maximum SSA arena falls **831,378 → 692,257**. Counts include all helpers,
+copies and compaction tables; they exclude proof tables and allocator capacity.
 
-**Early native emission remains unimplemented.** ABI/frame admission,
-word-level retirement captures, source ownership/effect transport, partial
-failures and actual local root/helper lowering are the next work. The preview
-is enabled only by the `early-region-planning` build feature. The independent
-`construction-census` feature produces diagnostics, never latency claims.
+**This is not selected.** Encoder text is **69,828 B**, and peak stack is
+**5,808 B**, above the unchanged 5,280 B ceiling. The actual worker passes 162
+output/alias/decompression observations, six failure cases and 12 recoveries;
+17 focused tests and nine native scalar cases pass. Full runtime qualification
+has not been performed for this worker, so it has no 81/62 claim.
 
-[Source, exact-artifact plans, all-unit counters, tests and both normal-build comparisons](evidence/early-codebook-planning/README.md) · [Next lowering contract](evidence/early-codebook-planning/lowering-contract.md)
+| New ten-balanced-build M1 cohort | Text | Source through final link | Stripped executable |
+| --- | ---: | ---: | ---: |
+| Selected reference compiler | 63,804 B | 2.209673 s | 276,072 B |
+| Same usable policies, unsplit | 67,364 B | 2.212749 s | 276,056 B |
+| Early codebook experiment | 69,828 B | 2.277083 s | 292,568 B |
+| Roc | 57,696 B | 2.983069 s | 191,912 B |
+| libdeflate | 37,080 B | 0.481339 s | 155,752 B |
+
+The early split costs a paired **68.174 ms** versus the selected reference,
+with a 90% interval **59.898–71.740 ms**, and is slower in all ten pairs.
+Its native phase is 1.278339 s versus 1.212840 s selected. The earlier
+2.205288-second cohort above uses the same selected compiler; results from
+separate cohorts are not added or treated as a source regression.
+
+Root-numbered late windows are excluded pending remapping. Even against the
+same-policy control, the early split grows the whole encoder by **2,464 B**:
+5,232 B removed from the root, plus a 7,348 B helper and 348 B elsewhere/alignment.
+Both the construction reduction and these adverse results are retained for repair.
+
+The closest remaining C loss on the **qualified** worker is
+**`prefix-natural-4096`**: paired Mech/C **1.04960× / 1.07280×**, requiring
+about **6.8% less Mech time** to win both orders and reach 63/81. The next
+closest case needs about 25.6%. The ranking uses the exact qualified summaries,
+not the early experiment.
+
+[Actual early source, counters, complete builds, contract evidence, earlier attempts and replay](evidence/early-codebook-emission/README.md) · [Ranked remaining C losses](evidence/early-codebook-emission/runtime-targets/nearest.json) · [Historical source planning baseline](evidence/early-codebook-planning/README.md)
 
 ## Qualified checked codebook phase alternative
 

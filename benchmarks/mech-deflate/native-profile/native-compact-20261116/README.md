@@ -670,3 +670,7 @@ allocation and stack checks are published in `evidence/baseline`.
 Raw receipts preserve original machine paths as provenance; the rebuild recipe
 uses paths relative to this checkout. `source-and-evidence-manifest.json` records
 the published source/evidence hashes and integration status.
+
+### Actual early source-unit experiment
+
+The opt-in `early-region-emission` feature now omits 885 original codebook operations from root SSA. Total SSA construction falls 18.6%, but the measured 69,828 B object is larger, builds in 2.277083 s, and exceeds the stack ceiling at 5,808 B. It is an experimental source implementation, with no new runtime-win claim; the selected 63,804 B / 81 Roc / 62 C result remains. See [the source, complete measurements, replay and next runtime target](evidence/early-codebook-emission/README.md).

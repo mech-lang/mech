@@ -1,4 +1,8 @@
-# Next lowering step: physical units with one source ownership model
+# Lowering contract: physical units with one source ownership model
+
+The [early-emission experiment](../early-codebook-emission/README.md) now implements
+the physical split and word/effect transport. This document records the design
+contract; size, build-time, stack and runtime promotion remain separate gates.
 
 The typed source preview now identifies a 22-word capture packet and a six-word
 normal result after constant elision and correct incoming-read liveness. The

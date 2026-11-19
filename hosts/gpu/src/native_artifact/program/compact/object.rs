@@ -746,10 +746,10 @@ impl Module for PreparedObject {
         }
         let checked_root = declaration.name.as_deref() == Some("mech_compact_closed_checked");
         let checked_body = checked_root
-            || declaration
-                .name
-                .as_deref()
-                .is_some_and(|name| name.starts_with("mech_compact_checked_phase_"));
+            || declaration.name.as_deref().is_some_and(|name| {
+                name.starts_with("mech_compact_checked_phase_")
+                    || name.starts_with("mech_compact_early_region_")
+            });
         let preselected = checked_body
             && self.isa().name() == "aarch64"
             && std::env::var_os("MECH_COMPACT_INLINE_SINGLE_CALLS").as_deref()

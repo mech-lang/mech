@@ -1,0 +1,80 @@
+ld: warning: no platform load command found in '/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/early-codebook-lowering/pure-smoke/original/program.o', assuming: macOS
+ld: warning: no platform load command found in '/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/early-codebook-lowering/pure-smoke/early/program.o', assuming: macOS
+{
+  "source_window": "2:3",
+  "matched_cases": 9,
+  "observations": [
+    {
+      "inputs": [
+        0,
+        1
+      ],
+      "original": "0 0 7",
+      "early": "0 0 7"
+    },
+    {
+      "inputs": [
+        1,
+        1
+      ],
+      "original": "0 0 8",
+      "early": "0 0 8"
+    },
+    {
+      "inputs": [
+        100,
+        3
+      ],
+      "original": "0 0 40",
+      "early": "0 0 40"
+    },
+    {
+      "inputs": [
+        99,
+        0
+      ],
+      "original": "1 2 11936128518282651045",
+      "early": "1 2 11936128518282651045"
+    },
+    {
+      "inputs": [
+        0,
+        0
+      ],
+      "original": "1 2 11936128518282651045",
+      "early": "1 2 11936128518282651045"
+    },
+    {
+      "inputs": [
+        18446744073709551615,
+        1
+      ],
+      "original": "1 3 11936128518282651045",
+      "early": "1 3 11936128518282651045"
+    },
+    {
+      "inputs": [
+        18446744073709551615,
+        2
+      ],
+      "original": "0 0 9223372036854775814",
+      "early": "0 0 9223372036854775814"
+    },
+    {
+      "inputs": [
+        9223372036854775808,
+        3
+      ],
+      "original": "0 0 3074457345618258609",
+      "early": "0 0 3074457345618258609"
+    },
+    {
+      "inputs": [
+        18446744073709551615,
+        18446744073709551615
+      ],
+      "original": "0 0 8",
+      "early": "0 0 8"
+    }
+  ]
+}

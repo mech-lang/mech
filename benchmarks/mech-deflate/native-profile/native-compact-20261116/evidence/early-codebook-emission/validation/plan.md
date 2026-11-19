@@ -1,0 +1,7 @@
+# Early codebook native construction — before-edit plan
+
+1. Mechanism: source entry 4119 to continuation 5031 owns 885 source operations before root SSA. Reuse one global ownership/guard/transfer model. Derive physical word captures including conditional owner clears and edge retirement; emit the helper once and a coarse call in the root.
+2. Hypothesis: local word/collection domains and omission of helper internals from root lower total constructed SSA/IR and maximum unit size, improving native compilation. This does not by itself predict a smaller whole encoder.
+3. Scope: opt-in early-region-emission feature and explicit source window. Keep canonical source/bytecode, checked status/origin and allocation/partial-write behavior. No entry/return ownership operations at this physical boundary. Root-numbered native layout windows must be remapped or explicitly excluded, never applied to changed block IDs.
+4. Validation: focused boundary/effect and native tests; all-unit construction census, whole-object text, stack/ABI, complete fresh source-through-link timing/RSS. A changed worker needs exact outputs, aliases, failures/recovery, both complete benchmark orders, preservation of every control peer win, 81 Roc / at least 62 C, stack at most 5280 bytes before selection.
+5. Decision: keep 63804-byte qualified worker selected until all gates pass. Record larger/near-qualified early candidates and attempt bounded recovery rather than discarding them on one loss. Do not present planning or root-only shrinkage as total-work success.

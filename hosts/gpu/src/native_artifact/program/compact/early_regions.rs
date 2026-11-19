@@ -1,4 +1,4 @@
-//! Typed pre-SSA ownership preview. No source operation is skipped yet.
+//! Typed pre-SSA ownership and local domains, shared by preview and lowering.
 use super::{
     flow::Flow,
     layout::Layout,
@@ -17,6 +17,113 @@ pub(super) fn preview(
     windows: &str,
     path: &Path,
 ) -> Result<(), NativeCompileError> {
+    let flow = Flow::derive(plan)?;
+    let ownership = plan_partition(plan, layout, &flow, windows)?;
+    let iteration_count = plan.iterations().len();
+    let mut scopes = vec![Vec::new(); iteration_count + plan.collections().len()];
+    for (site, &owner) in ownership.owners.iter().enumerate() {
+        if owner == Some(0) {
+            // Root resource references are checked against complete typed scopes
+            // by plan_partition; the report only needs their reachable owners.
+            match plan.blocks()[site].action() {
+                Action::Initialize { iteration }
+                | Action::Latch { iteration }
+                | Action::PrepareU64Range { iteration }
+                | Action::CollectionElement { iteration } => scopes[*iteration as usize].push(site),
+                Action::CollectionBegin { collection }
+                | Action::CollectionPush { collection, .. }
+                | Action::CollectionFinish { collection } => {
+                    scopes[iteration_count + *collection as usize].push(site)
+                }
+                _ => {}
+            }
+            if let Term::Header { iteration, .. } | Term::TailHeader { iteration, .. } =
+                plan.blocks()[site].terminator()
+            {
+                scopes[iteration as usize].push(site);
+            }
+        }
+    }
+
+    let describe = |ids: &[u32], domain: &[u32]| {
+        ids.iter()
+            .enumerate()
+            .map(|(local, &global)| {
+                let ty = layout.ty(global);
+                serde_json::json!({"global_value":global,"local_value":domain.binary_search(&global).expect("unit local value"),"transport_position":local,
+            "global_word_base":layout.slot(global),"words":ty.words,
+            "owner_lanes":ty.owners,"type":ty.summary()})
+            })
+            .collect::<Vec<_>>()
+    };
+    let slots = |ids: &[u32]| {
+        ids.iter()
+            .flat_map(|&v| layout.slot(v)..layout.slot(v) + layout.ty(v).words)
+            .collect::<Vec<_>>()
+    };
+    let hidden_words = |ids: &[usize]| {
+        ids.iter()
+            .map(|&id| {
+                if id >= iteration_count {
+                    7
+                }
+                // six builder lanes and rows-set flag
+                else if matches!(plan.iterations()[id], Loop::Collection(_)) {
+                    3
+                } else {
+                    0
+                } // tail carriers already have ordinary typed value homes
+            })
+            .sum::<usize>()
+    };
+    let region_scopes = ownership
+        .regions
+        .iter()
+        .flat_map(|r| r.scopes.iter().copied())
+        .collect::<BTreeSet<_>>();
+    let root_scopes = scopes
+        .iter()
+        .enumerate()
+        .filter_map(|(id, refs)| {
+            (!region_scopes.contains(&id) && refs.iter().any(|&s| flow.reachable[s])).then_some(id)
+        })
+        .collect::<Vec<_>>();
+    let regions = ownership.regions.iter().map(|r| {
+        let origins = r.failures.iter().map(|&s|serde_json::json!({"site":s,"origin":plan.blocks()[s].origin()})).collect::<Vec<_>>();
+        serde_json::json!({"entry":r.entry,"normal_exit":r.exit,"source_sites":r.sites,
+            "input_values":describe(&r.inputs, &r.local_values),"output_values":describe(&r.outputs, &r.local_values),
+            "constant_values":describe(&r.constants, &r.local_values),"local_values":describe(&r.local_values, &r.local_values),
+            "local_word_slots":slots(&r.local_values),"local_words":r.local_words,
+            "local_collection_state_words":hidden_words(&r.scopes),
+            "input_words":r.inputs.iter().map(|&v|layout.ty(v).words).sum::<usize>(),
+            "output_words":r.outputs.iter().map(|&v|layout.ty(v).words).sum::<usize>(),
+            "owned_iterations":r.scopes.iter().filter(|&&id|id<iteration_count).collect::<Vec<_>>(),
+            "owned_collections":r.scopes.iter().filter(|&&id|id>=iteration_count).map(|id|id-iteration_count).collect::<Vec<_>>(),
+            "explicit_failures":origins,"implicit_failure_origin_sites":r.sites,
+            "all_path_initialization_proved":true,
+            "synthetic_root_call_origin":plan.blocks()[r.entry].origin()})
+    }).collect::<Vec<_>>();
+    let report = serde_json::json!({"status":"typed source ownership and local domains only; this preview does not enable emission",
+        "emission_authorized":false,"source_sites":plan.blocks().len(),"global_values":layout.types.len(),
+        "global_words":layout.words,"source_owners":ownership.owners,
+        "root":{"source_sites":ownership.root_sites,"local_values":describe(&ownership.root_values, &ownership.root_values),
+            "local_words":ownership.root_words,"local_word_slots":slots(&ownership.root_values),
+            "local_collection_state_words":hidden_words(&root_scopes),
+            "owned_iterations":root_scopes.iter().filter(|&&id|id<iteration_count).collect::<Vec<_>>(),
+            "owned_collections":root_scopes.iter().filter(|&&id|id>=iteration_count).map(|id|id-iteration_count).collect::<Vec<_>>(),
+            "synthetic_region_calls":ownership.regions.len()},"regions":regions,
+        "unproved":["failure and partial-write transport","ownership handoff and cleanup at calls",
+            "finite admission and native ABI/frame checks","lowering local root/helper CFG and word domains",
+            "total construction reduction and actual-worker qualification"]});
+    std::fs::write(path, serde_json::to_vec_pretty(&report).map_err(backend)?).map_err(backend)
+}
+
+pub(super) fn plan_partition(
+    plan: &Plan,
+    layout: &Layout,
+    flow: &Flow,
+    windows: &str,
+) -> Result<super::partition_plan::Plan, NativeCompileError> {
     let windows = windows
         .split(';')
         .map(|window| {
@@ -32,7 +139,6 @@ pub(super) fn preview(
     if windows.is_empty() {
         return Err(backend("empty early source partition request"));
     }
-    let flow = Flow::derive(plan)?;
     let ends = plan
         .blocks()
         .iter()
@@ -110,75 +216,5 @@ pub(super) fn preview(
         }
     }
 
-    let describe = |ids: &[u32], domain: &[u32]| {
-        ids.iter()
-            .enumerate()
-            .map(|(local, &global)| {
-                let ty = layout.ty(global);
-                serde_json::json!({"global_value":global,"local_value":domain.binary_search(&global).expect("unit local value"),"transport_position":local,
-            "global_word_base":layout.slot(global),"words":ty.words,
-            "owner_lanes":ty.owners,"type":ty.summary()})
-            })
-            .collect::<Vec<_>>()
-    };
-    let slots = |ids: &[u32]| {
-        ids.iter()
-            .flat_map(|&v| layout.slot(v)..layout.slot(v) + layout.ty(v).words)
-            .collect::<Vec<_>>()
-    };
-    let hidden_words = |ids: &[usize]| {
-        ids.iter()
-            .map(|&id| {
-                if id >= iteration_count {
-                    7
-                }
-                // six builder lanes and rows-set flag
-                else if matches!(plan.iterations()[id], Loop::Collection(_)) {
-                    3
-                } else {
-                    0
-                } // tail carriers already have ordinary typed value homes
-            })
-            .sum::<usize>()
-    };
-    let region_scopes = ownership
-        .regions
-        .iter()
-        .flat_map(|r| r.scopes.iter().copied())
-        .collect::<BTreeSet<_>>();
-    let root_scopes = scopes
-        .iter()
-        .enumerate()
-        .filter_map(|(id, refs)| {
-            (!region_scopes.contains(&id) && refs.iter().any(|&s| flow.reachable[s])).then_some(id)
-        })
-        .collect::<Vec<_>>();
-    let regions = ownership.regions.iter().map(|r| {
-        let origins = r.failures.iter().map(|&s|serde_json::json!({"site":s,"origin":plan.blocks()[s].origin()})).collect::<Vec<_>>();
-        serde_json::json!({"entry":r.entry,"normal_exit":r.exit,"source_sites":r.sites,
-            "input_values":describe(&r.inputs, &r.local_values),"output_values":describe(&r.outputs, &r.local_values),
-            "constant_values":describe(&r.constants, &r.local_values),"local_values":describe(&r.local_values, &r.local_values),
-            "local_word_slots":slots(&r.local_values),"local_words":r.local_words,
-            "local_collection_state_words":hidden_words(&r.scopes),
-            "input_words":r.inputs.iter().map(|&v|layout.ty(v).words).sum::<usize>(),
-            "output_words":r.outputs.iter().map(|&v|layout.ty(v).words).sum::<usize>(),
-            "owned_iterations":r.scopes.iter().filter(|&&id|id<iteration_count).collect::<Vec<_>>(),
-            "owned_collections":r.scopes.iter().filter(|&&id|id>=iteration_count).map(|id|id-iteration_count).collect::<Vec<_>>(),
-            "explicit_failures":origins,"implicit_failure_origin_sites":r.sites,
-            "all_path_initialization_proved":true,
-            "synthetic_root_call_origin":plan.blocks()[r.entry].origin()})
-    }).collect::<Vec<_>>();
-    let report = serde_json::json!({"status":"typed source ownership and local domains only; early emission not implemented",
-        "emission_authorized":false,"source_sites":plan.blocks().len(),"global_values":layout.types.len(),
-        "global_words":layout.words,"source_owners":ownership.owners,
-        "root":{"source_sites":ownership.root_sites,"local_values":describe(&ownership.root_values, &ownership.root_values),
-            "local_words":ownership.root_words,"local_word_slots":slots(&ownership.root_values),
-            "local_collection_state_words":hidden_words(&root_scopes),
-            "owned_iterations":root_scopes.iter().filter(|&&id|id<iteration_count).collect::<Vec<_>>(),
-            "owned_collections":root_scopes.iter().filter(|&&id|id>=iteration_count).map(|id|id-iteration_count).collect::<Vec<_>>(),
-            "synthetic_region_calls":ownership.regions.len()},"regions":regions,
-        "unproved":["failure and partial-write transport","ownership handoff and cleanup at calls",
-            "finite admission and native ABI/frame checks","lowering local root/helper CFG and word domains",
-            "total construction reduction and actual-worker qualification"]});
-    std::fs::write(path, serde_json::to_vec_pretty(&report).map_err(backend)?).map_err(backend)
+    Ok(ownership)
 }
