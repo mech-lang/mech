@@ -2,26 +2,33 @@
 
 ## Current Apple M1 result
 
-The selected recipe is **`m1-register-spill-pairs`**: **63,756 B encoder text**, **81/81 Roc and 62/81 libdeflate wins in both complete orders**, including all prior individual wins and precision support for all 81/62. The exact fixed-support worker is `c2ffb9aa77320e29c4dc9caeb647afbc130166587a551f168ea5963c3373f63b`. Original Mech source and bytecode remain unchanged; no LLVM dependency is added.
+The selected recipe is **`m1-matcher-guard-facts`**: **63,692 B encoder text**, **81/81 Roc and 62/81 libdeflate wins in both complete orders**, with every previous winning fixture and all 81/62 precision-supported wins held. It combines allocator spill pairing with two generic impossible-guard proofs and a fresh matcher layout. It saves **64 B** from the qualified paired recipe and **112 B** from the earlier 63,804 B reference. Original Mech source and canonical bytecode are unchanged.
 
-This combines the historical allocator spill-pair feature with current scoped packets, spill forwarding and the sparse guard scheduler. It saves **48 B** from the previous selected encoder. Two 1 KiB cases slow by roughly 0.6–0.9% while retaining their wins; policy v3 accepts them. There is no 63rd C win.
+The actual fixed-support worker is `88321c097d29b7219f639abbc5fcce727f0602de2d05ab24e5e2b47f2996c3b4`. The checked root stays **46,788 B**, frame **3,296 B**, peak active stack **4,848 B** under the unchanged 5,280 B cap. Stripped deployment stays **276,072 B**. All 162 output/inflation/alias observations, six failures, 12 recoveries and ten unsigned-guard tests pass. Normal and allocation-checked compilers reproduce identical artifacts. No LLVM dependency is added.
 
 | Actor | Encoder text | Source through final link | Through strip | Stripped executable |
 | --- | ---: | ---: | ---: | ---: |
-| Prior selected, same compiler | 63,804 B | 2.221099 s | 2.232103 s | 276,072 B |
-| Current spill pairs | 63,756 B | 2.219958 s | 2.231146 s | 276,072 B |
-| Roc | 57,696 B | 2.984375 s | 2.995337 s | 191,912 B |
-| libdeflate | 37,080 B | 0.481603 s | 0.492534 s | 155,752 B |
+| Prior selected, same compiler | 63,756 B | 2.211203 s | 2.222270 s | 276,072 B |
+| Current matcher facts + layout | 63,692 B | 2.214612 s | 2.225813 s | 276,072 B |
+| Roc | 57,696 B | 2.983165 s | 2.994082 s | 191,912 B |
+| libdeflate | 37,080 B | 0.480880 s | 0.492001 s | 155,752 B |
 
-Eight balanced fresh-process builds per actor include final linking with fixed support prebuilt. Mech is **0.74322× Roc** and **4.60955× C** in paired complete-build time. Against the same-compiler reference it is **0.999683×**, 4/8 faster and a paired 0.704 ms reduction; treat time as unchanged. Previous cohort medians below remain historical.
+Eight balanced fresh-process builds per actor include final linking, with fixed support prebuilt for every actor. Mech complete-build time is **0.74294× Roc / 4.61093× C**. It is **1.000656× the same-compiler reference**: a paired **1.453 ms cost**, 90% interval **-0.561–5.621 ms**, 3/8 faster. This is not a demonstrated build-time gain. Do not compare separate cohort medians as a causal improvement.
 
-The checked root stays **46,788 B**, frame **3,296 B**, peak active stack **4,848 B**, stripped executable **276,072 B**. Both allocation-checker modes reproduce the candidate. All 162 outputs, six failures and 12 recoveries pass. Fresh complete runtime orders are required and recorded for this new worker.
+The encoder is **1.717691× C / 1.103924× Roc**, still **26,612 B** above C. The broader 1× libdeflate code and build-time goal remains unfinished. There is **no 63rd C win**.
 
-Current Mech phase medians: **0.709814 s parse**, **0.217974 s semantics**, **0.006830 s artifact**, **0.002543 s encode**, **1.219665 s native**; final link **0.035493 s**. Catalog join wait is 23 microseconds, overlapping catalog work with parsing. Independent medians need not add.
+Current phase medians: parse **0.707648 s**, semantics **0.214311 s**, artifact **0.006829 s**, encode **0.002540 s**, native **1.218448 s**; final link **0.036247 s**. Catalog work overlaps parsing; independent medians need not add.
 
-The encoder is **1.719× C / 1.105× Roc**, still **26,676 B** above C. Complete build is still **4.610× C**. Keep working toward 1× libdeflate while preserving every 81 Roc / 62 C win.
+Random 4/8 KiB improves roughly 3–4%, and 1 MiB about 2%, against the immediate qualified paired worker. The prior two 1 KiB slowdowns are recovered. There are no established slowdowns and three uncertain comparisons. The current 1 MiB matcher executes **233.15 million instructions**, including **41.02 million branches**, **8.65 million stack stores** and **22.27 million stack loads**.
 
-[Source recipe, fresh full runtime, matched complete builds, raw data, adverse cases and replay](evidence/encoder-size-gap/current-register-spill-pairs/README.md)
+[Current source recipe, full qualification, complete builds, adverse data and replay](evidence/encoder-size-gap/current-matcher-guard-facts/README.md)
+
+## Previous 63,756 B qualified recipe
+
+`m1-register-spill-pairs` remains available with its own 81/62 full qualification.
+Its earlier same-session complete build was 2.219958 s; its current-cohort
+reference is 2.211203 s. Those medians belong to different cohorts.
+[Previous pairing qualification and evidence](evidence/encoder-size-gap/current-register-spill-pairs/README.md)
 
 ## Previous 63,804 B reference and compiler cohorts
 
@@ -92,11 +99,12 @@ collector: it has 72.5% of Mech's encoder samples on 1 MiB, versus 13.2% in
 scoring. The qualified excess there is 7.652 ms per call; natural 4 KiB's is
 25.8 microseconds. These sample shares are not elapsed phase times.
 
-The current 1 MiB collector trace executes 245.0 million instructions,
-including 25.95 million stack-load instructions. The historical allocator spill-pair
-retest is now qualified and selected above: it removes 3.68 million of those
-load instructions, keeps all peer wins and leaves the branch/store counts
-unchanged. Trace the remaining hot checks and live ranges next.
+The audit reference's 1 MiB collector executes 245.0 million instructions and
+25.95 million stack-load instructions. Pairing qualified the 63,756 B
+predecessor. Its combination with current guard facts and fresh layout then
+qualified the selected 63,692 B worker above: 233.15 million instructions,
+41.02 million branches, 8.65 million stack stores and 22.27 million stack loads.
+The full-size and full-build claims belong to their individual cohorts.
 
 Prioritize the shared random-input collector path and keep natural 4 KiB as
 the next-win check. Existing integrated mechanisms are distinguished from

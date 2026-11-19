@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/mech_gpu-b3b0f09228423e85",
+    "unsigned_guard_facts",
+    "--test-threads=1"
+  ],
+  "binary_sha256": "bbedbd9c4a9b5a7258777a87e110fae6ce36d320bcc13c8c591c21b849ec21b7",
+  "exit_code": 0,
+  "seconds_diagnostic": 1.0115444171242416,
+  "scope": "Existing optimized GPU test binary from the vector-pointer validation build. Unsigned-guard source has not changed since that build. Semantic checks only, not latency."
+}

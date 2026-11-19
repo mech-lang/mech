@@ -11,22 +11,23 @@ git fetch origin codex/pr993-m3-optimization
 git switch -c codex/review-native-compact origin/codex/pr993-m3-optimization
 ```
 
-The selected M1 recipe is **63,756 B**, named `m1-register-spill-pairs`.
-Its fresh complete orders hold every prior peer win and **81/81 Roc / 62/81
-libdeflate**, with all wins precision-supported. It saves 48 B from the
-previous 63,804 B encoder by combining allocator spill pairing with current
-packet and spill improvements. Two 1 KiB cases slow 0.6–0.9% and still win,
-which the current policy allows. Its matched complete build is **2.219958 s**,
-**0.74322× Roc / 4.60955× C**, effectively unchanged from its same-compiler
-reference. See the [fresh source recipe and raw qualification](evidence/encoder-size-gap/current-register-spill-pairs/README.md).
-The next runtime milestone remains 63 C wins.
+The selected M1 recipe is **63,692 B**, named `m1-matcher-guard-facts`.
+Its fresh full orders hold every prior peer win and all **81 Roc / 62 C**
+point and precision-supported wins. It combines spill pairing, two generic
+guard proofs and a fresh matcher layout. It saves 64 B from the prior selected
+paired recipe and recovers that pass's 1 KiB slowdowns. Random 4/8 KiB improves
+roughly 3–4%, and random 1 MiB about 2%, against the immediate reference.
+Complete build is **2.214612 s**, **0.74294× Roc / 4.61093× C**, with a paired
+**1.45 ms cost** and a **−0.56 to +5.62 ms** 90% interval.
+[Current source recipe, full qualification and raw data](evidence/encoder-size-gap/current-matcher-guard-facts/README.md).
+No new C win is claimed; the next runtime milestone remains 63.
 
 The newer `m1-checked-codebook-phase` recipe is a qualified **64,444 B**
 alternative: it holds the same peer wins and, in its pre-sparse-rounds cohort,
 saves a paired 14 ms of complete
 build time, and uses 160 B less peak stack, at a 640 B encoder cost. It is a
 different object from the earlier 64,444 B literal-frame recipe. The smaller
-63,756 B paired recipe is selected. Both named recipes rebuild from this PR's
+63,692 B matcher-facts recipe is selected. Both named recipes rebuild from this PR's
 compiler source and the unchanged original Mech program.
 
 Continue reducing emitted code and complete build time toward
@@ -50,15 +51,13 @@ instructions. However, the whole object grows to 69,828 B, complete build takes
 2.277083 s versus 2.209673 s selected in the same ten-trial cohort, and stack
 is 5,808 B versus the 5,280 B ceiling. Correctness, errors and recovery pass;
 full runtime qualification has not been performed. Keep this experiment for
-repair and keep the qualified 63,756 B / 81 Roc / 62 C paired worker selected.
+repair and keep the qualified 63,692 B / 81 Roc / 62 C worker selected.
 
-The next runtime target is **`prefix-natural-4096`**, the closest remaining
-qualified loss to libdeflate. Its paired ratios are 1.04960× and 1.07280×.
-About 6.8% less Mech time would win both orders and raise the count to 63.
-The next closest loss needs approximately 25.6%. See the exact
-[ranking and source summaries](evidence/early-codebook-emission/runtime-targets/nearest.json).
-Preserve every existing qualified peer win; do not assign counts from the
-selected worker to a changed worker.
+The closest next-win check remains **`prefix-natural-4096`**. Current full-order
+paired Mech/C ratios are **1.055687× / 1.065612×**, requiring about
+**6.2%** less Mech time for both point wins. Prioritize the shared
+large-random collector path while retaining this scorer check.
+[Every current case ratio](evidence/encoder-size-gap/current-matcher-guard-facts/runtime-case-ratios.json).
 
 The new generic `MECH_ORDERED_VECTOR_CARRY_POINTERS` lowering carries immutable
 window addresses through the vector loop. It is off by default. Its disabled
@@ -72,12 +71,14 @@ The current runtime priority comes from the
 [19-mechanism history audit and all-loss profiles](evidence/history-and-profiles-20261119/README.md):
 investigate the shared collector on large random input, retaining natural
 4 KiB as a next-win check. It accounts for 72.5% of encoder samples on 1 MiB
-and still executes 25.95 million stack-load instructions. The first historical
-retest, allocator spill pairing, is now qualified and selected: it saves 48 B
+on the audit reference. The first historical
+retest, allocator spill pairing, qualified a 48 B saving
 and 3.68 million executed load instructions on 1 MiB while preserving every
-peer win. Its random-input latency gain is small and inconsistent; branches
-and stores are unchanged. Trace current hot word/root/link checks and their
-source range facts next. Keep the full size, stack and build accounting.
+peer win. The current guard-proof/layout combination then removes another
+64 B, 8.19 million instructions, 4.01 million branches and 1.05 million stack
+stores on 1 MiB. It leaves 22.27 million stack-load instructions. Trace the
+remaining hot word/root/link checks and live ranges next, retaining complete
+size, stack and build accounting.
 
 The secondary cursor repair is to remove ending-pointer transport: the backend currently prepares the
 scalar remainder address on every vector iteration. Reuse the admitted

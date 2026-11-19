@@ -1,11 +1,12 @@
 # Native compact compiler review handoff
 
-The current selected M1 compiler recipe is **`m1-register-spill-pairs`**:
-**63,756 B**, **81/81 Roc and 62/81 libdeflate wins in both complete orders**,
-and **2.220 s** source through final link in its matched build cohort.
-The historical spill pairing is combined with current packet and spill improvements;
-all prior peer wins are held, allowing the reported small still-winning slowdowns.
-[Fresh qualification, source recipe and matched builds](evidence/encoder-size-gap/current-register-spill-pairs/README.md)
+The selected M1 compiler recipe is **`m1-matcher-guard-facts`**:
+**63,692 B**, **81/81 Roc and 62/81 libdeflate wins in both complete orders**,
+and **2.215 s** source through final link in its matched cohort.
+It combines historical spill pairing with current guard proofs and matcher layout,
+recovers the two earlier 1 KiB slowdowns, and holds every prior peer win.
+The paired build-time difference is a **1.45 ms cost**, with an interval crossing zero.
+[Fresh qualification, source recipe and complete builds](evidence/encoder-size-gap/current-matcher-guard-facts/README.md)
 Use [CURRENT.md](CURRENT.md) for current identities, timings and tradeoffs;
 the earlier measurements below remain historical evidence.
 
@@ -678,5 +679,7 @@ the published source/evidence hashes and integration status.
 
 The opt-in `early-region-emission` feature now omits 885 original codebook operations from root SSA. Total SSA construction falls 18.6%, but the measured 69,828 B object is larger, builds in 2.277083 s, and exceeds the stack ceiling at 5,808 B. It is an experimental source implementation, with no new runtime-win claim; the selected 63,804 B / 81 Roc / 62 C result remains. See [the source, complete measurements, replay and next runtime target](evidence/early-codebook-emission/README.md).
 
-The selected pairing recipe rebuilds with `--variant m1-register-spill-pairs`; it
+The previous pairing recipe rebuilds with `--variant m1-register-spill-pairs`; it
 extends `m1-sparse-guard-rounds` with allocator spill pairs and valid current profiles.
+
+Use `--variant m1-matcher-guard-facts` for the current selected recipe.

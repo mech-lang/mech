@@ -1,0 +1,133 @@
+{
+  "objective": "Measure generic unsigned matcher guard proofs combined with qualified spill pairs and all existing peer wins.",
+  "focus_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "320-overlap",
+    "random-64",
+    "random-1024",
+    "prefix-random-1024",
+    "prefix-periodic-1024",
+    "prefix-periodic-4096",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-natural-16384",
+    "prefix-natural-32769",
+    "prefix-random-4096",
+    "heldout-mixed-131073"
+  ],
+  "runs": [
+    {
+      "id": "matcher-guard-current-guards-profiled-full-forward",
+      "kind": "full",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "matcher-guard-current-guards-profiled-full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "blocks_per_case": 96
+    }
+  ],
+  "policy": {
+    "path": "native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification-policy-v3.json",
+    "sha256": "89961956e17485b05457fee6d90e1b124fe09d1d1e6d3770aa5b86873912244c"
+  },
+  "timer": {
+    "path": "compare-library.py",
+    "sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a"
+  },
+  "driver": {
+    "path": "consolidation-995/natural4k-runtime-target/matcher-guards-qualify.py",
+    "sha256": "8a88ad9ab98ae88bb1e2a505f2bf15ae8ffc2dfcdb12875a01b74adb8bd0f3c7"
+  },
+  "as_run_inventory": {
+    "path": "fixtures.json",
+    "sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+  },
+  "pinned_peers": {
+    "path": "pinned-peers/pins.json",
+    "sha256": "3f348cf64a8f641b8ba28cab268e7d4dbde0606cb479b8d481b9be8355493439"
+  },
+  "fixture_content_sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+  "bindings": {
+    "mech-control": {
+      "program.o": {
+        "path": "consolidation-995/natural4k-runtime-target/retest-register-spills/paired-profiled/bound/program.o",
+        "sha256": "348c298469e92fdff8571c098f460c62253160869293bc4c0fa55dba85f757d0"
+      },
+      "metadata.json": {
+        "path": "consolidation-995/natural4k-runtime-target/retest-register-spills/paired-profiled/bound/metadata.json",
+        "sha256": "73575f54a5cbfd7ccaea79dccbed7e69960be8f5958f9b10fd8e902786806fdd"
+      },
+      "runtime.json": {
+        "path": "consolidation-995/natural4k-runtime-target/retest-register-spills/paired-profiled/bound/runtime.json",
+        "sha256": "75690698f87081f4b7cb8ddff138d7cafe9d4d04b8b19c017c7af1a657a51820"
+      },
+      "mech-worker": {
+        "path": "consolidation-995/natural4k-runtime-target/retest-register-spills/paired-profiled/bound/mech-worker",
+        "sha256": "c2ffb9aa77320e29c4dc9caeb647afbc130166587a551f168ea5963c3373f63b"
+      }
+    },
+    "mech-experiment": {
+      "program.o": {
+        "path": "consolidation-995/natural4k-runtime-target/hot-matcher-facts/guards-profiled/bound/program.o",
+        "sha256": "470e6899a3cfec1e2fc0f9d3d8aef1d427de7d621e6b9ec87b350cb6103d9b38"
+      },
+      "metadata.json": {
+        "path": "consolidation-995/natural4k-runtime-target/hot-matcher-facts/guards-profiled/bound/metadata.json",
+        "sha256": "3faa1a9d87a63454863ff55471898c7bea9a8a361401914a6932d7dca6b583db"
+      },
+      "runtime.json": {
+        "path": "consolidation-995/natural4k-runtime-target/hot-matcher-facts/guards-profiled/bound/runtime.json",
+        "sha256": "20000d791cdd06fc2b079bed0dcaafac8ef8cc959314c0595e2f961f2e35c7b2"
+      },
+      "mech-worker": {
+        "path": "consolidation-995/natural4k-runtime-target/hot-matcher-facts/guards-profiled/bound/mech-worker",
+        "sha256": "88321c097d29b7219f639abbc5fcce727f0602de2d05ab24e5e2b47f2996c3b4"
+      }
+    }
+  },
+  "identities": {
+    "mech-control": {
+      "worker": "c2ffb9aa77320e29c4dc9caeb647afbc130166587a551f168ea5963c3373f63b",
+      "metadata": "73575f54a5cbfd7ccaea79dccbed7e69960be8f5958f9b10fd8e902786806fdd"
+    },
+    "mech-experiment": {
+      "worker": "88321c097d29b7219f639abbc5fcce727f0602de2d05ab24e5e2b47f2996c3b4",
+      "metadata": "3faa1a9d87a63454863ff55471898c7bea9a8a361401914a6932d7dca6b583db"
+    },
+    "roc": {
+      "worker": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+      "metadata": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+    },
+    "libdeflate": {
+      "worker": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "metadata": null
+    },
+    "environment_sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+    "contract_sha256": "73b8d377ff7452010791de0f5155a939cfb7a65a3c46b9bac10a8a06e8f512cb"
+  },
+  "source_pin": "5a89f646664b86a0b808137c01c7627b2142552a",
+  "policy_version": 3,
+  "controller": {
+    "path": "source-frame-copy-tails/full-timing.py",
+    "sha256": "f9fa19f1ef9876ee3484a339b619889ba94027cf35a76fa355e12813cea31d07"
+  },
+  "compiler_build": {
+    "path": "consolidation-995/natural4k-runtime-target/vector-pointers/compiler/6711160f915f00bb/result.json",
+    "sha256": "f43f851d425ae585681f40e78ac8b225697b444a77b44381b3fa5a8949a3b8f2"
+  },
+  "linked_contract": {
+    "path": "consolidation-995/natural4k-runtime-target/hot-matcher-facts/linked-current-guards-profiled/linked-proofs/result.json",
+    "sha256": "98f0db64c2f53030e98a91bb526cf884d454e8a3f87edab6ef491d79fefc3cd7"
+  },
+  "max_peak_stack_bytes": 5280,
+  "load_average_before": [
+    2.06005859375,
+    1.95556640625,
+    1.9111328125
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "recipe": "m1-matcher-guard-facts",
+  "manifest_sha256": "caae0142a7725d40497523c322c485ca2b43e6b4ddb82e41d8f5b2ea94dfbb82",
+  "flags_equal_actual_qualified_recipe": true,
+  "profiles_portable": true
+}

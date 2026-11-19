@@ -17,6 +17,7 @@ M1_SOURCE_RECIPES = {
     'm1-checked-codebook-phase': 'checked-codebook-phase',
     'm1-sparse-guard-rounds': 'sparse-guard-rounds',
     'm1-register-spill-pairs': 'current-register-spill-pairs',
+    'm1-matcher-guard-facts': 'current-matcher-guard-facts',
 }
 
 
