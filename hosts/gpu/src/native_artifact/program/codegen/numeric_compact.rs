@@ -29,6 +29,8 @@ pub(in crate::native_artifact) struct Report {
     pub parent: Option<u32>,
     pub source_sites: Vec<usize>,
     pub typed_loads: Vec<(usize, u8)>,
+    #[serde(skip)]
+    pub bounded_byte_reads: Vec<super::cfg_cleanup::compared_bytes::BoundedRead>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub reused_scalar_reads: Vec<(usize, usize, usize)>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
@@ -241,6 +243,7 @@ pub(in crate::native_artifact) fn emit(
         parent: region.tail.parent(),
         source_sites: proof.sites.clone(),
         typed_loads: Vec::new(),
+        bounded_byte_reads: Vec::new(),
         reused_scalar_reads: Vec::new(),
         reused_scalar_operands: Vec::new(),
         read_pack_sites: Vec::new(),
@@ -638,6 +641,19 @@ pub(in crate::native_artifact) fn emit(
                                 address,
                                 0,
                             );
+                            if width == 1
+                                && vector_entry
+                                && std::env::var_os("MECH_REUSE_COMPARED_BYTES")
+                                    .is_some_and(|mode| mode == "proved")
+                                && let Some(read) =
+                                    super::cfg_cleanup::compared_bytes::BoundedRead::new(
+                                        b.func, value, *array,
+                                    )
+                            {
+                                // The original current logical bounds or its
+                                // existing window proof precedes this load.
+                                report.bounded_byte_reads.push(read);
+                            }
                             report.typed_loads.push((site, width));
                             value
                         };
