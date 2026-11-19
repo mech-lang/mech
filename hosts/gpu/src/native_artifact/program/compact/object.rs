@@ -267,6 +267,24 @@ impl PreparedObject {
         else {
             return Ok(false);
         };
+        let references_helper = context
+            .func
+            .layout
+            .blocks()
+            .flat_map(|block| context.func.layout.block_insts(block))
+            .any(|inst| {
+                let callee = match context.func.dfg.insts[inst] {
+                    ir::InstructionData::Call { func_ref, .. }
+                    | ir::InstructionData::FuncAddr { func_ref, .. }
+                    | ir::InstructionData::TryCall { func_ref, .. } => func_ref,
+                    _ => return false,
+                };
+                super::inlining::module_callee(&context.func, callee)
+                    .is_some_and(|callee| bodies.contains_key(&callee))
+            });
+        if !references_helper {
+            return Ok(false);
+        }
         // Use the same optimized IR that the compile-and-compare policy would
         // leave before inlining. Keep the original context for fallback.
         let mut prepared = Context::for_function(context.func.clone());
@@ -727,7 +745,12 @@ impl Module for PreparedObject {
                 .map_err(llvm_diagnostic_failure)?;
         }
         let checked_root = declaration.name.as_deref() == Some("mech_compact_closed_checked");
-        let preselected = checked_root
+        let checked_body = checked_root
+            || declaration
+                .name
+                .as_deref()
+                .is_some_and(|name| name.starts_with("mech_compact_checked_phase_"));
+        let preselected = checked_body
             && self.isa().name() == "aarch64"
             && std::env::var_os("MECH_COMPACT_INLINE_SINGLE_CALLS").as_deref()
                 == Some(std::ffi::OsStr::new("preselected"))
@@ -735,7 +758,7 @@ impl Module for PreparedObject {
         if !preselected {
             context.compile(self.isa(), control)?;
         }
-        if checked_root {
+        if checked_body {
             if !preselected {
                 self.inline_private_helpers(id, context, control)?;
             }
