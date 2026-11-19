@@ -1564,6 +1564,9 @@ fn finish_preparation(
         if !equality.mismatch_forwarded.is_empty() {
             summary["forwarded_vector_mismatches"] = serde_json::json!(equality.mismatch_forwarded);
         }
+        if !equality.word_probed.is_empty() {
+            summary["first_word_equality_probes"] = serde_json::json!(equality.word_probed);
+        }
         if !equality.word_reused.is_empty() {
             summary["word_reuse_loops"] = serde_json::json!(equality.word_reused);
         }
