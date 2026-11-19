@@ -1,54 +1,101 @@
-# Historical literal reuse: source, work and runtime study
+# Immutable current-input reads: qualified repair
 
-**The selected recipe remains 63,692 B with 81/81 Roc and 62/81 libdeflate in both complete orders.** This study revisits the older literal-read-once gain using generic compiler proofs on unchanged Mech source. Its smaller 63,484 B experiment has one near focused C loss and is being repaired; it is not selected and has no inherited full-suite win count.
+**Select `m1-immutable-current-reads`: 63,532 B, saving 160 B, with 81/81 Roc and 62/81 libdeflate wins in both complete orders.** Both orders support all those wins at the configured precision and retain every paired control win. Original Mech source and canonical bytecode are unchanged. The implementation starts at `5ccf097dc02ceb3abb17bccb85cd11a3ae144503`, with final source integration at `2cd17fca3c9d58a5804a18c904fe1daf65598b78`; another agent can build it from this branch. No LLVM dependency is added.
 
-The [19-mechanism history review](../../history-and-profiles-20261119/README.md) already led to retained spill pairing and unsigned-guard/layout combinations. Literal reuse is the next bounded retest. Current exact-worker samples put 72.8% of 1 MiB encoder samples in matching and 54.0% of natural 4 KiB samples in scoring. The former exposes a shared path across many larger losses; the latter remains the closest next-win check. Sample fractions are not elapsed phase timers or forecasts. [Current profiles and build baseline](../../sealed-base-phase-fusion/README.md).
+This is a small code-size win with runtime costs, under the policy allowing slowdowns that preserve peer wins. There are **13 established case slowdowns above 0.5% and 15 uncertain comparisons**. Large random 1 MiB costs 0.54% / 0.77% in the full orders; 256 KiB costs 0.75% / 0.81%. The complete stripped executable stays **276,072 B**. The 1× libdeflate code/build goal and next C win remain unfinished.
 
-## Two real reads, then a backend tradeoff
+## Final source integration and latest complete builds
 
-The original collector reads the same immutable input byte for observation sampling and the cache header. On 1 MiB, those sites execute 1,048,545 and 1,044,385 times. Source-pinned CLIF identifies the same current index through four copy-phi nodes with one external seed. The compiler reuses the existing strong defaulted-read matcher: exact pointer/length packet words, unsigned bound, physical width, wrapping address and zero default. Only the exact private fixed-view loan supplies immutable authority. Writable/appending lanes and cloned proofs are excluded; unknown inputs retain their original safety semantics.
+The final compiler source is **`2cd17fca3c9d58a5804a18c904fe1daf65598b78`**, including standard native/parser module layouts and a separate allowlisted JIT test boundary. Its normal and allocation-checked builds reproduce the same **63,532 B** object, full metadata and canonical bytecode. Relinking with the original fixed support reproduces qualified worker **`834c7a7e…`** exactly, so its **81 Roc / 62 C point and precision wins in both complete orders**, output/error/recovery/stack checks and profiles remain applicable.
 
-A bounded all-incoming copy-phi proof groups equivalent current indices at a common dominator. Actual updates, unavailable operands, unknown seeds, closed seedless cycles and exhausted budgets refuse sharing. The caller retains read-only owners, writable backings pass the existing unique-owner gate, and borrowed-copy analysis excludes phase boundaries. Original source, canonical bytecode, error ordering, resource checks and scalar native emission remain unchanged.
+| Latest Apple M1 build | Encoder text | Source through final link | Through strip | Stripped executable |
+| --- | ---: | ---: | ---: | ---: |
+| Earlier compiler, same qualified encoder | 63,532 B | 2.204676 s | 2.215713 s | 276,072 B |
+| Final source/compiler configuration | **63,532 B** | **2.208667 s** | **2.219695 s** | 276,072 B |
+| Roc | 57,696 B | 2.980663 s | 2.991847 s | 191,912 B |
+| libdeflate | 37,080 B | 0.480168 s | 0.490875 s | 155,752 B |
 
-| Source-emitted experiment | Whole encoder text | Matcher body | Matcher frame |
+Eight balanced fresh-process builds per actor use prebuilt compilers and fixed support for every actor. Paired ratios are **0.741248× Roc / 4.602361× C**. The final compiler/configuration costs a paired **3.360 ms** versus the earlier compiler generating the same encoder, 90% interval **0.941–5.050 ms**, 1/8 faster. This comparison includes the mechanical source/build changes; it does not isolate the immutable-read pass. The earlier sixteen-trial same-compiler study below found no established effect from that pass. Do not add or compare separate cohorts as causal gains.
+
+Latest phase medians are **702.055 ms parsing**, **214.546 ms semantics**, **6.834 ms artifact**, **2.532 ms encoding**, **1,221.209 ms native pipeline**, and **35.044 ms final link**. Catalog work overlaps parsing; separate medians do not add. Source peak RSS is **392.9 MB**.
+
+The published named rebuild command also reproduces the encoder and passes **162 outputs, six failures and 12 recoveries**. It rebuilds host support and has a different worker hash (`01ace001…`), so that worker has no inherited runtime-win claim. The matched timings use fixed prebuilt support; runtime qualification belongs to the exact `834c7a7e…` worker. Its fixed-support reproduction is explicitly verified.
+
+Fresh **536 default-feature syntax tests** and four load tests pass after the module moves; the prior 539 full-feature syntax tests are archived separately. Workspace formatting, module layout and warning policy pass. The unsafe audit remains blocked by the existing missing `benchmarks/mech-deflate/comparison/rust/src/pinned_allocator.rs`; no CI-green claim is made.
+
+## History, controls and repairs
+
+The [19-mechanism history review](../../history-and-profiles-20261119/README.md) already led to retained spill pairing and guard/layout combinations. This study revisits historical literal-read-once using generic compiler proofs on the unchanged codec. The collector reads one immutable input byte for observation sampling and the cache header; on 1 MiB those sites execute 1,048,545 and 1,044,385 times. Four copy-phi nodes carry the same current index, with one external seed.
+
+The pass reuses the strong defaulted-read recognizer: exact pointer/length packet fields, unsigned index bound, width, wrapping address and zero default. Only the exact private fixed-view loan supplies immutable authority. The root retains read-only owners; written backings pass the existing unique-owner gate, and borrowed-copy proofs exclude phase boundaries. A bounded all-incoming copy-phi proof shares equivalent current reads only where every operand is available. Updates, unavailable operands, unknown seeds, seedless cycles and budget exhaustion refuse sharing. Uncertified reads retain their original branches.
+
+| Source-emitted alternative | Whole encoder text | Matcher body | Matcher frame |
 | --- | ---: | ---: | ---: |
-| Selected reference |63,692 B|6,092 B|384 B|
-| Existing safe-address fold, all 8 reads |63,708 B|6,100 B|400 B|
-| Immutable flags, before explicit reuse |63,724 B|6,120 B|400 B|
-| Current-index reuse, backend may rematerialize |**63,484 B**|5,880 B|384 B|
-| Current-index reuse, retain load placement |63,692 B|6,092 B|400 B|
+| Prior selected | 63,692 B | 6,092 B | 384 B |
+| Existing safe-address fold on all eight reads | 63,708 B | 6,100 B | 400 B |
+| Immutable flags before explicit reuse | 63,724 B | 6,120 B | 400 B |
+| All eight reads, reuse with rematerialization | 63,484 B | 5,880 B | 384 B |
+| All eight reads, retain load placement | 63,692 B | 6,088 B | 400 B |
+| Only two certified reads, retain placement | 63,692 B | 6,088 B | 384 B |
+| **Only two certified reads, rematerialization** | **63,532 B** | **5,936 B** | **384 B** |
 
-The last two rows have freshly reconstructed matcher layouts. The other two retained phase profiles have exact ordered-graph equality proofs. Normal and allocation-checked builds reproduce identical objects, full metadata and bytecode. The disabled pass reproduces the selected native artifacts exactly.
+The 208 B saving was repaired rather than discarded: its first focused order lost `320-overlap` to C by 0.1763% and large-random time rose about 2.7%. Pinning the shared load removed a million dynamic byte loads but lengthened its live range and increased spills. Restricting the pass to the two certified reads removes unrelated safe-address/select work on mutable buffers. The chosen variant keeps 160 B of the saving and restores `320-overlap` in both focused and full orders: full Mech/C ratios **0.996719× / 0.993806×**. Every initial/adverse attempt remains archived.
 
-Cranelift 0.131.3 treats a narrow `Load` as pure when all of `readonly`, `notrap`, `can_move` are set. One shared expression is then rematerialized at both distant uses. Removing `can_move` keeps the manually proved load placement, but its longer live range adds spills. The diagnostic CLIF is not a shipping artifact; enabling it also retains additional general bodies. No whole-debug-object identity or elapsed-time claim is made.
+Cranelift treats `Load` as pure with `readonly`, `notrap` and `can_move`. Rematerialization can repeat the physical read at distant uses while reducing spills. Pinned placement is the default control; `MECH_COMPACT_REMATERIALIZE_IMMUTABLE_READS=1` enables the chosen policy under the separately scoped `MECH_COMPACT_IMMUTABLE_DEFAULTED_READS`. Both choices have the same source safety proof. No source codec rewrite or raw-machine-byte implementation is shipped.
 
-## Actual collector work after fresh layouts
+Fresh matcher layouts use each actual graph and untimed counters; the other two retained phase profiles have exact ordered-graph equality proofs. Normal and allocation-checked builds reproduce identical objects, full metadata and bytecode. The disabled pass reproduces the previous selected artifacts.
 
-The counters execute original instructions in diagnostic clones, verify outputs/inflation/aliases, and are never timed.
+## Original pass-isolation cohort: every alternative
 
-|1 MiB random-prefix trace|Selected|Rematerialized reuse|Retained load placement|
+| Apple M1 actor | Encoder text | Source through final link | Through strip |
 | --- | ---: | ---: | ---: |
-|Original instructions|233,154,478|247,693,058|242,615,383|
-|Branch instructions|41,017,489|36,790,982|36,790,982|
-|Byte-load instructions|4,002,154|4,002,154|**2,957,769**|
-|Stack-load instructions|22,267,325|22,127,094|23,296,565|
-|Stack-store instructions|8,653,030|**6,534,095**|9,701,645|
+| Previous compiler, selected encoder | 63,692 B | 2.223243 s | 2.234224 s |
+| Current compiler, pass disabled | 63,692 B | 2.213335 s | 2.224324 s |
+| All eight, rematerialization | 63,484 B | 2.222866 s | 2.234057 s |
+| All eight, pinned placement | 63,692 B | 2.226704 s | 2.237704 s |
+| Immutable only, pinned placement | 63,692 B | 2.220956 s | 2.232086 s |
+| **Immutable only, rematerialization** | **63,532 B** | **2.211926 s** | **2.223045 s** |
+| Roc | 57,696 B | 2.988797 s | 2.999631 s |
+| libdeflate | 37,080 B | 0.491145 s | 0.502016 s |
 
-Thus the 208 B saving does not remove dynamic byte loads. Pinning the load removes 1,044,385 byte loads but gives back the size gain and adds stack traffic. Both alternatives add overall instructions. The natural 4 KiB trace similarly favors rematerialization for spills:106,294 loads/30,598 stores versus the selected 131,115/38,744. These observations justify measuring both alternatives; neither proves a runtime gain.
+Sixteen balanced fresh-process trials per actor include final linking, with deployment support prebuilt for every actor. Compiler bootstrap is excluded for all; strip is separate. Raw warmups, outliers and every round remain included. All Mech deployments are 276,072 B; Roc is 191,912 B and C 155,752 B.
 
-The source-emitted zero data changes Mach-O section order. The diagnostic counter adapter canonicalizes section coordinates while preserving every text/data byte, symbol-relative offset and relocation target. Its linked executable is byte-identical to the corresponding original worker. Original objects and workers are used for runtime timing. The normalization and worker bindings are archived.
+**The pass has no established compile-time effect:** versus the same compiler with it disabled, paired median **-0.139 ms**, 90% interval **-3.628 to +3.598 ms**, 8/16 faster. Separate medians are not paired differences. The current compiler beats the previous compiler in this cohort, but that observation does not isolate this pass; the same-compiler control does. The other three alternatives cost paired medians of 8.276–10.345 ms versus the disabled control.
 
-## Measured focused orders and next repair
+Paired complete-build ratios are **0.739157× Roc / 4.505969× C**. Encoder ratios are **1.101151× Roc / 1.713376× C**, leaving **26,452 B** above C. That cohort’s phase medians are **704.371 ms parsing**, **217.767 ms semantics**, **6.834 ms artifact creation**, **2.515 ms encoding**, and **1,218.926 ms native pipeline**. Catalog work overlaps parsing; separate medians do not add. Source CPU is 2.237413 s and peak RSS 392.6 MB.
 
-Both changed workers pass 162 exact output/inflation/alias observations, six checked failures,12 successful recoveries and the 4,848 B peak active stack check, below the 5,280 B ceiling. Eight optimized native tests pass across defaulted loads and private-phase contracts, including original/decoded codec proofs, null/default/wrapping inputs, changed loop indices and divergent paths. The initial broad test build failed because its include still named the removed synthetic fixture; it was corrected to use the unchanged actual codec. The earlier failed fixture and logs remain archived.
+## Where the remaining losses accrue
 
-- Retained placement preserves all 15 focused Roc wins and all 13 contemporaneous focused C wins in both orders. It has no whole-text saving. Complete runtime qualification and matched complete builds are not claimed.
-- The 208 B-smaller alternative preserves all 17 focused Roc wins. It keeps 12/13 contemporaneous C wins forward and 13/13 reverse. `320-overlap` is **1.001763× C** forward and **0.994634× C** reverse. The single near loss prevents selection. Large-random 1 MiB and 256 KiB also slow approximately 2.7% versus their paired control in the first focused order. Every raw order and bootstrap result remains included.
+Fresh captures bind the actual selected worker `834c7a7e…` and pinned C. On 1 MiB random input, **72.3%** of Mech encoder leaf samples are matching and **14.4%** scoring. Natural 4 KiB is **52.3% scoring / 24.5% matching**. Each capture verifies two complete output/inflation/alias calls. Sample fractions are diagnostics, not elapsed phase timers or savings forecasts; C matching is inlined into its near-optimal body. Some constructor, transfer and cleanup work is outside the selected function trees.
 
-**Repair the scope before giving up the gain.** The new pass currently also applies the ordinary safe-address fold to six mutable-buffer reads; only two reads have immutable certificates. Those other transformations add address/select/GOT work on the main matcher path. The next source variant leaves all uncertified reads' original branches in place and shares only certified immutable reads. Its executable tests pass; compiler emission, new counters/layout, actual-worker checks and both full benchmark orders remain pending. The standalone ordinary safe-address pass stays independent.
+Keep the shared large-random collector as the primary runtime target: its larger separately measured median excess is **7.344 ms/call**, versus **25.1 µs** for natural 4 KiB. The latter remains closest to a new C win, at **1.063757× / 1.068946× C**, requiring about **6.45%** less Mech time in the worse order. [All case ratios](placement/runtime-case-ratios.json) and [all 19 remaining named C losses](placement/remaining-losses.json) preserve both orders.
 
-The complete source-through-final-link baseline remains 2.205340 s from the prior balanced cohort. This study's compiler bootstrap/preflights occurred under diagnostic load and are not replacement build timings. Fresh matched complete builds are required before selecting any changed recipe. The 1× libdeflate text/build goal and the larger early-region construction work remain unfinished.
+| Original collector instructions on 1 MiB | Prior selected | New selected |
+| --- | ---: | ---: |
+| Instructions | 233,154,478 | 239,331,515 |
+| Branches | 41,017,489 | 38,926,518 |
+| Byte loads | 4,002,154 | 4,002,154 |
+| Stack loads | 22,267,325 | 21,121,137 |
+| Stack stores | 8,653,030 | 6,553,980 |
 
-## Archive and checks
+The selected variant saves spills and static code while adding ALU work; it does not eliminate dynamic byte loads. Diagnostic clones count original instructions and verify outputs, but are never timed. Their Mach-O section-coordinate adapter preserves every code/data byte and relocation target, and its linked worker is byte-identical to the original. Actual original objects/workers are used for latency.
 
-Run `python 3 verify.py` to verify source/artifact bindings, tested workers, counters and paired focused observations. `as-run/` contains the exact acquisition scripts and original machine paths; source snapshots are compressed to keep historical Rust out of architecture scans. These are provenance records, not a portable replacement compiler build. This package preserves initial/adverse/repaired evidence without promoting an unqualified worker.
+The post-encode compiler capture includes native compilation through process exit. Dominance, SSA construction, validation and guard inference are among its leading active functions; it is not an exclusive elapsed-phase profile. The old `MECH_PROFILE_COMPACT_DETAIL` hook is absent from current production source, so its no-scope attempt is retained without invented attribution. **Reducing constructed/analyzed controller state remains the larger code/build task.** The checked controller still occupies 46,788 B, with a 3,296 B frame. The earlier early-unit construction gain remains available for repair, including its adverse size/stack/build evidence.
+
+## Validation and replay
+
+The actual selected worker passes **162 output/inflation/alias observations, six failures, 12 recoveries and 4,848 B peak active stack**, under the unchanged 5,280 B ceiling. Four source-bound executable load tests cover null/default/wrapping values, I8/I32 extension, current-loop sharing and divergent/changing indices. Loop sharing, divergence and changing indices run in both placement modes. Four optimized private-phase contract tests cover original/decoded codec proofs, unique ownership, growing-storage refusal and unpermitted cloned proofs. Unchanged private-contract source binds those reused tests. The initial stale fixture include failure and corrected actual-codec test are archived. Existing ordinary resource-accounting limitations are unchanged; no new CI-green claim is made.
+
+```sh
+python3 verify.py
+python3 reproduce.py /absolute/path/to/compile_profile /tmp/mech-immutable-replay
+```
+
+Or build the compiler and recipe from this checkout:
+
+```sh
+python3 ../../../rebuild.py /tmp/mech-immutable-build --variant m1-immutable-current-reads \
+  --mimalloc-object /path/to/mimalloc.o
+```
+
+`as-run/` records original machine paths and exact acquisition scripts. Compressed source snapshots keep historical Rust out of architecture scans. Both complete orders retain all 96 paired blocks for every case. The compiler source, generation route, profiles, raw measurements, adverse controls and verifiers are in PR #995; the worker is generated from original Mech source.

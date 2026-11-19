@@ -1,0 +1,59 @@
+{
+  "case": "prefix-natural-4096",
+  "actor": "libdeflate",
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/libdeflate-worker",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "worker_sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+  "sample_sha256": "c1b2e1816b22f357933795ad62158ceba8aba63d6ab9c5d637ed0534cb2b03a2",
+  "verified_calls": [
+    {
+      "borrowed_output_alias_unchanged": true,
+      "boundary": "fresh compressor, distinct output allocation and prefix copy, raw compression, compressor free; preparation, validation and previous-output drop excluded",
+      "capacity": 4101,
+      "case": "prefix-natural-4096",
+      "independent_inflation": true,
+      "input_alias_unchanged": true,
+      "input_bytes": 4096,
+      "level": 12,
+      "matches_reference_bytes": true,
+      "output_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+      "prefix_bytes": 0,
+      "profile": false,
+      "raw_bytes": 983,
+      "reference_capacity": 4101,
+      "runtime_input": true,
+      "sample": 0,
+      "seconds": 0.000312042,
+      "version": "1.26",
+      "warmup": true
+    },
+    {
+      "borrowed_output_alias_unchanged": true,
+      "boundary": "fresh compressor, distinct output allocation and prefix copy, raw compression, compressor free; preparation, validation and previous-output drop excluded",
+      "capacity": 4101,
+      "case": "prefix-natural-4096",
+      "independent_inflation": true,
+      "input_alias_unchanged": true,
+      "input_bytes": 4096,
+      "level": 12,
+      "matches_reference_bytes": true,
+      "output_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+      "prefix_bytes": 0,
+      "profile": true,
+      "raw_bytes": 983,
+      "reference_capacity": 4101,
+      "runtime_input": true,
+      "sample": 1,
+      "seconds": 0.00031875,
+      "version": "1.26",
+      "warmup": false
+    }
+  ],
+  "load_after": [
+    2.04736328125,
+    2.2646484375,
+    2.28857421875
+  ]
+}

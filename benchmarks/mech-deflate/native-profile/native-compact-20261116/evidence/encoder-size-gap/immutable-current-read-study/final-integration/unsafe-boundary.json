@@ -1,0 +1,9 @@
+{
+  "command": [
+    "scripts/check-unsafe-boundaries.sh"
+  ],
+  "exit_code": 1,
+  "stdout": "",
+  "stderr": "unsafe boundary audit failed: allowlisted file does not exist: benchmarks/mech-deflate/comparison/rust/src/pinned_allocator.rs\n",
+  "seconds_diagnostic": 2.326965541113168
+}

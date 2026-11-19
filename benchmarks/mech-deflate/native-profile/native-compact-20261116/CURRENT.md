@@ -1,8 +1,57 @@
 # PR #995 current status
 
-## Current Apple M1 result
+## Final source integration and latest complete builds
 
-**The compiler combines deterministic sealed-input parser phases and checks the work allowance before removing a pending frame.** The selected encoder remains **63,692 B**, with **81/81 Roc and 62/81 libdeflate wins in both full orders**. The new compiler reproduces its native object, complete metadata, canonical bytecode and fixed-support worker byte for byte. No new runtime campaign or 63rd C win is claimed. Original Mech source is unchanged.
+The final compiler source is **`2cd17fca3c9d58a5804a18c904fe1daf65598b78`**, including standard native/parser module layouts and a separate allowlisted JIT test boundary. Its normal and allocation-checked builds reproduce the same **63,532 B** object, full metadata and canonical bytecode. Relinking with the original fixed support reproduces qualified worker **`834c7a7e…`** exactly, so its **81 Roc / 62 C point and precision wins in both complete orders**, output/error/recovery/stack checks and profiles remain applicable.
+
+| Latest Apple M1 build | Encoder text | Source through final link | Through strip | Stripped executable |
+| --- | ---: | ---: | ---: | ---: |
+| Earlier compiler, same qualified encoder | 63,532 B | 2.204676 s | 2.215713 s | 276,072 B |
+| Final source/compiler configuration | **63,532 B** | **2.208667 s** | **2.219695 s** | 276,072 B |
+| Roc | 57,696 B | 2.980663 s | 2.991847 s | 191,912 B |
+| libdeflate | 37,080 B | 0.480168 s | 0.490875 s | 155,752 B |
+
+Eight balanced fresh-process builds per actor use prebuilt compilers and fixed support for every actor. Paired ratios are **0.741248× Roc / 4.602361× C**. The final compiler/configuration costs a paired **3.360 ms** versus the earlier compiler generating the same encoder, 90% interval **0.941–5.050 ms**, 1/8 faster. This comparison includes the mechanical source/build changes; it does not isolate the immutable-read pass. The earlier sixteen-trial same-compiler study below found no established effect from that pass. Do not add or compare separate cohorts as causal gains.
+
+Latest phase medians are **702.055 ms parsing**, **214.546 ms semantics**, **6.834 ms artifact**, **2.532 ms encoding**, **1,221.209 ms native pipeline**, and **35.044 ms final link**. Catalog work overlaps parsing; separate medians do not add. Source peak RSS is **392.9 MB**.
+
+The published named rebuild command also reproduces the encoder and passes **162 outputs, six failures and 12 recoveries**. It rebuilds host support and has a different worker hash (`01ace001…`), so that worker has no inherited runtime-win claim. The matched timings use fixed prebuilt support; runtime qualification belongs to the exact `834c7a7e…` worker. Its fixed-support reproduction is explicitly verified.
+
+Fresh **536 default-feature syntax tests** and four load tests pass after the module moves; the prior 539 full-feature syntax tests are archived separately. Workspace formatting, module layout and warning policy pass. The unsafe audit remains blocked by the existing missing `benchmarks/mech-deflate/comparison/rust/src/pinned_allocator.rs`; no CI-green claim is made.
+
+## Algorithm qualification and original pass-isolation cohort
+
+The selected M1 recipe is **`m1-immutable-current-reads`**: **63,532 B**, saving **160 B**, with **81/81 Roc and 62/81 libdeflate wins in both complete orders**. Every paired control win and all 81/62 precision-supported wins are retained. Original Mech source and canonical bytecode are unchanged; no LLVM dependency is added. Compiler source is integrated at `5ccf097dc02ceb3abb17bccb85cd11a3ae144503`.
+
+The source-through-final-link build is **2.211926 s**, versus **2.213335 s** with the pass disabled in the same compiler. The paired difference is **-0.139 ms**, 90% interval **-3.628 to +3.598 ms**, 8/16 faster: **no established compile-time change**. Sixteen balanced trials per actor include final linking, with support prebuilt for every actor. The complete stripped executable remains **276,072 B**. Runtime reports **13 established small slowdowns above 0.5% and 15 uncertain comparisons**; no individual peer win is lost. Large random 1 MiB costs 0.54% / 0.77% versus control. [Source, all controls, full orders, profiles and complete builds](evidence/encoder-size-gap/immutable-current-read-study/README.md).
+
+| Actor | Encoder text | Source through final link | Through strip | Stripped executable |
+| --- | ---: | ---: | ---: | ---: |
+| Same compiler, pass disabled | 63,692 B | 2.213335 s | 2.224324 s | 276,072 B |
+| Selected immutable-read reuse | **63,532 B** | **2.211926 s** | **2.223045 s** | 276,072 B |
+| Roc | 57,696 B | 2.988797 s | 2.999631 s | 191,912 B |
+| libdeflate | 37,080 B | 0.491145 s | 0.502016 s | 155,752 B |
+
+Paired build ratios are **0.739157× Roc / 4.505969× C**. Encoder ratios are **1.101151× Roc / 1.713376× C**, leaving **26,452 B** above C. Compiler bootstrap is excluded for all actors; strip is separate. Historical cohort medians are not causal comparisons.
+
+Current phase medians: parse **704.371 ms**, semantics **217.767 ms**, native pipeline **1,218.926 ms**. Catalog work overlaps parsing and independent medians do not add. The post-encode sample finds dominance, SSA construction, validation and guard inference among the leading active functions; it is not an exclusive phase timer.
+
+The historical literal-reuse lead is now a generic immutable-loan/current-index proof. A 63,484 B alternative lost C on `320-overlap` by 0.18% in one focused order. Restricting the pass to the two certified reads and allowing backend rematerialization keeps 160 B of that saving and restores the win in both full orders. The original branches remain for all uncertified reads. All adverse variants and source snapshots are retained.
+
+The selected worker is `834c7a7e423a69c46483a3dae74d9450949fdf142b5ad2dede894e0da3ca8693`. Normal and allocation-checked source builds reproduce identical object, full metadata and bytecode. It passes 162 output/inflation/alias observations, six failures, 12 recoveries and **4,848 B** peak stack under the 5,280 B ceiling. The root remains **46,788 B**, with a **3,296 B** frame. Four executable load tests cover both placement choices; four unchanged optimized private-contract tests cover original/decoded loans and refusal paths. Prior full-feature syntax qualification remains 539 tests; the final source-identical parser module move has its own fresh 536-test default-feature check.
+
+Fresh actual-worker samples put **72.3%** of 1 MiB encoder work in matching and **14.4%** in scoring. Natural 4 KiB is **52.3% scoring / 24.5% matching**. Large random still has the largest absolute gap, about **7.344 ms/call**; natural 4 KiB is the closest next-win check at **1.063757× / 1.068946× C**, needing about **6.45%** less time in the worse order. Sample shares are not elapsed phase timers or forecasts.
+
+The 1× libdeflate code/build goal remains active. The next major architecture task is reducing constructed/analyzed controller state, using the existing early-unit pilot and its adverse size/stack/build evidence. Keep every existing peer win and both 81/62 floors; target 63 C wins next. [Review handoff](REVIEW.md).
+
+```sh
+python3 rebuild.py /tmp/mech-immutable --variant m1-immutable-current-reads \
+  --mimalloc-object /path/to/mimalloc.o
+```
+
+## Previous sealed-parser cohort (63,692 B)
+
+**The compiler combines deterministic sealed-input parser phases and checks the work allowance before removing a pending frame.** The then-selected encoder remained **63,692 B**, with **81/81 Roc and 62/81 libdeflate wins in both full orders**. The new compiler reproduces its native object, complete metadata, canonical bytecode and fixed-support worker byte for byte. No new runtime campaign or 63rd C win is claimed. Original Mech source is unchanged.
 
 | Actor | Encoder text | Source through final link | Through strip | Stripped executable |
 | --- | ---: | ---: | ---: | ---: |
@@ -19,7 +68,7 @@ Current phase medians: parse **0.701823 s**, semantics **0.217373 s**, native **
 
 Fresh profiles of this exact selected worker place **72.8%** of 1 MiB random encoder samples in matching, versus **14.2%** in scoring. Natural 4 KiB is **54.0%** scoring and **23.6%** matching. The qualified median excess is about **7.13 ms** per large-random call versus **21.8 µs** for natural 4 KiB. These are sampled work shares and separately measured full-call gaps, not phase timers or savings forecasts. Prioritize the shared random collector and retain natural 4 KiB as the next-win check.
 
-## Matcher guard/layout qualification cohort
+## Previous matcher guard/layout qualification cohort
 
 The selected recipe is **`m1-matcher-guard-facts`**: **63,692 B encoder text**, **81/81 Roc and 62/81 libdeflate wins in both complete orders**, with every previous winning fixture and all 81/62 precision-supported wins held. It combines allocator spill pairing with two generic impossible-guard proofs and a fresh matcher layout. It saves **64 B** from the qualified paired recipe and **112 B** from the earlier 63,804 B reference. Original Mech source and canonical bytecode are unchanged.
 

@@ -1,0 +1,142 @@
+Analysis of sampling mech-worker (pid 73440) every 1 millisecond
+Process:         mech-worker [73440]
+Path:            /private/tmp/*/mech-worker
+Load Address:    0x1028a4000
+Identifier:      mech-worker
+Version:         0
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  Python [73439]
+Target Type:     live task
+
+Date/Time:       2026-11-19 05:59:25.284 -0500
+Launch Time:     2026-11-19 05:59:24.805 -0500
+OS Version:      macOS 15.6.1 (24G90)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         18.1M
+Physical footprint (peak):  18.1M
+Idle exit:                  untracked
+----
+
+Call graph:
+    2284 Thread_51140672   DispatchQueue_1: com.apple.main-thread  (serial)
+      2284 start  (in dyld) + 6076  [0x183f16b98]
+        2284 main  (in mech-worker) + 52  [0x1028ac8d0]
+          2284 _RNvNtCsgirOGyZpP7g_3std2rt19lang_start_internal  (in mech-worker) + 952  [0x1028d5014]
+            2284 _RNCINvNtCsgirOGyZpP7g_3std2rt10lang_startuE0Cs2fnfepAsUKT_11mech_worker  (in mech-worker) + 16  [0x1028b0158]
+              2284 _RINvNtNtCsgirOGyZpP7g_3std3sys9backtrace28___rust_begin_short_backtraceFEuuECs2fnfepAsUKT_11mech_worker  (in mech-worker) + 12  [0x1028aff44]
+                2284 _RNvCs2fnfepAsUKT_11mech_worker4main  (in mech-worker) + 2316  [0x1028ab994]
+                  2274 _RNCINvCs2fnfepAsUKT_11mech_worker3runINtNtNtNtCsgirOGyZpP7g_3std2io8buffered9bufreader9BufReaderNtNtBG_5stdio5StdinEE0B4_  (in mech-worker) + 708  [0x1028a9ed4]
+                  + 2274 mech_compact_closed_v2  (in mech-worker) + 300  [0x10290257c]
+                  +   1644 mech_compact_closed_checked  (in mech-worker) + 2836  [0x102903244]
+                  +   ! 1644 mech_compact_numeric_475_vector  (in mech-worker) + 1492,1580,...  [0x1028ffb34,0x1028ffb8c,...]
+                  +   328 mech_compact_closed_checked  (in mech-worker) + 16992  [0x102906990]
+                  +   ! 328 mech_compact_numeric_3009_no_growth_composed  (in mech-worker) + 204,212,...  [0x102900d5c,0x102900d64,...]
+                  +   135 mech_compact_closed_checked  (in mech-worker) + 18364  [0x102906eec]
+                  +   ! 135 mech_compact_numeric_3447  (in mech-worker) + 460  [0x1029018bc]
+                  +   !   135 mech_compact_numeric_3447_grouped  (in mech-worker) + 108,336,...  [0x1029014cc,0x1029015b0,...]
+                  +   112 mech_compact_closed_checked  (in mech-worker) + 14204  [0x102905eac]
+                  +   ! 112 mech_compact_numeric_2821_vector  (in mech-worker) + 68,96,...  [0x102902034,0x102902050,...]
+                  +   30 mech_compact_closed_checked  (in mech-worker) + 3988  [0x1029036c4]
+                  +   ! 30 mech_compact_word_collection_10  (in mech-worker) + 32,204,...  [0x1029022d0,0x10290237c,...]
+                  +   8 mech_compact_closed_checked  (in mech-worker) + 20224  [0x102907630]
+                  +   ! 8 mech_compact_numeric_3956_vector  (in mech-worker) + 212,108,...  [0x1029019e4,0x10290197c,...]
+                  +   7 mech_compact_closed_checked  (in mech-worker) + 2096,2572,...  [0x102902f60,0x10290313c,...]
+                  +   4 mech_compact_closed_checked  (in mech-worker) + 21032  [0x102907958]
+                  +   ! 4 mech_compact_numeric_4173  (in mech-worker) + 148,252,...  [0x102901174,0x1029011dc,...]
+                  +   2 mech_compact_closed_checked  (in mech-worker) + 37616  [0x10290ba20]
+                  +   ! 2 mech_compact_checked_layout_continuation_16644  (in mech-worker) + 556  [0x10290ebcc]
+                  +   !   2 _platform_memmove  (in libsystem_platform.dylib) + 88  [0x1842f1318]
+                  +   1 mech_compact_closed_checked  (in mech-worker) + 484  [0x102902914]
+                  +   ! 1 mech_compact_allocate_backing  (in mech-worker) + 32  [0x1028baa78]
+                  +   !   1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate  (in mech-worker) + 336  [0x1028ba5c0]
+                  +   !     1 _mi_malloc_generic  (in mech-worker) + 408  [0x102915a48]
+                  +   !       1 __bzero  (in libsystem_platform.dylib) + 68  [0x1842f0fd4]
+                  +   1 mech_compact_closed_checked  (in mech-worker) + 3936  [0x102903690]
+                  +   ! 1 mech_compact_allocate_backing  (in mech-worker) + 32  [0x1028baa78]
+                  +   !   1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate  (in mech-worker) + 620  [0x1028ba6dc]
+                  +   !     1 _mi_malloc_generic  (in mech-worker) + 244  [0x1029159a4]
+                  +   !       1 mi_page_fresh_alloc  (in mech-worker) + 60  [0x1028fcffc]
+                  +   !         1 mi_segments_page_alloc  (in mech-worker) + 792  [0x1028fa9f8]
+                  +   !           1 mi_segment_try_purge  (in mech-worker) + 144  [0x1028f8dc0]
+                  +   !             1 clock_gettime  (in libsystem_c.dylib) + 296  [0x18415687c]
+                  +   !               1 _mach_boottime_usec  (in libsystem_c.dylib) + 64  [0x18417bf48]
+                  +   !                 1 gettimeofday  (in libsystem_c.dylib) + 56  [0x18414eb34]
+                  +   !                   1 __commpage_gettimeofday_internal  (in libsystem_kernel.dylib) + 44  [0x184277ae4]
+                  +   !                     1 mach_absolute_time  (in libsystem_kernel.dylib) + 108  [0x1842760f0]
+                  +   1 mech_compact_closed_checked  (in mech-worker) + 27080  [0x1029090f8]
+                  +   ! 1 mech_compact_release_three  (in mech-worker) + 0  [0x1028bac00]
+                  +   1 mech_compact_closed_checked  (in mech-worker) + 39000  [0x10290bf88]
+                  +     1 mech_compact_release_four  (in mech-worker) + 152  [0x1028bab74]
+                  +       1 mech_compact_free  (in mech-worker) + 16  [0x1028baabc]
+                  +         1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap7release  (in mech-worker) + 356  [0x1028ba3d4]
+                  +           1 __munmap  (in libsystem_kernel.dylib) + 8  [0x1842795e8]
+                  6 _RNCINvCs2fnfepAsUKT_11mech_worker3runINtNtNtNtCsgirOGyZpP7g_3std2io8buffered9bufreader9BufReaderNtNtBG_5stdio5StdinEE0B4_  (in mech-worker) + 1220  [0x1028aa0d4]
+                  + 6 _platform_memcmp  (in libsystem_platform.dylib) + 48,56  [0x1842eeec0,0x1842eeec8]
+                  2 _RNCINvCs2fnfepAsUKT_11mech_worker3runINtNtNtNtCsgirOGyZpP7g_3std2io8buffered9bufreader9BufReaderNtNtBG_5stdio5StdinEE0B4_  (in mech-worker) + 1280  [0x1028aa110]
+                  + 2 _RNvNtCselbn9KGBQg0_11miniz_oxide7inflate23decompress_to_vec_inner  (in mech-worker) + 412  [0x1028b3824]
+                  +   2 _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress  (in mech-worker) + 2716  [0x1028b1160]
+                  +     2 _platform_memmove  (in libsystem_platform.dylib) + 88  [0x1842f1318]
+                  2 _RNCINvCs2fnfepAsUKT_11mech_worker3runINtNtNtNtCsgirOGyZpP7g_3std2io8buffered9bufreader9BufReaderNtNtBG_5stdio5StdinEE0B4_  (in mech-worker) + 1348  [0x1028aa154]
+                    2 _platform_memcmp  (in libsystem_platform.dylib) + 48,56  [0x1842eeec0,0x1842eeec8]
+
+Total number in stack (recursive counted multiple, when >=5):
+
+Sort by top of stack, same collapsed (when >= 5):
+        mech_compact_numeric_475_vector  (in mech-worker)        1644
+        mech_compact_numeric_3009_no_growth_composed  (in mech-worker)        328
+        mech_compact_numeric_3447_grouped  (in mech-worker)        135
+        mech_compact_numeric_2821_vector  (in mech-worker)        112
+        mech_compact_word_collection_10  (in mech-worker)        30
+        _platform_memcmp  (in libsystem_platform.dylib)        8
+        mech_compact_numeric_3956_vector  (in mech-worker)        8
+        mech_compact_closed_checked  (in mech-worker)        7
+
+Binary Images:
+       0x1028a4000 -        0x1029456e7 +mech-worker (0) <82C91240-2FF0-3865-B760-05E919792F98> /tmp/*/mech-worker
+       0x183ebc000 -        0x183f0f893  libobjc.A.dylib (940.4) <8CA52E4D-F699-3D14-8061-EEA9D4366538> /usr/lib/libobjc.A.dylib
+       0x183f10000 -        0x183fab577  dyld (1.0.0 - 1286.10) <3247E185-CED2-36FF-9E29-47A77C23E004> /usr/lib/dyld
+       0x183fac000 -        0x183faf168  libsystem_blocks.dylib (96) <BA8F0C40-B12D-3D8B-8396-FC3F8A733C27> /usr/lib/system/libsystem_blocks.dylib
+       0x183fb0000 -        0x183ffa8ff  libxpc.dylib (2894.140.12) <1B8951EB-68DB-37BA-9581-240B796AA872> /usr/lib/system/libxpc.dylib
+       0x183ffb000 -        0x1840167ff  libsystem_trace.dylib (1643.120.5) <AC8466B8-AF1D-3895-876B-228151F0DF1D> /usr/lib/system/libsystem_trace.dylib
+       0x184017000 -        0x1840b53b7  libcorecrypto.dylib (1736.140.2) <7254F3F1-A46F-30B6-934A-511B730A8FC7> /usr/lib/system/libcorecrypto.dylib
+       0x1840b6000 -        0x1840fd06f  libsystem_malloc.dylib (715.140.5) <85947F4E-385D-3B6D-9BF5-844EFE876D53> /usr/lib/system/libsystem_malloc.dylib
+       0x1840fe000 -        0x18414475f  libdispatch.dylib (1521.140.2) <24CE0D89-4114-30C2-A81A-3DB1F5931CFF> /usr/lib/system/libdispatch.dylib
+       0x184145000 -        0x184147d1b  libsystem_featureflags.dylib (97) <856DB4EF-8C67-3842-970C-6FA814B07749> /usr/lib/system/libsystem_featureflags.dylib
+       0x184148000 -        0x1841c9243  libsystem_c.dylib (1698.140.3) <DFEA8794-80CE-37C3-8F6A-108AA1D0B1B0> /usr/lib/system/libsystem_c.dylib
+       0x1841ca000 -        0x184256ff7  libc++.1.dylib (1900.181) <643ED232-CE19-3F63-8015-0AEE768C002F> /usr/lib/libc++.1.dylib
+       0x184257000 -        0x184274fff  libc++abi.dylib (1900.181) <776A4AFB-71EE-32AB-B2EE-E6FF80818654> /usr/lib/libc++abi.dylib
+       0x184275000 -        0x1842b0653  libsystem_kernel.dylib (11417.140.69) <6E4A96AD-04B8-3E8A-B91D-087E62306246> /usr/lib/system/libsystem_kernel.dylib
+       0x1842b1000 -        0x1842bda47  libsystem_pthread.dylib (536) <D6494BA9-171E-39FC-B1AA-28ECF87975D1> /usr/lib/system/libsystem_pthread.dylib
+       0x1842be000 -        0x1842edba3  libdyld.dylib (1286.10) <01BCB3F7-AB89-30BD-87EE-91B291EADAE8> /usr/lib/system/libdyld.dylib
+       0x1842ee000 -        0x1842f5e0b  libsystem_platform.dylib (349.140.6) <FD19A599-8750-31F9-924F-C2810C938371> /usr/lib/system/libsystem_platform.dylib
+       0x1842f6000 -        0x1843256f7  libsystem_info.dylib (597) <9720B57E-A0DF-3BDD-8149-0801054B5D00> /usr/lib/system/libsystem_info.dylib
+       0x187dbc000 -        0x187dc6387  libsystem_darwin.dylib (1698.140.3) <8E58BBDB-E560-3AB4-8A1D-849AB83CBFC5> /usr/lib/system/libsystem_darwin.dylib
+       0x18821e000 -        0x18822ffeb  libsystem_notify.dylib (342) <6A411086-A1A2-349F-B9CA-348F9DCBB415> /usr/lib/system/libsystem_notify.dylib
+       0x18a221000 -        0x18a23be8f  libsystem_networkextension.dylib (2063.140.6) <8183B684-71EB-3FB1-8378-EB830CADAE7D> /usr/lib/system/libsystem_networkextension.dylib
+       0x18a2b8000 -        0x18a2cffdb  libsystem_asl.dylib (402) <FE29D1E8-D286-33F9-81CB-822E632D1571> /usr/lib/system/libsystem_asl.dylib
+       0x18be15000 -        0x18be1d3a7  libsystem_symptoms.dylib (2022.140.4) <AABA26A2-74BC-3219-BAA3-ACC8D81D8589> /usr/lib/system/libsystem_symptoms.dylib
+       0x18f662000 -        0x18f69238f  libsystem_containermanager.dylib (689.100.6) <24EE4AC1-5C9F-3EE0-8B4E-9D060EBCBD41> /usr/lib/system/libsystem_containermanager.dylib
+       0x1908c7000 -        0x1908cb5df  libsystem_configuration.dylib (1351.140.5) <B1ADB810-702B-3646-8B66-EB2C288FE51A> /usr/lib/system/libsystem_configuration.dylib
+       0x1908cc000 -        0x1908d247f  libsystem_sandbox.dylib (2401.140.15) <B86C6D35-683E-3156-BAB2-A422F5AFF2BD> /usr/lib/system/libsystem_sandbox.dylib
+       0x1918d7000 -        0x1918d9fe3  libquarantine.dylib (181.120.2) <8CE8DAD0-52D6-3F46-98EF-161E1397FB48> /usr/lib/system/libquarantine.dylib
+       0x191fed000 -        0x191ff4033  libsystem_coreservices.dylib (178.6.1) <A4E84D5A-8D0E-3692-B888-89B9EEF8753D> /usr/lib/system/libsystem_coreservices.dylib
+       0x19246c000 -        0x1924a92b7  libsystem_m.dylib (3291.100.4) <0D060230-BD2F-3C8E-ACB9-8A79F5CD8EDE> /usr/lib/system/libsystem_m.dylib
+       0x1924ab000 -        0x1924ae4e7  libmacho.dylib (1024.3) <87AB4EEF-3A18-3399-A767-C6BF4ECEDCEB> /usr/lib/system/libmacho.dylib
+       0x1924c8000 -        0x1924d55ef  libcommonCrypto.dylib (600035) <E6BC26C2-DED7-3C04-A670-AEDB150BDB1F> /usr/lib/system/libcommonCrypto.dylib
+       0x1924d6000 -        0x1924dfad7  libunwind.dylib (1900.125) <F753CC2B-775B-3567-B0C6-D2989CA9EBF4> /usr/lib/system/libunwind.dylib
+       0x1924e8000 -        0x1924f269f  libcopyfile.dylib (224) <213FA18D-6145-3615-8DB5-906B6863EAB9> /usr/lib/system/libcopyfile.dylib
+       0x1924f3000 -        0x1924f698f  libcompiler_rt.dylib (103.3) <F0F65700-8E9D-35F3-AC32-952D363190BC> /usr/lib/system/libcompiler_rt.dylib
+       0x1924f7000 -        0x1924fba1b  libsystem_collections.dylib (1698.140.3) <B77BE835-646C-3F05-BDBD-7703DE140F6A> /usr/lib/system/libsystem_collections.dylib
+       0x1924fc000 -        0x1924ff2c7  libsystem_secinit.dylib (153.140.2) <D15B45AD-1345-34BF-B8E3-05336C4046A0> /usr/lib/system/libsystem_secinit.dylib
+       0x192500000 -        0x192502b6f  libremovefile.dylib (81) <9BCF9A24-BECB-3DED-A78E-3A3ECD1B1757> /usr/lib/system/libremovefile.dylib
+       0x192503000 -        0x192503f27  libkeymgr.dylib (31) <B20C6921-D5BE-3BB5-B68C-32D90D629E39> /usr/lib/system/libkeymgr.dylib
+       0x192504000 -        0x19250cd57  libsystem_dnssd.dylib (2600.140.3) <61F023F3-E2C5-3F19-BA1B-B02D7564ACC4> /usr/lib/system/libsystem_dnssd.dylib
+       0x19250d000 -        0x1925120b3  libcache.dylib (95) <2B900F8F-9EDE-3208-AB17-BD1385B5546A> /usr/lib/system/libcache.dylib
+       0x192513000 -        0x192514ca3  libSystem.B.dylib (1351) <072C7C60-2B6C-3E07-AA56-FD1750EADC2F> /usr/lib/libSystem.B.dylib
+       0x26b9f4000 -        0x26b9fb109  libRosetta.dylib (349) <4EE80AAC-8204-3BD0-AB75-EDD23DE67E2F> /usr/lib/libRosetta.dylib
+       0x26ce1f000 -        0x26ce22deb  libsystem_darwindirectory.dylib (122) <277D32FB-F49A-3949-97A4-B190A3DF89E8> /usr/lib/system/libsystem_darwindirectory.dylib
+       0x26ce23000 -        0x26ce2a523  libsystem_eligibility.dylib (181.140.5) <27E48AAA-644F-394A-9F62-49CEFB813716> /usr/lib/system/libsystem_eligibility.dylib
+       0x26ce2b000 -        0x26ce306c5  libsystem_sanitizers.dylib (19) <FB86D2F7-4501-38E4-9D9A-83F960D7D7BA> /usr/lib/system/libsystem_sanitizers.dylib

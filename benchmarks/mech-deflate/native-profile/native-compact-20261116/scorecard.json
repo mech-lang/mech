@@ -28,15 +28,15 @@
     "pr": 995,
     "stacked_on_pr": 993,
     "original_target_pr": 973,
-    "compiler_source_commit": "caa8b22ac5cd4d7c3cf30b5c97f78fd786fe5c16",
-    "compiler_sha256": "c66c37500b0d519a04f1219d617b90075b8f612f76f636310e7fcfe28b7dc107",
-    "latest_deployment_evidence": "evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md",
+    "compiler_source_commit": "2cd17fca3c9d58a5804a18c904fe1daf65598b78",
+    "compiler_sha256": "94aad561b2029fd09b8735aaafcde57c39ca9804054950f685f48f958b5ae432",
+    "latest_deployment_evidence": "evidence/encoder-size-gap/immutable-current-read-study/README.md",
     "host": "Apple M1, macOS 15.6.1, arm64",
     "local_checks": {
       "workspace_formatting": "Pass",
       "warning_policy": "Pass",
       "rust_module_layout": "Pass",
-      "unsafe_boundary_audit": "Blocked: missing allowlisted benchmarks/mech-deflate/comparison/rust/src/pinned_allocator.rs"
+      "unsafe_boundary_audit": "Blocked: existing missing allowlisted benchmarks/mech-deflate/comparison/rust/src/pinned_allocator.rs"
     },
     "required_ci": "pending on the next pushed head"
   },
@@ -7072,122 +7072,136 @@
     "receipt_sha256": "11601ee8ff034fc3804f1866275e7b499ab276433d36c9bb3ecbe46287e3aa27"
   },
   "latest_candidate": {
-    "name": "shared literal allocation and batched final cleanup",
-    "encoder_text_bytes": 64444,
+    "name": "certified immutable current-input reads",
+    "encoder_text_bytes": 63532,
     "current_implementation_candidate": true,
     "opt_in": true,
     "decision": "Retain",
     "runtime": {
-      "host": "Apple M1, macOS 15.6.1, arm64",
-      "source_commit": "4f5a94ac3f0546c99f5f88eb9b500f7bd0266527",
-      "compiler_sha256": "76c263ca3ac059b4bf53f36bc3fe6c07bf3b915c01fdf76a96817f49f445bc06",
-      "encoder_bytes": 64444,
-      "encoder_x_roc": 1.1169578480310594,
-      "encoder_x_libdeflate": 1.7379719525350594,
-      "bytes_saved_vs_64652": 208,
+      "source_integration": {
+        "source_integration_commit": "5ccf097dc02ceb3abb17bccb85cd11a3ae144503",
+        "compiler_sha256": "7fc8647695c26065516d04ee6ae01ef22510bb88fb88bb5b1d9bb76481e22c22",
+        "source_inputs": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads.rs": "e883f4d810ce0928e15f991057805c81e8a376a74f8642dfa1230f3dfc9d6950",
+          "hosts/gpu/src/native_artifact/program/compact/private_phase.rs": "243c0dd2325723be45c5efa89a4c6abc3709e89d263d3c3bd3b405a139461dea",
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "f80c6241e657f6933a9d2c154a222deb81e55f8497bc0101a7c34d4de6c91f71",
+          "hosts/gpu/src/native_artifact/program/compact/private_phase_tests.rs": "3540bb2462bc462cb84cff074b817258c5f2bd23bdf863635aea0d734f679167",
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads/immutable.rs": "786257e5a7dbb699f3995f40d3f0a12df0a8d2e3b4a0be086aa3cce6b6d0700d"
+        },
+        "same_source_content": true,
+        "scope": "This committed compiler source exactly matches every modified Rust input of the immutable source-built compiler. Selected recipe remains unchanged until full runtime and complete builds qualify."
+      },
+      "encoder_bytes": 63532,
+      "encoder_x_roc": 1.101150859678314,
+      "encoder_x_libdeflate": 1.7133764832793958,
+      "bytes_saved_vs_selected": 160,
+      "compiler_sha256": "7fc8647695c26065516d04ee6ae01ef22510bb88fb88bb5b1d9bb76481e22c22",
+      "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+      "artifacts": {
+        "program.o": "cf15343f1f01089d427122ce51a91ef6fa7b70ef89c50ca4db20901a8d2cefd9",
+        "metadata.json": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "worker_sha256": "834c7a7e423a69c46483a3dae74d9450949fdf142b5ad2dede894e0da3ca8693",
       "runtime_decision": "Retain",
-      "peak_stack_bytes": 4656,
+      "peak_stack_bytes": 4848,
+      "source_failure_cases": 6,
+      "source_exact_recoveries": 12,
       "wins": [
         {
           "order": "forward",
-          "roc": 81,
-          "libdeflate": 62,
-          "distinct_roc": 74,
-          "distinct_libdeflate": 56,
-          "precision_supported_roc": 81,
-          "precision_supported_libdeflate": 62,
-          "distinct_precision_supported_roc": 74,
-          "distinct_precision_supported_libdeflate": 56,
-          "roc_lost_cases": [],
-          "libdeflate_lost_cases": []
+          "roc": {
+            "point_estimate_wins": 81,
+            "precision_supported_wins": 81
+          },
+          "libdeflate": {
+            "point_estimate_wins": 62,
+            "precision_supported_wins": 62
+          }
         },
         {
           "order": "reverse",
-          "roc": 81,
-          "libdeflate": 62,
-          "distinct_roc": 74,
-          "distinct_libdeflate": 56,
-          "precision_supported_roc": 81,
-          "precision_supported_libdeflate": 61,
-          "distinct_precision_supported_roc": 74,
-          "distinct_precision_supported_libdeflate": 55,
-          "roc_lost_cases": [],
-          "libdeflate_lost_cases": []
+          "roc": {
+            "point_estimate_wins": 81,
+            "precision_supported_wins": 81
+          },
+          "libdeflate": {
+            "point_estimate_wins": 62,
+            "precision_supported_wins": 62
+          }
         }
       ],
-      "full_rejected": [],
-      "full_unresolved": [],
       "relative": {
         "slowdowns": [
-          "empty: established slowdown above the 0.5% resolution",
-          "320-overlap: established slowdown above the 0.5% resolution"
+          "16384-distribution-change: established slowdown above the 0.5% resolution",
+          "random-32769: established slowdown above the 0.5% resolution",
+          "prefix-natural-65535: established slowdown above the 0.5% resolution",
+          "prefix-natural-65536: established slowdown above the 0.5% resolution",
+          "prefix-natural-65537: established slowdown above the 0.5% resolution",
+          "prefix-natural-131072: established slowdown above the 0.5% resolution",
+          "prefix-natural-262144: established slowdown above the 0.5% resolution",
+          "prefix-random-32767: established slowdown above the 0.5% resolution",
+          "prefix-random-32768: established slowdown above the 0.5% resolution",
+          "prefix-random-32769: established slowdown above the 0.5% resolution",
+          "prefix-random-33027: established slowdown above the 0.5% resolution",
+          "prefix-random-65535: established slowdown above the 0.5% resolution",
+          "prefix-random-262144: established slowdown above the 0.5% resolution"
         ],
         "uncertain": [
-          "one-stored: combined and individual run bounds conflict: shared-terminal-literal-frame-cleanup-full-forward",
-          "seven-stored-prefix: combined and individual run bounds conflict: shared-terminal-literal-frame-cleanup-full-forward",
-          "random-256: regression bound or duplicate-control repeatability unresolved",
-          "repeated-1024: regression bound or duplicate-control repeatability unresolved",
-          "repeated-32769: regression bound or duplicate-control repeatability unresolved",
+          "empty: regression bound or duplicate-control repeatability unresolved",
+          "one-stored: regression bound or duplicate-control repeatability unresolved",
+          "seven-stored-prefix: regression bound or duplicate-control repeatability unresolved",
+          "32-high-entropy-stored: regression bound or duplicate-control repeatability unresolved",
+          "random-1024: regression bound or duplicate-control repeatability unresolved",
+          "heldout-random-65537: regression bound or duplicate-control repeatability unresolved",
+          "prefix-natural-1048576: regression bound or duplicate-control repeatability unresolved",
+          "prefix-random-1024: regression bound or duplicate-control repeatability unresolved",
+          "prefix-random-65536: combined and individual run bounds conflict: immutable-placement-read-immutable-profiled-full-reverse",
+          "prefix-random-65537: regression bound or duplicate-control repeatability unresolved",
+          "prefix-random-131072: regression bound or duplicate-control repeatability unresolved",
+          "prefix-random-1048576: combined and individual run bounds conflict: immutable-placement-read-immutable-profiled-full-reverse",
           "prefix-periodic-1024: regression bound or duplicate-control repeatability unresolved",
           "prefix-periodic-4096: regression bound or duplicate-control repeatability unresolved",
-          "prefix-repeated-1024: regression bound or duplicate-control repeatability unresolved",
-          "prefix-repeated-4096: regression bound or duplicate-control repeatability unresolved",
-          "prefix-repeated-8192: regression bound or duplicate-control repeatability unresolved"
+          "prefix-periodic-8192: regression bound or duplicate-control repeatability unresolved"
         ]
       },
-      "material_control_slowdowns": {
-        "empty": {
-          "decision": "regression",
-          "runs": {
-            "shared-terminal-literal-frame-cleanup-full-forward": {
-              "estimate": 0.049419716331057684,
-              "lower": 0.04199796768261366,
-              "upper": 0.05714321991231475
-            },
-            "shared-terminal-literal-frame-cleanup-full-reverse": {
-              "estimate": -0.0043285566099360295,
-              "lower": -0.012545845224984808,
-              "upper": 0.0038743009464448086
+      "remaining_c_losses": 19,
+      "next_c_target": {
+        "case": "prefix-natural-4096",
+        "worst_ratio": 1.0689458677488346,
+        "needed_time_reduction": 0.06449893285431973,
+        "orders": [
+          {
+            "case": "prefix-natural-4096",
+            "order": "forward",
+            "candidate_control": 0.9972768928304013,
+            "candidate_roc": 0.6264736312090096,
+            "candidate_c": 1.0637572685977872,
+            "median_seconds": {
+              "mech-control": 0.00041758349999999997,
+              "mech-experiment": 0.0004156665,
+              "roc": 0.0006629374999999999,
+              "libdeflate": 0.000390604
             }
           },
-          "combined": {
-            "estimate": 0.0221923711715597,
-            "lower": 0.016809824086666758,
-            "upper": 0.027749626914318037
-          },
-          "adverse_runs": [
-            "shared-terminal-literal-frame-cleanup-full-forward"
-          ],
-          "duplicate_controls": []
-        },
-        "320-overlap": {
-          "decision": "regression",
-          "runs": {
-            "shared-terminal-literal-frame-cleanup-full-forward": {
-              "estimate": 0.010066279414949308,
-              "lower": 0.008176473270284479,
-              "upper": 0.011969496744549835
-            },
-            "shared-terminal-literal-frame-cleanup-full-reverse": {
-              "estimate": 0.009215183427523588,
-              "lower": 0.0019271292785212335,
-              "upper": 0.019925728412707233
+          {
+            "case": "prefix-natural-4096",
+            "order": "reverse",
+            "candidate_control": 0.9991667419906325,
+            "candidate_roc": 0.6297786012742422,
+            "candidate_c": 1.0689458677488346,
+            "median_seconds": {
+              "libdeflate": 0.000392,
+              "roc": 0.0006615,
+              "mech-experiment": 0.0004158335,
+              "mech-control": 0.000415729
             }
-          },
-          "combined": {
-            "estimate": 0.009640641740275013,
-            "lower": 0.005738162016970305,
-            "upper": 0.015061839611763883
-          },
-          "adverse_runs": [
-            "shared-terminal-literal-frame-cleanup-full-forward"
-          ],
-          "duplicate_controls": []
-        }
+          }
+        ]
       },
-      "precision_note": "Both orders have 62 C point wins. Reverse has 61 precision-supported C wins. The unchanged v3 gate returns Retain."
+      "scope": "Changed actual worker, both full81-case orders,96 paired blocks/case, all individual peer wins and81/62 point+precision floors. Complete builds are recorded separately; code/bytecode are original-source generated."
     },
-    "evidence": "evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md"
+    "evidence": "evidence/encoder-size-gap/immutable-current-read-study/README.md"
   },
   "ordinary_integration": {
     "optimized_path": "explicit diagnostic compact entry",
@@ -7370,7 +7384,7 @@
     "checked_chain_estimated_recomputation_seconds": 0.0032,
     "next": "Exact-choice body planning and one further omitted-body investigation"
   },
-  "current_matched_build": "sealed_base_phase_fusion",
+  "current_matched_build": "immutable_current_reads.final_source_integration",
   "scoped_function_replay": {
     "compiler_source": "e9538f71514225abf5ca57a9fc0acab358407167",
     "control_source": "ff7c1dbc9c5059ed84d730b008847c02179fa2cf",
@@ -14224,6 +14238,55 @@
       "encoder_text_bytes": 71192
     },
     "peer_qualified_opt_in": {
+      "recipe": "m1-immutable-current-reads",
+      "source": "2cd17fca3c9d58a5804a18c904fe1daf65598b78",
+      "encoder_text_bytes": 63532,
+      "worker": "834c7a7e423a69c46483a3dae74d9450949fdf142b5ad2dede894e0da3ca8693",
+      "compiler_sha256": "94aad561b2029fd09b8735aaafcde57c39ca9804054950f685f48f958b5ae432",
+      "runtime": {
+        "decision": "Retain",
+        "wins": {
+          "roc": [
+            81,
+            81
+          ],
+          "libdeflate": [
+            62,
+            62
+          ]
+        },
+        "precision_supported_roc": [
+          81,
+          81
+        ],
+        "precision_supported_libdeflate": [
+          62,
+          62
+        ]
+      },
+      "runtime_tradeoff": "13 established slowdowns above0.5%,15 uncertain comparisons; all individual peer wins preserved. Large random1MiB costs0.54%/0.77%.",
+      "latest_default_build": {
+        "source_through_final_link_seconds": 2.208666958613321,
+        "paired_ratios": {
+          "roc": 0.7412477156382254,
+          "libdeflate": 4.602360941984291,
+          "mech-control-reference": 1.0015238819325103
+        },
+        "final_configuration_change_seconds": 0.0033596244174987078,
+        "final_configuration_ci90_seconds": [
+          0.0009405838791280985,
+          0.0050497292540967464
+        ],
+        "pass_isolation_evidence": "immutable_current_reads.build"
+      },
+      "evidence": "evidence/encoder-size-gap/immutable-current-read-study/README.md"
+    },
+    "rejected": {
+      "encoder_text_bytes": 64668,
+      "qualification": "Reject",
+      "evidence": "evidence/encoder-size-gap/shared-heap-call-screen/README.md"
+    },
+    "previous_peer_qualified_opt_in": {
       "recipe": "m1-matcher-guard-facts",
       "source": "5a89f646664b86a0b808137c01c7627b2142552a",
       "encoder_text_bytes": 63692,
@@ -14275,45 +14338,6 @@
         }
       },
       "evidence": "evidence/encoder-size-gap/current-matcher-guard-facts/README.md"
-    },
-    "rejected": {
-      "encoder_text_bytes": 64668,
-      "qualification": "Reject",
-      "evidence": "evidence/encoder-size-gap/shared-heap-call-screen/README.md"
-    },
-    "previous_peer_qualified_opt_in": {
-      "recipe": "m1-register-spill-pairs",
-      "source": "388e1087c401cd3b9f87a31b10652372ab720096",
-      "encoder_text_bytes": 63756,
-      "worker": "c2ffb9aa77320e29c4dc9caeb647afbc130166587a551f168ea5963c3373f63b",
-      "compiler_sha256": "6711160f915f00bb783831fc14f0144ba7949c06ea9df264edd727a62d44e715",
-      "runtime": {
-        "decision": "Retain",
-        "wins": {
-          "roc": [
-            81,
-            81
-          ],
-          "libdeflate": [
-            62,
-            62
-          ]
-        },
-        "precision_supported_libdeflate": [
-          62,
-          62
-        ]
-      },
-      "runtime_tradeoff": "Two established 1KiB slowdowns of0.6-0.9%; all individual peer wins held. See complete v3 replay.",
-      "latest_default_build": {
-        "source_through_final_link_seconds": 2.219958021072671,
-        "paired_ratios": {
-          "roc": 0.7432249118867276,
-          "libdeflate": 4.609545095050551,
-          "mech-control-reference": 0.9996832643542155
-        }
-      },
-      "evidence": "evidence/encoder-size-gap/current-register-spill-pairs/README.md"
     },
     "same_encoder_previous_compiler_recipe": {
       "recipe": "m1-preserved-root-registers",
@@ -16768,15 +16792,14 @@
     }
   },
   "next_runtime_target": {
-    "worker_sha256": "88321c097d29b7219f639abbc5fcce727f0602de2d05ab24e5e2b47f2996c3b4",
     "case": "prefix-natural-4096",
-    "paired_x_libdeflate": {
-      "forward": 1.0556871229332556,
-      "reverse": 1.0656124352288467
-    },
-    "required_time_cut_percent": 6.157251272575104,
-    "primary_investigation": "Shared large-random collector checks and remaining spill lifetimes",
-    "evidence": "evidence/encoder-size-gap/current-matcher-guard-facts/runtime-case-ratios.json"
+    "paired_mech_c": [
+      1.0637572685977872,
+      1.0689458677488346
+    ],
+    "required_time_reduction": 0.06449893285431973,
+    "primary_investigation": "Shared large-random collector; closest-next-win scorer remains a required canary.",
+    "evidence": "evidence/encoder-size-gap/immutable-current-read-study/placement/runtime-case-ratios.json"
   },
   "current_register_spill_pairs": {
     "status": "qualified predecessor",
@@ -18282,5 +18305,1245 @@
     },
     "syntax_tests": 539,
     "runtime_qualification": "Reused solely because object, full metadata, bytecode and fixed-support worker reproduce exactly. Both existing complete orders retain81Roc/62C. No new runtime campaign claimed."
+  },
+  "previous_latest_candidate_reference": {
+    "commit": "5ccf097dc02ceb3abb17bccb85cd11a3ae144503",
+    "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/scorecard.json",
+    "key": "latest_candidate"
+  },
+  "immutable_current_reads": {
+    "source_commit": "5ccf097dc02ceb3abb17bccb85cd11a3ae144503",
+    "evidence": "evidence/encoder-size-gap/immutable-current-read-study/README.md",
+    "runtime": {
+      "source_integration": {
+        "source_integration_commit": "5ccf097dc02ceb3abb17bccb85cd11a3ae144503",
+        "compiler_sha256": "7fc8647695c26065516d04ee6ae01ef22510bb88fb88bb5b1d9bb76481e22c22",
+        "source_inputs": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads.rs": "e883f4d810ce0928e15f991057805c81e8a376a74f8642dfa1230f3dfc9d6950",
+          "hosts/gpu/src/native_artifact/program/compact/private_phase.rs": "243c0dd2325723be45c5efa89a4c6abc3709e89d263d3c3bd3b405a139461dea",
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "f80c6241e657f6933a9d2c154a222deb81e55f8497bc0101a7c34d4de6c91f71",
+          "hosts/gpu/src/native_artifact/program/compact/private_phase_tests.rs": "3540bb2462bc462cb84cff074b817258c5f2bd23bdf863635aea0d734f679167",
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads/immutable.rs": "786257e5a7dbb699f3995f40d3f0a12df0a8d2e3b4a0be086aa3cce6b6d0700d"
+        },
+        "same_source_content": true,
+        "scope": "This committed compiler source exactly matches every modified Rust input of the immutable source-built compiler. Selected recipe remains unchanged until full runtime and complete builds qualify."
+      },
+      "encoder_bytes": 63532,
+      "encoder_x_roc": 1.101150859678314,
+      "encoder_x_libdeflate": 1.7133764832793958,
+      "bytes_saved_vs_selected": 160,
+      "compiler_sha256": "7fc8647695c26065516d04ee6ae01ef22510bb88fb88bb5b1d9bb76481e22c22",
+      "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+      "artifacts": {
+        "program.o": "cf15343f1f01089d427122ce51a91ef6fa7b70ef89c50ca4db20901a8d2cefd9",
+        "metadata.json": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "worker_sha256": "834c7a7e423a69c46483a3dae74d9450949fdf142b5ad2dede894e0da3ca8693",
+      "runtime_decision": "Retain",
+      "peak_stack_bytes": 4848,
+      "source_failure_cases": 6,
+      "source_exact_recoveries": 12,
+      "wins": [
+        {
+          "order": "forward",
+          "roc": {
+            "point_estimate_wins": 81,
+            "precision_supported_wins": 81
+          },
+          "libdeflate": {
+            "point_estimate_wins": 62,
+            "precision_supported_wins": 62
+          }
+        },
+        {
+          "order": "reverse",
+          "roc": {
+            "point_estimate_wins": 81,
+            "precision_supported_wins": 81
+          },
+          "libdeflate": {
+            "point_estimate_wins": 62,
+            "precision_supported_wins": 62
+          }
+        }
+      ],
+      "relative": {
+        "slowdowns": [
+          "16384-distribution-change: established slowdown above the 0.5% resolution",
+          "random-32769: established slowdown above the 0.5% resolution",
+          "prefix-natural-65535: established slowdown above the 0.5% resolution",
+          "prefix-natural-65536: established slowdown above the 0.5% resolution",
+          "prefix-natural-65537: established slowdown above the 0.5% resolution",
+          "prefix-natural-131072: established slowdown above the 0.5% resolution",
+          "prefix-natural-262144: established slowdown above the 0.5% resolution",
+          "prefix-random-32767: established slowdown above the 0.5% resolution",
+          "prefix-random-32768: established slowdown above the 0.5% resolution",
+          "prefix-random-32769: established slowdown above the 0.5% resolution",
+          "prefix-random-33027: established slowdown above the 0.5% resolution",
+          "prefix-random-65535: established slowdown above the 0.5% resolution",
+          "prefix-random-262144: established slowdown above the 0.5% resolution"
+        ],
+        "uncertain": [
+          "empty: regression bound or duplicate-control repeatability unresolved",
+          "one-stored: regression bound or duplicate-control repeatability unresolved",
+          "seven-stored-prefix: regression bound or duplicate-control repeatability unresolved",
+          "32-high-entropy-stored: regression bound or duplicate-control repeatability unresolved",
+          "random-1024: regression bound or duplicate-control repeatability unresolved",
+          "heldout-random-65537: regression bound or duplicate-control repeatability unresolved",
+          "prefix-natural-1048576: regression bound or duplicate-control repeatability unresolved",
+          "prefix-random-1024: regression bound or duplicate-control repeatability unresolved",
+          "prefix-random-65536: combined and individual run bounds conflict: immutable-placement-read-immutable-profiled-full-reverse",
+          "prefix-random-65537: regression bound or duplicate-control repeatability unresolved",
+          "prefix-random-131072: regression bound or duplicate-control repeatability unresolved",
+          "prefix-random-1048576: combined and individual run bounds conflict: immutable-placement-read-immutable-profiled-full-reverse",
+          "prefix-periodic-1024: regression bound or duplicate-control repeatability unresolved",
+          "prefix-periodic-4096: regression bound or duplicate-control repeatability unresolved",
+          "prefix-periodic-8192: regression bound or duplicate-control repeatability unresolved"
+        ]
+      },
+      "remaining_c_losses": 19,
+      "next_c_target": {
+        "case": "prefix-natural-4096",
+        "worst_ratio": 1.0689458677488346,
+        "needed_time_reduction": 0.06449893285431973,
+        "orders": [
+          {
+            "case": "prefix-natural-4096",
+            "order": "forward",
+            "candidate_control": 0.9972768928304013,
+            "candidate_roc": 0.6264736312090096,
+            "candidate_c": 1.0637572685977872,
+            "median_seconds": {
+              "mech-control": 0.00041758349999999997,
+              "mech-experiment": 0.0004156665,
+              "roc": 0.0006629374999999999,
+              "libdeflate": 0.000390604
+            }
+          },
+          {
+            "case": "prefix-natural-4096",
+            "order": "reverse",
+            "candidate_control": 0.9991667419906325,
+            "candidate_roc": 0.6297786012742422,
+            "candidate_c": 1.0689458677488346,
+            "median_seconds": {
+              "libdeflate": 0.000392,
+              "roc": 0.0006615,
+              "mech-experiment": 0.0004158335,
+              "mech-control": 0.000415729
+            }
+          }
+        ]
+      },
+      "scope": "Changed actual worker, both full81-case orders,96 paired blocks/case, all individual peer wins and81/62 point+precision floors. Complete builds are recorded separately; code/bytecode are original-source generated."
+    },
+    "build": {
+      "plan_sha256": "9f35db401059784968864c467d78135edb55dac3f95b5250bacb3c73e338f192",
+      "medians": {
+        "mech-control-reference": {
+          "source": 2.183295249240473,
+          "link": 0.03613635408692062,
+          "source_through_link": 2.2232433962635696,
+          "strip": 0.010808791732415557,
+          "source_through_strip": 2.2342243131715804
+        },
+        "mech-current-disabled": {
+          "source": 2.174737812485546,
+          "link": 0.035216354532167315,
+          "source_through_link": 2.213334812549874,
+          "strip": 0.010766583262011409,
+          "source_through_strip": 2.2243242498952895
+        },
+        "mech-immutable-current-read": {
+          "source": 2.176442541880533,
+          "link": 0.03523504175245762,
+          "source_through_link": 2.211926354561001,
+          "strip": 0.01079352106899023,
+          "source_through_strip": 2.2230450834613293
+        },
+        "mech-immutable-only-pinned": {
+          "source": 2.183995292056352,
+          "link": 0.03534250031225383,
+          "source_through_link": 2.2209563746582717,
+          "strip": 0.010746208019554615,
+          "source_through_strip": 2.2320856251753867
+        },
+        "mech-broad-rematerialized": {
+          "source": 2.183756979415193,
+          "link": 0.035590354120358825,
+          "source_through_link": 2.2228658960666507,
+          "strip": 0.010807625018060207,
+          "source_through_strip": 2.2340568124782294
+        },
+        "mech-broad-pinned": {
+          "source": 2.1863444792106748,
+          "link": 0.03573806257918477,
+          "source_through_link": 2.226703708525747,
+          "strip": 0.0106864373665303,
+          "source_through_strip": 2.23770364606753
+        },
+        "roc": {
+          "source": 2.9539014797192067,
+          "link": 0.03508650045841932,
+          "source_through_link": 2.988796562422067,
+          "strip": 0.010756166419014335,
+          "source_through_strip": 2.999630500562489
+        },
+        "libdeflate": {
+          "source": 0.4562412921804935,
+          "link": 0.034713416593149304,
+          "source_through_link": 0.49114456260576844,
+          "strip": 0.010714812437072396,
+          "source_through_strip": 0.5020164586603642
+        }
+      },
+      "phases": {
+        "mech-control-reference": {
+          "parse": 0.7044184785000001,
+          "catalog": 2.2270999999999997e-05,
+          "frontend": 0.21795160400000002,
+          "artifact": 0.006852562499999999,
+          "encode": 0.0025239169999999997,
+          "native": 1.2176527495
+        },
+        "mech-current-disabled": {
+          "parse": 0.704743208,
+          "catalog": 2.17915e-05,
+          "frontend": 0.21806408300000002,
+          "artifact": 0.006832709,
+          "encode": 0.002519542,
+          "native": 1.2157229374999998
+        },
+        "mech-immutable-current-read": {
+          "parse": 0.704370646,
+          "catalog": 2.0625e-05,
+          "frontend": 0.217767125,
+          "artifact": 0.006834479,
+          "encode": 0.0025154585,
+          "native": 1.218925875
+        },
+        "mech-immutable-only-pinned": {
+          "parse": 0.7046110415,
+          "catalog": 2.2292000000000003e-05,
+          "frontend": 0.218336437,
+          "artifact": 0.0068350830000000005,
+          "encode": 0.0025185625,
+          "native": 1.2204126875
+        },
+        "mech-broad-rematerialized": {
+          "parse": 0.7041157499999999,
+          "catalog": 2.42915e-05,
+          "frontend": 0.2222430835,
+          "artifact": 0.0068901455,
+          "encode": 0.0025371665,
+          "native": 1.2188389375000002
+        },
+        "mech-broad-pinned": {
+          "parse": 0.704489792,
+          "catalog": 2.1709e-05,
+          "frontend": 0.217649917,
+          "artifact": 0.0068748125,
+          "encode": 0.0025324164999999997,
+          "native": 1.221729292
+        }
+      },
+      "paired_ratios": {
+        "mech-control-reference": {
+          "roc": 0.7399190492633007,
+          "libdeflate": 4.574339071840733,
+          "mech-control-reference": 1.0
+        },
+        "mech-current-disabled": {
+          "roc": 0.7399453737831954,
+          "libdeflate": 4.503946559074974,
+          "mech-control-reference": 0.9949460926855106
+        },
+        "mech-immutable-current-read": {
+          "roc": 0.7391566823383466,
+          "libdeflate": 4.5059693735801005,
+          "mech-control-reference": 0.9942922599060711
+        },
+        "mech-immutable-only-pinned": {
+          "roc": 0.7410683507864431,
+          "libdeflate": 4.5637543361457755,
+          "mech-control-reference": 1.0016028314046372
+        },
+        "mech-broad-rematerialized": {
+          "roc": 0.7407420829912079,
+          "libdeflate": 4.593051379230306,
+          "mech-control-reference": 1.0011565921581005
+        },
+        "mech-broad-pinned": {
+          "roc": 0.741265621917685,
+          "libdeflate": 4.567785317777693,
+          "mech-control-reference": 1.0025780552985553
+        }
+      },
+      "candidate_compiler_sha256": "7fc8647695c26065516d04ee6ae01ef22510bb88fb88bb5b1d9bb76481e22c22",
+      "control_compiler_sha256": "bc6dfeef148b62c9576b408d761b45c5197c0caa0aec2145cd33985fc02e9104",
+      "source_inputs": {
+        "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads.rs": "e883f4d810ce0928e15f991057805c81e8a376a74f8642dfa1230f3dfc9d6950",
+        "hosts/gpu/src/native_artifact/program/compact/private_phase.rs": "243c0dd2325723be45c5efa89a4c6abc3709e89d263d3c3bd3b405a139461dea",
+        "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "f80c6241e657f6933a9d2c154a222deb81e55f8497bc0101a7c34d4de6c91f71",
+        "hosts/gpu/src/native_artifact/program/compact/private_phase_tests.rs": "3540bb2462bc462cb84cff074b817258c5f2bd23bdf863635aea0d734f679167",
+        "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads/immutable.rs": "786257e5a7dbb699f3995f40d3f0a12df0a8d2e3b4a0be086aa3cce6b6d0700d"
+      },
+      "trials": 16,
+      "changes": {
+        "mech-immutable-current-read_versus_mech-control-reference": {
+          "paired_median_seconds": -0.012690083822235465,
+          "paired_ci90_seconds": [
+            -0.02025737497024238,
+            -0.0007221042178571224
+          ],
+          "paired_median_ratio": 0.9942922599060711,
+          "paired_ci90_ratio": [
+            0.9909195550727341,
+            0.9996734270874005
+          ],
+          "faster_pairs": 12
+        },
+        "mech-immutable-current-read_versus_mech-current-disabled": {
+          "paired_median_seconds": -0.0001394171267747879,
+          "paired_ci90_seconds": [
+            -0.0036275002639740705,
+            0.003597750561311841
+          ],
+          "paired_median_ratio": 0.9999371485276851,
+          "paired_ci90_ratio": [
+            0.9983611543775693,
+            1.0016291410731197
+          ],
+          "faster_pairs": 8
+        },
+        "mech-current-disabled_versus_mech-control-reference": {
+          "paired_median_seconds": -0.011261395877227187,
+          "paired_ci90_seconds": [
+            -0.016061270609498024,
+            -0.004024750553071499
+          ],
+          "paired_median_ratio": 0.9949460926855106,
+          "paired_ci90_ratio": [
+            0.9927888764013517,
+            0.9981838791193879
+          ],
+          "faster_pairs": 12
+        },
+        "mech-immutable-only-pinned_versus_mech-current-disabled": {
+          "paired_median_seconds": 0.0103449581656605,
+          "paired_ci90_seconds": [
+            0.0018808541353791952,
+            0.023258083267137408
+          ],
+          "paired_median_ratio": 1.0046794927584273,
+          "paired_ci90_ratio": [
+            1.0008516493171093,
+            1.0105103497679442
+          ],
+          "faster_pairs": 4
+        },
+        "mech-broad-rematerialized_versus_mech-current-disabled": {
+          "paired_median_seconds": 0.009085229132324457,
+          "paired_ci90_seconds": [
+            0.0037357076071202755,
+            0.051001957850530744
+          ],
+          "paired_median_ratio": 1.0041037719302186,
+          "paired_ci90_ratio": [
+            1.001689123974015,
+            1.0229620666250892
+          ],
+          "faster_pairs": 4
+        },
+        "mech-broad-pinned_versus_mech-current-disabled": {
+          "paired_median_seconds": 0.008275958010926843,
+          "paired_ci90_seconds": [
+            0.0019438553135842085,
+            0.019590916810557246
+          ],
+          "paired_median_ratio": 1.0037361970565688,
+          "paired_ci90_ratio": [
+            1.000880213228045,
+            1.0088599175863244
+          ],
+          "faster_pairs": 4
+        },
+        "mech-immutable-current-read_versus_mech-immutable-only-pinned": {
+          "paired_median_seconds": -0.005048687104135752,
+          "paired_ci90_seconds": [
+            -0.015606187516823411,
+            -0.0029641883447766304
+          ],
+          "paired_median_ratio": 0.9977381488918234,
+          "paired_ci90_ratio": [
+            0.9929946069797625,
+            0.9986611641209713
+          ],
+          "faster_pairs": 15
+        }
+      },
+      "source_cpu_seconds": {
+        "mech-control-reference": 2.2459670000000003,
+        "mech-current-disabled": 2.236396,
+        "mech-immutable-current-read": 2.2374134999999997,
+        "mech-immutable-only-pinned": 2.243843,
+        "mech-broad-rematerialized": 2.2478745,
+        "mech-broad-pinned": 2.2437234999999998,
+        "roc": 2.9456715,
+        "libdeflate": 0.4455994999999999
+      },
+      "source_rss_bytes": {
+        "mech-control-reference": 392740864.0,
+        "mech-current-disabled": 392790016.0,
+        "mech-immutable-current-read": 392626176.0,
+        "mech-immutable-only-pinned": 392642560.0,
+        "mech-broad-rematerialized": 392839168.0,
+        "mech-broad-pinned": 392839168.0,
+        "roc": 392970240.0,
+        "libdeflate": 75251712.0
+      },
+      "stripped_executables": {
+        "mech-control-reference": {
+          "bytes": 276072,
+          "sha256": "8d2a9a53fa7f9747f36d2c17781530ab5124628d4f200ae937a38daa8a6e5589"
+        },
+        "mech-current-disabled": {
+          "bytes": 276072,
+          "sha256": "8d2a9a53fa7f9747f36d2c17781530ab5124628d4f200ae937a38daa8a6e5589"
+        },
+        "mech-immutable-current-read": {
+          "bytes": 276072,
+          "sha256": "ef5d395b081769dc5b396beaf5e5129e74729199f9e33c0af1bece4e34c9137a"
+        },
+        "mech-immutable-only-pinned": {
+          "bytes": 276072,
+          "sha256": "cabc44eb1cc8e5e90310e1b79cceb78043b29613666251c5f384a4ae5e253290"
+        },
+        "mech-broad-rematerialized": {
+          "bytes": 276072,
+          "sha256": "76edfb53011eb00e6171240950fcd9882a8acdb1591ea2e99b1a0b86bada1ae1"
+        },
+        "mech-broad-pinned": {
+          "bytes": 276072,
+          "sha256": "40a0b738943c88f6eb5eb804c45af57babe7bdd1b9f3744faacbb4cf561d4ac0"
+        },
+        "roc": {
+          "bytes": 191912,
+          "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+        },
+        "libdeflate": {
+          "bytes": 155752,
+          "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+        }
+      },
+      "timing_boundary": "Fresh process, original encoder source through native artifact and final deployment link. Fixed support prebuilt for every actor. Strip separate. Compiler bootstrap excluded."
+    },
+    "profiles": {
+      "plan": {
+        "source_commit": "5ccf097dc02ceb3abb17bccb85cd11a3ae144503",
+        "cases": [
+          "prefix-random-1048576",
+          "prefix-natural-4096"
+        ],
+        "actors": {
+          "mech": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/placement/immutable-profiled/bound/mech-worker",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/placement/immutable-profiled/bound/metadata.json",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+            ],
+            "sha256": "834c7a7e423a69c46483a3dae74d9450949fdf142b5ad2dede894e0da3ca8693",
+            "warmups": 32
+          },
+          "libdeflate": {
+            "command": [
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/libdeflate-worker",
+              "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+            ],
+            "sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+            "warmups": 80
+          }
+        },
+        "sample_seconds": 3,
+        "interval_ms": 1,
+        "load_before": [
+          2.4208984375,
+          2.34814453125,
+          2.31787109375
+        ],
+        "scope": "Fresh untimed diagnostic captures on the qualified 63532B worker and pinned C. Refresh hot-owner attribution after certified immutable-only read reuse. Existing full-order ratios remain the latency evidence; no new optimization or runtime campaign is claimed."
+      },
+      "profile_classifier_sha256": "661ba4dea576e18ce9eec221621e3b1446378a0cbe30b219e182e1add46aa938",
+      "profiles": {
+        "prefix-random-1048576": {
+          "mech": {
+            "encoder_roots": "mech_compact_closed_v2",
+            "encoder_stack_samples": 2274,
+            "all_main_thread_samples": 2284,
+            "buckets": {
+              "matcher": {
+                "samples": 1644,
+                "percent": 72.29551451187335
+              },
+              "scorer": {
+                "samples": 328,
+                "percent": 14.42392260334213
+              },
+              "histogram": {
+                "samples": 135,
+                "percent": 5.936675461741425
+              },
+              "other numeric kernels": {
+                "samples": 124,
+                "percent": 5.452946350043975
+              },
+              "other encoder calls": {
+                "samples": 32,
+                "percent": 1.4072119613016711
+              },
+              "controller self": {
+                "samples": 7,
+                "percent": 0.30782761653474056
+              },
+              "copying": {
+                "samples": 2,
+                "percent": 0.08795074758135445
+              },
+              "zeroing": {
+                "samples": 1,
+                "percent": 0.04397537379067722
+              },
+              "retirement": {
+                "samples": 1,
+                "percent": 0.04397537379067722
+              }
+            },
+            "top_encoder_functions": [
+              [
+                "mech_compact_numeric_475_vector",
+                1644
+              ],
+              [
+                "mech_compact_numeric_3009_no_growth_composed",
+                328
+              ],
+              [
+                "mech_compact_numeric_3447_grouped",
+                135
+              ],
+              [
+                "mech_compact_numeric_2821_vector",
+                112
+              ],
+              [
+                "mech_compact_word_collection_10",
+                30
+              ],
+              [
+                "mech_compact_numeric_3956_vector",
+                8
+              ],
+              [
+                "mech_compact_closed_checked",
+                7
+              ],
+              [
+                "mech_compact_numeric_4173",
+                4
+              ],
+              [
+                "_platform_memmove",
+                2
+              ],
+              [
+                "__bzero",
+                1
+              ],
+              [
+                "mach_absolute_time",
+                1
+              ],
+              [
+                "mech_compact_release_three",
+                1
+              ],
+              [
+                "__munmap",
+                1
+              ]
+            ],
+            "top_all_functions": [
+              [
+                "mech_compact_numeric_475_vector",
+                1644
+              ],
+              [
+                "mech_compact_numeric_3009_no_growth_composed",
+                328
+              ],
+              [
+                "mech_compact_numeric_3447_grouped",
+                135
+              ],
+              [
+                "mech_compact_numeric_2821_vector",
+                112
+              ],
+              [
+                "mech_compact_word_collection_10",
+                30
+              ],
+              [
+                "mech_compact_numeric_3956_vector",
+                8
+              ],
+              [
+                "_platform_memcmp",
+                8
+              ],
+              [
+                "mech_compact_closed_checked",
+                7
+              ],
+              [
+                "mech_compact_numeric_4173",
+                4
+              ],
+              [
+                "_platform_memmove",
+                4
+              ],
+              [
+                "__bzero",
+                1
+              ],
+              [
+                "mach_absolute_time",
+                1
+              ],
+              [
+                "mech_compact_release_three",
+                1
+              ],
+              [
+                "__munmap",
+                1
+              ],
+              [
+                "Thread_51140672   DispatchQueue_1: com.apple.main-thread  (serial)",
+                0
+              ]
+            ],
+            "scope": "Exclusive leaf samples within the named encoder function tree. Constructor/final-transfer/cleanup outside that tree and caller validation are not all represented. C near-optimal self samples include inlined matching. These are not elapsed phase times or forecasts.",
+            "worker_sha256": "834c7a7e423a69c46483a3dae74d9450949fdf142b5ad2dede894e0da3ca8693",
+            "sample_sha256": "c5f784854323f7fec293dc79323d133540e3eb6dd45839a18d5e1f0eec8d9aba"
+          },
+          "libdeflate": {
+            "encoder_roots": "deflate_compress_near_optimal",
+            "encoder_stack_samples": 2263,
+            "all_main_thread_samples": 2287,
+            "buckets": {
+              "near-optimal body (includes inlined matching)": {
+                "samples": 1553,
+                "percent": 68.62571807335395
+              },
+              "scorer": {
+                "samples": 589,
+                "percent": 26.027397260273972
+              },
+              "other encoder calls": {
+                "samples": 103,
+                "percent": 4.551480335837384
+              },
+              "Huffman": {
+                "samples": 14,
+                "percent": 0.618647812638091
+              },
+              "copying": {
+                "samples": 4,
+                "percent": 0.17675651789659744
+              }
+            },
+            "top_encoder_functions": [
+              [
+                "deflate_compress_near_optimal",
+                1553
+              ],
+              [
+                "deflate_find_min_cost_path",
+                589
+              ],
+              [
+                "deflate_optimize_and_flush_block",
+                87
+              ],
+              [
+                "deflate_make_huffman_code",
+                14
+              ],
+              [
+                "deflate_near_optimal_merge_stats",
+                9
+              ],
+              [
+                "do_end_block_check",
+                7
+              ],
+              [
+                "_platform_memmove",
+                4
+              ]
+            ],
+            "top_all_functions": [
+              [
+                "deflate_compress_near_optimal",
+                1553
+              ],
+              [
+                "deflate_find_min_cost_path",
+                589
+              ],
+              [
+                "deflate_optimize_and_flush_block",
+                87
+              ],
+              [
+                "deflate_make_huffman_code",
+                14
+              ],
+              [
+                "__bzero",
+                11
+              ],
+              [
+                "deflate_near_optimal_merge_stats",
+                9
+              ],
+              [
+                "_platform_memcmp",
+                9
+              ],
+              [
+                "do_end_block_check",
+                7
+              ],
+              [
+                "_platform_memmove",
+                4
+              ],
+              [
+                "madvise",
+                2
+              ],
+              [
+                "mi_segment_try_purge",
+                1
+              ],
+              [
+                "_mi_page_retire",
+                1
+              ],
+              [
+                "Thread_51140746   DispatchQueue_1: com.apple.main-thread  (serial)",
+                0
+              ],
+              [
+                "start",
+                0
+              ],
+              [
+                "main",
+                0
+              ]
+            ],
+            "scope": "Exclusive leaf samples within the named encoder function tree. Constructor/final-transfer/cleanup outside that tree and caller validation are not all represented. C near-optimal self samples include inlined matching. These are not elapsed phase times or forecasts.",
+            "worker_sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+            "sample_sha256": "64b70776249576d45fba5bcfcd6494413a74589cae896ab39696e29609779ad1"
+          },
+          "qualified_runtime": [
+            {
+              "case": "prefix-random-1048576",
+              "order": "forward",
+              "candidate_control": 1.0053578102159992,
+              "candidate_roc": 0.9627302033964779,
+              "candidate_c": 1.3581629085656366,
+              "median_seconds": {
+                "mech-control": 0.0274857295,
+                "mech-experiment": 0.0276913545,
+                "roc": 0.028767354000000002,
+                "libdeflate": 0.020347375
+              }
+            },
+            {
+              "case": "prefix-random-1048576",
+              "order": "reverse",
+              "candidate_control": 1.0077179600904016,
+              "candidate_roc": 0.9625073632307777,
+              "candidate_c": 1.3596603435752772,
+              "median_seconds": {
+                "libdeflate": 0.0203678125,
+                "roc": 0.0287481875,
+                "mech-experiment": 0.027681625,
+                "mech-control": 0.0274745835
+              }
+            }
+          ]
+        },
+        "prefix-natural-4096": {
+          "mech": {
+            "encoder_roots": "mech_compact_closed_v2",
+            "encoder_stack_samples": 2210,
+            "all_main_thread_samples": 2286,
+            "buckets": {
+              "scorer": {
+                "samples": 1156,
+                "percent": 52.30769230769231
+              },
+              "matcher": {
+                "samples": 541,
+                "percent": 24.479638009049772
+              },
+              "other numeric kernels": {
+                "samples": 199,
+                "percent": 9.004524886877828
+              },
+              "controller self": {
+                "samples": 142,
+                "percent": 6.425339366515837
+              },
+              "histogram": {
+                "samples": 69,
+                "percent": 3.1221719457013575
+              },
+              "other encoder calls": {
+                "samples": 59,
+                "percent": 2.669683257918552
+              },
+              "zeroing": {
+                "samples": 25,
+                "percent": 1.1312217194570136
+              },
+              "allocation": {
+                "samples": 12,
+                "percent": 0.5429864253393665
+              },
+              "retirement": {
+                "samples": 5,
+                "percent": 0.22624434389140272
+              },
+              "copying": {
+                "samples": 2,
+                "percent": 0.09049773755656108
+              }
+            },
+            "top_encoder_functions": [
+              [
+                "mech_compact_numeric_3009_no_growth_composed",
+                1156
+              ],
+              [
+                "mech_compact_numeric_475_vector",
+                541
+              ],
+              [
+                "mech_compact_closed_checked",
+                142
+              ],
+              [
+                "mech_compact_numeric_3447_grouped",
+                69
+              ],
+              [
+                "mech_compact_checked_layout_continuation_44066",
+                45
+              ],
+              [
+                "mech_compact_numeric_3956_vector",
+                43
+              ],
+              [
+                "mech_compact_numeric_2821_vector",
+                39
+              ],
+              [
+                "mech_compact_numeric_4173",
+                30
+              ],
+              [
+                "mech_compact_numeric_5895",
+                29
+              ],
+              [
+                "mech_compact_numeric_362_vector",
+                26
+              ],
+              [
+                "mech_compact_numeric_3872",
+                21
+              ],
+              [
+                "__bzero",
+                20
+              ],
+              [
+                "__munmap",
+                11
+              ],
+              [
+                "mech_compact_numeric_6633",
+                8
+              ],
+              [
+                "_platform_memset",
+                5
+              ]
+            ],
+            "top_all_functions": [
+              [
+                "mech_compact_numeric_3009_no_growth_composed",
+                1156
+              ],
+              [
+                "mech_compact_numeric_475_vector",
+                541
+              ],
+              [
+                "mech_compact_closed_checked",
+                142
+              ],
+              [
+                "mech_compact_numeric_3447_grouped",
+                69
+              ],
+              [
+                "mech_compact_checked_layout_continuation_44066",
+                45
+              ],
+              [
+                "mech_compact_numeric_3956_vector",
+                43
+              ],
+              [
+                "mech_compact_numeric_2821_vector",
+                39
+              ],
+              [
+                "mech_compact_numeric_4173",
+                30
+              ],
+              [
+                "mech_compact_numeric_5895",
+                29
+              ],
+              [
+                "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core15decompress_fast",
+                27
+              ],
+              [
+                "mech_compact_numeric_362_vector",
+                26
+              ],
+              [
+                "mech_compact_numeric_3872",
+                21
+              ],
+              [
+                "__bzero",
+                20
+              ],
+              [
+                "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree",
+                15
+              ],
+              [
+                "__munmap",
+                11
+              ]
+            ],
+            "scope": "Exclusive leaf samples within the named encoder function tree. Constructor/final-transfer/cleanup outside that tree and caller validation are not all represented. C near-optimal self samples include inlined matching. These are not elapsed phase times or forecasts.",
+            "worker_sha256": "834c7a7e423a69c46483a3dae74d9450949fdf142b5ad2dede894e0da3ca8693",
+            "sample_sha256": "5e1c80b19a77e11e4c8cdcd28632f5e90552846c2057aab54f9ba459cf561ba0"
+          },
+          "libdeflate": {
+            "encoder_roots": "deflate_compress_near_optimal",
+            "encoder_stack_samples": 2171,
+            "all_main_thread_samples": 2285,
+            "buckets": {
+              "scorer": {
+                "samples": 1569,
+                "percent": 72.27084292952557
+              },
+              "near-optimal body (includes inlined matching)": {
+                "samples": 383,
+                "percent": 17.64163979732842
+              },
+              "Huffman": {
+                "samples": 126,
+                "percent": 5.803777061262092
+              },
+              "other encoder calls": {
+                "samples": 70,
+                "percent": 3.2243205895900506
+              },
+              "zeroing": {
+                "samples": 23,
+                "percent": 1.0594196222938739
+              }
+            },
+            "top_encoder_functions": [
+              [
+                "deflate_find_min_cost_path",
+                1569
+              ],
+              [
+                "deflate_compress_near_optimal",
+                383
+              ],
+              [
+                "deflate_make_huffman_code",
+                111
+              ],
+              [
+                "deflate_optimize_and_flush_block",
+                36
+              ],
+              [
+                "_platform_memset_pattern16",
+                20
+              ],
+              [
+                "deflate_flush_block",
+                19
+              ],
+              [
+                "deflate_precompute_huffman_header",
+                15
+              ],
+              [
+                "OUTLINED_FUNCTION_10",
+                12
+              ],
+              [
+                "_platform_memset",
+                3
+              ],
+              [
+                "deflate_near_optimal_merge_stats",
+                3
+              ]
+            ],
+            "top_all_functions": [
+              [
+                "deflate_find_min_cost_path",
+                1569
+              ],
+              [
+                "deflate_compress_near_optimal",
+                383
+              ],
+              [
+                "deflate_make_huffman_code",
+                131
+              ],
+              [
+                "deflate_optimize_and_flush_block",
+                36
+              ],
+              [
+                "_platform_memset_pattern16",
+                21
+              ],
+              [
+                "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core15decompress_fast",
+                21
+              ],
+              [
+                "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core8transfer",
+                21
+              ],
+              [
+                "deflate_flush_block",
+                19
+              ],
+              [
+                "deflate_precompute_huffman_header",
+                15
+              ],
+              [
+                "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress",
+                13
+              ],
+              [
+                "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree",
+                13
+              ],
+              [
+                "OUTLINED_FUNCTION_10",
+                12
+              ],
+              [
+                "libdeflate_alloc_compressor_ex",
+                8
+              ],
+              [
+                "_platform_memset",
+                6
+              ],
+              [
+                "_platform_memmove",
+                4
+              ]
+            ],
+            "scope": "Exclusive leaf samples within the named encoder function tree. Constructor/final-transfer/cleanup outside that tree and caller validation are not all represented. C near-optimal self samples include inlined matching. These are not elapsed phase times or forecasts.",
+            "worker_sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+            "sample_sha256": "c1b2e1816b22f357933795ad62158ceba8aba63d6ab9c5d637ed0534cb2b03a2"
+          },
+          "qualified_runtime": [
+            {
+              "case": "prefix-natural-4096",
+              "order": "forward",
+              "candidate_control": 0.9972768928304013,
+              "candidate_roc": 0.6264736312090096,
+              "candidate_c": 1.0637572685977872,
+              "median_seconds": {
+                "mech-control": 0.00041758349999999997,
+                "mech-experiment": 0.0004156665,
+                "roc": 0.0006629374999999999,
+                "libdeflate": 0.000390604
+              }
+            },
+            {
+              "case": "prefix-natural-4096",
+              "order": "reverse",
+              "candidate_control": 0.9991667419906325,
+              "candidate_roc": 0.6297786012742422,
+              "candidate_c": 1.0689458677488346,
+              "median_seconds": {
+                "libdeflate": 0.000392,
+                "roc": 0.0006615,
+                "mech-experiment": 0.0004158335,
+                "mech-control": 0.000415729
+              }
+            }
+          ]
+        }
+      }
+    },
+    "final_source_integration": {
+      "source": {
+        "source_commit": "2cd17fca3c9d58a5804a18c904fe1daf65598b78",
+        "source_inputs": {
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads/mod.rs": "70ed8e870c41bb7822af33ebaf7a4f7119f022c0621ec7e9717b579e83f0d19d",
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads/immutable.rs": "786257e5a7dbb699f3995f40d3f0a12df0a8d2e3b4a0be086aa3cce6b6d0700d",
+          "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads/tests.rs": "a60be84a750f87ac817ca3c1ced4a6533059666dfe639aab942cfa6c88635189",
+          "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "f80c6241e657f6933a9d2c154a222deb81e55f8497bc0101a7c34d4de6c91f71",
+          "hosts/gpu/src/native_artifact/program/compact/private_phase.rs": "243c0dd2325723be45c5efa89a4c6abc3709e89d263d3c3bd3b405a139461dea",
+          "hosts/gpu/src/native_artifact/program/compact/private_phase_tests.rs": "3540bb2462bc462cb84cff074b817258c5f2bd23bdf863635aea0d734f679167",
+          "hosts/gpu/src/native_artifact/program/compact/mod.rs": "e5f54e93d7eb3621277b15d5ae10b4564cfd07a34a5e185243bafdda278144ea",
+          "src/syntax/src/document/parser/canonical/base/continuation/mod.rs": "07adb748cfdfcdee12a855c9354504f96ee83515201c447d85fe3c0a85569e58"
+        },
+        "prior_source_integration": "5ccf097dc02ceb3abb17bccb85cd11a3ae144503",
+        "scope": "Standard module layout, extracted JIT-test boundary and module declaration formatting; algorithm unchanged. Rebuild must reproduce all selected artifacts before reusing qualification.",
+        "compiler": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/final-integration/compiler/94aad561b2029fd0/compile_profile",
+        "compiler_sha256": "94aad561b2029fd09b8735aaafcde57c39ca9804054950f685f48f958b5ae432",
+        "artifacts": {
+          "program.o": "cf15343f1f01089d427122ce51a91ef6fa7b70ef89c50ca4db20901a8d2cefd9",
+          "metadata.json": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+          "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+        },
+        "named_worker": "01ace0010878603c1ba23b4e9b062f40c5a9f9aac5f0e3e6681359642edd1eb3",
+        "named_worker_is_timed_worker": false,
+        "verified_exact_calls": 162,
+        "source_failure_cases": 6,
+        "source_exact_recoveries": 12
+      },
+      "build": {
+        "plan_sha256": "2f1eb829fc0ef62dcc32f73132447857b3c2998c407eb5fd5e31ac1148f59ee1",
+        "medians": {
+          "mech-control-reference": {
+            "source": 2.169483770849183,
+            "link": 0.03502322966232896,
+            "source_through_link": 2.204675666987896,
+            "strip": 0.010855520376935601,
+            "source_through_strip": 2.215713249752298
+          },
+          "mech-final-source": {
+            "source": 2.1729860005434602,
+            "link": 0.035044104093685746,
+            "source_through_link": 2.208666958613321,
+            "strip": 0.010850792052224278,
+            "source_through_strip": 2.2196952919475734
+          },
+          "roc": {
+            "source": 2.945226479554549,
+            "link": 0.03509085439145565,
+            "source_through_link": 2.980663291644305,
+            "strip": 0.010716124903410673,
+            "source_through_strip": 2.9918468329124153
+          },
+          "libdeflate": {
+            "source": 0.4451252711005509,
+            "link": 0.034337708028033376,
+            "source_through_link": 0.480168312555179,
+            "strip": 0.010653395904228091,
+            "source_through_strip": 0.4908752085175365
+          }
+        },
+        "phases": {
+          "mech-control-reference": {
+            "parse": 0.701709479,
+            "catalog": 1.6646000000000003e-05,
+            "frontend": 0.214750063,
+            "artifact": 0.0068366045,
+            "encode": 0.0025172285,
+            "native": 1.2179774165000001
+          },
+          "mech-final-source": {
+            "parse": 0.7020552085,
+            "catalog": 1.6979e-05,
+            "frontend": 0.2145458545,
+            "artifact": 0.0068336460000000005,
+            "encode": 0.002531708,
+            "native": 1.221208979
+          }
+        },
+        "paired_ratios": {
+          "mech-control-reference": {
+            "roc": 0.7396469043096963,
+            "libdeflate": 4.592008848834157,
+            "mech-control-reference": 1.0
+          },
+          "mech-final-source": {
+            "roc": 0.7412477156382254,
+            "libdeflate": 4.602360941984291,
+            "mech-control-reference": 1.0015238819325103
+          }
+        },
+        "trials": 8,
+        "source_commit": "2cd17fca3c9d58a5804a18c904fe1daf65598b78",
+        "compiler_sha256": "94aad561b2029fd09b8735aaafcde57c39ca9804054950f685f48f958b5ae432",
+        "paired_median_seconds": 0.0033596244174987078,
+        "paired_ci90_seconds": [
+          0.0009405838791280985,
+          0.0050497292540967464
+        ],
+        "faster_pairs": 1,
+        "source_cpu_seconds": {
+          "mech-control-reference": 2.230133,
+          "mech-final-source": 2.234675,
+          "roc": 2.939031,
+          "libdeflate": 0.441679
+        },
+        "source_rss_bytes": {
+          "mech-control-reference": 392634368.0,
+          "mech-final-source": 392871936.0,
+          "roc": 390848512.0,
+          "libdeflate": 71540736.0
+        },
+        "scope": "Fresh source through final deployment link; fixed support prebuilt for every actor. Final mechanical integration versus the same qualified encoder generated by the earlier compiler. Original eight-actor pass-isolation cohort is retained separately."
+      },
+      "evidence": "evidence/encoder-size-gap/immutable-current-read-study/final-integration"
+    }
   }
 }

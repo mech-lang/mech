@@ -1,0 +1,8 @@
+{
+  "worker_sha256": "834c7a7e423a69c46483a3dae74d9450949fdf142b5ad2dede894e0da3ca8693",
+  "object_sha256": "cf15343f1f01089d427122ce51a91ef6fa7b70ef89c50ca4db20901a8d2cefd9",
+  "metadata_sha256": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+  "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+  "source_commit": "2cd17fca3c9d58a5804a18c904fe1daf65598b78",
+  "scope": "Final source normal and checked artifacts reproduce exactly. Linking the normal object with the original fixed support reproduces the exact worker from both complete81/62 runtime orders, stack/error/recovery and current samples. Runtime qualification is reused only on this complete identity."
+}

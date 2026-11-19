@@ -1,0 +1,10 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/integration-layout-focused-tests/tests",
+    "--test-threads=1"
+  ],
+  "exit_code": 0,
+  "binary_sha256": "f495be666bc1e3bb8e1207758fca1ca991953730f68c3a7d0f5e325a60a21b5c",
+  "seconds_diagnostic": 0.1847522919997573,
+  "output": "\nrunning 4 tests\ntest native_artifact::program::codegen::cfg_cleanup::defaulted_loads::tests::default_path_does_not_read_the_original_address ... ok\ntest native_artifact::program::codegen::cfg_cleanup::defaulted_loads::tests::immutable_default_addresses_keep_narrow_values_null_and_wrapping_boundaries ... ok\ntest native_artifact::program::codegen::cfg_cleanup::defaulted_loads::tests::shared_default_reads_preserve_current_loop_values_and_divergent_paths ... ok\ntest native_artifact::program::codegen::cfg_cleanup::defaulted_loads::tests::unknown_length_or_shifted_address_never_gains_memory_motion_flags ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n"
+}

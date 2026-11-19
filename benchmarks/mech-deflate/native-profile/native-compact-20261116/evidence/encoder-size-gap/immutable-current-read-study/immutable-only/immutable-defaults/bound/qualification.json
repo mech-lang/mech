@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/immutable-only/immutable-defaults/bound/mech-worker",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/immutable-only/immutable-defaults/bound/metadata.json",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "complete_smokes": 162,
+  "verified": true,
+  "worker_sha256": "a1ca35e4bed85423ad6a6a538be3775a0651ee084f0b4d6d8f6062fafe1fd9a2",
+  "metadata_sha256": "b130b21fcb52fb2cb32b0ffae87c0daadf6dfa28e9f19835a7ab5cb2b4263ccc"
+}

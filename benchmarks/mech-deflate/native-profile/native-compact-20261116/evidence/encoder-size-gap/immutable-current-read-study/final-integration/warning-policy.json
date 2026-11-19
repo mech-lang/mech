@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "scripts/check-warning-policy.py"
+  ],
+  "exit_code": 0,
+  "stdout": "warning policy contract passed\n",
+  "stderr": "",
+  "seconds_diagnostic": 19.674706417135894
+}

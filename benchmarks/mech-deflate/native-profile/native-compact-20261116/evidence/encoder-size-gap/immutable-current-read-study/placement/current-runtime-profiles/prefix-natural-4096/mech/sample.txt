@@ -1,0 +1,280 @@
+Analysis of sampling mech-worker (pid 73445) every 1 millisecond
+Process:         mech-worker [73445]
+Path:            /private/tmp/*/mech-worker
+Load Address:    0x104d78000
+Identifier:      mech-worker
+Version:         0
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  Python [73439]
+Target Type:     live task
+
+Date/Time:       2026-11-19 05:59:48.614 -0500
+Launch Time:     2026-11-19 05:59:48.155 -0500
+OS Version:      macOS 15.6.1 (24G90)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         9985K
+Physical footprint (peak):  9985K
+Idle exit:                  untracked
+----
+
+Call graph:
+    2286 Thread_51140882   DispatchQueue_1: com.apple.main-thread  (serial)
+      2286 start  (in dyld) + 6076  [0x183f16b98]
+        2286 main  (in mech-worker) + 52  [0x104d808d0]
+          2286 _RNvNtCsgirOGyZpP7g_3std2rt19lang_start_internal  (in mech-worker) + 952  [0x104da9014]
+            2286 _RNCINvNtCsgirOGyZpP7g_3std2rt10lang_startuE0Cs2fnfepAsUKT_11mech_worker  (in mech-worker) + 16  [0x104d84158]
+              2286 _RINvNtNtCsgirOGyZpP7g_3std3sys9backtrace28___rust_begin_short_backtraceFEuuECs2fnfepAsUKT_11mech_worker  (in mech-worker) + 12  [0x104d83f44]
+                2284 _RNvCs2fnfepAsUKT_11mech_worker4main  (in mech-worker) + 2316  [0x104d7f994]
+                + 2210 _RNCINvCs2fnfepAsUKT_11mech_worker3runINtNtNtNtCsgirOGyZpP7g_3std2io8buffered9bufreader9BufReaderNtNtBG_5stdio5StdinEE0B4_  (in mech-worker) + 708  [0x104d7ded4]
+                + ! 2210 mech_compact_closed_v2  (in mech-worker) + 300  [0x104dd657c]
+                + !   1156 mech_compact_closed_checked  (in mech-worker) + 16992  [0x104dda990]
+                + !   : 1156 mech_compact_numeric_3009_no_growth_composed  (in mech-worker) + 764,392,...  [0x104dd4f8c,0x104dd4e18,...]
+                + !   541 mech_compact_closed_checked  (in mech-worker) + 2836  [0x104dd7244]
+                + !   : 541 mech_compact_numeric_475_vector  (in mech-worker) + 860,648,...  [0x104dd38bc,0x104dd37e8,...]
+                + !   142 mech_compact_closed_checked  (in mech-worker) + 35528,24312,...  [0x104ddf1f8,0x104ddc628,...]
+                + !   69 mech_compact_closed_checked  (in mech-worker) + 18364  [0x104ddaeec]
+                + !   : 69 mech_compact_numeric_3447  (in mech-worker) + 460  [0x104dd58bc]
+                + !   :   69 mech_compact_numeric_3447_grouped  (in mech-worker) + 336,184,...  [0x104dd55b0,0x104dd5518,...]
+                + !   43 mech_compact_closed_checked  (in mech-worker) + 20224  [0x104ddb630]
+                + !   : 43 mech_compact_numeric_3956_vector  (in mech-worker) + 108,124,...  [0x104dd597c,0x104dd598c,...]
+                + !   40 mech_compact_closed_checked  (in mech-worker) + 36672  [0x104ddf670]
+                + !   : 40 mech_compact_checked_layout_continuation_44066  (in mech-worker) + 56,256,...  [0x104de2748,0x104de2810,...]
+                + !   39 mech_compact_closed_checked  (in mech-worker) + 14204  [0x104dd9eac]
+                + !   : 39 mech_compact_numeric_2821_vector  (in mech-worker) + 68,96,...  [0x104dd6034,0x104dd6050,...]
+                + !   30 mech_compact_closed_checked  (in mech-worker) + 21032  [0x104ddb958]
+                + !   : 30 mech_compact_numeric_4173  (in mech-worker) + 316,372,...  [0x104dd521c,0x104dd5254,...]
+                + !   29 mech_compact_closed_checked  (in mech-worker) + 29652  [0x104dddb04]
+                + !   : 29 mech_compact_numeric_5895  (in mech-worker) + 160,96,...  [0x104dd5d10,0x104dd5cd0,...]
+                + !   26 mech_compact_closed_checked  (in mech-worker) + 2048  [0x104dd6f30]
+                + !   : 26 mech_compact_numeric_362_vector  (in mech-worker) + 88,68,...  [0x104dd6218,0x104dd6204,...]
+                + !   21 mech_compact_closed_checked  (in mech-worker) + 484  [0x104dd6914]
+                + !   : 20 mech_compact_allocate_backing  (in mech-worker) + 32  [0x104d8ea78]
+                + !   : | 20 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate  (in mech-worker) + 336  [0x104d8e5c0]
+                + !   : |   20 _mi_malloc_generic  (in mech-worker) + 408  [0x104de9a48]
+                + !   : |     20 __bzero  (in libsystem_platform.dylib) + 68  [0x1842f0fd4]
+                + !   : 1 mech_compact_allocate_backing  (in mech-worker) + 40  [0x104d8ea80]
+                + !   21 mech_compact_closed_checked  (in mech-worker) + 19820  [0x104ddb49c]
+                + !   : 21 mech_compact_numeric_3872  (in mech-worker) + 72,92,...  [0x104dd5e28,0x104dd5e3c,...]
+                + !   11 mech_compact_closed_checked  (in mech-worker) + 39000  [0x104ddff88]
+                + !   : 11 mech_compact_release_four  (in mech-worker) + 152  [0x104d8eb74]
+                + !   :   11 mech_compact_free  (in mech-worker) + 16  [0x104d8eabc]
+                + !   :     11 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap7release  (in mech-worker) + 356  [0x104d8e3d4]
+                + !   :       11 __munmap  (in libsystem_kernel.dylib) + 8  [0x1842795e8]
+                + !   8 mech_compact_closed_checked  (in mech-worker) + 32316  [0x104dde56c]
+                + !   : 8 mech_compact_numeric_6633  (in mech-worker) + 300,92,...  [0x104dd5bbc,0x104dd5aec,...]
+                + !   5 mech_compact_closed_checked  (in mech-worker) + 34472  [0x104ddedd8]
+                + !   : 5 mech_compact_checked_layout_continuation_44066  (in mech-worker) + 244,256,...  [0x104de2804,0x104de2810,...]
+                + !   4 mech_compact_closed_checked  (in mech-worker) + 19236  [0x104ddb254]
+                + !   : 4 mech_compact_allocate_backing  (in mech-worker) + 32  [0x104d8ea78]
+                + !   :   4 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate  (in mech-worker) + 336  [0x104d8e5c0]
+                + !   :     2 mi_zalloc  (in mech-worker) + 68  [0x104dc4dd0]
+                + !   :     1 _mi_malloc_generic  (in mech-worker) + 408  [0x104de9a48]
+                + !   :     | 1 _platform_memset  (in libsystem_platform.dylib) + 140  [0x1842f107c]
+                + !   :     1 _mi_malloc_generic  (in mech-worker) + 240  [0x104de99a0]
+                + !   3 mech_compact_closed_checked  (in mech-worker) + 23604  [0x104ddc364]
+                + !   : 3 mech_compact_numeric_4799  (in mech-worker) + 16,92,...  [0x104dd5ef0,0x104dd5f3c,...]
+                + !   3 mech_compact_closed_checked  (in mech-worker) + 39908  [0x104de0314]
+                + !   : 2 mech_compact_release_four  (in mech-worker) + 8,48  [0x104d8eae4,0x104d8eb0c]
+                + !   : 1 mech_compact_release_four  (in mech-worker) + 128  [0x104d8eb5c]
+                + !   :   1 mech_compact_free  (in mech-worker) + 16  [0x104d8eabc]
+                + !   :     1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap7release  (in mech-worker) + 336  [0x104d8e3c0]
+                + !   :       1 mi_free  (in mech-worker) + 20  [0x104de96fc]
+                + !   2 mech_compact_closed_checked  (in mech-worker) + 1460  [0x104dd6ce4]
+                + !   : 2 mech_compact_allocate_backing  (in mech-worker) + 32  [0x104d8ea78]
+                + !   :   1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate  (in mech-worker) + 336  [0x104d8e5c0]
+                + !   :   | 1 _mi_malloc_generic  (in mech-worker) + 408  [0x104de9a48]
+                + !   :   |   1 _platform_memset  (in libsystem_platform.dylib) + 140  [0x1842f107c]
+                + !   :   1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate  (in mech-worker) + 504  [0x104d8e668]
+                + !   :     1 mi_malloc  (in mech-worker) + 28  [0x104dc4d38]
+                + !   :       1 _tlv_get_addr  (in libdyld.dylib) + 4  [0x1842c10fc]
+                + !   2 mech_compact_closed_checked  (in mech-worker) + 15180  [0x104dda27c]
+                + !   : 2 _platform_memmove  (in libsystem_platform.dylib) + 180,192  [0x1842f1374,0x1842f1380]
+                + !   2 mech_compact_closed_checked  (in mech-worker) + 17192  [0x104ddaa58]
+                + !   : 2 mech_compact_allocate_backing  (in mech-worker) + 32  [0x104d8ea78]
+                + !   :   1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate  (in mech-worker) + 336  [0x104d8e5c0]
+                + !   :   | 1 _mi_malloc_generic  (in mech-worker) + 408  [0x104de9a48]
+                + !   :   |   1 _platform_memset  (in libsystem_platform.dylib) + 140  [0x1842f107c]
+                + !   :   1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate  (in mech-worker) + 760  [0x104d8e768]
+                + !   2 mech_compact_closed_checked  (in mech-worker) + 25292  [0x104ddc9fc]
+                + !   : 2 mech_compact_writable_scalar_backing  (in mech-worker) + 108  [0x104d8ed98]
+                + !   :   2 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8writable  (in mech-worker) + 332  [0x104d8e974]
+                + !   :     1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate  (in mech-worker) + 504  [0x104d8e668]
+                + !   :     | 1 mi_malloc  (in mech-worker) + 20  [0x104dc4d30]
+                + !   :     1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate  (in mech-worker) + 620  [0x104d8e6dc]
+                + !   :       1 _mi_malloc_generic  (in mech-worker) + 244  [0x104de99a4]
+                + !   :         1 mi_find_page  (in mech-worker) + 316  [0x104dcc548]
+                + !   2 mech_compact_closed_checked  (in mech-worker) + 25956  [0x104ddcc94]
+                + !   : 2 mech_compact_allocate_backing  (in mech-worker) + 32  [0x104d8ea78]
+                + !   :   1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate  (in mech-worker) + 336  [0x104d8e5c0]
+                + !   :   | 1 _mi_malloc_generic  (in mech-worker) + 408  [0x104de9a48]
+                + !   :   |   1 _platform_memset  (in libsystem_platform.dylib) + 140  [0x1842f107c]
+                + !   :   1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate  (in mech-worker) + 504  [0x104d8e668]
+                + !   :     1 mi_malloc  (in mech-worker) + 20  [0x104dc4d30]
+                + !   1 mech_compact_closed_checked  (in mech-worker) + 660  [0x104dd69c4]
+                + !   : 1 mech_compact_allocate_backing  (in mech-worker) + 32  [0x104d8ea78]
+                + !   :   1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate  (in mech-worker) + 260  [0x104d8e574]
+                + !   :     1 mmap  (in libsystem_kernel.dylib) + 80  [0x18427687c]
+                + !   :       1 __mmap  (in libsystem_kernel.dylib) + 8  [0x1842768d8]
+                + !   1 mech_compact_closed_checked  (in mech-worker) + 17052  [0x104dda9cc]
+                + !   : 1 mech_compact_release_two  (in mech-worker) + 52  [0x104d8ece8]
+                + !   1 mech_compact_closed_checked  (in mech-worker) + 18996  [0x104ddb164]
+                + !   : 1 mech_compact_release_four  (in mech-worker) + 152  [0x104d8eb74]
+                + !   :   1 mech_compact_free  (in mech-worker) + 16  [0x104d8eabc]
+                + !   :     1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap7release  (in mech-worker) + 336  [0x104d8e3c0]
+                + !   :       1 mi_free  (in mech-worker) + 68  [0x104de972c]
+                + !   1 mech_compact_closed_checked  (in mech-worker) + 19360  [0x104ddb2d0]
+                + !   : 1 mech_compact_allocate_backing  (in mech-worker) + 32  [0x104d8ea78]
+                + !   :   1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate  (in mech-worker) + 336  [0x104d8e5c0]
+                + !   :     1 _mi_malloc_generic  (in mech-worker) + 408  [0x104de9a48]
+                + !   :       1 _platform_memset  (in libsystem_platform.dylib) + 140  [0x1842f107c]
+                + !   1 mech_compact_closed_checked  (in mech-worker) + 21112  [0x104ddb9a8]
+                + !   : 1 mech_compact_allocate_backing  (in mech-worker) + 32  [0x104d8ea78]
+                + !   :   1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate  (in mech-worker) + 504  [0x104d8e668]
+                + !   :     1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate  (in mech-worker) + 336  [0x104d8e5c0]
+                + !   :       1 _RNvCsfBzVIH1HIC6_7___rustc19___rust_alloc_zeroed  (in mech-worker) + 0  [0x104d8075c]
+                + !   1 mech_compact_closed_checked  (in mech-worker) + 22552  [0x104ddbf48]
+                + !   : 1 mech_compact_release_two  (in mech-worker) + 24  [0x104d8eccc]
+                + !   1 mech_compact_closed_checked  (in mech-worker) + 24408  [0x104ddc688]
+                + !   : 1 mech_compact_release_nullable  (in mech-worker) + 40  [0x104d8ebd8]
+                + !   :   1 mech_compact_free  (in mech-worker) + 16  [0x104d8eabc]
+                + !   :     1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap7release  (in mech-worker) + 60  [0x104d8e2ac]
+                + !   1 mech_compact_closed_checked  (in mech-worker) + 38024  [0x104ddfbb8]
+                + !   : 1 mech_compact_allocate_backing  (in mech-worker) + 32  [0x104d8ea78]
+                + !   :   1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate  (in mech-worker) + 484  [0x104d8e654]
+                + !   1 mech_compact_closed_checked  (in mech-worker) + 39040  [0x104ddffb0]
+                + !     1 mech_compact_release_four  (in mech-worker) + 128  [0x104d8eb5c]
+                + !       1 mech_compact_free  (in mech-worker) + 16  [0x104d8eabc]
+                + !         1 _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap7release  (in mech-worker) + 336  [0x104d8e3c0]
+                + !           1 mi_free  (in mech-worker) + 20  [0x104de96fc]
+                + 64 _RNCINvCs2fnfepAsUKT_11mech_worker3runINtNtNtNtCsgirOGyZpP7g_3std2io8buffered9bufreader9BufReaderNtNtBG_5stdio5StdinEE0B4_  (in mech-worker) + 1280  [0x104d7e110]
+                + ! 59 _RNvNtCselbn9KGBQg0_11miniz_oxide7inflate23decompress_to_vec_inner  (in mech-worker) + 412  [0x104d87824]
+                + ! : 35 _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress  (in mech-worker) + 6568  [0x104d8606c]
+                + ! : | 27 _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core15decompress_fast  (in mech-worker) + 152,456,...  [0x104d8699c,0x104d86acc,...]
+                + ! : | 8 _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core15decompress_fast  (in mech-worker) + 956  [0x104d86cc0]
+                + ! : |   8 _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core8transfer  (in mech-worker) + 232,244,...  [0x104d86e94,0x104d86ea0,...]
+                + ! : 13 _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress  (in mech-worker) + 3760  [0x104d85574]
+                + ! : | 12 _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree  (in mech-worker) + 580,356,...  [0x104d87460,0x104d87380,...]
+                + ! : | 1 _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree  (in mech-worker) + 296  [0x104d87344]
+                + ! : |   1 _platform_memset_pattern16  (in libsystem_platform.dylib) + 208  [0x1842ef1b0]
+                + ! : 6 _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress  (in mech-worker) + 4936  [0x104d85a0c]
+                + ! : | 3 _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress  (in mech-worker) + 2428,4836,...  [0x104d85040,0x104d859a8,...]
+                + ! : | 2 _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core8transfer  (in mech-worker) + 212  [0x104d86e80]
+                + ! : | 1 _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core11apply_match  (in mech-worker) + 24  [0x104d868a4]
+                + ! : 3 _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress  (in mech-worker) + 2220  [0x104d84f70]
+                + ! : | 3 _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree  (in mech-worker) + 580,596  [0x104d87460,0x104d87470]
+                + ! : 2 _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress  (in mech-worker) + 5936  [0x104d85df4]
+                + ! :   2 _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress  (in mech-worker) + 3824,3864  [0x104d855b4,0x104d855dc]
+                + ! 2 _RNvNtCselbn9KGBQg0_11miniz_oxide7inflate23decompress_to_vec_inner  (in mech-worker) + 312  [0x104d877c0]
+                + ! : 2 _platform_memset  (in libsystem_platform.dylib) + 140  [0x1842f107c]
+                + ! 2 _RNvNtCselbn9KGBQg0_11miniz_oxide7inflate23decompress_to_vec_inner  (in mech-worker) + 564  [0x104d878bc]
+                + ! : 2 _RINvNvMs2_NtCsgKscDXrlV49_5alloc7raw_vecINtB8_11RawVecInnerpE7reserve21do_reserve_and_handleNtNtBa_5alloc6GlobalECselbn9KGBQg0_11miniz_oxide  (in mech-worker) + 108  [0x104de3f4c]
+                + ! :   2 _RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growCselbn9KGBQg0_11miniz_oxide  (in mech-worker) + 92  [0x104de3fd4]
+                + ! :     2 _mi_heap_realloc_zero  (in mech-worker) + 200  [0x104de9b5c]
+                + ! :       2 _platform_memmove  (in libsystem_platform.dylib) + 180,200  [0x1842f1374,0x1842f1388]
+                + ! 1 _RNvNtCselbn9KGBQg0_11miniz_oxide7inflate23decompress_to_vec_inner  (in mech-worker) + 328  [0x104d877d0]
+                + !   1 _platform_memmove  (in libsystem_platform.dylib) + 180  [0x1842f1374]
+                + 2 _RNCINvCs2fnfepAsUKT_11mech_worker3runINtNtNtNtCsgirOGyZpP7g_3std2io8buffered9bufreader9BufReaderNtNtBG_5stdio5StdinEE0B4_  (in mech-worker) + 1220  [0x104d7e0d4]
+                + ! 2 _platform_memcmp  (in libsystem_platform.dylib) + 56,64  [0x1842eeec8,0x1842eeed0]
+                + 2 _RNCINvCs2fnfepAsUKT_11mech_worker3runINtNtNtNtCsgirOGyZpP7g_3std2io8buffered9bufreader9BufReaderNtNtBG_5stdio5StdinEE0B4_  (in mech-worker) + 2376  [0x104d7e558]
+                + ! 1 _RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE6insertCs2fnfepAsUKT_11mech_worker  (in mech-worker) + 336  [0x104d836e4]
+                + ! : 1 _RNvMs6_NtNtNtNtCsgKscDXrlV49_5alloc11collections5btree3map5entryINtB5_11VacantEntryNtNtBd_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE12insert_entryCs2fnfepAsUKT_11mech_worker  (in mech-worker) + 116  [0x104d841f4]
+                + ! 1 _RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE6insertCs2fnfepAsUKT_11mech_worker  (in mech-worker) + 136  [0x104d8361c]
+                + 2 _RNCINvCs2fnfepAsUKT_11mech_worker3runINtNtNtNtCsgirOGyZpP7g_3std2io8buffered9bufreader9BufReaderNtNtBG_5stdio5StdinEE0B4_  (in mech-worker) + 2608  [0x104d7e640]
+                + ! 1 _RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE6insertCs2fnfepAsUKT_11mech_worker  (in mech-worker) + 336  [0x104d836e4]
+                + ! : 1 _RNvMs6_NtNtNtNtCsgKscDXrlV49_5alloc11collections5btree3map5entryINtB5_11VacantEntryNtNtBd_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE12insert_entryCs2fnfepAsUKT_11mech_worker  (in mech-worker) + 108  [0x104d841ec]
+                + ! :   1 _RINvMsN_NtNtNtCsgKscDXrlV49_5alloc11collections5btree4nodeINtB6_6HandleINtB6_7NodeRefNtNtB6_6marker3MutNtNtBc_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueNtB1n_4LeafENtB1n_4EdgeE16insert_recursingNtNtBc_5alloc6GlobalNCNvMs6_NtNtB8_3map5entryINtB3M_11VacantEntryB1D_B1Y_E12insert_entry0ECs2fnfepAsUKT_11mech_worker  (in mech-worker) + 44  [0x104d823f4]
+                + ! 1 _RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE6insertCs2fnfepAsUKT_11mech_worker  (in mech-worker) + 160  [0x104d83634]
+                + 1 _RNCINvCs2fnfepAsUKT_11mech_worker3runINtNtNtNtCsgirOGyZpP7g_3std2io8buffered9bufreader9BufReaderNtNtBG_5stdio5StdinEE0B4_  (in mech-worker) + 984  [0x104d7dfe8]
+                + ! 1 _RNvMs3_NtCsgKscDXrlV49_5alloc7raw_vecINtB5_6RawVecONtNtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtime5OwnerE8grow_oneBT_  (in mech-worker) + 20  [0x104de509c]
+                + !   1 _RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner14grow_amortizedCs7fdMCt8k5K6_8mech_gpu  (in mech-worker) + 72  [0x104de51a4]
+                + !     1 _RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growCs7fdMCt8k5K6_8mech_gpu  (in mech-worker) + 80  [0x104de5104]
+                + !       1 _mi_heap_realloc_zero  (in mech-worker) + 200  [0x104de9b5c]
+                + 1 _RNCINvCs2fnfepAsUKT_11mech_worker3runINtNtNtNtCsgirOGyZpP7g_3std2io8buffered9bufreader9BufReaderNtNtBG_5stdio5StdinEE0B4_  (in mech-worker) + 2496  [0x104d7e5d0]
+                + ! 1 _RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE6insertCs2fnfepAsUKT_11mech_worker  (in mech-worker) + 112  [0x104d83604]
+                + !   1 _platform_memcmp  (in libsystem_platform.dylib) + 236  [0x1842eef7c]
+                + 1 _RNCINvCs2fnfepAsUKT_11mech_worker3runINtNtNtNtCsgirOGyZpP7g_3std2io8buffered9bufreader9BufReaderNtNtBG_5stdio5StdinEE0B4_  (in mech-worker) + 2720  [0x104d7e6b0]
+                + ! 1 _RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE6insertCs2fnfepAsUKT_11mech_worker  (in mech-worker) + 160  [0x104d83634]
+                + 1 _RNCINvCs2fnfepAsUKT_11mech_worker3runINtNtNtNtCsgirOGyZpP7g_3std2io8buffered9bufreader9BufReaderNtNtBG_5stdio5StdinEE0B4_  (in mech-worker) + 3248  [0x104d7e8c0]
+                +   1 _RNvMsi_NtNtNtCsgKscDXrlV49_5alloc11collections5btree3mapINtB5_8BTreeMapNtNtBb_6string6StringNtNtCseHa8un3MfdE_10serde_json5value5ValueE6insertCs2fnfepAsUKT_11mech_worker  (in mech-worker) + 152  [0x104d8362c]
+                2 _RNvCs2fnfepAsUKT_11mech_worker4main  (in mech-worker) + 2536  [0x104d7fa70]
+                  2 mi_free  (in mech-worker) + 20  [0x104de96fc]
+
+Total number in stack (recursive counted multiple, when >=5):
+        9       mech_compact_allocate_backing  (in mech-worker) + 32  [0x104d8ea78]
+        7       _RNvMs1_NtNtCs7fdMCt8k5K6_8mech_gpu15native_artifact15compact_runtimeNtB5_4Heap8allocate  (in mech-worker) + 336  [0x104d8e5c0]
+        6       _mi_malloc_generic  (in mech-worker) + 408  [0x104de9a48]
+        6       _platform_memset  (in libsystem_platform.dylib) + 0  [0x1842f0ff0]
+        5       mech_compact_free  (in mech-worker) + 16  [0x104d8eabc]
+
+Sort by top of stack, same collapsed (when >= 5):
+        mech_compact_numeric_3009_no_growth_composed  (in mech-worker)        1156
+        mech_compact_numeric_475_vector  (in mech-worker)        541
+        mech_compact_closed_checked  (in mech-worker)        142
+        mech_compact_numeric_3447_grouped  (in mech-worker)        69
+        mech_compact_checked_layout_continuation_44066  (in mech-worker)        45
+        mech_compact_numeric_3956_vector  (in mech-worker)        43
+        mech_compact_numeric_2821_vector  (in mech-worker)        39
+        mech_compact_numeric_4173  (in mech-worker)        30
+        mech_compact_numeric_5895  (in mech-worker)        29
+        _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core15decompress_fast  (in mech-worker)        27
+        mech_compact_numeric_362_vector  (in mech-worker)        26
+        mech_compact_numeric_3872  (in mech-worker)        21
+        __bzero  (in libsystem_platform.dylib)        20
+        _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree  (in mech-worker)        15
+        __munmap  (in libsystem_kernel.dylib)        11
+        _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core8transfer  (in mech-worker)        10
+        mech_compact_numeric_6633  (in mech-worker)        8
+        _platform_memset  (in libsystem_platform.dylib)        7
+        _RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress  (in mech-worker)        5
+        _platform_memmove  (in libsystem_platform.dylib)        5
+        mi_free  (in mech-worker)        5
+
+Binary Images:
+       0x104d78000 -        0x104e196e7 +mech-worker (0) <82C91240-2FF0-3865-B760-05E919792F98> /tmp/*/mech-worker
+       0x183ebc000 -        0x183f0f893  libobjc.A.dylib (940.4) <8CA52E4D-F699-3D14-8061-EEA9D4366538> /usr/lib/libobjc.A.dylib
+       0x183f10000 -        0x183fab577  dyld (1.0.0 - 1286.10) <3247E185-CED2-36FF-9E29-47A77C23E004> /usr/lib/dyld
+       0x183fac000 -        0x183faf168  libsystem_blocks.dylib (96) <BA8F0C40-B12D-3D8B-8396-FC3F8A733C27> /usr/lib/system/libsystem_blocks.dylib
+       0x183fb0000 -        0x183ffa8ff  libxpc.dylib (2894.140.12) <1B8951EB-68DB-37BA-9581-240B796AA872> /usr/lib/system/libxpc.dylib
+       0x183ffb000 -        0x1840167ff  libsystem_trace.dylib (1643.120.5) <AC8466B8-AF1D-3895-876B-228151F0DF1D> /usr/lib/system/libsystem_trace.dylib
+       0x184017000 -        0x1840b53b7  libcorecrypto.dylib (1736.140.2) <7254F3F1-A46F-30B6-934A-511B730A8FC7> /usr/lib/system/libcorecrypto.dylib
+       0x1840b6000 -        0x1840fd06f  libsystem_malloc.dylib (715.140.5) <85947F4E-385D-3B6D-9BF5-844EFE876D53> /usr/lib/system/libsystem_malloc.dylib
+       0x1840fe000 -        0x18414475f  libdispatch.dylib (1521.140.2) <24CE0D89-4114-30C2-A81A-3DB1F5931CFF> /usr/lib/system/libdispatch.dylib
+       0x184145000 -        0x184147d1b  libsystem_featureflags.dylib (97) <856DB4EF-8C67-3842-970C-6FA814B07749> /usr/lib/system/libsystem_featureflags.dylib
+       0x184148000 -        0x1841c9243  libsystem_c.dylib (1698.140.3) <DFEA8794-80CE-37C3-8F6A-108AA1D0B1B0> /usr/lib/system/libsystem_c.dylib
+       0x1841ca000 -        0x184256ff7  libc++.1.dylib (1900.181) <643ED232-CE19-3F63-8015-0AEE768C002F> /usr/lib/libc++.1.dylib
+       0x184257000 -        0x184274fff  libc++abi.dylib (1900.181) <776A4AFB-71EE-32AB-B2EE-E6FF80818654> /usr/lib/libc++abi.dylib
+       0x184275000 -        0x1842b0653  libsystem_kernel.dylib (11417.140.69) <6E4A96AD-04B8-3E8A-B91D-087E62306246> /usr/lib/system/libsystem_kernel.dylib
+       0x1842b1000 -        0x1842bda47  libsystem_pthread.dylib (536) <D6494BA9-171E-39FC-B1AA-28ECF87975D1> /usr/lib/system/libsystem_pthread.dylib
+       0x1842be000 -        0x1842edba3  libdyld.dylib (1286.10) <01BCB3F7-AB89-30BD-87EE-91B291EADAE8> /usr/lib/system/libdyld.dylib
+       0x1842ee000 -        0x1842f5e0b  libsystem_platform.dylib (349.140.6) <FD19A599-8750-31F9-924F-C2810C938371> /usr/lib/system/libsystem_platform.dylib
+       0x1842f6000 -        0x1843256f7  libsystem_info.dylib (597) <9720B57E-A0DF-3BDD-8149-0801054B5D00> /usr/lib/system/libsystem_info.dylib
+       0x187dbc000 -        0x187dc6387  libsystem_darwin.dylib (1698.140.3) <8E58BBDB-E560-3AB4-8A1D-849AB83CBFC5> /usr/lib/system/libsystem_darwin.dylib
+       0x18821e000 -        0x18822ffeb  libsystem_notify.dylib (342) <6A411086-A1A2-349F-B9CA-348F9DCBB415> /usr/lib/system/libsystem_notify.dylib
+       0x18a221000 -        0x18a23be8f  libsystem_networkextension.dylib (2063.140.6) <8183B684-71EB-3FB1-8378-EB830CADAE7D> /usr/lib/system/libsystem_networkextension.dylib
+       0x18a2b8000 -        0x18a2cffdb  libsystem_asl.dylib (402) <FE29D1E8-D286-33F9-81CB-822E632D1571> /usr/lib/system/libsystem_asl.dylib
+       0x18be15000 -        0x18be1d3a7  libsystem_symptoms.dylib (2022.140.4) <AABA26A2-74BC-3219-BAA3-ACC8D81D8589> /usr/lib/system/libsystem_symptoms.dylib
+       0x18f662000 -        0x18f69238f  libsystem_containermanager.dylib (689.100.6) <24EE4AC1-5C9F-3EE0-8B4E-9D060EBCBD41> /usr/lib/system/libsystem_containermanager.dylib
+       0x1908c7000 -        0x1908cb5df  libsystem_configuration.dylib (1351.140.5) <B1ADB810-702B-3646-8B66-EB2C288FE51A> /usr/lib/system/libsystem_configuration.dylib
+       0x1908cc000 -        0x1908d247f  libsystem_sandbox.dylib (2401.140.15) <B86C6D35-683E-3156-BAB2-A422F5AFF2BD> /usr/lib/system/libsystem_sandbox.dylib
+       0x1918d7000 -        0x1918d9fe3  libquarantine.dylib (181.120.2) <8CE8DAD0-52D6-3F46-98EF-161E1397FB48> /usr/lib/system/libquarantine.dylib
+       0x191fed000 -        0x191ff4033  libsystem_coreservices.dylib (178.6.1) <A4E84D5A-8D0E-3692-B888-89B9EEF8753D> /usr/lib/system/libsystem_coreservices.dylib
+       0x19246c000 -        0x1924a92b7  libsystem_m.dylib (3291.100.4) <0D060230-BD2F-3C8E-ACB9-8A79F5CD8EDE> /usr/lib/system/libsystem_m.dylib
+       0x1924ab000 -        0x1924ae4e7  libmacho.dylib (1024.3) <87AB4EEF-3A18-3399-A767-C6BF4ECEDCEB> /usr/lib/system/libmacho.dylib
+       0x1924c8000 -        0x1924d55ef  libcommonCrypto.dylib (600035) <E6BC26C2-DED7-3C04-A670-AEDB150BDB1F> /usr/lib/system/libcommonCrypto.dylib
+       0x1924d6000 -        0x1924dfad7  libunwind.dylib (1900.125) <F753CC2B-775B-3567-B0C6-D2989CA9EBF4> /usr/lib/system/libunwind.dylib
+       0x1924e8000 -        0x1924f269f  libcopyfile.dylib (224) <213FA18D-6145-3615-8DB5-906B6863EAB9> /usr/lib/system/libcopyfile.dylib
+       0x1924f3000 -        0x1924f698f  libcompiler_rt.dylib (103.3) <F0F65700-8E9D-35F3-AC32-952D363190BC> /usr/lib/system/libcompiler_rt.dylib
+       0x1924f7000 -        0x1924fba1b  libsystem_collections.dylib (1698.140.3) <B77BE835-646C-3F05-BDBD-7703DE140F6A> /usr/lib/system/libsystem_collections.dylib
+       0x1924fc000 -        0x1924ff2c7  libsystem_secinit.dylib (153.140.2) <D15B45AD-1345-34BF-B8E3-05336C4046A0> /usr/lib/system/libsystem_secinit.dylib
+       0x192500000 -        0x192502b6f  libremovefile.dylib (81) <9BCF9A24-BECB-3DED-A78E-3A3ECD1B1757> /usr/lib/system/libremovefile.dylib
+       0x192503000 -        0x192503f27  libkeymgr.dylib (31) <B20C6921-D5BE-3BB5-B68C-32D90D629E39> /usr/lib/system/libkeymgr.dylib
+       0x192504000 -        0x19250cd57  libsystem_dnssd.dylib (2600.140.3) <61F023F3-E2C5-3F19-BA1B-B02D7564ACC4> /usr/lib/system/libsystem_dnssd.dylib
+       0x19250d000 -        0x1925120b3  libcache.dylib (95) <2B900F8F-9EDE-3208-AB17-BD1385B5546A> /usr/lib/system/libcache.dylib
+       0x192513000 -        0x192514ca3  libSystem.B.dylib (1351) <072C7C60-2B6C-3E07-AA56-FD1750EADC2F> /usr/lib/libSystem.B.dylib
+       0x26b9f4000 -        0x26b9fb109  libRosetta.dylib (349) <4EE80AAC-8204-3BD0-AB75-EDD23DE67E2F> /usr/lib/libRosetta.dylib
+       0x26ce1f000 -        0x26ce22deb  libsystem_darwindirectory.dylib (122) <277D32FB-F49A-3949-97A4-B190A3DF89E8> /usr/lib/system/libsystem_darwindirectory.dylib
+       0x26ce23000 -        0x26ce2a523  libsystem_eligibility.dylib (181.140.5) <27E48AAA-644F-394A-9F62-49CEFB813716> /usr/lib/system/libsystem_eligibility.dylib
+       0x26ce2b000 -        0x26ce306c5  libsystem_sanitizers.dylib (19) <FB86D2F7-4501-38E4-9D9A-83F960D7D7BA> /usr/lib/system/libsystem_sanitizers.dylib

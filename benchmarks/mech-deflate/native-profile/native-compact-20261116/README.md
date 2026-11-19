@@ -1,21 +1,13 @@
 # Native compact compiler review handoff
 
-The compiler now fuses sealed base parser phases and avoids a pending-frame copy before zero-work polls. Complete source-through-link time is **2.205340 s**, versus **2.212686 s** before in the same eight balanced rounds. The paired saving is **8.203 ms** (4.951–11.409 ms, 90% interval), **0.371%**, 8/8 faster. The encoder remains **63,692 B**, with the identical qualified worker and all **81 Roc / 62 C** wins. Complete-build ratios are **0.738040× Roc / 4.589692× C**. **539 syntax tests pass**. This is a small parser maintenance gain; the large code/build gap and the next C win remain unfinished. [Source, isolated variants, complete builds and refreshed selected-worker profiles](evidence/sealed-base-phase-fusion/README.md).
+The selected M1 recipe is **`m1-immutable-current-reads`**: **63,532 B**, saving **160 B**, with **81/81 Roc and 62/81 libdeflate wins in both complete orders**, including all configured precision support and every paired control win. Original Mech source and canonical bytecode are unchanged. Final compiler source is `2cd17fca3c9d58a5804a18c904fe1daf65598b78`; no LLVM dependency is added.
 
+The latest matched source-through-final-link build is **2.208667 s**: **0.741248× Roc / 4.602361× C**. The final compiler/configuration costs a paired **3.360 ms** versus the earlier compiler generating the same qualified encoder. The pass-isolation study found no established compilation-time change. Thirteen runtime case slowdowns above 0.5% and fifteen uncertain comparisons are reported; no peer win is lost. The complete stripped executable remains **276,072 B**. [Source, both full orders, all alternatives, profiles and complete builds](evidence/encoder-size-gap/immutable-current-read-study/README.md).
 
-The selected M1 compiler recipe is **`m1-matcher-guard-facts`**:
-**63,692 B**, **81/81 Roc and 62/81 libdeflate wins in both complete orders**,
-and **2.215 s** source through final link in its matched cohort.
-It combines historical spill pairing with current guard proofs and matcher layout,
-recovers the two earlier 1 KiB slowdowns, and holds every prior peer win.
-The paired build-time difference is a **1.45 ms cost**, with an interval crossing zero.
-[Fresh qualification, source recipe and complete builds](evidence/encoder-size-gap/current-matcher-guard-facts/README.md)
-Use [CURRENT.md](CURRENT.md) for current identities, timings and tradeoffs;
-the earlier measurements below remain historical evidence.
+Use [CURRENT.md](CURRENT.md) for current identities, timings and tradeoffs; earlier measurements below are historical evidence.
 
 This PR contains compiler and parser source, a pinned Mech program, native build
-configuration, measured runtime source, and raw benchmark evidence. It is stacked
-on #973 at `9087b1f07727a9bfcb7c09059f48edaca6dc2301`.
+configuration, measured runtime source, and raw benchmark evidence. It targets #993, which is stacked on #973.
 
 Start with [the current scorecard](CURRENT.md) and [the review and continuation handoff](REVIEW.md).
 It identifies the retained baseline, review priorities, unresolved CI, and all
@@ -685,4 +677,4 @@ The opt-in `early-region-emission` feature now omits 885 original codebook opera
 The previous pairing recipe rebuilds with `--variant m1-register-spill-pairs`; it
 extends `m1-sparse-guard-rounds` with allocator spill pairs and valid current profiles.
 
-Use `--variant m1-matcher-guard-facts` for the current selected recipe.
+Use `--variant m1-immutable-current-reads` for the current selected recipe.
