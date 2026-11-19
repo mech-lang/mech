@@ -1,0 +1,23 @@
+[
+  {
+    "role": "selected",
+    "command": [
+      "python3",
+      "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/early-source-unit-repair/reproduce.py",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/controller-source-boundaries/minimal-integration/compiler/e75d74f775717293/compile_profile",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/controller-source-boundaries/portable-replay/selected"
+    ],
+    "exit_code": 0
+  },
+  {
+    "role": "unit",
+    "command": [
+      "python3",
+      "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/early-source-unit-repair/reproduce.py",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/controller-source-boundaries/scoped-registers/compiler/2a553c89309b34e7/compile_profile",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/controller-source-boundaries/portable-replay/unit",
+      "--unit"
+    ],
+    "exit_code": 0
+  }
+]

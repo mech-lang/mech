@@ -1,0 +1,10 @@
+
+running 5 tests
+test native_artifact::codegen::common::ssa_words::packet_tests::packet_homes_do_not_replace_literals_or_unknown_source_lanes ... ok
+test native_artifact::codegen::common::ssa_words::packet_tests::packet_owner_updates_survive_calls_conditional_clears_and_loop_joins ... ok
+test native_artifact::codegen::common::ssa_words::tests::direct_homes_require_a_single_definition_before_every_reachable_read ... ok
+test native_artifact::codegen::common::ssa_words::tests::entry_literal_needs_no_merge_parameter_and_flags_unexpected_writes ... ok
+test native_artifact::codegen::common::ssa_words::tests::ssa_home_spills_and_reloads_keep_the_boundary_memory_region ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

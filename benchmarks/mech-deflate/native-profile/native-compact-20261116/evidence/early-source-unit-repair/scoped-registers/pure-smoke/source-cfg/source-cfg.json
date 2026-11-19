@@ -1,0 +1,184 @@
+{
+  "iterations": "[]",
+  "sites": [
+    {
+      "action": "Scalar(None)",
+      "block": "block1",
+      "defs": [],
+      "origin": {
+        "block": null,
+        "local": null,
+        "node": 0
+      },
+      "recipe": "Scalar/control",
+      "retire_after": [],
+      "site": 0,
+      "terminator": "Scalar(Jump(1))",
+      "transfer": [],
+      "uses": []
+    },
+    {
+      "action": "Scalar(None)",
+      "block": "block2",
+      "defs": [],
+      "origin": {
+        "block": null,
+        "local": null,
+        "node": 0
+      },
+      "recipe": "Scalar/control",
+      "retire_after": [],
+      "site": 1,
+      "terminator": "Scalar(Jump(2))",
+      "transfer": [],
+      "uses": []
+    },
+    {
+      "action": "Scalar(Primitive { op: U64Div, operands: [NativeMatchValue(0), NativeMatchValue(1)], output: NativeMatchValue(3) })",
+      "block": "block3",
+      "defs": [
+        3
+      ],
+      "origin": {
+        "block": null,
+        "local": null,
+        "node": 0
+      },
+      "recipe": "Scalar/control",
+      "retire_after": [],
+      "site": 2,
+      "terminator": "Scalar(Jump(3))",
+      "transfer": [],
+      "uses": [
+        0,
+        1
+      ]
+    },
+    {
+      "action": "Scalar(Primitive { op: U64Add, operands: [NativeMatchValue(3), NativeMatchValue(2)], output: NativeMatchValue(4) })",
+      "block": "block4",
+      "defs": [
+        4
+      ],
+      "origin": {
+        "block": null,
+        "local": null,
+        "node": 1
+      },
+      "recipe": "Scalar/control",
+      "retire_after": [],
+      "site": 3,
+      "terminator": "Scalar(Jump(4))",
+      "transfer": [],
+      "uses": [
+        2,
+        3
+      ]
+    },
+    {
+      "action": "Scalar(None)",
+      "block": "block5",
+      "defs": [],
+      "origin": {
+        "block": null,
+        "local": null,
+        "node": 0
+      },
+      "recipe": "Scalar/control",
+      "retire_after": [],
+      "site": 4,
+      "terminator": "Scalar(Complete)",
+      "transfer": [],
+      "uses": [
+        4
+      ]
+    }
+  ],
+  "values": [
+    {
+      "base": 0,
+      "owners": [],
+      "type": {
+        "kind": {
+          "float": false,
+          "scalar_bytes": 8,
+          "signed": false
+        },
+        "owners": [],
+        "packed_align": 8,
+        "packed_bytes": 8,
+        "words": 1
+      },
+      "value": 0,
+      "words": 1
+    },
+    {
+      "base": 1,
+      "owners": [],
+      "type": {
+        "kind": {
+          "float": false,
+          "scalar_bytes": 8,
+          "signed": false
+        },
+        "owners": [],
+        "packed_align": 8,
+        "packed_bytes": 8,
+        "words": 1
+      },
+      "value": 1,
+      "words": 1
+    },
+    {
+      "base": 2,
+      "owners": [],
+      "type": {
+        "kind": {
+          "float": false,
+          "scalar_bytes": 8,
+          "signed": false
+        },
+        "owners": [],
+        "packed_align": 8,
+        "packed_bytes": 8,
+        "words": 1
+      },
+      "value": 2,
+      "words": 1
+    },
+    {
+      "base": 3,
+      "owners": [],
+      "type": {
+        "kind": {
+          "float": false,
+          "scalar_bytes": 8,
+          "signed": false
+        },
+        "owners": [],
+        "packed_align": 8,
+        "packed_bytes": 8,
+        "words": 1
+      },
+      "value": 3,
+      "words": 1
+    },
+    {
+      "base": 4,
+      "owners": [],
+      "type": {
+        "kind": {
+          "float": false,
+          "scalar_bytes": 8,
+          "signed": false
+        },
+        "owners": [],
+        "packed_align": 8,
+        "packed_bytes": 8,
+        "words": 1
+      },
+      "value": 4,
+      "words": 1
+    }
+  ]
+}

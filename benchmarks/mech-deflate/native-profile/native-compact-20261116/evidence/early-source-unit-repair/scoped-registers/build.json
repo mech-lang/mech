@@ -1,0 +1,33 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "build",
+    "--locked",
+    "--release",
+    "--config",
+    "profile.release.package.libmimalloc-sys.opt-level=1",
+    "--manifest-path",
+    "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target",
+    "--message-format=json",
+    "--bin",
+    "compile_profile",
+    "--features",
+    "early-region-emission"
+  ],
+  "profile": {
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+    "CARGO_PROFILE_RELEASE_DEBUG": "false",
+    "CARGO_PROFILE_RELEASE_LTO": "false",
+    "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "16"
+  },
+  "source_base": "249a4c7e0d15079f59a7d65aee7a034775332a4d",
+  "start_utc": "2026-11-19T12:40:48Z",
+  "seconds": 206.6994917918928,
+  "exit_code": 0,
+  "compiler": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/controller-source-boundaries/scoped-registers/compiler/2a553c89309b34e7/compile_profile",
+  "compiler_sha256": "2a553c89309b34e76893c7eb634d3655d7794303d00f853fbb7bbe077e7582eb"
+}

@@ -1,0 +1,32 @@
+{
+  "tests": {
+    "word-tests": {
+      "source_inputs": {
+        "hosts/gpu/src/native_artifact/codegen/common/ssa_words.rs": "6fa1eb7bc0c003100fa49ab62ce7daed2b0b9fdcb8561f37b5103047409bc675",
+        "hosts/gpu/src/native_artifact/codegen/common/ssa_words_tests.rs": "1300c33f376ce4ac0f07ba7bf8a586792b56268b47cd36cfb3a2639b6fb47099",
+        "hosts/gpu/src/native_artifact/codegen/common/ssa_direct_homes.rs": "15165ae1bd5c89287967336541b3325e9c45a11d3f45ba732038932c55243e65",
+        "hosts/gpu/src/native_artifact/codegen/common/ssa_packet_homes_tests.rs": "cc7ce7b74faaadbdabac388203ffb2f7b318d8a8a5f438bb58d627213747c69c",
+        "hosts/gpu/src/native_artifact/compiler/mod.rs": "5e3f326262228f0b4713d57ec408706348bce4838f4c24a8a5f4c8883625cae5"
+      },
+      "reused_result": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/controller-source-boundaries/output-scratch/word-tests/result.json",
+      "reused_result_sha256": "5a577781254963c006507002a688bf45e3c932278c16eedffee7023d63a781d0"
+    },
+    "phase-tests": {
+      "source_inputs": {
+        "hosts/gpu/src/native_artifact/program/compact/phase_storage.rs": "e53b1187dd220f2cf5bb3177c09fa794af6c1b0e5927a55f13ef792f50035171",
+        "hosts/gpu/src/native_artifact/program/compact/phase_storage_tests.rs": "542201f33ad2f1c8676d18c7b8b61d1c6900a0ebf71b52918fc2a5339c851a91"
+      },
+      "reused_result": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/controller-source-boundaries/output-scratch/phase-tests/result.json",
+      "reused_result_sha256": "125ccc77b67aeb897edf6eb37c354d5a75fefbb0146927404559c3dca8a02020"
+    },
+    "source-blocks": {
+      "source_inputs": {
+        "hosts/gpu/src/native_artifact/program/compact/source_blocks.rs": "bc8623d41645933e1caf295498bab95dc6362376006f6e9dcc82ad099a2c849a",
+        "hosts/gpu/src/native_artifact/program/compact/source_blocks_tests.rs": "687080bc481da210401e4997f487af0ca37533309339aa687a5f6d2ffdf59949"
+      },
+      "reused_log": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/controller-source-boundaries/output-scratch/boundary-tests.log",
+      "reused_log_sha256": "41ee0c27c69041b64c654470bad8f704fc069753a51dc0225497cc0059bed48a"
+    }
+  },
+  "scope": "Four boundary tests, five complete production Words tests and five complete phase-storage tests. The only following Rust change scopes register preference in emit.rs; tested implementations and their dependencies remain identical."
+}

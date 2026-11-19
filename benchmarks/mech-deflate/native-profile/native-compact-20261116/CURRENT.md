@@ -1,6 +1,31 @@
 # PR #995 current status
 
-## Final source integration and latest complete builds
+## Current source and complete builds
+
+Compiler source **`44fc9f05304111c6e75cac54a3dc5ec5c4f443bf`** adds source-relative unit extraction and caller-owned boundary storage. The selected recipe remains **`m1-immutable-current-reads`, 63,532 B, 81/81 Roc and 62/81 libdeflate wins in both complete orders**. Current minimal and experimental compiler configurations reproduce its exact artifacts in normal and allocation-checked modes; fixed-support linking reproduces the same qualified `834c7a7e…` worker. No 63rd C win is claimed.
+
+| Latest Apple M1 build | Encoder text | Source through final link | Through strip | Stripped executable |
+| --- | ---: | ---: | ---: | ---: |
+| Earlier compiler, selected encoder | 63,532 B | 2.241802 s | 2.252804 s | 276,072 B |
+| Current minimal compiler, selected encoder | **63,532 B** | **2.245045 s** | **2.256023 s** | **276,072 B** |
+| Experimental compiler, split disabled | 63,532 B | 2.215508 s | 2.226393 s | 276,072 B |
+| Repaired source unit, unselected | 65,948 B | 2.282298 s | 2.293045 s | 276,072 B |
+| Roc | 57,696 B | 2.993610 s | 3.004575 s | 191,912 B |
+| libdeflate | 37,080 B | 0.491877 s | 0.502805 s | 155,752 B |
+
+Eighteen balanced fresh-process orders per actor include final linking, with compilers and fixed support prebuilt for all. Strip is separate. Paired ratios for the current selected build are **0.739423× Roc / 4.540212× C**. Whole-encoder ratios remain **1.101151× Roc / 1.713376× C**, leaving 26,452 B above C.
+
+The current minimal compiler is a paired **1.058 ms slower**, 90% interval **−8.222 to +19.025 ms**, than the earlier compiler producing the same encoder: no established change. The experimental compiler configuration also has no established advantage. The repaired unit costs a paired **66.899 ms**, interval **63.081–71.099 ms**, against its own compiler with the split disabled. Separate cohorts' medians do not establish causal gains.
+
+Current phase medians: parsing **706.538 ms**, semantics **225.121 ms**, artifact preparation **6.921 ms**, encoding **2.667 ms**, native pipeline **1,226.643 ms**, final link **35.812 ms**. Catalog work overlaps parsing; separate medians do not add. Source peak RSS is **392.2 MB**.
+
+Source-relative extraction, shared packets, owner homes, borrowed private output scratch and root-scoped register preference reduce the early experiment from 69,556 to **65,948 B**, with actual active stack **5,280 B**. All 162 output/alias/inflation observations, six failures and 12 recoveries pass. It remains 2,416 B larger than the selection and loses the existing `320-overlap` C win in both 17-fixture focused orders (**1.007444× / 1.009468× C**). Its full runtime score is unmeasured. The source machinery and adverse evidence are retained for repair; the experiment is not selected.
+
+Four boundary tests, five production Words tests, five production phase-storage tests and nine scalar success/error probes pass. Normal/checked replay and portable published replay both reproduce all three artifacts. Four compiler captures identify full continuation-liveness computation as added early-unit planning work. The corrected identical-body inventory finds one 296 B candidate, without proving safe folding. Formatting, module layout and warning policy pass; the existing missing archived allocator path still blocks the unsafe audit.
+
+**Immediate work targets a runtime win on natural 4 KiB**, whose selected result needs about 6.45% less time in the worse order. Combine bounded scorer repairs with earlier gains, keep every existing peer win and the 81/62 floors, and price size and complete build time before selection. The 1× libdeflate goal remains unfinished. [Source, all alternatives, raw timings, checks and portable reproduction](evidence/early-source-unit-repair/README.md).
+
+## Previous standard-module integration cohort
 
 The final compiler source is **`2cd17fca3c9d58a5804a18c904fe1daf65598b78`**, including standard native/parser module layouts and a separate allowlisted JIT test boundary. Its normal and allocation-checked builds reproduce the same **63,532 B** object, full metadata and canonical bytecode. Relinking with the original fixed support reproduces qualified worker **`834c7a7e…`** exactly, so its **81 Roc / 62 C point and precision wins in both complete orders**, output/error/recovery/stack checks and profiles remain applicable.
 
@@ -42,7 +67,7 @@ The selected worker is `834c7a7e423a69c46483a3dae74d9450949fdf142b5ad2dede894e0d
 
 Fresh actual-worker samples put **72.3%** of 1 MiB encoder work in matching and **14.4%** in scoring. Natural 4 KiB is **52.3% scoring / 24.5% matching**. Large random still has the largest absolute gap, about **7.344 ms/call**; natural 4 KiB is the closest next-win check at **1.063757× / 1.068946× C**, needing about **6.45%** less time in the worse order. Sample shares are not elapsed phase timers or forecasts.
 
-The 1× libdeflate code/build goal remains active. The next major architecture task is reducing constructed/analyzed controller state, using the existing early-unit pilot and its adverse size/stack/build evidence. Keep every existing peer win and both 81/62 floors; target 63 C wins next. [Review handoff](REVIEW.md).
+The 1× libdeflate code/build goal remains active. The source-unit repair above is still unselected. Immediate work targets the natural 4 KiB scorer while preserving every existing peer win and both 81/62 floors; target 63 C wins next. [Review handoff](REVIEW.md).
 
 ```sh
 python3 rebuild.py /tmp/mech-immutable --variant m1-immutable-current-reads \

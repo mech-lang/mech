@@ -1,0 +1,6 @@
+empty {'bytes': 0, 'case': 'empty', 'live_at_failure': 0, 'origin': 23, 'requests': 0, 'status': 103426} [2.5e-07, 1.67e-07]
+one-stored {'bytes': 0, 'case': 'one-stored', 'live_at_failure': 0, 'origin': 69, 'requests': 0, 'status': 103426} [8.3e-08, 8.3e-08]
+seven-stored-prefix {'bytes': 0, 'case': 'seven-stored-prefix', 'live_at_failure': 0, 'origin': 69, 'requests': 0, 'status': 103426} [1.67e-07, 8.3e-08]
+prefix-periodic-4096 {'bytes': 4796076, 'case': 'prefix-periodic-4096', 'live_at_failure': 4778960, 'origin': 7164, 'requests': 41, 'status': 103426} [0.000208333, 0.00020725]
+prefix-repeated-16384 {'bytes': 6685744, 'case': 'prefix-repeated-16384', 'live_at_failure': 6668628, 'origin': 7164, 'requests': 41, 'status': 103426} [0.000621709, 0.000621584]
+heldout-mixed-131073 {'bytes': 7631132, 'case': 'heldout-mixed-131073', 'live_at_failure': 7586140, 'origin': 7164, 'requests': 92, 'status': 103426} [0.001012375, 0.001047334]

@@ -1,0 +1,81 @@
+{
+  "decision": "Reject",
+  "rejected": [
+    "320-overlap: repeated focused loss against libdeflate"
+  ],
+  "unresolved": [
+    "early-unit-repair-early-owner-output-root-preserved-focus-forward: focused losses against libdeflate: 320-overlap",
+    "early-unit-repair-early-owner-output-root-preserved-focus-reverse: focused losses against libdeflate: 320-overlap",
+    "both complete timing orders are required"
+  ],
+  "runs": [
+    {
+      "id": "early-unit-repair-early-owner-output-root-preserved-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 17,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "precision_supported_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 13,
+            "mech-experiment": 12
+          },
+          "precision_supported_wins": {
+            "mech-control": 13,
+            "mech-experiment": 12
+          },
+          "lost_cases": [
+            "320-overlap"
+          ],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "early-unit-repair-early-owner-output-root-preserved-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 17,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "precision_supported_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 13,
+            "mech-experiment": 12
+          },
+          "precision_supported_wins": {
+            "mech-control": 13,
+            "mech-experiment": 12
+          },
+          "lost_cases": [
+            "320-overlap"
+          ],
+          "gained_cases": []
+        }
+      }
+    }
+  ]
+}

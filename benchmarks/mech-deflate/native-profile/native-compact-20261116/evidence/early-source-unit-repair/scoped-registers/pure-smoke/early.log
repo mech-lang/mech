@@ -1,0 +1,33 @@
+compile-profile: pid=79029 phase=parse
+{"phase":"parse","seconds":0.001187958,"total_seconds":0.001212125}
+{"phase":"catalog","seconds":0.057648291,"total_seconds":0.058917375}
+compile-profile: phase=frontend
+{"phase":"frontend","seconds":0.000263167,"total_seconds":0.059255584}
+{"phase":"artifact","seconds":0.000040083,"total_seconds":0.0593445}
+{"phase":"encode","seconds":0.000041542,"total_seconds":0.059439625}
+compile-profile: phase=native mode=compact
+compact-stage: canonical lowering
+compact-stage: preparation blocks=5 values=5
+compact-stage: native module
+compact-stage: typed layout
+compact-stage: flow proof
+compact-stage: operation recipes
+compact early source unit: {"constant_zero_input_slots":[],"constant_zero_output_slots":[],"error_transport":"original checked status and canonical source site; caller returns immediately","helper_source_blocks":2,"helper_word_homes":3,"inout_owner_contract":"exact initialized input/output owner lanes in invocation-local caller storage; synchronous nonescaping unit, no new retain/release","inout_owner_homes":{},"input_word_slots":[0,1],"nested_output_scratch_words":null,"normal_exit":3,"operations":1,"output_word_slots":[3],"physical_packet_words":[2,1],"published_result_words":1,"root_numbered_layout_windows":"excluded until remapped to physical units","root_source_blocks":5,"root_word_homes":5,"runtime_qualification":"required for this changed worker","source_entry":2,"source_ownership_model":"shared global facts; no call-boundary retain/release","zero_proof":"all-path physical owner must-zero fixed point including guarded native bypasses; unknown writes kill, joins intersect, copies and clears propagate"}
+compact-stage: source CFG
+compact-stage: source site 0/5
+compact-stage: finalize SSA
+compact-stage: compact values before=11
+compact-values: retained=11
+compact-stage: CFG cleanup
+compact-stage: machine code
+compact-stage: machine code complete
+compact-stage: source CFG
+compact-stage: source site 0/5
+compact-stage: finalize SSA
+compact-stage: compact values before=20
+compact-values: retained=20
+compact-stage: CFG cleanup
+compact-stage: machine code
+compact-stage: machine code complete
+{"phase":"native","seconds":0.0012235,"total_seconds":0.060883417}
+{"bytecode_bytes":2229,"bytecode_sha256":"08cb17b4e96c38cde47f61e9e5587ff69bf7729848e382e42f3eaaf754da073f","catalog_overlapped_parse":false,"catalog_work_seconds":0.057646917,"mode":"compact","object_bytes":664,"object_sha256":"5f617499e54d2913db512efeb3d50e2958aee84be9297e1d03abe68596a009e8","phases":[{"phase":"parse","seconds":0.001187958,"total_seconds":0.001212125},{"phase":"catalog","seconds":0.057648291,"total_seconds":0.058917375},{"phase":"frontend","seconds":0.000263167,"total_seconds":0.059255584},{"phase":"artifact","seconds":0.000040083,"total_seconds":0.0593445},{"phase":"encode","seconds":0.000041542,"total_seconds":0.059439625},{"phase":"native","seconds":0.0012235,"total_seconds":0.060883417}],"source_bytes":77,"source_sha256":"467d0293709d14f462aa5356bb70e753fa40e7f028dc72bc62404a94577245a7","total_seconds":0.060930959}

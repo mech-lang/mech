@@ -1,0 +1,5 @@
+x := x<u64>
+y := y<u64>
+quotient := x / y
+answer := quotient + 7<u64>
+answer

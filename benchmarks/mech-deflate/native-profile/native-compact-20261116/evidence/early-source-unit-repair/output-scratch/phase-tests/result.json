@@ -1,0 +1,5 @@
+{
+  "exit_code": 0,
+  "binary_sha256": "19d6581d8cce8cc25fd705b8e6457f721fa87e406ef78295751f1e3adec9b960",
+  "output": "\nrunning 5 tests\ntest native_artifact::program::compact::phase_storage::tests::compact_input_offsets_keep_live_words_and_refuse_escapes ... ok\ntest native_artifact::program::compact::phase_storage::tests::exit_packet_words_keep_selected_results_and_failure_order ... ok\ntest native_artifact::program::compact::phase_storage::tests::exit_packet_words_refuse_escape_extent_width_and_path_changes ... ok\ntest native_artifact::program::compact::phase_storage::tests::input_packet_flags_require_the_complete_nonescaping_load_contract ... ok\ntest native_artifact::program::compact::phase_storage::tests::nested_call_outputs_can_use_a_checked_caller_extent ... ok\n\ntest result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n"
+}
