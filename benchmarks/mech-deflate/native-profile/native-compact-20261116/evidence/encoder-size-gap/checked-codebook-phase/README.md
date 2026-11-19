@@ -1,6 +1,6 @@
 # One substantial checked codebook phase
 
-**Experimental, not selected.** The selected M1 encoder remains the fully
+**Qualified build-speed alternative, not selected.** The selected M1 encoder remains the fully
 qualified **63,804 B** `m1-preserved-root-registers` recipe. This experiment
 emits **64,444 B**, 640 B more. Its object is `4f6694cf…`; it is a different
 build from the earlier qualified 64,444 B literal-frame recipe.
@@ -11,7 +11,7 @@ local IR preparation, input/output transport, error origins and full SSA checks.
 This is a late split: the compiler still constructs the global source/native
 plan. It does not complete the planned small-controller architecture.
 
-| Apple M1 | Selected control | Checked-phase experiment |
+| Apple M1 | Selected control | Checked-phase alternative |
 | --- | ---: | ---: |
 | Complete encoder text | 63,804 B | 64,444 B |
 | Checked controller | 46,788 B | 41,336 B |
@@ -26,9 +26,19 @@ source origins checked. The stack probe covers both samples of all 81 cases,
 including nested calls. `linked-result.json`, `linked-checked-failures.json`,
 `linked-stack.json` and `linked-proof-sources.tar.gz` record those checks.
 
-**Runtime win counts are unmeasured for this experiment.**
-Focused JIT tests are building; runtime measurements remain pending. Do not inherit the selected control's 81/81 Roc and 62/81 libdeflate
-wins, or the older literal-frame recipe's results, for this different worker.
+Both complete M1 orders independently hold **81/81 Roc and 62/81 libdeflate
+wins**, all supported at the configured precision. They cover 74 and 56 distinct
+contracts. V3 returns **Retain**, with no lost peer wins, rejected cases or
+unresolved peer cases. Candidate/control comparisons establish no slowdowns;
+eight cases have uncertain timing bounds. All raw observations and those bounds
+remain in `full-*-observations.tar`, `full-replay.json.gz` and `status.json`.
+The earlier focused result required complete orders and is superseded by this
+full qualification. Natural 4 KiB still loses to C; no 63rd C win is claimed.
+
+All **15 focused checked-region JIT tests pass**, including live outputs,
+partial writes, bypassed failures, paired heap captures, different phase frames
+and rejection of a non-entry heap load. `validation.json` records the exact
+command and the optimized GPU/JIT configuration.
 
 ## Matched fresh builds
 
@@ -42,7 +52,7 @@ measurement window and automatically resumed afterward; see
 | Same-session build | Source through final link | Through strip | Encoder text |
 | --- | ---: | ---: | ---: |
 | Selected control | 2.245295 s | 2.256457 s | 63,804 B |
-| Checked-phase experiment | 2.231624 s | 2.242875 s | 64,444 B |
+| Checked-phase alternative | 2.231624 s | 2.242875 s | 64,444 B |
 | Roc | 2.997875 s | 3.009078 s | 57,696 B |
 | libdeflate | 0.483540 s | 0.494262 s | 37,080 B |
 
@@ -50,8 +60,8 @@ The paired saving is **14.000 ms**, 7/8 faster, with a per-cohort 90% interval
 of **12.710–18.280 ms** saved (20,000 bootstrap resamples, seed 9951119).
 The median paired ratio is 0.99377 versus the control, 0.74597 versus Roc and
 4.62165 versus C. Stripped deployment remains 276,072 B. This is a measured
-build improvement with a 640 B encoder cost, not a size win or runtime
-promotion. The earlier qualified 2.239 s measurement is a different cohort.
+build improvement with a 640 B encoder cost. It remains an alternative to the
+smaller selected recipe. The earlier qualified 2.239 s measurement is a different cohort.
 
 Native phase medians are 1.238337 s for the control and 1.222933 s for the
 experiment. Source CPU medians are 2.273029 and 2.259801 s. Source RSS medians
@@ -93,7 +103,23 @@ results. `symbol-deltas.json` in the final variant includes alignment between
 symbols; the metadata records the separate raw body sizes. None of the single
 source-emission phase logs establishes a complete-build timing effect.
 
-## Source replay
+## Source rebuild and replay
+
+From the benchmark packet directory, the named recipe builds the compiler,
+emits the exact encoder, and links and checks a new host-support worker:
+
+```sh
+python3 -B rebuild.py /tmp/checked-codebook-phase \
+  --variant m1-checked-codebook-phase --mimalloc-object /path/to/mimalloc.o
+```
+
+The recorded complete source rebuild reproduces the object, full metadata and
+bytecode, then passes **162 success observations, six allocation-failure cases
+and 12 exact recoveries**. The freshly built host-support worker is
+`e1da155d…`; the independently runtime-qualified fixed-support worker is
+`a4f60a4a…`. Runtime wins belong to the latter. `source-rebuild.json` and
+`source-*.json.gz` retain the new worker's identities and checks. This single
+validation build is not part of the eight matched timing trials above.
 
 On this PR's source, first rebuild the selected control:
 
@@ -110,6 +136,13 @@ The as-run compiler is `4e1d5afe0ee1791bfbf4d624ff05a7665f90c5a64e3fb66a6fc08ccf
 from source base `d8faf1969b` plus the recorded five-file native compiler patch.
 `compiler-source.patch.gz` is historical reproduction evidence; this PR contains
 the implementation as live source.
+
+The register-preference follow-up adds 16 B with no frame reduction; its raw
+receipts remain in `register-scope/`. Its temporary option was removed. The
+current compiler still inherits the root's register preference in the phase.
+Three complete diagnostic native profiles of the selected 63,804 B recipe are
+in `native-profile/`; they ran under test-build load and do not establish build
+latency. These profiles guide further compiler work without changing selection.
 
 For discovery replay, extract `region-boundaries/after-regions.tsv` from the
 neighboring `preserved-root-registers/qualified-root-diagnostics.tar.gz`, then

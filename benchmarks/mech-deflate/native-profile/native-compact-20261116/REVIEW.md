@@ -1,23 +1,40 @@
 # Review and continuation handoff
 
-Review **mech-lang/mech PR #993**, branch
-`codex/native-compact-source-handoff`. It is stacked on #973's
-`codex/level12-compression-consolidated` branch. The compiler changes, Mech source,
+Review **[mech-lang/mech PR #995](https://github.com/mech-lang/mech/pull/995)**,
+branch `codex/pr993-m3-optimization`. It targets #993's
+`codex/native-compact-source-handoff`, which is stacked on #973. The compiler changes, Mech source,
 build recipe, runtime source, and evidence are committed here. Another agent can
 fetch this branch and use it as the basis for compiler work.
 
 ```sh
-git fetch origin codex/native-compact-source-handoff
-git switch -c codex/review-native-compact origin/codex/native-compact-source-handoff
+git fetch origin codex/pr993-m3-optimization
+git switch -c codex/review-native-compact origin/codex/pr993-m3-optimization
 ```
 
-The retained runtime floors are **81/81 Roc and 61/81 libdeflate**. The next
-milestones are 62, 71, and 81 libdeflate wins with repeatable qualification.
+The selected smaller M1 recipe is **63,804 B**, named
+`m1-preserved-root-registers`. It holds **81/81 Roc and 62/81 libdeflate** in
+both complete orders, with all those wins supported at the configured precision.
+Its matched source-through-final-link build is **2.239 s**. The next runtime
+target is 63 C wins. See [CURRENT.md](CURRENT.md) for the full current scorecard.
+
+The newer `m1-checked-codebook-phase` recipe is a qualified **64,444 B**
+alternative: it holds the same peer wins, saves a paired 14 ms of complete
+build time, and uses 160 B less peak stack, at a 640 B encoder cost. It is a
+different object from the earlier 64,444 B literal-frame recipe. The smaller
+63,804 B recipe stays selected. Both named recipes rebuild from this PR's
+compiler source and the unchanged original Mech program.
+
 Continue reducing emitted code and complete build time toward
 1× libdeflate. Preserve checked errors, origins, ownership, and finite admission;
 keep the ordinary resource-accounting limitations explicit. The rebuild recipe
 uses no external LLVM executable. Do not substitute old M3/LLVM measurements for
 the current Apple M1 comparisons.
+
+## Archived #993 measurements and review notes
+
+The following sections describe earlier builds. Their use of “current,”
+“latest” or “retained” applies to those historical cohorts; use CURRENT.md
+and the recipes above for present selection and qualification.
 
 Reusing the verifier's graph and proving identity-route reachability cuts
 matched native time by **1.71%** and the complete build by

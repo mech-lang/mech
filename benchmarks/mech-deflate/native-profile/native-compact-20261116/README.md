@@ -12,8 +12,9 @@ on #973 at `9087b1f07727a9bfcb7c09059f48edaca6dc2301`.
 
 Start with [the current scorecard](CURRENT.md) and [the review and continuation handoff](REVIEW.md).
 It identifies the retained baseline, review priorities, unresolved CI, and all
-24 static size screens and their subsequent runtime follow-ups, with
-checkout-relative reproduction commands. No smaller candidate has been promoted.
+24 historical static size screens and their subsequent runtime follow-ups, with
+checkout-relative reproduction commands. Current selection is recorded above
+and in CURRENT.md.
 
 The parser now replays admitted one-shot variable definitions with fresh
 identities. Matched Mech deployment builds take **3.13566 s**
@@ -210,6 +211,8 @@ python3 rebuild.py /tmp/mech-m1-literal-frame-cleanup \
   --variant m1-literal-frame-cleanup --mimalloc-object /path/to/mimalloc.o
 python3 rebuild.py /tmp/mech-m1-preserved-root-registers \
   --variant m1-preserved-root-registers --mimalloc-object /path/to/mimalloc.o
+python3 rebuild.py /tmp/mech-m1-checked-codebook-phase \
+  --variant m1-checked-codebook-phase --mimalloc-object /path/to/mimalloc.o
 ```
 
 The fixed allocator object enables the final executable link and linked
@@ -224,6 +227,12 @@ The named recipes apply to Apple AArch64. Their [M1 comparison](CURRENT.md)
 uses a fixed, prebuilt deployment host and records the runtime qualification
 of each archived worker separately. The `frame-copies` recipe remains the
 71,192-byte maintained control.
+
+`m1-preserved-root-registers` is the selected **63,804 B** recipe.
+`m1-checked-codebook-phase` is a separately qualified **64,444 B** build-speed
+alternative. Both hold 81/81 Roc and 62/81 libdeflate in both complete M1
+orders. The latter is a different object from the older 64,444 B
+`m1-literal-frame-cleanup` recipe.
 
 ## Preselected root inlining
 

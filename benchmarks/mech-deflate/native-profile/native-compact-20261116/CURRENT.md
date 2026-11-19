@@ -23,7 +23,7 @@ The small-controller architecture is still incomplete. Three shared controller a
 
 [Current source recipe, complete runtime evidence and build data](evidence/encoder-size-gap/preserved-root-registers/README.md) · [Earlier 64,444 B result](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md)
 
-## Checked codebook phase experiment
+## Qualified checked codebook phase alternative
 
 The selected result above stays **63,804 B**. A new late checked-phase split
 emits **64,444 B**, a different object from the older qualified literal-frame
@@ -36,11 +36,26 @@ In eight matched fresh builds, source through final link is **2.245295 →
 of **12.710–18.280 ms saved**. Roc takes 2.997875 s and C 0.483540 s in this
 cohort; the experiment takes 0.74597× Roc and 4.62165× C time. Encoder text is
 1.117× Roc and 1.738× C. This is a measured build/stack gain with a 640 B code
-cost. Its runtime wins are unmeasured and focused JIT tests are building; it
-is **experimental, not selected**. The global plan is still constructed, so
+cost. It independently holds **81/81 Roc and 62/81 libdeflate in both complete
+orders**, all supported at the configured precision, with no lost peer wins.
+V3 returns Retain. There are no established candidate/control slowdowns and
+eight uncertain timing cases. All 15 focused checked-region JIT tests pass.
+The named `m1-checked-codebook-phase` source rebuild reproduces all artifacts
+and passes 162 success observations, six failure cases and 12 recoveries.
+The freshly built host-support worker has a separate identity from the
+runtime-qualified fixed-support worker. This is a **qualified alternative,
+not the selected smaller recipe**. The global plan is still constructed, so
 this late split does not finish the small-controller architecture.
 
 [Source, adverse variants, replay, raw builds and verification](evidence/encoder-size-gap/checked-codebook-phase/README.md)
+
+CI at source head `c697f100f8` reports 40 successful jobs, including
+native plan, public CLI, hosted applications,
+same-binary policies, GPU owners, Windows, Linux and browser checks. Static
+architecture contracts still fail on raw native calls in the archived M3 ABI
+oracle outside the exact allowlist; the aggregate Static contracts and PR gate
+therefore fail too. One dependent job is skipped. This is not an all-green CI result; the
+audit policy is unchanged. [Source-head CI](https://github.com/mech-lang/mech/actions/runs/44427678031)
 
 ## Apple M3 shared M1 recipe
 
@@ -236,7 +251,9 @@ The 64,668 B trial lost one Roc case in the forward sweep. Its V3 result is Reje
 | Checked-read size candidate | 71,420 B | 5,328 B peak stack. Runtime qualification pending |
 | Earlier owner-exchange size candidate | 71,288 B | Rejected by the v2 runtime gate |
 | Maintained frame-copy recipe | **71,192 B** | Compiler source below |
-| Smallest v3-qualified opt-in build | **64,444 B** | [Compiler source, timings and tradeoffs](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md) |
+| Selected smallest v3-qualified opt-in build | **63,804 B** | [Preserved-root-register source recipe and complete qualification](evidence/encoder-size-gap/preserved-root-registers/README.md) |
+| Earlier qualified literal-frame option | 64,444 B | [Source, timings and tradeoffs](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md) |
+| Qualified faster checked-codebook alternative | 64,444 B | [Separate object, source and complete qualification](evidence/encoder-size-gap/checked-codebook-phase/README.md) |
 
 ~~~sh
 python3 -B benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py \

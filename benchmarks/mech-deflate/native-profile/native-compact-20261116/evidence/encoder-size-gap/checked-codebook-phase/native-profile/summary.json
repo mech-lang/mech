@@ -1,0 +1,325 @@
+{
+  "scope": "stack-derived exclusive sample classification; encode-through-exit under concurrent test-build load, not exclusive latency",
+  "active_samples": 2758,
+  "categories": {
+    "idle_or_wait": {
+      "samples": 7917,
+      "fraction_of_nonwait_samples": null
+    },
+    "native_cleanup_rewrites": {
+      "samples": 633,
+      "fraction_of_nonwait_samples": 0.22951414068165338
+    },
+    "validation": {
+      "samples": 572,
+      "fraction_of_nonwait_samples": 0.20739666424945613
+    },
+    "native_guard_construction": {
+      "samples": 332,
+      "fraction_of_nonwait_samples": 0.12037708484408992
+    },
+    "ssa_construction": {
+      "samples": 254,
+      "fraction_of_nonwait_samples": 0.09209572153734591
+    },
+    "other_native_planning_and_emission": {
+      "samples": 252,
+      "fraction_of_nonwait_samples": 0.09137055837563451
+    },
+    "machine_emission_and_regalloc": {
+      "samples": 206,
+      "fraction_of_nonwait_samples": 0.07469180565627266
+    },
+    "cfg_and_dominance": {
+      "samples": 194,
+      "fraction_of_nonwait_samples": 0.07034082668600435
+    },
+    "root_ir_construction_and_other_passes": {
+      "samples": 146,
+      "fraction_of_nonwait_samples": 0.05293691080493111
+    },
+    "numeric_analysis": {
+      "samples": 90,
+      "fraction_of_nonwait_samples": 0.032632342277012324
+    },
+    "checked_region_admission_and_preparation": {
+      "samples": 32,
+      "fraction_of_nonwait_samples": 0.011602610587382161
+    },
+    "backend_optimization": {
+      "samples": 28,
+      "fraction_of_nonwait_samples": 0.01015228426395939
+    },
+    "outside_native_or_teardown": {
+      "samples": 19,
+      "fraction_of_nonwait_samples": 0.006889050036258158
+    }
+  },
+  "per_trial": [
+    {
+      "idle_or_wait": 2607,
+      "outside_native_or_teardown": 5,
+      "validation": 199,
+      "native_cleanup_rewrites": 207,
+      "cfg_and_dominance": 62,
+      "machine_emission_and_regalloc": 72,
+      "backend_optimization": 9,
+      "root_ir_construction_and_other_passes": 48,
+      "native_guard_construction": 110,
+      "ssa_construction": 87,
+      "checked_region_admission_and_preparation": 9,
+      "other_native_planning_and_emission": 43,
+      "numeric_analysis": 32
+    },
+    {
+      "idle_or_wait": 2674,
+      "outside_native_or_teardown": 7,
+      "validation": 192,
+      "native_cleanup_rewrites": 207,
+      "cfg_and_dominance": 69,
+      "machine_emission_and_regalloc": 65,
+      "root_ir_construction_and_other_passes": 54,
+      "backend_optimization": 9,
+      "native_guard_construction": 111,
+      "ssa_construction": 82,
+      "checked_region_admission_and_preparation": 11,
+      "other_native_planning_and_emission": 108,
+      "numeric_analysis": 29
+    },
+    {
+      "idle_or_wait": 2636,
+      "outside_native_or_teardown": 7,
+      "validation": 181,
+      "native_cleanup_rewrites": 219,
+      "cfg_and_dominance": 63,
+      "machine_emission_and_regalloc": 69,
+      "root_ir_construction_and_other_passes": 44,
+      "backend_optimization": 10,
+      "native_guard_construction": 111,
+      "ssa_construction": 85,
+      "checked_region_admission_and_preparation": 12,
+      "other_native_planning_and_emission": 101,
+      "numeric_analysis": 29
+    }
+  ],
+  "top_native_owners": [
+    [
+      "mech_gpu::native_artifact::program::codegen::cfg_cleanup::optimize_ordered",
+      353
+    ],
+    [
+      "<mech_gpu::native_artifact::program::compact::object::PreparedObject>::compile_preselected_root",
+      225
+    ],
+    [
+      "<mech_gpu::native_artifact::program::compact::guards::state::State>::close",
+      193
+    ],
+    [
+      "mech_gpu::native_artifact::program::compact::emit::define_entry::<mech_gpu::native_artifact::program::compact::object::PreparedObject>",
+      192
+    ],
+    [
+      "mech_gpu::native_artifact::program::compact::emit::seal_auxiliary",
+      107
+    ],
+    [
+      "<mech_gpu::native_artifact::program::compact::guards::state::State>::merge",
+      77
+    ],
+    [
+      "<mech_gpu::native_artifact::codegen::common::ssa_words::Words>::read",
+      69
+    ],
+    [
+      "mech_gpu::native_artifact::program::codegen::cfg_cleanup::boolean_conditions::optimize",
+      51
+    ],
+    [
+      "<alloc::vec::Vec<cranelift_codegen::ir::entities::Value> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<cranelift_codegen::ir::entities::Value, core::iter::adapters::map::Map<core::slice::iter::Iter<cranelift_frontend::variable::Variable>, <mech_gpu::native_artifact::program::compact::collections::Collections>::view::{closure#0}>>>::from_iter",
+      50
+    ],
+    [
+      "mech_gpu::native_artifact::program::codegen::cfg_cleanup::coalesce_literal_join_arguments",
+      46
+    ],
+    [
+      "mech_gpu::native_artifact::program::codegen::cfg_cleanup::fold_scalar_span_guards",
+      44
+    ],
+    [
+      "mech_gpu::native_artifact::program::compact::checked_traversals::prepare_bodies::<mech_gpu::native_artifact::program::compact::object::PreparedObject, alloc::vec::Vec<mech_gpu::native_artifact::program::compact::checked_traversals::Traversal>>",
+      42
+    ],
+    [
+      "<<mech_gpu::native_artifact::program::compact::compile_jobs::Pool>::enqueue<cranelift_codegen::context::Context, <mech_gpu::native_artifact::program::compact::compile_jobs::Pool>::submit::{closure#0}>::{closure#0} as core::ops::function::FnOnce<(&dyn cranelift_codegen::isa::TargetIsa,)>>::call_once::{shim:vtable#0}",
+      42
+    ],
+    [
+      "mech_gpu::native_artifact::program::codegen::cfg_cleanup::optimize_final_batched_routes",
+      41
+    ],
+    [
+      "<mech_gpu::native_artifact::program::codegen::cfg_cleanup::word_ranges::Facts>::range",
+      40
+    ],
+    [
+      "<mech_gpu::native_artifact::program::codegen::cfg_cleanup::route_uses::reach::Reachability>::reachable",
+      34
+    ],
+    [
+      "mech_gpu::native_artifact::program::codegen::cfg_cleanup::dead_values::eliminate",
+      33
+    ],
+    [
+      "mech_gpu::native_artifact::program::codegen::cfg_cleanup::forward_identity_routes_from",
+      33
+    ],
+    [
+      "mech_gpu::native_artifact::program::prepare::phase_numeric::exits::live_query",
+      30
+    ],
+    [
+      "mech_gpu::native_artifact::program::codegen::cfg_cleanup::coalesce_equal_join_arguments",
+      25
+    ],
+    [
+      "mech_gpu::native_artifact::program::codegen::cfg_cleanup::local_phis::simplify",
+      24
+    ],
+    [
+      "<mech_gpu::native_artifact::program::compact::owner_flow::OwnerFlow>::derive",
+      24
+    ],
+    [
+      "mech_gpu::native_artifact::program::codegen::cfg_cleanup::reuse_dominating_window_facts",
+      23
+    ],
+    [
+      "mech_gpu::native_artifact::program::codegen::cfg_cleanup::boolean_words::inputs",
+      20
+    ]
+  ],
+  "top_leaf_symbols": [
+    [
+      "__psynch_mutexwait",
+      3284
+    ],
+    [
+      "__ulock_wait",
+      2745
+    ],
+    [
+      "semaphore_wait_trap",
+      1888
+    ],
+    [
+      "<mech_gpu::native_artifact::program::compact::guards::state::State>::close",
+      188
+    ],
+    [
+      "<cranelift_codegen::verifier::Verifier>::run",
+      135
+    ],
+    [
+      "<cranelift_frontend::ssa::SSABuilder>::use_var_nonlocal",
+      103
+    ],
+    [
+      "<cranelift_codegen::dominator_tree::DominatorTree>::compute",
+      101
+    ],
+    [
+      "cranelift_codegen::remove_constant_phis::do_remove_constant_phis",
+      73
+    ],
+    [
+      "<mech_gpu::native_artifact::program::compact::guards::state::State>::merge",
+      73
+    ],
+    [
+      "_platform_memmove",
+      67
+    ],
+    [
+      "<deduplicated_symbol>",
+      64
+    ],
+    [
+      "<cranelift_codegen::ir::dfg::DataFlowGraph>::resolve_all_aliases",
+      51
+    ],
+    [
+      "<cranelift_bforest::path::Path<cranelift_bforest::map::MapTypes<cranelift_codegen::ir::entities::Inst, cranelift_codegen::ir::entities::Block>>>::next",
+      35
+    ],
+    [
+      "<cranelift_codegen::ir::dfg::DataFlowGraph>::inst_args",
+      35
+    ],
+    [
+      "<cranelift_codegen::ir::dfg::DataFlowGraph>::value_def",
+      35
+    ],
+    [
+      "<mech_gpu::native_artifact::program::codegen::cfg_cleanup::route_uses::reach::Reachability>::reachable",
+      34
+    ],
+    [
+      "<cranelift_codegen::ir::layout::Insts as core::iter::traits::iterator::Iterator>::next",
+      33
+    ],
+    [
+      "<regalloc2::ion::data_structures::Env<cranelift_codegen::machinst::vcode::VCode<cranelift_codegen::isa::aarch64::lower::isle::generated_code::MInst>>>::run",
+      33
+    ],
+    [
+      "cranelift_codegen::ir::dfg::maybe_resolve_aliases",
+      32
+    ],
+    [
+      "<core::iter::adapters::map::Map<core::option::IntoIter<cranelift_codegen::ir::entities::Inst>, <cranelift_codegen::ir::function::FunctionStencil>::block_successors::{closure#0}> as core::iter::traits::double_ended::DoubleEndedIterator>::try_rfold::<(), <core::iter::adapters::flatten::FlattenCompat<_, _>>::iter_try_rfold::flatten<core::iter::adapters::map::Map<core::slice::iter::Iter<cranelift_codegen::ir::instructions::BlockCall>, <cranelift_codegen::ir::function::FunctionStencil>::block_successors::{closure#0}::{closure#0}>, (), core::ops::control_flow::ControlFlow<cranelift_codegen::ir::entities::Block>, <core::iter::adapters::flatten::FlattenCompat<_, _> as core::iter::traits::double_ended::DoubleEndedIterator>::try_rfold::flatten<core::iter::adapters::map::Map<core::slice::iter::Iter<cranelift_codegen::ir::instructions::BlockCall>, <cranelift_codegen::ir::function::FunctionStencil>::block_successors::{closure#0}::{closure#0}>, (), core::ops::control_flow::ControlFlow<cranelift_codegen::ir::entities::Block>, core::iter::traits::double_ended::DoubleEndedIterator::rfind::check<cranelift_codegen::ir::entities::Block, &mut <cranelift_codegen::dominator_tree::DominatorTree>::compute_spanning_tree::{closure#0}>::{closure#0}>::{closure#0}>::{closure#0}, core::ops::control_flow::ControlFlow<cranelift_codegen::ir::entities::Block>>",
+      31
+    ],
+    [
+      "mech_gpu::native_artifact::program::codegen::cfg_cleanup::boolean_conditions::optimize",
+      30
+    ],
+    [
+      "_tlv_get_addr",
+      30
+    ],
+    [
+      "<cranelift_frontend::ssa::VariableDefs>::insert",
+      29
+    ],
+    [
+      "<mech_gpu::native_artifact::program::codegen::cfg_cleanup::word_ranges::Facts>::range",
+      28
+    ],
+    [
+      "<cranelift_codegen::ir::dfg::DataFlowGraph>::resolve_alias_chains",
+      27
+    ],
+    [
+      "<hashbrown::raw::RawTable<(cranelift_codegen::ir::entities::Block, cranelift_entity::packed_option::PackedOption<cranelift_codegen::ir::entities::Value>)>>::reserve_rehash::<hashbrown::map::make_hasher<cranelift_codegen::ir::entities::Block, cranelift_entity::packed_option::PackedOption<cranelift_codegen::ir::entities::Value>, rustc_hash::FxBuildHasher>::{closure#0}>",
+      26
+    ],
+    [
+      "<cranelift_codegen::ir::dfg::DataFlowGraph>::non_tail_call_or_try_call_signature",
+      25
+    ],
+    [
+      "core::iter::adapters::chain::and_then_or_clear::<core::iter::adapters::chain::Chain<core::iter::adapters::copied::Copied<core::slice::iter::Iter<cranelift_codegen::ir::entities::Value>>, core::iter::adapters::flatten::FlatMap<core::slice::iter::Iter<cranelift_codegen::ir::instructions::BlockCall>, core::iter::adapters::filter_map::FilterMap<core::iter::adapters::map::Map<core::slice::iter::Iter<cranelift_codegen::ir::entities::Value>, <cranelift_codegen::ir::instructions::BlockCall>::args::{closure#0}>, <cranelift_codegen::ir::dfg::DataFlowGraph>::inst_values::{closure#0}::{closure#0}>, <cranelift_codegen::ir::dfg::DataFlowGraph>::inst_values::{closure#0}>>, cranelift_codegen::ir::entities::Value, <core::iter::adapters::chain::Chain<core::iter::adapters::copied::Copied<core::slice::iter::Iter<cranelift_codegen::ir::entities::Value>>, core::iter::adapters::flatten::FlatMap<core::slice::iter::Iter<cranelift_codegen::ir::instructions::BlockCall>, core::iter::adapters::filter_map::FilterMap<core::iter::adapters::map::Map<core::slice::iter::Iter<cranelift_codegen::ir::entities::Value>, <cranelift_codegen::ir::instructions::BlockCall>::args::{closure#0}>, <cranelift_codegen::ir::dfg::DataFlowGraph>::inst_values::{closure#0}::{closure#0}>, <cranelift_codegen::ir::dfg::DataFlowGraph>::inst_values::{closure#0}>> as core::iter::traits::iterator::Iterator>::next>",
+      25
+    ],
+    [
+      "<cranelift_codegen::flowgraph::ControlFlowGraph>::compute_block::{closure#0}",
+      22
+    ],
+    [
+      "<cranelift_bforest::map::MapCursorMut<cranelift_codegen::ir::entities::Inst, cranelift_codegen::ir::entities::Block, ()>>::insert",
+      21
+    ]
+  ]
+}

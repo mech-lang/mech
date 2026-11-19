@@ -1,5 +1,5 @@
 {
-  "status": "experimental; not selected",
+  "status": "qualified alternative; not selected",
   "selected_control_bytes": 63804,
   "experiment_bytes": 64444,
   "extra_bytes": 640,
@@ -24,7 +24,16 @@
   "canonical_bytecode_unchanged": true,
   "object_sha256": "4f6694cf58f512c5001b78f58b0a388004d2a8df5bd50ba626d19bb0072828fa",
   "metadata_sha256": "df728914febd9aa62c8e6a429813ab4cd132a8d703eefae34d230be3bcaa06e3",
-  "runtime_wins": "not measured; do not inherit any old 64,444 B recipe result",
+  "runtime_wins": {
+    "roc": [
+      81,
+      81
+    ],
+    "libdeflate": [
+      62,
+      62
+    ]
+  },
   "matched_build_time": {
     "control_source_through_link_seconds": 2.245294645894319,
     "phase_source_through_link_seconds": 2.231623937608674,
@@ -41,6 +50,150 @@
       "mech-control-reference": 0.99376651615491
     }
   },
-  "focused_jit_tests": "building",
-  "worker_sha256": "a4f60a4a335994e31bb1058dcdd9a2a9f02857168f468c2d1953ad74311ed52b"
+  "focused_jit_tests": {
+    "passed": 15,
+    "failed": 0,
+    "source_commit": "c697f100f85fb2ef150becebc14865f74452196c",
+    "profiles": "GPU/JIT opt3; unrelated full math opt0"
+  },
+  "worker_sha256": "a4f60a4a335994e31bb1058dcdd9a2a9f02857168f468c2d1953ad74311ed52b",
+  "focus": {
+    "decision": "Unresolved",
+    "reason": "both complete timing orders are required",
+    "roc": [
+      15,
+      15
+    ],
+    "libdeflate": [
+      13,
+      13
+    ],
+    "lost_peer_wins": {
+      "roc": [],
+      "libdeflate": []
+    },
+    "established_candidate_control_slowdowns": [],
+    "uncertain_candidate_control_cases": [
+      "empty",
+      "one-stored",
+      "seven-stored-prefix",
+      "320-overlap",
+      "prefix-periodic-4096"
+    ]
+  },
+  "runtime_decision": "Retain",
+  "runtime_rejected": [],
+  "runtime_unresolved": [],
+  "runtime_precision": [
+    {
+      "roc": {
+        "point_estimate_wins": {
+          "mech-control": 81,
+          "mech-experiment": 81
+        },
+        "precision_supported_wins": {
+          "mech-control": 81,
+          "mech-experiment": 81
+        },
+        "lost_cases": [],
+        "gained_cases": [],
+        "distinct_contract_point_estimate_wins": {
+          "mech-control": 74,
+          "mech-experiment": 74
+        },
+        "distinct_contract_precision_supported_wins": {
+          "mech-control": 74,
+          "mech-experiment": 74
+        }
+      },
+      "libdeflate": {
+        "point_estimate_wins": {
+          "mech-control": 62,
+          "mech-experiment": 62
+        },
+        "precision_supported_wins": {
+          "mech-control": 62,
+          "mech-experiment": 62
+        },
+        "lost_cases": [],
+        "gained_cases": [],
+        "distinct_contract_point_estimate_wins": {
+          "mech-control": 56,
+          "mech-experiment": 56
+        },
+        "distinct_contract_precision_supported_wins": {
+          "mech-control": 56,
+          "mech-experiment": 56
+        }
+      }
+    },
+    {
+      "roc": {
+        "point_estimate_wins": {
+          "mech-control": 81,
+          "mech-experiment": 81
+        },
+        "precision_supported_wins": {
+          "mech-control": 81,
+          "mech-experiment": 81
+        },
+        "lost_cases": [],
+        "gained_cases": [],
+        "distinct_contract_point_estimate_wins": {
+          "mech-control": 74,
+          "mech-experiment": 74
+        },
+        "distinct_contract_precision_supported_wins": {
+          "mech-control": 74,
+          "mech-experiment": 74
+        }
+      },
+      "libdeflate": {
+        "point_estimate_wins": {
+          "mech-control": 62,
+          "mech-experiment": 62
+        },
+        "precision_supported_wins": {
+          "mech-control": 62,
+          "mech-experiment": 62
+        },
+        "lost_cases": [],
+        "gained_cases": [],
+        "distinct_contract_point_estimate_wins": {
+          "mech-control": 56,
+          "mech-experiment": 56
+        },
+        "distinct_contract_precision_supported_wins": {
+          "mech-control": 56,
+          "mech-experiment": 56
+        }
+      }
+    }
+  ],
+  "candidate_control_timing_observations": {
+    "slowdowns": [],
+    "uncertain": [
+      "seven-stored-prefix: combined and individual run bounds conflict: checked-phase-root-codebook-core-private-helpers-full-forward",
+      "random-64: regression bound or duplicate-control repeatability unresolved",
+      "prefix-natural-32769: regression bound or duplicate-control repeatability unresolved",
+      "prefix-random-8192: regression bound or duplicate-control repeatability unresolved",
+      "prefix-random-16384: regression bound or duplicate-control repeatability unresolved",
+      "prefix-periodic-8192: regression bound or duplicate-control repeatability unresolved",
+      "prefix-repeated-4096: regression bound or duplicate-control repeatability unresolved",
+      "prefix-repeated-16384: regression bound or duplicate-control repeatability unresolved"
+    ]
+  },
+  "source_rebuild": {
+    "source_commit": "c697f100f85fb2ef150becebc14865f74452196c",
+    "compiler_sha256": "4e1d5afe0ee1791bfbf4d624ff05a7665f90c5a64e3fb66a6fc08ccf5e4114cb",
+    "object_sha256": "4f6694cf58f512c5001b78f58b0a388004d2a8df5bd50ba626d19bb0072828fa",
+    "metadata_sha256": "df728914febd9aa62c8e6a429813ab4cd132a8d703eefae34d230be3bcaa06e3",
+    "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "worker_sha256": "e1da155dc44955b4a1e11bf8c94edbb5549352ba15eb58cd2533b8d692c28181",
+    "worker_matches_archive": false,
+    "verified_exact_calls": 162,
+    "full_integrated_source_identity": true,
+    "checked_failure_cases": 6,
+    "exact_recoveries": 12
+  }
 }

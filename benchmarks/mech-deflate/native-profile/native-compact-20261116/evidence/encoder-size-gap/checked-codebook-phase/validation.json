@@ -1,0 +1,11 @@
+{
+  "source_commit": "c697f100f85fb2ef150becebc14865f74452196c",
+  "passed": 15,
+  "failed": 0,
+  "includes": [
+    "single_phase_keeps_live_outs_partial_writes_and_a_bypassed_failure",
+    "captured_heap_setup_uses_each_phase_frame_and_refuses_a_non_entry_load"
+  ],
+  "command": "CARGO_BUILD_JOBS=1 CARGO_PROFILE_RELEASE_OPT_LEVEL=3 CARGO_PROFILE_RELEASE_DEBUG=0 CARGO_INCREMENTAL=0 RUSTFLAGS='-D warnings' cargo +nightly-2026-03-03 test --locked --offline --release --config profile.release.package.libmimalloc-sys.opt-level=1 --config profile.release.package.mech-math.opt-level=0 --manifest-path hosts/gpu/Cargo.toml --features canonical-native-program --target-dir <qualification-target> --lib checked_traversals::tests -- --test-threads=1",
+  "profile_note": "GPU/compiler and JIT tests remain optimized at level 3. Only the unrelated full math dependency uses level 0. Benchmark compiler construction/timing uses its normal complete level-3 recipe."
+}

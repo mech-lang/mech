@@ -1,0 +1,10 @@
+{
+  "compiler_sha256": "517ee5cedd5f81058ac5d92b5db34207efbcef0058fcb545814d492698691389",
+  "inherited_phase_preference_encoder_bytes": 64444,
+  "ordinary_phase_preference_encoder_bytes": 64460,
+  "ordinary_phase_extra_bytes": 16,
+  "phase_frame_bytes_both": 496,
+  "root_default_and_old_experiment_exact": true,
+  "decision": "Keep the inherited preference. The ordinary preference did not reduce code or the phase frame. No runtime-win or build-time claim for the ordinary variant.",
+  "source_option": "Archived patch; the unhelpful scope knob is not retained in the live compiler."
+}
