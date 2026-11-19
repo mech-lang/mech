@@ -357,7 +357,12 @@ fn vector_nonzero_branch_preserves_every_bit_and_normalized_observation() {
 
 #[test]
 fn equality_scan_strategies_preserve_word_mismatches_and_admitted_tails() {
-    for (strategy, wide_tier) in [("word", true), ("vector", true), ("vector", false)] {
+    for (strategy, wide_tier) in [
+        ("word", true),
+        ("word-reuse", true),
+        ("vector", true),
+        ("vector", false),
+    ] {
         let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
         let (mut context, certificate) = fixture(&module, "normal");
         let outcome = optimize_with_strategy(
@@ -368,6 +373,9 @@ fn equality_scan_strategies_preserve_word_mismatches_and_admitted_tails() {
             Some(strategy),
         );
         if strategy == "word" {
+            assert!(outcome.wider.is_empty());
+        } else if strategy == "word-reuse" {
+            assert_eq!(outcome.word_reused, [7]);
             assert!(outcome.wider.is_empty());
         } else {
             assert_eq!(outcome.wider, [7]);
