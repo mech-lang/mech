@@ -1,0 +1,595 @@
+{
+  "plan": {
+    "scope": "Isolate deterministic chain fusion from the allowance-before-pop repair. Four fresh uninstrumented processes per round; all identity checks preserved. Screening only, not complete build evidence.",
+    "orders": [
+      [
+        "control",
+        "fused",
+        "fused-bounds",
+        "bounds-only"
+      ],
+      [
+        "fused",
+        "bounds-only",
+        "control",
+        "fused-bounds"
+      ],
+      [
+        "bounds-only",
+        "fused-bounds",
+        "fused",
+        "control"
+      ],
+      [
+        "fused-bounds",
+        "control",
+        "bounds-only",
+        "fused"
+      ],
+      [
+        "control",
+        "fused",
+        "fused-bounds",
+        "bounds-only"
+      ],
+      [
+        "fused",
+        "bounds-only",
+        "control",
+        "fused-bounds"
+      ],
+      [
+        "bounds-only",
+        "fused-bounds",
+        "fused",
+        "control"
+      ],
+      [
+        "fused-bounds",
+        "control",
+        "bounds-only",
+        "fused"
+      ]
+    ],
+    "identity_fields": [
+      "source_sha256",
+      "source_bytes",
+      "tree_sha256",
+      "parser_steps",
+      "events"
+    ],
+    "warmups_per_actor": 1,
+    "binary_sha256": {
+      "control": "e3a20b5c6697f7409032928ebfd2f6565ce596b51b0e3917e8996936e23f5e9f",
+      "fused": "fac07c2e8e8bfe9da976d6eb0821e51cb487c74dc054070795983e76b0fbf6e5",
+      "bounds-only": "6ef07bd16e36100b51d359f212c8fc87c2730050aed6499272f762bf40d5141d",
+      "fused-bounds": "0ed392388759c3a2d5da9e17c960d19a016497b9691b3f3e6227e205376e1db5"
+    }
+  },
+  "observations": [
+    {
+      "control": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/control/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-0-control"
+        ],
+        "process_wall_seconds": 0.7676726668141782,
+        "events": 718353,
+        "parse_seconds": 0.705687333,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "fused": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-0-fused"
+        ],
+        "process_wall_seconds": 0.7646623747423291,
+        "events": 718353,
+        "parse_seconds": 0.702681959,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "fused-bounds": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused-bounds/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-0-fused-bounds"
+        ],
+        "process_wall_seconds": 0.7586694997735322,
+        "events": 718353,
+        "parse_seconds": 0.697218291,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "bounds-only": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/bounds-only/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-0-bounds-only"
+        ],
+        "process_wall_seconds": 0.7648445423692465,
+        "events": 718353,
+        "parse_seconds": 0.703281375,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "fused": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-1-fused"
+        ],
+        "process_wall_seconds": 0.7673616670072079,
+        "events": 718353,
+        "parse_seconds": 0.705510084,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "bounds-only": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/bounds-only/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-1-bounds-only"
+        ],
+        "process_wall_seconds": 0.764616624917835,
+        "events": 718353,
+        "parse_seconds": 0.703209959,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "control": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/control/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-1-control"
+        ],
+        "process_wall_seconds": 0.7681810832582414,
+        "events": 718353,
+        "parse_seconds": 0.706495333,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "fused-bounds": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused-bounds/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-1-fused-bounds"
+        ],
+        "process_wall_seconds": 0.7590565839782357,
+        "events": 718353,
+        "parse_seconds": 0.697469708,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "bounds-only": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/bounds-only/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-2-bounds-only"
+        ],
+        "process_wall_seconds": 0.7640545843169093,
+        "events": 718353,
+        "parse_seconds": 0.702350417,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "fused-bounds": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused-bounds/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-2-fused-bounds"
+        ],
+        "process_wall_seconds": 0.7595474575646222,
+        "events": 718353,
+        "parse_seconds": 0.697754459,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "fused": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-2-fused"
+        ],
+        "process_wall_seconds": 0.767883624881506,
+        "events": 718353,
+        "parse_seconds": 0.704045208,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "control": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/control/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-2-control"
+        ],
+        "process_wall_seconds": 0.7699578329920769,
+        "events": 718353,
+        "parse_seconds": 0.707962417,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "fused-bounds": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused-bounds/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-3-fused-bounds"
+        ],
+        "process_wall_seconds": 0.7602107501588762,
+        "events": 718353,
+        "parse_seconds": 0.698731875,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "control": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/control/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-3-control"
+        ],
+        "process_wall_seconds": 0.7686463338322937,
+        "events": 718353,
+        "parse_seconds": 0.706842917,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "bounds-only": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/bounds-only/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-3-bounds-only"
+        ],
+        "process_wall_seconds": 0.7638075826689601,
+        "events": 718353,
+        "parse_seconds": 0.702295708,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "fused": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-3-fused"
+        ],
+        "process_wall_seconds": 0.7646269998513162,
+        "events": 718353,
+        "parse_seconds": 0.702875708,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "control": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/control/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-4-control"
+        ],
+        "process_wall_seconds": 0.7674783747643232,
+        "events": 718353,
+        "parse_seconds": 0.705655667,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "fused": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-4-fused"
+        ],
+        "process_wall_seconds": 0.7643201253376901,
+        "events": 718353,
+        "parse_seconds": 0.702271417,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "fused-bounds": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused-bounds/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-4-fused-bounds"
+        ],
+        "process_wall_seconds": 0.7596014998853207,
+        "events": 718353,
+        "parse_seconds": 0.697904208,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "bounds-only": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/bounds-only/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-4-bounds-only"
+        ],
+        "process_wall_seconds": 0.7655430831946433,
+        "events": 718353,
+        "parse_seconds": 0.703912875,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "fused": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-5-fused"
+        ],
+        "process_wall_seconds": 0.7642407496459782,
+        "events": 718353,
+        "parse_seconds": 0.702478833,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "bounds-only": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/bounds-only/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-5-bounds-only"
+        ],
+        "process_wall_seconds": 0.7672450826503336,
+        "events": 718353,
+        "parse_seconds": 0.705669875,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "control": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/control/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-5-control"
+        ],
+        "process_wall_seconds": 0.7684025000780821,
+        "events": 718353,
+        "parse_seconds": 0.706451583,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "fused-bounds": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused-bounds/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-5-fused-bounds"
+        ],
+        "process_wall_seconds": 0.7597025837749243,
+        "events": 718353,
+        "parse_seconds": 0.69821775,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "bounds-only": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/bounds-only/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-6-bounds-only"
+        ],
+        "process_wall_seconds": 0.764920458663255,
+        "events": 718353,
+        "parse_seconds": 0.703073916,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "fused-bounds": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused-bounds/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-6-fused-bounds"
+        ],
+        "process_wall_seconds": 0.759672624990344,
+        "events": 718353,
+        "parse_seconds": 0.6979275,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "fused": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-6-fused"
+        ],
+        "process_wall_seconds": 0.765746290795505,
+        "events": 718353,
+        "parse_seconds": 0.703887375,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "control": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/control/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-6-control"
+        ],
+        "process_wall_seconds": 0.7701409589499235,
+        "events": 718353,
+        "parse_seconds": 0.708114334,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "fused-bounds": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused-bounds/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-7-fused-bounds"
+        ],
+        "process_wall_seconds": 0.7600371250882745,
+        "events": 718353,
+        "parse_seconds": 0.698416792,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "control": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/control/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-7-control"
+        ],
+        "process_wall_seconds": 0.7671519997529685,
+        "events": 718353,
+        "parse_seconds": 0.705504459,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "bounds-only": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/bounds-only/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-7-bounds-only"
+        ],
+        "process_wall_seconds": 0.7639927919954062,
+        "events": 718353,
+        "parse_seconds": 0.702270208,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "fused": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/factorial/pair-7-fused"
+        ],
+        "process_wall_seconds": 0.7646066667512059,
+        "events": 718353,
+        "parse_seconds": 0.702624291,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    }
+  ],
+  "medians": {
+    "control": 0.706473458,
+    "fused": 0.7027788335,
+    "bounds-only": 0.7031419375000001,
+    "fused-bounds": 0.697915854
+  },
+  "comparisons": {
+    "fused_vs_control": {
+      "paired_median_seconds": -0.003650729500000005,
+      "ci90_seconds": [
+        -0.003969979499999998,
+        -0.0029427710000000107
+      ],
+      "paired_median_ratio": 0.9948355154499637,
+      "ci90_ratio": [
+        0.9943819486009198,
+        0.9958293933489666
+      ],
+      "faster_pairs": 8
+    },
+    "bounds-only_vs_control": {
+      "paired_median_seconds": -0.0032598125000000144,
+      "ci90_seconds": [
+        -0.0047938135000000215,
+        -0.002074375000000017
+      ],
+      "paired_median_ratio": 0.9953827242950937,
+      "ci90_ratio": [
+        0.9932243949006296,
+        0.9970604345486709
+      ],
+      "faster_pairs": 8
+    },
+    "fused-bounds_vs_control": {
+      "paired_median_seconds": -0.008351437500000003,
+      "ci90_seconds": [
+        -0.009606229500000008,
+        -0.007931250500000042
+      ],
+      "paired_median_ratio": 0.9881718384797675,
+      "ci90_ratio": [
+        0.9864194656488082,
+        0.9887701055807926
+      ],
+      "faster_pairs": 8
+    },
+    "fused-bounds_vs_bounds-only": {
+      "paired_median_seconds": -0.005443333500000036,
+      "ci90_seconds": [
+        -0.00603587550000001,
+        -0.004224687000000005
+      ],
+      "paired_median_ratio": 0.9922585973940251,
+      "ci90_ratio": [
+        0.991421384892951,
+        0.9939846165752588
+      ],
+      "faster_pairs": 8
+    }
+  }
+}

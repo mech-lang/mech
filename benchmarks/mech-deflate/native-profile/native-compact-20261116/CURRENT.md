@@ -2,6 +2,25 @@
 
 ## Current Apple M1 result
 
+**The compiler combines deterministic sealed-input parser phases and checks the work allowance before removing a pending frame.** The selected encoder remains **63,692 B**, with **81/81 Roc and 62/81 libdeflate wins in both full orders**. The new compiler reproduces its native object, complete metadata, canonical bytecode and fixed-support worker byte for byte. No new runtime campaign or 63rd C win is claimed. Original Mech source is unchanged.
+
+| Actor | Encoder text | Source through final link | Through strip | Stripped executable |
+| --- | ---: | ---: | ---: | ---: |
+| Before, same selected encoder | 63,692 B | 2.212686 s | 2.223608 s | 276,072 B |
+| Sealed parser combination | 63,692 B | 2.205340 s | 2.216274 s | 276,072 B |
+| Roc | 57,696 B | 2.988178 s | 2.999173 s | 191,912 B |
+| libdeflate | 37,080 B | 0.480449 s | 0.491357 s | 155,752 B |
+
+Eight balanced fresh-process trials per actor include final linking, with fixed support prebuilt for every actor. The paired complete-build saving is **8.203 ms**, 90% interval **4.951–11.409 ms saved**, 8/8 faster (**0.371%**). Paired complete-build ratios are **0.738040× Roc / 4.589692× C**. Compiler bootstrap is excluded for all actors; its diagnostic log is retained separately. Strip is reported separately. Do not infer causal gains from separate cohorts.
+
+This is parser maintenance, not the large code-size or build-time reduction still needed for 1× libdeflate. Encoder text stays **1.103924× Roc / 1.717691× C**; the C text gap is still **26,612 B**. Peak active encoder stack remains **4,848 B**, under the 5,280 B ceiling, and deployment size remains 276,072 B.
+
+Current phase medians: parse **0.701823 s**, semantics **0.217373 s**, native **1.214269 s**. Catalog work overlaps parsing. The identical worker reuses its existing full runtime/stack/failure/recovery qualification. **539 syntax tests pass**. [All evidence and source variants](evidence/sealed-base-phase-fusion/README.md).
+
+Fresh profiles of this exact selected worker place **72.8%** of 1 MiB random encoder samples in matching, versus **14.2%** in scoring. Natural 4 KiB is **54.0%** scoring and **23.6%** matching. The qualified median excess is about **7.13 ms** per large-random call versus **21.8 µs** for natural 4 KiB. These are sampled work shares and separately measured full-call gaps, not phase timers or savings forecasts. Prioritize the shared random collector and retain natural 4 KiB as the next-win check.
+
+## Matcher guard/layout qualification cohort
+
 The selected recipe is **`m1-matcher-guard-facts`**: **63,692 B encoder text**, **81/81 Roc and 62/81 libdeflate wins in both complete orders**, with every previous winning fixture and all 81/62 precision-supported wins held. It combines allocator spill pairing with two generic impossible-guard proofs and a fresh matcher layout. It saves **64 B** from the qualified paired recipe and **112 B** from the earlier 63,804 B reference. Original Mech source and canonical bytecode are unchanged.
 
 The actual fixed-support worker is `88321c097d29b7219f639abbc5fcce727f0602de2d05ab24e5e2b47f2996c3b4`. The checked root stays **46,788 B**, frame **3,296 B**, peak active stack **4,848 B** under the unchanged 5,280 B cap. Stripped deployment stays **276,072 B**. All 162 output/inflation/alias observations, six failures, 12 recoveries and ten unsigned-guard tests pass. Normal and allocation-checked compilers reproduce identical artifacts. No LLVM dependency is added.

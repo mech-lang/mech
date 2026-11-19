@@ -1,0 +1,14 @@
+{
+  "scope": "Diagnostic only. CLIF output was produced, but VCode uses a separate option; full artifacts differed with the inspection environment. Do not associate this dump with selected offsets or time it. Require an exact per-body comparison or corrected capture before analysis.",
+  "actual": {
+    "program.o": "fd5a460cbe90139b08e9f3179708444d5ab34d087fedbd746edbead0fd2cdab3",
+    "metadata.json": "2119ccd27c853809066f8f67c7cf5c5f86a779715f17b6137e6f30a0fda8df9c",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+  },
+  "expected": {
+    "program.o": "470e6899a3cfec1e2fc0f9d3d8aef1d427de7d621e6b9ec87b350cb6103d9b38",
+    "metadata.json": "3faa1a9d87a63454863ff55471898c7bea9a8a361401914a6932d7dca6b583db",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+  },
+  "vcode_exists": false
+}

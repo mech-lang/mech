@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/combined-tests/syntax-tests",
+    "--test-threads=1"
+  ],
+  "binary_sha256": "cb0621fb2861f105106759be0ec60d3799c0ac12fb1f70bd29d96d7233fb757b",
+  "exit_code": 0,
+  "seconds_diagnostic": 37.12910687504336,
+  "summary": [
+    "test result: ok. 539 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 36.81s"
+  ]
+}

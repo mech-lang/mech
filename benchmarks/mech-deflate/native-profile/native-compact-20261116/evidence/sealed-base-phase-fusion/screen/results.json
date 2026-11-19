@@ -1,0 +1,357 @@
+{
+  "plan": {
+    "scope": "Uninstrumented standalone parser screening, before complete builds. Same rebuilt baseline source/dependencies, same source and allocator. Each process writes a full tree/IDs/logical-work checksum.",
+    "orders": [
+      [
+        "control",
+        "fused"
+      ],
+      [
+        "fused",
+        "control"
+      ],
+      [
+        "fused",
+        "control"
+      ],
+      [
+        "control",
+        "fused"
+      ],
+      [
+        "control",
+        "fused"
+      ],
+      [
+        "fused",
+        "control"
+      ],
+      [
+        "fused",
+        "control"
+      ],
+      [
+        "control",
+        "fused"
+      ]
+    ],
+    "warmups_per_actor": 1,
+    "timing_fields": [
+      "parse_seconds",
+      "process_wall_seconds"
+    ],
+    "required_identity_fields": [
+      "source_sha256",
+      "source_bytes",
+      "tree_sha256",
+      "parser_steps",
+      "events"
+    ],
+    "analysis": "Paired differences and ratios; fixed seed bootstrap intervals. A standalone gain alone does not qualify complete build latency."
+  },
+  "actors": {
+    "control": {
+      "binary_sha256": "e3a20b5c6697f7409032928ebfd2f6565ce596b51b0e3917e8996936e23f5e9f"
+    },
+    "fused": {
+      "binary_sha256": "fac07c2e8e8bfe9da976d6eb0821e51cb487c74dc054070795983e76b0fbf6e5"
+    }
+  },
+  "identity": {
+    "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+    "source_bytes": 243209,
+    "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056",
+    "parser_steps": 3967302,
+    "events": 718353
+  },
+  "records": [
+    {
+      "control": {
+        "actor": "control",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/control/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/screen/pair-0-control"
+        ],
+        "process_wall_seconds": 0.7700822497718036,
+        "events": 718353,
+        "parse_seconds": 0.707262,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "fused": {
+        "actor": "fused",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/screen/pair-0-fused"
+        ],
+        "process_wall_seconds": 0.7669979589991271,
+        "events": 718353,
+        "parse_seconds": 0.70402925,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "fused": {
+        "actor": "fused",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/screen/pair-1-fused"
+        ],
+        "process_wall_seconds": 0.7672653328627348,
+        "events": 718353,
+        "parse_seconds": 0.704514625,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "control": {
+        "actor": "control",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/control/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/screen/pair-1-control"
+        ],
+        "process_wall_seconds": 0.7703539589419961,
+        "events": 718353,
+        "parse_seconds": 0.708001125,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "fused": {
+        "actor": "fused",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/screen/pair-2-fused"
+        ],
+        "process_wall_seconds": 0.771934375166893,
+        "events": 718353,
+        "parse_seconds": 0.709208125,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "control": {
+        "actor": "control",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/control/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/screen/pair-2-control"
+        ],
+        "process_wall_seconds": 0.7704423749819398,
+        "events": 718353,
+        "parse_seconds": 0.707435917,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "control": {
+        "actor": "control",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/control/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/screen/pair-3-control"
+        ],
+        "process_wall_seconds": 0.7709877910092473,
+        "events": 718353,
+        "parse_seconds": 0.707967958,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "fused": {
+        "actor": "fused",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/screen/pair-3-fused"
+        ],
+        "process_wall_seconds": 0.7740939590148628,
+        "events": 718353,
+        "parse_seconds": 0.711491833,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "control": {
+        "actor": "control",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/control/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/screen/pair-4-control"
+        ],
+        "process_wall_seconds": 0.7708335830830038,
+        "events": 718353,
+        "parse_seconds": 0.708091458,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "fused": {
+        "actor": "fused",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/screen/pair-4-fused"
+        ],
+        "process_wall_seconds": 0.9067540843971074,
+        "events": 718353,
+        "parse_seconds": 0.819202083,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "fused": {
+        "actor": "fused",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/screen/pair-5-fused"
+        ],
+        "process_wall_seconds": 0.807457874994725,
+        "events": 718353,
+        "parse_seconds": 0.741085333,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "control": {
+        "actor": "control",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/control/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/screen/pair-5-control"
+        ],
+        "process_wall_seconds": 0.7750453748740256,
+        "events": 718353,
+        "parse_seconds": 0.711655958,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "fused": {
+        "actor": "fused",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/screen/pair-6-fused"
+        ],
+        "process_wall_seconds": 0.7700229999609292,
+        "events": 718353,
+        "parse_seconds": 0.7070505,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "control": {
+        "actor": "control",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/control/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/screen/pair-6-control"
+        ],
+        "process_wall_seconds": 0.7724767080508173,
+        "events": 718353,
+        "parse_seconds": 0.710042334,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    },
+    {
+      "control": {
+        "actor": "control",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/control/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/screen/pair-7-control"
+        ],
+        "process_wall_seconds": 0.7735404586419463,
+        "events": 718353,
+        "parse_seconds": 0.710833125,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      },
+      "fused": {
+        "actor": "fused",
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/fused/parser",
+          "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/screen/pair-7-fused"
+        ],
+        "process_wall_seconds": 0.770263500045985,
+        "events": 718353,
+        "parse_seconds": 0.70732025,
+        "parser_steps": 3967302,
+        "source_bytes": 243209,
+        "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+        "tree_sha256": "bfa476cac02c0fa8ab487211e366b34cf0c27b13998958a358317222cedc0056"
+      }
+    }
+  ],
+  "analysis": {
+    "parse_seconds": {
+      "median_control": 0.7080462915,
+      "median_fused": 0.7082641875,
+      "paired_median_difference": -0.0006098130000000146,
+      "paired_median_difference_ci90": [
+        -0.003359624999999977,
+        0.016476624999999967
+      ],
+      "paired_median_ratio": 0.9991457575352947,
+      "paired_median_ratio_ci90": [
+        0.9952523886249062,
+        1.023165411927187
+      ],
+      "candidate_faster_pairs": 4
+    },
+    "process_wall_seconds": {
+      "median_control": 0.7709106870461255,
+      "median_fused": 0.771098937606439,
+      "paired_median_difference": -0.00048085395246744156,
+      "paired_median_difference_ci90": [
+        -0.0030864584259688854,
+        0.01775933406315744
+      ],
+      "paired_median_ratio": 0.9993800665397166,
+      "paired_median_ratio_ci90": [
+        0.9959927478694756,
+        1.022924474190423
+      ],
+      "candidate_faster_pairs": 4
+    }
+  }
+}

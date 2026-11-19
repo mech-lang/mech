@@ -1,0 +1,715 @@
+{
+  "plan": {
+    "source_commit": "2bc4014587fda4f31bdade02abd0cd5144d80e23",
+    "cases": [
+      "prefix-random-1048576",
+      "prefix-natural-4096"
+    ],
+    "actors": {
+      "mech": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-runtime-target/hot-matcher-facts/guards-profiled/bound/mech-worker",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-runtime-target/hot-matcher-facts/guards-profiled/bound/metadata.json",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+        ],
+        "sha256": "88321c097d29b7219f639abbc5fcce727f0602de2d05ab24e5e2b47f2996c3b4",
+        "warmups": 32
+      },
+      "libdeflate": {
+        "command": [
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/libdeflate-worker",
+          "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+        ],
+        "sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+        "warmups": 80
+      }
+    },
+    "sample_seconds": 3,
+    "interval_ms": 1,
+    "load_before": [
+      2.0087890625,
+      2.0986328125,
+      2.11474609375
+    ],
+    "scope": "Fresh untimed diagnostic captures on the byte-identical selected 63692B worker and pinned C. Refresh hot-owner attribution after retained spill/guard combinations. Existing full-order ratios remain the latency evidence; no new optimization or runtime campaign is claimed."
+  },
+  "profile_classifier_sha256": "661ba4dea576e18ce9eec221621e3b1446378a0cbe30b219e182e1add46aa938",
+  "profiles": {
+    "prefix-random-1048576": {
+      "mech": {
+        "encoder_roots": "mech_compact_closed_v2",
+        "encoder_stack_samples": 2279,
+        "all_main_thread_samples": 2286,
+        "buckets": {
+          "matcher": {
+            "samples": 1659,
+            "percent": 72.79508556384378
+          },
+          "scorer": {
+            "samples": 323,
+            "percent": 14.172882843352347
+          },
+          "histogram": {
+            "samples": 138,
+            "percent": 6.0552874067573494
+          },
+          "other numeric kernels": {
+            "samples": 121,
+            "percent": 5.309346204475648
+          },
+          "other encoder calls": {
+            "samples": 26,
+            "percent": 1.1408512505484862
+          },
+          "controller self": {
+            "samples": 7,
+            "percent": 0.307152259763054
+          },
+          "copying": {
+            "samples": 4,
+            "percent": 0.1755155770074594
+          },
+          "zeroing": {
+            "samples": 1,
+            "percent": 0.04387889425186485
+          }
+        },
+        "top_encoder_functions": [
+          [
+            "mech_compact_numeric_475_vector",
+            1659
+          ],
+          [
+            "mech_compact_numeric_3009_no_growth_composed",
+            323
+          ],
+          [
+            "mech_compact_numeric_3447_grouped",
+            138
+          ],
+          [
+            "mech_compact_numeric_2821_vector",
+            108
+          ],
+          [
+            "mech_compact_word_collection_10",
+            26
+          ],
+          [
+            "mech_compact_numeric_3956_vector",
+            7
+          ],
+          [
+            "mech_compact_closed_checked",
+            7
+          ],
+          [
+            "_platform_memmove",
+            4
+          ],
+          [
+            "mech_compact_numeric_362_vector",
+            2
+          ],
+          [
+            "mech_compact_numeric_5895",
+            2
+          ],
+          [
+            "_platform_memset",
+            1
+          ],
+          [
+            "mech_compact_numeric_3872",
+            1
+          ],
+          [
+            "mech_compact_numeric_4173",
+            1
+          ]
+        ],
+        "top_all_functions": [
+          [
+            "mech_compact_numeric_475_vector",
+            1659
+          ],
+          [
+            "mech_compact_numeric_3009_no_growth_composed",
+            323
+          ],
+          [
+            "mech_compact_numeric_3447_grouped",
+            138
+          ],
+          [
+            "mech_compact_numeric_2821_vector",
+            108
+          ],
+          [
+            "mech_compact_word_collection_10",
+            26
+          ],
+          [
+            "mech_compact_closed_checked",
+            7
+          ],
+          [
+            "mech_compact_numeric_3956_vector",
+            7
+          ],
+          [
+            "_platform_memcmp",
+            7
+          ],
+          [
+            "_platform_memmove",
+            4
+          ],
+          [
+            "mech_compact_numeric_362_vector",
+            2
+          ],
+          [
+            "mech_compact_numeric_5895",
+            2
+          ],
+          [
+            "_platform_memset",
+            1
+          ],
+          [
+            "mech_compact_numeric_3872",
+            1
+          ],
+          [
+            "mech_compact_numeric_4173",
+            1
+          ],
+          [
+            "Thread_51054739   DispatchQueue_1: com.apple.main-thread  (serial)",
+            0
+          ]
+        ],
+        "scope": "Exclusive leaf samples within the named encoder function tree. Constructor/final-transfer/cleanup outside that tree and caller validation are not all represented. C near-optimal self samples include inlined matching. These are not elapsed phase times or forecasts.",
+        "worker_sha256": "88321c097d29b7219f639abbc5fcce727f0602de2d05ab24e5e2b47f2996c3b4",
+        "sample_sha256": "02c2b4a41bda6e58f7370c6ed7c2f72fb2f0541a52e754c0236c166bbddc7af0"
+      },
+      "libdeflate": {
+        "encoder_roots": "deflate_compress_near_optimal",
+        "encoder_stack_samples": 2256,
+        "all_main_thread_samples": 2288,
+        "buckets": {
+          "near-optimal body (includes inlined matching)": {
+            "samples": 1553,
+            "percent": 68.83865248226951
+          },
+          "scorer": {
+            "samples": 582,
+            "percent": 25.79787234042553
+          },
+          "other encoder calls": {
+            "samples": 104,
+            "percent": 4.609929078014185
+          },
+          "Huffman": {
+            "samples": 15,
+            "percent": 0.6648936170212766
+          },
+          "copying": {
+            "samples": 2,
+            "percent": 0.08865248226950355
+          }
+        },
+        "top_encoder_functions": [
+          [
+            "deflate_compress_near_optimal",
+            1553
+          ],
+          [
+            "deflate_find_min_cost_path",
+            582
+          ],
+          [
+            "deflate_optimize_and_flush_block",
+            85
+          ],
+          [
+            "deflate_make_huffman_code",
+            14
+          ],
+          [
+            "do_end_block_check",
+            9
+          ],
+          [
+            "deflate_near_optimal_merge_stats",
+            9
+          ],
+          [
+            "_platform_memmove",
+            2
+          ],
+          [
+            "deflate_precompute_huffman_header",
+            1
+          ],
+          [
+            "OUTLINED_FUNCTION_10",
+            1
+          ]
+        ],
+        "top_all_functions": [
+          [
+            "deflate_compress_near_optimal",
+            1553
+          ],
+          [
+            "deflate_find_min_cost_path",
+            582
+          ],
+          [
+            "deflate_optimize_and_flush_block",
+            85
+          ],
+          [
+            "deflate_make_huffman_code",
+            14
+          ],
+          [
+            "madvise",
+            12
+          ],
+          [
+            "__bzero",
+            10
+          ],
+          [
+            "do_end_block_check",
+            9
+          ],
+          [
+            "deflate_near_optimal_merge_stats",
+            9
+          ],
+          [
+            "_platform_memcmp",
+            6
+          ],
+          [
+            "_platform_memmove",
+            5
+          ],
+          [
+            "deflate_precompute_huffman_header",
+            1
+          ],
+          [
+            "OUTLINED_FUNCTION_10",
+            1
+          ],
+          [
+            "mi_segment_span_free_coalesce",
+            1
+          ],
+          [
+            "Thread_51054801   DispatchQueue_1: com.apple.main-thread  (serial)",
+            0
+          ],
+          [
+            "start",
+            0
+          ]
+        ],
+        "scope": "Exclusive leaf samples within the named encoder function tree. Constructor/final-transfer/cleanup outside that tree and caller validation are not all represented. C near-optimal self samples include inlined matching. These are not elapsed phase times or forecasts.",
+        "worker_sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+        "sample_sha256": "ee6895f305a4532d4f2a4ce8f35e232989aff3c433806732a52d73f5335f265e"
+      },
+      "qualified_runtime": [
+        {
+          "order": "forward",
+          "case": "prefix-random-1048576",
+          "candidate_control": 0.9803414085334582,
+          "candidate_roc": 0.953738034958396,
+          "candidate_c": 1.3500105472276585,
+          "control_c": 1.3770820404773136,
+          "medians_seconds": {
+            "mech-control": 0.028022542,
+            "mech-experiment": 0.0274748535,
+            "roc": 0.0287998745,
+            "libdeflate": 0.0203520415
+          }
+        },
+        {
+          "order": "reverse",
+          "case": "prefix-random-1048576",
+          "candidate_control": 0.9802922914608521,
+          "candidate_roc": 0.9549909887996885,
+          "candidate_c": 1.351621671297487,
+          "control_c": 1.3787945524729897,
+          "medians_seconds": {
+            "libdeflate": 0.0203472295,
+            "roc": 0.028775687,
+            "mech-experiment": 0.027476041,
+            "mech-control": 0.028040979
+          }
+        }
+      ]
+    },
+    "prefix-natural-4096": {
+      "mech": {
+        "encoder_roots": "mech_compact_closed_v2",
+        "encoder_stack_samples": 2203,
+        "all_main_thread_samples": 2286,
+        "buckets": {
+          "scorer": {
+            "samples": 1190,
+            "percent": 54.01724920562869
+          },
+          "matcher": {
+            "samples": 520,
+            "percent": 23.604176123467997
+          },
+          "other numeric kernels": {
+            "samples": 170,
+            "percent": 7.716749886518384
+          },
+          "controller self": {
+            "samples": 155,
+            "percent": 7.035860190649115
+          },
+          "other encoder calls": {
+            "samples": 70,
+            "percent": 3.1774852473899227
+          },
+          "histogram": {
+            "samples": 58,
+            "percent": 2.6327734906945075
+          },
+          "zeroing": {
+            "samples": 21,
+            "percent": 0.9532455742169769
+          },
+          "allocation": {
+            "samples": 11,
+            "percent": 0.49931911030413073
+          },
+          "copying": {
+            "samples": 5,
+            "percent": 0.22696323195642307
+          },
+          "retirement": {
+            "samples": 3,
+            "percent": 0.13617793917385385
+          }
+        },
+        "top_encoder_functions": [
+          [
+            "mech_compact_numeric_3009_no_growth_composed",
+            1190
+          ],
+          [
+            "mech_compact_numeric_475_vector",
+            520
+          ],
+          [
+            "mech_compact_closed_checked",
+            155
+          ],
+          [
+            "mech_compact_numeric_3447_grouped",
+            58
+          ],
+          [
+            "mech_compact_checked_layout_continuation_44066",
+            44
+          ],
+          [
+            "mech_compact_numeric_3956_vector",
+            35
+          ],
+          [
+            "mech_compact_numeric_5895",
+            30
+          ],
+          [
+            "mech_compact_numeric_2821_vector",
+            27
+          ],
+          [
+            "mech_compact_numeric_4173",
+            23
+          ],
+          [
+            "mech_compact_numeric_3872",
+            20
+          ],
+          [
+            "mech_compact_numeric_362_vector",
+            18
+          ],
+          [
+            "__bzero",
+            17
+          ],
+          [
+            "__munmap",
+            15
+          ],
+          [
+            "mech_compact_numeric_6633",
+            12
+          ],
+          [
+            "mech_compact_numeric_4799",
+            5
+          ]
+        ],
+        "top_all_functions": [
+          [
+            "mech_compact_numeric_3009_no_growth_composed",
+            1190
+          ],
+          [
+            "mech_compact_numeric_475_vector",
+            520
+          ],
+          [
+            "mech_compact_closed_checked",
+            155
+          ],
+          [
+            "mech_compact_numeric_3447_grouped",
+            58
+          ],
+          [
+            "mech_compact_checked_layout_continuation_44066",
+            44
+          ],
+          [
+            "mech_compact_numeric_3956_vector",
+            35
+          ],
+          [
+            "mech_compact_numeric_5895",
+            30
+          ],
+          [
+            "mech_compact_numeric_2821_vector",
+            27
+          ],
+          [
+            "mech_compact_numeric_4173",
+            23
+          ],
+          [
+            "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core15decompress_fast",
+            22
+          ],
+          [
+            "mech_compact_numeric_3872",
+            20
+          ],
+          [
+            "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core8transfer",
+            20
+          ],
+          [
+            "mech_compact_numeric_362_vector",
+            18
+          ],
+          [
+            "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree",
+            18
+          ],
+          [
+            "__bzero",
+            17
+          ]
+        ],
+        "scope": "Exclusive leaf samples within the named encoder function tree. Constructor/final-transfer/cleanup outside that tree and caller validation are not all represented. C near-optimal self samples include inlined matching. These are not elapsed phase times or forecasts.",
+        "worker_sha256": "88321c097d29b7219f639abbc5fcce727f0602de2d05ab24e5e2b47f2996c3b4",
+        "sample_sha256": "19bcfe68f4593b682550f832f8502f7b27795593f29e27e2ff8ad0b3f542875f"
+      },
+      "libdeflate": {
+        "encoder_roots": "deflate_compress_near_optimal",
+        "encoder_stack_samples": 2163,
+        "all_main_thread_samples": 2282,
+        "buckets": {
+          "scorer": {
+            "samples": 1577,
+            "percent": 72.9079981507166
+          },
+          "near-optimal body (includes inlined matching)": {
+            "samples": 382,
+            "percent": 17.660656495607952
+          },
+          "Huffman": {
+            "samples": 112,
+            "percent": 5.17799352750809
+          },
+          "other encoder calls": {
+            "samples": 66,
+            "percent": 3.0513176144244105
+          },
+          "zeroing": {
+            "samples": 25,
+            "percent": 1.155802126675913
+          },
+          "copying": {
+            "samples": 1,
+            "percent": 0.04623208506703652
+          }
+        },
+        "top_encoder_functions": [
+          [
+            "deflate_find_min_cost_path",
+            1577
+          ],
+          [
+            "deflate_compress_near_optimal",
+            382
+          ],
+          [
+            "deflate_make_huffman_code",
+            102
+          ],
+          [
+            "deflate_optimize_and_flush_block",
+            31
+          ],
+          [
+            "deflate_flush_block",
+            25
+          ],
+          [
+            "_platform_memset_pattern16",
+            20
+          ],
+          [
+            "deflate_precompute_huffman_header",
+            10
+          ],
+          [
+            "OUTLINED_FUNCTION_10",
+            7
+          ],
+          [
+            "_platform_memset",
+            5
+          ],
+          [
+            "DYLD-STUB$$bzero",
+            1
+          ],
+          [
+            "_platform_memmove",
+            1
+          ],
+          [
+            "OUTLINED_FUNCTION_1",
+            1
+          ],
+          [
+            "deflate_near_optimal_merge_stats",
+            1
+          ]
+        ],
+        "top_all_functions": [
+          [
+            "deflate_find_min_cost_path",
+            1577
+          ],
+          [
+            "deflate_compress_near_optimal",
+            382
+          ],
+          [
+            "deflate_make_huffman_code",
+            125
+          ],
+          [
+            "deflate_optimize_and_flush_block",
+            31
+          ],
+          [
+            "deflate_flush_block",
+            25
+          ],
+          [
+            "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core15decompress_fast",
+            24
+          ],
+          [
+            "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core8transfer",
+            22
+          ],
+          [
+            "_platform_memset_pattern16",
+            20
+          ],
+          [
+            "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core9init_tree",
+            20
+          ],
+          [
+            "deflate_precompute_huffman_header",
+            10
+          ],
+          [
+            "_RNvNtNtCselbn9KGBQg0_11miniz_oxide7inflate4core10decompress",
+            10
+          ],
+          [
+            "_platform_memmove",
+            7
+          ],
+          [
+            "OUTLINED_FUNCTION_10",
+            7
+          ],
+          [
+            "_platform_memset",
+            6
+          ],
+          [
+            "libdeflate_alloc_compressor_ex",
+            3
+          ]
+        ],
+        "scope": "Exclusive leaf samples within the named encoder function tree. Constructor/final-transfer/cleanup outside that tree and caller validation are not all represented. C near-optimal self samples include inlined matching. These are not elapsed phase times or forecasts.",
+        "worker_sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+        "sample_sha256": "91ffa6c0ae64ff1f7f56cd59c57b91885573347098d4686a20895890c8fe93f4"
+      },
+      "qualified_runtime": [
+        {
+          "order": "forward",
+          "case": "prefix-natural-4096",
+          "candidate_control": 0.9990144374133574,
+          "candidate_roc": 0.6216743183291462,
+          "candidate_c": 1.0556871229332556,
+          "control_c": 1.0567285951008225,
+          "medians_seconds": {
+            "mech-control": 0.000411937,
+            "mech-experiment": 0.00041308299999999996,
+            "roc": 0.0006634375,
+            "libdeflate": 0.0003912495
+          }
+        },
+        {
+          "order": "reverse",
+          "case": "prefix-natural-4096",
+          "candidate_control": 0.9985826075886098,
+          "candidate_roc": 0.623965564757113,
+          "candidate_c": 1.0656124352288467,
+          "control_c": 1.0671249700634196,
+          "medians_seconds": {
+            "libdeflate": 0.0003926665,
+            "roc": 0.0006637505,
+            "mech-experiment": 0.000414479,
+            "mech-control": 0.000414146
+          }
+        }
+      ]
+    }
+  }
+}

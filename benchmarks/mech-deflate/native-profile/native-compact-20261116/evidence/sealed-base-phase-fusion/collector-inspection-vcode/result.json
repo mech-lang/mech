@@ -1,0 +1,6 @@
+{
+  "status": "Diagnostic VCode capture failed; no VCode mapping or new compiler optimization is claimed.",
+  "error": "Unsupported feature: AArch64 block layout metadata",
+  "scope": "The pre-emission CLIF-only capture separately proved identical6092B selected collector bytes. Its body-check.json, not this failed VCode attempt, binds that dump. Keep the failed log and do not use this artifact for latency or shipping.",
+  "log_sha256": "341758a269a89aec099ed4f65e5ca9f7f48d88fcd4acc15417270393de5005f2"
+}

@@ -1,0 +1,1142 @@
+{
+  "scope": "Inspection enables general-IR observation, which retains otherwise-refused bodies and changes the whole artifact. Compare the actual selected collector body separately before using this dump. No latency or optimization claim.",
+  "symbol": "mech_compact_numeric_475_vector",
+  "metadata_same": true,
+  "bytes_equal": true,
+  "selected_body_sha256": "364794ef73ba7724c6447525ac820732aa68548196d3e732f1ac703434e6f379",
+  "observed_body_sha256": "364794ef73ba7724c6447525ac820732aa68548196d3e732f1ac703434e6f379",
+  "selected_code_bytes": 6092,
+  "observed_code_bytes": 6092,
+  "selected_metadata": {
+    "actual_unit_append_growth": true,
+    "bit_counts": 0,
+    "cleanup": {
+      "adjacent_addresses_reused": 2,
+      "after_blocks": 2236,
+      "after_instructions": 3532,
+      "before_blocks": 4566,
+      "before_instructions": 11308,
+      "bitwise_constant_branches": 0,
+      "boolean_conditions_simplified": 134,
+      "boolean_phi_values": 19,
+      "constant_branches_removed": 17,
+      "current_predicate_branches": 0,
+      "dead_instructions_removed": 347,
+      "dead_loads_removed": 0,
+      "dead_parameters_removed": 0,
+      "enabled": true,
+      "fixed_point": true,
+      "identity_edges": 14,
+      "known_width_branches_removed": 16,
+      "local_phi_parameters_removed": 701,
+      "local_phi_preheaders": 2,
+      "loop_edges": 2,
+      "neutral_operations_removed": 26,
+      "ordered_capture_spans": 0,
+      "pre_codegen_data_passes": 0,
+      "rounds": 2,
+      "selected_home_constant_operands": 7,
+      "selected_home_merge_parameters": 10,
+      "selected_increment_guards_removed": 35,
+      "selected_range_branches_removed": 15,
+      "unsigned_intervals_combined": 0,
+      "window_bounds_combined": 8
+    },
+    "code_bytes": 6092,
+    "exit": 2779,
+    "fixed_length_entry_gate": true,
+    "fixed_writable_capacities": 6,
+    "future_write_hint": {
+      "byte_offset": 131072,
+      "byte_stride": 2,
+      "selector_mask": 65535,
+      "source_write": 890
+    },
+    "guard_arrays": [
+      [
+        1,
+        false
+      ],
+      [
+        2,
+        false
+      ],
+      [
+        3,
+        false
+      ],
+      [
+        4,
+        false
+      ],
+      [
+        5,
+        false
+      ],
+      [
+        6,
+        false
+      ]
+    ],
+    "header": 475,
+    "input_words": 29,
+    "output_words": 17,
+    "packed_halfword_stores": 1,
+    "packed_input_words": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      19,
+      20,
+      23,
+      24,
+      27,
+      28,
+      31,
+      32,
+      35,
+      36,
+      39,
+      40
+    ],
+    "phase_entry_bounds": [
+      [
+        0,
+        262144,
+        false
+      ]
+    ],
+    "private_write_sites": [
+      [
+        660,
+        0,
+        2
+      ],
+      [
+        662,
+        0,
+        2
+      ],
+      [
+        862,
+        1,
+        4
+      ],
+      [
+        890,
+        0,
+        2
+      ],
+      [
+        901,
+        0,
+        2
+      ],
+      [
+        903,
+        0,
+        2
+      ],
+      [
+        1250,
+        1,
+        4
+      ],
+      [
+        1286,
+        0,
+        2
+      ],
+      [
+        1288,
+        0,
+        2
+      ],
+      [
+        1344,
+        0,
+        2
+      ],
+      [
+        1366,
+        0,
+        2
+      ],
+      [
+        1368,
+        0,
+        2
+      ],
+      [
+        1799,
+        0,
+        2
+      ],
+      [
+        1801,
+        0,
+        2
+      ],
+      [
+        1859,
+        0,
+        2
+      ],
+      [
+        1881,
+        0,
+        2
+      ],
+      [
+        1883,
+        0,
+        2
+      ],
+      [
+        2000,
+        6,
+        4
+      ],
+      [
+        2020,
+        4,
+        4
+      ],
+      [
+        2059,
+        6,
+        4
+      ],
+      [
+        2094,
+        1,
+        4
+      ],
+      [
+        2357,
+        5,
+        4
+      ],
+      [
+        2360,
+        6,
+        4
+      ],
+      [
+        2434,
+        3,
+        4
+      ],
+      [
+        2436,
+        4,
+        4
+      ],
+      [
+        2645,
+        3,
+        4
+      ],
+      [
+        2647,
+        4,
+        4
+      ],
+      [
+        2728,
+        5,
+        4
+      ],
+      [
+        2731,
+        6,
+        4
+      ]
+    ],
+    "proven_changed_writes": [],
+    "proven_scalar_read_guards": [
+      [
+        656,
+        0,
+        1736
+      ],
+      [
+        658,
+        0,
+        1738
+      ],
+      [
+        888,
+        0,
+        1877
+      ],
+      [
+        965,
+        2,
+        1929
+      ],
+      [
+        979,
+        2,
+        1936
+      ],
+      [
+        1047,
+        2,
+        1977
+      ],
+      [
+        1061,
+        2,
+        1984
+      ],
+      [
+        1282,
+        0,
+        2122
+      ],
+      [
+        1284,
+        0,
+        2124
+      ],
+      [
+        1504,
+        2,
+        2253
+      ],
+      [
+        1518,
+        2,
+        2260
+      ],
+      [
+        1595,
+        2,
+        2302
+      ],
+      [
+        1609,
+        2,
+        2309
+      ],
+      [
+        1795,
+        0,
+        2433
+      ],
+      [
+        1797,
+        0,
+        2435
+      ],
+      [
+        2209,
+        5,
+        2673
+      ],
+      [
+        2232,
+        6,
+        2682
+      ],
+      [
+        2337,
+        5,
+        2729
+      ],
+      [
+        2350,
+        6,
+        2735
+      ],
+      [
+        2410,
+        4,
+        2769
+      ],
+      [
+        2427,
+        3,
+        2776
+      ],
+      [
+        2552,
+        1,
+        2840
+      ],
+      [
+        2621,
+        4,
+        2866
+      ],
+      [
+        2638,
+        3,
+        2873
+      ],
+      [
+        2708,
+        5,
+        2906
+      ],
+      [
+        2721,
+        6,
+        2912
+      ]
+    ],
+    "proven_scalar_write_guards": [
+      [
+        660,
+        0,
+        1740
+      ],
+      [
+        662,
+        0,
+        1742
+      ],
+      [
+        890,
+        0,
+        1879
+      ],
+      [
+        901,
+        0,
+        1887
+      ],
+      [
+        903,
+        0,
+        1889
+      ]
+    ],
+    "read_pack_sites": [
+      [
+        605,
+        625,
+        4
+      ],
+      [
+        688,
+        708,
+        4
+      ],
+      [
+        735,
+        755,
+        4
+      ],
+      [
+        803,
+        823,
+        4
+      ],
+      [
+        1097,
+        1141,
+        8
+      ],
+      [
+        1163,
+        1207,
+        8
+      ],
+      [
+        1645,
+        1689,
+        8
+      ],
+      [
+        1711,
+        1755,
+        8
+      ],
+      [
+        1097,
+        1141,
+        8
+      ],
+      [
+        1163,
+        1207,
+        8
+      ],
+      [
+        1645,
+        1689,
+        8
+      ],
+      [
+        1711,
+        1755,
+        8
+      ]
+    ],
+    "reused_scalar_operands": [
+      [
+        967,
+        1931,
+        965,
+        1930
+      ],
+      [
+        981,
+        1938,
+        979,
+        1937
+      ],
+      [
+        1049,
+        1979,
+        1047,
+        1978
+      ],
+      [
+        1063,
+        1986,
+        1061,
+        1985
+      ],
+      [
+        1506,
+        2255,
+        1504,
+        2254
+      ],
+      [
+        1520,
+        2262,
+        1518,
+        2261
+      ],
+      [
+        1597,
+        2304,
+        1595,
+        2303
+      ],
+      [
+        1611,
+        2311,
+        1609,
+        2310
+      ],
+      [
+        2215,
+        2675,
+        2214,
+        2672
+      ],
+      [
+        2238,
+        2684,
+        2237,
+        2681
+      ],
+      [
+        2558,
+        2842,
+        2557,
+        2839
+      ]
+    ],
+    "second_future_write_hint": {
+      "byte_offset": 262144,
+      "byte_stride": 4,
+      "selector_mask": 65535,
+      "source_write": 660
+    },
+    "selected_by_guard": true,
+    "stack_bytes": 384,
+    "symbol": "mech_compact_numeric_475_vector",
+    "unique_writable_owner_gate": true,
+    "unsigned_guards": 2,
+    "wider_equal_loops": [
+      1001,
+      1549
+    ]
+  },
+  "observed_metadata": {
+    "actual_unit_append_growth": true,
+    "bit_counts": 0,
+    "cleanup": {
+      "adjacent_addresses_reused": 2,
+      "after_blocks": 2236,
+      "after_instructions": 3532,
+      "before_blocks": 4566,
+      "before_instructions": 11308,
+      "bitwise_constant_branches": 0,
+      "boolean_conditions_simplified": 134,
+      "boolean_phi_values": 19,
+      "constant_branches_removed": 17,
+      "current_predicate_branches": 0,
+      "dead_instructions_removed": 347,
+      "dead_loads_removed": 0,
+      "dead_parameters_removed": 0,
+      "enabled": true,
+      "fixed_point": true,
+      "identity_edges": 14,
+      "known_width_branches_removed": 16,
+      "local_phi_parameters_removed": 701,
+      "local_phi_preheaders": 2,
+      "loop_edges": 2,
+      "neutral_operations_removed": 26,
+      "ordered_capture_spans": 0,
+      "pre_codegen_data_passes": 0,
+      "rounds": 2,
+      "selected_home_constant_operands": 7,
+      "selected_home_merge_parameters": 10,
+      "selected_increment_guards_removed": 35,
+      "selected_range_branches_removed": 15,
+      "unsigned_intervals_combined": 0,
+      "window_bounds_combined": 8
+    },
+    "code_bytes": 6092,
+    "exit": 2779,
+    "fixed_length_entry_gate": true,
+    "fixed_writable_capacities": 6,
+    "future_write_hint": {
+      "byte_offset": 131072,
+      "byte_stride": 2,
+      "selector_mask": 65535,
+      "source_write": 890
+    },
+    "guard_arrays": [
+      [
+        1,
+        false
+      ],
+      [
+        2,
+        false
+      ],
+      [
+        3,
+        false
+      ],
+      [
+        4,
+        false
+      ],
+      [
+        5,
+        false
+      ],
+      [
+        6,
+        false
+      ]
+    ],
+    "header": 475,
+    "input_words": 29,
+    "output_words": 17,
+    "packed_halfword_stores": 1,
+    "packed_input_words": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      19,
+      20,
+      23,
+      24,
+      27,
+      28,
+      31,
+      32,
+      35,
+      36,
+      39,
+      40
+    ],
+    "phase_entry_bounds": [
+      [
+        0,
+        262144,
+        false
+      ]
+    ],
+    "private_write_sites": [
+      [
+        660,
+        0,
+        2
+      ],
+      [
+        662,
+        0,
+        2
+      ],
+      [
+        862,
+        1,
+        4
+      ],
+      [
+        890,
+        0,
+        2
+      ],
+      [
+        901,
+        0,
+        2
+      ],
+      [
+        903,
+        0,
+        2
+      ],
+      [
+        1250,
+        1,
+        4
+      ],
+      [
+        1286,
+        0,
+        2
+      ],
+      [
+        1288,
+        0,
+        2
+      ],
+      [
+        1344,
+        0,
+        2
+      ],
+      [
+        1366,
+        0,
+        2
+      ],
+      [
+        1368,
+        0,
+        2
+      ],
+      [
+        1799,
+        0,
+        2
+      ],
+      [
+        1801,
+        0,
+        2
+      ],
+      [
+        1859,
+        0,
+        2
+      ],
+      [
+        1881,
+        0,
+        2
+      ],
+      [
+        1883,
+        0,
+        2
+      ],
+      [
+        2000,
+        6,
+        4
+      ],
+      [
+        2020,
+        4,
+        4
+      ],
+      [
+        2059,
+        6,
+        4
+      ],
+      [
+        2094,
+        1,
+        4
+      ],
+      [
+        2357,
+        5,
+        4
+      ],
+      [
+        2360,
+        6,
+        4
+      ],
+      [
+        2434,
+        3,
+        4
+      ],
+      [
+        2436,
+        4,
+        4
+      ],
+      [
+        2645,
+        3,
+        4
+      ],
+      [
+        2647,
+        4,
+        4
+      ],
+      [
+        2728,
+        5,
+        4
+      ],
+      [
+        2731,
+        6,
+        4
+      ]
+    ],
+    "proven_changed_writes": [],
+    "proven_scalar_read_guards": [
+      [
+        656,
+        0,
+        1736
+      ],
+      [
+        658,
+        0,
+        1738
+      ],
+      [
+        888,
+        0,
+        1877
+      ],
+      [
+        965,
+        2,
+        1929
+      ],
+      [
+        979,
+        2,
+        1936
+      ],
+      [
+        1047,
+        2,
+        1977
+      ],
+      [
+        1061,
+        2,
+        1984
+      ],
+      [
+        1282,
+        0,
+        2122
+      ],
+      [
+        1284,
+        0,
+        2124
+      ],
+      [
+        1504,
+        2,
+        2253
+      ],
+      [
+        1518,
+        2,
+        2260
+      ],
+      [
+        1595,
+        2,
+        2302
+      ],
+      [
+        1609,
+        2,
+        2309
+      ],
+      [
+        1795,
+        0,
+        2433
+      ],
+      [
+        1797,
+        0,
+        2435
+      ],
+      [
+        2209,
+        5,
+        2673
+      ],
+      [
+        2232,
+        6,
+        2682
+      ],
+      [
+        2337,
+        5,
+        2729
+      ],
+      [
+        2350,
+        6,
+        2735
+      ],
+      [
+        2410,
+        4,
+        2769
+      ],
+      [
+        2427,
+        3,
+        2776
+      ],
+      [
+        2552,
+        1,
+        2840
+      ],
+      [
+        2621,
+        4,
+        2866
+      ],
+      [
+        2638,
+        3,
+        2873
+      ],
+      [
+        2708,
+        5,
+        2906
+      ],
+      [
+        2721,
+        6,
+        2912
+      ]
+    ],
+    "proven_scalar_write_guards": [
+      [
+        660,
+        0,
+        1740
+      ],
+      [
+        662,
+        0,
+        1742
+      ],
+      [
+        890,
+        0,
+        1879
+      ],
+      [
+        901,
+        0,
+        1887
+      ],
+      [
+        903,
+        0,
+        1889
+      ]
+    ],
+    "read_pack_sites": [
+      [
+        605,
+        625,
+        4
+      ],
+      [
+        688,
+        708,
+        4
+      ],
+      [
+        735,
+        755,
+        4
+      ],
+      [
+        803,
+        823,
+        4
+      ],
+      [
+        1097,
+        1141,
+        8
+      ],
+      [
+        1163,
+        1207,
+        8
+      ],
+      [
+        1645,
+        1689,
+        8
+      ],
+      [
+        1711,
+        1755,
+        8
+      ],
+      [
+        1097,
+        1141,
+        8
+      ],
+      [
+        1163,
+        1207,
+        8
+      ],
+      [
+        1645,
+        1689,
+        8
+      ],
+      [
+        1711,
+        1755,
+        8
+      ]
+    ],
+    "reused_scalar_operands": [
+      [
+        967,
+        1931,
+        965,
+        1930
+      ],
+      [
+        981,
+        1938,
+        979,
+        1937
+      ],
+      [
+        1049,
+        1979,
+        1047,
+        1978
+      ],
+      [
+        1063,
+        1986,
+        1061,
+        1985
+      ],
+      [
+        1506,
+        2255,
+        1504,
+        2254
+      ],
+      [
+        1520,
+        2262,
+        1518,
+        2261
+      ],
+      [
+        1597,
+        2304,
+        1595,
+        2303
+      ],
+      [
+        1611,
+        2311,
+        1609,
+        2310
+      ],
+      [
+        2215,
+        2675,
+        2214,
+        2672
+      ],
+      [
+        2238,
+        2684,
+        2237,
+        2681
+      ],
+      [
+        2558,
+        2842,
+        2557,
+        2839
+      ]
+    ],
+    "second_future_write_hint": {
+      "byte_offset": 262144,
+      "byte_stride": 4,
+      "selector_mask": 65535,
+      "source_write": 660
+    },
+    "selected_by_guard": true,
+    "stack_bytes": 384,
+    "symbol": "mech_compact_numeric_475_vector",
+    "unique_writable_owner_gate": true,
+    "unsigned_guards": 2,
+    "wider_equal_loops": [
+      1001,
+      1549
+    ]
+  }
+}

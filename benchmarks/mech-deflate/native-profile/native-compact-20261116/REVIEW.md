@@ -17,9 +17,8 @@ point and precision-supported wins. It combines spill pairing, two generic
 guard proofs and a fresh matcher layout. It saves 64 B from the prior selected
 paired recipe and recovers that pass's 1 KiB slowdowns. Random 4/8 KiB improves
 roughly 3–4%, and random 1 MiB about 2%, against the immediate reference.
-Complete build is **2.214612 s**, **0.74294× Roc / 4.61093× C**, with a paired
-**1.45 ms cost** and a **−0.56 to +5.62 ms** 90% interval.
-[Current source recipe, full qualification and raw data](evidence/encoder-size-gap/current-matcher-guard-facts/README.md).
+The compiler now fuses sealed base parser phases and avoids a pending-frame copy before zero-work polls. Complete source-through-link time is **2.205340 s**, versus **2.212686 s** before in the same eight balanced rounds. The paired saving is **8.203 ms** (4.951–11.409 ms, 90% interval), **0.371%**, 8/8 faster. The encoder remains **63,692 B**, with the identical qualified worker and all **81 Roc / 62 C** wins. Complete-build ratios are **0.738040× Roc / 4.589692× C**. **539 syntax tests pass**. This is a small parser maintenance gain; the large code/build gap and the next C win remain unfinished. [Source, isolated variants, complete builds and refreshed selected-worker profiles](evidence/sealed-base-phase-fusion/README.md).
+
 No new C win is claimed; the next runtime milestone remains 63.
 
 The newer `m1-checked-codebook-phase` recipe is a qualified **64,444 B**
@@ -97,8 +96,7 @@ for all bodies, call setup, spills, stubs and alignment, then measure complete
 builds and the actual worker. Borrowing inactive caller scratch is a possible
 bounded stack repair, with pointer/spill costs still unproved.
 
-The sealed-parser semantic priority and conservative prepared-helper IR reuse
-remain unstarted. Guard closure's measured 34 ms improvement is already in the
+Sealed base phase fusion is implemented and measured as small parser maintenance. Larger complete-input family specialization and conservative prepared-helper IR reuse remain unfinished. Guard closure's measured 34 ms improvement is already in the
 selected recipe. No LLVM dependency is added; ordinary resource-accounting
 limitations are unchanged.
 

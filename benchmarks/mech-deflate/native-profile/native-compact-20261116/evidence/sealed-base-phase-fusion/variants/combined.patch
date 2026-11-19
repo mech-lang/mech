@@ -1,0 +1,255 @@
+diff --git a/src/syntax/src/document/parser/canonical/base/continuation.rs b/src/syntax/src/document/parser/canonical/base/continuation.rs
+index 97e3666d4..1e7ea5895 100644
+--- a/src/syntax/src/document/parser/canonical/base/continuation.rs
++++ b/src/syntax/src/document/parser/canonical/base/continuation.rs
+@@ -70,6 +70,8 @@ pub(crate) struct Continuation {
+     result: bool,
+     raw_range: Option<TextRange>,
+     pub work: u64,
++    #[cfg(test)]
++    disable_sealed_fusion: bool,
+ }
+ impl Continuation {
+     pub fn new(rule: RuleId) -> Self {
+@@ -80,6 +82,8 @@ impl Continuation {
+             result: false,
+             raw_range: None,
+             work: 0,
++            #[cfg(test)]
++            disable_sealed_fusion: false,
+         }
+     }
+     fn scanner(&mut self, scanner: Scanner) {
+@@ -152,11 +156,11 @@ impl Continuation {
+         rule: RuleId,
+         final_input: bool,
+         allowance: &mut u64,
+-    ) {
++    ) -> Option<Progress> {
+         let fixed = fixed_terminal_spec(rule);
+         if fixed.is_none() && !non_fixed_rule(rule) {
+             self.result = false;
+-            return;
++            return None;
+         }
+         if final_input
+             && let Some(spec) = fixed
+@@ -207,14 +211,14 @@ impl Continuation {
+                 }
+                 self.result = false;
+             }
+-            return;
++            return None;
+         }
+         let checkpoint = parser.checkpoint();
+         parser.state.rules.push_canonical(rule);
+         self.push(Frame::Exit(checkpoint));
+         if let Some(spec) = fixed {
+             self.push(Frame::Fixed(spec));
+-            return;
++            return None;
+         }
+         match specification(rule).expect("supported non-fixed base rule") {
+             Spec::Alias(rule) => self.push(Frame::Call(rule)),
+@@ -254,7 +258,7 @@ impl Continuation {
+                             self.work += work - 1;
+                             self.raw_range = Some(raw);
+                             self.result = true;
+-                            return;
++                            return None;
+                         }
+                         cache.capture = Some(super::recognition::Capture::new(
+                             parser,
+@@ -274,7 +278,12 @@ impl Continuation {
+                     self.choice(first);
+                 }
+             }
+-            Spec::Classified(kind, classify) => self.push(Frame::Classified(kind, classify)),
++            Spec::Classified(kind, classify) => {
++                if self.charge_sealed_followup(final_input, allowance) {
++                    return self.classified(parser, kind, classify, final_input, allowance);
++                }
++                self.push(Frame::Classified(kind, classify));
++            }
+             Spec::Raw(kind) => self.push(Frame::Raw(kind)),
+             Spec::Unless { excluded, rule } => self.unless(parser, excluded, rule),
+             Spec::NewlineIndent => {
+@@ -288,6 +297,88 @@ impl Continuation {
+             }
+             Spec::Never => self.result = false,
+         }
++        None
++    }
++
++    /// Execute the next deterministic phase without a stack round trip only
++    /// when this sealed poll can pay that phase's original logical work.
++    #[inline]
++    fn charge_sealed_followup(&mut self, final_input: bool, allowance: &mut u64) -> bool {
++        #[cfg(test)]
++        if self.disable_sealed_fusion {
++            return false;
++        }
++        if !final_input || *allowance == 0 {
++            return false;
++        }
++        *allowance -= 1;
++        self.work += 1;
++        true
++    }
++
++    fn classified(
++        &mut self,
++        parser: &mut Parser<'_>,
++        kind: SyntaxKind,
++        classify: fn(char) -> bool,
++        final_input: bool,
++        allowance: &mut u64,
++    ) -> Option<Progress> {
++        if let Some(first) = parser.cursor().peek_char() {
++            if classify(first) {
++                if self.charge_sealed_followup(final_input, allowance) {
++                    return self.raw(parser, Some(kind), final_input, allowance);
++                }
++                self.push(Frame::Raw(Some(kind)));
++            } else {
++                self.result = false;
++            }
++        } else if !final_input && parser.offset() == parser.cursor().end() {
++            self.push(Frame::Classified(kind, classify));
++            return Some(Progress::NeedInput);
++        } else {
++            self.result = false;
++        }
++        None
++    }
++
++    fn raw(
++        &mut self,
++        parser: &mut Parser<'_>,
++        kind: Option<SyntaxKind>,
++        final_input: bool,
++        allowance: &mut u64,
++    ) -> Option<Progress> {
++        if let Some(capture) = self
++            .storage
++            .prediction
++            .as_mut()
++            .and_then(|state| state.memo.capture.as_mut())
++        {
++            capture.raw(parser);
++        }
++        if parser.charge() {
++            let end = final_input.then_some(parser.cursor().context_end());
++            parser.observe_definition_raw_origin(end);
++            let scan = parser
++                .state
++                .grapheme_tail
++                .take()
++                .filter(|scan| scan.resumes_at(parser.offset(), end))
++                .unwrap_or_else(|| GraphemeScan::new(parser.offset(), end));
++            if final_input && *allowance != 0 {
++                if let Some(pending) = self.finish_sealed_grapheme(parser, kind, allowance, scan) {
++                    return Some(pending);
++                }
++            } else {
++                self.scanner(Scanner::Grapheme(scan));
++                self.push(Frame::Grapheme(kind));
++            }
++        } else {
++            self.raw_range = None;
++            self.result = false;
++        }
++        None
+     }
+ 
+     fn accept_grapheme(
+@@ -366,11 +457,10 @@ impl Continuation {
+             if !final_input && parser.is_halted() {
+                 return Progress::Limited;
+             }
+-            let frame = self.storage.frames.pop().expect("pending base phase");
+             if *allowance == 0 {
+-                self.push(frame);
+                 return Progress::NeedsProcessing;
+             }
++            let frame = self.storage.frames.pop().expect("pending base phase");
+             // Predict before charging this call frame: summaries include its
+             // original work, including every failed nested alternative. The
+             // cache belongs to this active continuation until storage returns.
+@@ -395,7 +485,11 @@ impl Continuation {
+                 self.work += 1;
+             }
+             match frame {
+-                Frame::Call(rule) => self.call(parser, rule, final_input, allowance),
++                Frame::Call(rule) => {
++                    if let Some(progress) = self.call(parser, rule, final_input, allowance) {
++                        return progress;
++                    }
++                }
+                 Frame::Exit(checkpoint) => {
+                     parser.state.rules.truncate(checkpoint.rule_depth);
+                     if !self.result {
+@@ -520,50 +614,15 @@ impl Continuation {
+                     };
+                 }
+                 Frame::Classified(kind, classify) => {
+-                    if let Some(first) = parser.cursor().peek_char() {
+-                        if classify(first) {
+-                            self.push(Frame::Raw(Some(kind)));
+-                        } else {
+-                            self.result = false;
+-                        }
+-                    } else if !final_input && parser.offset() == parser.cursor().end() {
+-                        self.push(Frame::Classified(kind, classify));
+-                        return Progress::NeedInput;
+-                    } else {
+-                        self.result = false;
++                    if let Some(progress) =
++                        self.classified(parser, kind, classify, final_input, allowance)
++                    {
++                        return progress;
+                     }
+                 }
+                 Frame::Raw(kind) => {
+-                    if let Some(capture) = self
+-                        .storage
+-                        .prediction
+-                        .as_mut()
+-                        .and_then(|state| state.memo.capture.as_mut())
+-                    {
+-                        capture.raw(parser);
+-                    }
+-                    if parser.charge() {
+-                        let end = final_input.then_some(parser.cursor().context_end());
+-                        parser.observe_definition_raw_origin(end);
+-                        let scan = parser
+-                            .state
+-                            .grapheme_tail
+-                            .take()
+-                            .filter(|scan| scan.resumes_at(parser.offset(), end))
+-                            .unwrap_or_else(|| GraphemeScan::new(parser.offset(), end));
+-                        if final_input && *allowance != 0 {
+-                            if let Some(pending) =
+-                                self.finish_sealed_grapheme(parser, kind, allowance, scan)
+-                            {
+-                                return pending;
+-                            }
+-                        } else {
+-                            self.scanner(Scanner::Grapheme(scan));
+-                            self.push(Frame::Grapheme(kind));
+-                        }
+-                    } else {
+-                        self.raw_range = None;
+-                        self.result = false;
++                    if let Some(progress) = self.raw(parser, kind, final_input, allowance) {
++                        return progress;
+                     }
+                 }
+                 Frame::Grapheme(kind) => {
+@@ -1054,3 +1113,6 @@ mod tests {
+         }
+     }
+ }
++
++#[cfg(test)]
++mod fused_tests;

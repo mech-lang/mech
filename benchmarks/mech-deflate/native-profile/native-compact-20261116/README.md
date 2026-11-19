@@ -1,5 +1,8 @@
 # Native compact compiler review handoff
 
+The compiler now fuses sealed base parser phases and avoids a pending-frame copy before zero-work polls. Complete source-through-link time is **2.205340 s**, versus **2.212686 s** before in the same eight balanced rounds. The paired saving is **8.203 ms** (4.951–11.409 ms, 90% interval), **0.371%**, 8/8 faster. The encoder remains **63,692 B**, with the identical qualified worker and all **81 Roc / 62 C** wins. Complete-build ratios are **0.738040× Roc / 4.589692× C**. **539 syntax tests pass**. This is a small parser maintenance gain; the large code/build gap and the next C win remain unfinished. [Source, isolated variants, complete builds and refreshed selected-worker profiles](evidence/sealed-base-phase-fusion/README.md).
+
+
 The selected M1 compiler recipe is **`m1-matcher-guard-facts`**:
 **63,692 B**, **81/81 Roc and 62/81 libdeflate wins in both complete orders**,
 and **2.215 s** source through final link in its matched cohort.

@@ -1,0 +1,59 @@
+{
+  "case": "prefix-random-1048576",
+  "actor": "libdeflate",
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/libdeflate-worker",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "worker_sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+  "sample_sha256": "ee6895f305a4532d4f2a4ce8f35e232989aff3c433806732a52d73f5335f265e",
+  "verified_calls": [
+    {
+      "borrowed_output_alias_unchanged": true,
+      "boundary": "fresh compressor, distinct output allocation and prefix copy, raw compression, compressor free; preparation, validation and previous-output drop excluded",
+      "capacity": 1049626,
+      "case": "prefix-random-1048576",
+      "independent_inflation": true,
+      "input_alias_unchanged": true,
+      "input_bytes": 1048576,
+      "level": 12,
+      "matches_reference_bytes": true,
+      "output_sha256": "221c04210d128f3dfb56b62f42de0b2ab3f53d9c65374b3e0b802afb17ed855b",
+      "prefix_bytes": 0,
+      "profile": false,
+      "raw_bytes": 1048666,
+      "reference_capacity": 1049626,
+      "runtime_input": true,
+      "sample": 0,
+      "seconds": 0.020069291,
+      "version": "1.26",
+      "warmup": true
+    },
+    {
+      "borrowed_output_alias_unchanged": true,
+      "boundary": "fresh compressor, distinct output allocation and prefix copy, raw compression, compressor free; preparation, validation and previous-output drop excluded",
+      "capacity": 1049626,
+      "case": "prefix-random-1048576",
+      "independent_inflation": true,
+      "input_alias_unchanged": true,
+      "input_bytes": 1048576,
+      "level": 12,
+      "matches_reference_bytes": true,
+      "output_sha256": "221c04210d128f3dfb56b62f42de0b2ab3f53d9c65374b3e0b802afb17ed855b",
+      "prefix_bytes": 0,
+      "profile": true,
+      "raw_bytes": 1048666,
+      "reference_capacity": 1049626,
+      "runtime_input": true,
+      "sample": 1,
+      "seconds": 0.020206334,
+      "version": "1.26",
+      "warmup": false
+    }
+  ],
+  "load_after": [
+    1.92529296875,
+    2.07275390625,
+    2.10400390625
+  ]
+}
