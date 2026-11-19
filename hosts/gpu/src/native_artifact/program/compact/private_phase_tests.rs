@@ -143,3 +143,38 @@ fn private_fixed_nested_contract_declines_growing_storage() {
         );
     }
 }
+
+#[test]
+fn private_immutable_default_views_require_the_exact_fixed_source_loan() {
+    let source = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec"
+    ));
+    for artifact in artifacts(source) {
+        let prepared = prepared(&artifact);
+        let layout = Layout::derive(prepared.plan()).unwrap();
+        let mut immutable = 0;
+        let mut mutable = 0;
+        for region in &prepared.metadata().closed_tails.regions {
+            let Some(contract) = PrivatePhase::derive(&prepared, region, &layout, false).unwrap()
+            else {
+                continue;
+            };
+            let proof = region.numeric.as_ref().unwrap();
+            let arrays = contract.immutable_fixed_arrays(proof);
+            for (array, view) in proof.arrays.iter().enumerate() {
+                if view.writable || view.appends {
+                    mutable += 1;
+                    assert!(!arrays.contains(&array));
+                }
+            }
+            immutable += arrays.len();
+            assert!(contract.immutable_fixed_arrays(&proof.clone()).is_empty());
+        }
+        assert!(immutable > 0, "the input has a retained immutable lane");
+        assert!(
+            mutable > 0,
+            "the updated data requires the unique-owner gate"
+        );
+    }
+}
