@@ -4,6 +4,7 @@
 mod adjacent_addresses;
 pub(in crate::native_artifact) mod admitted_lengths;
 mod boolean_words;
+pub(in crate::native_artifact) mod bounded_byte_histogram;
 pub(in crate::native_artifact) mod checked_adds;
 pub(in crate::native_artifact) mod compared_bytes;
 pub(in crate::native_artifact) mod composed_reads;

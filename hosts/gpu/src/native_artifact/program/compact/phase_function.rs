@@ -20,6 +20,8 @@ use cranelift_codegen::{
     isa::TargetIsa,
 };
 use std::sync::mpsc;
+#[path = "phase_histogram.rs"]
+mod bounded_histogram;
 
 pub(super) struct Composed {
     pub function: FuncId,
@@ -197,6 +199,7 @@ impl DeferredGeneral {
             None,
             None,
             None,
+            None,
         ))
     }
 }
@@ -237,6 +240,7 @@ impl GeneralPending {
                     cleanup,
                     input,
                     Vec::new(),
+                    None,
                     None,
                     None,
                     None,
@@ -854,6 +858,30 @@ fn prepare_impl<M: Module>(
             }
         }
     }
+    let bounded_histogram = if std::env::var_os("MECH_BOUNDED_BYTE_HISTOGRAM").is_some()
+        && !observe
+        && vectors.is_some()
+        && no_growth.is_none()
+        && proof.phase.is_none()
+        && proof.exits.is_empty()
+        && proof.prepaid_sites.is_empty()
+        && proof.arrays.iter().all(|array| !array.appends)
+        && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
+    {
+        bounded_histogram::prepare(
+            module,
+            &mut context,
+            proof,
+            region,
+            report.machine_header,
+            input_words,
+            &symbol,
+            &signature,
+            bodies.as_deref_mut(),
+        )?
+    } else {
+        None
+    };
     let word_loops = &report;
     let mut histogram = None;
     if std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM").is_some()
@@ -1462,6 +1490,7 @@ fn prepare_impl<M: Module>(
         },
         future_write_hints,
         histogram,
+        bounded_histogram,
         composed,
         vcode_path,
     )))
@@ -1491,6 +1520,7 @@ fn finish_preparation(
     input: SummaryInput,
     future_write_hints: Vec<cfg_cleanup::future_store::Hint>,
     histogram: Option<serde_json::Value>,
+    bounded_histogram: Option<serde_json::Value>,
     composed: Option<Composed>,
     vcode_path: Option<std::path::PathBuf>,
 ) -> Prepared {
@@ -1593,6 +1623,9 @@ fn finish_preparation(
         }
         if let Some(histogram) = histogram {
             summary["grouped_histogram"] = histogram;
+        }
+        if let Some(histogram) = bounded_histogram {
+            summary["bounded_byte_histogram"] = histogram;
         }
 
         Ok(summary)
