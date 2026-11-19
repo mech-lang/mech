@@ -35,7 +35,7 @@ struct Cursor {
 pub(super) struct Collections {
     builders: Vec<Vec<Variable>>,
     cursors: Vec<Option<Cursor>>,
-    rows_set: Vec<Variable>,
+    rows_set: Vec<Option<Variable>>,
 }
 fn variable(b: &mut FunctionBuilder<'_>, zero: Value) -> Variable {
     let v = b.declare_var(types::I64);
@@ -47,6 +47,17 @@ impl Collections {
         b: &mut FunctionBuilder<'_>,
         plan: &Plan,
         zero: Value,
+    ) -> Result<Self, NativeCompileError> {
+        Self::new_scoped(b, plan, zero, |_| true, |_| true)
+    }
+    /// Each physical unit owns complete cursor/builder scopes. Unowned scopes
+    /// receive no SSA variables, while canonical resource IDs remain stable.
+    pub(super) fn new_scoped(
+        b: &mut FunctionBuilder<'_>,
+        plan: &Plan,
+        zero: Value,
+        owns_iteration: impl Fn(usize) -> bool,
+        owns_collection: impl Fn(usize) -> bool,
     ) -> Result<Self, NativeCompileError> {
         for definition in plan.collections() {
             if definition.generators().is_empty()
@@ -68,13 +79,19 @@ impl Collections {
         let builders = plan
             .collections()
             .iter()
-            .map(|_| (0..6).map(|_| variable(b, zero)).collect())
+            .enumerate()
+            .map(|(id, _)| {
+                (0..if owns_collection(id) { 6 } else { 0 })
+                    .map(|_| variable(b, zero))
+                    .collect()
+            })
             .collect();
         let cursors = plan
             .iterations()
             .iter()
-            .map(|i| {
-                if matches!(i, Loop::Collection(_)) {
+            .enumerate()
+            .map(|(id, i)| {
+                if owns_iteration(id) && matches!(i, Loop::Collection(_)) {
                     Some(Cursor {
                         start: variable(b, zero),
                         count: variable(b, zero),
@@ -88,7 +105,8 @@ impl Collections {
         let rows_set = plan
             .collections()
             .iter()
-            .map(|_| variable(b, zero))
+            .enumerate()
+            .map(|(id, _)| owns_collection(id).then(|| variable(b, zero)))
             .collect();
         Ok(Self {
             builders,
@@ -197,7 +215,10 @@ impl Collections {
                     }
                     _ => (one, one),
                 };
-                b.def_var(self.rows_set[*collection as usize], known);
+                b.def_var(
+                    self.rows_set[*collection as usize].expect("owned collection rows"),
+                    known,
+                );
                 self.set(b, *collection, &[zero, zero, zero, rows, zero, zero]);
                 arrays.release(b, previous, error);
             }
@@ -310,7 +331,9 @@ impl Collections {
                     }
                     let view = self.view(b, *collection);
                     let block = arrays::read(words, b, layout, *value);
-                    let known = b.use_var(self.rows_set[*collection as usize]);
+                    let known = b.use_var(
+                        self.rows_set[*collection as usize].expect("owned collection rows"),
+                    );
                     let rows = b.ins().select(known, view[3], block[3]);
                     let same = b.ins().icmp(IntCC::Equal, rows, block[3]);
                     guard(b, same, error, INVALID);
@@ -330,7 +353,10 @@ impl Collections {
                     next[1] = length;
                     next[3] = rows;
                     next[4] = columns;
-                    b.def_var(self.rows_set[*collection as usize], one);
+                    b.def_var(
+                        self.rows_set[*collection as usize].expect("owned collection rows"),
+                        one,
+                    );
                     self.replace(b, arrays, *collection, &next, error);
                     return Ok(true);
                 }

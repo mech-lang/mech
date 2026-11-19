@@ -343,6 +343,23 @@ pub(super) fn derive(
 }
 
 impl Reduction {
+    #[cfg(feature = "early-region-emission")]
+    pub(super) fn word_effects(self, owners: &OwnerFlow) -> super::word_boundary::Effects {
+        let mut effect = super::word_boundary::Effects::default();
+        effect.read(self.cursor);
+        effect.read(self.cost);
+        for base in self.arrays {
+            for lane in [0, 1, 3, 4] {
+                effect.read(base + lane);
+            }
+        }
+        effect.write(self.result);
+        for word in owners.retire_bypass(self.header, self.exit, &[]) {
+            effect.read(word);
+            effect.clear(word);
+        }
+        effect
+    }
     pub(super) fn emit<M: Module>(
         self,
         module: &mut M,
