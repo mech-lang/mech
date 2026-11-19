@@ -1,10 +1,12 @@
 # PR #995 current status
 
-**Active objective: earn the 63rd libdeflate runtime win while preserving every existing peer win and all 81 Roc wins.** The qualified score is still **81/81 Roc, 62/81 libdeflate**, with the same 63,532 B encoder. Size and compiler-build improvements do not meet this runtime target. [Latest runtime mechanisms, repairs and raw observations](evidence/runtime-next-win-20261119/README.md).
+**Active objective: earn the 63rd libdeflate runtime win while preserving every existing peer win and all 81 Roc wins.** The qualified score is still **81/81 Roc, 62/81 libdeflate**, with the same 63,532 B encoder. Size and compiler-build improvements do not meet this runtime target. [Latest runtime mechanisms, repairs and raw observations](evidence/previous-dp-cost-20261119/README.md).
 
-Compiler source now includes the optional body-only vector-pointer repair at `66073d79dc7b9f1b44d89fcffda8cc6c72ceccb2`. Its default mode reproduces the selected artifacts. Other unsuccessful scalar-key and matcher prototypes are preserved as source snapshots and are absent from live code. The matched 2.245045 s build cohort below belongs to source `44fc9f053…`; no fresh matched build cohort is claimed for the pointer extension.
+Compiler source **`96b1f1ebc6214f57af22636721f8bd5a639bbc5a`** now includes opt-in previous-DP-value forwarding, entry seeding, late cleanup and a narrow-cost repair. Its default reproduces the exact qualified 63,532 B artifacts. The best seeded cleanup discovery probes put natural 4 KiB at about **1.04× libdeflate**, with no new qualified win. Both promising versions and all adverse repairs remain available. [Source, broad discovery, checks, build timings and portable evidence](evidence/previous-dp-cost-20261119/README.md).
 
-## Current source and complete builds
+Latest matched complete builds from this source are **2.216559 s** for the selected encoder, **2.219409 s** for the 63,548 B wide recurrence, **2.221740 s** for the 63,564 B narrow recurrence, **2.990605 s** for Roc and **0.483321 s** for C. Ten balanced fresh-process orders include final executable linking, with support and compilers prebuilt for every actor. Strip is separate. Selected-build paired ratios are **0.740679× Roc / 4.578593× C**. No new compile-time gain is inferred from historical cohorts.
+
+## Previous source-unit cohort
 
 Compiler source **`44fc9f05304111c6e75cac54a3dc5ec5c4f443bf`** adds source-relative unit extraction and caller-owned boundary storage. The selected recipe remains **`m1-immutable-current-reads`, 63,532 B, 81/81 Roc and 62/81 libdeflate wins in both complete orders**. Current minimal and experimental compiler configurations reproduce its exact artifacts in normal and allocation-checked modes; fixed-support linking reproduces the same qualified `834c7a7e…` worker. No 63rd C win is claimed.
 
