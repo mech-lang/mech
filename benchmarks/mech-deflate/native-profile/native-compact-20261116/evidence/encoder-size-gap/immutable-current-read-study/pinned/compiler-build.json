@@ -1,0 +1,54 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "build",
+    "--locked",
+    "--offline",
+    "--release",
+    "--config",
+    "profile.release.package.libmimalloc-sys.opt-level=1",
+    "--manifest-path",
+    "benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target",
+    "--bin",
+    "compile_profile",
+    "--features",
+    "early-region-emission"
+  ],
+  "cache_clean_command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "clean",
+    "--locked",
+    "--offline",
+    "--release",
+    "-p",
+    "mech-math",
+    "--manifest-path",
+    "benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target"
+  ],
+  "environment": {
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+    "CARGO_PROFILE_RELEASE_DEBUG": "false",
+    "CARGO_PROFILE_RELEASE_LTO": "false",
+    "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "16"
+  },
+  "exit_code": 0,
+  "seconds_diagnostic": 373.399851041846,
+  "source_base": "fb6bbe11695f05f7b071280e6f8dcc5648b198bf",
+  "source_inputs": {
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads.rs": "b69bc84c2cc2ff27f294ce1d3e343ca4bcdbc3f42ad181841f63949c969d8eb1",
+    "hosts/gpu/src/native_artifact/program/compact/private_phase.rs": "243c0dd2325723be45c5efa89a4c6abc3709e89d263d3c3bd3b405a139461dea",
+    "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "4f77a59be8d4067f0666a99669a30eedb2f8d52648944c57355e2c5984bae53d",
+    "hosts/gpu/src/native_artifact/program/compact/private_phase_tests.rs": "3540bb2462bc462cb84cff074b817258c5f2bd23bdf863635aea0d734f679167",
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads/immutable.rs": "deb1697471940ffedf8c7225fd9866dfa581d5f60ea0a2800f1f3c08871e7633"
+  },
+  "scope": "Compiler bootstrap, excluded from fresh source-through-final-link measurement.",
+  "compiler": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/pinned/compiler/12224d2a45c66b61/compile_profile",
+  "compiler_sha256": "12224d2a45c66b612dcfca5d133eb696a40588f262c1d3ac3abcd015cda8000c"
+}

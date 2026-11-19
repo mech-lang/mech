@@ -1,0 +1,29 @@
+{
+  "scope": "Diagnostic structural copy/constant-offset traversal of current source-pinned CLIF, not permission to change code without a source implementation and dominance/boundary tests.",
+  "reference": "v11551",
+  "candidate": "v11961",
+  "analysis": {
+    "result": true,
+    "nodes": 4,
+    "seeds": 1,
+    "unknown": [],
+    "visited": [
+      [
+        "v11551",
+        0
+      ],
+      [
+        "v11961",
+        0
+      ],
+      [
+        "v11962",
+        0
+      ],
+      [
+        "v11963",
+        0
+      ]
+    ]
+  }
+}

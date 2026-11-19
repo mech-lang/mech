@@ -1,0 +1,25 @@
+error[E0433]: cannot find type `Opcode` in this scope
+   --> /private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/focused-tests/tests.rs:105:25
+    |
+105 |                 opcode: Opcode::Uextend,
+    |                         ^^^^^^ use of undeclared type `Opcode`
+    |
+help: consider importing this enum
+    |
+ 98 | mod window_bounds{use cranelift_codegen::ir::Opcode;
+    |                   ++++++++++++++++++++++++++++++++++
+
+error[E0433]: cannot find type `MemFlags` in this scope
+   --> /private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/focused-tests/tests.rs:384:57
+    |
+384 |         (8, Op::Load) => loaded == returned && flags == MemFlags::new(),
+    |                                                         ^^^^^^^^ use of undeclared type `MemFlags`
+    |
+help: consider importing this struct
+    |
+155 | mod composed_reads{use cranelift_codegen::ir::MemFlags;
+    |                    ++++++++++++++++++++++++++++++++++++
+
+error: aborting due to 2 previous errors
+
+For more information about this error, try `rustc --explain E0433`.

@@ -1,0 +1,40 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "build",
+    "--locked",
+    "--offline",
+    "--release",
+    "--config",
+    "profile.release.package.libmimalloc-sys.opt-level=1",
+    "--manifest-path",
+    "benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target",
+    "--bin",
+    "compile_profile",
+    "--features",
+    "early-region-emission"
+  ],
+  "environment": {
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+    "CARGO_PROFILE_RELEASE_DEBUG": "false",
+    "CARGO_PROFILE_RELEASE_LTO": "false",
+    "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "16"
+  },
+  "exit_code": 0,
+  "seconds_diagnostic": 207.03919199993834,
+  "source_base": "fb6bbe11695f05f7b071280e6f8dcc5648b198bf",
+  "source_inputs": {
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads.rs": "bda8f9c73ddb467ca9020e08356d6c5d931514cc0a24a7c292d89525077682e1",
+    "hosts/gpu/src/native_artifact/program/compact/private_phase.rs": "243c0dd2325723be45c5efa89a4c6abc3709e89d263d3c3bd3b405a139461dea",
+    "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "4f77a59be8d4067f0666a99669a30eedb2f8d52648944c57355e2c5984bae53d",
+    "hosts/gpu/src/native_artifact/program/compact/private_phase_tests.rs": "80fc2a0d0904ac7c92cfc5967924aaa120ed74f1f09443761a3238ca094fb97f",
+    "hosts/gpu/tests/fixtures/native/numeric-private-immutable-defaults.mec": "69e7e2cb96cf361a015a44c065487738f33fe4a722569fb28c5a3ed8d157155e"
+  },
+  "scope": "Compiler bootstrap, excluded from fresh source-through-final-link measurement.",
+  "compiler": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/compiler/c4e0ec696d718139/compile_profile",
+  "compiler_sha256": "c4e0ec696d7181396d05c3d666f0168168a6a9775555e0dbb12d96a8346f7784"
+}

@@ -1,0 +1,45 @@
+{
+  "identity": false,
+  "source_sha256": "6ecf63c23b1eac6bfeccd2eeeeea1a2fe6c60e96abe3b476f65b1f51f50ac6c0",
+  "diagnostic_sha256": "b8670be4c098385b77cbec9351ae24a94696219cb06bfe4d74fbf66bfa6b0700",
+  "code_bytes_unchanged": 63692,
+  "constant_bytes_unchanged": 80064,
+  "relocations_unchanged": 544,
+  "source_sections": {
+    "(b'__TEXT', b'__const')": [
+      1,
+      0,
+      80064,
+      368,
+      0,
+      0
+    ],
+    "(b'__TEXT', b'__text')": [
+      2,
+      80064,
+      63692,
+      80432,
+      144128,
+      544
+    ]
+  },
+  "diagnostic_sections": {
+    "(b'__TEXT', b'__text')": [
+      1,
+      0,
+      63692,
+      368,
+      144128,
+      544
+    ],
+    "(b'__TEXT', b'__const')": [
+      2,
+      63696,
+      80064,
+      64064,
+      0,
+      0
+    ]
+  },
+  "scope": "Only diagnostic Mach-O section ordering, virtual bases, file offsets and corresponding symbol section/value coordinates change. Every text/data byte and each symbol-relative relocation target/offset is preserved. Not a shipping artifact and never used for latency."
+}

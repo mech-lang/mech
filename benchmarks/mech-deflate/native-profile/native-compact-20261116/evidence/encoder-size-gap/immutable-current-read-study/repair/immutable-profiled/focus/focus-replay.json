@@ -1,0 +1,755 @@
+{
+  "runs": [
+    {
+      "id": "immutable-read-repair-immutable-profiled-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 17,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "precision_supported_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 13,
+            "mech-experiment": 12
+          },
+          "precision_supported_wins": {
+            "mech-control": 13,
+            "mech-experiment": 12
+          },
+          "lost_cases": [
+            "320-overlap"
+          ],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "immutable-read-repair-immutable-profiled-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 17,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "precision_supported_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "precision_supported_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    }
+  ],
+  "cases": {
+    "empty": {
+      "decision": "bounded",
+      "runs": {
+        "immutable-read-repair-immutable-profiled-focus-forward": {
+          "estimate": -0.032670872428150366,
+          "lower": -0.041058863172577675,
+          "upper": -0.024892183199255125
+        },
+        "immutable-read-repair-immutable-profiled-focus-reverse": {
+          "estimate": -0.03087576944070003,
+          "lower": -0.03754306871468194,
+          "upper": -0.024340748600778173
+        }
+      },
+      "combined": {
+        "estimate": -0.03177373695211738,
+        "lower": -0.037171161429292,
+        "upper": -0.026646797065347227
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "one-stored": {
+      "decision": "bounded",
+      "runs": {
+        "immutable-read-repair-immutable-profiled-focus-forward": {
+          "estimate": -0.021156356137656207,
+          "lower": -0.028788293125827313,
+          "upper": -0.01360900589903935
+        },
+        "immutable-read-repair-immutable-profiled-focus-reverse": {
+          "estimate": -0.013606382220822333,
+          "lower": -0.021744272490215488,
+          "upper": -0.005311026288806198
+        }
+      },
+      "combined": {
+        "estimate": -0.017388620506799568,
+        "lower": -0.022980495995034822,
+        "upper": -0.01178372730375099
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "seven-stored-prefix": {
+      "decision": "unresolved",
+      "runs": {
+        "immutable-read-repair-immutable-profiled-focus-forward": {
+          "estimate": 0.006578805669992471,
+          "lower": -0.0001363560910971895,
+          "upper": 0.013488786089057125
+        },
+        "immutable-read-repair-immutable-profiled-focus-reverse": {
+          "estimate": 0.000786530424600862,
+          "lower": -0.007091436852388888,
+          "upper": 0.008953149102943536
+        }
+      },
+      "combined": {
+        "estimate": 0.003678489619763914,
+        "lower": -0.0015457432202675703,
+        "upper": 0.00889537771756821
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "regression",
+      "runs": {
+        "immutable-read-repair-immutable-profiled-focus-forward": {
+          "estimate": 0.007802681938336553,
+          "lower": 0.006211785767380906,
+          "upper": 0.00935140390664646
+        },
+        "immutable-read-repair-immutable-profiled-focus-reverse": {
+          "estimate": 0.005447066376363052,
+          "lower": 0.0038756555080845523,
+          "upper": 0.0070244128400529515
+        }
+      },
+      "combined": {
+        "estimate": 0.006624185106403724,
+        "lower": 0.005535389605261232,
+        "upper": 0.007707390491669575
+      },
+      "adverse_runs": [
+        "immutable-read-repair-immutable-profiled-focus-forward"
+      ],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "bounded",
+      "runs": {
+        "immutable-read-repair-immutable-profiled-focus-forward": {
+          "estimate": -0.00658540623081838,
+          "lower": -0.01278569839753263,
+          "upper": -0.0004766777321086879
+        },
+        "immutable-read-repair-immutable-profiled-focus-reverse": {
+          "estimate": -0.003513896936223393,
+          "lower": -0.010280944274542292,
+          "upper": 0.003163378081830981
+        }
+      },
+      "combined": {
+        "estimate": -0.00505083684052654,
+        "lower": -0.009492174313218915,
+        "upper": -0.0005300980314311143
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-1024": {
+      "decision": "regression",
+      "runs": {
+        "immutable-read-repair-immutable-profiled-focus-forward": {
+          "estimate": 0.019498951776705464,
+          "lower": 0.017947700065939154,
+          "upper": 0.021073575599870775
+        },
+        "immutable-read-repair-immutable-profiled-focus-reverse": {
+          "estimate": 0.016624555349815218,
+          "lower": 0.01471479054033642,
+          "upper": 0.018555394647532086
+        }
+      },
+      "combined": {
+        "estimate": 0.018060739116088298,
+        "lower": 0.01679326132933534,
+        "upper": 0.019280113360683027
+      },
+      "adverse_runs": [
+        "immutable-read-repair-immutable-profiled-focus-forward",
+        "immutable-read-repair-immutable-profiled-focus-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "heldout-mixed-131073": {
+      "decision": "regression",
+      "runs": {
+        "immutable-read-repair-immutable-profiled-focus-forward": {
+          "estimate": 0.006498551891038984,
+          "lower": 0.005537605097082565,
+          "upper": 0.007400418376755091
+        },
+        "immutable-read-repair-immutable-profiled-focus-reverse": {
+          "estimate": 0.008264156827533453,
+          "lower": 0.007293090662761292,
+          "upper": 0.009311926994467479
+        }
+      },
+      "combined": {
+        "estimate": 0.007380967544330597,
+        "lower": 0.006699493489531028,
+        "upper": 0.008073808728068066
+      },
+      "adverse_runs": [
+        "immutable-read-repair-immutable-profiled-focus-forward",
+        "immutable-read-repair-immutable-profiled-focus-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-natural-4096": {
+      "decision": "unresolved",
+      "runs": {
+        "immutable-read-repair-immutable-profiled-focus-forward": {
+          "estimate": 0.004502976217401589,
+          "lower": 3.3687724137143604e-05,
+          "upper": 0.009014051426623482
+        },
+        "immutable-read-repair-immutable-profiled-focus-reverse": {
+          "estimate": 0.01023345429195599,
+          "lower": 0.006787526683192713,
+          "upper": 0.01370735029637249
+        }
+      },
+      "combined": {
+        "estimate": 0.007364140472875924,
+        "lower": 0.004520940779325633,
+        "upper": 0.010186618083232846
+      },
+      "adverse_runs": [
+        "immutable-read-repair-immutable-profiled-focus-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "unresolved",
+      "runs": {
+        "immutable-read-repair-immutable-profiled-focus-forward": {
+          "estimate": 0.007395941868822753,
+          "lower": 0.004508277679690753,
+          "upper": 0.010294960996124702
+        },
+        "immutable-read-repair-immutable-profiled-focus-reverse": {
+          "estimate": 0.00491989797976089,
+          "lower": 0.0031630482676840987,
+          "upper": 0.006717858933299237
+        }
+      },
+      "combined": {
+        "estimate": 0.0061571582650707946,
+        "lower": 0.004448978018826599,
+        "upper": 0.007873943884864731
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-16384": {
+      "decision": "bounded",
+      "runs": {
+        "immutable-read-repair-immutable-profiled-focus-forward": {
+          "estimate": 0.003526166867151792,
+          "lower": 0.0014894063227770538,
+          "upper": 0.0054265798220543005
+        },
+        "immutable-read-repair-immutable-profiled-focus-reverse": {
+          "estimate": 0.004076245205137274,
+          "lower": 0.002929676640654355,
+          "upper": 0.005175227547374428
+        }
+      },
+      "combined": {
+        "estimate": 0.0038011683561012255,
+        "lower": 0.00266006492051285,
+        "upper": 0.004937029193448739
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-32769": {
+      "decision": "bounded",
+      "runs": {
+        "immutable-read-repair-immutable-profiled-focus-forward": {
+          "estimate": 0.0010368846091399764,
+          "lower": -0.0005476475846392104,
+          "upper": 0.002343530224073298
+        },
+        "immutable-read-repair-immutable-profiled-focus-reverse": {
+          "estimate": 0.0029800437586153805,
+          "lower": 0.00212104664194368,
+          "upper": 0.0038266140267464444
+        }
+      },
+      "combined": {
+        "estimate": 0.0020079931463936607,
+        "lower": 0.0010843998152558765,
+        "upper": 0.0028034162993122447
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1024": {
+      "decision": "regression",
+      "runs": {
+        "immutable-read-repair-immutable-profiled-focus-forward": {
+          "estimate": 0.018076042873337972,
+          "lower": 0.016052998328766277,
+          "upper": 0.020048357357634883
+        },
+        "immutable-read-repair-immutable-profiled-focus-reverse": {
+          "estimate": 0.01823137827849286,
+          "lower": 0.014884052997546027,
+          "upper": 0.02260687805137862
+        }
+      },
+      "combined": {
+        "estimate": 0.01815370761355717,
+        "lower": 0.01616671773049272,
+        "upper": 0.02057726783101077
+      },
+      "adverse_runs": [
+        "immutable-read-repair-immutable-profiled-focus-forward",
+        "immutable-read-repair-immutable-profiled-focus-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-random-4096": {
+      "decision": "regression",
+      "runs": {
+        "immutable-read-repair-immutable-profiled-focus-forward": {
+          "estimate": 0.02606336578463453,
+          "lower": 0.0197840239729985,
+          "upper": 0.03319520056054537
+        },
+        "immutable-read-repair-immutable-profiled-focus-reverse": {
+          "estimate": 0.027951432017690125,
+          "lower": 0.020692074485039402,
+          "upper": 0.035506595838271426
+        }
+      },
+      "combined": {
+        "estimate": 0.027006965019812368,
+        "lower": 0.022033108973290583,
+        "upper": 0.032092402010400756
+      },
+      "adverse_runs": [
+        "immutable-read-repair-immutable-profiled-focus-forward",
+        "immutable-read-repair-immutable-profiled-focus-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-random-262144": {
+      "decision": "regression",
+      "runs": {
+        "immutable-read-repair-immutable-profiled-focus-forward": {
+          "estimate": 0.02717197097478863,
+          "lower": 0.02546442411014027,
+          "upper": 0.028982139179200228
+        },
+        "immutable-read-repair-immutable-profiled-focus-reverse": {
+          "estimate": 0.027552885096409296,
+          "lower": 0.026578132218491257,
+          "upper": 0.028604917315618206
+        }
+      },
+      "combined": {
+        "estimate": 0.02736241038170628,
+        "lower": 0.026383143244929963,
+        "upper": 0.02843377968480887
+      },
+      "adverse_runs": [
+        "immutable-read-repair-immutable-profiled-focus-forward",
+        "immutable-read-repair-immutable-profiled-focus-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-random-1048576": {
+      "decision": "regression",
+      "runs": {
+        "immutable-read-repair-immutable-profiled-focus-forward": {
+          "estimate": 0.027285416619338587,
+          "lower": 0.026703310235889344,
+          "upper": 0.027870095948672846
+        },
+        "immutable-read-repair-immutable-profiled-focus-reverse": {
+          "estimate": 0.024702764069661765,
+          "lower": 0.021840606258270334,
+          "upper": 0.02688594853902493
+        }
+      },
+      "combined": {
+        "estimate": 0.025993277706189755,
+        "lower": 0.024517109535625803,
+        "upper": 0.027150355059589737
+      },
+      "adverse_runs": [
+        "immutable-read-repair-immutable-profiled-focus-forward",
+        "immutable-read-repair-immutable-profiled-focus-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-1024": {
+      "decision": "regression",
+      "runs": {
+        "immutable-read-repair-immutable-profiled-focus-forward": {
+          "estimate": 0.013042827274719837,
+          "lower": 0.011523731337455212,
+          "upper": 0.014582070008840375
+        },
+        "immutable-read-repair-immutable-profiled-focus-reverse": {
+          "estimate": 0.008014678440020795,
+          "lower": 0.005228769629028074,
+          "upper": 0.010445050716732407
+        }
+      },
+      "combined": {
+        "estimate": 0.010525625494621549,
+        "lower": 0.008954608632774086,
+        "upper": 0.011953052193063307
+      },
+      "adverse_runs": [
+        "immutable-read-repair-immutable-profiled-focus-forward",
+        "immutable-read-repair-immutable-profiled-focus-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-4096": {
+      "decision": "regression",
+      "runs": {
+        "immutable-read-repair-immutable-profiled-focus-forward": {
+          "estimate": 0.00685378530795866,
+          "lower": -0.00013673865679220132,
+          "upper": 0.013853392189426383
+        },
+        "immutable-read-repair-immutable-profiled-focus-reverse": {
+          "estimate": 0.013070709595616625,
+          "lower": 0.006736689023231213,
+          "upper": 0.019364406217328156
+        }
+      },
+      "combined": {
+        "estimate": 0.00995746382754481,
+        "lower": 0.005297062927077212,
+        "upper": 0.014588157976034966
+      },
+      "adverse_runs": [
+        "immutable-read-repair-immutable-profiled-focus-reverse"
+      ],
+      "duplicate_controls": []
+    }
+  },
+  "scope": "90% per-case paired bootstrap, stratified by run and actor order",
+  "equivalent_named_cases": [
+    [
+      "33027-periodic-window",
+      "prefix-periodic-33027"
+    ],
+    [
+      "prefix-repeated-1024",
+      "repeated-1024"
+    ],
+    [
+      "prefix-repeated-32769",
+      "repeated-32769"
+    ],
+    [
+      "prefix-natural-1024",
+      "reymont-prefix-1024"
+    ],
+    [
+      "prefix-natural-16384",
+      "reymont-prefix-16384"
+    ],
+    [
+      "prefix-natural-32769",
+      "reymont-prefix-32769"
+    ],
+    [
+      "heldout-window-32767",
+      "prefix-natural-32767"
+    ]
+  ],
+  "peak_private_payload_bytes": {},
+  "candidate_control_timing_observations": {
+    "slowdowns": [
+      "320-overlap: established slowdown above the 0.5% resolution",
+      "random-1024: established slowdown above the 0.5% resolution",
+      "heldout-mixed-131073: established slowdown above the 0.5% resolution",
+      "prefix-random-1024: established slowdown above the 0.5% resolution",
+      "prefix-random-4096: established slowdown above the 0.5% resolution",
+      "prefix-random-262144: established slowdown above the 0.5% resolution",
+      "prefix-random-1048576: established slowdown above the 0.5% resolution",
+      "prefix-periodic-1024: established slowdown above the 0.5% resolution",
+      "prefix-periodic-4096: established slowdown above the 0.5% resolution"
+    ],
+    "uncertain": [
+      "seven-stored-prefix: regression bound or duplicate-control repeatability unresolved",
+      "prefix-natural-4096: combined and individual run bounds conflict: immutable-read-repair-immutable-profiled-focus-reverse",
+      "prefix-natural-8192: regression bound or duplicate-control repeatability unresolved"
+    ]
+  },
+  "decision": "Unresolved",
+  "rejected": [],
+  "unresolved": [
+    "immutable-read-repair-immutable-profiled-focus-forward: focused losses against libdeflate: 320-overlap",
+    "both complete timing orders are required"
+  ],
+  "plan": {
+    "path": "consolidation-995/collector-read-lifetimes/repair/immutable-profiled/focus/plan.json",
+    "sha256": "d2afb047440c4ca1c0a53f9fe9952e4ced47b245ede7884aecefcb1a48a125ad"
+  },
+  "receipts": {
+    "immutable-read-repair-immutable-profiled-focus-forward": {
+      "id": "immutable-read-repair-immutable-profiled-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "consolidation-995/collector-read-lifetimes/repair/immutable-profiled/focus/canonical-pins/immutable-read-repair-immutable-profiled-focus-forward.json",
+        "sha256": "5e662cab9246c1e8d4a359ce0e09d7656fd487d02d44bae4ae30937667187141"
+      },
+      "original_pins": {
+        "path": "immutable-read-repair-immutable-profiled-focus-forward/pins.json",
+        "sha256": "f9de3a1ad5c55b4f03fe84bcf3cfaa722cc87ba13d52c6c27a2f8e98202880a7"
+      },
+      "summary": {
+        "path": "immutable-read-repair-immutable-profiled-focus-forward/summary.json",
+        "sha256": "c1efc2668d0bc459f21c3cdfdaa167286fcb3bbd0562d97d2f2009d555dd12a3"
+      },
+      "complete": {
+        "path": "immutable-read-repair-immutable-profiled-focus-forward/complete.json",
+        "sha256": "99f853d3840325c9c04561a514bc7ac5dd6ba90176ebeee2323bed3f796f08c5"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/320-overlap/observations.json.gz",
+          "sha256": "7dd0cd0fa37f6b2f0ea3d09cc50f5a5682cdcd3c31666d3ddb07f10208a9db00"
+        },
+        "empty": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/empty/observations.json.gz",
+          "sha256": "fe02245277c558dc30b80bb7a9f27c6ded6df6d0f20211d9864e26c7d1aa41fb"
+        },
+        "heldout-mixed-131073": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/heldout-mixed-131073/observations.json.gz",
+          "sha256": "1ff7948ad103e64e6862af179ae06112e32f1ab8db1f37d78178408929f7163d"
+        },
+        "one-stored": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/one-stored/observations.json.gz",
+          "sha256": "c70c9eee82ce30800e0a41aadeb154daca33e9368cc9c23d7b79d78e551b83b7"
+        },
+        "prefix-natural-16384": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/prefix-natural-16384/observations.json.gz",
+          "sha256": "b48e06eba6490bdca8b55bf84590a5c1c25f245545213cdb92f495a3f5227b44"
+        },
+        "prefix-natural-32769": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/prefix-natural-32769/observations.json.gz",
+          "sha256": "3075f09653600eea02fa9e86c2691e06fb87a35f0b6861ddbfea536c40f8e25e"
+        },
+        "prefix-natural-4096": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/prefix-natural-4096/observations.json.gz",
+          "sha256": "9d4162d6eec6357a36744759b5592d7a0f07b6ddf63424b0602f6ffbd4b43de9"
+        },
+        "prefix-natural-8192": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/prefix-natural-8192/observations.json.gz",
+          "sha256": "eeb845affffaa6e77c6385804910745be7660cffc5e1d03211ffe08ea9ff9dde"
+        },
+        "prefix-periodic-1024": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/prefix-periodic-1024/observations.json.gz",
+          "sha256": "38e5f990bdd5ba6848efd33fc878827c42ad4d38f345daba180eb026ba869bbb"
+        },
+        "prefix-periodic-4096": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/prefix-periodic-4096/observations.json.gz",
+          "sha256": "f37e246669cf150929e2a80405eae70ba2e9c14fb5c2b9efa2441188196f9a20"
+        },
+        "prefix-random-1024": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/prefix-random-1024/observations.json.gz",
+          "sha256": "51adea2076e88b5b776176bef975f07243eadc9adffc6886749b9131c0139411"
+        },
+        "prefix-random-1048576": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/prefix-random-1048576/observations.json.gz",
+          "sha256": "79a50955db3bd01d5d68aa6fad679bc0cf374d5d09e5f91eadcf051d7a87bf26"
+        },
+        "prefix-random-262144": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/prefix-random-262144/observations.json.gz",
+          "sha256": "75b9e87d4a0b924f0d7f18e415c7de52db3b87a7f0131b1d8cea2f01913b8abf"
+        },
+        "prefix-random-4096": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/prefix-random-4096/observations.json.gz",
+          "sha256": "858d2325adb738d25a8c5dacb1e6dd4212a504d9ed2f9db8201a19715b1a2092"
+        },
+        "random-1024": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/random-1024/observations.json.gz",
+          "sha256": "75ba8bf665553723ea0e4340b02aeef29da05050f9a07321e79cb00c58d54743"
+        },
+        "random-64": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/random-64/observations.json.gz",
+          "sha256": "307cd149e74fab60c1a0986df2aaff6b0e89bccfdaa66dc8fb1e4b6492c5ed25"
+        },
+        "seven-stored-prefix": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/seven-stored-prefix/observations.json.gz",
+          "sha256": "fbb4ef859f605c7c4f6673e0533eee1a4b0136eacc20f698acd0e801289dcef2"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "immutable-read-repair-immutable-profiled-focus-forward/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    },
+    "immutable-read-repair-immutable-profiled-focus-reverse": {
+      "id": "immutable-read-repair-immutable-profiled-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "consolidation-995/collector-read-lifetimes/repair/immutable-profiled/focus/canonical-pins/immutable-read-repair-immutable-profiled-focus-reverse.json",
+        "sha256": "5e662cab9246c1e8d4a359ce0e09d7656fd487d02d44bae4ae30937667187141"
+      },
+      "original_pins": {
+        "path": "immutable-read-repair-immutable-profiled-focus-reverse/pins.json",
+        "sha256": "f9de3a1ad5c55b4f03fe84bcf3cfaa722cc87ba13d52c6c27a2f8e98202880a7"
+      },
+      "summary": {
+        "path": "immutable-read-repair-immutable-profiled-focus-reverse/summary.json",
+        "sha256": "057eb9705d7c52adfcbb0697ef07d17b480dd289453579473dd43572ff7934dd"
+      },
+      "complete": {
+        "path": "immutable-read-repair-immutable-profiled-focus-reverse/complete.json",
+        "sha256": "99f853d3840325c9c04561a514bc7ac5dd6ba90176ebeee2323bed3f796f08c5"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/320-overlap/observations.json.gz",
+          "sha256": "a2fc513f870e8cc915309d16615246040b84043506ab68fdcf6ec57125f9506e"
+        },
+        "empty": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/empty/observations.json.gz",
+          "sha256": "1843e8dbec40ca1979aa0a95d21bc40333eda0d927db5530eb9677c8eb3deb6f"
+        },
+        "heldout-mixed-131073": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/heldout-mixed-131073/observations.json.gz",
+          "sha256": "dd128e35fecde60624ef35d8e3af5fd308698045e9362214e24c0e5808a0d5cf"
+        },
+        "one-stored": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/one-stored/observations.json.gz",
+          "sha256": "1fda52523ed0add92f009a15cd229ece5dc711f065c8f617c2023adc6a3c3061"
+        },
+        "prefix-natural-16384": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/prefix-natural-16384/observations.json.gz",
+          "sha256": "e6bb3f85067480d74fa76fa8fb6055248fe95a48bba79e9898afabfb51f7b425"
+        },
+        "prefix-natural-32769": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/prefix-natural-32769/observations.json.gz",
+          "sha256": "c98bd5f62bfc1062b4fff691621f9eedcefba87857d589c354315ddc9542db2c"
+        },
+        "prefix-natural-4096": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/prefix-natural-4096/observations.json.gz",
+          "sha256": "41a818375ef42bc0f3db5df9ea37bf272c445b21b7ab6232298b1bd017e156bb"
+        },
+        "prefix-natural-8192": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/prefix-natural-8192/observations.json.gz",
+          "sha256": "cf21ac4a4ff3905aa6603b5f85db3af5ffe44719cd2f312cfd5862fca9b105eb"
+        },
+        "prefix-periodic-1024": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/prefix-periodic-1024/observations.json.gz",
+          "sha256": "ad42391596a2c7c50dbe1ccd976d6d96ba5f8a233e4d9841dcbf72ce697b9812"
+        },
+        "prefix-periodic-4096": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/prefix-periodic-4096/observations.json.gz",
+          "sha256": "34664fd1b9b8de331931e7b6202d44deacc50e18c05bf6758590c1b9c11f3b1c"
+        },
+        "prefix-random-1024": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/prefix-random-1024/observations.json.gz",
+          "sha256": "6aa8272419e6dfb9d8d4e8701d3f567523a1ce827bf66610269a50a3ad6093c4"
+        },
+        "prefix-random-1048576": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/prefix-random-1048576/observations.json.gz",
+          "sha256": "567b04a13bc78a167e2e5d858a5f134232f536a57781bd3a71dec94dce3258df"
+        },
+        "prefix-random-262144": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/prefix-random-262144/observations.json.gz",
+          "sha256": "dabc69a67a90dca5c7c64168d5c5d6a3ab618c196c67f37fd6726c160fd02ab6"
+        },
+        "prefix-random-4096": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/prefix-random-4096/observations.json.gz",
+          "sha256": "c9c890cd67563d3d81577cf706af77ad2912d58c80689cfe392d4efa3faaddc8"
+        },
+        "random-1024": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/random-1024/observations.json.gz",
+          "sha256": "65b5d5ad2596b46693c6aaa4f2d2aa0b0d1655b62eed6068747e78d9ae3c1d8e"
+        },
+        "random-64": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/random-64/observations.json.gz",
+          "sha256": "1c1cd39637f0f11f1db6b718e6097966e6f40f8f440afdf0024e7d3c301dac0d"
+        },
+        "seven-stored-prefix": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/seven-stored-prefix/observations.json.gz",
+          "sha256": "d6fca167cd5dd91bc2f789d9095247a7c1164f4482f87371dc6faedcfccd67bb"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "immutable-read-repair-immutable-profiled-focus-reverse/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    }
+  }
+}

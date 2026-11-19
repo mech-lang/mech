@@ -1,0 +1,110 @@
+{
+  "object_sha256": "470e6899a3cfec1e2fc0f9d3d8aef1d427de7d621e6b9ec87b350cb6103d9b38",
+  "body_sha256": "364794ef73ba7724c6447525ac820732aa68548196d3e732f1ac703434e6f379",
+  "rows": [
+    {
+      "address": "0x118",
+      "visits": 1048545,
+      "loads": [
+        [
+          "ldrb",
+          "w1, [x27, x0]"
+        ]
+      ],
+      "instructions": [
+        [
+          "ldrb",
+          "w1, [x27, x0]"
+        ]
+      ]
+    },
+    {
+      "address": "0x3d4",
+      "visits": 1044385,
+      "loads": [
+        [
+          "ldrb",
+          "w1, [x27, x0]"
+        ]
+      ],
+      "instructions": [
+        [
+          "ldrb",
+          "w1, [x27, x0]"
+        ]
+      ]
+    },
+    {
+      "address": "0x4c4",
+      "visits": 477306,
+      "loads": [
+        [
+          "ldrb",
+          "w7, [x27, x2]"
+        ]
+      ],
+      "instructions": [
+        [
+          "ldrb",
+          "w7, [x27, x2]"
+        ]
+      ]
+    },
+    {
+      "address": "0x4d4",
+      "visits": 477306,
+      "loads": [
+        [
+          "ldrb",
+          "w2, [x27, x2]"
+        ]
+      ],
+      "instructions": [
+        [
+          "ldrb",
+          "w2, [x27, x2]"
+        ]
+      ]
+    },
+    {
+      "address": "0x554",
+      "visits": 477306,
+      "loads": [
+        [
+          "ldrb",
+          "w2, [x27, x2]"
+        ],
+        [
+          "ldrb",
+          "w7, [x27, x7]"
+        ]
+      ],
+      "instructions": [
+        [
+          "add",
+          "x2, x13, x22"
+        ],
+        [
+          "ldrb",
+          "w2, [x27, x2]"
+        ],
+        [
+          "add",
+          "x7, x0, x22"
+        ],
+        [
+          "ldrb",
+          "w7, [x27, x7]"
+        ],
+        [
+          "cmp",
+          "x2, x7"
+        ],
+        [
+          "b.ne",
+          "0x4b8"
+        ]
+      ]
+    }
+  ]
+}

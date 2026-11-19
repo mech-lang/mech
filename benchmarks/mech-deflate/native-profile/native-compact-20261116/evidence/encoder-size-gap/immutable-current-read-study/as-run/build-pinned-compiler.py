@@ -1,0 +1,12 @@
+from pathlib import Path
+from hashlib import sha256
+import json,os,subprocess,shutil,time
+ROOT=Path(__file__).resolve().parent;L=ROOT/'pinned';L.mkdir(exist_ok=True);W=Path('/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP');I=ROOT.parent;read=lambda p:json.loads(p.read_text());sha=lambda p:sha256(Path(p).read_bytes()).hexdigest();base=read(I/'sealed-base-execution/compiler-build.json');command=base['command'];env={k:v for k,v in os.environ.items() if not k.startswith('MECH_')}|base['environment'];paths=['hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads.rs','hosts/gpu/src/native_artifact/program/compact/private_phase.rs','hosts/gpu/src/native_artifact/program/compact/phase_function.rs','hosts/gpu/src/native_artifact/program/compact/private_phase_tests.rs','hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads/immutable.rs'];inputs={name:sha(W/name) for name in paths};(L/'source.patch').write_text(subprocess.check_output(['git','diff','HEAD','--',*paths],cwd=W,text=True))
+for name in paths:
+ snapshot=L/'source-inputs'/name;snapshot.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(W/name,snapshot)
+clean=['cargo','+nightly-2026-03-03','clean','--locked','--offline','--release','-p','mech-math','--manifest-path','benchmarks/mech-deflate/native-profile/Cargo.toml','--target-dir',str(I/'target')]
+with (L/'scoped-math-cache-clean.log').open('w') as log:subprocess.run(clean,cwd=W,env=env,stdout=log,stderr=log,check=True)
+start=time.perf_counter()
+with (L/'compiler-build.log').open('w') as log:result=subprocess.run(command,cwd=W,env=env,stdout=log,stderr=log)
+record={'command':command,'cache_clean_command':clean,'environment':base['environment'],'exit_code':result.returncode,'seconds_diagnostic':time.perf_counter()-start,'source_base':'fb6bbe11695f05f7b071280e6f8dcc5648b198bf','source_inputs':inputs,'scope':'Compiler bootstrap, excluded from fresh source-through-final-link measurement.'};(L/'compiler-build.json').write_text(json.dumps(record,indent=2)+'\n');assert result.returncode==0
+assert inputs=={name:sha(W/name) for name in paths};binary=I/'target/release/compile_profile';pin=sha(binary);dest=L/'compiler'/pin[:16]/'compile_profile';dest.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(binary,dest);record|={'compiler':str(dest),'compiler_sha256':pin};(L/'compiler-build.json').write_text(json.dumps(record,indent=2)+'\n');print('Immutable compiler',pin,flush=True)
