@@ -16798,7 +16798,7 @@
       1.0689458677488346
     ],
     "required_time_reduction": 0.06449893285431973,
-    "primary_investigation": "Shared large-random collector; closest-next-win scorer remains a required canary.",
+    "primary_investigation": "Earn 63/81 libdeflate runtime wins; profile short scalar scorer work on natural4K, preserve every existing individual peer win and all 81 Roc wins.",
     "evidence": "evidence/encoder-size-gap/immutable-current-read-study/placement/runtime-case-ratios.json"
   },
   "current_register_spill_pairs": {
@@ -19856,5 +19856,19 @@
       "libdeflate": 62
     },
     "next_runtime_target": "prefix-natural-4096 scorer; preserve every existing individual peer win"
+  },
+  "runtime_next_win_20261119": {
+    "objective": "63/81 libdeflate runtime wins; preserve every previous individual peer win and 81/81 Roc",
+    "source_commit": "66073d79dc7b9f1b44d89fcffda8cc6c72ceccb2",
+    "evidence": "evidence/runtime-next-win-20261119/README.md",
+    "qualified_selection": {
+      "encoder_text_bytes": 63532,
+      "roc": 81,
+      "libdeflate": 62,
+      "worker_sha256": "834c7a7e423a69c46483a3dae74d9450949fdf142b5ad2dede894e0da3ca8693"
+    },
+    "experimental_promotions": [],
+    "diagnostic_scope": "74 single-case orders, 96 balanced paired blocks per order; no complete qualification or new win",
+    "matched_builds_source_commit": "44fc9f05304111c6e75cac54a3dc5ec5c4f443bf"
   }
 }

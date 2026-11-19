@@ -1,5 +1,9 @@
 # Review and continuation handoff
 
+**Active objective: earn the 63rd libdeflate runtime win while preserving every existing peer win and all 81 Roc wins.** The qualified score is still **81/81 Roc, 62/81 libdeflate**, with the same 63,532 B encoder. Size and compiler-build improvements do not meet this runtime target. [Latest runtime mechanisms, repairs and raw observations](evidence/runtime-next-win-20261119/README.md).
+
+Compiler source now includes the optional body-only vector-pointer repair at `66073d79dc7b9f1b44d89fcffda8cc6c72ceccb2`. Its default mode reproduces the selected artifacts. Other unsuccessful scalar-key and matcher prototypes are preserved as source snapshots and are absent from live code. The matched 2.245045 s build cohort below belongs to source `44fc9f053…`; no fresh matched build cohort is claimed for the pointer extension.
+
 Review [mech-lang/mech PR #995](https://github.com/mech-lang/mech/pull/995), branch `codex/pr993-m3-optimization`. It targets #993's `codex/native-compact-source-handoff`, stacked on #973. Compiler source, original Mech program, build recipes, runtime source and evidence are in this branch. The first immutable-read implementation is `5ccf097dc02ceb3abb17bccb85cd11a3ae144503`; current compiler source is **`44fc9f05304111c6e75cac54a3dc5ec5c4f443bf`**. The minimal compiler `e75d74f7…` and experimental compiler `2a553c89…` reproduce all selected native artifacts in normal and checked allocation modes. Fixed-support linking reproduces the exact qualified worker. The source-unit experiment is opt-in and unselected.
 
 ```sh
