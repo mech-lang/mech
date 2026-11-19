@@ -365,6 +365,7 @@ fn equality_scan_strategies_preserve_word_mismatches_and_admitted_tails() {
     ] {
         let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
         let (mut context, certificate) = fixture(&module, "normal");
+        let original = context.func.display().to_string();
         let outcome = optimize_with_strategy(
             &mut context,
             &[certificate],
@@ -372,10 +373,9 @@ fn equality_scan_strategies_preserve_word_mismatches_and_admitted_tails() {
             wide_tier,
             Some(strategy),
         );
-        if strategy == "word" {
-            assert!(outcome.wider.is_empty());
-        } else if strategy == "word-reuse" {
-            assert_eq!(outcome.word_reused, [7]);
+        if matches!(strategy, "word" | "word-reuse") {
+            assert_eq!(context.func.display().to_string(), original);
+            assert!(outcome.word_reused.is_empty());
             assert!(outcome.wider.is_empty());
         } else {
             assert_eq!(outcome.wider, [7]);

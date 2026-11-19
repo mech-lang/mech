@@ -758,6 +758,11 @@ fn optimize_with_strategy(
         }
         let word_only = strategy == Some("word-reuse");
         let forwarded = if word_only {
+            // Selecting scalar words does not itself grant saved-prefix
+            // reuse. An inapplicable proof must leave the graph untouched.
+            let Some(saved) = saved else {
+                continue;
+            };
             word::apply(&mut context.func, cert, change, saved)
         } else {
             if probe_word {
