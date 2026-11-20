@@ -1495,7 +1495,12 @@ fn prepare_impl<M: Module>(
                     .flatten()
             })
             .collect();
-        entry_spans = cfg_cleanup::admitted_spans::fold(&mut context, &loads, &lengths);
+        entry_spans = cfg_cleanup::admitted_spans::fold(
+            &mut context,
+            &loads,
+            &lengths,
+            std::env::var_os("MECH_REUSE_ADMITTED_INPUT_WINDOWS").is_some(),
+        );
         if std::env::var_os("MECH_REUSE_ADMITTED_INPUT_WORD_LENGTHS").is_some() {
             cfg_cleanup::admitted_spans::admit_word_length(
                 &mut context.func,
