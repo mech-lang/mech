@@ -28,9 +28,9 @@
     "pr": 995,
     "stacked_on_pr": 993,
     "original_target_pr": 973,
-    "compiler_source_commit": "f3d74d9488095a1ef4b3dbc36a03d6265f8f14c9",
-    "compiler_sha256": "50e00e36a39a15c56060f10f0e2580186b9c7d8ef7becaae2eb741ba19a91017",
-    "latest_deployment_evidence": "evidence/encoder-size-gap/packed-cost-ordinal-study/README.md",
+    "compiler_source_commit": "31910aff67d9f902da9f6f5239c7efc403c82b01",
+    "compiler_sha256": "473691656e1cfb067fae07b1c0d6aa1169219fc9315c735914fd61cf75674212",
+    "latest_deployment_evidence": "evidence/encoder-size-gap/paired-packed-accumulator-study/README.md",
     "host": "Apple M1, macOS 15.6.1, arm64",
     "local_checks": {
       "workspace_formatting": "Pass",
@@ -7357,7 +7357,7 @@
     "checked_chain_estimated_recomputation_seconds": 0.0032,
     "next": "Exact-choice body planning and one further omitted-body investigation"
   },
-  "current_matched_build": "packed_cost_ordinal_experiment.complete_build",
+  "current_matched_build": "paired_packed_accumulator_experiment.complete_build",
   "scoped_function_replay": {
     "compiler_source": "e9538f71514225abf5ca57a9fc0acab358407167",
     "control_source": "ff7c1dbc9c5059ed84d730b008847c02179fa2cf",
@@ -16835,13 +16835,29 @@
   },
   "next_runtime_target": {
     "case": "prefix-natural-4096",
-    "paired_mech_c": [
-      1.0050622429168035,
-      1.0084914429877132
-    ],
-    "scope": "Original-profile packed probe, 21-case/24-block discovery only; no qualified new win. Use the exact ratios in linked evidence.",
-    "primary_investigation": "Two independent packed accumulators over eight candidates, retaining original vector fallback and exact tail handling; not implemented in this study.",
-    "evidence": "evidence/encoder-size-gap/packed-cost-ordinal-study/README.md"
+    "scope": "Full81-case96-block paired carried loop; old81Roc/62C all precision-supported. Only the new reverse natural4K win remains unsupported.",
+    "natural4k_by_order": {
+      "forward": {
+        "paired_x": 0.9846952086349671,
+        "interval": {
+          "estimate": -0.015304791365032933,
+          "lower": -0.019895708892103015,
+          "upper": -0.010784121165308136
+        },
+        "supported": true
+      },
+      "reverse": {
+        "paired_x": 1.0003619524963268,
+        "interval": {
+          "estimate": 0.0003619524963267562,
+          "lower": -0.004291084406992773,
+          "upper": 0.005276127596600899
+        },
+        "supported": false
+      }
+    },
+    "primary_investigation": "Retain paired carried loop; test optional-head peeling and widened packed ordinal separately/together. No abandonment over the reverse0.036% miss.",
+    "evidence": "evidence/encoder-size-gap/paired-packed-accumulator-study/README.md"
   },
   "current_register_spill_pairs": {
     "status": "qualified predecessor",
@@ -24783,6 +24799,153 @@
     },
     "disabled_replay_recipes": 16,
     "portable_recipe_replays": 7,
-    "next_target": "Two independent packed accumulators over eight candidates, retaining original vector fallback and exact tail handling; not implemented in this study."
+    "next_target": "Paired accumulators are implemented; see paired_packed_accumulator_experiment."
+  },
+  "paired_packed_accumulator_experiment": {
+    "source_commit": "31910aff67d9f902da9f6f5239c7efc403c82b01",
+    "compiler_sha256": "473691656e1cfb067fae07b1c0d6aa1169219fc9315c735914fd61cf75674212",
+    "evidence": "evidence/encoder-size-gap/paired-packed-accumulator-study/README.md",
+    "promoted": false,
+    "qualified_selection_unchanged": true,
+    "decision": "Retain candidate for one-case margin repair; all existing individual win floors pass",
+    "candidate_text_bytes": 63852,
+    "peak_stack_bytes": 4736,
+    "full24_scores": {
+      "forward": {
+        "roc": 81,
+        "libdeflate": 63
+      },
+      "reverse": {
+        "roc": 81,
+        "libdeflate": 63
+      }
+    },
+    "full96_scores": {
+      "forward": {
+        "roc": 81,
+        "libdeflate": 63
+      },
+      "reverse": {
+        "roc": 81,
+        "libdeflate": 62
+      }
+    },
+    "all_original_named_wins_precision_supported_both_orders": true,
+    "new63rd_qualified": false,
+    "natural4k_by_order": {
+      "forward": {
+        "paired_x": 0.9846952086349671,
+        "interval": {
+          "estimate": -0.015304791365032933,
+          "lower": -0.019895708892103015,
+          "upper": -0.010784121165308136
+        },
+        "supported": true
+      },
+      "reverse": {
+        "paired_x": 1.0003619524963268,
+        "interval": {
+          "estimate": 0.0003619524963267562,
+          "lower": -0.004291084406992773,
+          "upper": 0.005276127596600899
+        },
+        "supported": false
+      }
+    },
+    "complete_build": {
+      "plan_sha256": "cf74ca5f735ace0a52f1e958d442e2b65d26f50b89e749d2b54c2d7365895bc2",
+      "medians": {
+        "mech-control-reference": {
+          "source": 2.173535354435444,
+          "link": 0.03504139534197748,
+          "source_through_link": 2.209646770497784,
+          "strip": 0.01079972879961133,
+          "source_through_strip": 2.220815645996481
+        },
+        "mech-paired-probe": {
+          "source": 2.180560978827998,
+          "link": 0.0355572709813714,
+          "source_through_link": 2.216416999232024,
+          "strip": 0.010873083723708987,
+          "source_through_strip": 2.227399061899632
+        },
+        "mech-paired-carry-probe": {
+          "source": 2.179794979514554,
+          "link": 0.03521052096039057,
+          "source_through_link": 2.2154528335668147,
+          "strip": 0.010933417128399014,
+          "source_through_strip": 2.2265286459587514
+        },
+        "roc": {
+          "source": 2.9507613540627062,
+          "link": 0.035112000070512295,
+          "source_through_link": 2.9856574793811888,
+          "strip": 0.010729624889791012,
+          "source_through_strip": 2.9965702914632857
+        },
+        "libdeflate": {
+          "source": 0.4467648542486131,
+          "link": 0.03445954155176878,
+          "source_through_link": 0.48159979190677404,
+          "strip": 0.010723416227847338,
+          "source_through_strip": 0.4923993747215718
+        }
+      },
+      "phases": {
+        "mech-control-reference": {
+          "parse": 0.7023020835,
+          "catalog": 1.7667e-05,
+          "frontend": 0.214338625,
+          "artifact": 0.0068450835,
+          "encode": 0.0025421665,
+          "native": 1.2205270205
+        },
+        "mech-paired-probe": {
+          "parse": 0.7020145,
+          "catalog": 2.0437500000000002e-05,
+          "frontend": 0.2145319375,
+          "artifact": 0.006851625,
+          "encode": 0.002541646,
+          "native": 1.2274814375
+        },
+        "mech-paired-carry-probe": {
+          "parse": 0.701635875,
+          "catalog": 1.82085e-05,
+          "frontend": 0.21465016650000002,
+          "artifact": 0.0068497295,
+          "encode": 0.002556875,
+          "native": 1.2272202079999999
+        }
+      },
+      "paired_ratios": {
+        "mech-control-reference": {
+          "roc": 0.7408740780542165,
+          "libdeflate": 4.591870928607735,
+          "mech-control-reference": 1.0
+        },
+        "mech-paired-probe": {
+          "roc": 0.7427921994316835,
+          "libdeflate": 4.6024198432191,
+          "mech-control-reference": 1.0031035894824911
+        },
+        "mech-paired-carry-probe": {
+          "roc": 0.7428496411063902,
+          "libdeflate": 4.606302184401848,
+          "mech-control-reference": 1.0022894310884303
+        }
+      },
+      "trials": 10,
+      "source_commit": "31910aff67d9f902da9f6f5239c7efc403c82b01",
+      "scope": "10 serial balanced fresh-process source-through-final-executable-link orders. Compilers and fixed support prebuilt for every actor. Every generated Mech object, complete metadata and bytecode is hash checked. Strip is separate. Bootstrap is excluded equally."
+    },
+    "native_tests": {
+      "tests_per_mode": 18,
+      "modes": 3,
+      "packed_key_fixture_calls_per_mode": 61440,
+      "prior_winner_fixture_calls_per_mode": 16384
+    },
+    "disabled_replay_recipes": 23,
+    "portable_recipe_replays": 2,
+    "next_target": "Retain paired carried loop; test optional-head peeling and widened packed ordinal separately/together. No abandonment over the reverse0.036% miss."
   }
 }
