@@ -415,49 +415,83 @@ impl Reduction {
         }
         if let Some((front, other)) = pair {
             let back = reverse.expect("paired continuation has a reverse cursor");
-            super::scalar_pair::emit(
-                b,
-                scalar_entry,
-                scalar_body,
-                scalar_finish,
-                |b, index, previous| {
-                    let next = b.ins().iadd_imm(index, 1);
-                    let stride = i64::from(proof.arrays[back.array].width);
-                    let first_back = b.ins().iadd_imm(previous, -stride);
-                    let second_back = b.ins().iadd_imm(previous, -2 * stride);
-                    let stride = i64::from(proof.arrays[front.array].width);
-                    let base = words.read(b, shadow + proof.view(front.array));
-                    let offset = b.ins().imul_imm(index, stride);
-                    let first_front = b.ins().iadd(base, offset);
-                    let second_front = b.ins().iadd_imm(first_front, stride);
-                    let cost = |b: &mut FunctionBuilder<'_>, k, front_address, back_address| {
-                        inputs.scalar(
+            let item = |b: &mut FunctionBuilder<'_>, winner: Value| {
+                if deferred.is_some() {
+                    winner
+                } else {
+                    let high = emit_item_low32(b, words, proof, shadow, other, winner, ordinary);
+                    let winner = b.ins().ireduce(types::I32, winner);
+                    let selected = b.ins().bor(winner, high);
+                    b.ins().uextend(types::I64, selected)
+                }
+            };
+            if std::env::var_os("MECH_ORDERED_PAIRED_CONTINUATION").as_deref()
+                == Some(std::ffi::OsStr::new("sequential"))
+            {
+                super::scalar_pair::emit_sequential(
+                    b,
+                    scalar_entry,
+                    scalar_body,
+                    scalar_finish,
+                    |b, index, previous, best, old_item| {
+                        let stride = i64::from(proof.arrays[back.array].width);
+                        let previous = b.ins().iadd_imm(previous, -stride);
+                        let stride = i64::from(proof.arrays[front.array].width);
+                        let base = words.read(b, shadow + proof.view(front.array));
+                        let offset = b.ins().imul_imm(index, stride);
+                        let pointer = b.ins().iadd(base, offset);
+                        let cost = inputs.scalar(
                             b,
                             proof,
                             &self.cost,
-                            k,
+                            index,
                             &[
-                                (front, ScalarRead::LowWord(front_address)),
-                                (back, ScalarRead::LowWord(back_address)),
+                                (front, ScalarRead::LowWord(pointer)),
+                                (back, ScalarRead::LowWord(previous)),
                             ],
-                        )
-                    };
-                    let first = cost(b, index, first_front, first_back);
-                    let second = cost(b, next, second_front, second_back);
-                    (first, second, second_back)
-                },
-                |b, winner| {
-                    if deferred.is_some() {
-                        winner
-                    } else {
-                        let high =
-                            emit_item_low32(b, words, proof, shadow, other, winner, ordinary);
-                        let winner = b.ins().ireduce(types::I32, winner);
-                        let selected = b.ins().bor(winner, high);
-                        b.ins().uextend(types::I64, selected)
-                    }
-                },
-            );
+                        );
+                        let less = b.ins().icmp(IntCC::UnsignedLessThan, cost, best);
+                        let minimum = b.ins().select(less, cost, best);
+                        let selected = item(b, index);
+                        let choice = b.ins().select(less, selected, old_item);
+                        (minimum, choice, previous)
+                    },
+                );
+            } else {
+                super::scalar_pair::emit(
+                    b,
+                    scalar_entry,
+                    scalar_body,
+                    scalar_finish,
+                    |b, index, previous| {
+                        let next = b.ins().iadd_imm(index, 1);
+                        let stride = i64::from(proof.arrays[back.array].width);
+                        let first_back = b.ins().iadd_imm(previous, -stride);
+                        let second_back = b.ins().iadd_imm(previous, -2 * stride);
+                        let stride = i64::from(proof.arrays[front.array].width);
+                        let base = words.read(b, shadow + proof.view(front.array));
+                        let offset = b.ins().imul_imm(index, stride);
+                        let first_front = b.ins().iadd(base, offset);
+                        let second_front = b.ins().iadd_imm(first_front, stride);
+                        let cost = |b: &mut FunctionBuilder<'_>, k, front_address, back_address| {
+                            inputs.scalar(
+                                b,
+                                proof,
+                                &self.cost,
+                                k,
+                                &[
+                                    (front, ScalarRead::LowWord(front_address)),
+                                    (back, ScalarRead::LowWord(back_address)),
+                                ],
+                            )
+                        };
+                        let first = cost(b, index, first_front, first_back);
+                        let second = cost(b, next, second_front, second_back);
+                        (first, second, second_back)
+                    },
+                    item,
+                );
+            }
         }
         // Short entries have completed their first visit. Vector entries
         // reach this body only with a remainder.
