@@ -397,18 +397,14 @@ impl Reduction {
                 (window, pointer)
             })
             .collect::<Vec<_>>();
-        // The incoming best already occupies every cost lane. A lane records
-        // an index only after a strict improvement, so ties with that incoming
-        // best retain the missing sentinel. Among improved lanes, reduce the
-        // matching indices separately: the earliest index need not be in the
-        // lowest lane after multiple vector groups.
-        let minima = minimum_splat(b, final_costs);
-        let equal = b.ins().icmp(IntCC::Equal, final_costs, minima);
-        let missing_indices = b.ins().splat(types::I32X4, missing);
-        let indices = b.ins().bitselect(equal, final_indices, missing_indices);
-        let winners = minimum_splat(b, indices);
-        let minimum = b.ins().extractlane(minima, 0);
-        let winner = b.ins().extractlane(winners, 0);
+        let (minimum, winner) = super::winner::emit(
+            b,
+            final_costs,
+            final_indices,
+            best,
+            missing,
+            std::env::var_os("MECH_ORDERED_SKIP_UNCHANGED_VECTOR_WINNER").is_some(),
+        );
         let carried_value = if let Some(old_item) = old_item {
             let changed = b.ins().icmp_imm(IntCC::NotEqual, winner, -1);
             let index = b.ins().uextend(types::I64, winner);
@@ -607,7 +603,7 @@ impl Reduction {
 
 /// Broadcast the unsigned minimum using the existing portable vector vocabulary.
 /// Two pairwise shuffles keep both costs and stable indices in vector registers.
-fn minimum_splat(b: &mut FunctionBuilder<'_>, mut values: Value) -> Value {
+pub(super) fn minimum_splat(b: &mut FunctionBuilder<'_>, mut values: Value) -> Value {
     if cfg!(target_arch = "aarch64")
         && std::env::var_os("MECH_ORDERED_HORIZONTAL_MINIMUM").is_some()
     {

@@ -9,6 +9,7 @@ mod cost;
 mod emit;
 mod escape;
 mod normalize;
+mod winner;
 use normalize::{Cost, Item, Normalize};
 
 #[derive(Clone, Debug, serde::Serialize)]
@@ -195,3 +196,6 @@ fn equivalent(graph: &Graph, a: usize, b: usize, fuel: &mut usize) -> bool {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(all(test, target_arch = "aarch64"))]
+mod winner_tests;
