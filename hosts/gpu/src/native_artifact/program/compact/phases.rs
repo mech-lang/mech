@@ -38,6 +38,8 @@ pub(in crate::native_artifact) struct VectorContract {
     admitted_lengths: Vec<(usize, u64)>,
     // This caller adopts and guards additional fixed lengths from the fast body.
     extend_bounds: bool,
+    // Only a refused private body can add relational guards to its caller.
+    extend_spans: bool,
 }
 impl VectorContract {
     fn additional(
@@ -60,6 +62,7 @@ impl VectorContract {
         (!guards.is_empty()).then(|| Self {
             guards,
             extend_bounds: false,
+            extend_spans: false,
             admitted_lengths: existing
                 .iter()
                 .filter_map(|&(array, length, grows)| (!grows).then_some((array, length)))
@@ -177,6 +180,7 @@ pub(super) struct Phase {
     arrays: Vec<(usize, bool)>,
     fixed_arrays: Vec<usize>,
     entry_bounds: Vec<(usize, u64, bool)>,
+    entry_spans: Vec<cfg_cleanup::admitted_spans::Admission>,
     invariant_views: BTreeSet<usize>,
     outputs: Vec<(usize, Output)>,
     output_owners: Vec<usize>,
@@ -199,6 +203,11 @@ impl Phase {
                 let mut effect = Effects::default();
                 for &word in &self.inputs {
                     effect.read(word);
+                }
+                for span in &self.entry_spans {
+                    for word in [span.begin_word, span.end_word, span.length_word] {
+                        effect.read(word);
+                    }
                 }
                 for &(base, _) in &self.arrays {
                     for word in base..base + 6 {
@@ -464,6 +473,17 @@ impl Phase {
                 b.ins().bor(row, column)
             };
             let valid = b.ins().band(enough, flat);
+            let next = b.create_block();
+            b.ins().brif(valid, next, &[], fallback, &[]);
+            b.switch_to_block(next);
+        }
+        for span in &self.entry_spans {
+            let begin = words.read(b, span.begin_word);
+            let end = words.read(b, span.end_word);
+            let length = words.read(b, span.length_word);
+            let ordered = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, begin, end);
+            let fits = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, end, length);
+            let valid = b.ins().band(ordered, fits);
             let next = b.create_block();
             b.ins().brif(valid, next, &[], fallback, &[]);
             b.switch_to_block(next);
@@ -1259,6 +1279,8 @@ pub(super) fn define<M: Module>(
                     VectorContract::additional(proof, &bounds).map(|mut contract| {
                         contract.extend_bounds = !observe
                             && std::env::var_os("MECH_REUSE_ADMITTED_INDEX_RANGES").is_some();
+                        contract.extend_spans = !observe
+                            && std::env::var_os("MECH_REUSE_ADMITTED_INPUT_SPANS").is_some();
                         (bounds, contract)
                     })
                 })
@@ -1442,6 +1464,7 @@ pub(super) fn define<M: Module>(
         );
         let mut vector = None;
         let mut packed_input = None;
+        let mut entry_spans = Vec::new();
         if let Some(fast) = fast {
             let contract = vector_contract.unwrap();
             let used = general.as_ref().is_none_or(|body| fast.code != body.code);
@@ -1450,6 +1473,18 @@ pub(super) fn define<M: Module>(
             info["selected_by_guard"] = serde_json::json!(used);
             summary["vector_variant"] = info;
             if used {
+                for mut span in fast.entry_spans {
+                    let slot = |at| {
+                        inputs
+                            .get(at)
+                            .copied()
+                            .ok_or_else(|| backend("span guard lacks input word"))
+                    };
+                    span.begin_word = slot(span.begin_word)?;
+                    span.end_word = slot(span.end_word)?;
+                    span.length_word = slot(span.length_word)?;
+                    entry_spans.push(span);
+                }
                 packed_input = fast.packed_input;
                 vector = Some(VectorAlternative {
                     function: fast.function,
@@ -1570,6 +1605,7 @@ pub(super) fn define<M: Module>(
             arrays,
             fixed_arrays,
             entry_bounds,
+            entry_spans,
             invariant_views,
             outputs,
             output_owners,

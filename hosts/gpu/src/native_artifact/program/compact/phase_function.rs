@@ -35,6 +35,7 @@ pub(super) struct Compiled {
     pub code: Vec<u8>,
     pub composed: Option<Composed>,
     pub packed_input: Option<Vec<usize>>,
+    pub entry_spans: Vec<cfg_cleanup::admitted_spans::Admission>,
 }
 type FinishReport = Box<
     dyn FnOnce(
@@ -50,6 +51,7 @@ pub(super) struct Prepared {
 struct Details {
     function: FuncId,
     entry_bounds: Vec<(usize, u64, bool)>,
+    entry_spans: Vec<cfg_cleanup::admitted_spans::Admission>,
     finish_report: FinishReport,
     composed: Option<Composed>,
     packed_input: Option<Vec<usize>>,
@@ -357,6 +359,7 @@ impl Details {
             code: compiled.buffer.data().to_vec(),
             composed: self.composed,
             packed_input: self.packed_input,
+            entry_spans: self.entry_spans,
         })
     }
 }
@@ -646,6 +649,7 @@ fn prepare_impl<M: Module>(
             unsigned_guards: 0,
             packed_halfword_stores: 0,
             admitted_index_guards: 0,
+            entry_spans: Vec::new(),
         };
         return Ok(General::Deferred(DeferredGeneral {
             context,
@@ -677,6 +681,7 @@ fn prepare_impl<M: Module>(
     let pack_halfword_stores = std::env::var_os("MECH_PACK_PRIVATE_HALFWORD_STORES");
     let mut paired_halfword_stores = None;
     let mut admitted_index_guards = 0;
+    let mut entry_spans = Vec::new();
     if !observe
         && cleanup.enabled
         && no_growth.is_none()
@@ -811,6 +816,30 @@ fn prepare_impl<M: Module>(
                     }
                 }
             }
+        }
+    }
+    if !observe
+        && cleanup.enabled
+        && no_growth.is_none()
+        && vectors.is_some_and(|contract| contract.extend_spans)
+        && private.is_some_and(|contract| contract.permits(proof))
+        && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
+    {
+        let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
+        let lengths = proof
+            .arrays
+            .iter()
+            .enumerate()
+            .filter_map(|(array, view)| {
+                (!view.writable && !view.appends && view.width == 1)
+                    .then(|| packet.binary_search(&(proof.view(array) + 1)).ok())
+                    .flatten()
+            })
+            .collect();
+        entry_spans = cfg_cleanup::admitted_spans::fold(&mut context, &loads, &lengths);
+        if !entry_spans.is_empty() {
+            context.flowgraph();
+            context.verify(module.isa()).map_err(backend)?;
         }
     }
     if !observe
@@ -1562,6 +1591,7 @@ fn prepare_impl<M: Module>(
             unsigned_guards,
             packed_halfword_stores,
             admitted_index_guards,
+            entry_spans,
         },
         future_write_hints,
         histogram,
@@ -1587,6 +1617,7 @@ pub(super) struct SummaryInput {
     unsigned_guards: usize,
     packed_halfword_stores: usize,
     admitted_index_guards: usize,
+    entry_spans: Vec<cfg_cleanup::admitted_spans::Admission>,
 }
 
 fn finish_preparation(
@@ -1616,6 +1647,7 @@ fn finish_preparation(
         unsigned_guards,
         packed_halfword_stores,
         admitted_index_guards,
+        entry_spans,
     } = input;
     let PhaseCleanup {
         bit_counts,
@@ -1634,6 +1666,7 @@ fn finish_preparation(
     let reused_operands = report.reused_scalar_operands.clone();
     let changed_writes = report.proven_changed_writes.clone();
     let private_writes = report.private_write_sites.clone();
+    let span_summary = (!entry_spans.is_empty()).then(|| serde_json::json!(entry_spans));
     let finish_report: FinishReport = Box::new(move |compiled, entry_bounds| {
         let mut summary = serde_json::json!({"read_pack_sites":pack_sites,"wider_equal_loops":equality.wider,"private_write_sites":private_writes,"proven_changed_writes":changed_writes,"phase_entry_bounds":entry_bounds,"header":header,"exit":exit,"symbol":symbol,
         "code_bytes":compiled.code_info().total_size,"stack_bytes":compiled_stack_bytes(&compiled.buffer)?,
@@ -1707,6 +1740,9 @@ fn finish_preparation(
         if let Some(histogram) = bounded_histogram {
             summary["bounded_byte_histogram"] = histogram;
         }
+        if let Some(spans) = span_summary {
+            summary["admitted_input_spans"] = spans;
+        }
 
         Ok(summary)
     });
@@ -1715,6 +1751,7 @@ fn finish_preparation(
         details: Details {
             function,
             entry_bounds,
+            entry_spans,
             finish_report,
             composed,
             packed_input,
