@@ -1,6 +1,13 @@
 //! Discard proved zero high fields when only a packed word's low bits are used.
 use cranelift_codegen::ir::{Function, InstBuilder, InstructionData, Opcode, Value, ValueDef};
 
+#[path = "narrow_bits_phis.rs"]
+mod phis;
+
+pub(in crate::native_artifact) fn fold_parallel(function: &mut Function) -> usize {
+    phis::fold(function)
+}
+
 /// This changes only scalar integer reductions. A full-width packed value,
 /// including any store or error/resource use, retains its original definition.
 pub(in crate::native_artifact) fn fold(function: &mut Function) -> usize {
@@ -115,3 +122,7 @@ fn zero_low_bits(
 #[cfg(all(test, feature = "jit"))]
 #[path = "narrow_bits_tests.rs"]
 mod tests;
+
+#[cfg(all(test, feature = "jit"))]
+#[path = "narrow_bits_phi_tests.rs"]
+mod phi_tests;
