@@ -1509,7 +1509,16 @@ fn prepare_impl<M: Module>(
             );
         }
         if !entry_spans.is_empty() {
-            context.flowgraph();
+            if entry_spans
+                .iter()
+                .any(|span| span.window_checks_removed != 0)
+            {
+                context
+                    .compute_flowgraph_and_cleanup(module.isa())
+                    .map_err(backend)?;
+            } else {
+                context.flowgraph();
+            }
             context.verify(module.isa()).map_err(backend)?;
         }
     }

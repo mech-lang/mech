@@ -126,6 +126,25 @@ fn compile(mode: u8) -> (JITModule, Run, Run) {
     let spans = fold(&mut fast, &loads, &BTreeSet::from([2]), true);
     assert_eq!(spans.len(), 1);
     assert_eq!(spans[0].checks_removed, if mode == 0 { 3 } else { 1 });
+    assert_eq!(
+        spans[0].window_checks_removed,
+        if mode == 0 { 2 } else { 0 }
+    );
+    if mode == 0 {
+        let branches = |ctx: &Context| {
+            ctx.func
+                .layout
+                .blocks()
+                .filter(|&block| {
+                    ctx.func
+                        .layout
+                        .last_inst(block)
+                        .is_some_and(|inst| matches!(ctx.func.dfg.insts[inst], Data::Brif { .. }))
+                })
+                .count()
+        };
+        assert_eq!(branches(&old) - branches(&fast), 3);
+    }
     if mode != 0 {
         let mut plain = module.make_context();
         plain.func = old.func.clone();

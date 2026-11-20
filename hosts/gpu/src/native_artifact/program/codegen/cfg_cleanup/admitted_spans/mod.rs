@@ -20,6 +20,11 @@ pub(in crate::native_artifact) struct Admission {
     #[serde(skip_serializing_if = "zero_length")]
     pub minimum_length: u64,
     pub checks_removed: usize,
+    #[serde(skip_serializing_if = "zero_count")]
+    pub window_checks_removed: usize,
+}
+fn zero_count(count: &usize) -> bool {
+    *count == 0
 }
 fn zero_length(length: &u64) -> bool {
     *length == 0
@@ -137,15 +142,20 @@ pub(in crate::native_artifact) fn fold(
                 }
             }
             for (length_word, mut tests) in found {
-                if include_windows {
-                    tests.extend(windows::checks(ctx, loads, body, cursor, length_word));
-                }
+                let windows = if include_windows {
+                    windows::checks(ctx, loads, body, cursor, length_word)
+                } else {
+                    Vec::new()
+                };
+                let window_checks_removed = windows.len();
+                tests.extend(windows);
                 admissions.push(Admission {
                     begin_word,
                     end_word,
                     length_word,
                     minimum_length: 0,
                     checks_removed: tests.len(),
+                    window_checks_removed,
                 });
                 changes.extend(tests);
             }
@@ -154,6 +164,12 @@ pub(in crate::native_artifact) fn fold(
     for (inst, value) in changes {
         let ty = ctx.func.dfg.value_type(ctx.func.dfg.inst_results(inst)[0]);
         ctx.func.dfg.replace(inst).iconst(ty, value);
+    }
+    if admissions.iter().any(|a| a.window_checks_removed != 0) {
+        // These facts arrive after the normal CFG cleanup. Consume their
+        // constant predicates now, including zero-extension/Boolean wrappers,
+        // rather than lowering them into branches on materialized constants.
+        super::fold(&mut ctx.func);
     }
     admissions
 }
