@@ -10,6 +10,7 @@ mod emit;
 mod escape;
 mod normalize;
 mod packed_key;
+mod packed_loop;
 mod vector_loop;
 mod winner;
 use normalize::{Cost, Item, Normalize};
