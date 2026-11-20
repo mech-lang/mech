@@ -6,7 +6,7 @@ use cranelift_module::{Linkage, Module, default_libcall_names};
 
 type Run = unsafe extern "C" fn(*mut u32, u64, u64) -> u64;
 
-fn body(module: &JITModule) -> (Context, Value) {
+fn body(module: &JITModule, bitwise: bool) -> (Context, Value) {
     let mut context = module.make_context();
     context.func.signature.params = vec![AbiParam::new(types::I64); 3];
     context.func.signature.returns = vec![AbiParam::new(types::I64)];
@@ -34,7 +34,7 @@ fn body(module: &JITModule) -> (Context, Value) {
         // A visible source effect must still happen exactly once on refusal.
         let marker = b.ins().ireduce(types::I32, tag);
         b.ins()
-            .store(cranelift_codegen::ir::MemFlags::new(), marker, pointer, 0);
+            .store(cranelift_codegen::ir::MemFlags::new(), marker, pointer, 44);
         b.ins().brif(tag, left, &[], right, &[]);
         b.switch_to_block(left);
         let zero = b.ins().iconst(types::I64, 0);
@@ -44,7 +44,14 @@ fn body(module: &JITModule) -> (Context, Value) {
         b.ins().jump(join, &[one.into()]);
         b.switch_to_block(join);
         let bit = b.block_params(join)[0];
-        let index = b.ins().iadd_imm(bit, 8);
+        let index = if bitwise {
+            let shifted = b.ins().ushr_imm(tag, 5);
+            let high = b.ins().band_imm(shifted, 6);
+            let low = b.ins().band_imm(tag, 1);
+            b.ins().bor(high, low)
+        } else {
+            b.ins().iadd_imm(bit, 8)
+        };
         let in_bounds = b.ins().icmp(IntCC::UnsignedLessThan, index, current);
         b.ins().brif(in_bounds, read, &[], empty, &[]);
         b.switch_to_block(read);
@@ -88,8 +95,7 @@ fn body(module: &JITModule) -> (Context, Value) {
     (context, length)
 }
 
-#[test]
-fn guarded_small_table_preserves_partial_state_and_error_origins() {
+fn check_guarded(bitwise: bool) {
     let mut module = JITModule::new(
         JITBuilder::with_flags(
             &[("opt_level", "speed"), ("regalloc_checker", "true")],
@@ -97,12 +103,19 @@ fn guarded_small_table_preserves_partial_state_and_error_origins() {
         )
         .unwrap(),
     );
-    let (mut original, length) = body(&module);
+    let (mut original, length) = body(&module, bitwise);
     let mut fast = module.make_context();
     fast.func = original.func.clone();
-    let floors = required_index_floors(&fast.func, &std::collections::BTreeSet::from([length]));
-    assert_eq!(floors, BTreeMap::from([(length, 10)]));
-    assert_eq!(fold_index_ranges(&mut fast.func, &floors), (0, 2));
+    let floors = required_index_floors(
+        &fast.func,
+        &std::collections::BTreeSet::from([length]),
+        bitwise,
+    );
+    assert_eq!(
+        floors,
+        BTreeMap::from([(length, if bitwise { 8 } else { 10 })])
+    );
+    assert_eq!(fold_index_ranges(&mut fast.func, &floors, bitwise), (0, 2));
     let mut ids = Vec::new();
     for (name, context) in [("original", &mut original), ("fast", &mut fast)] {
         context.compute_cfg();
@@ -154,16 +167,30 @@ fn guarded_small_table_preserves_partial_state_and_error_origins() {
         unsafe { core::mem::transmute::<*const u8, Run>(module.get_finalized_function(ids[0])) };
     let new = unsafe { core::mem::transmute::<*const u8, Run>(module.get_finalized_function(id)) };
     for length in [0, 1, 7, 8, 9, 10, 11, 12, u64::MAX] {
-        for tag in [0, 1, 8, 9, u64::MAX] {
+        let tags: &[u64] = if bitwise {
+            &[0, 1, 64, 65, 128, 129, 192, 193, 255, u64::MAX]
+        } else {
+            &[0, 1, 8, 9, u64::MAX]
+        };
+        for &tag in tags {
             for seed in [0, 1, u32::MAX - 1, u32::MAX] {
                 let mut a = [seed; 12];
                 let mut b = a;
-                // Only slots 0, 8 and 9 are touched, backed by both live arrays.
+                // Only slots 0 through 9 and marker slot 11 are touched, backed by both live arrays.
                 let before = unsafe { old(a.as_mut_ptr(), length, tag) };
                 let after = unsafe { new(b.as_mut_ptr(), length, tag) };
                 assert_eq!((before, a), (after, b), "{length} {tag} {seed}");
-                assert_eq!(b[0], tag as u32);
+                assert_eq!(b[11], tag as u32);
             }
         }
     }
+}
+
+#[test]
+fn guarded_small_table_preserves_partial_state_and_error_origins() {
+    check_guarded(false);
+}
+#[test]
+fn guarded_bitwise_table_preserves_partial_state_and_error_origins() {
+    check_guarded(true);
 }

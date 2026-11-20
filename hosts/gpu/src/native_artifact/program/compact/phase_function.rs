@@ -673,6 +673,7 @@ fn prepare_impl<M: Module>(
         && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
         && std::env::var_os("MECH_PACK_PRIVATE_HALFWORD_READS").is_some();
     let reuse_lengths = std::env::var_os("MECH_REUSE_ADMITTED_VIEW_LENGTHS").is_some();
+    let bitwise_indices = std::env::var_os("MECH_REUSE_ADMITTED_BITWISE_INDEX_RANGES").is_some();
     let pack_halfword_stores = std::env::var_os("MECH_PACK_PRIVATE_HALFWORD_STORES");
     let mut paired_halfword_stores = None;
     let mut admitted_index_guards = 0;
@@ -702,6 +703,7 @@ fn prepare_impl<M: Module>(
         let required = cfg_cleanup::admitted_lengths::required_index_floors(
             &context.func,
             &lengths.keys().copied().collect(),
+            bitwise_indices,
         );
         for (length, minimum) in required {
             let array = lengths[&length];
@@ -779,7 +781,11 @@ fn prepare_impl<M: Module>(
                 let (folded, ranged) = if no_growth.is_none()
                     && std::env::var_os("MECH_REUSE_ADMITTED_INDEX_RANGES").is_some()
                 {
-                    cfg_cleanup::admitted_lengths::fold_index_ranges(&mut context.func, &floors)
+                    cfg_cleanup::admitted_lengths::fold_index_ranges(
+                        &mut context.func,
+                        &floors,
+                        bitwise_indices,
+                    )
                 } else {
                     (
                         cfg_cleanup::admitted_lengths::fold(&mut context.func, &floors),
