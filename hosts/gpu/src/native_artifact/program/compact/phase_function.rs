@@ -1880,7 +1880,14 @@ fn optimize_phase(
     no_growth: Option<&NoGrowth>,
     report_diagnostics: bool,
 ) -> Result<PhaseCleanup, NativeCompileError> {
-    if std::env::var_os("MECH_QUALIFY_PHASE_INPUT_PACKET").is_some() {
+    if std::env::var_os("MECH_QUALIFY_PHASE_INPUT_PACKET").is_some_and(|selection| {
+        // An exact phase list permits held-feature experiments without changing
+        // the existing all-phase option or the input packet's proof contract.
+        selection
+            .to_str()
+            .and_then(|value| value.strip_prefix("only:"))
+            .is_none_or(|symbols| symbols.split(',').any(|selected| selected == symbol))
+    }) {
         super::phase_storage::qualify_input_packet_loads(&mut context.func, input_words);
     }
     // Numeric phases have their own sealed SSA; never match through packets.
