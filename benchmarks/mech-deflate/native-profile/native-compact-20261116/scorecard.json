@@ -7072,19 +7072,19 @@
     "receipt_sha256": "11601ee8ff034fc3804f1866275e7b499ab276433d36c9bb3ecbe46287e3aa27"
   },
   "latest_candidate": {
-    "name": "packed eight-entry head scorer",
-    "recipe": "m1-packed-eight-entry",
-    "encoder_text_bytes": 63868,
+    "name": "packed eight-entry scorer with proved low-word folding",
+    "recipe": "m1-narrow-packed-words",
+    "encoder_text_bytes": 63852,
     "current_implementation_candidate": true,
-    "opt_in": true,
+    "opt_in": false,
     "selected_for_work": true,
-    "decision": "Selected working baseline:81 Roc/63 C point wins, new reverse4KiB confidence uncertain",
-    "source_commit": "60e942f46298e1d4b3ea446248596ae3e071853d",
-    "compiler_sha256": "13edf3ab0fdcd3bb05951cf6ad07c4b67b68cb920f3f733eb086237db150f7b3",
-    "worker_sha256": "0863e47b3aa5fb64256fdaf51feba952e4d3078ac3b11db488e8fe6aaff9afcf",
+    "decision": "81 Roc and63 C point wins, every required name in both complete96 orders; confidence reported separately",
+    "source_commit": "9b1460933a88837bfd688344c312081b441666cd",
+    "compiler_sha256": "bf695ca4e9eb7e540b8dffb04d147fd50f019670332f07211cb9d1d775b2d405",
+    "worker_sha256": "bb834bc0836f976612bd955a71ef753800820e1b515b08425db968d20c76e11a",
     "artifacts": {
-      "program.o": "b394b4c83fc8189cbc7a4540a756c99c3c92caf22fe169029102b2f596a52b5f",
-      "metadata.json": "a1a21ba86c12f1ef70c57957578f412acafb40a9af837cd72b0cf3c33e8af60d",
+      "program.o": "e50bc4186276da44d8197a6c572226bfe6d311b95cfbc9b740340cffbad37b76",
+      "metadata.json": "78272b87c86d240d4e848d721c00c029cdf79ab1c1bdde322db1ea5a64ad44ac",
       "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
     },
     "peak_stack_bytes": 4736,
@@ -7099,119 +7099,387 @@
           63
         ]
       },
-      "original_named_wins_confidence_supported": {
-        "roc": 81,
-        "libdeflate": 62
-      },
+      "required_named_point_wins_preserved": true,
       "new_win_confidence": {
         "forward": {
-          "paired_x": 0.9939013795416267,
+          "paired_x": 0.9841942521354337,
           "interval": {
-            "estimate": -0.006098620458373283,
-            "lower": -0.011435559570484477,
-            "upper": -0.0009639155684313394
+            "estimate": -0.015805747864566344,
+            "lower": -0.021047010616421336,
+            "upper": -0.010704878882238922
           },
           "supported": true
         },
         "reverse": {
-          "paired_x": 0.9976751346952779,
+          "paired_x": 0.9819219447528134,
           "interval": {
-            "estimate": -0.00232486530472209,
-            "lower": -0.008184463483581816,
-            "upper": 0.003877577771610019
+            "estimate": -0.018078055247186642,
+            "lower": -0.023328586163473886,
+            "upper": -0.012397511558502772
           },
-          "supported": false
+          "supported": true
         }
       },
-      "evidence": "evidence/encoder-size-gap/packed-eight-entry-study/result.json"
+      "named_confidence_unsupported": {
+        "forward": {
+          "roc": [],
+          "libdeflate": []
+        },
+        "reverse": {
+          "roc": [],
+          "libdeflate": [
+            "320-overlap"
+          ]
+        }
+      },
+      "confidence_is_selection_gate": false,
+      "evidence": "evidence/encoder-size-gap/packed-word-repair-study/result.json"
     },
     "build": {
-      "plan_sha256": "022ca0e7baba17bf26bf786b244f56d29639c7c1c5663ed811bc5aaa64271f38",
+      "plan_sha256": "b2ea2b124e08c25062a64d35239b32a01748c246227724eee12b9d0909a20bb5",
       "medians": {
-        "mech-control-reference": {
-          "source": 2.1738291669171304,
-          "link": 0.03572174999862909,
-          "source_through_link": 2.209805521182716,
-          "strip": 0.010753021109849215,
-          "source_through_strip": 2.220777500187978
+        "mech-selected63": {
+          "source": 2.1877377082128078,
+          "link": 0.035614687483757734,
+          "source_through_link": 2.2252674794290215,
+          "strip": 0.01073535461910069,
+          "source_through_strip": 2.236197999911383
         },
-        "mech-eight-paired": {
-          "source": 2.1796042507048696,
-          "link": 0.03518789610825479,
-          "source_through_link": 2.2153193331323564,
-          "strip": 0.010781812248751521,
-          "source_through_strip": 2.2262193120550364
+        "mech-phase-registers": {
+          "source": 2.1867613333743066,
+          "link": 0.03492518770508468,
+          "source_through_link": 2.221799875376746,
+          "strip": 0.01070302096195519,
+          "source_through_strip": 2.2326708752661943
         },
-        "mech-eight-head": {
-          "source": 2.1798759379889816,
-          "link": 0.035327166551724076,
-          "source_through_link": 2.2156371669843793,
-          "strip": 0.010774417081847787,
-          "source_through_strip": 2.2266498126555234
+        "mech-scorer-packet": {
+          "source": 2.1876253329683095,
+          "link": 0.03561791614629328,
+          "source_through_link": 2.2245765833649784,
+          "strip": 0.010710979346185923,
+          "source_through_strip": 2.2356263960245997
+        },
+        "mech-narrow-eight": {
+          "source": 2.1881680625956506,
+          "link": 0.03549762489274144,
+          "source_through_link": 2.2244762706104666,
+          "strip": 0.010719916550442576,
+          "source_through_strip": 2.235474854009226
+        },
+        "mech-narrow-packet-eight": {
+          "source": 2.187462167115882,
+          "link": 0.03513060347177088,
+          "source_through_link": 2.2224728539586067,
+          "strip": 0.010742166545242071,
+          "source_through_strip": 2.2335623330436647
+        },
+        "mech-narrow-once": {
+          "source": 2.1872192083392292,
+          "link": 0.035219999961555004,
+          "source_through_link": 2.223769812611863,
+          "strip": 0.010778500000014901,
+          "source_through_strip": 2.2347461879253387
+        },
+        "mech-narrow-packet-once": {
+          "source": 2.1878670209553093,
+          "link": 0.03506818739697337,
+          "source_through_link": 2.2237263745628297,
+          "strip": 0.010736374882981181,
+          "source_through_strip": 2.2346497499383986
         },
         "roc": {
-          "source": 2.948111603502184,
-          "link": 0.035451229428872466,
-          "source_through_link": 2.9837752708699554,
-          "strip": 0.010787416715174913,
-          "source_through_strip": 2.9951234164182097
+          "source": 2.9691498749889433,
+          "link": 0.034834375604987144,
+          "source_through_link": 3.0051220620516688,
+          "strip": 0.010692645562812686,
+          "source_through_strip": 3.01640991657041
         },
         "libdeflate": {
-          "source": 0.4457956040278077,
-          "link": 0.035133083583787084,
-          "source_through_link": 0.4809126041363925,
-          "strip": 0.010604562237858772,
-          "source_through_strip": 0.4917213961016387
-        }
-      },
-      "phases": {
-        "mech-control-reference": {
-          "parse": 0.7013804374999999,
-          "catalog": 1.8583500000000003e-05,
-          "frontend": 0.21547979150000002,
-          "artifact": 0.006809770999999999,
-          "encode": 0.002547813,
-          "native": 1.2207583335
-        },
-        "mech-eight-paired": {
-          "parse": 0.7016972705,
-          "catalog": 1.7021e-05,
-          "frontend": 0.21558577099999998,
-          "artifact": 0.0068053755,
-          "encode": 0.002535334,
-          "native": 1.226607187
-        },
-        "mech-eight-head": {
-          "parse": 0.701408021,
-          "catalog": 2.075e-05,
-          "frontend": 0.21508149999999998,
-          "artifact": 0.006795875,
-          "encode": 0.0025481875,
-          "native": 1.226934333
+          "source": 0.45598868769593537,
+          "link": 0.03424260439351201,
+          "source_through_link": 0.49029758339747787,
+          "strip": 0.010669958544895053,
+          "source_through_strip": 0.5010998120997101
         }
       },
       "paired_ratios": {
-        "mech-control-reference": {
-          "roc": 0.7409821135332537,
-          "libdeflate": 4.595493424552328,
-          "mech-control-reference": 1.0
+        "mech-selected63": {
+          "roc": 0.7406685409413305,
+          "libdeflate": 4.537533248773869,
+          "mech-selected63": 1.0
         },
-        "mech-eight-paired": {
-          "roc": 0.7424882868180559,
-          "libdeflate": 4.605417967461435,
-          "mech-control-reference": 1.0023800443634092
+        "mech-phase-registers": {
+          "roc": 0.7395860219113496,
+          "libdeflate": 4.532582550379729,
+          "mech-selected63": 0.9992971982552387
         },
-        "mech-eight-head": {
-          "roc": 0.7426535338084552,
-          "libdeflate": 4.604947662635128,
-          "mech-control-reference": 1.0025030266552584
+        "mech-scorer-packet": {
+          "roc": 0.7426134531216093,
+          "libdeflate": 4.549906712485752,
+          "mech-selected63": 1.0005550054207117
+        },
+        "mech-narrow-eight": {
+          "roc": 0.7406143459978429,
+          "libdeflate": 4.5314828321292975,
+          "mech-selected63": 0.9980668325737158
+        },
+        "mech-narrow-packet-eight": {
+          "roc": 0.7426237398392022,
+          "libdeflate": 4.5383311279154785,
+          "mech-selected63": 0.9985950582100742
+        },
+        "mech-narrow-once": {
+          "roc": 0.7399956240362822,
+          "libdeflate": 4.535373829467823,
+          "mech-selected63": 0.9980205245272677
+        },
+        "mech-narrow-packet-once": {
+          "roc": 0.7418279107046813,
+          "libdeflate": 4.532882702078966,
+          "mech-selected63": 0.999259564038113
         }
       },
-      "trials": 10,
-      "source_commit": "60e942f46298e1d4b3ea446248596ae3e071853d",
-      "scope": "10 serial balanced fresh-process source-through-final-executable-link orders. Compilers and fixed support prebuilt for every actor. Every generated Mech object, complete metadata and bytecode is hash checked. Strip is separate. Bootstrap is excluded equally."
+      "phases": {
+        "mech-selected63": {
+          "parse": 0.702723396,
+          "catalog": 2.10415e-05,
+          "frontend": 0.2179343745,
+          "artifact": 0.0068200625,
+          "encode": 0.0025382085,
+          "native": 1.2294584375
+        },
+        "mech-phase-registers": {
+          "parse": 0.702254521,
+          "catalog": 1.9520999999999998e-05,
+          "frontend": 0.21739302100000002,
+          "artifact": 0.0068115204999999995,
+          "encode": 0.0025317085,
+          "native": 1.2290115835000002
+        },
+        "mech-scorer-packet": {
+          "parse": 0.7027292709999999,
+          "catalog": 2.05205e-05,
+          "frontend": 0.218234396,
+          "artifact": 0.006822042,
+          "encode": 0.002527896,
+          "native": 1.2294052705
+        },
+        "mech-narrow-eight": {
+          "parse": 0.7028402715,
+          "catalog": 1.9604e-05,
+          "frontend": 0.2176216255,
+          "artifact": 0.0068301874999999995,
+          "encode": 0.0025238745,
+          "native": 1.2291518125
+        },
+        "mech-narrow-packet-eight": {
+          "parse": 0.7026702709999999,
+          "catalog": 2.1104e-05,
+          "frontend": 0.2177964165,
+          "artifact": 0.00682275,
+          "encode": 0.0025276045,
+          "native": 1.23011475
+        },
+        "mech-narrow-once": {
+          "parse": 0.7023078745,
+          "catalog": 2.0916500000000002e-05,
+          "frontend": 0.2173875,
+          "artifact": 0.0068319999999999995,
+          "encode": 0.0025275834999999996,
+          "native": 1.230413854
+        },
+        "mech-narrow-packet-once": {
+          "parse": 0.7028404585,
+          "catalog": 1.9479500000000002e-05,
+          "frontend": 0.217865896,
+          "artifact": 0.0068029375,
+          "encode": 0.0025350414999999998,
+          "native": 1.2298128955
+        }
+      },
+      "trials": 18,
+      "source_commit": "9b1460933a88837bfd688344c312081b441666cd",
+      "post_measurement_report_repair": {
+        "reason": "Post-measurement reporting expected mech-control-reference, but the actual named control is mech-selected63. All18 ordered trials and warmup completed before that KeyError. Reconstruct medians/ratios/phases from original saved actor result.json files; no clocks rerun or observations changed.",
+        "driver_log_sha256": "2bfd8c8ec3e087e673491108b2d033f360773143103a3856ce4882f5ff484278",
+        "replay_script_sha256": "1ba9dee1be19dec0a266ae4dda4c8d497ae0000b741b44ff463415b24aa64bab",
+        "measurement_records": {
+          "order-5/mech-scorer-packet/result.json": "0ae499c2924d77f8defaf9ecb36a85a225326d58266e24fc028aa147f78945f3",
+          "order-5/mech-narrow-once/result.json": "6d4f18ac0b46fdc45d6e3a553a3a77d605dcdc73ad0172fb7990e56f5997b2ab",
+          "order-5/mech-phase-registers/result.json": "e2d124c829f5e74c966133c4c78d9b5703163bdf9f7e11c9891b072ae2d63af6",
+          "order-5/mech-narrow-packet-once/result.json": "f71242b8195723212a18d80322d5d8ffd9760ccfd902344fa1ccc99fe752f84e",
+          "order-5/mech-selected63/result.json": "025d9f12b73975fef20026fc2f3a6facfa1db86411279d985cfa9134b1da0450",
+          "order-5/mech-narrow-eight/result.json": "b5ddbf811621691dc7f7d89a303e0eb10d6c84e3f0b7095cb0aeeccf522ca6eb",
+          "order-5/libdeflate/result.json": "6f96f058bfafc892b13f0d69aa55c42c427ead1ef106a90339bba8332e4fdbb9",
+          "order-5/roc/result.json": "f85fdfe1c29ae889090dce1764b046d6db6f0ad9158e8c46b22fd59923db2145",
+          "order-5/mech-narrow-packet-eight/result.json": "0c1f442fb2dfea5dac71b0ef6b518066233a76bea2cb513c83907590e82f7ef0",
+          "order-2/mech-scorer-packet/result.json": "9b5c935cf739fb53ffe75539205ba48799796c7be903d36ff8247f057dfbc3ca",
+          "order-2/mech-narrow-once/result.json": "7568ee382e73d232ec00aba8192aa97686dce54f01f5a79700b53ffce70ebf92",
+          "order-2/mech-phase-registers/result.json": "f8bff500866364091f5bcbfbe28321c63a454d6ef28ac010841021def3ce8c9c",
+          "order-2/mech-narrow-packet-once/result.json": "fa52c1489f5c299b464455b8b3325d0bbadf078bba6df6907e78ffa240603d74",
+          "order-2/mech-selected63/result.json": "927176f69b37a7f4397f9684ae0f5b2b519aacbd8aecd0439034308acba3f139",
+          "order-2/mech-narrow-eight/result.json": "a96d25d367acee88b5d84eaff08baefe14feec69fac2905f1208b25919d19c16",
+          "order-2/libdeflate/result.json": "aad7cb57646b84f1e6dc704c2cfeb368538318fd172749bea0058af59749c897",
+          "order-2/roc/result.json": "cacedd9b47d618109b5dec12aeb2579a2e5c13a1cce91078718d94b39117b289",
+          "order-2/mech-narrow-packet-eight/result.json": "6cc179bdfd11f3a4695fbe3dedee96b4b392b0c89ca1e86504d371d5f05cfac6",
+          "order-3/mech-scorer-packet/result.json": "a4120d95838e568319d93e3e3348f4c1b90ea9e8f9d0c3e481f81a3ab7e98544",
+          "order-3/mech-narrow-once/result.json": "7efcd02fb3e0431c05b700675ce6f899986e6363ff6073e10cdf35ebbdbc9c4d",
+          "order-3/mech-phase-registers/result.json": "b2e242160cb847d03e9fb66b79486803746d079c8b000063473f03cf0be769db",
+          "order-3/mech-narrow-packet-once/result.json": "054a752c9e4d02606a438b49eefb91c2b4c8e64ef33592ada1768087cc07ca36",
+          "order-3/mech-selected63/result.json": "a1cc723fe49921eab3d9853af95701943d7fc90ee2022ffa145e95fd3269a43c",
+          "order-3/mech-narrow-eight/result.json": "c79c1acc37f6d9ae5207ee7dcc70ca2e2116a0a0eeb0e247a9111b6741715c8c",
+          "order-3/libdeflate/result.json": "ea796496620e08e3e1ee7aca7232a6cfc1a8199af37633d080c42513cdd5b571",
+          "order-3/roc/result.json": "58b3f6d842482f423190779ed225345332114dd80387056bc59e6bcdaeec0566",
+          "order-3/mech-narrow-packet-eight/result.json": "1520a554e811adb958c3e8d7319b097059a1cfd6f1b2cbd663bbd8b1b40e768a",
+          "order-4/mech-scorer-packet/result.json": "4e455ed3caf2cb7bed891b7b80a9f82e8c14d8c40732fdee36520c53318dc01f",
+          "order-4/mech-narrow-once/result.json": "ec2ae287b7811f010e61e00ed3872fc0809199eb085d2e5c6ee5e841b79c3559",
+          "order-4/mech-phase-registers/result.json": "72c33ab125aa883710baa851aa90ac473f9f876784d2928560a32d96cb1379ad",
+          "order-4/mech-narrow-packet-once/result.json": "f51de136721674d213076607267c022392ffe39cc3684cd53def69b7e7c3a520",
+          "order-4/mech-selected63/result.json": "ac3ef6d103fd8b4b85835feb4f040c3bc8c027ca8e657a131e674142caa538e3",
+          "order-4/mech-narrow-eight/result.json": "e672b69bee11149f80ac9444102888646e1fe2c971c1a08b171cb078f9257444",
+          "order-4/libdeflate/result.json": "9665213bf7f529e1e643f6c5e319e5db10586507db7b49b19e458f3c8c3b4ec2",
+          "order-4/roc/result.json": "ada4b26b1eda95f4b812fb2e23df23bced7edb993a7a2969d9333cd3cee13697",
+          "order-4/mech-narrow-packet-eight/result.json": "25c13ac794f652756e697363b0e730c98db14e6a65413e2d9a1ac54a129ce6a8",
+          "order-18/mech-scorer-packet/result.json": "2bcdccee754d16760999e89f3c3098e40a01a26a509dc5694fc3a1de6fd55551",
+          "order-18/mech-narrow-once/result.json": "f85163f0f4e8f1d361e916f3f55b340c36cd6b05e1eb4e83be461c1de3f0df4e",
+          "order-18/mech-phase-registers/result.json": "3e79fe3c3dd8f70563786689dbf60e573fe646f007309b4792077f4b97e5a28e",
+          "order-18/mech-narrow-packet-once/result.json": "d7ee420ebdd0fefae9c117f38d2cd1fdb1a7eeb1f4128232f033d4783898a689",
+          "order-18/mech-selected63/result.json": "413ede7f142f413bcde3782aa2e585ed99be03c79616874308f809c57b076d7e",
+          "order-18/mech-narrow-eight/result.json": "3e4a9d3aa563463b9bc7f0a094203c05725210c34d67fe8d5c0da9f388b37712",
+          "order-18/libdeflate/result.json": "608f4a9b3037673efd41dc2d9872a4fd98edfa8da85b993ef54dfccc5e3261ad",
+          "order-18/roc/result.json": "9fe964d6733b512a0fd9774ce2a4f4a743a7ea1c7e216456a1f765bac32771f3",
+          "order-18/mech-narrow-packet-eight/result.json": "5502d69e954b4e9fbce50453c2e51774788a2d97611f9abb30bcc196043d0ee2",
+          "order-11/mech-scorer-packet/result.json": "12820f65727f84742c6e1123e409560a5c9792bb0d8618d6a34fffde4a40d201",
+          "order-11/mech-narrow-once/result.json": "a9631193d5bca32b4f25006de89745180e2f225de8ab0f0e4e84283bff22d49f",
+          "order-11/mech-phase-registers/result.json": "649169d2127576363cea5c73274621a9fe585c6b88abfcc2d57aaa9d5cd9c845",
+          "order-11/mech-narrow-packet-once/result.json": "6be4d71fcb5009c46bf494f30ef5fd5f45ad4ff2958f355f8992e8198c8925c7",
+          "order-11/mech-selected63/result.json": "43234126b1823116250ee3b17126e88193e884e2edf378a5a063d126fda88e67",
+          "order-11/mech-narrow-eight/result.json": "463bf77f4e51837c9d8df57e85678054a71ab77b8e720f8d649103382b49c5fd",
+          "order-11/libdeflate/result.json": "3fbc41356f20b24403a1b35123f3972bbe0534c14e451d71b9c5e80e032662ff",
+          "order-11/roc/result.json": "f4847eb14fed64bd333dbcf3bd6b6993e413d3ee094dbdd68ce543ca23da7d79",
+          "order-11/mech-narrow-packet-eight/result.json": "9b36b8b1052e6f90c56f6c1c53c93c733cbb75271dcd0412facfa8a573ab03d0",
+          "order-16/mech-scorer-packet/result.json": "12d694432d9baf993e9a195a66d57b850f8e3948019f0331de6f797e30c63ade",
+          "order-16/mech-narrow-once/result.json": "c25e5be56d7830f74c9a8f3a3ba23f6597a6b4bcc2154fd756d232dee1bf061f",
+          "order-16/mech-phase-registers/result.json": "184ed0452bb844d3a63e7e13dd081b65f1b24dc3ca9ffb92665454df163e1fa9",
+          "order-16/mech-narrow-packet-once/result.json": "17b219f7bc087203ff2cb56d991cab5230a067a37fec73eb9658c3266f59cf6b",
+          "order-16/mech-selected63/result.json": "bea050e18a440e4d0c942593a0c2a5dd7581bdf7713826748969f744887e2a08",
+          "order-16/mech-narrow-eight/result.json": "df6fee08b1c3a6f2a418db3b6830bb2f6bfc2c1a4e1398d7c49a3a1dee70e6da",
+          "order-16/libdeflate/result.json": "9134f6a45196d385e6e5bf91a99f9403a839557d391728ef963456728ce867c7",
+          "order-16/roc/result.json": "6f6be41d2152322aa55c3b252427b0a88a9c71454b26368809a790031d3eadaa",
+          "order-16/mech-narrow-packet-eight/result.json": "5a89b20c7afb011d16203b71a96b4b80bd52276903b5826ccc5a2626cb750006",
+          "order-17/mech-scorer-packet/result.json": "9908c74700eeac3a99628079b0ee920255f374f0b79ec44909428c20b0170540",
+          "order-17/mech-narrow-once/result.json": "a59dd9ca1f3240097f33c576a34f7fe2a7d722a3d268b7f56699e9702568a71d",
+          "order-17/mech-phase-registers/result.json": "a90f9e86bfdd588889bb2944d2c001e2138a5c85593de9b131279e6acfe3d745",
+          "order-17/mech-narrow-packet-once/result.json": "42da4cf2c68f859b88065e31bb35cd0f54518978c1bd9b5bfdf03d56b1c1592a",
+          "order-17/mech-selected63/result.json": "057d8c74bfc6320687c6ad025250b2775ca6317ff13332e0da4b32ef52071297",
+          "order-17/mech-narrow-eight/result.json": "286c5e000ffef88b582f7258356c0dcebfd22b00f111462445306477764aebc0",
+          "order-17/libdeflate/result.json": "17cdacd7a96ab8102f1633f2c0b56e070860eb7a0cd980a007e1314ed2babddb",
+          "order-17/roc/result.json": "3d5273740bf080d6d54384b60def5d432b9e53aef05313c45911cd361de0ca27",
+          "order-17/mech-narrow-packet-eight/result.json": "bd7b98f60ba46e15b2d1ecbbb2e3c1d4796be2b48b29f40962e4741238630400",
+          "order-10/mech-scorer-packet/result.json": "d3276c86c7bf571ec3b5fad31d64bb99c18237d732ad0beb7896dcbee0cd128e",
+          "order-10/mech-narrow-once/result.json": "6ce43779bacc1847591767fb25c503cc0786d3a37f48ec7d02940f0025804db4",
+          "order-10/mech-phase-registers/result.json": "8425614d9ac5bfeebc7f4926e509b416fc27416b0c98da463e5d2a1d98579f0f",
+          "order-10/mech-narrow-packet-once/result.json": "86d110106c630938b97a06e2598d765d7a32cfdfe5f5638caca9c79d5dae3f6d",
+          "order-10/mech-selected63/result.json": "6e9e962f9a78c03b137f654e623c74908310a5d062d360a63bff0c7c806b30ef",
+          "order-10/mech-narrow-eight/result.json": "aeca2813ea99cd180d11907d288c16c5c3453d66beb68eee59c38ae1d21405aa",
+          "order-10/libdeflate/result.json": "98909d72f81835815f6e48381bf534dec9cad3fda4134688a21c976d97430264",
+          "order-10/roc/result.json": "2fdc8aebfc9946503a2cb229f860f360cab3dd9e241cb57e161f1f8bffb25294",
+          "order-10/mech-narrow-packet-eight/result.json": "d48fd1e2585133fc611a589e63076ccfa187e2307168c87e462985e0775fa076",
+          "order-1/mech-scorer-packet/result.json": "b920cca3052022c7ae0ab8fe20b7f281ab43718fd562794349a235b0e9b0b677",
+          "order-1/mech-narrow-once/result.json": "cee0a03f788710ea063cd50d515a81ca1737facf2df023a48533866055cc5981",
+          "order-1/mech-phase-registers/result.json": "bbbdfb5e7c3dcd09c924de30cccd5d746e6daca6512540965a34005f2388b326",
+          "order-1/mech-narrow-packet-once/result.json": "2c9f2160ebc240d8504525cb1d657fd5d7bed65ead88cd87663448fd8b6dd260",
+          "order-1/mech-selected63/result.json": "9363d7ef13f23b94161339ec08fbb8141fb5b2e36930da32e5a906191b69a600",
+          "order-1/mech-narrow-eight/result.json": "839e1388d4934c8805a327e4bd86abbe2fadd19c707f55810f336d6b9b3dd4b4",
+          "order-1/libdeflate/result.json": "98436dda12d0e991c71c13e663108fa86285dce5044b403786a77abc637d19f7",
+          "order-1/roc/result.json": "d86051f7663421bf4d0220ab20236f43ed4413367b71e55f9c567a72c03b4fe0",
+          "order-1/mech-narrow-packet-eight/result.json": "eab651abc56a47ab74ffb3177157b30e38f4831beae829a76f3fb9450e4c412c",
+          "order-6/mech-scorer-packet/result.json": "3666f6b941b545c0231beeca20e006c694ee3c38a59e978db924a1b6633f360e",
+          "order-6/mech-narrow-once/result.json": "22c9afedeb723ba723d4a1313706f76a5a51bf67241c55896d85716c4ca9f3be",
+          "order-6/mech-phase-registers/result.json": "b4de770d244ca654ddd73e41a43f4b8be76cfe8acc1c60204f3806dcc093877a",
+          "order-6/mech-narrow-packet-once/result.json": "a92f0c26afe65b593e40261ae626861ece832cafd1b91cc64b786154a21bdff4",
+          "order-6/mech-selected63/result.json": "9e545bcbdfced18ec4fe1fc6d462618a6d066c9a9f89cdea0f37646316968d95",
+          "order-6/mech-narrow-eight/result.json": "9154363719de378f4ebed211babb040ab5736fed6f402c76c530ea9aeb7b7aef",
+          "order-6/libdeflate/result.json": "f95d25e56f400fc7037dcc9351b90f6dfcb8fbeb41f135e81acf1971842e386d",
+          "order-6/roc/result.json": "8dc70ba35b20c531112b52b2ac235ad0ab2c42e82826c7388d7945894d52069d",
+          "order-6/mech-narrow-packet-eight/result.json": "0aa4f35415f44410f85001dfcf6a7cb49b323ac0610dbbdeb31c94de025ed9f7",
+          "order-8/mech-scorer-packet/result.json": "41a65a3cbd813855b67b5cb56b4e3e64845ab62504dbd77f98785c93162192e3",
+          "order-8/mech-narrow-once/result.json": "786d47bc195f5dc7ff6514a22fadcc258e7ef3adb269678cbbe3ebafd122b827",
+          "order-8/mech-phase-registers/result.json": "f71eddd284ba65aa7d38d244f72d2cf35fe49a61b198ddf47ba0c1d58f39a792",
+          "order-8/mech-narrow-packet-once/result.json": "e2b045cc297058dc19a5309b7faf3744a204fd218f8c04a33f0ba3446a7ffdc4",
+          "order-8/mech-selected63/result.json": "a60c2cb20ac3602d425afcab2f055aebb7314877a679d68a17442252eaa16fa2",
+          "order-8/mech-narrow-eight/result.json": "d1864e50892673203a5cec4e7d7b8e335659c780bb3532ae8412ed46b4eb5332",
+          "order-8/libdeflate/result.json": "8b8791f4cadbe80f721dea77c959b299b7515b4867b016d2e5485a76e1373f9d",
+          "order-8/roc/result.json": "5380908bff185dd8b43de7dfec7ae04a923a1de4ca71e8e3687f85a4f6e6881c",
+          "order-8/mech-narrow-packet-eight/result.json": "1115a9a92f49a9a467d39722bbd292046393565b0bcdee1fa5147b11440cd29f",
+          "order-9/mech-scorer-packet/result.json": "51fa6ba79baac868fae85b821dbe1023d4d56db902ed914ec6191d732f6d9e75",
+          "order-9/mech-narrow-once/result.json": "f0b1cedc2684f0af6cda7a8887f1899d06c804272ea646d4b4f64694cea12ef7",
+          "order-9/mech-phase-registers/result.json": "a9b27646a3ae467c7d7a73792bbd7d154c056ab5c5dd51e63d9859f2648639e1",
+          "order-9/mech-narrow-packet-once/result.json": "7c50f3407346e0bb579521bc63bd9ba9593a09a01132a9a5036e77cbf515ab9c",
+          "order-9/mech-selected63/result.json": "5bb2575c6919bde46c5403932e4c7613a3d596eec039e90e826f492c4ca3b0b4",
+          "order-9/mech-narrow-eight/result.json": "bae544cd3a5c7fbaf361d5ecc6d33491281669e44b7c0a15f79e467beae49c4c",
+          "order-9/libdeflate/result.json": "d05f667a5672f2559f46b187d686d3bfbce9329a0ccddc1d34e652577fbd4ce6",
+          "order-9/roc/result.json": "be1340090dd9773d3d6db02c50340b67e13607ec980ea6212f2fafaba73ae70c",
+          "order-9/mech-narrow-packet-eight/result.json": "855eb223d96ced0e8235d5173d586a0bfc999b2ab3cbb08642f96757b708ffc6",
+          "order-7/mech-scorer-packet/result.json": "9096714cd8a9f8789885aa27b263e8bffca0376011750cbb900933ea4c4cb990",
+          "order-7/mech-narrow-once/result.json": "22f06c473f8e14545dcd2f35fd024ebc7f1dcb87362f2b5fcf318596f724ada0",
+          "order-7/mech-phase-registers/result.json": "56a595a8f32b60e9df4bd64b8bf6da1d3e905d3103d233f36c0ebad3d83f856a",
+          "order-7/mech-narrow-packet-once/result.json": "595819ebde0e6ea85b9cb50ad8d8ba287135faef401e930441b80d870445b3be",
+          "order-7/mech-selected63/result.json": "8b3450ddd13bf587076225a6cfb961adf1862d72abb7073a401a72679e5a0c20",
+          "order-7/mech-narrow-eight/result.json": "1f0aa864a886bc4ab6c0e86ec526b2a5f47b645619edfcf3294f70c3bbea8c09",
+          "order-7/libdeflate/result.json": "2f17bbb9d9f069860d9b723f7e6341fb661fd0d529ee9a530a6ad1c2dcf86f5c",
+          "order-7/roc/result.json": "946e58af03a194960dd6007384291d449612b95c69869ae1c03a16e6a5b497cd",
+          "order-7/mech-narrow-packet-eight/result.json": "8e87a87087f161444b862e01ca1fd68171a3400276e8c1df15625f70e599dfe8",
+          "order-15/mech-scorer-packet/result.json": "eea446d03db7745f2d58be4b7347f864667f4c002f7b9ac1c1c6c2fd02eb6dd6",
+          "order-15/mech-narrow-once/result.json": "e230c9f043be5a532ae7c3f77e03f4209d364163d12241c3f495c8a1b3edab7c",
+          "order-15/mech-phase-registers/result.json": "b17dcc0fa95479b507d0dc41c0d2cd3e8b4bf96f2b589bb51f6536b9eb8c692a",
+          "order-15/mech-narrow-packet-once/result.json": "cae736729a5fdd315ca1809ad754f49f1d7145df076850f94dcf3de189558799",
+          "order-15/mech-selected63/result.json": "ac0f364afd296120f0dc41241a31998a17bde0d82b5a551e813e9de21ad09a5c",
+          "order-15/mech-narrow-eight/result.json": "f3916213678d65c2f67e39fc6995f60eb573a93ff18086f6600e80f6e3912c80",
+          "order-15/libdeflate/result.json": "96d3716cf247693091d996ea61e0345195f0b69da3fd2c9d268290bc3fe3d658",
+          "order-15/roc/result.json": "ed63efce41ef6602fbdb6dba603212e7b688cd4d9ee442aa23f830bf532742d2",
+          "order-15/mech-narrow-packet-eight/result.json": "fd48adbae18e168a07d291fc0e1adea69fe1bda5a9ba1d4f6a6dffd24159565a",
+          "order-12/mech-scorer-packet/result.json": "4345a1dac6c17ea415a30966640ae1f9e2757715e15a4b3c0249b8a983107e88",
+          "order-12/mech-narrow-once/result.json": "9502512de28f5d1edb313ff54d32663ac4331beb2e11e0dbbba23f8a75182373",
+          "order-12/mech-phase-registers/result.json": "2048c00847a295a9c9d06f21b570a636b746e3b82390c51bcd12cf8fc099b9a1",
+          "order-12/mech-narrow-packet-once/result.json": "126168c1be6bba14ff4b3da05100eb58b0194520461381c17efdc96656bae272",
+          "order-12/mech-selected63/result.json": "4bf3e1dde337e72aafb6f12135987ffefae43b9264e39c78f6c62216f3f56b63",
+          "order-12/mech-narrow-eight/result.json": "6f8af2a5c6ccc54f21dc469ab1f40ca43cdddced7762408cfee4e94682779f73",
+          "order-12/libdeflate/result.json": "b60530bfdf55d7a5f0b7c62883260c111d69308eb9f25ce13d644efff41a4b67",
+          "order-12/roc/result.json": "8b94bd6f2ee8b567e11bdaa4536acc1c946e7c9ecb9a8909e062a6c503b3edc8",
+          "order-12/mech-narrow-packet-eight/result.json": "fdceb5d95aa091a6f84c146c12cafdaf0dd5fd58de41e2ae96308c1f165218fb",
+          "warmup/mech-scorer-packet/result.json": "a1b2ec0e08512f15bb3cf5c5befc77e0b346231f38f2883e1a30f0602361362e",
+          "warmup/mech-narrow-once/result.json": "2262c43dea12615a8d54ba7ed0d0b1965041c6f32d7950482f9fc747d9088e8f",
+          "warmup/mech-phase-registers/result.json": "8a23675bee8b67116775f7354c9c17dbd25b20629c09f881b4636651038f87ea",
+          "warmup/mech-narrow-packet-once/result.json": "61dc7a15e1a9c67ee2181bfa2e5337559d8dd56b9e0be3c62812e31448460f66",
+          "warmup/mech-selected63/result.json": "cfcd5f531cf0aeaae20a069cebd4e6fb5a9e0dbc1a29be6fbd98121a5385de0b",
+          "warmup/mech-narrow-eight/result.json": "fd832fed6f53d04f2e98e08cfe3bf6aef20243dd169f37c2a189ab3424fb60df",
+          "warmup/libdeflate/result.json": "9e8d74eaa663aa075dcd721f1450c41dc017ceb91b6340f9cde56596d8529bce",
+          "warmup/roc/result.json": "d9b634371c0803fca6602775189574b69aa194d6186d552589c3b40eadca4949",
+          "warmup/mech-narrow-packet-eight/result.json": "035dc805343e012a4e19c8e00400c53684f88fc23b5f96b47352aa9e927b9c1c",
+          "order-13/mech-scorer-packet/result.json": "c89272e4ed1d17893b3386f3143f58b938e88f10c1ed81301bbfeb6377b008d9",
+          "order-13/mech-narrow-once/result.json": "82a8a5c24d1f2876a362ba09f31d4c4714ddcce9d3a794a6a8b90080d4006428",
+          "order-13/mech-phase-registers/result.json": "f19b2d2a578a44e603ea2033a26f718b2effb09f2cb02b96f408cff00ea2ecc6",
+          "order-13/mech-narrow-packet-once/result.json": "effbe695c02bfe943be4a108de6f2948f0a5573abc730031ac5e5fca1283579b",
+          "order-13/mech-selected63/result.json": "7fbdcb1a7239fc2a63cff147c1546253c12777be0f8097cd817cdb0f6dcaebd4",
+          "order-13/mech-narrow-eight/result.json": "0613292720f466addac4e531ef14eb039321758138102c73cda652213ee3ca6f",
+          "order-13/libdeflate/result.json": "b34d50108ef7ffae4077ba6f315154f26cdc224a44f82ece902a80148be3add2",
+          "order-13/roc/result.json": "b2a89841eb9a1bf5194d05027914522fca2982512af672c8ff5f84c301551632",
+          "order-13/mech-narrow-packet-eight/result.json": "00c7b8d95fbc68da66e5c9e124cfb32b2aee8c1434bb2c8f9aea73a009ed097b",
+          "order-14/mech-scorer-packet/result.json": "369ff9dceb3dea81d2dfd185ea6e58f710f333fb27573b3fbd705a313847e0bf",
+          "order-14/mech-narrow-once/result.json": "34027946f487d541cdfb3f021c4fd74bbe28668ef717a28719b1a4e478dcc4c8",
+          "order-14/mech-phase-registers/result.json": "e56cacf08547ef82c5f7392400c97e1f4e94f88dad125ee7a22867849b838362",
+          "order-14/mech-narrow-packet-once/result.json": "0b44519685029a636f28bfa27c8fb5022f9009633ca2977f58177297cb7395be",
+          "order-14/mech-selected63/result.json": "2b3460bb1d908473b66e6778bcf72c53e1fb4b00ff0736cc1ecb7a19b5debb1b",
+          "order-14/mech-narrow-eight/result.json": "4c462e943997cbe8efeea99cc93eed20da43bded449a5642132d132921f026ff",
+          "order-14/libdeflate/result.json": "db710e4e02759708b7f53c904c0797bb6c36252dab62b9e80c9e857d7bb2d9eb",
+          "order-14/roc/result.json": "de6744ea5177f5554d8934ab68ec98f08c4fbe9c0d544434273a7c68fc10f014",
+          "order-14/mech-narrow-packet-eight/result.json": "0444fcb69ec5b405ddad3fc91d0c2759b4b2bcd35931f903feda2c3f9cf3d9fb"
+        }
+      },
+      "scope": "18 balanced serial fresh-process source-through-final-executable-link trials per actor; all compilers and fixed support prebuilt equally. Every generated artifact checked. Strip and compiler bootstrap separate. Reporting label repaired from original saved records after acquisition; no measurements rerun."
     },
-    "evidence": "evidence/encoder-size-gap/packed-eight-entry-study/README.md"
+    "evidence": "evidence/encoder-size-gap/packed-word-repair-study"
   },
   "ordinary_integration": {
     "optimized_path": "explicit diagnostic compact entry",
@@ -7394,7 +7662,350 @@
     "checked_chain_estimated_recomputation_seconds": 0.0032,
     "next": "Exact-choice body planning and one further omitted-body investigation"
   },
-  "current_matched_build": "working_selection.build",
+  "current_matched_build": {
+    "plan_sha256": "b2ea2b124e08c25062a64d35239b32a01748c246227724eee12b9d0909a20bb5",
+    "medians": {
+      "mech-selected63": {
+        "source": 2.1877377082128078,
+        "link": 0.035614687483757734,
+        "source_through_link": 2.2252674794290215,
+        "strip": 0.01073535461910069,
+        "source_through_strip": 2.236197999911383
+      },
+      "mech-phase-registers": {
+        "source": 2.1867613333743066,
+        "link": 0.03492518770508468,
+        "source_through_link": 2.221799875376746,
+        "strip": 0.01070302096195519,
+        "source_through_strip": 2.2326708752661943
+      },
+      "mech-scorer-packet": {
+        "source": 2.1876253329683095,
+        "link": 0.03561791614629328,
+        "source_through_link": 2.2245765833649784,
+        "strip": 0.010710979346185923,
+        "source_through_strip": 2.2356263960245997
+      },
+      "mech-narrow-eight": {
+        "source": 2.1881680625956506,
+        "link": 0.03549762489274144,
+        "source_through_link": 2.2244762706104666,
+        "strip": 0.010719916550442576,
+        "source_through_strip": 2.235474854009226
+      },
+      "mech-narrow-packet-eight": {
+        "source": 2.187462167115882,
+        "link": 0.03513060347177088,
+        "source_through_link": 2.2224728539586067,
+        "strip": 0.010742166545242071,
+        "source_through_strip": 2.2335623330436647
+      },
+      "mech-narrow-once": {
+        "source": 2.1872192083392292,
+        "link": 0.035219999961555004,
+        "source_through_link": 2.223769812611863,
+        "strip": 0.010778500000014901,
+        "source_through_strip": 2.2347461879253387
+      },
+      "mech-narrow-packet-once": {
+        "source": 2.1878670209553093,
+        "link": 0.03506818739697337,
+        "source_through_link": 2.2237263745628297,
+        "strip": 0.010736374882981181,
+        "source_through_strip": 2.2346497499383986
+      },
+      "roc": {
+        "source": 2.9691498749889433,
+        "link": 0.034834375604987144,
+        "source_through_link": 3.0051220620516688,
+        "strip": 0.010692645562812686,
+        "source_through_strip": 3.01640991657041
+      },
+      "libdeflate": {
+        "source": 0.45598868769593537,
+        "link": 0.03424260439351201,
+        "source_through_link": 0.49029758339747787,
+        "strip": 0.010669958544895053,
+        "source_through_strip": 0.5010998120997101
+      }
+    },
+    "paired_ratios": {
+      "mech-selected63": {
+        "roc": 0.7406685409413305,
+        "libdeflate": 4.537533248773869,
+        "mech-selected63": 1.0
+      },
+      "mech-phase-registers": {
+        "roc": 0.7395860219113496,
+        "libdeflate": 4.532582550379729,
+        "mech-selected63": 0.9992971982552387
+      },
+      "mech-scorer-packet": {
+        "roc": 0.7426134531216093,
+        "libdeflate": 4.549906712485752,
+        "mech-selected63": 1.0005550054207117
+      },
+      "mech-narrow-eight": {
+        "roc": 0.7406143459978429,
+        "libdeflate": 4.5314828321292975,
+        "mech-selected63": 0.9980668325737158
+      },
+      "mech-narrow-packet-eight": {
+        "roc": 0.7426237398392022,
+        "libdeflate": 4.5383311279154785,
+        "mech-selected63": 0.9985950582100742
+      },
+      "mech-narrow-once": {
+        "roc": 0.7399956240362822,
+        "libdeflate": 4.535373829467823,
+        "mech-selected63": 0.9980205245272677
+      },
+      "mech-narrow-packet-once": {
+        "roc": 0.7418279107046813,
+        "libdeflate": 4.532882702078966,
+        "mech-selected63": 0.999259564038113
+      }
+    },
+    "phases": {
+      "mech-selected63": {
+        "parse": 0.702723396,
+        "catalog": 2.10415e-05,
+        "frontend": 0.2179343745,
+        "artifact": 0.0068200625,
+        "encode": 0.0025382085,
+        "native": 1.2294584375
+      },
+      "mech-phase-registers": {
+        "parse": 0.702254521,
+        "catalog": 1.9520999999999998e-05,
+        "frontend": 0.21739302100000002,
+        "artifact": 0.0068115204999999995,
+        "encode": 0.0025317085,
+        "native": 1.2290115835000002
+      },
+      "mech-scorer-packet": {
+        "parse": 0.7027292709999999,
+        "catalog": 2.05205e-05,
+        "frontend": 0.218234396,
+        "artifact": 0.006822042,
+        "encode": 0.002527896,
+        "native": 1.2294052705
+      },
+      "mech-narrow-eight": {
+        "parse": 0.7028402715,
+        "catalog": 1.9604e-05,
+        "frontend": 0.2176216255,
+        "artifact": 0.0068301874999999995,
+        "encode": 0.0025238745,
+        "native": 1.2291518125
+      },
+      "mech-narrow-packet-eight": {
+        "parse": 0.7026702709999999,
+        "catalog": 2.1104e-05,
+        "frontend": 0.2177964165,
+        "artifact": 0.00682275,
+        "encode": 0.0025276045,
+        "native": 1.23011475
+      },
+      "mech-narrow-once": {
+        "parse": 0.7023078745,
+        "catalog": 2.0916500000000002e-05,
+        "frontend": 0.2173875,
+        "artifact": 0.0068319999999999995,
+        "encode": 0.0025275834999999996,
+        "native": 1.230413854
+      },
+      "mech-narrow-packet-once": {
+        "parse": 0.7028404585,
+        "catalog": 1.9479500000000002e-05,
+        "frontend": 0.217865896,
+        "artifact": 0.0068029375,
+        "encode": 0.0025350414999999998,
+        "native": 1.2298128955
+      }
+    },
+    "trials": 18,
+    "source_commit": "9b1460933a88837bfd688344c312081b441666cd",
+    "post_measurement_report_repair": {
+      "reason": "Post-measurement reporting expected mech-control-reference, but the actual named control is mech-selected63. All18 ordered trials and warmup completed before that KeyError. Reconstruct medians/ratios/phases from original saved actor result.json files; no clocks rerun or observations changed.",
+      "driver_log_sha256": "2bfd8c8ec3e087e673491108b2d033f360773143103a3856ce4882f5ff484278",
+      "replay_script_sha256": "1ba9dee1be19dec0a266ae4dda4c8d497ae0000b741b44ff463415b24aa64bab",
+      "measurement_records": {
+        "order-5/mech-scorer-packet/result.json": "0ae499c2924d77f8defaf9ecb36a85a225326d58266e24fc028aa147f78945f3",
+        "order-5/mech-narrow-once/result.json": "6d4f18ac0b46fdc45d6e3a553a3a77d605dcdc73ad0172fb7990e56f5997b2ab",
+        "order-5/mech-phase-registers/result.json": "e2d124c829f5e74c966133c4c78d9b5703163bdf9f7e11c9891b072ae2d63af6",
+        "order-5/mech-narrow-packet-once/result.json": "f71242b8195723212a18d80322d5d8ffd9760ccfd902344fa1ccc99fe752f84e",
+        "order-5/mech-selected63/result.json": "025d9f12b73975fef20026fc2f3a6facfa1db86411279d985cfa9134b1da0450",
+        "order-5/mech-narrow-eight/result.json": "b5ddbf811621691dc7f7d89a303e0eb10d6c84e3f0b7095cb0aeeccf522ca6eb",
+        "order-5/libdeflate/result.json": "6f96f058bfafc892b13f0d69aa55c42c427ead1ef106a90339bba8332e4fdbb9",
+        "order-5/roc/result.json": "f85fdfe1c29ae889090dce1764b046d6db6f0ad9158e8c46b22fd59923db2145",
+        "order-5/mech-narrow-packet-eight/result.json": "0c1f442fb2dfea5dac71b0ef6b518066233a76bea2cb513c83907590e82f7ef0",
+        "order-2/mech-scorer-packet/result.json": "9b5c935cf739fb53ffe75539205ba48799796c7be903d36ff8247f057dfbc3ca",
+        "order-2/mech-narrow-once/result.json": "7568ee382e73d232ec00aba8192aa97686dce54f01f5a79700b53ffce70ebf92",
+        "order-2/mech-phase-registers/result.json": "f8bff500866364091f5bcbfbe28321c63a454d6ef28ac010841021def3ce8c9c",
+        "order-2/mech-narrow-packet-once/result.json": "fa52c1489f5c299b464455b8b3325d0bbadf078bba6df6907e78ffa240603d74",
+        "order-2/mech-selected63/result.json": "927176f69b37a7f4397f9684ae0f5b2b519aacbd8aecd0439034308acba3f139",
+        "order-2/mech-narrow-eight/result.json": "a96d25d367acee88b5d84eaff08baefe14feec69fac2905f1208b25919d19c16",
+        "order-2/libdeflate/result.json": "aad7cb57646b84f1e6dc704c2cfeb368538318fd172749bea0058af59749c897",
+        "order-2/roc/result.json": "cacedd9b47d618109b5dec12aeb2579a2e5c13a1cce91078718d94b39117b289",
+        "order-2/mech-narrow-packet-eight/result.json": "6cc179bdfd11f3a4695fbe3dedee96b4b392b0c89ca1e86504d371d5f05cfac6",
+        "order-3/mech-scorer-packet/result.json": "a4120d95838e568319d93e3e3348f4c1b90ea9e8f9d0c3e481f81a3ab7e98544",
+        "order-3/mech-narrow-once/result.json": "7efcd02fb3e0431c05b700675ce6f899986e6363ff6073e10cdf35ebbdbc9c4d",
+        "order-3/mech-phase-registers/result.json": "b2e242160cb847d03e9fb66b79486803746d079c8b000063473f03cf0be769db",
+        "order-3/mech-narrow-packet-once/result.json": "054a752c9e4d02606a438b49eefb91c2b4c8e64ef33592ada1768087cc07ca36",
+        "order-3/mech-selected63/result.json": "a1cc723fe49921eab3d9853af95701943d7fc90ee2022ffa145e95fd3269a43c",
+        "order-3/mech-narrow-eight/result.json": "c79c1acc37f6d9ae5207ee7dcc70ca2e2116a0a0eeb0e247a9111b6741715c8c",
+        "order-3/libdeflate/result.json": "ea796496620e08e3e1ee7aca7232a6cfc1a8199af37633d080c42513cdd5b571",
+        "order-3/roc/result.json": "58b3f6d842482f423190779ed225345332114dd80387056bc59e6bcdaeec0566",
+        "order-3/mech-narrow-packet-eight/result.json": "1520a554e811adb958c3e8d7319b097059a1cfd6f1b2cbd663bbd8b1b40e768a",
+        "order-4/mech-scorer-packet/result.json": "4e455ed3caf2cb7bed891b7b80a9f82e8c14d8c40732fdee36520c53318dc01f",
+        "order-4/mech-narrow-once/result.json": "ec2ae287b7811f010e61e00ed3872fc0809199eb085d2e5c6ee5e841b79c3559",
+        "order-4/mech-phase-registers/result.json": "72c33ab125aa883710baa851aa90ac473f9f876784d2928560a32d96cb1379ad",
+        "order-4/mech-narrow-packet-once/result.json": "f51de136721674d213076607267c022392ffe39cc3684cd53def69b7e7c3a520",
+        "order-4/mech-selected63/result.json": "ac3ef6d103fd8b4b85835feb4f040c3bc8c027ca8e657a131e674142caa538e3",
+        "order-4/mech-narrow-eight/result.json": "e672b69bee11149f80ac9444102888646e1fe2c971c1a08b171cb078f9257444",
+        "order-4/libdeflate/result.json": "9665213bf7f529e1e643f6c5e319e5db10586507db7b49b19e458f3c8c3b4ec2",
+        "order-4/roc/result.json": "ada4b26b1eda95f4b812fb2e23df23bced7edb993a7a2969d9333cd3cee13697",
+        "order-4/mech-narrow-packet-eight/result.json": "25c13ac794f652756e697363b0e730c98db14e6a65413e2d9a1ac54a129ce6a8",
+        "order-18/mech-scorer-packet/result.json": "2bcdccee754d16760999e89f3c3098e40a01a26a509dc5694fc3a1de6fd55551",
+        "order-18/mech-narrow-once/result.json": "f85163f0f4e8f1d361e916f3f55b340c36cd6b05e1eb4e83be461c1de3f0df4e",
+        "order-18/mech-phase-registers/result.json": "3e79fe3c3dd8f70563786689dbf60e573fe646f007309b4792077f4b97e5a28e",
+        "order-18/mech-narrow-packet-once/result.json": "d7ee420ebdd0fefae9c117f38d2cd1fdb1a7eeb1f4128232f033d4783898a689",
+        "order-18/mech-selected63/result.json": "413ede7f142f413bcde3782aa2e585ed99be03c79616874308f809c57b076d7e",
+        "order-18/mech-narrow-eight/result.json": "3e4a9d3aa563463b9bc7f0a094203c05725210c34d67fe8d5c0da9f388b37712",
+        "order-18/libdeflate/result.json": "608f4a9b3037673efd41dc2d9872a4fd98edfa8da85b993ef54dfccc5e3261ad",
+        "order-18/roc/result.json": "9fe964d6733b512a0fd9774ce2a4f4a743a7ea1c7e216456a1f765bac32771f3",
+        "order-18/mech-narrow-packet-eight/result.json": "5502d69e954b4e9fbce50453c2e51774788a2d97611f9abb30bcc196043d0ee2",
+        "order-11/mech-scorer-packet/result.json": "12820f65727f84742c6e1123e409560a5c9792bb0d8618d6a34fffde4a40d201",
+        "order-11/mech-narrow-once/result.json": "a9631193d5bca32b4f25006de89745180e2f225de8ab0f0e4e84283bff22d49f",
+        "order-11/mech-phase-registers/result.json": "649169d2127576363cea5c73274621a9fe585c6b88abfcc2d57aaa9d5cd9c845",
+        "order-11/mech-narrow-packet-once/result.json": "6be4d71fcb5009c46bf494f30ef5fd5f45ad4ff2958f355f8992e8198c8925c7",
+        "order-11/mech-selected63/result.json": "43234126b1823116250ee3b17126e88193e884e2edf378a5a063d126fda88e67",
+        "order-11/mech-narrow-eight/result.json": "463bf77f4e51837c9d8df57e85678054a71ab77b8e720f8d649103382b49c5fd",
+        "order-11/libdeflate/result.json": "3fbc41356f20b24403a1b35123f3972bbe0534c14e451d71b9c5e80e032662ff",
+        "order-11/roc/result.json": "f4847eb14fed64bd333dbcf3bd6b6993e413d3ee094dbdd68ce543ca23da7d79",
+        "order-11/mech-narrow-packet-eight/result.json": "9b36b8b1052e6f90c56f6c1c53c93c733cbb75271dcd0412facfa8a573ab03d0",
+        "order-16/mech-scorer-packet/result.json": "12d694432d9baf993e9a195a66d57b850f8e3948019f0331de6f797e30c63ade",
+        "order-16/mech-narrow-once/result.json": "c25e5be56d7830f74c9a8f3a3ba23f6597a6b4bcc2154fd756d232dee1bf061f",
+        "order-16/mech-phase-registers/result.json": "184ed0452bb844d3a63e7e13dd081b65f1b24dc3ca9ffb92665454df163e1fa9",
+        "order-16/mech-narrow-packet-once/result.json": "17b219f7bc087203ff2cb56d991cab5230a067a37fec73eb9658c3266f59cf6b",
+        "order-16/mech-selected63/result.json": "bea050e18a440e4d0c942593a0c2a5dd7581bdf7713826748969f744887e2a08",
+        "order-16/mech-narrow-eight/result.json": "df6fee08b1c3a6f2a418db3b6830bb2f6bfc2c1a4e1398d7c49a3a1dee70e6da",
+        "order-16/libdeflate/result.json": "9134f6a45196d385e6e5bf91a99f9403a839557d391728ef963456728ce867c7",
+        "order-16/roc/result.json": "6f6be41d2152322aa55c3b252427b0a88a9c71454b26368809a790031d3eadaa",
+        "order-16/mech-narrow-packet-eight/result.json": "5a89b20c7afb011d16203b71a96b4b80bd52276903b5826ccc5a2626cb750006",
+        "order-17/mech-scorer-packet/result.json": "9908c74700eeac3a99628079b0ee920255f374f0b79ec44909428c20b0170540",
+        "order-17/mech-narrow-once/result.json": "a59dd9ca1f3240097f33c576a34f7fe2a7d722a3d268b7f56699e9702568a71d",
+        "order-17/mech-phase-registers/result.json": "a90f9e86bfdd588889bb2944d2c001e2138a5c85593de9b131279e6acfe3d745",
+        "order-17/mech-narrow-packet-once/result.json": "42da4cf2c68f859b88065e31bb35cd0f54518978c1bd9b5bfdf03d56b1c1592a",
+        "order-17/mech-selected63/result.json": "057d8c74bfc6320687c6ad025250b2775ca6317ff13332e0da4b32ef52071297",
+        "order-17/mech-narrow-eight/result.json": "286c5e000ffef88b582f7258356c0dcebfd22b00f111462445306477764aebc0",
+        "order-17/libdeflate/result.json": "17cdacd7a96ab8102f1633f2c0b56e070860eb7a0cd980a007e1314ed2babddb",
+        "order-17/roc/result.json": "3d5273740bf080d6d54384b60def5d432b9e53aef05313c45911cd361de0ca27",
+        "order-17/mech-narrow-packet-eight/result.json": "bd7b98f60ba46e15b2d1ecbbb2e3c1d4796be2b48b29f40962e4741238630400",
+        "order-10/mech-scorer-packet/result.json": "d3276c86c7bf571ec3b5fad31d64bb99c18237d732ad0beb7896dcbee0cd128e",
+        "order-10/mech-narrow-once/result.json": "6ce43779bacc1847591767fb25c503cc0786d3a37f48ec7d02940f0025804db4",
+        "order-10/mech-phase-registers/result.json": "8425614d9ac5bfeebc7f4926e509b416fc27416b0c98da463e5d2a1d98579f0f",
+        "order-10/mech-narrow-packet-once/result.json": "86d110106c630938b97a06e2598d765d7a32cfdfe5f5638caca9c79d5dae3f6d",
+        "order-10/mech-selected63/result.json": "6e9e962f9a78c03b137f654e623c74908310a5d062d360a63bff0c7c806b30ef",
+        "order-10/mech-narrow-eight/result.json": "aeca2813ea99cd180d11907d288c16c5c3453d66beb68eee59c38ae1d21405aa",
+        "order-10/libdeflate/result.json": "98909d72f81835815f6e48381bf534dec9cad3fda4134688a21c976d97430264",
+        "order-10/roc/result.json": "2fdc8aebfc9946503a2cb229f860f360cab3dd9e241cb57e161f1f8bffb25294",
+        "order-10/mech-narrow-packet-eight/result.json": "d48fd1e2585133fc611a589e63076ccfa187e2307168c87e462985e0775fa076",
+        "order-1/mech-scorer-packet/result.json": "b920cca3052022c7ae0ab8fe20b7f281ab43718fd562794349a235b0e9b0b677",
+        "order-1/mech-narrow-once/result.json": "cee0a03f788710ea063cd50d515a81ca1737facf2df023a48533866055cc5981",
+        "order-1/mech-phase-registers/result.json": "bbbdfb5e7c3dcd09c924de30cccd5d746e6daca6512540965a34005f2388b326",
+        "order-1/mech-narrow-packet-once/result.json": "2c9f2160ebc240d8504525cb1d657fd5d7bed65ead88cd87663448fd8b6dd260",
+        "order-1/mech-selected63/result.json": "9363d7ef13f23b94161339ec08fbb8141fb5b2e36930da32e5a906191b69a600",
+        "order-1/mech-narrow-eight/result.json": "839e1388d4934c8805a327e4bd86abbe2fadd19c707f55810f336d6b9b3dd4b4",
+        "order-1/libdeflate/result.json": "98436dda12d0e991c71c13e663108fa86285dce5044b403786a77abc637d19f7",
+        "order-1/roc/result.json": "d86051f7663421bf4d0220ab20236f43ed4413367b71e55f9c567a72c03b4fe0",
+        "order-1/mech-narrow-packet-eight/result.json": "eab651abc56a47ab74ffb3177157b30e38f4831beae829a76f3fb9450e4c412c",
+        "order-6/mech-scorer-packet/result.json": "3666f6b941b545c0231beeca20e006c694ee3c38a59e978db924a1b6633f360e",
+        "order-6/mech-narrow-once/result.json": "22c9afedeb723ba723d4a1313706f76a5a51bf67241c55896d85716c4ca9f3be",
+        "order-6/mech-phase-registers/result.json": "b4de770d244ca654ddd73e41a43f4b8be76cfe8acc1c60204f3806dcc093877a",
+        "order-6/mech-narrow-packet-once/result.json": "a92f0c26afe65b593e40261ae626861ece832cafd1b91cc64b786154a21bdff4",
+        "order-6/mech-selected63/result.json": "9e545bcbdfced18ec4fe1fc6d462618a6d066c9a9f89cdea0f37646316968d95",
+        "order-6/mech-narrow-eight/result.json": "9154363719de378f4ebed211babb040ab5736fed6f402c76c530ea9aeb7b7aef",
+        "order-6/libdeflate/result.json": "f95d25e56f400fc7037dcc9351b90f6dfcb8fbeb41f135e81acf1971842e386d",
+        "order-6/roc/result.json": "8dc70ba35b20c531112b52b2ac235ad0ab2c42e82826c7388d7945894d52069d",
+        "order-6/mech-narrow-packet-eight/result.json": "0aa4f35415f44410f85001dfcf6a7cb49b323ac0610dbbdeb31c94de025ed9f7",
+        "order-8/mech-scorer-packet/result.json": "41a65a3cbd813855b67b5cb56b4e3e64845ab62504dbd77f98785c93162192e3",
+        "order-8/mech-narrow-once/result.json": "786d47bc195f5dc7ff6514a22fadcc258e7ef3adb269678cbbe3ebafd122b827",
+        "order-8/mech-phase-registers/result.json": "f71eddd284ba65aa7d38d244f72d2cf35fe49a61b198ddf47ba0c1d58f39a792",
+        "order-8/mech-narrow-packet-once/result.json": "e2b045cc297058dc19a5309b7faf3744a204fd218f8c04a33f0ba3446a7ffdc4",
+        "order-8/mech-selected63/result.json": "a60c2cb20ac3602d425afcab2f055aebb7314877a679d68a17442252eaa16fa2",
+        "order-8/mech-narrow-eight/result.json": "d1864e50892673203a5cec4e7d7b8e335659c780bb3532ae8412ed46b4eb5332",
+        "order-8/libdeflate/result.json": "8b8791f4cadbe80f721dea77c959b299b7515b4867b016d2e5485a76e1373f9d",
+        "order-8/roc/result.json": "5380908bff185dd8b43de7dfec7ae04a923a1de4ca71e8e3687f85a4f6e6881c",
+        "order-8/mech-narrow-packet-eight/result.json": "1115a9a92f49a9a467d39722bbd292046393565b0bcdee1fa5147b11440cd29f",
+        "order-9/mech-scorer-packet/result.json": "51fa6ba79baac868fae85b821dbe1023d4d56db902ed914ec6191d732f6d9e75",
+        "order-9/mech-narrow-once/result.json": "f0b1cedc2684f0af6cda7a8887f1899d06c804272ea646d4b4f64694cea12ef7",
+        "order-9/mech-phase-registers/result.json": "a9b27646a3ae467c7d7a73792bbd7d154c056ab5c5dd51e63d9859f2648639e1",
+        "order-9/mech-narrow-packet-once/result.json": "7c50f3407346e0bb579521bc63bd9ba9593a09a01132a9a5036e77cbf515ab9c",
+        "order-9/mech-selected63/result.json": "5bb2575c6919bde46c5403932e4c7613a3d596eec039e90e826f492c4ca3b0b4",
+        "order-9/mech-narrow-eight/result.json": "bae544cd3a5c7fbaf361d5ecc6d33491281669e44b7c0a15f79e467beae49c4c",
+        "order-9/libdeflate/result.json": "d05f667a5672f2559f46b187d686d3bfbce9329a0ccddc1d34e652577fbd4ce6",
+        "order-9/roc/result.json": "be1340090dd9773d3d6db02c50340b67e13607ec980ea6212f2fafaba73ae70c",
+        "order-9/mech-narrow-packet-eight/result.json": "855eb223d96ced0e8235d5173d586a0bfc999b2ab3cbb08642f96757b708ffc6",
+        "order-7/mech-scorer-packet/result.json": "9096714cd8a9f8789885aa27b263e8bffca0376011750cbb900933ea4c4cb990",
+        "order-7/mech-narrow-once/result.json": "22f06c473f8e14545dcd2f35fd024ebc7f1dcb87362f2b5fcf318596f724ada0",
+        "order-7/mech-phase-registers/result.json": "56a595a8f32b60e9df4bd64b8bf6da1d3e905d3103d233f36c0ebad3d83f856a",
+        "order-7/mech-narrow-packet-once/result.json": "595819ebde0e6ea85b9cb50ad8d8ba287135faef401e930441b80d870445b3be",
+        "order-7/mech-selected63/result.json": "8b3450ddd13bf587076225a6cfb961adf1862d72abb7073a401a72679e5a0c20",
+        "order-7/mech-narrow-eight/result.json": "1f0aa864a886bc4ab6c0e86ec526b2a5f47b645619edfcf3294f70c3bbea8c09",
+        "order-7/libdeflate/result.json": "2f17bbb9d9f069860d9b723f7e6341fb661fd0d529ee9a530a6ad1c2dcf86f5c",
+        "order-7/roc/result.json": "946e58af03a194960dd6007384291d449612b95c69869ae1c03a16e6a5b497cd",
+        "order-7/mech-narrow-packet-eight/result.json": "8e87a87087f161444b862e01ca1fd68171a3400276e8c1df15625f70e599dfe8",
+        "order-15/mech-scorer-packet/result.json": "eea446d03db7745f2d58be4b7347f864667f4c002f7b9ac1c1c6c2fd02eb6dd6",
+        "order-15/mech-narrow-once/result.json": "e230c9f043be5a532ae7c3f77e03f4209d364163d12241c3f495c8a1b3edab7c",
+        "order-15/mech-phase-registers/result.json": "b17dcc0fa95479b507d0dc41c0d2cd3e8b4bf96f2b589bb51f6536b9eb8c692a",
+        "order-15/mech-narrow-packet-once/result.json": "cae736729a5fdd315ca1809ad754f49f1d7145df076850f94dcf3de189558799",
+        "order-15/mech-selected63/result.json": "ac0f364afd296120f0dc41241a31998a17bde0d82b5a551e813e9de21ad09a5c",
+        "order-15/mech-narrow-eight/result.json": "f3916213678d65c2f67e39fc6995f60eb573a93ff18086f6600e80f6e3912c80",
+        "order-15/libdeflate/result.json": "96d3716cf247693091d996ea61e0345195f0b69da3fd2c9d268290bc3fe3d658",
+        "order-15/roc/result.json": "ed63efce41ef6602fbdb6dba603212e7b688cd4d9ee442aa23f830bf532742d2",
+        "order-15/mech-narrow-packet-eight/result.json": "fd48adbae18e168a07d291fc0e1adea69fe1bda5a9ba1d4f6a6dffd24159565a",
+        "order-12/mech-scorer-packet/result.json": "4345a1dac6c17ea415a30966640ae1f9e2757715e15a4b3c0249b8a983107e88",
+        "order-12/mech-narrow-once/result.json": "9502512de28f5d1edb313ff54d32663ac4331beb2e11e0dbbba23f8a75182373",
+        "order-12/mech-phase-registers/result.json": "2048c00847a295a9c9d06f21b570a636b746e3b82390c51bcd12cf8fc099b9a1",
+        "order-12/mech-narrow-packet-once/result.json": "126168c1be6bba14ff4b3da05100eb58b0194520461381c17efdc96656bae272",
+        "order-12/mech-selected63/result.json": "4bf3e1dde337e72aafb6f12135987ffefae43b9264e39c78f6c62216f3f56b63",
+        "order-12/mech-narrow-eight/result.json": "6f8af2a5c6ccc54f21dc469ab1f40ca43cdddced7762408cfee4e94682779f73",
+        "order-12/libdeflate/result.json": "b60530bfdf55d7a5f0b7c62883260c111d69308eb9f25ce13d644efff41a4b67",
+        "order-12/roc/result.json": "8b94bd6f2ee8b567e11bdaa4536acc1c946e7c9ecb9a8909e062a6c503b3edc8",
+        "order-12/mech-narrow-packet-eight/result.json": "fdceb5d95aa091a6f84c146c12cafdaf0dd5fd58de41e2ae96308c1f165218fb",
+        "warmup/mech-scorer-packet/result.json": "a1b2ec0e08512f15bb3cf5c5befc77e0b346231f38f2883e1a30f0602361362e",
+        "warmup/mech-narrow-once/result.json": "2262c43dea12615a8d54ba7ed0d0b1965041c6f32d7950482f9fc747d9088e8f",
+        "warmup/mech-phase-registers/result.json": "8a23675bee8b67116775f7354c9c17dbd25b20629c09f881b4636651038f87ea",
+        "warmup/mech-narrow-packet-once/result.json": "61dc7a15e1a9c67ee2181bfa2e5337559d8dd56b9e0be3c62812e31448460f66",
+        "warmup/mech-selected63/result.json": "cfcd5f531cf0aeaae20a069cebd4e6fb5a9e0dbc1a29be6fbd98121a5385de0b",
+        "warmup/mech-narrow-eight/result.json": "fd832fed6f53d04f2e98e08cfe3bf6aef20243dd169f37c2a189ab3424fb60df",
+        "warmup/libdeflate/result.json": "9e8d74eaa663aa075dcd721f1450c41dc017ceb91b6340f9cde56596d8529bce",
+        "warmup/roc/result.json": "d9b634371c0803fca6602775189574b69aa194d6186d552589c3b40eadca4949",
+        "warmup/mech-narrow-packet-eight/result.json": "035dc805343e012a4e19c8e00400c53684f88fc23b5f96b47352aa9e927b9c1c",
+        "order-13/mech-scorer-packet/result.json": "c89272e4ed1d17893b3386f3143f58b938e88f10c1ed81301bbfeb6377b008d9",
+        "order-13/mech-narrow-once/result.json": "82a8a5c24d1f2876a362ba09f31d4c4714ddcce9d3a794a6a8b90080d4006428",
+        "order-13/mech-phase-registers/result.json": "f19b2d2a578a44e603ea2033a26f718b2effb09f2cb02b96f408cff00ea2ecc6",
+        "order-13/mech-narrow-packet-once/result.json": "effbe695c02bfe943be4a108de6f2948f0a5573abc730031ac5e5fca1283579b",
+        "order-13/mech-selected63/result.json": "7fbdcb1a7239fc2a63cff147c1546253c12777be0f8097cd817cdb0f6dcaebd4",
+        "order-13/mech-narrow-eight/result.json": "0613292720f466addac4e531ef14eb039321758138102c73cda652213ee3ca6f",
+        "order-13/libdeflate/result.json": "b34d50108ef7ffae4077ba6f315154f26cdc224a44f82ece902a80148be3add2",
+        "order-13/roc/result.json": "b2a89841eb9a1bf5194d05027914522fca2982512af672c8ff5f84c301551632",
+        "order-13/mech-narrow-packet-eight/result.json": "00c7b8d95fbc68da66e5c9e124cfb32b2aee8c1434bb2c8f9aea73a009ed097b",
+        "order-14/mech-scorer-packet/result.json": "369ff9dceb3dea81d2dfd185ea6e58f710f333fb27573b3fbd705a313847e0bf",
+        "order-14/mech-narrow-once/result.json": "34027946f487d541cdfb3f021c4fd74bbe28668ef717a28719b1a4e478dcc4c8",
+        "order-14/mech-phase-registers/result.json": "e56cacf08547ef82c5f7392400c97e1f4e94f88dad125ee7a22867849b838362",
+        "order-14/mech-narrow-packet-once/result.json": "0b44519685029a636f28bfa27c8fb5022f9009633ca2977f58177297cb7395be",
+        "order-14/mech-selected63/result.json": "2b3460bb1d908473b66e6778bcf72c53e1fb4b00ff0736cc1ecb7a19b5debb1b",
+        "order-14/mech-narrow-eight/result.json": "4c462e943997cbe8efeea99cc93eed20da43bded449a5642132d132921f026ff",
+        "order-14/libdeflate/result.json": "db710e4e02759708b7f53c904c0797bb6c36252dab62b9e80c9e857d7bb2d9eb",
+        "order-14/roc/result.json": "de6744ea5177f5554d8934ab68ec98f08c4fbe9c0d544434273a7c68fc10f014",
+        "order-14/mech-narrow-packet-eight/result.json": "0444fcb69ec5b405ddad3fc91d0c2759b4b2bcd35931f903feda2c3f9cf3d9fb"
+      }
+    },
+    "scope": "18 balanced serial fresh-process source-through-final-executable-link trials per actor; all compilers and fixed support prebuilt equally. Every generated artifact checked. Strip and compiler bootstrap separate. Reporting label repaired from original saved records after acquisition; no measurements rerun."
+  },
   "scoped_function_replay": {
     "compiler_source": "e9538f71514225abf5ca57a9fc0acab358407167",
     "control_source": "ff7c1dbc9c5059ed84d730b008847c02179fa2cf",
@@ -9001,13 +9612,18 @@
   "runtime_high_water": {
     "policy_version": 3,
     "roc_floor": 81,
-    "libdeflate_floor": 62,
-    "target_libdeflate": 63,
+    "libdeflate_floor": 63,
+    "target_libdeflate": 81,
     "required_win_libdeflate": "prefix-natural-8192",
     "historical_llvm_assisted_encoder_bytes": 55700,
     "maintained_llvm_free_encoder_bytes": 71192,
     "evidence": "evidence/runtime-62-high-water/README.md",
-    "current_qualified_llvm_free_encoder_bytes": 63612
+    "current_qualified_llvm_free_encoder_bytes": 63612,
+    "current_working_encoder_bytes": 63852,
+    "current_working_recipe": "m1-narrow-packed-words",
+    "required_named_point_wins": "working-selection-policy.json",
+    "confidence_is_selection_gate": false,
+    "current_working_evidence": "evidence/encoder-size-gap/packed-word-repair-study/README.md"
   },
   "ordered_vector_cursor_ablations": {
     "inventory_hits": 10,
@@ -27321,6 +27937,445 @@
     "evidence": "evidence/encoder-size-gap/bounded-byte-histogram-study/README.md"
   },
   "working_selection": {
+    "name": "packed eight-entry scorer with proved low-word folding",
+    "recipe": "m1-narrow-packed-words",
+    "encoder_text_bytes": 63852,
+    "current_implementation_candidate": true,
+    "opt_in": false,
+    "selected_for_work": true,
+    "decision": "81 Roc and63 C point wins, every required name in both complete96 orders; confidence reported separately",
+    "source_commit": "9b1460933a88837bfd688344c312081b441666cd",
+    "compiler_sha256": "bf695ca4e9eb7e540b8dffb04d147fd50f019670332f07211cb9d1d775b2d405",
+    "worker_sha256": "bb834bc0836f976612bd955a71ef753800820e1b515b08425db968d20c76e11a",
+    "artifacts": {
+      "program.o": "e50bc4186276da44d8197a6c572226bfe6d311b95cfbc9b740340cffbad37b76",
+      "metadata.json": "78272b87c86d240d4e848d721c00c029cdf79ab1c1bdde322db1ea5a64ad44ac",
+      "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+    },
+    "peak_stack_bytes": 4736,
+    "runtime": {
+      "point_wins": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          63,
+          63
+        ]
+      },
+      "required_named_point_wins_preserved": true,
+      "new_win_confidence": {
+        "forward": {
+          "paired_x": 0.9841942521354337,
+          "interval": {
+            "estimate": -0.015805747864566344,
+            "lower": -0.021047010616421336,
+            "upper": -0.010704878882238922
+          },
+          "supported": true
+        },
+        "reverse": {
+          "paired_x": 0.9819219447528134,
+          "interval": {
+            "estimate": -0.018078055247186642,
+            "lower": -0.023328586163473886,
+            "upper": -0.012397511558502772
+          },
+          "supported": true
+        }
+      },
+      "named_confidence_unsupported": {
+        "forward": {
+          "roc": [],
+          "libdeflate": []
+        },
+        "reverse": {
+          "roc": [],
+          "libdeflate": [
+            "320-overlap"
+          ]
+        }
+      },
+      "confidence_is_selection_gate": false,
+      "evidence": "evidence/encoder-size-gap/packed-word-repair-study/result.json"
+    },
+    "build": {
+      "plan_sha256": "b2ea2b124e08c25062a64d35239b32a01748c246227724eee12b9d0909a20bb5",
+      "medians": {
+        "mech-selected63": {
+          "source": 2.1877377082128078,
+          "link": 0.035614687483757734,
+          "source_through_link": 2.2252674794290215,
+          "strip": 0.01073535461910069,
+          "source_through_strip": 2.236197999911383
+        },
+        "mech-phase-registers": {
+          "source": 2.1867613333743066,
+          "link": 0.03492518770508468,
+          "source_through_link": 2.221799875376746,
+          "strip": 0.01070302096195519,
+          "source_through_strip": 2.2326708752661943
+        },
+        "mech-scorer-packet": {
+          "source": 2.1876253329683095,
+          "link": 0.03561791614629328,
+          "source_through_link": 2.2245765833649784,
+          "strip": 0.010710979346185923,
+          "source_through_strip": 2.2356263960245997
+        },
+        "mech-narrow-eight": {
+          "source": 2.1881680625956506,
+          "link": 0.03549762489274144,
+          "source_through_link": 2.2244762706104666,
+          "strip": 0.010719916550442576,
+          "source_through_strip": 2.235474854009226
+        },
+        "mech-narrow-packet-eight": {
+          "source": 2.187462167115882,
+          "link": 0.03513060347177088,
+          "source_through_link": 2.2224728539586067,
+          "strip": 0.010742166545242071,
+          "source_through_strip": 2.2335623330436647
+        },
+        "mech-narrow-once": {
+          "source": 2.1872192083392292,
+          "link": 0.035219999961555004,
+          "source_through_link": 2.223769812611863,
+          "strip": 0.010778500000014901,
+          "source_through_strip": 2.2347461879253387
+        },
+        "mech-narrow-packet-once": {
+          "source": 2.1878670209553093,
+          "link": 0.03506818739697337,
+          "source_through_link": 2.2237263745628297,
+          "strip": 0.010736374882981181,
+          "source_through_strip": 2.2346497499383986
+        },
+        "roc": {
+          "source": 2.9691498749889433,
+          "link": 0.034834375604987144,
+          "source_through_link": 3.0051220620516688,
+          "strip": 0.010692645562812686,
+          "source_through_strip": 3.01640991657041
+        },
+        "libdeflate": {
+          "source": 0.45598868769593537,
+          "link": 0.03424260439351201,
+          "source_through_link": 0.49029758339747787,
+          "strip": 0.010669958544895053,
+          "source_through_strip": 0.5010998120997101
+        }
+      },
+      "paired_ratios": {
+        "mech-selected63": {
+          "roc": 0.7406685409413305,
+          "libdeflate": 4.537533248773869,
+          "mech-selected63": 1.0
+        },
+        "mech-phase-registers": {
+          "roc": 0.7395860219113496,
+          "libdeflate": 4.532582550379729,
+          "mech-selected63": 0.9992971982552387
+        },
+        "mech-scorer-packet": {
+          "roc": 0.7426134531216093,
+          "libdeflate": 4.549906712485752,
+          "mech-selected63": 1.0005550054207117
+        },
+        "mech-narrow-eight": {
+          "roc": 0.7406143459978429,
+          "libdeflate": 4.5314828321292975,
+          "mech-selected63": 0.9980668325737158
+        },
+        "mech-narrow-packet-eight": {
+          "roc": 0.7426237398392022,
+          "libdeflate": 4.5383311279154785,
+          "mech-selected63": 0.9985950582100742
+        },
+        "mech-narrow-once": {
+          "roc": 0.7399956240362822,
+          "libdeflate": 4.535373829467823,
+          "mech-selected63": 0.9980205245272677
+        },
+        "mech-narrow-packet-once": {
+          "roc": 0.7418279107046813,
+          "libdeflate": 4.532882702078966,
+          "mech-selected63": 0.999259564038113
+        }
+      },
+      "phases": {
+        "mech-selected63": {
+          "parse": 0.702723396,
+          "catalog": 2.10415e-05,
+          "frontend": 0.2179343745,
+          "artifact": 0.0068200625,
+          "encode": 0.0025382085,
+          "native": 1.2294584375
+        },
+        "mech-phase-registers": {
+          "parse": 0.702254521,
+          "catalog": 1.9520999999999998e-05,
+          "frontend": 0.21739302100000002,
+          "artifact": 0.0068115204999999995,
+          "encode": 0.0025317085,
+          "native": 1.2290115835000002
+        },
+        "mech-scorer-packet": {
+          "parse": 0.7027292709999999,
+          "catalog": 2.05205e-05,
+          "frontend": 0.218234396,
+          "artifact": 0.006822042,
+          "encode": 0.002527896,
+          "native": 1.2294052705
+        },
+        "mech-narrow-eight": {
+          "parse": 0.7028402715,
+          "catalog": 1.9604e-05,
+          "frontend": 0.2176216255,
+          "artifact": 0.0068301874999999995,
+          "encode": 0.0025238745,
+          "native": 1.2291518125
+        },
+        "mech-narrow-packet-eight": {
+          "parse": 0.7026702709999999,
+          "catalog": 2.1104e-05,
+          "frontend": 0.2177964165,
+          "artifact": 0.00682275,
+          "encode": 0.0025276045,
+          "native": 1.23011475
+        },
+        "mech-narrow-once": {
+          "parse": 0.7023078745,
+          "catalog": 2.0916500000000002e-05,
+          "frontend": 0.2173875,
+          "artifact": 0.0068319999999999995,
+          "encode": 0.0025275834999999996,
+          "native": 1.230413854
+        },
+        "mech-narrow-packet-once": {
+          "parse": 0.7028404585,
+          "catalog": 1.9479500000000002e-05,
+          "frontend": 0.217865896,
+          "artifact": 0.0068029375,
+          "encode": 0.0025350414999999998,
+          "native": 1.2298128955
+        }
+      },
+      "trials": 18,
+      "source_commit": "9b1460933a88837bfd688344c312081b441666cd",
+      "post_measurement_report_repair": {
+        "reason": "Post-measurement reporting expected mech-control-reference, but the actual named control is mech-selected63. All18 ordered trials and warmup completed before that KeyError. Reconstruct medians/ratios/phases from original saved actor result.json files; no clocks rerun or observations changed.",
+        "driver_log_sha256": "2bfd8c8ec3e087e673491108b2d033f360773143103a3856ce4882f5ff484278",
+        "replay_script_sha256": "1ba9dee1be19dec0a266ae4dda4c8d497ae0000b741b44ff463415b24aa64bab",
+        "measurement_records": {
+          "order-5/mech-scorer-packet/result.json": "0ae499c2924d77f8defaf9ecb36a85a225326d58266e24fc028aa147f78945f3",
+          "order-5/mech-narrow-once/result.json": "6d4f18ac0b46fdc45d6e3a553a3a77d605dcdc73ad0172fb7990e56f5997b2ab",
+          "order-5/mech-phase-registers/result.json": "e2d124c829f5e74c966133c4c78d9b5703163bdf9f7e11c9891b072ae2d63af6",
+          "order-5/mech-narrow-packet-once/result.json": "f71242b8195723212a18d80322d5d8ffd9760ccfd902344fa1ccc99fe752f84e",
+          "order-5/mech-selected63/result.json": "025d9f12b73975fef20026fc2f3a6facfa1db86411279d985cfa9134b1da0450",
+          "order-5/mech-narrow-eight/result.json": "b5ddbf811621691dc7f7d89a303e0eb10d6c84e3f0b7095cb0aeeccf522ca6eb",
+          "order-5/libdeflate/result.json": "6f96f058bfafc892b13f0d69aa55c42c427ead1ef106a90339bba8332e4fdbb9",
+          "order-5/roc/result.json": "f85fdfe1c29ae889090dce1764b046d6db6f0ad9158e8c46b22fd59923db2145",
+          "order-5/mech-narrow-packet-eight/result.json": "0c1f442fb2dfea5dac71b0ef6b518066233a76bea2cb513c83907590e82f7ef0",
+          "order-2/mech-scorer-packet/result.json": "9b5c935cf739fb53ffe75539205ba48799796c7be903d36ff8247f057dfbc3ca",
+          "order-2/mech-narrow-once/result.json": "7568ee382e73d232ec00aba8192aa97686dce54f01f5a79700b53ffce70ebf92",
+          "order-2/mech-phase-registers/result.json": "f8bff500866364091f5bcbfbe28321c63a454d6ef28ac010841021def3ce8c9c",
+          "order-2/mech-narrow-packet-once/result.json": "fa52c1489f5c299b464455b8b3325d0bbadf078bba6df6907e78ffa240603d74",
+          "order-2/mech-selected63/result.json": "927176f69b37a7f4397f9684ae0f5b2b519aacbd8aecd0439034308acba3f139",
+          "order-2/mech-narrow-eight/result.json": "a96d25d367acee88b5d84eaff08baefe14feec69fac2905f1208b25919d19c16",
+          "order-2/libdeflate/result.json": "aad7cb57646b84f1e6dc704c2cfeb368538318fd172749bea0058af59749c897",
+          "order-2/roc/result.json": "cacedd9b47d618109b5dec12aeb2579a2e5c13a1cce91078718d94b39117b289",
+          "order-2/mech-narrow-packet-eight/result.json": "6cc179bdfd11f3a4695fbe3dedee96b4b392b0c89ca1e86504d371d5f05cfac6",
+          "order-3/mech-scorer-packet/result.json": "a4120d95838e568319d93e3e3348f4c1b90ea9e8f9d0c3e481f81a3ab7e98544",
+          "order-3/mech-narrow-once/result.json": "7efcd02fb3e0431c05b700675ce6f899986e6363ff6073e10cdf35ebbdbc9c4d",
+          "order-3/mech-phase-registers/result.json": "b2e242160cb847d03e9fb66b79486803746d079c8b000063473f03cf0be769db",
+          "order-3/mech-narrow-packet-once/result.json": "054a752c9e4d02606a438b49eefb91c2b4c8e64ef33592ada1768087cc07ca36",
+          "order-3/mech-selected63/result.json": "a1cc723fe49921eab3d9853af95701943d7fc90ee2022ffa145e95fd3269a43c",
+          "order-3/mech-narrow-eight/result.json": "c79c1acc37f6d9ae5207ee7dcc70ca2e2116a0a0eeb0e247a9111b6741715c8c",
+          "order-3/libdeflate/result.json": "ea796496620e08e3e1ee7aca7232a6cfc1a8199af37633d080c42513cdd5b571",
+          "order-3/roc/result.json": "58b3f6d842482f423190779ed225345332114dd80387056bc59e6bcdaeec0566",
+          "order-3/mech-narrow-packet-eight/result.json": "1520a554e811adb958c3e8d7319b097059a1cfd6f1b2cbd663bbd8b1b40e768a",
+          "order-4/mech-scorer-packet/result.json": "4e455ed3caf2cb7bed891b7b80a9f82e8c14d8c40732fdee36520c53318dc01f",
+          "order-4/mech-narrow-once/result.json": "ec2ae287b7811f010e61e00ed3872fc0809199eb085d2e5c6ee5e841b79c3559",
+          "order-4/mech-phase-registers/result.json": "72c33ab125aa883710baa851aa90ac473f9f876784d2928560a32d96cb1379ad",
+          "order-4/mech-narrow-packet-once/result.json": "f51de136721674d213076607267c022392ffe39cc3684cd53def69b7e7c3a520",
+          "order-4/mech-selected63/result.json": "ac3ef6d103fd8b4b85835feb4f040c3bc8c027ca8e657a131e674142caa538e3",
+          "order-4/mech-narrow-eight/result.json": "e672b69bee11149f80ac9444102888646e1fe2c971c1a08b171cb078f9257444",
+          "order-4/libdeflate/result.json": "9665213bf7f529e1e643f6c5e319e5db10586507db7b49b19e458f3c8c3b4ec2",
+          "order-4/roc/result.json": "ada4b26b1eda95f4b812fb2e23df23bced7edb993a7a2969d9333cd3cee13697",
+          "order-4/mech-narrow-packet-eight/result.json": "25c13ac794f652756e697363b0e730c98db14e6a65413e2d9a1ac54a129ce6a8",
+          "order-18/mech-scorer-packet/result.json": "2bcdccee754d16760999e89f3c3098e40a01a26a509dc5694fc3a1de6fd55551",
+          "order-18/mech-narrow-once/result.json": "f85163f0f4e8f1d361e916f3f55b340c36cd6b05e1eb4e83be461c1de3f0df4e",
+          "order-18/mech-phase-registers/result.json": "3e79fe3c3dd8f70563786689dbf60e573fe646f007309b4792077f4b97e5a28e",
+          "order-18/mech-narrow-packet-once/result.json": "d7ee420ebdd0fefae9c117f38d2cd1fdb1a7eeb1f4128232f033d4783898a689",
+          "order-18/mech-selected63/result.json": "413ede7f142f413bcde3782aa2e585ed99be03c79616874308f809c57b076d7e",
+          "order-18/mech-narrow-eight/result.json": "3e4a9d3aa563463b9bc7f0a094203c05725210c34d67fe8d5c0da9f388b37712",
+          "order-18/libdeflate/result.json": "608f4a9b3037673efd41dc2d9872a4fd98edfa8da85b993ef54dfccc5e3261ad",
+          "order-18/roc/result.json": "9fe964d6733b512a0fd9774ce2a4f4a743a7ea1c7e216456a1f765bac32771f3",
+          "order-18/mech-narrow-packet-eight/result.json": "5502d69e954b4e9fbce50453c2e51774788a2d97611f9abb30bcc196043d0ee2",
+          "order-11/mech-scorer-packet/result.json": "12820f65727f84742c6e1123e409560a5c9792bb0d8618d6a34fffde4a40d201",
+          "order-11/mech-narrow-once/result.json": "a9631193d5bca32b4f25006de89745180e2f225de8ab0f0e4e84283bff22d49f",
+          "order-11/mech-phase-registers/result.json": "649169d2127576363cea5c73274621a9fe585c6b88abfcc2d57aaa9d5cd9c845",
+          "order-11/mech-narrow-packet-once/result.json": "6be4d71fcb5009c46bf494f30ef5fd5f45ad4ff2958f355f8992e8198c8925c7",
+          "order-11/mech-selected63/result.json": "43234126b1823116250ee3b17126e88193e884e2edf378a5a063d126fda88e67",
+          "order-11/mech-narrow-eight/result.json": "463bf77f4e51837c9d8df57e85678054a71ab77b8e720f8d649103382b49c5fd",
+          "order-11/libdeflate/result.json": "3fbc41356f20b24403a1b35123f3972bbe0534c14e451d71b9c5e80e032662ff",
+          "order-11/roc/result.json": "f4847eb14fed64bd333dbcf3bd6b6993e413d3ee094dbdd68ce543ca23da7d79",
+          "order-11/mech-narrow-packet-eight/result.json": "9b36b8b1052e6f90c56f6c1c53c93c733cbb75271dcd0412facfa8a573ab03d0",
+          "order-16/mech-scorer-packet/result.json": "12d694432d9baf993e9a195a66d57b850f8e3948019f0331de6f797e30c63ade",
+          "order-16/mech-narrow-once/result.json": "c25e5be56d7830f74c9a8f3a3ba23f6597a6b4bcc2154fd756d232dee1bf061f",
+          "order-16/mech-phase-registers/result.json": "184ed0452bb844d3a63e7e13dd081b65f1b24dc3ca9ffb92665454df163e1fa9",
+          "order-16/mech-narrow-packet-once/result.json": "17b219f7bc087203ff2cb56d991cab5230a067a37fec73eb9658c3266f59cf6b",
+          "order-16/mech-selected63/result.json": "bea050e18a440e4d0c942593a0c2a5dd7581bdf7713826748969f744887e2a08",
+          "order-16/mech-narrow-eight/result.json": "df6fee08b1c3a6f2a418db3b6830bb2f6bfc2c1a4e1398d7c49a3a1dee70e6da",
+          "order-16/libdeflate/result.json": "9134f6a45196d385e6e5bf91a99f9403a839557d391728ef963456728ce867c7",
+          "order-16/roc/result.json": "6f6be41d2152322aa55c3b252427b0a88a9c71454b26368809a790031d3eadaa",
+          "order-16/mech-narrow-packet-eight/result.json": "5a89b20c7afb011d16203b71a96b4b80bd52276903b5826ccc5a2626cb750006",
+          "order-17/mech-scorer-packet/result.json": "9908c74700eeac3a99628079b0ee920255f374f0b79ec44909428c20b0170540",
+          "order-17/mech-narrow-once/result.json": "a59dd9ca1f3240097f33c576a34f7fe2a7d722a3d268b7f56699e9702568a71d",
+          "order-17/mech-phase-registers/result.json": "a90f9e86bfdd588889bb2944d2c001e2138a5c85593de9b131279e6acfe3d745",
+          "order-17/mech-narrow-packet-once/result.json": "42da4cf2c68f859b88065e31bb35cd0f54518978c1bd9b5bfdf03d56b1c1592a",
+          "order-17/mech-selected63/result.json": "057d8c74bfc6320687c6ad025250b2775ca6317ff13332e0da4b32ef52071297",
+          "order-17/mech-narrow-eight/result.json": "286c5e000ffef88b582f7258356c0dcebfd22b00f111462445306477764aebc0",
+          "order-17/libdeflate/result.json": "17cdacd7a96ab8102f1633f2c0b56e070860eb7a0cd980a007e1314ed2babddb",
+          "order-17/roc/result.json": "3d5273740bf080d6d54384b60def5d432b9e53aef05313c45911cd361de0ca27",
+          "order-17/mech-narrow-packet-eight/result.json": "bd7b98f60ba46e15b2d1ecbbb2e3c1d4796be2b48b29f40962e4741238630400",
+          "order-10/mech-scorer-packet/result.json": "d3276c86c7bf571ec3b5fad31d64bb99c18237d732ad0beb7896dcbee0cd128e",
+          "order-10/mech-narrow-once/result.json": "6ce43779bacc1847591767fb25c503cc0786d3a37f48ec7d02940f0025804db4",
+          "order-10/mech-phase-registers/result.json": "8425614d9ac5bfeebc7f4926e509b416fc27416b0c98da463e5d2a1d98579f0f",
+          "order-10/mech-narrow-packet-once/result.json": "86d110106c630938b97a06e2598d765d7a32cfdfe5f5638caca9c79d5dae3f6d",
+          "order-10/mech-selected63/result.json": "6e9e962f9a78c03b137f654e623c74908310a5d062d360a63bff0c7c806b30ef",
+          "order-10/mech-narrow-eight/result.json": "aeca2813ea99cd180d11907d288c16c5c3453d66beb68eee59c38ae1d21405aa",
+          "order-10/libdeflate/result.json": "98909d72f81835815f6e48381bf534dec9cad3fda4134688a21c976d97430264",
+          "order-10/roc/result.json": "2fdc8aebfc9946503a2cb229f860f360cab3dd9e241cb57e161f1f8bffb25294",
+          "order-10/mech-narrow-packet-eight/result.json": "d48fd1e2585133fc611a589e63076ccfa187e2307168c87e462985e0775fa076",
+          "order-1/mech-scorer-packet/result.json": "b920cca3052022c7ae0ab8fe20b7f281ab43718fd562794349a235b0e9b0b677",
+          "order-1/mech-narrow-once/result.json": "cee0a03f788710ea063cd50d515a81ca1737facf2df023a48533866055cc5981",
+          "order-1/mech-phase-registers/result.json": "bbbdfb5e7c3dcd09c924de30cccd5d746e6daca6512540965a34005f2388b326",
+          "order-1/mech-narrow-packet-once/result.json": "2c9f2160ebc240d8504525cb1d657fd5d7bed65ead88cd87663448fd8b6dd260",
+          "order-1/mech-selected63/result.json": "9363d7ef13f23b94161339ec08fbb8141fb5b2e36930da32e5a906191b69a600",
+          "order-1/mech-narrow-eight/result.json": "839e1388d4934c8805a327e4bd86abbe2fadd19c707f55810f336d6b9b3dd4b4",
+          "order-1/libdeflate/result.json": "98436dda12d0e991c71c13e663108fa86285dce5044b403786a77abc637d19f7",
+          "order-1/roc/result.json": "d86051f7663421bf4d0220ab20236f43ed4413367b71e55f9c567a72c03b4fe0",
+          "order-1/mech-narrow-packet-eight/result.json": "eab651abc56a47ab74ffb3177157b30e38f4831beae829a76f3fb9450e4c412c",
+          "order-6/mech-scorer-packet/result.json": "3666f6b941b545c0231beeca20e006c694ee3c38a59e978db924a1b6633f360e",
+          "order-6/mech-narrow-once/result.json": "22c9afedeb723ba723d4a1313706f76a5a51bf67241c55896d85716c4ca9f3be",
+          "order-6/mech-phase-registers/result.json": "b4de770d244ca654ddd73e41a43f4b8be76cfe8acc1c60204f3806dcc093877a",
+          "order-6/mech-narrow-packet-once/result.json": "a92f0c26afe65b593e40261ae626861ece832cafd1b91cc64b786154a21bdff4",
+          "order-6/mech-selected63/result.json": "9e545bcbdfced18ec4fe1fc6d462618a6d066c9a9f89cdea0f37646316968d95",
+          "order-6/mech-narrow-eight/result.json": "9154363719de378f4ebed211babb040ab5736fed6f402c76c530ea9aeb7b7aef",
+          "order-6/libdeflate/result.json": "f95d25e56f400fc7037dcc9351b90f6dfcb8fbeb41f135e81acf1971842e386d",
+          "order-6/roc/result.json": "8dc70ba35b20c531112b52b2ac235ad0ab2c42e82826c7388d7945894d52069d",
+          "order-6/mech-narrow-packet-eight/result.json": "0aa4f35415f44410f85001dfcf6a7cb49b323ac0610dbbdeb31c94de025ed9f7",
+          "order-8/mech-scorer-packet/result.json": "41a65a3cbd813855b67b5cb56b4e3e64845ab62504dbd77f98785c93162192e3",
+          "order-8/mech-narrow-once/result.json": "786d47bc195f5dc7ff6514a22fadcc258e7ef3adb269678cbbe3ebafd122b827",
+          "order-8/mech-phase-registers/result.json": "f71eddd284ba65aa7d38d244f72d2cf35fe49a61b198ddf47ba0c1d58f39a792",
+          "order-8/mech-narrow-packet-once/result.json": "e2b045cc297058dc19a5309b7faf3744a204fd218f8c04a33f0ba3446a7ffdc4",
+          "order-8/mech-selected63/result.json": "a60c2cb20ac3602d425afcab2f055aebb7314877a679d68a17442252eaa16fa2",
+          "order-8/mech-narrow-eight/result.json": "d1864e50892673203a5cec4e7d7b8e335659c780bb3532ae8412ed46b4eb5332",
+          "order-8/libdeflate/result.json": "8b8791f4cadbe80f721dea77c959b299b7515b4867b016d2e5485a76e1373f9d",
+          "order-8/roc/result.json": "5380908bff185dd8b43de7dfec7ae04a923a1de4ca71e8e3687f85a4f6e6881c",
+          "order-8/mech-narrow-packet-eight/result.json": "1115a9a92f49a9a467d39722bbd292046393565b0bcdee1fa5147b11440cd29f",
+          "order-9/mech-scorer-packet/result.json": "51fa6ba79baac868fae85b821dbe1023d4d56db902ed914ec6191d732f6d9e75",
+          "order-9/mech-narrow-once/result.json": "f0b1cedc2684f0af6cda7a8887f1899d06c804272ea646d4b4f64694cea12ef7",
+          "order-9/mech-phase-registers/result.json": "a9b27646a3ae467c7d7a73792bbd7d154c056ab5c5dd51e63d9859f2648639e1",
+          "order-9/mech-narrow-packet-once/result.json": "7c50f3407346e0bb579521bc63bd9ba9593a09a01132a9a5036e77cbf515ab9c",
+          "order-9/mech-selected63/result.json": "5bb2575c6919bde46c5403932e4c7613a3d596eec039e90e826f492c4ca3b0b4",
+          "order-9/mech-narrow-eight/result.json": "bae544cd3a5c7fbaf361d5ecc6d33491281669e44b7c0a15f79e467beae49c4c",
+          "order-9/libdeflate/result.json": "d05f667a5672f2559f46b187d686d3bfbce9329a0ccddc1d34e652577fbd4ce6",
+          "order-9/roc/result.json": "be1340090dd9773d3d6db02c50340b67e13607ec980ea6212f2fafaba73ae70c",
+          "order-9/mech-narrow-packet-eight/result.json": "855eb223d96ced0e8235d5173d586a0bfc999b2ab3cbb08642f96757b708ffc6",
+          "order-7/mech-scorer-packet/result.json": "9096714cd8a9f8789885aa27b263e8bffca0376011750cbb900933ea4c4cb990",
+          "order-7/mech-narrow-once/result.json": "22f06c473f8e14545dcd2f35fd024ebc7f1dcb87362f2b5fcf318596f724ada0",
+          "order-7/mech-phase-registers/result.json": "56a595a8f32b60e9df4bd64b8bf6da1d3e905d3103d233f36c0ebad3d83f856a",
+          "order-7/mech-narrow-packet-once/result.json": "595819ebde0e6ea85b9cb50ad8d8ba287135faef401e930441b80d870445b3be",
+          "order-7/mech-selected63/result.json": "8b3450ddd13bf587076225a6cfb961adf1862d72abb7073a401a72679e5a0c20",
+          "order-7/mech-narrow-eight/result.json": "1f0aa864a886bc4ab6c0e86ec526b2a5f47b645619edfcf3294f70c3bbea8c09",
+          "order-7/libdeflate/result.json": "2f17bbb9d9f069860d9b723f7e6341fb661fd0d529ee9a530a6ad1c2dcf86f5c",
+          "order-7/roc/result.json": "946e58af03a194960dd6007384291d449612b95c69869ae1c03a16e6a5b497cd",
+          "order-7/mech-narrow-packet-eight/result.json": "8e87a87087f161444b862e01ca1fd68171a3400276e8c1df15625f70e599dfe8",
+          "order-15/mech-scorer-packet/result.json": "eea446d03db7745f2d58be4b7347f864667f4c002f7b9ac1c1c6c2fd02eb6dd6",
+          "order-15/mech-narrow-once/result.json": "e230c9f043be5a532ae7c3f77e03f4209d364163d12241c3f495c8a1b3edab7c",
+          "order-15/mech-phase-registers/result.json": "b17dcc0fa95479b507d0dc41c0d2cd3e8b4bf96f2b589bb51f6536b9eb8c692a",
+          "order-15/mech-narrow-packet-once/result.json": "cae736729a5fdd315ca1809ad754f49f1d7145df076850f94dcf3de189558799",
+          "order-15/mech-selected63/result.json": "ac0f364afd296120f0dc41241a31998a17bde0d82b5a551e813e9de21ad09a5c",
+          "order-15/mech-narrow-eight/result.json": "f3916213678d65c2f67e39fc6995f60eb573a93ff18086f6600e80f6e3912c80",
+          "order-15/libdeflate/result.json": "96d3716cf247693091d996ea61e0345195f0b69da3fd2c9d268290bc3fe3d658",
+          "order-15/roc/result.json": "ed63efce41ef6602fbdb6dba603212e7b688cd4d9ee442aa23f830bf532742d2",
+          "order-15/mech-narrow-packet-eight/result.json": "fd48adbae18e168a07d291fc0e1adea69fe1bda5a9ba1d4f6a6dffd24159565a",
+          "order-12/mech-scorer-packet/result.json": "4345a1dac6c17ea415a30966640ae1f9e2757715e15a4b3c0249b8a983107e88",
+          "order-12/mech-narrow-once/result.json": "9502512de28f5d1edb313ff54d32663ac4331beb2e11e0dbbba23f8a75182373",
+          "order-12/mech-phase-registers/result.json": "2048c00847a295a9c9d06f21b570a636b746e3b82390c51bcd12cf8fc099b9a1",
+          "order-12/mech-narrow-packet-once/result.json": "126168c1be6bba14ff4b3da05100eb58b0194520461381c17efdc96656bae272",
+          "order-12/mech-selected63/result.json": "4bf3e1dde337e72aafb6f12135987ffefae43b9264e39c78f6c62216f3f56b63",
+          "order-12/mech-narrow-eight/result.json": "6f8af2a5c6ccc54f21dc469ab1f40ca43cdddced7762408cfee4e94682779f73",
+          "order-12/libdeflate/result.json": "b60530bfdf55d7a5f0b7c62883260c111d69308eb9f25ce13d644efff41a4b67",
+          "order-12/roc/result.json": "8b94bd6f2ee8b567e11bdaa4536acc1c946e7c9ecb9a8909e062a6c503b3edc8",
+          "order-12/mech-narrow-packet-eight/result.json": "fdceb5d95aa091a6f84c146c12cafdaf0dd5fd58de41e2ae96308c1f165218fb",
+          "warmup/mech-scorer-packet/result.json": "a1b2ec0e08512f15bb3cf5c5befc77e0b346231f38f2883e1a30f0602361362e",
+          "warmup/mech-narrow-once/result.json": "2262c43dea12615a8d54ba7ed0d0b1965041c6f32d7950482f9fc747d9088e8f",
+          "warmup/mech-phase-registers/result.json": "8a23675bee8b67116775f7354c9c17dbd25b20629c09f881b4636651038f87ea",
+          "warmup/mech-narrow-packet-once/result.json": "61dc7a15e1a9c67ee2181bfa2e5337559d8dd56b9e0be3c62812e31448460f66",
+          "warmup/mech-selected63/result.json": "cfcd5f531cf0aeaae20a069cebd4e6fb5a9e0dbc1a29be6fbd98121a5385de0b",
+          "warmup/mech-narrow-eight/result.json": "fd832fed6f53d04f2e98e08cfe3bf6aef20243dd169f37c2a189ab3424fb60df",
+          "warmup/libdeflate/result.json": "9e8d74eaa663aa075dcd721f1450c41dc017ceb91b6340f9cde56596d8529bce",
+          "warmup/roc/result.json": "d9b634371c0803fca6602775189574b69aa194d6186d552589c3b40eadca4949",
+          "warmup/mech-narrow-packet-eight/result.json": "035dc805343e012a4e19c8e00400c53684f88fc23b5f96b47352aa9e927b9c1c",
+          "order-13/mech-scorer-packet/result.json": "c89272e4ed1d17893b3386f3143f58b938e88f10c1ed81301bbfeb6377b008d9",
+          "order-13/mech-narrow-once/result.json": "82a8a5c24d1f2876a362ba09f31d4c4714ddcce9d3a794a6a8b90080d4006428",
+          "order-13/mech-phase-registers/result.json": "f19b2d2a578a44e603ea2033a26f718b2effb09f2cb02b96f408cff00ea2ecc6",
+          "order-13/mech-narrow-packet-once/result.json": "effbe695c02bfe943be4a108de6f2948f0a5573abc730031ac5e5fca1283579b",
+          "order-13/mech-selected63/result.json": "7fbdcb1a7239fc2a63cff147c1546253c12777be0f8097cd817cdb0f6dcaebd4",
+          "order-13/mech-narrow-eight/result.json": "0613292720f466addac4e531ef14eb039321758138102c73cda652213ee3ca6f",
+          "order-13/libdeflate/result.json": "b34d50108ef7ffae4077ba6f315154f26cdc224a44f82ece902a80148be3add2",
+          "order-13/roc/result.json": "b2a89841eb9a1bf5194d05027914522fca2982512af672c8ff5f84c301551632",
+          "order-13/mech-narrow-packet-eight/result.json": "00c7b8d95fbc68da66e5c9e124cfb32b2aee8c1434bb2c8f9aea73a009ed097b",
+          "order-14/mech-scorer-packet/result.json": "369ff9dceb3dea81d2dfd185ea6e58f710f333fb27573b3fbd705a313847e0bf",
+          "order-14/mech-narrow-once/result.json": "34027946f487d541cdfb3f021c4fd74bbe28668ef717a28719b1a4e478dcc4c8",
+          "order-14/mech-phase-registers/result.json": "e56cacf08547ef82c5f7392400c97e1f4e94f88dad125ee7a22867849b838362",
+          "order-14/mech-narrow-packet-once/result.json": "0b44519685029a636f28bfa27c8fb5022f9009633ca2977f58177297cb7395be",
+          "order-14/mech-selected63/result.json": "2b3460bb1d908473b66e6778bcf72c53e1fb4b00ff0736cc1ecb7a19b5debb1b",
+          "order-14/mech-narrow-eight/result.json": "4c462e943997cbe8efeea99cc93eed20da43bded449a5642132d132921f026ff",
+          "order-14/libdeflate/result.json": "db710e4e02759708b7f53c904c0797bb6c36252dab62b9e80c9e857d7bb2d9eb",
+          "order-14/roc/result.json": "de6744ea5177f5554d8934ab68ec98f08c4fbe9c0d544434273a7c68fc10f014",
+          "order-14/mech-narrow-packet-eight/result.json": "0444fcb69ec5b405ddad3fc91d0c2759b4b2bcd35931f903feda2c3f9cf3d9fb"
+        }
+      },
+      "scope": "18 balanced serial fresh-process source-through-final-executable-link trials per actor; all compilers and fixed support prebuilt equally. Every generated artifact checked. Strip and compiler bootstrap separate. Reporting label repaired from original saved records after acquisition; no measurements rerun."
+    },
+    "evidence": "evidence/encoder-size-gap/packed-word-repair-study"
+  },
+  "active_scoreboard": "working_selection",
+  "scalar_sequential_experiment": {
+    "source_commit": "30c1c440c39f4a7ff43d8e8e5f10d8cd6bad2006",
+    "promoted": false,
+    "evidence": "evidence/encoder-size-gap/scalar-sequential-study",
+    "variants": {
+      "scalar-loop-tail-probe-profiled": {
+        "text_bytes": 64108,
+        "worker_sha256": "0277541d7aa63d47363346ebc71c318bd68f49b99c8950fdb989033307481ac0"
+      },
+      "scalar-loop-head-probe-profiled": {
+        "text_bytes": 64092,
+        "worker_sha256": "69d2af67ff2b748a6e455be18c933d8b508aade326b015f71107b6d14b1374a6"
+      },
+      "scalar-once-tail-probe-profiled": {
+        "text_bytes": 64076,
+        "worker_sha256": "89ce1c695c409c85dc137438380eeab03ccf86ee5f42f5953064a15b22112fde"
+      },
+      "scalar-once-head-probe-profiled": {
+        "text_bytes": 64060,
+        "worker_sha256": "4ea0c0af1069bc3f71e95fba712d5e5a4aca5fa21c0bfd6468f2bb5717f06bc9"
+      }
+    },
+    "runtime_orders": 16,
+    "complete_build_trials_per_actor": 14,
+    "all_portable_normal_checked_exact": true,
+    "public_verifier_exit": 0,
+    "finding": "Sequential updates save16B and20271 natural4K instructions versus legacy pair; proved single-tail saves32B and31164 more. All16 discovery orders lose prior natural8K C win; selected81/63 build retained. Stack traffic remains the repair target."
+  },
+  "previous_working_selection": {
     "name": "packed eight-entry head scorer",
     "recipe": "m1-packed-eight-entry",
     "encoder_text_bytes": 63868,
@@ -27462,33 +28517,36 @@
     },
     "evidence": "evidence/encoder-size-gap/packed-eight-entry-study/README.md"
   },
-  "active_scoreboard": "working_selection",
-  "scalar_sequential_experiment": {
-    "source_commit": "30c1c440c39f4a7ff43d8e8e5f10d8cd6bad2006",
-    "promoted": false,
-    "evidence": "evidence/encoder-size-gap/scalar-sequential-study",
-    "variants": {
-      "scalar-loop-tail-probe-profiled": {
-        "text_bytes": 64108,
-        "worker_sha256": "0277541d7aa63d47363346ebc71c318bd68f49b99c8950fdb989033307481ac0"
-      },
-      "scalar-loop-head-probe-profiled": {
-        "text_bytes": 64092,
-        "worker_sha256": "69d2af67ff2b748a6e455be18c933d8b508aade326b015f71107b6d14b1374a6"
-      },
-      "scalar-once-tail-probe-profiled": {
-        "text_bytes": 64076,
-        "worker_sha256": "89ce1c695c409c85dc137438380eeab03ccf86ee5f42f5953064a15b22112fde"
-      },
-      "scalar-once-head-probe-profiled": {
-        "text_bytes": 64060,
-        "worker_sha256": "4ea0c0af1069bc3f71e95fba712d5e5a4aca5fa21c0bfd6468f2bb5717f06bc9"
-      }
+  "packed_word_repair_experiment": {
+    "evidence": "evidence/encoder-size-gap/packed-word-repair-study",
+    "source_commit": "9b1460933a88837bfd688344c312081b441666cd",
+    "source_variants": 12,
+    "discovery_orders": 24,
+    "full96_point_scores": {
+      "roc": [
+        81,
+        81
+      ],
+      "libdeflate": [
+        63,
+        63
+      ]
     },
-    "runtime_orders": 16,
-    "complete_build_trials_per_actor": 14,
-    "all_portable_normal_checked_exact": true,
+    "complete_build_trials": 18,
     "public_verifier_exit": 0,
-    "finding": "Sequential updates save16B and20271 natural4K instructions versus legacy pair; proved single-tail saves32B and31164 more. All16 discovery orders lose prior natural8K C win; selected81/63 build retained. Stack traffic remains the repair target."
+    "portable_normal_checked_replays": 12,
+    "literal_route_instructions_removed": 5977851,
+    "random_runtime_gain_established": false
+  },
+  "historical_runtime_high_water": {
+    "policy_version": 3,
+    "roc_floor": 81,
+    "libdeflate_floor": 62,
+    "target_libdeflate": 63,
+    "required_win_libdeflate": "prefix-natural-8192",
+    "historical_llvm_assisted_encoder_bytes": 55700,
+    "maintained_llvm_free_encoder_bytes": 71192,
+    "evidence": "evidence/runtime-62-high-water/README.md",
+    "current_qualified_llvm_free_encoder_bytes": 63612
   }
 }

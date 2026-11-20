@@ -1,12 +1,16 @@
 # PR #995 current status
 
-**Working selection: `m1-packed-eight-entry`, 63,868 B, 81/81 Roc and 63/81 libdeflate point wins in both complete 96-block orders.** Every original named 81 Roc / 62 C win remains confidence-supported. The newly won reverse natural 4 KiB comparison is 0.997675× C with a 90% interval of −0.818% to +0.388%; its uncertainty is reported, and this build remains the working baseline.
+**Working selection: `m1-narrow-packed-words`, 63,852 B, 81/81 Roc and 63/81 libdeflate point wins in both complete 96-block orders.** Every required named point win is retained. Natural 4 KiB is **0.984194× / 0.981922× C**, with both 90% intervals below parity. Reverse `320-overlap` has a confidence interval crossing parity while retaining its point win; confidence is reported separately under the user's working-selection rule.
 
-The selected build takes **2.215637 s** through final executable linking in its matched Apple M1 cohort: paired **0.742654× Roc / 4.604948× libdeflate**. Encoder code is **1.107× Roc / 1.722× C**; stripped executable **276,072 B**; peak stack **4,736 B**. Compilers and fixed support are prebuilt equally. [Exact source, all observations, checks and confidence results](evidence/encoder-size-gap/packed-eight-entry-study/README.md).
+The selected build takes **2.224476 s** through final executable linking on Apple M1, paired **0.740614× Roc / 4.531483× C** in 18 balanced trials. Roc takes **3.005122 s**, C **0.490298 s**. The previous selected build in this same cohort takes **2.225267 s**; no material compile-time gain is established. Encoder code is **1.107× Roc / 1.722× C**; stripped executable **276,072 B**; peak stack **4,736 B**. All compilers and fixed support are prebuilt equally; final executable linking is included, compiler bootstrap and strip are separate.
 
-On Apple AArch64, `rebuild.py` now defaults to this working recipe; `--variant m1-packed-eight-entry` selects it explicitly. `candidate.json` pins the source, flags, portable profiles, all three artifacts and the measured worker. Historical qualification records and their original policy remain unchanged. The smaller 63,612 B histogram is retained as an alternative.
+The compiler removes proved zero high fields from narrow costs while keeping full packed words for stores and item uses. This saves **16 B** and **5,977,851 scorer instructions (8.6%) on random 1 MiB**, but the random runtime is essentially unchanged. All source and adverse observations are preserved. [Twelve recipes, all 24 discovery orders, both full 81-case/96-block outcomes,18 complete-build trials, checks and portable source reproduction](evidence/encoder-size-gap/packed-word-repair-study/README.md).
 
-Current experiments apply register preference on the fresh immutable-cost phase context. Sequential scalar/tail variants remain available, but they have not improved the selected score. The original 2,719-line Mech codec and canonical bytecode remain unchanged; no LLVM dependency is added. The next work must hold all 81 Roc and 63 named C point wins while pursuing 1× C across all 81 cases.
+On Apple AArch64, `rebuild.py` defaults to this recipe; select it explicitly with `--variant m1-narrow-packed-words`. The actual named recipe reproduces all three artifacts exactly in normal and checked emission. Twenty-one optimized tests pass in four configurations, including 101,376 new native differential calls per configuration; all 53 older recipes reproduce exactly. Original 2,719-line Mech source and canonical bytecode remain unchanged. No LLVM dependency is added. The existing missing archived allocator still blocks the repository-wide unsafe audit.
+
+The goal remains **1× libdeflate across all 81 cases**. Every 81 Roc and 63 named C point win must survive future changes. Smaller and paired candidates remain available for repair; the previous eight-entry recipe remains explicit as `m1-packed-eight-entry`.
+
+Everything below is historical: references to a selected/default recipe apply to that checkpoint.
 
 ## Previous confidence-qualified selection and experiments
 
