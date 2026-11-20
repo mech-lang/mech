@@ -1288,6 +1288,9 @@ fn prepare_impl<M: Module>(
                     // A low-word cost must not retain an independently packed
                     // high field. Full item/store uses keep the original word.
                     cfg_cleanup::narrow_bits::fold(&mut candidate.func);
+                    if std::env::var("MECH_FOLD_NARROW_PACKED_WORDS").as_deref() == Ok("phis") {
+                        cfg_cleanup::narrow_bits::fold_parallel(&mut candidate.func);
+                    }
                     candidate.verify(module.isa()).map_err(backend)?;
                 }
                 let id = module
