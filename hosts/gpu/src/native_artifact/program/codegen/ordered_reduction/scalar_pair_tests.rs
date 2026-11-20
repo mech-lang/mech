@@ -16,118 +16,137 @@ fn paired_scalar_visits_preserve_unsigned_wrap_ties_full_items_and_odd_tails() {
     let mut functions = Vec::new();
     for stride in [4i64, 8] {
         for deferred in [false, true] {
-            let mut context = module.make_context();
-            context.func.signature.params = vec![AbiParam::new(types::I64); 4];
-            context.func.signature.returns = vec![AbiParam::new(types::I64)];
-            let mut builder = FunctionBuilderContext::new();
-            let mut b = FunctionBuilder::new(&mut context.func, &mut builder);
-            let entry = b.create_block();
-            b.append_block_params_for_function_params(entry);
-            b.switch_to_block(entry);
-            let [front, back, state, output] = b.block_params(entry)[..] else {
-                unreachable!()
-            };
-            let flags = MemFlags::new();
-            let index = b.ins().load(types::I64, flags, state, 0);
-            let count = b.ins().load(types::I64, flags, state, 8);
-            let best = b.ins().load(types::I32, flags, state, 16);
-            let old = b.ins().load(types::I64, flags, state, 24);
-            let offset = b.ins().load(types::I32, flags, state, 32);
-            let addition = b.ins().load(types::I32, flags, state, 40);
-            let end = b.ins().iadd_imm(back, 64 * stride);
-            let bytes = b.ins().imul_imm(index, stride);
-            let previous = b.ins().isub(end, bytes);
-            let pair = b.create_block();
-            let scalar = b.create_block();
-            let finish = b.create_block();
-            for block in [pair, scalar] {
-                for ty in [types::I64, types::I32, types::I64, types::I64, types::I64] {
-                    b.append_block_param(block, ty);
+            for sequential in [false, true] {
+                let mut context = module.make_context();
+                context.func.signature.params = vec![AbiParam::new(types::I64); 4];
+                context.func.signature.returns = vec![AbiParam::new(types::I64)];
+                let mut builder = FunctionBuilderContext::new();
+                let mut b = FunctionBuilder::new(&mut context.func, &mut builder);
+                let entry = b.create_block();
+                b.append_block_params_for_function_params(entry);
+                b.switch_to_block(entry);
+                let [front, back, state, output] = b.block_params(entry)[..] else {
+                    unreachable!()
+                };
+                let flags = MemFlags::new();
+                let index = b.ins().load(types::I64, flags, state, 0);
+                let count = b.ins().load(types::I64, flags, state, 8);
+                let best = b.ins().load(types::I32, flags, state, 16);
+                let old = b.ins().load(types::I64, flags, state, 24);
+                let offset = b.ins().load(types::I32, flags, state, 32);
+                let addition = b.ins().load(types::I32, flags, state, 40);
+                let end = b.ins().iadd_imm(back, 64 * stride);
+                let bytes = b.ins().imul_imm(index, stride);
+                let previous = b.ins().isub(end, bytes);
+                let pair = b.create_block();
+                let scalar = b.create_block();
+                let finish = b.create_block();
+                for block in [pair, scalar] {
+                    for ty in [types::I64, types::I32, types::I64, types::I64, types::I64] {
+                        b.append_block_param(block, ty);
+                    }
                 }
-            }
-            b.append_block_param(finish, types::I32);
-            b.append_block_param(finish, types::I64);
-            b.ins().jump(
-                pair,
-                &[
-                    index.into(),
-                    best.into(),
-                    old.into(),
-                    previous.into(),
-                    count.into(),
-                ],
-            );
-            let cost = |b: &mut FunctionBuilder<'_>, index: Value, previous: Value| {
-                let bytes = b.ins().ishl_imm(index, 2);
-                let address = b.ins().iadd(front, bytes);
-                let a = b.ins().load(types::I32, flags, address, 0);
-                let previous = b.ins().iadd_imm(previous, -stride);
-                let d = b.ins().load(types::I32, flags, previous, 0);
-                let sum = b.ins().iadd(a, d);
-                (b.ins().iadd(sum, addition), previous)
-            };
-            let item = |b: &mut FunctionBuilder<'_>, index| {
-                if deferred {
-                    index
+                b.append_block_param(finish, types::I32);
+                b.append_block_param(finish, types::I64);
+                b.ins().jump(
+                    pair,
+                    &[
+                        index.into(),
+                        best.into(),
+                        old.into(),
+                        previous.into(),
+                        count.into(),
+                    ],
+                );
+                let cost = |b: &mut FunctionBuilder<'_>, index: Value, previous: Value| {
+                    let bytes = b.ins().ishl_imm(index, 2);
+                    let address = b.ins().iadd(front, bytes);
+                    let a = b.ins().load(types::I32, flags, address, 0);
+                    let previous = b.ins().iadd_imm(previous, -stride);
+                    let d = b.ins().load(types::I32, flags, previous, 0);
+                    let sum = b.ins().iadd(a, d);
+                    (b.ins().iadd(sum, addition), previous)
+                };
+                let item = |b: &mut FunctionBuilder<'_>, index| {
+                    if deferred {
+                        index
+                    } else {
+                        let index = b.ins().ireduce(types::I32, index);
+                        let low = b.ins().bor(index, offset);
+                        b.ins().uextend(types::I64, low)
+                    }
+                };
+                if sequential {
+                    super::scalar_pair::emit_sequential(
+                        &mut b,
+                        pair,
+                        scalar,
+                        finish,
+                        |b, index, previous, best, old| {
+                            let (value, previous) = cost(b, index, previous);
+                            let better = b.ins().icmp(IntCC::UnsignedLessThan, value, best);
+                            let minimum = b.ins().select(better, value, best);
+                            let selected = item(b, index);
+                            let choice = b.ins().select(better, selected, old);
+                            (minimum, choice, previous)
+                        },
+                    );
                 } else {
-                    let index = b.ins().ireduce(types::I32, index);
-                    let low = b.ins().bor(index, offset);
-                    b.ins().uextend(types::I64, low)
+                    super::scalar_pair::emit(
+                        &mut b,
+                        pair,
+                        scalar,
+                        finish,
+                        |b, index, previous| {
+                            let (first, previous) = cost(b, index, previous);
+                            let next = b.ins().iadd_imm(index, 1);
+                            let (second, previous) = cost(b, next, previous);
+                            (first, second, previous)
+                        },
+                        item,
+                    );
                 }
-            };
-            super::scalar_pair::emit(
-                &mut b,
-                pair,
-                scalar,
-                finish,
-                |b, index, previous| {
-                    let (first, previous) = cost(b, index, previous);
-                    let next = b.ins().iadd_imm(index, 1);
-                    let (second, previous) = cost(b, next, previous);
-                    (first, second, previous)
-                },
-                item,
-            );
-            b.switch_to_block(scalar);
-            let args = b.block_params(scalar).to_vec();
-            let (value, previous) = cost(&mut b, args[0], args[3]);
-            let better = b.ins().icmp(IntCC::UnsignedLessThan, value, args[1]);
-            let minimum = b.ins().select(better, value, args[1]);
-            let selected = item(&mut b, args[0]);
-            let choice = b.ins().select(better, selected, args[2]);
-            let index = b.ins().iadd_imm(args[0], 1);
-            let left = b.ins().iadd_imm(args[4], -1);
-            let more = b.ins().icmp_imm(IntCC::NotEqual, left, 0);
-            b.ins().brif(
-                more,
-                scalar,
-                &[
-                    index.into(),
-                    minimum.into(),
-                    choice.into(),
-                    previous.into(),
-                    left.into(),
-                ],
-                finish,
-                &[minimum.into(), choice.into()],
-            );
-            b.switch_to_block(finish);
-            let values = b.block_params(finish).to_vec();
-            let minimum = b.ins().uextend(types::I64, values[0]);
-            b.ins().store(flags, minimum, output, 0);
-            b.ins().store(flags, values[1], output, 8);
-            b.ins().return_(&[values[1]]);
-            b.seal_all_blocks();
-            b.finalize();
-            let id = module
-                .declare_function(
-                    &format!("paired_scalar_{stride}_{deferred}"),
-                    Linkage::Local,
-                    &context.func.signature,
-                )
-                .unwrap();
-            module.define_function(id, &mut context).unwrap();
-            functions.push((id, stride as usize, deferred));
+                b.switch_to_block(scalar);
+                let args = b.block_params(scalar).to_vec();
+                let (value, previous) = cost(&mut b, args[0], args[3]);
+                let better = b.ins().icmp(IntCC::UnsignedLessThan, value, args[1]);
+                let minimum = b.ins().select(better, value, args[1]);
+                let selected = item(&mut b, args[0]);
+                let choice = b.ins().select(better, selected, args[2]);
+                let index = b.ins().iadd_imm(args[0], 1);
+                let left = b.ins().iadd_imm(args[4], -1);
+                let more = b.ins().icmp_imm(IntCC::NotEqual, left, 0);
+                b.ins().brif(
+                    more,
+                    scalar,
+                    &[
+                        index.into(),
+                        minimum.into(),
+                        choice.into(),
+                        previous.into(),
+                        left.into(),
+                    ],
+                    finish,
+                    &[minimum.into(), choice.into()],
+                );
+                b.switch_to_block(finish);
+                let values = b.block_params(finish).to_vec();
+                let minimum = b.ins().uextend(types::I64, values[0]);
+                b.ins().store(flags, minimum, output, 0);
+                b.ins().store(flags, values[1], output, 8);
+                b.ins().return_(&[values[1]]);
+                b.seal_all_blocks();
+                b.finalize();
+                let id = module
+                    .declare_function(
+                        &format!("paired_scalar_{stride}_{deferred}_{sequential}"),
+                        Linkage::Local,
+                        &context.func.signature,
+                    )
+                    .unwrap();
+                module.define_function(id, &mut context).unwrap();
+                functions.push((id, stride as usize, deferred));
+            }
         }
     }
     module.finalize_definitions().unwrap();

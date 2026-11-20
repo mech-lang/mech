@@ -13,6 +13,46 @@ pub(super) fn emit(
     costs: impl FnOnce(&mut FunctionBuilder<'_>, Value, Value) -> (Value, Value, Value),
     item: impl FnOnce(&mut FunctionBuilder<'_>, Value) -> Value,
 ) {
+    group(b, entry, scalar, finish, |b, args| {
+        let index = args[0];
+        let next = b.ins().iadd_imm(index, 1);
+        let (first, second, previous) = costs(b, index, args[3]);
+        // Strict comparisons retain the first member of a tie, and a pair
+        // tied with the incoming best retains the complete incoming item.
+        let later = b.ins().icmp(IntCC::UnsignedLessThan, second, first);
+        let pair_minimum = b.ins().select(later, second, first);
+        let winner = b.ins().select(later, next, index);
+        let better = b.ins().icmp(IntCC::UnsignedLessThan, pair_minimum, args[1]);
+        let minimum = b.ins().select(better, pair_minimum, args[1]);
+        let selected = item(b, winner);
+        let choice = b.ins().select(better, selected, args[2]);
+        (minimum, choice, previous)
+    });
+}
+
+/// Settle the first visit before constructing the second. Each callback
+/// carries only the updated best, complete item and reverse cursor forward.
+pub(super) fn emit_sequential(
+    b: &mut FunctionBuilder<'_>,
+    entry: Block,
+    scalar: Block,
+    finish: Block,
+    mut visit: impl FnMut(&mut FunctionBuilder<'_>, Value, Value, Value, Value) -> (Value, Value, Value),
+) {
+    group(b, entry, scalar, finish, |b, args| {
+        let (minimum, item, previous) = visit(b, args[0], args[3], args[1], args[2]);
+        let next = b.ins().iadd_imm(args[0], 1);
+        visit(b, next, previous, minimum, item)
+    });
+}
+
+fn group(
+    b: &mut FunctionBuilder<'_>,
+    entry: Block,
+    scalar: Block,
+    finish: Block,
+    reduce: impl FnOnce(&mut FunctionBuilder<'_>, &[Value]) -> (Value, Value, Value),
+) {
     let group = b.create_block();
     let tail = b.create_block();
     for ty in [types::I64, types::I32, types::I64, types::I64, types::I64] {
@@ -28,17 +68,7 @@ pub(super) fn emit(
     b.switch_to_block(group);
     let args = b.block_params(group).to_vec();
     let index = args[0];
-    let next = b.ins().iadd_imm(index, 1);
-    let (first, second, previous) = costs(b, index, args[3]);
-    // Strict comparisons retain the first member of a tie, and a pair tied
-    // with the incoming best retains the complete incoming item.
-    let later = b.ins().icmp(IntCC::UnsignedLessThan, second, first);
-    let pair_minimum = b.ins().select(later, second, first);
-    let winner = b.ins().select(later, next, index);
-    let better = b.ins().icmp(IntCC::UnsignedLessThan, pair_minimum, args[1]);
-    let minimum = b.ins().select(better, pair_minimum, args[1]);
-    let selected = item(b, winner);
-    let choice = b.ins().select(better, selected, args[2]);
+    let (minimum, choice, previous) = reduce(b, &args);
     let next = b.ins().iadd_imm(index, 2);
     let left = b.ins().iadd_imm(args[4], -2);
     let more = b.ins().icmp_imm(IntCC::UnsignedGreaterThanOrEqual, left, 2);
