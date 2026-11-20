@@ -1,0 +1,11 @@
+{
+  "command": [
+    "python3",
+    "verify.py"
+  ],
+  "exit_code": 0,
+  "verification_log_sha256": "15e7c1d8df57dc1c6322588263af480a1ef4f360ade4784081f775fdd0d65dad",
+  "verifier_sha256": "bccc43d92c072446233a2f8deb18f52dffe5f49d298e3974abcceb610d69583b",
+  "source_basis_commit": "84628d979e34b67b6450b9eb3e9b79a694b629e3",
+  "scope": "Six source/artifact bindings,4x20 optimized tests,33 exact prior recipes, all6 semantic/recovery/stack gates and portable replays, actual raw-body equivalence, eight complete21-case runtime orders, eleven-case loss census and10 complete build trials per actor. No new qualification claimed."
+}

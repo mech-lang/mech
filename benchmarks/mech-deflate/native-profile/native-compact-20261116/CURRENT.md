@@ -6,7 +6,7 @@ The guarded histogram takes **2.44–2.73% less time on random 1 MiB** than its 
 
 Qualification uses 81 cases, forward96 and pooled reverse288 blocks per case. The original reverse96 had two uncertain Roc comparisons during large timing swings; the complete reverse192 repeat independently supports all 81/62 wins, and all 288 reverse blocks remain included in the pooled checks. Every prior named win is checked explicitly. All 162 output/inflation/alias observations, six failures, twelve injected failures, twelve recoveries and 4,864 B peak stack pass. Normal and checked allocation emission match exactly.
 
-Latest complete-build cohort on the **Apple M1** reproduces the qualified encoder exactly and measures **2.209806 s Mech, 2.983775 s Roc and 0.480913 s C**, ten balanced fresh-process trials including final executable linking with equal prebuilt compilers/support. Stripped executables remain 276,072 B / 191,912 B / 155,752 B. Bootstrap and strip are separate; no compilation-time gain is established. [Current build evidence](evidence/encoder-size-gap/packed-eight-entry-study/README.md).
+Latest complete-build cohort on the **Apple M1** reproduces the qualified encoder exactly and measures **2.213505 s Mech, 2.986912 s Roc and 0.482204 s C**, ten balanced fresh-process trials including final executable linking with equal prebuilt compilers/support. Stripped executables remain 276,072 B / 191,912 B / 155,752 B. Bootstrap and strip are separate; no compilation-time gain is established. [Current build evidence](evidence/encoder-size-gap/scalar-pair-revisit-study/README.md).
 
 The histogram source is committed at **7ea6c80d8db874e10392bdb2a3d38e6205ca876d**. Its new entry guard removes four per-byte bounds checks and retains the U32 increment check; a guard miss executes the original checked code. The two relevant repository tests pass 11,760 native calls. The original 2,719-line Mech source and canonical bytecode remain unchanged, with no LLVM dependency added. Rebuild with `--variant m1-bounded-byte-histogram`.
 
@@ -14,7 +14,15 @@ Both earlier mismatch finalists and all adverse observations remain available in
 
 The entire GPU suite is not claimed. Its relevant histogram and earlier wide-equality tests are recorded separately, and the existing missing archived allocator continues to block the repository unsafe audit. [Review and continuation handoff](REVIEW.md).
 
-## Current guarded eight-entry experiment
+## Current paired scalar revisit
+
+Compiler source **`84628d979e`** restores the historical paired scalar continuation as an opt-in path. It passes **20 optimized tests in four configurations**, including **22,528 new native calls** per configuration, and all **33 older recipes reproduce exactly**. Both main candidates and four register-setting workers pass output/error/stack/recovery gates and portable normal/checked replay. The qualified **63,612 B / 81 Roc / 62 C** default remains selected; the preceding eight-entry candidate still retains 63 C point wins in both full96 orders, with reverse confidence crossing parity.
+
+Pairing increases natural 4 KiB stack loads **17,310 → 105,720** and instructions **3,266,626 → 3,589,068**, despite removing 3,881 branches. Its original head variant costs **1.96–2.44% more natural 4 KiB time** and **4.21–4.86% more natural 8 KiB time** than its held control, losing the old 8 KiB C win in both orders. Existing register settings leave the scorer body and counts unchanged; their four additional orders are preserved. Keep the source and repair the cost/best/item lifetimes. A separate eleven-case census also identifies the literal-only DP route behind random-input losses. [All eight orders, checks, counts, builds and replay](evidence/encoder-size-gap/scalar-pair-revisit-study/README.md).
+
+Head text: **64,108 B**; complete build **2.219618 s**, paired **0.743139× Roc / 4.606172× C**; stripped executable **276,072 B**; peak stack **4,736 B**. No compile-time gain is shown. Next, test sequential updates inside the unrolled pair and optimize the literal-only route separately. These follow-ups are not yet implemented.
+
+## Preceding guarded eight-entry experiment
 
 Compiler source **`60e942f462`** adds guarded eight-candidate entry to the paired packed scorer. Head candidate: **63,868 B**, **4,736 B** stack. It removes **66,937 natural-4-KiB scorer instructions and 36,501 branches** versus the sixteen-entry head worker, with unchanged stack traffic. Every original named 81 Roc / 62 C win remains precision-supported in both full96 orders. The new reverse natural-4-KiB interval still crosses parity, so the 63rd C win is not yet qualified. The qualified 63,612 B histogram remains selected until a separate promotion. [All eight runtime orders, confidence results, source, tests, counts, builds and portable replay](evidence/encoder-size-gap/packed-eight-entry-study/README.md).
 

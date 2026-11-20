@@ -28,9 +28,9 @@
     "pr": 995,
     "stacked_on_pr": 993,
     "original_target_pr": 973,
-    "compiler_source_commit": "60e942f46298e1d4b3ea446248596ae3e071853d",
-    "compiler_sha256": "13edf3ab0fdcd3bb05951cf6ad07c4b67b68cb920f3f733eb086237db150f7b3",
-    "latest_deployment_evidence": "evidence/encoder-size-gap/packed-eight-entry-study/README.md",
+    "compiler_source_commit": "84628d979e34b67b6450b9eb3e9b79a694b629e3",
+    "compiler_sha256": "9871d88d5109f3d31104c2b95ac40e1810966b33f2286b9687078d546de8f133",
+    "latest_deployment_evidence": "evidence/encoder-size-gap/scalar-pair-revisit-study/README.md",
     "host": "Apple M1, macOS 15.6.1, arm64",
     "local_checks": {
       "workspace_formatting": "Pass",
@@ -7357,7 +7357,7 @@
     "checked_chain_estimated_recomputation_seconds": 0.0032,
     "next": "Exact-choice body planning and one further omitted-body investigation"
   },
-  "current_matched_build": "packed_eight_entry_experiment.complete_build",
+  "current_matched_build": "scalar_pair_revisit_experiment.complete_build",
   "scoped_function_replay": {
     "compiler_source": "e9538f71514225abf5ca57a9fc0acab358407167",
     "control_source": "ff7c1dbc9c5059ed84d730b008847c02179fa2cf",
@@ -16856,7 +16856,7 @@
         "supported": false
       }
     },
-    "primary_investigation": "Retain the eight-entry candidate. If its 63rd win lacks confidence, revisit historical scalar pairing against the modern frame and inspect actual scalar-block counts.",
+    "primary_investigation": "Sequential minimum/item updates within the unrolled pair to shorten first-cost and incoming-best lifetimes. Keep exact odd tails and prior named wins. Separately investigate literal-only packed DP writes identified by the eleven-case loss census.",
     "evidence": "evidence/encoder-size-gap/paired-packed-accumulator-study/README.md"
   },
   "current_register_spill_pairs": {
@@ -25295,5 +25295,1887 @@
       "scope": "10 serial balanced fresh-process source-through-final-executable-link orders. Compilers and fixed support prebuilt for every actor. Every generated Mech object, complete metadata and bytecode is hash checked. Strip is separate. Bootstrap is excluded equally."
     },
     "next_target": "Retain the eight-entry candidate. If its 63rd win lacks confidence, revisit historical scalar pairing against the modern frame and inspect actual scalar-block counts."
+  },
+  "scalar_pair_revisit_experiment": {
+    "source_commit": "84628d979e34b67b6450b9eb3e9b79a694b629e3",
+    "compiler_sha256": "9871d88d5109f3d31104c2b95ac40e1810966b33f2286b9687078d546de8f133",
+    "evidence": "evidence/encoder-size-gap/scalar-pair-revisit-study/README.md",
+    "promoted": false,
+    "qualified_selection_unchanged": true,
+    "head_text_bytes": 64108,
+    "peak_stack_bytes": 4736,
+    "native_tests": {
+      "tests_per_mode": 20,
+      "modes": 4,
+      "packed_key_fixture_calls_per_mode": 94208,
+      "wide_item_fixture_calls_per_mode": 16384,
+      "paired_scalar_fixture_calls_per_mode": 22528,
+      "prior_winner_fixture_calls_per_mode": 16384
+    },
+    "discovery_orders": 8,
+    "full81_score_measured": false,
+    "register_equivalence": [
+      {
+        "left": "eight-entry-root-probe-profiled",
+        "right": "packed-eight-head-probe-profiled",
+        "all_artifacts_same": false,
+        "raw_scorer_body_same": true,
+        "text_bytes": 63852
+      },
+      {
+        "left": "scalar-pair-root-probe-profiled",
+        "right": "scalar-pair-head-probe-profiled",
+        "all_artifacts_same": false,
+        "raw_scorer_body_same": true,
+        "text_bytes": 64092
+      },
+      {
+        "left": "eight-entry-plain-probe-profiled",
+        "right": "packed-eight-head-probe-profiled",
+        "all_artifacts_same": false,
+        "raw_scorer_body_same": true,
+        "text_bytes": 64620
+      },
+      {
+        "left": "scalar-pair-plain-probe-profiled",
+        "right": "scalar-pair-head-probe-profiled",
+        "all_artifacts_same": false,
+        "raw_scorer_body_same": true,
+        "text_bytes": 64860
+      }
+    ],
+    "broad_loss_census": {
+      "scope": "Untimed instruction census of the exact eight-entry head raw scorer. Layout profiles and latency acquisitions are unchanged. Loss ratios refer to the preceding exact profiled worker full96 orders. Instrumented diagnostic clones are never used for timing.",
+      "counts_sha256": "82660a34079f6572f63517c734abd0746288e77c0e064dc90ec1fcba07226517",
+      "cases": {
+        "prefix-natural-1024": {
+          "paired_x_libdeflate": {
+            "forward": 1.2525955832024687,
+            "reverse": 1.2530993554047725
+          },
+          "counts": {
+            "instructions": 423496,
+            "branches": 69032,
+            "stack_loads": 2496,
+            "stack_stores": 2804
+          },
+          "top_blocks": [
+            {
+              "address": "0x152b8",
+              "visits": 1748,
+              "instructions": [
+                [
+                  "lsl",
+                  "x14, x27, #2"
+                ],
+                [
+                  "ldr",
+                  "q16, [x28, x14]"
+                ],
+                [
+                  "sub",
+                  "x14, x3, x27, lsl #3"
+                ],
+                [
+                  "ldur",
+                  "q19, [x14, #-0x18]"
+                ],
+                [
+                  "ldur",
+                  "q20, [x14, #-0x8]"
+                ],
+                [
+                  "add",
+                  "x14, x27, #0x4"
+                ],
+                [
+                  "lsl",
+                  "x8, x14, #2"
+                ],
+                [
+                  "ldr",
+                  "q6, [x28, x8]"
+                ],
+                [
+                  "sub",
+                  "x14, x3, x14, lsl #3"
+                ],
+                [
+                  "ldur",
+                  "q7, [x14, #-0x18]"
+                ],
+                [
+                  "ldur",
+                  "q18, [x14, #-0x8]"
+                ],
+                [
+                  "add",
+                  "x27, x27, #0x8"
+                ],
+                [
+                  "add.4s",
+                  "v16, v3, v16"
+                ],
+                [
+                  "uzp1.4s",
+                  "v19, v20, v19"
+                ],
+                [
+                  "rev64.4s",
+                  "v19, v19"
+                ],
+                [
+                  "add.4s",
+                  "v16, v16, v19"
+                ],
+                [
+                  "uqxtn.4h",
+                  "v16, v16"
+                ],
+                [
+                  "zip1.8h",
+                  "v16, v1, v16"
+                ],
+                [
+                  "umin.4s",
+                  "v0, v16, v0"
+                ],
+                [
+                  "add.8h",
+                  "v16, v1, v4"
+                ],
+                [
+                  "add.4s",
+                  "v6, v3, v6"
+                ],
+                [
+                  "uzp1.4s",
+                  "v7, v18, v7"
+                ],
+                [
+                  "rev64.4s",
+                  "v7, v7"
+                ],
+                [
+                  "add.4s",
+                  "v6, v6, v7"
+                ],
+                [
+                  "uqxtn.4h",
+                  "v6, v6"
+                ],
+                [
+                  "zip1.8h",
+                  "v6, v16, v6"
+                ],
+                [
+                  "umin.4s",
+                  "v17, v6, v17"
+                ],
+                [
+                  "add.8h",
+                  "v1, v1, v5"
+                ],
+                [
+                  "cmp",
+                  "x27, x7"
+                ],
+                [
+                  "b.lo",
+                  "0x19f8"
+                ]
+              ]
+            },
+            {
+              "address": "0x15100",
+              "visits": 3572,
+              "instructions": [
+                [
+                  "add",
+                  "x7, x21, #0x1"
+                ],
+                [
+                  "ldr",
+                  "w3, [x9, x7, lsl #2]"
+                ],
+                [
+                  "sub",
+                  "x7, x11, x7"
+                ],
+                [
+                  "ldr",
+                  "x7, [x12, x7, lsl #3]"
+                ],
+                [
+                  "add",
+                  "w3, w24, w3"
+                ],
+                [
+                  "add",
+                  "w3, w3, w7"
+                ],
+                [
+                  "cmp",
+                  "w3, w27"
+                ],
+                [
+                  "csel",
+                  "x28, x3, x27, lo"
+                ],
+                [
+                  "add",
+                  "w7, w21, #0x1"
+                ],
+                [
+                  "orr",
+                  "w7, w7, w23, lsl #9"
+                ],
+                [
+                  "csel",
+                  "x19, x7, x19, lo"
+                ],
+                [
+                  "cmp",
+                  "x25, #0x1"
+                ],
+                [
+                  "b.eq",
+                  "0x17c4"
+                ]
+              ]
+            },
+            {
+              "address": "0x15388",
+              "visits": 4144,
+              "instructions": [
+                [
+                  "ldr",
+                  "w14, [x9, x3, lsl #2]"
+                ],
+                [
+                  "ldr",
+                  "w25, [x7, #-0x8]!"
+                ],
+                [
+                  "add",
+                  "w14, w24, w14"
+                ],
+                [
+                  "add",
+                  "w14, w14, w25"
+                ],
+                [
+                  "cmp",
+                  "w14, w28"
+                ],
+                [
+                  "csel",
+                  "x28, x14, x28, lo"
+                ],
+                [
+                  "orr",
+                  "w14, w3, w23, lsl #9"
+                ],
+                [
+                  "add",
+                  "x3, x3, #0x1"
+                ],
+                [
+                  "csel",
+                  "x19, x14, x19, lo"
+                ],
+                [
+                  "subs",
+                  "x21, x21, #0x1"
+                ],
+                [
+                  "b.eq",
+                  "0x17c4"
+                ]
+              ]
+            }
+          ]
+        },
+        "prefix-natural-4096": {
+          "paired_x_libdeflate": {
+            "forward": 0.9939013795416267,
+            "reverse": 0.9976751346952779
+          },
+          "counts": {
+            "instructions": 3266626,
+            "branches": 513080,
+            "stack_loads": 17310,
+            "stack_stores": 18475
+          },
+          "top_blocks": [
+            {
+              "address": "0x15388",
+              "visits": 43667,
+              "instructions": [
+                [
+                  "ldr",
+                  "w14, [x9, x3, lsl #2]"
+                ],
+                [
+                  "ldr",
+                  "w25, [x7, #-0x8]!"
+                ],
+                [
+                  "add",
+                  "w14, w24, w14"
+                ],
+                [
+                  "add",
+                  "w14, w14, w25"
+                ],
+                [
+                  "cmp",
+                  "w14, w28"
+                ],
+                [
+                  "csel",
+                  "x28, x14, x28, lo"
+                ],
+                [
+                  "orr",
+                  "w14, w3, w23, lsl #9"
+                ],
+                [
+                  "add",
+                  "x3, x3, #0x1"
+                ],
+                [
+                  "csel",
+                  "x19, x14, x19, lo"
+                ],
+                [
+                  "subs",
+                  "x21, x21, #0x1"
+                ],
+                [
+                  "b.eq",
+                  "0x17c4"
+                ]
+              ]
+            },
+            {
+              "address": "0x152b8",
+              "visits": 12630,
+              "instructions": [
+                [
+                  "lsl",
+                  "x14, x27, #2"
+                ],
+                [
+                  "ldr",
+                  "q16, [x28, x14]"
+                ],
+                [
+                  "sub",
+                  "x14, x3, x27, lsl #3"
+                ],
+                [
+                  "ldur",
+                  "q19, [x14, #-0x18]"
+                ],
+                [
+                  "ldur",
+                  "q20, [x14, #-0x8]"
+                ],
+                [
+                  "add",
+                  "x14, x27, #0x4"
+                ],
+                [
+                  "lsl",
+                  "x8, x14, #2"
+                ],
+                [
+                  "ldr",
+                  "q6, [x28, x8]"
+                ],
+                [
+                  "sub",
+                  "x14, x3, x14, lsl #3"
+                ],
+                [
+                  "ldur",
+                  "q7, [x14, #-0x18]"
+                ],
+                [
+                  "ldur",
+                  "q18, [x14, #-0x8]"
+                ],
+                [
+                  "add",
+                  "x27, x27, #0x8"
+                ],
+                [
+                  "add.4s",
+                  "v16, v3, v16"
+                ],
+                [
+                  "uzp1.4s",
+                  "v19, v20, v19"
+                ],
+                [
+                  "rev64.4s",
+                  "v19, v19"
+                ],
+                [
+                  "add.4s",
+                  "v16, v16, v19"
+                ],
+                [
+                  "uqxtn.4h",
+                  "v16, v16"
+                ],
+                [
+                  "zip1.8h",
+                  "v16, v1, v16"
+                ],
+                [
+                  "umin.4s",
+                  "v0, v16, v0"
+                ],
+                [
+                  "add.8h",
+                  "v16, v1, v4"
+                ],
+                [
+                  "add.4s",
+                  "v6, v3, v6"
+                ],
+                [
+                  "uzp1.4s",
+                  "v7, v18, v7"
+                ],
+                [
+                  "rev64.4s",
+                  "v7, v7"
+                ],
+                [
+                  "add.4s",
+                  "v6, v6, v7"
+                ],
+                [
+                  "uqxtn.4h",
+                  "v6, v6"
+                ],
+                [
+                  "zip1.8h",
+                  "v6, v16, v6"
+                ],
+                [
+                  "umin.4s",
+                  "v17, v6, v17"
+                ],
+                [
+                  "add.8h",
+                  "v1, v1, v5"
+                ],
+                [
+                  "cmp",
+                  "x27, x7"
+                ],
+                [
+                  "b.lo",
+                  "0x19f8"
+                ]
+              ]
+            },
+            {
+              "address": "0x15100",
+              "visits": 28772,
+              "instructions": [
+                [
+                  "add",
+                  "x7, x21, #0x1"
+                ],
+                [
+                  "ldr",
+                  "w3, [x9, x7, lsl #2]"
+                ],
+                [
+                  "sub",
+                  "x7, x11, x7"
+                ],
+                [
+                  "ldr",
+                  "x7, [x12, x7, lsl #3]"
+                ],
+                [
+                  "add",
+                  "w3, w24, w3"
+                ],
+                [
+                  "add",
+                  "w3, w3, w7"
+                ],
+                [
+                  "cmp",
+                  "w3, w27"
+                ],
+                [
+                  "csel",
+                  "x28, x3, x27, lo"
+                ],
+                [
+                  "add",
+                  "w7, w21, #0x1"
+                ],
+                [
+                  "orr",
+                  "w7, w7, w23, lsl #9"
+                ],
+                [
+                  "csel",
+                  "x19, x7, x19, lo"
+                ],
+                [
+                  "cmp",
+                  "x25, #0x1"
+                ],
+                [
+                  "b.eq",
+                  "0x17c4"
+                ]
+              ]
+            }
+          ]
+        },
+        "prefix-natural-8192": {
+          "paired_x_libdeflate": {
+            "forward": 0.9613919549170266,
+            "reverse": 0.9623143470091087
+          },
+          "counts": {
+            "instructions": 7608126,
+            "branches": 1307558,
+            "stack_loads": 43074,
+            "stack_stores": 46548
+          },
+          "top_blocks": [
+            {
+              "address": "0x15388",
+              "visits": 134148,
+              "instructions": [
+                [
+                  "ldr",
+                  "w14, [x9, x3, lsl #2]"
+                ],
+                [
+                  "ldr",
+                  "w25, [x7, #-0x8]!"
+                ],
+                [
+                  "add",
+                  "w14, w24, w14"
+                ],
+                [
+                  "add",
+                  "w14, w14, w25"
+                ],
+                [
+                  "cmp",
+                  "w14, w28"
+                ],
+                [
+                  "csel",
+                  "x28, x14, x28, lo"
+                ],
+                [
+                  "orr",
+                  "w14, w3, w23, lsl #9"
+                ],
+                [
+                  "add",
+                  "x3, x3, #0x1"
+                ],
+                [
+                  "csel",
+                  "x19, x14, x19, lo"
+                ],
+                [
+                  "subs",
+                  "x21, x21, #0x1"
+                ],
+                [
+                  "b.eq",
+                  "0x17c4"
+                ]
+              ]
+            },
+            {
+              "address": "0x15100",
+              "visits": 80424,
+              "instructions": [
+                [
+                  "add",
+                  "x7, x21, #0x1"
+                ],
+                [
+                  "ldr",
+                  "w3, [x9, x7, lsl #2]"
+                ],
+                [
+                  "sub",
+                  "x7, x11, x7"
+                ],
+                [
+                  "ldr",
+                  "x7, [x12, x7, lsl #3]"
+                ],
+                [
+                  "add",
+                  "w3, w24, w3"
+                ],
+                [
+                  "add",
+                  "w3, w3, w7"
+                ],
+                [
+                  "cmp",
+                  "w3, w27"
+                ],
+                [
+                  "csel",
+                  "x28, x3, x27, lo"
+                ],
+                [
+                  "add",
+                  "w7, w21, #0x1"
+                ],
+                [
+                  "orr",
+                  "w7, w7, w23, lsl #9"
+                ],
+                [
+                  "csel",
+                  "x19, x7, x19, lo"
+                ],
+                [
+                  "cmp",
+                  "x25, #0x1"
+                ],
+                [
+                  "b.eq",
+                  "0x17c4"
+                ]
+              ]
+            },
+            {
+              "address": "0x150a4",
+              "visits": 86904,
+              "instructions": [
+                [
+                  "lsr",
+                  "x23, x25, #16"
+                ],
+                [
+                  "ldrb",
+                  "w7, [x22, w23, uxtw]"
+                ],
+                [
+                  "add",
+                  "x14, x0, #0x80c"
+                ],
+                [
+                  "ldr",
+                  "w24, [x14, x7, lsl #2]"
+                ],
+                [
+                  "and",
+                  "x26, x25, #0xffff"
+                ],
+                [
+                  "sub",
+                  "x3, x26, #0x3"
+                ],
+                [
+                  "cmp",
+                  "x3, #0xff"
+                ],
+                [
+                  "b.hi",
+                  "0x1c34"
+                ]
+              ]
+            }
+          ]
+        },
+        "prefix-random-4096": {
+          "paired_x_libdeflate": {
+            "forward": 1.5708648788925055,
+            "reverse": 1.5587492518084187
+          },
+          "counts": {
+            "instructions": 283182,
+            "branches": 61503,
+            "stack_loads": 36,
+            "stack_stores": 45
+          },
+          "top_blocks": [
+            {
+              "address": "0x15490",
+              "visits": 12279,
+              "instructions": [
+                [
+                  "ldr",
+                  "w7, [x20, x7, lsl #2]"
+                ],
+                [
+                  "add",
+                  "w7, w7, w5"
+                ],
+                [
+                  "mov",
+                  "w5, w7"
+                ],
+                [
+                  "mov",
+                  "w8, #0x1"
+                ],
+                [
+                  "orr",
+                  "w8, w8, w6, lsl #9"
+                ],
+                [
+                  "lsl",
+                  "x6, x8, #32"
+                ],
+                [
+                  "orr",
+                  "x5, x5, x8, lsl #32"
+                ],
+                [
+                  "str",
+                  "x5, [x10, x11, lsl #3]"
+                ],
+                [
+                  "sub",
+                  "x4, x4, #0x1"
+                ],
+                [
+                  "sub",
+                  "x15, x15, #0x1"
+                ],
+                [
+                  "add",
+                  "x11, x11, #0x1"
+                ],
+                [
+                  "orr",
+                  "w19, w7, w6"
+                ],
+                [
+                  "b",
+                  "0x1b6c"
+                ]
+              ]
+            },
+            {
+              "address": "0x15430",
+              "visits": 12282,
+              "instructions": [
+                [
+                  "sub",
+                  "x6, x15, #0x1"
+                ],
+                [
+                  "ldr",
+                  "w6, [x13, x6, lsl #2]"
+                ],
+                [
+                  "and",
+                  "x7, x6, #0xffff"
+                ],
+                [
+                  "cbnz",
+                  "x7, 0x1b94"
+                ]
+              ]
+            },
+            {
+              "address": "0x15440",
+              "visits": 12279,
+              "instructions": [
+                [
+                  "lsr",
+                  "x6, x6, #16"
+                ],
+                [
+                  "add",
+                  "x7, x6, #0x103"
+                ],
+                [
+                  "cmp",
+                  "x7, #0x221"
+                ],
+                [
+                  "b.hs",
+                  "0x1c64"
+                ]
+              ]
+            }
+          ]
+        },
+        "prefix-random-8192": {
+          "paired_x_libdeflate": {
+            "forward": 1.5509589885247343,
+            "reverse": 1.5461273486089209
+          },
+          "counts": {
+            "instructions": 566862,
+            "branches": 123123,
+            "stack_loads": 60,
+            "stack_stores": 81
+          },
+          "top_blocks": [
+            {
+              "address": "0x15490",
+              "visits": 24543,
+              "instructions": [
+                [
+                  "ldr",
+                  "w7, [x20, x7, lsl #2]"
+                ],
+                [
+                  "add",
+                  "w7, w7, w5"
+                ],
+                [
+                  "mov",
+                  "w5, w7"
+                ],
+                [
+                  "mov",
+                  "w8, #0x1"
+                ],
+                [
+                  "orr",
+                  "w8, w8, w6, lsl #9"
+                ],
+                [
+                  "lsl",
+                  "x6, x8, #32"
+                ],
+                [
+                  "orr",
+                  "x5, x5, x8, lsl #32"
+                ],
+                [
+                  "str",
+                  "x5, [x10, x11, lsl #3]"
+                ],
+                [
+                  "sub",
+                  "x4, x4, #0x1"
+                ],
+                [
+                  "sub",
+                  "x15, x15, #0x1"
+                ],
+                [
+                  "add",
+                  "x11, x11, #0x1"
+                ],
+                [
+                  "orr",
+                  "w19, w7, w6"
+                ],
+                [
+                  "b",
+                  "0x1b6c"
+                ]
+              ]
+            },
+            {
+              "address": "0x15430",
+              "visits": 24558,
+              "instructions": [
+                [
+                  "sub",
+                  "x6, x15, #0x1"
+                ],
+                [
+                  "ldr",
+                  "w6, [x13, x6, lsl #2]"
+                ],
+                [
+                  "and",
+                  "x7, x6, #0xffff"
+                ],
+                [
+                  "cbnz",
+                  "x7, 0x1b94"
+                ]
+              ]
+            },
+            {
+              "address": "0x15440",
+              "visits": 24543,
+              "instructions": [
+                [
+                  "lsr",
+                  "x6, x6, #16"
+                ],
+                [
+                  "add",
+                  "x7, x6, #0x103"
+                ],
+                [
+                  "cmp",
+                  "x7, #0x221"
+                ],
+                [
+                  "b.hs",
+                  "0x1c64"
+                ]
+              ]
+            }
+          ]
+        },
+        "prefix-random-16384": {
+          "paired_x_libdeflate": {
+            "forward": 1.4910453319875883,
+            "reverse": 1.4938009518929134
+          },
+          "counts": {
+            "instructions": 1133958,
+            "branches": 246318,
+            "stack_loads": 102,
+            "stack_stores": 144
+          },
+          "top_blocks": [
+            {
+              "address": "0x15490",
+              "visits": 49077,
+              "instructions": [
+                [
+                  "ldr",
+                  "w7, [x20, x7, lsl #2]"
+                ],
+                [
+                  "add",
+                  "w7, w7, w5"
+                ],
+                [
+                  "mov",
+                  "w5, w7"
+                ],
+                [
+                  "mov",
+                  "w8, #0x1"
+                ],
+                [
+                  "orr",
+                  "w8, w8, w6, lsl #9"
+                ],
+                [
+                  "lsl",
+                  "x6, x8, #32"
+                ],
+                [
+                  "orr",
+                  "x5, x5, x8, lsl #32"
+                ],
+                [
+                  "str",
+                  "x5, [x10, x11, lsl #3]"
+                ],
+                [
+                  "sub",
+                  "x4, x4, #0x1"
+                ],
+                [
+                  "sub",
+                  "x15, x15, #0x1"
+                ],
+                [
+                  "add",
+                  "x11, x11, #0x1"
+                ],
+                [
+                  "orr",
+                  "w19, w7, w6"
+                ],
+                [
+                  "b",
+                  "0x1b6c"
+                ]
+              ]
+            },
+            {
+              "address": "0x15430",
+              "visits": 49113,
+              "instructions": [
+                [
+                  "sub",
+                  "x6, x15, #0x1"
+                ],
+                [
+                  "ldr",
+                  "w6, [x13, x6, lsl #2]"
+                ],
+                [
+                  "and",
+                  "x7, x6, #0xffff"
+                ],
+                [
+                  "cbnz",
+                  "x7, 0x1b94"
+                ]
+              ]
+            },
+            {
+              "address": "0x15440",
+              "visits": 49077,
+              "instructions": [
+                [
+                  "lsr",
+                  "x6, x6, #16"
+                ],
+                [
+                  "add",
+                  "x7, x6, #0x103"
+                ],
+                [
+                  "cmp",
+                  "x7, #0x221"
+                ],
+                [
+                  "b.hs",
+                  "0x1c64"
+                ]
+              ]
+            }
+          ]
+        },
+        "prefix-random-32769": {
+          "paired_x_libdeflate": {
+            "forward": 1.4065950837089198,
+            "reverse": 1.4033895160979826
+          },
+          "counts": {
+            "instructions": 2269803,
+            "branches": 492993,
+            "stack_loads": 222,
+            "stack_stores": 324
+          },
+          "top_blocks": [
+            {
+              "address": "0x15490",
+              "visits": 98112,
+              "instructions": [
+                [
+                  "ldr",
+                  "w7, [x20, x7, lsl #2]"
+                ],
+                [
+                  "add",
+                  "w7, w7, w5"
+                ],
+                [
+                  "mov",
+                  "w5, w7"
+                ],
+                [
+                  "mov",
+                  "w8, #0x1"
+                ],
+                [
+                  "orr",
+                  "w8, w8, w6, lsl #9"
+                ],
+                [
+                  "lsl",
+                  "x6, x8, #32"
+                ],
+                [
+                  "orr",
+                  "x5, x5, x8, lsl #32"
+                ],
+                [
+                  "str",
+                  "x5, [x10, x11, lsl #3]"
+                ],
+                [
+                  "sub",
+                  "x4, x4, #0x1"
+                ],
+                [
+                  "sub",
+                  "x15, x15, #0x1"
+                ],
+                [
+                  "add",
+                  "x11, x11, #0x1"
+                ],
+                [
+                  "orr",
+                  "w19, w7, w6"
+                ],
+                [
+                  "b",
+                  "0x1b6c"
+                ]
+              ]
+            },
+            {
+              "address": "0x15430",
+              "visits": 98208,
+              "instructions": [
+                [
+                  "sub",
+                  "x6, x15, #0x1"
+                ],
+                [
+                  "ldr",
+                  "w6, [x13, x6, lsl #2]"
+                ],
+                [
+                  "and",
+                  "x7, x6, #0xffff"
+                ],
+                [
+                  "cbnz",
+                  "x7, 0x1b94"
+                ]
+              ]
+            },
+            {
+              "address": "0x15440",
+              "visits": 98112,
+              "instructions": [
+                [
+                  "lsr",
+                  "x6, x6, #16"
+                ],
+                [
+                  "add",
+                  "x7, x6, #0x103"
+                ],
+                [
+                  "cmp",
+                  "x7, #0x221"
+                ],
+                [
+                  "b.hs",
+                  "0x1c64"
+                ]
+              ]
+            }
+          ]
+        },
+        "prefix-random-65537": {
+          "paired_x_libdeflate": {
+            "forward": 1.3537807842160596,
+            "reverse": 1.3565963075147633
+          },
+          "counts": {
+            "instructions": 4547568,
+            "branches": 987378,
+            "stack_loads": 603,
+            "stack_stores": 894
+          },
+          "top_blocks": [
+            {
+              "address": "0x15490",
+              "visits": 196035,
+              "instructions": [
+                [
+                  "ldr",
+                  "w7, [x20, x7, lsl #2]"
+                ],
+                [
+                  "add",
+                  "w7, w7, w5"
+                ],
+                [
+                  "mov",
+                  "w5, w7"
+                ],
+                [
+                  "mov",
+                  "w8, #0x1"
+                ],
+                [
+                  "orr",
+                  "w8, w8, w6, lsl #9"
+                ],
+                [
+                  "lsl",
+                  "x6, x8, #32"
+                ],
+                [
+                  "orr",
+                  "x5, x5, x8, lsl #32"
+                ],
+                [
+                  "str",
+                  "x5, [x10, x11, lsl #3]"
+                ],
+                [
+                  "sub",
+                  "x4, x4, #0x1"
+                ],
+                [
+                  "sub",
+                  "x15, x15, #0x1"
+                ],
+                [
+                  "add",
+                  "x11, x11, #0x1"
+                ],
+                [
+                  "orr",
+                  "w19, w7, w6"
+                ],
+                [
+                  "b",
+                  "0x1b6c"
+                ]
+              ]
+            },
+            {
+              "address": "0x15430",
+              "visits": 196320,
+              "instructions": [
+                [
+                  "sub",
+                  "x6, x15, #0x1"
+                ],
+                [
+                  "ldr",
+                  "w6, [x13, x6, lsl #2]"
+                ],
+                [
+                  "and",
+                  "x7, x6, #0xffff"
+                ],
+                [
+                  "cbnz",
+                  "x7, 0x1b94"
+                ]
+              ]
+            },
+            {
+              "address": "0x15440",
+              "visits": 196035,
+              "instructions": [
+                [
+                  "lsr",
+                  "x6, x6, #16"
+                ],
+                [
+                  "add",
+                  "x7, x6, #0x103"
+                ],
+                [
+                  "cmp",
+                  "x7, #0x221"
+                ],
+                [
+                  "b.hs",
+                  "0x1c64"
+                ]
+              ]
+            }
+          ]
+        },
+        "prefix-random-262144": {
+          "paired_x_libdeflate": {
+            "forward": 1.3000869240551867,
+            "reverse": 1.3014492615259714
+          },
+          "counts": {
+            "instructions": 18204723,
+            "branches": 3952062,
+            "stack_loads": 2670,
+            "stack_stores": 3990
+          },
+          "top_blocks": [
+            {
+              "address": "0x15490",
+              "visits": 783789,
+              "instructions": [
+                [
+                  "ldr",
+                  "w7, [x20, x7, lsl #2]"
+                ],
+                [
+                  "add",
+                  "w7, w7, w5"
+                ],
+                [
+                  "mov",
+                  "w5, w7"
+                ],
+                [
+                  "mov",
+                  "w8, #0x1"
+                ],
+                [
+                  "orr",
+                  "w8, w8, w6, lsl #9"
+                ],
+                [
+                  "lsl",
+                  "x6, x8, #32"
+                ],
+                [
+                  "orr",
+                  "x5, x5, x8, lsl #32"
+                ],
+                [
+                  "str",
+                  "x5, [x10, x11, lsl #3]"
+                ],
+                [
+                  "sub",
+                  "x4, x4, #0x1"
+                ],
+                [
+                  "sub",
+                  "x15, x15, #0x1"
+                ],
+                [
+                  "add",
+                  "x11, x11, #0x1"
+                ],
+                [
+                  "orr",
+                  "w19, w7, w6"
+                ],
+                [
+                  "b",
+                  "0x1b6c"
+                ]
+              ]
+            },
+            {
+              "address": "0x15430",
+              "visits": 785103,
+              "instructions": [
+                [
+                  "sub",
+                  "x6, x15, #0x1"
+                ],
+                [
+                  "ldr",
+                  "w6, [x13, x6, lsl #2]"
+                ],
+                [
+                  "and",
+                  "x7, x6, #0xffff"
+                ],
+                [
+                  "cbnz",
+                  "x7, 0x1b94"
+                ]
+              ]
+            },
+            {
+              "address": "0x15440",
+              "visits": 783789,
+              "instructions": [
+                [
+                  "lsr",
+                  "x6, x6, #16"
+                ],
+                [
+                  "add",
+                  "x7, x6, #0x103"
+                ],
+                [
+                  "cmp",
+                  "x7, #0x221"
+                ],
+                [
+                  "b.hs",
+                  "0x1c64"
+                ]
+              ]
+            }
+          ]
+        },
+        "prefix-random-1048576": {
+          "paired_x_libdeflate": {
+            "forward": 1.2815050333854963,
+            "reverse": 1.2838879211361258
+          },
+          "counts": {
+            "instructions": 69418301,
+            "branches": 15068186,
+            "stack_loads": 11060,
+            "stack_stores": 16540
+          },
+          "top_blocks": [
+            {
+              "address": "0x15490",
+              "visits": 2986191,
+              "instructions": [
+                [
+                  "ldr",
+                  "w7, [x20, x7, lsl #2]"
+                ],
+                [
+                  "add",
+                  "w7, w7, w5"
+                ],
+                [
+                  "mov",
+                  "w5, w7"
+                ],
+                [
+                  "mov",
+                  "w8, #0x1"
+                ],
+                [
+                  "orr",
+                  "w8, w8, w6, lsl #9"
+                ],
+                [
+                  "lsl",
+                  "x6, x8, #32"
+                ],
+                [
+                  "orr",
+                  "x5, x5, x8, lsl #32"
+                ],
+                [
+                  "str",
+                  "x5, [x10, x11, lsl #3]"
+                ],
+                [
+                  "sub",
+                  "x4, x4, #0x1"
+                ],
+                [
+                  "sub",
+                  "x15, x15, #0x1"
+                ],
+                [
+                  "add",
+                  "x11, x11, #0x1"
+                ],
+                [
+                  "orr",
+                  "w19, w7, w6"
+                ],
+                [
+                  "b",
+                  "0x1b6c"
+                ]
+              ]
+            },
+            {
+              "address": "0x15430",
+              "visits": 2991649,
+              "instructions": [
+                [
+                  "sub",
+                  "x6, x15, #0x1"
+                ],
+                [
+                  "ldr",
+                  "w6, [x13, x6, lsl #2]"
+                ],
+                [
+                  "and",
+                  "x7, x6, #0xffff"
+                ],
+                [
+                  "cbnz",
+                  "x7, 0x1b94"
+                ]
+              ]
+            },
+            {
+              "address": "0x15440",
+              "visits": 2986191,
+              "instructions": [
+                [
+                  "lsr",
+                  "x6, x6, #16"
+                ],
+                [
+                  "add",
+                  "x7, x6, #0x103"
+                ],
+                [
+                  "cmp",
+                  "x7, #0x221"
+                ],
+                [
+                  "b.hs",
+                  "0x1c64"
+                ]
+              ]
+            }
+          ]
+        },
+        "16384-distribution-change": {
+          "paired_x_libdeflate": {
+            "forward": 1.283662543114439,
+            "reverse": 1.2911041024577037
+          },
+          "counts": {
+            "instructions": 3161972,
+            "branches": 649956,
+            "stack_loads": 30669,
+            "stack_stores": 38221
+          },
+          "top_blocks": [
+            {
+              "address": "0x15490",
+              "visits": 43094,
+              "instructions": [
+                [
+                  "ldr",
+                  "w7, [x20, x7, lsl #2]"
+                ],
+                [
+                  "add",
+                  "w7, w7, w5"
+                ],
+                [
+                  "mov",
+                  "w5, w7"
+                ],
+                [
+                  "mov",
+                  "w8, #0x1"
+                ],
+                [
+                  "orr",
+                  "w8, w8, w6, lsl #9"
+                ],
+                [
+                  "lsl",
+                  "x6, x8, #32"
+                ],
+                [
+                  "orr",
+                  "x5, x5, x8, lsl #32"
+                ],
+                [
+                  "str",
+                  "x5, [x10, x11, lsl #3]"
+                ],
+                [
+                  "sub",
+                  "x4, x4, #0x1"
+                ],
+                [
+                  "sub",
+                  "x15, x15, #0x1"
+                ],
+                [
+                  "add",
+                  "x11, x11, #0x1"
+                ],
+                [
+                  "orr",
+                  "w19, w7, w6"
+                ],
+                [
+                  "b",
+                  "0x1b6c"
+                ]
+              ]
+            },
+            {
+              "address": "0x15050",
+              "visits": 30588,
+              "instructions": [
+                [
+                  "and",
+                  "x7, x13, #0xffff"
+                ],
+                [
+                  "sub",
+                  "x15, x10, x7"
+                ],
+                [
+                  "add",
+                  "w3, w20, w3"
+                ],
+                [
+                  "mov",
+                  "w27, w3"
+                ],
+                [
+                  "mov",
+                  "w3, #0x1"
+                ],
+                [
+                  "orr",
+                  "w19, w3, w28, lsl #9"
+                ],
+                [
+                  "mov",
+                  "x21, #0x2"
+                ],
+                [
+                  "adrp",
+                  "x22, 0 ; 0x1000"
+                ],
+                [
+                  "ldr",
+                  "x22, [x22]"
+                ],
+                [
+                  "cmp",
+                  "x15, x10"
+                ],
+                [
+                  "b.eq",
+                  "0x1af8"
+                ]
+              ]
+            },
+            {
+              "address": "0x15100",
+              "visits": 25228,
+              "instructions": [
+                [
+                  "add",
+                  "x7, x21, #0x1"
+                ],
+                [
+                  "ldr",
+                  "w3, [x9, x7, lsl #2]"
+                ],
+                [
+                  "sub",
+                  "x7, x11, x7"
+                ],
+                [
+                  "ldr",
+                  "x7, [x12, x7, lsl #3]"
+                ],
+                [
+                  "add",
+                  "w3, w24, w3"
+                ],
+                [
+                  "add",
+                  "w3, w3, w7"
+                ],
+                [
+                  "cmp",
+                  "w3, w27"
+                ],
+                [
+                  "csel",
+                  "x28, x3, x27, lo"
+                ],
+                [
+                  "add",
+                  "w7, w21, #0x1"
+                ],
+                [
+                  "orr",
+                  "w7, w7, w23, lsl #9"
+                ],
+                [
+                  "csel",
+                  "x19, x7, x19, lo"
+                ],
+                [
+                  "cmp",
+                  "x25, #0x1"
+                ],
+                [
+                  "b.eq",
+                  "0x17c4"
+                ]
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "panel_audit": [
+      {
+        "stage": "scalar_pair",
+        "role": "scalar-pair-tail-probe-profiled",
+        "order": "forward",
+        "previous_wins_missing": {
+          "roc": [],
+          "libdeflate": []
+        }
+      },
+      {
+        "stage": "scalar_pair",
+        "role": "scalar-pair-tail-probe-profiled",
+        "order": "reverse",
+        "previous_wins_missing": {
+          "roc": [],
+          "libdeflate": [
+            "prefix-natural-8192"
+          ]
+        }
+      },
+      {
+        "stage": "scalar_pair",
+        "role": "scalar-pair-head-probe-profiled",
+        "order": "forward",
+        "previous_wins_missing": {
+          "roc": [],
+          "libdeflate": [
+            "prefix-natural-8192"
+          ]
+        }
+      },
+      {
+        "stage": "scalar_pair",
+        "role": "scalar-pair-head-probe-profiled",
+        "order": "reverse",
+        "previous_wins_missing": {
+          "roc": [],
+          "libdeflate": [
+            "prefix-natural-8192"
+          ]
+        }
+      },
+      {
+        "stage": "registers",
+        "role": "scalar-pair-root-probe-profiled",
+        "order": "forward",
+        "previous_wins_missing": {
+          "roc": [],
+          "libdeflate": [
+            "prefix-natural-8192",
+            "prefix-random-1024"
+          ]
+        }
+      },
+      {
+        "stage": "registers",
+        "role": "scalar-pair-root-probe-profiled",
+        "order": "reverse",
+        "previous_wins_missing": {
+          "roc": [],
+          "libdeflate": [
+            "prefix-random-1024",
+            "prefix-natural-8192"
+          ]
+        }
+      },
+      {
+        "stage": "registers",
+        "role": "scalar-pair-plain-probe-profiled",
+        "order": "forward",
+        "previous_wins_missing": {
+          "roc": [],
+          "libdeflate": [
+            "prefix-natural-8192",
+            "prefix-random-1024"
+          ]
+        }
+      },
+      {
+        "stage": "registers",
+        "role": "scalar-pair-plain-probe-profiled",
+        "order": "reverse",
+        "previous_wins_missing": {
+          "roc": [],
+          "libdeflate": [
+            "prefix-random-1024",
+            "prefix-natural-8192"
+          ]
+        }
+      }
+    ],
+    "complete_build": {
+      "plan_sha256": "521ce032fb94af238cd79ed1347d0235b574791a5cf95b1df10bdf7a12262dcf",
+      "medians": {
+        "mech-control-reference": {
+          "source": 2.1757910209707916,
+          "link": 0.03539714589715004,
+          "source_through_link": 2.213504707906395,
+          "strip": 0.01087814592756331,
+          "source_through_strip": 2.2243448542430997
+        },
+        "mech-scalar-pair-tail": {
+          "source": 2.184223728487268,
+          "link": 0.035509958397597075,
+          "source_through_link": 2.2207470000721514,
+          "strip": 0.010710000060498714,
+          "source_through_strip": 2.2315334789454937
+        },
+        "mech-scalar-pair-head": {
+          "source": 2.1834976454265416,
+          "link": 0.03558545792475343,
+          "source_through_link": 2.219617520691827,
+          "strip": 0.010831228457391262,
+          "source_through_strip": 2.231024625012651
+        },
+        "roc": {
+          "source": 2.9516256246715784,
+          "link": 0.035020000068470836,
+          "source_through_link": 2.9869124374818057,
+          "strip": 0.010718416422605515,
+          "source_through_strip": 2.997623333474621
+        },
+        "libdeflate": {
+          "source": 0.44702431303448975,
+          "link": 0.034625520929694176,
+          "source_through_link": 0.48220377042889595,
+          "strip": 0.010680666426196694,
+          "source_through_strip": 0.4931131659541279
+        }
+      },
+      "phases": {
+        "mech-control-reference": {
+          "parse": 0.7040768749999999,
+          "catalog": 2.32295e-05,
+          "frontend": 0.217322625,
+          "artifact": 0.006847708,
+          "encode": 0.002539479,
+          "native": 1.2179899585
+        },
+        "mech-scalar-pair-tail": {
+          "parse": 0.704560125,
+          "catalog": 2.2521499999999998e-05,
+          "frontend": 0.217031896,
+          "artifact": 0.006852562499999999,
+          "encode": 0.0025261875,
+          "native": 1.2256821455
+        },
+        "mech-scalar-pair-head": {
+          "parse": 0.704243646,
+          "catalog": 2.1979e-05,
+          "frontend": 0.2174052085,
+          "artifact": 0.0068608955,
+          "encode": 0.002538146,
+          "native": 1.2255118545
+        }
+      },
+      "paired_ratios": {
+        "mech-control-reference": {
+          "roc": 0.7409601005659168,
+          "libdeflate": 4.5915620643394695,
+          "mech-control-reference": 1.0
+        },
+        "mech-scalar-pair-tail": {
+          "roc": 0.7434872277477723,
+          "libdeflate": 4.6054068675387025,
+          "mech-control-reference": 1.0032920221763424
+        },
+        "mech-scalar-pair-head": {
+          "roc": 0.7431393104441286,
+          "libdeflate": 4.606171540081721,
+          "mech-control-reference": 1.002866116475968
+        }
+      },
+      "trials": 10,
+      "source_commit": "84628d979e34b67b6450b9eb3e9b79a694b629e3",
+      "scope": "10 serial balanced fresh-process source-through-final-executable-link orders. Compilers and fixed support prebuilt for every actor. Every generated Mech object, complete metadata and bytecode is hash checked. Strip is separate. Bootstrap is excluded equally."
+    },
+    "next_target": "Sequential minimum/item updates within the unrolled pair to shorten first-cost and incoming-best lifetimes. Keep exact odd tails and prior named wins. Separately investigate literal-only packed DP writes identified by the eleven-case loss census."
   }
 }

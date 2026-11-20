@@ -1,0 +1,227 @@
+{
+  "compiler_sha256": "9871d88d5109f3d31104c2b95ac40e1810966b33f2286b9687078d546de8f133",
+  "runs": [
+    {
+      "role": "scalar-pair-tail-probe-profiled",
+      "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+      "variants": [
+        {
+          "mode": "normal",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-revisit-compiler/compiler/9871d88d5109f3d3/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-portable-replays/scalar-pair-tail-probe-profiled/normal/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "9871d88d5109f3d31104c2b95ac40e1810966b33f2286b9687078d546de8f133",
+          "artifacts": {
+            "program.o": "1fc6e1a7b1fbcee8be3a708e42a6dbbbdddaee576b282d1020ce39225af9fb5f",
+            "metadata.json": "faa1534026e88b131cec3b36b233537d7e5e564258fb68263687712e99e34c8b",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        },
+        {
+          "mode": "checked",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-revisit-compiler/compiler/9871d88d5109f3d3/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-portable-replays/scalar-pair-tail-probe-profiled/checked/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "9871d88d5109f3d31104c2b95ac40e1810966b33f2286b9687078d546de8f133",
+          "artifacts": {
+            "program.o": "1fc6e1a7b1fbcee8be3a708e42a6dbbbdddaee576b282d1020ce39225af9fb5f",
+            "metadata.json": "faa1534026e88b131cec3b36b233537d7e5e564258fb68263687712e99e34c8b",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        }
+      ],
+      "scope": "Exact source-artifact replay; runtime and complete-build measurements are separate."
+    },
+    {
+      "role": "scalar-pair-head-probe-profiled",
+      "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+      "variants": [
+        {
+          "mode": "normal",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-revisit-compiler/compiler/9871d88d5109f3d3/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-portable-replays/scalar-pair-head-probe-profiled/normal/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "9871d88d5109f3d31104c2b95ac40e1810966b33f2286b9687078d546de8f133",
+          "artifacts": {
+            "program.o": "e58fbb723f822f98ab68919a95519a5d9ec16cb616951e5c49c29bb5671835dd",
+            "metadata.json": "635430d59467dacaa1138c950243e173d180ca51ef92a63c6491db938813810e",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        },
+        {
+          "mode": "checked",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-revisit-compiler/compiler/9871d88d5109f3d3/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-portable-replays/scalar-pair-head-probe-profiled/checked/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "9871d88d5109f3d31104c2b95ac40e1810966b33f2286b9687078d546de8f133",
+          "artifacts": {
+            "program.o": "e58fbb723f822f98ab68919a95519a5d9ec16cb616951e5c49c29bb5671835dd",
+            "metadata.json": "635430d59467dacaa1138c950243e173d180ca51ef92a63c6491db938813810e",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        }
+      ],
+      "scope": "Exact source-artifact replay; runtime and complete-build measurements are separate."
+    },
+    {
+      "role": "eight-entry-root-probe-profiled",
+      "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+      "variants": [
+        {
+          "mode": "normal",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-revisit-compiler/compiler/9871d88d5109f3d3/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-portable-replays/eight-entry-root-probe-profiled/normal/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "9871d88d5109f3d31104c2b95ac40e1810966b33f2286b9687078d546de8f133",
+          "artifacts": {
+            "program.o": "603a479282385e7fa57220932d978ff4508781f8497810ca3a36a7a70be663da",
+            "metadata.json": "f4c0f9af0f253d4a2314b7d932023467758678c88d82c5ad0dcbe622b8a6c582",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        },
+        {
+          "mode": "checked",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-revisit-compiler/compiler/9871d88d5109f3d3/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-portable-replays/eight-entry-root-probe-profiled/checked/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "9871d88d5109f3d31104c2b95ac40e1810966b33f2286b9687078d546de8f133",
+          "artifacts": {
+            "program.o": "603a479282385e7fa57220932d978ff4508781f8497810ca3a36a7a70be663da",
+            "metadata.json": "f4c0f9af0f253d4a2314b7d932023467758678c88d82c5ad0dcbe622b8a6c582",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        }
+      ],
+      "scope": "Exact source-artifact replay; runtime and complete-build measurements are separate."
+    },
+    {
+      "role": "scalar-pair-root-probe-profiled",
+      "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+      "variants": [
+        {
+          "mode": "normal",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-revisit-compiler/compiler/9871d88d5109f3d3/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-portable-replays/scalar-pair-root-probe-profiled/normal/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "9871d88d5109f3d31104c2b95ac40e1810966b33f2286b9687078d546de8f133",
+          "artifacts": {
+            "program.o": "7bff44fd6bccc5d3dd434634ea4786e0608cfb696019f64851358e1d6de252ed",
+            "metadata.json": "436a0e8e1b4ea972f1dfe261cc72b4f7de6d98e59eab0ef733163a89df39c730",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        },
+        {
+          "mode": "checked",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-revisit-compiler/compiler/9871d88d5109f3d3/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-portable-replays/scalar-pair-root-probe-profiled/checked/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "9871d88d5109f3d31104c2b95ac40e1810966b33f2286b9687078d546de8f133",
+          "artifacts": {
+            "program.o": "7bff44fd6bccc5d3dd434634ea4786e0608cfb696019f64851358e1d6de252ed",
+            "metadata.json": "436a0e8e1b4ea972f1dfe261cc72b4f7de6d98e59eab0ef733163a89df39c730",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        }
+      ],
+      "scope": "Exact source-artifact replay; runtime and complete-build measurements are separate."
+    },
+    {
+      "role": "eight-entry-plain-probe-profiled",
+      "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+      "variants": [
+        {
+          "mode": "normal",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-revisit-compiler/compiler/9871d88d5109f3d3/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-portable-replays/eight-entry-plain-probe-profiled/normal/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "9871d88d5109f3d31104c2b95ac40e1810966b33f2286b9687078d546de8f133",
+          "artifacts": {
+            "program.o": "9ce6e274388a6bced51b5c207b2b04045d8bca43d236880ca427b0b33e9af85d",
+            "metadata.json": "21d3ec0caa10771344f1c14115d818568827ee8395a67bd08f05930bc2e9f163",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        },
+        {
+          "mode": "checked",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-revisit-compiler/compiler/9871d88d5109f3d3/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-portable-replays/eight-entry-plain-probe-profiled/checked/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "9871d88d5109f3d31104c2b95ac40e1810966b33f2286b9687078d546de8f133",
+          "artifacts": {
+            "program.o": "9ce6e274388a6bced51b5c207b2b04045d8bca43d236880ca427b0b33e9af85d",
+            "metadata.json": "21d3ec0caa10771344f1c14115d818568827ee8395a67bd08f05930bc2e9f163",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        }
+      ],
+      "scope": "Exact source-artifact replay; runtime and complete-build measurements are separate."
+    },
+    {
+      "role": "scalar-pair-plain-probe-profiled",
+      "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+      "variants": [
+        {
+          "mode": "normal",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-revisit-compiler/compiler/9871d88d5109f3d3/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-portable-replays/scalar-pair-plain-probe-profiled/normal/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "9871d88d5109f3d31104c2b95ac40e1810966b33f2286b9687078d546de8f133",
+          "artifacts": {
+            "program.o": "434d3f68c34b7af7bf47ac4eb50f302e373eca416ab2ad92a57b87005ec73fd3",
+            "metadata.json": "c2f2b1675fdb0fe3441bd7eb5da2080de90d9fb8fc31c59d5db8a49f2c5f6ab1",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        },
+        {
+          "mode": "checked",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-revisit-compiler/compiler/9871d88d5109f3d3/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-portable-replays/scalar-pair-plain-probe-profiled/checked/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "9871d88d5109f3d31104c2b95ac40e1810966b33f2286b9687078d546de8f133",
+          "artifacts": {
+            "program.o": "434d3f68c34b7af7bf47ac4eb50f302e373eca416ab2ad92a57b87005ec73fd3",
+            "metadata.json": "c2f2b1675fdb0fe3441bd7eb5da2080de90d9fb8fc31c59d5db8a49f2c5f6ab1",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        }
+      ],
+      "scope": "Exact source-artifact replay; runtime and complete-build measurements are separate."
+    }
+  ]
+}
