@@ -1496,6 +1496,13 @@ fn prepare_impl<M: Module>(
             })
             .collect();
         entry_spans = cfg_cleanup::admitted_spans::fold(&mut context, &loads, &lengths);
+        if std::env::var_os("MECH_REUSE_ADMITTED_INPUT_WORD_LENGTHS").is_some() {
+            cfg_cleanup::admitted_spans::admit_word_length(
+                &mut context.func,
+                &loads,
+                &mut entry_spans,
+            );
+        }
         if !entry_spans.is_empty() {
             context.flowgraph();
             context.verify(module.isa()).map_err(backend)?;

@@ -6,7 +6,7 @@ use cranelift_module::{Linkage, Module, default_libcall_names};
 mod fixture;
 type Run = unsafe extern "C" fn(u64, *const u64, *mut u64) -> u64;
 
-fn compile(normalized: bool) -> (JITModule, Run, Run) {
+fn compile(normalized: bool, word_floor: bool) -> (JITModule, Run, Run) {
     let mut module = JITModule::new(
         JITBuilder::with_flags(
             &[("opt_level", "speed"), ("regalloc_checker", "true")],
@@ -37,14 +37,23 @@ fn compile(normalized: bool) -> (JITModule, Run, Run) {
             (1, 1)
         );
     }
+    let mut spans = fold(&mut fast, &loads, &BTreeSet::from([2]));
+    let extra = if word_floor {
+        let extra = admit_word_length(&mut fast.func, &loads, &mut spans);
+        assert!(extra > 0);
+        extra
+    } else {
+        0
+    };
     assert_eq!(
-        fold(&mut fast, &loads, &BTreeSet::from([2])),
+        spans,
         vec![Admission {
             begin_word: 0,
             end_word: 1,
             length_word: 2,
+            minimum_length: if word_floor { 8 } else { 0 },
             // Readonly conversion also leaves its old comparison for dead-value retirement.
-            checks_removed: if normalized { 2 } else { 1 },
+            checks_removed: (if normalized { 2 } else { 1 }) + extra,
         }]
     );
     let mut functions = Vec::new();
@@ -74,7 +83,15 @@ fn compile(normalized: bool) -> (JITModule, Run, Run) {
         [0, 8, 16].map(|offset| b.ins().load(types::I64, MemFlags::new(), args[1], offset));
     let ordered = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, begin, end);
     let fits = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, end, length);
-    let admitted = b.ins().band(ordered, fits);
+    let mut admitted = b.ins().band(ordered, fits);
+    if spans[0].minimum_length != 0 {
+        let enough = b.ins().icmp_imm(
+            IntCC::UnsignedGreaterThanOrEqual,
+            length,
+            spans[0].minimum_length as i64,
+        );
+        admitted = b.ins().band(admitted, enough);
+    }
     b.ins().brif(admitted, yes, &[], no, &[]);
     for (block, function) in [(yes, calls[1]), (no, calls[0])] {
         b.switch_to_block(block);
@@ -99,7 +116,12 @@ fn compile(normalized: bool) -> (JITModule, Run, Run) {
 }
 
 fn oracle(bytes: &[u8], mut at: u64, end: u64, budget: u64, marker: u64) -> (u64, [u64; 4]) {
-    let mut output = [0, 0, 0, marker.wrapping_add(1)];
+    let mut output = [
+        0,
+        0,
+        bytes.len().saturating_sub(8) as u64,
+        marker.wrapping_add(1),
+    ];
     while at != end {
         if output[1] == budget {
             output[0] = 102;
@@ -117,17 +139,19 @@ fn oracle(bytes: &[u8], mut at: u64, end: u64, budget: u64, marker: u64) -> (u64
     (0, output)
 }
 
-fn check(normalized: bool) {
-    let (_module, old, guarded) = compile(normalized);
+fn check(normalized: bool, word_floor: bool) {
+    let (_module, old, guarded) = compile(normalized, word_floor);
     let mut count = 0;
     for error in [false, true] {
-        let mut bytes = [11, 22, 33, 44, 55, 66, 77, 88];
+        let mut bytes = [
+            11, 22, 33, 44, 55, 66, 77, 88, 99, 110, 121, 132, 143, 154, 165, 176,
+        ];
         if error {
             bytes[3] = 255;
         }
         for begin in [0, 1, 7, 8, 9, u64::MAX - 1, u64::MAX] {
             for end in [0, 1, 7, 8, 9, u64::MAX] {
-                for length in [0, 1, 7, 8] {
+                for length in [0, 1, 7, 8, 16] {
                     for budget in [0, 1, 8] {
                         for marker in [0, 1, u64::MAX] {
                             let expected = oracle(&bytes[..length], begin, end, budget, marker);
@@ -150,17 +174,22 @@ fn check(normalized: bool) {
             }
         }
     }
-    assert_eq!(count, 6048);
+    assert_eq!(count, 7560);
 }
 
 #[test]
 fn admitted_span_keeps_default_reads_partial_effects_and_original_errors() {
-    check(false);
+    check(false, false);
 }
 
 #[test]
 fn admitted_span_composes_with_readonly_default_loads() {
-    check(true);
+    check(true, false);
+}
+
+#[test]
+fn admitted_word_floor_preserves_short_input_fallback_and_saturated_windows() {
+    check(true, true);
 }
 
 #[test]
@@ -169,10 +198,9 @@ fn admitted_span_proof_misses_preserve_graph_and_empty_contract() {
     for mode in 1..=8 {
         let (mut ctx, loads) = fixture::body(&module, mode);
         let before = ctx.func.display().to_string();
-        assert!(
-            fold(&mut ctx, &loads, &BTreeSet::from([2])).is_empty(),
-            "mode {mode}"
-        );
+        let mut spans = fold(&mut ctx, &loads, &BTreeSet::from([2]));
+        assert!(spans.is_empty(), "mode {mode}");
+        assert_eq!(admit_word_length(&mut ctx.func, &loads, &mut spans), 0);
         assert_eq!(ctx.func.display().to_string(), before, "mode {mode}");
         ctx.verify(module.isa()).unwrap();
     }

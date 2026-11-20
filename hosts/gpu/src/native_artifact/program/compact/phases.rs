@@ -483,7 +483,15 @@ impl Phase {
             let length = words.read(b, span.length_word);
             let ordered = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, begin, end);
             let fits = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, end, length);
-            let valid = b.ins().band(ordered, fits);
+            let mut valid = b.ins().band(ordered, fits);
+            if span.minimum_length != 0 {
+                let enough = b.ins().icmp_imm(
+                    IntCC::UnsignedGreaterThanOrEqual,
+                    length,
+                    span.minimum_length as i64,
+                );
+                valid = b.ins().band(valid, enough);
+            }
             let next = b.create_block();
             b.ins().brif(valid, next, &[], fallback, &[]);
             b.switch_to_block(next);

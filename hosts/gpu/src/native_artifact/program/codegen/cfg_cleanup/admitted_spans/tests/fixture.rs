@@ -55,20 +55,27 @@ pub(super) fn body(module: &JITModule, mode: u8) -> (Context, BTreeMap<Value, (I
     for offset in [0, 8, 16] {
         b.ins().store(MemFlags::new(), zero, output, offset);
     }
+    let word_fits = b
+        .ins()
+        .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, length, 8);
+    let after_word = b.ins().iadd_imm(length, -8);
+    let window = b.ins().select(word_fits, after_word, zero);
+    b.ins().store(MemFlags::new(), window, output, 16);
     if mode == 8 {
         let alternate = b.create_block();
         b.ins().brif(
             budget,
             outer,
-            &[begin.into(), zero.into(), zero.into()],
+            &[begin.into(), zero.into(), window.into()],
             alternate,
             &[],
         );
         b.switch_to_block(alternate);
-        b.ins().jump(outer, &[end.into(), zero.into(), zero.into()]);
+        b.ins()
+            .jump(outer, &[end.into(), zero.into(), window.into()]);
     } else {
         b.ins()
-            .jump(outer, &[begin.into(), zero.into(), zero.into()]);
+            .jump(outer, &[begin.into(), zero.into(), window.into()]);
     }
     b.switch_to_block(outer);
     b.ins().jump(
