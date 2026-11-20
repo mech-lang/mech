@@ -144,7 +144,7 @@ fn bounded_cost_ordinal_key_preserves_strict_ties_unsigned_costs_and_wide_fallba
             if mode >= 4 {
                 let long = b
                     .ins()
-                    .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, count, 16);
+                    .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, count, 8);
                 fits = b.ins().band(fits, long);
             }
             let narrow = b.create_block();
@@ -214,7 +214,7 @@ fn bounded_cost_ordinal_key_preserves_strict_ties_unsigned_costs_and_wide_fallba
             seed ^= seed << 17;
             seed as u32
         };
-        let count = [0, 4, 8, 16, 20, 24, 28, 32, 64, 128, 252, 256, 508, 512][sample % 14];
+        let count = [0, 4, 8, 12, 16, 20, 24, 28, 32, 64, 128, 252, 256, 508, 512][sample % 15];
         let start = match sample % 8 {
             0 => 0,
             1 => 3,
@@ -268,7 +268,7 @@ fn bounded_cost_ordinal_key_preserves_strict_ties_unsigned_costs_and_wide_fallba
                 continue;
             }
             let route = u32::from(
-                mode != 0 && best <= 65535 && start + count <= 65535 && (mode < 4 || count >= 16),
+                mode != 0 && best <= 65535 && start + count <= 65535 && (mode < 4 || count >= 8),
             );
             let mut output = [0xa5a5_a5a5u32; 5];
             // SAFETY: count is a multiple of four, both input extents are

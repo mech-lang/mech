@@ -125,11 +125,27 @@ impl Reduction {
         let vector = b.create_block();
         let missing = b.ins().iconst(types::I32, -1);
         let initial = old_item.unwrap_or(missing);
-        let long = b
-            .ins()
-            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, 16);
+        let count_admitted = std::env::var_os("MECH_ORDERED_PACKED_COST_INDEX").is_some()
+            && facts.check(
+                initialize,
+                super::super::traversal_facts::Check::Le(
+                    super::super::traversal_facts::Operand::Word(c.count),
+                    super::super::traversal_facts::Operand::Constant(65535),
+                ),
+            );
+        let eight_entry = std::env::var_os("MECH_ORDERED_PACKED_EIGHT_ENTRY").is_some()
+            && std::env::var_os("MECH_ORDERED_PACKED_ACCUMULATORS").as_deref()
+                == Some(std::ffi::OsStr::new("2"))
+            && super::vector_loop::packed_enabled(self);
+        let long = b.ins().icmp_imm(
+            IntCC::UnsignedGreaterThanOrEqual,
+            remaining,
+            if eight_entry { 8 } else { 16 },
+        );
+        let short_entry;
         if let Some(old_item) = old_item.filter(|_| singleton) {
             let short = b.create_block();
+            short_entry = Some(short);
             b.ins().brif(long, vector, &[], short, &[]);
             b.switch_to_block(short);
             // Do the first admitted visit directly. Only the continuing
@@ -257,6 +273,7 @@ impl Reduction {
             }
             b.ins().jump(scalar_body, &args);
         } else {
+            short_entry = None;
             b.ins().brif(
                 long,
                 vector,
@@ -266,6 +283,33 @@ impl Reduction {
             );
         }
         b.switch_to_block(vector);
+        let packed_fit = if eight_entry {
+            let fits = super::packed_key::fits(b, best, stop, count_admitted);
+            let original_long = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, 16);
+            let admitted = b.ins().bor(original_long, fits);
+            let body = b.create_block();
+            // Short wide-cost intervals retain the optimized scalar entry.
+            // Only a packed interval can enter with eight candidates; the
+            // original wide vector route still requires sixteen. Reuse this
+            // same fit value in the kernel, without another packed guard.
+            if let Some(short) = short_entry {
+                b.ins().brif(admitted, body, &[], short, &[]);
+            } else {
+                b.ins().brif(
+                    admitted,
+                    body,
+                    &[],
+                    scalar_body,
+                    &[start.into(), best.into(), initial.into()],
+                );
+            }
+            b.switch_to_block(body);
+            Some(fits)
+        } else {
+            None
+        };
         if std::env::var_os("MECH_ORDERED_VECTOR_HOIST_COST_WORDS").is_some() {
             inputs.prepare_vector_words(b);
         }
@@ -300,14 +344,6 @@ impl Reduction {
                 winner
             }
         };
-        let count_admitted = std::env::var_os("MECH_ORDERED_PACKED_COST_INDEX").is_some()
-            && facts.check(
-                initialize,
-                super::super::traversal_facts::Check::Le(
-                    super::super::traversal_facts::Operand::Word(c.count),
-                    super::super::traversal_facts::Operand::Constant(65535),
-                ),
-            );
         let selected = super::vector_loop::Kernel {
             reduction: self,
             proof,
@@ -317,6 +353,7 @@ impl Reduction {
             stop,
             best,
             count_admitted,
+            packed_fit,
         }
         .emit(b, missing, old_item, map);
         let minimum = selected.minimum;
