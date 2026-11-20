@@ -20,6 +20,7 @@ pub(in crate::native_artifact) mod identity_routes;
 pub(in crate::native_artifact) mod independent_private_read;
 mod known_widths;
 mod local_phis;
+pub(in crate::native_artifact) mod narrow_bits;
 pub(in crate::native_artifact) mod packed_halfword_reads;
 mod preheaders;
 pub(in crate::native_artifact) mod reduction_bound;
