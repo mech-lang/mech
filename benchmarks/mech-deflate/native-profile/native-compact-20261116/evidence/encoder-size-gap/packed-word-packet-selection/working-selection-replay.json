@@ -1,0 +1,40 @@
+{
+  "manifest_sha256": "5982044c54c904396f9ac6adf507c214eb0c3c61e7dde12c2bb62d08629753b2",
+  "compiler_source_commit": "89dd67efb617e44e72aaa0710101e566661e8600",
+  "compiler_sha256": "8021d18c60b34931391099f3728e6e8201ec44ec5258ae8bc2df8d2ea9b13603",
+  "production_recipe_assembly_checked": true,
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "runs": [
+    {
+      "mode": "normal",
+      "compiler_sha256": "8021d18c60b34931391099f3728e6e8201ec44ec5258ae8bc2df8d2ea9b13603",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/parallel-low-compiler/compiler/8021d18c60b34931/compile_profile",
+        "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/working-packet-latest-source-replay/normal/frontend",
+        "compact"
+      ],
+      "artifacts": {
+        "program.o": "6b7a6066980489e586890372344de6ec011e06ef2c2bbb5e546ebf5ba8e0ace1",
+        "metadata.json": "b4c0eeb760aad34e98e6733bef6b8e5db6935dc4a1df5ed5fe4ae8736fcda82f",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      }
+    },
+    {
+      "mode": "checked",
+      "compiler_sha256": "8021d18c60b34931391099f3728e6e8201ec44ec5258ae8bc2df8d2ea9b13603",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/parallel-low-compiler/compiler/8021d18c60b34931/compile_profile",
+        "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/working-packet-latest-source-replay/checked/frontend",
+        "compact"
+      ],
+      "artifacts": {
+        "program.o": "6b7a6066980489e586890372344de6ec011e06ef2c2bbb5e546ebf5ba8e0ace1",
+        "metadata.json": "b4c0eeb760aad34e98e6733bef6b8e5db6935dc4a1df5ed5fe4ae8736fcda82f",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      }
+    }
+  ],
+  "scope": "Actual named recipe flag assembly and relocated profile loader reproduced the selected object,full metadata and canonical bytecode exactly in normal/checked modes. Runtime score belongs to the pinned worker recorded in candidate.json."
+}

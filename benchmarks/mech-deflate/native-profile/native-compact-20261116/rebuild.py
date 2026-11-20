@@ -23,6 +23,7 @@ M1_SOURCE_RECIPES = {
     'm1-bounded-byte-histogram': 'bounded-byte-histogram-study',
     'm1-packed-eight-entry': 'packed-eight-entry-study',
     'm1-narrow-packed-words': 'packed-word-repair-study',
+    'm1-narrow-packet-words': 'packed-word-packet-selection',
     'm1-bounded-index-ranges-experimental': 'bounded-index-range-study',
 }
 
@@ -80,7 +81,7 @@ parser.add_argument(
         'frame-copies',
         *M1_SOURCE_RECIPES,
     ],
-    default=('m1-narrow-packed-words' if (platform.system(), platform.machine()) == ('Darwin', 'arm64') else 'baseline'),
+    default=('m1-narrow-packet-words' if (platform.system(), platform.machine()) == ('Darwin', 'arm64') else 'baseline'),
 )
 parser.add_argument('--mimalloc-object',type=Path,help='optional fixed comparator allocator; also link and check the worker')
 parser.add_argument('--target-dir',type=Path)
