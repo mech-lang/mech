@@ -45,6 +45,27 @@ pub(super) fn apply(context: &mut Context, symbol: &str) -> io::Result<()> {
     Ok(())
 }
 
+/// Register weights refer to the full lowered VCode, rather than byte offsets
+/// in a previously allocated machine body. Validation occurs after lowering.
+pub(super) fn apply_register_weights(context: &mut Context, symbol: &str) -> io::Result<()> {
+    #[derive(serde::Deserialize)]
+    struct RegisterWeights {
+        expected_vcode: String,
+        block_frequencies: Vec<u32>,
+    }
+    if let Ok(profiles) = std::env::var("MECH_COMPACT_PHASE_REGISTER_WEIGHTS")
+        && let Some(path) = profiles
+            .split(';')
+            .filter_map(|entry| entry.split_once('@'))
+            .find_map(|(name, path)| (name == symbol).then_some(path))
+    {
+        let weights: RegisterWeights = serde_json::from_slice(&std::fs::read(path)?)?;
+        context.func.regalloc_block_frequencies =
+            Some((weights.expected_vcode, weights.block_frequencies));
+    }
+    Ok(())
+}
+
 pub(super) fn pad_object_tail(
     profiles: &str,
     symbol: &str,

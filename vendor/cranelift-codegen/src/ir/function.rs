@@ -14,7 +14,6 @@ use crate::ir::{
 };
 use crate::isa::CallConv;
 use crate::write::{write_function, write_function_spec};
-#[cfg(feature = "enable-serde")]
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt;
@@ -204,6 +203,12 @@ pub struct FunctionStencil {
     #[cfg_attr(feature = "enable-serde", serde(default))]
     pub aarch64_prefer_preserved_regs: bool,
 
+    /// Exact pre-allocation VCode and measured relative frequencies, indexed by
+    /// VCode block. The backend rejects mismatched code, missing blocks, or
+    /// weights outside 1..=2^20 before using the profile for spill costs.
+    #[cfg_attr(feature = "enable-serde", serde(default))]
+    pub regalloc_block_frequencies: Option<(String, Vec<u32>)>,
+
     /// Select AArch64 compare-and-branch instructions for integer zero comparisons.
     pub aarch64_branch_on_zero: bool,
 
@@ -262,6 +267,7 @@ impl FunctionStencil {
         self.aarch64_share_frame_copies = false;
         self.forward_spill_reloads = false;
         self.aarch64_prefer_preserved_regs = false;
+        self.regalloc_block_frequencies = None;
         self.aarch64_branch_on_zero = false;
         self.aarch64_block_layout.clear();
         self.aarch64_block_layout_literal_start = None;
@@ -464,6 +470,7 @@ impl Function {
                 aarch64_share_frame_copies: false,
                 forward_spill_reloads: false,
                 aarch64_prefer_preserved_regs: false,
+                regalloc_block_frequencies: None,
                 aarch64_branch_on_zero: false,
                 aarch64_block_layout: Vec::new(),
                 aarch64_block_layout_literal_start: None,

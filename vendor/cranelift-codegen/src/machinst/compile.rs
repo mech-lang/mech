@@ -29,7 +29,7 @@ pub fn compile<B: LowerBackend + TargetIsa>(
         crate::machinst::Lower::new(f, abi, emit_info, block_order, sigs, b.flags().clone())?;
 
     // Lower the IR.
-    let vcode = {
+    let mut vcode = {
         log::debug!(
             "Number of CLIF instructions to lower: {}",
             f.dfg.num_insts()
@@ -46,6 +46,10 @@ pub fn compile<B: LowerBackend + TargetIsa>(
     );
     log::debug!("Number of lowered vcode blocks: {}", vcode.num_blocks());
     trace!("vcode from lowering: \n{:?}", vcode);
+
+    if let Some((expected, frequencies)) = &f.regalloc_block_frequencies {
+        vcode.apply_register_profile(expected, frequencies)?;
+    }
 
     // Perform register allocation.
     let regalloc_result = {

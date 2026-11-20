@@ -1139,6 +1139,9 @@ impl<'a, F: Function> Env<'a, F> {
                             OperandConstraint::Reg,
                             loop_depth as usize,
                             /* is_def = */ true,
+                            self.func.block_frequency(
+                                self.ctx.cfginfo.insn_block[first_conflict_point.inst().index()],
+                            ),
                         )
                         .to_int();
                         if lowest_cost_split_conflict_cost.is_none()
@@ -1159,6 +1162,8 @@ impl<'a, F: Function> Env<'a, F> {
                             OperandConstraint::Reg,
                             loop_depth as usize,
                             /* is_def = */ true,
+                            self.func
+                                .block_frequency(self.ctx.cfginfo.insn_block[point.inst().index()]),
                         )
                         .to_int();
 
