@@ -397,34 +397,57 @@ impl Reduction {
                 (window, pointer)
             })
             .collect::<Vec<_>>();
-        let (minimum, winner) = super::winner::emit(
-            b,
-            final_costs,
-            final_indices,
-            best,
-            missing,
-            std::env::var_os("MECH_ORDERED_SKIP_UNCHANGED_VECTOR_WINNER").is_some(),
-        );
-        let carried_value = if let Some(old_item) = old_item {
-            let changed = b.ins().icmp_imm(IntCC::NotEqual, winner, -1);
-            let index = b.ins().uextend(types::I64, winner);
-            let selected = if let Some((window, _)) = deferred {
-                b.ins().iadd_imm(index, window.delta as i64)
+        let selection = std::env::var_os("MECH_ORDERED_SKIP_UNCHANGED_VECTOR_WINNER");
+        let map = |b: &mut FunctionBuilder<'_>, winner: Value, improved: bool| {
+            if let Some(old_item) = old_item {
+                let changed = (!improved).then(|| b.ins().icmp_imm(IntCC::NotEqual, winner, -1));
+                let index = b.ins().uextend(types::I64, winner);
+                let selected = if let Some((window, _)) = deferred {
+                    b.ins().iadd_imm(index, window.delta as i64)
+                } else {
+                    emit_item(
+                        b,
+                        words,
+                        proof,
+                        shadow,
+                        &self.selected,
+                        index,
+                        ordinary,
+                        true,
+                    )
+                };
+                changed.map_or(selected, |changed| {
+                    b.ins().select(changed, selected, old_item)
+                })
             } else {
-                emit_item(
-                    b,
-                    words,
-                    proof,
-                    shadow,
-                    &self.selected,
-                    index,
-                    ordinary,
-                    true,
-                )
-            };
-            b.ins().select(changed, selected, old_item)
+                winner
+            }
+        };
+        let (minimum, carried_value) = if selection.as_deref() == Some(std::ffi::OsStr::new("item"))
+            && let Some(old_item) = old_item
+        {
+            // The selected item is pure and source-observable only after a
+            // strict improvement. Keep its reconstruction on that same edge.
+            super::winner::emit_mapped(
+                b,
+                final_costs,
+                final_indices,
+                best,
+                missing,
+                true,
+                old_item,
+                map,
+            )
         } else {
-            winner
+            let (minimum, winner) = super::winner::emit(
+                b,
+                final_costs,
+                final_indices,
+                best,
+                missing,
+                selection.is_some(),
+            );
+            (minimum, map(b, winner, false))
         };
         let more = b.ins().icmp(IntCC::UnsignedLessThan, end, stop);
         let finish_args = [minimum.into(), carried_value.into()];
