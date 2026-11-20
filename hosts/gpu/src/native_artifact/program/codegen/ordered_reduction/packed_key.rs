@@ -57,3 +57,16 @@ pub(super) fn finish(b: &mut FunctionBuilder<'_>, keys: Value) -> (Value, Value)
     let index = b.ins().iadd_imm(biased, -1);
     (cost, index)
 }
+
+/// Widen before removing the ordinal bias. A full-width item offset can then
+/// fold into this subtraction, without a wrapping I32 operation in between.
+/// Zero ordinal becomes I64 -1; the item's unchanged sentinel test discards
+/// the pure total extension of that index and preserves the complete old item.
+pub(super) fn finish_wide_item(b: &mut FunctionBuilder<'_>, keys: Value) -> (Value, Value) {
+    let key = minimum_word(b, keys);
+    let cost = b.ins().ushr_imm(key, 16);
+    let biased = b.ins().band_imm(key, 65535);
+    let biased = b.ins().uextend(types::I64, biased);
+    let index = b.ins().iadd_imm(biased, -1);
+    (cost, index)
+}

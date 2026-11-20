@@ -274,7 +274,11 @@ impl Reduction {
         let map = |b: &mut FunctionBuilder<'_>, winner: Value, improved: bool| {
             if let Some(old_item) = old_item {
                 let changed = (!improved).then(|| b.ins().icmp_imm(IntCC::NotEqual, winner, -1));
-                let index = b.ins().uextend(types::I64, winner);
+                let index = if b.func.dfg.value_type(winner) == types::I64 {
+                    winner
+                } else {
+                    b.ins().uextend(types::I64, winner)
+                };
                 let selected = if let Some((window, _)) = deferred {
                     b.ins().iadd_imm(index, window.delta as i64)
                 } else {
