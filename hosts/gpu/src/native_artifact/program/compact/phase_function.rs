@@ -585,7 +585,7 @@ fn prepare_impl<M: Module>(
     let symbol = format!("mech_compact_numeric_{header}{suffix}");
     let signature = phase_signature(module);
     let error_origin_base = bodies.is_some().then_some(header);
-    let (mut context, report) = phase_ir(
+    let (mut context, mut report) = phase_ir(
         module,
         code,
         region,
@@ -645,6 +645,7 @@ fn prepare_impl<M: Module>(
             packed_input: None,
             unsigned_guards: 0,
             packed_halfword_stores: 0,
+            admitted_index_guards: 0,
         };
         return Ok(General::Deferred(DeferredGeneral {
             context,
@@ -674,11 +675,53 @@ fn prepare_impl<M: Module>(
     let reuse_lengths = std::env::var_os("MECH_REUSE_ADMITTED_VIEW_LENGTHS").is_some();
     let pack_halfword_stores = std::env::var_os("MECH_PACK_PRIVATE_HALFWORD_STORES");
     let mut paired_halfword_stores = None;
+    let mut admitted_index_guards = 0;
+    if !observe
+        && cleanup.enabled
+        && no_growth.is_none()
+        && vectors.is_some_and(|contract| contract.extend_bounds)
+        && private.is_some_and(|contract| contract.permits(proof))
+        && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
+    {
+        let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
+        let mut lengths = BTreeMap::new();
+        for (array, view) in proof.arrays.iter().enumerate() {
+            if !view.writable || view.appends || view.width != 4 {
+                continue;
+            }
+            let Ok(at) = packet.binary_search(&(proof.view(array) + 1)) else {
+                continue;
+            };
+            let mut values = loads.iter().filter(|(_, pair)| pair.1 == at);
+            if let Some((&value, _)) = values.next()
+                && values.next().is_none()
+            {
+                lengths.insert(value, array);
+            }
+        }
+        let required = cfg_cleanup::admitted_lengths::required_index_floors(
+            &context.func,
+            &lengths.keys().copied().collect(),
+        );
+        for (length, minimum) in required {
+            let array = lengths[&length];
+            if let Some((_, floor)) = report
+                .phase_entry_bounds
+                .iter_mut()
+                .find(|(old, _)| *old == array)
+            {
+                *floor = (*floor).max(minimum);
+            } else {
+                report.phase_entry_bounds.push((array, minimum));
+            }
+        }
+        report.phase_entry_bounds.sort_unstable();
+    }
     if (pack_halfwords || reuse_lengths)
         && !observe
         && cleanup.enabled
         && let Some(vectors) = vectors
-        && !vectors.admitted_lengths.is_empty()
+        && (!vectors.admitted_lengths.is_empty() || vectors.extend_bounds)
         && private.is_some_and(|contract| contract.permits(proof))
         && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
     {
@@ -720,20 +763,45 @@ fn prepare_impl<M: Module>(
             }
         }
         if reuse_lengths {
-            let floors: BTreeMap<_, _> = vectors
-                .admitted_lengths
+            let admitted_lengths = if vectors.extend_bounds {
+                &report.phase_entry_bounds
+            } else {
+                &vectors.admitted_lengths
+            };
+            let floors: BTreeMap<_, _> = admitted_lengths
                 .iter()
                 .filter_map(|&(array, minimum)| {
                     input_word(proof.view(array) + 1).map(|length| (length, minimum))
                 })
                 .collect();
             if !floors.is_empty() {
-                let folded = cfg_cleanup::admitted_lengths::fold(&mut context.func, &floors);
-                if folded != 0 {
+                // Keep the later dense scorer composition's default-read structure.
+                let (folded, ranged) = if no_growth.is_none()
+                    && std::env::var_os("MECH_REUSE_ADMITTED_INDEX_RANGES").is_some()
+                {
+                    cfg_cleanup::admitted_lengths::fold_index_ranges(&mut context.func, &floors)
+                } else {
+                    (
+                        cfg_cleanup::admitted_lengths::fold(&mut context.func, &floors),
+                        0,
+                    )
+                };
+                admitted_index_guards += ranged;
+                if folded + ranged != 0 {
                     context.flowgraph();
+                    if ranged != 0 {
+                        // Removing a read/default edge can orphan a block that
+                        // still refers to words defined on the old entry path.
+                        context
+                            .eliminate_unreachable_code(module.isa())
+                            .map_err(backend)?;
+                        context.flowgraph();
+                    }
                     context.verify(module.isa()).map_err(backend)?;
                     if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
-                        eprintln!("{symbol} reused admitted view lengths: {folded}");
+                        eprintln!(
+                            "{symbol} reused admitted view lengths: {folded} literal, {ranged} indexed"
+                        );
                     }
                 }
             }
@@ -1487,6 +1555,7 @@ fn prepare_impl<M: Module>(
             packed_input,
             unsigned_guards,
             packed_halfword_stores,
+            admitted_index_guards,
         },
         future_write_hints,
         histogram,
@@ -1511,6 +1580,7 @@ pub(super) struct SummaryInput {
     packed_input: Option<Vec<usize>>,
     unsigned_guards: usize,
     packed_halfword_stores: usize,
+    admitted_index_guards: usize,
 }
 
 fn finish_preparation(
@@ -1539,6 +1609,7 @@ fn finish_preparation(
         packed_input,
         unsigned_guards,
         packed_halfword_stores,
+        admitted_index_guards,
     } = input;
     let PhaseCleanup {
         bit_counts,
@@ -1563,6 +1634,9 @@ fn finish_preparation(
         "input_words":input_words,"output_words":output_words,
         "fixed_writable_capacities":fixed_count,"fixed_length_entry_gate":fixed_count != 0,
         "actual_unit_append_growth":actual_unit_append_growth,"unique_writable_owner_gate":true,"cleanup":cleanup});
+        if admitted_index_guards != 0 {
+            summary["admitted_masked_index_guards"] = serde_json::json!(admitted_index_guards);
+        }
         if let Some(checked_regions) = checked_regions {
             summary["checked_regions"] = checked_regions;
         }

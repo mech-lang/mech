@@ -36,6 +36,8 @@ pub(in crate::native_artifact) struct VectorContract {
     guards: Vec<(usize, bool)>,
     // The caller tests these exact fixed-view lengths before either body.
     admitted_lengths: Vec<(usize, u64)>,
+    // This caller adopts and guards additional fixed lengths from the fast body.
+    extend_bounds: bool,
 }
 impl VectorContract {
     fn additional(
@@ -57,6 +59,7 @@ impl VectorContract {
             .collect::<Vec<_>>();
         (!guards.is_empty()).then(|| Self {
             guards,
+            extend_bounds: false,
             admitted_lengths: existing
                 .iter()
                 .filter_map(|&(array, length, grows)| (!grows).then_some((array, length)))
@@ -1253,7 +1256,11 @@ pub(super) fn define<M: Module>(
                     function::refused_general_bounds(CodePlan::Program(prepared), region, private)
                 })
                 .and_then(|bounds| {
-                    VectorContract::additional(proof, &bounds).map(|contract| (bounds, contract))
+                    VectorContract::additional(proof, &bounds).map(|mut contract| {
+                        contract.extend_bounds = !observe
+                            && std::env::var_os("MECH_REUSE_ADMITTED_INDEX_RANGES").is_some();
+                        (bounds, contract)
+                    })
                 })
         } else {
             None
@@ -1272,7 +1279,10 @@ pub(super) fn define<M: Module>(
         } else {
             None
         };
-        let use_vector_bounds = vector_only.is_some();
+        let use_vector_bounds = vector_only.is_some()
+            || source_admission
+                .as_ref()
+                .is_some_and(|(_, contract)| contract.extend_bounds);
         let (ready, general_declaration, mut entry_bounds, vector_contract) =
             if let Some((general, _, fast)) = &chosen {
                 (None, *general, fast.entry_bounds().to_vec(), None)
