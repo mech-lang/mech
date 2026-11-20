@@ -114,7 +114,7 @@ fn bounded_cost_ordinal_key_preserves_strict_ties_unsigned_costs_and_wide_fallba
         .unwrap(),
     );
     let mut functions = Vec::new();
-    for mode in 0..4 {
+    for mode in 0..8 {
         let mut context = module.make_context();
         context.func.signature.params = vec![AbiParam::new(types::I64); 3];
         context.func.signature.returns = vec![AbiParam::new(types::I32)];
@@ -140,13 +140,37 @@ fn bounded_cost_ordinal_key_preserves_strict_ties_unsigned_costs_and_wide_fallba
             b.ins()
                 .jump(done, &[cost.into(), winner.into(), route.into()]);
         } else {
-            let fits = super::packed_key::fits(&mut b, best, stop, mode == 3);
+            let mut fits = super::packed_key::fits(&mut b, best, stop, mode == 3);
+            if mode >= 4 {
+                let long = b
+                    .ins()
+                    .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, count, 16);
+                fits = b.ins().band(fits, long);
+            }
             let narrow = b.create_block();
             let wide = b.create_block();
             b.ins().brif(fits, narrow, &[], wide, &[]);
             for (block, packed) in [(wide, false), (narrow, true)] {
                 b.switch_to_block(block);
-                let (cost, winner) = emit_loop(&mut b, input, start, stop, best, packed, mode == 2);
+                let (cost, winner) = if packed && mode >= 4 {
+                    let keys = super::packed_loop::emit(
+                        &mut b,
+                        start,
+                        stop,
+                        best,
+                        mode >= 6,
+                        mode % 2 != 0,
+                        |b, k, _| {
+                            let offset = b.ins().isub(k, start);
+                            let offset = b.ins().ishl_imm(offset, 2);
+                            let pointer = b.ins().iadd(input, offset);
+                            b.ins().load(types::I32X4, MemFlags::new(), pointer, 0)
+                        },
+                    );
+                    super::packed_key::finish(&mut b, keys)
+                } else {
+                    emit_loop(&mut b, input, start, stop, best, packed, mode == 2)
+                };
                 let route = b.ins().iconst(types::I32, i64::from(packed));
                 b.ins()
                     .jump(done, &[cost.into(), winner.into(), route.into()]);
@@ -189,7 +213,7 @@ fn bounded_cost_ordinal_key_preserves_strict_ties_unsigned_costs_and_wide_fallba
             seed ^= seed << 17;
             seed as u32
         };
-        let count = [0, 4, 8, 16, 32, 64, 128, 252, 256, 508, 512][sample % 11];
+        let count = [0, 4, 8, 16, 20, 24, 28, 32, 64, 128, 252, 256, 508, 512][sample % 14];
         let start = match sample % 8 {
             0 => 0,
             1 => 3,
@@ -242,7 +266,9 @@ fn bounded_cost_ordinal_key_preserves_strict_ties_unsigned_costs_and_wide_fallba
             if mode == 3 && start + count > 65535 {
                 continue;
             }
-            let route = u32::from(mode != 0 && best <= 65535 && start + count <= 65535);
+            let route = u32::from(
+                mode != 0 && best <= 65535 && start + count <= 65535 && (mode < 4 || count >= 16),
+            );
             let mut output = [0xa5a5_a5a5u32; 5];
             // SAFETY: count is a multiple of four, both input extents are
             // initialized, output is disjoint and guarded, and stop <= U32::MAX.
@@ -260,5 +286,5 @@ fn bounded_cost_ordinal_key_preserves_strict_ties_unsigned_costs_and_wide_fallba
             assert_eq!(storage, original);
         }
     }
-    assert_eq!(native_calls, 28672);
+    assert_eq!(native_calls, 61440);
 }

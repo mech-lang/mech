@@ -210,7 +210,30 @@ impl Kernel<'_> {
     where
         F: FnMut(&mut FunctionBuilder<'_>, Value, bool) -> Value,
     {
-        let lanes = self.lanes(b, packed);
+        let lanes = if packed
+            && std::env::var_os("MECH_ORDERED_PACKED_ACCUMULATORS").as_deref()
+                == Some(std::ffi::OsStr::new("2"))
+        {
+            let costs = super::packed_loop::emit(
+                b,
+                self.start,
+                self.end,
+                self.best,
+                std::env::var_os("MECH_ORDERED_VECTOR_CARRY_LANES").is_some(),
+                std::env::var_os("MECH_ORDERED_VECTOR_LATCH_TEST").is_some(),
+                |b, k, index| {
+                    self.inputs
+                        .emit(b, self.proof, &self.reduction.cost, k, index)
+                },
+            );
+            Lanes {
+                costs,
+                indices: None,
+                pointers: Vec::new(),
+            }
+        } else {
+            self.lanes(b, packed)
+        };
         let (minimum, item) = if packed {
             let (minimum, winner) = super::packed_key::finish(b, lanes.costs);
             (minimum, map(b, winner, false))
