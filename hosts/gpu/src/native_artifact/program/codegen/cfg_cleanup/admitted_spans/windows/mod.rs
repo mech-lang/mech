@@ -1,5 +1,6 @@
 //! On an admitted cursor, cursor + min(length - cursor, cap) cannot wrap or
 //! exceed length. Prove each clamped incoming value on its actual CFG edge.
+mod read_limits;
 use super::super::word_ranges::{constant_offset, literal};
 use super::{comparison, fixed_word, offset, sole_predecessor};
 use cranelift_codegen::Context;
@@ -215,6 +216,7 @@ pub(super) fn checks(
             else {
                 continue;
             };
+            let mut folded = false;
             for (end, other, condition) in [(a, b, cond), (b, a, cond.swap_args())] {
                 let value = if proof.length(other) {
                     match condition {
@@ -233,8 +235,12 @@ pub(super) fn checks(
                 };
                 if let Some(value) = value.filter(|_| proof.end(end, block)) {
                     changes.push((inst, value));
+                    folded = true;
                     break;
                 }
+            }
+            if !folded && let Some(value) = read_limits::prove(&mut proof, a, b, cond, block) {
+                changes.push((inst, value));
             }
         }
     }
