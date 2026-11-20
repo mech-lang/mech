@@ -8,7 +8,7 @@ fn positions(b: &mut FunctionBuilder<'_>, k: Value, lanes: Value) -> Value {
     b.ins().iadd(index, lanes)
 }
 
-/// The caller admits at least sixteen immutable source elements, a four-aligned
+/// The caller admits at least eight immutable source elements, a four-aligned
 /// prefix length, and best/absolute end <= 65535. Cost has no index expression;
 /// its callback reads only the already admitted four-element window and uses
 /// total U32 arithmetic. It neither changes source state nor settles charges.
@@ -33,7 +33,7 @@ where
     let (start, paired_end, seed) = if head_group {
         // Remove the optional four-element group at the beginning, leaving
         // the existing end value as the paired-loop bound. When this group
-        // exists count >= 20, so at least sixteen elements remain. Otherwise
+        // exists count >= 12, so at least eight elements remain. Otherwise
         // the original admitted count is already a multiple of eight.
         let extra = b.ins().band_imm(count, 4);
         let has_head = b.ins().icmp_imm(IntCC::NotEqual, extra, 0);
@@ -121,7 +121,7 @@ where
         args.push(b.ins().iadd(first, eight).into());
     }
     if latch {
-        // The admitted prefix has at least two groups of eight. No iteration
+        // The admitted prefix has at least one group of eight. No iteration
         // or speculative second load passes the rounded paired_end.
         let more = b.ins().icmp(IntCC::UnsignedLessThan, next, paired_end);
         b.ins()

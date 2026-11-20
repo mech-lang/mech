@@ -12,6 +12,13 @@ pub(super) struct Kernel<'a> {
     pub stop: Value,
     pub best: Value,
     pub count_admitted: bool,
+    pub packed_fit: Option<Value>,
+}
+pub(super) fn packed_enabled(reduction: &Reduction) -> bool {
+    cfg!(all(target_arch = "aarch64", target_endian = "little"))
+        && std::env::var_os("MECH_ORDERED_PACKED_COST_INDEX").is_some()
+        && std::env::var_os("MECH_ORDERED_VECTOR_CARRY_POINTERS").is_none()
+        && !Inputs::uses_index(&reduction.cost)
 }
 struct Lanes {
     costs: Value,
@@ -285,16 +292,15 @@ impl Kernel<'_> {
         F: FnMut(&mut FunctionBuilder<'_>, Value, bool) -> Value,
     {
         let selection = std::env::var_os("MECH_ORDERED_SKIP_UNCHANGED_VECTOR_WINNER");
-        let packed = cfg!(all(target_arch = "aarch64", target_endian = "little"))
-            && std::env::var_os("MECH_ORDERED_PACKED_COST_INDEX").is_some()
-            && std::env::var_os("MECH_ORDERED_VECTOR_CARRY_POINTERS").is_none()
-            && !Inputs::uses_index(&self.reduction.cost);
+        let packed = packed_enabled(self.reduction);
         if !packed {
             return self.selected(b, false, missing, old_item, selection.as_deref(), &mut map);
         }
         // Neither guard changes source state or its exact settled charges. A
         // miss retains the original native vector loop, including wide costs.
-        let fits = super::packed_key::fits(b, self.best, self.stop, self.count_admitted);
+        let fits = self.packed_fit.unwrap_or_else(|| {
+            super::packed_key::fits(b, self.best, self.stop, self.count_admitted)
+        });
         let narrow = b.create_block();
         let wide = b.create_block();
         let done = b.create_block();
