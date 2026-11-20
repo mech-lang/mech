@@ -21,6 +21,7 @@ M1_SOURCE_RECIPES = {
     'm1-immutable-current-reads': 'immutable-current-read-study',
     'm1-word-complement-current-reads': 'word-complement-current-read-study',
     'm1-bounded-byte-histogram': 'bounded-byte-histogram-study',
+    'm1-packed-eight-entry': 'packed-eight-entry-study',
     'm1-bounded-index-ranges-experimental': 'bounded-index-range-study',
 }
 
@@ -78,7 +79,7 @@ parser.add_argument(
         'frame-copies',
         *M1_SOURCE_RECIPES,
     ],
-    default='baseline',
+    default=('m1-packed-eight-entry' if (platform.system(), platform.machine()) == ('Darwin', 'arm64') else 'baseline'),
 )
 parser.add_argument('--mimalloc-object',type=Path,help='optional fixed comparator allocator; also link and check the worker')
 parser.add_argument('--target-dir',type=Path)

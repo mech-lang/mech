@@ -1,0 +1,40 @@
+{
+  "manifest_sha256": "d785d05093946516547750423ab2e092a30e8fed74d65e0560071ddbcad6c9f0",
+  "compiler_source_commit": "c188a565d8c643054f12e769a9514a80194565d7",
+  "compiler_sha256": "2185146659ddd26f8b69827ccf2f5e70499ed3b2658ef7c2369ff1277c0b36fb",
+  "production_recipe_assembly_checked": true,
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "runs": [
+    {
+      "mode": "normal",
+      "compiler_sha256": "2185146659ddd26f8b69827ccf2f5e70499ed3b2658ef7c2369ff1277c0b36fb",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/phase-preserved-compiler/compiler/2185146659ddd26f/compile_profile",
+        "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/working-eight-entry-selection-replay/normal/frontend",
+        "compact"
+      ],
+      "artifacts": {
+        "program.o": "b394b4c83fc8189cbc7a4540a756c99c3c92caf22fe169029102b2f596a52b5f",
+        "metadata.json": "a1a21ba86c12f1ef70c57957578f412acafb40a9af837cd72b0cf3c33e8af60d",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      }
+    },
+    {
+      "mode": "checked",
+      "compiler_sha256": "2185146659ddd26f8b69827ccf2f5e70499ed3b2658ef7c2369ff1277c0b36fb",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/phase-preserved-compiler/compiler/2185146659ddd26f/compile_profile",
+        "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/working-eight-entry-selection-replay/checked/frontend",
+        "compact"
+      ],
+      "artifacts": {
+        "program.o": "b394b4c83fc8189cbc7a4540a756c99c3c92caf22fe169029102b2f596a52b5f",
+        "metadata.json": "a1a21ba86c12f1ef70c57957578f412acafb40a9af837cd72b0cf3c33e8af60d",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      }
+    }
+  ],
+  "scope": "Actual named recipe flag assembly and relocated profile loader reproduced the selected object,full metadata and canonical bytecode exactly in normal/checked modes. Runtime score belongs to the pinned worker recorded in candidate.json."
+}

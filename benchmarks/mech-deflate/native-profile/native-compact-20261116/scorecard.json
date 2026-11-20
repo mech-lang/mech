@@ -7072,109 +7072,146 @@
     "receipt_sha256": "11601ee8ff034fc3804f1866275e7b499ab276433d36c9bb3ecbe46287e3aa27"
   },
   "latest_candidate": {
-    "name": "guarded whole-span byte histogram",
-    "recipe": "m1-bounded-byte-histogram",
-    "encoder_text_bytes": 63612,
+    "name": "packed eight-entry head scorer",
+    "recipe": "m1-packed-eight-entry",
+    "encoder_text_bytes": 63868,
     "current_implementation_candidate": true,
     "opt_in": true,
-    "decision": "Retain",
-    "source_commit": "7ea6c80d8db874e10392bdb2a3d38e6205ca876d",
-    "compiler_sha256": "08e3c13132397e7f7e78d358ef06ee35dc320c203b32ec10eea2e96ad18020c8",
-    "worker_sha256": "a2f692f524448d7b1c972abf5f1cc92ac412c1fcd1424ce4ade4b9bae526481c",
+    "selected_for_work": true,
+    "decision": "Selected working baseline:81 Roc/63 C point wins, new reverse4KiB confidence uncertain",
+    "source_commit": "60e942f46298e1d4b3ea446248596ae3e071853d",
+    "compiler_sha256": "13edf3ab0fdcd3bb05951cf6ad07c4b67b68cb920f3f733eb086237db150f7b3",
+    "worker_sha256": "0863e47b3aa5fb64256fdaf51feba952e4d3078ac3b11db488e8fe6aaff9afcf",
     "artifacts": {
-      "program.o": "25a66449a3cbd7c9cf68260f843f572ebea28695649c9fcc2dd41b82620c90bb",
-      "metadata.json": "75516ef937ce014528cfc94efb8d3054717e55822925edec2bb49555a64bab4e",
+      "program.o": "b394b4c83fc8189cbc7a4540a756c99c3c92caf22fe169029102b2f596a52b5f",
+      "metadata.json": "a1a21ba86c12f1ef70c57957578f412acafb40a9af837cd72b0cf3c33e8af60d",
       "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
     },
-    "peak_stack_bytes": 4864,
+    "peak_stack_bytes": 4736,
     "runtime": {
-      "roc_wins": [
-        81,
-        81
-      ],
-      "libdeflate_wins": [
-        62,
-        62
-      ],
-      "all_previous_individual_precision_wins": true,
-      "forward_blocks": 96,
-      "reverse_blocks": 288,
-      "reverse_acquisitions": [
-        96,
-        192
-      ],
-      "original_reverse_roc_confidence_wins": 79,
-      "repeat_reverse_roc_confidence_wins": 81,
-      "all_original_observations_retained": true,
-      "no_63rd_c_win": true
+      "point_wins": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          63,
+          63
+        ]
+      },
+      "original_named_wins_confidence_supported": {
+        "roc": 81,
+        "libdeflate": 62
+      },
+      "new_win_confidence": {
+        "forward": {
+          "paired_x": 0.9939013795416267,
+          "interval": {
+            "estimate": -0.006098620458373283,
+            "lower": -0.011435559570484477,
+            "upper": -0.0009639155684313394
+          },
+          "supported": true
+        },
+        "reverse": {
+          "paired_x": 0.9976751346952779,
+          "interval": {
+            "estimate": -0.00232486530472209,
+            "lower": -0.008184463483581816,
+            "upper": 0.003877577771610019
+          },
+          "supported": false
+        }
+      },
+      "evidence": "evidence/encoder-size-gap/packed-eight-entry-study/result.json"
     },
     "build": {
-      "plan_sha256": "0ccc1c50d110c8df0890bf9fd2a7b9e35e42f66401fa81d3d684113367a1bb5d",
+      "plan_sha256": "022ca0e7baba17bf26bf786b244f56d29639c7c1c5663ed811bc5aaa64271f38",
       "medians": {
         "mech-control-reference": {
-          "source": 2.1803322290070355,
-          "link": 0.03487262479029596,
-          "source_through_link": 2.217692125122994,
-          "strip": 0.010771687608212233,
-          "source_through_strip": 2.22851258283481
+          "source": 2.1738291669171304,
+          "link": 0.03572174999862909,
+          "source_through_link": 2.209805521182716,
+          "strip": 0.010753021109849215,
+          "source_through_strip": 2.220777500187978
         },
-        "mech-bounded-histogram": {
-          "source": 2.178948666434735,
-          "link": 0.035303832963109016,
-          "source_through_link": 2.214982957812026,
-          "strip": 0.010765207698568702,
-          "source_through_strip": 2.225962665863335
+        "mech-eight-paired": {
+          "source": 2.1796042507048696,
+          "link": 0.03518789610825479,
+          "source_through_link": 2.2153193331323564,
+          "strip": 0.010781812248751521,
+          "source_through_strip": 2.2262193120550364
+        },
+        "mech-eight-head": {
+          "source": 2.1798759379889816,
+          "link": 0.035327166551724076,
+          "source_through_link": 2.2156371669843793,
+          "strip": 0.010774417081847787,
+          "source_through_strip": 2.2266498126555234
         },
         "roc": {
-          "source": 2.95618470874615,
-          "link": 0.03498558304272592,
-          "source_through_link": 2.991646395297721,
-          "strip": 0.010836562141776085,
-          "source_through_strip": 3.0026768539100885
+          "source": 2.948111603502184,
+          "link": 0.035451229428872466,
+          "source_through_link": 2.9837752708699554,
+          "strip": 0.010787416715174913,
+          "source_through_strip": 2.9951234164182097
         },
         "libdeflate": {
-          "source": 0.4465793955605477,
-          "link": 0.034275917103514075,
-          "source_through_link": 0.48138664616271853,
-          "strip": 0.010638125007972121,
-          "source_through_strip": 0.4920662296935916
+          "source": 0.4457956040278077,
+          "link": 0.035133083583787084,
+          "source_through_link": 0.4809126041363925,
+          "strip": 0.010604562237858772,
+          "source_through_strip": 0.4917213961016387
         }
       },
       "phases": {
         "mech-control-reference": {
-          "parse": 0.703528354,
-          "catalog": 2.2416499999999998e-05,
-          "frontend": 0.21888285400000002,
-          "artifact": 0.006834021,
-          "encode": 0.00253025,
-          "native": 1.220058729
+          "parse": 0.7013804374999999,
+          "catalog": 1.8583500000000003e-05,
+          "frontend": 0.21547979150000002,
+          "artifact": 0.006809770999999999,
+          "encode": 0.002547813,
+          "native": 1.2207583335
         },
-        "mech-bounded-histogram": {
-          "parse": 0.7026814375,
-          "catalog": 1.9854e-05,
-          "frontend": 0.2188547085,
-          "artifact": 0.0068162085,
-          "encode": 0.0025350835,
-          "native": 1.220943042
+        "mech-eight-paired": {
+          "parse": 0.7016972705,
+          "catalog": 1.7021e-05,
+          "frontend": 0.21558577099999998,
+          "artifact": 0.0068053755,
+          "encode": 0.002535334,
+          "native": 1.226607187
+        },
+        "mech-eight-head": {
+          "parse": 0.701408021,
+          "catalog": 2.075e-05,
+          "frontend": 0.21508149999999998,
+          "artifact": 0.006795875,
+          "encode": 0.0025481875,
+          "native": 1.226934333
         }
       },
       "paired_ratios": {
         "mech-control-reference": {
-          "roc": 0.7399288132997077,
-          "libdeflate": 4.6044328059187,
+          "roc": 0.7409821135332537,
+          "libdeflate": 4.595493424552328,
           "mech-control-reference": 1.0
         },
-        "mech-bounded-histogram": {
-          "roc": 0.7406591159136231,
-          "libdeflate": 4.602733588808226,
-          "mech-control-reference": 0.998456189935835
+        "mech-eight-paired": {
+          "roc": 0.7424882868180559,
+          "libdeflate": 4.605417967461435,
+          "mech-control-reference": 1.0023800443634092
+        },
+        "mech-eight-head": {
+          "roc": 0.7426535338084552,
+          "libdeflate": 4.604947662635128,
+          "mech-control-reference": 1.0025030266552584
         }
       },
-      "trials": 8,
-      "source_commit": "7ea6c80d8db874e10392bdb2a3d38e6205ca876d",
-      "scope": "Eight serial balanced fresh-process source-through-final-executable-link orders. Compilers and fixed support prebuilt for every actor. Every generated Mech object, complete metadata and bytecode is hash checked. Strip is separate. Bootstrap is excluded equally."
+      "trials": 10,
+      "source_commit": "60e942f46298e1d4b3ea446248596ae3e071853d",
+      "scope": "10 serial balanced fresh-process source-through-final-executable-link orders. Compilers and fixed support prebuilt for every actor. Every generated Mech object, complete metadata and bytecode is hash checked. Strip is separate. Bootstrap is excluded equally."
     },
-    "evidence": "evidence/encoder-size-gap/bounded-byte-histogram-study/README.md"
+    "evidence": "evidence/encoder-size-gap/packed-eight-entry-study/README.md"
   },
   "ordinary_integration": {
     "optimized_path": "explicit diagnostic compact entry",
@@ -7357,7 +7394,7 @@
     "checked_chain_estimated_recomputation_seconds": 0.0032,
     "next": "Exact-choice body planning and one further omitted-body investigation"
   },
-  "current_matched_build": "scalar_pair_revisit_experiment.complete_build",
+  "current_matched_build": "working_selection.build",
   "scoped_function_replay": {
     "compiler_source": "e9538f71514225abf5ca57a9fc0acab358407167",
     "control_source": "ff7c1dbc9c5059ed84d730b008847c02179fa2cf",
@@ -16856,7 +16893,7 @@
         "supported": false
       }
     },
-    "primary_investigation": "Sequential minimum/item updates within the unrolled pair to shorten first-cost and incoming-best lifetimes. Keep exact odd tails and prior named wins. Separately investigate literal-only packed DP writes identified by the eleven-case loss census.",
+    "primary_investigation": "Improve the selected63-win eight-entry worker, retaining all81 Roc and63 named C point wins. Apply register preference on its actual immutable-cost phase context; continue toward1xC on all81 cases.",
     "evidence": "evidence/encoder-size-gap/paired-packed-accumulator-study/README.md"
   },
   "current_register_spill_pairs": {
@@ -27177,5 +27214,253 @@
       "scope": "10 serial balanced fresh-process source-through-final-executable-link orders. Compilers and fixed support prebuilt for every actor. Every generated Mech object, complete metadata and bytecode is hash checked. Strip is separate. Bootstrap is excluded equally."
     },
     "next_target": "Sequential minimum/item updates within the unrolled pair to shorten first-cost and incoming-best lifetimes. Keep exact odd tails and prior named wins. Separately investigate literal-only packed DP writes identified by the eleven-case loss census."
-  }
+  },
+  "previous_confidence_qualified_candidate": {
+    "name": "guarded whole-span byte histogram",
+    "recipe": "m1-bounded-byte-histogram",
+    "encoder_text_bytes": 63612,
+    "current_implementation_candidate": true,
+    "opt_in": true,
+    "decision": "Retain",
+    "source_commit": "7ea6c80d8db874e10392bdb2a3d38e6205ca876d",
+    "compiler_sha256": "08e3c13132397e7f7e78d358ef06ee35dc320c203b32ec10eea2e96ad18020c8",
+    "worker_sha256": "a2f692f524448d7b1c972abf5f1cc92ac412c1fcd1424ce4ade4b9bae526481c",
+    "artifacts": {
+      "program.o": "25a66449a3cbd7c9cf68260f843f572ebea28695649c9fcc2dd41b82620c90bb",
+      "metadata.json": "75516ef937ce014528cfc94efb8d3054717e55822925edec2bb49555a64bab4e",
+      "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+    },
+    "peak_stack_bytes": 4864,
+    "runtime": {
+      "roc_wins": [
+        81,
+        81
+      ],
+      "libdeflate_wins": [
+        62,
+        62
+      ],
+      "all_previous_individual_precision_wins": true,
+      "forward_blocks": 96,
+      "reverse_blocks": 288,
+      "reverse_acquisitions": [
+        96,
+        192
+      ],
+      "original_reverse_roc_confidence_wins": 79,
+      "repeat_reverse_roc_confidence_wins": 81,
+      "all_original_observations_retained": true,
+      "no_63rd_c_win": true
+    },
+    "build": {
+      "plan_sha256": "0ccc1c50d110c8df0890bf9fd2a7b9e35e42f66401fa81d3d684113367a1bb5d",
+      "medians": {
+        "mech-control-reference": {
+          "source": 2.1803322290070355,
+          "link": 0.03487262479029596,
+          "source_through_link": 2.217692125122994,
+          "strip": 0.010771687608212233,
+          "source_through_strip": 2.22851258283481
+        },
+        "mech-bounded-histogram": {
+          "source": 2.178948666434735,
+          "link": 0.035303832963109016,
+          "source_through_link": 2.214982957812026,
+          "strip": 0.010765207698568702,
+          "source_through_strip": 2.225962665863335
+        },
+        "roc": {
+          "source": 2.95618470874615,
+          "link": 0.03498558304272592,
+          "source_through_link": 2.991646395297721,
+          "strip": 0.010836562141776085,
+          "source_through_strip": 3.0026768539100885
+        },
+        "libdeflate": {
+          "source": 0.4465793955605477,
+          "link": 0.034275917103514075,
+          "source_through_link": 0.48138664616271853,
+          "strip": 0.010638125007972121,
+          "source_through_strip": 0.4920662296935916
+        }
+      },
+      "phases": {
+        "mech-control-reference": {
+          "parse": 0.703528354,
+          "catalog": 2.2416499999999998e-05,
+          "frontend": 0.21888285400000002,
+          "artifact": 0.006834021,
+          "encode": 0.00253025,
+          "native": 1.220058729
+        },
+        "mech-bounded-histogram": {
+          "parse": 0.7026814375,
+          "catalog": 1.9854e-05,
+          "frontend": 0.2188547085,
+          "artifact": 0.0068162085,
+          "encode": 0.0025350835,
+          "native": 1.220943042
+        }
+      },
+      "paired_ratios": {
+        "mech-control-reference": {
+          "roc": 0.7399288132997077,
+          "libdeflate": 4.6044328059187,
+          "mech-control-reference": 1.0
+        },
+        "mech-bounded-histogram": {
+          "roc": 0.7406591159136231,
+          "libdeflate": 4.602733588808226,
+          "mech-control-reference": 0.998456189935835
+        }
+      },
+      "trials": 8,
+      "source_commit": "7ea6c80d8db874e10392bdb2a3d38e6205ca876d",
+      "scope": "Eight serial balanced fresh-process source-through-final-executable-link orders. Compilers and fixed support prebuilt for every actor. Every generated Mech object, complete metadata and bytecode is hash checked. Strip is separate. Bootstrap is excluded equally."
+    },
+    "evidence": "evidence/encoder-size-gap/bounded-byte-histogram-study/README.md"
+  },
+  "working_selection": {
+    "name": "packed eight-entry head scorer",
+    "recipe": "m1-packed-eight-entry",
+    "encoder_text_bytes": 63868,
+    "current_implementation_candidate": true,
+    "opt_in": true,
+    "selected_for_work": true,
+    "decision": "Selected working baseline:81 Roc/63 C point wins, new reverse4KiB confidence uncertain",
+    "source_commit": "60e942f46298e1d4b3ea446248596ae3e071853d",
+    "compiler_sha256": "13edf3ab0fdcd3bb05951cf6ad07c4b67b68cb920f3f733eb086237db150f7b3",
+    "worker_sha256": "0863e47b3aa5fb64256fdaf51feba952e4d3078ac3b11db488e8fe6aaff9afcf",
+    "artifacts": {
+      "program.o": "b394b4c83fc8189cbc7a4540a756c99c3c92caf22fe169029102b2f596a52b5f",
+      "metadata.json": "a1a21ba86c12f1ef70c57957578f412acafb40a9af837cd72b0cf3c33e8af60d",
+      "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+    },
+    "peak_stack_bytes": 4736,
+    "runtime": {
+      "point_wins": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          63,
+          63
+        ]
+      },
+      "original_named_wins_confidence_supported": {
+        "roc": 81,
+        "libdeflate": 62
+      },
+      "new_win_confidence": {
+        "forward": {
+          "paired_x": 0.9939013795416267,
+          "interval": {
+            "estimate": -0.006098620458373283,
+            "lower": -0.011435559570484477,
+            "upper": -0.0009639155684313394
+          },
+          "supported": true
+        },
+        "reverse": {
+          "paired_x": 0.9976751346952779,
+          "interval": {
+            "estimate": -0.00232486530472209,
+            "lower": -0.008184463483581816,
+            "upper": 0.003877577771610019
+          },
+          "supported": false
+        }
+      },
+      "evidence": "evidence/encoder-size-gap/packed-eight-entry-study/result.json"
+    },
+    "build": {
+      "plan_sha256": "022ca0e7baba17bf26bf786b244f56d29639c7c1c5663ed811bc5aaa64271f38",
+      "medians": {
+        "mech-control-reference": {
+          "source": 2.1738291669171304,
+          "link": 0.03572174999862909,
+          "source_through_link": 2.209805521182716,
+          "strip": 0.010753021109849215,
+          "source_through_strip": 2.220777500187978
+        },
+        "mech-eight-paired": {
+          "source": 2.1796042507048696,
+          "link": 0.03518789610825479,
+          "source_through_link": 2.2153193331323564,
+          "strip": 0.010781812248751521,
+          "source_through_strip": 2.2262193120550364
+        },
+        "mech-eight-head": {
+          "source": 2.1798759379889816,
+          "link": 0.035327166551724076,
+          "source_through_link": 2.2156371669843793,
+          "strip": 0.010774417081847787,
+          "source_through_strip": 2.2266498126555234
+        },
+        "roc": {
+          "source": 2.948111603502184,
+          "link": 0.035451229428872466,
+          "source_through_link": 2.9837752708699554,
+          "strip": 0.010787416715174913,
+          "source_through_strip": 2.9951234164182097
+        },
+        "libdeflate": {
+          "source": 0.4457956040278077,
+          "link": 0.035133083583787084,
+          "source_through_link": 0.4809126041363925,
+          "strip": 0.010604562237858772,
+          "source_through_strip": 0.4917213961016387
+        }
+      },
+      "phases": {
+        "mech-control-reference": {
+          "parse": 0.7013804374999999,
+          "catalog": 1.8583500000000003e-05,
+          "frontend": 0.21547979150000002,
+          "artifact": 0.006809770999999999,
+          "encode": 0.002547813,
+          "native": 1.2207583335
+        },
+        "mech-eight-paired": {
+          "parse": 0.7016972705,
+          "catalog": 1.7021e-05,
+          "frontend": 0.21558577099999998,
+          "artifact": 0.0068053755,
+          "encode": 0.002535334,
+          "native": 1.226607187
+        },
+        "mech-eight-head": {
+          "parse": 0.701408021,
+          "catalog": 2.075e-05,
+          "frontend": 0.21508149999999998,
+          "artifact": 0.006795875,
+          "encode": 0.0025481875,
+          "native": 1.226934333
+        }
+      },
+      "paired_ratios": {
+        "mech-control-reference": {
+          "roc": 0.7409821135332537,
+          "libdeflate": 4.595493424552328,
+          "mech-control-reference": 1.0
+        },
+        "mech-eight-paired": {
+          "roc": 0.7424882868180559,
+          "libdeflate": 4.605417967461435,
+          "mech-control-reference": 1.0023800443634092
+        },
+        "mech-eight-head": {
+          "roc": 0.7426535338084552,
+          "libdeflate": 4.604947662635128,
+          "mech-control-reference": 1.0025030266552584
+        }
+      },
+      "trials": 10,
+      "source_commit": "60e942f46298e1d4b3ea446248596ae3e071853d",
+      "scope": "10 serial balanced fresh-process source-through-final-executable-link orders. Compilers and fixed support prebuilt for every actor. Every generated Mech object, complete metadata and bytecode is hash checked. Strip is separate. Bootstrap is excluded equally."
+    },
+    "evidence": "evidence/encoder-size-gap/packed-eight-entry-study/README.md"
+  },
+  "active_scoreboard": "working_selection"
 }

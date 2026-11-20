@@ -1,6 +1,8 @@
 # Guarded eight-candidate packed scorer entry
 
-**Strict 63-win qualification: not passed. The qualified default remains 63,612 B / 81 Roc / 62 libdeflate until selection is separately updated. Keep the candidate and its measured gains.**
+**Selected working baseline: `m1-packed-eight-entry`, 81 Roc /63 C point wins in both full96 orders.** All previous named81 Roc/62 C wins remain confidence-supported; the new reverse4KiB win has an interval crossing parity. The working selection uses the point-win requirement and retains that uncertainty in its report. Historical strict qualification below is preserved as recorded. `candidate.json` and the default Apple AArch64 `rebuild.py` recipe regenerate this build.
+
+**Historical strict qualification:** the new reverse comparison lacked confidence support. The selected working recipe now uses its **81 Roc / 63 C point wins**, with that uncertainty reported separately. The earlier 63,612 B / 81 Roc / 62 C build remains available.
 
 Compiler source: [`60e942f462`](https://github.com/mech-lang/mech/commit/60e942f46298e1d4b3ea446248596ae3e071853d). The original 2,719-line Mech codec and canonical bytecode remain unchanged. No LLVM dependency is added.
 

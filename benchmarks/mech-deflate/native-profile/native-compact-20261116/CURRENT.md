@@ -1,5 +1,15 @@
 # PR #995 current status
 
+**Working selection: `m1-packed-eight-entry`, 63,868 B, 81/81 Roc and 63/81 libdeflate point wins in both complete 96-block orders.** Every original named 81 Roc / 62 C win remains confidence-supported. The newly won reverse natural 4 KiB comparison is 0.997675× C with a 90% interval of −0.818% to +0.388%; its uncertainty is reported, and this build remains the working baseline.
+
+The selected build takes **2.215637 s** through final executable linking in its matched Apple M1 cohort: paired **0.742654× Roc / 4.604948× libdeflate**. Encoder code is **1.107× Roc / 1.722× C**; stripped executable **276,072 B**; peak stack **4,736 B**. Compilers and fixed support are prebuilt equally. [Exact source, all observations, checks and confidence results](evidence/encoder-size-gap/packed-eight-entry-study/README.md).
+
+On Apple AArch64, `rebuild.py` now defaults to this working recipe; `--variant m1-packed-eight-entry` selects it explicitly. `candidate.json` pins the source, flags, portable profiles, all three artifacts and the measured worker. Historical qualification records and their original policy remain unchanged. The smaller 63,612 B histogram is retained as an alternative.
+
+Current experiments apply register preference on the fresh immutable-cost phase context. Sequential scalar/tail variants remain available, but they have not improved the selected score. The original 2,719-line Mech codec and canonical bytecode remain unchanged; no LLVM dependency is added. The next work must hold all 81 Roc and 63 named C point wins while pursuing 1× C across all 81 cases.
+
+## Previous confidence-qualified selection and experiments
+
 **Qualified throughput recipe: `m1-bounded-byte-histogram`, 63,612 B, retaining every prior individual 81/81 Roc and 62/81 libdeflate win.** The smaller `m1-word-complement-current-reads` remains available at 63,388 B. No 63rd C win is yet confidence-qualified; the goal remains 1× libdeflate performance.
 
 The guarded histogram takes **2.44–2.73% less time on random 1 MiB** than its same-run compact reference, at a cost of 224 B. It measures **1.325151× / 1.324508× C** in the original full orders. Natural 4 KiB improves 0.30–0.60% and remains **1.027657× / 1.031202× C**. [Source, raw observations, qualification and reproduction](evidence/encoder-size-gap/bounded-byte-histogram-study/README.md).
