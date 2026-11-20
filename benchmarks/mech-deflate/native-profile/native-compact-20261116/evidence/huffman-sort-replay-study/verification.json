@@ -1,0 +1,40 @@
+{
+  "passed": true,
+  "captured_frequency_vectors": 212,
+  "standalone_sorted_calls_checked": 1303376,
+  "public_full_codec_replays": 8,
+  "full81_orders": [
+    {
+      "roc": {
+        "wins": 81,
+        "required_missing": [],
+        "passed": true
+      },
+      "libdeflate": {
+        "wins": 63,
+        "required_missing": [],
+        "passed": true
+      }
+    },
+    {
+      "roc": {
+        "wins": 81,
+        "required_missing": [],
+        "passed": true
+      },
+      "libdeflate": {
+        "wins": 63,
+        "required_missing": [],
+        "passed": true
+      }
+    }
+  ],
+  "full81_saved_calls": 1965312,
+  "focused_saved_calls": 4485600,
+  "zero_duration_individual_samples_retained": 1038628,
+  "balanced_complete_build_orders": 14,
+  "runnable_executable_checks": 567,
+  "selected_default_changed": false,
+  "next_C_target": 64,
+  "ultimate_C_target": 81
+}
