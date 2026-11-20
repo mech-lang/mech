@@ -106,6 +106,7 @@ pub(super) struct Facts<'a> {
     assumptions: Option<&'a BTreeMap<Value, Range>>,
     bound_values: bool,
     bitwise_constants: bool,
+    bitwise_ranges: bool,
     cfg: Option<&'a ControlFlowGraph>,
 }
 impl<'a> Facts<'a> {
@@ -117,6 +118,7 @@ impl<'a> Facts<'a> {
             cfg: None,
             bound_values: false,
             bitwise_constants: false,
+            bitwise_ranges: false,
         }
     }
 
@@ -135,6 +137,7 @@ impl<'a> Facts<'a> {
             cfg: None,
             bound_values: false,
             bitwise_constants: false,
+            bitwise_ranges: false,
         }
     }
 
@@ -158,6 +161,15 @@ impl<'a> Facts<'a> {
             cfg: Some(cfg),
             bound_values: false,
             bitwise_constants: true,
+            bitwise_ranges: false,
+        }
+    }
+
+    // Opt-in precision for independently bounded unsigned index expressions.
+    pub fn bitwise_edges(function: &'a Function, cfg: &'a ControlFlowGraph) -> Self {
+        Self {
+            bitwise_ranges: true,
+            ..Self::across_edges(function, cfg, None)
         }
     }
 
@@ -296,6 +308,18 @@ impl<'a> Facts<'a> {
                         left.0 | right.0
                     };
                     return Some(Range(value, value));
+                }
+                if opcode == Op::Bor && self.bitwise_ranges {
+                    // Every possible bit lies below the highest bit of the
+                    // unsigned maximum. OR cannot set a bit outside this union.
+                    let bits = |maximum: u64| {
+                        if maximum == 0 {
+                            0
+                        } else {
+                            u64::MAX >> maximum.leading_zeros()
+                        }
+                    };
+                    return Some(Range(0, bits(left.1) | bits(right.1)));
                 }
                 (opcode == Op::Band).then(|| left.bit_and(right))
             }
