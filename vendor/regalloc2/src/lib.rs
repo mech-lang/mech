@@ -1236,6 +1236,14 @@ pub trait Function {
     /// Get the CFG predecessors for a given block.
     fn block_preds(&self, block: Block) -> &[Block];
 
+    /// Optional measured relative execution frequency for a block. This affects
+    /// spill costs only; loop structure and splitting heuristics are unchanged.
+    /// Values are clamped to 1..=2^20. Without a profile, the allocator retains
+    /// its existing loop-depth estimate.
+    fn block_frequency(&self, _block: Block) -> Option<u32> {
+        None
+    }
+
     /// Get the block parameters for a given block.
     fn block_params(&self, block: Block) -> &[VReg];
 

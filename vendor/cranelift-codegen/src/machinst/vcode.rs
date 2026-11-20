@@ -188,6 +188,10 @@ pub struct VCode<I: VCodeInst> {
     /// Block-order information.
     block_order: BlockLoweringOrder,
 
+    /// Optional measured frequencies, validated against the full VCode before
+    /// register allocation. Empty retains regalloc2's loop-depth estimate.
+    block_frequencies: Vec<u32>,
+
     /// ABI object.
     pub(crate) abi: Callee<I::ABIMachineSpec>,
 
@@ -720,11 +724,62 @@ impl<I: VCodeInst> VCode<I> {
             branch_block_arg_succ_range: Ranges::with_capacity(n_blocks),
             block_order,
             abi,
+            block_frequencies: Vec::new(),
             emit_info,
             constants,
             debug_value_labels: vec![],
             log2_min_function_alignment,
         }
+    }
+
+    /// Identity of the complete lowered program before register allocation.
+    /// Include constraints and clobbers as well as the readable instructions.
+    fn register_profile_input(&self) -> String {
+        let mut clobbers = self.clobbers.iter().collect::<Vec<_>>();
+        clobbers.sort_unstable_by_key(|(inst, _)| inst.index());
+        format!(
+            "{self:?}\nRegister operands: {:?}\nRegister types: {:?}\nClobbers: {clobbers:?}\n",
+            self.operands, self.vreg_types,
+        )
+    }
+
+    pub(crate) fn apply_register_profile(
+        &mut self,
+        expected: &str,
+        frequencies: &[u32],
+    ) -> CodegenResult<()> {
+        if frequencies.len() != self.num_blocks()
+            || frequencies
+                .iter()
+                .any(|&value| !(1..=1 << 20).contains(&value))
+        {
+            return Err(CodegenError::Unsupported(format!(
+                "register frequency profile does not match lowered code: {} weights for {} blocks, all weights must be in 1..=2^20",
+                frequencies.len(),
+                self.num_blocks(),
+            )));
+        }
+        let actual = self.register_profile_input();
+        if expected != actual {
+            let at = expected
+                .bytes()
+                .zip(actual.bytes())
+                .position(|(a, b)| a != b)
+                .unwrap_or(expected.len().min(actual.len()));
+            let context = |text: &str| {
+                String::from(
+                    text.get(at.saturating_sub(64)..(at + 128).min(text.len()))
+                        .unwrap_or(""),
+                )
+            };
+            return Err(CodegenError::Unsupported(format!(
+                "register frequency profile does not match lowered code at byte {at}: expected {:?}, actual {:?}",
+                context(expected),
+                context(&actual),
+            )));
+        }
+        self.block_frequencies.extend_from_slice(frequencies);
+        Ok(())
     }
 
     /// Get the number of blocks. Block indices will be in the range `0 ..
@@ -859,6 +914,9 @@ impl<I: VCodeInst> VCode<I> {
         cold_epilogue_branch_range: Option<CodeOffset>,
     ) -> EmitResult {
         let _tt = timing::vcode_emit();
+        // Emission replaces virtual instruction operands with their allocated
+        // registers. Capture the profile identity before that replacement.
+        let register_profile_input = want_disasm.then(|| self.register_profile_input());
         let mut buffer = MachBuffer::new();
         buffer.set_log2_min_function_alignment(self.log2_min_function_alignment);
         let mut bb_starts: Vec<Option<CodeOffset>> = vec![];
@@ -1347,6 +1405,23 @@ impl<I: VCodeInst> VCode<I> {
         // Store metadata about frame layout in the MachBuffer.
         buffer.set_frame_layout(self.abi.frame_slot_metadata());
 
+        if want_disasm {
+            writeln!(disasm, ";; REGALLOC_INPUT_BEGIN").unwrap();
+            write!(disasm, "{}", register_profile_input.as_ref().unwrap()).unwrap();
+            writeln!(disasm, ";; REGALLOC_INPUT_END").unwrap();
+            for index in 0..self.num_blocks() {
+                let block = BlockIndex::new(index);
+                let offset = buffer.resolve_label_offset(MachLabel::from_block(block));
+                writeln!(
+                    disasm,
+                    ";; REGALLOC_BLOCK {index} offset={offset} ir={:?} successors={:?}",
+                    self.bindex_to_bb(block),
+                    self.block_succs(block),
+                )
+                .unwrap();
+            }
+        }
+
         EmitResult {
             buffer: buffer.finish(&self.constants, ctrl_plane),
             cold_code: cold_code_start.map(|start| start..func_body_len),
@@ -1735,6 +1810,10 @@ impl<I: VCodeInst> RegallocFunction for VCode<I> {
     fn block_preds(&self, block: BlockIndex) -> &[BlockIndex] {
         let range = self.block_pred_range.get(block.index());
         &self.block_preds[range]
+    }
+
+    fn block_frequency(&self, block: BlockIndex) -> Option<u32> {
+        self.block_frequencies.get(block.index()).copied()
     }
 
     fn block_params(&self, block: BlockIndex) -> &[VReg] {
