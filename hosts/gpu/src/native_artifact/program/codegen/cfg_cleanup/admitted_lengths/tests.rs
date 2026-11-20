@@ -16,6 +16,21 @@ enum Case {
     Signed,
     Equal,
     SignedNegative,
+    Masked,
+    MaskedReversed,
+    MaskedRoundTrip,
+    MaskedReject,
+    MaskedInclusive,
+    MaskedEdge,
+    MaskedSigned,
+    MaskedWrap,
+    MaskedDifferent,
+    MaskedChanged,
+    Joined,
+    JoinedRoundTrip,
+    JoinedUnknown,
+    JoinedWrap,
+    DeadFailureUse,
 }
 
 type Run = unsafe extern "C" fn(u64, u64, u64) -> u64;
@@ -62,6 +77,77 @@ fn compile(case: Case, optimize: bool) -> (JITModule, Run) {
         let current = b.block_params(admitted)[0];
         length = current;
         let check = match case {
+            Case::Joined | Case::JoinedRoundTrip | Case::JoinedUnknown | Case::JoinedWrap => {
+                let left = b.create_block();
+                let right = b.create_block();
+                let join = b.create_block();
+                b.append_block_param(join, types::I64);
+                b.ins().brif(other, left, &[], right, &[]);
+                b.switch_to_block(left);
+                let zero = b.ins().iconst(types::I64, 0);
+                b.ins().jump(join, &[zero.into()]);
+                b.switch_to_block(right);
+                let one = if matches!(case, Case::JoinedUnknown) {
+                    arithmetic_ok
+                } else {
+                    b.ins().iconst(types::I64, 1)
+                };
+                b.ins().jump(join, &[one.into()]);
+                b.switch_to_block(join);
+                let bit = b.block_params(join)[0];
+                let mut index = b.ins().iadd_imm(bit, 5);
+                if matches!(case, Case::JoinedRoundTrip) {
+                    let one_based = b.ins().iadd_imm(index, 1);
+                    index = b.ins().iadd_imm(one_based, -1);
+                }
+                if matches!(case, Case::JoinedWrap) {
+                    index = b.ins().iadd_imm(index, -6);
+                }
+                b.ins().icmp(UnsignedLessThan, index, current)
+            }
+            Case::DeadFailureUse
+            | Case::Masked
+            | Case::MaskedReversed
+            | Case::MaskedRoundTrip
+            | Case::MaskedReject
+            | Case::MaskedInclusive
+            | Case::MaskedEdge
+            | Case::MaskedSigned
+            | Case::MaskedWrap
+            | Case::MaskedDifferent
+            | Case::MaskedChanged => {
+                let mask = if matches!(case, Case::MaskedInclusive | Case::MaskedEdge) {
+                    8
+                } else {
+                    7
+                };
+                let mut index = b.ins().band_imm(other, mask);
+                if matches!(case, Case::MaskedRoundTrip) {
+                    let one_based = b.ins().iadd_imm(index, 1);
+                    index = b.ins().iadd_imm(one_based, -1);
+                }
+                if matches!(case, Case::MaskedWrap) {
+                    index = b.ins().iadd_imm(index, -1);
+                }
+                let length = if matches!(case, Case::MaskedDifferent) {
+                    arithmetic_ok
+                } else if matches!(case, Case::MaskedChanged) {
+                    b.ins().iadd_imm(current, -1)
+                } else {
+                    current
+                };
+                let condition = match case {
+                    Case::MaskedReject => UnsignedGreaterThanOrEqual,
+                    Case::MaskedInclusive => UnsignedLessThanOrEqual,
+                    Case::MaskedSigned => SignedLessThan,
+                    _ => UnsignedLessThan,
+                };
+                if matches!(case, Case::MaskedReversed) {
+                    b.ins().icmp(UnsignedGreaterThan, length, index)
+                } else {
+                    b.ins().icmp(condition, index, length)
+                }
+            }
             Case::Exact => b.ins().icmp_imm(UnsignedGreaterThanOrEqual, current, 8),
             Case::Strict => b.ins().icmp_imm(UnsignedGreaterThan, current, 7),
             Case::Reversed => {
@@ -85,8 +171,16 @@ fn compile(case: Case, optimize: bool) -> (JITModule, Run) {
             Case::SignedNegative => b.ins().icmp_imm(UnsignedGreaterThanOrEqual, current, -1),
         };
         let rejection = b.ins().iconst(types::I64, 12);
-        b.ins()
-            .brif(check, end, &[current.into()], end, &[rejection.into()]);
+        if matches!(case, Case::DeadFailureUse) {
+            let dead = b.create_block();
+            b.ins().brif(check, end, &[current.into()], dead, &[]);
+            b.switch_to_block(dead);
+            let dependent = b.ins().iadd(current, other);
+            b.ins().jump(end, &[dependent.into()]);
+        } else {
+            b.ins()
+                .brif(check, end, &[current.into()], end, &[rejection.into()]);
+        }
         b.switch_to_block(end);
         let result = b.block_params(end)[0];
         b.ins().return_(&[result]);
@@ -94,17 +188,69 @@ fn compile(case: Case, optimize: bool) -> (JITModule, Run) {
         b.finalize();
     }
     if optimize {
-        assert_eq!(
-            fold(&mut context.func, &BTreeMap::from([(length, 8)])),
-            usize::from(matches!(
-                case,
-                Case::Exact | Case::Strict | Case::Reversed | Case::Wrapped
-            )),
-            "{case:?}"
-        );
+        let original = context.func.display().to_string();
+        let derived =
+            required_index_floors(&context.func, &std::collections::BTreeSet::from([length]));
+        assert_eq!(context.func.display().to_string(), original);
+        match case {
+            Case::Joined | Case::JoinedRoundTrip => assert_eq!(derived.get(&length), Some(&7)),
+            Case::JoinedUnknown | Case::JoinedWrap => assert!(derived.is_empty()),
+            _ => {}
+        }
+        let floors = BTreeMap::from([(length, 8)]);
+        if matches!(
+            case,
+            Case::DeadFailureUse
+                | Case::Joined
+                | Case::JoinedRoundTrip
+                | Case::JoinedUnknown
+                | Case::JoinedWrap
+                | Case::Masked
+                | Case::MaskedReversed
+                | Case::MaskedRoundTrip
+                | Case::MaskedReject
+                | Case::MaskedInclusive
+                | Case::MaskedEdge
+                | Case::MaskedSigned
+                | Case::MaskedWrap
+                | Case::MaskedDifferent
+                | Case::MaskedChanged
+        ) {
+            let (literals, ranged) = fold_index_ranges(&mut context.func, &floors);
+            assert_eq!(literals, 0, "{case:?}");
+            assert_eq!(
+                ranged,
+                usize::from(matches!(
+                    case,
+                    Case::DeadFailureUse
+                        | Case::Joined
+                        | Case::JoinedRoundTrip
+                        | Case::Masked
+                        | Case::MaskedReversed
+                        | Case::MaskedRoundTrip
+                        | Case::MaskedReject
+                        | Case::MaskedInclusive
+                )),
+                "{case:?}"
+            );
+        } else {
+            assert_eq!(
+                fold(&mut context.func, &floors),
+                usize::from(matches!(
+                    case,
+                    Case::Exact | Case::Strict | Case::Reversed | Case::Wrapped
+                )),
+                "{case:?}"
+            );
+        }
     }
     context.compute_cfg();
     context.compute_domtree();
+    if optimize {
+        context.eliminate_unreachable_code(module.isa()).unwrap();
+        context.compute_cfg();
+        context.compute_domtree();
+    }
     context.verify(module.isa()).unwrap();
     let id = module
         .declare_function("floor", Linkage::Local, &context.func.signature)
@@ -129,6 +275,21 @@ fn admitted_unsigned_length_retains_fallback_and_selected_values() {
         Case::Signed,
         Case::Equal,
         Case::SignedNegative,
+        Case::Masked,
+        Case::MaskedReversed,
+        Case::MaskedRoundTrip,
+        Case::MaskedReject,
+        Case::MaskedInclusive,
+        Case::MaskedEdge,
+        Case::MaskedSigned,
+        Case::MaskedWrap,
+        Case::MaskedDifferent,
+        Case::MaskedChanged,
+        Case::Joined,
+        Case::JoinedRoundTrip,
+        Case::JoinedUnknown,
+        Case::JoinedWrap,
+        Case::DeadFailureUse,
     ] {
         let (_old, original) = compile(case, false);
         let (_new, optimized) = compile(case, true);
@@ -143,7 +304,7 @@ fn admitted_unsigned_length_retains_fallback_and_selected_values() {
             i64::MIN as u64,
             u64::MAX,
         ] {
-            for other in [0, 7, 8, u64::MAX] {
+            for other in [0, 1, 6, 7, 8, 9, i64::MIN as u64, u64::MAX] {
                 for arithmetic_ok in [0, 1] {
                     assert_eq!(
                         unsafe { original(current, other, arithmetic_ok) },
