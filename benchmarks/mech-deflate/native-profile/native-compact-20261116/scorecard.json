@@ -24388,5 +24388,36 @@
     "paired_build_x_roc": 0.7414565063463912,
     "paired_build_x_libdeflate": 4.5836599491675605,
     "evidence": "evidence/encoder-size-gap/bounded-index-range-study/README.md"
+  },
+  "admitted_input_span_experiment": {
+    "source_commit": "b55805f7f36a6163b4b0f7200d0519461b6448e2",
+    "compiler_sha256": "1d53d0b5edc1be50722c4c51e1de3b366fccf0eb4264eaefe121e7bec5d1b056",
+    "promoted": false,
+    "qualified_selection_unchanged": true,
+    "qualified_score": {
+      "roc": 81,
+      "libdeflate": 62
+    },
+    "discovery_scope": "19 cases,24 balanced blocks per case,both orders; probe variants use held-feature controls. Not full-score or confidence qualification.",
+    "word_encoder_text_bytes": 63292,
+    "word_peak_stack_bytes": 4832,
+    "word_source_through_link_seconds": 2.21701052156277,
+    "word_paired_build_x": {
+      "roc": 0.7427642319933374,
+      "libdeflate": 4.595760644708099
+    },
+    "combined_probe_encoder_text_bytes": 63740,
+    "combined_probe_natural4k_x_c": [
+      1.0243470506991488,
+      1.0397114180434341
+    ],
+    "combined_probe_natural4k_time_reduction_vs_control": [
+      0.0127266141494141,
+      0.0130347055307642
+    ],
+    "relevant_repository_tests": 15,
+    "span_and_histogram_native_calls": 23856,
+    "evidence": "evidence/encoder-size-gap/admitted-input-span-study/README.md",
+    "next_target": "Remove repeated saturated input-length calculations and measure the combination; maintain every prior named win."
   }
 }

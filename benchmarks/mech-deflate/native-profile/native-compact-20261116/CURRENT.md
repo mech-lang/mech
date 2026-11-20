@@ -6,7 +6,7 @@ The guarded histogram takes **2.44–2.73% less time on random 1 MiB** than its 
 
 Qualification uses 81 cases, forward96 and pooled reverse288 blocks per case. The original reverse96 had two uncertain Roc comparisons during large timing swings; the complete reverse192 repeat independently supports all 81/62 wins, and all 288 reverse blocks remain included in the pooled checks. Every prior named win is checked explicitly. All 162 output/inflation/alias observations, six failures, twelve injected failures, twelve recoveries and 4,864 B peak stack pass. Normal and checked allocation emission match exactly.
 
-Latest matched source-through-final-link medians: **2.214983 s Mech, 2.991646 s Roc and 0.481387 s C**, eight balanced fresh-process trials with all compilers/support prebuilt equally. Paired Mech ratios are **0.740659× Roc / 4.602734× C**. The same compiler with the histogram guard disabled measures 2.217692 s; no established compile-time improvement is claimed. Stripped executables remain 276,072 B / 191,912 B / 155,752 B respectively. Bootstrap and strip are separate metrics.
+Latest complete-build cohort on the **Apple M1**: the current compiler reproduces the qualified encoder exactly and measures **2.213534 s Mech, 2.985958 s Roc and 0.483760 s C**, twelve balanced fresh-process trials with final executable linking and equal prebuilt compilers/support. Paired qualified-control ratios are **0.741312× Roc / 4.577308× C**. Stripped executables remain 276,072 B / 191,912 B / 155,752 B. Bootstrap and strip are separate. The earlier eight-trial histogram cohort remains archived; no small compilation-time gain is claimed.
 
 The histogram source is committed at **7ea6c80d8db874e10392bdb2a3d38e6205ca876d**. Its new entry guard removes four per-byte bounds checks and retains the U32 increment check; a guard miss executes the original checked code. The two relevant repository tests pass 11,760 native calls. The original 2,719-line Mech source and canonical bytecode remain unchanged, with no LLVM dependency added. Rebuild with `--variant m1-bounded-byte-histogram`.
 
@@ -14,7 +14,15 @@ Both earlier mismatch finalists and all adverse observations remain available in
 
 The entire GPU suite is not claimed. Its relevant histogram and earlier wide-equality tests are recorded separately, and the existing missing archived allocator continues to block the repository unsafe audit. [Review and continuation handoff](REVIEW.md).
 
-## New experimental compact candidate
+## Current input-span and first-word experiments
+
+Compiler source **`b55805f7f`** proves `begin <= end <= current input length` for the private unit-stride collector, after readonly-load conversion. The word candidate is **63,292 B / 4,832 B stack**, and builds through final link in **2.217011 s**, paired **0.742764× Roc / 4.595761× C**. It remains unpromoted: only the nineteen-case discovery panel is complete for the new variants.
+
+Combining the span proof with the first-word probe takes **1.27–1.30% less time** than its held-feature vector/complement control on natural 4 KiB, in both orders. It remains **1.024347× / 1.039711× C**. All previous wins in the nineteen-case subset are retained; this is not a new 81-case score. The earlier bitwise word candidate's reverse `320-overlap` loss and every adverse observation remain recorded.
+
+Fifteen relevant repository tests pass, including 23,856 span/histogram native calls and the equality probe tests. All five current alternatives pass 162 outputs, six failures and the stack cap. Word, vector/complement and the combined probe also pass twelve failures/recoveries and normal/checked artifact replay. Public profiles reproduce word and the probe exactly. [Source, all alternatives, raw data, build profiles and portable reproduction](evidence/encoder-size-gap/admitted-input-span-study/README.md).
+
+## Earlier experimental compact candidate
 
 The guarded-index word recipe is **63,388 B** with **4,720 B** peak stack. Word and vector/complement retain all prior named wins in both complete 81-case, 24-block point orders: **81 Roc / 62 C**. All 162 outputs, six failures, twelve recoveries and checked emission pass. Full 96-block individual confidence qualification remains pending, so the qualified histogram selection above is unchanged. No 63rd C win is claimed.
 
