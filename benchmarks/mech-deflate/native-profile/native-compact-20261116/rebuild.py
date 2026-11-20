@@ -21,6 +21,7 @@ M1_SOURCE_RECIPES = {
     'm1-immutable-current-reads': 'immutable-current-read-study',
     'm1-word-complement-current-reads': 'word-complement-current-read-study',
     'm1-bounded-byte-histogram': 'bounded-byte-histogram-study',
+    'm1-bounded-index-ranges-experimental': 'bounded-index-range-study',
 }
 
 

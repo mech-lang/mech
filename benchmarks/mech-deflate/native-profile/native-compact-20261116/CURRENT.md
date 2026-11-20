@@ -14,6 +14,12 @@ Both earlier mismatch finalists and all adverse observations remain available in
 
 The entire GPU suite is not claimed. Its relevant histogram and earlier wide-equality tests are recorded separately, and the existing missing archived allocator continues to block the repository unsafe audit. [Review and continuation handoff](REVIEW.md).
 
+## New experimental compact candidate
+
+The guarded-index word recipe is **63,388 B** with **4,720 B** peak stack. Word and vector/complement retain all prior named wins in both complete 81-case, 24-block point orders: **81 Roc / 62 C**. All 162 outputs, six failures, twelve recoveries and checked emission pass. Full 96-block individual confidence qualification remains pending, so the qualified histogram selection above is unchanged. No 63rd C win is claimed.
+
+The minimal word recipe builds a final executable in **2.215846 s**, paired **0.741457× Roc / 4.583660× C**, with 276,072 B stripped deployment. Ten balanced fresh-process trials include final linking and equal prebuilt support. Rebased verified region hints avoid the optional compiler feature's measured 3.9% overhead. Both the slower intermediate modes and raw counter regressions are retained for repair. [Source, full point screens, build cohorts and portable reproduction](evidence/encoder-size-gap/bounded-index-range-study/README.md).
+
 ## Previous source-unit cohort
 
 Compiler source **`44fc9f05304111c6e75cac54a3dc5ec5c4f443bf`** adds source-relative unit extraction and caller-owned boundary storage. The selected recipe remains **`m1-immutable-current-reads`, 63,532 B, 81/81 Roc and 62/81 libdeflate wins in both complete orders**. Current minimal and experimental compiler configurations reproduce its exact artifacts in normal and allocation-checked modes; fixed-support linking reproduces the same qualified `834c7a7e…` worker. No 63rd C win is claimed.

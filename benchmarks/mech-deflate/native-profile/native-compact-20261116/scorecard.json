@@ -24350,5 +24350,43 @@
         }
       }
     ]
+  },
+  "bounded_index_range_experiment": {
+    "source_commit": "2537362150d163fe6bc490ff84d283f7f3fc9639",
+    "promoted": false,
+    "recipe": "m1-bounded-index-ranges-experimental",
+    "encoder_text_bytes": 63388,
+    "peak_stack_bytes": 4720,
+    "point_screen_wins": {
+      "word": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          62,
+          62
+        ]
+      },
+      "vector_complements": {
+        "roc": [
+          81,
+          81
+        ],
+        "libdeflate": [
+          62,
+          62
+        ]
+      }
+    },
+    "every_prior_named_point_win_retained": true,
+    "full_confidence_qualification": "outstanding",
+    "recovery_pairs": 12,
+    "checked_emission_exact": true,
+    "source_through_link_seconds": 2.215845958329737,
+    "build_trials_per_actor": 10,
+    "paired_build_x_roc": 0.7414565063463912,
+    "paired_build_x_libdeflate": 4.5836599491675605,
+    "evidence": "evidence/encoder-size-gap/bounded-index-range-study/README.md"
   }
 }
