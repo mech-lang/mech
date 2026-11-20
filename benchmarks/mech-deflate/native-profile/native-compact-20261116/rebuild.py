@@ -20,6 +20,7 @@ M1_SOURCE_RECIPES = {
     'm1-matcher-guard-facts': 'current-matcher-guard-facts',
     'm1-immutable-current-reads': 'immutable-current-read-study',
     'm1-word-complement-current-reads': 'word-complement-current-read-study',
+    'm1-bounded-byte-histogram': 'bounded-byte-histogram-study',
 }
 
 

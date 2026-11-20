@@ -1,5 +1,11 @@
 # PR #995 review and continuation handoff
 
+**Latest qualified throughput recipe: `m1-bounded-byte-histogram`, 63,612 B, preserving every prior 81 Roc / 62 C win.** It improves random 1 MiB by 2.44–2.73% against its same-run 63,388 B reference. Forward96 and reverse288 pooled blocks retain all original data; the fresh reverse192 repeat independently supports all wins. The original reverse96 had 2 uncertain Roc comparisons and remains archived. Build 2.214983 s, paired 0.740659× Roc / 4.602734× C; stripped executable 276,072 B. No 63rd win. [Full evidence and reproducible recipe](evidence/encoder-size-gap/bounded-byte-histogram-study/README.md).
+
+The 63,388 B recipe below remains the compact choice. The first bounded-index reuse prototype passed its native differential test but admitted no new checks in this codec. Inspection shows the 262,144-entry history floor is already exploited; observation counters use a different small array. Carry a separately guarded current extent for that array, or prove a checked read/write continuation, before making a performance claim. Preserve the scorer composition.
+
+## Preceding compact reference and mechanisms
+
 **Goal: reach 1× libdeflate performance. The next milestone is 63/81 C wins while preserving every existing individual C win and all 81 Roc wins.** The qualified reference is now `m1-word-complement-current-reads`: **63,388 B, 81/81 Roc and 62/81 C**, both point estimates and configured confidence checks in both complete 96-block orders. This is 144 B smaller than the previous reference. There is no 63rd C win.
 
 Work is in [mech-lang/mech PR #995](https://github.com/mech-lang/mech/pull/995), branch `codex/pr993-m3-optimization`, targeting #993's `codex/native-compact-source-handoff`, stacked on #973. The branch contains compiler source, the original 2,719-line Mech codec, reproducible build recipes and the raw evidence. No LLVM dependency is added. Canonical bytecode remains `c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3`.

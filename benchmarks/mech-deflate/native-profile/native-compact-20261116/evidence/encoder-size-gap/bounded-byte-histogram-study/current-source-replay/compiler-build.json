@@ -1,0 +1,39 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "build",
+    "--locked",
+    "--release",
+    "--config",
+    "profile.release.package.libmimalloc-sys.opt-level=1",
+    "--manifest-path",
+    "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/compiler-target",
+    "--message-format=json",
+    "--bin",
+    "compile_profile"
+  ],
+  "environment": {
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+    "CARGO_PROFILE_RELEASE_DEBUG": "false",
+    "CARGO_PROFILE_RELEASE_LTO": "false",
+    "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "16",
+    "CARGO_INCREMENTAL": "0"
+  },
+  "source_base": "7ea6c80d8db874e10392bdb2a3d38e6205ca876d",
+  "source_pin": "Working-tree admitted index range overlay; source inputs copied before build",
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/admitted_lengths/mod.rs": "2d9878f5cf2dbeca7203c7e2b22d733660a876cfff1d277e43551a7a24a92912",
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/admitted_lengths/tests.rs": "8e9ac7860d4ee09c9ae6d665b8fbb2a5a2c005872141ab2443660b9e1f350bf5",
+    "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "1927a19dd861c1fcf3b3df743183db250f85c45359abfa89e6c52a187d52a695"
+  },
+  "start_utc": "2026-11-20T00:29:43.182631+00:00",
+  "scope": "Rust compiler rebuild, distinct from source-through-final-link codec timing.",
+  "seconds": 223.5156892919913,
+  "exit_code": 0,
+  "compiler": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/admitted-index-range-compiler/compiler/d54e0da3dce50740/compile_profile",
+  "compiler_sha256": "d54e0da3dce507406fe8e34b827d4813a03290c2dec07f8816aa99cd67710358"
+}
