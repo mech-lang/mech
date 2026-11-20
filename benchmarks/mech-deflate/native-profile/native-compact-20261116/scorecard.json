@@ -28,9 +28,9 @@
     "pr": 995,
     "stacked_on_pr": 993,
     "original_target_pr": 973,
-    "compiler_source_commit": "2b6ed311d19b24794bde87b9893301ca4e56dc1c",
-    "compiler_sha256": "a99a1746b989387833013d1a7a0ededae4bacd7cc5667bf8ce6531a4e66bfd6d",
-    "latest_deployment_evidence": "evidence/encoder-size-gap/packed-margin-repair-study/README.md",
+    "compiler_source_commit": "60e942f46298e1d4b3ea446248596ae3e071853d",
+    "compiler_sha256": "13edf3ab0fdcd3bb05951cf6ad07c4b67b68cb920f3f733eb086237db150f7b3",
+    "latest_deployment_evidence": "evidence/encoder-size-gap/packed-eight-entry-study/README.md",
     "host": "Apple M1, macOS 15.6.1, arm64",
     "local_checks": {
       "workspace_formatting": "Pass",
@@ -7357,7 +7357,7 @@
     "checked_chain_estimated_recomputation_seconds": 0.0032,
     "next": "Exact-choice body planning and one further omitted-body investigation"
   },
-  "current_matched_build": "packed_margin_repair_experiment.complete_build",
+  "current_matched_build": "packed_eight_entry_experiment.complete_build",
   "scoped_function_replay": {
     "compiler_source": "e9538f71514225abf5ca57a9fc0acab358407167",
     "control_source": "ff7c1dbc9c5059ed84d730b008847c02179fa2cf",
@@ -16856,7 +16856,7 @@
         "supported": false
       }
     },
-    "primary_investigation": "Packed eight-candidate entry guarded by cost/index bounds; preserve scalar8..15 wide-cost path and original sixteen-element wide vector threshold. Keep all original named wins.",
+    "primary_investigation": "Retain the eight-entry candidate. If its 63rd win lacks confidence, revisit historical scalar pairing against the modern frame and inspect actual scalar-block counts.",
     "evidence": "evidence/encoder-size-gap/paired-packed-accumulator-study/README.md"
   },
   "current_register_spill_pairs": {
@@ -25073,5 +25073,227 @@
       "scope": "8 serial balanced fresh-process source-through-final-executable-link orders. Compilers and fixed support prebuilt for every actor. Every generated Mech object, complete metadata and bytecode is hash checked. Strip is separate. Bootstrap is excluded equally."
     },
     "next_target": "Packed eight-candidate entry guarded by cost/index bounds; preserve scalar8..15 wide-cost path and original sixteen-element wide vector threshold. Keep all original named wins."
+  },
+  "packed_eight_entry_experiment": {
+    "source_commit": "60e942f46298e1d4b3ea446248596ae3e071853d",
+    "compiler_sha256": "13edf3ab0fdcd3bb05951cf6ad07c4b67b68cb920f3f733eb086237db150f7b3",
+    "evidence": "evidence/encoder-size-gap/packed-eight-entry-study/README.md",
+    "promoted": false,
+    "qualified_selection_unchanged": true,
+    "head_text_bytes": 63868,
+    "peak_stack_bytes": 4736,
+    "native_tests": {
+      "tests_per_mode": 19,
+      "modes": 3,
+      "packed_key_fixture_calls_per_mode": 94208,
+      "wide_item_fixture_calls_per_mode": 16384,
+      "prior_winner_fixture_calls_per_mode": 16384
+    },
+    "discovery_orders": 4,
+    "full24_orders": 2,
+    "full96_orders": 2,
+    "all_original_named_wins_precision_supported": true,
+    "new63rd_strict_qualification_passed": false,
+    "full96_report": [
+      {
+        "id": "packed-eight-entry-qualified96-packed-eight-head-probe-profiled-forward",
+        "kind": "full",
+        "order": "forward",
+        "case_count": 81,
+        "peers": {
+          "roc": {
+            "point_estimate_wins": {
+              "mech-control": 81,
+              "mech-experiment": 81
+            },
+            "precision_supported_wins": {
+              "mech-control": 81,
+              "mech-experiment": 81
+            },
+            "lost_cases": [],
+            "gained_cases": [],
+            "distinct_contract_point_estimate_wins": {
+              "mech-control": 74,
+              "mech-experiment": 74
+            },
+            "distinct_contract_precision_supported_wins": {
+              "mech-control": 74,
+              "mech-experiment": 74
+            }
+          },
+          "libdeflate": {
+            "point_estimate_wins": {
+              "mech-control": 62,
+              "mech-experiment": 63
+            },
+            "precision_supported_wins": {
+              "mech-control": 62,
+              "mech-experiment": 63
+            },
+            "lost_cases": [],
+            "gained_cases": [
+              "prefix-natural-4096"
+            ],
+            "distinct_contract_point_estimate_wins": {
+              "mech-control": 56,
+              "mech-experiment": 57
+            },
+            "distinct_contract_precision_supported_wins": {
+              "mech-control": 56,
+              "mech-experiment": 57
+            }
+          }
+        }
+      },
+      {
+        "id": "packed-eight-entry-qualified96-packed-eight-head-probe-profiled-reverse",
+        "kind": "full",
+        "order": "reverse",
+        "case_count": 81,
+        "peers": {
+          "roc": {
+            "point_estimate_wins": {
+              "mech-control": 81,
+              "mech-experiment": 81
+            },
+            "precision_supported_wins": {
+              "mech-control": 81,
+              "mech-experiment": 81
+            },
+            "lost_cases": [],
+            "gained_cases": [],
+            "distinct_contract_point_estimate_wins": {
+              "mech-control": 74,
+              "mech-experiment": 74
+            },
+            "distinct_contract_precision_supported_wins": {
+              "mech-control": 74,
+              "mech-experiment": 74
+            }
+          },
+          "libdeflate": {
+            "point_estimate_wins": {
+              "mech-control": 62,
+              "mech-experiment": 63
+            },
+            "precision_supported_wins": {
+              "mech-control": 62,
+              "mech-experiment": 62
+            },
+            "lost_cases": [],
+            "gained_cases": [
+              "prefix-natural-4096"
+            ],
+            "distinct_contract_point_estimate_wins": {
+              "mech-control": 56,
+              "mech-experiment": 57
+            },
+            "distinct_contract_precision_supported_wins": {
+              "mech-control": 56,
+              "mech-experiment": 56
+            }
+          }
+        }
+      }
+    ],
+    "named_unsupported": {
+      "forward": {
+        "roc": [],
+        "libdeflate": []
+      },
+      "reverse": {
+        "roc": [],
+        "libdeflate": [
+          "prefix-natural-4096"
+        ]
+      }
+    },
+    "complete_build": {
+      "plan_sha256": "022ca0e7baba17bf26bf786b244f56d29639c7c1c5663ed811bc5aaa64271f38",
+      "medians": {
+        "mech-control-reference": {
+          "source": 2.1738291669171304,
+          "link": 0.03572174999862909,
+          "source_through_link": 2.209805521182716,
+          "strip": 0.010753021109849215,
+          "source_through_strip": 2.220777500187978
+        },
+        "mech-eight-paired": {
+          "source": 2.1796042507048696,
+          "link": 0.03518789610825479,
+          "source_through_link": 2.2153193331323564,
+          "strip": 0.010781812248751521,
+          "source_through_strip": 2.2262193120550364
+        },
+        "mech-eight-head": {
+          "source": 2.1798759379889816,
+          "link": 0.035327166551724076,
+          "source_through_link": 2.2156371669843793,
+          "strip": 0.010774417081847787,
+          "source_through_strip": 2.2266498126555234
+        },
+        "roc": {
+          "source": 2.948111603502184,
+          "link": 0.035451229428872466,
+          "source_through_link": 2.9837752708699554,
+          "strip": 0.010787416715174913,
+          "source_through_strip": 2.9951234164182097
+        },
+        "libdeflate": {
+          "source": 0.4457956040278077,
+          "link": 0.035133083583787084,
+          "source_through_link": 0.4809126041363925,
+          "strip": 0.010604562237858772,
+          "source_through_strip": 0.4917213961016387
+        }
+      },
+      "phases": {
+        "mech-control-reference": {
+          "parse": 0.7013804374999999,
+          "catalog": 1.8583500000000003e-05,
+          "frontend": 0.21547979150000002,
+          "artifact": 0.006809770999999999,
+          "encode": 0.002547813,
+          "native": 1.2207583335
+        },
+        "mech-eight-paired": {
+          "parse": 0.7016972705,
+          "catalog": 1.7021e-05,
+          "frontend": 0.21558577099999998,
+          "artifact": 0.0068053755,
+          "encode": 0.002535334,
+          "native": 1.226607187
+        },
+        "mech-eight-head": {
+          "parse": 0.701408021,
+          "catalog": 2.075e-05,
+          "frontend": 0.21508149999999998,
+          "artifact": 0.006795875,
+          "encode": 0.0025481875,
+          "native": 1.226934333
+        }
+      },
+      "paired_ratios": {
+        "mech-control-reference": {
+          "roc": 0.7409821135332537,
+          "libdeflate": 4.595493424552328,
+          "mech-control-reference": 1.0
+        },
+        "mech-eight-paired": {
+          "roc": 0.7424882868180559,
+          "libdeflate": 4.605417967461435,
+          "mech-control-reference": 1.0023800443634092
+        },
+        "mech-eight-head": {
+          "roc": 0.7426535338084552,
+          "libdeflate": 4.604947662635128,
+          "mech-control-reference": 1.0025030266552584
+        }
+      },
+      "trials": 10,
+      "source_commit": "60e942f46298e1d4b3ea446248596ae3e071853d",
+      "scope": "10 serial balanced fresh-process source-through-final-executable-link orders. Compilers and fixed support prebuilt for every actor. Every generated Mech object, complete metadata and bytecode is hash checked. Strip is separate. Bootstrap is excluded equally."
+    },
+    "next_target": "Retain the eight-entry candidate. If its 63rd win lacks confidence, revisit historical scalar pairing against the modern frame and inspect actual scalar-block counts."
   }
 }

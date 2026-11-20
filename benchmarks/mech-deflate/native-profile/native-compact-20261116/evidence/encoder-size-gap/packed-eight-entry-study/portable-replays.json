@@ -1,0 +1,79 @@
+{
+  "compiler_sha256": "13edf3ab0fdcd3bb05951cf6ad07c4b67b68cb920f3f733eb086237db150f7b3",
+  "runs": [
+    {
+      "role": "packed-eight-paired-probe-profiled",
+      "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+      "variants": [
+        {
+          "mode": "normal",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/packed-eight-entry-compiler/compiler/13edf3ab0fdcd3bb/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/packed-eight-entry-portable-replays/packed-eight-paired-probe-profiled/normal/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "13edf3ab0fdcd3bb05951cf6ad07c4b67b68cb920f3f733eb086237db150f7b3",
+          "artifacts": {
+            "program.o": "b7d567af4fac123e3f3fa4a62db39a1ec88e2ff8b8fadc0f7c4bb31ecbab33dc",
+            "metadata.json": "076549c490026275a61a380b23eef627b2c5160b84b625c8e41a6455e3383dc1",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        },
+        {
+          "mode": "checked",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/packed-eight-entry-compiler/compiler/13edf3ab0fdcd3bb/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/packed-eight-entry-portable-replays/packed-eight-paired-probe-profiled/checked/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "13edf3ab0fdcd3bb05951cf6ad07c4b67b68cb920f3f733eb086237db150f7b3",
+          "artifacts": {
+            "program.o": "b7d567af4fac123e3f3fa4a62db39a1ec88e2ff8b8fadc0f7c4bb31ecbab33dc",
+            "metadata.json": "076549c490026275a61a380b23eef627b2c5160b84b625c8e41a6455e3383dc1",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        }
+      ],
+      "scope": "Exact source-artifact replay; runtime and complete-build measurements are separate."
+    },
+    {
+      "role": "packed-eight-head-probe-profiled",
+      "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+      "variants": [
+        {
+          "mode": "normal",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/packed-eight-entry-compiler/compiler/13edf3ab0fdcd3bb/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/packed-eight-entry-portable-replays/packed-eight-head-probe-profiled/normal/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "13edf3ab0fdcd3bb05951cf6ad07c4b67b68cb920f3f733eb086237db150f7b3",
+          "artifacts": {
+            "program.o": "b394b4c83fc8189cbc7a4540a756c99c3c92caf22fe169029102b2f596a52b5f",
+            "metadata.json": "a1a21ba86c12f1ef70c57957578f412acafb40a9af837cd72b0cf3c33e8af60d",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        },
+        {
+          "mode": "checked",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/packed-eight-entry-compiler/compiler/13edf3ab0fdcd3bb/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/packed-eight-entry-portable-replays/packed-eight-head-probe-profiled/checked/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "13edf3ab0fdcd3bb05951cf6ad07c4b67b68cb920f3f733eb086237db150f7b3",
+          "artifacts": {
+            "program.o": "b394b4c83fc8189cbc7a4540a756c99c3c92caf22fe169029102b2f596a52b5f",
+            "metadata.json": "a1a21ba86c12f1ef70c57957578f412acafb40a9af837cd72b0cf3c33e8af60d",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        }
+      ],
+      "scope": "Exact source-artifact replay; runtime and complete-build measurements are separate."
+    }
+  ]
+}

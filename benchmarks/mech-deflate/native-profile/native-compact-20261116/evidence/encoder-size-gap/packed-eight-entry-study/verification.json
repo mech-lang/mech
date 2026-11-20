@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "verify.py"
+  ],
+  "exit_code": 0,
+  "verification_log_sha256": "15305f631753e2b20cd52b3f10a2bb59842caae9c512b22d3b134c5cef7da72a",
+  "source_basis_commit": "60e942f46298e1d4b3ea446248596ae3e071853d",
+  "scope": "Public artifact/source, raw-runtime, confidence, old-recipe, correctness/recovery, counter and complete-build evidence replay passed. The separately reported strict63 qualification remains false because reverse natural4K confidence crosses parity."
+}

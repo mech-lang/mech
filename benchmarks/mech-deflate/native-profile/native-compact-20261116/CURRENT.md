@@ -1,12 +1,12 @@
 # PR #995 current status
 
-**Qualified throughput recipe: `m1-bounded-byte-histogram`, 63,612 B, retaining every prior individual 81/81 Roc and 62/81 libdeflate win.** The smaller `m1-word-complement-current-reads` remains available at 63,388 B. There is no 63rd C win; the goal remains 1× libdeflate performance.
+**Qualified throughput recipe: `m1-bounded-byte-histogram`, 63,612 B, retaining every prior individual 81/81 Roc and 62/81 libdeflate win.** The smaller `m1-word-complement-current-reads` remains available at 63,388 B. No 63rd C win is yet confidence-qualified; the goal remains 1× libdeflate performance.
 
 The guarded histogram takes **2.44–2.73% less time on random 1 MiB** than its same-run compact reference, at a cost of 224 B. It measures **1.325151× / 1.324508× C** in the original full orders. Natural 4 KiB improves 0.30–0.60% and remains **1.027657× / 1.031202× C**. [Source, raw observations, qualification and reproduction](evidence/encoder-size-gap/bounded-byte-histogram-study/README.md).
 
 Qualification uses 81 cases, forward96 and pooled reverse288 blocks per case. The original reverse96 had two uncertain Roc comparisons during large timing swings; the complete reverse192 repeat independently supports all 81/62 wins, and all 288 reverse blocks remain included in the pooled checks. Every prior named win is checked explicitly. All 162 output/inflation/alias observations, six failures, twelve injected failures, twelve recoveries and 4,864 B peak stack pass. Normal and checked allocation emission match exactly.
 
-Latest complete-build cohort on the **Apple M1** reproduces the qualified encoder exactly and measures **2.216508 s Mech, 2.988164 s Roc and 0.482030 s C**, eight balanced fresh-process trials including final executable linking with equal prebuilt compilers/support. Paired qualified-control ratios are **0.741978× Roc / 4.602918× C**. Stripped executables remain 276,072 B / 191,912 B / 155,752 B. Bootstrap and strip are separate; no compilation-time gain is established. [Current build evidence](evidence/encoder-size-gap/packed-margin-repair-study/README.md).
+Latest complete-build cohort on the **Apple M1** reproduces the qualified encoder exactly and measures **2.209806 s Mech, 2.983775 s Roc and 0.480913 s C**, ten balanced fresh-process trials including final executable linking with equal prebuilt compilers/support. Stripped executables remain 276,072 B / 191,912 B / 155,752 B. Bootstrap and strip are separate; no compilation-time gain is established. [Current build evidence](evidence/encoder-size-gap/packed-eight-entry-study/README.md).
 
 The histogram source is committed at **7ea6c80d8db874e10392bdb2a3d38e6205ca876d**. Its new entry guard removes four per-byte bounds checks and retains the U32 increment check; a guard miss executes the original checked code. The two relevant repository tests pass 11,760 native calls. The original 2,719-line Mech source and canonical bytecode remain unchanged, with no LLVM dependency added. Rebuild with `--variant m1-bounded-byte-histogram`.
 
@@ -14,7 +14,15 @@ Both earlier mismatch finalists and all adverse observations remain available in
 
 The entire GPU suite is not claimed. Its relevant histogram and earlier wide-equality tests are recorded separately, and the existing missing archived allocator continues to block the repository unsafe audit. [Review and continuation handoff](REVIEW.md).
 
-## Current paired scorer margin experiments
+## Current guarded eight-entry experiment
+
+Compiler source **`60e942f462`** adds guarded eight-candidate entry to the paired packed scorer. Head candidate: **63,868 B**, **4,736 B** stack. It removes **66,937 natural-4-KiB scorer instructions and 36,501 branches** versus the sixteen-entry head worker, with unchanged stack traffic. Every original named 81 Roc / 62 C win remains precision-supported in both full96 orders. The new reverse natural-4-KiB interval still crosses parity, so the 63rd C win is not yet qualified. The qualified 63,612 B histogram remains selected until a separate promotion. [All eight runtime orders, confidence results, source, tests, counts, builds and portable replay](evidence/encoder-size-gap/packed-eight-entry-study/README.md).
+
+Forward96: **81 Roc / 63 C point wins**, natural 4 KiB **0.993901× C**, 90% interval **-1.144% to -0.096%**. Reverse96: **81 Roc / 63 C point wins**, natural 4 KiB **0.997675× C**, 90% interval **-0.818% to +0.388%**.
+
+Head complete build: **2.215637 s**, paired **0.742654× Roc / 4.604948× C**, stripped executable **276,072 B**. Nineteen optimized tests pass in three configurations; 31 older recipes and both portable normal/checked artifacts reproduce exactly. No compilation-time gain is established.
+
+## Preceding paired scorer margin experiments
 
 Compiler source **`2b6ed311d`** keeps the paired scorer and tests head-group processing plus wider item decoding. The head candidate is **63,836 B**, saving **16 B** and **10,308 executed natural-4-KiB scorer instructions**. It measures **0.998497× / 1.000382× C**, with **1.000019× / 0.998029×** time versus the exact paired-carried control. All prior wins present in eight complete 21-case discovery orders survive. No new full score or qualified 63rd win is claimed; keep the saving and continue the paired scorer. The qualified default remains **63,612 B / 81 Roc / 62 C**.
 
