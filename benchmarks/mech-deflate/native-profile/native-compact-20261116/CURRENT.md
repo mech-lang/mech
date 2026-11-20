@@ -10,6 +10,8 @@ Source through final executable link on Apple M1 takes **2.222473s**, paired **0
 
 Original 2,719-line Mech source and canonical bytecode remain unchanged; no LLVM dependency is added. The next milestone is **64/81 C**, preserving all 63 existing C names and 81/81 Roc; the full goal remains **1× libdeflate across all 81 cases**. The next major diagnostic is a current Mech/C phase-and-work comparison across the remaining losses, as requested in the new brief. Existing unsafe audit still has the unrelated missing archived allocator blocker.
 
+Current attribution now includes **45 fresh owner captures, exact nine-case Mech/C parsing-work alignment, C search counters and 212 real Huffman vectors**, plus current matcher instruction and stack counts. Both Mech scorers match C exactly on passes, node updates, no-match positions, match records and candidate lengths. The opt-in carried-cost candidate takes **2.42–2.51% less time on random 1 MiB** in its two 21-case discovery orders. All observed wins survive, but no 64th win or full 81-case qualification is claimed. The selected 63-win recipe is unchanged. Comparable total matcher/setup/output work, Mech frequency capture, phase replay and aligned coarse phase times remain outstanding. [Current evidence, all raw observations and portable verification](evidence/current-phase-work-study/README.md).
+
 Everything below is historical: references to a selected/default recipe apply to that checkpoint.
 
 ## Previous confidence-qualified selection and experiments

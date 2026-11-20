@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/trace-current-semantic-entries.py", line 14, in <module>
+    assert status.returncode==0 and (folder/'result.json').exists(),(folder/'lldb.log').read_text()[-5000:]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: (lldb) command script import /private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/semantic_trace_callbacks.py
+(lldb) semantic_trace /private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/current-semantic-entry-traces/prefix-natural-4096/mech/plan.json
+Traceback (most recent call last):
+  File "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/semantic_trace_callbacks.py", line 34, in run
+    error=lldb.SBError();process=target.Launch(launch,error);assert error.Success(),str(error)
+AssertionError: error: process exited with status -1 (this is a non-interactive debug session, cannot get permission to debug processes.)
+

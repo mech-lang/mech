@@ -1,0 +1,17 @@
+{
+  "passed": true,
+  "archives": 4,
+  "current_owner_captures": 45,
+  "C_frequency_vectors": 212,
+  "aligned_DP_cases_per_Mech_body": 9,
+  "carry_raw_checked_calls": 358848,
+  "selected_C_wins": 63,
+  "next_target": 64,
+  "inputs_sha256": {
+    "verify.py": "1320bb27c248478070f6ffaf89a09a62dcf68519e0308aa7dde82295afa0fb69",
+    "trace-libdeflate.py": "a29567f3116cabc71dc8b42696389227fba078b565f0ac42f77141a941d876cb",
+    "align-dp-work.py": "af5af6d6328b409791646cfaec4f574bd2316acf28b2c3a2f0d246595ae051d7",
+    "summary.json": "2fe5f15fa7054ad31c4a9a68edd75076c761ec1aff97de925278b73dab825200",
+    "archive-files.json": "bec8d40562da34aaa9c96a481e1858624c2c9fd868887ade4d42eb3f9a37f72b"
+  }
+}
