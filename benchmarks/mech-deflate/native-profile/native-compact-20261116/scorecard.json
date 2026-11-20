@@ -24464,5 +24464,40 @@
       "packet_qualification_slows_natural_and_distribution_change": true
     },
     "next_target": "Prove the clamped input window from the admitted unit-stride span; remove its impossible overflow and input-extent checks."
+  },
+  "clamped_input_window_experiment": {
+    "source_commit": "3304169045a648907028e309aab098ef9b445751",
+    "evidence": "evidence/encoder-size-gap/clamped-input-window-study/README.md",
+    "promoted": false,
+    "qualified_selection_unchanged": true,
+    "text_bytes": {
+      "word": 63180,
+      "probe": 63484,
+      "packet": 63068
+    },
+    "peak_stack_bytes": 4736,
+    "probe_natural_4096_x_libdeflate": [
+      1.0111990184831572,
+      1.009383732385288
+    ],
+    "probe_natural_4096_x_matching_base": [
+      0.9896381890787064,
+      0.9847401623408268
+    ],
+    "probe_random_1MiB_x_matching_base": [
+      0.9839061251043655,
+      0.9837634363511996
+    ],
+    "discovery": {
+      "orders": 6,
+      "cases_per_order": 21,
+      "balanced_blocks_per_case": 24,
+      "all_observed_required_peer_wins_preserved": true,
+      "full_score_not_established": true
+    },
+    "probe_source_through_final_link_seconds": 2.2133202080149204,
+    "probe_paired_build_x_roc": 0.7421111498636686,
+    "probe_paired_build_x_libdeflate": 4.602745791908093,
+    "next_target": "Reuse the selected window >=5 edge for the remaining four-byte read at position+1."
   }
 }

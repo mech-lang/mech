@@ -6,7 +6,7 @@ The guarded histogram takes **2.44–2.73% less time on random 1 MiB** than its 
 
 Qualification uses 81 cases, forward96 and pooled reverse288 blocks per case. The original reverse96 had two uncertain Roc comparisons during large timing swings; the complete reverse192 repeat independently supports all 81/62 wins, and all 288 reverse blocks remain included in the pooled checks. Every prior named win is checked explicitly. All 162 output/inflation/alias observations, six failures, twelve injected failures, twelve recoveries and 4,864 B peak stack pass. Normal and checked allocation emission match exactly.
 
-Latest complete-build cohort on the **Apple M1**: the current compiler reproduces the qualified encoder exactly and measures **2.212362 s Mech, 2.983196 s Roc and 0.480611 s C**, twelve balanced fresh-process trials with final executable linking and equal prebuilt compilers/support. Paired qualified-control ratios are **0.741329× Roc / 4.605473× C**. Stripped executables remain 276,072 B / 191,912 B / 155,752 B. Bootstrap and strip are separate. Earlier cohorts remain archived; no small compilation-time gain is claimed. [Current complete-build evidence](evidence/encoder-size-gap/admitted-input-word-study/README.md).
+Latest complete-build cohort on the **Apple M1**: the current compiler reproduces the qualified encoder exactly and measures **2.211302 s Mech, 2.984480 s Roc and 0.481384 s C**, twelve balanced fresh-process trials with final executable linking and equal prebuilt compilers/support. Paired qualified-control ratios are **0.740519× Roc / 4.592119× C**. Stripped executables remain 276,072 B / 191,912 B / 155,752 B. Bootstrap and strip are separate. Earlier cohorts remain archived; no small compilation-time gain is claimed. [Current complete-build evidence](evidence/encoder-size-gap/clamped-input-window-study/README.md).
 
 The histogram source is committed at **7ea6c80d8db874e10392bdb2a3d38e6205ca876d**. Its new entry guard removes four per-byte bounds checks and retains the U32 increment check; a guard miss executes the original checked code. The two relevant repository tests pass 11,760 native calls. The original 2,719-line Mech source and canonical bytecode remain unchanged, with no LLVM dependency added. Rebuild with `--variant m1-bounded-byte-histogram`.
 
@@ -14,7 +14,13 @@ Both earlier mismatch finalists and all adverse observations remain available in
 
 The entire GPU suite is not claimed. Its relevant histogram and earlier wide-equality tests are recorded separately, and the existing missing archived allocator continues to block the repository unsafe audit. [Review and continuation handoff](REVIEW.md).
 
-## Current input-word and packet experiments
+## Current clamped-window experiments
+
+Source **`330416904`** proves the collector's clamped window fits the admitted input and consumes the facts with late constant-branch cleanup. Word is **63,180 B**, probe **63,484 B**, and packet-qualified **63,068 B**; all use 4,736 B peak stack. The probe takes **1.04–1.53% less time on natural 4 KiB** and **1.61–1.62% less time on random 1 MiB** than its matching input-word/probe base. Natural 4 KiB remains **1.011199× / 1.009384× C**. All previously required peer wins present in all six twenty-one-case discovery orders remain point wins. There is no new full score or 63rd C win.
+
+The probe builds through final executable link in **2.213320 s**, paired **0.742111× Roc / 4.602746× C**. Twenty-three relevant tests pass, including 47,552 native calls; all three candidates pass outputs/errors, twelve failures/recoveries, checked emission and stack gates. The first comparison-only implementation left constant branches and is preserved with its adverse counts. Next, reuse `window >= 5` for the remaining four-byte read. [Source, all data, machine counts, complete-build profiles and reproduction](evidence/encoder-size-gap/clamped-input-window-study/README.md).
+
+## Preceding input-word and packet experiments
 
 Source **`baeab0027`** adds an admitted eight-byte input floor. The word candidate is **63,292 B / 4,736 B stack**, with a **2.213294 s** complete build, paired **0.742082× Roc / 4.611124× C**. The combined word-probe candidate is **63,756 B** and measures **1.009970× / 1.022278× C** on natural 4 KiB against its matching held-feature control. These are twenty-one-case, twenty-four-block discovery orders, not a new full score. Every previously required peer win observed in the panel is retained. The smaller word's reverse `320-overlap` win is fragile at 0.999809× C.
 
