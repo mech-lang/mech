@@ -28,9 +28,9 @@
     "pr": 995,
     "stacked_on_pr": 993,
     "original_target_pr": 973,
-    "compiler_source_commit": "44fc9f05304111c6e75cac54a3dc5ec5c4f443bf",
-    "compiler_sha256": "e75d74f775717293490258b6533e202c83dd5a8ee4b2f680e88c20f171ca3d82",
-    "latest_deployment_evidence": "evidence/early-source-unit-repair/README.md",
+    "compiler_source_commit": "f3d74d9488095a1ef4b3dbc36a03d6265f8f14c9",
+    "compiler_sha256": "50e00e36a39a15c56060f10f0e2580186b9c7d8ef7becaae2eb741ba19a91017",
+    "latest_deployment_evidence": "evidence/encoder-size-gap/packed-cost-ordinal-study/README.md",
     "host": "Apple M1, macOS 15.6.1, arm64",
     "local_checks": {
       "workspace_formatting": "Pass",
@@ -7357,7 +7357,7 @@
     "checked_chain_estimated_recomputation_seconds": 0.0032,
     "next": "Exact-choice body planning and one further omitted-body investigation"
   },
-  "current_matched_build": "early_source_unit_repair.selected_build",
+  "current_matched_build": "packed_cost_ordinal_experiment.complete_build",
   "scoped_function_replay": {
     "compiler_source": "e9538f71514225abf5ca57a9fc0acab358407167",
     "control_source": "ff7c1dbc9c5059ed84d730b008847c02179fa2cf",
@@ -8969,7 +8969,8 @@
     "required_win_libdeflate": "prefix-natural-8192",
     "historical_llvm_assisted_encoder_bytes": 55700,
     "maintained_llvm_free_encoder_bytes": 71192,
-    "evidence": "evidence/runtime-62-high-water/README.md"
+    "evidence": "evidence/runtime-62-high-water/README.md",
+    "current_qualified_llvm_free_encoder_bytes": 63612
   },
   "ordered_vector_cursor_ablations": {
     "inventory_hits": 10,
@@ -16835,12 +16836,12 @@
   "next_runtime_target": {
     "case": "prefix-natural-4096",
     "paired_mech_c": [
-      1.0637572685977872,
-      1.0689458677488346
+      1.0050622429168035,
+      1.0084914429877132
     ],
-    "required_time_reduction": 0.06449893285431973,
-    "primary_investigation": "Earn 63/81 libdeflate runtime wins; profile short scalar scorer work on natural4K, preserve every existing individual peer win and all 81 Roc wins.",
-    "evidence": "evidence/encoder-size-gap/immutable-current-read-study/placement/runtime-case-ratios.json"
+    "scope": "Original-profile packed probe, 21-case/24-block discovery only; no qualified new win. Use the exact ratios in linked evidence.",
+    "primary_investigation": "Two independent packed accumulators over eight candidates, retaining original vector fallback and exact tail handling; not implemented in this study.",
+    "evidence": "evidence/encoder-size-gap/packed-cost-ordinal-study/README.md"
   },
   "current_register_spill_pairs": {
     "status": "qualified predecessor",
@@ -24606,6 +24607,182 @@
       },
       "proof_folder": "attempt-3"
     },
-    "next_target": "Integrate packed cost/index under explicit bounds with the existing vector fallback; verify full-source accounting and all previous wins."
+    "next_target": "Packed prototype is now integrated; see packed_cost_ordinal_experiment."
+  },
+  "packed_cost_ordinal_experiment": {
+    "source_commit": "f3d74d9488095a1ef4b3dbc36a03d6265f8f14c9",
+    "compiler_sha256": "50e00e36a39a15c56060f10f0e2580186b9c7d8ef7becaae2eb741ba19a91017",
+    "evidence": "evidence/encoder-size-gap/packed-cost-ordinal-study/README.md",
+    "promoted": false,
+    "qualified_selection_unchanged": true,
+    "roles": {
+      "packed-key-probe-profiled": {
+        "encoder_text_bytes": 63660,
+        "artifact_sha256": {
+          "program.o": "7ec8ae26c8d706fdf575d99e4e410399a17aab4cad3db52872984685170bb66b",
+          "metadata.json": "c3b4296ca3470af2b60a47090c386fb000a01223de4d4ebb79398d93386c2164",
+          "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+        },
+        "worker_sha256": "bff02921bbfe91a8141a06b932b12de3bb453336aafc07f20d1c97a4c18aa8cc"
+      },
+      "packed-key-word-profiled": {
+        "encoder_text_bytes": 63020,
+        "artifact_sha256": {
+          "program.o": "ffe135811216bb247e5d29d86842cf7963d9435b1212ec6150e97d3048dcc287",
+          "metadata.json": "a5be7f4c9b021ce4cbacc11e8be399f3d11431f99c4eb384aca4c926f29e9a0e",
+          "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+        },
+        "worker_sha256": "1e3849ac6a44121b3579ace2081d3cac03015e0ad1fc6030acd8c6f4fa112cf1"
+      },
+      "packed-key-carry-probe-profiled": {
+        "encoder_text_bytes": 63676,
+        "artifact_sha256": {
+          "program.o": "08584c6c2d7666024bd8299f84ed3b945c8be57d8b2a6823eb3059235fbeb46a",
+          "metadata.json": "e7b905032577e13888daa558015bf84ef8dfe1c15eddf23f1905dc5ff59d7d50",
+          "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+        },
+        "worker_sha256": "e2e9f18d4c54d0e6e385dad17859fcecd44a82aa7c679794ebc75085d6cedf65"
+      },
+      "packed-key-carry-word-profiled": {
+        "encoder_text_bytes": 63036,
+        "artifact_sha256": {
+          "program.o": "56fc57807b3a41c21a00241a1dacef29762bf2a6a5bf7eec81031382986bd5a7",
+          "metadata.json": "d36687aae013967d47c037764171d06a7700d589979dff39e8be57f22a4861ec",
+          "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+        },
+        "worker_sha256": "8206dd1e7cfdf5cc5928b6bdb661212d9782512650cfcf7c94417ec32cb80f19"
+      },
+      "extended-control-probe-profiled": {
+        "encoder_text_bytes": 63436,
+        "artifact_sha256": {
+          "program.o": "ef9ba2e7e882f98b359da7d8feee1c2ffb8281f8764d9c6e0c1ee9b0e22d1de3",
+          "metadata.json": "47c8df93e494f1d6aab3b500339b67a5aa2f2ebf3c84a3bf45decbaf7601ac66",
+          "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+        },
+        "worker_sha256": "dda4dc34c96734991e3d5adca92708a8a5c8de64b25ebdf790df9d813712bece"
+      },
+      "packed-extended-probe-profiled": {
+        "encoder_text_bytes": 63644,
+        "artifact_sha256": {
+          "program.o": "31200732f61b643e6a872b2f37472d95b819285daeaf8c602f9d628f5396f943",
+          "metadata.json": "92adde47421dde4a335ba833ef73af6619967b99cfcc84db2b5781c428eb1d67",
+          "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+        },
+        "worker_sha256": "9f25d65962693a287e308f225f15a8b1206990671bd784127068f18cfdd48299"
+      },
+      "packed-extended-carry-probe-profiled": {
+        "encoder_text_bytes": 63660,
+        "artifact_sha256": {
+          "program.o": "594416c7c0a187cbbed36ef58a9259bfe2d6e6bddc9ca59042412917b71d1205",
+          "metadata.json": "c3b4296ca3470af2b60a47090c386fb000a01223de4d4ebb79398d93386c2164",
+          "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+        },
+        "worker_sha256": "623e2f9e6d2defa4242b75a926d168aa4b23b03e992a23aad6671378b3f39065"
+      }
+    },
+    "peak_stack_bytes": 4736,
+    "discovery": {
+      "orders": 14,
+      "cases_per_order": 21,
+      "balanced_blocks_per_case": 24,
+      "all_observed_previous_wins_preserved": true,
+      "new_C_win": false,
+      "full_score_not_established": true
+    },
+    "complete_build": {
+      "plan_sha256": "450f8216e9bc79b579191ab0ddec2171273dcaac02c634760ce66692d9c7c9b0",
+      "medians": {
+        "mech-control-reference": {
+          "source": 2.177533020498231,
+          "link": 0.035826020408421755,
+          "source_through_link": 2.218822645721957,
+          "strip": 0.010911291697993875,
+          "source_through_strip": 2.229889958864078
+        },
+        "mech-packed-probe": {
+          "source": 2.184943416621536,
+          "link": 0.03497979138046503,
+          "source_through_link": 2.22000581282191,
+          "strip": 0.010832604020833969,
+          "source_through_strip": 2.231109271524474
+        },
+        "mech-packed-extended-carry": {
+          "source": 2.1836456870660186,
+          "link": 0.035851665772497654,
+          "source_through_link": 2.221298208227381,
+          "strip": 0.010901583591476083,
+          "source_through_strip": 2.2323368955403566
+        },
+        "roc": {
+          "source": 2.9504327913746238,
+          "link": 0.03504479140974581,
+          "source_through_link": 2.985870978794992,
+          "strip": 0.010758750140666962,
+          "source_through_strip": 2.996787166921422
+        },
+        "libdeflate": {
+          "source": 0.44668210460804403,
+          "link": 0.034817042062059045,
+          "source_through_link": 0.4820944785606116,
+          "strip": 0.010721166618168354,
+          "source_through_strip": 0.49335202062502503
+        }
+      },
+      "phases": {
+        "mech-control-reference": {
+          "parse": 0.7026532295,
+          "catalog": 2.34585e-05,
+          "frontend": 0.217300958,
+          "artifact": 0.006848166,
+          "encode": 0.0025322085,
+          "native": 1.221503229
+        },
+        "mech-packed-probe": {
+          "parse": 0.7028898960000001,
+          "catalog": 2.12705e-05,
+          "frontend": 0.21752970849999997,
+          "artifact": 0.0068409790000000005,
+          "encode": 0.002538125,
+          "native": 1.227477
+        },
+        "mech-packed-extended-carry": {
+          "parse": 0.7027233335,
+          "catalog": 2.125e-05,
+          "frontend": 0.21739231250000002,
+          "artifact": 0.0068597499999999995,
+          "encode": 0.0025386875,
+          "native": 1.226953584
+        }
+      },
+      "paired_ratios": {
+        "mech-control-reference": {
+          "roc": 0.742458786581769,
+          "libdeflate": 4.599062806228762,
+          "mech-control-reference": 1.0
+        },
+        "mech-packed-probe": {
+          "roc": 0.7439379655283411,
+          "libdeflate": 4.607384883929251,
+          "mech-control-reference": 1.0024263683971864
+        },
+        "mech-packed-extended-carry": {
+          "roc": 0.74362898605203,
+          "libdeflate": 4.605955420507282,
+          "mech-control-reference": 1.0007558806825467
+        }
+      },
+      "trials": 10,
+      "source_commit": "f3d74d9488095a1ef4b3dbc36a03d6265f8f14c9",
+      "scope": "10 serial balanced fresh-process source-through-final-executable-link orders. Compilers and fixed support prebuilt for every actor. Every generated Mech object, complete metadata and bytecode is hash checked. Strip is separate. Bootstrap is excluded equally."
+    },
+    "native_tests": {
+      "tests_per_mode": 18,
+      "modes": 3,
+      "packed_key_fixture_calls_per_mode": 28672,
+      "prior_winner_fixture_calls_per_mode": 16384
+    },
+    "disabled_replay_recipes": 16,
+    "portable_recipe_replays": 7,
+    "next_target": "Two independent packed accumulators over eight candidates, retaining original vector fallback and exact tail handling; not implemented in this study."
   }
 }
