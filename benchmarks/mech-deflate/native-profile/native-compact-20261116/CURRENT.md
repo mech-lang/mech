@@ -6,7 +6,7 @@ The guarded histogram takes **2.44–2.73% less time on random 1 MiB** than its 
 
 Qualification uses 81 cases, forward96 and pooled reverse288 blocks per case. The original reverse96 had two uncertain Roc comparisons during large timing swings; the complete reverse192 repeat independently supports all 81/62 wins, and all 288 reverse blocks remain included in the pooled checks. Every prior named win is checked explicitly. All 162 output/inflation/alias observations, six failures, twelve injected failures, twelve recoveries and 4,864 B peak stack pass. Normal and checked allocation emission match exactly.
 
-Latest complete-build cohort on the **Apple M1**: the current compiler reproduces the qualified encoder exactly and measures **2.211302 s Mech, 2.984480 s Roc and 0.481384 s C**, twelve balanced fresh-process trials with final executable linking and equal prebuilt compilers/support. Paired qualified-control ratios are **0.740519× Roc / 4.592119× C**. Stripped executables remain 276,072 B / 191,912 B / 155,752 B. Bootstrap and strip are separate. Earlier cohorts remain archived; no small compilation-time gain is claimed. [Current complete-build evidence](evidence/encoder-size-gap/clamped-input-window-study/README.md).
+Latest complete-build cohort on the **Apple M1**: the current compiler reproduces the qualified encoder exactly and measures **2.211354 s Mech, 2.984581 s Roc and 0.480780 s C**, sixteen balanced fresh-process trials with final executable linking and equal prebuilt compilers/support. Paired qualified-control ratios are **0.741370× Roc / 4.606478× C**. Stripped executables remain 276,072 B / 191,912 B / 155,752 B. Bootstrap and strip are separate; no small compilation-time gain is claimed. [Current complete-build evidence](evidence/encoder-size-gap/fixed-read-window-study/README.md).
 
 The histogram source is committed at **7ea6c80d8db874e10392bdb2a3d38e6205ca876d**. Its new entry guard removes four per-byte bounds checks and retains the U32 increment check; a guard miss executes the original checked code. The two relevant repository tests pass 11,760 native calls. The original 2,719-line Mech source and canonical bytecode remain unchanged, with no LLVM dependency added. Rebuild with `--variant m1-bounded-byte-histogram`.
 
@@ -14,7 +14,13 @@ Both earlier mismatch finalists and all adverse observations remain available in
 
 The entire GPU suite is not claimed. Its relevant histogram and earlier wide-equality tests are recorded separately, and the existing missing archived allocator continues to block the repository unsafe audit. [Review and continuation handoff](REVIEW.md).
 
-## Current clamped-window experiments
+## Current fixed-read window experiments
+
+Source **`2dcf8babd`** reuses the selected `window >= 5` edge to admit a four-byte read at `position + 1`, without a new runtime guard or cloned body. Word is **63,164 B**, probe **63,436 B**, and packet-qualified **63,020 B**, all with 4,736 B stack. The probe takes 0.13–0.38% less natural-4-KiB time and 0.44–0.50% less random-1-MiB time than its matching clamped-window base. Natural 4 KiB remains **1.010619× / 1.017073× C**. Four historical carry/load/hash combinations retain the panel wins but earn no additional win; hash narrowing slows random 1 MiB by about 4.1%. All fourteen complete twenty-one-case discovery orders remain available. Full 81-case confidence qualification is outstanding.
+
+The probe builds through final link in **2.217276 s**, paired **0.741816× Roc / 4.587254× C**, in its twelve-trial cohort. Twenty-five relevant repository tests pass, including 72,752 native calls; all seven candidates pass output/error/stack/recovery gates and checked artifact replay. The qualified 81 Roc / 62 C selection is unchanged. Next, isolate packet-load qualification by phase to recover its 416 B saving without the earlier hot-scorer slowdown. [Source, all observations, dynamic counts, complete builds and reproduction](evidence/encoder-size-gap/fixed-read-window-study/README.md).
+
+## Preceding clamped-window experiments
 
 Source **`330416904`** proves the collector's clamped window fits the admitted input and consumes the facts with late constant-branch cleanup. Word is **63,180 B**, probe **63,484 B**, and packet-qualified **63,068 B**; all use 4,736 B peak stack. The probe takes **1.04–1.53% less time on natural 4 KiB** and **1.61–1.62% less time on random 1 MiB** than its matching input-word/probe base. Natural 4 KiB remains **1.011199× / 1.009384× C**. All previously required peer wins present in all six twenty-one-case discovery orders remain point wins. There is no new full score or 63rd C win.
 

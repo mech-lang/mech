@@ -24499,5 +24499,38 @@
     "probe_paired_build_x_roc": 0.7421111498636686,
     "probe_paired_build_x_libdeflate": 4.602745791908093,
     "next_target": "Reuse the selected window >=5 edge for the remaining four-byte read at position+1."
+  },
+  "fixed_read_window_experiment": {
+    "source_commit": "2dcf8babd9e34e1f2d752edd875e1572f185aef5",
+    "evidence": "evidence/encoder-size-gap/fixed-read-window-study/README.md",
+    "promoted": false,
+    "qualified_selection_unchanged": true,
+    "text_bytes": {
+      "read-window-word-profiled": 63164,
+      "read-window-probe-profiled": 63436,
+      "read-window-packet-profiled": 63020,
+      "tune-read-wide-profiled": 63420,
+      "tune-read-pinned-profiled": 63436,
+      "tune-read-wide-pinned-profiled": 63420,
+      "tune-read-hash32-profiled": 63452
+    },
+    "peak_stack_bytes": 4736,
+    "native_calls": 72752,
+    "relevant_repository_tests": 25,
+    "discovery": {
+      "orders": 14,
+      "cases_per_order": 21,
+      "balanced_blocks_per_case": 24,
+      "all_observed_required_peer_wins_preserved": true,
+      "full_score_not_established": true
+    },
+    "probe_natural_4096_x_libdeflate": [
+      1.0106189481840375,
+      1.017073107614276
+    ],
+    "probe_source_through_final_link_seconds": 2.217276062583551,
+    "probe_paired_build_x_roc": 0.741816205345686,
+    "probe_paired_build_x_libdeflate": 4.587254416252321,
+    "next_target": "Isolate packet-load qualification by phase to repair its hot-scorer slowdown while retaining cold-routine size savings."
   }
 }
