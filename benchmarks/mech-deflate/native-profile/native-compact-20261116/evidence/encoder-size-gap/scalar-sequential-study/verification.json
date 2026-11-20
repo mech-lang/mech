@@ -1,0 +1,8 @@
+{
+  "exit_code": 0,
+  "log_sha256": "4045a05db382e1caac7443b307e00211157c6411e4ecfe0f916d9a6496754655",
+  "verifier_sha256": "f9e124aaef50e004bc29b8dbc1e635c1ff2d75b024deeaaeddeecbae345ffec1",
+  "result_sha256": "1b6df4ae342149aad19ffc01d27d93ebc14bda3f8b2baafa73f6f9d21200b73d",
+  "portable_replays_sha256": "f232c63149724fdb3293279e7abcbea228cc72f3790b0b06408d250c6ecb57f7",
+  "scope": "Source/artifact bindings, four20-test modes,41 older exact recipes, four portable normal/checked replays, semantic/error/recovery/stack, counters,16 discovery orders,14 complete-build trials per actor. No full81 score inferred."
+}

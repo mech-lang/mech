@@ -851,3 +851,7 @@ the portfolio after two experiments or a substantial decision.
 | Additional parser replay families | The post-change profile identifies enough repeated work and conservative admission coverage |
 | Wider Related Posts historical probes | The checked producer route is available and each archive identity can be preserved |
 | Scorer lowering and table-slot partition selection | A runtime slot reopens after the compiler investigation, with the separate source and causal ablation ready. [Partition evidence](evidence/match-cache-partition-cause/README.md) |
+
+## Sequential scalar repair, not selected
+
+[Source, all sixteen runtime orders and fourteen complete build trials](evidence/encoder-size-gap/scalar-sequential-study/README.md) are published with four portable normal/checked source replays and a passing public verifier. Sequential updates and a proved one-visit odd tail save48B and51,435 natural4KiB instructions versus the earlier paired helper, but still spill more than the selected scorer and lose the existing natural8KiB C win. The **81/63 point-win working selection remains m1-packed-eight-entry,63,868B**. Both partial gains remain available for repair.

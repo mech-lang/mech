@@ -27462,5 +27462,33 @@
     },
     "evidence": "evidence/encoder-size-gap/packed-eight-entry-study/README.md"
   },
-  "active_scoreboard": "working_selection"
+  "active_scoreboard": "working_selection",
+  "scalar_sequential_experiment": {
+    "source_commit": "30c1c440c39f4a7ff43d8e8e5f10d8cd6bad2006",
+    "promoted": false,
+    "evidence": "evidence/encoder-size-gap/scalar-sequential-study",
+    "variants": {
+      "scalar-loop-tail-probe-profiled": {
+        "text_bytes": 64108,
+        "worker_sha256": "0277541d7aa63d47363346ebc71c318bd68f49b99c8950fdb989033307481ac0"
+      },
+      "scalar-loop-head-probe-profiled": {
+        "text_bytes": 64092,
+        "worker_sha256": "69d2af67ff2b748a6e455be18c933d8b508aade326b015f71107b6d14b1374a6"
+      },
+      "scalar-once-tail-probe-profiled": {
+        "text_bytes": 64076,
+        "worker_sha256": "89ce1c695c409c85dc137438380eeab03ccf86ee5f42f5953064a15b22112fde"
+      },
+      "scalar-once-head-probe-profiled": {
+        "text_bytes": 64060,
+        "worker_sha256": "4ea0c0af1069bc3f71e95fba712d5e5a4aca5fa21c0bfd6468f2bb5717f06bc9"
+      }
+    },
+    "runtime_orders": 16,
+    "complete_build_trials_per_actor": 14,
+    "all_portable_normal_checked_exact": true,
+    "public_verifier_exit": 0,
+    "finding": "Sequential updates save16B and20271 natural4K instructions versus legacy pair; proved single-tail saves32B and31164 more. All16 discovery orders lose prior natural8K C win; selected81/63 build retained. Stack traffic remains the repair target."
+  }
 }

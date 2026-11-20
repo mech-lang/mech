@@ -1,0 +1,153 @@
+{
+  "compiler_sha256": "914028273cbd2761c5cf570031ef1ae35746411f5f38f76b5bbcf8efd4bb2915",
+  "runs": [
+    {
+      "role": "scalar-loop-tail-probe-profiled",
+      "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+      "variants": [
+        {
+          "mode": "normal",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-single-tail-compiler/compiler/914028273cbd2761/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-single-tail-public-replays/scalar-loop-tail-probe-profiled/normal/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "914028273cbd2761c5cf570031ef1ae35746411f5f38f76b5bbcf8efd4bb2915",
+          "artifacts": {
+            "program.o": "d13768ae15b52be37bbd44db01ea7b6ffd7b83f04c17f0b18a19ded04de21dde",
+            "metadata.json": "635430d59467dacaa1138c950243e173d180ca51ef92a63c6491db938813810e",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        },
+        {
+          "mode": "checked",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-single-tail-compiler/compiler/914028273cbd2761/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-single-tail-public-replays/scalar-loop-tail-probe-profiled/checked/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "914028273cbd2761c5cf570031ef1ae35746411f5f38f76b5bbcf8efd4bb2915",
+          "artifacts": {
+            "program.o": "d13768ae15b52be37bbd44db01ea7b6ffd7b83f04c17f0b18a19ded04de21dde",
+            "metadata.json": "635430d59467dacaa1138c950243e173d180ca51ef92a63c6491db938813810e",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        }
+      ],
+      "scope": "Exact source-artifact replay; runtime and complete-build measurements are separate."
+    },
+    {
+      "role": "scalar-loop-head-probe-profiled",
+      "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+      "variants": [
+        {
+          "mode": "normal",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-single-tail-compiler/compiler/914028273cbd2761/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-single-tail-public-replays/scalar-loop-head-probe-profiled/normal/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "914028273cbd2761c5cf570031ef1ae35746411f5f38f76b5bbcf8efd4bb2915",
+          "artifacts": {
+            "program.o": "0def4a4af75cface44d17a94747f0d123b4af646469df11d35c4004d1dfae67d",
+            "metadata.json": "0947034f87388d94a9872b15ad2289a2427a22202a44d64741b61b115707ce1a",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        },
+        {
+          "mode": "checked",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-single-tail-compiler/compiler/914028273cbd2761/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-single-tail-public-replays/scalar-loop-head-probe-profiled/checked/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "914028273cbd2761c5cf570031ef1ae35746411f5f38f76b5bbcf8efd4bb2915",
+          "artifacts": {
+            "program.o": "0def4a4af75cface44d17a94747f0d123b4af646469df11d35c4004d1dfae67d",
+            "metadata.json": "0947034f87388d94a9872b15ad2289a2427a22202a44d64741b61b115707ce1a",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        }
+      ],
+      "scope": "Exact source-artifact replay; runtime and complete-build measurements are separate."
+    },
+    {
+      "role": "scalar-once-tail-probe-profiled",
+      "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+      "variants": [
+        {
+          "mode": "normal",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-single-tail-compiler/compiler/914028273cbd2761/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-single-tail-public-replays/scalar-once-tail-probe-profiled/normal/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "914028273cbd2761c5cf570031ef1ae35746411f5f38f76b5bbcf8efd4bb2915",
+          "artifacts": {
+            "program.o": "fe397260c0610b6e411ce8d7a7c91b01ebdab80c1be3aafb48054ab92193803a",
+            "metadata.json": "0218a993e8336a5f8a01980a3568b275291dc312fcb8acb0d26dc71e690793df",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        },
+        {
+          "mode": "checked",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-single-tail-compiler/compiler/914028273cbd2761/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-single-tail-public-replays/scalar-once-tail-probe-profiled/checked/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "914028273cbd2761c5cf570031ef1ae35746411f5f38f76b5bbcf8efd4bb2915",
+          "artifacts": {
+            "program.o": "fe397260c0610b6e411ce8d7a7c91b01ebdab80c1be3aafb48054ab92193803a",
+            "metadata.json": "0218a993e8336a5f8a01980a3568b275291dc312fcb8acb0d26dc71e690793df",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        }
+      ],
+      "scope": "Exact source-artifact replay; runtime and complete-build measurements are separate."
+    },
+    {
+      "role": "scalar-once-head-probe-profiled",
+      "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+      "variants": [
+        {
+          "mode": "normal",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-single-tail-compiler/compiler/914028273cbd2761/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-single-tail-public-replays/scalar-once-head-probe-profiled/normal/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "914028273cbd2761c5cf570031ef1ae35746411f5f38f76b5bbcf8efd4bb2915",
+          "artifacts": {
+            "program.o": "f4a129f8d026bf2573d5bf419ef1ee3bd26a5889645e4866db8326f47bca3867",
+            "metadata.json": "a929d8c38dfd522d8aee7a34733906bb476971d18b4b38fd41c0c1ed0a18e92e",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        },
+        {
+          "mode": "checked",
+          "command": [
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-pair-single-tail-compiler/compiler/914028273cbd2761/compile_profile",
+            "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+            "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/scalar-single-tail-public-replays/scalar-once-head-probe-profiled/checked/frontend",
+            "compact"
+          ],
+          "compiler_sha256": "914028273cbd2761c5cf570031ef1ae35746411f5f38f76b5bbcf8efd4bb2915",
+          "artifacts": {
+            "program.o": "f4a129f8d026bf2573d5bf419ef1ee3bd26a5889645e4866db8326f47bca3867",
+            "metadata.json": "a929d8c38dfd522d8aee7a34733906bb476971d18b4b38fd41c0c1ed0a18e92e",
+            "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+          }
+        }
+      ],
+      "scope": "Exact source-artifact replay; runtime and complete-build measurements are separate."
+    }
+  ]
+}
