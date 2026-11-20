@@ -2,6 +2,7 @@
 //! A proof miss changes neither the graph nor its entry contract. The private
 //! caller must check begin <= end <= length before any phase effects.
 mod induction;
+mod windows;
 mod word_length;
 use super::bounded_byte_histogram::{fixed_word, offset};
 use super::window_bounds::{comparison, sole_predecessor};
@@ -30,6 +31,7 @@ pub(in crate::native_artifact) fn fold(
     ctx: &mut Context,
     loads: &BTreeMap<Value, (Inst, usize)>,
     lengths: &BTreeSet<usize>,
+    include_windows: bool,
 ) -> Vec<Admission> {
     let f = &ctx.func;
     if lengths.is_empty()
@@ -134,7 +136,10 @@ pub(in crate::native_artifact) fn fold(
                     }
                 }
             }
-            for (length_word, tests) in found {
+            for (length_word, mut tests) in found {
+                if include_windows {
+                    tests.extend(windows::checks(ctx, loads, body, cursor, length_word));
+                }
                 admissions.push(Admission {
                     begin_word,
                     end_word,
