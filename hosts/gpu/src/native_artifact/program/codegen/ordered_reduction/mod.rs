@@ -11,6 +11,7 @@ mod escape;
 mod normalize;
 mod packed_key;
 mod packed_loop;
+mod scalar_pair;
 mod vector_loop;
 mod winner;
 use normalize::{Cost, Item, Normalize};
@@ -208,3 +209,6 @@ mod packed_tests;
 
 #[cfg(all(test, target_arch = "aarch64", target_endian = "little"))]
 mod packed_item_tests;
+
+#[cfg(all(test, target_arch = "aarch64", target_endian = "little"))]
+mod scalar_pair_tests;
