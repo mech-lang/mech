@@ -1289,6 +1289,14 @@ fn prepare_impl<M: Module>(
                     candidate.func.aarch64_branch_on_zero =
                         admission.immutable_code_bytes.is_some()
                             && std::env::var_os("MECH_COMPACT_DENSE_BRANCH_ON_ZERO").is_some();
+                    // Numeric phases start with their own Function. The
+                    // enclosing checked entry's register preference does not
+                    // reach this independently admitted immutable-cost body.
+                    if admission.immutable_code_bytes.is_some()
+                        && std::env::var_os("MECH_ORDERED_PREFER_PRESERVED_REGS").is_some()
+                    {
+                        candidate.func.aarch64_prefer_preserved_regs = true;
+                    }
                     phase_layout::apply(&mut candidate, &name).map_err(backend)?;
                 }
                 let inspect_path = std::env::var_os("MECH_INSPECT_PHASE_CLIF")
