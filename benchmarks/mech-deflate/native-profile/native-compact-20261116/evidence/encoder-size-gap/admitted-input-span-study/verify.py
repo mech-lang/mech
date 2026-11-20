@@ -60,7 +60,7 @@ def main():
      for actor in ['mech-control','mech-experiment']:
       for peer,key in [('roc','paired_x_roc'),('libdeflate','paired_x_libdeflate')]:assert isclose(1+timing.estimate(timing.paired(blocks,actor,peer)),row[key][actor],rel_tol=2e-12)
     panels+=1
-  assert panels==26
+  assert panels==28
   for name,stage in [('span-matched-builds','early_span'),('span-composed-matched-builds','composed_span')]:
    summary=result['stages'][stage]['builds'];comparison=read(checks/name/'comparison.json');plan=read(checks/name/'plan.json');assert digest((checks/name/'plan.json').read_bytes())==comparison['plan_sha256']==summary['plan_sha256'];observations=comparison['observations'];assert len(observations)==summary['trials']
    for actor,job in plan['actors'].items():
@@ -68,5 +68,5 @@ def main():
     if actor.startswith('mech-'):
      for row in observations:assert row[actor]['generated_artifacts']==job['artifact_sha256'] and row[actor]['stripped_executable']['bytes']==276072
   assert findings.rejected==findings.unresolved==[]
- print('Verified source/artifact pins,15 repository tests,162 outputs/six failures and stack gates,checked emissions,12 recoveries per finalist,26 two-order point acquisitions and10/12-trial complete-build cohorts. No new qualified score is claimed.')
+ print('Verified source/artifact pins,15 repository tests,162 outputs/six failures and stack gates,checked emissions,12 recoveries per finalist,28 two-order point acquisitions and10/12-trial complete-build cohorts. No new qualified score is claimed.')
 if __name__=='__main__':main()

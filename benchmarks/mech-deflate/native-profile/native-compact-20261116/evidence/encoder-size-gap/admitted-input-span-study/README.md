@@ -16,6 +16,8 @@ The span tests exercise **12,096 native calls**, including readonly-load convers
 
 ## Discovery results and retained alternatives
 
+The 63,292 B word candidate subsequently retains every prior named win in both complete 81-case, 24-block point orders: 81 Roc / 62 C. It remains unpromoted pending full 96-block confidence qualification.
+
 All five current variants retain the six previous C-winning cases and all nineteen Roc-winning cases present in this nineteen-case panel, in both orders. These subset counts must not be described as a new 81-case score.
 
 The first-word probe compares eight bytes, forwards a failing XOR to mismatch reconstruction and advances successful reads by eight before the vector remainder. With the span optimization and the other features held fixed, it takes **1.2727% / 1.3035% less time** on natural 4 KiB in forward/reverse order. Fresh profiles follow the same acquisition policy for each graph. Without the span optimization, the probe is inconsistent: 0.9284% slower forward and 0.0513% faster reverse. Both combinations remain archived.
@@ -65,6 +67,6 @@ The compiler is `/tmp/mech-span-compiler/release/compile_profile`. The checked s
 
 Use the minimal compiler configuration in the archived build plan; the optional source-unit compiler feature is not required by these final flags. Profiles and generation flags are included. Both raw source coordinates and the regenerated numeric checked-region boundaries are preserved. Stale-coordinate failures remain available. Source replay verifies artifacts; fresh runtime and complete-build qualification on other hardware are separate.
 
-`checks-and-builds.tar.gz` binds source snapshots, native tests, normal/checked artifacts, recoveries, counters, profiles and both build cohorts. `raw-runtime.tar.gz` retains all 26 acquisitions, including adverse observations. The verifier independently recomputes point ratios from balanced raw blocks, checks source and worker identities, and replays the build medians and generated-artifact pins.
+`checks-and-builds.tar.gz` binds source snapshots, native tests, normal/checked artifacts, recoveries, counters, profiles and both build cohorts. `raw-runtime.tar.gz` retains all 28 acquisitions, including adverse observations. The verifier independently recomputes point ratios from balanced raw blocks, checks source and worker identities, and replays the build medians and generated-artifact pins.
 
 The entire GPU suite is not claimed. The repository unsafe audit remains blocked by the pre-existing absent allowlisted `benchmarks/mech-deflate/comparison/rust/src/pinned_allocator.rs`. Preserve the qualified 81/62 selection and every original adverse block while continuing toward the next C win.

@@ -16,7 +16,7 @@ The entire GPU suite is not claimed. Its relevant histogram and earlier wide-equ
 
 ## Current input-span and first-word experiments
 
-Compiler source **`b55805f7f`** proves `begin <= end <= current input length` for the private unit-stride collector, after readonly-load conversion. The word candidate is **63,292 B / 4,832 B stack**, and builds through final link in **2.217011 s**, paired **0.742764× Roc / 4.595761× C**. It remains unpromoted: only the nineteen-case discovery panel is complete for the new variants.
+Compiler source **`b55805f7f`** proves `begin <= end <= current input length` for the private unit-stride collector, after readonly-load conversion. The word candidate is **63,292 B / 4,832 B stack**, and builds through final link in **2.217011 s**, paired **0.742764× Roc / 4.595761× C**. It now retains every prior named win in both full 81-case, 24-block point orders: **81 Roc / 62 C**. It remains unpromoted pending full 96-block confidence qualification. Other current variants still have nineteen-case panels.
 
 Combining the span proof with the first-word probe takes **1.27–1.30% less time** than its held-feature vector/complement control on natural 4 KiB, in both orders. It remains **1.024347× / 1.039711× C**. All previous wins in the nineteen-case subset are retained; this is not a new 81-case score. The earlier bitwise word candidate's reverse `320-overlap` loss and every adverse observation remain recorded.
 

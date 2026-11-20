@@ -6511,6 +6511,14 @@
     "word-complements-prior-wins.json": {
       "bytes": 4762,
       "sha256": "a4b568118d94b8b2846ec9f83bbb43d3ce1191fa17a48d4b4f57fb83819b8096"
+    },
+    "small-table-full24-span-late-word-profiled/plan.json": {
+      "bytes": 664,
+      "sha256": "9fcc45ae176f6d526aabd81b5d39c9164b56a15e039905afb942bab9c7082975"
+    },
+    "small-table-full24-span-late-word-profiled/result.json": {
+      "bytes": 171872,
+      "sha256": "e3d179b3387ea0f16dd04f8f1f33f7e48b8560aa7cce6f55fe43c425bcbafce2"
     }
   },
   "raw-runtime.tar.gz": {
@@ -10209,6 +10217,710 @@
     "span-discovery-span-fast-word-profiled-reverse/summary.json": {
       "bytes": 16603,
       "sha256": "8d7c938ba465bf06791bc0d2c2445ec0412012d95cc4266a2af5b78533b9c492"
+    },
+    "small-table-full24-span-late-word-profiled-forward/summary.json": {
+      "bytes": 70889,
+      "sha256": "f5a0fea6db49e49f2d33ffdf746a5b08b56f56a085cbd275fe60f8373bf9ead9"
+    },
+    "small-table-full24-span-late-word-profiled-forward/roc.stderr": {
+      "bytes": 52,
+      "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+    },
+    "small-table-full24-span-late-word-profiled-forward/mech-control.stderr": {
+      "bytes": 53,
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+    },
+    "small-table-full24-span-late-word-profiled-forward/libdeflate.stderr": {
+      "bytes": 52,
+      "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+    },
+    "small-table-full24-span-late-word-profiled-forward/complete.json": {
+      "bytes": 286,
+      "sha256": "cc5f0ae91e8c7f1cef10a16f38180629d7a1c8aa5b48793160b6a1cf5b549fbe"
+    },
+    "small-table-full24-span-late-word-profiled-forward/mech-experiment.stderr": {
+      "bytes": 53,
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+    },
+    "small-table-full24-span-late-word-profiled-forward/pins.json": {
+      "bytes": 6388,
+      "sha256": "95fa79be388317dbd1e4ff1d1e05305fbe6cdba4017ef62e5199d01f7961ad10"
+    },
+    "small-table-full24-span-late-word-profiled-forward/heldout-mixed-131073/observations.json.gz": {
+      "bytes": 2885,
+      "sha256": "1d59b4e9675efa377127b5b61f404686005d4ef61919e2b52ad0ca5e2b0f8cd6"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-random-32769/observations.json.gz": {
+      "bytes": 2834,
+      "sha256": "645b61d63d1057d74d37f3237d5c751dc10f6bbf7f419f62a91f91f9397cbf50"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-natural-1024/observations.json.gz": {
+      "bytes": 79598,
+      "sha256": "f3070ccbe89abf635cd856e2bb797bfc7a24f8b1a2ff45d887ed3a97167a7f69"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-random-32767/observations.json.gz": {
+      "bytes": 2818,
+      "sha256": "6c892f47ade67ca30c14575be095b3521d581e096de86c14abc09bf9843e1ad4"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-repeated-1024/observations.json.gz": {
+      "bytes": 81105,
+      "sha256": "c642a1218c943d981987be9e166affd9293057c506508b56c085cdfa56d60dc0"
+    },
+    "small-table-full24-span-late-word-profiled-forward/random-1024/observations.json.gz": {
+      "bytes": 78025,
+      "sha256": "057c5c6d89c8c009174305e973e545af7d2c0526e83969be655f33752d6402a6"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-repeated-65537/observations.json.gz": {
+      "bytes": 2846,
+      "sha256": "d06596aa07aa4e2c608ec41bb0e9b81e5bf8d583750698c2f588e3bab755f901"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-periodic-4096/observations.json.gz": {
+      "bytes": 2811,
+      "sha256": "036f362c207544d20b79a1e4b943c49c49bc678ccc3ad0a70d3c61358b853497"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-natural-16384/observations.json.gz": {
+      "bytes": 2863,
+      "sha256": "84329c9a3d7448e15683ac5c42c9fc82aad7f1479fd87fd6a10c0e1402d5b2c2"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-random-33027/observations.json.gz": {
+      "bytes": 2796,
+      "sha256": "cc61ec8c234128374e5e6395b8135c55b36d07f5c7e5953208a25313254ec8f9"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-random-32768/observations.json.gz": {
+      "bytes": 2847,
+      "sha256": "70dd84c4580a0d904d3aa0241fcdc9a985bfb70de54ff9409e58755ee05946c7"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-random-4096/observations.json.gz": {
+      "bytes": 2783,
+      "sha256": "c5e0ffce46d49788775af2b9e4c9eb7eda73e02b1df0b73ae413c3b0686eb6d7"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-natural-1048576/observations.json.gz": {
+      "bytes": 2961,
+      "sha256": "1ec909f8fda6591473ae0ecafceff24135c5433e69d9c4e018f5303f6c651b74"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-repeated-65536/observations.json.gz": {
+      "bytes": 2863,
+      "sha256": "17430407911e7044712389f61940faed4e608efe6c7db9d9cee2386683648550"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-repeated-16384/observations.json.gz": {
+      "bytes": 2784,
+      "sha256": "3eb6d5c1c0a16e505b0576e966ed07b9b8176dc17686b3f9f29950d3f7fb8b9d"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-periodic-65535/observations.json.gz": {
+      "bytes": 2841,
+      "sha256": "8102180b566511caf3fa84049be7263ba1fbedd4260047d176b628ee7b4cac7e"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-random-262144/observations.json.gz": {
+      "bytes": 2881,
+      "sha256": "63b0d5a2f9de81fad5e335ce79b21271ade82a67f28c7af6bd26ee653568b86c"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-periodic-1048576/observations.json.gz": {
+      "bytes": 2915,
+      "sha256": "0f809811bc85d32e82806e7143841a06e29076827ec83194e64790abcc315fd2"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-repeated-262144/observations.json.gz": {
+      "bytes": 2862,
+      "sha256": "3f38fc5dde027b583938f577cbe08c8c2621c8db34a586a0cba6f7fec1531dd4"
+    },
+    "small-table-full24-span-late-word-profiled-forward/eight-literals-prefix/observations.json.gz": {
+      "bytes": 77959,
+      "sha256": "aea73acc8a80fecf5737d55f644d5b6f0d934eb4a0802920bd0e3df8beedb74d"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-natural-65536/observations.json.gz": {
+      "bytes": 2893,
+      "sha256": "a11ef9e2faef52db8bb0779e1dd6ba43765a88833e0e0fb9a2d4a6e1dfffab7c"
+    },
+    "small-table-full24-span-late-word-profiled-forward/empty/observations.json.gz": {
+      "bytes": 313546,
+      "sha256": "6c380d69868dec66a91ea43cd1c5c1085fd720646f2259686a538bae422e92db"
+    },
+    "small-table-full24-span-late-word-profiled-forward/one-stored/observations.json.gz": {
+      "bytes": 311884,
+      "sha256": "339678e477ca61ae4e6130e061aae0f849016e52d45e40a3bd78de62843472f1"
+    },
+    "small-table-full24-span-late-word-profiled-forward/repeated-32769/observations.json.gz": {
+      "bytes": 2804,
+      "sha256": "ae2ce20851393fe88fdeb1c4c78bf553aa483236adeab4a60b6c425f3cdfb5b8"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-natural-65537/observations.json.gz": {
+      "bytes": 2896,
+      "sha256": "6f50a2fc9df25553372f62a9e4779a4d7fa89a2bb5334c7433094efe5e8551aa"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-natural-4096/observations.json.gz": {
+      "bytes": 2819,
+      "sha256": "568e7250074378c1a179f2751d05dec12bb11b6e260044a77af7a8eef3f521ef"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-repeated-4096/observations.json.gz": {
+      "bytes": 2812,
+      "sha256": "87efcf389c0bf82f38e55c1b987baeda48d1442f7143e2f04b252a0b499e5f68"
+    },
+    "small-table-full24-span-late-word-profiled-forward/320-overlap/observations.json.gz": {
+      "bytes": 76066,
+      "sha256": "f943bbf1eaa907dbfdc9e4e37ae51e0e89b3c4385a52520dd0d2960f67dbeb1b"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-periodic-1024/observations.json.gz": {
+      "bytes": 81887,
+      "sha256": "87cde6db0cda4d26c2285031489e8dfd5169c83a5cb84f7f1265c354bb5aa68f"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-random-65535/observations.json.gz": {
+      "bytes": 2845,
+      "sha256": "2ba521f489d2ff230ef829eb136ba89ee9ddd70003565de044749341d57b25f1"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-random-1048576/observations.json.gz": {
+      "bytes": 2921,
+      "sha256": "bde2de0ee80a713f27ea1de009d50c73695c678cd6aadd2fc8fb1c683fd14562"
+    },
+    "small-table-full24-span-late-word-profiled-forward/heldout-slides-65537/observations.json.gz": {
+      "bytes": 2894,
+      "sha256": "67185275e43e855ef82e6fdd6b682e089f9b48b1f22f6bbaea4c91643ee70a73"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-random-1024/observations.json.gz": {
+      "bytes": 79921,
+      "sha256": "8f89340d7f515f7ecddfb9586ce2c45574468f21974ea48c6d358bf44971a3f3"
+    },
+    "small-table-full24-span-late-word-profiled-forward/random-256/observations.json.gz": {
+      "bytes": 77110,
+      "sha256": "fd61ff9835bc83683f3a9d2c246ae369d67f3cbc43b2e863236ab5bd88ff39ea"
+    },
+    "small-table-full24-span-late-word-profiled-forward/random-32769/observations.json.gz": {
+      "bytes": 2827,
+      "sha256": "5ef423b1a398fb6189d0eee4ca1848203b6aa41869fe0f76736a127bc76ec937"
+    },
+    "small-table-full24-span-late-word-profiled-forward/reymont-prefix-16384/observations.json.gz": {
+      "bytes": 2842,
+      "sha256": "14955ff1a02284a524741e1bd0de616dee07a70012240330ed8877f8f3bc25f3"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-periodic-32768/observations.json.gz": {
+      "bytes": 2843,
+      "sha256": "b71cd48ebc9fc3beec529c379b68c1295be9490708e20300ca5211151e77bb10"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-periodic-33027/observations.json.gz": {
+      "bytes": 2808,
+      "sha256": "6162ede5c6f0d5c7b3486b91c285c699ddfd3c317381b87f1079f5220a1b3cae"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-periodic-131072/observations.json.gz": {
+      "bytes": 2850,
+      "sha256": "77580477adc4624362977da9576f2f19770e36e2af3e22aa08029d70bcff49c9"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-repeated-1048576/observations.json.gz": {
+      "bytes": 2922,
+      "sha256": "bd805e828f43d617bdd19a9fe5f1599307fb8af955a3a0d7d73600c2e9b1c44c"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-periodic-32769/observations.json.gz": {
+      "bytes": 2804,
+      "sha256": "f62630e2bea9f02d3cc970951c2d6846c789f7306f22b51f74f91a02a6395a25"
+    },
+    "small-table-full24-span-late-word-profiled-forward/repeated-1024/observations.json.gz": {
+      "bytes": 80712,
+      "sha256": "fbd4589e32e8622f4458821430cb268a33542b3504fa9b0bd111bee5a14dd73f"
+    },
+    "small-table-full24-span-late-word-profiled-forward/reymont-prefix-1024/observations.json.gz": {
+      "bytes": 79760,
+      "sha256": "52de87caab2ca499184000486ff405da8b641f7094b043c3727b11a0e8441a67"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-periodic-32767/observations.json.gz": {
+      "bytes": 2804,
+      "sha256": "6f801747ee9058b8cd10f5b6e33856da092aa6eed8aa8fa69db6f1a7a9b8c85c"
+    },
+    "small-table-full24-span-late-word-profiled-forward/seven-stored-prefix/observations.json.gz": {
+      "bytes": 312536,
+      "sha256": "99fc1cc1d80513c4b9b97eeee6ad11439164609143d72c8f803702c6cd0d2691"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-natural-262144/observations.json.gz": {
+      "bytes": 2907,
+      "sha256": "57d3ac1f7793e1a220505b004b3b46bea5a9a2dd52a1d7122535029f5f3281bd"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-repeated-8192/observations.json.gz": {
+      "bytes": 2767,
+      "sha256": "fbc1c5368d27ddbde346eb32c9768fc765d47c0afe36cd393d94ca54f0285f2e"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-periodic-262144/observations.json.gz": {
+      "bytes": 2857,
+      "sha256": "36597564bc7781da0841b3e3224b73f07a90ff46979b72bfd8d949f74637e899"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-natural-8192/observations.json.gz": {
+      "bytes": 2831,
+      "sha256": "148be7f12754823b33f6c4316b997008227303e6aa1af57e6f0c00e517292597"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-periodic-16384/observations.json.gz": {
+      "bytes": 2814,
+      "sha256": "20bc2c330b8d3e504280e9ac12e1ed1d9353cfd800cb1adf64f98803ff290390"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-repeated-65535/observations.json.gz": {
+      "bytes": 2818,
+      "sha256": "e6c8982585cdf2d69be37a395c863af17e92c2cb9be9939c81673fa505f2e15c"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-natural-131072/observations.json.gz": {
+      "bytes": 2890,
+      "sha256": "2366ca04031094f6834a5793b90aa0460ce52f5be508783be1ab0c1d456728e4"
+    },
+    "small-table-full24-span-late-word-profiled-forward/33027-periodic-window/observations.json.gz": {
+      "bytes": 2829,
+      "sha256": "5e4491b4eabcafd8da690e94f26acfdc6d5c3d2b1e673ba816e1a4870c404551"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-natural-65535/observations.json.gz": {
+      "bytes": 2869,
+      "sha256": "162d81ae06c8682a4c26a56fd13f51be72a82fb25dfc92420fa52381c575ba65"
+    },
+    "small-table-full24-span-late-word-profiled-forward/16384-distribution-change/observations.json.gz": {
+      "bytes": 2846,
+      "sha256": "210b7d984c516601e02a558e1361af9853ae4b6e6d9e8eb36aaa9f36a6cd4c33"
+    },
+    "small-table-full24-span-late-word-profiled-forward/eight-literals/observations.json.gz": {
+      "bytes": 75930,
+      "sha256": "efd0ce4c5930f544ce2f74517a9c166aa7faebcd9e106667aa456ef0663e222e"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-periodic-65536/observations.json.gz": {
+      "bytes": 2840,
+      "sha256": "b234351fc7b8747839f986a1cfc808d9ff087d5d6ca9353d5d11095adaa672c5"
+    },
+    "small-table-full24-span-late-word-profiled-forward/heldout-random-65537/observations.json.gz": {
+      "bytes": 2844,
+      "sha256": "7baaf6ba44cdf9f7d9e373bc11ebdfaa9e782fa02c14e7429c1d6c39f448420e"
+    },
+    "small-table-full24-span-late-word-profiled-forward/random-64/observations.json.gz": {
+      "bytes": 75591,
+      "sha256": "d7013c1639482a07ea1f3df04916645b1a83760c88404a8e62d53d8c955bf8ba"
+    },
+    "small-table-full24-span-late-word-profiled-forward/reymont-prefix-32769/observations.json.gz": {
+      "bytes": 2857,
+      "sha256": "631823ac0a3f79421408f32667e3c6d098bf921c5665e867802ecc5af29734fb"
+    },
+    "small-table-full24-span-late-word-profiled-forward/32-high-entropy-stored/observations.json.gz": {
+      "bytes": 77160,
+      "sha256": "f5063d5930be47322b67ea4f0bb322ce059c6257298d750adc0d73bee26092f5"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-periodic-65537/observations.json.gz": {
+      "bytes": 2843,
+      "sha256": "cae4a48ab5785d74760fb15c4a19a54763904932e0bdd7215b22d946edadfa0e"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-repeated-32767/observations.json.gz": {
+      "bytes": 2820,
+      "sha256": "5477b6f1a903db52a97f9cf4efeed804b7dda6b2f77c8a2ecde2fba34af6cb61"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-random-131072/observations.json.gz": {
+      "bytes": 2850,
+      "sha256": "4aa1b849cd5fd999f379fbaa4f98e17fad9abfbdd544cc136a943ec74df36263"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-repeated-32769/observations.json.gz": {
+      "bytes": 2844,
+      "sha256": "59605139fcde3b47300fcb22c0f31647e86cfd330bfd8d54534d87347700e9b0"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-periodic-8192/observations.json.gz": {
+      "bytes": 2797,
+      "sha256": "5913ce2de0b7c1ce6c42d9b65bf93ef2db50813d1ee22937e68d1c2d6b2ee154"
+    },
+    "small-table-full24-span-late-word-profiled-forward/eight-overlap/observations.json.gz": {
+      "bytes": 75820,
+      "sha256": "29a0605d801201cde6d46a27211b6bf84dde0f8a4f807b9a2655ca5ad82bf602"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-random-65537/observations.json.gz": {
+      "bytes": 2836,
+      "sha256": "b94af45a307ea1e516ac261682e8c20dec9e0e83ec6239100c958509ebc82af4"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-repeated-131072/observations.json.gz": {
+      "bytes": 2841,
+      "sha256": "220ac031b460a12dc58f267dfa3f56dd9cae8463481909723ce82f0329c010e9"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-repeated-32768/observations.json.gz": {
+      "bytes": 2835,
+      "sha256": "a19c1354a5c8ee73767fb7f9df1172b732b3e4ad45b62d258b2ef76cd32fce99"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-repeated-33027/observations.json.gz": {
+      "bytes": 2843,
+      "sha256": "ce29ca089e723a757dac0ea1334acf4eadfde104a697917c80131455102d0b7d"
+    },
+    "small-table-full24-span-late-word-profiled-forward/128-biased-dynamic/observations.json.gz": {
+      "bytes": 77648,
+      "sha256": "075d564c2ba8809dc7d7df607ec0f0f0e63a98b84e20bad377ba4e176a236475"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-random-8192/observations.json.gz": {
+      "bytes": 2804,
+      "sha256": "1b6aec72e329c8e5b73ff13b5b634d2f072c784060570a0b1ade12742f5838d4"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-random-65536/observations.json.gz": {
+      "bytes": 2835,
+      "sha256": "024c4f9008d6dff4dcc45170febf7cfe29714bbffa4342f971354625c310d69b"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-natural-33027/observations.json.gz": {
+      "bytes": 2864,
+      "sha256": "0bdea38a7ac145021030427f5e36286ca80274fac0743945daf832fab2edc5c6"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-natural-32768/observations.json.gz": {
+      "bytes": 2855,
+      "sha256": "70e8a7beca0a23b8bd24664d016bf88a1def47b5e8c5a212c1937fdacf8d7f26"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-random-16384/observations.json.gz": {
+      "bytes": 2818,
+      "sha256": "d9a2c0964d0b6999c774d2e7625230e8d7a3c4b23ce998cfab9fddab7e68bca7"
+    },
+    "small-table-full24-span-late-word-profiled-forward/heldout-window-32767/observations.json.gz": {
+      "bytes": 2848,
+      "sha256": "c427d65bb4481d8cc1f4c946e0ede0ca665b290d339bbf6c7c887adf85100322"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-natural-32767/observations.json.gz": {
+      "bytes": 2865,
+      "sha256": "ad7fc20edefc52b5f63c6a9b840b976a94f584bd0afb0c113b70e98c0a598144"
+    },
+    "small-table-full24-span-late-word-profiled-forward/prefix-natural-32769/observations.json.gz": {
+      "bytes": 2857,
+      "sha256": "82060c67764e88cd9960c12a1b9796450b70abbc1312ebecb436a8ce003ca282"
+    },
+    "small-table-full24-span-late-word-profiled-forward/heldout-window-32768/observations.json.gz": {
+      "bytes": 2852,
+      "sha256": "73bed42cbd2d6435201bb45348672672a1153b84e2628062b513459a9449b734"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/summary.json": {
+      "bytes": 70815,
+      "sha256": "2bda8dae3aa65c1a109c9cd664f6bc4bcace5b356f54276755e62b414ad6a767"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/roc.stderr": {
+      "bytes": 52,
+      "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/mech-control.stderr": {
+      "bytes": 53,
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/libdeflate.stderr": {
+      "bytes": 52,
+      "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/complete.json": {
+      "bytes": 286,
+      "sha256": "cc5f0ae91e8c7f1cef10a16f38180629d7a1c8aa5b48793160b6a1cf5b549fbe"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/mech-experiment.stderr": {
+      "bytes": 53,
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/pins.json": {
+      "bytes": 6388,
+      "sha256": "95fa79be388317dbd1e4ff1d1e05305fbe6cdba4017ef62e5199d01f7961ad10"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/heldout-mixed-131073/observations.json.gz": {
+      "bytes": 2895,
+      "sha256": "ed7c31b605c30f8081234df15710bacb5ae7dd419fb26490295ac466e59df26c"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-random-32769/observations.json.gz": {
+      "bytes": 2784,
+      "sha256": "ef9c050a6239977e5f207378b39ae624248f8a312c3548a4382ac49ef7d18e58"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-natural-1024/observations.json.gz": {
+      "bytes": 79076,
+      "sha256": "58b678958899f7211fda6796add4a4a1f0ccd05b3c15d61f89688f0878123ee4"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-random-32767/observations.json.gz": {
+      "bytes": 2814,
+      "sha256": "4f402f34c62f1d7af90fa65f45d933c990aa53aa944f0c119c4288234624b30c"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-repeated-1024/observations.json.gz": {
+      "bytes": 81269,
+      "sha256": "3b395768218353103bea0ae741dcd3e9060844fd941fc035258ca2812cafdd2b"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/random-1024/observations.json.gz": {
+      "bytes": 77745,
+      "sha256": "f612b57d7ed8d534a9825b092c00e9020fad82c95e34f17c2e3526da429ee2ac"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-repeated-65537/observations.json.gz": {
+      "bytes": 2850,
+      "sha256": "5c729dde3cc3d848bb398f11e91ff778d417814a8c666ca0c2d51d85ab696adc"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-periodic-4096/observations.json.gz": {
+      "bytes": 2785,
+      "sha256": "01e83348c263056ee9af08e76dd14c4e6578c40c75c9c0df5898068845a05268"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-natural-16384/observations.json.gz": {
+      "bytes": 2791,
+      "sha256": "f47237abe29dcc01d6787b3d9750b3ce8e0d753148b3ad2b553fef03007c1ec6"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-random-33027/observations.json.gz": {
+      "bytes": 2867,
+      "sha256": "3716ba644602fd83c04127182d0f51ecdf370bbeebaf1658cc71e345e850f5e8"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-random-32768/observations.json.gz": {
+      "bytes": 2826,
+      "sha256": "fdd82f20ead4e73c36a2e6a83b1fcc3b6a3575825b80c40eab1678ea0d769fd1"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-random-4096/observations.json.gz": {
+      "bytes": 2830,
+      "sha256": "3f03d4819cd4485194df49bf59b1d20aaf2628eace8ce4f6c9de985883880075"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-natural-1048576/observations.json.gz": {
+      "bytes": 2997,
+      "sha256": "d62f346e687504b6c50649c516cb5a12ab14948224f9f51a1c2fea4de3fca69d"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-repeated-65536/observations.json.gz": {
+      "bytes": 2842,
+      "sha256": "4a5cf1c211b563c5211893d4c13a51431606cbb01527d444f718c76006e299f8"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-repeated-16384/observations.json.gz": {
+      "bytes": 2807,
+      "sha256": "4a9d792e30d792991c4b8479d501084aed4cf764268ddcbe19acca4407c5d5d5"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-periodic-65535/observations.json.gz": {
+      "bytes": 2855,
+      "sha256": "86d93e6b8b2704824bafd5d82a6b0f204b09ac2e00abccbc429843aee933fbf2"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-random-262144/observations.json.gz": {
+      "bytes": 2850,
+      "sha256": "2968790adf2ef2dad08ea10bc41f8e5f7a4f281e6ba25e3ad7922dc7c1acc86f"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-periodic-1048576/observations.json.gz": {
+      "bytes": 2910,
+      "sha256": "627a663b13561c00fa3e96327d761f3d619dd70e8503d66ccbfaaaa676ad4196"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-repeated-262144/observations.json.gz": {
+      "bytes": 2862,
+      "sha256": "f1e9b1c4a9e5e14b9bdc373b35321edb2882e00045a6ca3b9eb2745ab8972bfa"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/eight-literals-prefix/observations.json.gz": {
+      "bytes": 77376,
+      "sha256": "aac5c9baba77b9edcebf6ce1ab37c1a71d290a337340bc7ca116bf6afb1dda72"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-natural-65536/observations.json.gz": {
+      "bytes": 2900,
+      "sha256": "63409ac63e836081155a9292a5c5c28f17f4b58c9e8e2266d7c542e7bf751d28"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/empty/observations.json.gz": {
+      "bytes": 313037,
+      "sha256": "b53399b0c25e8374c4e8d553a3bef54b1e4b79a3d5f22ee292d7fa318963192d"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/one-stored/observations.json.gz": {
+      "bytes": 311415,
+      "sha256": "7ffae81e032ad40aad9561623a150241127937203625d4388076b906d249509b"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/repeated-32769/observations.json.gz": {
+      "bytes": 2795,
+      "sha256": "5f2c2102a24890254c5b21f02d10bc68c2398733aa46ebf90b842c23dc3033f1"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-natural-65537/observations.json.gz": {
+      "bytes": 2897,
+      "sha256": "021e93faf1992f85383b61c30e9c3799f35e769cc7c673709aadd36761a8815f"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-natural-4096/observations.json.gz": {
+      "bytes": 2817,
+      "sha256": "fed4b1cd9a0c1b01b828a7ab554f964a91bf3d646d3350b3863b1de51e617b89"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-repeated-4096/observations.json.gz": {
+      "bytes": 2795,
+      "sha256": "26c26baba947eff5542ae19adc3facee3c0ad77d7e07e1dc200198a564a0b92f"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/320-overlap/observations.json.gz": {
+      "bytes": 75548,
+      "sha256": "79ae1b55085240cdbe1ab35b693dbb54ca70534ab5a8ac951155c772e2f62e61"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-periodic-1024/observations.json.gz": {
+      "bytes": 81169,
+      "sha256": "48d2aad07770d1db11527885b1ac9bda57c7549e622205393f4d6d635c3393bd"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-random-65535/observations.json.gz": {
+      "bytes": 2867,
+      "sha256": "32ca56e7ba1b9ee71cfe82c691d2c7fa75f9c091f569f17593ac6095192e2cef"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-random-1048576/observations.json.gz": {
+      "bytes": 2922,
+      "sha256": "7bd54153e60fb5df65c9b59854f99cc25ec2ad7fedb5a80aa054216a59090392"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/heldout-slides-65537/observations.json.gz": {
+      "bytes": 2886,
+      "sha256": "fdcaaa65440b151e25ed62bd88381720403c22c00a04a4ebb6305301e0df078b"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-random-1024/observations.json.gz": {
+      "bytes": 79084,
+      "sha256": "4eb1d8b08ab5dea6078bdf04ec7f777775215f15a15888d850f841c6c3c0ffda"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/random-256/observations.json.gz": {
+      "bytes": 76564,
+      "sha256": "ff6e16e0f9cd1cd9278097c2168a5b8cd529ea8598c2f0fdb5146f6202c18500"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/random-32769/observations.json.gz": {
+      "bytes": 2828,
+      "sha256": "e55d3afed11807d75929820808946f58ef124b0914758e83538146c7b31360fe"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/reymont-prefix-16384/observations.json.gz": {
+      "bytes": 2831,
+      "sha256": "8600c9aeee35d6d99791cf03fca51235ce08f4c96d12ce20318a18cb33c00ff9"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-periodic-32768/observations.json.gz": {
+      "bytes": 2812,
+      "sha256": "e4a947ab53c95d29df67efcca17184f5f0bcbe9a872b49b3bb7619bf055a16ee"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-periodic-33027/observations.json.gz": {
+      "bytes": 2817,
+      "sha256": "34c09b94da373a3cf0c1154eab4b3b270373e42d8f0c6f537ca3c7ece8bad8bb"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-periodic-131072/observations.json.gz": {
+      "bytes": 2836,
+      "sha256": "f66435bca11e7e14047e0852bf0862285a2633540f6bec03de335e6428d0aad9"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-repeated-1048576/observations.json.gz": {
+      "bytes": 2895,
+      "sha256": "112fe3eed23825556f286707d1b69a8baf0cc8c776f31ca98e67f697c38854ca"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-periodic-32769/observations.json.gz": {
+      "bytes": 2823,
+      "sha256": "35939b28dda863da89fc7c45ff6532b5d28ceceb2e912750e05d3b7c41bb2290"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/repeated-1024/observations.json.gz": {
+      "bytes": 80019,
+      "sha256": "e8f41f127fba78c5ac2b4e8426cb52d4afef4b9d946223a2f551dad383130677"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/reymont-prefix-1024/observations.json.gz": {
+      "bytes": 78895,
+      "sha256": "007240edfcd79432ac82a00405bfdb3b5b176bc1de69d178aa2d1e0e97b142b5"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-periodic-32767/observations.json.gz": {
+      "bytes": 2829,
+      "sha256": "2af7614701303e199fab91a6a51be1c782f6e4d1331f1f6079dfdb94cb7827c5"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/seven-stored-prefix/observations.json.gz": {
+      "bytes": 312331,
+      "sha256": "219b0c5eee9aa9196fbb6e84d22ce7c1b533c93b857b70ea97ab5b33fc7c56b0"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-natural-262144/observations.json.gz": {
+      "bytes": 2931,
+      "sha256": "acbfe421aa0835431f3bd807f69f3b8ee44f797adbbafbc3b810d9b18d9be95c"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-repeated-8192/observations.json.gz": {
+      "bytes": 2807,
+      "sha256": "b6cc444ee312bd1524637860c7ece1ae96f4425b8ca3cad57f0dfd988f2c459a"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-periodic-262144/observations.json.gz": {
+      "bytes": 2890,
+      "sha256": "954eeb59c444fe3850b93f84648bfcee6f573285fb4bb8e8dd5c8cb8a556c570"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-natural-8192/observations.json.gz": {
+      "bytes": 2801,
+      "sha256": "8de87b5522bc0f3e629acd37f8ef769bfe691513cd604095bf70c1e391a02867"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-periodic-16384/observations.json.gz": {
+      "bytes": 2795,
+      "sha256": "bda711abdadbecadffeb363a907e797192d086f741f03db81f6baa10a79216ed"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-repeated-65535/observations.json.gz": {
+      "bytes": 2825,
+      "sha256": "45e3e09a47dcb02f135e6f62f403e0bf42ee4748fdf65109f3221003efe73334"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-natural-131072/observations.json.gz": {
+      "bytes": 2877,
+      "sha256": "f52406e9f5234e5ffb73d743bcf4a2805f3b68889debb1f0eceefe89170a477b"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/33027-periodic-window/observations.json.gz": {
+      "bytes": 2831,
+      "sha256": "3703f7a5c65e21e44adab3fca4fd7858639f4bf49e1210a7e1c0c25ce0d83f2f"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-natural-65535/observations.json.gz": {
+      "bytes": 2880,
+      "sha256": "825e5bba39d1b9fcc0b4591cd0e17f3661b549e5ad5138695e3f8f798ad9641a"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/16384-distribution-change/observations.json.gz": {
+      "bytes": 2806,
+      "sha256": "6a3a2d9684ee57e742860505dee100f951051c11a04abb86a305910272a5b9db"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/eight-literals/observations.json.gz": {
+      "bytes": 75586,
+      "sha256": "3038f6b2cec343b07cc8b83a2cc7628691c64753ec73115abd37c0285acfea1b"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-periodic-65536/observations.json.gz": {
+      "bytes": 2855,
+      "sha256": "9f6c81e2b31f180e74839e32ad224f60a5176899e06fc05aadf40ad0785db82b"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/heldout-random-65537/observations.json.gz": {
+      "bytes": 2851,
+      "sha256": "364cb1801b2cda1b5422305bb27c0adadb10733ffbfb4086eee499aa4858fa87"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/random-64/observations.json.gz": {
+      "bytes": 75102,
+      "sha256": "21e8bcfeeb551d12d49eb039ad94740aee6d6128249b12546a5f052e1a7a6466"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/reymont-prefix-32769/observations.json.gz": {
+      "bytes": 2868,
+      "sha256": "11f180fdffd313bb029afd31462a2544e4a4b398181187308fce51be80a8678e"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/32-high-entropy-stored/observations.json.gz": {
+      "bytes": 76681,
+      "sha256": "ed8660ab10387885de80821da99c891c5d84cdc1e93f0c678a26ff62b2783641"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-periodic-65537/observations.json.gz": {
+      "bytes": 2826,
+      "sha256": "85cfe3bc39c0e1cb98e41714a79a51c446656bba591734cbd7fab129e34579c9"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-repeated-32767/observations.json.gz": {
+      "bytes": 2830,
+      "sha256": "874b64aed3b8e6163f769b7215527d37f6480940dda4cf49bf31442c59c05951"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-random-131072/observations.json.gz": {
+      "bytes": 2846,
+      "sha256": "afdf4e1306d5018d3dece799506da99cdbe37c3b533dfcb402ae411a5952affa"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-repeated-32769/observations.json.gz": {
+      "bytes": 2790,
+      "sha256": "fdb89e03648db193a5ce4c36f399ac68acc65e47d3a8054e504d78697fef4a0b"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-periodic-8192/observations.json.gz": {
+      "bytes": 2785,
+      "sha256": "d3f1df7980f3f5f00178d09020558410d2551ddf6c27d94fc17b540cd78cd537"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/eight-overlap/observations.json.gz": {
+      "bytes": 75189,
+      "sha256": "1f9f38f6339ce88d94425f3cd057d6ba4f69b6624c68f350173815bb8f194342"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-random-65537/observations.json.gz": {
+      "bytes": 2844,
+      "sha256": "362a27388e4f3d8d2a0373fe4fda90120bcef385a6c4607881df01f0aa0b6eae"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-repeated-131072/observations.json.gz": {
+      "bytes": 2831,
+      "sha256": "2bce05c3e53d867259ea19ff4ebf27ce190f1fea8f2934342d5261ff491ff197"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-repeated-32768/observations.json.gz": {
+      "bytes": 2816,
+      "sha256": "d55f9e201d90f4fb02ba585f49d2cf2b854c2f0f8cbfce127a742b349063c5d6"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-repeated-33027/observations.json.gz": {
+      "bytes": 2783,
+      "sha256": "81388d9c1d291dd7167ef0f3613c37c6fec93b98b748e480d417f63b4b0898ac"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/128-biased-dynamic/observations.json.gz": {
+      "bytes": 77190,
+      "sha256": "c2cca0fd07ad6c280282c943efb6bc37d741298e1fa0c7607ff20bcf75a0f41a"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-random-8192/observations.json.gz": {
+      "bytes": 2813,
+      "sha256": "7d94ca68a0b5432e749e781e1f09c4bc17e45f3f642fcf7e2f2ccf03d395e895"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-random-65536/observations.json.gz": {
+      "bytes": 2815,
+      "sha256": "6d9cf9e2b8e654a4e34b6506296d5f001fe2eba02d0ac8e157c567b958c6556f"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-natural-33027/observations.json.gz": {
+      "bytes": 2878,
+      "sha256": "aea9fc9f0b03ae22b950f070eab62b21175cd8a672d909663b82da5c7de6083c"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-natural-32768/observations.json.gz": {
+      "bytes": 2838,
+      "sha256": "2f2fdf0d1d2b0ac8bfbebe09c51fda961f29f90bea9b81254eef8773d0dbba75"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-random-16384/observations.json.gz": {
+      "bytes": 2814,
+      "sha256": "856911717c47b16e610d5370ce1215b5e2282f6f19ad380185d88e56b9347f43"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/heldout-window-32767/observations.json.gz": {
+      "bytes": 2884,
+      "sha256": "bb53030f2a86f2325f3b1173070ab5e56add9551f6363068aec291f56be3060f"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-natural-32767/observations.json.gz": {
+      "bytes": 2867,
+      "sha256": "7f9ae43744902481769517b2df204814a0c54a7d75553c287a7c69c035eedee8"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/prefix-natural-32769/observations.json.gz": {
+      "bytes": 2841,
+      "sha256": "29c3253fab69fb44d812afa3b38eb0ca5cbba4f4e2e73a531e4ded7a754d4126"
+    },
+    "small-table-full24-span-late-word-profiled-reverse/heldout-window-32768/observations.json.gz": {
+      "bytes": 2855,
+      "sha256": "43afedbda42cf426be02ccdb4ddff8e519794d05978e776bd81dc8aaceb1609a"
     }
   }
 }

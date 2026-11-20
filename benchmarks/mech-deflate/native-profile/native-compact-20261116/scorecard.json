@@ -24418,6 +24418,24 @@
     "relevant_repository_tests": 15,
     "span_and_histogram_native_calls": 23856,
     "evidence": "evidence/encoder-size-gap/admitted-input-span-study/README.md",
-    "next_target": "Remove repeated saturated input-length calculations and measure the combination; maintain every prior named win."
+    "next_target": "Remove repeated saturated input-length calculations and measure the combination; maintain every prior named win.",
+    "word_full_point_screens": {
+      "cases": 81,
+      "blocks_per_case": 24,
+      "orders": [
+        "forward",
+        "reverse"
+      ],
+      "roc_wins": [
+        81,
+        81
+      ],
+      "libdeflate_wins": [
+        62,
+        62
+      ],
+      "lost_previous_named_wins": [],
+      "confidence_qualified": false
+    }
   }
 }
