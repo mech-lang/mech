@@ -55,6 +55,7 @@ fn compile(normalized: bool, word_floor: bool) -> (JITModule, Run, Run) {
             minimum_length: if word_floor { 8 } else { 0 },
             // Readonly conversion also leaves its old comparison for dead-value retirement.
             checks_removed: (if normalized { 2 } else { 1 }) + extra,
+            window_checks_removed: 0,
         }]
     );
     finish(module, old, fast, spans)
@@ -68,6 +69,7 @@ fn finish(
 ) -> (JITModule, Run, Run) {
     let mut functions = Vec::new();
     for (name, context) in [("old", &mut old), ("fast", &mut fast)] {
+        context.compute_flowgraph_and_cleanup(module.isa()).unwrap();
         context.verify(module.isa()).unwrap();
         let id = module
             .declare_function(name, Linkage::Local, &context.func.signature)
