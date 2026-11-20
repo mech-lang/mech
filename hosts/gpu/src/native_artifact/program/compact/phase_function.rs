@@ -1579,6 +1579,14 @@ fn prepare_impl<M: Module>(
         phase_layout::apply(&mut context, &symbol).map_err(backend)?;
     }
     prepare_body(module.isa(), &mut context)?;
+    // Inspect the actual prepared body without requesting the general observed
+    // pipeline or changing disassembly, compilation sharing, or admission.
+    if let Some(path) = std::env::var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF")
+        .map(std::path::PathBuf::from)
+        .filter(|path| path.file_stem().is_some_and(|name| name == symbol.as_str()))
+    {
+        std::fs::write(path, context.func.display().to_string()).map_err(backend)?;
+    }
     let entry_bounds = entry_bounds(proof, &report.phase_entry_bounds);
     Ok(General::Ready(finish_preparation(
         context,
