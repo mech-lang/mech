@@ -122,6 +122,19 @@ impl Reduction {
         let scalar_finish = b.create_block();
         b.append_block_param(scalar_finish, types::I32);
         b.append_block_param(scalar_finish, carried);
+        let pair = biased.filter(|_| {
+            cfg!(target_arch = "aarch64")
+                && std::env::var_os("MECH_ORDERED_PAIRED_CONTINUATION").is_some()
+        });
+        let scalar_entry = if pair.is_some() {
+            let entry = b.create_block();
+            for ty in [types::I64, types::I32, types::I64, types::I64, types::I64] {
+                b.append_block_param(entry, ty);
+            }
+            entry
+        } else {
+            scalar_body
+        };
         let vector = b.create_block();
         let missing = b.ins().iconst(types::I32, -1);
         let initial = old_item.unwrap_or(missing);
@@ -271,14 +284,14 @@ impl Reduction {
                 args[0] = index.into();
                 args.push(left.into());
             }
-            b.ins().jump(scalar_body, &args);
+            b.ins().jump(scalar_entry, &args);
         } else {
             short_entry = None;
             b.ins().brif(
                 long,
                 vector,
                 &[],
-                scalar_body,
+                scalar_entry,
                 &[start.into(), best.into(), initial.into()],
             );
         }
@@ -390,14 +403,60 @@ impl Reduction {
                 args[0] = index.into();
                 args.push(left.into());
             }
-            b.ins().jump(scalar_body, &args);
+            b.ins().jump(scalar_entry, &args);
         } else {
             b.ins().brif(
                 more,
-                scalar_body,
+                scalar_entry,
                 &[end.into(), minimum.into(), carried_value.into()],
                 scalar_finish,
                 &finish_args,
+            );
+        }
+        if let Some((front, other)) = pair {
+            let back = reverse.expect("paired continuation has a reverse cursor");
+            super::scalar_pair::emit(
+                b,
+                scalar_entry,
+                scalar_body,
+                scalar_finish,
+                |b, index, previous| {
+                    let next = b.ins().iadd_imm(index, 1);
+                    let stride = i64::from(proof.arrays[back.array].width);
+                    let first_back = b.ins().iadd_imm(previous, -stride);
+                    let second_back = b.ins().iadd_imm(previous, -2 * stride);
+                    let stride = i64::from(proof.arrays[front.array].width);
+                    let base = words.read(b, shadow + proof.view(front.array));
+                    let offset = b.ins().imul_imm(index, stride);
+                    let first_front = b.ins().iadd(base, offset);
+                    let second_front = b.ins().iadd_imm(first_front, stride);
+                    let cost = |b: &mut FunctionBuilder<'_>, k, front_address, back_address| {
+                        inputs.scalar(
+                            b,
+                            proof,
+                            &self.cost,
+                            k,
+                            &[
+                                (front, ScalarRead::LowWord(front_address)),
+                                (back, ScalarRead::LowWord(back_address)),
+                            ],
+                        )
+                    };
+                    let first = cost(b, index, first_front, first_back);
+                    let second = cost(b, next, second_front, second_back);
+                    (first, second, second_back)
+                },
+                |b, winner| {
+                    if deferred.is_some() {
+                        winner
+                    } else {
+                        let high =
+                            emit_item_low32(b, words, proof, shadow, other, winner, ordinary);
+                        let winner = b.ins().ireduce(types::I32, winner);
+                        let selected = b.ins().bor(winner, high);
+                        b.ins().uextend(types::I64, selected)
+                    }
+                },
             );
         }
         // Short entries have completed their first visit. Vector entries
