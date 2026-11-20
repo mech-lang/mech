@@ -1282,6 +1282,14 @@ fn prepare_impl<M: Module>(
                         eprintln!("{name} late previous append forwarding: {forwarded:?}");
                     }
                 }
+                if admission.immutable_code_bytes.is_some()
+                    && std::env::var_os("MECH_FOLD_NARROW_PACKED_WORDS").is_some()
+                {
+                    // A low-word cost must not retain an independently packed
+                    // high field. Full item/store uses keep the original word.
+                    cfg_cleanup::narrow_bits::fold(&mut candidate.func);
+                    candidate.verify(module.isa()).map_err(backend)?;
+                }
                 let id = module
                     .declare_function(&name, Linkage::Local, &signature)
                     .map_err(backend)?;
