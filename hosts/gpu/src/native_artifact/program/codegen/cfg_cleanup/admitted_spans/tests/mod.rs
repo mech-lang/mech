@@ -6,7 +6,7 @@ use cranelift_module::{Linkage, Module, default_libcall_names};
 mod fixture;
 type Run = unsafe extern "C" fn(u64, *const u64, *mut u64) -> u64;
 
-fn compile() -> (JITModule, Run, Run) {
+fn compile(normalized: bool) -> (JITModule, Run, Run) {
     let mut module = JITModule::new(
         JITBuilder::with_flags(
             &[("opt_level", "speed"), ("regalloc_checker", "true")],
@@ -17,13 +17,34 @@ fn compile() -> (JITModule, Run, Run) {
     let (mut old, loads) = fixture::body(&module, 0);
     let mut fast = module.make_context();
     fast.func = old.func.clone();
+    if normalized {
+        let view = super::super::composed_reads::View {
+            array: 0,
+            pointer_word: 3,
+            length_word: 2,
+            width: 1,
+            literal: None,
+        };
+        assert_eq!(
+            super::super::defaulted_loads::fold_immutable(
+                &mut module,
+                &mut fast,
+                &loads,
+                &[view],
+                false,
+            )
+            .unwrap(),
+            (1, 1)
+        );
+    }
     assert_eq!(
         fold(&mut fast, &loads, &BTreeSet::from([2])),
         vec![Admission {
             begin_word: 0,
             end_word: 1,
             length_word: 2,
-            checks_removed: 1,
+            // Readonly conversion also leaves its old comparison for dead-value retirement.
+            checks_removed: if normalized { 2 } else { 1 },
         }]
     );
     let mut functions = Vec::new();
@@ -96,9 +117,8 @@ fn oracle(bytes: &[u8], mut at: u64, end: u64, budget: u64, marker: u64) -> (u64
     (0, output)
 }
 
-#[test]
-fn admitted_span_keeps_default_reads_partial_effects_and_original_errors() {
-    let (_module, old, guarded) = compile();
+fn check(normalized: bool) {
+    let (_module, old, guarded) = compile(normalized);
     let mut count = 0;
     for error in [false, true] {
         let mut bytes = [11, 22, 33, 44, 55, 66, 77, 88];
@@ -131,6 +151,16 @@ fn admitted_span_keeps_default_reads_partial_effects_and_original_errors() {
         }
     }
     assert_eq!(count, 6048);
+}
+
+#[test]
+fn admitted_span_keeps_default_reads_partial_effects_and_original_errors() {
+    check(false);
+}
+
+#[test]
+fn admitted_span_composes_with_readonly_default_loads() {
+    check(true);
 }
 
 #[test]

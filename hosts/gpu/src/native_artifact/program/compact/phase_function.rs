@@ -820,30 +820,6 @@ fn prepare_impl<M: Module>(
     }
     if !observe
         && cleanup.enabled
-        && no_growth.is_none()
-        && vectors.is_some_and(|contract| contract.extend_spans)
-        && private.is_some_and(|contract| contract.permits(proof))
-        && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
-    {
-        let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
-        let lengths = proof
-            .arrays
-            .iter()
-            .enumerate()
-            .filter_map(|(array, view)| {
-                (!view.writable && !view.appends && view.width == 1)
-                    .then(|| packet.binary_search(&(proof.view(array) + 1)).ok())
-                    .flatten()
-            })
-            .collect();
-        entry_spans = cfg_cleanup::admitted_spans::fold(&mut context, &loads, &lengths);
-        if !entry_spans.is_empty() {
-            context.flowgraph();
-            context.verify(module.isa()).map_err(backend)?;
-        }
-    }
-    if !observe
-        && cleanup.enabled
         && vectors.is_some()
         && std::env::var_os("MECH_SHARE_CLAMP_DECISIONS").is_some()
     {
@@ -1498,6 +1474,32 @@ fn prepare_impl<M: Module>(
             context.verify(module.isa()).map_err(backend)?;
         }
         eprintln!("{symbol} scalar choices folded: {selected}");
+    }
+    // Preserve default-read recognition and its readonly load flags before
+    // folding the now-admitted address predicates.
+    if !observe
+        && cleanup.enabled
+        && no_growth.is_none()
+        && vectors.is_some_and(|contract| contract.extend_spans)
+        && private.is_some_and(|contract| contract.permits(proof))
+        && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
+    {
+        let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
+        let lengths = proof
+            .arrays
+            .iter()
+            .enumerate()
+            .filter_map(|(array, view)| {
+                (!view.writable && !view.appends && view.width == 1)
+                    .then(|| packet.binary_search(&(proof.view(array) + 1)).ok())
+                    .flatten()
+            })
+            .collect();
+        entry_spans = cfg_cleanup::admitted_spans::fold(&mut context, &loads, &lengths);
+        if !entry_spans.is_empty() {
+            context.flowgraph();
+            context.verify(module.isa()).map_err(backend)?;
+        }
     }
     if !observe
         && private.is_some()
