@@ -17223,8 +17223,9 @@
     "ultimate_C_target": 81,
     "maintain_Roc": 81,
     "maintain_every_named_C_win": 63,
-    "primary_investigation": "Repair collector state/lifetimes and large-random stores while retaining the measured smaller-input gains; measure setup/mapping/retirement on closest natural1KiB loss before changing allocation policy.",
-    "evidence": "evidence/source-search-specialization-study/README.md"
+    "primary_investigation": "Repair collector state/lifetimes and large-random stores while retaining smaller-input gains. Current nine-case setup trace supports examining transient scratch/owner lifetimes and captured-input Huffman replay for closest natural 1 KiB; do not repeat mapping-threshold sweeps or treat clock-inflated method totals as a speed budget.",
+    "evidence": "evidence/source-search-specialization-study/README.md",
+    "setup_evidence": "evidence/setup-retirement-study/README.md"
   },
   "current_register_spill_pairs": {
     "status": "qualified predecessor",
@@ -29151,5 +29152,38 @@
     "retained_for_repair": true,
     "goal_C_wins": 81,
     "next_C_wins": 64
+  },
+  "setup_retirement_diagnostic": {
+    "evidence": "evidence/setup-retirement-study/README.md",
+    "cases": 9,
+    "orders": [
+      "forward",
+      "reverse"
+    ],
+    "batches": 72,
+    "saved_calls": 3024,
+    "allocation_event_streams": 1512,
+    "selected_artifacts_unchanged": true,
+    "runtime_scoreboard_unchanged": {
+      "Roc": 81,
+      "C": 63
+    },
+    "natural_1KiB": {
+      "Mech_payload_requests": 65,
+      "Mech_mappings": 1,
+      "C_context_requests": 1,
+      "C_output_requests": 1,
+      "coarse_diagnostic_gap_microseconds": "13.7\u201314.1"
+    },
+    "random_1MiB": {
+      "traced_runtime_group_medians_microseconds": "53\u201355",
+      "coarse_diagnostic_gap_milliseconds": "5.8"
+    },
+    "limits": [
+      "Payload counts exclude owner descriptor and registry allocator requests.",
+      "Per-operation clocks perturb small workloads; event durations are not removable-time budgets.",
+      "Task faults do not measure cleared bytes or isolate first-touch elapsed time.",
+      "Coarse host boundaries are not aligned Mech/C semantic phases; no new win qualification."
+    ]
   }
 }

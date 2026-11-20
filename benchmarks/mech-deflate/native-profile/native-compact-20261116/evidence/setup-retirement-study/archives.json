@@ -1,0 +1,1280 @@
+{
+  "runtime-native-proofs.tar.gz": {
+    "sha256": "c4d28d85fd0773b6212c4205fb9fbbd1cd3ba013ffd975e8815ae21ae7fce5f1",
+    "bytes": 1788313,
+    "members": {
+      "config.json": {
+        "sha256": "9092101706ae52fa370bbc2b344792ab01a89d6498f10372bef19687fae47256",
+        "bytes": 7341
+      },
+      "diagnostics/build.json": {
+        "sha256": "34072e779394a8702b42f8c2669f8a60ac7314651bd0f838301035548902ab6e",
+        "bytes": 15469
+      },
+      "diagnostics/compact_runtime/mod.rs": {
+        "sha256": "df09af64fff7df1ba371f5221d79538829e060aca54124920b224e2092611dec",
+        "bytes": 48882
+      },
+      "diagnostics/compact_runtime/setup_probe.rs": {
+        "sha256": "1d936185786977417172e174a3ad9268ea5bf67e47e37401ba0dfde666ef5864",
+        "bytes": 954
+      },
+      "diagnostics/compact_runtime/terminal_appends.rs": {
+        "sha256": "3cbe6cbe3237d14264649b6e217a2eaeaf9e1f5a43fabb0122401fd62314cbe4",
+        "bytes": 9463
+      },
+      "diagnostics/compact_runtime/zero_pages.rs": {
+        "sha256": "066429a89d55c06f139dc915d90e5d4bdf47b446dc87a66dbe8957b23f24ea80",
+        "bytes": 2994
+      },
+      "diagnostics/config.json": {
+        "sha256": "9092101706ae52fa370bbc2b344792ab01a89d6498f10372bef19687fae47256",
+        "bytes": 7341
+      },
+      "diagnostics/libmech_clocks.rlib": {
+        "sha256": "66ad2df7c60944133078f03b367820e63a7354df0e94655d77e5cf6ba91c60b0",
+        "bytes": 320928
+      },
+      "diagnostics/libmech_counts.rlib": {
+        "sha256": "43ca7310195232a84ed46cdfeb29700e380e5bef36fa1db43b92976f72a9795a",
+        "bytes": 316344
+      },
+      "diagnostics/mech-clocks": {
+        "sha256": "c30e564a4aaeece41c7914721b03007243a817c600c63d9ed8517843a8e8cb84",
+        "bytes": 1008008
+      },
+      "diagnostics/mech-clocks-runtime.log": {
+        "sha256": "c7ceda6692389b1dbdca82bc0c7de172ef72b47b8362c9979d4cccd3d5e4f9cf",
+        "bytes": 8672
+      },
+      "diagnostics/mech-clocks-worker.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "diagnostics/mech-control": {
+        "sha256": "01b7c76a67184006731702d4a95cf136fa5eff409893091db938f43cb45b4b59",
+        "bytes": 1007280
+      },
+      "diagnostics/mech-control-worker.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "diagnostics/mech-counts": {
+        "sha256": "fa0f0117c0d8c8a62c6c89277e366c62cdcdc091cf547a733e9ca3e0ebf060d2",
+        "bytes": 1007896
+      },
+      "diagnostics/mech-counts-runtime.log": {
+        "sha256": "c7ceda6692389b1dbdca82bc0c7de172ef72b47b8362c9979d4cccd3d5e4f9cf",
+        "bytes": 8672
+      },
+      "diagnostics/mech-counts-worker.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "diagnostics/pinned_allocator.rs": {
+        "sha256": "050a1d160cc235d5321866a45840c76b5dadeaac30630cfed17eb19615ded1b6",
+        "bytes": 1768
+      },
+      "diagnostics/probe-c.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "diagnostics/probe.o": {
+        "sha256": "6019afc1a2973cf6282ac3540d4044b30f8a0b73703fc56eaba182d6ad7d687e",
+        "bytes": 2120
+      },
+      "diagnostics/runtime.rs": {
+        "sha256": "58d3dbb2937ec0241348c3672f4b80ef7284332dc9b91b31d5f889554fa38bca",
+        "bytes": 236
+      },
+      "diagnostics/worker.rs": {
+        "sha256": "c4954c62fe0e81af8769393ec2cdb9d2fbf100c045e9a1f4a6b2476a26897e92",
+        "bytes": 10624
+      },
+      "libdeflate/0-encoder.o": {
+        "sha256": "fd35728446cd309af78c9334d8af6539810f099b8e764bc769b852980441f726",
+        "bytes": 52128
+      },
+      "libdeflate/1-libdeflate-alloc.o": {
+        "sha256": "d54cc202e299bcd92c533638846c979348dc9a5b947c95f150d31434e9ba232d",
+        "bytes": 1112
+      },
+      "libdeflate/2-libdeflate-arm.o": {
+        "sha256": "1294dffb8fc3dcde0298edcb15c2314e630c17cdb9f7f1b7de1790cb27aaa7ad",
+        "bytes": 1704
+      },
+      "original-runtime/mod.rs": {
+        "sha256": "57febc7bc97475eddf6b03dff0fe7b98173ba4c5eeebc976c8b650797ae80710",
+        "bytes": 47520
+      },
+      "original-runtime/runtime.rlib": {
+        "sha256": "147fef325ee8f2ac03e7385ba9ae1465e3e1dc3fdbe9c559b6ced2db683fc673",
+        "bytes": 291216
+      },
+      "original-runtime/terminal_appends.rs": {
+        "sha256": "3cbe6cbe3237d14264649b6e217a2eaeaf9e1f5a43fabb0122401fd62314cbe4",
+        "bytes": 9463
+      },
+      "original-runtime/zero_pages.rs": {
+        "sha256": "066429a89d55c06f139dc915d90e5d4bdf47b446dc87a66dbe8957b23f24ea80",
+        "bytes": 2994
+      },
+      "selected/metadata.json": {
+        "sha256": "b4c0eeb760aad34e98e6733bef6b8e5db6935dc4a1df5ed5fe4ae8736fcda82f",
+        "bytes": 379452
+      },
+      "selected/program.mecb": {
+        "sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+        "bytes": 1034027
+      },
+      "selected/program.o": {
+        "sha256": "6b7a6066980489e586890372344de6ec011e06ef2c2bbb5e546ebf5ba8e0ace1",
+        "bytes": 152720
+      }
+    }
+  },
+  "diagnostic-observations.tar.gz": {
+    "sha256": "c99d8dc40d14e7b683edda4475195b349b73a6db130faebf80264324fa2038a7",
+    "bytes": 13275808,
+    "members": {
+      "C-oracle.json": {
+        "sha256": "ab77258e776c24641f0a6b09c3f485d54f9e951e4bb2ad29d70a5a61e7cc7c2c",
+        "bytes": 17348
+      },
+      "fixtures-original.json": {
+        "sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4",
+        "bytes": 93410
+      },
+      "fixtures-portable.json": {
+        "sha256": "075679f4773366c13aa821c8eda1d4b3874b91f2cde44cebd50ade3270e266c9",
+        "bytes": 4751
+      },
+      "fixtures/16384-distribution-change/expected.bin": {
+        "sha256": "9009624c8f27451b6182f638b4b4d88875748fa47b718ea6255e062904021ff0",
+        "bytes": 11394
+      },
+      "fixtures/16384-distribution-change/input.bin": {
+        "sha256": "56a7af3beee008d646c71c1dc13ee34eadb7c508ff7626ff013a6d6366c79631",
+        "bytes": 16384
+      },
+      "fixtures/16384-distribution-change/prefix.bin": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "fixtures/320-overlap/expected.bin": {
+        "sha256": "cca7ccc706b591a5e0bd44ba23191e7f13593264492fc348e8ab31eb04dc978f",
+        "bytes": 7
+      },
+      "fixtures/320-overlap/input.bin": {
+        "sha256": "fee1a848cb6763c3088a0e523541b46ac171af2677b062178a9116c4612b352f",
+        "bytes": 320
+      },
+      "fixtures/320-overlap/prefix.bin": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "fixtures/prefix-natural-1024/expected.bin": {
+        "sha256": "527ed79756b88d36e82bbad176590ac7757a366d505f66e153cc05e4d22c787e",
+        "bytes": 460
+      },
+      "fixtures/prefix-natural-1024/input.bin": {
+        "sha256": "a41aff2241346e3bb0e8dfc7a4ff04b9fca37736c173628c825a2ea87b14780f",
+        "bytes": 1024
+      },
+      "fixtures/prefix-natural-1024/prefix.bin": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "fixtures/prefix-natural-4096/expected.bin": {
+        "sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "bytes": 983
+      },
+      "fixtures/prefix-natural-4096/input.bin": {
+        "sha256": "849382ed7bd61eddf344a7ab603377c5bc5cfcc6a4ae6a2dc3d62936bbaea7ba",
+        "bytes": 4096
+      },
+      "fixtures/prefix-natural-4096/prefix.bin": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "fixtures/prefix-natural-8192/expected.bin": {
+        "sha256": "acf25c299c27aded98c5167bf0da8a3336ac0dfdcdea90081ea879601503c434",
+        "bytes": 2309
+      },
+      "fixtures/prefix-natural-8192/input.bin": {
+        "sha256": "70c3398d2b8e0c40330a2f3165ca703abf20f629f90e7c927bc63b242194938a",
+        "bytes": 8192
+      },
+      "fixtures/prefix-natural-8192/prefix.bin": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "fixtures/prefix-random-1048576/expected.bin": {
+        "sha256": "221c04210d128f3dfb56b62f42de0b2ab3f53d9c65374b3e0b802afb17ed855b",
+        "bytes": 1048666
+      },
+      "fixtures/prefix-random-1048576/input.bin": {
+        "sha256": "6cb4ea2316f36630654b2786b8917268d28a357b8758134a8fbd1e270f50b968",
+        "bytes": 1048576
+      },
+      "fixtures/prefix-random-1048576/prefix.bin": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "fixtures/prefix-random-16384/expected.bin": {
+        "sha256": "81f464776461dccab0151fbf92caffcfb52c09a9138fa40c4b1d5aebe0a43a25",
+        "bytes": 16389
+      },
+      "fixtures/prefix-random-16384/input.bin": {
+        "sha256": "24b5fdba05bfebeb07e2d47db3a5681cf46859f584353f53ab52aca04de51736",
+        "bytes": 16384
+      },
+      "fixtures/prefix-random-16384/prefix.bin": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "fixtures/prefix-random-4096/expected.bin": {
+        "sha256": "1728b84fa2fbf4829916f90192f721e85645b980ba668de8ba0c61d69460fa7a",
+        "bytes": 4101
+      },
+      "fixtures/prefix-random-4096/input.bin": {
+        "sha256": "94559b249d7d9c3ce775b6d7ec28ab32b06275cb13df82237bc65cec653be754",
+        "bytes": 4096
+      },
+      "fixtures/prefix-random-4096/prefix.bin": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "fixtures/prefix-random-65536/expected.bin": {
+        "sha256": "95136fc939393a404af19bd73110c81778dc11ac7c805b48ea80e507cc511ed1",
+        "bytes": 65546
+      },
+      "fixtures/prefix-random-65536/input.bin": {
+        "sha256": "be6f5a3969f2de16d61998cf408c1f474cacceffe9d4465aae562adae89ec46e",
+        "bytes": 65536
+      },
+      "fixtures/prefix-random-65536/prefix.bin": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/16384-distribution-change/libdeflate/output.bin": {
+        "sha256": "9009624c8f27451b6182f638b4b4d88875748fa47b718ea6255e062904021ff0",
+        "bytes": 11394
+      },
+      "forward/16384-distribution-change/libdeflate/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/16384-distribution-change/libdeflate/stdout.jsonl": {
+        "sha256": "f1de27f7ff51d2535955a9dceb1f8b69b71e1cc488c6aab8edad0a3345f5df45",
+        "bytes": 26335
+      },
+      "forward/16384-distribution-change/mech-clocks/output.bin": {
+        "sha256": "9009624c8f27451b6182f638b4b4d88875748fa47b718ea6255e062904021ff0",
+        "bytes": 11394
+      },
+      "forward/16384-distribution-change/mech-clocks/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/16384-distribution-change/mech-clocks/stdout.jsonl": {
+        "sha256": "5c825bb0512be35da9e6ef95a12a5e6ba3bd8b4cc76602c954214896cb4a0318",
+        "bytes": 1421326
+      },
+      "forward/16384-distribution-change/mech-control/output.bin": {
+        "sha256": "9009624c8f27451b6182f638b4b4d88875748fa47b718ea6255e062904021ff0",
+        "bytes": 11394
+      },
+      "forward/16384-distribution-change/mech-control/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/16384-distribution-change/mech-control/stdout.jsonl": {
+        "sha256": "3a50facbb03648cd8e118f8ffbc567ce1108deef7080f797ba33404b2ed29b2e",
+        "bytes": 29373
+      },
+      "forward/16384-distribution-change/mech-counts/output.bin": {
+        "sha256": "9009624c8f27451b6182f638b4b4d88875748fa47b718ea6255e062904021ff0",
+        "bytes": 11394
+      },
+      "forward/16384-distribution-change/mech-counts/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/16384-distribution-change/mech-counts/stdout.jsonl": {
+        "sha256": "ba0654333ab11909d53e102d1aaa32de3a7b16685cf9401669096c662167ed7b",
+        "bytes": 1403437
+      },
+      "forward/320-overlap/libdeflate/output.bin": {
+        "sha256": "cca7ccc706b591a5e0bd44ba23191e7f13593264492fc348e8ab31eb04dc978f",
+        "bytes": 7
+      },
+      "forward/320-overlap/libdeflate/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/320-overlap/libdeflate/stdout.jsonl": {
+        "sha256": "860faf87247bccdb62e8c041f563cea6e378f6b47e07f66159b8247af2bf7909",
+        "bytes": 25355
+      },
+      "forward/320-overlap/mech-clocks/output.bin": {
+        "sha256": "cca7ccc706b591a5e0bd44ba23191e7f13593264492fc348e8ab31eb04dc978f",
+        "bytes": 7
+      },
+      "forward/320-overlap/mech-clocks/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/320-overlap/mech-clocks/stdout.jsonl": {
+        "sha256": "71cd7e4a97238bfd3611ceec8d8fcd6fce278f2a29f9ae93a8ae8f28ede89de5",
+        "bytes": 641476
+      },
+      "forward/320-overlap/mech-control/output.bin": {
+        "sha256": "cca7ccc706b591a5e0bd44ba23191e7f13593264492fc348e8ab31eb04dc978f",
+        "bytes": 7
+      },
+      "forward/320-overlap/mech-control/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/320-overlap/mech-control/stdout.jsonl": {
+        "sha256": "b8e8ad710ac2d04d85ee24b7123c0fe94f366b35d315586196068dda56a1d863",
+        "bytes": 28206
+      },
+      "forward/320-overlap/mech-counts/output.bin": {
+        "sha256": "cca7ccc706b591a5e0bd44ba23191e7f13593264492fc348e8ab31eb04dc978f",
+        "bytes": 7
+      },
+      "forward/320-overlap/mech-counts/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/320-overlap/mech-counts/stdout.jsonl": {
+        "sha256": "f105563fe20be3690f7bab125494b53a38e84f4d587d35a1524860241afb954a",
+        "bytes": 633334
+      },
+      "forward/prefix-natural-1024/libdeflate/output.bin": {
+        "sha256": "527ed79756b88d36e82bbad176590ac7757a366d505f66e153cc05e4d22c787e",
+        "bytes": 460
+      },
+      "forward/prefix-natural-1024/libdeflate/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-natural-1024/libdeflate/stdout.jsonl": {
+        "sha256": "18ced867397f3445001ffbf7d848d749d5cd1cc5576e204d9b29ea8fa3e59142",
+        "bytes": 25785
+      },
+      "forward/prefix-natural-1024/mech-clocks/output.bin": {
+        "sha256": "527ed79756b88d36e82bbad176590ac7757a366d505f66e153cc05e4d22c787e",
+        "bytes": 460
+      },
+      "forward/prefix-natural-1024/mech-clocks/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-natural-1024/mech-clocks/stdout.jsonl": {
+        "sha256": "beed94fd5aa508d81767b4686cbd78c35015bd59cbeae90f447fcada11181a9e",
+        "bytes": 704519
+      },
+      "forward/prefix-natural-1024/mech-control/output.bin": {
+        "sha256": "527ed79756b88d36e82bbad176590ac7757a366d505f66e153cc05e4d22c787e",
+        "bytes": 460
+      },
+      "forward/prefix-natural-1024/mech-control/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-natural-1024/mech-control/stdout.jsonl": {
+        "sha256": "370bda6d1bb0736cc47eb1742764d0a9fabfc1442833f911d82810f004b47db0",
+        "bytes": 29105
+      },
+      "forward/prefix-natural-1024/mech-counts/output.bin": {
+        "sha256": "527ed79756b88d36e82bbad176590ac7757a366d505f66e153cc05e4d22c787e",
+        "bytes": 460
+      },
+      "forward/prefix-natural-1024/mech-counts/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-natural-1024/mech-counts/stdout.jsonl": {
+        "sha256": "6a0ba02f53676676a3f98ab2f0952475e99b1f5a0394b1e118aa79c4704da08e",
+        "bytes": 695776
+      },
+      "forward/prefix-natural-4096/libdeflate/output.bin": {
+        "sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "bytes": 983
+      },
+      "forward/prefix-natural-4096/libdeflate/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-natural-4096/libdeflate/stdout.jsonl": {
+        "sha256": "d559968e5ad42024cd262fcfb5ef7182d2306d741cc0743c66072652cddf6466",
+        "bytes": 25885
+      },
+      "forward/prefix-natural-4096/mech-clocks/output.bin": {
+        "sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "bytes": 983
+      },
+      "forward/prefix-natural-4096/mech-clocks/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-natural-4096/mech-clocks/stdout.jsonl": {
+        "sha256": "3472f56921dc6c86e62a38a1c1351449f4b20406e3ad3604580522ab77672c46",
+        "bytes": 1036322
+      },
+      "forward/prefix-natural-4096/mech-control/output.bin": {
+        "sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "bytes": 983
+      },
+      "forward/prefix-natural-4096/mech-control/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-natural-4096/mech-control/stdout.jsonl": {
+        "sha256": "7671ebe21b5bff7771992476b1f3ee73e35fcd036c49a985342d00db19540ae5",
+        "bytes": 28851
+      },
+      "forward/prefix-natural-4096/mech-counts/output.bin": {
+        "sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "bytes": 983
+      },
+      "forward/prefix-natural-4096/mech-counts/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-natural-4096/mech-counts/stdout.jsonl": {
+        "sha256": "7de84b2712c6ced495e8c33a97a46fed39dc63db48fa4772743ee68456e635e6",
+        "bytes": 1023420
+      },
+      "forward/prefix-natural-8192/libdeflate/output.bin": {
+        "sha256": "acf25c299c27aded98c5167bf0da8a3336ac0dfdcdea90081ea879601503c434",
+        "bytes": 2309
+      },
+      "forward/prefix-natural-8192/libdeflate/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-natural-8192/libdeflate/stdout.jsonl": {
+        "sha256": "fe482e0e2aa0073e3511c52a613ec9a9716099f27fd016de62905a9d800245ba",
+        "bytes": 25895
+      },
+      "forward/prefix-natural-8192/mech-clocks/output.bin": {
+        "sha256": "acf25c299c27aded98c5167bf0da8a3336ac0dfdcdea90081ea879601503c434",
+        "bytes": 2309
+      },
+      "forward/prefix-natural-8192/mech-clocks/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-natural-8192/mech-clocks/stdout.jsonl": {
+        "sha256": "4774ccb5454879062e70e82efc38177fc30d89d40eda9f3f8387feecc5490644",
+        "bytes": 1212890
+      },
+      "forward/prefix-natural-8192/mech-control/output.bin": {
+        "sha256": "acf25c299c27aded98c5167bf0da8a3336ac0dfdcdea90081ea879601503c434",
+        "bytes": 2309
+      },
+      "forward/prefix-natural-8192/mech-control/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-natural-8192/mech-control/stdout.jsonl": {
+        "sha256": "010ce1bfdfc95242de8a4b8236f19d453cc1095897abe5845b44ec27409d48fe",
+        "bytes": 28930
+      },
+      "forward/prefix-natural-8192/mech-counts/output.bin": {
+        "sha256": "acf25c299c27aded98c5167bf0da8a3336ac0dfdcdea90081ea879601503c434",
+        "bytes": 2309
+      },
+      "forward/prefix-natural-8192/mech-counts/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-natural-8192/mech-counts/stdout.jsonl": {
+        "sha256": "02ae1efe1f37469f861a102bbca8ca504dbc47342632d898341c70289e2e3410",
+        "bytes": 1197637
+      },
+      "forward/prefix-random-1048576/libdeflate/output.bin": {
+        "sha256": "221c04210d128f3dfb56b62f42de0b2ab3f53d9c65374b3e0b802afb17ed855b",
+        "bytes": 1048666
+      },
+      "forward/prefix-random-1048576/libdeflate/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-random-1048576/libdeflate/stdout.jsonl": {
+        "sha256": "85b1f721e6806d2080e393bee1ae4ede65504a755bf5bb2848748ea5629f64d4",
+        "bytes": 26676
+      },
+      "forward/prefix-random-1048576/mech-clocks/output.bin": {
+        "sha256": "221c04210d128f3dfb56b62f42de0b2ab3f53d9c65374b3e0b802afb17ed855b",
+        "bytes": 1048666
+      },
+      "forward/prefix-random-1048576/mech-clocks/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-random-1048576/mech-clocks/stdout.jsonl": {
+        "sha256": "2f61ef799defbe3d86699245e6c75734331766e90726f98699a7192e876fd477",
+        "bytes": 2682005
+      },
+      "forward/prefix-random-1048576/mech-control/output.bin": {
+        "sha256": "221c04210d128f3dfb56b62f42de0b2ab3f53d9c65374b3e0b802afb17ed855b",
+        "bytes": 1048666
+      },
+      "forward/prefix-random-1048576/mech-control/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-random-1048576/mech-control/stdout.jsonl": {
+        "sha256": "d28d7b28b2109cf1190f7258099aabccd74000efb77f5ba10f26821af8e6f9bd",
+        "bytes": 29489
+      },
+      "forward/prefix-random-1048576/mech-counts/output.bin": {
+        "sha256": "221c04210d128f3dfb56b62f42de0b2ab3f53d9c65374b3e0b802afb17ed855b",
+        "bytes": 1048666
+      },
+      "forward/prefix-random-1048576/mech-counts/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-random-1048576/mech-counts/stdout.jsonl": {
+        "sha256": "759553f8a15e31d69edb1b163497941003a04afb3dd3aa2c65f84053d92f9653",
+        "bytes": 2642976
+      },
+      "forward/prefix-random-16384/libdeflate/output.bin": {
+        "sha256": "81f464776461dccab0151fbf92caffcfb52c09a9138fa40c4b1d5aebe0a43a25",
+        "bytes": 16389
+      },
+      "forward/prefix-random-16384/libdeflate/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-random-16384/libdeflate/stdout.jsonl": {
+        "sha256": "4d23fff11965f13750941d8224202344c646b0bdd8a0e3500dd4f867c0f12b78",
+        "bytes": 26120
+      },
+      "forward/prefix-random-16384/mech-clocks/output.bin": {
+        "sha256": "81f464776461dccab0151fbf92caffcfb52c09a9138fa40c4b1d5aebe0a43a25",
+        "bytes": 16389
+      },
+      "forward/prefix-random-16384/mech-clocks/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-random-16384/mech-clocks/stdout.jsonl": {
+        "sha256": "34f85d5f8851f5be3ee3fc006cf6fbbd816360a783faa286b1f53f604aac2600",
+        "bytes": 850314
+      },
+      "forward/prefix-random-16384/mech-control/output.bin": {
+        "sha256": "81f464776461dccab0151fbf92caffcfb52c09a9138fa40c4b1d5aebe0a43a25",
+        "bytes": 16389
+      },
+      "forward/prefix-random-16384/mech-control/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-random-16384/mech-control/stdout.jsonl": {
+        "sha256": "514a38d70235dddccda73bd0ece894331b935b425fd46694b0c6c3fb13896c84",
+        "bytes": 29042
+      },
+      "forward/prefix-random-16384/mech-counts/output.bin": {
+        "sha256": "81f464776461dccab0151fbf92caffcfb52c09a9138fa40c4b1d5aebe0a43a25",
+        "bytes": 16389
+      },
+      "forward/prefix-random-16384/mech-counts/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-random-16384/mech-counts/stdout.jsonl": {
+        "sha256": "6a3191f8c1612c5bd017a1d08c76d5da27d09b1c8a1b570659ee567a36d838c9",
+        "bytes": 839454
+      },
+      "forward/prefix-random-4096/libdeflate/output.bin": {
+        "sha256": "1728b84fa2fbf4829916f90192f721e85645b980ba668de8ba0c61d69460fa7a",
+        "bytes": 4101
+      },
+      "forward/prefix-random-4096/libdeflate/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-random-4096/libdeflate/stdout.jsonl": {
+        "sha256": "4fcfb9bf3fe191eac525d0313a4286ecf6ba29ffc4987b02c6f52eb1579dd7ba",
+        "bytes": 25866
+      },
+      "forward/prefix-random-4096/mech-clocks/output.bin": {
+        "sha256": "1728b84fa2fbf4829916f90192f721e85645b980ba668de8ba0c61d69460fa7a",
+        "bytes": 4101
+      },
+      "forward/prefix-random-4096/mech-clocks/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-random-4096/mech-clocks/stdout.jsonl": {
+        "sha256": "40d395922e7b5e7bbdc6b073768c82f3c081e9b68eb8c10639e70290680abfc3",
+        "bytes": 652789
+      },
+      "forward/prefix-random-4096/mech-control/output.bin": {
+        "sha256": "1728b84fa2fbf4829916f90192f721e85645b980ba668de8ba0c61d69460fa7a",
+        "bytes": 4101
+      },
+      "forward/prefix-random-4096/mech-control/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-random-4096/mech-control/stdout.jsonl": {
+        "sha256": "63344ca9446c6135a69d2b33e0fd96ca9c4dcde55ef682a12ecad0bd4fa90e81",
+        "bytes": 28870
+      },
+      "forward/prefix-random-4096/mech-counts/output.bin": {
+        "sha256": "1728b84fa2fbf4829916f90192f721e85645b980ba668de8ba0c61d69460fa7a",
+        "bytes": 4101
+      },
+      "forward/prefix-random-4096/mech-counts/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-random-4096/mech-counts/stdout.jsonl": {
+        "sha256": "f445cab50036abc7923c7083f72f731f4f2c188b6c59bc190184d27050bc0350",
+        "bytes": 644523
+      },
+      "forward/prefix-random-65536/libdeflate/output.bin": {
+        "sha256": "95136fc939393a404af19bd73110c81778dc11ac7c805b48ea80e507cc511ed1",
+        "bytes": 65546
+      },
+      "forward/prefix-random-65536/libdeflate/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-random-65536/libdeflate/stdout.jsonl": {
+        "sha256": "24b6f173368e8d843274ea19e03fd0e28ace233fa9adf49c964edea33778eadb",
+        "bytes": 26089
+      },
+      "forward/prefix-random-65536/mech-clocks/output.bin": {
+        "sha256": "95136fc939393a404af19bd73110c81778dc11ac7c805b48ea80e507cc511ed1",
+        "bytes": 65546
+      },
+      "forward/prefix-random-65536/mech-clocks/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-random-65536/mech-clocks/stdout.jsonl": {
+        "sha256": "2c6f946ce83fadaed81e5f75604b5f30937dae623dd5b6fee9e64b34f1450902",
+        "bytes": 840630
+      },
+      "forward/prefix-random-65536/mech-control/output.bin": {
+        "sha256": "95136fc939393a404af19bd73110c81778dc11ac7c805b48ea80e507cc511ed1",
+        "bytes": 65546
+      },
+      "forward/prefix-random-65536/mech-control/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-random-65536/mech-control/stdout.jsonl": {
+        "sha256": "2f551c2328b0e3e622332e7e9902b67f5756bca0b257ea71b2f5c0021539c949",
+        "bytes": 29078
+      },
+      "forward/prefix-random-65536/mech-counts/output.bin": {
+        "sha256": "95136fc939393a404af19bd73110c81778dc11ac7c805b48ea80e507cc511ed1",
+        "bytes": 65546
+      },
+      "forward/prefix-random-65536/mech-counts/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "forward/prefix-random-65536/mech-counts/stdout.jsonl": {
+        "sha256": "7c6a979fdcbf207f2e705a86f1cb761b4514fa27dd3d7d28b2ca731f1ed14cd7",
+        "bytes": 829694
+      },
+      "plan.json": {
+        "sha256": "427164f20943b9e79113a12356830ad8692ef6caf4420a152a646f821934d13b",
+        "bytes": 1034
+      },
+      "reverse/16384-distribution-change/libdeflate/output.bin": {
+        "sha256": "9009624c8f27451b6182f638b4b4d88875748fa47b718ea6255e062904021ff0",
+        "bytes": 11394
+      },
+      "reverse/16384-distribution-change/libdeflate/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/16384-distribution-change/libdeflate/stdout.jsonl": {
+        "sha256": "605474e64adc1138503bd512f3c3767db0b8e43500b214e7586a65c0a4a45fb4",
+        "bytes": 26292
+      },
+      "reverse/16384-distribution-change/mech-clocks/output.bin": {
+        "sha256": "9009624c8f27451b6182f638b4b4d88875748fa47b718ea6255e062904021ff0",
+        "bytes": 11394
+      },
+      "reverse/16384-distribution-change/mech-clocks/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/16384-distribution-change/mech-clocks/stdout.jsonl": {
+        "sha256": "3cc3804895badc2bcca5bd7bfdc1ae860c8722e65bdb9d6c09812b8653a8e6c9",
+        "bytes": 1421940
+      },
+      "reverse/16384-distribution-change/mech-control/output.bin": {
+        "sha256": "9009624c8f27451b6182f638b4b4d88875748fa47b718ea6255e062904021ff0",
+        "bytes": 11394
+      },
+      "reverse/16384-distribution-change/mech-control/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/16384-distribution-change/mech-control/stdout.jsonl": {
+        "sha256": "e509f05e66138ffd5fa8485c5b29252c77d1339ed759593144aaeeca98f2befa",
+        "bytes": 29300
+      },
+      "reverse/16384-distribution-change/mech-counts/output.bin": {
+        "sha256": "9009624c8f27451b6182f638b4b4d88875748fa47b718ea6255e062904021ff0",
+        "bytes": 11394
+      },
+      "reverse/16384-distribution-change/mech-counts/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/16384-distribution-change/mech-counts/stdout.jsonl": {
+        "sha256": "6e6e4db9db0b66fd52da37be2d5a665669c999a35477e22f36426b30aa30da7d",
+        "bytes": 1403427
+      },
+      "reverse/320-overlap/libdeflate/output.bin": {
+        "sha256": "cca7ccc706b591a5e0bd44ba23191e7f13593264492fc348e8ab31eb04dc978f",
+        "bytes": 7
+      },
+      "reverse/320-overlap/libdeflate/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/320-overlap/libdeflate/stdout.jsonl": {
+        "sha256": "b00d0f150f91e0ec5af9da59080b50f2c54bcffe14c8c9407d94651dc83f34f5",
+        "bytes": 25353
+      },
+      "reverse/320-overlap/mech-clocks/output.bin": {
+        "sha256": "cca7ccc706b591a5e0bd44ba23191e7f13593264492fc348e8ab31eb04dc978f",
+        "bytes": 7
+      },
+      "reverse/320-overlap/mech-clocks/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/320-overlap/mech-clocks/stdout.jsonl": {
+        "sha256": "b714cc17a13084581d52dbc44a64e54a494c956a5f297854f1e4bbcedc187d87",
+        "bytes": 642404
+      },
+      "reverse/320-overlap/mech-control/output.bin": {
+        "sha256": "cca7ccc706b591a5e0bd44ba23191e7f13593264492fc348e8ab31eb04dc978f",
+        "bytes": 7
+      },
+      "reverse/320-overlap/mech-control/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/320-overlap/mech-control/stdout.jsonl": {
+        "sha256": "2b944cb62629a9807011d6e036ac1953e3f2f93e4006d0ad069955b72c72bb85",
+        "bytes": 28216
+      },
+      "reverse/320-overlap/mech-counts/output.bin": {
+        "sha256": "cca7ccc706b591a5e0bd44ba23191e7f13593264492fc348e8ab31eb04dc978f",
+        "bytes": 7
+      },
+      "reverse/320-overlap/mech-counts/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/320-overlap/mech-counts/stdout.jsonl": {
+        "sha256": "ed54c0f1069efdc19e67866de1a65c4064b06e64fc7104b32b1ee3a9695cb44a",
+        "bytes": 633332
+      },
+      "reverse/prefix-natural-1024/libdeflate/output.bin": {
+        "sha256": "527ed79756b88d36e82bbad176590ac7757a366d505f66e153cc05e4d22c787e",
+        "bytes": 460
+      },
+      "reverse/prefix-natural-1024/libdeflate/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-natural-1024/libdeflate/stdout.jsonl": {
+        "sha256": "cb61db62d49f5404dd3aa1917f1167154ccdab73e3cabc841ec0179b891646f1",
+        "bytes": 25858
+      },
+      "reverse/prefix-natural-1024/mech-clocks/output.bin": {
+        "sha256": "527ed79756b88d36e82bbad176590ac7757a366d505f66e153cc05e4d22c787e",
+        "bytes": 460
+      },
+      "reverse/prefix-natural-1024/mech-clocks/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-natural-1024/mech-clocks/stdout.jsonl": {
+        "sha256": "22d5dc87105008cb976f054d2edf193f3d29d491bc5ccb97f0a73a0d548977a4",
+        "bytes": 704469
+      },
+      "reverse/prefix-natural-1024/mech-control/output.bin": {
+        "sha256": "527ed79756b88d36e82bbad176590ac7757a366d505f66e153cc05e4d22c787e",
+        "bytes": 460
+      },
+      "reverse/prefix-natural-1024/mech-control/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-natural-1024/mech-control/stdout.jsonl": {
+        "sha256": "ad436d511586bdd78b81e8c86f823d0028468b2cb6ff0a34fb4a34f5c4a62164",
+        "bytes": 28793
+      },
+      "reverse/prefix-natural-1024/mech-counts/output.bin": {
+        "sha256": "527ed79756b88d36e82bbad176590ac7757a366d505f66e153cc05e4d22c787e",
+        "bytes": 460
+      },
+      "reverse/prefix-natural-1024/mech-counts/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-natural-1024/mech-counts/stdout.jsonl": {
+        "sha256": "54aefef49d7cc9733667efc7784533ccc334d4aeb7ea4bc9af44a2e0bfc4a9d0",
+        "bytes": 695598
+      },
+      "reverse/prefix-natural-4096/libdeflate/output.bin": {
+        "sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "bytes": 983
+      },
+      "reverse/prefix-natural-4096/libdeflate/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-natural-4096/libdeflate/stdout.jsonl": {
+        "sha256": "31c3adf97008e84cc63e7ae328edc956f92d024b4d679672dbfeaa82ac65082e",
+        "bytes": 26010
+      },
+      "reverse/prefix-natural-4096/mech-clocks/output.bin": {
+        "sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "bytes": 983
+      },
+      "reverse/prefix-natural-4096/mech-clocks/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-natural-4096/mech-clocks/stdout.jsonl": {
+        "sha256": "6968e2461fa0c285cd204255856a7c4fc2bfb4b65ee6e69e4c8d6b9e543d08d9",
+        "bytes": 1036314
+      },
+      "reverse/prefix-natural-4096/mech-control/output.bin": {
+        "sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "bytes": 983
+      },
+      "reverse/prefix-natural-4096/mech-control/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-natural-4096/mech-control/stdout.jsonl": {
+        "sha256": "fb309c9b70c0d0faa499db0ecee93bea045d7caac143aafaa5604a1cc4c844c5",
+        "bytes": 28897
+      },
+      "reverse/prefix-natural-4096/mech-counts/output.bin": {
+        "sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "bytes": 983
+      },
+      "reverse/prefix-natural-4096/mech-counts/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-natural-4096/mech-counts/stdout.jsonl": {
+        "sha256": "4fe1d1be1d612cff61c77b45d1db88832a966766872a5f900c26bb054f1befde",
+        "bytes": 1023430
+      },
+      "reverse/prefix-natural-8192/libdeflate/output.bin": {
+        "sha256": "acf25c299c27aded98c5167bf0da8a3336ac0dfdcdea90081ea879601503c434",
+        "bytes": 2309
+      },
+      "reverse/prefix-natural-8192/libdeflate/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-natural-8192/libdeflate/stdout.jsonl": {
+        "sha256": "21a3e6638c656adc76666520f8b3a8cd056eddf958c8f6adb260013706187c87",
+        "bytes": 25934
+      },
+      "reverse/prefix-natural-8192/mech-clocks/output.bin": {
+        "sha256": "acf25c299c27aded98c5167bf0da8a3336ac0dfdcdea90081ea879601503c434",
+        "bytes": 2309
+      },
+      "reverse/prefix-natural-8192/mech-clocks/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-natural-8192/mech-clocks/stdout.jsonl": {
+        "sha256": "bf0406e95f828359c89c60fb1817467e81b7d1aa7f834fdce9055a5ec06d4209",
+        "bytes": 1212791
+      },
+      "reverse/prefix-natural-8192/mech-control/output.bin": {
+        "sha256": "acf25c299c27aded98c5167bf0da8a3336ac0dfdcdea90081ea879601503c434",
+        "bytes": 2309
+      },
+      "reverse/prefix-natural-8192/mech-control/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-natural-8192/mech-control/stdout.jsonl": {
+        "sha256": "f4fcda11a7e4dde97bbdd3dbc8efdb0c896c3749c7e971666c3261daedc8e148",
+        "bytes": 28971
+      },
+      "reverse/prefix-natural-8192/mech-counts/output.bin": {
+        "sha256": "acf25c299c27aded98c5167bf0da8a3336ac0dfdcdea90081ea879601503c434",
+        "bytes": 2309
+      },
+      "reverse/prefix-natural-8192/mech-counts/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-natural-8192/mech-counts/stdout.jsonl": {
+        "sha256": "6e4d70601c0fcb86c405977089c3e0bfebdbd6e48ef1de4fb647452724f42bb8",
+        "bytes": 1197715
+      },
+      "reverse/prefix-random-1048576/libdeflate/output.bin": {
+        "sha256": "221c04210d128f3dfb56b62f42de0b2ab3f53d9c65374b3e0b802afb17ed855b",
+        "bytes": 1048666
+      },
+      "reverse/prefix-random-1048576/libdeflate/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-random-1048576/libdeflate/stdout.jsonl": {
+        "sha256": "8be191da89bd6007d95ae4a9d2fe23ea6059b8df56621f692ef1fbd8ce58123d",
+        "bytes": 26673
+      },
+      "reverse/prefix-random-1048576/mech-clocks/output.bin": {
+        "sha256": "221c04210d128f3dfb56b62f42de0b2ab3f53d9c65374b3e0b802afb17ed855b",
+        "bytes": 1048666
+      },
+      "reverse/prefix-random-1048576/mech-clocks/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-random-1048576/mech-clocks/stdout.jsonl": {
+        "sha256": "452ccbe61266590772d203e9b420f7f9fade027599db69926c25f101c6f667b3",
+        "bytes": 2681730
+      },
+      "reverse/prefix-random-1048576/mech-control/output.bin": {
+        "sha256": "221c04210d128f3dfb56b62f42de0b2ab3f53d9c65374b3e0b802afb17ed855b",
+        "bytes": 1048666
+      },
+      "reverse/prefix-random-1048576/mech-control/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-random-1048576/mech-control/stdout.jsonl": {
+        "sha256": "f1c69cfcbffaa690d12338ecf69204d1c9bd2c23f0afea8346a017f63ffdfab6",
+        "bytes": 29524
+      },
+      "reverse/prefix-random-1048576/mech-counts/output.bin": {
+        "sha256": "221c04210d128f3dfb56b62f42de0b2ab3f53d9c65374b3e0b802afb17ed855b",
+        "bytes": 1048666
+      },
+      "reverse/prefix-random-1048576/mech-counts/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-random-1048576/mech-counts/stdout.jsonl": {
+        "sha256": "f766ab561417c7609286354d09e2abe0ff741398daaf2da5c0b179b4198d1d7b",
+        "bytes": 2642917
+      },
+      "reverse/prefix-random-16384/libdeflate/output.bin": {
+        "sha256": "81f464776461dccab0151fbf92caffcfb52c09a9138fa40c4b1d5aebe0a43a25",
+        "bytes": 16389
+      },
+      "reverse/prefix-random-16384/libdeflate/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-random-16384/libdeflate/stdout.jsonl": {
+        "sha256": "8c35129facaddec454436f637acad22586add941ffbf1cd7c56a43ce1e1c4f31",
+        "bytes": 26171
+      },
+      "reverse/prefix-random-16384/mech-clocks/output.bin": {
+        "sha256": "81f464776461dccab0151fbf92caffcfb52c09a9138fa40c4b1d5aebe0a43a25",
+        "bytes": 16389
+      },
+      "reverse/prefix-random-16384/mech-clocks/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-random-16384/mech-clocks/stdout.jsonl": {
+        "sha256": "2b22b436032664d44ce5a28e1e2821591f64402836364bb4a09c61e211b8a71d",
+        "bytes": 850234
+      },
+      "reverse/prefix-random-16384/mech-control/output.bin": {
+        "sha256": "81f464776461dccab0151fbf92caffcfb52c09a9138fa40c4b1d5aebe0a43a25",
+        "bytes": 16389
+      },
+      "reverse/prefix-random-16384/mech-control/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-random-16384/mech-control/stdout.jsonl": {
+        "sha256": "08cf720e443545a8f9faf6288315783f8d65857b365a77f271c6f52299491801",
+        "bytes": 29056
+      },
+      "reverse/prefix-random-16384/mech-counts/output.bin": {
+        "sha256": "81f464776461dccab0151fbf92caffcfb52c09a9138fa40c4b1d5aebe0a43a25",
+        "bytes": 16389
+      },
+      "reverse/prefix-random-16384/mech-counts/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-random-16384/mech-counts/stdout.jsonl": {
+        "sha256": "7910568f8bffb6c6d70002f9621b0b83d68539f0708f52b60d11579ec967c473",
+        "bytes": 839448
+      },
+      "reverse/prefix-random-4096/libdeflate/output.bin": {
+        "sha256": "1728b84fa2fbf4829916f90192f721e85645b980ba668de8ba0c61d69460fa7a",
+        "bytes": 4101
+      },
+      "reverse/prefix-random-4096/libdeflate/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-random-4096/libdeflate/stdout.jsonl": {
+        "sha256": "11dd85520e766852e57a8b65f26902fbb5556a456ab533640ee21402371654b2",
+        "bytes": 25843
+      },
+      "reverse/prefix-random-4096/mech-clocks/output.bin": {
+        "sha256": "1728b84fa2fbf4829916f90192f721e85645b980ba668de8ba0c61d69460fa7a",
+        "bytes": 4101
+      },
+      "reverse/prefix-random-4096/mech-clocks/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-random-4096/mech-clocks/stdout.jsonl": {
+        "sha256": "065c55653ba72ec5b1c8c4371f8f9c236d76c4e827796622ac35cab14cde8a44",
+        "bytes": 652860
+      },
+      "reverse/prefix-random-4096/mech-control/output.bin": {
+        "sha256": "1728b84fa2fbf4829916f90192f721e85645b980ba668de8ba0c61d69460fa7a",
+        "bytes": 4101
+      },
+      "reverse/prefix-random-4096/mech-control/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-random-4096/mech-control/stdout.jsonl": {
+        "sha256": "dde909ddf96cbd6557be82ec834edc3eb6215bfd76682e2222db764b9f1a5bc1",
+        "bytes": 28855
+      },
+      "reverse/prefix-random-4096/mech-counts/output.bin": {
+        "sha256": "1728b84fa2fbf4829916f90192f721e85645b980ba668de8ba0c61d69460fa7a",
+        "bytes": 4101
+      },
+      "reverse/prefix-random-4096/mech-counts/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-random-4096/mech-counts/stdout.jsonl": {
+        "sha256": "8fbe8f45e2e5144f65b8b725a474ea92242e2383e182fb2f7b9fa6fb5f4c3d6c",
+        "bytes": 644777
+      },
+      "reverse/prefix-random-65536/libdeflate/output.bin": {
+        "sha256": "95136fc939393a404af19bd73110c81778dc11ac7c805b48ea80e507cc511ed1",
+        "bytes": 65546
+      },
+      "reverse/prefix-random-65536/libdeflate/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-random-65536/libdeflate/stdout.jsonl": {
+        "sha256": "0f585df1661c28f183df7f8471eef2624f620fa575b40533807ce10b0bd8177a",
+        "bytes": 26155
+      },
+      "reverse/prefix-random-65536/mech-clocks/output.bin": {
+        "sha256": "95136fc939393a404af19bd73110c81778dc11ac7c805b48ea80e507cc511ed1",
+        "bytes": 65546
+      },
+      "reverse/prefix-random-65536/mech-clocks/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-random-65536/mech-clocks/stdout.jsonl": {
+        "sha256": "07f621dd4c54a5ed9e331cb96e10c6bf1abe239df3c5619b3d66d5cb49a10bf5",
+        "bytes": 840625
+      },
+      "reverse/prefix-random-65536/mech-control/output.bin": {
+        "sha256": "95136fc939393a404af19bd73110c81778dc11ac7c805b48ea80e507cc511ed1",
+        "bytes": 65546
+      },
+      "reverse/prefix-random-65536/mech-control/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-random-65536/mech-control/stdout.jsonl": {
+        "sha256": "9debec2966de06d5e1a443bdd347ebb2b8d5a96864ffd3377d4bc48af3d7e740",
+        "bytes": 29096
+      },
+      "reverse/prefix-random-65536/mech-counts/output.bin": {
+        "sha256": "95136fc939393a404af19bd73110c81778dc11ac7c805b48ea80e507cc511ed1",
+        "bytes": 65546
+      },
+      "reverse/prefix-random-65536/mech-counts/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "reverse/prefix-random-65536/mech-counts/stdout.jsonl": {
+        "sha256": "022786d1d8c8847fa4aa4f5f2712a652110113f750f3564b928ae6f72facba92",
+        "bytes": 829683
+      },
+      "summary.json": {
+        "sha256": "2401ad23cffc8582baa2c8e50c3972a229d176f5d428da0d0404313b8748883f",
+        "bytes": 414276
+      }
+    }
+  },
+  "preliminary-cold-smoke.tar.gz": {
+    "sha256": "d5c760524e2055314a37c30cc246104c5d3353a366dc76f45f3877f0e1c71286",
+    "bytes": 1484105,
+    "members": {
+      "diagnostics/build.json": {
+        "sha256": "df71f776ba1115ddfb445b87e9a7bbed11e1c4098cb416ea9092dd01e8bb3893",
+        "bytes": 15236
+      },
+      "diagnostics/compact_runtime/mod.rs": {
+        "sha256": "df09af64fff7df1ba371f5221d79538829e060aca54124920b224e2092611dec",
+        "bytes": 48882
+      },
+      "diagnostics/compact_runtime/setup_probe.rs": {
+        "sha256": "1d936185786977417172e174a3ad9268ea5bf67e47e37401ba0dfde666ef5864",
+        "bytes": 954
+      },
+      "diagnostics/compact_runtime/terminal_appends.rs": {
+        "sha256": "3cbe6cbe3237d14264649b6e217a2eaeaf9e1f5a43fabb0122401fd62314cbe4",
+        "bytes": 9463
+      },
+      "diagnostics/compact_runtime/zero_pages.rs": {
+        "sha256": "066429a89d55c06f139dc915d90e5d4bdf47b446dc87a66dbe8957b23f24ea80",
+        "bytes": 2994
+      },
+      "diagnostics/config.json": {
+        "sha256": "9092101706ae52fa370bbc2b344792ab01a89d6498f10372bef19687fae47256",
+        "bytes": 7341
+      },
+      "diagnostics/libmech_clocks.rlib": {
+        "sha256": "e9363fba78982c71aeb595ce5f68ebcb75d5a65e4a3b905084293393d0ffb054",
+        "bytes": 320800
+      },
+      "diagnostics/libmech_counts.rlib": {
+        "sha256": "924c9041f173a98cba62003cef76eeb338541540dc9aa72398c9a9fa46ebca69",
+        "bytes": 316216
+      },
+      "diagnostics/mech-clocks": {
+        "sha256": "d8b6497c391ca565339d29d4885a4c6112dfffb10db985e3ada6775de49ebe2a",
+        "bytes": 1006104
+      },
+      "diagnostics/mech-clocks-runtime.log": {
+        "sha256": "e2173e0cbc7875f3159a807419466895dd23c0cfa236d54fd0ef6f8cd0cd0da3",
+        "bytes": 8553
+      },
+      "diagnostics/mech-clocks-worker.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "diagnostics/mech-control": {
+        "sha256": "ac191e75eb6d3d5a0dc7c3d412b98ad751425e743241bf8d998b60456e073d1f",
+        "bytes": 988576
+      },
+      "diagnostics/mech-control-worker.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "diagnostics/mech-counts": {
+        "sha256": "b2d4918be19dd2459720492cba6960d9f9aa7d82d248f1f233028698d7880c5e",
+        "bytes": 1005992
+      },
+      "diagnostics/mech-counts-runtime.log": {
+        "sha256": "e2173e0cbc7875f3159a807419466895dd23c0cfa236d54fd0ef6f8cd0cd0da3",
+        "bytes": 8553
+      },
+      "diagnostics/mech-counts-worker.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "diagnostics/pinned_allocator.rs": {
+        "sha256": "050a1d160cc235d5321866a45840c76b5dadeaac30630cfed17eb19615ded1b6",
+        "bytes": 1768
+      },
+      "diagnostics/probe-c.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "diagnostics/probe.o": {
+        "sha256": "6019afc1a2973cf6282ac3540d4044b30f8a0b73703fc56eaba182d6ad7d687e",
+        "bytes": 2120
+      },
+      "diagnostics/runtime.rs": {
+        "sha256": "200fac5a8328ee14a0a1756d3de055a0baea2bdb2a3c028bf14745c2d6b0a577",
+        "bytes": 229
+      },
+      "diagnostics/worker.rs": {
+        "sha256": "7eb6523888698b36a0afb110e1ff883e5b0d7f633a78e26050aa01d8da5b2a32",
+        "bytes": 9918
+      },
+      "smoke/forward/prefix-natural-1024/libdeflate/output.bin": {
+        "sha256": "527ed79756b88d36e82bbad176590ac7757a366d505f66e153cc05e4d22c787e",
+        "bytes": 460
+      },
+      "smoke/forward/prefix-natural-1024/libdeflate/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "smoke/forward/prefix-natural-1024/libdeflate/stdout.jsonl": {
+        "sha256": "2ba9509bf34f64da5f6566d50445cd100b88535fa1251931d0f88c0f72288b5b",
+        "bytes": 8001
+      },
+      "smoke/forward/prefix-natural-1024/mech-clocks/output.bin": {
+        "sha256": "527ed79756b88d36e82bbad176590ac7757a366d505f66e153cc05e4d22c787e",
+        "bytes": 460
+      },
+      "smoke/forward/prefix-natural-1024/mech-clocks/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "smoke/forward/prefix-natural-1024/mech-clocks/stdout.jsonl": {
+        "sha256": "4bbfbebfbc1288606e1b12b95f36666646bd6c313da56af0494a25cf817d96c5",
+        "bytes": 188157
+      },
+      "smoke/forward/prefix-natural-1024/mech-control/output.bin": {
+        "sha256": "527ed79756b88d36e82bbad176590ac7757a366d505f66e153cc05e4d22c787e",
+        "bytes": 460
+      },
+      "smoke/forward/prefix-natural-1024/mech-control/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "smoke/forward/prefix-natural-1024/mech-control/stdout.jsonl": {
+        "sha256": "0326d8fbfaeb340520356f6c8d941305fb5a26b617640fae88e92aace7b55169",
+        "bytes": 8852
+      },
+      "smoke/forward/prefix-natural-1024/mech-counts/output.bin": {
+        "sha256": "527ed79756b88d36e82bbad176590ac7757a366d505f66e153cc05e4d22c787e",
+        "bytes": 460
+      },
+      "smoke/forward/prefix-natural-1024/mech-counts/stderr.log": {
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "bytes": 0
+      },
+      "smoke/forward/prefix-natural-1024/mech-counts/stdout.jsonl": {
+        "sha256": "dfba9e5a17341b495487d120b58bb4af7abb2ca2cfd01b2b6fe67f4041187cd6",
+        "bytes": 183486
+      },
+      "smoke/plan.json": {
+        "sha256": "b8a79c1fd395ae8bc9278a36b52c6d3e89c94ce7ddad8c35aaa0a0d812819dc5",
+        "bytes": 750
+      },
+      "smoke/summary.json": {
+        "sha256": "9d857b2535ef7bfec7b9b7cec359d8b45ba1b92be19e4d162cf19e943ffc3b20",
+        "bytes": 27156
+      }
+    }
+  }
+}
