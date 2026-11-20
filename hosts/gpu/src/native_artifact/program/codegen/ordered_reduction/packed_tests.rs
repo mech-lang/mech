@@ -114,7 +114,7 @@ fn bounded_cost_ordinal_key_preserves_strict_ties_unsigned_costs_and_wide_fallba
         .unwrap(),
     );
     let mut functions = Vec::new();
-    for mode in 0..8 {
+    for mode in 0..12 {
         let mut context = module.make_context();
         context.func.signature.params = vec![AbiParam::new(types::I64); 3];
         context.func.signature.returns = vec![AbiParam::new(types::I32)];
@@ -158,8 +158,9 @@ fn bounded_cost_ordinal_key_preserves_strict_ties_unsigned_costs_and_wide_fallba
                         start,
                         stop,
                         best,
-                        mode >= 6,
+                        mode % 4 >= 2,
                         mode % 2 != 0,
+                        mode >= 8,
                         |b, k, _| {
                             let offset = b.ins().isub(k, start);
                             let offset = b.ins().ishl_imm(offset, 2);
@@ -286,5 +287,5 @@ fn bounded_cost_ordinal_key_preserves_strict_ties_unsigned_costs_and_wide_fallba
             assert_eq!(storage, original);
         }
     }
-    assert_eq!(native_calls, 61440);
+    assert_eq!(native_calls, 94208);
 }
