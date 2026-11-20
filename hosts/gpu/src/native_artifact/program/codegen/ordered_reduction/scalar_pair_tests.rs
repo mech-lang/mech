@@ -16,7 +16,7 @@ fn paired_scalar_visits_preserve_unsigned_wrap_ties_full_items_and_odd_tails() {
     let mut functions = Vec::new();
     for stride in [4i64, 8] {
         for deferred in [false, true] {
-            for sequential in [false, true] {
+            for sequential in [0u8, 1, 2] {
                 let mut context = module.make_context();
                 context.func.signature.params = vec![AbiParam::new(types::I64); 4];
                 context.func.signature.returns = vec![AbiParam::new(types::I64)];
@@ -76,7 +76,7 @@ fn paired_scalar_visits_preserve_unsigned_wrap_ties_full_items_and_odd_tails() {
                         b.ins().uextend(types::I64, low)
                     }
                 };
-                if sequential {
+                if sequential != 0 {
                     super::scalar_pair::emit_sequential(
                         &mut b,
                         pair,
@@ -113,22 +113,26 @@ fn paired_scalar_visits_preserve_unsigned_wrap_ties_full_items_and_odd_tails() {
                 let minimum = b.ins().select(better, value, args[1]);
                 let selected = item(&mut b, args[0]);
                 let choice = b.ins().select(better, selected, args[2]);
-                let index = b.ins().iadd_imm(args[0], 1);
-                let left = b.ins().iadd_imm(args[4], -1);
-                let more = b.ins().icmp_imm(IntCC::NotEqual, left, 0);
-                b.ins().brif(
-                    more,
-                    scalar,
-                    &[
-                        index.into(),
-                        minimum.into(),
-                        choice.into(),
-                        previous.into(),
-                        left.into(),
-                    ],
-                    finish,
-                    &[minimum.into(), choice.into()],
-                );
+                if sequential == 2 {
+                    b.ins().jump(finish, &[minimum.into(), choice.into()]);
+                } else {
+                    let index = b.ins().iadd_imm(args[0], 1);
+                    let left = b.ins().iadd_imm(args[4], -1);
+                    let more = b.ins().icmp_imm(IntCC::NotEqual, left, 0);
+                    b.ins().brif(
+                        more,
+                        scalar,
+                        &[
+                            index.into(),
+                            minimum.into(),
+                            choice.into(),
+                            previous.into(),
+                            left.into(),
+                        ],
+                        finish,
+                        &[minimum.into(), choice.into()],
+                    );
+                }
                 b.switch_to_block(finish);
                 let values = b.block_params(finish).to_vec();
                 let minimum = b.ins().uextend(types::I64, values[0]);

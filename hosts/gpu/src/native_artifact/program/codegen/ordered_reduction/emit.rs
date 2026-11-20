@@ -425,8 +425,9 @@ impl Reduction {
                     b.ins().uextend(types::I64, selected)
                 }
             };
-            if std::env::var_os("MECH_ORDERED_PAIRED_CONTINUATION").as_deref()
-                == Some(std::ffi::OsStr::new("sequential"))
+            if std::env::var_os("MECH_ORDERED_PAIRED_CONTINUATION")
+                .as_deref()
+                .is_some_and(|mode| mode == "sequential" || mode == "sequential-tail")
             {
                 super::scalar_pair::emit_sequential(
                     b,
@@ -545,25 +546,37 @@ impl Reduction {
             b.ins().ireduce(types::I32, params[0])
         };
         let choice = b.ins().select(less, selected, params[2]);
-        let next = b.ins().iadd_imm(params[0], 1);
-        let mut next_args = vec![next.into(), minimum.into(), choice.into()];
-        if let Some((_, pointer)) = reverse_cursor {
-            next_args.push(pointer.into());
-        }
-        let more = if forward.is_some() {
-            let left = b.ins().iadd_imm(params[4], -1);
-            next_args.push(left.into());
-            b.ins().icmp_imm(IntCC::NotEqual, left, 0)
+        if pair.is_some()
+            && std::env::var_os("MECH_ORDERED_PAIRED_CONTINUATION").as_deref()
+                == Some(std::ffi::OsStr::new("sequential-tail"))
+        {
+            // The paired entry rejects only its nonzero count below two;
+            // the paired loop exits with fewer than two visits and reaches
+            // this body only on its odd edge. Both routes therefore carry
+            // exactly one. Other reductions retain the original backedge.
+            b.ins()
+                .jump(scalar_finish, &[minimum.into(), choice.into()]);
         } else {
-            b.ins().icmp(IntCC::UnsignedLessThan, next, stop)
-        };
-        b.ins().brif(
-            more,
-            scalar_body,
-            &next_args,
-            scalar_finish,
-            &[minimum.into(), choice.into()],
-        );
+            let next = b.ins().iadd_imm(params[0], 1);
+            let mut next_args = vec![next.into(), minimum.into(), choice.into()];
+            if let Some((_, pointer)) = reverse_cursor {
+                next_args.push(pointer.into());
+            }
+            let more = if forward.is_some() {
+                let left = b.ins().iadd_imm(params[4], -1);
+                next_args.push(left.into());
+                b.ins().icmp_imm(IntCC::NotEqual, left, 0)
+            } else {
+                b.ins().icmp(IntCC::UnsignedLessThan, next, stop)
+            };
+            b.ins().brif(
+                more,
+                scalar_body,
+                &next_args,
+                scalar_finish,
+                &[minimum.into(), choice.into()],
+            );
+        }
         b.switch_to_block(scalar_finish);
         let params = b.block_params(scalar_finish).to_vec();
         let minimum = params[0];
