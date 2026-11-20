@@ -6,7 +6,7 @@ The guarded histogram takes **2.44–2.73% less time on random 1 MiB** than its 
 
 Qualification uses 81 cases, forward96 and pooled reverse288 blocks per case. The original reverse96 had two uncertain Roc comparisons during large timing swings; the complete reverse192 repeat independently supports all 81/62 wins, and all 288 reverse blocks remain included in the pooled checks. Every prior named win is checked explicitly. All 162 output/inflation/alias observations, six failures, twelve injected failures, twelve recoveries and 4,864 B peak stack pass. Normal and checked allocation emission match exactly.
 
-Latest complete-build cohort on the **Apple M1**: the current compiler reproduces the qualified encoder exactly and measures **2.209519 s Mech, 2.984085 s Roc and 0.481338 s C**, fourteen balanced fresh-process trials with final executable linking and equal prebuilt compilers/support. Paired qualified-control ratios are **0.740214× Roc / 4.595235× C**. Stripped executables remain 276,072 B / 191,912 B / 155,752 B. Bootstrap and strip are separate; no small compilation-time gain is claimed. [Current complete-build evidence](evidence/encoder-size-gap/selected-packet-phase-study/README.md).
+Latest complete-build cohort on the **Apple M1** reproduces the qualified encoder exactly and measures **2.212275 s Mech, 2.990601 s Roc and 0.481984 s C**, fourteen balanced fresh-process trials including final executable linking and equal prebuilt compilers/support. Paired qualified-control ratios are **0.740639× Roc / 4.587332× C**. Stripped executables remain 276,072 B / 191,912 B / 155,752 B. Bootstrap and strip are separate; no compilation-time gain is established. [Current build evidence](evidence/encoder-size-gap/conditional-winner-item-study/README.md).
 
 The histogram source is committed at **7ea6c80d8db874e10392bdb2a3d38e6205ca876d**. Its new entry guard removes four per-byte bounds checks and retains the U32 increment check; a guard miss executes the original checked code. The two relevant repository tests pass 11,760 native calls. The original 2,719-line Mech source and canonical bytecode remain unchanged, with no LLVM dependency added. Rebuild with `--variant m1-bounded-byte-histogram`.
 
@@ -14,7 +14,13 @@ Both earlier mismatch finalists and all adverse observations remain available in
 
 The entire GPU suite is not claimed. Its relevant histogram and earlier wide-equality tests are recorded separately, and the existing missing archived allocator continues to block the repository unsafe audit. [Review and continuation handoff](REVIEW.md).
 
-## Current packet phase-selection experiments
+## Current conditional winner experiments
+
+Latest source **`46dc3230f`** completes the conditional winner experiment. The combined word is **62,796 B** and saves about 1% on distribution change against its 62,844 B control, while natural 4 KiB stays near **1.025× / 1.035× C**. The index-only guard is slower. Moving item reconstruction to the same strict-winner edge recovers its 32 B growth and removes 19,427 natural-4-KiB scorer instructions, but still adds 3,550 branches and establishes no latency win. All prior peer wins observed in twenty complete twenty-one-case orders survive; the qualified **63,612 B / 81 Roc / 62 C** result remains selected.
+
+The mapped word is **62,796 B**, or **1.088× Roc / 1.694× C encoder text**, and builds through final link in **2.215644 s**, paired **0.741685× Roc / 4.605130× C**. All ten variants pass output/error/stack/recovery and checked replay. Sixteen/seventeen optimized tests and 8,192/16,384 native fixture calls pass. A separate 8,192-call packed-key prototype emits one horizontal minimum instead of two under explicit U16 bounds; it is not codec-integrated or a speed claim. Next, admit its bounds and retain the old vector path on a miss. [All twenty raw orders, source, counts, complete builds, prototype and reproduction](evidence/encoder-size-gap/conditional-winner-item-study/README.md).
+
+## Preceding packet phase-selection experiments
 
 Source **`3fe63cb1d`** allows exact phase selection for the existing packet-load qualifier. Selecting nine complete routine families recovers **320 B** of the original 416 B saving: word **62,844 B**, probe **63,116 B**, both with 4,736 B peak stack. All prior peer wins observed in fourteen complete twenty-one-case discovery orders survive; no full score or win #63 is established. The current all-phase probe still costs 8.80–9.26% on distribution change, while the narrower selection costs 0.11–0.45% in the probe orders and 0.20–0.63% in the word orders. The smaller 62,796 B non-scorer candidate retains its 5.86–6.20% penalty for repair.
 

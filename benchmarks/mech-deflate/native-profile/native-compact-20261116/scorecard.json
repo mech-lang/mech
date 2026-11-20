@@ -24553,5 +24553,59 @@
     "word_paired_build_x_roc": 0.7413569030111302,
     "word_paired_build_x_libdeflate": 4.606719745814001,
     "next_target": "Combine word scorer-only improvement with the nine-family320B saving; isolate extra475/3956/4879/4673 to repair the additional48B saving."
+  },
+  "conditional_winner_item_experiment": {
+    "source_commit": "46dc3230fce4cdf4d184fedf261b854b5c8f59fd",
+    "evidence": "evidence/encoder-size-gap/conditional-winner-item-study/README.md",
+    "promoted": false,
+    "qualified_selection_unchanged": true,
+    "combined_word_text_bytes": 62796,
+    "mapped_word_text_bytes": 62796,
+    "mapped_probe_text_bytes": 63436,
+    "peak_stack_bytes": 4736,
+    "scorer_stack_bytes": 208,
+    "discovery": {
+      "orders": 20,
+      "cases_per_order": 21,
+      "balanced_blocks_per_case": 24,
+      "all_observed_previous_wins_preserved": true,
+      "new_C_win": false,
+      "full_score_not_established": true
+    },
+    "mapped_word_source_through_link_seconds": 2.2156436666846275,
+    "mapped_word_paired_build_x_roc": 0.7416851643146035,
+    "mapped_word_paired_build_x_libdeflate": 4.60512963632824,
+    "packed_prototype": {
+      "exit_code": 0,
+      "native_calls": 8192,
+      "samples": 4096,
+      "preconditions": [
+        "unsignedbest<=65535",
+        "start+count<=65535",
+        "countmultipleof4"
+      ],
+      "codec_integrated": false,
+      "latency_measured": false,
+      "stdout": "Verified8192nativecalls: best/stop<=65535, arbitraryU32costs, strictinitialtie, earliestglobalindex, saturatinghighcosts andguardedunalignedstorage. Prototypeonly; no codec or latency claim.\n",
+      "source_sha256": "9f13af61ba3db98e28584020f074719525ee19eda341b78f8d9f8c5d00b005b9",
+      "assembly_sha256": {
+        "packed-false.vcode.txt": "58387c811b218f7beb8c8e3930639dc897857bdb3366a5823dfbb1bfbb9220ad",
+        "packed-true.vcode.txt": "bdcac9f7fb586ae3965950265fc89825b428e5f1de52fd589fa03efb11ce65c4"
+      },
+      "opcode_counts": {
+        "packed-false.vcode.txt": {
+          "uminv": 2,
+          "uqxtn": 0,
+          "zip1": 0
+        },
+        "packed-true.vcode.txt": {
+          "uminv": 1,
+          "uqxtn": 1,
+          "zip1": 1
+        }
+      },
+      "proof_folder": "attempt-3"
+    },
+    "next_target": "Integrate packed cost/index under explicit bounds with the existing vector fallback; verify full-source accounting and all previous wins."
   }
 }
