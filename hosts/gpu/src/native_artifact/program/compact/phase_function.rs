@@ -1570,6 +1570,9 @@ fn prepare_impl<M: Module>(
         }
     }
     let vcode_path = std::env::var_os("MECH_INSPECT_PHASE_VCODE")
+        // Keep register-profile capture on the normal refused-general and
+        // preparation route. The older VCode probe observes the general IR.
+        .or_else(|| std::env::var_os("MECH_INSPECT_PHASE_REGISTER_PROFILE"))
         .map(std::path::PathBuf::from)
         .filter(|path| path.file_stem().is_some_and(|name| name == symbol.as_str()));
     if vcode_path.is_some() {
@@ -1612,6 +1615,9 @@ fn prepare_impl<M: Module>(
         phase_layout::apply(&mut context, &symbol).map_err(backend)?;
     }
     prepare_body(module.isa(), &mut context)?;
+    if !observe && vectors.is_some() {
+        phase_layout::apply_register_weights(&mut context, &symbol).map_err(backend)?;
+    }
     // Inspect the actual prepared body without requesting the general observed
     // pipeline or changing disassembly, compilation sharing, or admission.
     if let Some(path) = std::env::var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF")
