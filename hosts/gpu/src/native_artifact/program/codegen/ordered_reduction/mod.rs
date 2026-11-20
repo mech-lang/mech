@@ -205,3 +205,6 @@ mod winner_tests;
 
 #[cfg(all(test, target_arch = "aarch64", target_endian = "little"))]
 mod packed_tests;
+
+#[cfg(all(test, target_arch = "aarch64", target_endian = "little"))]
+mod packed_item_tests;

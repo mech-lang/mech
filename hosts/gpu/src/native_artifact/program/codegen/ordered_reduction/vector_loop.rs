@@ -221,6 +221,7 @@ impl Kernel<'_> {
                 self.best,
                 std::env::var_os("MECH_ORDERED_VECTOR_CARRY_LANES").is_some(),
                 std::env::var_os("MECH_ORDERED_VECTOR_LATCH_TEST").is_some(),
+                std::env::var_os("MECH_ORDERED_PACKED_HEAD_GROUP").is_some(),
                 |b, k, index| {
                     self.inputs
                         .emit(b, self.proof, &self.reduction.cost, k, index)
@@ -235,7 +236,13 @@ impl Kernel<'_> {
             self.lanes(b, packed)
         };
         let (minimum, item) = if packed {
-            let (minimum, winner) = super::packed_key::finish(b, lanes.costs);
+            let (minimum, winner) = if old_item.is_some()
+                && std::env::var_os("MECH_ORDERED_PACKED_WIDE_ITEM").is_some()
+            {
+                super::packed_key::finish_wide_item(b, lanes.costs)
+            } else {
+                super::packed_key::finish(b, lanes.costs)
+            };
             (minimum, map(b, winner, false))
         } else if selection == Some(std::ffi::OsStr::new("item"))
             && let Some(old_item) = old_item
