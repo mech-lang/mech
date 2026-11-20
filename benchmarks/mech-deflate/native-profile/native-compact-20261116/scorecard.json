@@ -28,9 +28,9 @@
     "pr": 995,
     "stacked_on_pr": 993,
     "original_target_pr": 973,
-    "compiler_source_commit": "31910aff67d9f902da9f6f5239c7efc403c82b01",
-    "compiler_sha256": "473691656e1cfb067fae07b1c0d6aa1169219fc9315c735914fd61cf75674212",
-    "latest_deployment_evidence": "evidence/encoder-size-gap/paired-packed-accumulator-study/README.md",
+    "compiler_source_commit": "2b6ed311d19b24794bde87b9893301ca4e56dc1c",
+    "compiler_sha256": "a99a1746b989387833013d1a7a0ededae4bacd7cc5667bf8ce6531a4e66bfd6d",
+    "latest_deployment_evidence": "evidence/encoder-size-gap/packed-margin-repair-study/README.md",
     "host": "Apple M1, macOS 15.6.1, arm64",
     "local_checks": {
       "workspace_formatting": "Pass",
@@ -7357,7 +7357,7 @@
     "checked_chain_estimated_recomputation_seconds": 0.0032,
     "next": "Exact-choice body planning and one further omitted-body investigation"
   },
-  "current_matched_build": "paired_packed_accumulator_experiment.complete_build",
+  "current_matched_build": "packed_margin_repair_experiment.complete_build",
   "scoped_function_replay": {
     "compiler_source": "e9538f71514225abf5ca57a9fc0acab358407167",
     "control_source": "ff7c1dbc9c5059ed84d730b008847c02179fa2cf",
@@ -16856,7 +16856,7 @@
         "supported": false
       }
     },
-    "primary_investigation": "Retain paired carried loop; test optional-head peeling and widened packed ordinal separately/together. No abandonment over the reverse0.036% miss.",
+    "primary_investigation": "Packed eight-candidate entry guarded by cost/index bounds; preserve scalar8..15 wide-cost path and original sixteen-element wide vector threshold. Keep all original named wins.",
     "evidence": "evidence/encoder-size-gap/paired-packed-accumulator-study/README.md"
   },
   "current_register_spill_pairs": {
@@ -24947,5 +24947,131 @@
     "disabled_replay_recipes": 23,
     "portable_recipe_replays": 2,
     "next_target": "Retain paired carried loop; test optional-head peeling and widened packed ordinal separately/together. No abandonment over the reverse0.036% miss."
+  },
+  "packed_margin_repair_experiment": {
+    "source_commit": "2b6ed311d19b24794bde87b9893301ca4e56dc1c",
+    "compiler_sha256": "a99a1746b989387833013d1a7a0ededae4bacd7cc5667bf8ce6531a4e66bfd6d",
+    "evidence": "evidence/encoder-size-gap/packed-margin-repair-study/README.md",
+    "promoted": false,
+    "qualified_selection_unchanged": true,
+    "head_text_bytes": 63836,
+    "head_saved_bytes": 16,
+    "head_natural_scorer_instructions_removed": 10308,
+    "native_tests": {
+      "tests_per_mode": 19,
+      "modes": 4,
+      "packed_key_fixture_calls_per_mode": 94208,
+      "wide_item_fixture_calls_per_mode": 16384,
+      "prior_winner_fixture_calls_per_mode": 16384
+    },
+    "artifact_equivalence": [
+      {
+        "left": "packed-wide-item-probe",
+        "right": "paired-key-carry-probe",
+        "same_artifacts": {
+          "program.o": true,
+          "metadata.json": true,
+          "program.mecb": true
+        }
+      },
+      {
+        "left": "packed-head-wide-probe",
+        "right": "packed-head-group-probe",
+        "same_artifacts": {
+          "program.o": true,
+          "metadata.json": true,
+          "program.mecb": true
+        }
+      },
+      {
+        "left": "packed-wide-item-probe-profiled",
+        "right": "paired-key-carry-probe-profiled",
+        "same_artifacts": {
+          "program.o": true,
+          "metadata.json": true,
+          "program.mecb": true
+        }
+      },
+      {
+        "left": "packed-head-wide-probe-profiled",
+        "right": "packed-head-group-probe-profiled",
+        "same_artifacts": {
+          "program.o": true,
+          "metadata.json": true,
+          "program.mecb": true
+        }
+      }
+    ],
+    "discovery_orders": 8,
+    "discovery_cases": 21,
+    "all_observed_prior_wins_preserved": true,
+    "new63rd_qualified": false,
+    "complete_build": {
+      "plan_sha256": "c4374a02d46fac6b0740f8662ed8a26e810d11cad226ac5a2b6b3e572349f03a",
+      "medians": {
+        "mech-control-reference": {
+          "source": 2.1807987289503217,
+          "link": 0.03530712495557964,
+          "source_through_link": 2.2165084998123348,
+          "strip": 0.01079035410657525,
+          "source_through_strip": 2.2275165205355734
+        },
+        "mech-head-group": {
+          "source": 2.1859067922923714,
+          "link": 0.035264707868918777,
+          "source_through_link": 2.222766458056867,
+          "strip": 0.01075420854613185,
+          "source_through_strip": 2.2336945831775665
+        },
+        "roc": {
+          "source": 2.9525541465263814,
+          "link": 0.035137791419401765,
+          "source_through_link": 2.9881644377019256,
+          "strip": 0.010646645678207278,
+          "source_through_strip": 2.9989726876374334
+        },
+        "libdeflate": {
+          "source": 0.44691289542242885,
+          "link": 0.03462116629816592,
+          "source_through_link": 0.4820296666584909,
+          "strip": 0.01060695806518197,
+          "source_through_strip": 0.4929007915779948
+        }
+      },
+      "phases": {
+        "mech-control-reference": {
+          "parse": 0.7041190625,
+          "catalog": 2.4125e-05,
+          "frontend": 0.21782287449999999,
+          "artifact": 0.0068251045,
+          "encode": 0.0025322920000000002,
+          "native": 1.221851354
+        },
+        "mech-head-group": {
+          "parse": 0.703789604,
+          "catalog": 1.93955e-05,
+          "frontend": 0.2176590415,
+          "artifact": 0.006828250500000001,
+          "encode": 0.00253375,
+          "native": 1.22751475
+        }
+      },
+      "paired_ratios": {
+        "mech-control-reference": {
+          "roc": 0.7419783541677955,
+          "libdeflate": 4.602918367845133,
+          "mech-control-reference": 1.0
+        },
+        "mech-head-group": {
+          "roc": 0.7440776085215401,
+          "libdeflate": 4.610973538893683,
+          "mech-control-reference": 1.0013713722955306
+        }
+      },
+      "trials": 8,
+      "source_commit": "2b6ed311d19b24794bde87b9893301ca4e56dc1c",
+      "scope": "8 serial balanced fresh-process source-through-final-executable-link orders. Compilers and fixed support prebuilt for every actor. Every generated Mech object, complete metadata and bytecode is hash checked. Strip is separate. Bootstrap is excluded equally."
+    },
+    "next_target": "Packed eight-candidate entry guarded by cost/index bounds; preserve scalar8..15 wide-cost path and original sixteen-element wide vector threshold. Keep all original named wins."
   }
 }
