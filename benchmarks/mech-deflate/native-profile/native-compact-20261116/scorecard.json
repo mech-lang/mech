@@ -24437,5 +24437,32 @@
       "lost_previous_named_wins": [],
       "confidence_qualified": false
     }
+  },
+  "admitted_input_word_experiment": {
+    "source_commit": "baeab0027d90305fa3a9b750264acf621acf94ce",
+    "inspection_source_commit": "6062e2e65",
+    "evidence": "evidence/encoder-size-gap/admitted-input-word-study/README.md",
+    "promoted": false,
+    "qualified_selection_unchanged": true,
+    "word_text_bytes": 63292,
+    "word_peak_stack_bytes": 4736,
+    "word_source_through_link_seconds": 2.213293500477448,
+    "word_paired_build_x_roc": 0.742082323856063,
+    "word_paired_build_x_libdeflate": 4.6111244416409125,
+    "probe_text_bytes": 63756,
+    "packet_qualified_text_bytes": 63340,
+    "discovery": {
+      "cases_per_order": 21,
+      "balanced_blocks_per_case": 24,
+      "orders": 18,
+      "observed_previous_peer_wins_preserved": true,
+      "full_score_not_established": true,
+      "probe_natural_4096_x_libdeflate": [
+        1.0099703604788879,
+        1.022277890455536
+      ],
+      "packet_qualification_slows_natural_and_distribution_change": true
+    },
+    "next_target": "Prove the clamped input window from the admitted unit-stride span; remove its impossible overflow and input-extent checks."
   }
 }
