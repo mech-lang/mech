@@ -7651,132 +7651,112 @@
     "next": "Exact-choice body planning and one further omitted-body investigation"
   },
   "current_matched_build": {
-    "plan_sha256": "e765bbb09456e9cbcf2ea99d65ce2efe244ffee77506a1aacd48238949337444",
+    "plan_sha256": "94a908ba2214b238fbf20f1778cc10e0ef4cbd9ebadc6668a4cf5d9bbf07ad7a",
     "medians": {
       "mech-control-reference": {
-        "source": 2.1829561041668057,
-        "link": 0.03478358290158212,
-        "source_through_link": 2.219190417090431,
-        "strip": 0.010624208487570286,
-        "source_through_strip": 2.2300526045728475
-      },
-      "mech-source-control": {
-        "source": 2.1761137703433633,
-        "link": 0.035547458566725254,
-        "source_through_link": 2.2153328955173492,
-        "strip": 0.010688875103369355,
-        "source_through_strip": 2.2262490212451667
-      },
-      "mech-all-buckets": {
-        "source": 2.262024042196572,
-        "link": 0.03536010440438986,
-        "source_through_link": 2.2981309788301587,
-        "strip": 0.010661332868039608,
-        "source_through_strip": 2.3089660829864442
-      },
-      "mech-hybrid-u64": {
-        "source": 2.309743458405137,
-        "link": 0.03544741705991328,
-        "source_through_link": 2.349237520713359,
-        "strip": 0.010731729213148355,
-        "source_through_strip": 2.3601668330375105
+        "source": 2.1832347919698805,
+        "link": 0.03510016668587923,
+        "source_through_link": 2.2189821042120457,
+        "strip": 0.010673667071387172,
+        "source_through_strip": 2.2300781251396984
       },
       "mech-hybrid-u32": {
-        "source": 2.310892562614754,
-        "link": 0.03496954124420881,
-        "source_through_link": 2.3461396251805127,
-        "strip": 0.010612395592033863,
-        "source_through_strip": 2.3569794790819287
+        "source": 2.3151741875335574,
+        "link": 0.03490989585407078,
+        "source_through_link": 2.3510584998875856,
+        "strip": 0.01073318743146956,
+        "source_through_strip": 2.361824395833537
+      },
+      "mech-split": {
+        "source": 2.753765041474253,
+        "link": 0.04212727095000446,
+        "source_through_link": 2.7981232495512813,
+        "strip": 0.01086522894911468,
+        "source_through_strip": 2.8091741665266454
+      },
+      "mech-projected": {
+        "source": 2.838360874913633,
+        "link": 0.0400028545409441,
+        "source_through_link": 2.8803536044433713,
+        "strip": 0.01085760397836566,
+        "source_through_strip": 2.891366937663406
       },
       "roc": {
-        "source": 2.950750499498099,
-        "link": 0.03483860404230654,
-        "source_through_link": 2.986471666023135,
-        "strip": 0.010455646086484194,
-        "source_through_strip": 2.9970769791398197
+        "source": 2.953810104634613,
+        "link": 0.03481512516736984,
+        "source_through_link": 2.9890716455411166,
+        "strip": 0.0106197081040591,
+        "source_through_strip": 2.999900999944657
       },
       "libdeflate": {
-        "source": 0.45081729209050536,
-        "link": 0.03440074995160103,
-        "source_through_link": 0.4858126456383616,
-        "strip": 0.010584416799247265,
-        "source_through_strip": 0.49663983355276287
+        "source": 0.4554940205998719,
+        "link": 0.03468785434961319,
+        "source_through_link": 0.49078849935904145,
+        "strip": 0.010655916295945644,
+        "source_through_strip": 0.5015839368570596
       }
     },
     "phases": {
       "mech-control-reference": {
-        "parse": 0.70254275,
-        "catalog": 2.1146499999999998e-05,
-        "frontend": 0.2171821665,
-        "artifact": 0.0068172085,
-        "encode": 0.0025317085,
-        "native": 1.226424125
-      },
-      "mech-source-control": {
-        "parse": 0.7035062080000001,
-        "catalog": 2.1521e-05,
-        "frontend": 0.21704225,
-        "artifact": 0.006830042,
-        "encode": 0.0025324170000000003,
-        "native": 1.219718604
-      },
-      "mech-all-buckets": {
-        "parse": 0.7039659375,
-        "catalog": 2.35205e-05,
-        "frontend": 0.22125272950000002,
-        "artifact": 0.0070854165,
-        "encode": 0.002605396,
-        "native": 1.2991255205
-      },
-      "mech-hybrid-u64": {
-        "parse": 0.7056675625,
-        "catalog": 2.4396e-05,
-        "frontend": 0.22590643700000002,
-        "artifact": 0.007274021,
-        "encode": 0.0027273749999999998,
-        "native": 1.3415115415
+        "parse": 0.7034585625,
+        "catalog": 2.30835e-05,
+        "frontend": 0.216717125,
+        "artifact": 0.0068198749999999995,
+        "encode": 0.002544604,
+        "native": 1.2265237085
       },
       "mech-hybrid-u32": {
-        "parse": 0.7052447915,
-        "catalog": 2.27085e-05,
-        "frontend": 0.22397914600000002,
-        "artifact": 0.007342417,
-        "encode": 0.0026892080000000002,
-        "native": 1.343306021
+        "parse": 0.706286959,
+        "catalog": 2.24375e-05,
+        "frontend": 0.22455966700000002,
+        "artifact": 0.007357708,
+        "encode": 0.0026948335,
+        "native": 1.346256875
+      },
+      "mech-split": {
+        "parse": 0.710701479,
+        "catalog": 2.00415e-05,
+        "frontend": 0.53848125,
+        "artifact": 0.0080595415,
+        "encode": 0.003066896,
+        "native": 1.4585568334999999
+      },
+      "mech-projected": {
+        "parse": 0.7109598335,
+        "catalog": 1.78955e-05,
+        "frontend": 0.532813583,
+        "artifact": 0.008033979,
+        "encode": 0.0029681245,
+        "native": 1.5491741669999999
       }
     },
     "paired_ratios": {
       "mech-control-reference": {
-        "roc": 0.7416365275817273,
-        "libdeflate": 4.578822639855554,
+        "roc": 0.740956409228067,
+        "libdeflate": 4.551324023392484,
         "mech-control-reference": 1.0
       },
-      "mech-source-control": {
-        "roc": 0.7407789216586016,
-        "libdeflate": 4.558940380250101,
-        "mech-control-reference": 0.9979180988470142
-      },
-      "mech-all-buckets": {
-        "roc": 0.7686612095966809,
-        "libdeflate": 4.740006025424494,
-        "mech-control-reference": 1.0356697981037732
-      },
-      "mech-hybrid-u64": {
-        "roc": 0.7862046571431861,
-        "libdeflate": 4.844153745576309,
-        "mech-control-reference": 1.058548518727894
-      },
       "mech-hybrid-u32": {
-        "roc": 0.7855569337821668,
-        "libdeflate": 4.837379886399157,
-        "mech-control-reference": 1.0581647489674055
+        "roc": 0.7846070860453702,
+        "libdeflate": 4.795939270159998,
+        "mech-control-reference": 1.0587489132903367
+      },
+      "mech-split": {
+        "roc": 0.9315186009386682,
+        "libdeflate": 5.700791270973266,
+        "mech-control-reference": 1.259858489759651
+      },
+      "mech-projected": {
+        "roc": 0.962775907742923,
+        "libdeflate": 5.943183798316614,
+        "mech-control-reference": 1.293623373707786
       }
     },
-    "trials": 14,
-    "source_commit": "246ae433104745651505c1389b0bcb12f9bb4846",
-    "scope": "14 balanced serial fresh-process source-through-final-executable-link trials peractor. Fixedsupport/compilers prebuilt equally, artifacthasheschecked, strip/bootstrapseparate. Source variants independent from runtime qualification. Original default and hybrid-u32 both qualified81/63; rawbucket sole overlap loss retained; hybrid-u64 focus only.",
-    "selected_actor": "mech-control-reference",
-    "evidence": "evidence/huffman-sort-replay-study/README.md"
+    "trials": 12,
+    "source_commit": "229253fdfbc7ffab467b680f1b59ddbf6712ddb8",
+    "scope": "12 balanced serial fresh-process source-through-final-executable-link trials per actor. Fixedsupport/compilers prebuilt equally, artifacthasheschecked, strip/bootstrapseparate. Source variants independent from runtime qualification. Original default and hybrid-U32 remain fully81/63 qualified; initial split regresses; projection-order repair loses overlap in both focused orders. No new qualification or promotion.",
+    "evidence": "evidence/collector-loop-specialization-study/README.md",
+    "selected_artifacts_preserved": true
   },
   "scoped_function_replay": {
     "compiler_source": "e9538f71514225abf5ca57a9fc0acab358407167",
@@ -27744,132 +27724,112 @@
       "evidence": "evidence/encoder-size-gap/packed-word-packet-selection/result.json"
     },
     "build": {
-      "plan_sha256": "e765bbb09456e9cbcf2ea99d65ce2efe244ffee77506a1aacd48238949337444",
+      "plan_sha256": "94a908ba2214b238fbf20f1778cc10e0ef4cbd9ebadc6668a4cf5d9bbf07ad7a",
       "medians": {
         "mech-control-reference": {
-          "source": 2.1829561041668057,
-          "link": 0.03478358290158212,
-          "source_through_link": 2.219190417090431,
-          "strip": 0.010624208487570286,
-          "source_through_strip": 2.2300526045728475
-        },
-        "mech-source-control": {
-          "source": 2.1761137703433633,
-          "link": 0.035547458566725254,
-          "source_through_link": 2.2153328955173492,
-          "strip": 0.010688875103369355,
-          "source_through_strip": 2.2262490212451667
-        },
-        "mech-all-buckets": {
-          "source": 2.262024042196572,
-          "link": 0.03536010440438986,
-          "source_through_link": 2.2981309788301587,
-          "strip": 0.010661332868039608,
-          "source_through_strip": 2.3089660829864442
-        },
-        "mech-hybrid-u64": {
-          "source": 2.309743458405137,
-          "link": 0.03544741705991328,
-          "source_through_link": 2.349237520713359,
-          "strip": 0.010731729213148355,
-          "source_through_strip": 2.3601668330375105
+          "source": 2.1832347919698805,
+          "link": 0.03510016668587923,
+          "source_through_link": 2.2189821042120457,
+          "strip": 0.010673667071387172,
+          "source_through_strip": 2.2300781251396984
         },
         "mech-hybrid-u32": {
-          "source": 2.310892562614754,
-          "link": 0.03496954124420881,
-          "source_through_link": 2.3461396251805127,
-          "strip": 0.010612395592033863,
-          "source_through_strip": 2.3569794790819287
+          "source": 2.3151741875335574,
+          "link": 0.03490989585407078,
+          "source_through_link": 2.3510584998875856,
+          "strip": 0.01073318743146956,
+          "source_through_strip": 2.361824395833537
+        },
+        "mech-split": {
+          "source": 2.753765041474253,
+          "link": 0.04212727095000446,
+          "source_through_link": 2.7981232495512813,
+          "strip": 0.01086522894911468,
+          "source_through_strip": 2.8091741665266454
+        },
+        "mech-projected": {
+          "source": 2.838360874913633,
+          "link": 0.0400028545409441,
+          "source_through_link": 2.8803536044433713,
+          "strip": 0.01085760397836566,
+          "source_through_strip": 2.891366937663406
         },
         "roc": {
-          "source": 2.950750499498099,
-          "link": 0.03483860404230654,
-          "source_through_link": 2.986471666023135,
-          "strip": 0.010455646086484194,
-          "source_through_strip": 2.9970769791398197
+          "source": 2.953810104634613,
+          "link": 0.03481512516736984,
+          "source_through_link": 2.9890716455411166,
+          "strip": 0.0106197081040591,
+          "source_through_strip": 2.999900999944657
         },
         "libdeflate": {
-          "source": 0.45081729209050536,
-          "link": 0.03440074995160103,
-          "source_through_link": 0.4858126456383616,
-          "strip": 0.010584416799247265,
-          "source_through_strip": 0.49663983355276287
+          "source": 0.4554940205998719,
+          "link": 0.03468785434961319,
+          "source_through_link": 0.49078849935904145,
+          "strip": 0.010655916295945644,
+          "source_through_strip": 0.5015839368570596
         }
       },
       "phases": {
         "mech-control-reference": {
-          "parse": 0.70254275,
-          "catalog": 2.1146499999999998e-05,
-          "frontend": 0.2171821665,
-          "artifact": 0.0068172085,
-          "encode": 0.0025317085,
-          "native": 1.226424125
-        },
-        "mech-source-control": {
-          "parse": 0.7035062080000001,
-          "catalog": 2.1521e-05,
-          "frontend": 0.21704225,
-          "artifact": 0.006830042,
-          "encode": 0.0025324170000000003,
-          "native": 1.219718604
-        },
-        "mech-all-buckets": {
-          "parse": 0.7039659375,
-          "catalog": 2.35205e-05,
-          "frontend": 0.22125272950000002,
-          "artifact": 0.0070854165,
-          "encode": 0.002605396,
-          "native": 1.2991255205
-        },
-        "mech-hybrid-u64": {
-          "parse": 0.7056675625,
-          "catalog": 2.4396e-05,
-          "frontend": 0.22590643700000002,
-          "artifact": 0.007274021,
-          "encode": 0.0027273749999999998,
-          "native": 1.3415115415
+          "parse": 0.7034585625,
+          "catalog": 2.30835e-05,
+          "frontend": 0.216717125,
+          "artifact": 0.0068198749999999995,
+          "encode": 0.002544604,
+          "native": 1.2265237085
         },
         "mech-hybrid-u32": {
-          "parse": 0.7052447915,
-          "catalog": 2.27085e-05,
-          "frontend": 0.22397914600000002,
-          "artifact": 0.007342417,
-          "encode": 0.0026892080000000002,
-          "native": 1.343306021
+          "parse": 0.706286959,
+          "catalog": 2.24375e-05,
+          "frontend": 0.22455966700000002,
+          "artifact": 0.007357708,
+          "encode": 0.0026948335,
+          "native": 1.346256875
+        },
+        "mech-split": {
+          "parse": 0.710701479,
+          "catalog": 2.00415e-05,
+          "frontend": 0.53848125,
+          "artifact": 0.0080595415,
+          "encode": 0.003066896,
+          "native": 1.4585568334999999
+        },
+        "mech-projected": {
+          "parse": 0.7109598335,
+          "catalog": 1.78955e-05,
+          "frontend": 0.532813583,
+          "artifact": 0.008033979,
+          "encode": 0.0029681245,
+          "native": 1.5491741669999999
         }
       },
       "paired_ratios": {
         "mech-control-reference": {
-          "roc": 0.7416365275817273,
-          "libdeflate": 4.578822639855554,
+          "roc": 0.740956409228067,
+          "libdeflate": 4.551324023392484,
           "mech-control-reference": 1.0
         },
-        "mech-source-control": {
-          "roc": 0.7407789216586016,
-          "libdeflate": 4.558940380250101,
-          "mech-control-reference": 0.9979180988470142
-        },
-        "mech-all-buckets": {
-          "roc": 0.7686612095966809,
-          "libdeflate": 4.740006025424494,
-          "mech-control-reference": 1.0356697981037732
-        },
-        "mech-hybrid-u64": {
-          "roc": 0.7862046571431861,
-          "libdeflate": 4.844153745576309,
-          "mech-control-reference": 1.058548518727894
-        },
         "mech-hybrid-u32": {
-          "roc": 0.7855569337821668,
-          "libdeflate": 4.837379886399157,
-          "mech-control-reference": 1.0581647489674055
+          "roc": 0.7846070860453702,
+          "libdeflate": 4.795939270159998,
+          "mech-control-reference": 1.0587489132903367
+        },
+        "mech-split": {
+          "roc": 0.9315186009386682,
+          "libdeflate": 5.700791270973266,
+          "mech-control-reference": 1.259858489759651
+        },
+        "mech-projected": {
+          "roc": 0.962775907742923,
+          "libdeflate": 5.943183798316614,
+          "mech-control-reference": 1.293623373707786
         }
       },
-      "trials": 14,
-      "source_commit": "246ae433104745651505c1389b0bcb12f9bb4846",
-      "scope": "14 balanced serial fresh-process source-through-final-executable-link trials peractor. Fixedsupport/compilers prebuilt equally, artifacthasheschecked, strip/bootstrapseparate. Source variants independent from runtime qualification. Original default and hybrid-u32 both qualified81/63; rawbucket sole overlap loss retained; hybrid-u64 focus only.",
-      "selected_actor": "mech-control-reference",
-      "evidence": "evidence/huffman-sort-replay-study/README.md"
+      "trials": 12,
+      "source_commit": "229253fdfbc7ffab467b680f1b59ddbf6712ddb8",
+      "scope": "12 balanced serial fresh-process source-through-final-executable-link trials per actor. Fixedsupport/compilers prebuilt equally, artifacthasheschecked, strip/bootstrapseparate. Source variants independent from runtime qualification. Original default and hybrid-U32 remain fully81/63 qualified; initial split regresses; projection-order repair loses overlap in both focused orders. No new qualification or promotion.",
+      "evidence": "evidence/collector-loop-specialization-study/README.md",
+      "selected_artifacts_preserved": true
     },
     "evidence": "evidence/encoder-size-gap/packed-word-packet-selection",
     "build_at_selection": {
@@ -29395,5 +29355,178 @@
     "runnable_executable_checks": 567,
     "selected": false,
     "reason": "Qualified runtime alternative; default63804B source remains unchanged. No64th C win established."
+  },
+  "previous_matched_build_before_collector_split": {
+    "plan_sha256": "e765bbb09456e9cbcf2ea99d65ce2efe244ffee77506a1aacd48238949337444",
+    "medians": {
+      "mech-control-reference": {
+        "source": 2.1829561041668057,
+        "link": 0.03478358290158212,
+        "source_through_link": 2.219190417090431,
+        "strip": 0.010624208487570286,
+        "source_through_strip": 2.2300526045728475
+      },
+      "mech-source-control": {
+        "source": 2.1761137703433633,
+        "link": 0.035547458566725254,
+        "source_through_link": 2.2153328955173492,
+        "strip": 0.010688875103369355,
+        "source_through_strip": 2.2262490212451667
+      },
+      "mech-all-buckets": {
+        "source": 2.262024042196572,
+        "link": 0.03536010440438986,
+        "source_through_link": 2.2981309788301587,
+        "strip": 0.010661332868039608,
+        "source_through_strip": 2.3089660829864442
+      },
+      "mech-hybrid-u64": {
+        "source": 2.309743458405137,
+        "link": 0.03544741705991328,
+        "source_through_link": 2.349237520713359,
+        "strip": 0.010731729213148355,
+        "source_through_strip": 2.3601668330375105
+      },
+      "mech-hybrid-u32": {
+        "source": 2.310892562614754,
+        "link": 0.03496954124420881,
+        "source_through_link": 2.3461396251805127,
+        "strip": 0.010612395592033863,
+        "source_through_strip": 2.3569794790819287
+      },
+      "roc": {
+        "source": 2.950750499498099,
+        "link": 0.03483860404230654,
+        "source_through_link": 2.986471666023135,
+        "strip": 0.010455646086484194,
+        "source_through_strip": 2.9970769791398197
+      },
+      "libdeflate": {
+        "source": 0.45081729209050536,
+        "link": 0.03440074995160103,
+        "source_through_link": 0.4858126456383616,
+        "strip": 0.010584416799247265,
+        "source_through_strip": 0.49663983355276287
+      }
+    },
+    "phases": {
+      "mech-control-reference": {
+        "parse": 0.70254275,
+        "catalog": 2.1146499999999998e-05,
+        "frontend": 0.2171821665,
+        "artifact": 0.0068172085,
+        "encode": 0.0025317085,
+        "native": 1.226424125
+      },
+      "mech-source-control": {
+        "parse": 0.7035062080000001,
+        "catalog": 2.1521e-05,
+        "frontend": 0.21704225,
+        "artifact": 0.006830042,
+        "encode": 0.0025324170000000003,
+        "native": 1.219718604
+      },
+      "mech-all-buckets": {
+        "parse": 0.7039659375,
+        "catalog": 2.35205e-05,
+        "frontend": 0.22125272950000002,
+        "artifact": 0.0070854165,
+        "encode": 0.002605396,
+        "native": 1.2991255205
+      },
+      "mech-hybrid-u64": {
+        "parse": 0.7056675625,
+        "catalog": 2.4396e-05,
+        "frontend": 0.22590643700000002,
+        "artifact": 0.007274021,
+        "encode": 0.0027273749999999998,
+        "native": 1.3415115415
+      },
+      "mech-hybrid-u32": {
+        "parse": 0.7052447915,
+        "catalog": 2.27085e-05,
+        "frontend": 0.22397914600000002,
+        "artifact": 0.007342417,
+        "encode": 0.0026892080000000002,
+        "native": 1.343306021
+      }
+    },
+    "paired_ratios": {
+      "mech-control-reference": {
+        "roc": 0.7416365275817273,
+        "libdeflate": 4.578822639855554,
+        "mech-control-reference": 1.0
+      },
+      "mech-source-control": {
+        "roc": 0.7407789216586016,
+        "libdeflate": 4.558940380250101,
+        "mech-control-reference": 0.9979180988470142
+      },
+      "mech-all-buckets": {
+        "roc": 0.7686612095966809,
+        "libdeflate": 4.740006025424494,
+        "mech-control-reference": 1.0356697981037732
+      },
+      "mech-hybrid-u64": {
+        "roc": 0.7862046571431861,
+        "libdeflate": 4.844153745576309,
+        "mech-control-reference": 1.058548518727894
+      },
+      "mech-hybrid-u32": {
+        "roc": 0.7855569337821668,
+        "libdeflate": 4.837379886399157,
+        "mech-control-reference": 1.0581647489674055
+      }
+    },
+    "trials": 14,
+    "source_commit": "246ae433104745651505c1389b0bcb12f9bb4846",
+    "scope": "14 balanced serial fresh-process source-through-final-executable-link trials peractor. Fixedsupport/compilers prebuilt equally, artifacthasheschecked, strip/bootstrapseparate. Source variants independent from runtime qualification. Original default and hybrid-u32 both qualified81/63; rawbucket sole overlap loss retained; hybrid-u64 focus only.",
+    "selected_actor": "mech-control-reference",
+    "evidence": "evidence/huffman-sort-replay-study/README.md"
+  },
+  "collector_loop_source_experiment": {
+    "evidence": "evidence/collector-loop-specialization-study/README.md",
+    "selected": false,
+    "original_default_source_unchanged": true,
+    "source_generator": "evidence/collector-loop-specialization-study/generate.py",
+    "native_reproducer": "evidence/collector-loop-specialization-study/reproduce.py",
+    "native_recipes": "evidence/collector-loop-specialization-study/recipes.json",
+    "repaired_source_lines": 2754,
+    "repaired_encoder_text_bytes": 77988,
+    "repaired_peak_stack_bytes": 5008,
+    "repaired_source_through_final_link_seconds": 2.8803536044433713,
+    "repaired_paired_build_x_Roc": 0.962775907742923,
+    "repaired_paired_build_x_C": 5.943183798316614,
+    "focused_orders": 2,
+    "focused_cases": 21,
+    "focused_blocks": 24,
+    "focused_repaired_Roc_wins": [
+      21,
+      21
+    ],
+    "focused_repaired_C_wins": [
+      8,
+      8
+    ],
+    "required_C_win_lost": [
+      "320-overlap"
+    ],
+    "full81_qualified": false,
+    "default_still_Roc81_C63": true,
+    "new_C_win": false,
+    "public_native_replays": 8,
+    "verification": {
+      "passed": true,
+      "public_native_replays": 8,
+      "all_saved_calls_checked": 717696,
+      "zero_duration_individual_samples_retained": 114715,
+      "balanced_complete_build_orders": 12,
+      "deployment_executions": 486,
+      "selected_default_changed": false,
+      "new_qualified_C_win": false,
+      "next_C_target": 64,
+      "ultimate_C_target": 81
+    },
+    "next": "Broader cross-input work: map and measure bulk matchfinder buffer maintenance before choosing a representation/vectorization or ownership repair. Preserve this source and its small large-random gain for later combinations."
   }
 }
