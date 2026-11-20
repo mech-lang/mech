@@ -6,7 +6,7 @@ The guarded histogram takes **2.44–2.73% less time on random 1 MiB** than its 
 
 Qualification uses 81 cases, forward96 and pooled reverse288 blocks per case. The original reverse96 had two uncertain Roc comparisons during large timing swings; the complete reverse192 repeat independently supports all 81/62 wins, and all 288 reverse blocks remain included in the pooled checks. Every prior named win is checked explicitly. All 162 output/inflation/alias observations, six failures, twelve injected failures, twelve recoveries and 4,864 B peak stack pass. Normal and checked allocation emission match exactly.
 
-Latest complete-build cohort on the **Apple M1**: the current compiler reproduces the qualified encoder exactly and measures **2.211354 s Mech, 2.984581 s Roc and 0.480780 s C**, sixteen balanced fresh-process trials with final executable linking and equal prebuilt compilers/support. Paired qualified-control ratios are **0.741370× Roc / 4.606478× C**. Stripped executables remain 276,072 B / 191,912 B / 155,752 B. Bootstrap and strip are separate; no small compilation-time gain is claimed. [Current complete-build evidence](evidence/encoder-size-gap/fixed-read-window-study/README.md).
+Latest complete-build cohort on the **Apple M1**: the current compiler reproduces the qualified encoder exactly and measures **2.209519 s Mech, 2.984085 s Roc and 0.481338 s C**, fourteen balanced fresh-process trials with final executable linking and equal prebuilt compilers/support. Paired qualified-control ratios are **0.740214× Roc / 4.595235× C**. Stripped executables remain 276,072 B / 191,912 B / 155,752 B. Bootstrap and strip are separate; no small compilation-time gain is claimed. [Current complete-build evidence](evidence/encoder-size-gap/selected-packet-phase-study/README.md).
 
 The histogram source is committed at **7ea6c80d8db874e10392bdb2a3d38e6205ca876d**. Its new entry guard removes four per-byte bounds checks and retains the U32 increment check; a guard miss executes the original checked code. The two relevant repository tests pass 11,760 native calls. The original 2,719-line Mech source and canonical bytecode remain unchanged, with no LLVM dependency added. Rebuild with `--variant m1-bounded-byte-histogram`.
 
@@ -14,7 +14,13 @@ Both earlier mismatch finalists and all adverse observations remain available in
 
 The entire GPU suite is not claimed. Its relevant histogram and earlier wide-equality tests are recorded separately, and the existing missing archived allocator continues to block the repository unsafe audit. [Review and continuation handoff](REVIEW.md).
 
-## Current fixed-read window experiments
+## Current packet phase-selection experiments
+
+Source **`3fe63cb1d`** allows exact phase selection for the existing packet-load qualifier. Selecting nine complete routine families recovers **320 B** of the original 416 B saving: word **62,844 B**, probe **63,116 B**, both with 4,736 B peak stack. All prior peer wins observed in fourteen complete twenty-one-case discovery orders survive; no full score or win #63 is established. The current all-phase probe still costs 8.80–9.26% on distribution change, while the narrower selection costs 0.11–0.45% in the probe orders and 0.20–0.63% in the word orders. The smaller 62,796 B non-scorer candidate retains its 5.86–6.20% penalty for repair.
+
+The selected-routine word builds through final link in **2.213414 s**, paired **0.741357× Roc / 4.606720× C**. All six new candidates pass outputs/errors, twelve failures/recoveries, stack gates and normal/checked artifact replay. The qualified 63,612 B / 81 Roc / 62 C result is unchanged. Next, combine the word scorer-only improvement with the nine-family saving and isolate the four extra families responsible for the remaining 48 B tradeoff. [All source, fourteen raw orders, exact-mode checks, full build cohort and reproduction](evidence/encoder-size-gap/selected-packet-phase-study/README.md).
+
+## Preceding fixed-read window experiments
 
 Source **`2dcf8babd`** reuses the selected `window >= 5` edge to admit a four-byte read at `position + 1`, without a new runtime guard or cloned body. Word is **63,164 B**, probe **63,436 B**, and packet-qualified **63,020 B**, all with 4,736 B stack. The probe takes 0.13–0.38% less natural-4-KiB time and 0.44–0.50% less random-1-MiB time than its matching clamped-window base. Natural 4 KiB remains **1.010619× / 1.017073× C**. Four historical carry/load/hash combinations retain the panel wins but earn no additional win; hash narrowing slows random 1 MiB by about 4.1%. All fourteen complete twenty-one-case discovery orders remain available. Full 81-case confidence qualification is outstanding.
 

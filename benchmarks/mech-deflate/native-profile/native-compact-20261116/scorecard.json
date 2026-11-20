@@ -24532,5 +24532,26 @@
     "probe_paired_build_x_roc": 0.741816205345686,
     "probe_paired_build_x_libdeflate": 4.587254416252321,
     "next_target": "Isolate packet-load qualification by phase to repair its hot-scorer slowdown while retaining cold-routine size savings."
+  },
+  "selected_packet_phase_experiment": {
+    "source_commit": "3fe63cb1d357006835f0715c5537ec6ad867ffbf",
+    "evidence": "evidence/encoder-size-gap/selected-packet-phase-study/README.md",
+    "promoted": false,
+    "qualified_selection_unchanged": true,
+    "cold_word_text_bytes": 62844,
+    "cold_probe_text_bytes": 63116,
+    "other_word_text_bytes": 62796,
+    "peak_stack_bytes": 4736,
+    "discovery": {
+      "orders": 14,
+      "cases_per_order": 21,
+      "balanced_blocks_per_case": 24,
+      "all_observed_previous_wins_preserved": true,
+      "full_score_not_established": true
+    },
+    "word_source_through_final_link_seconds": 2.213414437836036,
+    "word_paired_build_x_roc": 0.7413569030111302,
+    "word_paired_build_x_libdeflate": 4.606719745814001,
+    "next_target": "Combine word scorer-only improvement with the nine-family320B saving; isolate extra475/3956/4879/4673 to repair the additional48B saving."
   }
 }
