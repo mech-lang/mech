@@ -17,7 +17,7 @@ fn body(module: &JITModule, mode: u8) -> (Context, BTreeMap<Value, (Inst, usize)
     let readable = b.create_block();
     let update = b.create_block();
     let done = b.create_block();
-    let errors = [(); 4].map(|_| b.create_block());
+    let errors = [(); 5].map(|_| b.create_block());
     b.append_block_params_for_function_params(entry);
     let cursor = b.append_block_param(header, types::I64);
     let count = b.append_block_param(header, types::I64);
@@ -78,6 +78,24 @@ fn body(module: &JITModule, mode: u8) -> (Context, BTreeMap<Value, (Inst, usize)
         let delta = b.ins().isub(cursor, cap);
         b.ins().iadd(cap, delta)
     };
+    if mode >= 5 {
+        let wide = b.create_block();
+        let finish = b.create_block();
+        let enough = b
+            .ins()
+            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, width, 5);
+        b.ins().brif(enough, wide, &[], finish, &[]);
+        b.switch_to_block(wide);
+        let length_fits = b
+            .ins()
+            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, length, 3);
+        let after_word = b.ins().iadd_imm(length, -3);
+        let limit = b.ins().select(length_fits, after_word, zero);
+        let index = b.ins().iadd_imm(base, if mode == 6 { 2 } else { 1 });
+        let fits = b.ins().icmp(IntCC::UnsignedLessThan, index, limit);
+        b.ins().brif(fits, finish, &[], errors[4], &[]);
+        b.switch_to_block(finish);
+    }
     let stop = b.ins().iadd(base, saved.unwrap_or(width));
     let no_overflow = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, stop, base);
     b.ins().brif(no_overflow, extent, &[], errors[1], &[]);
@@ -125,12 +143,14 @@ fn compile(mode: u8) -> (JITModule, Run, Run) {
     fast.func = old.func.clone();
     let spans = fold(&mut fast, &loads, &BTreeSet::from([2]), true);
     assert_eq!(spans.len(), 1);
-    assert_eq!(spans[0].checks_removed, if mode == 0 { 3 } else { 1 });
-    assert_eq!(
-        spans[0].window_checks_removed,
-        if mode == 0 { 2 } else { 0 }
-    );
-    if mode == 0 {
+    let windows = match mode {
+        0 | 6 => 2,
+        5 => 3,
+        _ => 0,
+    };
+    assert_eq!(spans[0].checks_removed, windows + 1);
+    assert_eq!(spans[0].window_checks_removed, windows);
+    if windows != 0 {
         let branches = |ctx: &Context| {
             ctx.func
                 .layout
@@ -143,9 +163,9 @@ fn compile(mode: u8) -> (JITModule, Run, Run) {
                 })
                 .count()
         };
-        assert_eq!(branches(&old) - branches(&fast), 3);
+        assert_eq!(branches(&old) - branches(&fast), windows + 1);
     }
-    if mode != 0 {
+    if windows == 0 {
         let mut plain = module.make_context();
         plain.func = old.func.clone();
         assert_eq!(fold(&mut plain, &loads, &BTreeSet::from([2]), false), spans);
@@ -159,7 +179,21 @@ fn compile(mode: u8) -> (JITModule, Run, Run) {
 
 #[test]
 fn admitted_clamped_window_preserves_errors_effects_and_full_word_boundaries() {
-    let (_module, old, guarded) = compile(0);
+    check_boundaries(0);
+}
+
+#[test]
+fn clamped_floor_admits_the_packed_word_read_with_saturated_length_limits() {
+    check_boundaries(5);
+}
+
+#[test]
+fn next_byte_past_the_admitted_word_keeps_its_bounds_error() {
+    check_boundaries(6);
+}
+
+fn check_boundaries(mode: u8) {
+    let (_module, old, guarded) = compile(mode);
     let mut calls = 0;
     for begin in [0, 1, 7, 8, 15, u64::MAX - 1, u64::MAX] {
         for end in [0, 1, 8, 16, u64::MAX] {
