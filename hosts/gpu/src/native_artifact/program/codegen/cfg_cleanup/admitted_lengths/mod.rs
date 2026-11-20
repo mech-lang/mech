@@ -71,11 +71,19 @@ mod tests;
 pub(in crate::native_artifact) fn fold_index_ranges(
     f: &mut Function,
     floors: &BTreeMap<Value, u64>,
+    bitwise: bool,
 ) -> (usize, usize) {
     use super::word_ranges::Facts;
     let literals = fold(f, floors);
+    if !within_budget(f) {
+        return (literals, 0);
+    }
     let cfg = cranelift_codegen::flowgraph::ControlFlowGraph::with_function(f);
-    let mut ranges = Facts::across_edges(f, &cfg, None);
+    let mut ranges = if bitwise {
+        Facts::bitwise_edges(f, &cfg)
+    } else {
+        Facts::across_edges(f, &cfg, None)
+    };
     let mut changes = Vec::new();
     for block in f.layout.blocks() {
         let Some(inst) = f.layout.last_inst(block) else {
@@ -147,20 +155,17 @@ fn index_maximum(
 pub(in crate::native_artifact) fn required_index_floors(
     f: &Function,
     lengths: &std::collections::BTreeSet<Value>,
+    bitwise: bool,
 ) -> BTreeMap<Value, u64> {
-    // Bound speculative work even for unusually large generated functions.
-    if f.layout.blocks().take(4097).count() > 4096
-        || f.layout
-            .blocks()
-            .flat_map(|b| f.layout.block_insts(b))
-            .take(32769)
-            .count()
-            > 32768
-    {
+    if !within_budget(f) {
         return BTreeMap::new();
     }
     let cfg = cranelift_codegen::flowgraph::ControlFlowGraph::with_function(f);
-    let mut facts = super::word_ranges::Facts::across_edges(f, &cfg, None);
+    let mut facts = if bitwise {
+        super::word_ranges::Facts::bitwise_edges(f, &cfg)
+    } else {
+        super::word_ranges::Facts::across_edges(f, &cfg, None)
+    };
     let mut floors = BTreeMap::<Value, u64>::new();
     for block in f.layout.blocks() {
         let Some(inst) = f.layout.last_inst(block) else {
@@ -204,4 +209,14 @@ pub(in crate::native_artifact) fn required_index_floors(
         }
     }
     floors
+}
+
+fn within_budget(f: &Function) -> bool {
+    f.layout.blocks().take(4097).count() <= 4096
+        && f.layout
+            .blocks()
+            .flat_map(|block| f.layout.block_insts(block))
+            .take(32769)
+            .count()
+            <= 32768
 }

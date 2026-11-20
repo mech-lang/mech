@@ -31,12 +31,25 @@ enum Case {
     JoinedUnknown,
     JoinedWrap,
     DeadFailureUse,
+    BitwiseOr,
+    BitwiseOrJoined,
+    BitwiseOrRoundTrip,
+    BitwiseOrUnknown,
+    BitwiseOrSigned,
 }
 
 type Run = unsafe extern "C" fn(u64, u64, u64) -> u64;
 
 fn compile(case: Case, optimize: bool) -> (JITModule, Run) {
     use IntCC::*;
+    let bitwise = matches!(
+        case,
+        Case::BitwiseOr
+            | Case::BitwiseOrJoined
+            | Case::BitwiseOrRoundTrip
+            | Case::BitwiseOrUnknown
+            | Case::BitwiseOrSigned
+    );
     let mut module = JITModule::new(
         JITBuilder::with_flags(
             &[("opt_level", "speed"), ("regalloc_checker", "true")],
@@ -77,6 +90,46 @@ fn compile(case: Case, optimize: bool) -> (JITModule, Run) {
         let current = b.block_params(admitted)[0];
         length = current;
         let check = match case {
+            Case::BitwiseOr
+            | Case::BitwiseOrJoined
+            | Case::BitwiseOrRoundTrip
+            | Case::BitwiseOrUnknown
+            | Case::BitwiseOrSigned => {
+                let left = b.ins().band_imm(other, 6);
+                let right = if matches!(case, Case::BitwiseOrUnknown) {
+                    arithmetic_ok
+                } else {
+                    b.ins().band_imm(other, 1)
+                };
+                let mut index = b.ins().bor(left, right);
+                if matches!(case, Case::BitwiseOrJoined) {
+                    let a = b.create_block();
+                    let c = b.create_block();
+                    let join = b.create_block();
+                    b.append_block_param(join, types::I64);
+                    b.ins().brif(arithmetic_ok, a, &[], c, &[]);
+                    b.switch_to_block(a);
+                    b.ins().jump(join, &[index.into()]);
+                    b.switch_to_block(c);
+                    let seven = b.ins().iconst(types::I64, 7);
+                    b.ins().jump(join, &[seven.into()]);
+                    b.switch_to_block(join);
+                    index = b.block_params(join)[0];
+                }
+                if matches!(case, Case::BitwiseOrRoundTrip) {
+                    let one_based = b.ins().iadd_imm(index, 1);
+                    index = b.ins().iadd_imm(one_based, -1);
+                }
+                b.ins().icmp(
+                    if matches!(case, Case::BitwiseOrSigned) {
+                        SignedLessThan
+                    } else {
+                        UnsignedLessThan
+                    },
+                    index,
+                    current,
+                )
+            }
             Case::Joined | Case::JoinedRoundTrip | Case::JoinedUnknown | Case::JoinedWrap => {
                 let left = b.create_block();
                 let right = b.create_block();
@@ -189,10 +242,27 @@ fn compile(case: Case, optimize: bool) -> (JITModule, Run) {
     }
     if optimize {
         let original = context.func.display().to_string();
-        let derived =
-            required_index_floors(&context.func, &std::collections::BTreeSet::from([length]));
+        let derived = required_index_floors(
+            &context.func,
+            &std::collections::BTreeSet::from([length]),
+            bitwise,
+        );
         assert_eq!(context.func.display().to_string(), original);
+        if bitwise {
+            assert!(
+                required_index_floors(
+                    &context.func,
+                    &std::collections::BTreeSet::from([length]),
+                    false
+                )
+                .is_empty()
+            );
+        }
         match case {
+            Case::BitwiseOr | Case::BitwiseOrJoined | Case::BitwiseOrRoundTrip => {
+                assert_eq!(derived.get(&length), Some(&8))
+            }
+            Case::BitwiseOrUnknown | Case::BitwiseOrSigned => assert!(derived.is_empty()),
             Case::Joined | Case::JoinedRoundTrip => assert_eq!(derived.get(&length), Some(&7)),
             Case::JoinedUnknown | Case::JoinedWrap => assert!(derived.is_empty()),
             _ => {}
@@ -200,7 +270,12 @@ fn compile(case: Case, optimize: bool) -> (JITModule, Run) {
         let floors = BTreeMap::from([(length, 8)]);
         if matches!(
             case,
-            Case::DeadFailureUse
+            Case::BitwiseOr
+                | Case::BitwiseOrJoined
+                | Case::BitwiseOrRoundTrip
+                | Case::BitwiseOrUnknown
+                | Case::BitwiseOrSigned
+                | Case::DeadFailureUse
                 | Case::Joined
                 | Case::JoinedRoundTrip
                 | Case::JoinedUnknown
@@ -216,13 +291,16 @@ fn compile(case: Case, optimize: bool) -> (JITModule, Run) {
                 | Case::MaskedDifferent
                 | Case::MaskedChanged
         ) {
-            let (literals, ranged) = fold_index_ranges(&mut context.func, &floors);
+            let (literals, ranged) = fold_index_ranges(&mut context.func, &floors, bitwise);
             assert_eq!(literals, 0, "{case:?}");
             assert_eq!(
                 ranged,
                 usize::from(matches!(
                     case,
-                    Case::DeadFailureUse
+                    Case::BitwiseOr
+                        | Case::BitwiseOrJoined
+                        | Case::BitwiseOrRoundTrip
+                        | Case::DeadFailureUse
                         | Case::Joined
                         | Case::JoinedRoundTrip
                         | Case::Masked
@@ -290,6 +368,11 @@ fn admitted_unsigned_length_retains_fallback_and_selected_values() {
         Case::JoinedUnknown,
         Case::JoinedWrap,
         Case::DeadFailureUse,
+        Case::BitwiseOr,
+        Case::BitwiseOrJoined,
+        Case::BitwiseOrRoundTrip,
+        Case::BitwiseOrUnknown,
+        Case::BitwiseOrSigned,
     ] {
         let (_old, original) = compile(case, false);
         let (_new, optimized) = compile(case, true);
@@ -305,7 +388,7 @@ fn admitted_unsigned_length_retains_fallback_and_selected_values() {
             u64::MAX,
         ] {
             for other in [0, 1, 6, 7, 8, 9, i64::MIN as u64, u64::MAX] {
-                for arithmetic_ok in [0, 1] {
+                for arithmetic_ok in [0, 1, 8, u64::MAX] {
                     assert_eq!(
                         unsafe { original(current, other, arithmetic_ok) },
                         unsafe { optimized(current, other, arithmetic_ok) },
