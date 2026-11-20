@@ -4,6 +4,7 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{Linkage, Module, default_libcall_names};
 mod fixture;
+mod window_tests;
 type Run = unsafe extern "C" fn(u64, *const u64, *mut u64) -> u64;
 
 fn compile(normalized: bool, word_floor: bool) -> (JITModule, Run, Run) {
@@ -14,7 +15,7 @@ fn compile(normalized: bool, word_floor: bool) -> (JITModule, Run, Run) {
         )
         .unwrap(),
     );
-    let (mut old, loads) = fixture::body(&module, 0);
+    let (old, loads) = fixture::body(&module, 0);
     let mut fast = module.make_context();
     fast.func = old.func.clone();
     if normalized {
@@ -37,7 +38,7 @@ fn compile(normalized: bool, word_floor: bool) -> (JITModule, Run, Run) {
             (1, 1)
         );
     }
-    let mut spans = fold(&mut fast, &loads, &BTreeSet::from([2]));
+    let mut spans = fold(&mut fast, &loads, &BTreeSet::from([2]), false);
     let extra = if word_floor {
         let extra = admit_word_length(&mut fast.func, &loads, &mut spans);
         assert!(extra > 0);
@@ -56,6 +57,15 @@ fn compile(normalized: bool, word_floor: bool) -> (JITModule, Run, Run) {
             checks_removed: (if normalized { 2 } else { 1 }) + extra,
         }]
     );
+    finish(module, old, fast, spans)
+}
+
+fn finish(
+    mut module: JITModule,
+    mut old: Context,
+    mut fast: Context,
+    spans: Vec<Admission>,
+) -> (JITModule, Run, Run) {
     let mut functions = Vec::new();
     for (name, context) in [("old", &mut old), ("fast", &mut fast)] {
         context.verify(module.isa()).unwrap();
@@ -115,6 +125,12 @@ fn compile(normalized: bool, word_floor: bool) -> (JITModule, Run, Run) {
     (module, old, guarded)
 }
 
+fn invoke(run: Run, packet: &[u64; 5], output: &mut [u64; 4]) -> u64 {
+    // Finalized fixtures use this exact packet/output ABI; their live arrays
+    // and any byte storage named by the fixture remain valid for the call.
+    unsafe { run(0, packet.as_ptr(), output.as_mut_ptr()) }
+}
+
 fn oracle(bytes: &[u8], mut at: u64, end: u64, budget: u64, marker: u64) -> (u64, [u64; 4]) {
     let mut output = [
         0,
@@ -159,8 +175,7 @@ fn check(normalized: bool, word_floor: bool) {
                             for run in [old, guarded] {
                                 let mut output = [77, 88, 99, marker];
                                 // The live input extent and exclusive four-word output match the packet.
-                                let status =
-                                    unsafe { run(0, packet.as_ptr(), output.as_mut_ptr()) };
+                                let status = invoke(run, &packet, &mut output);
                                 assert_eq!(
                                     (status, output),
                                     expected,
@@ -198,7 +213,7 @@ fn admitted_span_proof_misses_preserve_graph_and_empty_contract() {
     for mode in 1..=8 {
         let (mut ctx, loads) = fixture::body(&module, mode);
         let before = ctx.func.display().to_string();
-        let mut spans = fold(&mut ctx, &loads, &BTreeSet::from([2]));
+        let mut spans = fold(&mut ctx, &loads, &BTreeSet::from([2]), false);
         assert!(spans.is_empty(), "mode {mode}");
         assert_eq!(admit_word_length(&mut ctx.func, &loads, &mut spans), 0);
         assert_eq!(ctx.func.display().to_string(), before, "mode {mode}");
