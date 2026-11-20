@@ -1,0 +1,83 @@
+diff --git a/hosts/gpu/src/native_artifact/program/codegen/numeric_compact.rs b/hosts/gpu/src/native_artifact/program/codegen/numeric_compact.rs
+index 891359613..be529c468 100644
+--- a/hosts/gpu/src/native_artifact/program/codegen/numeric_compact.rs
++++ b/hosts/gpu/src/native_artifact/program/codegen/numeric_compact.rs
+@@ -308,6 +308,34 @@ pub(in crate::native_artifact) fn emit(
+             .iter()
+             .flat_map(|version| version.sites.iter().map(move |&site| (Some(version), site))),
+     );
++    let source_sites = std::env::var_os("MECH_INSPECT_PHASE_SOURCE_SITES");
++    if let Some(folder) = &source_sites {
++        let folder = std::path::Path::new(folder);
++        std::fs::create_dir_all(folder).map_err(backend)?;
++        let source = proof
++            .sites
++            .iter()
++            .map(|&site| {
++                let block = &code.blocks()[site];
++                serde_json::json!({
++                    "site": site,
++                    "action": format!("{:?}", block.action()),
++                    "terminator": format!("{:?}", block.terminator()),
++                })
++            })
++            .collect::<Vec<_>>();
++        let name = format!(
++            "source-{}-vector-{}-no-growth-{}.json",
++            region.tail.header(),
++            vectors.is_some(),
++            no_growth.is_some()
++        );
++        std::fs::write(
++            folder.join(name),
++            serde_json::to_vec_pretty(&source).map_err(backend)?,
++        )
++        .map_err(backend)?;
++    }
+     let mut read_snapshots = BTreeMap::new();
+     for (version, site) in emitted_sites {
+         let complete_pack = |pack: &super::numeric_read_packs::Pack| {
+@@ -344,6 +372,11 @@ pub(in crate::native_artifact) fn emit(
+         };
+         let traversal = version.map_or(&traversal, |v| &v.facts);
+         b.switch_to_block(target(site as u32));
++        if source_sites.is_some() {
++            b.set_srcloc(cranelift_codegen::ir::SourceLoc::new(
++                u32::try_from(site).map_err(backend)?,
++            ));
++        }
+         if matches!(proof.action(site), Some(Operation::Fallback)) {
+             boundaries.insert(target(site as u32));
+             if let Some(count) = native.handoff(b, &words, site)? {
+diff --git a/hosts/gpu/src/native_artifact/program/compact/phase_function.rs b/hosts/gpu/src/native_artifact/program/compact/phase_function.rs
+index 58e5635c1..99ee864f9 100644
+--- a/hosts/gpu/src/native_artifact/program/compact/phase_function.rs
++++ b/hosts/gpu/src/native_artifact/program/compact/phase_function.rs
+@@ -346,7 +346,26 @@ impl Details {
+                 .vcode
+                 .as_ref()
+                 .ok_or_else(|| backend("phase VCode diagnostic was not emitted"))?;
+-            std::fs::write(path, text).map_err(backend)?;
++            std::fs::write(&path, text).map_err(backend)?;
++            if std::env::var_os("MECH_INSPECT_PHASE_SOURCE_SITES").is_some() {
++                let locations = compiled
++                    .buffer
++                    .get_srclocs_sorted()
++                    .iter()
++                    .map(|value| {
++                        serde_json::json!({
++                            "start": value.start,
++                            "end": value.end,
++                            "site": value.loc.bits(),
++                        })
++                    })
++                    .collect::<Vec<_>>();
++                std::fs::write(
++                    path.with_extension("source-ranges.json"),
++                    serde_json::to_vec_pretty(&locations).map_err(backend)?,
++                )
++                .map_err(backend)?;
++            }
+         }
+         let mut summary = (self.finish_report)(compiled, &self.entry_bounds)?;
+         if let Some(words) = &self.packed_input {

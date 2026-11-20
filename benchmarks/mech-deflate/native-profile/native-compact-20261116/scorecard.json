@@ -29528,5 +29528,16 @@
       "ultimate_C_target": 81
     },
     "next": "Broader cross-input work: map and measure bulk matchfinder buffer maintenance before choosing a representation/vectorization or ownership repair. Preserve this source and its small large-random gain for later combinations."
+  },
+  "matcher_source_attribution_diagnostic": {
+    "evidence": "evidence/matcher-source-attribution/README.md",
+    "normal_compiler_source_changed": false,
+    "optional_source_patch": true,
+    "selected_default_changed": false,
+    "exact_control_recipes": 2,
+    "new_C_win": false,
+    "native_diagnostic": "162 successes, six errors, 12 recoveries, 4,704-byte stack; normal/checked equality for all three artifacts. Separate 6,232-byte annotated body.",
+    "scope": "Canonical source attribution and actual bulk-kernel census. Annotated diagnostic differs from shipping native code and cannot inherit its timings. Mech/C semantic work alignment remains pending.",
+    "next": "Test equivalent lazy adaptive-block predicates as a separate source alternative; preserve the earlier collector candidates for combinations."
   }
 }
