@@ -51,7 +51,7 @@ fn same(f: &Function, a: Value, b: Value) -> bool {
 }
 // Follow only pure copies/constant additions and unanimous block arguments.
 // The loop cursor is an explicit leaf, so backedges cannot make this cyclic.
-fn offset(
+pub(super) fn offset(
     f: &Function,
     cfg: &ControlFlowGraph,
     value: Value,
@@ -114,7 +114,7 @@ fn offset(
     active.remove(&value);
     result
 }
-fn fixed_word(
+pub(super) fn fixed_word(
     f: &Function,
     cfg: &ControlFlowGraph,
     loads: &BTreeMap<Value, (Inst, usize)>,
