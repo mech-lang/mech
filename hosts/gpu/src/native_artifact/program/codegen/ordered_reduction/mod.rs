@@ -9,6 +9,8 @@ mod cost;
 mod emit;
 mod escape;
 mod normalize;
+mod packed_key;
+mod vector_loop;
 mod winner;
 use normalize::{Cost, Item, Normalize};
 
@@ -199,3 +201,6 @@ mod tests;
 
 #[cfg(all(test, target_arch = "aarch64"))]
 mod winner_tests;
+
+#[cfg(all(test, target_arch = "aarch64", target_endian = "little"))]
+mod packed_tests;
