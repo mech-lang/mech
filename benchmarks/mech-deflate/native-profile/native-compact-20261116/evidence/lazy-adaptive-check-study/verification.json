@@ -1,0 +1,12 @@
+{
+  "passed": true,
+  "public_native_replays": 2,
+  "all_saved_calls_checked": 358848,
+  "zero_duration_individual_samples_retained": 58773,
+  "balanced_complete_build_orders": 10,
+  "deployment_executions": 405,
+  "selected_default_changed": false,
+  "new_qualified_C_win": false,
+  "next_C_target": 64,
+  "ultimate_C_target": 81
+}

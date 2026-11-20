@@ -29539,5 +29539,179 @@
     "native_diagnostic": "162 successes, six errors, 12 recoveries, 4,704-byte stack; normal/checked equality for all three artifacts. Separate 6,232-byte annotated body.",
     "scope": "Canonical source attribution and actual bulk-kernel census. Annotated diagnostic differs from shipping native code and cannot inherit its timings. Mech/C semantic work alignment remains pending.",
     "next": "Test equivalent lazy adaptive-block predicates as a separate source alternative; preserve the earlier collector candidates for combinations."
+  },
+  "conditional_adaptive_block_experiment": {
+    "source_sha256": "cb8f5acae98624c6d8ad37541cc70d6dad04914a324b637baa8c158e375f3489",
+    "text_bytes": 72308,
+    "measured_peak_stack_bytes": 4752,
+    "panel_cases": 21,
+    "blocks_per_case": 24,
+    "orders": 2,
+    "Roc_panel_wins_both_orders": 21,
+    "C_panel_wins_both_orders": 9,
+    "named_panel_wins_retained": true,
+    "full81_qualified": false,
+    "promoted": false,
+    "new_C_win": false,
+    "builds": {
+      "plan_sha256": "5316455ad41ded99a8227a6df66b12b7956dab559df8ef8c864f1ac568de3318",
+      "medians": {
+        "mech-control-reference": {
+          "source": 2.18461497919634,
+          "link": 0.035182583378627896,
+          "source_through_link": 2.2209530209656805,
+          "strip": 0.010940271196886897,
+          "source_through_strip": 2.2319821040146053
+        },
+        "mech-hybrid-u32": {
+          "source": 2.3119059165474027,
+          "link": 0.035510479006916285,
+          "source_through_link": 2.348570395959541,
+          "strip": 0.01098970859311521,
+          "source_through_strip": 2.3595350419636816
+        },
+        "mech-lazy-check": {
+          "source": 2.3120630418416113,
+          "link": 0.03714210446923971,
+          "source_through_link": 2.3506546248681843,
+          "strip": 0.010778832947835326,
+          "source_through_strip": 2.3616420414764434
+        },
+        "roc": {
+          "source": 2.9529930835124105,
+          "link": 0.034818666288629174,
+          "source_through_link": 2.9882078752852976,
+          "strip": 0.01058379141613841,
+          "source_through_strip": 2.999087041709572
+        },
+        "libdeflate": {
+          "source": 0.4489934169687331,
+          "link": 0.034429895924404263,
+          "source_through_link": 0.4837833335623145,
+          "strip": 0.010739520424976945,
+          "source_through_strip": 0.49475229205563664
+        }
+      },
+      "phases": {
+        "mech-control-reference": {
+          "parse": 0.7033264375,
+          "catalog": 1.9646e-05,
+          "frontend": 0.21731781249999998,
+          "artifact": 0.0068252705,
+          "encode": 0.0025543329999999998,
+          "native": 1.2253828750000002
+        },
+        "mech-hybrid-u32": {
+          "parse": 0.7061175,
+          "catalog": 2.4187e-05,
+          "frontend": 0.22491520850000002,
+          "artifact": 0.007347375,
+          "encode": 0.002699,
+          "native": 1.343533458
+        },
+        "mech-lazy-check": {
+          "parse": 0.7064193745,
+          "catalog": 2.3854e-05,
+          "frontend": 0.22409872949999998,
+          "artifact": 0.0073124165,
+          "encode": 0.0027074585,
+          "native": 1.342788729
+        }
+      },
+      "paired_ratios": {
+        "mech-control-reference": {
+          "roc": 0.7433699890421421,
+          "libdeflate": 4.590725031480752,
+          "mech-control-reference": 1.0
+        },
+        "mech-hybrid-u32": {
+          "roc": 0.7858222597116689,
+          "libdeflate": 4.853143425152485,
+          "mech-control-reference": 1.0576380818727222
+        },
+        "mech-lazy-check": {
+          "roc": 0.7858631435791836,
+          "libdeflate": 4.852381530722569,
+          "mech-control-reference": 1.058776942551375
+        }
+      },
+      "trials": 10,
+      "source_commit": "99acd1d3671626e036b8228179301c0bb2735d7b",
+      "scope": "10 balanced serial fresh-process source-through-final-executable-link trials per actor. Fixedsupport/compilers prebuilt equally, artifacthasheschecked, strip/bootstrapseparate. Source variants independent from runtime qualification. Original default and HF source retain full81/63 qualification. Conditional-check source retains all observed wins in both21caseorders but has no newwin and no full81 qualification."
+    },
+    "public_native_replays": 2,
+    "verification": {
+      "passed": true,
+      "public_native_replays": 2,
+      "all_saved_calls_checked": 358848,
+      "zero_duration_individual_samples_retained": 58773,
+      "balanced_complete_build_orders": 10,
+      "deployment_executions": 405,
+      "selected_default_changed": false,
+      "new_qualified_C_win": false,
+      "next_C_target": 64,
+      "ultimate_C_target": 81
+    },
+    "evidence": "evidence/lazy-adaptive-check-study/README.md",
+    "next": "Measured register weights across mixed input paths; comparable Mech/C semantic work remains open."
+  },
+  "latest_source_through_link_cohort": {
+    "evidence": "evidence/lazy-adaptive-check-study/README.md",
+    "trials": 10,
+    "medians": {
+      "mech-control-reference": {
+        "source": 2.18461497919634,
+        "link": 0.035182583378627896,
+        "source_through_link": 2.2209530209656805,
+        "strip": 0.010940271196886897,
+        "source_through_strip": 2.2319821040146053
+      },
+      "mech-hybrid-u32": {
+        "source": 2.3119059165474027,
+        "link": 0.035510479006916285,
+        "source_through_link": 2.348570395959541,
+        "strip": 0.01098970859311521,
+        "source_through_strip": 2.3595350419636816
+      },
+      "mech-lazy-check": {
+        "source": 2.3120630418416113,
+        "link": 0.03714210446923971,
+        "source_through_link": 2.3506546248681843,
+        "strip": 0.010778832947835326,
+        "source_through_strip": 2.3616420414764434
+      },
+      "roc": {
+        "source": 2.9529930835124105,
+        "link": 0.034818666288629174,
+        "source_through_link": 2.9882078752852976,
+        "strip": 0.01058379141613841,
+        "source_through_strip": 2.999087041709572
+      },
+      "libdeflate": {
+        "source": 0.4489934169687331,
+        "link": 0.034429895924404263,
+        "source_through_link": 0.4837833335623145,
+        "strip": 0.010739520424976945,
+        "source_through_strip": 0.49475229205563664
+      }
+    },
+    "paired_ratios": {
+      "mech-control-reference": {
+        "roc": 0.7433699890421421,
+        "libdeflate": 4.590725031480752,
+        "mech-control-reference": 1.0
+      },
+      "mech-hybrid-u32": {
+        "roc": 0.7858222597116689,
+        "libdeflate": 4.853143425152485,
+        "mech-control-reference": 1.0576380818727222
+      },
+      "mech-lazy-check": {
+        "roc": 0.7858631435791836,
+        "libdeflate": 4.852381530722569,
+        "mech-control-reference": 1.058776942551375
+      }
+    },
+    "scope": "10 balanced serial fresh-process source-through-final-executable-link trials per actor. Fixedsupport/compilers prebuilt equally, artifacthasheschecked, strip/bootstrapseparate. Source variants independent from runtime qualification. Original default and HF source retain full81/63 qualification. Conditional-check source retains all observed wins in both21caseorders but has no newwin and no full81 qualification."
   }
 }
