@@ -271,133 +271,6 @@ impl Reduction {
         }
         let prefix = b.ins().band_imm(remaining, -4);
         let end = b.ins().iadd(start, prefix);
-        let costs = b.ins().splat(types::I32X4, best);
-        let indices = super::cost::constant(b, [u32::MAX; 4]);
-        let lanes = super::cost::constant(b, [0, 1, 2, 3]);
-        let induction_step = std::env::var_os("MECH_ORDERED_VECTOR_CARRY_LANES")
-            .is_some()
-            .then(|| super::cost::constant(b, [4; 4]));
-        let test_at_latch = std::env::var_os("MECH_ORDERED_VECTOR_LATCH_TEST").is_some();
-        let pointer_scope = std::env::var_os("MECH_ORDERED_VECTOR_CARRY_POINTERS");
-        let carry_end_pointers = pointer_scope.as_deref() != Some(std::ffi::OsStr::new("body"));
-        let pointer_windows = if pointer_scope.is_some() {
-            self.reads.as_slice()
-        } else {
-            &[]
-        };
-        let header = b.create_block();
-        let body = (!test_at_latch).then(|| b.create_block());
-        let finish = b.create_block();
-        if test_at_latch {
-            b.append_block_param(finish, types::I32X4);
-            b.append_block_param(finish, types::I32X4);
-            if carry_end_pointers {
-                for _ in pointer_windows {
-                    b.append_block_param(finish, types::I64);
-                }
-            }
-        }
-        for ty in [types::I64, types::I32X4, types::I32X4] {
-            b.append_block_param(header, ty);
-        }
-        let mut entry = vec![start.into(), costs.into(), indices.into()];
-        if induction_step.is_some() {
-            b.append_block_param(header, types::I32X4);
-            let first = b.ins().ireduce(types::I32, start);
-            let first = b.ins().splat(types::I32X4, first);
-            entry.push(b.ins().iadd(first, lanes).into());
-        }
-        let pointer_base = 3 + usize::from(induction_step.is_some());
-        for &window in pointer_windows {
-            b.append_block_param(header, types::I64);
-            entry.push(inputs.pointer(b, proof, window, start).into());
-        }
-        b.ins().jump(header, &entry);
-        b.switch_to_block(header);
-        let params = b.block_params(header).to_vec();
-        let k = params[0];
-        if let Some(body) = body {
-            let more = b.ins().icmp(IntCC::UnsignedLessThan, k, end);
-            b.ins().brif(more, body, &[], finish, &[]);
-            b.switch_to_block(body);
-        }
-        let index = if induction_step.is_some() {
-            params[3]
-        } else {
-            let k32 = b.ins().ireduce(types::I32, k);
-            let index = b.ins().splat(types::I32X4, k32);
-            b.ins().iadd(index, lanes)
-        };
-        let pointers = pointer_windows
-            .iter()
-            .enumerate()
-            .map(|(i, &window)| (window, params[pointer_base + i]))
-            .collect::<Vec<_>>();
-        let cost = if pointers.is_empty() {
-            inputs.emit(b, proof, &self.cost, k, index)
-        } else {
-            inputs.emit_with_pointers(b, proof, &self.cost, k, index, &pointers)
-        };
-        let better = b.ins().icmp(IntCC::UnsignedLessThan, cost, params[1]);
-        let costs = b.ins().umin(cost, params[1]);
-        let indices = b.ins().bitselect(better, index, params[2]);
-        let next = b.ins().iadd_imm(k, 4);
-        let mut next_group = vec![next.into(), costs.into(), indices.into()];
-        if let Some(step) = induction_step {
-            // The current lanes equal the low 32 bits of k + [0, 1, 2, 3].
-            // Advancing by four preserves that identity and leaves the
-            // admitted window and the scalar remainder bounds unchanged.
-            next_group.push(b.ins().iadd(index, step).into());
-        }
-        let next_pointers = pointers
-            .iter()
-            .map(|&(window, pointer)| {
-                // k advances by four. The immutable admitted window stays
-                // the same; only its integer address geometry changes. The
-                // terminal address is carried without dereferencing it.
-                let stride = 4 * i64::from(proof.arrays[window.array].width);
-                b.ins()
-                    .iadd_imm(pointer, if window.reverse { -stride } else { stride })
-            })
-            .collect::<Vec<_>>();
-        for &pointer in &next_pointers {
-            next_group.push(pointer.into());
-        }
-        if test_at_latch {
-            // This path admits at least 16 elements. Its rounded prefix
-            // contains a full first group, and next never exceeds end.
-            let more = b.ins().icmp(IntCC::UnsignedLessThan, next, end);
-            let mut finished = vec![costs.into(), indices.into()];
-            if carry_end_pointers {
-                for &pointer in &next_pointers {
-                    finished.push(pointer.into());
-                }
-            }
-            b.ins().brif(more, header, &next_group, finish, &finished);
-        } else {
-            b.ins().jump(header, &next_group);
-        }
-        b.switch_to_block(finish);
-        let (final_costs, final_indices) = if test_at_latch {
-            let values = b.block_params(finish);
-            (values[0], values[1])
-        } else {
-            (params[1], params[2])
-        };
-        let end_pointers = pointer_windows
-            .iter()
-            .filter(|_| carry_end_pointers)
-            .enumerate()
-            .map(|(i, &window)| {
-                let pointer = if test_at_latch {
-                    b.block_params(finish)[2 + i]
-                } else {
-                    params[pointer_base + i]
-                };
-                (window, pointer)
-            })
-            .collect::<Vec<_>>();
-        let selection = std::env::var_os("MECH_ORDERED_SKIP_UNCHANGED_VECTOR_WINNER");
         let map = |b: &mut FunctionBuilder<'_>, winner: Value, improved: bool| {
             if let Some(old_item) = old_item {
                 let changed = (!improved).then(|| b.ins().icmp_imm(IntCC::NotEqual, winner, -1));
@@ -423,32 +296,28 @@ impl Reduction {
                 winner
             }
         };
-        let (minimum, carried_value) = if selection.as_deref() == Some(std::ffi::OsStr::new("item"))
-            && let Some(old_item) = old_item
-        {
-            // The selected item is pure and source-observable only after a
-            // strict improvement. Keep its reconstruction on that same edge.
-            super::winner::emit_mapped(
-                b,
-                final_costs,
-                final_indices,
-                best,
-                missing,
-                true,
-                old_item,
-                map,
-            )
-        } else {
-            let (minimum, winner) = super::winner::emit(
-                b,
-                final_costs,
-                final_indices,
-                best,
-                missing,
-                selection.is_some(),
+        let count_admitted = std::env::var_os("MECH_ORDERED_PACKED_COST_INDEX").is_some()
+            && facts.check(
+                initialize,
+                super::super::traversal_facts::Check::Le(
+                    super::super::traversal_facts::Operand::Word(c.count),
+                    super::super::traversal_facts::Operand::Constant(65535),
+                ),
             );
-            (minimum, map(b, winner, false))
-        };
+        let selected = super::vector_loop::Kernel {
+            reduction: self,
+            proof,
+            inputs: &inputs,
+            start,
+            end,
+            stop,
+            best,
+            count_admitted,
+        }
+        .emit(b, missing, old_item, map);
+        let minimum = selected.minimum;
+        let carried_value = selected.item;
+        let end_pointers = selected.pointers;
         let more = b.ins().icmp(IntCC::UnsignedLessThan, end, stop);
         let finish_args = [minimum.into(), carried_value.into()];
         if let Some(window) = reverse {
