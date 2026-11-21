@@ -1,6 +1,6 @@
 # Elapsed time and libdeflate parity
 
-Full81-case96-block qualification, both orders. Milliseconds are per-call medians; ratios are medians of paired observations, so rounded displayed milliseconds need not divide to the paired ratio. A ratio below one is a win. Remaining reduction uses 1-1/ratio, not ratio-1. Confidence is separate.
+Full81-case96-block qualification, both orders. Milliseconds are per-call medians; ratios are geometric means of paired block observations, so rounded displayed milliseconds need not divide to the paired ratio. A ratio below one is a win. Remaining reduction uses 1-1/ratio, not ratio-1. Confidence is separate.
 
 **Qualified runtime arm: all-sqrt, 64,412 B. Both orders retain every named 81 Roc /63 libdeflate win; no64th C win.**
 

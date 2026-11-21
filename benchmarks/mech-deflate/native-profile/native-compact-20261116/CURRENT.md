@@ -1,5 +1,24 @@
 # PR #995 current status
 
+**New qualified alternatives retain every named 81/81 Roc and 63/81 libdeflate win in both full orders.** The faster random-1-MiB arm takes **23.53–23.54 ms versus 20.35 ms C**, paired **1.156–1.157× C**. About **3.19 ms, or 13.5% less Mech time**, is still needed for parity. No64thCwin is established. Original 2,719-line source and canonical bytecode are unchanged. The 64,412-B current default and qualified 63,372-B compact arm remain available.
+
+| Full-qualified arm | Random 1 MiB Mech ms, forward /reverse | C ms, forward /reverse | Paired Mech ÷ C | Mech time reduction to parity |
+| --- | ---: | ---: | ---: | ---: |
+| Shared Boolean, linear | 23.541563 /23.531354 | 20.354751 /20.346833 | 1.156161 /1.156749× | 13.51% /13.55% |
+| Shared Boolean, square-root | 23.590687 /23.584479 | 20.353000 /20.346312 | 1.159830 /1.160628× | 13.78% /13.84% |
+
+The linear arm improves random 1 MiB by 0.62–0.71% but costs 3.83–4.43% on distribution change; full-suite geometric means are 1.001378× /0.998416× control. The square-root arm improves the full-suite geometric mean by 0.14–0.17%. Both are retained as alternatives, including all slowdowns. The first linear layout's single named 4-KiB miss is repaired by the matching linear layout. The default stays unchanged.
+
+Latest matched source-through-final-link builds are **2.201176 s square-root /2.200958 s linear /2.196295 s current control /2.984033 s Roc /0.481201 s C**. Twelve balanced serial orders include final executable linking with compilers/support equally prebuilt; no compile-time gain is established. New text is **64,680 /64,696 B**, stripped executables stay **276,072 B**, and measured stack drops to **4,640 B**. Parsing/frontend/native are about **0.704 /0.218 /1.206 s**. Runtime and complete-build clocks exclude other build/test/profile/counter/archive/Git work.
+
+Ten public normal/checked source replays reproduce all three artifacts exactly. The compiler has 79 optimized scalar tests and 103,424 focused native executions passing. Portable verification checks 4,674,624 saved runtime calls, 54 actual training counter cases, twelve complete-build orders and all 486 saved stripped deployment streams. Direct scalar execution and strict output/resource/error/recovery contracts remain maintained. `MECH_ARM64_CCMP_SHARED_BOOLEAN=1` is optional and off by default; no LLVM dependency or codec rewrite is added.
+
+[Both source-built alternatives, tradeoffs and verification](evidence/shared-comparison-booleans/README.md) · [All81 elapsed times and remaining parity gaps for both arms](evidence/shared-comparison-booleans/PARITY.md).
+
+Actual matcher profiling confirms hot observation-counter accesses already omit redundant bounds. The next broad experiments revisit proved 32-bit hash arithmetic with fresh profiles and investigate copied loop state, duplicate immutable byte loads and the remaining high-word guard. **64 C wins is next; 1× libdeflate across all81 cases remains the goal.**
+
+Earlier checkpoints follow; their selected recipes and timing labels apply to those versions.
+
 **Selected: `m1-argument-all-sqrt`, 64,412 B, every named 81/81 Roc and 63/81 libdeflate win retained in both full 81-case, 96-block orders.** Pure SSA argument transport forwarding with fresh profiles takes **1.49–1.59% less elapsed time across the full suite by geometric mean** than the previous 63,468-B selection. Its measured peak stack is 4,736 B. The **63,372-B compact alternative** also retains every named win in both full orders, saving 96 B and taking 0.87–0.90% less full-suite time; random 1 MiB costs 0.23–0.30% more than its matching control. Both retain the original 2,719-line source and canonical bytecode.
 
 **The nearest remaining loss is random 1 MiB: 23.68–23.69 ms Mech versus 20.34–20.35 ms C, paired 1.164–1.165× C. About 3.34 ms, or 14.1% of Mech time, must still be removed to tie.** No 64th C win is established. Milliseconds below are per-call medians; ratios come from paired observations, so dividing displayed aggregate medians need not reproduce the paired ratio.

@@ -1,10 +1,10 @@
 # Native compact compiler review handoff
 
-The current selected M1 recipe is **`m1-argument-all-sqrt`**, **64,412 B**, with every named **81/81 Roc and 63/81 libdeflate** win retained in both complete orders. The compact **63,372-B** alternative is also qualified. The original Mech source and canonical bytecode remain unchanged.
+The current selected M1 recipe remains **`m1-argument-all-sqrt`**, **64,412 B**, with every named **81/81 Roc and 63/81 libdeflate** win retained. The qualified compact alternative emits **63,372 B**. Two new shared-Boolean alternatives also retain every named win in both complete orders; the original codec and canonical bytecode are unchanged.
 
-Random 1 MiB takes **23.68–23.69 ms versus 20.34–20.35 ms C**, or **1.164–1.165× C**. We still need about **14.1% less Mech time** for parity on that test. The selected complete source-through-link build is **2.200294 s**, **0.735180× Roc /4.521701× C**.
+The faster new random-1-MiB arm takes **23.53–23.54 ms versus 20.35 ms C**, or **1.156–1.157× C**. It still needs about **13.5% less Mech time** for parity. Its complete source-through-link build is **2.200958 s**, paired **0.736903× Roc /4.575391× C**. It costs about 4% on distribution change and stays available alongside the square-root arm and smaller current default.
 
-Use [CURRENT.md](CURRENT.md) for current identities, timings and tradeoffs, and [the complete elapsed-time table](evidence/argument-jump-forwarding/PARITY.md) for all 81 cases. Earlier measurements below are historical evidence.
+Use [CURRENT.md](CURRENT.md) for identities, timings and tradeoffs, [the new elapsed-time tables](evidence/shared-comparison-booleans/PARITY.md) for all81 cases in both full-qualified alternatives, and [the source recipes](evidence/shared-comparison-booleans/README.md) to reproduce them. Earlier measurements below are historical evidence.
 
 This PR contains compiler and parser source, a pinned Mech program, native build
 configuration, measured runtime source, and raw benchmark evidence. It targets #993, which is stacked on #973.

@@ -26,7 +26,7 @@ def derive(summary):
     losses = sorted((name for name in forward if not forward[name]['libdeflate_point_win'] or not reverse[name]['libdeflate_point_win']),
                     key=lambda name: max(forward[name]['mech_x_libdeflate'], reverse[name]['mech_x_libdeflate']))
     return {'role': 'all-sqrt', 'host': 'Apple M1, macOS 15.6.1, arm64',
-            'scope': 'Full81-case96-block qualification, both orders. Milliseconds are per-call medians; ratios are medians of paired observations, so rounded displayed milliseconds need not divide to the paired ratio. A ratio below one is a win. Remaining reduction uses 1-1/ratio, not ratio-1. Confidence is separate.',
+            'scope': 'Full81-case96-block qualification, both orders. Milliseconds are per-call medians; ratios are geometric means of paired block observations, so rounded displayed milliseconds need not divide to the paired ratio. A ratio below one is a win. Remaining reduction uses 1-1/ratio, not ratio-1. Confidence is separate.',
             'orders': orders, 'remaining_losses_closest_first': losses}
 
 
