@@ -58,11 +58,7 @@ pub use build_image::{
     encode_native_metadata_image,
 };
 mod program_image;
-#[cfg(any(
-    feature = "pure_text",
-    feature = "map_ops",
-    feature = "sequence_buffers"
-))]
+// Scalar control identities and uniform-word proofs also use this private codec.
 pub(crate) mod program_image_proofs;
 pub(crate) mod program_image_read;
 pub use crate::resident::general::native_match_lowering::{

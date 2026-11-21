@@ -58,6 +58,7 @@ impl NativeTypedStorage<u64> {
     }
 }
 impl NativeTypedStorage<Option<mech_core::Value>> {
+    #[cfg(any(test, feature = "canonical-native-program-runtime"))]
     pub(in crate::native_artifact) fn new_values(
         count: usize,
         limit: u64,

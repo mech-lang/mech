@@ -19,11 +19,17 @@ def struct_body(source: str, name: str) -> str | None:
 
 
 def declared_fields(body: str) -> list[str]:
-    return re.findall(r"^\s*(?:pub\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*:", body, re.M)
+    return re.findall(
+        r"^\s*(?:pub(?:\([^)]*\))?\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*:(?!:)",
+        body, re.M,
+    )
 
 
 def public_fields(body: str) -> list[str]:
-    return re.findall(r"^\s*pub\s+([A-Za-z_][A-Za-z0-9_]*)\s*:", body, re.M)
+    return re.findall(
+        r"^\s*pub(?:\([^)]*\))?\s+([A-Za-z_][A-Za-z0-9_]*)\s*:(?!:)",
+        body, re.M,
+    )
 
 
 def function_body(source: str, signature: str) -> str | None:
@@ -64,7 +70,12 @@ def validate_model(source: str, manifest: dict[str, object]) -> list[str]:
             failures.append(f"ProgramArtifact read-only accessor {field}() is missing")
     for sidecar in sidecars:
         accessor = sidecar["read_accessor"]
-        if re.search(rf"pub\s+(?:const\s+)?fn\s+{re.escape(accessor)}\s*\(", source) is None:
+        visibility = sidecar.get("read_visibility", "public")
+        if visibility not in {"public", "crate"}:
+            failures.append(f"unsupported sidecar accessor visibility: {visibility}")
+            continue
+        prefix = r"pub\(crate\)" if visibility == "crate" else "pub"
+        if re.search(rf"{prefix}\s+(?:const\s+)?fn\s+{re.escape(accessor)}\s*\(", source) is None:
             failures.append(
                 f"ProgramArtifact internal sidecar accessor {accessor}() is missing"
             )

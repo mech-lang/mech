@@ -233,7 +233,7 @@ fn configured_catalog_census_rejects_unbound_names_before_arguments() {
         .map(|export| export.canonical_name.clone())
         .collect::<BTreeSet<_>>();
     // Keep the historical census independently visible, and account for each
-    // deliberate text/number, map, and collection addition by exact name.
+    // deliberate text/number, map, collection, and word addition by exact name.
     let additions = BTreeSet::from([
         "number/parse-u64",
         "number/format",
@@ -247,6 +247,17 @@ fn configured_catalog_census_rejects_unbound_names_before_arguments() {
         "sequence/sort-indices",
         "text/lines",
         "text/join",
+        "bits/and",
+        "bits/or",
+        "bits/xor",
+        "bits/not",
+        "bits/shift-left-wrap",
+        "bits/shift-right-wrap",
+        "bits/leading-zeros",
+        "bits/trailing-zeros",
+        "bits/wrapping-add",
+        "bits/wrapping-sub",
+        "bits/wrapping-mul",
     ]);
     assert!(additions.iter().all(|name| names.contains(*name)));
     assert_eq!(
@@ -257,7 +268,7 @@ fn configured_catalog_census_rejects_unbound_names_before_arguments() {
         120,
         "review any change to the retained catalog census"
     );
-    assert_eq!(names.len(), 132, "review every catalog addition by name");
+    assert_eq!(names.len(), 143, "review every catalog addition by name");
     let mut checked = 0;
     for name in names {
         if catalog.all_exports().any(|export| {

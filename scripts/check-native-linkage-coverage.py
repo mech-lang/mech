@@ -87,11 +87,26 @@ CANONICAL_CONTRACT_KIND = re.compile(r"^[a-z][a-z0-9_-]*(?:/[a-z][a-z0-9_-]*)+$"
 # These independently audited additions extend, rather than replace, the
 # historical full surface. Current inventories and digests include them all.
 CURRENT_MAP_ADDITIONS = frozenset({"map/new", "map/insert", "map/contains-key"})
+EXPECTED_BITS_RUNTIME_IDS = {
+    "bits/and": "007c554ddfad3605",
+    "bits/or": "0086f82b0f6ed70d",
+    "bits/xor": "003cb9ca4351eda0",
+    "bits/not": "008cf05e27688924",
+    "bits/shift-left-wrap": "00ac06fa22ffd127",
+    "bits/shift-right-wrap": "00441f33f8301fc7",
+    "bits/leading-zeros": "00f3df7d09e8f0f7",
+    "bits/trailing-zeros": "00d49e143f462e22",
+    "bits/wrapping-add": "0002c333c618ad9f",
+    "bits/wrapping-sub": "0075def5831a8284",
+    "bits/wrapping-mul": "00e671fcf31faf7f",
+}
+CURRENT_BITS_ADDITIONS = frozenset(EXPECTED_BITS_RUNTIME_IDS)
+CURRENT_FULL_ADDITIONS = CURRENT_MAP_ADDITIONS | CURRENT_BITS_ADDITIONS
 ADDITIVE_RUNTIME_FACTORIES = frozenset({
     "number/parse-u64", "NumberFormatScalarCanonical", "NumberFormatMatrixCanonical",
     "sequence/length", "map/histogram", "map/keys", "map/values",
     "sequence/sort-indices", "text/lines", "text/join",
-}) | CURRENT_MAP_ADDITIONS
+}) | CURRENT_FULL_ADDITIONS
 MATRIX_FEATURES = {
     "matrix", "matrix1", "matrix2", "matrix3", "matrix4", "matrix2x3", "matrix3x2",
     "matrixd", "row_vector2", "row_vector3", "row_vector4", "row_vectord",
@@ -481,14 +496,19 @@ def verify_full_surface(entries: list[dict[str, Any]]) -> None:
     expected = {(item["id_hex"], item["name"]) for item in frozen}
     retained = retained_runtime_entries(entries)
     frozen_entries = [entry for entry in entries
-                      if entry["runtime_factory_name"] not in CURRENT_MAP_ADDITIONS]
+                      if entry["runtime_factory_name"] not in CURRENT_FULL_ADDITIONS]
     actual = {(item["runtime_factory_id"], item["runtime_factory_name"]) for item in frozen_entries}
     if len(frozen_entries) != len(expected) or actual != expected:
         raise ContractError("runtime/native-plan drift in the frozen full surface")
     current_count, current_digest = runtime_profile_contract(
-        "EXPECTED_RUNTIME_FACTORIES", "EXPECTED_CURRENT_RUNTIME_SURFACE_DIGEST", "full"
+        "EXPECTED_RUNTIME_FACTORIES", "EXPECTED_PRE_BITS_RUNTIME_SURFACE_DIGEST", "full"
     )
-    if len(entries) != current_count or catalog_surface_digest(entries) != current_digest:
+    pre_bits = [entry for entry in entries
+                if entry["runtime_factory_name"] not in CURRENT_BITS_ADDITIONS]
+    bits_ids = {entry["runtime_factory_name"]: entry["runtime_factory_id"]
+                for entry in entries if entry["runtime_factory_name"] in CURRENT_BITS_ADDITIONS}
+    if (len(pre_bits) != current_count or catalog_surface_digest(pre_bits) != current_digest
+            or bits_ids != EXPECTED_BITS_RUNTIME_IDS):
         raise ContractError("runtime/native-plan drift in the current full surface")
     retained_identity = [
         {"runtime_factory_id": entry["runtime_factory_id"],
@@ -619,6 +639,8 @@ def build_report_from_ci_surfaces() -> dict[str, Any]:
 
 def verify_extended_runtime_contract(report: dict[str, Any]) -> None:
     expected_count, expected_digest = frozen_extended_runtime_contract()
+    # The Rust count freezes the predecessor catalog and checks bits separately.
+    expected_count += len(CURRENT_BITS_ADDITIONS)
     complete = report.get("complete_catalog")
     if not isinstance(complete, dict):
         raise ContractError("native linkage report omits the complete catalog contract")

@@ -110,10 +110,12 @@ impl NativeTurnPlanCache {
             .checked_add(256)
     }
 
+    #[cfg(any(test, feature = "sequence_buffers"))]
     pub(crate) fn refinement_work_bound(metadata: u64) -> Option<u64> {
         Self::refinement_probe_work()?.checked_add(metadata)
     }
 
+    #[cfg(any(test, feature = "sequence_buffers"))]
     pub(crate) fn selected_access_data_work_bound(inputs: usize) -> Option<u64> {
         snapshot_footprint::DataFootprints::selected_access_metadata_work_bound(inputs)
     }

@@ -94,6 +94,12 @@ pub(crate) fn schema_record(
     finalize_schema_image(super::canonical_record(image)?)
 }
 
+#[cfg(any(
+    test,
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 pub(crate) fn matching_schema_record(
     image: crate::native_artifact::BuildOwnedImageRecord<'_>,
     definition: &Schema,

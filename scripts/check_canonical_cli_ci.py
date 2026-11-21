@@ -175,8 +175,8 @@ def complete(log_dir, evidence):
         completed_summary(log_dir, stage)
     selection(log_dir / "canonical-cli-unit-selection.log", UNIT_NAMES)
     selection(log_dir / "canonical-cli-public-selection.log", PUBLIC_NAMES)
-    passed_count(log_dir / "canonical-cli-unit-contracts.log", 5)
-    passed_count(log_dir / "canonical-cli-public-qualification.log", 3)
+    passed_count(log_dir / "canonical-cli-unit-contracts.log", len(UNIT_NAMES))
+    passed_count(log_dir / "canonical-cli-public-qualification.log", len(PUBLIC_NAMES))
     verify_pins(log_dir)
     case_evidence(evidence)
 

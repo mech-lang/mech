@@ -284,6 +284,15 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn('" -eq 1', step)
         self.assertNotIn("--no-run", step)
 
+    def test_exclusive_snapshot_selection_tracks_every_declared_regression(self):
+        step = next(step for step in job_steps(FULL, "managed-memory-runtime")
+                    if "Execute exclusive snapshot first-admission regressions" in step)
+        source = (ROOT / "src/core/src/snapshot/unique_admission_tests.rs").read_text()
+        names = re.findall(r"#\[test\]\s*fn\s+(\w+)\s*\(", source)
+        self.assertTrue(names)
+        self.assertIn(f'" -eq {len(names)}', step)
+        self.assertIn("--test-threads=1", step)
+
     def test_generated_mixed_program_execution_and_runtime_only_profile_are_selected(self):
         contracts = next(step for step in job_steps(FULL, "canonical-applications")
                          if "Execute canonical native lowering and selected implementation witnesses" in step)
@@ -1261,8 +1270,8 @@ class FullWorkflowContractTests(unittest.TestCase):
         native = job_block(NATIVE, "canonical-native-cli")
         checker = (ROOT / "scripts/check_canonical_cli_ci.py").read_text(encoding="utf-8")
         self.assertIn("len(names) == len(expected) and set(names) == expected", checker)
-        self.assertIn('passed_count(log_dir / "canonical-cli-unit-contracts.log", 5)', checker)
-        self.assertIn('passed_count(log_dir / "canonical-cli-public-qualification.log", 3)', checker)
+        self.assertIn('passed_count(log_dir / "canonical-cli-unit-contracts.log", len(UNIT_NAMES))', checker)
+        self.assertIn('passed_count(log_dir / "canonical-cli-public-qualification.log", len(PUBLIC_NAMES))', checker)
         for required in ('"owned_group_cleanup") == "complete"', '"command_exit_status") == 0',
                          '"reason") == "exit"', 'target.get("kind") == ["bin"]',
                          'message.get("reason") == "compiler-artifact"',

@@ -7,11 +7,13 @@ pub(in crate::native_artifact) use crate::native_artifact::program::protocol::ow
 /// A cold first-write request, never ownership authority. The runtime still
 /// requires the current selected tree, its exact source-site last-use proof,
 /// matching frozen identity, and Core's exclusive consuming transfer.
+#[cfg(feature = "canonical-native-program-runtime")]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in crate::native_artifact) enum NumericWriteHandoff {
     Established,
     RetireDeadTreePins,
 }
+#[cfg(feature = "canonical-native-program-runtime")]
 impl NumericWriteHandoff {
     pub const fn raw(self) -> u64 {
         match self {

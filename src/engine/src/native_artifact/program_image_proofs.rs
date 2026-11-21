@@ -71,6 +71,11 @@ macro_rules! image_struct {
 }
 pub(crate) use image_struct;
 
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 macro_rules! image_enum {
     ($name:ident { $($variant:ident { $($field:ident: $ty:ty),* $(,)? }),* $(,)? }) => {
         impl $crate::native_artifact::program_image_proofs::ImageRead for $name {
@@ -89,6 +94,11 @@ macro_rules! image_enum {
         }
     };
 }
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 pub(crate) use image_enum;
 
 macro_rules! primitives {

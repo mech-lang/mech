@@ -56,6 +56,9 @@
           "read_accessor": {
             "type": "string",
             "minLength": 1
+          },
+          "read_visibility": {
+            "enum": ["public", "crate"]
           }
         }
       }

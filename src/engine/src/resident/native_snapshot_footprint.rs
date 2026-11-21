@@ -95,6 +95,7 @@ impl DataFootprints {
     // One complete live-facts measurement per input, then at most one
     // selected-access source lookup across all input slots. DATA walks remain
     // separately payload-priced; these are only fixed cache carrier fees.
+    #[cfg(any(test, feature = "sequence_buffers"))]
     pub(super) fn selected_access_metadata_work_bound(inputs: usize) -> Option<u64> {
         let probes = u64::try_from(inputs).ok()?.checked_mul(2)?;
         Self::probe_work()

@@ -59,10 +59,7 @@ pub(in crate::native_artifact) struct NativeValueSlotMap {
     physical: usize,
 }
 impl NativeValueSlotMap {
-    #[cfg(any(
-        feature = "canonical-native",
-        feature = "canonical-native-program-runtime"
-    ))]
+    #[cfg(feature = "canonical-native-program-runtime")]
     pub(in crate::native_artifact) fn from_inventory(
         inventory: &[bool],
     ) -> Result<Self, &'static str> {

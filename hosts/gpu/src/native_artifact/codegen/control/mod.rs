@@ -608,6 +608,7 @@ impl<'plan> CfgDefinition<'plan> {
             joined_maps,
             #[cfg(feature = "canonical-native-program")]
             histogram_function,
+            #[cfg(feature = "canonical-native-program")]
             classified_histogram_function,
             #[cfg(feature = "canonical-native-program")]
             packed_functions,

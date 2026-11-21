@@ -34,6 +34,11 @@
     {
       "field": "slot_shape_hints",
       "read_accessor": "slot_shape_hint"
+    },
+    {
+      "field": "collection_lexical_cache",
+      "read_accessor": "collection_lexical_cache",
+      "read_visibility": "crate"
     }
   ],
   "forbidden_artifact_tokens": [
