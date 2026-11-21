@@ -2293,6 +2293,19 @@ fn define_entry<M: Module>(
             eprintln!("compact root forwarded empty jumps: {forwarded}");
         }
         if outline_allowed
+            && std::env::var_os("MECH_COMPACT_FORWARD_ARGUMENT_JUMPS")
+                .is_some_and(|scope| scope == "root" || scope == "all")
+        {
+            let forwarded = cfg_cleanup::argument_jumps::forward(&mut context.func);
+            if forwarded != 0 {
+                let isa = module.isa();
+                context.flowgraph();
+                context.eliminate_unreachable_code(isa).map_err(backend)?;
+                context.verify(isa).map_err(backend)?;
+            }
+            eprintln!("compact root forwarded argument jumps: {forwarded}");
+        }
+        if outline_allowed
             && let Some(schedule) = std::env::var_os("MECH_COMPACT_FINISH_CFG_CLEANUP")
         {
             let cleanup = if schedule == "ordered" {

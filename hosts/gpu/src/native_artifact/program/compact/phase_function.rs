@@ -1556,6 +1556,21 @@ fn prepare_impl<M: Module>(
         }
         eprintln!("{symbol} forwarded empty jumps: {count}");
     }
+    if !observe
+        && private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_COMPACT_FORWARD_ARGUMENT_JUMPS")
+            .is_some_and(|scope| scope == "vector" || scope == "all")
+    {
+        let count = cfg_cleanup::argument_jumps::forward(&mut context.func);
+        if count != 0 {
+            let isa = module.isa();
+            context.flowgraph();
+            context.eliminate_unreachable_code(isa).map_err(backend)?;
+            context.verify(isa).map_err(backend)?;
+        }
+        eprintln!("{symbol} forwarded argument jumps: {count}");
+    }
     let packed_input = if pack_input {
         phase_storage::pack_used_input_words(&mut context.func, input_words)
     } else {
