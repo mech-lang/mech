@@ -18,6 +18,7 @@ pub(in crate::native_artifact) mod empty_jumps;
 pub(in crate::native_artifact) mod future_store;
 pub(in crate::native_artifact) mod grouped_histogram;
 pub(in crate::native_artifact) mod identity_routes;
+pub(in crate::native_artifact) mod immutable_word_reads;
 pub(in crate::native_artifact) mod independent_private_read;
 mod known_widths;
 mod local_phis;

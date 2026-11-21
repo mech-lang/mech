@@ -1563,6 +1563,36 @@ fn prepare_impl<M: Module>(
         }
     }
     if !observe
+        && let Some(private) = private.filter(|contract| contract.permits(proof))
+        && vectors.is_some()
+        && std::env::var_os("MECH_COMPACT_SCHEDULE_IMMUTABLE_WORDS")
+            .is_some_and(|scope| scope == "all" || scope == symbol.as_str())
+        && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
+    {
+        let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
+        let views = private
+            .immutable_fixed_arrays(proof)
+            .into_iter()
+            .filter_map(|array| {
+                Some(View {
+                    array,
+                    pointer_word: packet.iter().position(|&word| word == proof.view(array))?,
+                    length_word: packet
+                        .iter()
+                        .position(|&word| word == proof.view(array) + 1)?,
+                    width: proof.arrays[array].width,
+                    literal: None,
+                })
+            })
+            .collect::<Vec<_>>();
+        let moved =
+            cfg_cleanup::immutable_word_reads::schedule(module, &mut context, &loads, &views)?;
+        if moved != 0 {
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        eprintln!("{symbol} immutable words scheduled: {moved}");
+    }
+    if !observe
         && private.is_some()
         && vectors.is_some()
         && std::env::var_os("MECH_COMPACT_SKIP_EMPTY_JUMPS")
@@ -1648,9 +1678,8 @@ fn prepare_impl<M: Module>(
                 && std::env::var_os("MECH_COMPACT_REFINE_SELECTED_VALUES")
                     .is_some_and(|target| target == "all" || target == symbol.as_str())
             {
-                let ranges = cfg_cleanup::fold_selected_value_ranges(
-                    &controls, &mut context, module.isa(),
-                )?;
+                let ranges =
+                    cfg_cleanup::fold_selected_value_ranges(&controls, &mut context, module.isa())?;
                 eprintln!("{symbol} selected value guards folded: {ranges}");
             }
         }
