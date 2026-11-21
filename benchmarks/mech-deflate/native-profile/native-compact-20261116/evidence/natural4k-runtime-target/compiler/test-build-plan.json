@@ -1,0 +1,32 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "test",
+    "--locked",
+    "--offline",
+    "--release",
+    "--config",
+    "profile.release.package.libmimalloc-sys.opt-level=1",
+    "--config",
+    "profile.release.package.mech-math.opt-level=0",
+    "--manifest-path",
+    "hosts/gpu/Cargo.toml",
+    "--features",
+    "canonical-native-program,early-region-emission",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target",
+    "--lib",
+    "ordered_reduction",
+    "--no-run"
+  ],
+  "environment": {
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+    "CARGO_PROFILE_RELEASE_DEBUG": "false",
+    "CARGO_PROFILE_RELEASE_LTO": "false",
+    "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "16",
+    "CARGO_INCREMENTAL": "0"
+  },
+  "note": "Only the unrelated full math dev dependency is opt-level0. GPU, compiler and JIT tests remain optimized at level3."
+}

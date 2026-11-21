@@ -1,0 +1,29 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "build",
+    "--locked",
+    "--offline",
+    "--release",
+    "--config",
+    "profile.release.package.libmimalloc-sys.opt-level=1",
+    "--manifest-path",
+    "/private/tmp/mech-pr993-m3-20261117/benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--target-dir",
+    "/private/tmp/mech-pr993-m3-rebuilt/compiler",
+    "--message-format=json",
+    "--bin",
+    "compile_profile"
+  ],
+  "seconds": 48.064090666826814,
+  "exit_code": 0,
+  "source_commit": "09eccc93dfd6a2b9d4d31786be6d8b09e7d008a6",
+  "source_status": "",
+  "source_files": {
+    "hosts/gpu/src/native_artifact/program/compact/allocation_stubs.rs": "3cda98c549d0670c21f36b043fa50d80417477aa2f0f8af679074436d5b407d7",
+    "hosts/gpu/src/native_artifact/program/compact/mod.rs": "b1ac3e9a461744a09cf4d07b93fee545f58dccd6adced8c98af2911d3958a483",
+    "hosts/gpu/src/native_artifact/program/compact/emit.rs": "de5ceb1e8fa1025882ef58b0fce3679ad76117fc9c736be788adacf6dee9d32a"
+  },
+  "compiler_sha256": "72675cd80a4be625d98fec3b823dbddf6208dd9245ca2616ea99a7715df04834"
+}

@@ -1,0 +1,8 @@
+{
+  "source_commit": "2bc4014587fda4f31bdade02abd0cd5144d80e23",
+  "plan_sha256": "726944a062ca0c8fd616e53a2fcdf533976b1f5c479b972a36d236a71e49e933",
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "selected_worker_sha256": "88321c097d29b7219f639abbc5fcce727f0602de2d05ab24e5e2b47f2996c3b4",
+  "compiler_sha256": "6711160f915f00bb783831fc14f0144ba7949c06ea9df264edd727a62d44e715",
+  "scope": "Current parser profile and one bounded structural experiment; no performance conclusion yet."
+}

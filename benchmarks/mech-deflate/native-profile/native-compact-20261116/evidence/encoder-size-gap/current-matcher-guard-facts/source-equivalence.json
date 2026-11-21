@@ -1,0 +1,15 @@
+{
+  "source_base": "5a89f646664b86a0b808137c01c7627b2142552a",
+  "compiler_implementation_commit": "388e1087c401cd3b9f87a31b10652372ab720096",
+  "changed_rust_or_cargo_files_between": [],
+  "compiler_sha256": "6711160f915f00bb783831fc14f0144ba7949c06ea9df264edd727a62d44e715",
+  "source_files_sha256": {
+    "hosts/gpu/src/native_artifact/program/compiler.rs": "ef9a678dad7007846b5aa592c0eac9832d5aceaa2acde45a794005e67d6da6e2",
+    "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "de3ccc6adda3795e506e16ba4d5abeb23a07834eb9cdd7f9567dbba2f1f25530",
+    "hosts/gpu/src/native_artifact/codegen/common/unsigned_guard_facts/mod.rs": "c00027e52cc59e318bda9d66eced3bf390b7a1ef745e8f9e063993dc28557da3",
+    "hosts/gpu/src/native_artifact/codegen/common/unsigned_guard_facts/intervals.rs": "b24507afb56f15b919fd2692c0e3d7508a094b49de57962e9a74f1499ca2d813",
+    "vendor/cranelift-codegen/src/isa/aarch64/abi.rs": "b99ca8bc4c3dd104f018b2085fe68bb7a9a3cd63fb0a296a46d394672a8a1f41",
+    "vendor/cranelift-codegen/src/machinst/vcode.rs": "ec32e0bac1f20c67e913fc5a2961f9b4a62b2014ff74081b875ef6a1d6589da7"
+  },
+  "scope": "Same compiler implementation, different named source recipe and native flags. The compiler producer records its parent plus the pointer-continuation patch, integrated in388e. There are no later Rust/Cargo changes through the source base."
+}

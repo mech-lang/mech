@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-runtime-target/rebase-spill-pair-profiles.py", line 39, in <module>
+    assert a['blocks']==b['blocks'],symbol
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: mech_compact_numeric_3009_no_growth_composed

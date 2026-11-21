@@ -1351,7 +1351,9 @@ fn prepare_bodies<M: Module>(
         traversal.register_outputs =
             register_outputs && traversal.can_return_register_outputs(root);
         let candidate = traversal.candidate;
-        let kind = if region_kind.is_continuation() {
+        let kind = if region_kind == RegionKind::Phase {
+            "phase"
+        } else if region_kind.is_continuation() {
             "layout_continuation"
         } else if refusal_regions {
             "traversal"
@@ -1383,6 +1385,17 @@ fn prepare_bodies<M: Module>(
         };
         let signature = body.signature.clone();
         let mut context = Context::for_function(body);
+        if region_kind == RegionKind::Phase {
+            // Local IR preparation deliberately starts with a fresh Function.
+            // Keep the enclosing checked function's backend policies when a
+            // phase bounds its compilation, independently of its value IDs.
+            context.func.share_cold_epilogues = root.share_cold_epilogues;
+            context.func.forward_spill_reloads = root.forward_spill_reloads;
+            context.func.aarch64_prefer_preserved_regs = root.aarch64_prefer_preserved_regs;
+            context.func.aarch64_share_cold_tails = root.aarch64_share_cold_tails;
+            context.func.aarch64_share_frame_copies = root.aarch64_share_frame_copies;
+            context.func.aarch64_branch_on_zero = root.aarch64_branch_on_zero;
+        }
         if share_retirements {
             let shared = super::owner_retirement::share(module, &mut context.func)?;
             if shared != 0 {
@@ -1413,12 +1426,44 @@ fn prepare_bodies<M: Module>(
                 traversal.output_words()
             );
         }
+        if region_kind == RegionKind::Phase {
+            if std::env::var_os("MECH_COMPACT_SHARE_STATIC_ERROR_STATUS").is_some() {
+                context.flowgraph();
+                let shared = super::cold_status::share(&mut context.func, &context.cfg);
+                if shared != 0 {
+                    context.flowgraph();
+                }
+                eprintln!(
+                    "compact checked phase {} shared error returns: {shared}",
+                    candidate.header
+                );
+            }
+            if super::word_pairs::available(module.isa())
+                && std::env::var_os("MECH_COMPACT_SELECT_DEFAULTED_LOADS").is_some()
+            {
+                let folded =
+                    crate::native_artifact::program::codegen::cfg_cleanup::defaulted_loads::fold(
+                        module,
+                        &mut context,
+                    )?;
+                eprintln!(
+                    "compact checked phase {} defaulted loads folded: {folded}",
+                    candidate.header
+                );
+            }
+        }
+        let release_stubs = if region_kind == RegionKind::Phase
+            && std::env::var_os("MECH_COMPACT_SHARE_RELEASE_SETUP").is_some()
+        {
+            super::release_stubs::ReleaseStubs::prepare_captured(
+                module,
+                &mut context.func,
+                candidate.header,
+            )?
+        } else {
+            None
+        };
         context.verify(module.isa()).map_err(backend)?;
-        context
-            .compile(module.isa(), &mut ControlPlane::default())
-            .map_err(ModuleError::from)
-            .map_err(backend)?;
-        let compiled = context.compiled_code().unwrap();
         let function = module
             .declare_function(
                 &format!("mech_compact_checked_{kind}_{}", candidate.header),
@@ -1426,6 +1471,26 @@ fn prepare_bodies<M: Module>(
                 &signature,
             )
             .map_err(backend)?;
+        if region_kind == RegionKind::Phase {
+            // Keep the Object's existing private-helper selection within the
+            // new compilation unit. Unused alternatives remain unreferenced.
+            module
+                .define_function(function, &mut context)
+                .map_err(backend)?;
+        } else {
+            context
+                .compile(module.isa(), &mut ControlPlane::default())
+                .map_err(ModuleError::from)
+                .map_err(backend)?;
+        }
+        let compiled = context.compiled_code().unwrap();
+        if let Some(stubs) = release_stubs {
+            let frame = compiled
+                .buffer
+                .frame_layout()
+                .ok_or_else(|| backend("checked phase release setup needs a frame"))?;
+            stubs.define(module, frame)?;
+        }
         let relocs = compiled
             .buffer
             .relocs()
@@ -1594,7 +1659,7 @@ fn share_families<M: Module>(
         .flatten()
         {
             groups.retain_mut(|group| {
-                if group.traversals.len() > 1 {
+                if group.traversals.len() > 1 || region_kind == RegionKind::Phase {
                     return true;
                 }
                 let mut traversal = group.traversals.pop().unwrap();
@@ -1626,7 +1691,9 @@ fn share_families<M: Module>(
     drop((cfg, dominance));
     let groups = groups
         .into_iter()
-        .filter(|group| group.traversals.len() > 1)
+        // A phase bounds backend work even with a single call site. Other
+        // region kinds remain duplicate-sharing transformations.
+        .filter(|group| region_kind == RegionKind::Phase || group.traversals.len() > 1)
         .collect::<Vec<_>>();
     if groups.is_empty() {
         return Ok(None);
@@ -1695,14 +1762,16 @@ fn share_families<M: Module>(
         && std::env::var_os("MECH_COMPACT_CHECKED_TRAVERSALS_COLD_LAYOUT").is_some();
     let mut report = Vec::new();
     for selected in groups {
-        module
-            .define_function_bytes(
-                selected.function,
-                selected.alignment.into(),
-                &selected.bytes,
-                &selected.relocs,
-            )
-            .map_err(backend)?;
+        if region_kind != RegionKind::Phase {
+            module
+                .define_function_bytes(
+                    selected.function,
+                    selected.alignment.into(),
+                    &selected.bytes,
+                    &selected.relocs,
+                )
+                .map_err(backend)?;
+        }
         for traversal in &selected.traversals {
             traversal.replace(module, root, selected.function, packets, observer, cold);
         }

@@ -1,0 +1,33 @@
+{
+  "source_target": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target",
+  "compiler_target": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/compiler-target",
+  "copy_on_write_clone": true,
+  "removed_unhashed_machine_outputs_from_clone": [
+    {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/compiler-target/release/deps/libmech_combinatorics.rlib",
+      "bytes": 1866288
+    },
+    {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/compiler-target/release/deps/libmech_combinatorics.dylib",
+      "bytes": 16752
+    },
+    {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/compiler-target/release/deps/libmech_math.dylib",
+      "bytes": 16752
+    },
+    {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/compiler-target/release/deps/libmech_set.rlib",
+      "bytes": 2359112
+    },
+    {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/compiler-target/release/deps/libmech_math.rlib",
+      "bytes": 1638576744
+    },
+    {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/compiler-target/release/deps/libmech_set.dylib",
+      "bytes": 16752
+    }
+  ],
+  "seconds": 0.3552749170921743,
+  "reason": "rlib/cdylib dependencies have unhashed shared output names; full-feature test build overwrote minimal compiler outputs while both fingerprints remained fresh. Original test target preserved."
+}

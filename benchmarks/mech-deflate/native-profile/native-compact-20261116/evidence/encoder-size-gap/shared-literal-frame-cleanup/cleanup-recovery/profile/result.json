@@ -1,0 +1,162 @@
+{
+  "source_commit": "caa8b22ac5cd4d7c3cf30b5c97f78fd786fe5c16",
+  "compiler_sha256": "c66c37500b0d519a04f1219d617b90075b8f612f76f636310e7fcfe28b7dc107",
+  "observations": [
+    {
+      "samples": {
+        "final_cleanup": 74,
+        "edge_rewrites": 32,
+        "verification": 16,
+        "graph_construction": 9,
+        "constant_phis": 4,
+        "liveness": 4,
+        "range_proofs": 3,
+        "other": 5,
+        "local_phis": 1
+      },
+      "sample_sha256": "87944f607aa89c3e265d46fe395e7d78507e16b9fa6d21344511c5d6b4a9c80b"
+    },
+    {
+      "samples": {
+        "final_cleanup": 74,
+        "edge_rewrites": 31,
+        "verification": 18,
+        "graph_construction": 5,
+        "constant_phis": 4,
+        "range_proofs": 4,
+        "other": 9,
+        "liveness": 2,
+        "local_phis": 1
+      },
+      "sample_sha256": "4496f12f971e3ae803d2206e93f4bc9baae79260d356dbe7b47bad80c22dc771"
+    },
+    {
+      "samples": {
+        "final_cleanup": 75,
+        "edge_rewrites": 32,
+        "verification": 16,
+        "graph_construction": 7,
+        "constant_phis": 4,
+        "liveness": 3,
+        "other": 8,
+        "range_proofs": 4,
+        "local_phis": 1
+      },
+      "sample_sha256": "3b706cb9e6eefbd17bcf6cc3657b55c945dbf1353f3b0b65d80541e7864aa4c6"
+    }
+  ],
+  "samples": {
+    "final_cleanup": 223,
+    "edge_rewrites": 95,
+    "verification": 50,
+    "graph_construction": 21,
+    "constant_phis": 12,
+    "liveness": 9,
+    "range_proofs": 11,
+    "other": 22,
+    "local_phis": 3
+  },
+  "top_leaves": [
+    [
+      "_RNvNtNtNtNtNtNtCs4bZSOWly7k6_8mech_gpu15native_artifact7program7codegen11cfg_cleanup14threaded_edges5route4find",
+      29
+    ],
+    [
+      "_RNvXs7_NtNtCs8fhUY7PQvvP_17cranelift_codegen2ir6layoutNtB5_5InstsNtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator4next",
+      21
+    ],
+    [
+      "_RNvMsb_NtNtCs8fhUY7PQvvP_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph9inst_args",
+      16
+    ],
+    [
+      "_RNvMs8_NtCs8fhUY7PQvvP_17cranelift_codegen8verifierNtB5_8Verifier3run",
+      13
+    ],
+    [
+      "_RNvMs2_NtCs8fhUY7PQvvP_17cranelift_codegen14dominator_treeNtB5_13DominatorTree7compute",
+      10
+    ],
+    [
+      "_RNvNtCs8fhUY7PQvvP_17cranelift_codegen20remove_constant_phis23do_remove_constant_phis",
+      10
+    ],
+    [
+      "_RNvMsc_NtNtCs8fhUY7PQvvP_17cranelift_codegen2ir12instructionsNtB5_15InstructionData18branch_destination",
+      7
+    ],
+    [
+      "_RNvMNtNtCs8fhUY7PQvvP_17cranelift_codegen2ir12instructionsNtB2_9BlockCall4args",
+      6
+    ],
+    [
+      "_RINvMs4_NtNtNtNtCsgKscDXrlV49_5alloc11collections5btree3map5entryINtB6_5EntryNtNtNtCs8fhUY7PQvvP_17cranelift_codegen2ir8entities5BlockINtNtBe_4sync3ArcINtNtBe_3vec3VecbEEE14or_insert_withNCNvNtNtNtNtNtNtCs4bZSOWly7k6_8mech_gpu15native_artifact7program7codegen11cfg_cleanup15identity_routes5route4finds3_0EB3f_",
+      6
+    ],
+    [
+      "_RNvMs4_NtNtCs8fhUY7PQvvP_17cranelift_codegen2ir6layoutNtB5_6Layout11block_insts",
+      4
+    ],
+    [
+      "_RNvMse_NtNtCs8fhUY7PQvvP_17cranelift_codegen2ir12instructionsNtB5_12ValueTypeSet8contains",
+      4
+    ],
+    [
+      "_RNvMNtNtCs8fhUY7PQvvP_17cranelift_codegen2ir12instructionsNtB2_9BlockCall5block",
+      3
+    ],
+    [
+      "mi_free",
+      3
+    ],
+    [
+      "_RNCNvMs_NtCs8fhUY7PQvvP_17cranelift_codegen9flowgraphNtB6_16ControlFlowGraph13compute_block0B8_",
+      3
+    ],
+    [
+      "_RNvXs2_NtNtCs8fhUY7PQvvP_17cranelift_codegen2ir6layoutNtB5_6BlocksNtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator4next",
+      3
+    ],
+    [
+      "_RINvXs0_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapNtNtNtCs8fhUY7PQvvP_17cranelift_codegen2ir6layout6BlocksNCNvNtNtNtNtNtCs4bZSOWly7k6_8mech_gpu15native_artifact7program7codegen11cfg_cleanup18unsigned_intervals7combine0ENtNtNtBa_6traits8iterator8Iterator8try_folduNCINvNvMsg_NtB8_7flattenINtB4z_13FlattenCompatppE13iter_try_fold7flattenNtBZ_5InstsuINtNtNtBc_3ops12control_flow11ControlFlowTNtNtB11_8entities4InstNtB6s_5ValueyyEENCINvNvXsi_B4z_B4M_B3G_8try_fold7flattenB5y_uB5K_NCINvNvB3G_8find_map5checkB6q_B6p_QNCB1T_s_0E0E0E0B5K_EB25_",
+      3
+    ],
+    [
+      "_RINvXs1_NtNtNtCsgDHHaSskbIF_4core4iter8adapters3mapINtB6_3MapINtNtBc_6option8IntoIterNtNtNtCs8fhUY7PQvvP_17cranelift_codegen2ir8entities4InstENCNvMs_NtB1p_8functionNtB2n_15FunctionStencil16block_successors0ENtNtNtBa_6traits12double_ended19DoubleEndedIterator9try_rfolduNCINvNvMsh_NtB8_7flattenINtB4u_13FlattenCompatppE14iter_try_rfold7flattenIBO_INtNtNtBc_5slice4iter4IterNtNtB1p_12instructions9BlockCallENCNCB2i_00EuINtNtNtBc_3ops12control_flow11ControlFlowNtB1n_5BlockENCINvNvXsj_B4u_B4H_B3j_9try_rfold7flattenB5u_uB6H_NCINvNvB3j_5rfind5checkB7m_QNCNvMs2_NtB1r_14dominator_treeNtB8X_13DominatorTree21compute_spanning_tree0E0E0E0B6H_EB1r_",
+      3
+    ],
+    [
+      "_RNvMs1_NtCsgKscDXrlV49_5alloc3vecINtB5_3VecNtNtCs8fhUY7PQvvP_17cranelift_codegen20remove_constant_phis12BlockSummaryE6resizeBJ_",
+      2
+    ],
+    [
+      "_RNvMNtNtNtNtNtCs4bZSOWly7k6_8mech_gpu15native_artifact7program7codegen11cfg_cleanup11word_rangesNtB2_5Facts5range",
+      2
+    ],
+    [
+      "_RNvMNtCs4EMTQjjiagM_17cranelift_bforest4poolINtB2_8NodePoolINtNtB4_3map8MapTypesNtNtNtCs8fhUY7PQvvP_17cranelift_codegen2ir8entities4InstNtB1i_5BlockEE10alloc_nodeB1m_",
+      2
+    ],
+    [
+      "_RNvMs8_NtCs8fhUY7PQvvP_17cranelift_codegen8verifierNtB5_8Verifier20typecheck_block_call",
+      2
+    ],
+    [
+      "mi_malloc_aligned",
+      2
+    ],
+    [
+      "_RINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB6_3VecNtNtCs8fhUY7PQvvP_17cranelift_codegen14dominator_tree14TraversalEventE16extend_desugaredINtNtNtNtCsgDHHaSskbIF_4core4iter8adapters3map3MapINtNtB2b_6filter6FilterINtNtB2b_3rev3RevINtNtB2b_7flatten7FlatMapINtNtB2f_6option8IntoIterNtNtNtBK_2ir8entities4InstEIB27_INtNtNtB2f_5slice4iter4IterNtNtB4q_12instructions9BlockCallENCNCNvMs_NtB4q_8functionNtB5Z_15FunctionStencil16block_successors00ENCB5U_0EENCNvMs2_BI_NtBI_13DominatorTree21compute_spanning_tree0ENCB77_s_0EEBK_",
+      2
+    ],
+    [
+      "_RNvNtNtNtNtNtCs4bZSOWly7k6_8mech_gpu15native_artifact7program7codegen11cfg_cleanup10local_phis8simplify",
+      2
+    ],
+    [
+      "_RNvMs6_NtNtCs8fhUY7PQvvP_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph15resolve_aliases",
+      2
+    ]
+  ],
+  "scope": "Three instrumented source compilations. Samples attribute final cleanup only; they are not matched build timings."
+}

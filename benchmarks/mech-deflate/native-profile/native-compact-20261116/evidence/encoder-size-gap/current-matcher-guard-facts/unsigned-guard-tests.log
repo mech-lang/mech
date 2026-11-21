@@ -1,0 +1,15 @@
+
+running 10 tests
+test native_artifact::codegen::common::unsigned_guard_facts::arithmetic_tests::arithmetic_intervals_preserve_checked_products_effects_and_shared_or_signed_entries ... ok
+test native_artifact::codegen::common::unsigned_guard_facts::arithmetic_tests::canonicalized_negative_immediate_keeps_only_dominating_unsigned_product_proofs ... ok
+test native_artifact::codegen::common::unsigned_guard_facts::arithmetic_tests::extrema_only_refine_unsigned_selected_operands ... ok
+test native_artifact::codegen::common::unsigned_guard_facts::arithmetic_tests::narrow_wrapping_arithmetic_does_not_supply_a_false_nonzero_proof ... ok
+test native_artifact::codegen::common::unsigned_guard_facts::intervals::tests::modular_sum_intervals_enclose_every_small_width_result_and_reject_split_wraps ... ok
+test native_artifact::codegen::common::unsigned_guard_facts::tests::dominated_unsigned_add_preserves_extremes_signed_tests_and_shared_entries ... ok
+test native_artifact::codegen::common::unsigned_guard_facts::tests::dynamic_masked_addends_and_immediate_predicates_preserve_signed_and_overflow_failures ... ok
+test native_artifact::codegen::common::unsigned_guard_facts::tests::intrinsic_unsigned_ranges_preserve_extremes_random_inputs_and_real_narrow_loads ... ok
+test native_artifact::codegen::common::unsigned_guard_facts::tests::one_based_read_extents_preserve_zero_index_wrap_and_first_error_order ... ok
+test native_artifact::codegen::common::unsigned_guard_facts::tests::physical_extent_bounds_keep_first_failures_signed_bypasses_and_dynamic_addends ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 1331 filtered out; finished in 0.02s
+

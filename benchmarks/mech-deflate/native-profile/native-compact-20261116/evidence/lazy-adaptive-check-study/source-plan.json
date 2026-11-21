@@ -1,0 +1,11 @@
+{
+  "base_source_sha256": "ecf98df0c4f0ea9bfd2b5ae548a76fdfba178703c224a6e33e987848711a4b22",
+  "source_sha256": "cb8f5acae98624c6d8ad37541cc70d6dad04914a324b637baa8c158e375f3489",
+  "before": "  check := !at-limit && (number-fresh >= 512u64) && (bits/wrapping-sub(position, begin) >= 5000u64) && (bits/wrapping-sub(end, position) >= 5000u64)",
+  "after": "  check := (at-limit?\n    | true => false\n    | false => ((number-fresh >= 512u64)?\n      | false => false\n      | true => ((bits/wrapping-sub(position, begin) >= 5000u64)?\n        | false => false\n        | true => bits/wrapping-sub(end, position) >= 5000u64)))",
+  "purpose": "Short-circuit pure total adaptive-block predicates so they are evaluated only when they can affect the existing decision. No threshold or block/output policy change; original default and qualified HF source remain unchanged.",
+  "source_lines": 2738,
+  "control": "source-sort-hybrid32-profiled",
+  "selection_unchanged": true,
+  "scope": "Separate ordinary-Mech source alternative. No performance or score claim before native checks and matched clocks."
+}

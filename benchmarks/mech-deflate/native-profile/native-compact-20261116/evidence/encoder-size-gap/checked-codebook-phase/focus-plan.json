@@ -1,0 +1,133 @@
+{
+  "objective": "Measure a separately compiled substantial checked phase; hold 81 Roc and 62 C wins.",
+  "focus_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "320-overlap",
+    "random-64",
+    "random-1024",
+    "prefix-random-1024",
+    "prefix-periodic-1024",
+    "prefix-periodic-4096",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-natural-16384",
+    "prefix-natural-32769",
+    "prefix-random-4096",
+    "heldout-mixed-131073"
+  ],
+  "runs": [
+    {
+      "id": "checked-phase-root-codebook-core-private-helpers-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "checked-phase-root-codebook-core-private-helpers-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96
+    }
+  ],
+  "policy": {
+    "path": "native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification-policy-v3.json",
+    "sha256": "89961956e17485b05457fee6d90e1b124fe09d1d1e6d3770aa5b86873912244c"
+  },
+  "timer": {
+    "path": "compare-library.py",
+    "sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a"
+  },
+  "driver": {
+    "path": "consolidation-995/qualify-checked-root-phase.py",
+    "sha256": "ba586f95bace2f8880bcdd74d0bdee07a4f1ef590fb27129e36472fe4d18a4bd"
+  },
+  "as_run_inventory": {
+    "path": "fixtures.json",
+    "sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+  },
+  "pinned_peers": {
+    "path": "pinned-peers/pins.json",
+    "sha256": "db5a289d7a929176e5a1c9efbff5f69702596b0dccba9f2cace86d78cc18902d"
+  },
+  "fixture_content_sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+  "bindings": {
+    "mech-control": {
+      "program.o": {
+        "path": "consolidation-995/preserved-registers/preserved/bound/program.o",
+        "sha256": "c5aab01c69ff4ed325b5149d2e1402a59477e5858f52052939d51f7eff699ef8"
+      },
+      "metadata.json": {
+        "path": "consolidation-995/preserved-registers/preserved/bound/metadata.json",
+        "sha256": "c187c6f40d81d45995eaf3313c3282d41aadbd066413d7f44c0775b1c22225fa"
+      },
+      "runtime.json": {
+        "path": "consolidation-995/preserved-registers/preserved/bound/runtime.json",
+        "sha256": "2af06e96947e003c13581d770b242fff4906ce7dab1199ab98d7d1d53390f27a"
+      },
+      "mech-worker": {
+        "path": "consolidation-995/preserved-registers/preserved/bound/mech-worker",
+        "sha256": "5afce59aa83c03df81c693d78e9a65f17df1c88c64a7e04c490c58ecc4fffba0"
+      }
+    },
+    "mech-experiment": {
+      "program.o": {
+        "path": "consolidation-995/checked-root-phase/codebook-core-private-helpers/bound/program.o",
+        "sha256": "4f6694cf58f512c5001b78f58b0a388004d2a8df5bd50ba626d19bb0072828fa"
+      },
+      "metadata.json": {
+        "path": "consolidation-995/checked-root-phase/codebook-core-private-helpers/bound/metadata.json",
+        "sha256": "df728914febd9aa62c8e6a429813ab4cd132a8d703eefae34d230be3bcaa06e3"
+      },
+      "runtime.json": {
+        "path": "consolidation-995/checked-root-phase/codebook-core-private-helpers/bound/runtime.json",
+        "sha256": "b5ea593716443893b53d48028d58cffbca01aa0b2de2f053db6563b36b4326e6"
+      },
+      "mech-worker": {
+        "path": "consolidation-995/checked-root-phase/codebook-core-private-helpers/bound/mech-worker",
+        "sha256": "a4f60a4a335994e31bb1058dcdd9a2a9f02857168f468c2d1953ad74311ed52b"
+      }
+    }
+  },
+  "identities": {
+    "mech-control": {
+      "worker": "5afce59aa83c03df81c693d78e9a65f17df1c88c64a7e04c490c58ecc4fffba0",
+      "metadata": "c187c6f40d81d45995eaf3313c3282d41aadbd066413d7f44c0775b1c22225fa"
+    },
+    "mech-experiment": {
+      "worker": "a4f60a4a335994e31bb1058dcdd9a2a9f02857168f468c2d1953ad74311ed52b",
+      "metadata": "df728914febd9aa62c8e6a429813ab4cd132a8d703eefae34d230be3bcaa06e3"
+    },
+    "roc": {
+      "worker": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+      "metadata": "b6e97f561158a9176529a2e88f47c7b9f7a3637efa8f0d2e3afc6ebb1c6ffaee"
+    },
+    "libdeflate": {
+      "worker": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "metadata": null
+    },
+    "environment_sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+    "contract_sha256": "73b8d377ff7452010791de0f5155a939cfb7a65a3c46b9bac10a8a06e8f512cb"
+  },
+  "source_pin": "d8faf1969b085de84e5f0e71968c0c56a9f77a05",
+  "policy_version": 3,
+  "controller": {
+    "path": "source-frame-copy-tails/full-timing.py",
+    "sha256": "f9fa19f1ef9876ee3484a339b619889ba94027cf35a76fa355e12813cea31d07"
+  },
+  "compiler_build": {
+    "path": "consolidation-995/checked-root-phase/compiler/4e1d5afe0ee1791b/result.json",
+    "sha256": "065c8082d6a408d438ff2dcdbad13f8c15c90ddac0d993293981c224ce63de85"
+  },
+  "linked_contract": {
+    "path": "consolidation-995/checked-root-phase/linked-current-codebook-core-private-helpers/linked-proofs/result.json",
+    "sha256": "cb1e4a2013f7ab1dd1441d36cab7bb71019ed2e955daa07e61fb981604a36084"
+  },
+  "max_peak_stack_bytes": 5280,
+  "load_average_before": [
+    2.41845703125,
+    2.3779296875,
+    2.57568359375
+  ]
+}

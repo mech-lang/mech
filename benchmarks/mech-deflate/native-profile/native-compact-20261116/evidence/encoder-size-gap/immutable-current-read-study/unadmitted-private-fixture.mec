@@ -1,0 +1,21 @@
++> sequence
++> bits
+<state> := <{data<[u8]> input<[u8]> position<u64>}>
+byte(input<[u8]>, index<u64>) => (out<u8>) :=
+  out := ((index < sequence/length(input))? | true => input[bits/wrapping-add(index, 1u64)] | false => 0u8).
+poke(data<[u8]>, input<[u8]>, position<u64>) => (out<[u8]>) :=
+  literal := byte(input, position)
+  ~next := data
+  next[bits/wrapping-add(position, 1u64)] = literal
+  out := next.
+child(data<[u8]>, input<[u8]>, position<u64>, cursor<u64>, limit<u64>) => (out<[u8]>) :=
+  more := cursor < limit
+  next := (more? | true => poke(data, input, position) | false => data)
+  out := (more? | true => child(next, input, position, bits/wrapping-add(cursor, 1u64), limit) | false => next).
+walk(data<[u8]>, input<[u8]>, position<u64>, end<u64>) => (out<state>) :=
+  more := position < end
+  next := (more? | true => child(data, input, position, 0u64, 2u64) | false => data)
+  out := (more? | true => walk(next, input, bits/wrapping-add(position, 1u64), end) | false => {data: next, input: input, position: position}).
+execute(data<[u8]>, input<[u8]>, end<u64>) => (out<state>) :=
+  out := walk(data, input, 0u64, end).
+execute(data<[u8]>, input<[u8]>, end<u64>)

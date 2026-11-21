@@ -1,0 +1,174 @@
+{
+  "control_median_s": 0.7307906455,
+  "instrumented_median_s": 0.767623854,
+  "instrumented_ratio": 1.050401860952666,
+  "tree_and_logical_work_equal": true,
+  "rows": [
+    {
+      "rule": 1881181452,
+      "started": 7773,
+      "completed": 7773,
+      "success": 7585,
+      "fresh_success": 7585,
+      "eligible": 7585,
+      "hits": 71285,
+      "eligible_bytes": 21672,
+      "eligible_work": 588393,
+      "eligible_charges": 21672,
+      "hit_work": 5433357,
+      "timed": 7773,
+      "suspended": 0,
+      "cold_inclusive_ns": 5116483,
+      "eligible_inclusive_ns": 5090565
+    },
+    {
+      "rule": 681945150,
+      "started": 81187,
+      "completed": 81187,
+      "success": 81162,
+      "fresh_success": 41727,
+      "eligible": 41727,
+      "hits": 10486,
+      "eligible_bytes": 325130,
+      "eligible_work": 21065153,
+      "eligible_charges": 325130,
+      "hit_work": 5452994,
+      "timed": 81187,
+      "suspended": 0,
+      "cold_inclusive_ns": 76085320,
+      "eligible_inclusive_ns": 53721410
+    },
+    {
+      "rule": 2779870302,
+      "started": 6,
+      "completed": 6,
+      "success": 6,
+      "fresh_success": 6,
+      "eligible": 6,
+      "hits": 30,
+      "eligible_bytes": 36,
+      "eligible_work": 1314,
+      "eligible_charges": 42,
+      "hit_work": 6570,
+      "timed": 6,
+      "suspended": 0,
+      "cold_inclusive_ns": 31500,
+      "eligible_inclusive_ns": 31500
+    }
+  ],
+  "frames": [
+    [
+      "Call",
+      4482943
+    ],
+    [
+      "Exit",
+      1739894
+    ],
+    [
+      "Sequence",
+      58063
+    ],
+    [
+      "Choice",
+      2006028
+    ],
+    [
+      "Repeat",
+      712840
+    ],
+    [
+      "FirstRepeat",
+      102706
+    ],
+    [
+      "CompleteNode",
+      90094
+    ],
+    [
+      "Unless",
+      1502
+    ],
+    [
+      "Fixed",
+      304618
+    ],
+    [
+      "FixedAfterLeading",
+      16278
+    ],
+    [
+      "FixedAfterToken",
+      16278
+    ],
+    [
+      "Literal",
+      304618
+    ],
+    [
+      "LiteralResult",
+      304618
+    ],
+    [
+      "Classified",
+      449016
+    ],
+    [
+      "Raw",
+      445039
+    ],
+    [
+      "Grapheme",
+      0
+    ],
+    [
+      "GraphemeResult",
+      0
+    ],
+    [
+      "EscapeAfterSlash",
+      1128
+    ],
+    [
+      "EscapeZero",
+      0
+    ],
+    [
+      "EscapeUnicode",
+      0
+    ],
+    [
+      "EscapeFallback",
+      0
+    ],
+    [
+      "EscapeSymbol",
+      0
+    ],
+    [
+      "EscapeSymbolResult",
+      0
+    ],
+    [
+      "UnicodePrefix",
+      0
+    ],
+    [
+      "UnicodeDigit",
+      0
+    ],
+    [
+      "UnicodeDigitResult",
+      0
+    ],
+    [
+      "UnicodeCloser",
+      0
+    ],
+    [
+      "UnicodeComplete",
+      0
+    ]
+  ],
+  "scope": "Cold spans include necessary token/publication work; exclude spans crossing an advance boundary. They are an upper bound pool, not predicted savings."
+}

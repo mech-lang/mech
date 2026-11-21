@@ -1,0 +1,150 @@
+{
+  "scope": "Single-case diagnostic. Does not establish 81/62 preservation or a new 63rd win.",
+  "load_after": [
+    3.13427734375,
+    2.54736328125,
+    2.181640625
+  ],
+  "runs": [
+    {
+      "role": "pointer-profiled",
+      "order": "forward",
+      "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-pointer-pointer-profiled-forward",
+      "summary_sha256": "4f6a2b95bb4e9b130e3cb65b3745c3fbc4041a8141479b9bba50923796769746",
+      "result": {
+        "case": "prefix-natural-4096",
+        "input_bytes": 4096,
+        "reference_raw_bytes": 983,
+        "libdeflate_raw_bytes": 983,
+        "reference_capacity": 4101,
+        "libdeflate_capacity": 4101,
+        "libdeflate_same_bytes": true,
+        "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "median_seconds": {
+          "mech-control": 0.0004165005,
+          "mech-experiment": 0.0004157495,
+          "roc": 0.0006656665,
+          "libdeflate": 0.00039193699999999997
+        },
+        "paired_x_roc": {
+          "mech-control": 0.6234319984080501,
+          "mech-experiment": 0.6232387944755039,
+          "roc": 1.0,
+          "libdeflate": 0.5864737443949084
+        },
+        "paired_x_libdeflate": {
+          "mech-control": 1.0630177469432551,
+          "mech-experiment": 1.062688313725839,
+          "roc": 1.7051061698111403,
+          "libdeflate": 1.0
+        },
+        "timed_calls": 384
+      }
+    },
+    {
+      "role": "pointer-profiled",
+      "order": "reverse",
+      "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-pointer-pointer-profiled-reverse",
+      "summary_sha256": "53bed05c1b9d6c81b7854b320ff0ba825c526c491cb1e5b048d9c34c21ba81c0",
+      "result": {
+        "case": "prefix-natural-4096",
+        "input_bytes": 4096,
+        "reference_raw_bytes": 983,
+        "libdeflate_raw_bytes": 983,
+        "reference_capacity": 4101,
+        "libdeflate_capacity": 4101,
+        "libdeflate_same_bytes": true,
+        "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "median_seconds": {
+          "libdeflate": 0.000393604,
+          "roc": 0.000663,
+          "mech-experiment": 0.0004162915,
+          "mech-control": 0.000418104
+        },
+        "paired_x_roc": {
+          "libdeflate": 0.5873589277878116,
+          "roc": 1.0,
+          "mech-experiment": 0.6281279327982205,
+          "mech-control": 0.632601429639955
+        },
+        "paired_x_libdeflate": {
+          "libdeflate": 1.0,
+          "roc": 1.7025364775952778,
+          "mech-experiment": 1.069410718185486,
+          "mech-control": 1.077027009740946
+        },
+        "timed_calls": 384
+      }
+    },
+    {
+      "role": "pointer-lanes-profiled",
+      "order": "forward",
+      "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-pointer-pointer-lanes-profiled-forward",
+      "summary_sha256": "b649b17c942d794523d27a1ffd9bcfe826aa701b1588b8ab108e811c70cc7910",
+      "result": {
+        "case": "prefix-natural-4096",
+        "input_bytes": 4096,
+        "reference_raw_bytes": 983,
+        "libdeflate_raw_bytes": 983,
+        "reference_capacity": 4101,
+        "libdeflate_capacity": 4101,
+        "libdeflate_same_bytes": true,
+        "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "median_seconds": {
+          "mech-control": 0.00041525,
+          "mech-experiment": 0.00041552099999999997,
+          "roc": 0.0006638955,
+          "libdeflate": 0.0003921045
+        },
+        "paired_x_roc": {
+          "mech-control": 0.622855469412571,
+          "mech-experiment": 0.6214567917552335,
+          "roc": 1.0,
+          "libdeflate": 0.5858579676418602
+        },
+        "paired_x_libdeflate": {
+          "mech-control": 1.0631509748337633,
+          "mech-experiment": 1.060763574244219,
+          "roc": 1.706898352897896,
+          "libdeflate": 1.0
+        },
+        "timed_calls": 384
+      }
+    },
+    {
+      "role": "pointer-lanes-profiled",
+      "order": "reverse",
+      "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-pointer-pointer-lanes-profiled-reverse",
+      "summary_sha256": "ff3d853df31702e76080c2763df6951838dc786ee1d657851a1e2a29cafeafdb",
+      "result": {
+        "case": "prefix-natural-4096",
+        "input_bytes": 4096,
+        "reference_raw_bytes": 983,
+        "libdeflate_raw_bytes": 983,
+        "reference_capacity": 4101,
+        "libdeflate_capacity": 4101,
+        "libdeflate_same_bytes": true,
+        "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+        "median_seconds": {
+          "libdeflate": 0.000391604,
+          "roc": 0.0006631460000000001,
+          "mech-experiment": 0.000417875,
+          "mech-control": 0.0004164165
+        },
+        "paired_x_roc": {
+          "libdeflate": 0.5840951705247404,
+          "roc": 1.0,
+          "mech-experiment": 0.6279384102962933,
+          "mech-control": 0.6277515600833548
+        },
+        "paired_x_libdeflate": {
+          "libdeflate": 1.0,
+          "roc": 1.7120497659681355,
+          "mech-experiment": 1.075061808390172,
+          "mech-control": 1.0747419115268393
+        },
+        "timed_calls": 384
+      }
+    }
+  ]
+}

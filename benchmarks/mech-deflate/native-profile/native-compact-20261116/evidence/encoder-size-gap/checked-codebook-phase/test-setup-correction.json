@@ -1,0 +1,7 @@
+{
+  "stopped_command": "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/cargo test --locked --offline --release --target-dir /private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target -p mech-gpu --features canonical-native-program --lib checked_traversals::tests -- --test-threads=1",
+  "pid": 30891,
+  "reason": "Earlier published indexed-loop-liveout validation uses level 0 for the unrelated full math dependency and level 3 for GPU/JIT tests. The level-3 math setup had not reached tests. Correct that setup; this is not an observation-timeout restart.",
+  "validated_configuration": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-literal-frame-cleanup/cleanup-recovery/indexed-loop-liveouts/validation.json",
+  "utc": "2026-11-19T00:26:12Z"
+}

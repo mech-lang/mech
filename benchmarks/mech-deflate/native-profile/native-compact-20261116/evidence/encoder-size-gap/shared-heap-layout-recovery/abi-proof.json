@@ -1,0 +1,16 @@
+{
+  "encoder": "a42f47a761ca918853eea1d411e363a0e1456a7a2cec90d70d66a651f4f51b5e",
+  "root_entry_heap_slot_offset": 592,
+  "redirected_calls": {
+    "release_owner": 74,
+    "release_nullable": 26,
+    "release_two": 30,
+    "release_three": 32,
+    "release_four": 31,
+    "allocate_backing": 26,
+    "writable_scalar_backing": 31,
+    "append_backing_byte_consume": 10
+  },
+  "shared_entries": 8,
+  "all_stubs_tail_branch_to_original_entry": true
+}

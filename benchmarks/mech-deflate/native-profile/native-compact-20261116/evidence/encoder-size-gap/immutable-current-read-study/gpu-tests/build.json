@@ -1,0 +1,59 @@
+{
+  "plan": {
+    "command": [
+      "cargo",
+      "+nightly-2026-03-03",
+      "test",
+      "--locked",
+      "--offline",
+      "--release",
+      "--config",
+      "profile.release.package.libmimalloc-sys.opt-level=1",
+      "--config",
+      "profile.release.package.mech-math.opt-level=0",
+      "--manifest-path",
+      "hosts/gpu/Cargo.toml",
+      "--features",
+      "canonical-native-program,early-region-emission",
+      "--target-dir",
+      "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target",
+      "--lib",
+      "defaulted_loads",
+      "-vv",
+      "--no-run"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "1",
+      "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+      "CARGO_PROFILE_RELEASE_DEBUG": "false",
+      "CARGO_PROFILE_RELEASE_LTO": "false",
+      "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "16",
+      "CARGO_INCREMENTAL": "0"
+    },
+    "note": "Only the unrelated full math dev dependency is opt-level0. GPU, compiler and JIT tests remain optimized at level3.",
+    "scope": "Optimized full GPU unit-test binary with the established full-catalog dev dependencies. Only math dependency atopt0; not compiler/source latency evidence. Run focused defaulted-load and private-loan tests after build. The immutable production compiler is already saved separately."
+  },
+  "cache_clean_command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "clean",
+    "--locked",
+    "--offline",
+    "--release",
+    "-p",
+    "mech-math",
+    "--manifest-path",
+    "benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target"
+  ],
+  "source_inputs": {
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads.rs": "edaf478682d09dfe91cdfed28fe09edd721141429e758e7373be0a0e0cea2f12",
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads/immutable.rs": "97ff382c6b53a4ab397a21f3c064018b66e85156f8fa62b8be4cc19b52f0f5a8",
+    "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "4f77a59be8d4067f0666a99669a30eedb2f8d52648944c57355e2c5984bae53d",
+    "hosts/gpu/src/native_artifact/program/compact/private_phase.rs": "243c0dd2325723be45c5efa89a4c6abc3709e89d263d3c3bd3b405a139461dea",
+    "hosts/gpu/src/native_artifact/program/compact/private_phase_tests.rs": "80fc2a0d0904ac7c92cfc5967924aaa120ed74f1f09443761a3238ca094fb97f"
+  },
+  "exit_code": 101,
+  "seconds_diagnostic": 849.816536208149
+}

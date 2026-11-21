@@ -1,0 +1,167 @@
+{
+  "host": "Apple M1, macOS 15.6.1, arm64",
+  "decision": "Retain",
+  "encoder_bytes": 63804,
+  "encoder_x_roc": 1.105865224625624,
+  "encoder_x_libdeflate": 1.7207119741100323,
+  "root_bytes": 46788,
+  "root_stack_bytes": 3296,
+  "peak_stack_bytes": 4848,
+  "bytes_saved": 640,
+  "worker_sha256": "5afce59aa83c03df81c693d78e9a65f17df1c88c64a7e04c490c58ecc4fffba0",
+  "source_commit": "6dc64cff731a7388fb1239945b3aa4eaf2ace0ce",
+  "compiler_sha256": "bf4f2ead7fa0f00e9b765cd7ffdaf4f3f3d82ff5ecbf8b9fb06a2282515623a8",
+  "wins": [
+    {
+      "id": "preserved-register-root-preserved-full-forward",
+      "kind": "full",
+      "order": "forward",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 62,
+            "mech-experiment": 62
+          },
+          "precision_supported_wins": {
+            "mech-control": 62,
+            "mech-experiment": 62
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 56,
+            "mech-experiment": 56
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 56,
+            "mech-experiment": 56
+          }
+        }
+      }
+    },
+    {
+      "id": "preserved-register-root-preserved-full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 62,
+            "mech-experiment": 62
+          },
+          "precision_supported_wins": {
+            "mech-control": 61,
+            "mech-experiment": 62
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 56,
+            "mech-experiment": 56
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 55,
+            "mech-experiment": 56
+          }
+        }
+      }
+    }
+  ],
+  "candidate_control_timing_observations": {
+    "slowdowns": [],
+    "uncertain": [
+      "eight-literals-prefix: regression bound or duplicate-control repeatability unresolved",
+      "32-high-entropy-stored: regression bound or duplicate-control repeatability unresolved",
+      "random-256: regression bound or duplicate-control repeatability unresolved",
+      "random-1024: regression bound or duplicate-control repeatability unresolved",
+      "prefix-random-4096: combined and individual run bounds conflict: preserved-register-root-preserved-full-reverse",
+      "prefix-random-8192: regression bound or duplicate-control repeatability unresolved",
+      "prefix-repeated-32769: regression bound or duplicate-control repeatability unresolved"
+    ]
+  },
+  "equivalent_named_cases": [
+    [
+      "33027-periodic-window",
+      "prefix-periodic-33027"
+    ],
+    [
+      "prefix-repeated-1024",
+      "repeated-1024"
+    ],
+    [
+      "prefix-repeated-32769",
+      "repeated-32769"
+    ],
+    [
+      "prefix-natural-1024",
+      "reymont-prefix-1024"
+    ],
+    [
+      "prefix-natural-16384",
+      "reymont-prefix-16384"
+    ],
+    [
+      "prefix-natural-32769",
+      "reymont-prefix-32769"
+    ],
+    [
+      "heldout-window-32767",
+      "prefix-natural-32767"
+    ]
+  ],
+  "peak_private_payload_bytes": {
+    "mech-control": 10548878,
+    "mech-experiment": 10548878
+  },
+  "source_successes": 162,
+  "source_failure_cases": 6,
+  "source_exact_recoveries": 12,
+  "stripped_deployment": {
+    "bytes": 276072,
+    "sha256": "95c583c67e0c25c7179a9affe6b3d9ecde604ed0be43f9ec49ab6dc948e66fb5"
+  },
+  "new_source_built_worker_sha256": "2e0f926c0799786bbd27f8006f9ea9d1cc87c42af9f55975d1159465145b7c48",
+  "new_source_built_worker_runtime": "not measured; runtime counts belong to exact archived fixed-support worker"
+}

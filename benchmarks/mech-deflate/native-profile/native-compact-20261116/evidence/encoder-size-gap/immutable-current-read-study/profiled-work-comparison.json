@@ -1,0 +1,134 @@
+{
+  "scope": "Untimed original-instruction work in the three actual emitted collector graphs. No elapsed-time or per-call instruction equivalence with C is inferred.",
+  "inputs": {
+    "selected": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-runtime-target/hot-matcher-facts/profiled-matcher-counts/counts.json",
+      "sha256": "4781e61f35e32c625227d0a0d9a40c0f352a080432e1d07e332790a18f8b2967"
+    },
+    "rematerialized": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/repair/immutable-profiled/matcher-counts/counts.json",
+      "sha256": "3a9534eb716a8120c3d80847abb9fb8ede169e0b99bf63a7f6006363953e03f8"
+    },
+    "pinned": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/pinned/immutable-profiled/matcher-counts/counts.json",
+      "sha256": "89987b0b19a61c155d42e7f5271c645cc389518a9e51e7491fcabb9cc364ee2f"
+    }
+  },
+  "cases": {
+    "prefix-natural-4096": {
+      "selected": {
+        "instructions": 1512193,
+        "branches": 290027,
+        "ldrb": 34353,
+        "stack_loads": 131115,
+        "stack_stores": 38744
+      },
+      "rematerialized": {
+        "instructions": 1542485,
+        "branches": 283182,
+        "ldrb": 34353,
+        "stack_loads": 106294,
+        "stack_stores": 30598
+      },
+      "pinned": {
+        "instructions": 1554923,
+        "branches": 283182,
+        "ldrb": 33688,
+        "stack_loads": 134980,
+        "stack_stores": 42799
+      }
+    },
+    "prefix-natural-8192": {
+      "selected": {
+        "instructions": 3122501,
+        "branches": 601205,
+        "ldrb": 72218,
+        "stack_loads": 267703,
+        "stack_stores": 78365
+      },
+      "rematerialized": {
+        "instructions": 3181302,
+        "branches": 587419,
+        "ldrb": 72218,
+        "stack_loads": 216274,
+        "stack_stores": 61988
+      },
+      "pinned": {
+        "instructions": 3207513,
+        "branches": 587419,
+        "ldrb": 70968,
+        "stack_loads": 275151,
+        "stack_stores": 86559
+      }
+    },
+    "prefix-random-1024": {
+      "selected": {
+        "instructions": 192626,
+        "branches": 31684,
+        "ldrb": 2072,
+        "stack_loads": 19988,
+        "stack_stores": 7198
+      },
+      "rematerialized": {
+        "instructions": 207947,
+        "branches": 27592,
+        "ldrb": 2072,
+        "stack_loads": 20989,
+        "stack_stores": 5153
+      },
+      "pinned": {
+        "instructions": 201835,
+        "branches": 27592,
+        "ldrb": 1048,
+        "stack_loads": 21013,
+        "stack_stores": 8224
+      }
+    },
+    "prefix-random-1048576": {
+      "selected": {
+        "instructions": 233154478,
+        "branches": 41017489,
+        "ldrb": 4002154,
+        "stack_loads": 22267325,
+        "stack_stores": 8653030
+      },
+      "rematerialized": {
+        "instructions": 247693058,
+        "branches": 36790982,
+        "ldrb": 4002154,
+        "stack_loads": 22127094,
+        "stack_stores": 6534095
+      },
+      "pinned": {
+        "instructions": 242615383,
+        "branches": 36790982,
+        "ldrb": 2957769,
+        "stack_loads": 23296565,
+        "stack_stores": 9701645
+      }
+    },
+    "random-1024": {
+      "selected": {
+        "instructions": 192417,
+        "branches": 31631,
+        "ldrb": 2068,
+        "stack_loads": 19984,
+        "stack_stores": 7195
+      },
+      "rematerialized": {
+        "instructions": 207741,
+        "branches": 27539,
+        "ldrb": 2068,
+        "stack_loads": 20988,
+        "stack_stores": 5150
+      },
+      "pinned": {
+        "instructions": 201626,
+        "branches": 27539,
+        "ldrb": 1044,
+        "stack_loads": 21009,
+        "stack_stores": 8221
+      }
+    }
+  }
+}

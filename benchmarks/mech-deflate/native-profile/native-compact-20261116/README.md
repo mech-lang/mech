@@ -1,13 +1,82 @@
 # Native compact compiler review handoff
 
+**Selected: `m1-histogram-capacity-grouped`, 63,192 B, preserving every named 81/81 Roc and 63/81 libdeflate win in both full 81-case, 96-block orders.** A proved entry counter-capacity bound permits four ordered byte histogram visits per iteration. The original **2,719-line Mech codec and canonical bytecode are unchanged**.
+
+| Runtime case / order | Mech | Matched Mech control | libdeflate | Paired Mech ÷ C time | Mech time reduction to parity |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Random 1 MiB, forward | 23.024375 ms | 23.382167 ms | 20.340292 ms | 1.131646× | 11.63% |
+| Random 1 MiB, reverse | 23.033958 ms | 23.393646 ms | 20.342875 ms | 1.132528× | 11.70% |
+| Random 4 KiB, forward | 0.109104 ms | 0.110250 ms | 0.076916 ms | 1.428573× | 30.00% |
+| Random 4 KiB, reverse | 0.108521 ms | 0.109459 ms | 0.075750 ms | 1.448058× | 30.94% |
+
+Paired 1-MiB time is **0.984931× /0.984668×** the matched 63,048-B control, about **1.51–1.53% less time**. The grouped candidate adds **144 B** and remains 180 B below the earlier 63,372-B compact recipe. The original neutral scalar-capacity and SIMD trials remain retained. No formal confidence claim or **64th libdeflate win** is added; the closest remaining case still needs about **11.6–11.7% less Mech time**.
+
+Fresh-process source through final executable linking takes **2.202398 s Mech /2.984846 s Roc /0.480850 s C**, paired **0.738298× Roc /4.582297× C**. Twelve balanced serial orders use equally prebuilt compilers/fixed support. Parse/frontend/native/link medians are **0.702117 /0.218718 /1.209371 /0.035314 s**. Bootstrap and strip are separate; no build, test, profile, counter, archive or Git work overlaps primary clocks.
+
+Encoder text is **1.095× Roc /1.704× C**. Stripped executables remain **276,072 B Mech /191,912 B Roc /155,752 B C**. Measured peak stack remains **4,736 B**, below the 5,280-B cap. The actual main default reproduces object, full metadata and bytecode exactly from the integrated compiler source. All five source arms pass strict output/alias/resource/error/recovery/stack checks and **10 current public normal/checked source replays**. **40,725 focused native calls**, 79 maintained optimized scalar tests and the current-word/SSA/increment families pass. Portable verification checks **6,630,336 saved runtime observations**, retaining 995,679 zero samples, all twelve complete-build orders and **486 actual stripped-executable outputs**. The full GPU suite is not claimed.
+
+[All retained trials and profiling](evidence/histogram-counter-capacity/README.md) · [All 81 elapsed times and parity gaps](evidence/histogram-counter-capacity/PARITY.md). Compiler implementation and stricter admission recognition are integrated at `c41789c828b601512735f89b1476396a89b239d2`. The optional flags remain off globally; only the named qualified source recipe enables the selected combination.
+
+Fresh five-second native samples put matching at **74.3%**, scoring at **13.9%**, the remaining packed histogram at **7.5%**, and the optimized byte histogram at **1.0%** of encoder samples on random1MiB. On random4KiB, matching is **43.4%**, packed histogram **13.5%**, Huffman **11.9%**, scoring **11.1%**, and byte histogram **3.9%**. These encoder-root exclusive shares guide the next broad optimization; they are not exact phase elapsed times. [Sampling derivation and correction](evidence/histogram-counter-capacity/PROFILE.md).
+
+**64 libdeflate wins is next; 1× libdeflate across all 81 remains the goal.** Fresh native CPU sampling is preserved separately from the primary timing and will guide the next broad optimization. All slower cases and unselected candidates remain available.
+
+Previous checkpoints follow; their selected/default labels apply to those versions.
+
+**Selected: `m1-coalesced-compact-all-linear`, 63,048 B, every named 81/81 Roc and 63/81 libdeflate win preserved in both full 81-case, 96-block orders.** Repeating existing current-word and argument-transport proofs after SSA argument coalescing combines with the earlier compact recipe. The original **2,719-line Mech source and canonical bytecode are unchanged**.
+
+| Random 1 MiB | Mech | Current Mech control | libdeflate | Paired Mech ÷ C | Mech time reduction to parity |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Forward | 23.419542 ms | 23.473645 ms | 20.398521 ms | 1.156924× | 13.56% |
+| Reverse | 23.388208 ms | 23.431687 ms | 20.352874 ms | 1.152030× | 13.20% |
+
+The broader target, random **4 KiB**, takes **108.438 /108.020 µs Mech**, versus **75.667 /76.042 µs libdeflate**. Paired Mech time is **1.440× /1.436× C**, leaving **30.57% /30.38%** to remove.
+
+This saves **1,216 B** versus the prior 64,264-B selection and **324 B** versus the previous qualified 63,372-B compact recipe. Paired target time is **0.998227× /0.999471×** control; full-suite geometric-mean point estimates are **0.993651× /0.992991×**. The timing differences are small; no formal confidence claim is added. Small slower cases remain included. **No 64th C win is established; about 13.2–13.6% of Mech's time still needs to be removed on the closest remaining case.** Earlier qualified named recipes remain available.
+
+Matched complete builds take **2.203537 s Mech /2.988196 s Roc /0.482477 s C**, paired **0.737236× Roc /4.560036× C**. Twelve balanced serial fresh-process orders include final executable linking, with compilers and fixed support equally prebuilt. The matched prior Mech median is **2.197920 s**; no compile-time improvement is established. Parse/frontend/native medians are **0.702318 /0.217598 /1.208162 s**. Bootstrap and strip are separate.
+
+Encoder text is **1.093× Roc /1.700× C**. The stripped executable remains **276,072 B**, **1.439× Roc /1.773× C**. Measured peak stack is **4,736 B**, below the 5,280-B cap. The actual main default reproduces object, full metadata and bytecode exactly. **36 public normal/checked source replays**, **79 optimized scalar tests**, the current-word/SSA/increment tests, strict output/resource/error/recovery/stack checks and **486 actual timed stripped-executable checks** pass. Portable verification recomputes **4,836,096 saved runtime observations**, retaining 708,858 zero samples, **180 actual counter cases**, every profile derivation and all twelve complete-build orders. Compiler source is rebasable at **`c92e9e1a2`**. No new LLVM dependency, codec rewrite, generic operation dispatch or shipping native-byte patch is added.
+
+[All eighteen source arms, profiling and verification](evidence/coalesced-argument-refinement/README.md) · [All 81 elapsed times and remaining parity gaps](evidence/coalesced-argument-refinement/PARITY.md).
+
+Separate native CPU sampling puts the matcher at **73.3%** and scorer at **13.7%** of encoder samples on random 1 MiB. On the larger relative loss at random 4 KiB, the matcher is **44.1%**, with **21.1%** in two histogram kernels. Code boundaries differ across compilers; these are phase guides, not matched phase timings. The next broad target tests a max-bin/remaining-span entry proof for the histogram's per-byte overflow check, keeping the checked loop on a proof miss and preserving partial writes and error origins. **64 C wins is next; 1× libdeflate across all 81 remains the goal.**
+
+Previous checkpoints follow; their selected/default labels apply to those versions.
+
+**Selected: `m1-bounded-increment-vector-linear`, 64,264 B, every named 81/81 Roc and 63/81 libdeflate win preserved in both full 81-case, 96-block orders.** The compiler now proves that selected non-strict unsigned bounds can make a checked `+1` overflow impossible. The original **2,719-line Mech source and canonical bytecode are unchanged**.
+
+| Random 1 MiB | Mech | Current Mech control | libdeflate | Paired Mech ÷ C | Mech time reduction to parity |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Forward | 23.434895 ms | 23.506791 ms | 20.393270 ms | 1.149165× | 12.98% |
+| Reverse | 23.430417 ms | 23.504812 ms | 20.352646 ms | 1.152650× | 13.24% |
+
+This saves **144 B** versus the prior 64,408-B selection. Paired random-1-MiB time is **0.996426× /0.996761×** control, about **0.32–0.36% less time**. Full-suite geometric-mean point estimates are **0.995072× /0.995243×**; no formal confidence claim is added. Small slower cases remain included. **No 64th libdeflate win is established; about 3.0–3.1 ms, or 13.0–13.24% of Mech's time, still needs to be removed on the closest remaining case.** The earlier qualified **63,372-B compact recipe remains available**.
+
+Matched complete builds take **2.196434 s Mech /2.983926 s Roc /0.480779 s C**, paired **0.735454× Roc /4.565690× C**. Twelve balanced serial fresh-process orders include final executable linking with compilers and fixed support equally prebuilt. The matched prior Mech control takes **2.195559 s**; no compile-time improvement is established. Selected parse/frontend/native medians are **0.703131 /0.216515 /1.203295 s**; final link is **0.035262 s**. Bootstrap and strip are separate.
+
+Encoder text is **1.114× Roc /1.733× C**. The stripped executable remains **276,072 B**, **1.439× Roc /1.773× C**; measured peak stack is **4,832 B**, below the 5,280-B cap. The standard main rebuild command reproduces all three measured artifacts exactly. All seven retained source arms pass strict output/resource/error/recovery/stack gates and public normal/checked source replays. **79 optimized scalar tests**, the native increment/range tests, **169,600 focused native calls**, and **486 actual stripped-executable checks** pass. Portable verification recomputes **3,400,704 saved runtime observations**, including 464,141 retained zero samples, **72 actual counter cases**, register profiles, native-flow constraints, source-label guides and all 12 complete-build orders. Compiler source is rebasable at **`b73335e1c`**. No new LLVM dependency, codec rewrite, generic operation dispatch or shipping native-byte patch is added.
+
+[All seven source arms, tradeoffs and verification](evidence/bounded-unsigned-increments/README.md) · [All 81 elapsed times and remaining parity gaps](evidence/bounded-unsigned-increments/PARITY.md).
+
+The next broad experiment revisits current-word, known-width and argument-transport cleanup after the new SSA coalescing. Count whether it can remove the remaining hot high-word guards. Private input-packet specialization also needs current SSA or all-callsite bounds. Shared comparison ANDs, immutable byte-load reuse and the retained compact recipe remain recorded for later combinations. **64 C wins is next; 1× libdeflate across all 81 remains the goal.**
+
+Previous checkpoints follow; their selected/default labels apply to those versions.
+
+The selected M1 recipe is **`m1-identical-shared-vector-linear`**, **64,408 B**, preserving every named **81/81 Roc and 63/81 libdeflate win** in both full orders. The 64,364-byte alternative is also qualified, and the earlier 63,372-byte compact recipe remains available. The original Mech source and canonical bytecode are unchanged.
+
+Random 1 MiB takes **23.506–23.508 ms versus20.349–20.353 ms C**, paired **1.155–1.156× C**. About **13.4–13.5% less Mech time** is still needed for parity; no 64th C win is established. The complete source-through-final-link build is **2.199275 s**, **0.736279× Roc /4.563207× C**.
+
+Use [CURRENT.md](CURRENT.md), [all 81 timing rows](evidence/identical-argument-coalescing/PARITY.md), and [source recipes, tradeoffs and verification](evidence/identical-argument-coalescing/README.md). Earlier measurements below are historical evidence.
+
 This PR contains compiler and parser source, a pinned Mech program, native build
-configuration, measured runtime source, and raw benchmark evidence. It is stacked
-on #973 at `9087b1f07727a9bfcb7c09059f48edaca6dc2301`.
+configuration, measured runtime source, and raw benchmark evidence. It targets #993, which is stacked on #973.
 
 Start with [the current scorecard](CURRENT.md) and [the review and continuation handoff](REVIEW.md).
 It identifies the retained baseline, review priorities, unresolved CI, and all
-24 static size screens and their subsequent runtime follow-ups, with
-checkout-relative reproduction commands. No smaller candidate has been promoted.
+24 historical static size screens and their subsequent runtime follow-ups, with
+checkout-relative reproduction commands. Current selection is recorded above
+and in CURRENT.md.
 
 The parser now replays admitted one-shot variable definitions with fresh
 identities. Matched Mech deployment builds take **3.13566 s**
@@ -106,9 +175,10 @@ complete build takes **1.402× Roc** and
 **8.718× libdeflate** time. The pinned benchmark workers
 match byte for byte. [Current parser results](evidence/compact-parser-storage/README.md)
 
-The accepted runtime floors are **81/81 against Roc and 61/81 against libdeflate**.
-62 is an improvement target. The older raw reports retain the former 62 floor;
-that wording is historical. Historical evidence has not been edited.
+The historical cohorts below used floors of 81/81 against Roc and 61/81 against
+libdeflate. The current required floor is **81/81 Roc and 62/81 libdeflate**;
+63 C wins is the next target. [Current results](CURRENT.md) supersede these
+historical summaries. Original evidence remains unchanged.
 
 | Apple M1 evidence | Mech code | × Roc code | × libdeflate code | Runtime qualification |
 | --- | ---: | ---: | ---: | --- |
@@ -181,6 +251,55 @@ passes all 81 exact deployment checks and six compiled-provider failure
 cases. A new matched compile-to-deployment comparison gives **3.73555 s**
 Mech, 2.99608 s Roc and 0.48811 s libdeflate.
 [Smaller host, independent timing and reproduction](evidence/alloc-only-deployment/README.md)
+
+## Source-built M1 reference encoders
+
+From this checkout on Apple AArch64, build a recorded M1 recipe with
+the original Mech source and the pinned compiler toolchain. Each name reads
+its flags and layout profiles from the corresponding archived manifest.
+
+```sh
+python3 rebuild.py /tmp/mech-m1-checked-regions \
+  --variant m1-checked-regions --mimalloc-object /path/to/mimalloc.o
+python3 rebuild.py /tmp/mech-m1-compact-match-equality \
+  --variant m1-compact-match-equality --mimalloc-object /path/to/mimalloc.o
+python3 rebuild.py /tmp/mech-m1-shared-release-setup \
+  --variant m1-shared-release-setup --mimalloc-object /path/to/mimalloc.o
+python3 rebuild.py /tmp/mech-m1-shared-heap-setup \
+  --variant m1-shared-heap-setup --mimalloc-object /path/to/mimalloc.o
+python3 rebuild.py /tmp/mech-m1-shared-heap-layout \
+  --variant m1-shared-heap-layout --mimalloc-object /path/to/mimalloc.o
+python3 rebuild.py /tmp/mech-m1-literal-frame-cleanup \
+  --variant m1-literal-frame-cleanup --mimalloc-object /path/to/mimalloc.o
+python3 rebuild.py /tmp/mech-m1-preserved-root-registers \
+  --variant m1-preserved-root-registers --mimalloc-object /path/to/mimalloc.o
+python3 rebuild.py /tmp/mech-m1-checked-codebook-phase \
+  --variant m1-checked-codebook-phase --mimalloc-object /path/to/mimalloc.o
+python3 rebuild.py /tmp/mech-m1-sparse-guard-rounds \
+  --variant m1-sparse-guard-rounds --mimalloc-object /path/to/mimalloc.o
+```
+
+The fixed allocator object enables the final executable link and linked
+checks. The command verifies the object, canonical bytecode and complete
+metadata, then checks 162 successful observations and two observations of
+each of six allocation-failure cases. Each injected failure is followed by
+an exact recovery call in the same worker. The probes check borrowed inputs,
+failure origins and private heap cleanup. The receipt records the newly
+linked worker hash and the expected archived worker hash.
+
+The named recipes apply to Apple AArch64. Their [M1 comparison](CURRENT.md)
+uses a fixed, prebuilt deployment host and records the runtime qualification
+of each archived worker separately. The `frame-copies` recipe remains the
+71,192-byte maintained control.
+
+`m1-sparse-guard-rounds` is the previous selected compiler recipe for the same
+**63,804 B** encoder as `m1-preserved-root-registers`. It saves a paired
+34 ms of complete build time with identical object, metadata, bytecode and
+fixed-support benchmark worker.
+`m1-checked-codebook-phase` is a separately qualified **64,444 B** build-speed
+alternative. Both hold 81/81 Roc and 62/81 libdeflate in both complete M1
+orders. The latter is a different object from the older 64,444 B
+`m1-literal-frame-cleanup` recipe.
 
 ## Preselected root inlining
 
@@ -613,3 +732,12 @@ allocation and stack checks are published in `evidence/baseline`.
 Raw receipts preserve original machine paths as provenance; the rebuild recipe
 uses paths relative to this checkout. `source-and-evidence-manifest.json` records
 the published source/evidence hashes and integration status.
+
+### Actual early source-unit experiment
+
+The opt-in `early-region-emission` feature now omits 885 original codebook operations from root SSA. Total SSA construction falls 18.6%, but the measured 69,828 B object is larger, builds in 2.277083 s, and exceeds the stack ceiling at 5,808 B. It is an experimental source implementation, with no new runtime-win claim; the selected 63,804 B / 81 Roc / 62 C result remains. See [the source, complete measurements, replay and next runtime target](evidence/early-codebook-emission/README.md).
+
+The previous pairing recipe rebuilds with `--variant m1-register-spill-pairs`; it
+extends `m1-sparse-guard-rounds` with allocator spill pairs and valid current profiles.
+
+Use `--variant m1-immutable-current-reads` for the current selected recipe.

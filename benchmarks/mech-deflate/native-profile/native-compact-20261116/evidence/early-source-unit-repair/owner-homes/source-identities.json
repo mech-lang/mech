@@ -1,0 +1,12 @@
+{
+  "benchmarks/mech-deflate/native-profile/Cargo.toml": "6969ac31537a38840321c9836bec7d7e5ab35ccd48fd6e144b58a1436a80af00",
+  "benchmarks/mech-deflate/native-profile/source_blocks_tests.rs": "41ea2c74227bff40207a29fcd74b57d88c3bf545cf7b8bdbd6532fb126ae6ab1",
+  "hosts/gpu/src/native_artifact/codegen/common/ssa_packet_homes_tests.rs": "3b521bcd29b1ad6a42a4bb4938997fa8676cde632f899730fac8d87d188d4178",
+  "hosts/gpu/src/native_artifact/codegen/common/ssa_words.rs": "09abe803f7e0c7221ed35473740c00c00dd0f515a853d60af2af9a2f6bcffece",
+  "hosts/gpu/src/native_artifact/program/compact/early_units.rs": "8ce64bd610e84b2f7d42b1a0ac2674eae5152fcd3c651902ffde236949774f2b",
+  "hosts/gpu/src/native_artifact/program/compact/emit.rs": "8d3ff6e1895d8ae9058b9c0ce8a8af63f2dba65f5adce43ad2aed57a6af6f882",
+  "hosts/gpu/src/native_artifact/program/compact/mod.rs": "dea18e50b5074166edbdb4a5b03aa18d274be870bf3d87c1f4cd758fd1cfe0eb",
+  "hosts/gpu/src/native_artifact/program/compact/source_blocks.rs": "bc8623d41645933e1caf295498bab95dc6362376006f6e9dcc82ad099a2c849a",
+  "hosts/gpu/src/native_artifact/program/compact/source_blocks_tests.rs": "687080bc481da210401e4997f487af0ca37533309339aa687a5f6d2ffdf59949",
+  "scripts/unsafe-boundaries.allowlist": "2ca30d1135230730f69d1181f5ccaf4be362b8a18cb72baabcba9d79639002a5"
+}

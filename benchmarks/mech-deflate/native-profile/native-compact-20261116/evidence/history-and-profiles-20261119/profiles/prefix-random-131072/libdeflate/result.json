@@ -1,0 +1,63 @@
+{
+  "case": "prefix-random-131072",
+  "aliases": [
+    "prefix-random-131072"
+  ],
+  "actor": "libdeflate",
+  "worker_sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/libdeflate-worker",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "sample_exit_code": 0,
+  "sample_sha256": "27f50d3a830a32ef1eadadf0ac51cfe72fc62516d045533faf9622db94b0454b",
+  "verified_calls": [
+    {
+      "borrowed_output_alias_unchanged": true,
+      "boundary": "fresh compressor, distinct output allocation and prefix copy, raw compression, compressor free; preparation, validation and previous-output drop excluded",
+      "capacity": 131207,
+      "case": "prefix-random-131072",
+      "independent_inflation": true,
+      "input_alias_unchanged": true,
+      "input_bytes": 131072,
+      "level": 12,
+      "matches_reference_bytes": true,
+      "output_sha256": "302d003e1aabec5c88782062aab2a462fe6d74a0d5145637bceef068d5fdf485",
+      "prefix_bytes": 0,
+      "profile": false,
+      "raw_bytes": 131087,
+      "reference_capacity": 131207,
+      "runtime_input": true,
+      "sample": 0,
+      "seconds": 0.002446875,
+      "version": "1.26",
+      "warmup": true
+    },
+    {
+      "borrowed_output_alias_unchanged": true,
+      "boundary": "fresh compressor, distinct output allocation and prefix copy, raw compression, compressor free; preparation, validation and previous-output drop excluded",
+      "capacity": 131207,
+      "case": "prefix-random-131072",
+      "independent_inflation": true,
+      "input_alias_unchanged": true,
+      "input_bytes": 131072,
+      "level": 12,
+      "matches_reference_bytes": true,
+      "output_sha256": "302d003e1aabec5c88782062aab2a462fe6d74a0d5145637bceef068d5fdf485",
+      "prefix_bytes": 0,
+      "profile": true,
+      "raw_bytes": 131087,
+      "reference_capacity": 131207,
+      "runtime_input": true,
+      "sample": 1,
+      "seconds": 0.002449583,
+      "version": "1.26",
+      "warmup": false
+    }
+  ],
+  "load_after": [
+    1.79638671875,
+    1.70166015625,
+    1.89208984375
+  ]
+}

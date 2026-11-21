@@ -1,0 +1,12 @@
+{
+  "source_base": "fb6bbe11695f05f7b071280e6f8dcc5648b198bf",
+  "compiler_sha256": "5cd4bb2f763f60da4246d4ecf5fc2349805429803ac2e4688846180372f3022b",
+  "clif_sha256": "bff02fedfe53da68976ab1e51a114e836f9c2cb08b408d46dbc85ba1424aecad",
+  "immutable_narrow_load_count": 1,
+  "backend_source_sha256": "668f62a7c6bf9bcc3e31da7ed99cc4269b5178bd699b9c999730c7df0d88bbb7",
+  "backend_predicate": "Load is pure for egraph iff readonly && notrap && can_move. See cranelift-codegen0.131.3/src/inst_predicates.rs:46-52.",
+  "observed_dynamic_byte_loads_control": 4002154,
+  "observed_dynamic_byte_loads_repair": 4002154,
+  "diagnosis": "Post-pass one shared value is rematerialized by backend at both uses. The next source variant omits can_move to retain the manually proved placement. The old result is not a dynamic byte-load reduction.",
+  "scope": "Untimed diagnostic SSA/counters, no latency forecast. Debug full object retains extra general bodies; pure-value statement is about the captured target CLIF, not whole shipping object identity."
+}

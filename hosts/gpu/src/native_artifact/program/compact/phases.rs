@@ -19,7 +19,7 @@ use crate::native_artifact::{
     compiler::{backend, compiled_stack_bytes, offset},
 };
 use cranelift_codegen::ir::condcodes::IntCC;
-use cranelift_codegen::ir::{AbiParam, Block, FuncRef, InstBuilder, MemFlags, types};
+use cranelift_codegen::ir::{AbiParam, Block, FuncRef, InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{FuncId, Linkage, Module};
 use mech_engine::native_artifact::NativeProgramFacts;
@@ -36,6 +36,10 @@ pub(in crate::native_artifact) struct VectorContract {
     guards: Vec<(usize, bool)>,
     // The caller tests these exact fixed-view lengths before either body.
     admitted_lengths: Vec<(usize, u64)>,
+    // This caller adopts and guards additional fixed lengths from the fast body.
+    extend_bounds: bool,
+    // Only a refused private body can add relational guards to its caller.
+    extend_spans: bool,
 }
 impl VectorContract {
     fn additional(
@@ -57,6 +61,8 @@ impl VectorContract {
             .collect::<Vec<_>>();
         (!guards.is_empty()).then(|| Self {
             guards,
+            extend_bounds: false,
+            extend_spans: false,
             admitted_lengths: existing
                 .iter()
                 .filter_map(|&(array, length, grows)| (!grows).then_some((array, length)))
@@ -77,6 +83,7 @@ struct VectorAlternative {
 pub(in crate::native_artifact) struct NoGrowth {
     pub(super) array: usize,
     countdown: usize,
+    append_value_forwarding: bool,
 }
 impl NoGrowth {
     fn derive(
@@ -117,7 +124,32 @@ impl NoGrowth {
             .get(field)
             .copied()
             .flatten()?;
-        Some(Self { array, countdown })
+        let append_value_forwarding = proof.arrays[array].width == 8
+            && proof.actions.iter().all(|(_, action)| {
+                matches!(action,
+                Operation::Append { array: target, .. } if *target == array)
+                    || matches!(
+                        action,
+                        Operation::Aggregate
+                            | Operation::Frame
+                            | Operation::ArrayCopy
+                            | Operation::Length { .. }
+                            | Operation::Read { .. }
+                    )
+            })
+            && proof
+                .frames
+                .iter()
+                .all(|frame| frame.scalar_slots().all(|slot| slot < proof.scalar_words));
+        Some(Self {
+            array,
+            countdown,
+            append_value_forwarding,
+        })
+    }
+
+    pub(in crate::native_artifact) fn permits_append_value_forwarding(&self) -> bool {
+        self.append_value_forwarding
     }
 
     pub(in crate::native_artifact) fn proves_append(&self, array: usize, maximum: usize) -> bool {
@@ -125,10 +157,11 @@ impl NoGrowth {
     }
 }
 struct NoGrowthAlternative {
-    function: FuncId,
+    function: Option<FuncId>,
     array: usize,
     countdown_slot: usize,
     composed: Option<function::Composed>,
+    refuse_growth: bool,
 }
 
 enum Output {
@@ -147,6 +180,7 @@ pub(super) struct Phase {
     arrays: Vec<(usize, bool)>,
     fixed_arrays: Vec<usize>,
     entry_bounds: Vec<(usize, u64, bool)>,
+    entry_spans: Vec<cfg_cleanup::admitted_spans::Admission>,
     invariant_views: BTreeSet<usize>,
     outputs: Vec<(usize, Output)>,
     output_owners: Vec<usize>,
@@ -158,6 +192,90 @@ pub(super) struct Phase {
     relative_error_origins: bool,
 }
 impl Phase {
+    #[cfg(feature = "early-region-emission")]
+    pub(super) fn word_effects(
+        &self,
+        owners: &OwnerFlow,
+    ) -> Vec<(usize, super::word_boundary::Effects)> {
+        use super::word_boundary::Effects;
+        let effects =
+            |site: usize, outputs: &[(usize, Output)], output_owners: &[usize], normal: bool| {
+                let mut effect = Effects::default();
+                for &word in &self.inputs {
+                    effect.read(word);
+                }
+                for span in &self.entry_spans {
+                    for word in [span.begin_word, span.end_word, span.length_word] {
+                        effect.read(word);
+                    }
+                }
+                for &(base, _) in &self.arrays {
+                    for word in base..base + 6 {
+                        effect.read(word);
+                    }
+                }
+                for &word in output_owners {
+                    if owners.live_at_entry(self.header, word) {
+                        effect.read(word);
+                    }
+                }
+                // The normal adapter refreshes writable current views before
+                // publishing outputs. Stack results are deliberately opaque here.
+                let mut updated = BTreeSet::new();
+                if normal {
+                    for (array, &(base, writable)) in self.arrays.iter().enumerate() {
+                        if writable && !self.invariant_views.contains(&array) {
+                            for word in base..base + 6 {
+                                effect.write(word);
+                                updated.insert(word);
+                            }
+                        }
+                    }
+                }
+                let parallel = !normal || !self.invariant_views.is_empty();
+                if parallel {
+                    for (_, source) in outputs {
+                        if let Output::Word(source) = *source {
+                            effect.read(source);
+                        }
+                    }
+                }
+                for &(destination, ref source) in outputs {
+                    if !parallel && let Output::Word(source) = *source {
+                        effect.read(source);
+                    }
+                    effect.write(destination);
+                    if let Output::Word(source) = *source
+                        && !updated.contains(&source)
+                    {
+                        effect.copy_lane(destination, source);
+                    }
+                    // In the sequential publication form, a later Word reads the
+                    // refreshed home. Do not claim an incoming-value copy for it.
+                    if !parallel {
+                        updated.insert(destination);
+                    }
+                }
+                if normal && std::env::var_os("MECH_PHASE_OWNER_TRANSFER").is_some() {
+                    for (_, source) in self.owner_transfers(owners) {
+                        effect.clear(source);
+                    }
+                }
+                for word in owners.retire_bypass(self.header, site, output_owners) {
+                    effect.read(word);
+                    effect.clear(word);
+                }
+                (site, effect)
+            };
+        std::iter::once(effects(self.exit, &self.outputs, &self.output_owners, true))
+            .chain(
+                self.private
+                    .iter()
+                    .flat_map(|p| &p.handoffs)
+                    .map(|exit| effects(exit.site, &exit.outputs, &exit.owners, false)),
+            )
+            .collect()
+    }
     pub fn checked_traversal_key(&self) -> Option<FuncId> {
         (self.relative_error_origins && !self.refuse_general_vector).then_some(self.function)
     }
@@ -225,6 +343,66 @@ impl Phase {
             }
             b.switch_to_block(next);
         }
+    }
+
+    fn growth_admission(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        words: &Words,
+        no_growth: &NoGrowthAlternative,
+    ) -> (Value, Value) {
+        let base = self.arrays[no_growth.array].0;
+        let length = words.read(b, base + 1);
+        let capacity = words.read(b, base + 2);
+        let remaining = words.read(b, no_growth.countdown_slot);
+        let valid = b
+            .ins()
+            .icmp(IntCC::UnsignedLessThanOrEqual, length, capacity);
+        let available = b.ins().isub(capacity, length);
+        let fits = b
+            .ins()
+            .icmp(IntCC::UnsignedLessThanOrEqual, remaining, available);
+        let enough = b.ins().band(valid, fits);
+        (remaining, enough)
+    }
+
+    fn composed_admission(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        words: &Words,
+        composed: &function::Composed,
+        remaining: Value,
+        consider_record_count: bool,
+    ) -> Value {
+        let admission = composed.admission;
+        let cursor = words.read(b, self.inputs[admission.cursor_word]);
+        let cache_length = words.read(b, self.arrays[admission.cache].0 + 1);
+        let cost_length = words.read(b, self.arrays[admission.costs].0 + 1);
+        let nonnegative = b
+            .ins()
+            .icmp(IntCC::UnsignedGreaterThanOrEqual, cursor, remaining);
+        let within = b
+            .ins()
+            .icmp(IntCC::UnsignedLessThanOrEqual, cursor, cache_length);
+        // Dense codes are an immutable object table. The old
+        // record threshold amortizes filling a private cost cache.
+        // Keep the actual cursor, length and cost admission checks.
+        let work = consider_record_count.then(|| {
+            let records = b.ins().isub(cursor, remaining);
+            b.ins().icmp_imm(
+                IntCC::UnsignedGreaterThanOrEqual,
+                records,
+                admission.minimum_records as i64,
+            )
+        });
+        let readable = b.ins().icmp_imm(
+            IntCC::UnsignedGreaterThanOrEqual,
+            cost_length,
+            admission.minimum_costs as i64,
+        );
+        let geometry = b.ins().band(nonnegative, within);
+        let ready = work.map_or(readable, |work| b.ins().band(work, readable));
+        b.ins().band(geometry, ready)
     }
 
     pub fn emit<M: Module>(
@@ -299,13 +477,54 @@ impl Phase {
             b.ins().brif(valid, next, &[], fallback, &[]);
             b.switch_to_block(next);
         }
+        for span in &self.entry_spans {
+            let begin = words.read(b, span.begin_word);
+            let end = words.read(b, span.end_word);
+            let length = words.read(b, span.length_word);
+            let ordered = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, begin, end);
+            let fits = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, end, length);
+            let mut valid = b.ins().band(ordered, fits);
+            if span.minimum_length != 0 {
+                let enough = b.ins().icmp_imm(
+                    IntCC::UnsignedGreaterThanOrEqual,
+                    length,
+                    span.minimum_length as i64,
+                );
+                valid = b.ins().band(valid, enough);
+            }
+            let next = b.create_block();
+            b.ins().brif(valid, next, &[], fallback, &[]);
+            b.switch_to_block(next);
+        }
         if let Some(observe) = observe.filter(|_| self.vector.is_none()) {
             let header = b.ins().iconst(types::I64, self.header as i64);
             let yes = b.ins().iconst(types::I64, 1);
             b.ins().call(observe, &[storage.heap, header, yes]);
         }
+        let dense = self.no_growth.as_ref().and_then(|growth| {
+            (root_entry
+                && growth.function.is_none()
+                && std::env::var_os("MECH_COMPACT_GUARD_DENSE_BEFORE_PACKET").is_some())
+            .then(|| {
+                (
+                    growth,
+                    growth
+                        .composed
+                        .as_ref()
+                        .expect("selected dense composition"),
+                )
+            })
+        });
+        if let Some((growth, composed)) = dense {
+            let (remaining, enough) = self.growth_admission(b, words, growth);
+            let ready = self.composed_admission(b, words, composed, remaining, false);
+            let admitted = b.ins().band(enough, ready);
+            let packet = b.create_block();
+            b.ins().brif(admitted, packet, &[], fallback, &[]);
+            b.switch_to_block(packet);
+        }
         let (input_words, output_words) = self.packet_words();
-        let (input, output) = packets.for_call(input_words, output_words)?;
+        let input = packets.input_for_call(input_words, output_words)?;
         for (at, &slot) in self.inputs.iter().enumerate() {
             let value = words.read(b, slot);
             b.ins().stack_store(value, input, offset(at)?);
@@ -334,7 +553,7 @@ impl Phase {
             .map(|&slot| words.read(b, slot))
             .collect::<Vec<_>>();
         let input = b.ins().stack_addr(types::I64, input, 0);
-        let out = b.ins().stack_addr(types::I64, output, 0);
+        let out = packets.output_address(b, input_words, output_words)?;
         let phase_timer =
             if root_entry && std::env::var_os("MECH_COMPACT_PROFILE_PHASE_CALLS").is_some() {
                 let mut signature = module.make_signature();
@@ -354,57 +573,57 @@ impl Phase {
             } else {
                 None
             };
-        let (status, at) = if let Some(no_growth) = &self.no_growth {
-            let base = self.arrays[no_growth.array].0;
-            let length = words.read(b, base + 1);
-            let capacity = words.read(b, base + 2);
-            let remaining = words.read(b, no_growth.countdown_slot);
-            let valid = b
-                .ins()
-                .icmp(IntCC::UnsignedLessThanOrEqual, length, capacity);
-            let available = b.ins().isub(capacity, length);
-            let fits = b
-                .ins()
-                .icmp(IntCC::UnsignedLessThanOrEqual, remaining, available);
-            let enough = b.ins().band(valid, fits);
+        let (status, at) = if let Some((_, composed)) = dense {
+            let function = module.declare_func_in_func(composed.function, b.func);
+            let call = b.ins().call(function, &[storage.heap, input, out]);
+            let result = b.inst_results(call);
+            (result[0], result[1])
+        } else if let Some(no_growth) = &self.no_growth {
+            let (remaining, enough) = self.growth_admission(b, words, no_growth);
             let fast = b.create_block();
             let general = b.create_block();
             let returned = b.create_block();
             b.append_block_param(returned, types::I64);
             b.append_block_param(returned, types::I64);
             b.ins().brif(enough, fast, &[], general, &[]);
-            let mut routes = vec![(fast, no_growth.function), (general, self.function)];
+            let mut routes: Vec<_> = no_growth
+                .function
+                .map(|function| (fast, function))
+                .into_iter()
+                .collect();
+            if no_growth.refuse_growth {
+                // Only the private call packet has been written. The
+                // original typed views and their owners are still current.
+                // Resume the ordinary checked phase before any visits.
+                b.switch_to_block(general);
+                b.ins().jump(fallback, &[]);
+            } else {
+                routes.push((general, self.function));
+            }
             if root_entry && let Some(composed) = &no_growth.composed {
-                let admission = composed.admission;
                 b.switch_to_block(fast);
-                let cursor = words.read(b, self.inputs[admission.cursor_word]);
-                let cache_length = words.read(b, self.arrays[admission.cache].0 + 1);
-                let cost_length = words.read(b, self.arrays[admission.costs].0 + 1);
-                let nonnegative =
-                    b.ins()
-                        .icmp(IntCC::UnsignedGreaterThanOrEqual, cursor, remaining);
-                let within = b
-                    .ins()
-                    .icmp(IntCC::UnsignedLessThanOrEqual, cursor, cache_length);
-                let records = b.ins().isub(cursor, remaining);
-                let work = b.ins().icmp_imm(
-                    IntCC::UnsignedGreaterThanOrEqual,
-                    records,
-                    admission.minimum_records as i64,
+                let ready = self.composed_admission(
+                    b,
+                    words,
+                    composed,
+                    remaining,
+                    no_growth.function.is_some(),
                 );
-                let readable = b.ins().icmp_imm(
-                    IntCC::UnsignedGreaterThanOrEqual,
-                    cost_length,
-                    admission.minimum_costs as i64,
-                );
-                let geometry = b.ins().band(nonnegative, within);
-                let ready = b.ins().band(work, readable);
-                let ready = b.ins().band(geometry, ready);
                 let prepare = b.create_block();
                 let sparse = b.create_block();
                 b.ins().brif(ready, prepare, &[], sparse, &[]);
-                routes[0].0 = sparse;
+                if no_growth.function.is_some() {
+                    routes[0].0 = sparse;
+                } else {
+                    // Only the caller's private packet was initialized.
+                    // Refuse before a phase visit or owner transfer.
+                    b.switch_to_block(sparse);
+                    b.ins().jump(fallback, &[]);
+                }
                 routes.push((prepare, composed.function));
+            } else if no_growth.function.is_none() {
+                b.switch_to_block(fast);
+                b.ins().jump(fallback, &[]);
             }
             for (block, function) in routes {
                 b.switch_to_block(block);
@@ -487,9 +706,7 @@ impl Phase {
                     .outputs
                     .iter()
                     .map(|(_, from)| match *from {
-                        Output::Stack(at) => {
-                            Ok(b.ins().stack_load(types::I64, output, offset(at)?))
-                        }
+                        Output::Stack(at) => packets.read_output(b, at),
                         Output::Word(at) => Ok(words.read(b, at)),
                     })
                     .collect::<Result<Vec<_>, NativeCompileError>>()?;
@@ -565,18 +782,14 @@ impl Phase {
                 continue;
             }
             for lane in 0..6 {
-                let value = b.ins().stack_load(
-                    types::I64,
-                    output,
-                    offset(1 + self.result_words + ordinal * 6 + lane)?,
-                );
+                let value = packets.read_output(b, 1 + self.result_words + ordinal * 6 + lane)?;
                 words.write(b, base + lane, value);
             }
         }
         if self.invariant_views.is_empty() {
             for (slot, source) in &self.outputs {
                 let value = match *source {
-                    Output::Stack(at) => b.ins().stack_load(types::I64, output, offset(at)?),
+                    Output::Stack(at) => packets.read_output(b, at)?,
                     Output::Word(at) => words.read(b, at),
                 };
                 words.write(b, *slot, value);
@@ -588,7 +801,7 @@ impl Phase {
                 .outputs
                 .iter()
                 .map(|(_, source)| match *source {
-                    Output::Stack(at) => Ok(b.ins().stack_load(types::I64, output, offset(at)?)),
+                    Output::Stack(at) => packets.read_output(b, at),
                     Output::Word(at) => Ok(words.read(b, at)),
                 })
                 .collect::<Result<Vec<_>, NativeCompileError>>()?;
@@ -748,13 +961,18 @@ pub(super) fn define<M: Module>(
             "geometry refusal requires the unobserved compact entry",
         ));
     }
+    let fixed_packets = std::env::var_os("MECH_COMPACT_FIXED_PHASE_PACKET");
+    let selected_outputs = std::env::var_os("MECH_COMPACT_SELECT_PHASE_OUTPUT_WORDS");
     let mut candidates = Vec::new();
     for (id, region) in closed.regions.iter().enumerate() {
         let Some(proof) = region.numeric.as_ref() else {
             continue;
         };
         let private = if std::env::var_os("MECH_PRIVATE_NESTED_PHASES").is_some() {
-            PrivatePhase::derive(prepared, region, layout)?
+            let compact_packet = fixed_packets.as_deref().is_some_and(|scope| {
+                scope != "refused" || refuse_general.contains(&(region.tail.header() as usize))
+            });
+            PrivatePhase::derive(prepared, region, layout, compact_packet)?
         } else {
             None
         };
@@ -953,8 +1171,9 @@ pub(super) fn define<M: Module>(
         // Each synchronous alternative returns to this same reader. Retain
         // the existing packet offsets while selecting only the normal-return
         // words the reader can consume. Failure and handoff have separate layouts.
-        let selected_output = std::env::var_os("MECH_COMPACT_SELECT_PHASE_OUTPUT_WORDS")
-            .is_some()
+        let selected_output = selected_outputs
+            .as_deref()
+            .is_some_and(|scope| scope != "non-private" || private.is_none())
             .then(|| {
                 let mut selected = outputs
                     .iter()
@@ -990,6 +1209,74 @@ pub(super) fn define<M: Module>(
             && !share_phase_bodies
             && std::env::var_os("MECH_COMPACT_KEEP_REFUSED_PHASE_CODE").is_none();
         let vector_fast = std::env::var_os("MECH_PHASE_VECTOR_FAST").is_some();
+        let literal_views = || -> BTreeMap<_, _> {
+            arrays
+                .iter()
+                .enumerate()
+                .filter_map(|(array, &(base, writable))| {
+                    if writable || proof.arrays[array].appends {
+                        return None;
+                    }
+                    literals.literal(base).map(|literal| (array, literal))
+                })
+                .collect()
+        };
+        let refuse_growth = !observe
+            && !share_phase_bodies
+            && std::env::var_os("MECH_COMPACT_PROFILE_PHASE_CALLS").is_none()
+            && std::env::var_os("MECH_COMPACT_REFUSE_PHASE_GROWTH").is_some();
+        let unobserved_growth = refuse_growth
+            && prepared.metadata().parallel.regions.is_empty()
+            && function::refused_general_ssa_unobserved();
+        let dense_only =
+            unobserved_growth && std::env::var_os("MECH_COMPACT_DENSE_NO_GROWTH_ONLY").is_some();
+        let mut chosen = None;
+        if unobserved_growth
+            && !omit_general
+            && private.is_none()
+            && std::env::var_os("MECH_WHOLE_PHASE_CAPACITY").is_some()
+            && std::env::var_os("MECH_COMPACT_PREPARE_DENSE_FIRST").is_some()
+            && let Some(pool) = pool
+            && let Some(contract) = NoGrowth::derive(prepared, &facts, region)
+        {
+            let literals = literal_views();
+            if !literals.is_empty() {
+                // Keep speculative declarations, definitions and memoized data
+                // IDs together. An unadmitted body leaves the compiler state intact.
+                let mut recorded = pool.record(module)?;
+                let mut tables = dense_tables.clone();
+                let general = function::declare_refused_general(&mut recorded, header)?;
+                let fast = function::prepare(
+                    &mut recorded,
+                    prepared,
+                    id,
+                    observe,
+                    input_words,
+                    output_words,
+                    fixed_count,
+                    selected_output.as_ref(),
+                    false,
+                    None,
+                    None,
+                    Some(&contract),
+                    &literals,
+                    &mut tables,
+                    None,
+                    "_no_growth",
+                );
+                if let Ok(fast) = fast
+                    && fast.has_dense_composition()
+                    && fast
+                        .entry_bounds()
+                        .iter()
+                        .any(|&(array, _, row)| array == contract.array && row)
+                {
+                    recorded.replay(module)?;
+                    dense_tables = tables;
+                    chosen = Some((general, contract, fast));
+                }
+            }
+        }
         let source_admission = if skip_refused_general_ssa && omit_general && vector_fast {
             private
                 .as_ref()
@@ -997,13 +1284,39 @@ pub(super) fn define<M: Module>(
                     function::refused_general_bounds(CodePlan::Program(prepared), region, private)
                 })
                 .and_then(|bounds| {
-                    VectorContract::additional(proof, &bounds).map(|contract| (bounds, contract))
+                    VectorContract::additional(proof, &bounds).map(|mut contract| {
+                        contract.extend_bounds = !observe
+                            && std::env::var_os("MECH_REUSE_ADMITTED_INDEX_RANGES").is_some();
+                        contract.extend_spans = !observe
+                            && std::env::var_os("MECH_REUSE_ADMITTED_INPUT_SPANS").is_some();
+                        (bounds, contract)
+                    })
                 })
         } else {
             None
         };
-        let (ready, general_declaration, entry_bounds, vector_contract) =
-            if let Some((bounds, contract)) = source_admission {
+        // A refused geometry can use the checked source continuation
+        // directly. Admit a conservative current-view vector contract without
+        // known length floors and take those floors from the one body we emit.
+        let vector_only = if source_admission.is_none()
+            && skip_refused_general_ssa
+            && omit_general
+            && vector_fast
+            && private.is_none()
+            && std::env::var_os("MECH_COMPACT_PREPARE_REFUSED_VECTOR_ONLY").is_some()
+        {
+            VectorContract::additional(proof, &[]).map(|contract| (Vec::new(), contract))
+        } else {
+            None
+        };
+        let use_vector_bounds = vector_only.is_some()
+            || source_admission
+                .as_ref()
+                .is_some_and(|(_, contract)| contract.extend_bounds);
+        let (ready, general_declaration, mut entry_bounds, vector_contract) =
+            if let Some((general, _, fast)) = &chosen {
+                (None, *general, fast.entry_bounds().to_vec(), None)
+            } else if let Some((bounds, contract)) = source_admission.or(vector_only) {
                 let declaration = function::declare_refused_general(module, header)?;
                 (None, declaration, bounds, Some(contract))
             } else {
@@ -1038,7 +1351,9 @@ pub(super) fn define<M: Module>(
         let pack_input = compact_packet
             && refuse_general.contains(&header)
             && std::env::var_os("MECH_COMPACT_PACK_PHASE_INPUTS").is_some();
-        let (general, fast) = if omit_general && let Some(contract) = vector_contract.as_ref() {
+        let (general, fast) = if chosen.is_some() {
+            (None, None)
+        } else if omit_general && let Some(contract) = vector_contract.as_ref() {
             let skipped_general_ssa = ready.is_none();
             // The source proof or the verified general IR supplied the same
             // bounds. No general code or cleanup result is needed here.
@@ -1061,7 +1376,9 @@ pub(super) fn define<M: Module>(
                 None,
                 "_vector",
             )?;
-            if skipped_general_ssa && fast.entry_bounds() != entry_bounds.as_slice() {
+            if use_vector_bounds {
+                entry_bounds = fast.entry_bounds().to_vec();
+            } else if skipped_general_ssa && fast.entry_bounds() != entry_bounds.as_slice() {
                 return Err(backend(
                     "refused phase source bounds differ from its vector body",
                 ));
@@ -1140,7 +1457,11 @@ pub(super) fn define<M: Module>(
                     "symbol": format!("mech_compact_numeric_{header}"),
                     "phase_entry_bounds": entry_bounds,
                     "code_bytes": 0, "stack_bytes": 0,
-                    "compilation": "omitted: geometry uses checked continuation",
+                    "compilation": if chosen.is_some() {
+                        "omitted: admitted dense scorer uses checked continuation"
+                    } else {
+                        "omitted: geometry uses checked continuation"
+                    },
                     "input_words": input_words, "output_words": output_words,
                     "fixed_writable_capacities": fixed_count,
                     "fixed_length_entry_gate": fixed_count != 0,
@@ -1151,6 +1472,7 @@ pub(super) fn define<M: Module>(
         );
         let mut vector = None;
         let mut packed_input = None;
+        let mut entry_spans = Vec::new();
         if let Some(fast) = fast {
             let contract = vector_contract.unwrap();
             let used = general.as_ref().is_none_or(|body| fast.code != body.code);
@@ -1159,6 +1481,18 @@ pub(super) fn define<M: Module>(
             info["selected_by_guard"] = serde_json::json!(used);
             summary["vector_variant"] = info;
             if used {
+                for mut span in fast.entry_spans {
+                    let slot = |at| {
+                        inputs
+                            .get(at)
+                            .copied()
+                            .ok_or_else(|| backend("span guard lacks input word"))
+                    };
+                    span.begin_word = slot(span.begin_word)?;
+                    span.end_word = slot(span.end_word)?;
+                    span.length_word = slot(span.length_word)?;
+                    entry_spans.push(span);
+                }
                 packed_input = fast.packed_input;
                 vector = Some(VectorAlternative {
                     function: fast.function,
@@ -1181,53 +1515,74 @@ pub(super) fn define<M: Module>(
         if refuse_general_vector {
             summary["general_geometry_uses_checked_continuation"] = serde_json::json!(true);
         }
-        let no_growth = if std::env::var_os("MECH_WHOLE_PHASE_CAPACITY").is_some()
-            && vector.is_none()
-            && private.is_none()
-            && let Some(contract) = NoGrowth::derive(prepared, &facts, region)
-            && entry_bounds
-                .iter()
-                .any(|&(array, _, row)| array == contract.array && row)
-        {
-            let literal_views = arrays
-                .iter()
-                .enumerate()
-                .filter_map(|(array, &(base, writable))| {
-                    if writable || proof.arrays[array].appends {
-                        return None;
-                    }
-                    literals.literal(base).map(|literal| (array, literal))
-                })
-                .collect();
-            let fast = function::define(
-                module,
-                prepared,
-                id,
-                observe,
-                input_words,
-                output_words,
-                fixed_count,
-                selected_output.as_ref(),
-                false,
-                None,
-                None,
-                Some(&contract),
-                &literal_views,
-                &mut dense_tables,
-                bodies,
-                "_no_growth",
-            )?;
-            if fast.entry_bounds != entry_bounds {
+        let planned = chosen
+            .map(|(_, contract, ready)| (contract, Some(ready)))
+            .or_else(|| {
+                if std::env::var_os("MECH_WHOLE_PHASE_CAPACITY").is_some()
+                    && vector.is_none()
+                    && private.is_none()
+                    && let Some(contract) = NoGrowth::derive(prepared, &facts, region)
+                    && entry_bounds
+                        .iter()
+                        .any(|&(array, _, row)| array == contract.array && row)
+                {
+                    Some((contract, None))
+                } else {
+                    None
+                }
+            });
+        let no_growth = if let Some((contract, ready)) = planned {
+            let fast = if let Some(ready) = ready {
+                ready
+            } else {
+                function::prepare(
+                    module,
+                    prepared,
+                    id,
+                    observe,
+                    input_words,
+                    output_words,
+                    fixed_count,
+                    selected_output.as_ref(),
+                    false,
+                    None,
+                    None,
+                    Some(&contract),
+                    &literal_views(),
+                    &mut dense_tables,
+                    bodies.as_deref_mut(),
+                    "_no_growth",
+                )?
+            };
+            if fast.entry_bounds() != entry_bounds {
                 return Err(backend("no-growth variant entry bounds differ"));
             }
-            summary["no_growth_variant"] = fast.summary;
-            if let Some(composed) = &fast.composed {
+            let dense_only = dense_only && fast.has_dense_composition();
+            let (function, composed) = if dense_only {
+                summary["no_growth_variant"] = serde_json::json!({
+                    "symbol": format!("mech_compact_numeric_{header}_no_growth"),
+                    "phase_entry_bounds": entry_bounds,
+                    "code_bytes": 0,
+                    "stack_bytes": 0,
+                    "compilation": "omitted: refusals resume the checked continuation",
+                });
+                (None, fast.into_composition())
+            } else {
+                let fast = fast.define(module, bodies)?;
+                summary["no_growth_variant"] = fast.summary;
+                (Some(fast.function), fast.composed)
+            };
+            if let Some(composed) = &composed {
                 summary["composed_variant"] = composed.summary.clone();
             }
+            if refuse_growth {
+                summary["general_growth_uses_checked_continuation"] = serde_json::json!(true);
+            }
             Some(NoGrowthAlternative {
-                function: fast.function,
+                refuse_growth,
+                function,
                 array: contract.array,
-                composed: fast.composed,
+                composed,
                 countdown_slot: *bindings
                     .get(&contract.countdown)
                     .ok_or_else(|| backend("no-growth countdown lacks current binding"))?,
@@ -1258,6 +1613,7 @@ pub(super) fn define<M: Module>(
             arrays,
             fixed_arrays,
             entry_bounds,
+            entry_spans,
             invariant_views,
             outputs,
             output_owners,

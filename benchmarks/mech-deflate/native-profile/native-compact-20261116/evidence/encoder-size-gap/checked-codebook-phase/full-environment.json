@@ -1,0 +1,11 @@
+{
+  "cpu": "Apple M1",
+  "cpu_source": {
+    "path": "native-size-20261117/aligned-environment.json",
+    "sha256": "c98315ff0b534b2afb0340e534aa1174d8968d62ce6db3e0bd66cbe773b10aa9"
+  },
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t15.6.1\nBuildVersion:\t\t24G90",
+  "architecture": "arm64",
+  "clock": "Rust Instant",
+  "protocol": "Serial balanced worker orders with separate warmup and private allocation cleanup."
+}

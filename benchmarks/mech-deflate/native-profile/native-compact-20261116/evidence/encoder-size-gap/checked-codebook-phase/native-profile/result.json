@@ -1,0 +1,43 @@
+{
+  "compiler_sha256": "4e1d5afe0ee1791bfbf4d624ff05a7665f90c5a64e3fb66a6fc08ccf5e4114cb",
+  "source_base": "c697f100f8",
+  "scope": "diagnostic encode-through-process-exit stack samples under concurrent test-build load; 3-second collector follows target exit to include complete native work and teardown; not a latency measurement",
+  "trials": [
+    {
+      "trial": 0,
+      "pid": 32432,
+      "artifacts": {
+        "program.o": "c5aab01c69ff4ed325b5149d2e1402a59477e5858f52052939d51f7eff699ef8",
+        "metadata.json": "c187c6f40d81d45995eaf3313c3282d41aadbd066413d7f44c0775b1c22225fa",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "exact_control": true,
+      "sample_file": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/checked-root-phase/current-native-profile-complete/0/sample.txt",
+      "sampler_exit_code": 0
+    },
+    {
+      "trial": 1,
+      "pid": 32434,
+      "artifacts": {
+        "program.o": "c5aab01c69ff4ed325b5149d2e1402a59477e5858f52052939d51f7eff699ef8",
+        "metadata.json": "c187c6f40d81d45995eaf3313c3282d41aadbd066413d7f44c0775b1c22225fa",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "exact_control": true,
+      "sample_file": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/checked-root-phase/current-native-profile-complete/1/sample.txt",
+      "sampler_exit_code": 0
+    },
+    {
+      "trial": 2,
+      "pid": 32436,
+      "artifacts": {
+        "program.o": "c5aab01c69ff4ed325b5149d2e1402a59477e5858f52052939d51f7eff699ef8",
+        "metadata.json": "c187c6f40d81d45995eaf3313c3282d41aadbd066413d7f44c0775b1c22225fa",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "exact_control": true,
+      "sample_file": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/checked-root-phase/current-native-profile-complete/2/sample.txt",
+      "sampler_exit_code": 0
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "qualified_selection": {
+    "text_bytes": 63388,
+    "roc_wins": 81,
+    "libdeflate_wins": 62,
+    "word_worker_sha256": "fab303151eca902a95986488684102fc1707ec7f8df1324ebfd9c55543cfc368"
+  },
+  "source_first_word_probe": "ce5abdb0d13cae82cf01f4935a43ab667971ce0c",
+  "source_no_state_fix": "00765f3be3f20c1a50efd931f3128718ea4c205a",
+  "repository_tests": {
+    "passed": 10,
+    "filtered_out": 1350,
+    "result": "repository-tests/result.json"
+  },
+  "finalist_precision": "finalists/precision.json",
+  "adverse_original_retained": true,
+  "repeat_complete": true,
+  "winner_frequency": "winner-frequency/result.json",
+  "first_word_frequency": "first-word-frequency/result.json",
+  "histogram_counts": "histogram-counts/counts.json",
+  "scope": "No new 63rd win. Both finalists retained. Original adverse timing is preserved; fresh repeat does not delete or reinterpret it. Counters are untimed diagnostic clones, separate from shipping latency workers. Histogram proof implementation is still in progress.",
+  "no_state_actual_source_reproduction": "no-state-source-reproduction.json"
+}

@@ -1,0 +1,474 @@
+{
+  "source_commit": "5a89f646664b86a0b808137c01c7627b2142552a",
+  "compiler_sha256": "6711160f915f00bb783831fc14f0144ba7949c06ea9df264edd727a62d44e715",
+  "object_sha256": "470e6899a3cfec1e2fc0f9d3d8aef1d427de7d621e6b9ec87b350cb6103d9b38",
+  "metadata_sha256": "3faa1a9d87a63454863ff55471898c7bea9a8a361401914a6932d7dca6b583db",
+  "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+  "worker_sha256": "88321c097d29b7219f639abbc5fcce727f0602de2d05ab24e5e2b47f2996c3b4",
+  "decision": "Retain",
+  "encoder_bytes": 63692,
+  "encoder_bytes_saved": 64,
+  "encoder_x_libdeflate": 1.7176914778856527,
+  "encoder_x_roc": 1.1039240155296728,
+  "root_bytes": 46788,
+  "root_stack_bytes": 3296,
+  "peak_stack_bytes": 4848,
+  "source_success_observations": 162,
+  "source_failure_cases": 6,
+  "source_exact_recoveries": 12,
+  "wins": [
+    {
+      "id": "matcher-guard-current-guards-profiled-full-forward",
+      "kind": "full",
+      "order": "forward",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 62,
+            "mech-experiment": 62
+          },
+          "precision_supported_wins": {
+            "mech-control": 62,
+            "mech-experiment": 62
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 56,
+            "mech-experiment": 56
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 56,
+            "mech-experiment": 56
+          }
+        }
+      }
+    },
+    {
+      "id": "matcher-guard-current-guards-profiled-full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "case_count": 81,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "precision_supported_wins": {
+            "mech-control": 81,
+            "mech-experiment": 81
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 74,
+            "mech-experiment": 74
+          }
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 62,
+            "mech-experiment": 62
+          },
+          "precision_supported_wins": {
+            "mech-control": 62,
+            "mech-experiment": 62
+          },
+          "lost_cases": [],
+          "gained_cases": [],
+          "distinct_contract_point_estimate_wins": {
+            "mech-control": 56,
+            "mech-experiment": 56
+          },
+          "distinct_contract_precision_supported_wins": {
+            "mech-control": 56,
+            "mech-experiment": 56
+          }
+        }
+      }
+    }
+  ],
+  "counter_differences": [
+    {
+      "case": "prefix-natural-4096",
+      "calls": 1,
+      "control": {
+        "instructions": 1508125,
+        "pacibsp": 1,
+        "stp": 6,
+        "stack_stores": 39683,
+        "mov": 146885,
+        "sub": 73178,
+        "stur": 39673,
+        "ldr": 75587,
+        "payload_loads": 94214,
+        "str": 16624,
+        "b": 20581,
+        "branches": 281929,
+        "add": 169344,
+        "cmp": 236063,
+        "b.lo": 41081,
+        "eor.16b": 7038,
+        "umaxp.4s": 7038,
+        "mov.d": 7038,
+        "cbnz": 7079,
+        "b.ls": 24965,
+        "b.hi": 16473,
+        "eor": 15508,
+        "b.eq": 27256,
+        "rbit": 5561,
+        "clz": 5561,
+        "lsr": 26701,
+        "ldur": 91886,
+        "stack_loads": 131115,
+        "b.hs": 77418,
+        "and": 94469,
+        "orr": 24159,
+        "payload_stores": 36292,
+        "tbz": 26357,
+        "cset": 17772,
+        "uxtb": 13714,
+        "tbnz": 9621,
+        "ldrb": 34353,
+        "lsl": 15381,
+        "strh": 19672,
+        "ldrh": 11568,
+        "ccmp": 22691,
+        "b.ne": 27006,
+        "movk": 8145,
+        "mul": 8184,
+        "prfm": 8184,
+        "ldp": 11935,
+        "cbz": 4092,
+        "csel": 4092,
+        "uxth": 8184,
+        "retab": 1
+      },
+      "candidate": {
+        "instructions": 1512193,
+        "pacibsp": 1,
+        "stp": 6,
+        "stack_stores": 38744,
+        "mov": 145946,
+        "sub": 73178,
+        "stur": 38734,
+        "ldr": 75587,
+        "payload_loads": 94214,
+        "str": 16624,
+        "b": 29618,
+        "branches": 290027,
+        "cmp": 235124,
+        "b.hs": 71578,
+        "add": 168405,
+        "payload_stores": 36292,
+        "ldp": 11935,
+        "stack_loads": 131115,
+        "ldrb": 34353,
+        "ldur": 91886,
+        "and": 94195,
+        "orr": 24159,
+        "tbz": 26357,
+        "ccmp": 22691,
+        "lsr": 26701,
+        "b.ne": 31318,
+        "cset": 17772,
+        "movk": 8145,
+        "uxtb": 13714,
+        "eor": 15508,
+        "cbz": 11126,
+        "b.lo": 45982,
+        "tbnz": 9621,
+        "b.eq": 22944,
+        "b.ls": 16820,
+        "b.hi": 24618,
+        "csel": 4092,
+        "lsl": 15381,
+        "ldrh": 11568,
+        "uxth": 8184,
+        "strh": 19672,
+        "mul": 8184,
+        "prfm": 8184,
+        "eor.16b": 7038,
+        "umaxp.4s": 7038,
+        "mov.d": 7038,
+        "rbit": 5561,
+        "clz": 5561,
+        "cbnz": 45,
+        "retab": 1
+      },
+      "instructions_removed": -4068,
+      "branches_removed": -8098,
+      "stack_store_instructions_removed": 939
+    },
+    {
+      "case": "prefix-random-1048576",
+      "calls": 35,
+      "control": {
+        "instructions": 241346097,
+        "pacibsp": 35,
+        "stp": 210,
+        "stack_stores": 9698800,
+        "mov": 26964330,
+        "sub": 6180413,
+        "stur": 9698450,
+        "ldr": 11028493,
+        "payload_loads": 10186617,
+        "str": 3188609,
+        "b": 4457625,
+        "branches": 45024643,
+        "add": 24829388,
+        "cmp": 39105612,
+        "b.lo": 5739640,
+        "eor.16b": 1962,
+        "umaxp.4s": 1962,
+        "mov.d": 1962,
+        "cbnz": 1962,
+        "b.hi": 3586060,
+        "eor": 2097060,
+        "b.eq": 3719953,
+        "rbit": 1962,
+        "clz": 1962,
+        "lsr": 6697913,
+        "b.ls": 3149551,
+        "ldur": 12216924,
+        "stack_loads": 22267325,
+        "b.hs": 13075546,
+        "and": 17582861,
+        "orr": 5240528,
+        "payload_stores": 6811398,
+        "tbz": 3554518,
+        "cset": 3145605,
+        "uxtb": 2097060,
+        "tbnz": 1050527,
+        "ldrb": 4002154,
+        "lsl": 2337776,
+        "strh": 3622929,
+        "ldrh": 1525847,
+        "ccmp": 1531771,
+        "b.ne": 5640716,
+        "movk": 2097117,
+        "mul": 2140930,
+        "prfm": 2097082,
+        "ldp": 3680524,
+        "cbz": 1048545,
+        "csel": 1048541,
+        "uxth": 2097082,
+        "umulh": 45840,
+        "retab": 35,
+        "msub": 8509,
+        "madd": 2016
+      },
+      "candidate": {
+        "instructions": 233154478,
+        "pacibsp": 35,
+        "stp": 210,
+        "stack_stores": 8653030,
+        "mov": 25918560,
+        "sub": 6180413,
+        "stur": 8652680,
+        "ldr": 11028493,
+        "payload_loads": 10186617,
+        "str": 3188609,
+        "b": 1496241,
+        "branches": 41017489,
+        "cmp": 38059842,
+        "b.hs": 9960813,
+        "add": 23783618,
+        "payload_stores": 6811398,
+        "ldp": 3680524,
+        "stack_loads": 22267325,
+        "ldrb": 4002154,
+        "ldur": 12216924,
+        "and": 17581476,
+        "orr": 5240528,
+        "tbz": 3554518,
+        "ccmp": 1531771,
+        "lsr": 6697913,
+        "b.ne": 6690293,
+        "cset": 3145605,
+        "movk": 2097117,
+        "uxtb": 2097060,
+        "eor": 2097060,
+        "cbz": 1050507,
+        "b.lo": 7808603,
+        "tbnz": 1050527,
+        "b.eq": 2670376,
+        "b.ls": 1052469,
+        "b.hi": 5683142,
+        "csel": 1048541,
+        "lsl": 2337776,
+        "ldrh": 1525847,
+        "uxth": 2097082,
+        "strh": 3622929,
+        "mul": 2140930,
+        "prfm": 2097082,
+        "eor.16b": 1962,
+        "umaxp.4s": 1962,
+        "mov.d": 1962,
+        "rbit": 1962,
+        "clz": 1962,
+        "retab": 35,
+        "umulh": 45840,
+        "msub": 8509,
+        "madd": 2016
+      },
+      "instructions_removed": 8191619,
+      "branches_removed": 4007154,
+      "stack_store_instructions_removed": 1045770
+    }
+  ],
+  "complete_builds": {
+    "plan_sha256": "a4876c0fb526eaf9cb29bad00595beaa6264cca944b6d4045da919f27b7f1b08",
+    "medians": {
+      "mech-control-reference": {
+        "source": 2.175034604500979,
+        "link": 0.0357743538916111,
+        "source_through_link": 2.2112025832757354,
+        "strip": 0.010841354494914412,
+        "source_through_strip": 2.222269874997437
+      },
+      "mech-current-matcher-guards": {
+        "source": 2.176973167108372,
+        "link": 0.036247041542083025,
+        "source_through_link": 2.2146117088850588,
+        "strip": 0.010855125030502677,
+        "source_through_strip": 2.225812896154821
+      },
+      "roc": {
+        "source": 2.9472290829289705,
+        "link": 0.03543254197575152,
+        "source_through_link": 2.9831648957915604,
+        "strip": 0.010632916586473584,
+        "source_through_strip": 2.9940823127981275
+      },
+      "libdeflate": {
+        "source": 0.44540933333337307,
+        "link": 0.034813417121768,
+        "source_through_link": 0.4808802087791264,
+        "strip": 0.010784457670524716,
+        "source_through_strip": 0.49200110463425517
+      }
+    },
+    "phases": {
+      "mech-control-reference": {
+        "parse": 0.7077066455,
+        "catalog": 1.76455e-05,
+        "frontend": 0.214411958,
+        "artifact": 0.0068093755,
+        "encode": 0.002541542,
+        "native": 1.21767125
+      },
+      "mech-current-matcher-guards": {
+        "parse": 0.707648437,
+        "catalog": 2.1979500000000002e-05,
+        "frontend": 0.21431125,
+        "artifact": 0.006829417,
+        "encode": 0.0025397915,
+        "native": 1.2184482294999999
+      }
+    },
+    "paired_ratios": {
+      "mech-control-reference": {
+        "roc": 0.7411378711054204,
+        "libdeflate": 4.60190417329895,
+        "mech-control-reference": 1.0
+      },
+      "mech-current-matcher-guards": {
+        "roc": 0.7429372430758119,
+        "libdeflate": 4.610931729543916,
+        "mech-control-reference": 1.0006561885090997
+      }
+    },
+    "source_commit": "5a89f646664b86a0b808137c01c7627b2142552a",
+    "compiler_sha256": "6711160f915f00bb783831fc14f0144ba7949c06ea9df264edd727a62d44e715",
+    "trials": 8,
+    "source_cpu_seconds": {
+      "mech-control-reference": 2.2355835,
+      "mech-current-matcher-guards": 2.2375939999999996,
+      "roc": 2.93951,
+      "libdeflate": 0.441536
+    },
+    "source_rss_bytes": {
+      "mech-control-reference": 393068544.0,
+      "mech-current-matcher-guards": 393117696.0,
+      "roc": 392216576.0,
+      "libdeflate": 71540736.0
+    },
+    "stripped_executables": {
+      "mech-control-reference": {
+        "bytes": 276072,
+        "sha256": "38251de381d9c1e63a927d73bf1bc51483ea1f1b4dc9827ad87d4c1ed6d08f4b"
+      },
+      "mech-current-matcher-guards": {
+        "bytes": 276072,
+        "sha256": "8d2a9a53fa7f9747f36d2c17781530ab5124628d4f200ae937a38daa8a6e5589"
+      },
+      "roc": {
+        "bytes": 191912,
+        "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+      },
+      "libdeflate": {
+        "bytes": 155752,
+        "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+      }
+    },
+    "paired_ms_guards_vs_control": 1.4534997753798962,
+    "guards_faster_than_control": 3,
+    "timing_boundary": "Fresh process, original encoder source through native artifact and final deployment link; fixed support prebuilt for every actor; strip is reported separately."
+  },
+  "paired_complete_build_cost_ms": {
+    "values": [
+      -0.2671666443347931,
+      1.2520411983132362,
+      8.390083443373442,
+      2.8512924909591675,
+      -7.348790764808655,
+      1.654958352446556,
+      18.772500101476908,
+      -0.8554584346711636
+    ],
+    "median": 1.4534997753798962,
+    "interval90": [
+      -0.5613125395029783,
+      5.620687967166305
+    ],
+    "bootstrap_resamples": 20000,
+    "seed": 9951119
+  },
+  "runtime_tradeoffs": {
+    "slowdowns": [],
+    "uncertain": [
+      "seven-stored-prefix: combined and individual run bounds conflict: matcher-guard-current-guards-profiled-full-forward",
+      "random-64: combined and individual run bounds conflict: matcher-guard-current-guards-profiled-full-forward",
+      "prefix-periodic-8192: regression bound or duplicate-control repeatability unresolved"
+    ]
+  },
+  "recipe": "m1-matcher-guard-facts",
+  "limitation": "No new C win. All observed differences belong to the guard proof plus fresh layout, without a separate effects ablation. Profile edge estimates only chose layout; actual counters and complete timing are reported separately."
+}

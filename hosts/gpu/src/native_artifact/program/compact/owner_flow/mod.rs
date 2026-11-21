@@ -60,6 +60,12 @@ fn insert(words: &mut [u64], id: usize) {
     words[id / 64] |= 1u64 << (id % 64);
 }
 impl OwnerFlow {
+    #[cfg(feature = "early-region-emission")]
+    pub(super) fn copy_lanes(&self, site: usize) -> impl Iterator<Item = (usize, usize)> + '_ {
+        self.copies[site]
+            .iter()
+            .map(|&(destination, source)| (self.slots[destination], self.slots[source]))
+    }
     pub fn derive(
         plan: &Plan,
         layout: &Layout,

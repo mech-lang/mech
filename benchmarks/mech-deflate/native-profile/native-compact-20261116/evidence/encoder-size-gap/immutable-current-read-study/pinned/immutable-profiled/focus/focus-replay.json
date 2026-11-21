@@ -1,0 +1,678 @@
+{
+  "runs": [
+    {
+      "id": "pinned-immutable-read-immutable-profiled-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 15,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 15,
+            "mech-experiment": 15
+          },
+          "precision_supported_wins": {
+            "mech-control": 15,
+            "mech-experiment": 15
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "precision_supported_wins": {
+            "mech-control": 13,
+            "mech-experiment": 12
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "pinned-immutable-read-immutable-profiled-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 15,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 15,
+            "mech-experiment": 15
+          },
+          "precision_supported_wins": {
+            "mech-control": 15,
+            "mech-experiment": 15
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "precision_supported_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    }
+  ],
+  "cases": {
+    "empty": {
+      "decision": "unresolved",
+      "runs": {
+        "pinned-immutable-read-immutable-profiled-focus-forward": {
+          "estimate": -0.0023606737177265247,
+          "lower": -0.010553256009337653,
+          "upper": 0.005829714227774119
+        },
+        "pinned-immutable-read-immutable-profiled-focus-reverse": {
+          "estimate": 0.0036169140555977197,
+          "lower": -0.012523818112812113,
+          "upper": 0.027036968505884662
+        }
+      },
+      "combined": {
+        "estimate": 0.0006236565182340392,
+        "lower": -0.008649977239091888,
+        "upper": 0.012735571698279102
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "one-stored": {
+      "decision": "bounded",
+      "runs": {
+        "pinned-immutable-read-immutable-profiled-focus-forward": {
+          "estimate": -0.02086703196689943,
+          "lower": -0.028479730498479627,
+          "upper": -0.013199284159604363
+        },
+        "pinned-immutable-read-immutable-profiled-focus-reverse": {
+          "estimate": -0.00472883796966439,
+          "lower": -0.012326609268512367,
+          "upper": 0.0030922320366082445
+        }
+      },
+      "combined": {
+        "estimate": -0.012830912722387011,
+        "lower": -0.018002367561404276,
+        "upper": -0.007339263457436074
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "seven-stored-prefix": {
+      "decision": "unresolved",
+      "runs": {
+        "pinned-immutable-read-immutable-profiled-focus-forward": {
+          "estimate": 0.0026473903208863447,
+          "lower": -0.003932670807178407,
+          "upper": 0.00946906697545935
+        },
+        "pinned-immutable-read-immutable-profiled-focus-reverse": {
+          "estimate": 0.007156406321808362,
+          "lower": -0.00022506103487784923,
+          "upper": 0.014926021950026902
+        }
+      },
+      "combined": {
+        "estimate": 0.004899369311934354,
+        "lower": -4.769978604790559e-05,
+        "upper": 0.010063831234095266
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "bounded",
+      "runs": {
+        "pinned-immutable-read-immutable-profiled-focus-forward": {
+          "estimate": 0.005166922460048573,
+          "lower": 0.0030289849961571136,
+          "upper": 0.007477507852837073
+        },
+        "pinned-immutable-read-immutable-profiled-focus-reverse": {
+          "estimate": 0.0002323825912098343,
+          "lower": -0.002901506896285766,
+          "upper": 0.0029226204898504804
+        }
+      },
+      "combined": {
+        "estimate": 0.0026966170054072425,
+        "lower": 0.0007521677442001717,
+        "upper": 0.004496186749124442
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "unresolved",
+      "runs": {
+        "pinned-immutable-read-immutable-profiled-focus-forward": {
+          "estimate": 0.007901787521753079,
+          "lower": 0.0025336175136250194,
+          "upper": 0.013124232086974441
+        },
+        "pinned-immutable-read-immutable-profiled-focus-reverse": {
+          "estimate": -0.0015852045122396463,
+          "lower": -0.007659356453851185,
+          "upper": 0.004411236269632468
+        }
+      },
+      "combined": {
+        "estimate": 0.0031470764849386157,
+        "lower": -0.0009097539503108987,
+        "upper": 0.007201220745854053
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "random-1024": {
+      "decision": "regression",
+      "runs": {
+        "pinned-immutable-read-immutable-profiled-focus-forward": {
+          "estimate": 0.01471185366497596,
+          "lower": 0.012765341207583214,
+          "upper": 0.016758278532366555
+        },
+        "pinned-immutable-read-immutable-profiled-focus-reverse": {
+          "estimate": 0.01326779036045922,
+          "lower": 0.011221417238079123,
+          "upper": 0.01547689130803298
+        }
+      },
+      "combined": {
+        "estimate": 0.01398956494417436,
+        "lower": 0.012521632996655985,
+        "upper": 0.015466964395382421
+      },
+      "adverse_runs": [
+        "pinned-immutable-read-immutable-profiled-focus-forward",
+        "pinned-immutable-read-immutable-profiled-focus-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "heldout-mixed-131073": {
+      "decision": "regression",
+      "runs": {
+        "pinned-immutable-read-immutable-profiled-focus-forward": {
+          "estimate": 0.010265797125955434,
+          "lower": 0.008975954256987828,
+          "upper": 0.011457713055200047
+        },
+        "pinned-immutable-read-immutable-profiled-focus-reverse": {
+          "estimate": 0.010674037770212585,
+          "lower": 0.009779858522320328,
+          "upper": 0.011585812444766308
+        }
+      },
+      "combined": {
+        "estimate": 0.010469896831386105,
+        "lower": 0.009687595088295309,
+        "upper": 0.011220440040044855
+      },
+      "adverse_runs": [
+        "pinned-immutable-read-immutable-profiled-focus-forward",
+        "pinned-immutable-read-immutable-profiled-focus-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-natural-4096": {
+      "decision": "unresolved",
+      "runs": {
+        "pinned-immutable-read-immutable-profiled-focus-forward": {
+          "estimate": 0.0027349029258902924,
+          "lower": -0.0017905134287278246,
+          "upper": 0.007330784872662477
+        },
+        "pinned-immutable-read-immutable-profiled-focus-reverse": {
+          "estimate": 0.0027189711702704233,
+          "lower": -0.0005317382488779776,
+          "upper": 0.006002061586161567
+        }
+      },
+      "combined": {
+        "estimate": 0.0027269370164391127,
+        "lower": -7.124985314088672e-05,
+        "upper": 0.005581666038021016
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "unresolved",
+      "runs": {
+        "pinned-immutable-read-immutable-profiled-focus-forward": {
+          "estimate": 0.0055093551686378195,
+          "lower": 0.00238151062090064,
+          "upper": 0.008738019481411508
+        },
+        "pinned-immutable-read-immutable-profiled-focus-reverse": {
+          "estimate": 0.005617668508001827,
+          "lower": 0.0029544063890056815,
+          "upper": 0.008384108954202274
+        }
+      },
+      "combined": {
+        "estimate": 0.005563510379960945,
+        "lower": 0.0034495881525049565,
+        "upper": 0.007661520123624532
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-16384": {
+      "decision": "unresolved",
+      "runs": {
+        "pinned-immutable-read-immutable-profiled-focus-forward": {
+          "estimate": 0.004136413517607851,
+          "lower": 0.002495288095196946,
+          "upper": 0.00578702371912776
+        },
+        "pinned-immutable-read-immutable-profiled-focus-reverse": {
+          "estimate": 0.005652052766162541,
+          "lower": 0.0032253201113772167,
+          "upper": 0.00819509366649851
+        }
+      },
+      "combined": {
+        "estimate": 0.004893947395064435,
+        "lower": 0.003409431828699905,
+        "upper": 0.006370290701210424
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-32769": {
+      "decision": "bounded",
+      "runs": {
+        "pinned-immutable-read-immutable-profiled-focus-forward": {
+          "estimate": 0.0032250304840506505,
+          "lower": 0.002309955111086781,
+          "upper": 0.004129576351220798
+        },
+        "pinned-immutable-read-immutable-profiled-focus-reverse": {
+          "estimate": -0.0001185666637483207,
+          "lower": -0.001563130884171926,
+          "upper": 0.0011936874795526187
+        }
+      },
+      "combined": {
+        "estimate": 0.0015518366211493273,
+        "lower": 0.0007212463366477184,
+        "upper": 0.002375115114499282
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1024": {
+      "decision": "regression",
+      "runs": {
+        "pinned-immutable-read-immutable-profiled-focus-forward": {
+          "estimate": 0.013326476683318544,
+          "lower": 0.010713981225727975,
+          "upper": 0.016063631580081283
+        },
+        "pinned-immutable-read-immutable-profiled-focus-reverse": {
+          "estimate": 0.011443719722848966,
+          "lower": 0.009100527884251308,
+          "upper": 0.014078501172959834
+        }
+      },
+      "combined": {
+        "estimate": 0.01238466052692866,
+        "lower": 0.010616138637258965,
+        "upper": 0.01423903884168265
+      },
+      "adverse_runs": [
+        "pinned-immutable-read-immutable-profiled-focus-forward",
+        "pinned-immutable-read-immutable-profiled-focus-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-random-4096": {
+      "decision": "regression",
+      "runs": {
+        "pinned-immutable-read-immutable-profiled-focus-forward": {
+          "estimate": 0.0009932499348712653,
+          "lower": -0.004590533692729326,
+          "upper": 0.0065033069675968225
+        },
+        "pinned-immutable-read-immutable-profiled-focus-reverse": {
+          "estimate": 0.026064568937439248,
+          "lower": 0.018778527148592516,
+          "upper": 0.033370137953705914
+        }
+      },
+      "combined": {
+        "estimate": 0.013451383887609136,
+        "lower": 0.008818095984304497,
+        "upper": 0.01808998070278589
+      },
+      "adverse_runs": [
+        "pinned-immutable-read-immutable-profiled-focus-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-1024": {
+      "decision": "regression",
+      "runs": {
+        "pinned-immutable-read-immutable-profiled-focus-forward": {
+          "estimate": 0.008223063935810293,
+          "lower": 0.005765351641493721,
+          "upper": 0.011070874638448247
+        },
+        "pinned-immutable-read-immutable-profiled-focus-reverse": {
+          "estimate": 0.00601913211563021,
+          "lower": 0.004146020962438657,
+          "upper": 0.007720222048008596
+        }
+      },
+      "combined": {
+        "estimate": 0.007120495154212092,
+        "lower": 0.005574050095695782,
+        "upper": 0.008766854958097037
+      },
+      "adverse_runs": [
+        "pinned-immutable-read-immutable-profiled-focus-forward"
+      ],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-4096": {
+      "decision": "unresolved",
+      "runs": {
+        "pinned-immutable-read-immutable-profiled-focus-forward": {
+          "estimate": 0.007912257785998689,
+          "lower": 0.0005902416979941538,
+          "upper": 0.015440310350927966
+        },
+        "pinned-immutable-read-immutable-profiled-focus-reverse": {
+          "estimate": 0.02379941907580485,
+          "lower": -0.012301964740663918,
+          "upper": 0.06010465155502298
+        }
+      },
+      "combined": {
+        "estimate": 0.015824780166682206,
+        "lower": -0.0025971425758894995,
+        "upper": 0.03442176492300031
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    }
+  },
+  "scope": "90% per-case paired bootstrap, stratified by run and actor order",
+  "equivalent_named_cases": [
+    [
+      "33027-periodic-window",
+      "prefix-periodic-33027"
+    ],
+    [
+      "prefix-repeated-1024",
+      "repeated-1024"
+    ],
+    [
+      "prefix-repeated-32769",
+      "repeated-32769"
+    ],
+    [
+      "prefix-natural-1024",
+      "reymont-prefix-1024"
+    ],
+    [
+      "prefix-natural-16384",
+      "reymont-prefix-16384"
+    ],
+    [
+      "prefix-natural-32769",
+      "reymont-prefix-32769"
+    ],
+    [
+      "heldout-window-32767",
+      "prefix-natural-32767"
+    ]
+  ],
+  "peak_private_payload_bytes": {},
+  "candidate_control_timing_observations": {
+    "slowdowns": [
+      "random-1024: established slowdown above the 0.5% resolution",
+      "heldout-mixed-131073: established slowdown above the 0.5% resolution",
+      "prefix-random-1024: established slowdown above the 0.5% resolution",
+      "prefix-random-4096: established slowdown above the 0.5% resolution",
+      "prefix-periodic-1024: established slowdown above the 0.5% resolution"
+    ],
+    "uncertain": [
+      "empty: regression bound or duplicate-control repeatability unresolved",
+      "seven-stored-prefix: regression bound or duplicate-control repeatability unresolved",
+      "random-64: regression bound or duplicate-control repeatability unresolved",
+      "prefix-natural-4096: regression bound or duplicate-control repeatability unresolved",
+      "prefix-natural-8192: regression bound or duplicate-control repeatability unresolved",
+      "prefix-natural-16384: regression bound or duplicate-control repeatability unresolved",
+      "prefix-periodic-4096: regression bound or duplicate-control repeatability unresolved"
+    ]
+  },
+  "decision": "Unresolved",
+  "rejected": [],
+  "unresolved": [
+    "both complete timing orders are required"
+  ],
+  "plan": {
+    "path": "consolidation-995/collector-read-lifetimes/pinned/immutable-profiled/focus/plan.json",
+    "sha256": "b405e938107e440499cc711aea4b5b0a8c696dc2513857868578e59918f4ced2"
+  },
+  "receipts": {
+    "pinned-immutable-read-immutable-profiled-focus-forward": {
+      "id": "pinned-immutable-read-immutable-profiled-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "consolidation-995/collector-read-lifetimes/pinned/immutable-profiled/focus/canonical-pins/pinned-immutable-read-immutable-profiled-focus-forward.json",
+        "sha256": "c8daef28716f5ddc90446f712aa260bf11881722f599ce25dd9d4e70c6a7f8b4"
+      },
+      "original_pins": {
+        "path": "pinned-immutable-read-immutable-profiled-focus-forward/pins.json",
+        "sha256": "1aa82280b0f47a13a02e33c590e111c314d386efba048368ededb04a0bce07c4"
+      },
+      "summary": {
+        "path": "pinned-immutable-read-immutable-profiled-focus-forward/summary.json",
+        "sha256": "eab0122ab5edd204ce5e3c7f0f9790b70ecbdfe869ab1b72037fa2b7aa53de48"
+      },
+      "complete": {
+        "path": "pinned-immutable-read-immutable-profiled-focus-forward/complete.json",
+        "sha256": "b6d0f228d6052be05e58ab3cf5190c6091cf68d5e02833716bd8b0d4943fd9fc"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-forward/320-overlap/observations.json.gz",
+          "sha256": "38764120e11cba2fb0c031585ac5c0958524fbb0ab31369ef37b0d0fe63001b9"
+        },
+        "empty": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-forward/empty/observations.json.gz",
+          "sha256": "539bf9746bbbc2c396ec297c9fde774ea5db43baa643989877b0cf768a81fe10"
+        },
+        "heldout-mixed-131073": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-forward/heldout-mixed-131073/observations.json.gz",
+          "sha256": "29048c6863f918fcdd694537dc024423249e7218a12ae5f1612c43a3cbab473a"
+        },
+        "one-stored": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-forward/one-stored/observations.json.gz",
+          "sha256": "c426c0db9ac356687af4931689e62874b4b20dbfe109b8fe8243f921106564cb"
+        },
+        "prefix-natural-16384": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-forward/prefix-natural-16384/observations.json.gz",
+          "sha256": "8a7659b7e0113c6aada28e37d7513cfae36de9976b75acf48602829ca0c927a0"
+        },
+        "prefix-natural-32769": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-forward/prefix-natural-32769/observations.json.gz",
+          "sha256": "f2b770dcba331ab4b5b77c77d81ff997bc1a38269a39e2714288df4c0844fd48"
+        },
+        "prefix-natural-4096": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-forward/prefix-natural-4096/observations.json.gz",
+          "sha256": "ec394d2155a1b1ada273e97290df40a98ff3f81c00eb61bbf64f9ab1ab337d91"
+        },
+        "prefix-natural-8192": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-forward/prefix-natural-8192/observations.json.gz",
+          "sha256": "48834b7accefb17b93f65622e45fdb209c5cbf697d071c040572b675e3c9c56a"
+        },
+        "prefix-periodic-1024": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-forward/prefix-periodic-1024/observations.json.gz",
+          "sha256": "481d27612967a9a982910baeb5a67f4ffadafb40cd8ed20974ed4670bc7819a2"
+        },
+        "prefix-periodic-4096": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-forward/prefix-periodic-4096/observations.json.gz",
+          "sha256": "ed708a908a8f66ecf0c1c79e7a12245522a27dfa209bedf8b1451b0c09e717f6"
+        },
+        "prefix-random-1024": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-forward/prefix-random-1024/observations.json.gz",
+          "sha256": "a5d8a91af042a3475ea45de5f0c5057534fc7cbb4a85faf356200aa0453a4856"
+        },
+        "prefix-random-4096": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-forward/prefix-random-4096/observations.json.gz",
+          "sha256": "d99a47e804831e5b3e38ff8f041ade4d7531774a262dd3b2db61887d70756547"
+        },
+        "random-1024": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-forward/random-1024/observations.json.gz",
+          "sha256": "d1168e61e46343d79b2751cbfa7c8175b9b2ffe1f5064d00244871ddc66aff58"
+        },
+        "random-64": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-forward/random-64/observations.json.gz",
+          "sha256": "85a1ffb6dd34317e30f6851023a8205c360454366ffe823e71b77123ed43c331"
+        },
+        "seven-stored-prefix": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-forward/seven-stored-prefix/observations.json.gz",
+          "sha256": "54b1663044b2c2c01a4366886ffc6cbbec356ebb32906db99c2515dd5d690cad"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-forward/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-forward/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-forward/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-forward/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    },
+    "pinned-immutable-read-immutable-profiled-focus-reverse": {
+      "id": "pinned-immutable-read-immutable-profiled-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "consolidation-995/collector-read-lifetimes/pinned/immutable-profiled/focus/canonical-pins/pinned-immutable-read-immutable-profiled-focus-reverse.json",
+        "sha256": "c8daef28716f5ddc90446f712aa260bf11881722f599ce25dd9d4e70c6a7f8b4"
+      },
+      "original_pins": {
+        "path": "pinned-immutable-read-immutable-profiled-focus-reverse/pins.json",
+        "sha256": "1aa82280b0f47a13a02e33c590e111c314d386efba048368ededb04a0bce07c4"
+      },
+      "summary": {
+        "path": "pinned-immutable-read-immutable-profiled-focus-reverse/summary.json",
+        "sha256": "557c80634a29d2794dfd304c7452305ee7f570e600f21c0404563b40de61d6fc"
+      },
+      "complete": {
+        "path": "pinned-immutable-read-immutable-profiled-focus-reverse/complete.json",
+        "sha256": "b6d0f228d6052be05e58ab3cf5190c6091cf68d5e02833716bd8b0d4943fd9fc"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-reverse/320-overlap/observations.json.gz",
+          "sha256": "f753b964975691670581f874d076a948fbd5b66abb7e37bf70527c2d01352a4a"
+        },
+        "empty": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-reverse/empty/observations.json.gz",
+          "sha256": "a6273628dc1a9cedaff73df619096cecf62d9e67ea2e2b01a877fe1ab5f20b5e"
+        },
+        "heldout-mixed-131073": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-reverse/heldout-mixed-131073/observations.json.gz",
+          "sha256": "e44d0590dbe67cec3e930b460b0cb233b5c6dd4da897af59cc6842767b71ab85"
+        },
+        "one-stored": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-reverse/one-stored/observations.json.gz",
+          "sha256": "d42c294617fbf68bf21b1af7f39533d59ebf35b699245cd7655a63a65d56c6ba"
+        },
+        "prefix-natural-16384": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-reverse/prefix-natural-16384/observations.json.gz",
+          "sha256": "bf45db6b1ec5a348ca7b9de00e21859256cc732843f7102ea97bc797300e65ad"
+        },
+        "prefix-natural-32769": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-reverse/prefix-natural-32769/observations.json.gz",
+          "sha256": "2afbb52290ad71b75e3d1c0e52420991854d046b5ade5728dc51cff37d54851a"
+        },
+        "prefix-natural-4096": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-reverse/prefix-natural-4096/observations.json.gz",
+          "sha256": "d14032853f4d6a8d25f2580e3d9ccf5be90a10755dcfef504da798ddcc9e6554"
+        },
+        "prefix-natural-8192": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-reverse/prefix-natural-8192/observations.json.gz",
+          "sha256": "157f9ebcfe53536380ce94ecf9ade579874285e20c99374e4907baa1105df309"
+        },
+        "prefix-periodic-1024": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-reverse/prefix-periodic-1024/observations.json.gz",
+          "sha256": "bd0962530e18579b37fcc978df7ece31a5a0dc18622058cbd467552d84e7b40d"
+        },
+        "prefix-periodic-4096": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-reverse/prefix-periodic-4096/observations.json.gz",
+          "sha256": "933bc89334d4a36a2f6e9e38a9fb8f65e4d6c5c0c89ae96bfa52f7a34a23cc4b"
+        },
+        "prefix-random-1024": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-reverse/prefix-random-1024/observations.json.gz",
+          "sha256": "9fc679c1d4d9fff802bce23e543c8e8e49c85539cbbda4496671d571c49b4af8"
+        },
+        "prefix-random-4096": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-reverse/prefix-random-4096/observations.json.gz",
+          "sha256": "7dd1dabe37db385f81058e612e484efca2b4321e17404301dbebb3619efc57ea"
+        },
+        "random-1024": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-reverse/random-1024/observations.json.gz",
+          "sha256": "d647b3de1b3774135be628137c4205cd647ce3948955b16a50331f788f55b538"
+        },
+        "random-64": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-reverse/random-64/observations.json.gz",
+          "sha256": "d8c4c5c6012ee9a1b1d3fbd8ff0944a3979e0c0693a66d9e9458941e27cf4cf2"
+        },
+        "seven-stored-prefix": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-reverse/seven-stored-prefix/observations.json.gz",
+          "sha256": "495f814ca4f23e0fff26b3a98815c6b738be7d58036372a0b75f4ad861388012"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-reverse/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-reverse/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-reverse/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "pinned-immutable-read-immutable-profiled-focus-reverse/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    }
+  }
+}

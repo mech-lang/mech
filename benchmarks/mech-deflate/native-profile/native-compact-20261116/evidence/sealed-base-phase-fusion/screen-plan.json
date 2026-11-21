@@ -1,0 +1,50 @@
+{
+  "scope": "Uninstrumented standalone parser screening, before complete builds. Same rebuilt baseline source/dependencies, same source and allocator. Each process writes a full tree/IDs/logical-work checksum.",
+  "orders": [
+    [
+      "control",
+      "fused"
+    ],
+    [
+      "fused",
+      "control"
+    ],
+    [
+      "fused",
+      "control"
+    ],
+    [
+      "control",
+      "fused"
+    ],
+    [
+      "control",
+      "fused"
+    ],
+    [
+      "fused",
+      "control"
+    ],
+    [
+      "fused",
+      "control"
+    ],
+    [
+      "control",
+      "fused"
+    ]
+  ],
+  "warmups_per_actor": 1,
+  "timing_fields": [
+    "parse_seconds",
+    "process_wall_seconds"
+  ],
+  "required_identity_fields": [
+    "source_sha256",
+    "source_bytes",
+    "tree_sha256",
+    "parser_steps",
+    "events"
+  ],
+  "analysis": "Paired differences and ratios; fixed seed bootstrap intervals. A standalone gain alone does not qualify complete build latency."
+}

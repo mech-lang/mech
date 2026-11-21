@@ -1,0 +1,33 @@
+   Compiling cranelift-codegen v0.131.3 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/vendor/cranelift-codegen)
+   Compiling cranelift-module v0.131.3
+   Compiling mech-combinatorics v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/combinatorics)
+   Compiling cranelift-native v0.131.3
+   Compiling mech-math v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/math)
+   Compiling mech-set v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/set)
+   Compiling mech-stdlib v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/stdlib)
+   Compiling cranelift-jit v0.131.3
+   Compiling cranelift-object v0.131.3
+   Compiling cranelift-frontend v0.131.3 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/vendor/cranelift-frontend)
+   Compiling mech-gpu v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/hosts/gpu)
+    Finished `release` profile [optimized] target(s) in 12m 11s
+     Running unittests src/lib.rs (/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/mech_gpu-783f7c637136a51c)
+
+running 15 tests
+test native_artifact::program::compact::checked_traversals::tests::captured_heap_setup_uses_each_phase_frame_and_refuses_a_non_entry_load ... ok
+test native_artifact::program::compact::checked_traversals::tests::direct_refusal_shares_a_bound_used_by_multiple_constants ... ok
+test native_artifact::program::compact::checked_traversals::tests::nested_continuation_returns_full_error_origin_in_result_register ... ok
+test native_artifact::program::compact::checked_traversals::tests::packed_refusal_preserves_partial_resume_and_failure_origin ... ok
+test native_artifact::program::compact::checked_traversals::tests::phase_regions_keep_the_value_used_after_success_and_the_shared_failure ... ok
+test native_artifact::program::compact::checked_traversals::tests::shared_body_takes_distinct_operand_roles_even_when_a_caller_repeats_a_value ... ok
+test native_artifact::program::compact::checked_traversals::tests::shared_continuation_preserves_nested_results_and_error_origins ... ok
+test native_artifact::program::compact::checked_traversals::tests::shared_controller_keeps_each_callers_bound_and_error_origin ... ok
+test native_artifact::program::compact::checked_traversals::tests::shared_controller_passes_normalized_inputs_in_registers ... ok
+test native_artifact::program::compact::checked_traversals::tests::shared_controller_preserves_loop_value_and_direct_uses_after_exit ... ok
+test native_artifact::program::compact::checked_traversals::tests::shared_controller_returns_normalized_outputs_in_registers ... ok
+test native_artifact::program::compact::checked_traversals::tests::shared_loop_can_pad_a_single_output ... ok
+test native_artifact::program::compact::checked_traversals::tests::shared_loop_writes_the_union_of_current_outputs ... ok
+test native_artifact::program::compact::checked_traversals::tests::shared_traversal_preserves_exit_resume_and_failure_origin ... ok
+test native_artifact::program::compact::checked_traversals::tests::single_phase_keeps_live_outs_partial_writes_and_a_bypassed_failure ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 1308 filtered out; finished in 0.03s
+

@@ -1,0 +1,34 @@
+
+running 29 tests
+test boolean_predecessors::tests::empty_graph_has_no_predecessors ... ok
+test boolean_predecessors::tests::index_matches_original_scan_with_parallel_missing_and_outside_edges ... ok
+test contradictions_require_a_stable_boolean_home ... ok
+test owner_reads::tests::empty_graph_and_scalar_only_graph_need_no_owner_words ... ok
+test owner_reads::tests::every_two_node_graph_read_definition_and_post_use_pattern_matches ... ok
+test owner_reads::tests::owner_word_boundaries_and_duplicate_edges_match_independent_traversal ... ok
+test owner_reads::tests::reads_precede_definitions_and_post_uses_are_observable ... ok
+test owner_reads::tests::seeded_branching_cyclic_graphs_match_every_start_and_owner ... ok
+test route_reach::tests::every_short_graph_start_and_stop_matches_independent_traversal ... ok
+test route_reach::tests::memo_reuses_exact_context_and_evicts_without_changing_old_rows ... ok
+test route_reach::tests::parallel_successors_and_stopped_cycles_match_independent_traversal ... ok
+test state::tests::conjunction_truth_reaches_repeated_current_tuple_projections ... ok
+test state::tests::expiration_keeps_pending_inferences_and_new_relations_require_closure ... ok
+test state::tests::expiration_matches_full_reclosure_for_every_small_truth_and_definition_subset ... ok
+test state::tests::false_and_true_or_preserve_both_operand_possibilities ... ok
+test state::tests::false_or_true_and_and_negated_copies_follow_boolean_semantics ... ok
+test state::tests::filtering_known_candidates_preserves_first_inference_on_conflicting_paths ... ok
+test state::tests::initializing_a_relation_index_does_not_change_logical_state_equality ... ok
+test state::tests::joined_relation_indexes_follow_exact_and_partial_intersections ... ok
+test state::tests::joins_keep_only_relations_true_on_every_incoming_path ... ok
+test state::tests::packed_truth_intersections_match_maps_across_word_boundaries ... ok
+test state::tests::redefined_copy_operands_and_outputs_do_not_share_old_versions ... ok
+test state::tests::redefining_a_tuple_keeps_old_boolean_truth_but_expires_its_relation ... ok
+test state::tests::shared_guard_states_match_the_original_analysis_through_updates_and_joins ... ok
+test state::tests::shared_relation_index_expires_without_resurrecting_old_projection_peers ... ok
+test state::tests::sibling_paths_close_with_their_own_truths_and_rejoin_on_common_facts ... ok
+test state::tests::sparse_rounds_preserve_backward_chains_conflicts_and_unrelated_equations ... ok
+test state::tests::unchanged_edges_share_closed_facts_without_mutating_predecessors ... ok
+test state::tests::unrelated_assumptions_keep_closure_and_later_relations_use_their_current_truth ... ok
+
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.22s
+

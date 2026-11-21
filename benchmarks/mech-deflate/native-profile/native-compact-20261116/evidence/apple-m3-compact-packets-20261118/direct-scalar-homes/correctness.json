@@ -1,0 +1,219 @@
+{
+  "candidate": "latest-matcher-pinned",
+  "timings_excluded_from_performance_results": true,
+  "actors": {
+    "control": {
+      "worker_sha256": "6828360cbf38c42a27e7c0c24bf07af7c2f0e407f5bcaf11e82f911f180512d2",
+      "object_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+      "metadata_sha256": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
+      "failure_outcomes": [
+        {
+          "bytes": 0,
+          "case": "empty",
+          "live_at_failure": 0,
+          "origin": 23,
+          "requests": 0,
+          "status": 103426
+        },
+        {
+          "bytes": 0,
+          "case": "empty",
+          "live_at_failure": 0,
+          "origin": 23,
+          "requests": 0,
+          "status": 103426
+        },
+        {
+          "bytes": 0,
+          "case": "one-stored",
+          "live_at_failure": 0,
+          "origin": 69,
+          "requests": 0,
+          "status": 103426
+        },
+        {
+          "bytes": 0,
+          "case": "one-stored",
+          "live_at_failure": 0,
+          "origin": 69,
+          "requests": 0,
+          "status": 103426
+        },
+        {
+          "bytes": 0,
+          "case": "seven-stored-prefix",
+          "live_at_failure": 0,
+          "origin": 69,
+          "requests": 0,
+          "status": 103426
+        },
+        {
+          "bytes": 0,
+          "case": "seven-stored-prefix",
+          "live_at_failure": 0,
+          "origin": 69,
+          "requests": 0,
+          "status": 103426
+        },
+        {
+          "bytes": 7631132,
+          "case": "heldout-mixed-131073",
+          "live_at_failure": 7586140,
+          "origin": 7164,
+          "requests": 92,
+          "status": 103426
+        },
+        {
+          "bytes": 7631132,
+          "case": "heldout-mixed-131073",
+          "live_at_failure": 7586140,
+          "origin": 7164,
+          "requests": 92,
+          "status": 103426
+        },
+        {
+          "bytes": 4796076,
+          "case": "prefix-periodic-4096",
+          "live_at_failure": 4778960,
+          "origin": 7164,
+          "requests": 41,
+          "status": 103426
+        },
+        {
+          "bytes": 4796076,
+          "case": "prefix-periodic-4096",
+          "live_at_failure": 4778960,
+          "origin": 7164,
+          "requests": 41,
+          "status": 103426
+        },
+        {
+          "bytes": 6685744,
+          "case": "prefix-repeated-16384",
+          "live_at_failure": 6668628,
+          "origin": 7164,
+          "requests": 41,
+          "status": 103426
+        },
+        {
+          "bytes": 6685744,
+          "case": "prefix-repeated-16384",
+          "live_at_failure": 6668628,
+          "origin": 7164,
+          "requests": 41,
+          "status": 103426
+        }
+      ],
+      "peak_stack_bytes": 5280
+    },
+    "candidate": {
+      "worker_sha256": "acbcc7c36616fed2a27ea6ac05fd442a248afe5d3126a834e1b3accf55e30dd6",
+      "object_sha256": "6aa84b6f1959257d89790935b17abf47cb195ba728c8fd01d5876281b569d096",
+      "metadata_sha256": "d2b96451e5e3ad381b4b21f4ec2c6f1b665d9ecbced4509cfbad44e81d5925af",
+      "failure_outcomes": [
+        {
+          "bytes": 0,
+          "case": "empty",
+          "live_at_failure": 0,
+          "origin": 23,
+          "requests": 0,
+          "status": 103426
+        },
+        {
+          "bytes": 0,
+          "case": "empty",
+          "live_at_failure": 0,
+          "origin": 23,
+          "requests": 0,
+          "status": 103426
+        },
+        {
+          "bytes": 0,
+          "case": "one-stored",
+          "live_at_failure": 0,
+          "origin": 69,
+          "requests": 0,
+          "status": 103426
+        },
+        {
+          "bytes": 0,
+          "case": "one-stored",
+          "live_at_failure": 0,
+          "origin": 69,
+          "requests": 0,
+          "status": 103426
+        },
+        {
+          "bytes": 0,
+          "case": "seven-stored-prefix",
+          "live_at_failure": 0,
+          "origin": 69,
+          "requests": 0,
+          "status": 103426
+        },
+        {
+          "bytes": 0,
+          "case": "seven-stored-prefix",
+          "live_at_failure": 0,
+          "origin": 69,
+          "requests": 0,
+          "status": 103426
+        },
+        {
+          "bytes": 7631132,
+          "case": "heldout-mixed-131073",
+          "live_at_failure": 7586140,
+          "origin": 7164,
+          "requests": 92,
+          "status": 103426
+        },
+        {
+          "bytes": 7631132,
+          "case": "heldout-mixed-131073",
+          "live_at_failure": 7586140,
+          "origin": 7164,
+          "requests": 92,
+          "status": 103426
+        },
+        {
+          "bytes": 4796076,
+          "case": "prefix-periodic-4096",
+          "live_at_failure": 4778960,
+          "origin": 7164,
+          "requests": 41,
+          "status": 103426
+        },
+        {
+          "bytes": 4796076,
+          "case": "prefix-periodic-4096",
+          "live_at_failure": 4778960,
+          "origin": 7164,
+          "requests": 41,
+          "status": 103426
+        },
+        {
+          "bytes": 6685744,
+          "case": "prefix-repeated-16384",
+          "live_at_failure": 6668628,
+          "origin": 7164,
+          "requests": 41,
+          "status": 103426
+        },
+        {
+          "bytes": 6685744,
+          "case": "prefix-repeated-16384",
+          "live_at_failure": 6668628,
+          "origin": 7164,
+          "requests": 41,
+          "status": 103426
+        }
+      ],
+      "peak_stack_bytes": 4752
+    }
+  },
+  "status": "passed",
+  "checked_failure_cases": 6,
+  "checked_failure_calls_per_actor": 12,
+  "stack_checked_success_calls_per_actor": 162,
+  "predeclared_maximum_stack_bytes": 5280
+}

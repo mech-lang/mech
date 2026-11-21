@@ -1,0 +1,9 @@
+pointer-disabled-control 63804 B: exact source-built artifacts reproduced
+control-default-scorer-layout 63820 B: exact source-built artifacts reproduced
+deferred-default-scorer-layout 63836 B: exact source-built artifacts reproduced
+encoded-default-scorer-layout 63964 B: exact source-built artifacts reproduced
+deferred-rebased-scorer-layout 63820 B: exact source-built artifacts reproduced
+pointer-default-layout 63820 B: exact source-built artifacts reproduced
+pointer-lanes-default-layout 63836 B: exact source-built artifacts reproduced
+pointer-profiled 63820 B: exact source-built artifacts reproduced
+pointer-lanes-profiled 63836 B: exact source-built artifacts reproduced

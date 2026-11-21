@@ -1,0 +1,26 @@
+{
+  "README.md": {
+    "bytes": 8758,
+    "sha256": "3065397c79bef8dc9a3f33e68d44ee018368ee1885d4f288bb1d3af428892b4f"
+  },
+  "archive-files.json": {
+    "bytes": 660117,
+    "sha256": "f7d234c3bcec2dfef7216c2bbac9b20c32a1c52525afa4e2dd1c113e9978cadf"
+  },
+  "raw-runtime.tar.gz": {
+    "bytes": 642119,
+    "sha256": "8d71023963159e8aa3d357c1c124278518b81f6827801e387ad727767cb36343"
+  },
+  "source-and-receipts.tar.gz": {
+    "bytes": 25545441,
+    "sha256": "f13ce70aab37f6cea987c202181eeed7776b7e7673e365f32006b5269c2be2c0"
+  },
+  "study.json": {
+    "bytes": 157947,
+    "sha256": "ae447b2d7d614b6ce5fec5f8f0f4e9af4ef9ea4b829c90373290c73efc4a0848"
+  },
+  "verify.py": {
+    "bytes": 4007,
+    "sha256": "55344819c657ff3590eee00210396484526a13b86a40cf998228e8178445a744"
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "plan_sha256": "5daedea12b6713df719abf29f07aa036a635157f5ff698de23b0d46f8c41c3fc",
+  "driver_sha256": "e3efeff6619b6db8eca0bdee541901b10c6c481b12d2d54ecd802b2a08d1b8a7",
+  "fixture_content_sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+  "replayed_all_intervals": true,
+  "cases": 81,
+  "blocks_per_case": 96,
+  "archive_worker_sha256": {
+    "frame-copies": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+    "m1-checked-regions": "969329f3dde79b02ad3f13cd540a9e03f5818769b33033827822591e7473e6fa",
+    "m1-compact-match-equality": "792f63292b32ad062448c3344442c795c41bbaa263ff86ef803d10a692b56891"
+  },
+  "decision": {
+    "m1-checked-regions": {
+      "status": "opt-in, paired test established runtime slowdowns",
+      "established_slowdowns_by_order": {
+        "forward": 6,
+        "reverse": 7
+      },
+      "unresolved_cases_by_order": {
+        "forward": 3,
+        "reverse": 4
+      },
+      "established_slowdown_both_orders": [
+        "128-biased-dynamic",
+        "16384-distribution-change",
+        "eight-overlap",
+        "heldout-mixed-131073"
+      ]
+    },
+    "m1-compact-match-equality": {
+      "status": "opt-in, paired test established runtime slowdowns",
+      "established_slowdowns_by_order": {
+        "forward": 6,
+        "reverse": 7
+      },
+      "unresolved_cases_by_order": {
+        "forward": 3,
+        "reverse": 2
+      },
+      "established_slowdown_both_orders": [
+        "128-biased-dynamic",
+        "16384-distribution-change",
+        "one-stored",
+        "prefix-random-4096",
+        "prefix-random-8192",
+        "seven-stored-prefix"
+      ]
+    }
+  }
+}

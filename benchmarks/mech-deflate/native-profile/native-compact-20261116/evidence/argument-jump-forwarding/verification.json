@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "source_replays": 16,
+  "scalar_tests": 79,
+  "SSA_tests": 5,
+  "actual_main_named_recipes": 2,
+  "saved_runtime_calls": 6801408,
+  "zero_duration_samples_retained": 935509,
+  "actual_training_counter_cases": 45,
+  "complete_build_orders": 12,
+  "deployment_executions": 972,
+  "selected_default_changed": true,
+  "new_qualified_C_win": false
+}

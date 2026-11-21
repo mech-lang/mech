@@ -1,0 +1,30 @@
+{
+  "source_commit": "b104d014da5da9b87ef270909507e9bfe35558f8",
+  "case": "prefix-natural-4096",
+  "actors": {
+    "mech": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/preserved-registers/preserved/bound/mech-worker",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/preserved-registers/preserved/bound/metadata.json",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+      ],
+      "sha256": "5afce59aa83c03df81c693d78e9a65f17df1c88c64a7e04c490c58ecc4fffba0"
+    },
+    "libdeflate": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/libdeflate-worker",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+      ],
+      "sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2"
+    }
+  },
+  "scope": "Exact published workers, repeated W commands; sample includes caller validation outside compression and is not latency. Attribute compression separately.",
+  "load_before": [
+    1.64013671875,
+    1.5869140625,
+    1.68212890625
+  ],
+  "sampling_seconds": 10,
+  "sampling_interval_ms": 1,
+  "warmup_commands": 80
+}

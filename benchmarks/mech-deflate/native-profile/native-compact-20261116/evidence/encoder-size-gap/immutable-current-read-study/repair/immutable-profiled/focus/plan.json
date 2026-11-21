@@ -1,0 +1,135 @@
+{
+  "objective": "Measure source-emitted immutable current-input reuse with backend rematerialization and a fresh matcher layout, preserving every existing peer win.",
+  "focus_cases": [
+    "empty",
+    "one-stored",
+    "seven-stored-prefix",
+    "320-overlap",
+    "random-64",
+    "random-1024",
+    "prefix-random-1024",
+    "prefix-periodic-1024",
+    "prefix-periodic-4096",
+    "prefix-natural-4096",
+    "prefix-natural-8192",
+    "prefix-natural-16384",
+    "prefix-natural-32769",
+    "prefix-random-4096",
+    "heldout-mixed-131073",
+    "prefix-random-262144",
+    "prefix-random-1048576"
+  ],
+  "runs": [
+    {
+      "id": "immutable-read-repair-immutable-profiled-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "immutable-read-repair-immutable-profiled-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96
+    }
+  ],
+  "policy": {
+    "path": "native-review-pr/staging/benchmarks/mech-deflate/native-profile/native-compact-20261116/qualification-policy-v3.json",
+    "sha256": "89961956e17485b05457fee6d90e1b124fe09d1d1e6d3770aa5b86873912244c"
+  },
+  "timer": {
+    "path": "compare-library.py",
+    "sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a"
+  },
+  "driver": {
+    "path": "consolidation-995/collector-read-lifetimes/qualify-repaired.py",
+    "sha256": "e4bec93a7ed12c456136532ed6c979a8f8cd4963feeae50e4c1936e854dca41d"
+  },
+  "as_run_inventory": {
+    "path": "fixtures.json",
+    "sha256": "387582249cce52fcb7f5f551a0b7af3977aa3954438f5ecf10ef2f0fb41f11a4"
+  },
+  "pinned_peers": {
+    "path": "pinned-peers/pins.json",
+    "sha256": "3f348cf64a8f641b8ba28cab268e7d4dbde0606cb479b8d481b9be8355493439"
+  },
+  "fixture_content_sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+  "bindings": {
+    "mech-control": {
+      "program.o": {
+        "path": "consolidation-995/natural4k-runtime-target/hot-matcher-facts/guards-profiled/bound/program.o",
+        "sha256": "470e6899a3cfec1e2fc0f9d3d8aef1d427de7d621e6b9ec87b350cb6103d9b38"
+      },
+      "metadata.json": {
+        "path": "consolidation-995/natural4k-runtime-target/hot-matcher-facts/guards-profiled/bound/metadata.json",
+        "sha256": "3faa1a9d87a63454863ff55471898c7bea9a8a361401914a6932d7dca6b583db"
+      },
+      "runtime.json": {
+        "path": "consolidation-995/natural4k-runtime-target/hot-matcher-facts/guards-profiled/bound/runtime.json",
+        "sha256": "20000d791cdd06fc2b079bed0dcaafac8ef8cc959314c0595e2f961f2e35c7b2"
+      },
+      "mech-worker": {
+        "path": "consolidation-995/natural4k-runtime-target/hot-matcher-facts/guards-profiled/bound/mech-worker",
+        "sha256": "88321c097d29b7219f639abbc5fcce727f0602de2d05ab24e5e2b47f2996c3b4"
+      }
+    },
+    "mech-experiment": {
+      "program.o": {
+        "path": "consolidation-995/collector-read-lifetimes/repair/immutable-profiled/bound/program.o",
+        "sha256": "39e56197a7862d63b37cfc6470b5df0c3f4f5c00e181665c591ade6bf166036f"
+      },
+      "metadata.json": {
+        "path": "consolidation-995/collector-read-lifetimes/repair/immutable-profiled/bound/metadata.json",
+        "sha256": "854943758c35fc29c6f7c5d676c7048a9ae40bcc8ee80f2df9ff22937123ab7a"
+      },
+      "runtime.json": {
+        "path": "consolidation-995/collector-read-lifetimes/repair/immutable-profiled/bound/runtime.json",
+        "sha256": "98b747da701b5f2a7880184e0ae963d1a6c546735881ca4fe4289b1ed80754e6"
+      },
+      "mech-worker": {
+        "path": "consolidation-995/collector-read-lifetimes/repair/immutable-profiled/bound/mech-worker",
+        "sha256": "142c72d95188e67cf0e8126b96a78c40fd8466faef329a5b6e30058360672143"
+      }
+    }
+  },
+  "identities": {
+    "mech-control": {
+      "worker": "88321c097d29b7219f639abbc5fcce727f0602de2d05ab24e5e2b47f2996c3b4",
+      "metadata": "3faa1a9d87a63454863ff55471898c7bea9a8a361401914a6932d7dca6b583db"
+    },
+    "mech-experiment": {
+      "worker": "142c72d95188e67cf0e8126b96a78c40fd8466faef329a5b6e30058360672143",
+      "metadata": "854943758c35fc29c6f7c5d676c7048a9ae40bcc8ee80f2df9ff22937123ab7a"
+    },
+    "roc": {
+      "worker": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+      "metadata": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e"
+    },
+    "libdeflate": {
+      "worker": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "metadata": null
+    },
+    "environment_sha256": "6f5439f1e2ccf65f03223477c75250b292aa137ceb000629616ae2b6250566e4",
+    "contract_sha256": "73b8d377ff7452010791de0f5155a939cfb7a65a3c46b9bac10a8a06e8f512cb"
+  },
+  "source_pin": "fb6bbe11695f05f7b071280e6f8dcc5648b198bf",
+  "policy_version": 3,
+  "controller": {
+    "path": "source-frame-copy-tails/full-timing.py",
+    "sha256": "f9fa19f1ef9876ee3484a339b619889ba94027cf35a76fa355e12813cea31d07"
+  },
+  "compiler_build": {
+    "path": "consolidation-995/collector-read-lifetimes/repair/compiler/5cd4bb2f763f60da/result.json",
+    "sha256": "d6d9307a35858755b1903b04308ff2777687898f86fd7f0c54c8f8bccfd731f6"
+  },
+  "linked_contract": {
+    "path": "consolidation-995/collector-read-lifetimes/repair/linked-current-immutable-profiled/linked-proofs/result.json",
+    "sha256": "aa96e972d536ece1145eda795b32dcf4945ce0a994de961127cdc86377e679d2"
+  },
+  "max_peak_stack_bytes": 5280,
+  "load_average_before": [
+    2.44091796875,
+    2.40625,
+    2.50244140625
+  ]
+}

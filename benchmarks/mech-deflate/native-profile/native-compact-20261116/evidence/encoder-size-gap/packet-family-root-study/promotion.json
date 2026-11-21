@@ -1,0 +1,24 @@
+{
+  "selected_default_changed": true,
+  "previous_recipe": "m1-forwarded-register-linear",
+  "previous_text_bytes": 63516,
+  "recipe": "m1-root-packet-combined",
+  "text_bytes": 63468,
+  "saved_text_bytes": 48,
+  "artifacts": {
+    "program.o": "f07c52189c5cf3be0dbdadf7e026b567c5480c4c0da597f22b6231a1aacd8373",
+    "metadata.json": "458b60ac069a807dc0a6ee6ff0aa249d827f50d27060ee288e4ef526f2c999ba",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+  },
+  "worker_sha256": "f2606b2d13d3e581977a45b3286fc37475ade7f397589f809b893bfdea8ec43e",
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "bytecode_unchanged": true,
+  "all_required_named_wins_preserved": true,
+  "confidence_assessed": false,
+  "selection_basis": "Both full81/96 point orders and every required named81Roc/63Cwin. Generic root cleanup reduces matched source-through-final-link build time by1.35percent paired; helpers reduce code48B. Families/root-only remain retained with panels/nativegates and nofull81 claim. Stack4752 under5280.",
+  "compiler_rebuild_py_before_default_sha256": "b70ea5cc6f96de2803e2dd4e706e8e6adb9f2086f1650f85a425e6a95647886f",
+  "compiler_rebuild_py_after_default_sha256": "68bc720504499bd2fdd4b07f56bfe7a5ca7c56db3ac9cf16802aeda593b22d5a",
+  "stack_bytes": 4752,
+  "next_C_target": 64,
+  "ultimate_C_target": 81
+}

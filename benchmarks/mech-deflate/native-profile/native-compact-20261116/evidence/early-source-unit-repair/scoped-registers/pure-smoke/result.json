@@ -1,0 +1,218 @@
+{
+  "compiler_sha256": "2a553c89309b34e76893c7eb634d3655d7794303d00f853fbb7bbe077e7582eb",
+  "source_window": "2:3",
+  "cases": [
+    {
+      "inputs": [
+        0,
+        1
+      ],
+      "original": "0 0 7",
+      "early": "0 0 7"
+    },
+    {
+      "inputs": [
+        1,
+        1
+      ],
+      "original": "0 0 8",
+      "early": "0 0 8"
+    },
+    {
+      "inputs": [
+        100,
+        3
+      ],
+      "original": "0 0 40",
+      "early": "0 0 40"
+    },
+    {
+      "inputs": [
+        99,
+        0
+      ],
+      "original": "1 2 11936128518282651045",
+      "early": "1 2 11936128518282651045"
+    },
+    {
+      "inputs": [
+        0,
+        0
+      ],
+      "original": "1 2 11936128518282651045",
+      "early": "1 2 11936128518282651045"
+    },
+    {
+      "inputs": [
+        18446744073709551615,
+        1
+      ],
+      "original": "1 3 11936128518282651045",
+      "early": "1 3 11936128518282651045"
+    },
+    {
+      "inputs": [
+        18446744073709551615,
+        2
+      ],
+      "original": "0 0 9223372036854775814",
+      "early": "0 0 9223372036854775814"
+    },
+    {
+      "inputs": [
+        9223372036854775808,
+        3
+      ],
+      "original": "0 0 3074457345618258609",
+      "early": "0 0 3074457345618258609"
+    },
+    {
+      "inputs": [
+        18446744073709551615,
+        18446744073709551615
+      ],
+      "original": "0 0 8",
+      "early": "0 0 8"
+    }
+  ],
+  "early_unit": {
+    "constant_zero_input_slots": [],
+    "constant_zero_output_slots": [],
+    "error_transport": "original checked status and canonical source site; caller returns immediately",
+    "helper": {
+      "all_path_initialization_proved": true,
+      "bit_counts": 0,
+      "buffer_result_sites": [],
+      "calls": 0,
+      "cleanup": {
+        "adjacent_addresses_reused": 0,
+        "after_blocks": 5,
+        "after_instructions": 13,
+        "before_blocks": 5,
+        "before_instructions": 14,
+        "bitwise_constant_branches": 0,
+        "boolean_conditions_simplified": 0,
+        "boolean_phi_values": 0,
+        "constant_branches_removed": 0,
+        "current_predicate_branches": 0,
+        "dead_instructions_removed": 1,
+        "dead_loads_removed": 0,
+        "dead_parameters_removed": 0,
+        "enabled": true,
+        "fixed_point": true,
+        "identity_edges": 0,
+        "known_width_branches_removed": 0,
+        "local_phi_parameters_removed": 0,
+        "local_phi_preheaders": 0,
+        "loop_edges": 0,
+        "neutral_operations_removed": 0,
+        "ordered_capture_spans": 0,
+        "pre_codegen_data_passes": 0,
+        "rounds": 1,
+        "selected_home_constant_operands": 0,
+        "selected_home_merge_parameters": 0,
+        "selected_increment_guards_removed": 0,
+        "selected_range_branches_removed": 0,
+        "unsigned_intervals_combined": 0,
+        "window_bounds_combined": 0
+      },
+      "code_bytes": 76,
+      "concrete_heap_context": false,
+      "contract": "Diagnostic typed closed computation; ordinary exact resource/admission/recovery contract omitted. Not NoLimits or qualified ordinary entry.",
+      "guarded_consuming_sites": [],
+      "input_words": 2,
+      "inputs": [],
+      "native_string_classes": [],
+      "numeric_phases": [],
+      "omitted_copy_owner_lanes": [],
+      "origins": [
+        {
+          "block": null,
+          "local": null,
+          "node": 0
+        },
+        {
+          "block": null,
+          "local": null,
+          "node": 0
+        },
+        {
+          "block": null,
+          "local": null,
+          "node": 0
+        },
+        {
+          "block": null,
+          "local": null,
+          "node": 1
+        },
+        {
+          "block": null,
+          "local": null,
+          "node": 0
+        }
+      ],
+      "output_types": [
+        {
+          "kind": {
+            "float": false,
+            "scalar_bytes": 8,
+            "signed": false
+          },
+          "owners": [],
+          "packed_align": 8,
+          "packed_bytes": 8,
+          "words": 1
+        }
+      ],
+      "output_words": 1,
+      "owner_transfer_lanes": 0,
+      "owner_transfer_sites": [],
+      "phase_call_storage": null,
+      "phase_observer": false,
+      "physical_unit": {
+        "kind": "region",
+        "native_numbered_windows_applied": false,
+        "source_entry": 2,
+        "source_relative_windows_applied": false,
+        "word_homes": 3
+      },
+      "prechange_retirement_sites": [],
+      "private_indexed_chains": [],
+      "reachable_blocks": 2,
+      "source_blocks": 5,
+      "source_error_origins": "cold-return constants",
+      "stack_bytes": 16,
+      "symbol": "mech_compact_early_region_2_3",
+      "typed_ir_version": 355,
+      "word_collections": [],
+      "word_pack_sites": []
+    },
+    "helper_source_blocks": 2,
+    "helper_word_homes": 3,
+    "inout_owner_contract": "exact initialized input/output owner lanes in invocation-local caller storage; synchronous nonescaping unit, no new retain/release",
+    "inout_owner_homes": {},
+    "input_word_slots": [
+      0,
+      1
+    ],
+    "nested_output_scratch_words": null,
+    "normal_exit": 3,
+    "operations": 1,
+    "output_word_slots": [
+      3
+    ],
+    "physical_packet_words": [
+      2,
+      1
+    ],
+    "published_result_words": 1,
+    "root_numbered_layout_windows": "excluded until remapped to physical units",
+    "root_source_blocks": 5,
+    "root_word_homes": 5,
+    "runtime_qualification": "required for this changed worker",
+    "source_entry": 2,
+    "source_ownership_model": "shared global facts; no call-boundary retain/release",
+    "zero_proof": "all-path physical owner must-zero fixed point including guarded native bypasses; unknown writes kill, joins intersect, copies and clears propagate"
+  }
+}

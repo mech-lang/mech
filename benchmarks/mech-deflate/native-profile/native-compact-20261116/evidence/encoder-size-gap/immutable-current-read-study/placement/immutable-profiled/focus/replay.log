@@ -1,0 +1,73 @@
+{
+  "decision": "Unresolved",
+  "rejected": [],
+  "unresolved": [
+    "both complete timing orders are required"
+  ],
+  "runs": [
+    {
+      "id": "immutable-placement-read-immutable-profiled-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 17,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "precision_supported_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "precision_supported_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "immutable-placement-read-immutable-profiled-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 17,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "precision_supported_wins": {
+            "mech-control": 17,
+            "mech-experiment": 17
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "precision_supported_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    }
+  ]
+}

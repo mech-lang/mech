@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "batches": 72,
+  "checked_saved_calls": 3024,
+  "validated_runtime_event_streams": 1512,
+  "selected_default_changed": false,
+  "C_next_target": 64,
+  "runtime_scoreboard": "81 Roc / 63 C; no new win qualification",
+  "scope": "Portable raw-data, source-generation, object identity and independent-inflation checks. VM faults are observations, not physical-clearing byte counts or isolated first-touch elapsed time."
+}

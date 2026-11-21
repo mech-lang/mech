@@ -1,0 +1,3 @@
+{"all_equal": true, "cases": 9, "source_commit": "9b1460933a88837bfd688344c312081b441666cd"}
+{"all_equal": true, "cases": 9, "source_commit": "89dd67efb617e44e72aaa0710101e566661e8600"}
+{"passed": true, "archives": 4, "current_owner_captures": 45, "C_frequency_vectors": 212, "aligned_DP_cases_per_Mech_body": 9, "carry_raw_checked_calls": 358848, "selected_C_wins": 63, "next_target": 64}

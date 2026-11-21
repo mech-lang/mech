@@ -1,0 +1,6 @@
+{
+  "source_commit": "2bc4014587fda4f31bdade02abd0cd5144d80e23",
+  "original_sha256": "b4c18d3adaf531eb5298e96c23081bb541420b037be8c510ea88800e05309497",
+  "candidate_sha256": "55655a70d1ecb1402dc870d8263d83a654e80650a81f09295383104ba31d7e99",
+  "scope": "Sealed deterministic Call/Classified/Raw chain; same handlers, per-phase charges and pending-frame boundaries. No scanner batching or Unicode assumptions."
+}

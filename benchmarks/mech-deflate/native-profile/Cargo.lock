@@ -301,6 +301,8 @@ version = "0.131.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c3af4f7d421b2354deb01d714266022f38fcdbebc9f5f1ec6d310d3c27286d9e"
 dependencies = [
+ "serde",
+ "serde_derive",
  "wasmtime-internal-core",
 ]
 
@@ -324,6 +326,7 @@ dependencies = [
  "regalloc2",
  "rustc-hash",
  "serde",
+ "serde_derive",
  "smallvec",
  "target-lexicon",
  "wasmtime-internal-core",
@@ -361,6 +364,8 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9aa2846b239a046217ecf95cfed0e31be4e86843785d07438ad33f456871e888"
 dependencies = [
  "cranelift-bitset",
+ "serde",
+ "serde_derive",
  "wasmtime-internal-core",
 ]
 
@@ -1392,6 +1397,7 @@ dependencies = [
  "hashbrown 0.17.1",
  "log",
  "rustc-hash",
+ "serde",
  "smallvec",
 ]
 
@@ -1539,6 +1545,9 @@ name = "smallvec"
 version = "1.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ed6a63f02c8539c91a8685a86f4099661ba3da017932f6ebbea6de3f0fa7c90"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "stable_deref_trait"

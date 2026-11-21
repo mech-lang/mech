@@ -1,0 +1,9 @@
+
+running 4 tests
+test native_artifact::program::codegen::cfg_cleanup::defaulted_loads::tests::default_path_does_not_read_the_original_address ... ok
+test native_artifact::program::codegen::cfg_cleanup::defaulted_loads::tests::immutable_default_addresses_keep_narrow_values_null_and_wrapping_boundaries ... ok
+test native_artifact::program::codegen::cfg_cleanup::defaulted_loads::tests::shared_default_reads_preserve_current_loop_values_and_divergent_paths ... ok
+test native_artifact::program::codegen::cfg_cleanup::defaulted_loads::tests::unknown_length_or_shifted_address_never_gains_memory_motion_flags ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

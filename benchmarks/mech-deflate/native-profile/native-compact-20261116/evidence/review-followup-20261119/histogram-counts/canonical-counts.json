@@ -1,0 +1,1897 @@
+{
+  "object_sha256": "c135e6b0ccdd8124d6f26ef9c738a1cbe374fa4dae61852b886c6f8e3a7cf6b5",
+  "symbol": "_mech_compact_numeric_2821_vector",
+  "literal_offset": null,
+  "cases": {
+    "prefix-natural-1024": {
+      "calls": 1,
+      "counts": {
+        "instructions": 22552,
+        "pacibsp": 1,
+        "stp": 1,
+        "stack_stores": 1,
+        "mov": 2051,
+        "sub": 1,
+        "ldr": 1037,
+        "payload_loads": 2061,
+        "cmp": 6145,
+        "b.lo": 4097,
+        "branches": 7169,
+        "add": 4097,
+        "ldp": 1,
+        "stack_loads": 1,
+        "retab": 1,
+        "ldrb": 1024,
+        "b.hi": 1024,
+        "b.hs": 1024,
+        "str": 1024,
+        "payload_stores": 1024,
+        "b": 1024
+      },
+      "blocks": [
+        {
+          "address": "0x2ac4",
+          "visits": 1025,
+          "instructions": [
+            [
+              "cmp",
+              "x8, x10"
+            ],
+            [
+              "b.lo",
+              "0x2ae0"
+            ]
+          ]
+        },
+        {
+          "address": "0x2ae0",
+          "visits": 1024,
+          "instructions": [
+            [
+              "add",
+              "x7, x9, x8"
+            ],
+            [
+              "cmp",
+              "x7, x9"
+            ],
+            [
+              "b.lo",
+              "0x2b40"
+            ]
+          ]
+        },
+        {
+          "address": "0x2aec",
+          "visits": 1024,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x4"
+            ],
+            [
+              "b.lo",
+              "0x2afc"
+            ]
+          ]
+        },
+        {
+          "address": "0x2afc",
+          "visits": 1024,
+          "instructions": [
+            [
+              "ldrb",
+              "w7, [x3, x7]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b00",
+          "visits": 1024,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x6"
+            ],
+            [
+              "b.lo",
+              "0x2b10"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b10",
+          "visits": 1024,
+          "instructions": [
+            [
+              "ldr",
+              "w12, [x5, x7, lsl #2]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b14",
+          "visits": 1024,
+          "instructions": [
+            [
+              "mov",
+              "x0, #0x1"
+            ],
+            [
+              "add",
+              "x1, x12, #0x1"
+            ],
+            [
+              "mov",
+              "x11, #0xffffffff"
+            ],
+            [
+              "cmp",
+              "x1, x11"
+            ],
+            [
+              "b.hi",
+              "0x2b50"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b28",
+          "visits": 1024,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x6"
+            ],
+            [
+              "b.hs",
+              "0x2b5c"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b30",
+          "visits": 1024,
+          "instructions": [
+            [
+              "add",
+              "w0, w12, #0x1"
+            ],
+            [
+              "str",
+              "w0, [x5, x7, lsl #2]"
+            ],
+            [
+              "add",
+              "x8, x8, #0x1"
+            ],
+            [
+              "b",
+              "0x2ac4"
+            ]
+          ]
+        },
+        {
+          "address": "0x2a80",
+          "visits": 1,
+          "instructions": [
+            [
+              "pacibsp",
+              ""
+            ],
+            [
+              "stp",
+              "x29, x30, [sp, #-0x10]!"
+            ],
+            [
+              "mov",
+              "x29, sp"
+            ],
+            [
+              "sub",
+              "sp, sp, #0x60"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x58]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x60]"
+            ],
+            [
+              "ldr",
+              "x9, [x1]"
+            ],
+            [
+              "ldr",
+              "x10, [x1, #0x8]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x10]"
+            ],
+            [
+              "ldr",
+              "x3, [x1, #0x18]"
+            ],
+            [
+              "ldr",
+              "x4, [x1, #0x20]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x28]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x30]"
+            ],
+            [
+              "ldr",
+              "x5, [x1, #0x38]"
+            ],
+            [
+              "ldr",
+              "x6, [x1, #0x40]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x48]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x50]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2acc",
+          "visits": 1,
+          "instructions": [
+            [
+              "mov",
+              "x1, #0x0"
+            ],
+            [
+              "mov",
+              "x0, x1"
+            ],
+            [
+              "add",
+              "sp, sp, #0x60"
+            ],
+            [
+              "ldp",
+              "x29, x30, [sp], #0x10"
+            ],
+            [
+              "retab",
+              ""
+            ]
+          ]
+        }
+      ]
+    },
+    "prefix-natural-4096": {
+      "calls": 1,
+      "counts": {
+        "instructions": 90136,
+        "pacibsp": 1,
+        "stp": 1,
+        "stack_stores": 1,
+        "mov": 8195,
+        "sub": 1,
+        "ldr": 4109,
+        "payload_loads": 8205,
+        "cmp": 24577,
+        "b.lo": 16385,
+        "branches": 28673,
+        "add": 16385,
+        "ldp": 1,
+        "stack_loads": 1,
+        "retab": 1,
+        "ldrb": 4096,
+        "b.hi": 4096,
+        "b.hs": 4096,
+        "str": 4096,
+        "payload_stores": 4096,
+        "b": 4096
+      },
+      "blocks": [
+        {
+          "address": "0x2ac4",
+          "visits": 4097,
+          "instructions": [
+            [
+              "cmp",
+              "x8, x10"
+            ],
+            [
+              "b.lo",
+              "0x2ae0"
+            ]
+          ]
+        },
+        {
+          "address": "0x2ae0",
+          "visits": 4096,
+          "instructions": [
+            [
+              "add",
+              "x7, x9, x8"
+            ],
+            [
+              "cmp",
+              "x7, x9"
+            ],
+            [
+              "b.lo",
+              "0x2b40"
+            ]
+          ]
+        },
+        {
+          "address": "0x2aec",
+          "visits": 4096,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x4"
+            ],
+            [
+              "b.lo",
+              "0x2afc"
+            ]
+          ]
+        },
+        {
+          "address": "0x2afc",
+          "visits": 4096,
+          "instructions": [
+            [
+              "ldrb",
+              "w7, [x3, x7]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b00",
+          "visits": 4096,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x6"
+            ],
+            [
+              "b.lo",
+              "0x2b10"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b10",
+          "visits": 4096,
+          "instructions": [
+            [
+              "ldr",
+              "w12, [x5, x7, lsl #2]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b14",
+          "visits": 4096,
+          "instructions": [
+            [
+              "mov",
+              "x0, #0x1"
+            ],
+            [
+              "add",
+              "x1, x12, #0x1"
+            ],
+            [
+              "mov",
+              "x11, #0xffffffff"
+            ],
+            [
+              "cmp",
+              "x1, x11"
+            ],
+            [
+              "b.hi",
+              "0x2b50"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b28",
+          "visits": 4096,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x6"
+            ],
+            [
+              "b.hs",
+              "0x2b5c"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b30",
+          "visits": 4096,
+          "instructions": [
+            [
+              "add",
+              "w0, w12, #0x1"
+            ],
+            [
+              "str",
+              "w0, [x5, x7, lsl #2]"
+            ],
+            [
+              "add",
+              "x8, x8, #0x1"
+            ],
+            [
+              "b",
+              "0x2ac4"
+            ]
+          ]
+        },
+        {
+          "address": "0x2a80",
+          "visits": 1,
+          "instructions": [
+            [
+              "pacibsp",
+              ""
+            ],
+            [
+              "stp",
+              "x29, x30, [sp, #-0x10]!"
+            ],
+            [
+              "mov",
+              "x29, sp"
+            ],
+            [
+              "sub",
+              "sp, sp, #0x60"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x58]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x60]"
+            ],
+            [
+              "ldr",
+              "x9, [x1]"
+            ],
+            [
+              "ldr",
+              "x10, [x1, #0x8]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x10]"
+            ],
+            [
+              "ldr",
+              "x3, [x1, #0x18]"
+            ],
+            [
+              "ldr",
+              "x4, [x1, #0x20]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x28]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x30]"
+            ],
+            [
+              "ldr",
+              "x5, [x1, #0x38]"
+            ],
+            [
+              "ldr",
+              "x6, [x1, #0x40]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x48]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x50]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2acc",
+          "visits": 1,
+          "instructions": [
+            [
+              "mov",
+              "x1, #0x0"
+            ],
+            [
+              "mov",
+              "x0, x1"
+            ],
+            [
+              "add",
+              "sp, sp, #0x60"
+            ],
+            [
+              "ldp",
+              "x29, x30, [sp], #0x10"
+            ],
+            [
+              "retab",
+              ""
+            ]
+          ]
+        }
+      ]
+    },
+    "prefix-natural-8192": {
+      "calls": 1,
+      "counts": {
+        "instructions": 180248,
+        "pacibsp": 1,
+        "stp": 1,
+        "stack_stores": 1,
+        "mov": 16387,
+        "sub": 1,
+        "ldr": 8205,
+        "payload_loads": 16397,
+        "cmp": 49153,
+        "b.lo": 32769,
+        "branches": 57345,
+        "add": 32769,
+        "ldp": 1,
+        "stack_loads": 1,
+        "retab": 1,
+        "ldrb": 8192,
+        "b.hi": 8192,
+        "b.hs": 8192,
+        "str": 8192,
+        "payload_stores": 8192,
+        "b": 8192
+      },
+      "blocks": [
+        {
+          "address": "0x2ac4",
+          "visits": 8193,
+          "instructions": [
+            [
+              "cmp",
+              "x8, x10"
+            ],
+            [
+              "b.lo",
+              "0x2ae0"
+            ]
+          ]
+        },
+        {
+          "address": "0x2ae0",
+          "visits": 8192,
+          "instructions": [
+            [
+              "add",
+              "x7, x9, x8"
+            ],
+            [
+              "cmp",
+              "x7, x9"
+            ],
+            [
+              "b.lo",
+              "0x2b40"
+            ]
+          ]
+        },
+        {
+          "address": "0x2aec",
+          "visits": 8192,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x4"
+            ],
+            [
+              "b.lo",
+              "0x2afc"
+            ]
+          ]
+        },
+        {
+          "address": "0x2afc",
+          "visits": 8192,
+          "instructions": [
+            [
+              "ldrb",
+              "w7, [x3, x7]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b00",
+          "visits": 8192,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x6"
+            ],
+            [
+              "b.lo",
+              "0x2b10"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b10",
+          "visits": 8192,
+          "instructions": [
+            [
+              "ldr",
+              "w12, [x5, x7, lsl #2]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b14",
+          "visits": 8192,
+          "instructions": [
+            [
+              "mov",
+              "x0, #0x1"
+            ],
+            [
+              "add",
+              "x1, x12, #0x1"
+            ],
+            [
+              "mov",
+              "x11, #0xffffffff"
+            ],
+            [
+              "cmp",
+              "x1, x11"
+            ],
+            [
+              "b.hi",
+              "0x2b50"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b28",
+          "visits": 8192,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x6"
+            ],
+            [
+              "b.hs",
+              "0x2b5c"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b30",
+          "visits": 8192,
+          "instructions": [
+            [
+              "add",
+              "w0, w12, #0x1"
+            ],
+            [
+              "str",
+              "w0, [x5, x7, lsl #2]"
+            ],
+            [
+              "add",
+              "x8, x8, #0x1"
+            ],
+            [
+              "b",
+              "0x2ac4"
+            ]
+          ]
+        },
+        {
+          "address": "0x2a80",
+          "visits": 1,
+          "instructions": [
+            [
+              "pacibsp",
+              ""
+            ],
+            [
+              "stp",
+              "x29, x30, [sp, #-0x10]!"
+            ],
+            [
+              "mov",
+              "x29, sp"
+            ],
+            [
+              "sub",
+              "sp, sp, #0x60"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x58]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x60]"
+            ],
+            [
+              "ldr",
+              "x9, [x1]"
+            ],
+            [
+              "ldr",
+              "x10, [x1, #0x8]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x10]"
+            ],
+            [
+              "ldr",
+              "x3, [x1, #0x18]"
+            ],
+            [
+              "ldr",
+              "x4, [x1, #0x20]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x28]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x30]"
+            ],
+            [
+              "ldr",
+              "x5, [x1, #0x38]"
+            ],
+            [
+              "ldr",
+              "x6, [x1, #0x40]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x48]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x50]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2acc",
+          "visits": 1,
+          "instructions": [
+            [
+              "mov",
+              "x1, #0x0"
+            ],
+            [
+              "mov",
+              "x0, x1"
+            ],
+            [
+              "add",
+              "sp, sp, #0x60"
+            ],
+            [
+              "ldp",
+              "x29, x30, [sp], #0x10"
+            ],
+            [
+              "retab",
+              ""
+            ]
+          ]
+        }
+      ]
+    },
+    "prefix-random-4096": {
+      "calls": 1,
+      "counts": {
+        "instructions": 90136,
+        "pacibsp": 1,
+        "stp": 1,
+        "stack_stores": 1,
+        "mov": 8195,
+        "sub": 1,
+        "ldr": 4109,
+        "payload_loads": 8205,
+        "cmp": 24577,
+        "b.lo": 16385,
+        "branches": 28673,
+        "add": 16385,
+        "ldp": 1,
+        "stack_loads": 1,
+        "retab": 1,
+        "ldrb": 4096,
+        "b.hi": 4096,
+        "b.hs": 4096,
+        "str": 4096,
+        "payload_stores": 4096,
+        "b": 4096
+      },
+      "blocks": [
+        {
+          "address": "0x2ac4",
+          "visits": 4097,
+          "instructions": [
+            [
+              "cmp",
+              "x8, x10"
+            ],
+            [
+              "b.lo",
+              "0x2ae0"
+            ]
+          ]
+        },
+        {
+          "address": "0x2ae0",
+          "visits": 4096,
+          "instructions": [
+            [
+              "add",
+              "x7, x9, x8"
+            ],
+            [
+              "cmp",
+              "x7, x9"
+            ],
+            [
+              "b.lo",
+              "0x2b40"
+            ]
+          ]
+        },
+        {
+          "address": "0x2aec",
+          "visits": 4096,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x4"
+            ],
+            [
+              "b.lo",
+              "0x2afc"
+            ]
+          ]
+        },
+        {
+          "address": "0x2afc",
+          "visits": 4096,
+          "instructions": [
+            [
+              "ldrb",
+              "w7, [x3, x7]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b00",
+          "visits": 4096,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x6"
+            ],
+            [
+              "b.lo",
+              "0x2b10"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b10",
+          "visits": 4096,
+          "instructions": [
+            [
+              "ldr",
+              "w12, [x5, x7, lsl #2]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b14",
+          "visits": 4096,
+          "instructions": [
+            [
+              "mov",
+              "x0, #0x1"
+            ],
+            [
+              "add",
+              "x1, x12, #0x1"
+            ],
+            [
+              "mov",
+              "x11, #0xffffffff"
+            ],
+            [
+              "cmp",
+              "x1, x11"
+            ],
+            [
+              "b.hi",
+              "0x2b50"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b28",
+          "visits": 4096,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x6"
+            ],
+            [
+              "b.hs",
+              "0x2b5c"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b30",
+          "visits": 4096,
+          "instructions": [
+            [
+              "add",
+              "w0, w12, #0x1"
+            ],
+            [
+              "str",
+              "w0, [x5, x7, lsl #2]"
+            ],
+            [
+              "add",
+              "x8, x8, #0x1"
+            ],
+            [
+              "b",
+              "0x2ac4"
+            ]
+          ]
+        },
+        {
+          "address": "0x2a80",
+          "visits": 1,
+          "instructions": [
+            [
+              "pacibsp",
+              ""
+            ],
+            [
+              "stp",
+              "x29, x30, [sp, #-0x10]!"
+            ],
+            [
+              "mov",
+              "x29, sp"
+            ],
+            [
+              "sub",
+              "sp, sp, #0x60"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x58]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x60]"
+            ],
+            [
+              "ldr",
+              "x9, [x1]"
+            ],
+            [
+              "ldr",
+              "x10, [x1, #0x8]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x10]"
+            ],
+            [
+              "ldr",
+              "x3, [x1, #0x18]"
+            ],
+            [
+              "ldr",
+              "x4, [x1, #0x20]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x28]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x30]"
+            ],
+            [
+              "ldr",
+              "x5, [x1, #0x38]"
+            ],
+            [
+              "ldr",
+              "x6, [x1, #0x40]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x48]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x50]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2acc",
+          "visits": 1,
+          "instructions": [
+            [
+              "mov",
+              "x1, #0x0"
+            ],
+            [
+              "mov",
+              "x0, x1"
+            ],
+            [
+              "add",
+              "sp, sp, #0x60"
+            ],
+            [
+              "ldp",
+              "x29, x30, [sp], #0x10"
+            ],
+            [
+              "retab",
+              ""
+            ]
+          ]
+        }
+      ]
+    },
+    "prefix-random-8192": {
+      "calls": 1,
+      "counts": {
+        "instructions": 180248,
+        "pacibsp": 1,
+        "stp": 1,
+        "stack_stores": 1,
+        "mov": 16387,
+        "sub": 1,
+        "ldr": 8205,
+        "payload_loads": 16397,
+        "cmp": 49153,
+        "b.lo": 32769,
+        "branches": 57345,
+        "add": 32769,
+        "ldp": 1,
+        "stack_loads": 1,
+        "retab": 1,
+        "ldrb": 8192,
+        "b.hi": 8192,
+        "b.hs": 8192,
+        "str": 8192,
+        "payload_stores": 8192,
+        "b": 8192
+      },
+      "blocks": [
+        {
+          "address": "0x2ac4",
+          "visits": 8193,
+          "instructions": [
+            [
+              "cmp",
+              "x8, x10"
+            ],
+            [
+              "b.lo",
+              "0x2ae0"
+            ]
+          ]
+        },
+        {
+          "address": "0x2ae0",
+          "visits": 8192,
+          "instructions": [
+            [
+              "add",
+              "x7, x9, x8"
+            ],
+            [
+              "cmp",
+              "x7, x9"
+            ],
+            [
+              "b.lo",
+              "0x2b40"
+            ]
+          ]
+        },
+        {
+          "address": "0x2aec",
+          "visits": 8192,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x4"
+            ],
+            [
+              "b.lo",
+              "0x2afc"
+            ]
+          ]
+        },
+        {
+          "address": "0x2afc",
+          "visits": 8192,
+          "instructions": [
+            [
+              "ldrb",
+              "w7, [x3, x7]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b00",
+          "visits": 8192,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x6"
+            ],
+            [
+              "b.lo",
+              "0x2b10"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b10",
+          "visits": 8192,
+          "instructions": [
+            [
+              "ldr",
+              "w12, [x5, x7, lsl #2]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b14",
+          "visits": 8192,
+          "instructions": [
+            [
+              "mov",
+              "x0, #0x1"
+            ],
+            [
+              "add",
+              "x1, x12, #0x1"
+            ],
+            [
+              "mov",
+              "x11, #0xffffffff"
+            ],
+            [
+              "cmp",
+              "x1, x11"
+            ],
+            [
+              "b.hi",
+              "0x2b50"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b28",
+          "visits": 8192,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x6"
+            ],
+            [
+              "b.hs",
+              "0x2b5c"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b30",
+          "visits": 8192,
+          "instructions": [
+            [
+              "add",
+              "w0, w12, #0x1"
+            ],
+            [
+              "str",
+              "w0, [x5, x7, lsl #2]"
+            ],
+            [
+              "add",
+              "x8, x8, #0x1"
+            ],
+            [
+              "b",
+              "0x2ac4"
+            ]
+          ]
+        },
+        {
+          "address": "0x2a80",
+          "visits": 1,
+          "instructions": [
+            [
+              "pacibsp",
+              ""
+            ],
+            [
+              "stp",
+              "x29, x30, [sp, #-0x10]!"
+            ],
+            [
+              "mov",
+              "x29, sp"
+            ],
+            [
+              "sub",
+              "sp, sp, #0x60"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x58]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x60]"
+            ],
+            [
+              "ldr",
+              "x9, [x1]"
+            ],
+            [
+              "ldr",
+              "x10, [x1, #0x8]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x10]"
+            ],
+            [
+              "ldr",
+              "x3, [x1, #0x18]"
+            ],
+            [
+              "ldr",
+              "x4, [x1, #0x20]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x28]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x30]"
+            ],
+            [
+              "ldr",
+              "x5, [x1, #0x38]"
+            ],
+            [
+              "ldr",
+              "x6, [x1, #0x40]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x48]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x50]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2acc",
+          "visits": 1,
+          "instructions": [
+            [
+              "mov",
+              "x1, #0x0"
+            ],
+            [
+              "mov",
+              "x0, x1"
+            ],
+            [
+              "add",
+              "sp, sp, #0x60"
+            ],
+            [
+              "ldp",
+              "x29, x30, [sp], #0x10"
+            ],
+            [
+              "retab",
+              ""
+            ]
+          ]
+        }
+      ]
+    },
+    "prefix-random-1048576": {
+      "calls": 4,
+      "counts": {
+        "instructions": 23068768,
+        "pacibsp": 4,
+        "stp": 4,
+        "stack_stores": 4,
+        "mov": 2097164,
+        "sub": 4,
+        "ldr": 1048628,
+        "payload_loads": 2097204,
+        "cmp": 6291460,
+        "b.lo": 4194308,
+        "branches": 7340036,
+        "add": 4194308,
+        "ldp": 4,
+        "stack_loads": 4,
+        "retab": 4,
+        "ldrb": 1048576,
+        "b.hi": 1048576,
+        "b.hs": 1048576,
+        "str": 1048576,
+        "payload_stores": 1048576,
+        "b": 1048576
+      },
+      "blocks": [
+        {
+          "address": "0x2ac4",
+          "visits": 1048580,
+          "instructions": [
+            [
+              "cmp",
+              "x8, x10"
+            ],
+            [
+              "b.lo",
+              "0x2ae0"
+            ]
+          ]
+        },
+        {
+          "address": "0x2ae0",
+          "visits": 1048576,
+          "instructions": [
+            [
+              "add",
+              "x7, x9, x8"
+            ],
+            [
+              "cmp",
+              "x7, x9"
+            ],
+            [
+              "b.lo",
+              "0x2b40"
+            ]
+          ]
+        },
+        {
+          "address": "0x2aec",
+          "visits": 1048576,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x4"
+            ],
+            [
+              "b.lo",
+              "0x2afc"
+            ]
+          ]
+        },
+        {
+          "address": "0x2afc",
+          "visits": 1048576,
+          "instructions": [
+            [
+              "ldrb",
+              "w7, [x3, x7]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b00",
+          "visits": 1048576,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x6"
+            ],
+            [
+              "b.lo",
+              "0x2b10"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b10",
+          "visits": 1048576,
+          "instructions": [
+            [
+              "ldr",
+              "w12, [x5, x7, lsl #2]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b14",
+          "visits": 1048576,
+          "instructions": [
+            [
+              "mov",
+              "x0, #0x1"
+            ],
+            [
+              "add",
+              "x1, x12, #0x1"
+            ],
+            [
+              "mov",
+              "x11, #0xffffffff"
+            ],
+            [
+              "cmp",
+              "x1, x11"
+            ],
+            [
+              "b.hi",
+              "0x2b50"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b28",
+          "visits": 1048576,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x6"
+            ],
+            [
+              "b.hs",
+              "0x2b5c"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b30",
+          "visits": 1048576,
+          "instructions": [
+            [
+              "add",
+              "w0, w12, #0x1"
+            ],
+            [
+              "str",
+              "w0, [x5, x7, lsl #2]"
+            ],
+            [
+              "add",
+              "x8, x8, #0x1"
+            ],
+            [
+              "b",
+              "0x2ac4"
+            ]
+          ]
+        },
+        {
+          "address": "0x2a80",
+          "visits": 4,
+          "instructions": [
+            [
+              "pacibsp",
+              ""
+            ],
+            [
+              "stp",
+              "x29, x30, [sp, #-0x10]!"
+            ],
+            [
+              "mov",
+              "x29, sp"
+            ],
+            [
+              "sub",
+              "sp, sp, #0x60"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x58]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x60]"
+            ],
+            [
+              "ldr",
+              "x9, [x1]"
+            ],
+            [
+              "ldr",
+              "x10, [x1, #0x8]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x10]"
+            ],
+            [
+              "ldr",
+              "x3, [x1, #0x18]"
+            ],
+            [
+              "ldr",
+              "x4, [x1, #0x20]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x28]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x30]"
+            ],
+            [
+              "ldr",
+              "x5, [x1, #0x38]"
+            ],
+            [
+              "ldr",
+              "x6, [x1, #0x40]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x48]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x50]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2acc",
+          "visits": 4,
+          "instructions": [
+            [
+              "mov",
+              "x1, #0x0"
+            ],
+            [
+              "mov",
+              "x0, x1"
+            ],
+            [
+              "add",
+              "sp, sp, #0x60"
+            ],
+            [
+              "ldp",
+              "x29, x30, [sp], #0x10"
+            ],
+            [
+              "retab",
+              ""
+            ]
+          ]
+        }
+      ]
+    },
+    "16384-distribution-change": {
+      "calls": 2,
+      "counts": {
+        "instructions": 360496,
+        "pacibsp": 2,
+        "stp": 2,
+        "stack_stores": 2,
+        "mov": 32774,
+        "sub": 2,
+        "ldr": 16410,
+        "payload_loads": 32794,
+        "cmp": 98306,
+        "b.lo": 65538,
+        "branches": 114690,
+        "add": 65538,
+        "ldp": 2,
+        "stack_loads": 2,
+        "retab": 2,
+        "ldrb": 16384,
+        "b.hi": 16384,
+        "b.hs": 16384,
+        "str": 16384,
+        "payload_stores": 16384,
+        "b": 16384
+      },
+      "blocks": [
+        {
+          "address": "0x2ac4",
+          "visits": 16386,
+          "instructions": [
+            [
+              "cmp",
+              "x8, x10"
+            ],
+            [
+              "b.lo",
+              "0x2ae0"
+            ]
+          ]
+        },
+        {
+          "address": "0x2ae0",
+          "visits": 16384,
+          "instructions": [
+            [
+              "add",
+              "x7, x9, x8"
+            ],
+            [
+              "cmp",
+              "x7, x9"
+            ],
+            [
+              "b.lo",
+              "0x2b40"
+            ]
+          ]
+        },
+        {
+          "address": "0x2aec",
+          "visits": 16384,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x4"
+            ],
+            [
+              "b.lo",
+              "0x2afc"
+            ]
+          ]
+        },
+        {
+          "address": "0x2afc",
+          "visits": 16384,
+          "instructions": [
+            [
+              "ldrb",
+              "w7, [x3, x7]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b00",
+          "visits": 16384,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x6"
+            ],
+            [
+              "b.lo",
+              "0x2b10"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b10",
+          "visits": 16384,
+          "instructions": [
+            [
+              "ldr",
+              "w12, [x5, x7, lsl #2]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b14",
+          "visits": 16384,
+          "instructions": [
+            [
+              "mov",
+              "x0, #0x1"
+            ],
+            [
+              "add",
+              "x1, x12, #0x1"
+            ],
+            [
+              "mov",
+              "x11, #0xffffffff"
+            ],
+            [
+              "cmp",
+              "x1, x11"
+            ],
+            [
+              "b.hi",
+              "0x2b50"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b28",
+          "visits": 16384,
+          "instructions": [
+            [
+              "cmp",
+              "x7, x6"
+            ],
+            [
+              "b.hs",
+              "0x2b5c"
+            ]
+          ]
+        },
+        {
+          "address": "0x2b30",
+          "visits": 16384,
+          "instructions": [
+            [
+              "add",
+              "w0, w12, #0x1"
+            ],
+            [
+              "str",
+              "w0, [x5, x7, lsl #2]"
+            ],
+            [
+              "add",
+              "x8, x8, #0x1"
+            ],
+            [
+              "b",
+              "0x2ac4"
+            ]
+          ]
+        },
+        {
+          "address": "0x2a80",
+          "visits": 2,
+          "instructions": [
+            [
+              "pacibsp",
+              ""
+            ],
+            [
+              "stp",
+              "x29, x30, [sp, #-0x10]!"
+            ],
+            [
+              "mov",
+              "x29, sp"
+            ],
+            [
+              "sub",
+              "sp, sp, #0x60"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x58]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x60]"
+            ],
+            [
+              "ldr",
+              "x9, [x1]"
+            ],
+            [
+              "ldr",
+              "x10, [x1, #0x8]"
+            ],
+            [
+              "ldr",
+              "x8, [x1, #0x10]"
+            ],
+            [
+              "ldr",
+              "x3, [x1, #0x18]"
+            ],
+            [
+              "ldr",
+              "x4, [x1, #0x20]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x28]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x30]"
+            ],
+            [
+              "ldr",
+              "x5, [x1, #0x38]"
+            ],
+            [
+              "ldr",
+              "x6, [x1, #0x40]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x48]"
+            ],
+            [
+              "ldr",
+              "x0, [x1, #0x50]"
+            ]
+          ]
+        },
+        {
+          "address": "0x2acc",
+          "visits": 2,
+          "instructions": [
+            [
+              "mov",
+              "x1, #0x0"
+            ],
+            [
+              "mov",
+              "x0, x1"
+            ],
+            [
+              "add",
+              "sp, sp, #0x60"
+            ],
+            [
+              "ldp",
+              "x29, x30, [sp], #0x10"
+            ],
+            [
+              "retab",
+              ""
+            ]
+          ]
+        }
+      ]
+    }
+  }
+}

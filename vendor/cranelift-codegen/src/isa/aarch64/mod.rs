@@ -86,7 +86,9 @@ impl TargetIsa for AArch64Backend {
             if self.flags.regalloc_checker() {
                 let mut checker = regalloc2::checker::Checker::new(&vcode, vcode.abi.machine_env());
                 checker.prepare(&regalloc_result);
-                checker.run().expect("spill forwarding preserves register allocation");
+                checker
+                    .run()
+                    .expect("spill forwarding preserves register allocation");
             }
         }
 
@@ -137,14 +139,19 @@ impl TargetIsa for AArch64Backend {
                 || !emit_result.value_labels_ranges.is_empty()
                 || !matches!(func.signature.call_conv, crate::isa::CallConv::AppleAarch64)
             {
-                return Err(crate::CodegenError::Unsupported("AArch64 block layout metadata".into()));
+                return Err(crate::CodegenError::Unsupported(
+                    "AArch64 block layout metadata".into(),
+                ));
             }
             block_layout::apply(
                 &mut emit_result.buffer,
                 &func.aarch64_block_layout,
                 func.aarch64_block_layout_literal_start,
+                func.aarch64_block_layout_thread_jumps,
             )
-                .ok_or_else(|| crate::CodegenError::Unsupported("AArch64 block layout profile".into()))?;
+            .ok_or_else(|| {
+                crate::CodegenError::Unsupported("AArch64 block layout profile".into())
+            })?;
         }
         let value_labels_ranges = emit_result.value_labels_ranges;
         let buffer = emit_result.buffer;

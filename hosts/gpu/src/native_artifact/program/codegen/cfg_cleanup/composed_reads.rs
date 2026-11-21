@@ -85,7 +85,7 @@ struct DenseCodes {
     key: CodeKey,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub(in crate::native_artifact) struct DenseTables(BTreeMap<CodeKey, DataId>);
 
 impl DenseTables {
@@ -154,7 +154,7 @@ fn incoming(
 
 // Invariant packet fields can pass through a self edge or be reloaded by an
 // alternate entry. All external definitions must identify the same word.
-pub(super) fn packet_word(
+pub(in crate::native_artifact) fn packet_word(
     f: &Function,
     cfg: &ControlFlowGraph,
     loads: &BTreeMap<Value, (Inst, usize)>,

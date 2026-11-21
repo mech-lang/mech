@@ -1,0 +1,96 @@
+{
+  "plan_sha256": "9b5e6c994a1243ab71a9f10eb7f7d9f8e6d132f39425e6886df3212361157a68",
+  "medians": {
+    "mech-control-reference": {
+      "source": 2.1712352086324245,
+      "link": 0.03554577101022005,
+      "source_through_link": 2.207502083387226,
+      "strip": 0.011060979217290878,
+      "source_through_strip": 2.218774395994842
+    },
+    "mech-current-default": {
+      "source": 2.1768237091600895,
+      "link": 0.03509462531656027,
+      "source_through_link": 2.212215354433283,
+      "strip": 0.011027603643015027,
+      "source_through_strip": 2.229320146376267
+    },
+    "roc": {
+      "source": 2.94165606261231,
+      "link": 0.035082979360595345,
+      "source_through_link": 2.9770111460238695,
+      "strip": 0.010953875258564949,
+      "source_through_strip": 2.988297729520127
+    },
+    "libdeflate": {
+      "source": 0.4458220414817333,
+      "link": 0.03485112520866096,
+      "source_through_link": 0.4810217288322747,
+      "strip": 0.011091833002865314,
+      "source_through_strip": 0.49223966570571065
+    }
+  },
+  "phases": {
+    "mech-control-reference": {
+      "parse": 0.707260729,
+      "catalog": 2.125e-05,
+      "frontend": 0.213347021,
+      "artifact": 0.006849646,
+      "encode": 0.0025176455,
+      "native": 1.212920083
+    },
+    "mech-current-default": {
+      "parse": 0.7073237705,
+      "catalog": 1.9353999999999998e-05,
+      "frontend": 0.212866229,
+      "artifact": 0.0068466875,
+      "encode": 0.0025353745,
+      "native": 1.2170760205
+    }
+  },
+  "paired_ratios": {
+    "mech-control-reference": {
+      "roc": 0.7412323562432612,
+      "libdeflate": 4.587950914299283,
+      "mech-control-reference": 1.0
+    },
+    "mech-current-default": {
+      "roc": 0.7426900612428287,
+      "libdeflate": 4.609306595086583,
+      "mech-control-reference": 1.0019601237647295
+    }
+  },
+  "paired_ms_cost": [
+    -3.7226672284305096,
+    1.7060423269867897,
+    19.14875116199255,
+    5.2473340183496475,
+    18.158082850277424,
+    20.32462414354086,
+    3.401750698685646,
+    -0.08954107761383057
+  ],
+  "paired_median_ms_cost": 4.324542358517647,
+  "cost_90pct_interval_ms": [
+    0.8082506246864796,
+    18.653417006134987
+  ],
+  "faster": 2,
+  "trials": 8,
+  "seed": 9951120,
+  "bootstrap_resamples": 20000,
+  "default_compiler_sha256": "1d1d2b352c40d0ed6f3f1db749106d44509d468b217bb1893d84df4e62e63843",
+  "prior_compiler_sha256": "e7bb105011a9632bc5d1033494bc46f6d883f21e989df4a9e72757d3f0384eb1",
+  "source_cpu_seconds": {
+    "mech-control-reference": 2.2293855000000002,
+    "mech-current-default": 2.2358325,
+    "roc": 2.9336624999999996,
+    "libdeflate": 0.4423295
+  },
+  "source_rss_bytes": {
+    "mech-control-reference": 392642560.0,
+    "mech-current-default": 392560640.0,
+    "roc": 390463488.0,
+    "libdeflate": 71532544.0
+  }
+}

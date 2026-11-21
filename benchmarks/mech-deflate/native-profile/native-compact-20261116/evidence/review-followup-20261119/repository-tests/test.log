@@ -1,0 +1,141 @@
+ Downloading crates ...
+  Downloaded crossbeam-deque v0.8.7
+  Downloaded either v1.16.0
+  Downloaded once_cell v1.21.4
+  Downloaded errno v0.3.14
+  Downloaded fsevent-sys v4.1.0
+  Downloaded same-file v1.0.6
+  Downloaded cargo-platform v0.3.3
+  Downloaded arrayref v0.3.9
+  Downloaded cfg_aliases v0.2.2
+  Downloaded notify-types v2.1.0
+  Downloaded cargo_metadata v0.23.1
+  Downloaded thiserror-impl v2.0.19
+  Downloaded fastrand v2.5.0
+  Downloaded walkdir v2.5.0
+  Downloaded globset v0.4.19
+  Downloaded arrayvec v0.7.8
+  Downloaded thiserror v2.0.19
+  Downloaded find-msvc-tools v0.1.9
+  Downloaded semver v1.0.28
+  Downloaded crossbeam-utils v0.8.22
+  Downloaded crossbeam-epoch v0.9.20
+  Downloaded notify v8.2.0
+  Downloaded constant_time_eq v0.4.2
+  Downloaded uuid v1.24.0
+  Downloaded camino v1.2.5
+  Downloaded tempfile v3.27.0
+  Downloaded getrandom v0.4.3
+  Downloaded bitflags v2.13.1
+  Downloaded ignore v0.4.31
+  Downloaded cc v1.3.0
+  Downloaded itertools v0.14.0
+  Downloaded aho-corasick v1.1.4
+  Downloaded blake3 v1.8.5
+  Downloaded nix v0.31.3
+  Downloaded bstr v1.13.0
+  Downloaded regex-syntax v0.8.11
+  Downloaded rustix v1.1.4
+  Downloaded regex-automata v0.4.16
+   Compiling serde_core v1.0.229
+   Compiling libc v0.2.189
+   Compiling indexmap v2.14.0
+   Compiling memchr v2.8.3
+   Compiling syn v3.0.3
+   Compiling serde_derive v1.0.229
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling simba v0.9.1
+   Compiling cpufeatures v0.3.0
+   Compiling bincode v2.0.1
+   Compiling nalgebra v0.34.2
+   Compiling sha2 v0.11.0
+   Compiling mech-core v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/core)
+   Compiling cranelift-codegen-meta v0.131.3 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/vendor/cranelift-codegen-meta)
+   Compiling cranelift-codegen v0.131.3 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/vendor/cranelift-codegen)
+   Compiling bitflags v2.13.1
+   Compiling crossbeam-utils v0.8.22
+   Compiling regalloc2 v0.15.2 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/vendor/regalloc2)
+   Compiling gimli v0.33.0
+   Compiling cpufeatures v0.2.17
+   Compiling crossbeam-epoch v0.9.20
+   Compiling find-msvc-tools v0.1.9
+   Compiling getrandom v0.4.3
+   Compiling cc v1.3.0
+   Compiling mech-syntax v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/syntax)
+   Compiling sha2 v0.10.9
+   Compiling mech-bytecode v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/bytecode)
+   Compiling aho-corasick v1.1.4
+   Compiling crossbeam-deque v0.8.7
+   Compiling regex-syntax v0.8.11
+   Compiling same-file v1.0.6
+   Compiling walkdir v2.5.0
+   Compiling regex-automata v0.4.16
+   Compiling mech-engine v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/engine)
+   Compiling blake3 v1.8.5
+   Compiling bstr v1.13.0
+   Compiling camino v1.2.5
+   Compiling cfg_aliases v0.2.2
+   Compiling thiserror v2.0.19
+   Compiling nix v0.31.3
+   Compiling globset v0.4.19
+   Compiling notify-types v2.1.0
+   Compiling thiserror-impl v2.0.19
+   Compiling fsevent-sys v4.1.0
+   Compiling either v1.16.0
+   Compiling rustix v1.1.4
+   Compiling arrayvec v0.7.8
+   Compiling constant_time_eq v0.4.2
+   Compiling arrayref v0.3.9
+   Compiling toml_edit v0.23.10+spec-1.0.0
+   Compiling itertools v0.14.0
+   Compiling notify v8.2.0
+   Compiling cranelift-module v0.131.3
+   Compiling ignore v0.4.31
+   Compiling uuid v1.24.0
+   Compiling mech-compute v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/compute)
+   Compiling mach2 v0.4.3
+   Compiling errno v0.3.14
+   Compiling semver v1.0.28
+   Compiling cargo-platform v0.3.3
+   Compiling mech-stdlib v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/stdlib)
+   Compiling region v3.0.2
+   Compiling cargo_metadata v0.23.1
+   Compiling mech-runtime v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/runtime)
+   Compiling mech-combinatorics v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/combinatorics)
+   Compiling object v0.39.1
+   Compiling cranelift-native v0.131.3
+   Compiling wasmtime-internal-jit-icache-coherence v44.0.3
+   Compiling mech-set v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/set)
+   Compiling mech-math v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/math)
+   Compiling mech-string v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/string)
+   Compiling mech-logic v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/logic)
+   Compiling mech-matrix v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/matrix)
+   Compiling mech-range v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/range)
+   Compiling mech-stats v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/stats)
+   Compiling mech-compare v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/compare)
+   Compiling fastrand v2.5.0
+   Compiling once_cell v1.21.4
+   Compiling tempfile v3.27.0
+   Compiling cranelift-jit v0.131.3
+   Compiling cranelift-object v0.131.3
+   Compiling mech-build v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/build)
+   Compiling cranelift-frontend v0.131.3 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/vendor/cranelift-frontend)
+   Compiling mech-gpu v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/hosts/gpu)
+    Finished `release` profile [optimized] target(s) in 30m 49s
+     Running unittests src/lib.rs (/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/mech_gpu-b3b0f09228423e85)
+
+running 10 tests
+test native_artifact::program::codegen::wide_equal::mismatch::tests::first_word_probe_preserves_mismatches_and_the_following_vector_and_scalar_tails ... ok
+test native_artifact::program::codegen::wide_equal::mismatch::tests::vector_mismatch_declines_effects_independently_observed_words_and_unsupported_exits ... ok
+test native_artifact::program::codegen::wide_equal::mismatch::tests::vector_mismatch_preserves_first_byte_bits_tails_positions_and_live_payloads ... ok
+test native_artifact::program::codegen::wide_equal::prefix::tests::endpoint_addresses_allow_commutation_and_preserve_distinct_bases ... ok
+test native_artifact::program::codegen::wide_equal::prefix::tests::endpoint_handoff_extends_only_its_selected_edge_and_preserves_existing_arguments ... ok
+test native_artifact::program::codegen::wide_equal::tests::compact_wide_equal_keeps_scalar_backedge_after_entering_tiers ... ok
+test native_artifact::program::codegen::wide_equal::tests::compact_wide_equal_preserves_first_bad_word_tails_and_current_buffers ... ok
+test native_artifact::program::codegen::wide_equal::tests::compact_wide_equal_refuses_effects_other_steps_extra_state_or_unproved_geometry ... ok
+test native_artifact::program::codegen::wide_equal::tests::equality_scan_strategies_preserve_word_mismatches_and_admitted_tails ... ok
+test native_artifact::program::codegen::wide_equal::tests::vector_nonzero_branch_preserves_every_bit_and_normalized_observation ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 1350 filtered out; finished in 0.26s
+

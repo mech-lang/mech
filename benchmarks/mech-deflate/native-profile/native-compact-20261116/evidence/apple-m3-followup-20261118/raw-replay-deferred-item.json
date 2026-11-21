@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "experiments": [
+    {
+      "candidate": "deferred-item",
+      "scope": "focus",
+      "status": "passed",
+      "timed_calls": 1479168,
+      "plan_sha256": "9499ad891fb8745d3ddb25920899b57e4d0f15460d81d9160e759e3011286d09"
+    }
+  ],
+  "total_timed_calls_verified": 1479168
+}

@@ -1,0 +1,458 @@
+{
+  "control": [
+    {
+      "address": "0xb78",
+      "visits": 1048545,
+      "instructions": [
+        [
+          "ldrb",
+          "w1, [x27, x0]"
+        ]
+      ]
+    },
+    {
+      "address": "0xa68",
+      "visits": 1044385,
+      "instructions": [
+        [
+          "ldrb",
+          "w1, [x27, x0]"
+        ]
+      ]
+    },
+    {
+      "address": "0x690",
+      "visits": 477306,
+      "instructions": [
+        [
+          "add",
+          "x2, x13, x22"
+        ],
+        [
+          "ldrb",
+          "w2, [x27, x2]"
+        ],
+        [
+          "add",
+          "x7, x0, x22"
+        ],
+        [
+          "ldrb",
+          "w7, [x27, x7]"
+        ],
+        [
+          "cmp",
+          "x2, x7"
+        ],
+        [
+          "b.ne",
+          "0x878"
+        ]
+      ]
+    },
+    {
+      "address": "0x88c",
+      "visits": 477306,
+      "instructions": [
+        [
+          "ldrb",
+          "w7, [x27, x2]"
+        ]
+      ]
+    },
+    {
+      "address": "0x8a4",
+      "visits": 477306,
+      "instructions": [
+        [
+          "ldrb",
+          "w2, [x27, x2]"
+        ]
+      ]
+    }
+  ],
+  "immutable-defaults": [
+    {
+      "address": "0xb94",
+      "visits": 1048545,
+      "instructions": [
+        [
+          "sub",
+          "x2, x3, x28"
+        ],
+        [
+          "and",
+          "x2, x2, #0xffff"
+        ],
+        [
+          "add",
+          "x7, x27, x0"
+        ],
+        [
+          "adrp",
+          "x24, 0 ; 0x0"
+        ],
+        [
+          "ldr",
+          "x24, [x24]"
+        ],
+        [
+          "cmp",
+          "x0, x6"
+        ],
+        [
+          "csel",
+          "x7, x7, x24, lo"
+        ],
+        [
+          "ldrb",
+          "w7, [x7]"
+        ],
+        [
+          "orr",
+          "x2, x2, x7, lsl #16"
+        ],
+        [
+          "ldr",
+          "x15, [sp, #0x100]"
+        ],
+        [
+          "str",
+          "w2, [x15, x3, lsl #2]"
+        ],
+        [
+          "mov",
+          "w7, #0x1"
+        ],
+        [
+          "tbnz",
+          "w1, #0x0, 0xbd4"
+        ]
+      ]
+    },
+    {
+      "address": "0xa74",
+      "visits": 1044385,
+      "instructions": [
+        [
+          "add",
+          "x1, x27, x0"
+        ],
+        [
+          "adrp",
+          "x2, 0 ; 0x0"
+        ],
+        [
+          "ldr",
+          "x2, [x2]"
+        ],
+        [
+          "cmp",
+          "x0, x6"
+        ],
+        [
+          "csel",
+          "x1, x1, x2, lo"
+        ],
+        [
+          "ldrb",
+          "w1, [x1]"
+        ],
+        [
+          "uxtb",
+          "w1, w1"
+        ],
+        [
+          "lsr",
+          "x4, x1, #5"
+        ],
+        [
+          "and",
+          "x4, x4, #0x6"
+        ],
+        [
+          "and",
+          "x1, x1, #0x1"
+        ],
+        [
+          "orr",
+          "x1, x4, x1"
+        ],
+        [
+          "ldur",
+          "x10, [sp, #0xc0]"
+        ],
+        [
+          "add",
+          "x4, x10, x1, lsl #2"
+        ],
+        [
+          "ldur",
+          "x12, [sp, #0xb8]"
+        ],
+        [
+          "cmp",
+          "x1, x12"
+        ],
+        [
+          "csel",
+          "x2, x4, x2, lo"
+        ],
+        [
+          "ldr",
+          "w2, [x2]"
+        ],
+        [
+          "cmp",
+          "x1, x12"
+        ],
+        [
+          "b.hs",
+          "0x1478"
+        ]
+      ]
+    },
+    {
+      "address": "0x694",
+      "visits": 477306,
+      "instructions": [
+        [
+          "add",
+          "x2, x13, x22"
+        ],
+        [
+          "ldrb",
+          "w2, [x27, x2]"
+        ],
+        [
+          "add",
+          "x7, x0, x22"
+        ],
+        [
+          "ldrb",
+          "w7, [x27, x7]"
+        ],
+        [
+          "cmp",
+          "x2, x7"
+        ],
+        [
+          "b.ne",
+          "0x87c"
+        ]
+      ]
+    },
+    {
+      "address": "0x890",
+      "visits": 477306,
+      "instructions": [
+        [
+          "ldrb",
+          "w2, [x27, x2]"
+        ]
+      ]
+    },
+    {
+      "address": "0x8a8",
+      "visits": 477306,
+      "instructions": [
+        [
+          "ldrb",
+          "w13, [x27, x7]"
+        ]
+      ]
+    }
+  ],
+  "repair/immutable-defaults": [
+    {
+      "address": "0xb7c",
+      "visits": 1048545,
+      "instructions": [
+        [
+          "sub",
+          "x6, x8, x22"
+        ],
+        [
+          "and",
+          "x6, x6, #0xffff"
+        ],
+        [
+          "add",
+          "x7, x28, x13"
+        ],
+        [
+          "adrp",
+          "x22, 0 ; 0x0"
+        ],
+        [
+          "ldr",
+          "x22, [x22]"
+        ],
+        [
+          "cmp",
+          "x13, x5"
+        ],
+        [
+          "csel",
+          "x7, x7, x22, lo"
+        ],
+        [
+          "ldrb",
+          "w7, [x7]"
+        ],
+        [
+          "orr",
+          "x6, x6, x7, lsl #16"
+        ],
+        [
+          "ldur",
+          "x15, [sp, #0xf0]"
+        ],
+        [
+          "str",
+          "w6, [x15, x8, lsl #2]"
+        ],
+        [
+          "mov",
+          "w6, #0x1"
+        ],
+        [
+          "tbnz",
+          "w3, #0x0, 0xbbc"
+        ]
+      ]
+    },
+    {
+      "address": "0xa5c",
+      "visits": 1044385,
+      "instructions": [
+        [
+          "add",
+          "x1, x28, x13"
+        ],
+        [
+          "adrp",
+          "x6, 0 ; 0x0"
+        ],
+        [
+          "ldr",
+          "x6, [x6]"
+        ],
+        [
+          "cmp",
+          "x13, x5"
+        ],
+        [
+          "csel",
+          "x1, x1, x6, lo"
+        ],
+        [
+          "ldrb",
+          "w1, [x1]"
+        ],
+        [
+          "uxtb",
+          "w1, w1"
+        ],
+        [
+          "lsr",
+          "x3, x1, #5"
+        ],
+        [
+          "and",
+          "x3, x3, #0x6"
+        ],
+        [
+          "and",
+          "x1, x1, #0x1"
+        ],
+        [
+          "orr",
+          "x3, x3, x1"
+        ],
+        [
+          "ldur",
+          "x1, [sp, #0xb0]"
+        ],
+        [
+          "add",
+          "x7, x1, x3, lsl #2"
+        ],
+        [
+          "ldur",
+          "x9, [sp, #0xa8]"
+        ],
+        [
+          "cmp",
+          "x3, x9"
+        ],
+        [
+          "csel",
+          "x6, x7, x6, lo"
+        ],
+        [
+          "ldr",
+          "w6, [x6]"
+        ],
+        [
+          "cmp",
+          "x3, x9"
+        ],
+        [
+          "b.hs",
+          "0x13f4"
+        ]
+      ]
+    },
+    {
+      "address": "0x67c",
+      "visits": 477306,
+      "instructions": [
+        [
+          "add",
+          "x1, x19, x14"
+        ],
+        [
+          "ldrb",
+          "w1, [x28, x1]"
+        ],
+        [
+          "add",
+          "x6, x13, x14"
+        ],
+        [
+          "ldrb",
+          "w6, [x28, x6]"
+        ],
+        [
+          "cmp",
+          "x1, x6"
+        ],
+        [
+          "b.ne",
+          "0x864"
+        ]
+      ]
+    },
+    {
+      "address": "0x878",
+      "visits": 477306,
+      "instructions": [
+        [
+          "ldrb",
+          "w6, [x28, x1]"
+        ]
+      ]
+    },
+    {
+      "address": "0x890",
+      "visits": 477306,
+      "instructions": [
+        [
+          "ldrb",
+          "w9, [x28, x1]"
+        ]
+      ]
+    }
+  ]
+}

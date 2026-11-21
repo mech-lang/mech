@@ -1,0 +1,667 @@
+{
+  "runs": [
+    {
+      "id": "shared-terminal-literal-frame-cleanup-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "case_count": 15,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 15,
+            "mech-experiment": 15
+          },
+          "precision_supported_wins": {
+            "mech-control": 15,
+            "mech-experiment": 15
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "precision_supported_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    },
+    {
+      "id": "shared-terminal-literal-frame-cleanup-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "case_count": 15,
+      "peers": {
+        "roc": {
+          "point_estimate_wins": {
+            "mech-control": 15,
+            "mech-experiment": 15
+          },
+          "precision_supported_wins": {
+            "mech-control": 15,
+            "mech-experiment": 15
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        },
+        "libdeflate": {
+          "point_estimate_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "precision_supported_wins": {
+            "mech-control": 13,
+            "mech-experiment": 13
+          },
+          "lost_cases": [],
+          "gained_cases": []
+        }
+      }
+    }
+  ],
+  "cases": {
+    "empty": {
+      "decision": "unresolved",
+      "runs": {
+        "shared-terminal-literal-frame-cleanup-focus-forward": {
+          "estimate": -0.004446817865074948,
+          "lower": -0.012785349887093345,
+          "upper": 0.0038344234455300885
+        },
+        "shared-terminal-literal-frame-cleanup-focus-reverse": {
+          "estimate": 0.02464800783324761,
+          "lower": 0.008407042028661271,
+          "upper": 0.043835060522980474
+        }
+      },
+      "combined": {
+        "estimate": 0.009995834034280282,
+        "lower": 0.0009211977572076702,
+        "upper": 0.020514037936866902
+      },
+      "adverse_runs": [
+        "shared-terminal-literal-frame-cleanup-focus-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "one-stored": {
+      "decision": "regression",
+      "runs": {
+        "shared-terminal-literal-frame-cleanup-focus-forward": {
+          "estimate": -0.011928951232522467,
+          "lower": -0.01998469802135383,
+          "upper": -0.004040789727648875
+        },
+        "shared-terminal-literal-frame-cleanup-focus-reverse": {
+          "estimate": 0.03705787697371021,
+          "lower": 0.026567036560333213,
+          "upper": 0.046495812781747636
+        }
+      },
+      "combined": {
+        "estimate": 0.012268177971622052,
+        "lower": 0.005711738736103644,
+        "upper": 0.018493656695306004
+      },
+      "adverse_runs": [
+        "shared-terminal-literal-frame-cleanup-focus-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "seven-stored-prefix": {
+      "decision": "bounded",
+      "runs": {
+        "shared-terminal-literal-frame-cleanup-focus-forward": {
+          "estimate": -0.04638461433579688,
+          "lower": -0.054250283636079755,
+          "upper": -0.03806533843272131
+        },
+        "shared-terminal-literal-frame-cleanup-focus-reverse": {
+          "estimate": -0.0544303873223978,
+          "lower": -0.06184458142970184,
+          "upper": -0.046725154548137304
+        }
+      },
+      "combined": {
+        "estimate": -0.05041602221504238,
+        "lower": -0.05606742243020557,
+        "upper": -0.04491566035642003
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "320-overlap": {
+      "decision": "regression",
+      "runs": {
+        "shared-terminal-literal-frame-cleanup-focus-forward": {
+          "estimate": 0.007774307859733209,
+          "lower": 0.005870469815095758,
+          "upper": 0.009894090953128654
+        },
+        "shared-terminal-literal-frame-cleanup-focus-reverse": {
+          "estimate": 0.0076059761783737745,
+          "lower": 0.005801547796479012,
+          "upper": 0.009344156359585964
+        }
+      },
+      "combined": {
+        "estimate": 0.007690138504139243,
+        "lower": 0.006394809511056199,
+        "upper": 0.009057518062936643
+      },
+      "adverse_runs": [
+        "shared-terminal-literal-frame-cleanup-focus-forward",
+        "shared-terminal-literal-frame-cleanup-focus-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "random-64": {
+      "decision": "unresolved",
+      "runs": {
+        "shared-terminal-literal-frame-cleanup-focus-forward": {
+          "estimate": 0.0037166400427695034,
+          "lower": -0.0033066745863949976,
+          "upper": 0.010629163548848686
+        },
+        "shared-terminal-literal-frame-cleanup-focus-reverse": {
+          "estimate": 0.012428938091581854,
+          "lower": 0.005820931903059989,
+          "upper": 0.019148859892610393
+        }
+      },
+      "combined": {
+        "estimate": 0.00806337698745474,
+        "lower": 0.0030902306463520546,
+        "upper": 0.013065567414115575
+      },
+      "adverse_runs": [
+        "shared-terminal-literal-frame-cleanup-focus-reverse"
+      ],
+      "duplicate_controls": []
+    },
+    "random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "shared-terminal-literal-frame-cleanup-focus-forward": {
+          "estimate": -0.00217634469047312,
+          "lower": -0.004280093066060142,
+          "upper": 4.113369516467458e-05
+        },
+        "shared-terminal-literal-frame-cleanup-focus-reverse": {
+          "estimate": -0.0028130455431913948,
+          "lower": -0.005599449801863887,
+          "upper": 0.00015334677698652932
+        }
+      },
+      "combined": {
+        "estimate": -0.0024947459170616693,
+        "lower": -0.0042890600634512,
+        "upper": -0.000671390410874162
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "heldout-mixed-131073": {
+      "decision": "bounded",
+      "runs": {
+        "shared-terminal-literal-frame-cleanup-focus-forward": {
+          "estimate": -0.01784112990321829,
+          "lower": -0.019021680368469518,
+          "upper": -0.01661853578306116
+        },
+        "shared-terminal-literal-frame-cleanup-focus-reverse": {
+          "estimate": -0.017976804661306467,
+          "lower": -0.0199827897691105,
+          "upper": -0.016130656492198803
+        }
+      },
+      "combined": {
+        "estimate": -0.01790896962517652,
+        "lower": -0.01908905609959466,
+        "upper": -0.016785297660449117
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-4096": {
+      "decision": "bounded",
+      "runs": {
+        "shared-terminal-literal-frame-cleanup-focus-forward": {
+          "estimate": -0.005591250817797433,
+          "lower": -0.010396195323617796,
+          "upper": -0.0005734690098844197
+        },
+        "shared-terminal-literal-frame-cleanup-focus-reverse": {
+          "estimate": -0.004781341268553452,
+          "lower": -0.00891615119905198,
+          "upper": -0.0007134849090831841
+        }
+      },
+      "combined": {
+        "estimate": -0.005186378464826613,
+        "lower": -0.008369542756736847,
+        "upper": -0.00196079449523745
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-8192": {
+      "decision": "bounded",
+      "runs": {
+        "shared-terminal-literal-frame-cleanup-focus-forward": {
+          "estimate": -0.0015925264872628242,
+          "lower": -0.004632297475901215,
+          "upper": 0.0014079185461457477
+        },
+        "shared-terminal-literal-frame-cleanup-focus-reverse": {
+          "estimate": -0.0017814355017196082,
+          "lower": -0.00401819131875103,
+          "upper": 0.0004228198163254149
+        }
+      },
+      "combined": {
+        "estimate": -0.001686985462856283,
+        "lower": -0.003565029680057785,
+        "upper": 0.00016335966342029273
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-16384": {
+      "decision": "bounded",
+      "runs": {
+        "shared-terminal-literal-frame-cleanup-focus-forward": {
+          "estimate": -0.003433461728334586,
+          "lower": -0.005096100984348317,
+          "upper": -0.00182116769700702
+        },
+        "shared-terminal-literal-frame-cleanup-focus-reverse": {
+          "estimate": -0.0020557950859618757,
+          "lower": -0.003513394025200567,
+          "upper": -0.0006339982151333245
+        }
+      },
+      "combined": {
+        "estimate": -0.002744866305792071,
+        "lower": -0.003837431708651029,
+        "upper": -0.0016405636874584628
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-natural-32769": {
+      "decision": "bounded",
+      "runs": {
+        "shared-terminal-literal-frame-cleanup-focus-forward": {
+          "estimate": -0.0038129506613836517,
+          "lower": -0.0048285708160759055,
+          "upper": -0.002838747559442467
+        },
+        "shared-terminal-literal-frame-cleanup-focus-reverse": {
+          "estimate": -0.002081308470870402,
+          "lower": -0.0029342280948819743,
+          "upper": -0.0012418409776288053
+        }
+      },
+      "combined": {
+        "estimate": -0.0029475054971997983,
+        "lower": -0.003602054357640272,
+        "upper": -0.002296331983760891
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-1024": {
+      "decision": "bounded",
+      "runs": {
+        "shared-terminal-literal-frame-cleanup-focus-forward": {
+          "estimate": -0.00433709824703854,
+          "lower": -0.006001404236898322,
+          "upper": -0.002709547400743917
+        },
+        "shared-terminal-literal-frame-cleanup-focus-reverse": {
+          "estimate": 0.0037714247117683897,
+          "lower": 0.0013662516901369326,
+          "upper": 0.0064913458874495955
+        }
+      },
+      "combined": {
+        "estimate": -0.0002910576446644164,
+        "lower": -0.0017454492079379547,
+        "upper": 0.0012597256601882822
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-random-4096": {
+      "decision": "bounded",
+      "runs": {
+        "shared-terminal-literal-frame-cleanup-focus-forward": {
+          "estimate": 0.0021436320537080444,
+          "lower": -0.0022805333937619965,
+          "upper": 0.006635942943556961
+        },
+        "shared-terminal-literal-frame-cleanup-focus-reverse": {
+          "estimate": -0.004728009400804534,
+          "lower": -0.01092453575279495,
+          "upper": 0.0015265549614917884
+        }
+      },
+      "combined": {
+        "estimate": -0.001298098759994537,
+        "lower": -0.005038248712133875,
+        "upper": 0.002426156116012157
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-1024": {
+      "decision": "bounded",
+      "runs": {
+        "shared-terminal-literal-frame-cleanup-focus-forward": {
+          "estimate": -0.0012969528516610929,
+          "lower": -0.0027056329049435224,
+          "upper": 0.00016873357101743203
+        },
+        "shared-terminal-literal-frame-cleanup-focus-reverse": {
+          "estimate": 0.0024657401286607428,
+          "lower": -0.0012588191424866002,
+          "upper": 0.005850334362098364
+        }
+      },
+      "combined": {
+        "estimate": 0.0005826249382447912,
+        "lower": -0.0013921046931234526,
+        "upper": 0.002441750015913291
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    },
+    "prefix-periodic-4096": {
+      "decision": "unresolved",
+      "runs": {
+        "shared-terminal-literal-frame-cleanup-focus-forward": {
+          "estimate": -0.00211133139158981,
+          "lower": -0.00949940737569499,
+          "upper": 0.005940769455499151
+        },
+        "shared-terminal-literal-frame-cleanup-focus-reverse": {
+          "estimate": 0.006175650298789526,
+          "lower": -0.002496473257373788,
+          "upper": 0.014913679469477081
+        }
+      },
+      "combined": {
+        "estimate": 0.002023592567989674,
+        "lower": -0.0038138652586646726,
+        "upper": 0.007840944127361471
+      },
+      "adverse_runs": [],
+      "duplicate_controls": []
+    }
+  },
+  "scope": "90% per-case paired bootstrap, stratified by run and actor order",
+  "equivalent_named_cases": [
+    [
+      "33027-periodic-window",
+      "prefix-periodic-33027"
+    ],
+    [
+      "prefix-repeated-1024",
+      "repeated-1024"
+    ],
+    [
+      "prefix-repeated-32769",
+      "repeated-32769"
+    ],
+    [
+      "prefix-natural-1024",
+      "reymont-prefix-1024"
+    ],
+    [
+      "prefix-natural-16384",
+      "reymont-prefix-16384"
+    ],
+    [
+      "prefix-natural-32769",
+      "reymont-prefix-32769"
+    ],
+    [
+      "heldout-window-32767",
+      "prefix-natural-32767"
+    ]
+  ],
+  "peak_private_payload_bytes": {},
+  "candidate_control_timing_observations": {
+    "slowdowns": [
+      "one-stored: established slowdown above the 0.5% resolution",
+      "320-overlap: established slowdown above the 0.5% resolution"
+    ],
+    "uncertain": [
+      "empty: combined and individual run bounds conflict: shared-terminal-literal-frame-cleanup-focus-reverse",
+      "random-64: combined and individual run bounds conflict: shared-terminal-literal-frame-cleanup-focus-reverse",
+      "prefix-periodic-4096: regression bound or duplicate-control repeatability unresolved"
+    ]
+  },
+  "decision": "Unresolved",
+  "rejected": [],
+  "unresolved": [
+    "both complete timing orders are required"
+  ],
+  "plan": {
+    "path": "consolidation-995/literal-frame-cleanup/focus/plan.json",
+    "sha256": "ef8b3c09e35885b29e6c88690d4cf04be69c3b609e90ef0e6055cd04a84e2b7b"
+  },
+  "receipts": {
+    "shared-terminal-literal-frame-cleanup-focus-forward": {
+      "id": "shared-terminal-literal-frame-cleanup-focus-forward",
+      "kind": "focus",
+      "order": "forward",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "consolidation-995/literal-frame-cleanup/focus/canonical-pins/shared-terminal-literal-frame-cleanup-focus-forward.json",
+        "sha256": "2d7dd32beaf715df8337730a4e6f2a7531368c41f543bc0c39d73b5bb835dc8a"
+      },
+      "original_pins": {
+        "path": "shared-terminal-literal-frame-cleanup-focus-forward/pins.json",
+        "sha256": "da506f63165508b0fa66a7c37c7da67e021f36f056946c43067a8726c409ad90"
+      },
+      "summary": {
+        "path": "shared-terminal-literal-frame-cleanup-focus-forward/summary.json",
+        "sha256": "d735747473f972e7ac9f99d4cb9a9e6a2e695d2d1bd5687165834e3bbd009202"
+      },
+      "complete": {
+        "path": "shared-terminal-literal-frame-cleanup-focus-forward/complete.json",
+        "sha256": "b6d0f228d6052be05e58ab3cf5190c6091cf68d5e02833716bd8b0d4943fd9fc"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-forward/320-overlap/observations.json.gz",
+          "sha256": "d9f211978e4ff273819d61690a3fabad63b0a6ae225da4f67c6bbe3ebd473327"
+        },
+        "empty": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-forward/empty/observations.json.gz",
+          "sha256": "41075bbd47b7306fb2eab8148065d387396c81b113bfe5e110f3d32b0187acff"
+        },
+        "heldout-mixed-131073": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-forward/heldout-mixed-131073/observations.json.gz",
+          "sha256": "fde21018fbdb27007f2cfa2fb576efded3d22f733882bb24a42f5ceb50196db5"
+        },
+        "one-stored": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-forward/one-stored/observations.json.gz",
+          "sha256": "dea37a15900c94d3f6033bc4c4ed64599279e3e5530c8280f5d2be064f9d0010"
+        },
+        "prefix-natural-16384": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-forward/prefix-natural-16384/observations.json.gz",
+          "sha256": "7476b6b9e6c711219ba7c2b2f40ebe74b4bcf2a6d081a14cf5cd8f85123c7078"
+        },
+        "prefix-natural-32769": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-forward/prefix-natural-32769/observations.json.gz",
+          "sha256": "40377183715360e512d1e7a6868d659a9517e9dfd40c43974532b02e674f8065"
+        },
+        "prefix-natural-4096": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-forward/prefix-natural-4096/observations.json.gz",
+          "sha256": "d907136560efd05811370a1d70096fc1dfeff6c9eb8fb3eb7b797202b412e790"
+        },
+        "prefix-natural-8192": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-forward/prefix-natural-8192/observations.json.gz",
+          "sha256": "2a144f64063eb3c72fa49bb8c8f8869d35dbb8cc888b42c21eaafd4a075ef0a6"
+        },
+        "prefix-periodic-1024": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-forward/prefix-periodic-1024/observations.json.gz",
+          "sha256": "39135389b1443973f0e446fccf64ba6cff5c17a313893f21635533488e2dd062"
+        },
+        "prefix-periodic-4096": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-forward/prefix-periodic-4096/observations.json.gz",
+          "sha256": "bbd6daf717c1bea885f930df0b157823ac33d12e77da872fb54c229f1a073dae"
+        },
+        "prefix-random-1024": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-forward/prefix-random-1024/observations.json.gz",
+          "sha256": "1725ee2b1273b4bbb211e30af70c7c6fab12e33219e34f189c2cd5650b56072e"
+        },
+        "prefix-random-4096": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-forward/prefix-random-4096/observations.json.gz",
+          "sha256": "971762ee5515512e047d658d46859c3761c08714f1bd357a6d04d0848074aa2b"
+        },
+        "random-1024": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-forward/random-1024/observations.json.gz",
+          "sha256": "1e963a90a6338bc97215f55a3bf73954d33ae9537291aa70bfce1b60ca20aaae"
+        },
+        "random-64": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-forward/random-64/observations.json.gz",
+          "sha256": "237c68458771655080412492a78cfb11af8dcb159c4515015e17ceb12250629b"
+        },
+        "seven-stored-prefix": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-forward/seven-stored-prefix/observations.json.gz",
+          "sha256": "334fd1757bfd910b2152b71337b84d102023791226ad6a98e8777aa542cf2fbd"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-forward/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-forward/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-forward/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-forward/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    },
+    "shared-terminal-literal-frame-cleanup-focus-reverse": {
+      "id": "shared-terminal-literal-frame-cleanup-focus-reverse",
+      "kind": "focus",
+      "order": "reverse",
+      "blocks_per_case": 96,
+      "pins": {
+        "path": "consolidation-995/literal-frame-cleanup/focus/canonical-pins/shared-terminal-literal-frame-cleanup-focus-reverse.json",
+        "sha256": "2d7dd32beaf715df8337730a4e6f2a7531368c41f543bc0c39d73b5bb835dc8a"
+      },
+      "original_pins": {
+        "path": "shared-terminal-literal-frame-cleanup-focus-reverse/pins.json",
+        "sha256": "da506f63165508b0fa66a7c37c7da67e021f36f056946c43067a8726c409ad90"
+      },
+      "summary": {
+        "path": "shared-terminal-literal-frame-cleanup-focus-reverse/summary.json",
+        "sha256": "6f7280a68ba4695e9457cb6ab32e89e67b5fccfb3312b4423402c0395650ef4b"
+      },
+      "complete": {
+        "path": "shared-terminal-literal-frame-cleanup-focus-reverse/complete.json",
+        "sha256": "b6d0f228d6052be05e58ab3cf5190c6091cf68d5e02833716bd8b0d4943fd9fc"
+      },
+      "observations": {
+        "320-overlap": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-reverse/320-overlap/observations.json.gz",
+          "sha256": "7da658a4146ce08df130c2a70869bfca8f8208e8bd6ccba70021001e1de47503"
+        },
+        "empty": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-reverse/empty/observations.json.gz",
+          "sha256": "50d77e66a0dbf0a0fa9bbebdb8830d1c9dbe4089c89699f5218b96a8949679a9"
+        },
+        "heldout-mixed-131073": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-reverse/heldout-mixed-131073/observations.json.gz",
+          "sha256": "c33a4cf24680b9c37abdce02007a1ae0fa645c35465f792e315fdfeebb8c57fe"
+        },
+        "one-stored": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-reverse/one-stored/observations.json.gz",
+          "sha256": "9fdadca8fe9a126c30b572692fa1a97abefbc63cf7c8d3483f737765972eaf68"
+        },
+        "prefix-natural-16384": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-reverse/prefix-natural-16384/observations.json.gz",
+          "sha256": "d20079524256c29bb7f5284c128a68f5a444982c84c992b3f2aeafeb75328839"
+        },
+        "prefix-natural-32769": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-reverse/prefix-natural-32769/observations.json.gz",
+          "sha256": "b934b5c20175f061b394ee12016571d88ab2db7e0ed7b4e883b3213a74155504"
+        },
+        "prefix-natural-4096": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-reverse/prefix-natural-4096/observations.json.gz",
+          "sha256": "038112c3c0a7f32dab688f6407f64a4d88151a139b7fafa110061dbd7aee8c5a"
+        },
+        "prefix-natural-8192": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-reverse/prefix-natural-8192/observations.json.gz",
+          "sha256": "087038799858b152baecbba605548a0aad84719a60a4a0c530fc13fbe198d8c3"
+        },
+        "prefix-periodic-1024": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-reverse/prefix-periodic-1024/observations.json.gz",
+          "sha256": "a8ce911bf896a20de8599e584e837cec02fc9b6c72df3ff99f73f63ccebeed02"
+        },
+        "prefix-periodic-4096": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-reverse/prefix-periodic-4096/observations.json.gz",
+          "sha256": "d09f35f3a8e20e760811625bb566ddbc420cc53f170c3858bab00bafa4630b60"
+        },
+        "prefix-random-1024": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-reverse/prefix-random-1024/observations.json.gz",
+          "sha256": "7002d5e6eaea277513ff191f4f5ad9e528147fb4db667095917db15527782fd3"
+        },
+        "prefix-random-4096": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-reverse/prefix-random-4096/observations.json.gz",
+          "sha256": "7cd423f82ff835eb7e9e4bf8b20954dda70ea4e0895b4518d7d21669f210e43d"
+        },
+        "random-1024": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-reverse/random-1024/observations.json.gz",
+          "sha256": "16b1b159170fd828c427f995a50e3bdbacbf1b56b493a696cc342d3afdd6cb72"
+        },
+        "random-64": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-reverse/random-64/observations.json.gz",
+          "sha256": "c75ee1bd0467a327f50d6159ab8fde7ce10543e7a36b1f1d2f33169b9dcc8acf"
+        },
+        "seven-stored-prefix": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-reverse/seven-stored-prefix/observations.json.gz",
+          "sha256": "8a55b354455b9a4c0e0303068c90721a94d6f952d4da49031b973336c55b3033"
+        }
+      },
+      "cleanup": {
+        "mech-control": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-reverse/mech-control.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "mech-experiment": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-reverse/mech-experiment.stderr",
+          "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+        },
+        "roc": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-reverse/roc.stderr",
+          "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+        },
+        "libdeflate": {
+          "path": "shared-terminal-literal-frame-cleanup-focus-reverse/libdeflate.stderr",
+          "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+        }
+      }
+    }
+  }
+}

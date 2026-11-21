@@ -1,0 +1,328 @@
+{
+  "raw-runtime.tar.gz": {
+    "finalist-precision-20261119-forward/16384-distribution-change/observations.json.gz": {
+      "bytes": 11868,
+      "sha256": "8f4e1670bf8bc06c34c37e260941486980a6f267bfb10c00e615f8811425880a"
+    },
+    "finalist-precision-20261119-forward/320-overlap/observations.json.gz": {
+      "bytes": 453638,
+      "sha256": "9ef9c2b8d6fa84ed29ebd0e7a52879e695f9bc6bb60a24151996eaf2d75956ec"
+    },
+    "finalist-precision-20261119-forward/complete.json": {
+      "bytes": 287,
+      "sha256": "17faaa069a9505008b4c68e90018c898de11a64a2c995cd35383c7ad0ebd5e38"
+    },
+    "finalist-precision-20261119-forward/eight-overlap/observations.json.gz": {
+      "bytes": 446245,
+      "sha256": "f0f59e3ca41720121c4bb21ef54d7527632fe4ff182184f31ac297ef0b062785"
+    },
+    "finalist-precision-20261119-forward/empty/observations.json.gz": {
+      "bytes": 1923364,
+      "sha256": "ed7c52db772acdebb55eab138e26c987fa2e997ebc6b268b247daa79c6fd91ee"
+    },
+    "finalist-precision-20261119-forward/libdeflate.stderr": {
+      "bytes": 52,
+      "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+    },
+    "finalist-precision-20261119-forward/mech-control.stderr": {
+      "bytes": 53,
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+    },
+    "finalist-precision-20261119-forward/mech-experiment.stderr": {
+      "bytes": 53,
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+    },
+    "finalist-precision-20261119-forward/mech-vector.stderr": {
+      "bytes": 53,
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+    },
+    "finalist-precision-20261119-forward/pins.json": {
+      "bytes": 7079,
+      "sha256": "d8a2dc0b03b873b94bdf4b2405d1709fb6e1b53636083f25f07f21ba71485c4d"
+    },
+    "finalist-precision-20261119-forward/prefix-natural-1024/observations.json.gz": {
+      "bytes": 477635,
+      "sha256": "934ff2fb07c3db2648766d453a5821f3e421292ab13129438162bd6717b1c584"
+    },
+    "finalist-precision-20261119-forward/prefix-natural-4096/observations.json.gz": {
+      "bytes": 11677,
+      "sha256": "fef68234bd4a270dfa5be138b77469efab6660d163eb37258cb07a0c329f7d83"
+    },
+    "finalist-precision-20261119-forward/prefix-natural-8192/observations.json.gz": {
+      "bytes": 11727,
+      "sha256": "9c38072abb5b077391ecc82327c9637eeadb15e40d9c025ec2ada29d9aba7947"
+    },
+    "finalist-precision-20261119-forward/prefix-periodic-1024/observations.json.gz": {
+      "bytes": 487552,
+      "sha256": "5d4f336503fa0fb2d0b4be28cbcaa1ade3e8b9084535386aaa94c274b014cc7c"
+    },
+    "finalist-precision-20261119-forward/prefix-random-1024/observations.json.gz": {
+      "bytes": 477216,
+      "sha256": "d896c6458dd767565593606a69cb4cf4f34aed4d42287ab8171388f9d8356c85"
+    },
+    "finalist-precision-20261119-forward/prefix-random-1048576/observations.json.gz": {
+      "bytes": 12274,
+      "sha256": "e3d029d4cf02d3245baa6456c1fe7259b3d826d44eb1ce1dc184e139bfc1ca83"
+    },
+    "finalist-precision-20261119-forward/prefix-random-16384/observations.json.gz": {
+      "bytes": 11666,
+      "sha256": "3789c48c25d0d3b0033f991638d271b0a559fdaa7d340348f3ddcb9679b6e2e0"
+    },
+    "finalist-precision-20261119-forward/prefix-random-32767/observations.json.gz": {
+      "bytes": 11682,
+      "sha256": "4946f5b216c1331c9be47180fe5c3ec38d4a2fd937e4540dd9428484a1e729da"
+    },
+    "finalist-precision-20261119-forward/prefix-random-32768/observations.json.gz": {
+      "bytes": 11661,
+      "sha256": "d32309e0b0fccd202c87957b6f3c3a3e9be79c095bb7d90dd39e31378e8b6272"
+    },
+    "finalist-precision-20261119-forward/prefix-random-32769/observations.json.gz": {
+      "bytes": 11681,
+      "sha256": "7ebb4e8e658aefdf6dfa70ec2d084f71fea2dd105cc0cb1740333ef1a6b9773d"
+    },
+    "finalist-precision-20261119-forward/prefix-random-4096/observations.json.gz": {
+      "bytes": 11472,
+      "sha256": "6c8617b6336d707a19ffdea32bdf5c4bd97621a6fad415342ac361f5954c9e1f"
+    },
+    "finalist-precision-20261119-forward/prefix-random-65535/observations.json.gz": {
+      "bytes": 11755,
+      "sha256": "0a1573eddcdfe30d0f24aa35677527d19aca5d5a537afbd9279cc2063b17f2ba"
+    },
+    "finalist-precision-20261119-forward/prefix-random-65536/observations.json.gz": {
+      "bytes": 11704,
+      "sha256": "f4c04ec635aab616a9dcd48d29100dcdd4c9aaf30406e60a96d42f458b6011bc"
+    },
+    "finalist-precision-20261119-forward/prefix-random-65537/observations.json.gz": {
+      "bytes": 11791,
+      "sha256": "9cda308353424f065507c67fe9037e289ed256a5d8f365c6786bcf68c6391060"
+    },
+    "finalist-precision-20261119-forward/prefix-random-8192/observations.json.gz": {
+      "bytes": 11563,
+      "sha256": "abd508cc1e56d29b56ee182a212d306e131140e631b60eb8f7a3e8bf12f3cdd5"
+    },
+    "finalist-precision-20261119-forward/roc.stderr": {
+      "bytes": 52,
+      "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+    },
+    "finalist-precision-20261119-forward/summary.json": {
+      "bytes": 18758,
+      "sha256": "63483a4a4e6685168fce84056c1d88d0f343d83ca496ef5b40ac53a96692789c"
+    },
+    "finalist-precision-20261119-reverse/16384-distribution-change/observations.json.gz": {
+      "bytes": 11770,
+      "sha256": "d5b7001f82d3efe2244dec8f40c0805cc20b1c26999adeaa8d9ee09413a02f54"
+    },
+    "finalist-precision-20261119-reverse/320-overlap/observations.json.gz": {
+      "bytes": 453540,
+      "sha256": "d663b64e9f045c4e5ef42a89181a5484f1eaef5b77e4c40af382ac2c52352041"
+    },
+    "finalist-precision-20261119-reverse/complete.json": {
+      "bytes": 287,
+      "sha256": "17faaa069a9505008b4c68e90018c898de11a64a2c995cd35383c7ad0ebd5e38"
+    },
+    "finalist-precision-20261119-reverse/eight-overlap/observations.json.gz": {
+      "bytes": 447627,
+      "sha256": "1a52a6351461bebf4f0a81c4fac01ded7011ef38bb427391898397ca3c8664a7"
+    },
+    "finalist-precision-20261119-reverse/empty/observations.json.gz": {
+      "bytes": 1923443,
+      "sha256": "7a1d898e35e96dcd473a88f29807308d8faf3fd8ea2bb85a73555fc285374aab"
+    },
+    "finalist-precision-20261119-reverse/libdeflate.stderr": {
+      "bytes": 52,
+      "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+    },
+    "finalist-precision-20261119-reverse/mech-control.stderr": {
+      "bytes": 53,
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+    },
+    "finalist-precision-20261119-reverse/mech-experiment.stderr": {
+      "bytes": 53,
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+    },
+    "finalist-precision-20261119-reverse/mech-vector.stderr": {
+      "bytes": 53,
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+    },
+    "finalist-precision-20261119-reverse/pins.json": {
+      "bytes": 7079,
+      "sha256": "d8a2dc0b03b873b94bdf4b2405d1709fb6e1b53636083f25f07f21ba71485c4d"
+    },
+    "finalist-precision-20261119-reverse/prefix-natural-1024/observations.json.gz": {
+      "bytes": 476089,
+      "sha256": "2300298d91be3edaeab830e9d0c2a3c91ebaeba82d712a1ed3a967d6ca9a923d"
+    },
+    "finalist-precision-20261119-reverse/prefix-natural-4096/observations.json.gz": {
+      "bytes": 11710,
+      "sha256": "167cd6413c83e4701a36ea666d1c94db49b2be2b4c7324a809e243a046de72d0"
+    },
+    "finalist-precision-20261119-reverse/prefix-natural-8192/observations.json.gz": {
+      "bytes": 11736,
+      "sha256": "3f63d2954ba42b6241f82448e667cfa323d05316df8e23e7a69dc4c1588fcdec"
+    },
+    "finalist-precision-20261119-reverse/prefix-periodic-1024/observations.json.gz": {
+      "bytes": 487462,
+      "sha256": "b9fb8c2265083fb6d1cd083f89e9a17b2962ff3e03c3a2edb8081deceb22af4a"
+    },
+    "finalist-precision-20261119-reverse/prefix-random-1024/observations.json.gz": {
+      "bytes": 475527,
+      "sha256": "3a9635020293354407feebedd0c8e49bd3ba4603a2af98547c4b612c97b3a8a2"
+    },
+    "finalist-precision-20261119-reverse/prefix-random-1048576/observations.json.gz": {
+      "bytes": 12241,
+      "sha256": "8dc442291089abe2a2f33945eab63c0c54f1bdc99e77a0d6b149c376fd59c03c"
+    },
+    "finalist-precision-20261119-reverse/prefix-random-16384/observations.json.gz": {
+      "bytes": 11691,
+      "sha256": "1254127b3a67b5ecc7e33292754334ee3c4849b8a73219c8521961ec260219ef"
+    },
+    "finalist-precision-20261119-reverse/prefix-random-32767/observations.json.gz": {
+      "bytes": 11678,
+      "sha256": "9ab654b7774fc9afa684a748232c66f039817a365c9743d0ab599f74c45208fe"
+    },
+    "finalist-precision-20261119-reverse/prefix-random-32768/observations.json.gz": {
+      "bytes": 11697,
+      "sha256": "5fde1ee0c03ab9e1377222535d147a052ba6174495d5a9a4fde1810bdab941ee"
+    },
+    "finalist-precision-20261119-reverse/prefix-random-32769/observations.json.gz": {
+      "bytes": 11715,
+      "sha256": "194b57f7e91a51ef0744ae3c393cc5d41c66a44c8ffb702d614117701c125c4a"
+    },
+    "finalist-precision-20261119-reverse/prefix-random-4096/observations.json.gz": {
+      "bytes": 11392,
+      "sha256": "9faf158b2f67e8d8b6c0dfb349bc766ec6946ec3dd5cb421f9f0a6bfb7c895dc"
+    },
+    "finalist-precision-20261119-reverse/prefix-random-65535/observations.json.gz": {
+      "bytes": 11855,
+      "sha256": "50e9dd14fcb60454248ef89e2599a1b321f91902fdd2c062a611c47ac0162c4a"
+    },
+    "finalist-precision-20261119-reverse/prefix-random-65536/observations.json.gz": {
+      "bytes": 11778,
+      "sha256": "799c1cd3563db778e096e4dd68b49289f11829a465a8308d1d19c352dff283fb"
+    },
+    "finalist-precision-20261119-reverse/prefix-random-65537/observations.json.gz": {
+      "bytes": 11759,
+      "sha256": "865be2537af238faa5aa15a717e952eabeef3dd4a2d8df8b93e878fd54fb914f"
+    },
+    "finalist-precision-20261119-reverse/prefix-random-8192/observations.json.gz": {
+      "bytes": 11537,
+      "sha256": "30664561a07a910e41c09081876dacb955da2aa0c8a7ac14601885cf9b44d249"
+    },
+    "finalist-precision-20261119-reverse/roc.stderr": {
+      "bytes": 52,
+      "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+    },
+    "finalist-precision-20261119-reverse/summary.json": {
+      "bytes": 18877,
+      "sha256": "0975fcec3ea2bd18e9b8a2a2303d97d99c84607766399ea692139ea2d9c7f55e"
+    },
+    "review-word-reuse-reverse-repeat-20261119/16384-distribution-change/observations.json.gz": {
+      "bytes": 2828,
+      "sha256": "4688c8f50f8f14268b865e794cb2574f54938458696d36ef9e78daa172399291"
+    },
+    "review-word-reuse-reverse-repeat-20261119/320-overlap/observations.json.gz": {
+      "bytes": 75768,
+      "sha256": "c7ebe11edd12c952a6a46afbb37b2cce22ac6d8db0d721ba17522aba36f56572"
+    },
+    "review-word-reuse-reverse-repeat-20261119/complete.json": {
+      "bytes": 285,
+      "sha256": "01e413562b15a015eae2523a309e972980fdd4ccbda162c9d23ddcddcdab7c70"
+    },
+    "review-word-reuse-reverse-repeat-20261119/eight-overlap/observations.json.gz": {
+      "bytes": 75121,
+      "sha256": "8e3eb7e9591d0a00aca27e23ff290478739a48cc3ff8a65a0ea5ed15aa6f085d"
+    },
+    "review-word-reuse-reverse-repeat-20261119/empty/observations.json.gz": {
+      "bytes": 313012,
+      "sha256": "8eb2ebdef5c506ed0f6abda54c2ff4b2e6b61f710e6be283dd6230dcc62f906d"
+    },
+    "review-word-reuse-reverse-repeat-20261119/libdeflate.stderr": {
+      "bytes": 52,
+      "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+    },
+    "review-word-reuse-reverse-repeat-20261119/mech-control.stderr": {
+      "bytes": 53,
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+    },
+    "review-word-reuse-reverse-repeat-20261119/mech-experiment.stderr": {
+      "bytes": 53,
+      "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+    },
+    "review-word-reuse-reverse-repeat-20261119/pins.json": {
+      "bytes": 6418,
+      "sha256": "2b6f7e3769bc66b3cea319bd2ea4fdf3b317ea35f961ee79472ae6000f06d160"
+    },
+    "review-word-reuse-reverse-repeat-20261119/prefix-natural-1024/observations.json.gz": {
+      "bytes": 79076,
+      "sha256": "26d9bd63016421c6d4ac71ebb61db16fdb555a7120d51c388237625298b421ad"
+    },
+    "review-word-reuse-reverse-repeat-20261119/prefix-natural-4096/observations.json.gz": {
+      "bytes": 2811,
+      "sha256": "6dfd1851e57929552b462a229d24311e7eebca373524152f8510b3fd3ed11586"
+    },
+    "review-word-reuse-reverse-repeat-20261119/prefix-natural-8192/observations.json.gz": {
+      "bytes": 2834,
+      "sha256": "211a2babf7e1048cb2ef8ad22bf09621aee661143083207bc5d2f89e0673e275"
+    },
+    "review-word-reuse-reverse-repeat-20261119/prefix-periodic-1024/observations.json.gz": {
+      "bytes": 81125,
+      "sha256": "f28ae98aa0656d1e5aec653868799e68cb6c49f3ca593e92e42e79ec4c0c926d"
+    },
+    "review-word-reuse-reverse-repeat-20261119/prefix-random-1024/observations.json.gz": {
+      "bytes": 79380,
+      "sha256": "5b791c81e6741d8d337bb84b41ca67c7de1dd2493c77692910cf9f9ba583c5b1"
+    },
+    "review-word-reuse-reverse-repeat-20261119/prefix-random-1048576/observations.json.gz": {
+      "bytes": 2916,
+      "sha256": "6f47a807810fa9e730bc794c436a69d67db2559ae8354a16f8c73b3e2712f886"
+    },
+    "review-word-reuse-reverse-repeat-20261119/prefix-random-16384/observations.json.gz": {
+      "bytes": 2789,
+      "sha256": "338815a2ad27d354d3c3cac73845ce6635e68c5187a6132b8b1fa0d07bc76b17"
+    },
+    "review-word-reuse-reverse-repeat-20261119/prefix-random-32767/observations.json.gz": {
+      "bytes": 2811,
+      "sha256": "08e57e3c8595d06accccc74c8be61f1eb8a1a21d93ec9ff2102aa85e9f9e1b04"
+    },
+    "review-word-reuse-reverse-repeat-20261119/prefix-random-32768/observations.json.gz": {
+      "bytes": 2794,
+      "sha256": "3c0f366fb530da57c10aeecc267ee5c9849fac316f1a53156a477fc2f46bdedc"
+    },
+    "review-word-reuse-reverse-repeat-20261119/prefix-random-32769/observations.json.gz": {
+      "bytes": 2826,
+      "sha256": "dd8b936b9c345bfb243730b9fce38370f747a584ed4e4125e94df34a99fa9afe"
+    },
+    "review-word-reuse-reverse-repeat-20261119/prefix-random-4096/observations.json.gz": {
+      "bytes": 2821,
+      "sha256": "ebc440316269478640637ca6c589ededd2f8fccb61d51faef19f9d92a215c569"
+    },
+    "review-word-reuse-reverse-repeat-20261119/prefix-random-65535/observations.json.gz": {
+      "bytes": 2845,
+      "sha256": "071573513d41ba454ac41d15b01188dd6d42129bae6521f6a06c7c80deada97b"
+    },
+    "review-word-reuse-reverse-repeat-20261119/prefix-random-65536/observations.json.gz": {
+      "bytes": 2804,
+      "sha256": "8a45a5813a2f8e9114208636f23de85df62092037f187ffe7642ff6cf479fafb"
+    },
+    "review-word-reuse-reverse-repeat-20261119/prefix-random-65537/observations.json.gz": {
+      "bytes": 2823,
+      "sha256": "dd6ce60ba12cb310cd7b7871b4d3650393652df95dfaf6fcf0c1309034dd077e"
+    },
+    "review-word-reuse-reverse-repeat-20261119/prefix-random-8192/observations.json.gz": {
+      "bytes": 2765,
+      "sha256": "1fbbb67c27181a205cce740806ed33bcdb72b4698e05c0c3ede78088ada51721"
+    },
+    "review-word-reuse-reverse-repeat-20261119/roc.stderr": {
+      "bytes": 52,
+      "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+    },
+    "review-word-reuse-reverse-repeat-20261119/summary.json": {
+      "bytes": 16592,
+      "sha256": "99c5cbc17cbd5716598c80600fa7df0dd32001b9b3a8e7e47bb081356ef2574a"
+    },
+    "vector-mismatch-clean-panel-word-reuse-complements-profiled-reverse/prefix-random-1048576/observations.json.gz": {
+      "bytes": 2923,
+      "sha256": "4afdb2030871b86f9690d2ccd3a669ebacc00a2d80cdfbac7bb230d69bc850a1"
+    }
+  }
+}

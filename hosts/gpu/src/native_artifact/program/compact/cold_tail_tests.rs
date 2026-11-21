@@ -269,3 +269,83 @@ fn unsupported_debug_metadata_and_embedded_literals_are_left_unchanged() {
         );
     }
 }
+
+#[test]
+fn preserved_register_preference_keeps_live_values_across_calls_and_outputs() {
+    for opt in ["none", "speed"] {
+        for prefer in [false, true] {
+            let (mut module, helper) = module(opt, true);
+            let mut context = module.make_context();
+            context.func.signature.params = vec![AbiParam::new(types::I64); 3];
+            context.func.signature.returns = vec![AbiParam::new(types::I64)];
+            context.func.aarch64_prefer_preserved_regs = prefer;
+            let id = module
+                .declare_function("preserved_calls", Linkage::Local, &context.func.signature)
+                .unwrap();
+            let helper = module.declare_func_in_func(helper, &mut context.func);
+            let mut frontend = FunctionBuilderContext::new();
+            let mut b = FunctionBuilder::new(&mut context.func, &mut frontend);
+            let entry = b.create_block();
+            b.append_block_params_for_function_params(entry);
+            b.switch_to_block(entry);
+            let [mode, input, output] = b.block_params(entry)[..] else {
+                unreachable!()
+            };
+            b.ins().store(MemFlags::new(), mode, output, 0);
+            let mut values = Vec::new();
+            for ordinal in 0..18 {
+                let value = b.ins().iadd_imm(input, ordinal * 193);
+                let call = b.ins().call(helper, &[value, output]);
+                values.push(b.inst_results(call)[0]);
+            }
+            let mut checksum = mode;
+            for (ordinal, value) in values.into_iter().enumerate() {
+                let value = b.ins().rotl_imm(value, ordinal as i64);
+                checksum = b.ins().bxor(checksum, value);
+            }
+            b.ins().store(MemFlags::new(), checksum, output, 8);
+            let result = b.ins().bxor(checksum, input);
+            b.ins().return_(&[result]);
+            b.seal_all_blocks();
+            b.finalize();
+            context.verify(module.isa()).unwrap();
+            module.define_function(id, &mut context).unwrap();
+            module.finalize_definitions().unwrap();
+            type Call = unsafe extern "C" fn(u64, u64, *mut u64) -> u64;
+            // SAFETY: the retained module owns this exact three-word entry;
+            // calls lend only the middle three initialized writable words.
+            let call: Call = unsafe { std::mem::transmute(module.get_finalized_function(id)) };
+            for seed in 0..128u64 {
+                let input = seed.wrapping_mul(0x9876_5432_10fe_dcbb).rotate_left(17);
+                let mode = seed.rotate_left(29);
+                let checksum = (0..18u64).fold(mode, |sum, ordinal| {
+                    sum ^ input
+                        .wrapping_add(ordinal * 193)
+                        .wrapping_mul(97)
+                        .rotate_left(ordinal as u32)
+                });
+                let mut output = [0xa5a5_a5a5_a5a5_a5a5; 5];
+                let sentinel = output[0];
+                // SAFETY: output[1..4] is exclusive, initialized and live.
+                let result = unsafe { call(mode, input, output.as_mut_ptr().add(1)) };
+                assert_eq!(
+                    output,
+                    [
+                        sentinel,
+                        mode,
+                        checksum,
+                        input.wrapping_add(17 * 193).rotate_left(23),
+                        sentinel
+                    ]
+                );
+                assert_eq!(
+                    result,
+                    checksum ^ input,
+                    "{opt}, prefer={prefer}, seed={seed}"
+                );
+            }
+            context.clear();
+            assert!(!context.func.aarch64_prefer_preserved_regs);
+        }
+    }
+}

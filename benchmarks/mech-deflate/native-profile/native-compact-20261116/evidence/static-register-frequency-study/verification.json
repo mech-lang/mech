@@ -1,0 +1,15 @@
+{
+  "passed": true,
+  "source_replays": 10,
+  "all_saved_runtime_calls": 1794240,
+  "zero_duration_samples_retained": 293742,
+  "complete_build_orders": 16,
+  "deployment_executions": 648,
+  "selected_default_changed": false,
+  "actual_native_counter_cases": 54,
+  "selected_score": {
+    "Roc": 81,
+    "libdeflate": 63
+  },
+  "new_C_win": false
+}

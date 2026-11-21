@@ -1,0 +1,3604 @@
+{
+  "live_source_commit": "66073d79dc7b9f1b44d89fcffda8cc6c72ceccb2",
+  "live_source_selection": {
+    "kept_source": "body-only vector pointer transport mode",
+    "kept_emit_sha256": "721a7ec56f17ba590f65ba58c29f609bbf3cb637b08ef2a756d7f30f1799d7ee",
+    "restored_base": "c36477ebda733142c3d860abd12799fa12229faa",
+    "archived_exact_experimental_inputs": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/word-first-compiler/source-inputs",
+    "reason": "Other scalar branch, cost-key and matcher hybrid variants have no runtime gain. Preserve their source snapshots, controls, bounded repairs and raw measurements without adding their unused production code."
+  },
+  "objective": "Earn 63/81 libdeflate wins while retaining every existing peer win and 81/81 Roc.",
+  "qualified_selection": {
+    "recipe": "m1-immutable-current-reads",
+    "text_bytes": 63532,
+    "roc": 81,
+    "libdeflate": 62,
+    "worker_sha256": "834c7a7e423a69c46483a3dae74d9450949fdf142b5ad2dede894e0da3ca8693"
+  },
+  "experimental_promotions": [],
+  "cases": {
+    "control-default": {
+      "receipt": "control-default/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "5790d4f25fa287fef63ee6c7bd568e3838a845c7e4d4f4d51a3af02e77576aab",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "matcher-vector-default": {
+      "receipt": "matcher-vector-default/receipt.json",
+      "text_bytes": 63532,
+      "artifacts": {
+        "program.o": "61ce760fb0606ef9b103543c69cf7d0b3aea1ef688f4f7980148d88d0f87fa69",
+        "metadata.json": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "pointer-body-profiled": {
+      "receipt": "pointer-body-profiled/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "00376c32be8e9c4055709a83675d621c5346621b534f61437f0030267ad6fd4c",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "pointer-body-lanes-profiled": {
+      "receipt": "pointer-body-lanes-profiled/receipt.json",
+      "text_bytes": 63564,
+      "artifacts": {
+        "program.o": "26ab2b3f444fe20b3bd1770147bf5fc17b38b59618a2afc48539f4c598eae60e",
+        "metadata.json": "3f3f17a2b9d83bf560f7a6da33faf93c4283746f77dcc48436128db611b586a4",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "key-pair-profiled": {
+      "receipt": "key-pair-profiled/receipt.json",
+      "text_bytes": 63836,
+      "artifacts": {
+        "program.o": "5fc3174f22929028de7bed821ff3304c72d0b7e9df7ffa6f8ea3a2c4996dbd51",
+        "metadata.json": "5da02a69386c5ce01f08968f67cec3fcd47f5fa6e39daccbf6328589b264923f",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "d7191384e8c08f54268d2a52beabfd6a5f3e3c0895d0f9a8c6bb32ccd72057d3"
+    },
+    "key-pair-vector12-profiled": {
+      "receipt": "key-pair-vector12-profiled/receipt.json",
+      "text_bytes": 63836,
+      "artifacts": {
+        "program.o": "3408340f9246de200ee0d075e32cc4e91fd3f28cbd663f0db1e96e166723123b",
+        "metadata.json": "5da02a69386c5ce01f08968f67cec3fcd47f5fa6e39daccbf6328589b264923f",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "d7191384e8c08f54268d2a52beabfd6a5f3e3c0895d0f9a8c6bb32ccd72057d3"
+    },
+    "branch-hot-profiled": {
+      "receipt": "branch-hot-profiled/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "a1e4132321fcfefafefa7d523eb69a879d09c0c36cffc1a459e79296b7db0eaf",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "matcher-word-default": {
+      "receipt": "matcher-word-default/receipt.json",
+      "text_bytes": 63436,
+      "artifacts": {
+        "program.o": "8b401d7ad7d0fe91aa7f81851d903654df4e6e2cee20ab786ac1b980ba816358",
+        "metadata.json": "1e83a7711a6dec6b5574570abea6c8981a1a9711d17053b4149ceec47cd3f7df",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "scalar-from-end-profiled": {
+      "receipt": "scalar-from-end-profiled/receipt.json",
+      "text_bytes": 63532,
+      "artifacts": {
+        "program.o": "5d745799dc90ca4774bd219c0814b1254af81c1abf238c12957f113e3064678b",
+        "metadata.json": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "branch-vector8-body-profiled": {
+      "receipt": "branch-vector8-body-profiled/receipt.json",
+      "text_bytes": 63564,
+      "artifacts": {
+        "program.o": "be894edc968bdf1693362dbe4796529cf974dcbd6acfaa36a5f9e45ebaca0bb2",
+        "metadata.json": "3f3f17a2b9d83bf560f7a6da33faf93c4283746f77dcc48436128db611b586a4",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "key-pair-body-lanes-profiled": {
+      "receipt": "key-pair-body-lanes-profiled/receipt.json",
+      "text_bytes": 63852,
+      "artifacts": {
+        "program.o": "e0761d198dcd6af56d190eaa9263f6931eecfa659bde5daca961c541a45de040",
+        "metadata.json": "1bf55de9853463e7821c476cd4ce6a0f54cd3e34c471a804c596a2f039683c33",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "d7191384e8c08f54268d2a52beabfd6a5f3e3c0895d0f9a8c6bb32ccd72057d3"
+    },
+    "wordfirst-exact-control": {
+      "receipt": "wordfirst-exact-control/receipt.json",
+      "text_bytes": 63532,
+      "artifacts": {
+        "program.o": "cf15343f1f01089d427122ce51a91ef6fa7b70ef89c50ca4db20901a8d2cefd9",
+        "metadata.json": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "342e245f5b43f65305ad3d293c6ee6ee33ebc6ed704540bf9ae31c3ed6dbdb85"
+    },
+    "scalar-reuse-ordinal-profiled": {
+      "receipt": "scalar-reuse-ordinal-profiled/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "bc24739e3727ee18d26978024d24faa740c0209b0ddbb9ba0f159430673c1023",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "key-pair-body-default": {
+      "receipt": "key-pair-body-default/receipt.json",
+      "text_bytes": 63852,
+      "artifacts": {
+        "program.o": "a281243336392b26a4cc66521289c86a8b16ac385fd2c6d237916850e8b3731b",
+        "metadata.json": "1bf55de9853463e7821c476cd4ce6a0f54cd3e34c471a804c596a2f039683c33",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "d7191384e8c08f54268d2a52beabfd6a5f3e3c0895d0f9a8c6bb32ccd72057d3"
+    },
+    "pointer-exit-profiled": {
+      "receipt": "pointer-exit-profiled/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "f516ffbad29f673be64cab670e5c86c3c621a579c8d35da676e04a6cd5d2bece",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "keyfix-pair-profiled": {
+      "receipt": "keyfix-pair-profiled/receipt.json",
+      "text_bytes": 63740,
+      "artifacts": {
+        "program.o": "5636d2e590579fb911dc277fc3881c470093774022378a1b60d4923f17bd29cf",
+        "metadata.json": "8a90660213e6030f1c2bccbe97796f40138a2d17a414891cee25dee541d6bdbf",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "scalar-encode-default": {
+      "receipt": "scalar-encode-default/receipt.json",
+      "text_bytes": 63692,
+      "artifacts": {
+        "program.o": "92ae624cd69413855e4effc5de02bf562fc98b597a613bbb830fdc542276930f",
+        "metadata.json": "ee051707e21c4fa4c4e19a469b0b543a9aa626b70a31cd3089306abd02c23b15",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "key-exact-control": {
+      "receipt": "key-exact-control/receipt.json",
+      "text_bytes": 63532,
+      "artifacts": {
+        "program.o": "cf15343f1f01089d427122ce51a91ef6fa7b70ef89c50ca4db20901a8d2cefd9",
+        "metadata.json": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "d7191384e8c08f54268d2a52beabfd6a5f3e3c0895d0f9a8c6bb32ccd72057d3"
+    },
+    "branch-hot-default": {
+      "receipt": "branch-hot-default/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "957deaa50224db129bbddd0591191961d4b59548c133eea788af57d75a34c695",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "keyfix-pair-body-default": {
+      "receipt": "keyfix-pair-body-default/receipt.json",
+      "text_bytes": 63756,
+      "artifacts": {
+        "program.o": "a74b6f95be1691f88b34e4366173ab4eb02659211930a224ac5fe791a909d8c4",
+        "metadata.json": "da5189a458415b23a3eaac60025c416096f9042d0b564ab39f2fdf6557c64714",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "keyfix-exact-control": {
+      "receipt": "keyfix-exact-control/receipt.json",
+      "text_bytes": 63532,
+      "artifacts": {
+        "program.o": "cf15343f1f01089d427122ce51a91ef6fa7b70ef89c50ca4db20901a8d2cefd9",
+        "metadata.json": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "branch-vector12-body-default": {
+      "receipt": "branch-vector12-body-default/receipt.json",
+      "text_bytes": 63564,
+      "artifacts": {
+        "program.o": "93cbc5b7a08d16b8b028266e377580acbdc85983c2ca458db33489bfa4aa53f7",
+        "metadata.json": "3f3f17a2b9d83bf560f7a6da33faf93c4283746f77dcc48436128db611b586a4",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "scalar-encode-body-profiled": {
+      "receipt": "scalar-encode-body-profiled/receipt.json",
+      "text_bytes": 63692,
+      "artifacts": {
+        "program.o": "9d1bb41fa68af1a7f26b6d1511f09c27d309ef53ad090fce6aedb6b86ba457b1",
+        "metadata.json": "ee051707e21c4fa4c4e19a469b0b543a9aa626b70a31cd3089306abd02c23b15",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "keyfix-pair-vector12-profiled": {
+      "receipt": "keyfix-pair-vector12-profiled/receipt.json",
+      "text_bytes": 63740,
+      "artifacts": {
+        "program.o": "da4dc5ca2e86da14c32675b705bb39b4025d8cefe274921a17dd813e5fab0a2c",
+        "metadata.json": "8a90660213e6030f1c2bccbe97796f40138a2d17a414891cee25dee541d6bdbf",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "key-pair-vector12-body-profiled": {
+      "receipt": "key-pair-vector12-body-profiled/receipt.json",
+      "text_bytes": 63852,
+      "artifacts": {
+        "program.o": "e484d85885b22e856f33c14e76d6c9e827d144bc73c0965dfab24ce30fd06b40",
+        "metadata.json": "1bf55de9853463e7821c476cd4ce6a0f54cd3e34c471a804c596a2f039683c33",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "d7191384e8c08f54268d2a52beabfd6a5f3e3c0895d0f9a8c6bb32ccd72057d3"
+    },
+    "pointer-exit-lanes-profiled": {
+      "receipt": "pointer-exit-lanes-profiled/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "9ca5bb8590496212c411e9b1308cd7df628f4e7bf11d499c7b56c4b6940f0bec",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "scalar-pack-addresses-default": {
+      "receipt": "scalar-pack-addresses-default/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "3c963b33636b4f03f9d5a93d227ae4250c32df8d39253eb95008865dd75561e8",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "scalar-reuse-from-end-default": {
+      "receipt": "scalar-reuse-from-end-default/receipt.json",
+      "text_bytes": 63532,
+      "artifacts": {
+        "program.o": "35fc030cb9b13a8231debd9793e18ac041aa8a10b1c2b8b1b9054349262044cf",
+        "metadata.json": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "key-pair-default": {
+      "receipt": "key-pair-default/receipt.json",
+      "text_bytes": 63836,
+      "artifacts": {
+        "program.o": "f2d8c640a4d358d212e781ae3242a9e2427960c4f48c04adc48f10724620e316",
+        "metadata.json": "5da02a69386c5ce01f08968f67cec3fcd47f5fa6e39daccbf6328589b264923f",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "d7191384e8c08f54268d2a52beabfd6a5f3e3c0895d0f9a8c6bb32ccd72057d3"
+    },
+    "vector8-default": {
+      "receipt": "vector8-default/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "59c19c34dcf45fa4b65ab8a87debc159f342803a9f51c7d580e462f95fee0163",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "control-profiled": {
+      "receipt": "control-profiled/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "bc24739e3727ee18d26978024d24faa740c0209b0ddbb9ba0f159430673c1023",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "scalar-reuse-from-end-profiled": {
+      "receipt": "scalar-reuse-from-end-profiled/receipt.json",
+      "text_bytes": 63532,
+      "artifacts": {
+        "program.o": "5d745799dc90ca4774bd219c0814b1254af81c1abf238c12957f113e3064678b",
+        "metadata.json": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "key-pair-vector12-body-default": {
+      "receipt": "key-pair-vector12-body-default/receipt.json",
+      "text_bytes": 63852,
+      "artifacts": {
+        "program.o": "1b0000b075bf0b4b429e3035493f8d9e2f426491d6ec55a316368ca3739b3fc4",
+        "metadata.json": "1bf55de9853463e7821c476cd4ce6a0f54cd3e34c471a804c596a2f039683c33",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "d7191384e8c08f54268d2a52beabfd6a5f3e3c0895d0f9a8c6bb32ccd72057d3"
+    },
+    "keyfix-single-default": {
+      "receipt": "keyfix-single-default/receipt.json",
+      "text_bytes": 63612,
+      "artifacts": {
+        "program.o": "5418b91fbcfc965e83dbd16e551a88acfbec582ca95cf44120e04e61b69f6fed",
+        "metadata.json": "a738845276e2a38b96ff9ef8291dfdb4afe97863cb09c7a32b2b86ede32b10ab",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "keyfix-pair-body-lanes-profiled": {
+      "receipt": "keyfix-pair-body-lanes-profiled/receipt.json",
+      "text_bytes": 63756,
+      "artifacts": {
+        "program.o": "e528b9e82e41ebe7464e8b1ef1469f77480dba89d7a18611c85cb4bdc5d6ec75",
+        "metadata.json": "da5189a458415b23a3eaac60025c416096f9042d0b564ab39f2fdf6557c64714",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "wordfirst-wide-profiled": {
+      "receipt": "wordfirst-wide-profiled/receipt.json",
+      "text_bytes": 63772,
+      "artifacts": {
+        "program.o": "431650a829c2c8bcd2f5737461a99b7bad4b4611e9401e608da5c33e0b6a49a2",
+        "metadata.json": "f7c90c556cc1a238f728b97b1a4f41176424a1d810616aef617ed853c6023a19",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "342e245f5b43f65305ad3d293c6ee6ee33ebc6ed704540bf9ae31c3ed6dbdb85"
+    },
+    "scalar-encode-profiled": {
+      "receipt": "scalar-encode-profiled/receipt.json",
+      "text_bytes": 63692,
+      "artifacts": {
+        "program.o": "2ca2ed8c9704560c974542a9846b91804ec038582e4518abdc7920ad1213b731",
+        "metadata.json": "ee051707e21c4fa4c4e19a469b0b543a9aa626b70a31cd3089306abd02c23b15",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "matcher-vector-no-reuse-default": {
+      "receipt": "matcher-vector-no-reuse-default/receipt.json",
+      "text_bytes": 63532,
+      "artifacts": {
+        "program.o": "61ce760fb0606ef9b103543c69cf7d0b3aea1ef688f4f7980148d88d0f87fa69",
+        "metadata.json": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "keyfix-pair-body-lanes-default": {
+      "receipt": "keyfix-pair-body-lanes-default/receipt.json",
+      "text_bytes": 63772,
+      "artifacts": {
+        "program.o": "2d056a564b353bdc96544dc2ba8b43f976357d6afdcbed9aa31e80c71f840009",
+        "metadata.json": "81b7dc2ad5dd39b983a89f443603da036e36c27e701a9aa564f5b560c7d3b392",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "wordfirst-wide-default": {
+      "receipt": "wordfirst-wide-default/receipt.json",
+      "text_bytes": 63772,
+      "artifacts": {
+        "program.o": "85f49cbac34e7abc75cd10653c522faed001fb0bb1a41ffc67fe5c5eac0c2a89",
+        "metadata.json": "421b3c4a5befd39ec0ec188535378c669afd05397b51ff198e93a7159059f696",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "342e245f5b43f65305ad3d293c6ee6ee33ebc6ed704540bf9ae31c3ed6dbdb85"
+    },
+    "keyfix-pair-vector12-body-profiled": {
+      "receipt": "keyfix-pair-vector12-body-profiled/receipt.json",
+      "text_bytes": 63740,
+      "artifacts": {
+        "program.o": "010cafce5ddcb4743829d61e40b213ff979fb129527d28d3c5ce608a91454e4f",
+        "metadata.json": "8a90660213e6030f1c2bccbe97796f40138a2d17a414891cee25dee541d6bdbf",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "branch-vector12-body-profiled": {
+      "receipt": "branch-vector12-body-profiled/receipt.json",
+      "text_bytes": 63564,
+      "artifacts": {
+        "program.o": "4d81663a8b3414e46c99c88b1a1a8883c65887b6506145ee66aef0168cebf38c",
+        "metadata.json": "3f3f17a2b9d83bf560f7a6da33faf93c4283746f77dcc48436128db611b586a4",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "branch-body-profiled": {
+      "receipt": "branch-body-profiled/receipt.json",
+      "text_bytes": 63564,
+      "artifacts": {
+        "program.o": "f044b87b18f2dcc61c31a8aa9dd1b11b2dabaf3a875dcf43c6d9a376e80fd743",
+        "metadata.json": "3f3f17a2b9d83bf560f7a6da33faf93c4283746f77dcc48436128db611b586a4",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "keyfix-single-vector12-default": {
+      "receipt": "keyfix-single-vector12-default/receipt.json",
+      "text_bytes": 63612,
+      "artifacts": {
+        "program.o": "1783142dca02519276921fae9011c6da6a436464c78443838a3cac3135f49c90",
+        "metadata.json": "a738845276e2a38b96ff9ef8291dfdb4afe97863cb09c7a32b2b86ede32b10ab",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "key-pair-vector12-default": {
+      "receipt": "key-pair-vector12-default/receipt.json",
+      "text_bytes": 63836,
+      "artifacts": {
+        "program.o": "63fb89b4424f89171603ee3e8deeef8c2072b048e558f9c04cfe6fd67d089dd7",
+        "metadata.json": "5da02a69386c5ce01f08968f67cec3fcd47f5fa6e39daccbf6328589b264923f",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "d7191384e8c08f54268d2a52beabfd6a5f3e3c0895d0f9a8c6bb32ccd72057d3"
+    },
+    "key-single-profiled": {
+      "receipt": "key-single-profiled/receipt.json",
+      "text_bytes": 63724,
+      "artifacts": {
+        "program.o": "5559e10899de44936be2576c5833e096f6e18b16433839ae97e0524bf32f4ff0",
+        "metadata.json": "8accb24d0ad6b93fb242ce4cb6e696c1f885aab1e5147c145ca36aec991f6bcf",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "d7191384e8c08f54268d2a52beabfd6a5f3e3c0895d0f9a8c6bb32ccd72057d3"
+    },
+    "key-single-default": {
+      "receipt": "key-single-default/receipt.json",
+      "text_bytes": 63724,
+      "artifacts": {
+        "program.o": "e78a1940b52caef9fea90be05167960e43528abf4df58e5de22736d48624052a",
+        "metadata.json": "8accb24d0ad6b93fb242ce4cb6e696c1f885aab1e5147c145ca36aec991f6bcf",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "d7191384e8c08f54268d2a52beabfd6a5f3e3c0895d0f9a8c6bb32ccd72057d3"
+    },
+    "vector8-profiled": {
+      "receipt": "vector8-profiled/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "7f3621eb819aec6d14963d705a93c151219bf18268b5d466c12b20bb79a32458",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "matcher-exact-control": {
+      "receipt": "matcher-exact-control/receipt.json",
+      "text_bytes": 63532,
+      "artifacts": {
+        "program.o": "cf15343f1f01089d427122ce51a91ef6fa7b70ef89c50ca4db20901a8d2cefd9",
+        "metadata.json": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "key-single-vector12-profiled": {
+      "receipt": "key-single-vector12-profiled/receipt.json",
+      "text_bytes": 63724,
+      "artifacts": {
+        "program.o": "9b7745ae0f6c335f7fd93da8aedbbfa41a9558411450faeccb80525e20d8f6c5",
+        "metadata.json": "8accb24d0ad6b93fb242ce4cb6e696c1f885aab1e5147c145ca36aec991f6bcf",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "d7191384e8c08f54268d2a52beabfd6a5f3e3c0895d0f9a8c6bb32ccd72057d3"
+    },
+    "keyfix-pair-default": {
+      "receipt": "keyfix-pair-default/receipt.json",
+      "text_bytes": 63756,
+      "artifacts": {
+        "program.o": "fd4f24c3a1634ff3b5c223b4002607e7dadab63f872d9417c4aadac22dad5597",
+        "metadata.json": "da5189a458415b23a3eaac60025c416096f9042d0b564ab39f2fdf6557c64714",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "vector12-body-default": {
+      "receipt": "vector12-body-default/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "292aa2d0e59238d5b862510a4910fd1eff1e532c1541db9fa939c62c0ea7cd1d",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "scalar-from-end-default": {
+      "receipt": "scalar-from-end-default/receipt.json",
+      "text_bytes": 63532,
+      "artifacts": {
+        "program.o": "35fc030cb9b13a8231debd9793e18ac041aa8a10b1c2b8b1b9054349262044cf",
+        "metadata.json": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "keyfix-pair-vector12-default": {
+      "receipt": "keyfix-pair-vector12-default/receipt.json",
+      "text_bytes": 63756,
+      "artifacts": {
+        "program.o": "53480238c37ebda97296d71be7e4c6abaad5d6dfd20f0db0da3708afeb5e486a",
+        "metadata.json": "da5189a458415b23a3eaac60025c416096f9042d0b564ab39f2fdf6557c64714",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "selected": {
+      "receipt": "selected/receipt.json",
+      "text_bytes": 63532,
+      "artifacts": {
+        "program.o": "cf15343f1f01089d427122ce51a91ef6fa7b70ef89c50ca4db20901a8d2cefd9",
+        "metadata.json": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "scalar-pack-body-default": {
+      "receipt": "scalar-pack-body-default/receipt.json",
+      "text_bytes": 63564,
+      "artifacts": {
+        "program.o": "e2f6674c505cfba367c7438756893c12fe984f1839adcb5d298384c9e56239cb",
+        "metadata.json": "3f3f17a2b9d83bf560f7a6da33faf93c4283746f77dcc48436128db611b586a4",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "loop-exact-control": {
+      "receipt": "loop-exact-control/receipt.json",
+      "text_bytes": 63532,
+      "artifacts": {
+        "program.o": "cf15343f1f01089d427122ce51a91ef6fa7b70ef89c50ca4db20901a8d2cefd9",
+        "metadata.json": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "keyfix-single-profiled": {
+      "receipt": "keyfix-single-profiled/receipt.json",
+      "text_bytes": 63612,
+      "artifacts": {
+        "program.o": "c713978a8ebc3f6529f7376af46dc06136ad5e6f1bd6c832eaf349903ab6706f",
+        "metadata.json": "a738845276e2a38b96ff9ef8291dfdb4afe97863cb09c7a32b2b86ede32b10ab",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "vector4-default": {
+      "receipt": "vector4-default/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "f3923469c4de2c2de7ba0ab075a4ff6bb23915fc649fc6b18c2f80bf7e0b0356",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "scalar-pack-addresses-profiled": {
+      "receipt": "scalar-pack-addresses-profiled/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "d05527a1f405fcaacb044e447170e751d6947b92581e7fce23c820d2d55c15e3",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "wordfirst-profiled": {
+      "receipt": "wordfirst-profiled/receipt.json",
+      "text_bytes": 63532,
+      "artifacts": {
+        "program.o": "4ddf4d944a13d5dd00d6f728d95377b75f0d0c1dec3f284cc48df3814e041383",
+        "metadata.json": "1ecb017e700f85178be770975c34ee8aeb83ca83027309a420938753e9c88557",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "342e245f5b43f65305ad3d293c6ee6ee33ebc6ed704540bf9ae31c3ed6dbdb85"
+    },
+    "key-pair-body-profiled": {
+      "receipt": "key-pair-body-profiled/receipt.json",
+      "text_bytes": 63852,
+      "artifacts": {
+        "program.o": "1a620c634fa32a3423e1bfeb528b27221b075ab4206192c9f862d0a172aaf2ac",
+        "metadata.json": "1bf55de9853463e7821c476cd4ce6a0f54cd3e34c471a804c596a2f039683c33",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "d7191384e8c08f54268d2a52beabfd6a5f3e3c0895d0f9a8c6bb32ccd72057d3"
+    },
+    "key-single-vector12-default": {
+      "receipt": "key-single-vector12-default/receipt.json",
+      "text_bytes": 63724,
+      "artifacts": {
+        "program.o": "48c901a1b3079131b302b03c112d46b8253751e59bbeb80c7649bb9de189db1f",
+        "metadata.json": "8accb24d0ad6b93fb242ce4cb6e696c1f885aab1e5147c145ca36aec991f6bcf",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "d7191384e8c08f54268d2a52beabfd6a5f3e3c0895d0f9a8c6bb32ccd72057d3"
+    },
+    "branch-cold-body-profiled": {
+      "receipt": "branch-cold-body-profiled/receipt.json",
+      "text_bytes": 63564,
+      "artifacts": {
+        "program.o": "33339d3699765e04348df561852ca59f760e02fc8f0671bfab9196f2c4b47cbb",
+        "metadata.json": "3f3f17a2b9d83bf560f7a6da33faf93c4283746f77dcc48436128db611b586a4",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "vector8-body-profiled": {
+      "receipt": "vector8-body-profiled/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "143b1e0100223b969f4a7afc01c7c2c4eddce4b24c56ab97de4e9912e3072e82",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "matcher-vector-no-prefix-default": {
+      "receipt": "matcher-vector-no-prefix-default/receipt.json",
+      "text_bytes": 63532,
+      "artifacts": {
+        "program.o": "61ce760fb0606ef9b103543c69cf7d0b3aea1ef688f4f7980148d88d0f87fa69",
+        "metadata.json": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "scalar-encode-body-default": {
+      "receipt": "scalar-encode-body-default/receipt.json",
+      "text_bytes": 63692,
+      "artifacts": {
+        "program.o": "b967d9e2e67377f0f3f51d9e2d293c2f967e1a08fa4c9a89dfed50aa4744920f",
+        "metadata.json": "ee051707e21c4fa4c4e19a469b0b543a9aa626b70a31cd3089306abd02c23b15",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "branch-cold-profiled": {
+      "receipt": "branch-cold-profiled/receipt.json",
+      "text_bytes": 63564,
+      "artifacts": {
+        "program.o": "4958b98a677a1cceb8e4bf3278fce634555554fe5e25ae91936f084ec4c05b38",
+        "metadata.json": "3f3f17a2b9d83bf560f7a6da33faf93c4283746f77dcc48436128db611b586a4",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "key-pair-body-lanes-default": {
+      "receipt": "key-pair-body-lanes-default/receipt.json",
+      "text_bytes": 63852,
+      "artifacts": {
+        "program.o": "efa9c461dfd9a3bda97022007307f2e6361768e33470a7df457cc2595481829c",
+        "metadata.json": "1bf55de9853463e7821c476cd4ce6a0f54cd3e34c471a804c596a2f039683c33",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "d7191384e8c08f54268d2a52beabfd6a5f3e3c0895d0f9a8c6bb32ccd72057d3"
+    },
+    "wordfirst-default": {
+      "receipt": "wordfirst-default/receipt.json",
+      "text_bytes": 63532,
+      "artifacts": {
+        "program.o": "1b80e78c556caf67107f51028b2161efdfe8ab7896a588c47dd26c25a43342c3",
+        "metadata.json": "0735a022cae6df54c54d43db1560eaeea97f2887b2515d5f3cd495bc4adbc5ed",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "342e245f5b43f65305ad3d293c6ee6ee33ebc6ed704540bf9ae31c3ed6dbdb85"
+    },
+    "pointer-exit-default": {
+      "receipt": "pointer-exit-default/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "12896eb05f8eff68998cd10efc050cf15ac323046316500614ceba771781ac01",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "scalar-reuse-ordinal-default": {
+      "receipt": "scalar-reuse-ordinal-default/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "5790d4f25fa287fef63ee6c7bd568e3838a845c7e4d4f4d51a3af02e77576aab",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "pointer-body-lanes-default": {
+      "receipt": "pointer-body-lanes-default/receipt.json",
+      "text_bytes": 63564,
+      "artifacts": {
+        "program.o": "4197dd12602db831aaa17d8d5ae4eef3f5c08e696198ddd84b635241417e0007",
+        "metadata.json": "3f3f17a2b9d83bf560f7a6da33faf93c4283746f77dcc48436128db611b586a4",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "pointer-exit-lanes-default": {
+      "receipt": "pointer-exit-lanes-default/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "4b2b94e25178c32856825ad86d77acb53fc0bf096edc4e35c5059b0f45ca1af3",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "vector12-default": {
+      "receipt": "vector12-default/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "444ac2a9c3784e8555e422ea222a815b68f29d034822aaa1c5f2303df11b6014",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "scalar-pack-default": {
+      "receipt": "scalar-pack-default/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "bb4f50c828fe03e3304c1519fed5085e49d1141045dacd6a27add14ecc779941",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "branch-vector8-body-default": {
+      "receipt": "branch-vector8-body-default/receipt.json",
+      "text_bytes": 63564,
+      "artifacts": {
+        "program.o": "a66664d4d72d13ed2e35c955097753b8f38afcaace42051f5ff3bf5339df054f",
+        "metadata.json": "3f3f17a2b9d83bf560f7a6da33faf93c4283746f77dcc48436128db611b586a4",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "branch-cold-default": {
+      "receipt": "branch-cold-default/receipt.json",
+      "text_bytes": 63564,
+      "artifacts": {
+        "program.o": "b76015d442c12b4d730704f112cb209b41fab07fc0c8f6f4830456f70e227eec",
+        "metadata.json": "3f3f17a2b9d83bf560f7a6da33faf93c4283746f77dcc48436128db611b586a4",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "keyfix-single-vector12-profiled": {
+      "receipt": "keyfix-single-vector12-profiled/receipt.json",
+      "text_bytes": 63612,
+      "artifacts": {
+        "program.o": "490e4e4111d95368e51ea0f79f0d63b5b15f19cf57bec75bf07c7c33e949ca57",
+        "metadata.json": "a738845276e2a38b96ff9ef8291dfdb4afe97863cb09c7a32b2b86ede32b10ab",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "matcher-vector-profiled": {
+      "receipt": "matcher-vector-profiled/receipt.json",
+      "text_bytes": 63532,
+      "artifacts": {
+        "program.o": "cf15343f1f01089d427122ce51a91ef6fa7b70ef89c50ca4db20901a8d2cefd9",
+        "metadata.json": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "vector8-body-default": {
+      "receipt": "vector8-body-default/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "71803affd1d2137b0cf72ba186ac574d9bab3318630cc1eb1b7b642ba9a13e31",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "pointer-body-default": {
+      "receipt": "pointer-body-default/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "246127bc23c2d00deb376270caa4476acd22b83993be466bc5e30f080a866ea2",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "vector12-body-profiled": {
+      "receipt": "vector12-body-profiled/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "93021f31d4b2b0e63d83bc5ecfb30ce4327a189219dd1383adf74ed87a443c22",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "branch-body-default": {
+      "receipt": "branch-body-default/receipt.json",
+      "text_bytes": 63564,
+      "artifacts": {
+        "program.o": "6d21e8bc5d0e9d7ca8066f410ae32259a807e8cc4bfd197c90d436e10e47062a",
+        "metadata.json": "3f3f17a2b9d83bf560f7a6da33faf93c4283746f77dcc48436128db611b586a4",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "vector4-profiled": {
+      "receipt": "vector4-profiled/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "11f27066cf8aea8c908e9261281d3e1ef84057ab4038d1b116ab274660c8dcbf",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "keyfix-pair-vector12-body-default": {
+      "receipt": "keyfix-pair-vector12-body-default/receipt.json",
+      "text_bytes": 63756,
+      "artifacts": {
+        "program.o": "7b2e20b2f67b42d58cd880da997470bd309bae562e5670e64ed2eaad13210e7c",
+        "metadata.json": "da5189a458415b23a3eaac60025c416096f9042d0b564ab39f2fdf6557c64714",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "keyfix-pair-body-profiled": {
+      "receipt": "keyfix-pair-body-profiled/receipt.json",
+      "text_bytes": 63740,
+      "artifacts": {
+        "program.o": "66e3ab57548d2a8a204fa408edda5815a5d91156ca63e0a1a16c26f8e5e9be71",
+        "metadata.json": "8a90660213e6030f1c2bccbe97796f40138a2d17a414891cee25dee541d6bdbf",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "scalar-pack-profiled": {
+      "receipt": "scalar-pack-profiled/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "b06f74afb2f63197f61613e67142077b9816a8df24514a7bd14db432de12a945",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "scalar-pack-body-profiled": {
+      "receipt": "scalar-pack-body-profiled/receipt.json",
+      "text_bytes": 63564,
+      "artifacts": {
+        "program.o": "cac739b1de7d99d7b968e3f14e1d643b538f67a637ab7eca6dccd7114047d6d8",
+        "metadata.json": "3f3f17a2b9d83bf560f7a6da33faf93c4283746f77dcc48436128db611b586a4",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "8431367bfa07fb370fa21eda039c33188a3709aedc2a908929b7e7f7b64a1b6f"
+    },
+    "branch-cold-body-default": {
+      "receipt": "branch-cold-body-default/receipt.json",
+      "text_bytes": 63564,
+      "artifacts": {
+        "program.o": "99464070176456c58c0f2035041abd468b6ed32d9f65c09ef71081600bbc5be6",
+        "metadata.json": "3f3f17a2b9d83bf560f7a6da33faf93c4283746f77dcc48436128db611b586a4",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    },
+    "matcher-word-profiled": {
+      "receipt": "matcher-word-profiled/receipt.json",
+      "text_bytes": 63420,
+      "artifacts": {
+        "program.o": "81ae3cfcf8951c0ffc4d386d457172c5efdbec0c7d36d9b56c3c38e04d576914",
+        "metadata.json": "3971c09df569db442c436bfa86e8f63276465c0eb564a1aaee5be41bb19ba1b1",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "de0821abcfb23b69ee75aa80654aaf211a94bc452fa0cb229ded138080305a41"
+    },
+    "vector12-profiled": {
+      "receipt": "vector12-profiled/receipt.json",
+      "text_bytes": 63548,
+      "artifacts": {
+        "program.o": "d7d4bba85b886ea1861465c9ef1ca67b755b2edd40b462777c8b0489249a85ef",
+        "metadata.json": "25e15c2e5a2ed34023251e2a310083ed8f3d729e0826e5134fdad44a216dda99",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      },
+      "compiler_sha256": "240bea7d487bbcf066eac09253a73eea2dec10de90bc6c5dd57da50d34515d62"
+    }
+  },
+  "campaigns": {
+    "probe-scalar-results": {
+      "scope": "Single-case diagnostic. Does not establish 81/62 preservation or a new 63rd win.",
+      "load_after": [
+        2.70263671875,
+        2.8525390625,
+        2.69970703125
+      ],
+      "runs": [
+        {
+          "role": "scalar-from-end-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-scalar-repair44-scalar-from-end-profiled-forward",
+          "summary_sha256": "3de94b65e1ecd2a54aaf4784d396e8392903a46ba6bcdca91f573237a573638e",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.00041879199999999997,
+              "mech-experiment": 0.0004185625,
+              "roc": 0.00066475,
+              "libdeflate": 0.000392854
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6300703327040409,
+              "mech-experiment": 0.6298008690501726,
+              "roc": 1.0,
+              "libdeflate": 0.5909641484482303
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.066173530760701,
+              "mech-experiment": 1.0657175578314197,
+              "roc": 1.6921500274184602,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "scalar-from-end-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-scalar-repair44-scalar-from-end-profiled-reverse",
+          "summary_sha256": "b4d1adf3ee6b9c08f5789aac4249191a083b5d360edcd9e06b965d5a3055cb3b",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.000391291,
+              "roc": 0.0006607085,
+              "mech-experiment": 0.000413917,
+              "mech-control": 0.000415125
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5845783330690669,
+              "roc": 1.0,
+              "mech-experiment": 0.6237784568688672,
+              "mech-control": 0.6262902725930782
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.710634731790259,
+              "mech-experiment": 1.0670570932624164,
+              "mech-control": 1.0713538924801087
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "scalar-pack-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-scalar-repair44-scalar-pack-profiled-forward",
+          "summary_sha256": "75e7fdf6e3171dfcde40aa76efca635f4b7340f85a14c5ad075cbccb3bce5e80",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004150215,
+              "mech-experiment": 0.00042491649999999996,
+              "roc": 0.0006660415,
+              "libdeflate": 0.0003898545
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6216672668392969,
+              "mech-experiment": 0.6370639443497844,
+              "roc": 1.0,
+              "libdeflate": 0.5852555345605254
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.062215101145713,
+              "mech-experiment": 1.0885227165398146,
+              "roc": 1.7086553495831707,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "scalar-pack-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-scalar-repair44-scalar-pack-profiled-reverse",
+          "summary_sha256": "579d8cd1925f465fe31087f2323bf18245aa0107ac0f3696ace8cc2ec2c4bb9a",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.000392166,
+              "roc": 0.0006622710000000001,
+              "mech-experiment": 0.000423458,
+              "mech-control": 0.00041372900000000005
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5878957445798503,
+              "roc": 1.0,
+              "mech-experiment": 0.6390268010830137,
+              "mech-control": 0.6263140761780178
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7009818649302644,
+              "mech-experiment": 1.0869729998466056,
+              "mech-control": 1.0653488853293605
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "scalar-pack-body-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-scalar-repair44-scalar-pack-body-profiled-forward",
+          "summary_sha256": "765b43b65a5ec2990c2b3d0c6c2b30da257a2dd21cc93467a3673b37f15fbda4",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.000414,
+              "mech-experiment": 0.0004207705,
+              "roc": 0.0006620625,
+              "libdeflate": 0.0003894785
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6245738535643798,
+              "mech-experiment": 0.6358863196718733,
+              "roc": 1.0,
+              "libdeflate": 0.5878464154500779
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0624779485746831,
+              "mech-experiment": 1.0817218629886756,
+              "roc": 1.7011246028171514,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "scalar-pack-body-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-scalar-repair44-scalar-pack-body-profiled-reverse",
+          "summary_sha256": "dee2234313ecbdeb9dd861a3fec0cd66bc99bf61b894b3bdef000e0d89c9a4ef",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.0003911875,
+              "roc": 0.0006631040000000001,
+              "mech-experiment": 0.0004215415,
+              "mech-control": 0.000414021
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5833530803125533,
+              "roc": 1.0,
+              "mech-experiment": 0.6340530375496668,
+              "mech-control": 0.624161382258948
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7142276843112108,
+              "mech-experiment": 1.0869112702892545,
+              "mech-control": 1.0699547209462408
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "scalar-encode-body-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-scalar-repair44-scalar-encode-body-profiled-forward",
+          "summary_sha256": "ccff4ac619fffde90059da3288128e3b5defd8cfa0a4baf5342409e706413b02",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.000415813,
+              "mech-experiment": 0.000428375,
+              "roc": 0.000663208,
+              "libdeflate": 0.0003899795
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6244370784155644,
+              "mech-experiment": 0.6420591313766044,
+              "roc": 1.0,
+              "libdeflate": 0.5859410426046214
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.065699503895171,
+              "mech-experiment": 1.0957742924484812,
+              "roc": 1.70665634814521,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "scalar-encode-body-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-scalar-repair44-scalar-encode-body-profiled-reverse",
+          "summary_sha256": "36e621c2ef01981913101869b17afcacc804c6be2f6cf0fda6728901ba89a49f",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.000392875,
+              "roc": 0.0006601045000000001,
+              "mech-experiment": 0.00042862499999999997,
+              "mech-control": 0.0004134585
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5911470815442833,
+              "roc": 1.0,
+              "mech-experiment": 0.6490471534827947,
+              "mech-control": 0.6267520639077381
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.6916263840593608,
+              "mech-experiment": 1.097945289330121,
+              "mech-control": 1.0602303275699883
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "scalar-pack-addresses-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-scalar-repair44-scalar-pack-addresses-profiled-forward",
+          "summary_sha256": "3171a4eeb6f2814a68cacc044aaa071278b22a3146a167ec71f0986719bc9e2e",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004159375,
+              "mech-experiment": 0.000422292,
+              "roc": 0.000662146,
+              "libdeflate": 0.0003903335
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6255087688893111,
+              "mech-experiment": 0.6359319147594046,
+              "roc": 1.0,
+              "libdeflate": 0.5878921844993555
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0639855153406905,
+              "mech-experiment": 1.0817152048057237,
+              "roc": 1.7009921655134648,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "scalar-pack-addresses-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-scalar-repair44-scalar-pack-addresses-profiled-reverse",
+          "summary_sha256": "a8323966068880c3d8779bc42d9e5104e7c0ee794b0f09d8452805cee33db4ac",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.000392208,
+              "roc": 0.0006636039999999999,
+              "mech-experiment": 0.000423271,
+              "mech-control": 0.0004153535
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5842621160953966,
+              "roc": 1.0,
+              "mech-experiment": 0.6370131838828931,
+              "mech-control": 0.6255774889779928
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7115605692235625,
+              "mech-experiment": 1.0902866476095183,
+              "mech-control": 1.0707137631286203
+            },
+            "timed_calls": 384
+          }
+        }
+      ]
+    },
+    "probe-pointer-results": {
+      "scope": "Single-case diagnostic. Does not establish 81/62 preservation or a new 63rd win.",
+      "load_after": [
+        3.61865234375,
+        2.775390625,
+        2.232421875
+      ],
+      "runs": [
+        {
+          "role": "pointer-exit-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-body-repair44-pointer-exit-profiled-forward",
+          "summary_sha256": "5d47517a46fa558d6262d394ce962bf8901033a858b7a0f127fe026d68675768",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004160625,
+              "mech-experiment": 0.00041647850000000003,
+              "roc": 0.000661938,
+              "libdeflate": 0.0003916455
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6292159483200426,
+              "mech-experiment": 0.630344779329512,
+              "roc": 1.0,
+              "libdeflate": 0.5898278006765971
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0667790626319462,
+              "mech-experiment": 1.068692894106445,
+              "roc": 1.69541008215091,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "pointer-exit-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-body-repair44-pointer-exit-profiled-reverse",
+          "summary_sha256": "fc880a5b7ed2fd2b8e1a8aa6807fc285b4961db56c9213fcceade8c2ede95f1d",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.000392125,
+              "roc": 0.0006616875,
+              "mech-experiment": 0.000412938,
+              "mech-control": 0.00041510449999999997
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5858662889164711,
+              "roc": 1.0,
+              "mech-experiment": 0.6225091439909572,
+              "mech-control": 0.6257855776810911
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.706874109192129,
+              "mech-experiment": 1.0625447406135198,
+              "mech-control": 1.068137200449694
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "pointer-body-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-body-repair44-pointer-body-profiled-forward",
+          "summary_sha256": "1efe39b72a3dab6bf92281dc3b449635e34952a4f091951ecc89a13b1112d506",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004139795,
+              "mech-experiment": 0.0004133755,
+              "roc": 0.000663042,
+              "libdeflate": 0.0003899375
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6226022880548824,
+              "mech-experiment": 0.6201188519991352,
+              "roc": 1.0,
+              "libdeflate": 0.5843987407821639
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0653723983415613,
+              "mech-experiment": 1.0611228408349465,
+              "roc": 1.7111604290276055,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "pointer-body-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-body-repair44-pointer-body-profiled-reverse",
+          "summary_sha256": "2557b0fea9b23b72b10269098bf4894d03178b191272c1a6912914e5ce5f8af6",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.000391146,
+              "roc": 0.000662375,
+              "mech-experiment": 0.0004129795,
+              "mech-control": 0.000414042
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5843865006713989,
+              "roc": 1.0,
+              "mech-experiment": 0.6226192023086379,
+              "mech-control": 0.6249460489193385
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.711196269679578,
+              "mech-experiment": 1.0654236564214157,
+              "mech-control": 1.069405347661763
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "pointer-body-lanes-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-body-repair44-pointer-body-lanes-profiled-forward",
+          "summary_sha256": "c2986df900dc2a456aeba5f6ea56a08c0c94ffcd3a9f13333b8e07687a280a21",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.000415646,
+              "mech-experiment": 0.0004129375,
+              "roc": 0.0006631045,
+              "libdeflate": 0.00038927099999999995
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6239080276884934,
+              "mech-experiment": 0.6218499770155822,
+              "roc": 1.0,
+              "libdeflate": 0.5834951507767351
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.069260004745475,
+              "mech-experiment": 1.065732896302206,
+              "roc": 1.7138103010261927,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "pointer-body-lanes-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-body-repair44-pointer-body-lanes-profiled-reverse",
+          "summary_sha256": "c779580015ad0e19420817fc072f2bdb220918b1e64e3d61950aeace309deba9",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.0003924375,
+              "roc": 0.000664333,
+              "mech-experiment": 0.0004151875,
+              "mech-control": 0.0004145
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5834872549305989,
+              "roc": 1.0,
+              "mech-experiment": 0.6216786762341546,
+              "mech-control": 0.6225154927372121
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7138334925909253,
+              "mech-experiment": 1.0654537369596844,
+              "mech-control": 1.0668879011097772
+            },
+            "timed_calls": 384
+          }
+        }
+      ]
+    },
+    "probe-wordfirst-results": {
+      "scope": "Single-case diagnostic. Does not establish 81/62 preservation or a new 63rd win.",
+      "load_after": [
+        2.234375,
+        2.00439453125,
+        2.08837890625
+      ],
+      "runs": [
+        {
+          "role": "wordfirst-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-wordfirst-342e-wordfirst-profiled-forward",
+          "summary_sha256": "fe3d15213f0fc7e5ab3fe71f90ed167c819c8af79bde9915335b701dd90aa0f7",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004135,
+              "mech-experiment": 0.00041331250000000005,
+              "roc": 0.0006609375000000001,
+              "libdeflate": 0.000391708
+            },
+            "paired_x_roc": {
+              "mech-control": 0.625505442421394,
+              "mech-experiment": 0.6263965619360631,
+              "roc": 1.0,
+              "libdeflate": 0.5941378799731126
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0527950893312863,
+              "mech-experiment": 1.0542949423867913,
+              "roc": 1.6831109978129226,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "wordfirst-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-wordfirst-342e-wordfirst-profiled-reverse",
+          "summary_sha256": "dfc60b050057eb9e586d13ac970ea006df6af326d2d994f9e35bbb6f03ce2518",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.000390958,
+              "roc": 0.0006601875,
+              "mech-experiment": 0.000410146,
+              "mech-control": 0.000412666
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5854324965644273,
+              "roc": 1.0,
+              "mech-experiment": 0.620873966058062,
+              "mech-control": 0.6241687129688557
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7081388646315934,
+              "mech-experiment": 1.0605389514617325,
+              "mech-control": 1.066166836709184
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "wordfirst-wide-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-wordfirst-342e-wordfirst-wide-profiled-forward",
+          "summary_sha256": "d2fc3013a999dc03b15fa552e5a686cffc5d49fa638bccf2dbdf43835b19f8fe",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.000415396,
+              "mech-experiment": 0.0004207085,
+              "roc": 0.000665104,
+              "libdeflate": 0.0003909165
+            },
+            "paired_x_roc": {
+              "mech-control": 0.621014062131177,
+              "mech-experiment": 0.6281441396046252,
+              "roc": 1.0,
+              "libdeflate": 0.5842070274005112
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0630034097577403,
+              "mech-experiment": 1.0752081199701014,
+              "roc": 1.7117219634443666,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "wordfirst-wide-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-wordfirst-342e-wordfirst-wide-profiled-reverse",
+          "summary_sha256": "3b2fbceeecc50f5c1205f220a306e94621e942b071e39387c2fdcdf66288a194",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.0003925205,
+              "roc": 0.000664875,
+              "mech-experiment": 0.000420271,
+              "mech-control": 0.0004159795
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5832777750221093,
+              "roc": 1.0,
+              "mech-experiment": 0.6309199792142427,
+              "mech-control": 0.6260289631484149
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7144490032422282,
+              "mech-experiment": 1.0816801294894658,
+              "mech-control": 1.0732947318705657
+            },
+            "timed_calls": 384
+          }
+        }
+      ]
+    },
+    "probe-key-results": {
+      "scope": "Single-case diagnostic. Does not establish 81/62 preservation or a new 63rd win.",
+      "load_after": [
+        2.14892578125,
+        1.93017578125,
+        1.9365234375
+      ],
+      "runs": [
+        {
+          "role": "key-single-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-key-d719-key-single-profiled-forward",
+          "summary_sha256": "4ddfa009d37ee5954a3feeb828684e64c67873db410e07cf4b6ba64dfd2b49d9",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.000415729,
+              "mech-experiment": 0.000443396,
+              "roc": 0.000664,
+              "libdeflate": 0.0003919795
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6283481550910107,
+              "mech-experiment": 0.6711783523233297,
+              "roc": 1.0,
+              "libdeflate": 0.5917897047807117
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0617760836577004,
+              "mech-experiment": 1.1341500990998745,
+              "roc": 1.6897894504105155,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "key-single-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-key-d719-key-single-profiled-reverse",
+          "summary_sha256": "377936dde045e4c52a50b920bebbe3a8c5cd87b3d2a697665cc8b074ecf6a03e",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.0003904585,
+              "roc": 0.000662958,
+              "mech-experiment": 0.000442729,
+              "mech-control": 0.000415291
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5854255211425465,
+              "roc": 1.0,
+              "mech-experiment": 0.6690057819577195,
+              "mech-control": 0.6260748158425361
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7081592173302398,
+              "mech-experiment": 1.1427683928983032,
+              "mech-control": 1.0694354674197604
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "key-pair-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-key-d719-key-pair-profiled-forward",
+          "summary_sha256": "e5bc9b995bf68c02f3e11e67b84b43a11c3047c400a6ad332890cfe67c30abc9",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.000414042,
+              "mech-experiment": 0.00043593799999999997,
+              "roc": 0.000665958,
+              "libdeflate": 0.0003909165
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6197133988459886,
+              "mech-experiment": 0.6523930471036928,
+              "roc": 1.0,
+              "libdeflate": 0.5842788429920008
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0606466523287632,
+              "mech-experiment": 1.116578248431673,
+              "roc": 1.7115115701933619,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "key-pair-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-key-d719-key-pair-profiled-reverse",
+          "summary_sha256": "723a5f4f35343a6dcc5eb16f02eb9a32a6c8ef503003f2deba26ed00fea324fc",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.000390354,
+              "roc": 0.000661979,
+              "mech-experiment": 0.000434396,
+              "mech-control": 0.00041720850000000003
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5847585400567641,
+              "roc": 1.0,
+              "mech-experiment": 0.6559413557524043,
+              "mech-control": 0.6291432090972151
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7101075597851505,
+              "mech-experiment": 1.1217302712479074,
+              "mech-control": 1.0759025580646373
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "key-pair-body-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-key-d719-key-pair-body-profiled-forward",
+          "summary_sha256": "d970e1ca4830b21b4ea8ce99a0cd364e97a42edcc5e02570734af2532f358d9d",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004150835,
+              "mech-experiment": 0.0004325625,
+              "roc": 0.0006611045,
+              "libdeflate": 0.000390604
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6276322237158559,
+              "mech-experiment": 0.6540484690957578,
+              "roc": 1.0,
+              "libdeflate": 0.5897629144148665
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0642110725774634,
+              "mech-experiment": 1.1090023687648658,
+              "roc": 1.6955966127374258,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "key-pair-body-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-key-d719-key-pair-body-profiled-reverse",
+          "summary_sha256": "c518383be9626cd5f31c5ac7199fbb2324ed0a87f4c3900dd9ff0ccabfc2f2d5",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.000391771,
+              "roc": 0.0006606254999999999,
+              "mech-experiment": 0.0004355,
+              "mech-control": 0.0004142705
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5865665211766493,
+              "roc": 1.0,
+              "mech-experiment": 0.65836378345484,
+              "mech-control": 0.6297821384836845
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7048364744615927,
+              "mech-experiment": 1.1224025914983449,
+              "mech-control": 1.0736755606514072
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "key-pair-body-lanes-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-key-d719-key-pair-body-lanes-profiled-forward",
+          "summary_sha256": "ded9e96c4d978fdcb72a694f9a418d1db716354aeef0645086772ca6bffde855",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004173335,
+              "mech-experiment": 0.0004371245,
+              "roc": 0.000659896,
+              "libdeflate": 0.000390625
+            },
+            "paired_x_roc": {
+              "mech-control": 0.628823720583552,
+              "mech-experiment": 0.6588261009557942,
+              "roc": 1.0,
+              "libdeflate": 0.5919566118587436
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.062280086050641,
+              "mech-experiment": 1.1129634972520712,
+              "roc": 1.6893130002552048,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "key-pair-body-lanes-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-key-d719-key-pair-body-lanes-profiled-reverse",
+          "summary_sha256": "54af64834cc5772dc23ff80d93590626577ef7efeb1233d98730424902ceb3d1",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.00039066649999999997,
+              "roc": 0.000657604,
+              "mech-experiment": 0.00043375,
+              "mech-control": 0.000413938
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5875807584730078,
+              "roc": 1.0,
+              "mech-experiment": 0.6573372061228945,
+              "mech-control": 0.6291459107100131
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7018937151699425,
+              "mech-experiment": 1.1187180598479232,
+              "mech-control": 1.0707394713622411
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "key-single-vector12-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-key-d719-key-single-vector12-profiled-forward",
+          "summary_sha256": "e5ea0c7bfe62058da5d0264baa650c8a328e5dbce50e847559a40820f29e103d",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.000415292,
+              "mech-experiment": 0.00044475,
+              "roc": 0.0006644165000000001,
+              "libdeflate": 0.000391042
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6220486391573262,
+              "mech-experiment": 0.6669072468265332,
+              "roc": 1.0,
+              "libdeflate": 0.5857919499282684
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0618934576234746,
+              "mech-experiment": 1.1384711703672226,
+              "roc": 1.7070907173143166,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "key-single-vector12-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-key-d719-key-single-vector12-profiled-reverse",
+          "summary_sha256": "bc4e48bdcfd6c2aacb2835b6501fd1ba3c1b69d8c91ceb870756da34ff2f257c",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.0003907295,
+              "roc": 0.0006565415,
+              "mech-experiment": 0.000443125,
+              "mech-control": 0.000414625
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5873385295592366,
+              "roc": 1.0,
+              "mech-experiment": 0.6717521079758492,
+              "mech-control": 0.6287746365641141
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7025956065753798,
+              "mech-experiment": 1.1437221877474308,
+              "mech-control": 1.0705489337400917
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "key-pair-vector12-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-key-d719-key-pair-vector12-profiled-forward",
+          "summary_sha256": "c3a2b214c780d9deb2b8567668b2054493f7e4ee30b87bc64487d60aa3b87b46",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004142085,
+              "mech-experiment": 0.000434687,
+              "roc": 0.0006626035000000001,
+              "libdeflate": 0.000389625
+            },
+            "paired_x_roc": {
+              "mech-control": 0.622867619140862,
+              "mech-experiment": 0.654095550104966,
+              "roc": 1.0,
+              "libdeflate": 0.5859945621959729
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0629238892707638,
+              "mech-experiment": 1.1162143683616952,
+              "roc": 1.706500477158988,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "key-pair-vector12-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-key-d719-key-pair-vector12-profiled-reverse",
+          "summary_sha256": "361cd86e5ebb2994a56e04d6572b26f3d5da7384c518cce74eb94037e1bbd2dc",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.00039152049999999997,
+              "roc": 0.0006629374999999999,
+              "mech-experiment": 0.00043599999999999997,
+              "mech-control": 0.000416229
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5856880656662251,
+              "roc": 1.0,
+              "mech-experiment": 0.6568333685056045,
+              "mech-control": 0.6289786193460688
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7073935062386694,
+              "mech-experiment": 1.12147302806734,
+              "mech-control": 1.0739140102344418
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "key-pair-vector12-body-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-key-d719-key-pair-vector12-body-profiled-forward",
+          "summary_sha256": "a6cc7f46103eba82922de6bd078ffe6de09f59ecda6c431e35d2e86282e9e38a",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004143545,
+              "mech-experiment": 0.0004362085,
+              "roc": 0.000666583,
+              "libdeflate": 0.0003905415
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6222939198470457,
+              "mech-experiment": 0.6538580302836837,
+              "roc": 1.0,
+              "libdeflate": 0.5862981145503044
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0613950555245268,
+              "mech-experiment": 1.1152313371930223,
+              "roc": 1.7056169467080895,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "key-pair-vector12-body-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-key-d719-key-pair-vector12-body-profiled-reverse",
+          "summary_sha256": "f75686de54f39c772498068d5c1c1e768b85b742561ae5cbcc92c5e8ac287610",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.00039102099999999997,
+              "roc": 0.0006629794999999999,
+              "mech-experiment": 0.000433958,
+              "mech-control": 0.0004137295
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5821889936490323,
+              "roc": 1.0,
+              "mech-experiment": 0.6512275755938844,
+              "mech-control": 0.6226830837249075
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7176552818908863,
+              "mech-experiment": 1.118584484931832,
+              "mech-control": 1.0695548877041925
+            },
+            "timed_calls": 384
+          }
+        }
+      ]
+    },
+    "probe-keyfix-results": {
+      "scope": "Single-case diagnostic. Does not establish 81/62 preservation or a new 63rd win.",
+      "load_after": [
+        1.5712890625,
+        1.89453125,
+        2.1494140625
+      ],
+      "runs": [
+        {
+          "role": "keyfix-single-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-keyfix-de082-keyfix-single-profiled-forward",
+          "summary_sha256": "367fc5c0c9431cf73ee8d8d33b83fd76a6f234c213847b88532c7542c1356ce0",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004146245,
+              "mech-experiment": 0.0004391455,
+              "roc": 0.000662354,
+              "libdeflate": 0.0003901665
+            },
+            "paired_x_roc": {
+              "mech-control": 0.626656562827907,
+              "mech-experiment": 0.6627115234714113,
+              "roc": 1.0,
+              "libdeflate": 0.5883517510662091
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0651052906569618,
+              "mech-experiment": 1.1263865914743139,
+              "roc": 1.699663506036658,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "keyfix-single-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-keyfix-de082-keyfix-single-profiled-reverse",
+          "summary_sha256": "7ce9dd7245ad138fc09e14134e666402c732ee68569ddf1fc0bbe744082502f5",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.000392396,
+              "roc": 0.0006629585,
+              "mech-experiment": 0.000439146,
+              "mech-control": 0.00041475
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5840477508889063,
+              "roc": 1.0,
+              "mech-experiment": 0.6612891930034904,
+              "mech-control": 0.6255189219192683
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7121887696306075,
+              "mech-experiment": 1.1322519297386637,
+              "mech-control": 1.071006473301616
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "keyfix-pair-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-keyfix-de082-keyfix-pair-profiled-forward",
+          "summary_sha256": "14612f4613ac3fe3e1d2e65b634954e4f6b85d07f9a09d952670d6cdd16e10c2",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004130625,
+              "mech-experiment": 0.0004242085,
+              "roc": 0.0006661460000000001,
+              "libdeflate": 0.000391375
+            },
+            "paired_x_roc": {
+              "mech-control": 0.618228966181876,
+              "mech-experiment": 0.633897199697088,
+              "roc": 1.0,
+              "libdeflate": 0.5849121822579872
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0569603180348768,
+              "mech-experiment": 1.0837476443899656,
+              "roc": 1.7096583561306815,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "keyfix-pair-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-keyfix-de082-keyfix-pair-profiled-reverse",
+          "summary_sha256": "f77d6f2c84cdf0fbbaee4046383ebaa203388df1123c53c2330ebae9a2b58755",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.00039193750000000003,
+              "roc": 0.0006617295,
+              "mech-experiment": 0.00042545850000000004,
+              "mech-control": 0.00041425
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5858918223037545,
+              "roc": 1.0,
+              "mech-experiment": 0.6398903745275669,
+              "mech-control": 0.6255533401685064
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7067997229726686,
+              "mech-experiment": 1.0921647139765283,
+              "mech-control": 1.067694267704234
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "keyfix-pair-body-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-keyfix-de082-keyfix-pair-body-profiled-forward",
+          "summary_sha256": "559daf5ac57e482debbeb90f2465ae0a96924101c3c4e0eb0ac6026fa6f43d7b",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004132705,
+              "mech-experiment": 0.0004250625,
+              "roc": 0.000664979,
+              "libdeflate": 0.0003908125
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6210370613256041,
+              "mech-experiment": 0.6375383595857493,
+              "roc": 1.0,
+              "libdeflate": 0.5880242736814011
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0561418790376154,
+              "mech-experiment": 1.0842041529924589,
+              "roc": 1.700610067913306,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "keyfix-pair-body-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-keyfix-de082-keyfix-pair-body-profiled-reverse",
+          "summary_sha256": "8f2662fe085c38222cab1a144a9e370d9142e8399876080bf00ca6d233aa4749",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.000393937,
+              "roc": 0.0006597495,
+              "mech-experiment": 0.00042879150000000004,
+              "mech-control": 0.0004173745
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5909579997948201,
+              "roc": 1.0,
+              "mech-experiment": 0.6511466551510843,
+              "mech-control": 0.6342164010290349
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.6921676334819038,
+              "mech-experiment": 1.1018492944966676,
+              "mech-control": 1.073200466444712
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "keyfix-pair-body-lanes-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-keyfix-de082-keyfix-pair-body-lanes-profiled-forward",
+          "summary_sha256": "09c93254392c9837aa3c084cbcfb04586c6d122bb07ba56c247c2bc3fc13f200",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004149995,
+              "mech-experiment": 0.000426,
+              "roc": 0.0006622500000000001,
+              "libdeflate": 0.0003915415
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6249680022296277,
+              "mech-experiment": 0.6408374709429235,
+              "roc": 1.0,
+              "libdeflate": 0.5876963840820566
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.063419852762557,
+              "mech-experiment": 1.0904226881434194,
+              "roc": 1.7015588781645046,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "keyfix-pair-body-lanes-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-keyfix-de082-keyfix-pair-body-lanes-profiled-reverse",
+          "summary_sha256": "457bfb0ce1a6a2095dcfa19967984d9bfa07c50d48e6bae7e42c2deef96560b5",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.0003928545,
+              "roc": 0.000661979,
+              "mech-experiment": 0.0004259585,
+              "mech-control": 0.0004152085
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.587411103969404,
+              "roc": 1.0,
+              "mech-experiment": 0.6426542642136964,
+              "mech-control": 0.6274123763491898
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7023852515598448,
+              "mech-experiment": 1.0940451412494405,
+              "mech-control": 1.0680975761429756
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "keyfix-single-vector12-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-keyfix-de082-keyfix-single-vector12-profiled-forward",
+          "summary_sha256": "b839e2eee81274a5c78f892081e557e127e50cf1451fcc67d547b0e8804acddc",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.000412,
+              "mech-experiment": 0.000438021,
+              "roc": 0.0006631874999999999,
+              "libdeflate": 0.000390959
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6193155069831554,
+              "mech-experiment": 0.6555329340689309,
+              "roc": 1.0,
+              "libdeflate": 0.5860585895295602
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0567467452022006,
+              "mech-experiment": 1.1185450495574836,
+              "roc": 1.706314040721966,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "keyfix-single-vector12-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-keyfix-de082-keyfix-single-vector12-profiled-reverse",
+          "summary_sha256": "9f1eedf5f37a1ea3d8fd5a0b7a7282b759a08e66908f47fc933692fbce484858",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.00039272950000000004,
+              "roc": 0.0006607295,
+              "mech-experiment": 0.000438854,
+              "mech-control": 0.000413667
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5913865939750363,
+              "roc": 1.0,
+              "mech-experiment": 0.6636927499480312,
+              "mech-control": 0.6264610483011229
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.6909412729132853,
+              "mech-experiment": 1.1222654634204425,
+              "mech-control": 1.0593088424448918
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "keyfix-pair-vector12-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-keyfix-de082-keyfix-pair-vector12-profiled-forward",
+          "summary_sha256": "ccc27f69eddd65977b722d7752952b1a507aa7b646eb79fc47f777a80191c152",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004153335,
+              "mech-experiment": 0.000427958,
+              "roc": 0.0006631670000000001,
+              "libdeflate": 0.00039118750000000004
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6239065481471954,
+              "mech-experiment": 0.643753436993221,
+              "roc": 1.0,
+              "libdeflate": 0.5875904759302831
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0618050729284132,
+              "mech-experiment": 1.0955818097187835,
+              "roc": 1.7018655695819154,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "keyfix-pair-vector12-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-keyfix-de082-keyfix-pair-vector12-profiled-reverse",
+          "summary_sha256": "d9c4b5abc1eab5e3fba18b6311a40d77e639ec4af9215fe4b4d019468e7a5b2e",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.0003937915,
+              "roc": 0.000662354,
+              "mech-experiment": 0.0004268545,
+              "mech-control": 0.000416125
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5896305802481027,
+              "roc": 1.0,
+              "mech-experiment": 0.6454488566116938,
+              "mech-control": 0.6298707309149075
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.6959771651925235,
+              "mech-experiment": 1.0946665221130563,
+              "mech-control": 1.0682463766548076
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "keyfix-pair-vector12-body-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-keyfix-de082-keyfix-pair-vector12-body-profiled-forward",
+          "summary_sha256": "32e6a6baa9c6e5468a3aae9160995582053c1b306d01768ee9e992160b2dd4a1",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004157085,
+              "mech-experiment": 0.0004293125,
+              "roc": 0.0006583954999999999,
+              "libdeflate": 0.0003909795
+            },
+            "paired_x_roc": {
+              "mech-control": 0.628797182422899,
+              "mech-experiment": 0.649124068240524,
+              "roc": 1.0,
+              "libdeflate": 0.5921584214007766
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0618732415144108,
+              "mech-experiment": 1.0962000113162162,
+              "roc": 1.6887372768159852,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "keyfix-pair-vector12-body-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-cost-keyfix-de082-keyfix-pair-vector12-body-profiled-reverse",
+          "summary_sha256": "da3543f8789e26af415952fe9da9bb65943e9f92f84da764b8441bf04b8035f3",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.00039470849999999997,
+              "roc": 0.000662375,
+              "mech-experiment": 0.000429417,
+              "mech-control": 0.000415187
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5888665901583542,
+              "roc": 1.0,
+              "mech-experiment": 0.6466370289810965,
+              "mech-control": 0.6260163369204164
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.698177510344213,
+              "mech-experiment": 1.0981044599714973,
+              "mech-control": 1.0630868644663167
+            },
+            "timed_calls": 384
+          }
+        }
+      ]
+    },
+    "probe-loop-results": {
+      "scope": "Single-case diagnostic. Does not establish 81/62 preservation or a new 63rd win.",
+      "load_after": [
+        2.2294921875,
+        2.15771484375,
+        2.28662109375
+      ],
+      "runs": [
+        {
+          "role": "branch-hot-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-branch-hot-profiled-forward",
+          "summary_sha256": "c9b06a78a0a272e3a23285fe6d830503af3dcbd6c51ccbdf0487987097bf5d81",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.000417583,
+              "mech-experiment": 0.0004534375,
+              "roc": 0.0006662705,
+              "libdeflate": 0.000391917
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6286377089051702,
+              "mech-experiment": 0.6753278229890134,
+              "roc": 1.0,
+              "libdeflate": 0.5853555129724988
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0739417242572462,
+              "mech-experiment": 1.1537054115363592,
+              "roc": 1.7083635121533094,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "branch-hot-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-branch-hot-profiled-reverse",
+          "summary_sha256": "ef84a8dd0b717e1fdc382dbf94b92e78ef7cc32c9ed1256bc0e22f2f18cacef8",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.000391708,
+              "roc": 0.000665854,
+              "mech-experiment": 0.000450458,
+              "mech-control": 0.000417479
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5841712621605597,
+              "roc": 1.0,
+              "mech-experiment": 0.6757821800110286,
+              "mech-control": 0.6270044092207587
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7118267617299354,
+              "mech-experiment": 1.1568220208430755,
+              "mech-control": 1.0733229274267626
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "branch-cold-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-branch-cold-profiled-forward",
+          "summary_sha256": "dbb7922cb201e2090769d3802c7513df4c4af9f7bafd62d63ba50d418b104c40",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.000415646,
+              "mech-experiment": 0.000454417,
+              "roc": 0.000664417,
+              "libdeflate": 0.000391625
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6249144013977616,
+              "mech-experiment": 0.6794807777948635,
+              "roc": 1.0,
+              "libdeflate": 0.5895067394717942
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0600632012412496,
+              "mech-experiment": 1.1526259706609752,
+              "roc": 1.696333448021329,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "branch-cold-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-branch-cold-profiled-reverse",
+          "summary_sha256": "9d318c2e009e661166eadb5bafc8b9ee1fcb8acf0a9aa00aa44753775a15ef35",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.00039275,
+              "roc": 0.000663896,
+              "mech-experiment": 0.000454104,
+              "mech-control": 0.00041725
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5853472599490176,
+              "roc": 1.0,
+              "mech-experiment": 0.6811265271663464,
+              "mech-control": 0.6281464495222849
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7083875989905508,
+              "mech-experiment": 1.1636281123544867,
+              "mech-control": 1.0731176047138158
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "branch-body-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-branch-body-profiled-forward",
+          "summary_sha256": "52412707ddbcea484ad284621eca5a1092f3128c70733f88bbcc8db0a781ddf3",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004136875,
+              "mech-experiment": 0.0004503955,
+              "roc": 0.0006596045,
+              "libdeflate": 0.0003902085
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6251865062284804,
+              "mech-experiment": 0.6780596215311232,
+              "roc": 1.0,
+              "libdeflate": 0.5899436920398369
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0597392847218774,
+              "mech-experiment": 1.149363287853133,
+              "roc": 1.6950770276775387,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "branch-body-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-branch-body-profiled-reverse",
+          "summary_sha256": "c77554dc526a8844f753bed33dc9dd7acdfe961351edc69041a74a6c34b8e528",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.0003917705,
+              "roc": 0.0006609995,
+              "mech-experiment": 0.0004475625,
+              "mech-control": 0.000418021
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5897006309095941,
+              "roc": 1.0,
+              "mech-experiment": 0.6791441546260547,
+              "mech-control": 0.6331445758945482
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.6957756997097533,
+              "mech-experiment": 1.1516761540147866,
+              "mech-control": 1.0736711862050123
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "branch-cold-body-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-branch-cold-body-profiled-forward",
+          "summary_sha256": "851f9c0b67520157590d6fcb58099f503c4f194f46c9769158d3d6156f13b2ce",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004138125,
+              "mech-experiment": 0.000452458,
+              "roc": 0.00066325,
+              "libdeflate": 0.00039016699999999997
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6246091442693604,
+              "mech-experiment": 0.6782554733325246,
+              "roc": 1.0,
+              "libdeflate": 0.5868830932603234
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.064282054539102,
+              "mech-experiment": 1.1556909393395514,
+              "roc": 1.703916864336098,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "branch-cold-body-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-branch-cold-body-profiled-reverse",
+          "summary_sha256": "bf9c254663396a94af35948a001110af789f4cca4b364346cca41690607f3c6d",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.000388771,
+              "roc": 0.0006646874999999999,
+              "mech-experiment": 0.00044985399999999997,
+              "mech-control": 0.0004151455
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5823051125377567,
+              "roc": 1.0,
+              "mech-experiment": 0.6743532672453469,
+              "mech-control": 0.6243983050796165
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.717312760044091,
+              "mech-experiment": 1.1580754706178575,
+              "mech-control": 1.0722871766631286
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "vector4-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-vector4-profiled-forward",
+          "summary_sha256": "8dac7475871358c916ebd7c4abdec176372c5c385878f6b7f6a3d5ea02902bfc",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.000416771,
+              "mech-experiment": 0.0004446875,
+              "roc": 0.0006607704999999999,
+              "libdeflate": 0.0003919585
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6290913085143102,
+              "mech-experiment": 0.6725217080740714,
+              "roc": 1.0,
+              "libdeflate": 0.5890687533356387
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0679420779867226,
+              "mech-experiment": 1.1416692945702436,
+              "roc": 1.697594710867683,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "vector4-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-vector4-profiled-reverse",
+          "summary_sha256": "1c0111ee55b920088d084d1081815e15ff94f7f7da288b72e4197fb980f0d547",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.00039193750000000003,
+              "roc": 0.0006649375,
+              "mech-experiment": 0.000444875,
+              "mech-control": 0.000414271
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5849866201433143,
+              "roc": 1.0,
+              "mech-experiment": 0.6688996468369153,
+              "mech-control": 0.6247131636876435
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.70944080696241,
+              "mech-experiment": 1.1434443520657673,
+              "mech-control": 1.0679101746542454
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "vector8-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-vector8-profiled-forward",
+          "summary_sha256": "a098704a9f2c037b7acdd21380c3f810eefd0794ad5b80223a3b6ac2dadbc0d7",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.000414833,
+              "mech-experiment": 0.000417396,
+              "roc": 0.000661854,
+              "libdeflate": 0.000390937
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6241822264675904,
+              "mech-experiment": 0.6286824114545803,
+              "roc": 1.0,
+              "libdeflate": 0.5876468206590969
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0621723874342004,
+              "mech-experiment": 1.0698303629881947,
+              "roc": 1.701702391375849,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "vector8-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-vector8-profiled-reverse",
+          "summary_sha256": "5e1e4acfbd981a2344192f9023207224fcb99158289004e28620d07bf611e452",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.000391646,
+              "roc": 0.0006625625,
+              "mech-experiment": 0.000420979,
+              "mech-control": 0.000414625
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.584987079876031,
+              "roc": 1.0,
+              "mech-experiment": 0.6337910568696451,
+              "mech-control": 0.6243372020800851
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7094394635380963,
+              "mech-experiment": 1.0834274442504892,
+              "mech-control": 1.0672666517906568
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "vector12-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-vector12-profiled-forward",
+          "summary_sha256": "3b4221c11ad551032029ef9a01148ebb565ca47cde6d65fc52008d783e30b1df",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.000414875,
+              "mech-experiment": 0.000413542,
+              "roc": 0.0006641875000000001,
+              "libdeflate": 0.000391229
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6220861321666965,
+              "mech-experiment": 0.620368670843048,
+              "roc": 1.0,
+              "libdeflate": 0.5861092617515457
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0613825318297079,
+              "mech-experiment": 1.0584522568183288,
+              "roc": 1.7061665209172288,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "vector12-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-vector12-profiled-reverse",
+          "summary_sha256": "ea705214b53234cfd8ed595004a6b41fe5ac17bfad9caaffdb02adb170c461e6",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.000391625,
+              "roc": 0.0006639375,
+              "mech-experiment": 0.000412667,
+              "mech-control": 0.00041191649999999997
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5836914417201357,
+              "roc": 1.0,
+              "mech-experiment": 0.6201051796717479,
+              "mech-control": 0.6206791194562113
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7132339598007555,
+              "mech-experiment": 1.0623852524619877,
+              "mech-control": 1.0633685455916113
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "vector8-body-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-vector8-body-profiled-forward",
+          "summary_sha256": "9a359e38a2cd9d3a3b128cda82e79842d18282b3013562818105293d2dbf34dc",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004141665,
+              "mech-experiment": 0.00041764600000000003,
+              "roc": 0.0006638334999999999,
+              "libdeflate": 0.000389666
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6214474031376103,
+              "mech-experiment": 0.6261368312506201,
+              "roc": 1.0,
+              "libdeflate": 0.5834890489099792
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0650540987847867,
+              "mech-experiment": 1.073090973035932,
+              "roc": 1.71382822328561,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "vector8-body-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-vector8-body-profiled-reverse",
+          "summary_sha256": "3688c6e7679754b7ddf08e29d82fd4a94f1542055bec7f05b742e8dc5b0b91c7",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.00039222949999999997,
+              "roc": 0.0006615,
+              "mech-experiment": 0.0004194165,
+              "mech-control": 0.000416667
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5884836016792854,
+              "roc": 1.0,
+              "mech-experiment": 0.6338204920326109,
+              "mech-control": 0.6283388676280158
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.699282693938148,
+              "mech-experiment": 1.0770401931743776,
+              "mech-control": 1.06772536368898
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "vector12-body-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-vector12-body-profiled-forward",
+          "summary_sha256": "da54dfeb14feb13f227be144e388f52a198eb79e20afdcb1ba177be216138a6c",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.000414333,
+              "mech-experiment": 0.0004161875,
+              "roc": 0.0006636875,
+              "libdeflate": 0.00039143749999999997
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6244783655962177,
+              "mech-experiment": 0.62747613836911,
+              "roc": 1.0,
+              "libdeflate": 0.5898474830959609
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0587115881523947,
+              "mech-experiment": 1.0637938727408747,
+              "roc": 1.6953535085904778,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "vector12-body-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-vector12-body-profiled-reverse",
+          "summary_sha256": "af5e145214d323ae8060dd9924fd222cf983d871da1eae1be04c3ffe60466b7e",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.000392208,
+              "roc": 0.0006605414999999999,
+              "mech-experiment": 0.000414687,
+              "mech-control": 0.00041431249999999997
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5861007817485013,
+              "roc": 1.0,
+              "mech-experiment": 0.624229277071352,
+              "mech-control": 0.624362288538671
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.706191206598842,
+              "mech-experiment": 1.065054503440693,
+              "mech-control": 1.0652814464366094
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "branch-vector8-body-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-branch-vector8-body-profiled-forward",
+          "summary_sha256": "d265f7ae127fb582aceed51ec4482944d4c42f5a45b31230aeab1d7764591248",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004138955,
+              "mech-experiment": 0.00043931250000000003,
+              "roc": 0.0006569375,
+              "libdeflate": 0.000390083
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6290140935797283,
+              "mech-experiment": 0.6649338865147665,
+              "roc": 1.0,
+              "libdeflate": 0.5912511384656196
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0638695685425805,
+              "mech-experiment": 1.1246217440534052,
+              "roc": 1.691328667197397,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "branch-vector8-body-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-branch-vector8-body-profiled-reverse",
+          "summary_sha256": "406b18f906e27e0b11fec63855531a575bceb75993d089dec558efe3772ce519",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.0003935415,
+              "roc": 0.000662896,
+              "mech-experiment": 0.000440896,
+              "mech-control": 0.000417333
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5878708291768587,
+              "roc": 1.0,
+              "mech-experiment": 0.663568280045282,
+              "mech-control": 0.6314765642128745
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.701053956700331,
+              "mech-experiment": 1.1287654483118603,
+              "mech-control": 1.074175708117841
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "branch-vector12-body-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-branch-vector12-body-profiled-forward",
+          "summary_sha256": "fd8d6c00163c3ea903608f909aa139bb703d7810aa95dd861b28238899c3105d",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004162915,
+              "mech-experiment": 0.00044420850000000003,
+              "roc": 0.0006605204999999999,
+              "libdeflate": 0.000391729
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6286892508826641,
+              "mech-experiment": 0.6707234013070125,
+              "roc": 1.0,
+              "libdeflate": 0.5920823728694302
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0618273397261004,
+              "mech-experiment": 1.1328210938901313,
+              "roc": 1.688954182428475,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "branch-vector12-body-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-loop-repair240-branch-vector12-body-profiled-reverse",
+          "summary_sha256": "a62031d40a7725712b525fd6a6067b964414b5f797a2fdb166eb33e5792d66fe",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.000393104,
+              "roc": 0.000662354,
+              "mech-experiment": 0.0004439795,
+              "mech-control": 0.000418021
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5876569984129794,
+              "roc": 1.0,
+              "mech-experiment": 0.667559850754672,
+              "mech-control": 0.630303886262324
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7016729192379059,
+              "mech-experiment": 1.1359685199997234,
+              "mech-control": 1.0725710541430058
+            },
+            "timed_calls": 384
+          }
+        }
+      ]
+    },
+    "probe-matcher-results": {
+      "scope": "Single-case diagnostic. Does not establish 81/62 preservation or a new 63rd win.",
+      "load_after": [
+        3.064453125,
+        2.7294921875,
+        2.6279296875
+      ],
+      "runs": [
+        {
+          "role": "matcher-vector-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-matcher-de082-matcher-vector-profiled-forward",
+          "summary_sha256": "0ef6ab95da0396a38cf453cc6a7033d1d8049fb63d50f18a013b55fbe4826f3e",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.0004186665,
+              "mech-experiment": 0.000418729,
+              "roc": 0.0006687500000000001,
+              "libdeflate": 0.00039193750000000003
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6262707667798807,
+              "mech-experiment": 0.6258404451785301,
+              "roc": 1.0,
+              "libdeflate": 0.5865298255243561
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0677560450058892,
+              "mech-experiment": 1.0670223711454578,
+              "roc": 1.7049431358516214,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "matcher-vector-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-matcher-de082-matcher-vector-profiled-reverse",
+          "summary_sha256": "94de679961e13d58c3d1bc018bef8e89d7842357fcf7c8a825270361dfce3a93",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.0003905835,
+              "roc": 0.000660604,
+              "mech-experiment": 0.000412375,
+              "mech-control": 0.000411333
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.5849242122267081,
+              "roc": 1.0,
+              "mech-experiment": 0.6215041347687232,
+              "mech-control": 0.6220129852453068
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.7096231940770037,
+              "mech-experiment": 1.0625378840153694,
+              "mech-control": 1.0634078265924536
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "matcher-word-profiled",
+          "order": "forward",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-matcher-de082-matcher-word-profiled-forward",
+          "summary_sha256": "1f203c1899f40fb6ee47c7ded28ccaf86efdf6c9422b70fe0a362fa148e2898e",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "mech-control": 0.000415354,
+              "mech-experiment": 0.00041525000000000004,
+              "roc": 0.0006599374999999999,
+              "libdeflate": 0.000391354
+            },
+            "paired_x_roc": {
+              "mech-control": 0.6279748239218403,
+              "mech-experiment": 0.6295236633909734,
+              "roc": 1.0,
+              "libdeflate": 0.5925402624894163
+            },
+            "paired_x_libdeflate": {
+              "mech-control": 1.0598011032761794,
+              "mech-experiment": 1.0624150007059103,
+              "roc": 1.6876490313058883,
+              "libdeflate": 1.0
+            },
+            "timed_calls": 384
+          }
+        },
+        {
+          "role": "matcher-word-profiled",
+          "order": "reverse",
+          "run": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/natural4k-matcher-de082-matcher-word-profiled-reverse",
+          "summary_sha256": "60ddd485e268f725a8df296058e8ad524af0ef658b0ba194989ff6491d66b4cd",
+          "result": {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "reference_raw_bytes": 983,
+            "libdeflate_raw_bytes": 983,
+            "reference_capacity": 4101,
+            "libdeflate_capacity": 4101,
+            "libdeflate_same_bytes": true,
+            "raw_stream_sha256": "42ffa3a258db0b5f7810cfd861eda444a19e3cf3f81beec86aabe28b46247d38",
+            "median_seconds": {
+              "libdeflate": 0.000392875,
+              "roc": 0.000663313,
+              "mech-experiment": 0.0004146665,
+              "mech-control": 0.0004153745
+            },
+            "paired_x_roc": {
+              "libdeflate": 0.58517363529159,
+              "roc": 1.0,
+              "mech-experiment": 0.6239848424567764,
+              "mech-control": 0.6258813273176813
+            },
+            "paired_x_libdeflate": {
+              "libdeflate": 1.0,
+              "roc": 1.708894488217507,
+              "mech-experiment": 1.066324258005655,
+              "mech-control": 1.069565150531443
+            },
+            "timed_calls": 384
+          }
+        }
+      ]
+    }
+  },
+  "scope": "Single-case diagnostics, 96 balanced paired blocks per order. No full runtime qualification or 63rd win is claimed. All measured objects come from original-source compilation; counters use separate untimed clones."
+}

@@ -1,0 +1,21 @@
+{
+  "test_cargo_pid": 30891,
+  "test_command": "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/cargo test --locked --offline --release --target-dir /private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target -p mech-gpu --features canonical-native-program --lib checked_traversals::tests -- --test-threads=1",
+  "started_utc": "2026-11-19T00:10:31Z",
+  "test_build_stopped": true,
+  "test_build_resumed": true,
+  "stopped_members": [
+    {
+      "pid": 30891,
+      "state": "Ts",
+      "command": "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/cargo"
+    },
+    {
+      "pid": 31183,
+      "state": "T",
+      "command": "/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc"
+    }
+  ],
+  "timing_exit_code": 0,
+  "finished_utc": "2026-11-19T00:11:49Z"
+}

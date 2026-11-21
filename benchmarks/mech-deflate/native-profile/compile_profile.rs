@@ -99,6 +99,8 @@ fn run() {
         std::fs::write(out.join("program.mecb"), &bytes).unwrap();
         (bytes.len(), hash(&bytes))
     };
+    #[cfg(feature = "construction-census")]
+    cranelift_codegen::construction_census::reset();
     eprintln!("compile-profile: phase=native mode={}", args[3]);
     let start = Instant::now();
     let (object, metadata) = match args[3].as_str() {
@@ -115,6 +117,24 @@ fn run() {
         _ => panic!("expected compact|managed|frontend"),
     };
     stamp("native", start);
+    #[cfg(feature = "construction-census")]
+    {
+        let c = cranelift_codegen::construction_census::snapshot();
+        let arena = |a: cranelift_codegen::construction_census::ArenaSnapshot| {
+            serde_json::json!({"created":a.created,"resident":a.resident,
+                "peak_resident":a.peak_resident,"maximum_unit":a.maximum_unit})
+        };
+        let report = serde_json::json!({"blocks":arena(c.blocks),
+            "instructions":arena(c.instructions),"values":arena(c.values),
+            "cfg_builds":c.cfg_builds,"dominator_builds":c.dominator_builds,
+            "full_verifications":c.full_verifications,
+            "scope":"all DFG arenas and copies during native compilation; includes retired IDs until compaction; excludes plan/proof tables and allocator capacity; not register liveness or a latency measurement"});
+        std::fs::write(
+            out.join("construction-census.json"),
+            serde_json::to_vec_pretty(&report).unwrap(),
+        )
+        .unwrap();
+    }
     let total_seconds = total.elapsed().as_secs_f64();
     std::fs::write(out.join("program.o"), &object).unwrap();
     std::fs::write(

@@ -1,0 +1,15 @@
+
+running 10 tests
+test word_boundary::tests::conditional_clear_returns_actual_token_and_preserves_old_input ... ok
+test word_boundary::tests::old_target_owner_is_read_before_it_is_replaced ... ok
+test word_boundary::tests::aggregate_copies_read_pre_action_lanes_and_post_copy_clears_win ... ok
+test word_boundary::tests::must_zero_preserves_clears_through_loops_but_intersects_unknown_paths ... ok
+test word_boundary::tests::one_branch_can_preserve_an_owner_while_another_clears_it ... ok
+test word_boundary::tests::a_native_bypass_cannot_inherit_zeroes_from_skipped_source_actions ... ok
+test word_boundary::tests::owner_only_read_does_not_capture_uninitialized_descriptor_fields ... ok
+test word_boundary::tests::root_omits_region_internals_but_keeps_transport_and_settlement_words ... ok
+test word_boundary::tests::unknown_write_loses_zero_and_successful_edge_clear_recovers_it ... ok
+test word_boundary::tests::successful_edge_clear_is_an_output_even_without_source_definition ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

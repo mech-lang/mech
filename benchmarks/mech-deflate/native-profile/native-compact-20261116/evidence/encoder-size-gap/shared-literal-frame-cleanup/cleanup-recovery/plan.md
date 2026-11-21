@@ -1,0 +1,15 @@
+# Recover final-cleanup compilation cost while retaining the 64,444-byte worker
+
+Measured pool: ten balanced same-compiler source-through-link builds cost a paired median 111.002 ms more with the 64,444-byte recipe than the exact 64,652-byte control. Native time grows from 1.186526 s to 1.299900 s. Cleanup alone costs 109.083 ms. The smaller worker has 81/62 point wins in both orders, a Retain v3 decision, two established control slowdowns and one reverse C precision shortfall.
+
+Proposed work removed: test the existing ordered CFG/phi/liveness cleanup without repeating the imported range, predicate, edge, home and address passes, which already ran before the final compact transforms. Obtain the actual final-cleanup report before choosing any narrower schedule. No proof from a prior pass is assumed to authorize a new fold.
+
+Expected effect: recover part of the measured 111 ms while retaining the object, canonical bytecode, full metadata, linked benchmark worker and stripped deployment exactly. No runtime gain is assumed.
+
+Correctness: retain the exact existing transform implementations and their admission conditions, unconditional context verification, final backend verification, checked allocation target and ABI. The existing full schedule and the opt-out control remain available. If any program artifacts change, do not inherit the old runtime counts.
+
+Decision: compare full and ordered schedules on the same newly built compiler. An identical worker admits a matched fresh-process build comparison. A changed worker requires the normal linked/fault checks and new runtime qualification; keep the original qualified 64,444-byte worker available for further recovery.
+
+First screen: the rebuilt full schedule exactly reproduces all three 64,444-byte artifacts. Ordered-only emits 64,556 B and changes metadata. The actual report has two loop-edge rewrites, five identity routes, and one adjacent-address reuse in the full imported schedule. All other imported change counters are zero. Extend the shortened schedule with exactly those existing three search implementations in their original order. Test artifact equality before any runtime inheritance or build-time claim. Single diagnostic emission times are not the build timing decision.
+
+Second screen: the routes schedule reproduces object, bytecode, full metadata and the exact f77ad506... linked worker. Ten balanced builds give a paired 8.012 ms saving vs full (9/10 faster), but still cost 97.167 ms vs the 64,652-byte control. Existing wrappers run a complete ordered sweep after each of the loop and identity rewrites. Try one batched optional schedule: keep initial ordered cleanup, refresh current reachability/phis/dominance between the independently proved rewrites, then run one final ordered cleanup before adjacent-address reuse. Keep unconditional verification and the original full schedule. Require exact artifacts/worker to inherit qualification. This tests removal of repeated broad cleanup, not removal of checked work or reuse of stale graph proofs.

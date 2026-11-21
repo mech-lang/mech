@@ -1,0 +1,104 @@
+{
+  "encoder_sha256": "58cbf64ac481b499e65b74d262a85bd6564343b8ecf02f9375298ffb98ed402d",
+  "root_entry_heap_slot_offset": 592,
+  "redirected_call_count": 259,
+  "allocation_call_count": 26,
+  "stubs": {
+    "_mech_compact_release_owner_from_frame": {
+      "start": 60696,
+      "extent": 12,
+      "sha256": "2bca437c57e3572db407a0871cfaffbd5be1e35aeef2352f23bcd4a8f034a272",
+      "tail_target": "_mech_compact_release_owner",
+      "redirected_calls": 74
+    },
+    "_mech_compact_release_nullable_from_frame": {
+      "start": 60708,
+      "extent": 12,
+      "sha256": "2bca437c57e3572db407a0871cfaffbd5be1e35aeef2352f23bcd4a8f034a272",
+      "tail_target": "_mech_compact_release_nullable",
+      "redirected_calls": 25
+    },
+    "_mech_compact_release_two_from_frame": {
+      "start": 60628,
+      "extent": 16,
+      "sha256": "57f4d398de8218751dfeb6540d126dd2f9d6ec3370f7397e7fb1a7ee3ac73897",
+      "tail_target": "_mech_compact_release_two",
+      "redirected_calls": 30
+    },
+    "_mech_compact_release_three_from_frame": {
+      "start": 60720,
+      "extent": 32,
+      "sha256": "4cae6fbce4be0e43011f5d8e805f9e139287053860a2591b7c6f5605e663bf9a",
+      "tail_target": "_mech_compact_release_three",
+      "redirected_calls": 32
+    },
+    "_mech_compact_release_four_from_frame": {
+      "start": 60644,
+      "extent": 24,
+      "sha256": "96673ace98b6ff901979976ead7dc385283817ff56422158b3fddc9939becb44",
+      "tail_target": "_mech_compact_release_four",
+      "redirected_calls": 31
+    },
+    "_mech_compact_writable_scalar_backing_from_frame": {
+      "start": 60596,
+      "extent": 32,
+      "sha256": "3cc34bd24412503775df534c3b21d6eefe8f1600fad9bb46b6cabbe5cec5d7b6",
+      "tail_target": "_mech_compact_writable_scalar_backing",
+      "redirected_calls": 31
+    },
+    "_mech_compact_append_backing_byte_consume_from_frame": {
+      "start": 60668,
+      "extent": 28,
+      "sha256": "5e954d9dc7294f839dfb38ed8520a232b2418c2d545b35a8e3192b38409f5fb4",
+      "tail_target": "_mech_compact_append_backing_byte_consume",
+      "redirected_calls": 10
+    },
+    "_mech_compact_allocate_backing_stride_1_zeroed_1_from_frame": {
+      "start": 60452,
+      "extent": 24,
+      "sha256": "953399fec8fe1640011acff40de8de83cd4de0fc44ecb80e5633e6f1de917ccb",
+      "tail_target": "_mech_compact_allocate_backing",
+      "redirected_calls": 1
+    },
+    "_mech_compact_allocate_backing_stride_2_zeroed_0_from_frame": {
+      "start": 60476,
+      "extent": 24,
+      "sha256": "2bbaa23b010051e1b2483918069a88e387f49215e02030540f893974f63d6ce0",
+      "tail_target": "_mech_compact_allocate_backing",
+      "redirected_calls": 1
+    },
+    "_mech_compact_allocate_backing_stride_2_zeroed_1_from_frame": {
+      "start": 60500,
+      "extent": 24,
+      "sha256": "02a34dad9ffc93fe9ada1bd8d52c085837c963de7621f5298f702850ad9e8f13",
+      "tail_target": "_mech_compact_allocate_backing",
+      "redirected_calls": 1
+    },
+    "_mech_compact_allocate_backing_stride_4_zeroed_1_from_frame": {
+      "start": 60524,
+      "extent": 24,
+      "sha256": "e01458d7102eab4ffdd39d9e37b4c3365c5e457780e9189f52d58d64dd85f3d7",
+      "tail_target": "_mech_compact_allocate_backing",
+      "redirected_calls": 21
+    },
+    "_mech_compact_allocate_backing_stride_8_zeroed_0_from_frame": {
+      "start": 60548,
+      "extent": 24,
+      "sha256": "3ed78eb79cefea7f81a333497d81242527013d1542eb1b4763ea40a81f3a0848",
+      "tail_target": "_mech_compact_allocate_backing",
+      "redirected_calls": 1
+    },
+    "_mech_compact_allocate_backing_stride_8_zeroed_1_from_frame": {
+      "start": 60572,
+      "extent": 24,
+      "sha256": "4b66e7656548bab3df5f66d047e2b17f35494147165500e933cfb9bc08763c82",
+      "tail_target": "_mech_compact_allocate_backing",
+      "redirected_calls": 1
+    }
+  },
+  "all_original_argument_and_result_registers_preserved": true,
+  "all_stubs_tail_branch_to_original_entry": true,
+  "all_stubs_preserve_sp_and_lr": true,
+  "heap_stored_once_before_any_root_call": true,
+  "control_change": "Final CFG cleanup removes one unreachable nullable-release call."
+}

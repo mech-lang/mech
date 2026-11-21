@@ -1,0 +1,19 @@
+{
+  "reproduces_qualified_fixed_support_worker": true,
+  "worker_sha256": "5afce59aa83c03df81c693d78e9a65f17df1c88c64a7e04c490c58ecc4fffba0",
+  "object_sha256": "c5aab01c69ff4ed325b5149d2e1402a59477e5858f52052939d51f7eff699ef8",
+  "metadata_sha256": "c187c6f40d81d45995eaf3313c3282d41aadbd066413d7f44c0775b1c22225fa",
+  "qualification": "same byte-for-byte worker as preserved-root-registers/full-replay.json.gz; not a new runtime campaign",
+  "runtime_wins": {
+    "roc": [
+      81,
+      81
+    ],
+    "libdeflate": [
+      62,
+      62
+    ]
+  },
+  "control_directory": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/preserved-registers/preserved/bound",
+  "candidate_directory": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sparse-guard-rounds/lazy-index/sparse/bound"
+}

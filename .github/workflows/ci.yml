@@ -69,7 +69,15 @@ jobs:
         id: checkout
         with:
           ref: ${{ github.sha }}
-          fetch-depth: 0
+          # Classification needs commit trees and these source files.
+          # A moving base is fetched separately without unrelated refs/blobs.
+          fetch-depth: 2
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/ci/owners.toml
+            /scripts/ci-impact.py
+            /scripts/ci_owners.py
+            /scripts/ci-fetch-impact-base.sh
       - name: Record selected checkout identity
         env:
           VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
@@ -90,6 +98,7 @@ jobs:
           set -euo pipefail
           if test "$GITHUB_EVENT_NAME" = pull_request
           then
+            bash scripts/ci-fetch-impact-base.sh "$PR_BASE" "$GITHUB_SHA"
             python3 scripts/ci-impact.py --base "$PR_BASE" --head "$GITHUB_SHA" \
               --labels "$PR_LABELS" | tee /tmp/ci-impact.json
           elif test "$GITHUB_EVENT_NAME" = workflow_dispatch
@@ -156,6 +165,7 @@ jobs:
             tests.ci.test_ci_impact \
             tests.ci.test_ci_full_contract \
             tests.ci.test_ci_test_inventory \
+            scripts.tests.test_ci_impact_checkout \
             scripts.tests.test_native_macos_ci \
             tests.browser.harness.test_chrome_session \
             tests.browser.harness.test_completion_server

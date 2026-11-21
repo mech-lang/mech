@@ -1,0 +1,11 @@
+# Keep the register preference appropriate to each checked compilation unit
+
+Measured pool: the checked codebook phase emits 6,008 B, has a 496 B frame, a 15-word input packet and two register outputs. Total encoder text is 64,444 B, 640 B over the selected 63,804 B control. It saves a paired 14.000 ms through final linking and 160 B peak native stack. Both focused orders hold 15/15 Roc and 13/15 libdeflate point wins with no lost peer cases. Full orders are still required. Current local phase register allocation inherits the root's preserved-register preference, unlike the other existing checked helpers.
+
+Work removed: price using the ordinary register preference in this smaller extracted phase while keeping the qualified large root's preserved-register preference. The earlier preference optimization was measured for a 46,788 B root with hundreds of calls and many global live ranges. It is not established as the best choice for the separated 6,008 B phase. Use one scope choice, not a width/layout sweep or benchmark-case branch.
+
+Expected effect: reduce unnecessary nonvolatile assignments or spill/copy work inside the separated phase. The outcome is uncertain; the standard allocator already accounts for calls. A same-compiler option will allow the inherited and root-only scope to be compared without changing the root's policy or IR.
+
+Correctness boundary: only the existing integer register preference changes in the new phase. Keep the same allocatable union, ABI, reserved registers, call clobbers, frame construction, native error paths and checks. Source, canonical bytecode and all old source recipes must remain exact with the old option value. Reuse the existing preserved-register ABI tests; the changed experimental worker still needs 162 output/alias/decompression checks, six checked failures, measured total stack, focused comparison and both complete runtime orders before selection.
+
+Stopping rule: one root-only scope variant after the currently live JIT test build finishes. If it is smaller or improves the compiler/runtime tradeoff, measure complete build time and repair a narrow lost win if one appears. Preserve the inherited-preference experiment and all adverse results. Do not promote a smaller but unqualified worker, and do not mistake a local size gain for the unfinished 1x-libdeflate objective.

@@ -1,0 +1,64 @@
+{
+  "command": [
+    "rustc",
+    "+nightly-2026-03-03",
+    "--edition=2024",
+    "--test",
+    "-C",
+    "opt-level=3",
+    "-C",
+    "codegen-units=16",
+    "--cfg",
+    "feature=\"early-region-emission\"",
+    "-L",
+    "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/controller-source-boundaries/output-scratch/phase-tests/tests.rs",
+    "-o",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/controller-source-boundaries/output-scratch/phase-tests/tests",
+    "--extern",
+    "cranelift_codegen=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_codegen-d7c7fff1066f618e.rlib",
+    "--extern",
+    "cranelift_jit=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_jit-c2b908fd462bd708.rlib",
+    "--extern",
+    "cranelift_module=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_module-66db0da08c7f38f6.rlib",
+    "--extern",
+    "cranelift_frontend=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_frontend-058074d3f4503b68.rlib",
+    "--extern",
+    "serde=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libserde-2456c0391d15d182.rlib",
+    "--extern",
+    "serde_json=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libserde_json-fcf6d49dea77c577.rlib"
+  ],
+  "dependencies": {
+    "cranelift_codegen": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_codegen-d7c7fff1066f618e.rlib",
+      "sha256": "646b5298f203595d5bc2e5c6ce0c6e7268d307de4242c94e0d180bc9ea4d048f"
+    },
+    "cranelift_jit": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_jit-c2b908fd462bd708.rlib",
+      "sha256": "aa6f37c1368de6ccfdde77de105b75e466c709277845588674a90038077b107a"
+    },
+    "cranelift_module": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_module-66db0da08c7f38f6.rlib",
+      "sha256": "bb3691ac9eddfe2fe120222120325ef344894e9f6d846554eb658ec3db00deff"
+    },
+    "cranelift_frontend": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_frontend-058074d3f4503b68.rlib",
+      "sha256": "468adee593e0e314a462530c3baf69d15430a5fd4318d382282f50dd8fca0b7f"
+    },
+    "serde": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libserde-2456c0391d15d182.rlib",
+      "sha256": "892b65b2b6472df14403fa183b37a7ae7c8bab099dd6cb04e8369232ed0cbb4c"
+    },
+    "serde_json": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libserde_json-fcf6d49dea77c577.rlib",
+      "sha256": "481ec6309943e21311064f5c989f1df19ce7dce03cc7afeda552f7227337e794"
+    }
+  },
+  "source_inputs": {
+    "hosts/gpu/src/native_artifact/program/compact/phase_storage.rs": "e53b1187dd220f2cf5bb3177c09fa794af6c1b0e5927a55f13ef792f50035171",
+    "hosts/gpu/src/native_artifact/program/compact/phase_storage_tests.rs": "542201f33ad2f1c8676d18c7b8b61d1c6900a0ebf71b52918fc2a5339c851a91"
+  },
+  "offset_span_sha256": "ed73405d9feca57a28c5960bb43018864cad1aa1e02a546797f0984f5378dda9",
+  "exit_code": 0,
+  "scope": "Exact complete production phase_storage module and original/new JIT tests, with compiler error adapter and exact offset implementation. Does not replace coarse-unit boundary or full-worker qualification."
+}

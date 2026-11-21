@@ -1,0 +1,1 @@
+The first two trials rejected the old scorer profile because it names instruction offsets of the prior body. Remove only that scorer profile for a matched control and the two existing generic lowering options. Keep every other flag. No byte patching or guessed offsets. This diagnoses the mechanism before any further layout work. Qualification remains pending.

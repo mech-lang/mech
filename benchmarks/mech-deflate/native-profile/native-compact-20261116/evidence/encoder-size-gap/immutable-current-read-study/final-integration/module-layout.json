@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python3",
+    "scripts/check-rust-module-layout.py"
+  ],
+  "exit_code": 0,
+  "stdout": "Rust module layout contract passed\n",
+  "stderr": "",
+  "seconds_diagnostic": 0.5022822497412562
+}

@@ -1,0 +1,24 @@
+compile-profile: pid=79028 phase=parse
+{"phase":"parse","seconds":0.001210125,"total_seconds":0.0012375}
+{"phase":"catalog","seconds":0.058015792,"total_seconds":0.059324166}
+compile-profile: phase=frontend
+{"phase":"frontend","seconds":0.0002545,"total_seconds":0.059686083}
+{"phase":"artifact","seconds":0.000038792,"total_seconds":0.059792541}
+{"phase":"encode","seconds":0.000041958,"total_seconds":0.059897875}
+compile-profile: phase=native mode=compact
+compact-stage: canonical lowering
+compact-stage: preparation blocks=5 values=5
+compact-stage: native module
+compact-stage: typed layout
+compact-stage: flow proof
+compact-stage: operation recipes
+compact-stage: source CFG
+compact-stage: source site 0/5
+compact-stage: finalize SSA
+compact-stage: compact values before=20
+compact-values: retained=20
+compact-stage: CFG cleanup
+compact-stage: machine code
+compact-stage: machine code complete
+{"phase":"native","seconds":0.00129825,"total_seconds":0.061815625}
+{"bytecode_bytes":2229,"bytecode_sha256":"08cb17b4e96c38cde47f61e9e5587ff69bf7729848e382e42f3eaaf754da073f","catalog_overlapped_parse":false,"catalog_work_seconds":0.05801475,"mode":"compact","object_bytes":448,"object_sha256":"9e9ca4039f0c5871a24a0ca8cb3fb43c506e12ed77db01eb96c61a47914009ef","phases":[{"phase":"parse","seconds":0.001210125,"total_seconds":0.0012375},{"phase":"catalog","seconds":0.058015792,"total_seconds":0.059324166},{"phase":"frontend","seconds":0.0002545,"total_seconds":0.059686083},{"phase":"artifact","seconds":0.000038792,"total_seconds":0.059792541},{"phase":"encode","seconds":0.000041958,"total_seconds":0.059897875},{"phase":"native","seconds":0.00129825,"total_seconds":0.061815625}],"source_bytes":77,"source_sha256":"467d0293709d14f462aa5356bb70e753fa40e7f028dc72bc62404a94577245a7","total_seconds":0.061864041}

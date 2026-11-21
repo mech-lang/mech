@@ -1,0 +1,10 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "fmt",
+    "--all",
+    "--check"
+  ],
+  "exit_code": 0
+}

@@ -43,6 +43,28 @@ pub(super) fn derive(prepared: &PreparedNativeProgram) -> Result<Vec<Pack>, Nati
     }
     Ok(selected)
 }
+#[cfg(feature = "early-region-emission")]
+pub(super) fn word_effects(
+    pack: &Pack,
+    layout: &Layout,
+    owners: &OwnerFlow,
+    memory: bool,
+) -> super::word_boundary::Effects {
+    let mut effect = super::word_boundary::Effects::default();
+    effect.read(layout.slot(pack.base.get()));
+    let base = layout.slot(pack.source.get());
+    for lane in [0, 1, 3, 4] {
+        effect.read(base + lane);
+    }
+    effect.write(layout.slot(pack.output.get()));
+    if memory {
+        for word in owners.retire_bypass(pack.first, pack.next as usize, &[]) {
+            effect.read(word);
+            effect.clear(word);
+        }
+    }
+    effect
+}
 /// The caller's source window admits every logical byte and the current
 /// view's descriptor proves its physical backing. Width is always 2, 4 or 8.
 pub(super) fn define_matrix_word(module: &mut impl Module) -> Result<FuncId, NativeCompileError> {

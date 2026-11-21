@@ -1,5 +1,6 @@
 //! An edge may bypass only total scalar control. No load, store, call, checked
 //! arithmetic, source debit or exceptional edge is crossed.
+use super::super::route_uses::Uses;
 use super::super::word_ranges::{Facts, Range};
 use super::values::{self, Word};
 use cranelift_codegen::dominator_tree::DominatorTree;
@@ -67,6 +68,7 @@ pub(super) fn find(
     edge: Edge,
     known: &mut BTreeMap<Value, Range>,
     visits: &mut super::visits::Visits,
+    uses: Option<&mut Option<Uses>>,
 ) -> Option<Plan> {
     let source = f.layout.inst_block(edge.inst)?;
     if !dom.is_reachable(source) {
@@ -194,34 +196,43 @@ pub(super) fn find(
         })
         .collect::<BTreeSet<_>>();
     let mut repairs = BTreeMap::new();
+    let index = uses.map(|index| &*index.get_or_insert_with(|| Uses::new(f)));
+    let mut live_outs = index.map(|index| index.live_outs(target));
     for value in definitions {
         let owner = values::owner(f, value)?;
-        let mut pending = vec![target];
-        visits.begin();
-        let mut used = false;
-        while let Some(block) = pending.pop() {
-            // A fresh visit to its definition ends this value's old activation.
-            if block == owner || !visits.insert(block) {
-                continue;
-            }
-            for inst in f.layout.block_insts(block) {
-                let mut uses = f.dfg.inst_args(inst).contains(&value);
-                for call in f.dfg.insts[inst]
-                    .branch_destination(&f.dfg.jump_tables, &f.dfg.exception_tables)
-                {
-                    uses |= call
-                        .args(&f.dfg.value_lists)
-                        .any(|a| a.as_value() == Some(value));
-                    pending.push(call.block(&f.dfg.value_lists));
+        let used = if let Some(query) = &mut live_outs {
+            query.required(dom, value, owner)?
+        } else {
+            let mut pending = vec![target];
+            visits.begin();
+            let mut used = false;
+            while let Some(block) = pending.pop() {
+                // A fresh definition starts a new activation of this value.
+                if block == owner || !visits.insert(block) {
+                    continue;
                 }
-                if uses {
-                    if !dom.block_dominates(target, block) || !dom.block_dominates(owner, target) {
-                        return None;
+                for inst in f.layout.block_insts(block) {
+                    let mut uses = f.dfg.inst_args(inst).contains(&value);
+                    for call in f.dfg.insts[inst]
+                        .branch_destination(&f.dfg.jump_tables, &f.dfg.exception_tables)
+                    {
+                        uses |= call
+                            .args(&f.dfg.value_lists)
+                            .any(|a| a.as_value() == Some(value));
+                        pending.push(call.block(&f.dfg.value_lists));
                     }
-                    used = true;
+                    if uses {
+                        if !dom.block_dominates(target, block)
+                            || !dom.block_dominates(owner, target)
+                        {
+                            return None;
+                        }
+                        used = true;
+                    }
                 }
             }
-        }
+            used
+        };
         if used {
             repairs.insert(
                 value,

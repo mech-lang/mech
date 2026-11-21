@@ -1,0 +1,6 @@
+{
+  "worker_sha256": "834c7a7e423a69c46483a3dae74d9450949fdf142b5ad2dede894e0da3ca8693",
+  "object_sha256": "cf15343f1f01089d427122ce51a91ef6fa7b70ef89c50ca4db20901a8d2cefd9",
+  "metadata_sha256": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+  "scope": "Final minimal compiler output and original fixed support reproduce the exact qualified worker. Both complete 81 Roc/62 C orders and every original peer win remain applicable on that identity."
+}

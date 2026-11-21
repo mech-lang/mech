@@ -1,8 +1,11 @@
 //! Invocation-local argument/result space for synchronous numeric phase calls.
 //! A call consumes current inputs and finishes before its caller loads results;
 //! neither packet address is a source value or retained by the array helpers.
-use crate::native_artifact::{NativeCompileError, compiler::backend};
-use cranelift_codegen::ir::{StackSlot, StackSlotData, StackSlotKind};
+use crate::native_artifact::{
+    NativeCompileError,
+    compiler::{backend, offset},
+};
+use cranelift_codegen::ir::{InstBuilder, StackSlot, StackSlotData, StackSlotKind, Value, types};
 use cranelift_frontend::FunctionBuilder;
 
 #[derive(Clone, Copy)]
@@ -57,7 +60,38 @@ impl Geometry {
             };
         Ok(Slots {
             input: allocate(self.input_words)?,
-            output: allocate(self.output_words)?,
+            output: Some(allocate(self.output_words)?),
+            #[cfg(feature = "early-region-emission")]
+            borrowed_output: None,
+            geometry: self,
+        })
+    }
+
+    /// A synchronous source unit may use its caller's private result extent
+    /// before publishing its own final result. That extent is disjoint from
+    /// the unit's input/owner homes and stays live through every nested call.
+    #[cfg(feature = "early-region-emission")]
+    pub fn reserve_with_output(
+        self,
+        b: &mut FunctionBuilder<'_>,
+        output: Value,
+        words: usize,
+    ) -> Result<Slots, NativeCompileError> {
+        if self.output_words > words {
+            return Err(backend("borrowed phase output exceeds its caller extent"));
+        }
+        let bytes = self
+            .input_words
+            .max(1)
+            .checked_mul(8)
+            .and_then(|n| u32::try_from(n).ok())
+            .ok_or_else(|| backend("native phase input exceeds stack-slot extent"))?;
+        let input =
+            b.create_sized_stack_slot(StackSlotData::new(StackSlotKind::ExplicitSlot, bytes, 3));
+        Ok(Slots {
+            input,
+            output: None,
+            borrowed_output: Some(output),
             geometry: self,
         })
     }
@@ -71,22 +105,78 @@ impl Geometry {
 
 pub(super) struct Slots {
     input: StackSlot,
-    output: StackSlot,
+    output: Option<StackSlot>,
+    #[cfg(feature = "early-region-emission")]
+    borrowed_output: Option<Value>,
     geometry: Geometry,
 }
 
 impl Slots {
+    #[cfg(feature = "early-region-emission")]
     pub fn for_call(
         &self,
         input: usize,
         output: usize,
     ) -> Result<(StackSlot, StackSlot), NativeCompileError> {
+        let input = self.input_for_call(input, output)?;
+        Ok((
+            input,
+            self.output
+                .ok_or_else(|| backend("call requires a local output slot"))?,
+        ))
+    }
+
+    pub fn input_for_call(
+        &self,
+        input: usize,
+        output: usize,
+    ) -> Result<StackSlot, NativeCompileError> {
         if input > self.geometry.input_words || output > self.geometry.output_words {
             return Err(backend(
                 "native phase packet exceeds its prepared shared extent",
             ));
         }
-        Ok((self.input, self.output))
+        Ok(self.input)
+    }
+
+    pub fn output_address(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        input: usize,
+        output: usize,
+    ) -> Result<Value, NativeCompileError> {
+        self.input_for_call(input, output)?;
+        #[cfg(feature = "early-region-emission")]
+        if let Some(output) = self.borrowed_output {
+            return Ok(output);
+        }
+        let output = self
+            .output
+            .ok_or_else(|| backend("phase output storage is absent"))?;
+        Ok(b.ins().stack_addr(types::I64, output, 0))
+    }
+
+    pub fn read_output(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        at: usize,
+    ) -> Result<Value, NativeCompileError> {
+        if at >= self.geometry.output_words {
+            return Err(backend("phase output read exceeds its prepared extent"));
+        }
+        #[cfg(feature = "early-region-emission")]
+        if let Some(output) = self.borrowed_output {
+            return Ok(b.ins().load(
+                types::I64,
+                cranelift_codegen::ir::MemFlags::new(),
+                output,
+                offset(at)?,
+            ));
+        }
+        let output = self
+            .output
+            .ok_or_else(|| backend("phase output storage is absent"))?;
+        Ok(b.ins().stack_load(types::I64, output, offset(at)?))
     }
 }
 
@@ -137,6 +227,29 @@ pub(super) fn input_word_loads(
         }
     }
     Some(loads)
+}
+
+/// Numeric phases receive an initialized, aligned stack input packet from
+/// Slots, separate from their output packet. Its address does not escape the
+/// callee. Preserve this contract in IR so unused packet loads can disappear
+/// and repeated reads need not retain separate register values.
+pub(super) fn qualify_input_packet_loads(
+    function: &mut cranelift_codegen::ir::Function,
+    input_words: usize,
+) -> usize {
+    use cranelift_codegen::ir::InstructionData;
+    let Some(loads) = input_word_loads(function, input_words) else {
+        return 0;
+    };
+    for &(inst, _) in loads.values() {
+        let InstructionData::Load { flags, .. } = &mut function.dfg.insts[inst] else {
+            unreachable!("validated input packet load");
+        };
+        flags.set_notrap();
+        flags.set_readonly();
+        flags.set_aligned();
+    }
+    loads.len()
 }
 
 /// Compact a caller's initialized, nonescaping input slot to the offsets

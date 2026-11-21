@@ -44,6 +44,7 @@ regalloc2 = { path = "../regalloc2" }
 features = ["all-arch"]
 
 [features]
+construction-census = []
 experimental-cmp-reuse = []
 all-arch = [
     "all-native-arch",

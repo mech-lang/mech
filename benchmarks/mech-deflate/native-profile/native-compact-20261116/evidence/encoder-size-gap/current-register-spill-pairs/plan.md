@@ -1,0 +1,9 @@
+# Current allocator spill pairs — before experiment
+
+1. Full objective remains1x libdeflate code/build time and more runtime wins while retaining81Roc/62C and every existing peer win. Use the selected63804B worker as the reference.
+2. The history audit finds old pairing held every full peer win but v1 rejected small slowdowns. Current all-loss profiles put72.5% of1MiB encoder samples in collector475; current counters show25.95M stack-load instructions. The live pairing flag is absent from selected flags.
+3. Retest the existing generic allocator spill-pair feature with current scoped packets, spill forwarding, direct homes and current source. Emit matched unprofiled control, paired and checker-enabled bodies from one immutable normal compiler. Existing machine-offset profiles cannot be reused blindly; rebase only after exact ordered-control-graph matching. No raw-byte implementation, no LLVM dependency, no codec source changes.
+4. Require equal normal/checker objects and metadata, source bytecode unchanged, whole encoder accounting, actual linked outputs/errors/recoveries, stack<=5280, focused then complete both-order qualification and every required peer win. Measure complete matched source-through-link time before selection.
+5. Keep all adverse data. If a lost win is due to function placement, attempt bounded source-emitted alignment recovery using actual bodies. Small slowdowns without peer losses are allowed. Do not claim old61C receipts satisfy current62C.
+
+Profile preparation correction: the scorer shrinks by one instruction without moving its 16-byte literal pool, adding one unreachable zero padding word. Preserve the failed strict graph diagnostic. Rebase only after proving exact ordered non-padding control graphs, no branch into the zero tail and no preceding fallthrough; include all actual padding words in the new source-defined layout.

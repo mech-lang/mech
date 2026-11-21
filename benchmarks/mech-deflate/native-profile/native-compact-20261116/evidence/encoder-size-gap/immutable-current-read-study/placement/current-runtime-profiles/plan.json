@@ -1,0 +1,34 @@
+{
+  "source_commit": "5ccf097dc02ceb3abb17bccb85cd11a3ae144503",
+  "cases": [
+    "prefix-random-1048576",
+    "prefix-natural-4096"
+  ],
+  "actors": {
+    "mech": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/placement/immutable-profiled/bound/mech-worker",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/placement/immutable-profiled/bound/metadata.json",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+      ],
+      "sha256": "834c7a7e423a69c46483a3dae74d9450949fdf142b5ad2dede894e0da3ca8693",
+      "warmups": 32
+    },
+    "libdeflate": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/libdeflate-worker",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+      ],
+      "sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "warmups": 80
+    }
+  },
+  "sample_seconds": 3,
+  "interval_ms": 1,
+  "load_before": [
+    2.4208984375,
+    2.34814453125,
+    2.31787109375
+  ],
+  "scope": "Fresh untimed diagnostic captures on the qualified 63532B worker and pinned C. Refresh hot-owner attribution after certified immutable-only read reuse. Existing full-order ratios remain the latency evidence; no new optimization or runtime campaign is claimed."
+}

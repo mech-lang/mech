@@ -20,6 +20,10 @@ mod cold_tail_tests;
 mod collections;
 mod compile_jobs;
 mod constants;
+#[cfg(feature = "early-region-planning")]
+mod early_regions;
+#[cfg(feature = "early-region-emission")]
+mod early_units;
 mod emit;
 mod flow;
 mod histogram;
@@ -30,14 +34,21 @@ mod layout;
 mod le_scalar_stores;
 mod packed;
 mod parallel;
+#[cfg(feature = "early-region-planning")]
+mod partition_plan;
 mod phase_bodies;
 mod phase_layout;
 mod phase_storage;
 mod phases;
+#[cfg(feature = "early-region-emission")]
+mod source_blocks;
 mod vector_guard_facts;
+#[cfg(feature = "early-region-emission")]
+mod word_boundary;
 pub(in crate::native_artifact) use phases::{
     NoGrowth, PRIVATE_HANDOFF, PrivatePhase, VectorContract,
 };
+mod allocation_stubs;
 mod map_index;
 mod maps;
 mod object;

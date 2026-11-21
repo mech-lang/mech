@@ -1,0 +1,20 @@
+
+running 15 tests
+test native_artifact::program::codegen::ordered_reduction::tests::horizontal_minima_keep_unsigned_values_ties_and_vector_identity ... ok
+test native_artifact::program::codegen::ordered_reduction::tests::ordered_reduction_keeps_reverse_length_bound_to_its_current_array ... ok
+test native_artifact::program::codegen::ordered_reduction::tests::ordered_reduction_refuses_overwritten_captures_and_recursive_expressions ... ok
+test native_artifact::program::codegen::ordered_reduction::tests::ordered_reduction_requires_every_exhausted_payload_on_every_path ... ok
+test native_artifact::program::codegen::ordered_reduction::tests::ordered_reduction_requires_every_terminal_dependency_to_survive_elision ... ok
+test native_artifact::program::codegen::ordered_reduction::tests::reverse_cursor_preindexed_load_respects_current_words ... ok
+test native_artifact::program::codegen::ordered_reduction::tests::reverse_packed_low_words_keeps_lane_order_and_unaligned_storage ... ok
+test native_artifact::program::runtime::composition_tests::ordered_reduction::numeric_ordered_reduction_preserves_prefix_remainders_wrapping_and_global_ties ... ok
+test native_artifact::program::runtime::composition_tests::ordered_reduction::numeric_ordered_reduction_refuses_changed_ties_predicates_and_carried_dependencies ... ok
+test native_artifact::program::runtime::composition_tests::ordered_reduction::numeric_ordered_reduction_selects_current_total_source_recipe ... ok
+test native_artifact::program::runtime::composition_tests::ordered_reduction_exhaustion::numeric_ordered_reduction_exhausted_payloads_follow_source_edges ... ok
+test native_artifact::program::runtime::composition_tests::ordered_reduction_exhaustion::numeric_ordered_reduction_exhaustion_denials_preserve_publication_and_retry ... ok
+test native_artifact::program::runtime::composition_tests::ordered_reduction_return::numeric_ordered_reduction_preserves_current_terminal_result_fields ... ok
+test native_artifact::program::runtime::composition_tests::ordered_reduction_terminal::numeric_ordered_reduction_exhausted_payload_keeps_finite_publication_and_retry ... ok
+test native_artifact::program::runtime::composition_tests::ordered_reduction_terminal::numeric_ordered_reduction_preserves_exhausted_payload_updates ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 1326 filtered out; finished in 27.47s
+

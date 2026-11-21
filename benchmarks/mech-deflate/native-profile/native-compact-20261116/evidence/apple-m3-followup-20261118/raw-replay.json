@@ -1,0 +1,111 @@
+{
+  "status": "passed",
+  "experiments": [
+    {
+      "candidate": "ccmp-control-profiled",
+      "scope": "focus",
+      "status": "passed",
+      "timed_calls": 1479168,
+      "plan_sha256": "c7a570644d697016a7f21be182896852ec8d138fb00b2d9fed6b3afc08cdc39f"
+    },
+    {
+      "candidate": "ccmp-spill-demand-reads-profiled",
+      "scope": "focus",
+      "status": "passed",
+      "timed_calls": 1479168,
+      "plan_sha256": "046902423487422b9d26bd1ab4b4295574d6f7af3aac6b2c8139bb4ec18b9b6c"
+    },
+    {
+      "candidate": "ccmp-spill-no-prefetch-profiled",
+      "scope": "focus",
+      "status": "passed",
+      "timed_calls": 1479168,
+      "plan_sha256": "b9340cafe2883234a602a755de02b76b012dd9458688eaab15cd268ec9e01548"
+    },
+    {
+      "candidate": "ccmp-spill-no-prefetch-profiled",
+      "scope": "full",
+      "status": "passed",
+      "timed_calls": 1965312,
+      "plan_sha256": "510360cb265192e268c2ccfb243a85f86e370f39cfc042ca7f44aecaa647bf71"
+    },
+    {
+      "candidate": "halfword-mapping",
+      "scope": "focus",
+      "status": "passed",
+      "timed_calls": 1479168,
+      "plan_sha256": "3f44528e009ebac46cd303152c181e305306704a117c34fd9db8177a8b5a90a9"
+    },
+    {
+      "candidate": "latch-hoist-neon",
+      "scope": "focus",
+      "status": "passed",
+      "timed_calls": 1479168,
+      "plan_sha256": "ad27ae66cf95819e5c2e73bb2514143edd2d0f77fbaec6be31ef2d502b3b6b33"
+    },
+    {
+      "candidate": "latch-only",
+      "scope": "focus",
+      "status": "passed",
+      "timed_calls": 1479168,
+      "plan_sha256": "007cb8e23ef486498ff972cadcc2bebb735615946ec37df92c2598a1581b6cb9"
+    },
+    {
+      "candidate": "neon-reductions",
+      "scope": "focus",
+      "status": "passed",
+      "timed_calls": 1488384,
+      "plan_sha256": "9ed8afc0d7d74154fb93d5ba9db180922c36bdff2408486419f2966137facff7"
+    },
+    {
+      "candidate": "phase-spill-active-profiled",
+      "scope": "focus",
+      "status": "passed",
+      "timed_calls": 1479168,
+      "plan_sha256": "e74fd5bca8c3e5fd51ad6227fab3bcdf9d9c28aed0de94a5bff2f76ba0f4815b"
+    },
+    {
+      "candidate": "phase-words-profiled",
+      "scope": "focus",
+      "status": "passed",
+      "timed_calls": 1479168,
+      "plan_sha256": "b7d13f6479fe4eec9482b52c6c52b50255e55918e8ca41aa30e02e6e2faf9cd2"
+    },
+    {
+      "candidate": "scaled-address-profiled",
+      "scope": "focus",
+      "status": "passed",
+      "timed_calls": 1479168,
+      "plan_sha256": "c1e53835ab331955477e8d32f2e1cc50cfbe2f2193f2a56adece7a9d1ca20d72"
+    },
+    {
+      "candidate": "ubfiz-spill-no-prefetch-profiled",
+      "scope": "focus",
+      "status": "passed",
+      "timed_calls": 1479168,
+      "plan_sha256": "94e7a0a3458985086560e5583adc23a310f5dd0da1725511e79f270e99a2c805"
+    },
+    {
+      "candidate": "vector-12",
+      "scope": "focus",
+      "status": "passed",
+      "timed_calls": 1479168,
+      "plan_sha256": "87e96e757fb68bd2f7761c56f3a0d2934cd774a49032ed80e3c08b12506337cc"
+    },
+    {
+      "candidate": "vector-4",
+      "scope": "focus",
+      "status": "passed",
+      "timed_calls": 1479168,
+      "plan_sha256": "f10d333982b6ed63ffb44a7fa2424a493e4cfb7a87ee8a38c2b46e6f930c2e5e"
+    },
+    {
+      "candidate": "vector-8",
+      "scope": "focus",
+      "status": "passed",
+      "timed_calls": 1479168,
+      "plan_sha256": "f609f13fa18d87370c62d31fc88fd1eeeb9055cda7e33a05660355561d361a52"
+    }
+  ],
+  "total_timed_calls_verified": 22682880
+}

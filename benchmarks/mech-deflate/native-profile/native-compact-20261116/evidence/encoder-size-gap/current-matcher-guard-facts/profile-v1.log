@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-runtime-target/profile-matcher-guards.py", line 17, in <module>
+    counts={ids[int(block['address'],16)-shape['atom']['start']]:block['visits'] for block in row['blocks']};peak=max(counts.values());assert peak>0;trace=study.scheduler.edge_counts(graph,counts)
+                                                                                                                                                           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-runtime/schedule.py", line 40, in edge_counts
+    assert len(resolved) == sum(map(len, graph))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

@@ -1,0 +1,27 @@
+{
+  "source_base": "fa4c5a497b81cd00a72358d08f187b13080b1876",
+  "source_sha256": "8025c8dc98ab11ba3cc7e7eb3e687de9fe9ae2a5a1c72640f73a6d245127f4a0",
+  "compiler_command": "rustc +nightly-2026-03-03 --edition=2024 --test -C opt-level=3 benchmarks/mech-deflate/native-profile/guard_state_tests.rs -o <qualification>/guard-sparse-tests",
+  "test_command": "<qualification>/guard-sparse-tests --test-threads=1",
+  "passed": 29,
+  "failed": 0,
+  "execution_seconds": 1.23,
+  "differential_modes": [
+    "full scan",
+    "sparse rounds"
+  ],
+  "global_environment_mutations": false,
+  "tests_include": [
+    "original map reference through updates and joins, 64 seeds x 1000 steps x both modes",
+    "exhaustive small-truth/definition subsets in both modes",
+    "backward chains, conflicting paths and unused sparse-ID equations"
+  ],
+  "all_sparse_process": {
+    "command": "MECH_GUARD_SPARSE_ROUNDS=1 <qualification>/guard-sparse-tests --test-threads=1",
+    "passed": 29,
+    "failed": 0,
+    "seconds": 1.22,
+    "log": "all-sparse-tests.log"
+  },
+  "module_layout": "passed"
+}

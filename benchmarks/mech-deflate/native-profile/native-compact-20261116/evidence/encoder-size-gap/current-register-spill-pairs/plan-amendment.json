@@ -1,0 +1,7 @@
+{
+  "initial_plan_file": "plan-initial.md",
+  "initial_plan_sha256": "dc3b48696f05fbd3a041888760975a4ed1775a12e6ec2dbdbce3e2825ed3b773",
+  "amended_plan_file": "plan.md",
+  "amended_plan_sha256": "3bab14e84f8a57db35a092fc7e393d643b69fdfafb6ab020f449a0ffbfbc0165",
+  "reason": "Preserve the failed strict graph match and prove unreachable zero literal padding separately before source-profile rebasing."
+}

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "clean",
+    "--locked",
+    "--offline",
+    "--release",
+    "-p",
+    "mech-math",
+    "--manifest-path",
+    "benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target"
+  ],
+  "exit_code": 0,
+  "scope": "Remove only stale mech-math release artifacts in the current compiler target. Previous math artifact referenced a different mech_core crate identity."
+}

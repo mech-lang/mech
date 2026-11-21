@@ -1,0 +1,9 @@
+{
+  "load": [
+    2.1708984375,
+    2.595703125,
+    2.64404296875
+  ],
+  "power": "Now drawing from 'AC Power'\n",
+  "thermal": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+}

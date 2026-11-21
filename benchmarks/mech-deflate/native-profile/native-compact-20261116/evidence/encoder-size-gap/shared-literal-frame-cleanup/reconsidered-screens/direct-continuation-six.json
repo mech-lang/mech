@@ -1,0 +1,16 @@
+{
+  "status": 0,
+  "flags": {
+    "MECH_COMPACT_DIRECT_CONTINUATION_WORDS": "6"
+  },
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/compile_profile",
+    "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/revisit-size-options/direct-continuation-six/frontend",
+    "compact"
+  ],
+  "encoder_text_bytes": 64668,
+  "encoder_sha256": "d3eeddcd633a03fac9c4b4fd828873c1d5cca9cae376fa54561547412333ce6a",
+  "metadata_sha256": "7de8c1c0585ab518840dc001b97c726fa6d38e90b3ab699bba92433f18e4e3ce",
+  "bytes_saved": -16
+}

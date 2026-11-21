@@ -1,0 +1,290 @@
+[
+  {
+    "candidate": "ccmp-control-profiled",
+    "scope": "focus",
+    "results": [
+      {
+        "order": "forward",
+        "cases": 15,
+        "timed_calls": 739584,
+        "wins": {
+          "mech-control": {
+            "roc": 12,
+            "libdeflate": 10
+          },
+          "mech-experiment": {
+            "roc": 13,
+            "libdeflate": 10
+          }
+        }
+      },
+      {
+        "order": "reverse",
+        "cases": 15,
+        "timed_calls": 739584,
+        "wins": {
+          "mech-control": {
+            "roc": 12,
+            "libdeflate": 9
+          },
+          "mech-experiment": {
+            "roc": 13,
+            "libdeflate": 9
+          }
+        }
+      }
+    ]
+  },
+  {
+    "candidate": "ccmp-spill-demand-reads-profiled",
+    "scope": "focus",
+    "results": [
+      {
+        "order": "forward",
+        "cases": 15,
+        "timed_calls": 739584,
+        "wins": {
+          "mech-control": {
+            "roc": 12,
+            "libdeflate": 10
+          },
+          "mech-experiment": {
+            "roc": 12,
+            "libdeflate": 13
+          }
+        }
+      },
+      {
+        "order": "reverse",
+        "cases": 15,
+        "timed_calls": 739584,
+        "wins": {
+          "mech-control": {
+            "roc": 12,
+            "libdeflate": 10
+          },
+          "mech-experiment": {
+            "roc": 12,
+            "libdeflate": 13
+          }
+        }
+      }
+    ]
+  },
+  {
+    "candidate": "ccmp-spill-no-prefetch-profiled",
+    "scope": "focus",
+    "results": [
+      {
+        "order": "forward",
+        "cases": 15,
+        "timed_calls": 739584,
+        "wins": {
+          "mech-control": {
+            "roc": 13,
+            "libdeflate": 12
+          },
+          "mech-experiment": {
+            "roc": 13,
+            "libdeflate": 13
+          }
+        }
+      },
+      {
+        "order": "reverse",
+        "cases": 15,
+        "timed_calls": 739584,
+        "wins": {
+          "mech-control": {
+            "roc": 12,
+            "libdeflate": 10
+          },
+          "mech-experiment": {
+            "roc": 12,
+            "libdeflate": 13
+          }
+        }
+      }
+    ]
+  },
+  {
+    "candidate": "ccmp-spill-no-prefetch-profiled",
+    "scope": "full",
+    "results": [
+      {
+        "order": "forward",
+        "cases": 81,
+        "timed_calls": 982656,
+        "wins": {
+          "mech-control": {
+            "roc": 69,
+            "libdeflate": 59
+          },
+          "mech-experiment": {
+            "roc": 68,
+            "libdeflate": 60
+          }
+        }
+      },
+      {
+        "order": "reverse",
+        "cases": 81,
+        "timed_calls": 982656,
+        "wins": {
+          "mech-control": {
+            "roc": 68,
+            "libdeflate": 58
+          },
+          "mech-experiment": {
+            "roc": 68,
+            "libdeflate": 61
+          }
+        }
+      }
+    ]
+  },
+  {
+    "candidate": "deferred-item",
+    "scope": "focus",
+    "results": [
+      {
+        "order": "forward",
+        "cases": 15,
+        "timed_calls": 739584,
+        "wins": {
+          "mech-control": {
+            "roc": 12,
+            "libdeflate": 12
+          },
+          "mech-experiment": {
+            "roc": 12,
+            "libdeflate": 12
+          }
+        }
+      },
+      {
+        "order": "reverse",
+        "cases": 15,
+        "timed_calls": 739584,
+        "wins": {
+          "mech-control": {
+            "roc": 12,
+            "libdeflate": 10
+          },
+          "mech-experiment": {
+            "roc": 12,
+            "libdeflate": 12
+          }
+        }
+      }
+    ]
+  },
+  {
+    "candidate": "phase-spill-active-profiled",
+    "scope": "focus",
+    "results": [
+      {
+        "order": "forward",
+        "cases": 15,
+        "timed_calls": 739584,
+        "wins": {
+          "mech-control": {
+            "roc": 12,
+            "libdeflate": 10
+          },
+          "mech-experiment": {
+            "roc": 12,
+            "libdeflate": 10
+          }
+        }
+      },
+      {
+        "order": "reverse",
+        "cases": 15,
+        "timed_calls": 739584,
+        "wins": {
+          "mech-control": {
+            "roc": 12,
+            "libdeflate": 10
+          },
+          "mech-experiment": {
+            "roc": 12,
+            "libdeflate": 13
+          }
+        }
+      }
+    ]
+  },
+  {
+    "candidate": "scaled-address-profiled",
+    "scope": "focus",
+    "results": [
+      {
+        "order": "forward",
+        "cases": 15,
+        "timed_calls": 739584,
+        "wins": {
+          "mech-control": {
+            "roc": 12,
+            "libdeflate": 9
+          },
+          "mech-experiment": {
+            "roc": 12,
+            "libdeflate": 10
+          }
+        }
+      },
+      {
+        "order": "reverse",
+        "cases": 15,
+        "timed_calls": 739584,
+        "wins": {
+          "mech-control": {
+            "roc": 12,
+            "libdeflate": 12
+          },
+          "mech-experiment": {
+            "roc": 12,
+            "libdeflate": 10
+          }
+        }
+      }
+    ]
+  },
+  {
+    "candidate": "ubfiz-spill-no-prefetch-profiled",
+    "scope": "focus",
+    "results": [
+      {
+        "order": "forward",
+        "cases": 15,
+        "timed_calls": 739584,
+        "wins": {
+          "mech-control": {
+            "roc": 12,
+            "libdeflate": 9
+          },
+          "mech-experiment": {
+            "roc": 12,
+            "libdeflate": 13
+          }
+        }
+      },
+      {
+        "order": "reverse",
+        "cases": 15,
+        "timed_calls": 739584,
+        "wins": {
+          "mech-control": {
+            "roc": 12,
+            "libdeflate": 10
+          },
+          "mech-experiment": {
+            "roc": 12,
+            "libdeflate": 9
+          }
+        }
+      }
+    ]
+  }
+]

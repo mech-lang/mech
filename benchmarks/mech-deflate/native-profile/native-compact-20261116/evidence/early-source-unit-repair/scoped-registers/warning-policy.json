@@ -1,0 +1,8 @@
+{
+  "command": [
+    "python3",
+    "scripts/check-warning-policy.py"
+  ],
+  "exit_code": 0,
+  "output": "warning policy contract passed\n"
+}

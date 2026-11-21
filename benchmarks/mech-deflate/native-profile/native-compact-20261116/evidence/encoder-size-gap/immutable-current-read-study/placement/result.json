@@ -1,0 +1,124 @@
+{
+  "source_integration": {
+    "source_integration_commit": "5ccf097dc02ceb3abb17bccb85cd11a3ae144503",
+    "compiler_sha256": "7fc8647695c26065516d04ee6ae01ef22510bb88fb88bb5b1d9bb76481e22c22",
+    "source_inputs": {
+      "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads.rs": "e883f4d810ce0928e15f991057805c81e8a376a74f8642dfa1230f3dfc9d6950",
+      "hosts/gpu/src/native_artifact/program/compact/private_phase.rs": "243c0dd2325723be45c5efa89a4c6abc3709e89d263d3c3bd3b405a139461dea",
+      "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "f80c6241e657f6933a9d2c154a222deb81e55f8497bc0101a7c34d4de6c91f71",
+      "hosts/gpu/src/native_artifact/program/compact/private_phase_tests.rs": "3540bb2462bc462cb84cff074b817258c5f2bd23bdf863635aea0d734f679167",
+      "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads/immutable.rs": "786257e5a7dbb699f3995f40d3f0a12df0a8d2e3b4a0be086aa3cce6b6d0700d"
+    },
+    "same_source_content": true,
+    "scope": "This committed compiler source exactly matches every modified Rust input of the immutable source-built compiler. Selected recipe remains unchanged until full runtime and complete builds qualify."
+  },
+  "encoder_bytes": 63532,
+  "encoder_x_roc": 1.101150859678314,
+  "encoder_x_libdeflate": 1.7133764832793958,
+  "bytes_saved_vs_selected": 160,
+  "compiler_sha256": "7fc8647695c26065516d04ee6ae01ef22510bb88fb88bb5b1d9bb76481e22c22",
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "artifacts": {
+    "program.o": "cf15343f1f01089d427122ce51a91ef6fa7b70ef89c50ca4db20901a8d2cefd9",
+    "metadata.json": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+  },
+  "worker_sha256": "834c7a7e423a69c46483a3dae74d9450949fdf142b5ad2dede894e0da3ca8693",
+  "runtime_decision": "Retain",
+  "peak_stack_bytes": 4848,
+  "source_failure_cases": 6,
+  "source_exact_recoveries": 12,
+  "wins": [
+    {
+      "order": "forward",
+      "roc": {
+        "point_estimate_wins": 81,
+        "precision_supported_wins": 81
+      },
+      "libdeflate": {
+        "point_estimate_wins": 62,
+        "precision_supported_wins": 62
+      }
+    },
+    {
+      "order": "reverse",
+      "roc": {
+        "point_estimate_wins": 81,
+        "precision_supported_wins": 81
+      },
+      "libdeflate": {
+        "point_estimate_wins": 62,
+        "precision_supported_wins": 62
+      }
+    }
+  ],
+  "relative": {
+    "slowdowns": [
+      "16384-distribution-change: established slowdown above the 0.5% resolution",
+      "random-32769: established slowdown above the 0.5% resolution",
+      "prefix-natural-65535: established slowdown above the 0.5% resolution",
+      "prefix-natural-65536: established slowdown above the 0.5% resolution",
+      "prefix-natural-65537: established slowdown above the 0.5% resolution",
+      "prefix-natural-131072: established slowdown above the 0.5% resolution",
+      "prefix-natural-262144: established slowdown above the 0.5% resolution",
+      "prefix-random-32767: established slowdown above the 0.5% resolution",
+      "prefix-random-32768: established slowdown above the 0.5% resolution",
+      "prefix-random-32769: established slowdown above the 0.5% resolution",
+      "prefix-random-33027: established slowdown above the 0.5% resolution",
+      "prefix-random-65535: established slowdown above the 0.5% resolution",
+      "prefix-random-262144: established slowdown above the 0.5% resolution"
+    ],
+    "uncertain": [
+      "empty: regression bound or duplicate-control repeatability unresolved",
+      "one-stored: regression bound or duplicate-control repeatability unresolved",
+      "seven-stored-prefix: regression bound or duplicate-control repeatability unresolved",
+      "32-high-entropy-stored: regression bound or duplicate-control repeatability unresolved",
+      "random-1024: regression bound or duplicate-control repeatability unresolved",
+      "heldout-random-65537: regression bound or duplicate-control repeatability unresolved",
+      "prefix-natural-1048576: regression bound or duplicate-control repeatability unresolved",
+      "prefix-random-1024: regression bound or duplicate-control repeatability unresolved",
+      "prefix-random-65536: combined and individual run bounds conflict: immutable-placement-read-immutable-profiled-full-reverse",
+      "prefix-random-65537: regression bound or duplicate-control repeatability unresolved",
+      "prefix-random-131072: regression bound or duplicate-control repeatability unresolved",
+      "prefix-random-1048576: combined and individual run bounds conflict: immutable-placement-read-immutable-profiled-full-reverse",
+      "prefix-periodic-1024: regression bound or duplicate-control repeatability unresolved",
+      "prefix-periodic-4096: regression bound or duplicate-control repeatability unresolved",
+      "prefix-periodic-8192: regression bound or duplicate-control repeatability unresolved"
+    ]
+  },
+  "remaining_c_losses": 19,
+  "next_c_target": {
+    "case": "prefix-natural-4096",
+    "worst_ratio": 1.0689458677488346,
+    "needed_time_reduction": 0.06449893285431973,
+    "orders": [
+      {
+        "case": "prefix-natural-4096",
+        "order": "forward",
+        "candidate_control": 0.9972768928304013,
+        "candidate_roc": 0.6264736312090096,
+        "candidate_c": 1.0637572685977872,
+        "median_seconds": {
+          "mech-control": 0.00041758349999999997,
+          "mech-experiment": 0.0004156665,
+          "roc": 0.0006629374999999999,
+          "libdeflate": 0.000390604
+        }
+      },
+      {
+        "case": "prefix-natural-4096",
+        "order": "reverse",
+        "candidate_control": 0.9991667419906325,
+        "candidate_roc": 0.6297786012742422,
+        "candidate_c": 1.0689458677488346,
+        "median_seconds": {
+          "libdeflate": 0.000392,
+          "roc": 0.0006615,
+          "mech-experiment": 0.0004158335,
+          "mech-control": 0.000415729
+        }
+      }
+    ]
+  },
+  "scope": "Changed actual worker, both full81-case orders,96 paired blocks/case, all individual peer wins and81/62 point+precision floors. Complete builds are recorded separately; code/bytecode are original-source generated."
+}

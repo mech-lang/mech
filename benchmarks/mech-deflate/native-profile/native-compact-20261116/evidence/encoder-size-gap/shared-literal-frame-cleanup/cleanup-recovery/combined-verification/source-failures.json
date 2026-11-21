@@ -1,0 +1,62 @@
+[
+  {
+    "case": "empty",
+    "origin": 23,
+    "status": 103426
+  },
+  {
+    "case": "empty",
+    "origin": 23,
+    "status": 103426
+  },
+  {
+    "case": "one-stored",
+    "origin": 69,
+    "status": 103426
+  },
+  {
+    "case": "one-stored",
+    "origin": 69,
+    "status": 103426
+  },
+  {
+    "case": "seven-stored-prefix",
+    "origin": 69,
+    "status": 103426
+  },
+  {
+    "case": "seven-stored-prefix",
+    "origin": 69,
+    "status": 103426
+  },
+  {
+    "case": "heldout-mixed-131073",
+    "origin": 7164,
+    "status": 103426
+  },
+  {
+    "case": "heldout-mixed-131073",
+    "origin": 7164,
+    "status": 103426
+  },
+  {
+    "case": "prefix-periodic-4096",
+    "origin": 7164,
+    "status": 103426
+  },
+  {
+    "case": "prefix-periodic-4096",
+    "origin": 7164,
+    "status": 103426
+  },
+  {
+    "case": "prefix-repeated-16384",
+    "origin": 7164,
+    "status": 103426
+  },
+  {
+    "case": "prefix-repeated-16384",
+    "origin": 7164,
+    "status": 103426
+  }
+]

@@ -1,0 +1,194 @@
+diff --git a/hosts/gpu/src/native_artifact/program/compact/phase_function.rs b/hosts/gpu/src/native_artifact/program/compact/phase_function.rs
+index 58e5635c1..cb1c011fb 100644
+--- a/hosts/gpu/src/native_artifact/program/compact/phase_function.rs
++++ b/hosts/gpu/src/native_artifact/program/compact/phase_function.rs
+@@ -1572,0 +1573,3 @@ fn prepare_impl<M: Module>(
++        // Keep register-profile capture on the normal refused-general and
++        // preparation route. The older VCode probe observes the general IR.
++        .or_else(|| std::env::var_os("MECH_INSPECT_PHASE_REGISTER_PROFILE"))
+@@ -1614,0 +1618,3 @@ fn prepare_impl<M: Module>(
++    if !observe && vectors.is_some() {
++        phase_layout::apply_register_weights(&mut context, &symbol).map_err(backend)?;
++    }
+diff --git a/hosts/gpu/src/native_artifact/program/compact/phase_layout.rs b/hosts/gpu/src/native_artifact/program/compact/phase_layout.rs
+index 7f66b90ce..647b5a8f6 100644
+--- a/hosts/gpu/src/native_artifact/program/compact/phase_layout.rs
++++ b/hosts/gpu/src/native_artifact/program/compact/phase_layout.rs
+@@ -47,0 +48,21 @@ pub(super) fn apply(context: &mut Context, symbol: &str) -> io::Result<()> {
++/// Register weights refer to the full lowered VCode, rather than byte offsets
++/// in a previously allocated machine body. Validation occurs after lowering.
++pub(super) fn apply_register_weights(context: &mut Context, symbol: &str) -> io::Result<()> {
++    #[derive(serde::Deserialize)]
++    struct RegisterWeights {
++        expected_vcode: String,
++        block_frequencies: Vec<u32>,
++    }
++    if let Ok(profiles) = std::env::var("MECH_COMPACT_PHASE_REGISTER_WEIGHTS")
++        && let Some(path) = profiles
++            .split(';')
++            .filter_map(|entry| entry.split_once('@'))
++            .find_map(|(name, path)| (name == symbol).then_some(path))
++    {
++        let weights: RegisterWeights = serde_json::from_slice(&std::fs::read(path)?)?;
++        context.func.regalloc_block_frequencies =
++            Some((weights.expected_vcode, weights.block_frequencies));
++    }
++    Ok(())
++}
++
+diff --git a/vendor/cranelift-codegen/src/ir/function.rs b/vendor/cranelift-codegen/src/ir/function.rs
+index 9457f2ccc..498d0d3d4 100644
+--- a/vendor/cranelift-codegen/src/ir/function.rs
++++ b/vendor/cranelift-codegen/src/ir/function.rs
+@@ -17 +16,0 @@ use crate::write::{write_function, write_function_spec};
+-#[cfg(feature = "enable-serde")]
+@@ -206,0 +206,6 @@ pub struct FunctionStencil {
++    /// Exact pre-allocation VCode and measured relative frequencies, indexed by
++    /// VCode block. The backend rejects mismatched code, missing blocks, or
++    /// weights outside 1..=2^20 before using the profile for spill costs.
++    #[cfg_attr(feature = "enable-serde", serde(default))]
++    pub regalloc_block_frequencies: Option<(String, Vec<u32>)>,
++
+@@ -264,0 +270 @@ impl FunctionStencil {
++        self.regalloc_block_frequencies = None;
+@@ -466,0 +473 @@ impl Function {
++                regalloc_block_frequencies: None,
+diff --git a/vendor/cranelift-codegen/src/machinst/compile.rs b/vendor/cranelift-codegen/src/machinst/compile.rs
+index d7a516615..6be6926d2 100644
+--- a/vendor/cranelift-codegen/src/machinst/compile.rs
++++ b/vendor/cranelift-codegen/src/machinst/compile.rs
+@@ -32 +32 @@ pub fn compile<B: LowerBackend + TargetIsa>(
+-    let vcode = {
++    let mut vcode = {
+@@ -49,0 +50,4 @@ pub fn compile<B: LowerBackend + TargetIsa>(
++    if let Some((expected, frequencies)) = &f.regalloc_block_frequencies {
++        vcode.apply_register_profile(expected, frequencies)?;
++    }
++
+diff --git a/vendor/cranelift-codegen/src/machinst/vcode.rs b/vendor/cranelift-codegen/src/machinst/vcode.rs
+index 50d3f87bc..0e8f913d8 100644
+--- a/vendor/cranelift-codegen/src/machinst/vcode.rs
++++ b/vendor/cranelift-codegen/src/machinst/vcode.rs
+@@ -190,0 +191,4 @@ pub struct VCode<I: VCodeInst> {
++    /// Optional measured frequencies, validated against the full VCode before
++    /// register allocation. Empty retains regalloc2's loop-depth estimate.
++    block_frequencies: Vec<u32>,
++
+@@ -722,0 +727 @@ impl<I: VCodeInst> VCode<I> {
++            block_frequencies: Vec::new(),
+@@ -729,0 +735,50 @@ impl<I: VCodeInst> VCode<I> {
++    /// Identity of the complete lowered program before register allocation.
++    /// Include constraints and clobbers as well as the readable instructions.
++    fn register_profile_input(&self) -> String {
++        let mut clobbers = self.clobbers.iter().collect::<Vec<_>>();
++        clobbers.sort_unstable_by_key(|(inst, _)| inst.index());
++        format!(
++            "{self:?}\nRegister operands: {:?}\nRegister types: {:?}\nClobbers: {clobbers:?}\n",
++            self.operands, self.vreg_types,
++        )
++    }
++
++    pub(crate) fn apply_register_profile(
++        &mut self,
++        expected: &str,
++        frequencies: &[u32],
++    ) -> CodegenResult<()> {
++        if frequencies.len() != self.num_blocks()
++            || frequencies
++                .iter()
++                .any(|&value| !(1..=1 << 20).contains(&value))
++        {
++            return Err(CodegenError::Unsupported(format!(
++                "register frequency profile does not match lowered code: {} weights for {} blocks, all weights must be in 1..=2^20",
++                frequencies.len(),
++                self.num_blocks(),
++            )));
++        }
++        let actual = self.register_profile_input();
++        if expected != actual {
++            let at = expected
++                .bytes()
++                .zip(actual.bytes())
++                .position(|(a, b)| a != b)
++                .unwrap_or(expected.len().min(actual.len()));
++            let context = |text: &str| {
++                String::from(
++                    text.get(at.saturating_sub(64)..(at + 128).min(text.len()))
++                        .unwrap_or(""),
++                )
++            };
++            return Err(CodegenError::Unsupported(format!(
++                "register frequency profile does not match lowered code at byte {at}: expected {:?}, actual {:?}",
++                context(expected),
++                context(&actual),
++            )));
++        }
++        self.block_frequencies.extend_from_slice(frequencies);
++        Ok(())
++    }
++
+@@ -861,0 +917,3 @@ impl<I: VCodeInst> VCode<I> {
++        // Emission replaces virtual instruction operands with their allocated
++        // registers. Capture the profile identity before that replacement.
++        let register_profile_input = want_disasm.then(|| self.register_profile_input());
+@@ -1349,0 +1408,17 @@ impl<I: VCodeInst> VCode<I> {
++        if want_disasm {
++            writeln!(disasm, ";; REGALLOC_INPUT_BEGIN").unwrap();
++            write!(disasm, "{}", register_profile_input.as_ref().unwrap()).unwrap();
++            writeln!(disasm, ";; REGALLOC_INPUT_END").unwrap();
++            for index in 0..self.num_blocks() {
++                let block = BlockIndex::new(index);
++                let offset = buffer.resolve_label_offset(MachLabel::from_block(block));
++                writeln!(
++                    disasm,
++                    ";; REGALLOC_BLOCK {index} offset={offset} ir={:?} successors={:?}",
++                    self.bindex_to_bb(block),
++                    self.block_succs(block),
++                )
++                .unwrap();
++            }
++        }
++
+@@ -1739,0 +1815,4 @@ impl<I: VCodeInst> RegallocFunction for VCode<I> {
++    fn block_frequency(&self, block: BlockIndex) -> Option<u32> {
++        self.block_frequencies.get(block.index()).copied()
++    }
++
+diff --git a/vendor/regalloc2/src/ion/liveranges.rs b/vendor/regalloc2/src/ion/liveranges.rs
+index 09040f6c6..41a07fa65 100644
+--- a/vendor/regalloc2/src/ion/liveranges.rs
++++ b/vendor/regalloc2/src/ion/liveranges.rs
+@@ -39,0 +40 @@ pub fn spill_weight_from_constraint(
++    frequency: Option<u32>,
+@@ -44 +45,4 @@ pub fn spill_weight_from_constraint(
+-    let hot_bonus: f32 = (0..loop_depth).fold(1000.0, |a, _| a * 4.0);
++    let hot_bonus: f32 = match frequency {
++        Some(frequency) => 1000.0 * frequency.clamp(1, 1 << 20) as f32,
++        None => (0..loop_depth).fold(1000.0, |a, _| a * 4.0),
++    };
+@@ -223,0 +228 @@ impl<'a, F: Function> Env<'a, F> {
++            self.func.block_frequency(block),
+diff --git a/vendor/regalloc2/src/ion/process.rs b/vendor/regalloc2/src/ion/process.rs
+index a6e5db90e..8294a6ef8 100644
+--- a/vendor/regalloc2/src/ion/process.rs
++++ b/vendor/regalloc2/src/ion/process.rs
+@@ -1141,0 +1142,3 @@ impl<'a, F: Function> Env<'a, F> {
++                            self.func.block_frequency(
++                                self.ctx.cfginfo.insn_block[first_conflict_point.inst().index()],
++                            ),
+@@ -1161,0 +1165,2 @@ impl<'a, F: Function> Env<'a, F> {
++                            self.func
++                                .block_frequency(self.ctx.cfginfo.insn_block[point.inst().index()]),
+diff --git a/vendor/regalloc2/src/lib.rs b/vendor/regalloc2/src/lib.rs
+index 0fd1ef473..bc67e9bef 100644
+--- a/vendor/regalloc2/src/lib.rs
++++ b/vendor/regalloc2/src/lib.rs
+@@ -1238,0 +1239,8 @@ pub trait Function {
++    /// Optional measured relative execution frequency for a block. This affects
++    /// spill costs only; loop structure and splitting heuristics are unchanged.
++    /// Values are clamped to 1..=2^20. Without a profile, the allocator retains
++    /// its existing loop-depth estimate.
++    fn block_frequency(&self, _block: Block) -> Option<u32> {
++        None
++    }
++

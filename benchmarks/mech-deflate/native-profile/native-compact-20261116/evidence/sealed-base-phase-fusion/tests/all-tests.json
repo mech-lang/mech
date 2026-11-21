@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/tests/syntax-tests",
+    "--test-threads=1"
+  ],
+  "exit_code": 0,
+  "seconds_diagnostic": 36.68715199967846,
+  "summary": [
+    "test result: ok. 539 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 36.68s"
+  ]
+}

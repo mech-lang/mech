@@ -1,0 +1,267 @@
+{
+  "object_sha256": "8d7872a717efd7820affb98864024844942748c252a40533807079693395399f",
+  "scope": "Read-only inventory of identical finalized checked helper bytes and target relocations; signatures/address-use eligibility still require compiler proofs. No bytes are edited or timed.",
+  "rows": [
+    {
+      "unit": "mech_compact_closed_v2",
+      "name": "_mech_compact_checked_layout_16446",
+      "bytes": 296,
+      "stack": 48,
+      "code_sha256": "f94d6676de8327c2fd96f391a7c8b57266e47613227bbf1b805b2d0fd3817a78",
+      "relocations": [
+        [
+          220,
+          45,
+          "_mech_compact_release_owner"
+        ],
+        [
+          144,
+          45,
+          "_mech_compact_writable_scalar_backing"
+        ]
+      ]
+    },
+    {
+      "unit": "mech_compact_closed_v2",
+      "name": "_mech_compact_checked_layout_16456",
+      "bytes": 300,
+      "stack": 48,
+      "code_sha256": "ab55ee7ac9e2fdfdd4e9803599dc6452192bc50b4c7e7ef8b861c4913fef7251",
+      "relocations": [
+        [
+          224,
+          45,
+          "_mech_compact_release_owner"
+        ],
+        [
+          144,
+          45,
+          "_mech_compact_writable_scalar_backing"
+        ]
+      ]
+    },
+    {
+      "unit": "mech_compact_closed_v2",
+      "name": "_mech_compact_checked_layout_16457",
+      "bytes": 296,
+      "stack": 48,
+      "code_sha256": "776d63a1fbf203e57f28fd5f2c103d9099b9636f0bc4103eef660cdcf00fff53",
+      "relocations": [
+        [
+          220,
+          45,
+          "_mech_compact_release_owner"
+        ],
+        [
+          144,
+          45,
+          "_mech_compact_writable_scalar_backing"
+        ]
+      ]
+    },
+    {
+      "unit": "mech_compact_closed_v2",
+      "name": "_mech_compact_checked_layout_continuation_16446",
+      "bytes": 324,
+      "stack": 48,
+      "code_sha256": "59959a24aaaaee92da989a512a056682faf84a18d8d22ce5442f2a0b42195e70",
+      "relocations": [
+        [
+          248,
+          45,
+          "_mech_compact_release_owner"
+        ],
+        [
+          160,
+          45,
+          "_mech_compact_writable_scalar_backing"
+        ]
+      ]
+    },
+    {
+      "unit": "mech_compact_closed_v2",
+      "name": "_mech_compact_checked_layout_continuation_16448",
+      "bytes": 320,
+      "stack": 48,
+      "code_sha256": "8330e80528c26e866b83e9766f8cc9330daae07bc8f64e8d40bcdae9b4f63e70",
+      "relocations": [
+        [
+          244,
+          45,
+          "_mech_compact_release_owner"
+        ],
+        [
+          160,
+          45,
+          "_mech_compact_writable_scalar_backing"
+        ]
+      ]
+    },
+    {
+      "unit": "mech_compact_closed_v2",
+      "name": "_mech_compact_checked_layout_continuation_16454",
+      "bytes": 296,
+      "stack": 48,
+      "code_sha256": "0eda42e8f4ac712a83167e730217d0e348fef69d9d70db8ffabb3cd875e42c58",
+      "relocations": [
+        [
+          220,
+          45,
+          "_mech_compact_release_owner"
+        ],
+        [
+          136,
+          45,
+          "_mech_compact_writable_scalar_backing"
+        ]
+      ]
+    },
+    {
+      "unit": "mech_compact_closed_v2",
+      "name": "_mech_compact_checked_layout_continuation_16457",
+      "bytes": 648,
+      "stack": 80,
+      "code_sha256": "2f287ac738876e1ea5d26b560aa45df7a9b3664852c4044e5899a8236c4a1e39",
+      "relocations": [
+        [
+          520,
+          45,
+          "_mech_compact_release_owner"
+        ],
+        [
+          204,
+          45,
+          "_mech_compact_append_backing_byte_consume"
+        ]
+      ]
+    },
+    {
+      "unit": "mech_compact_closed_v2",
+      "name": "_mech_compact_checked_layout_continuation_16461",
+      "bytes": 848,
+      "stack": 128,
+      "code_sha256": "266f6b869d604156a09f19af51b88f43c746297527445c1d4d7bd733c703c01f",
+      "relocations": [
+        [
+          616,
+          45,
+          "_mech_compact_release_owner"
+        ],
+        [
+          548,
+          108,
+          "_memmove"
+        ],
+        [
+          544,
+          93,
+          "_memmove"
+        ],
+        [
+          488,
+          45,
+          "_mech_compact_append_backing_byte_consume"
+        ],
+        [
+          312,
+          45,
+          "_mech_compact_release_owner"
+        ],
+        [
+          216,
+          45,
+          "_mech_compact_append_backing_byte_consume"
+        ]
+      ]
+    },
+    {
+      "unit": "mech_compact_closed_v2",
+      "name": "_mech_compact_checked_layout_continuation_16463",
+      "bytes": 156,
+      "stack": 16,
+      "code_sha256": "385f8797b68745e625f251e2ddc0fe5a5f3230deb8da152a886b96780fac66b0",
+      "relocations": []
+    },
+    {
+      "unit": "mech_compact_early_region_4119_5031",
+      "name": "_mech_compact_checked_layout_24670",
+      "bytes": 296,
+      "stack": 48,
+      "code_sha256": "f94d6676de8327c2fd96f391a7c8b57266e47613227bbf1b805b2d0fd3817a78",
+      "relocations": [
+        [
+          220,
+          45,
+          "_mech_compact_release_owner"
+        ],
+        [
+          144,
+          45,
+          "_mech_compact_writable_scalar_backing"
+        ]
+      ]
+    },
+    {
+      "unit": "mech_compact_early_region_4119_5031",
+      "name": "_mech_compact_checked_layout_24671",
+      "bytes": 300,
+      "stack": 48,
+      "code_sha256": "1828729d71e5337267b6d2d842856c664dde9abbc023792d19677200f28068e5",
+      "relocations": [
+        [
+          224,
+          45,
+          "_mech_compact_release_owner"
+        ],
+        [
+          148,
+          45,
+          "_mech_compact_writable_scalar_backing"
+        ]
+      ]
+    }
+  ],
+  "duplicate_groups": [
+    [
+      {
+        "unit": "mech_compact_closed_v2",
+        "name": "_mech_compact_checked_layout_16446",
+        "bytes": 296,
+        "stack": 48,
+        "code_sha256": "f94d6676de8327c2fd96f391a7c8b57266e47613227bbf1b805b2d0fd3817a78",
+        "relocations": [
+          [
+            220,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            144,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ]
+        ]
+      },
+      {
+        "unit": "mech_compact_early_region_4119_5031",
+        "name": "_mech_compact_checked_layout_24670",
+        "bytes": 296,
+        "stack": 48,
+        "code_sha256": "f94d6676de8327c2fd96f391a7c8b57266e47613227bbf1b805b2d0fd3817a78",
+        "relocations": [
+          [
+            220,
+            45,
+            "_mech_compact_release_owner"
+          ],
+          [
+            144,
+            45,
+            "_mech_compact_writable_scalar_backing"
+          ]
+        ]
+      }
+    ]
+  ],
+  "potential_body_bytes": 296
+}

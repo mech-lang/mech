@@ -1,0 +1,26 @@
+{
+  "compiler-build.json": {
+    "sha256": "b389f8f51cebeda49cbb1a9c89f3fc25c9fcd0c0b951aab7bbf49292f00a22de",
+    "bytes": 1921
+  },
+  "named-rebuild.json": {
+    "sha256": "7c7c531702fe8a07ca3eea982128a62a50db20f2eceaebcca8a2d26a2f5aba8e",
+    "bytes": 63862
+  },
+  "source-inputs/hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/admitted_lengths/mod.rs": {
+    "sha256": "2d9878f5cf2dbeca7203c7e2b22d733660a876cfff1d277e43551a7a24a92912",
+    "bytes": 4520
+  },
+  "source-inputs/hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/admitted_lengths/tests.rs": {
+    "sha256": "8e9ac7860d4ee09c9ae6d665b8fbb2a5a2c005872141ab2443660b9e1f350bf5",
+    "bytes": 8855
+  },
+  "source-inputs/hosts/gpu/src/native_artifact/program/compact/phase_function.rs": {
+    "sha256": "1927a19dd861c1fcf3b3df743183db250f85c45359abfa89e6c52a187d52a695",
+    "bytes": 76747
+  },
+  "source-reproduction.json": {
+    "sha256": "1b62aad524e8293cd9f85ad6e87808e2630c5fa8b849a10ab4ad96457c3f29f2",
+    "bytes": 2250
+  }
+}

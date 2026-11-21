@@ -1,0 +1,12 @@
+from pathlib import Path
+from hashlib import sha256
+import json,os,shutil,subprocess,time
+L=Path(__file__).resolve().parent;W=Path('/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP');read=lambda p:json.loads(p.read_text());sha=lambda p:sha256(Path(p).read_bytes()).hexdigest();base=read(L/'compiler-build.json');assert base['exit_code']==101;assert base['source_files']=={str(p.relative_to(W)):sha(p) for p in (W/'src/syntax/src').rglob('*.rs')}
+archive=L/'bootstrap-cache-failure';archive.mkdir();shutil.copy2(L/'compiler-build.json',archive/'build.json');shutil.copy2(L/'compiler-build.log',archive/'build.log')
+clean=['cargo','+nightly-2026-03-03','clean','--locked','--offline','--release','-p','mech-math','--manifest-path','benchmarks/mech-deflate/native-profile/Cargo.toml','--target-dir',str(L.parent/'target')];env={k:v for k,v in os.environ.items() if not k.startswith('MECH_')}|base['environment']
+with (archive/'clean.log').open('w') as log:result=subprocess.run(clean,cwd=W,env=env,stdout=log,stderr=log)
+(archive/'clean.json').write_text(json.dumps({'command':clean,'exit_code':result.returncode,'scope':'Remove only stale mech-math release artifacts in the current compiler target. Previous math artifact referenced a different mech_core crate identity.'},indent=2)+'\n');assert result.returncode==0
+start=time.perf_counter()
+with (L/'compiler-build.log').open('w') as log:result=subprocess.run(base['command'],cwd=W,env=env,stdout=log,stderr=log)
+record=base|{'exit_code':result.returncode,'seconds_diagnostic':time.perf_counter()-start,'cache_repair':{'failed_build_receipt_sha256':sha(archive/'build.json'),'failed_build_log_sha256':sha(archive/'build.log'),'clean':clean},'scope':'Incremental compiler bootstrap after a scoped stale-cache repair; not source-through-link Mech encoder timing.'};(L/'compiler-build.json').write_text(json.dumps(record,indent=2)+'\n');assert result.returncode==0
+assert base['source_files']=={str(p.relative_to(W)):sha(p) for p in (W/'src/syntax/src').rglob('*.rs')};binary=L.parent/'target/release/compile_profile';pin=sha(binary);dest=L/'compiler'/pin[:16]/'compile_profile';dest.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(binary,dest);record|={'compiler':str(dest),'compiler_sha256':pin};(L/'compiler-build.json').write_text(json.dumps(record,indent=2)+'\n');print('Immutable compiler built',pin,flush=True)

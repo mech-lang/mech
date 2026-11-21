@@ -1,8 +1,668 @@
-# PR #993 current status
+# PR #995 current status
 
-PR #993 tracks the qualified LLVM-free MechDeflate build and is stacked on #973. Measurements use Apple M1, macOS 15.6.1 and arm64.
+**Selected: `m1-histogram-capacity-grouped`, 63,192 B, preserving every named 81/81 Roc and 63/81 libdeflate win in both full 81-case, 96-block orders.** A proved entry counter-capacity bound permits four ordered byte histogram visits per iteration. The original **2,719-line Mech codec and canonical bytecode are unchanged**.
 
-## Current matched deployment build
+| Runtime case / order | Mech | Matched Mech control | libdeflate | Paired Mech ÷ C time | Mech time reduction to parity |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Random 1 MiB, forward | 23.024375 ms | 23.382167 ms | 20.340292 ms | 1.131646× | 11.63% |
+| Random 1 MiB, reverse | 23.033958 ms | 23.393646 ms | 20.342875 ms | 1.132528× | 11.70% |
+| Random 4 KiB, forward | 0.109104 ms | 0.110250 ms | 0.076916 ms | 1.428573× | 30.00% |
+| Random 4 KiB, reverse | 0.108521 ms | 0.109459 ms | 0.075750 ms | 1.448058× | 30.94% |
+
+Paired 1-MiB time is **0.984931× /0.984668×** the matched 63,048-B control, about **1.51–1.53% less time**. The grouped candidate adds **144 B** and remains 180 B below the earlier 63,372-B compact recipe. The original neutral scalar-capacity and SIMD trials remain retained. No formal confidence claim or **64th libdeflate win** is added; the closest remaining case still needs about **11.6–11.7% less Mech time**.
+
+Fresh-process source through final executable linking takes **2.202398 s Mech /2.984846 s Roc /0.480850 s C**, paired **0.738298× Roc /4.582297× C**. Twelve balanced serial orders use equally prebuilt compilers/fixed support. Parse/frontend/native/link medians are **0.702117 /0.218718 /1.209371 /0.035314 s**. Bootstrap and strip are separate; no build, test, profile, counter, archive or Git work overlaps primary clocks.
+
+Encoder text is **1.095× Roc /1.704× C**. Stripped executables remain **276,072 B Mech /191,912 B Roc /155,752 B C**. Measured peak stack remains **4,736 B**, below the 5,280-B cap. The actual main default reproduces object, full metadata and bytecode exactly from the integrated compiler source. All five source arms pass strict output/alias/resource/error/recovery/stack checks and **10 current public normal/checked source replays**. **40,725 focused native calls**, 79 maintained optimized scalar tests and the current-word/SSA/increment families pass. Portable verification checks **6,630,336 saved runtime observations**, retaining 995,679 zero samples, all twelve complete-build orders and **486 actual stripped-executable outputs**. The full GPU suite is not claimed.
+
+[All retained trials and profiling](evidence/histogram-counter-capacity/README.md) · [All 81 elapsed times and parity gaps](evidence/histogram-counter-capacity/PARITY.md). Compiler implementation and stricter admission recognition are integrated at `c41789c828b601512735f89b1476396a89b239d2`. The optional flags remain off globally; only the named qualified source recipe enables the selected combination.
+
+Fresh five-second native samples put matching at **74.3%**, scoring at **13.9%**, the remaining packed histogram at **7.5%**, and the optimized byte histogram at **1.0%** of encoder samples on random1MiB. On random4KiB, matching is **43.4%**, packed histogram **13.5%**, Huffman **11.9%**, scoring **11.1%**, and byte histogram **3.9%**. These encoder-root exclusive shares guide the next broad optimization; they are not exact phase elapsed times. [Sampling derivation and correction](evidence/histogram-counter-capacity/PROFILE.md).
+
+**64 libdeflate wins is next; 1× libdeflate across all 81 remains the goal.** Fresh native CPU sampling is preserved separately from the primary timing and will guide the next broad optimization. All slower cases and unselected candidates remain available.
+
+Previous checkpoints follow; their selected/default labels apply to those versions.
+
+**Selected: `m1-coalesced-compact-all-linear`, 63,048 B, every named 81/81 Roc and 63/81 libdeflate win preserved in both full 81-case, 96-block orders.** Repeating existing current-word and argument-transport proofs after SSA argument coalescing combines with the earlier compact recipe. The original **2,719-line Mech source and canonical bytecode are unchanged**.
+
+| Random 1 MiB | Mech | Current Mech control | libdeflate | Paired Mech ÷ C | Mech time reduction to parity |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Forward | 23.419542 ms | 23.473645 ms | 20.398521 ms | 1.156924× | 13.56% |
+| Reverse | 23.388208 ms | 23.431687 ms | 20.352874 ms | 1.152030× | 13.20% |
+
+The broader target, random **4 KiB**, takes **108.438 /108.020 µs Mech**, versus **75.667 /76.042 µs libdeflate**. Paired Mech time is **1.440× /1.436× C**, leaving **30.57% /30.38%** to remove.
+
+This saves **1,216 B** versus the prior 64,264-B selection and **324 B** versus the previous qualified 63,372-B compact recipe. Paired target time is **0.998227× /0.999471×** control; full-suite geometric-mean point estimates are **0.993651× /0.992991×**. The timing differences are small; no formal confidence claim is added. Small slower cases remain included. **No 64th C win is established; about 13.2–13.6% of Mech's time still needs to be removed on the closest remaining case.** Earlier qualified named recipes remain available.
+
+Matched complete builds take **2.203537 s Mech /2.988196 s Roc /0.482477 s C**, paired **0.737236× Roc /4.560036× C**. Twelve balanced serial fresh-process orders include final executable linking, with compilers and fixed support equally prebuilt. The matched prior Mech median is **2.197920 s**; no compile-time improvement is established. Parse/frontend/native medians are **0.702318 /0.217598 /1.208162 s**. Bootstrap and strip are separate.
+
+Encoder text is **1.093× Roc /1.700× C**. The stripped executable remains **276,072 B**, **1.439× Roc /1.773× C**. Measured peak stack is **4,736 B**, below the 5,280-B cap. The actual main default reproduces object, full metadata and bytecode exactly. **36 public normal/checked source replays**, **79 optimized scalar tests**, the current-word/SSA/increment tests, strict output/resource/error/recovery/stack checks and **486 actual timed stripped-executable checks** pass. Portable verification recomputes **4,836,096 saved runtime observations**, retaining 708,858 zero samples, **180 actual counter cases**, every profile derivation and all twelve complete-build orders. Compiler source is rebasable at **`c92e9e1a2`**. No new LLVM dependency, codec rewrite, generic operation dispatch or shipping native-byte patch is added.
+
+[All eighteen source arms, profiling and verification](evidence/coalesced-argument-refinement/README.md) · [All 81 elapsed times and remaining parity gaps](evidence/coalesced-argument-refinement/PARITY.md).
+
+Separate native CPU sampling puts the matcher at **73.3%** and scorer at **13.7%** of encoder samples on random 1 MiB. On the larger relative loss at random 4 KiB, the matcher is **44.1%**, with **21.1%** in two histogram kernels. Code boundaries differ across compilers; these are phase guides, not matched phase timings. The next broad target tests a max-bin/remaining-span entry proof for the histogram's per-byte overflow check, keeping the checked loop on a proof miss and preserving partial writes and error origins. **64 C wins is next; 1× libdeflate across all 81 remains the goal.**
+
+Previous checkpoints follow; their selected/default labels apply to those versions.
+
+**Selected: `m1-bounded-increment-vector-linear`, 64,264 B, every named 81/81 Roc and 63/81 libdeflate win preserved in both full 81-case, 96-block orders.** The compiler now proves that selected non-strict unsigned bounds can make a checked `+1` overflow impossible. The original **2,719-line Mech source and canonical bytecode are unchanged**.
+
+| Random 1 MiB | Mech | Current Mech control | libdeflate | Paired Mech ÷ C | Mech time reduction to parity |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Forward | 23.434895 ms | 23.506791 ms | 20.393270 ms | 1.149165× | 12.98% |
+| Reverse | 23.430417 ms | 23.504812 ms | 20.352646 ms | 1.152650× | 13.24% |
+
+This saves **144 B** versus the prior 64,408-B selection. Paired random-1-MiB time is **0.996426× /0.996761×** control, about **0.32–0.36% less time**. Full-suite geometric-mean point estimates are **0.995072× /0.995243×**; no formal confidence claim is added. Small slower cases remain included. **No 64th libdeflate win is established; about 3.0–3.1 ms, or 13.0–13.24% of Mech's time, still needs to be removed on the closest remaining case.** The earlier qualified **63,372-B compact recipe remains available**.
+
+Matched complete builds take **2.196434 s Mech /2.983926 s Roc /0.480779 s C**, paired **0.735454× Roc /4.565690× C**. Twelve balanced serial fresh-process orders include final executable linking with compilers and fixed support equally prebuilt. The matched prior Mech control takes **2.195559 s**; no compile-time improvement is established. Selected parse/frontend/native medians are **0.703131 /0.216515 /1.203295 s**; final link is **0.035262 s**. Bootstrap and strip are separate.
+
+Encoder text is **1.114× Roc /1.733× C**. The stripped executable remains **276,072 B**, **1.439× Roc /1.773× C**; measured peak stack is **4,832 B**, below the 5,280-B cap. The standard main rebuild command reproduces all three measured artifacts exactly. All seven retained source arms pass strict output/resource/error/recovery/stack gates and public normal/checked source replays. **79 optimized scalar tests**, the native increment/range tests, **169,600 focused native calls**, and **486 actual stripped-executable checks** pass. Portable verification recomputes **3,400,704 saved runtime observations**, including 464,141 retained zero samples, **72 actual counter cases**, register profiles, native-flow constraints, source-label guides and all 12 complete-build orders. Compiler source is rebasable at **`b73335e1c`**. No new LLVM dependency, codec rewrite, generic operation dispatch or shipping native-byte patch is added.
+
+[All seven source arms, tradeoffs and verification](evidence/bounded-unsigned-increments/README.md) · [All 81 elapsed times and remaining parity gaps](evidence/bounded-unsigned-increments/PARITY.md).
+
+The next broad experiment revisits current-word, known-width and argument-transport cleanup after the new SSA coalescing. Count whether it can remove the remaining hot high-word guards. Private input-packet specialization also needs current SSA or all-callsite bounds. Shared comparison ANDs, immutable byte-load reuse and the retained compact recipe remain recorded for later combinations. **64 C wins is next; 1× libdeflate across all 81 remains the goal.**
+
+Previous checkpoints follow; their selected/default labels apply to those versions.
+
+**Selected: `m1-identical-shared-vector-linear`, 64,408 B, every named 81/81 Roc and 63/81 libdeflate win held in both full 81-case, 96-block orders.** Dominance-proved SSA argument coalescing with shared-Boolean lowering takes **23.506–23.508 ms versus 20.349–20.353 ms C** on random 1 MiB, paired **1.154592–1.155961× C**. About **3.16 ms, or 13.4–13.5% less Mech time**, is still needed for parity. No 64th C win is established. The original 2,719-line Mech source and canonical bytecode are unchanged.
+
+| Qualified arm | Text B | Random 1 MiB Mech ms, forward /reverse | C ms, forward /reverse | Paired Mech ÷ C |
+| --- | ---: | ---: | ---: | ---: |
+| New default, shared-vector-linear | 64,408 | 23.506125 /23.507917 | 20.353292 /20.348604 | 1.154592 /1.155961× |
+| New vector-linear alternative | 64,364 | 23.591333 /23.597542 | 20.348937 /20.350479 | 1.160017 /1.160308× |
+
+The default saves **4 B** versus the preceding64,412-B selection. The alternative saves **48 B** and also retains all 81 Roc/63 Cwins in both complete orders. Default full-suite geometric means are **0.999440× /0.999564×** control; alternative **0.998341× /0.998738×**. These small broad differences are not an established large runtime gain. Small slower cases remain included; point wins and confidence are separate. The previously qualified **63,372-B compact recipe remains available**.
+
+Matched complete builds take **2.199275 s new default /2.192953 s alternative /2.204447 s prior control /2.986321 s Roc /0.481612 s C**. Twelve balanced serial fresh-process orders include final executable linking with compilers/support equally prebuilt; no compile-time gain is claimed. Default paired time is **0.736279× Roc /4.563207× C**. Parse/frontend/native medians are **0.703250 /0.218701 /1.204642 s**. The stripped Mech image remains **276,072 B**; peak stack is **4,832 B**, below 5,280 B. The alternative has 4,736 B peak stack. Text is **1.116× Roc /1.737× C**; stripped image **1.439× Roc /1.773× C**.
+
+The actual main default and explicit alternative reproduce all three artifacts exactly. **34 public normal/checked source replays**, **79 optimized scalar tests**, **7,360 new focused native executions**, all strict output/resource/error/recovery/stack checks and **486 actual timed stripped-image executions** pass. Portable verification checks **10,031,040 saved runtime calls**, including 1,450,135 retained zero samples, **144 actual training counter cases**, both profile derivations and all 12 complete-build orders. Compiler source is rebasable at `10a4b06f8`.
+
+[All17 retained source recipes, timings and tradeoffs](evidence/identical-argument-coalescing/README.md) · [All81 elapsed times and remaining parity gaps for both new arms](evidence/identical-argument-coalescing/PARITY.md).
+
+The next broad investigation is relational unsigned bounds: the existing selected-edge range code narrows variable comparisons only when one operand is constant. A true `x<y` can prove `x<MAX` even with an unknown upper bound, which may remove redundant checked increments. Count the actual remaining hot guards first, preserve width/signedness and boundary errors, and combine proved facts with the new SSA normalization. Constant private input-packet words, shared comparison ANDs, immutable byte-load reuse and the retained compact recipe are also recorded for follow-up. **64 C wins is next; 1× libdeflate across all 81 remains the goal.**
+
+Earlier checkpoints follow; their selected/default labels apply to those versions.
+
+**New qualified alternatives retain every named 81/81 Roc and 63/81 libdeflate win in both full orders.** The faster random-1-MiB arm takes **23.53–23.54 ms versus 20.35 ms C**, paired **1.156–1.157× C**. About **3.19 ms, or 13.5% less Mech time**, is still needed for parity. No64thCwin is established. Original 2,719-line source and canonical bytecode are unchanged. The 64,412-B current default and qualified 63,372-B compact arm remain available.
+
+| Full-qualified arm | Random 1 MiB Mech ms, forward /reverse | C ms, forward /reverse | Paired Mech ÷ C | Mech time reduction to parity |
+| --- | ---: | ---: | ---: | ---: |
+| Shared Boolean, linear | 23.541563 /23.531354 | 20.354751 /20.346833 | 1.156161 /1.156749× | 13.51% /13.55% |
+| Shared Boolean, square-root | 23.590687 /23.584479 | 20.353000 /20.346312 | 1.159830 /1.160628× | 13.78% /13.84% |
+
+The linear arm improves random 1 MiB by 0.62–0.71% but costs 3.83–4.43% on distribution change; full-suite geometric means are 1.001378× /0.998416× control. The square-root arm improves the full-suite geometric mean by 0.14–0.17%. Both are retained as alternatives, including all slowdowns. The first linear layout's single named 4-KiB miss is repaired by the matching linear layout. The default stays unchanged.
+
+Latest matched source-through-final-link builds are **2.201176 s square-root /2.200958 s linear /2.196295 s current control /2.984033 s Roc /0.481201 s C**. Twelve balanced serial orders include final executable linking with compilers/support equally prebuilt; no compile-time gain is established. New text is **64,680 /64,696 B**, stripped executables stay **276,072 B**, and measured stack drops to **4,640 B**. Parsing/frontend/native are about **0.704 /0.218 /1.206 s**. Runtime and complete-build clocks exclude other build/test/profile/counter/archive/Git work.
+
+Ten public normal/checked source replays reproduce all three artifacts exactly. The compiler has 79 optimized scalar tests and 103,424 focused native executions passing. Portable verification checks 4,674,624 saved runtime calls, 54 actual training counter cases, twelve complete-build orders and all 486 saved stripped deployment streams. Direct scalar execution and strict output/resource/error/recovery contracts remain maintained. `MECH_ARM64_CCMP_SHARED_BOOLEAN=1` is optional and off by default; no LLVM dependency or codec rewrite is added.
+
+[Both source-built alternatives, tradeoffs and verification](evidence/shared-comparison-booleans/README.md) · [All81 elapsed times and remaining parity gaps for both arms](evidence/shared-comparison-booleans/PARITY.md).
+
+Actual matcher profiling confirms hot observation-counter accesses already omit redundant bounds. The next broad experiments revisit proved 32-bit hash arithmetic with fresh profiles and investigate copied loop state, duplicate immutable byte loads and the remaining high-word guard. **64 C wins is next; 1× libdeflate across all81 cases remains the goal.**
+
+Earlier checkpoints follow; their selected recipes and timing labels apply to those versions.
+
+**Selected: `m1-argument-all-sqrt`, 64,412 B, every named 81/81 Roc and 63/81 libdeflate win retained in both full 81-case, 96-block orders.** Pure SSA argument transport forwarding with fresh profiles takes **1.49–1.59% less elapsed time across the full suite by geometric mean** than the previous 63,468-B selection. Its measured peak stack is 4,736 B. The **63,372-B compact alternative** also retains every named win in both full orders, saving 96 B and taking 0.87–0.90% less full-suite time; random 1 MiB costs 0.23–0.30% more than its matching control. Both retain the original 2,719-line source and canonical bytecode.
+
+**The nearest remaining loss is random 1 MiB: 23.68–23.69 ms Mech versus 20.34–20.35 ms C, paired 1.164–1.165× C. About 3.34 ms, or 14.1% of Mech time, must still be removed to tie.** No 64th C win is established. Milliseconds below are per-call medians; ratios come from paired observations, so dividing displayed aggregate medians need not reproduce the paired ratio.
+
+| Test | Mech ms, forward /reverse | C ms, forward /reverse | Paired Mech ÷ C | Mech time reduction still needed |
+| --- | ---: | ---: | ---: | ---: |
+| Random 1 MiB | 23.691354 /23.683562 | 20.353500 /20.343750 | 1.163816 /1.164937× | 14.08% /14.16% |
+| Distribution change, 16 KiB | 0.579458 /0.587708 | 0.482479 /0.483042 | 1.200310 /1.209133× | 16.69% /17.30% |
+| Random 4 KiB | 0.107542 /0.108750 | 0.076312 /0.076979 | 1.426908 /1.425898× | 29.92% /29.87% |
+| Periodic 1 MiB | 12.004729 /12.004251 | 18.465896 /18.409959 | 0.649893 /0.652389× | 0.00% /0.00% |
+
+Latest matched complete builds on **Apple M1** take **2.200294 s Mech /2.984815 s Roc /0.485399 s C**, paired **0.735180× Roc /4.521701× C**. Twelve balanced serial fresh-process orders include final executable link with compilers and fixed support equally prebuilt. Paired time versus the previous compiler/recipe is 0.998819×; **no compile-time gain is established**. Selected parse/frontend/native medians are 0.706155 /0.217352 /1.203106 s. Stripped executables remain 276,072 B Mech /191,912 B Roc /155,752 B C. Selected encoder text is 1.116× Roc /1.737× C; compact text is 1.098× Roc /1.709× C.
+
+Sixteen public normal/checked source replays and both actual main source recipes, including the new main default, reproduce object, full metadata and bytecode exactly. Every candidate passes strict original output/resource/error/recovery checks and the 5,280-B stack cap. The portable verifier checks **6,801,408 saved runtime calls**, 935,509 retained zero samples, **45 actual training counter cases**, both profile derivations, all twelve complete-build orders and **972 saved stripped deployment streams** with independent inflation. The compiler source has **5 SSA regression tests and 79 optimized scalar tests passing**, including direct checked Bool/U64/I64/F64 original/decoded paths. Source implementation is committed and rebasable at `a0bc28d87`; no LLVM dependency or shipping native-byte patch is added.
+
+[All eight source recipes, tradeoffs, raw measurements and verification](evidence/argument-jump-forwarding/README.md) · [All 81 elapsed times and remaining parity gaps](evidence/argument-jump-forwarding/PARITY.md).
+
+The next broad proof investigates masked observation-counter indices and repeated read/write bounds in the actual matcher, reusing existing admission and word-range machinery. Confirm which checks remain before adding a pass; the existing bounded byte-histogram optimization is already enabled. Report elapsed milliseconds, paired ×C and the remaining time reduction for every target case. **64 C wins is next; 1× libdeflate across all 81 runtime cases remains the goal.**
+
+Earlier checkpoints follow; their selected recipes and timing labels apply to those versions.
+
+**Selected remains `m1-root-packet-combined`: 63,468 B, every named 81/81 Roc and 63/81 libdeflate win retained.** Five broader register-frequency/layout experiments reduce actual matcher reloads by up to 46% and instructions by about 4.4%, but do not improve broad elapsed time. Both 21-case discovery orders preserve all observed point wins; all five arms and their slowdowns remain available for later combinations. The selected object/metadata/bytecode and exact worker are unchanged; no new C win or experimental full81 qualification is claimed.
+
+Latest matched complete builds on **Apple M1** take **2.200666 s selected Mech /2.993788 s Roc /0.485272 s C**, paired **0.734807× Roc /4.546587× C**. Sixteen balanced serial fresh-process orders include final executable link with equal prebuilt compilers/support. Experimental Mech medians span 2.198552–2.202191 s; no compile-time gain is established. Selected parse/frontend/native medians are 0.703388 /0.217314 /1.205074 s. Mech stripped images remain 276,072 B; selected text remains 1.100× Roc /1.712× C.
+
+The independent frequency generator fixes assigning hot counts to unvisited blocks, using every static head and the actual code extent. Two layout repairs were also attempted. Ten public normal/checked source rebuilds reproduce all three artifacts exactly; every candidate passes strict output/resource/error/recovery checks and 4,752-B measured peak stack. The portable verifier checks **1,794,240 saved runtime calls**, 293,742 retained zero samples, all 54 actual matcher counter cases, both frequency/layout derivations, sixteen complete-build orders and **648 saved stripped deployment streams**. No Rust changes in this study; the same compiler source has 79 optimized scalar tests passing. [All five retained source recipes, raw results, build phases and verification](evidence/static-register-frequency-study/README.md).
+
+The next broad structural pass composes arguments through jump-only blocks to reduce copied loop state and compilation work. It must preserve escaping SSA uses, per-edge argument permutations, aliases, cold/debug boundaries and efficient checked scalar paths. **64 C wins is next; 81 remains the full goal.**
+
+Earlier checkpoints follow; their timing/default labels apply to those versions.
+
+The source-to-block diagnostic is now integrated, with **79 optimized scalar tests**, eight exact public normal/checked source replays and byte-identical selected artifacts and worker. The selected **63,468 B /81 Roc /63 C** result is unchanged. The latest eight-order matched complete-build cohort measures **2.199818 s Mech /2.988482 s Roc /0.481730 s C**, paired **0.736360× Roc /4.562243× C**. Against the previous compiler the paired ratio is **0.999881×**; no timing change is established. All 324 actual stripped deployment streams pass independent inflation.
+
+On seven of nine mixed inputs, mapped private search-tree and skip-tree step counts match C exactly. The two larger inputs retain a checked-continuation scope remainder. This points the broader investigation toward register reloads, copied loop state and repeated checks per step. Missing/merged source labels and unvisited machine blocks are recorded without inventing counts. [Compiler diagnostic, actual object mappings, raw counts, build phases and portable verification](evidence/semantic-block-map/README.md).
+
+**Working selection: `m1-root-packet-combined`, 63,468 B, preserving every named 81/81 Roc and 63/81 libdeflate win in both full 81-case, 96-block orders.** It combines retained input-packet qualification with generic checked-entry jump cleanup. The original **2,719-line Mech codec and canonical bytecode remain unchanged**. Runtime is effectively flat against the preceding selected build; all named wins survive. Confidence is separate; no 64th C win is established.
+
+Latest matched complete builds on **Apple M1** take **2.199591 s selected Mech**, **2.227699 s preceding Mech**, **2.992954 s Roc**, **0.490219 s C**, including final executable linking with compilers and fixed support equally prebuilt. Twelve balanced serial orders check every artifact. Selected paired time is **0.986513× preceding Mech / 0.734967× Roc / 4.521845× C**. The paired median saving is **30.041 ms**, with a descriptive 90% bootstrap interval **21.707–43.436 ms**. The native pipeline falls **1.232435 → 1.201935 s**. Training, compiler bootstrap and strip are separate.
+
+The combination saves another **48 B** of native text: **1.100× Roc / 1.712× C**. The stripped executable remains **276,072 B**; measured peak stack is **4,752 B**, under the 5,280 B cap. Root cleanup increases the checked entry by 276 B; the packet proof saves 320 B in helpers, and padding yields the 48 B net saving. The **63,196 B** packet-only arm remains available with all native checks and both panel orders; it has no full81 qualification. All three variants and every adverse observation are retained.
+
+Six public normal/checked source replays and three actual main named recipes reproduce object, full metadata and bytecode exactly. The portable verifier checks **3,041,856 saved runtime calls**, every required named win, twelve complete-build orders, the bootstrap derivation and **486 actual stripped deployment streams**. The same compiler feature has **79 optimized scalar tests** passing. No Rust source changes in this combination. [Source recipes, all runtime/build observations, intervals and portable verification](evidence/encoder-size-gap/packet-family-root-study/README.md).
+
+`rebuild.py` now defaults to `m1-root-packet-combined` on Apple ARM64. No LLVM dependency or shipping native-byte patch is added. The next larger investigation compares actual Mech/C matching, skip and tree work, with source-to-code mappings that preserve emitted bytes. **64 C wins is next; 81 C wins remains the full goal.**
+
+Earlier checkpoints follow; their selected/default labels apply to those versions.
+
+**Working selection: `m1-forwarded-register-linear`, 63,516 B, preserving every named 81/81 Roc and 63/81 libdeflate win in both full 81-case, 96-block orders.** Generic forward-jump cleanup with fresh register and matcher/Huffman layout profiles saves another **96 B**, takes **1.25–1.33% less random-1-MiB time** and reduces measured peak stack to **4,720 B**. The original **2,719-line codec and canonical bytecode remain unchanged**. Confidence is separate; no 64th C win is established.
+
+Latest matched complete builds on **Apple M1**: **2.229091 s selected Mech**, **2.230269 s preceding Mech**, **2.988087 s Roc**, **0.486367 s C**, including final executable link with compilers/fixed support equally prebuilt. Ten balanced serial fresh-process orders check all artifacts. Selected paired ratios are **0.745744× Roc / 4.595310× C**; encoder text **1.101× Roc / 1.713× C**; stripped executable **276,072 B**. **No compile-time gain is established.**
+
+The actual selected control and both final matcher candidates have fresh nine-case native work counts. On random 1 MiB, selected instructions fall **198,169,162 → 195,425,468** and stack loads **20,228,175 → 18,128,229**, with 35 calls each. Every native output/resource/error/recovery/stack check passes. Four public normal/checked rebuilds and both main named recipes reproduce all three artifacts exactly. The portable verifier checks **2,683,008 saved runtime calls**, seven source/counter bindings, both register-profile derivations, every named full-suite win, ten complete-build orders and **405 actual stripped deployment streams**. The compiler feature has **79 optimized scalar tests** passing. [Current source recipes, raw results, phases and verification](evidence/encoder-size-gap/forward-jump-register-study/README.md).
+
+The **63,468 B** square-root alternative remains available with both panel orders and all native gates, including its **3.0–3.4% distribution slowdown**; it has no full81 qualification. `rebuild.py` now defaults to `m1-forwarded-register-linear` on Apple ARM64. No LLVM dependency or shipping native-byte patch is added.
+
+Broader work now revisits retained input-packet qualification and checked-entry construction across input families. The checked entry remains **46,572 B**. **64 C wins is next; 81 C wins remains the full goal.**
+
+Earlier checkpoints follow; their selected/default labels apply to those versions.
+
+**Working selection: `m1-profiled-register-sqrt`, 63,612 B, preserving every named 81/81 Roc and 63/81 libdeflate win in both full 81-case, 96-block orders.** It saves **192 B** from the preceding default. Measured register spill weights combine with the retained carried-low-cost phi proof; the original **2,719-line codec and canonical bytecode remain unchanged**. Confidence has not been reassessed and is separate from selection. No 64th C win is established.
+
+The selected combination takes **3.07–3.14% less time across all 81 cases by geometric mean**, **7.2–7.4% less on random 1 MiB** and **3.2–3.5% less on distribution change** than the preceding selected build. Natural 4 KiB is **0.972895× / 0.984128× C**. The fully qualified linear alternative emits **63,628 B** and saves about **8.5%** on random 1 MiB in both focused panel orders. Small slowdowns are retained when named wins survive.
+
+Latest matched complete builds on **Apple M1**, including final executable link with compilers and fixed support equally prebuilt: **2.236726 s selected Mech**, **2.230153 s preceding Mech**, **2.988907 s Roc**, **0.490598 s C**. Selected paired ratios are **0.746096× Roc / 4.591963× C**. Fourteen balanced serial fresh-process orders check every native artifact. **No compile-time gain is established.** Encoder text is **1.103× Roc / 1.716× C**; the stripped executable remains **276,072 B** and peak stack **4,736 B**.
+
+All four compact combinations pass strict original resource/output/error/recovery/stack checks and both 21-case panels. Both carried combinations pass full qualification. **Eight public normal/checked source replays and both actual main named recipes reproduce all three artifacts exactly.** The portable verifier checks **5,366,016 saved runtime calls**, every named win, four exact matcher-layout transfers, fourteen build orders and **567 actual stripped deployment streams**. The same source compiler feature has **79 optimized scalar tests** passing. [Source recipes, full scoreboard, build phases, every raw observation and verification](evidence/encoder-size-gap/compact-register-weight-study/README.md).
+
+`rebuild.py` now defaults to `m1-profiled-register-sqrt` on Apple ARM64; `--variant m1-profiled-register-linear` selects the alternative. Prior recipes remain available. The compiler implementation and independent spill-weight generator are already rebasable at `5b3a4af26`; this update combines their validated profiles with the compact original-source build. No LLVM dependency or shipping native-byte patch is added.
+
+Broader work now tests generic forward-jump cleanup with fresh register and machine-layout profiles. The initial census reduces matcher construction from **2,124 to 1,147 prepared blocks**; its runtime/build gains are not yet qualified. Remaining work compares actual Mech/C matcher search/skip/tree work and state traffic across random, natural, periodic, repeated and changing distributions. **64 C wins is next; 81 C wins remains the goal.**
+
+Everything below describes earlier checkpoints; their selected/default labels apply to those versions.
+
+**Working selection: `m1-narrow-packet-words`, 63,804 B, 81/81 Roc and 63/81 libdeflate in both complete 96-block orders.** Every required named point win is retained, and all required confidence checks also pass in both directions. This saves 48 B versus the preceding 63,852 B working build and 64 B versus the original eight-entry 63-win build.
+
+Measured register weights now preserve every named **81 Roc / 63 C** win in both orders of 81 cases, with 96 blocks per case, for two variants. Against the qualified HF-U32 control, linear weighting takes **6.3% less time on random 1 MiB**. Square root weighting takes **5.1% less on random 1 MiB**, **4.1% less on random 16 KiB** and **2.3–2.4% less on distribution change**. Neither earns a 64th C win. Their 2,732-line codec source and bytecode are unchanged.
+
+The alternatives emit **72,020 B / 72,004 B**, saving 176 B / 192 B against their 72,196 B control. Both stripped executables remain **292,568 B**, with **4,752 B** measured peak stack. All 79 optimized scalar tests pass, and four public normal/checked source rebuilds reproduce object, full metadata and bytecode exactly. The compiler feature is committed at `5b3a4af26`; portable recipes build from source and published profiles. The verifier checks **4,648,320 saved calls**, every named win and **486 deployment streams**. The smaller default remains selected. [Code, measurements, limits and source reproduction](evidence/measured-register-weight-study/README.md).
+
+Natural 4 KiB measures **0.981214× / 0.992852× C**. The point-win requirement remains the selection rule; confidence is reported alongside it. The one narrow discovery loss did not discard this candidate; complete 96-block evaluation established all 63 named C wins.
+
+The latest matched Apple M1 cohort builds the exact selected encoder from source through final executable link in **2.233524 s**, paired **0.746380× Roc / 4.609191× C**. Qualified HF-U32 takes **2.356827 s**, linear weighting **2.358269 s**, square root weighting **2.362126 s**, Roc **2.985902 s** and C **0.483257 s**. Twelve balanced fresh-process trials include final linking, with compilers and fixed support equally prebuilt. The selected stripped executable remains **276,072 B**, with **4,736 B** peak stack. No compile-time gain is established. [Current builds and phase breakdown](evidence/measured-register-weight-study/README.md).
+
+`rebuild.py` defaults to this recipe on Apple AArch64. Explicit selection: `--variant m1-narrow-packet-words`. Actual named-recipe normal/checked emission reproduces the measured object, full metadata and canonical bytecode exactly. [Current source, both full orders, every named win, confidence bounds and reconstruction](evidence/encoder-size-gap/packed-word-packet-selection/README.md). [Prior twelve-recipe study, tests, gates, counters and build evidence](evidence/encoder-size-gap/packed-word-repair-study/README.md).
+
+Original 2,719-line Mech source and canonical bytecode remain unchanged; no LLVM dependency is added. The next milestone is **64/81 C**, preserving all 63 existing C names and 81/81 Roc; the full goal remains **1× libdeflate across all 81 cases**. The next major diagnostic is a current Mech/C phase-and-work comparison across the remaining losses, as requested in the new brief. Existing unsafe audit still has the unrelated missing archived allocator blocker.
+
+Current attribution now includes **45 fresh owner captures, exact nine-case Mech/C parsing-work alignment, C search counters and 212 real Huffman vectors**, plus current matcher instruction and stack counts. Both Mech scorers match C exactly on passes, node updates, no-match positions, match records and candidate lengths. The opt-in carried-cost candidate takes **2.42–2.51% less time on random 1 MiB** in its two 21-case discovery orders. All observed wins survive, but no 64th win or full 81-case qualification is claimed. The selected 63-win recipe is unchanged. Comparable total matcher/setup/output work, Mech frequency capture, phase replay and aligned coarse phase times remain outstanding. [Current evidence, all raw observations and portable verification](evidence/current-phase-work-study/README.md).
+
+A separate ordinary-Mech search-call specialization now retains **81/81 Roc and 63/81 C in both complete 96-block orders**, with every required named win. Its composite candidate takes **3.2–6.2% less time on random 4 KiB** and **4.9–5.4% less on distribution change** in those full matrices; no 64th win appears. The isolated source edit costs about 2.4–2.5% on random 1 MiB versus its matched original-source control, so that store/lifetime cost remains a repair target. It has **69,060 B** text and builds in **2.497319 s**, while the selected recipe remains **63,804 B**. Full source, explicit generation recipes, four exact public normal/checked replays, all raw timings and failures are published. [Retained source alternative and complete qualification](evidence/source-search-specialization-study/README.md).
+
+Current setup/retirement diagnostics cover **nine cases, both orders, 72 batches and 3,024 saved calls** around the exact selected and C encoder objects. Natural 1 KiB makes **65 Mech payload requests**, versus one C compressor context plus output; its coarse diagnostic gap is about **14 µs**. Mapping/unmapping alone does not explain that gap. Random 1 MiB records roughly **53–55 µs** in instrumented allocation/retirement methods against a roughly **5.8 ms** whole-call gap, supporting continued matcher work. Per-operation clocks visibly perturb small inputs; their totals are not removable-time budgets. Payload counts exclude owner/registry allocations, and task faults do not quantify clearing traffic or isolated first-touch time. The selected source, artifacts, build time and **81 Roc / 63 C** score remain unchanged. [Raw records, source, explicit limits and portable verification](evidence/setup-retirement-study/README.md).
+
+A separately pinned **2,732-line Huffman source repair** now retains every **81 Roc / 63 C** named win in both full 96-block orders. It takes **11.4–12.5% less random-4-KiB time** and **10.0–10.8% less random-16-KiB time** than selected. The first all-bucket version lost overlap; the sparse/small-alphabet Shell path recovers it, and U32 counters save 224 B versus the repaired U64 arm. No 64th win is established. The repaired U32 alternative emits **72,196 B**, builds through final executable link in **2.346140 s**, and measures **4,752 B** stack. The smaller default remains selected. Eight public normal/checked source rebuilds are exact; complete raw/adverse/repaired orders, 212-vector C/Mech algorithm replay and the 14-trial matched build cohort are published. [Source, qualification, limits and reproduction](evidence/huffman-sort-replay-study/README.md).
+
+Everything below is historical: references to a selected/default recipe apply to that checkpoint.
+
+The latest collector source experiment splits search from a bounded skip loop. Moving four observation-field reads before the nested loop repairs outer-phase native admission and the initial large regression. The repaired source saves only **0.4–0.5%** on random 1 MiB, slows other inputs and loses the required overlap win; it is retained for further combinations. It emits **77,988 B**, takes **2.880354 s** through final link and measures **5,008 B** stack. Both 21-case/24-block orders, all adverse results, eight exact public normal/checked rebuilds and twelve complete-build orders are published. The qualified Huffman alternative takes **2.351058 s** in this latest matched cohort; its native artifacts and previous full81/63 qualification are unchanged. The smaller **63,804 B /81 Roc /63 C** default remains selected. [Source, repair, counters and build/runtime evidence](evidence/collector-loop-specialization-study/README.md).
+
+The broader follow-up maps actual rebasing to word collection 10 (header 514). It already uses four-vector SIMD saturation, with 31 calls and 7.37 million kernel instructions on random 1 MiB. Canonical constants already use native readonly data. A separate source-attribution diagnostic exports 752 source ranges for a validated 6,232-byte matcher image. The normal compiler source is restored; both qualified control recipes reproduce exactly. The diagnostic passes 162 successes, six errors, 12 recoveries and normal/checked emission equality. Matching semantic work with C remains open. The next source experiment makes adaptive-block predicates conditional while preserving every threshold and decision. [Diagnostic source, native checks, scopes and raw evidence](evidence/matcher-source-attribution/README.md).
+
+The equivalent conditional adaptive-block source retains every observed win in both21case24block orders, but offers little overall speedup: natural1KiB improves about1.2%, random1MiB is flat and distribution change slows2–3%. It emits **72,308 B**, measures **4,752 B** stack and builds through final link in **2.350655 s**, versus **2.348570 s** for qualified HF-U32. The selected default takes **2.220953 s**, Roc **2.988208 s** and C **0.483783 s** in the same ten-order cohort. Two public normal/checked replays and a portable verifier cover all358,848 saved runtime calls and405 actual stripped executable checks. The **63,804 B /81 Roc /63 C** default and qualified HF-U32 full81/63 result remain unchanged. [Source, raw observations and reproduction](evidence/lazy-adaptive-check-study/README.md).
+
+## Previous confidence-qualified selection and experiments
+
+**Qualified throughput recipe: `m1-bounded-byte-histogram`, 63,612 B, retaining every prior individual 81/81 Roc and 62/81 libdeflate win.** The smaller `m1-word-complement-current-reads` remains available at 63,388 B. No 63rd C win is yet confidence-qualified; the goal remains 1× libdeflate performance.
+
+The guarded histogram takes **2.44–2.73% less time on random 1 MiB** than its same-run compact reference, at a cost of 224 B. It measures **1.325151× / 1.324508× C** in the original full orders. Natural 4 KiB improves 0.30–0.60% and remains **1.027657× / 1.031202× C**. [Source, raw observations, qualification and reproduction](evidence/encoder-size-gap/bounded-byte-histogram-study/README.md).
+
+Qualification uses 81 cases, forward96 and pooled reverse288 blocks per case. The original reverse96 had two uncertain Roc comparisons during large timing swings; the complete reverse192 repeat independently supports all 81/62 wins, and all 288 reverse blocks remain included in the pooled checks. Every prior named win is checked explicitly. All 162 output/inflation/alias observations, six failures, twelve injected failures, twelve recoveries and 4,864 B peak stack pass. Normal and checked allocation emission match exactly.
+
+Latest complete-build cohort on the **Apple M1** reproduces the qualified encoder exactly and measures **2.213505 s Mech, 2.986912 s Roc and 0.482204 s C**, ten balanced fresh-process trials including final executable linking with equal prebuilt compilers/support. Stripped executables remain 276,072 B / 191,912 B / 155,752 B. Bootstrap and strip are separate; no compilation-time gain is established. [Current build evidence](evidence/encoder-size-gap/scalar-pair-revisit-study/README.md).
+
+The histogram source is committed at **7ea6c80d8db874e10392bdb2a3d38e6205ca876d**. Its new entry guard removes four per-byte bounds checks and retains the U32 increment check; a guard miss executes the original checked code. The two relevant repository tests pass 11,760 native calls. The original 2,719-line Mech source and canonical bytecode remain unchanged, with no LLVM dependency added. Rebuild with `--variant m1-bounded-byte-histogram`.
+
+Both earlier mismatch finalists and all adverse observations remain available in the [review follow-up](evidence/review-followup-20261119/README.md). The first-word probe remains experimental. The initial admitted-index-range pass removes no checks from this codec: the existing 262,144-entry floor covers an already optimized history table; the observation counters need a separate extent proof. The source utility's tests and further work remain separate from the qualified histogram gain.
+
+The entire GPU suite is not claimed. Its relevant histogram and earlier wide-equality tests are recorded separately, and the existing missing archived allocator continues to block the repository unsafe audit. [Review and continuation handoff](REVIEW.md).
+
+## Current paired scalar revisit
+
+Compiler source **`84628d979e`** restores the historical paired scalar continuation as an opt-in path. It passes **20 optimized tests in four configurations**, including **22,528 new native calls** per configuration, and all **33 older recipes reproduce exactly**. Both main candidates and four register-setting workers pass output/error/stack/recovery gates and portable normal/checked replay. The qualified **63,612 B / 81 Roc / 62 C** default remains selected; the preceding eight-entry candidate still retains 63 C point wins in both full96 orders, with reverse confidence crossing parity.
+
+Pairing increases natural 4 KiB stack loads **17,310 → 105,720** and instructions **3,266,626 → 3,589,068**, despite removing 3,881 branches. Its original head variant costs **1.96–2.44% more natural 4 KiB time** and **4.21–4.86% more natural 8 KiB time** than its held control, losing the old 8 KiB C win in both orders. Existing register settings leave the scorer body and counts unchanged; their four additional orders are preserved. Keep the source and repair the cost/best/item lifetimes. A separate eleven-case census also identifies the literal-only DP route behind random-input losses. [All eight orders, checks, counts, builds and replay](evidence/encoder-size-gap/scalar-pair-revisit-study/README.md).
+
+Head text: **64,108 B**; complete build **2.219618 s**, paired **0.743139× Roc / 4.606172× C**; stripped executable **276,072 B**; peak stack **4,736 B**. No compile-time gain is shown. Next, test sequential updates inside the unrolled pair and optimize the literal-only route separately. These follow-ups are not yet implemented.
+
+## Preceding guarded eight-entry experiment
+
+Compiler source **`60e942f462`** adds guarded eight-candidate entry to the paired packed scorer. Head candidate: **63,868 B**, **4,736 B** stack. It removes **66,937 natural-4-KiB scorer instructions and 36,501 branches** versus the sixteen-entry head worker, with unchanged stack traffic. Every original named 81 Roc / 62 C win remains precision-supported in both full96 orders. The new reverse natural-4-KiB interval still crosses parity, so the 63rd C win is not yet qualified. The qualified 63,612 B histogram remains selected until a separate promotion. [All eight runtime orders, confidence results, source, tests, counts, builds and portable replay](evidence/encoder-size-gap/packed-eight-entry-study/README.md).
+
+Forward96: **81 Roc / 63 C point wins**, natural 4 KiB **0.993901× C**, 90% interval **-1.144% to -0.096%**. Reverse96: **81 Roc / 63 C point wins**, natural 4 KiB **0.997675× C**, 90% interval **-0.818% to +0.388%**.
+
+Head complete build: **2.215637 s**, paired **0.742654× Roc / 4.604948× C**, stripped executable **276,072 B**. Nineteen optimized tests pass in three configurations; 31 older recipes and both portable normal/checked artifacts reproduce exactly. No compilation-time gain is established.
+
+## Preceding paired scorer margin experiments
+
+Compiler source **`2b6ed311d`** keeps the paired scorer and tests head-group processing plus wider item decoding. The head candidate is **63,836 B**, saving **16 B** and **10,308 executed natural-4-KiB scorer instructions**. It measures **0.998497× / 1.000382× C**, with **1.000019× / 0.998029×** time versus the exact paired-carried control. All prior wins present in eight complete 21-case discovery orders survive. No new full score or qualified 63rd win is claimed; keep the saving and continue the paired scorer. The qualified default remains **63,612 B / 81 Roc / 62 C**.
+
+Wide-only and head+wide are exact artifact no-ops for this codec. Combining width changes with the older deferred-item option removes 2,955 instructions, but the deferred family does not establish a latency gain. All six workers pass output/error/stack/recovery gates and portable normal/checked replay. Nineteen optimized tests pass in four configurations; 25 older recipes reproduce all artifacts exactly. Head build is **2.222766 s**, paired **0.744078× Roc / 4.610974× C**, with **276,072 B** stripped executable and **4,736 B** peak stack. No compile-time gain is shown. [Source, all eight distinct-code orders, negative results, counts, checks and complete builds](evidence/encoder-size-gap/packed-margin-repair-study/README.md).
+
+Next, enter at eight only under the packed bounds and retain the original short wide-cost scalar path. This revisits the earlier short-vector work with the new paired scorer; it is not implemented in the linked source epoch.
+
+## Preceding paired packed-accumulator experiments
+
+Preceding compiler source **`31910aff6`** adds two independent packed accumulators over eight candidates. The **63,852 B** carried probe takes **1.50% / 1.59% less natural-4-KiB time** than its matching one-accumulator control. Both full81/24-block orders win **81 Roc / 63 C**. Full96 then retains every original **81 Roc / 62 C** named win with confidence support, but natural 4 KiB is **0.984695× C forward / 1.000362× C reverse**. Its reverse 90% interval spans parity (−0.429% to +0.528%). **Keep the candidate and repair this one margin; no qualified 63rd win is claimed.** The smaller qualified 63,612 B histogram remains selected.
+
+Complete carried-probe build is **2.215453 s**, paired **0.742850× Roc / 4.606302× C**; encoder text is **1.107× Roc / 1.722× C**, stripped executable **276,072 B** and peak stack **4,736 B**. All prior named wins, output/error/recovery/stack gates, three configurations of eighteen optimized tests, 23 exact older recipes and both portable normal/checked emissions pass. No compile-time gain is shown. [Source, all eight runtime orders, both confidence reports, counts, complete builds and replay](evidence/encoder-size-gap/paired-packed-accumulator-study/README.md).
+
+Next, test optional-head peeling and a widened packed ordinal separately and together. This targets redundant loop-bound setup and item-index reconstruction while retaining this exact paired candidate. These repairs are not yet implemented.
+
+## Preceding bounded packed-key experiments
+
+Preceding compiler source **`f3d74d948`** integrates bounded packed cost/ordinal keys with the original optimized vector fallback. The packed probe takes **0.89% / 0.88% less natural-4-KiB time** than its matching control, reaching **1.005062× / 1.008491× libdeflate**. No 63rd win is established. Carrying indices removes more instructions; a broader profile repairs its distribution-change slowdown to **0.39% / 0.57% less time** than its matching revised-profile control. All prior peer wins observed in fourteen complete 21-case orders survive; the qualified **63,612 B / 81 Roc / 62 C** recipe remains selected.
+
+The repaired probe is **63,660 B**, **1.103× Roc / 1.717× C encoder text**, with **4,736 B** peak stack. Its complete executable build is **2.221298 s**, paired **0.743629× Roc / 4.605955× C**; the same-cohort qualified build is **2.218823 s**. No compile-time gain is shown. Eighteen optimized tests pass in all three feature configurations; sixteen old recipes and all seven portable normal/checked emissions reproduce exactly. All seven workers pass output/error/stack/recovery gates. [Source, all fourteen raw orders, counts, build profiles, verifier and reproduction](evidence/encoder-size-gap/packed-cost-ordinal-study/README.md).
+
+Next, test two independent packed accumulators over eight candidates to reduce the key/minimum dependency and loop branches. Preserve the existing vector fallback, exact tails, all named peer wins and every adverse observation. This is the next experiment, not an implemented result.
+
+## Preceding conditional winner experiments
+
+Preceding source **`46dc3230f`** completes the conditional winner experiment. The combined word is **62,796 B** and saves about 1% on distribution change against its 62,844 B control, while natural 4 KiB stays near **1.025× / 1.035× C**. The index-only guard is slower. Moving item reconstruction to the same strict-winner edge recovers its 32 B growth and removes 19,427 natural-4-KiB scorer instructions, but still adds 3,550 branches and establishes no latency win. All prior peer wins observed in twenty complete twenty-one-case orders survive; the qualified **63,612 B / 81 Roc / 62 C** result remains selected.
+
+The mapped word is **62,796 B**, or **1.088× Roc / 1.694× C encoder text**, and builds through final link in **2.215644 s**, paired **0.741685× Roc / 4.605130× C**. All ten variants pass output/error/stack/recovery and checked replay. Sixteen/seventeen optimized tests and 8,192/16,384 native fixture calls pass. A separate 8,192-call packed-key prototype emits one horizontal minimum instead of two under explicit U16 bounds; it is not codec-integrated or a speed claim. Next, admit its bounds and retain the old vector path on a miss. [All twenty raw orders, source, counts, complete builds, prototype and reproduction](evidence/encoder-size-gap/conditional-winner-item-study/README.md).
+
+## Preceding packet phase-selection experiments
+
+Source **`3fe63cb1d`** allows exact phase selection for the existing packet-load qualifier. Selecting nine complete routine families recovers **320 B** of the original 416 B saving: word **62,844 B**, probe **63,116 B**, both with 4,736 B peak stack. All prior peer wins observed in fourteen complete twenty-one-case discovery orders survive; no full score or win #63 is established. The current all-phase probe still costs 8.80–9.26% on distribution change, while the narrower selection costs 0.11–0.45% in the probe orders and 0.20–0.63% in the word orders. The smaller 62,796 B non-scorer candidate retains its 5.86–6.20% penalty for repair.
+
+The selected-routine word builds through final link in **2.213414 s**, paired **0.741357× Roc / 4.606720× C**. All six new candidates pass outputs/errors, twelve failures/recoveries, stack gates and normal/checked artifact replay. The qualified 63,612 B / 81 Roc / 62 C result is unchanged. Next, combine the word scorer-only improvement with the nine-family saving and isolate the four extra families responsible for the remaining 48 B tradeoff. [All source, fourteen raw orders, exact-mode checks, full build cohort and reproduction](evidence/encoder-size-gap/selected-packet-phase-study/README.md).
+
+## Preceding fixed-read window experiments
+
+Source **`2dcf8babd`** reuses the selected `window >= 5` edge to admit a four-byte read at `position + 1`, without a new runtime guard or cloned body. Word is **63,164 B**, probe **63,436 B**, and packet-qualified **63,020 B**, all with 4,736 B stack. The probe takes 0.13–0.38% less natural-4-KiB time and 0.44–0.50% less random-1-MiB time than its matching clamped-window base. Natural 4 KiB remains **1.010619× / 1.017073× C**. Four historical carry/load/hash combinations retain the panel wins but earn no additional win; hash narrowing slows random 1 MiB by about 4.1%. All fourteen complete twenty-one-case discovery orders remain available. Full 81-case confidence qualification is outstanding.
+
+The probe builds through final link in **2.217276 s**, paired **0.741816× Roc / 4.587254× C**, in its twelve-trial cohort. Twenty-five relevant repository tests pass, including 72,752 native calls; all seven candidates pass output/error/stack/recovery gates and checked artifact replay. The qualified 81 Roc / 62 C selection is unchanged. Next, isolate packet-load qualification by phase to recover its 416 B saving without the earlier hot-scorer slowdown. [Source, all observations, dynamic counts, complete builds and reproduction](evidence/encoder-size-gap/fixed-read-window-study/README.md).
+
+## Preceding clamped-window experiments
+
+Source **`330416904`** proves the collector's clamped window fits the admitted input and consumes the facts with late constant-branch cleanup. Word is **63,180 B**, probe **63,484 B**, and packet-qualified **63,068 B**; all use 4,736 B peak stack. The probe takes **1.04–1.53% less time on natural 4 KiB** and **1.61–1.62% less time on random 1 MiB** than its matching input-word/probe base. Natural 4 KiB remains **1.011199× / 1.009384× C**. All previously required peer wins present in all six twenty-one-case discovery orders remain point wins. There is no new full score or 63rd C win.
+
+The probe builds through final executable link in **2.213320 s**, paired **0.742111× Roc / 4.602746× C**. Twenty-three relevant tests pass, including 47,552 native calls; all three candidates pass outputs/errors, twelve failures/recoveries, checked emission and stack gates. The first comparison-only implementation left constant branches and is preserved with its adverse counts. Next, reuse `window >= 5` for the remaining four-byte read. [Source, all data, machine counts, complete-build profiles and reproduction](evidence/encoder-size-gap/clamped-input-window-study/README.md).
+
+## Preceding input-word and packet experiments
+
+Source **`baeab0027`** adds an admitted eight-byte input floor. The word candidate is **63,292 B / 4,736 B stack**, with a **2.213294 s** complete build, paired **0.742082× Roc / 4.611124× C**. The combined word-probe candidate is **63,756 B** and measures **1.009970× / 1.022278× C** on natural 4 KiB against its matching held-feature control. These are twenty-one-case, twenty-four-block discovery orders, not a new full score. Every previously required peer win observed in the panel is retained. The smaller word's reverse `320-overlap` win is fragile at 0.999809× C.
+
+Revisited packet-load qualification reduces the probe to **63,340 B**, but slows natural and distribution-change inputs. All five packet alternatives and all eighteen discovery orders are retained for repair. Twenty-one relevant tests pass, including 34,440 span/histogram native calls. All nine timed variants pass output/error/stack gates; word and probe pass twelve failures/recoveries. Source **`6062e2e65`** adds actual optimized IR inspection, with twelve artifact-identical plain/inspected/checked replays. The actual collector's clamped input-window checks are the next proof target. The qualified 81 Roc / 62 C selection remains unchanged. [All source, raw data, checks, complete-build profiles and portable reproduction](evidence/encoder-size-gap/admitted-input-word-study/README.md).
+
+## Preceding input-span and first-word experiments
+
+Compiler source **`b55805f7f`** proves `begin <= end <= current input length` for the private unit-stride collector, after readonly-load conversion. The word candidate is **63,292 B / 4,832 B stack**, and builds through final link in **2.217011 s**, paired **0.742764× Roc / 4.595761× C**. It now retains every prior named win in both full 81-case, 24-block point orders: **81 Roc / 62 C**. It remains unpromoted pending full 96-block confidence qualification. Other current variants still have nineteen-case panels.
+
+Combining the span proof with the first-word probe takes **1.27–1.30% less time** than its held-feature vector/complement control on natural 4 KiB, in both orders. It remains **1.024347× / 1.039711× C**. All previous wins in the nineteen-case subset are retained; this is not a new 81-case score. The earlier bitwise word candidate's reverse `320-overlap` loss and every adverse observation remain recorded.
+
+Fifteen relevant repository tests pass, including 23,856 span/histogram native calls and the equality probe tests. All five current alternatives pass 162 outputs, six failures and the stack cap. Word, vector/complement and the combined probe also pass twelve failures/recoveries and normal/checked artifact replay. Public profiles reproduce word and the probe exactly. [Source, all alternatives, raw data, build profiles and portable reproduction](evidence/encoder-size-gap/admitted-input-span-study/README.md).
+
+## Earlier experimental compact candidate
+
+The guarded-index word recipe is **63,388 B** with **4,720 B** peak stack. Word and vector/complement retain all prior named wins in both complete 81-case, 24-block point orders: **81 Roc / 62 C**. All 162 outputs, six failures, twelve recoveries and checked emission pass. Full 96-block individual confidence qualification remains pending, so the qualified histogram selection above is unchanged. No 63rd C win is claimed.
+
+The minimal word recipe builds a final executable in **2.215846 s**, paired **0.741457× Roc / 4.583660× C**, with 276,072 B stripped deployment. Ten balanced fresh-process trials include final linking and equal prebuilt support. Rebased verified region hints avoid the optional compiler feature's measured 3.9% overhead. Both the slower intermediate modes and raw counter regressions are retained for repair. [Source, full point screens, build cohorts and portable reproduction](evidence/encoder-size-gap/bounded-index-range-study/README.md).
+
+## Previous source-unit cohort
+
+Compiler source **`44fc9f05304111c6e75cac54a3dc5ec5c4f443bf`** adds source-relative unit extraction and caller-owned boundary storage. The selected recipe remains **`m1-immutable-current-reads`, 63,532 B, 81/81 Roc and 62/81 libdeflate wins in both complete orders**. Current minimal and experimental compiler configurations reproduce its exact artifacts in normal and allocation-checked modes; fixed-support linking reproduces the same qualified `834c7a7e…` worker. No 63rd C win is claimed.
+
+| Latest Apple M1 build | Encoder text | Source through final link | Through strip | Stripped executable |
+| --- | ---: | ---: | ---: | ---: |
+| Earlier compiler, selected encoder | 63,532 B | 2.241802 s | 2.252804 s | 276,072 B |
+| Current minimal compiler, selected encoder | **63,532 B** | **2.245045 s** | **2.256023 s** | **276,072 B** |
+| Experimental compiler, split disabled | 63,532 B | 2.215508 s | 2.226393 s | 276,072 B |
+| Repaired source unit, unselected | 65,948 B | 2.282298 s | 2.293045 s | 276,072 B |
+| Roc | 57,696 B | 2.993610 s | 3.004575 s | 191,912 B |
+| libdeflate | 37,080 B | 0.491877 s | 0.502805 s | 155,752 B |
+
+Eighteen balanced fresh-process orders per actor include final linking, with compilers and fixed support prebuilt for all. Strip is separate. Paired ratios for the current selected build are **0.739423× Roc / 4.540212× C**. Whole-encoder ratios remain **1.101151× Roc / 1.713376× C**, leaving 26,452 B above C.
+
+The current minimal compiler is a paired **1.058 ms slower**, 90% interval **−8.222 to +19.025 ms**, than the earlier compiler producing the same encoder: no established change. The experimental compiler configuration also has no established advantage. The repaired unit costs a paired **66.899 ms**, interval **63.081–71.099 ms**, against its own compiler with the split disabled. Separate cohorts' medians do not establish causal gains.
+
+Current phase medians: parsing **706.538 ms**, semantics **225.121 ms**, artifact preparation **6.921 ms**, encoding **2.667 ms**, native pipeline **1,226.643 ms**, final link **35.812 ms**. Catalog work overlaps parsing; separate medians do not add. Source peak RSS is **392.2 MB**.
+
+Source-relative extraction, shared packets, owner homes, borrowed private output scratch and root-scoped register preference reduce the early experiment from 69,556 to **65,948 B**, with actual active stack **5,280 B**. All 162 output/alias/inflation observations, six failures and 12 recoveries pass. It remains 2,416 B larger than the selection and loses the existing `320-overlap` C win in both 17-fixture focused orders (**1.007444× / 1.009468× C**). Its full runtime score is unmeasured. The source machinery and adverse evidence are retained for repair; the experiment is not selected.
+
+Four boundary tests, five production Words tests, five production phase-storage tests and nine scalar success/error probes pass. Normal/checked replay and portable published replay both reproduce all three artifacts. Four compiler captures identify full continuation-liveness computation as added early-unit planning work. The corrected identical-body inventory finds one 296 B candidate, without proving safe folding. Formatting, module layout and warning policy pass; the existing missing archived allocator path still blocks the unsafe audit.
+
+**Immediate work targets a runtime win on natural 4 KiB**, whose selected result needs about 6.45% less time in the worse order. Combine bounded scorer repairs with earlier gains, keep every existing peer win and the 81/62 floors, and price size and complete build time before selection. The 1× libdeflate goal remains unfinished. [Source, all alternatives, raw timings, checks and portable reproduction](evidence/early-source-unit-repair/README.md).
+
+## Previous standard-module integration cohort
+
+The final compiler source is **`2cd17fca3c9d58a5804a18c904fe1daf65598b78`**, including standard native/parser module layouts and a separate allowlisted JIT test boundary. Its normal and allocation-checked builds reproduce the same **63,532 B** object, full metadata and canonical bytecode. Relinking with the original fixed support reproduces qualified worker **`834c7a7e…`** exactly, so its **81 Roc / 62 C point and precision wins in both complete orders**, output/error/recovery/stack checks and profiles remain applicable.
+
+| Latest Apple M1 build | Encoder text | Source through final link | Through strip | Stripped executable |
+| --- | ---: | ---: | ---: | ---: |
+| Earlier compiler, same qualified encoder | 63,532 B | 2.204676 s | 2.215713 s | 276,072 B |
+| Final source/compiler configuration | **63,532 B** | **2.208667 s** | **2.219695 s** | 276,072 B |
+| Roc | 57,696 B | 2.980663 s | 2.991847 s | 191,912 B |
+| libdeflate | 37,080 B | 0.480168 s | 0.490875 s | 155,752 B |
+
+Eight balanced fresh-process builds per actor use prebuilt compilers and fixed support for every actor. Paired ratios are **0.741248× Roc / 4.602361× C**. The final compiler/configuration costs a paired **3.360 ms** versus the earlier compiler generating the same encoder, 90% interval **0.941–5.050 ms**, 1/8 faster. This comparison includes the mechanical source/build changes; it does not isolate the immutable-read pass. The earlier sixteen-trial same-compiler study below found no established effect from that pass. Do not add or compare separate cohorts as causal gains.
+
+Latest phase medians are **702.055 ms parsing**, **214.546 ms semantics**, **6.834 ms artifact**, **2.532 ms encoding**, **1,221.209 ms native pipeline**, and **35.044 ms final link**. Catalog work overlaps parsing; separate medians do not add. Source peak RSS is **392.9 MB**.
+
+The published named rebuild command also reproduces the encoder and passes **162 outputs, six failures and 12 recoveries**. It rebuilds host support and has a different worker hash (`01ace001…`), so that worker has no inherited runtime-win claim. The matched timings use fixed prebuilt support; runtime qualification belongs to the exact `834c7a7e…` worker. Its fixed-support reproduction is explicitly verified.
+
+Fresh **536 default-feature syntax tests** and four load tests pass after the module moves; the prior 539 full-feature syntax tests are archived separately. Workspace formatting, module layout and warning policy pass. The unsafe audit remains blocked by the existing missing `benchmarks/mech-deflate/comparison/rust/src/pinned_allocator.rs`; no CI-green claim is made.
+
+## Algorithm qualification and original pass-isolation cohort
+
+The selected M1 recipe is **`m1-immutable-current-reads`**: **63,532 B**, saving **160 B**, with **81/81 Roc and 62/81 libdeflate wins in both complete orders**. Every paired control win and all 81/62 precision-supported wins are retained. Original Mech source and canonical bytecode are unchanged; no LLVM dependency is added. Compiler source is integrated at `5ccf097dc02ceb3abb17bccb85cd11a3ae144503`.
+
+The source-through-final-link build is **2.211926 s**, versus **2.213335 s** with the pass disabled in the same compiler. The paired difference is **-0.139 ms**, 90% interval **-3.628 to +3.598 ms**, 8/16 faster: **no established compile-time change**. Sixteen balanced trials per actor include final linking, with support prebuilt for every actor. The complete stripped executable remains **276,072 B**. Runtime reports **13 established small slowdowns above 0.5% and 15 uncertain comparisons**; no individual peer win is lost. Large random 1 MiB costs 0.54% / 0.77% versus control. [Source, all controls, full orders, profiles and complete builds](evidence/encoder-size-gap/immutable-current-read-study/README.md).
+
+| Actor | Encoder text | Source through final link | Through strip | Stripped executable |
+| --- | ---: | ---: | ---: | ---: |
+| Same compiler, pass disabled | 63,692 B | 2.213335 s | 2.224324 s | 276,072 B |
+| Selected immutable-read reuse | **63,532 B** | **2.211926 s** | **2.223045 s** | 276,072 B |
+| Roc | 57,696 B | 2.988797 s | 2.999631 s | 191,912 B |
+| libdeflate | 37,080 B | 0.491145 s | 0.502016 s | 155,752 B |
+
+Paired build ratios are **0.739157× Roc / 4.505969× C**. Encoder ratios are **1.101151× Roc / 1.713376× C**, leaving **26,452 B** above C. Compiler bootstrap is excluded for all actors; strip is separate. Historical cohort medians are not causal comparisons.
+
+Current phase medians: parse **704.371 ms**, semantics **217.767 ms**, native pipeline **1,218.926 ms**. Catalog work overlaps parsing and independent medians do not add. The post-encode sample finds dominance, SSA construction, validation and guard inference among the leading active functions; it is not an exclusive phase timer.
+
+The historical literal-reuse lead is now a generic immutable-loan/current-index proof. A 63,484 B alternative lost C on `320-overlap` by 0.18% in one focused order. Restricting the pass to the two certified reads and allowing backend rematerialization keeps 160 B of that saving and restores the win in both full orders. The original branches remain for all uncertified reads. All adverse variants and source snapshots are retained.
+
+The selected worker is `834c7a7e423a69c46483a3dae74d9450949fdf142b5ad2dede894e0da3ca8693`. Normal and allocation-checked source builds reproduce identical object, full metadata and bytecode. It passes 162 output/inflation/alias observations, six failures, 12 recoveries and **4,848 B** peak stack under the 5,280 B ceiling. The root remains **46,788 B**, with a **3,296 B** frame. Four executable load tests cover both placement choices; four unchanged optimized private-contract tests cover original/decoded loans and refusal paths. Prior full-feature syntax qualification remains 539 tests; the final source-identical parser module move has its own fresh 536-test default-feature check.
+
+Fresh actual-worker samples put **72.3%** of 1 MiB encoder work in matching and **14.4%** in scoring. Natural 4 KiB is **52.3% scoring / 24.5% matching**. Large random still has the largest absolute gap, about **7.344 ms/call**; natural 4 KiB is the closest next-win check at **1.063757× / 1.068946× C**, needing about **6.45%** less time in the worse order. Sample shares are not elapsed phase timers or forecasts.
+
+The 1× libdeflate code/build goal remains active. The source-unit repair above is still unselected. Immediate work targets the natural 4 KiB scorer while preserving every existing peer win and both 81/62 floors; target 63 C wins next. [Review handoff](REVIEW.md).
+
+```sh
+python3 rebuild.py /tmp/mech-immutable --variant m1-immutable-current-reads \
+  --mimalloc-object /path/to/mimalloc.o
+```
+
+## Previous sealed-parser cohort (63,692 B)
+
+**The compiler combines deterministic sealed-input parser phases and checks the work allowance before removing a pending frame.** The then-selected encoder remained **63,692 B**, with **81/81 Roc and 62/81 libdeflate wins in both full orders**. The new compiler reproduces its native object, complete metadata, canonical bytecode and fixed-support worker byte for byte. No new runtime campaign or 63rd C win is claimed. Original Mech source is unchanged.
+
+| Actor | Encoder text | Source through final link | Through strip | Stripped executable |
+| --- | ---: | ---: | ---: | ---: |
+| Before, same selected encoder | 63,692 B | 2.212686 s | 2.223608 s | 276,072 B |
+| Sealed parser combination | 63,692 B | 2.205340 s | 2.216274 s | 276,072 B |
+| Roc | 57,696 B | 2.988178 s | 2.999173 s | 191,912 B |
+| libdeflate | 37,080 B | 0.480449 s | 0.491357 s | 155,752 B |
+
+Eight balanced fresh-process trials per actor include final linking, with fixed support prebuilt for every actor. The paired complete-build saving is **8.203 ms**, 90% interval **4.951–11.409 ms saved**, 8/8 faster (**0.371%**). Paired complete-build ratios are **0.738040× Roc / 4.589692× C**. Compiler bootstrap is excluded for all actors; its diagnostic log is retained separately. Strip is reported separately. Do not infer causal gains from separate cohorts.
+
+This is parser maintenance, not the large code-size or build-time reduction still needed for 1× libdeflate. Encoder text stays **1.103924× Roc / 1.717691× C**; the C text gap is still **26,612 B**. Peak active encoder stack remains **4,848 B**, under the 5,280 B ceiling, and deployment size remains 276,072 B.
+
+Current phase medians: parse **0.701823 s**, semantics **0.217373 s**, native **1.214269 s**. Catalog work overlaps parsing. The identical worker reuses its existing full runtime/stack/failure/recovery qualification. **539 syntax tests pass**. [All evidence and source variants](evidence/sealed-base-phase-fusion/README.md).
+
+Fresh profiles of this exact selected worker place **72.8%** of 1 MiB random encoder samples in matching, versus **14.2%** in scoring. Natural 4 KiB is **54.0%** scoring and **23.6%** matching. The qualified median excess is about **7.13 ms** per large-random call versus **21.8 µs** for natural 4 KiB. These are sampled work shares and separately measured full-call gaps, not phase timers or savings forecasts. Prioritize the shared random collector and retain natural 4 KiB as the next-win check.
+
+## Previous matcher guard/layout qualification cohort
+
+The selected recipe is **`m1-matcher-guard-facts`**: **63,692 B encoder text**, **81/81 Roc and 62/81 libdeflate wins in both complete orders**, with every previous winning fixture and all 81/62 precision-supported wins held. It combines allocator spill pairing with two generic impossible-guard proofs and a fresh matcher layout. It saves **64 B** from the qualified paired recipe and **112 B** from the earlier 63,804 B reference. Original Mech source and canonical bytecode are unchanged.
+
+The actual fixed-support worker is `88321c097d29b7219f639abbc5fcce727f0602de2d05ab24e5e2b47f2996c3b4`. The checked root stays **46,788 B**, frame **3,296 B**, peak active stack **4,848 B** under the unchanged 5,280 B cap. Stripped deployment stays **276,072 B**. All 162 output/inflation/alias observations, six failures, 12 recoveries and ten unsigned-guard tests pass. Normal and allocation-checked compilers reproduce identical artifacts. No LLVM dependency is added.
+
+| Actor | Encoder text | Source through final link | Through strip | Stripped executable |
+| --- | ---: | ---: | ---: | ---: |
+| Prior selected, same compiler | 63,756 B | 2.211203 s | 2.222270 s | 276,072 B |
+| Current matcher facts + layout | 63,692 B | 2.214612 s | 2.225813 s | 276,072 B |
+| Roc | 57,696 B | 2.983165 s | 2.994082 s | 191,912 B |
+| libdeflate | 37,080 B | 0.480880 s | 0.492001 s | 155,752 B |
+
+Eight balanced fresh-process builds per actor include final linking, with fixed support prebuilt for every actor. Mech complete-build time is **0.74294× Roc / 4.61093× C**. It is **1.000656× the same-compiler reference**: a paired **1.453 ms cost**, 90% interval **-0.561–5.621 ms**, 3/8 faster. This is not a demonstrated build-time gain. Do not compare separate cohort medians as a causal improvement.
+
+The encoder is **1.717691× C / 1.103924× Roc**, still **26,612 B** above C. The broader 1× libdeflate code and build-time goal remains unfinished. There is **no 63rd C win**.
+
+Current phase medians: parse **0.707648 s**, semantics **0.214311 s**, artifact **0.006829 s**, encode **0.002540 s**, native **1.218448 s**; final link **0.036247 s**. Catalog work overlaps parsing; independent medians need not add.
+
+Random 4/8 KiB improves roughly 3–4%, and 1 MiB about 2%, against the immediate qualified paired worker. The prior two 1 KiB slowdowns are recovered. There are no established slowdowns and three uncertain comparisons. The current 1 MiB matcher executes **233.15 million instructions**, including **41.02 million branches**, **8.65 million stack stores** and **22.27 million stack loads**.
+
+[Current source recipe, full qualification, complete builds, adverse data and replay](evidence/encoder-size-gap/current-matcher-guard-facts/README.md)
+
+## Previous 63,756 B qualified recipe
+
+`m1-register-spill-pairs` remains available with its own 81/62 full qualification.
+Its earlier same-session complete build was 2.219958 s; its current-cohort
+reference is 2.211203 s. Those medians belong to different cohorts.
+[Previous pairing qualification and evidence](evidence/encoder-size-gap/current-register-spill-pairs/README.md)
+
+## Previous 63,804 B reference and compiler cohorts
+
+The selected compiler recipe is **`m1-sparse-guard-rounds`**, producing the same
+qualified **63,804 B** encoder as `m1-preserved-root-registers`: **1.106× Roc**
+and **1.721× libdeflate**. The checked entry remains **46,788 B**, peak active
+stack **4,848 B**, and stripped deployment **276,072 B**. The maintained
+frame-copies control remains 71,192 B.
+
+The newly linked fixed-support benchmark worker is byte-for-byte identical to
+`5afce59a…`, which holds **81/81 Roc and 62/81 libdeflate wins in both complete
+M1 orders**, covering 74 and 56 distinct contracts. Both orders support all
+those wins at the configured precision. This compiler-only change reuses that
+exact worker's qualification; it does not claim a new runtime timing campaign.
+The prior 63,804 B comparison had no established candidate/control slowdowns
+and seven uncertain cases, all retained in its evidence.
+
+| Latest same-session Apple M1 build | Encoder text | Source to final link | Source through strip | Source CPU | Source peak RSS |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Prior selected compiler | 63,804 B | 2.207729 s | 2.218989 s | 2.229473 s | 392.7 MB |
+| Current default, preview excluded | 63,804 B | **2.205288 s** | **2.216334 s** | 2.228903 s | 392.1 MB |
+| Roc | 57,696 B | 2.977513 s | 2.988813 s | 2.934162 s | 387.9 MB |
+| libdeflate | 37,080 B | 0.480597 s | 0.491707 s | 0.442477 s | 71.6 MB |
+
+Eight balanced fresh builds include final linking and use fixed support
+prebuilt for every actor. The paired difference is **2.407 ms saved**, 7/8
+faster, with a 90% interval **1.145–6.921 ms saved**. Current build ratios are
+**0.74063× Roc** and **4.58750× C**. This prices the normal compiler after the
+diagnostic/planning source additions, with both experimental features absent.
+It is not an early-emission gain. The first version with dormant preview code
+cost +4.325 ms; isolating that code behind `early-region-planning` recovered
+the cost. Both cohorts and raw observations are retained.
+
+The guard scheduler's earlier paired **33.998 ms saving** (8/8 faster) belongs
+to its own cohort. The effects are not added across cohorts. Its source and
+adverse eager-index prototype remain in the [sparse-rounds evidence](evidence/encoder-size-gap/sparse-guard-rounds/README.md).
+
+Current phase medians are **0.707378 s parsing**, **0.213160 s source semantics**,
+**0.006847 s artifact creation**, **0.002528 s encoding**, and **1.212155 s
+native emission**. Catalog join wait is 19 microseconds; its work still runs
+during parsing. Final link takes **0.035383 s**, strip **0.010892 s**.
+Independently calculated medians need not add.
+
+The guard scheduler's **29 focused tests pass**, including both closure schedules against the
+original map reference through updates, joins and exhaustive small-state
+expiration. Its original named source rebuild reproduces the object, full metadata and
+bytecode and passes **162 output checks, six injected failure cases and 12
+recoveries**. That earlier compiler source is `0fb8fec139`, binary `e7bb1050…`. Runtime
+qualification belongs to fixed-support worker `5afce59a…`; the separately
+rebuilt host-support worker `a3325554…` has its own identity and no runtime-win
+claim. The original Mech source and all runtime admission/accounting behavior
+are unchanged.
+
+The small-controller architecture is still incomplete. A **46,788 B checked
+controller** remains, exceeding C's entire encoder by 9,708 B. The remaining
+total code gap is **26,724 B**; the latest cohort's median C build-time gap is
+**1.724691 s**. The goal remains 1× libdeflate for code and build time, with
+at least 81 Roc and 62 C wins and eventually more C wins.
+
+[Selected compiler source, raw builds, exact worker, source checks and verifier](evidence/encoder-size-gap/sparse-guard-rounds/README.md) · [63,804 B runtime qualification and earlier compiler cohort](evidence/encoder-size-gap/preserved-root-registers/README.md) · [Earlier literal-frame 64,444 B option](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md)
+
+## History review and runtime priorities
+
+The audit reviews 19 historical mechanisms and profiles the exact prior selected
+63,804 B Mech/C workers on all 19 remaining named C losses, covering 18 distinct
+contracts in 36 useful captures. Large random inputs expose the same hot
+collector: it has 72.5% of Mech's encoder samples on 1 MiB, versus 13.2% in
+scoring. The qualified excess there is 7.652 ms per call; natural 4 KiB's is
+25.8 microseconds. These sample shares are not elapsed phase times.
+
+The audit reference's 1 MiB collector executes 245.0 million instructions and
+25.95 million stack-load instructions. Pairing qualified the 63,756 B
+predecessor. Its combination with current guard facts and fresh layout then
+qualified the selected 63,692 B worker above: 233.15 million instructions,
+41.02 million branches, 8.65 million stack stores and 22.27 million stack loads.
+The full-size and full-build claims belong to their individual cohorts.
+
+Prioritize the shared random-input collector path and keep natural 4 KiB as
+the next-win check. Existing integrated mechanisms are distinguished from
+untried repairs. The review snapshots the old worker; the fresh paired recipe
+and current build/size figures are recorded above.
+
+[History, all-loss profiles, remaining costs and next experiments](evidence/history-and-profiles-20261119/README.md)
+
+## Natural 4 KiB runtime experiment
+
+The opt-in vector address continuation is now implemented in compiler source.
+Its disabled path reproduces the selected object, full metadata and bytecode.
+Pointer-only emits **63,820 B** and measures **0.99969× / 0.99293×** the selected
+worker's time on `prefix-natural-4096`, in a fresh single-case paired probe.
+The forward interval overlaps parity; both orders still lose to C at
+**1.06269× / 1.06941×**. This is not a 63rd qualified win or a size win.
+
+Both pointer variants pass 162 outputs, six checked failures, 12 recoveries and
+the stack check at 4,848 B. Full runtime qualification and matched complete
+build timing are not performed for these unselected workers. Keep the variants
+for repair: ending-pointer transport currently adds a remainder-address
+calculation inside each vector iteration. The new evidence also retains the
+delayed-packing attempt after an exact control-graph layout repair.
+
+[Source, all timings, bounds, adverse attempts and portable replay](evidence/natural4k-runtime-target/README.md)
+
+## Actual early emission experiment
+
+The new `early-region-emission` feature builds the 885-operation codebook unit
+before root SSA. Its word/effect proof includes guarded numeric bypasses,
+conditional cleanup and copied owner state, while preserving one global source
+ownership model and original failure origins. It adds no boundary retain/release
+operations. The feature is off by default; the selected artifacts reproduce
+exactly when the split is disabled.
+
+Total constructed SSA slots fall **1,407,099 → 1,145,776 (18.6%)**, instructions
+**497,878 → 360,196 (27.7%)**, and blocks **174,834 → 128,800 (26.3%)**.
+The maximum SSA arena falls **831,378 → 692,257**. Counts include all helpers,
+copies and compaction tables; they exclude proof tables and allocator capacity.
+
+**This is not selected.** Encoder text is **69,828 B**, and peak stack is
+**5,808 B**, above the unchanged 5,280 B ceiling. The actual worker passes 162
+output/alias/decompression observations, six failure cases and 12 recoveries;
+17 focused tests and nine native scalar cases pass. Full runtime qualification
+has not been performed for this worker, so it has no 81/62 claim.
+
+| New ten-balanced-build M1 cohort | Text | Source through final link | Stripped executable |
+| --- | ---: | ---: | ---: |
+| Selected reference compiler | 63,804 B | 2.209673 s | 276,072 B |
+| Same usable policies, unsplit | 67,364 B | 2.212749 s | 276,056 B |
+| Early codebook experiment | 69,828 B | 2.277083 s | 292,568 B |
+| Roc | 57,696 B | 2.983069 s | 191,912 B |
+| libdeflate | 37,080 B | 0.481339 s | 155,752 B |
+
+The early split costs a paired **68.174 ms** versus the selected reference,
+with a 90% interval **59.898–71.740 ms**, and is slower in all ten pairs.
+Its native phase is 1.278339 s versus 1.212840 s selected. The earlier
+2.205288-second cohort above uses the same selected compiler; results from
+separate cohorts are not added or treated as a source regression.
+
+Root-numbered late windows are excluded pending remapping. Even against the
+same-policy control, the early split grows the whole encoder by **2,464 B**:
+5,232 B removed from the root, plus a 7,348 B helper and 348 B elsewhere/alignment.
+Both the construction reduction and these adverse results are retained for repair.
+
+The closest remaining C loss on the **qualified** worker is
+**`prefix-natural-4096`**: paired Mech/C **1.04960× / 1.07280×**, requiring
+about **6.8% less Mech time** to win both orders and reach 63/81. The next
+closest case needs about 25.6%. The ranking uses the exact qualified summaries,
+not the early experiment.
+
+[Actual early source, counters, complete builds, contract evidence, earlier attempts and replay](evidence/early-codebook-emission/README.md) · [Ranked remaining C losses](evidence/early-codebook-emission/runtime-targets/nearest.json) · [Historical source planning baseline](evidence/early-codebook-planning/README.md)
+
+## Qualified checked codebook phase alternative
+
+The selected result above stays **63,804 B**. A new late checked-phase split
+emits **64,444 B**, a different object from the older qualified literal-frame
+recipe of the same size. Its controller is 41,336 B and its extracted phase is
+6,008 B. The exact linked workers pass 162 output/alias/decompression checks and
+six failure cases, and measured peak native stack falls 4,848 → 4,688 B.
+
+In eight matched fresh builds, source through final link is **2.245295 →
+2.231624 s**. The paired saving is **14.000 ms**, 7/8 faster, with a 90% interval
+of **12.710–18.280 ms saved**. Roc takes 2.997875 s and C 0.483540 s in this
+cohort; the experiment takes 0.74597× Roc and 4.62165× C time. Encoder text is
+1.117× Roc and 1.738× C. This is a measured build/stack gain with a 640 B code
+cost in its earlier, pre-sparse-rounds compiler cohort. The 14 ms and newer
+34 ms effects have not been measured together and are not added. It independently holds **81/81 Roc and 62/81 libdeflate in both complete
+orders**, all supported at the configured precision, with no lost peer wins.
+V3 returns Retain. There are no established candidate/control slowdowns and
+eight uncertain timing cases. All 15 focused checked-region JIT tests pass.
+The named `m1-checked-codebook-phase` source rebuild reproduces all artifacts
+and passes 162 success observations, six failure cases and 12 recoveries.
+The freshly built host-support worker has a separate identity from the
+runtime-qualified fixed-support worker. This is a **qualified alternative,
+not the selected smaller recipe**. The global plan is still constructed, so
+this late split does not finish the small-controller architecture.
+
+[Source, adverse variants, replay, raw builds and verification](evidence/encoder-size-gap/checked-codebook-phase/README.md)
+
+CI at source head `c697f100f8` reports 40 successful jobs, including
+native plan, public CLI, hosted applications,
+same-binary policies, GPU owners, Windows, Linux and browser checks. Static
+architecture contracts still fail on raw native calls in the archived M3 ABI
+oracle outside the exact allowlist; the aggregate Static contracts and PR gate
+therefore fail too. One dependent job is skipped. This is not an all-green CI result; the
+audit policy is unchanged. [Source-head CI](https://github.com/mech-lang/mech/actions/runs/44427678031)
+
+## Apple M3 shared M1 recipe
+
+The integrated compiler's `m1-shared-heap-layout` recipe records **81/81 Roc and 61/81 libdeflate 1.26 level 12 wins in both complete M3 orders**. Raw-record replay verifies all **1,965,312 timed calls**. The **64,652 B** encoder object, complete metadata and canonical bytecode reproduce the named M1 recipe exactly. Peak native stack is **4,784 B**, below the unchanged 5,280 B limit. Both full orders completed without background-activity rejection.
+
+[Complete shared-build qualification and source pins](evidence/apple-m3-win-recovery-20261118/integration/confirmation/README.md) · [Every timing in seconds and comparator multiples](evidence/apple-m3-win-recovery-20261118/integration/confirmation/timings.csv)
+
+## Apple M3 earlier upstream integration
+
+The compiler changes are rebased onto `ca0c778e58618c72e6bd13e7df03d3089d4ec2e3`. The combined encoder contains **63,868 B** of text and uses **4,768 B** peak native stack. In the fresh complete comparison, both the previous and rebased M3 executables record **81/81 Roc in both orders, 58/81 libdeflate forward and 60/81 reverse**. The original upstream deployment recipe reproduces its encoder object, complete metadata and bytecode byte for byte with the combined compiler.
+
+[Complete integration results and reproduction](evidence/apple-m3-rebase-20261118/README.md) · [All timings in seconds and comparator multiples](evidence/apple-m3-rebase-20261118/timings.csv)
+
+The shared compiler contains the M1 heap-setup work and the M3 literal-allocation setup pass. The common M1 recipe is now qualified on M3 as recorded above. Five additional combined builds remain experimental and untimed. [Shared-source verification](evidence/apple-m3-win-recovery-20261118/integration/README.md) · [Recovery trials](evidence/apple-m3-win-recovery-20261118/README.md)
+
+## Apple M3 comparison before upstream integration
+
+The retained word-scan and current-guard optimization records **81/81 against Roc and 61/81 against libdeflate 1.26 level 12 in both orders** in its [complete M3 confirmation](evidence/apple-m3-compact-packets-20261118/word-scans/confirmation/README.md). Encoder text is **64,512 B** and native stack high-water is **4,736 B**, below the unchanged 5,280 B bound. The original Mech source, bytecode, runtime, allocator and peer executables are unchanged.
+
+[All 81 timings, both orders, in seconds and comparator multiples](evidence/apple-m3-compact-packets-20261118/word-scans/confirmation/timings.csv) · [Source and reproduction recipe](evidence/apple-m3-compact-packets-20261118/word-scans/README.md)
+
+## Earlier source-built Apple M1 references
+
+PR #995's integrated compiler at `90d133253a` builds the three named M1 recipes. Each reproduces its archived encoder object, canonical bytecode and complete metadata. The fixed link inputs reproduce all three benchmark and stripped deployment executables. The named command rebuilds its host support and verifies each new worker using 162 success observations, six checked failure cases and 12 exact recovery calls. [Source-built commands](README.md#source-built-m1-reference-encoders) · [Identities and checks](evidence/m1-source-built-20261118/result.json) · [Exact archive worker links](evidence/m1-source-built-20261118/archive-workers-rebased.json)
+
+| Apple M1 build | Encoder text | Source to link | Source to strip | Source CPU | Source peak RSS |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Mech frame-copies control | 71,192 B | 2.321 s | 2.332 s | 2.361 s | 394.1 MB |
+| Mech checked regions | 65,516 B | 2.172 s | 2.183 s | 2.204 s | 392.7 MB |
+| Mech compact match equality | 65,276 B | 2.173 s | 2.184 s | 2.205 s | 392.7 MB |
+| Mech shared release setup | 65,036 B | 2.176 s | 2.187 s | 2.207 s | 392.7 MB |
+| Roc | 57,696 B | 2.983 s | 2.994 s | 2.941 s | 392.9 MB |
+| libdeflate | 37,080 B | 0.480 s | 0.491 s | 0.442 s | 71.5 MB |
+
+Twelve balanced fresh builds per recipe use prebuilt deployment support. Shared release setup takes **0.729× Roc** and **4.532× libdeflate** time. It saves a paired median **145.4 ms** against frame-copies. Its encoder text is **1.127× Roc** and **1.754× libdeflate**. The stripped executable is 276,056 B and peak native stack is 4,784 B. [Raw trials and compiler phases](evidence/m1-source-built-20261118/matched-rebased-observations.json.gz)
+
+Shared release setup spends 0.706 s parsing, 0.217 s in source semantics, 0.009 s creating and encoding the artifact and 1.179 s in native emission. Exposed catalog wait is 18 µs. The remaining 0.062 s includes 0.035 s of final link. The complete build is 0.176 s above 2.0 s, 1.176 s above 1.0 s and 1.726 s above 0.45 s. [Phase accounting](evidence/m1-source-built-20261118/result.json)
+
+Frame-copies remains the maintained control. All three named recipes remain opt-in. Each exact archived worker records 81/81 Roc and 62/81 libdeflate wins in each full order, covering 74/74 and 56/74 distinct contracts. The fresh comparison with frame-copies found four cases with established slowdowns in both orders for checked regions and six for compact match equality. Shared release setup still needs a direct runtime comparison with frame-copies. [Runtime qualification](evidence/m1-source-built-20261118/result.json) · [Paired intervals and matcher diagnosis](evidence/m1-source-built-20261118/maintained-runtime/README.md)
+
+The 64,668 B shared-heap trial missed one Roc win in the forward sweep.
+Its **64,652 B** successor passes both full M1 sweeps at **81/81 Roc and
+62/81 libdeflate**. The previously lost case runs at 0.969× Roc forward
+and 0.967× reverse. A fresh source-to-final-link build in the recovery
+cohort takes **2.173 s**, or **0.728× Roc** and **4.522× libdeflate**.
+Both heap recipes are opt-in. [Original trial](evidence/encoder-size-gap/shared-heap-call-screen/README.md) · [Smaller qualified worker and build timings](evidence/encoder-size-gap/shared-heap-layout-recovery/README.md)
+
+The current native profile attributes the largest traced intervals to root CFG cleanup and phase construction. Retirement-transition caching reuses 3.1% of transitions and adds a paired median 4.7 ms to the complete build. It stays experimental. [Native spans and paired prototype results](evidence/m1-source-built-20261118/native-attribution/README.md)
+
+CI at published head `72691d0265` passes Impact and the GPU owner suite. Its static architecture check fails on the archived M3 ABI oracle's raw native calls outside the exact allowlist; the full log confirms that specific failure. Other native qualification jobs were still running when recorded. The audit policy is unchanged. [Current published-head CI](https://github.com/mech-lang/mech/actions/runs/44400014842). The earlier [3fcb5bf4f8 run](https://github.com/mech-lang/mech/actions/runs/44393821950) passed public CLI, hosted applications, same-binary policies, Linux, Windows and browser standard checks. The new combined-validation source awaits its own CI run.
+
+## Earlier shared-release matched deployment
+
+PR #993 tracks the qualified LLVM-free MechDeflate build and is stacked on #973. The measurements below use Apple M1, macOS 15.6.1 and arm64.
 
 | Apple M1 | Mech | Roc | libdeflate |
 | --- | ---: | ---: | ---: |
@@ -19,9 +679,9 @@ An earlier dedicated parser-phase comparison reported **813 ms Mech**
 and **3 ms Roc**. Mech's interval includes indexing and its strict check.
 [Earlier Mech and Roc parser-phase observations](evidence/sealed-ascii-graphemes/README.md)
 
-## Encoder code size
+## Earlier encoder code-size studies
 
-The checked entry accounts for **48,220 B**. The match collector adds **6,224 B**, and the dense scorer adds **1,104 B**. The matched libdeflate object emits **37,080 B**.
+In the earlier 65,612 B checked-address build, the checked entry accounts for **48,220 B**. The match collector adds **6,224 B**, and the dense scorer adds **1,104 B**. The matched libdeflate object emits **37,080 B**.
 [Qualified encoder](evidence/encoder-size-gap/select-checked-default-address/README.md) · [Historical byte attribution](evidence/encoder-size-gap/README.md)
 
 An experimental capacity refusal reuses the checked continuation and
@@ -119,7 +779,7 @@ Roc and libdeflate trials from the same session.
 Parser, lowering, native compilation and link timings are in the
 machine-readable scorecard.
 
-## Whole-build budget
+## Earlier shared-release build budget
 
 | Stage | Current | 2.0 s budget | 1.0 s budget | 0.45 s budget |
 | --- | ---: | ---: | ---: | ---: |
@@ -130,7 +790,7 @@ machine-readable scorecard.
 | Artifact, encoding, link and other work | 0.073 s | 0.07 | 0.06 | 0.05 |
 | **Total** | **2.175 s** | 2.00 | 1.00 | 0.45 |
 
-Mech needs **1.725 s** less elapsed time to reach the
+That shared-release build needs **1.725 s** less elapsed time to reach the
 0.45 s working budget. The phase medians come from the matched measurements above. Catalog work runs during parsing and the table lists the join wait.
 
 ## Which build to use
@@ -144,7 +804,9 @@ The 64,668 B trial lost one Roc case in the forward sweep. Its V3 result is Reje
 | Checked-read size candidate | 71,420 B | 5,328 B peak stack. Runtime qualification pending |
 | Earlier owner-exchange size candidate | 71,288 B | Rejected by the v2 runtime gate |
 | Maintained frame-copy recipe | **71,192 B** | Compiler source below |
-| Smallest v3-qualified opt-in build | **65,036 B** | [Compiler source and replay](evidence/encoder-size-gap/shared-release-setup/README.md) |
+| Selected smallest v3-qualified encoder and faster compiler recipe | **63,804 B** | [Sparse-rounds source recipe and exact qualified worker](evidence/encoder-size-gap/sparse-guard-rounds/README.md) |
+| Earlier qualified literal-frame option | 64,444 B | [Source, timings and tradeoffs](evidence/encoder-size-gap/shared-literal-frame-cleanup/README.md) |
+| Qualified faster checked-codebook alternative | 64,444 B | [Separate object, source and complete qualification](evidence/encoder-size-gap/checked-codebook-phase/README.md) |
 
 ~~~sh
 python3 -B benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py \
@@ -385,3 +1047,9 @@ the portfolio after two experiments or a substantial decision.
 | Additional parser replay families | The post-change profile identifies enough repeated work and conservative admission coverage |
 | Wider Related Posts historical probes | The checked producer route is available and each archive identity can be preserved |
 | Scorer lowering and table-slot partition selection | A runtime slot reopens after the compiler investigation, with the separate source and causal ablation ready. [Partition evidence](evidence/match-cache-partition-cause/README.md) |
+
+## Sequential scalar repair, not selected
+
+[Source, all sixteen runtime orders and fourteen complete build trials](evidence/encoder-size-gap/scalar-sequential-study/README.md) are published with four portable normal/checked source replays and a passing public verifier. Sequential updates and a proved one-visit odd tail save48B and51,435 natural4KiB instructions versus the earlier paired helper, but still spill more than the selected scorer and lose the existing natural8KiB C win. The **81/63 point-win working selection remains m1-packed-eight-entry,63,868B**. Both partial gains remain available for repair.
+
+The optional parallel low-word carry repair at source89dd67efb passes22 optimized tests in four configurations, including30,720 new loop/multi-edge native calls per configuration, and57 older recipes reproduce exactly. It changes the literal cost recurrence to use the separately carried low cost while the full word is stored. Instruction and branch counts and stack traffic remain unchanged. Its two experimental workers pass output/error/recovery/stack and normal/checked gates; no whole-call speed gain or promotion is claimed yet. The new brief prioritizes current matched Mech/C owner and semantic-work traces after this bounded check.

@@ -20,6 +20,8 @@ use cranelift_codegen::{
     isa::TargetIsa,
 };
 use std::sync::mpsc;
+#[path = "phase_histogram.rs"]
+mod bounded_histogram;
 
 pub(super) struct Composed {
     pub function: FuncId,
@@ -29,11 +31,11 @@ pub(super) struct Composed {
 
 pub(super) struct Compiled {
     pub function: FuncId,
-    pub entry_bounds: Vec<(usize, u64, bool)>,
     pub summary: serde_json::Value,
     pub code: Vec<u8>,
     pub composed: Option<Composed>,
     pub packed_input: Option<Vec<usize>>,
+    pub entry_spans: Vec<cfg_cleanup::admitted_spans::Admission>,
 }
 type FinishReport = Box<
     dyn FnOnce(
@@ -49,6 +51,7 @@ pub(super) struct Prepared {
 struct Details {
     function: FuncId,
     entry_bounds: Vec<(usize, u64, bool)>,
+    entry_spans: Vec<cfg_cleanup::admitted_spans::Admission>,
     finish_report: FinishReport,
     composed: Option<Composed>,
     packed_input: Option<Vec<usize>>,
@@ -198,6 +201,7 @@ impl DeferredGeneral {
             None,
             None,
             None,
+            None,
         ))
     }
 }
@@ -241,6 +245,7 @@ impl GeneralPending {
                     None,
                     None,
                     None,
+                    None,
                 );
                 super::super::compile_jobs::publish(module, details.function, &context)?;
                 Ok((details.finish(&context)?, context))
@@ -272,6 +277,17 @@ impl Prepared {
     pub(super) fn entry_bounds(&self) -> &[(usize, u64, bool)] {
         &self.details.entry_bounds
     }
+    pub(super) fn has_dense_composition(&self) -> bool {
+        self.details
+            .composed
+            .as_ref()
+            .is_some_and(|body| body.admission.immutable_code_bytes.is_some())
+    }
+
+    pub(super) fn into_composition(self) -> Option<Composed> {
+        self.details.composed
+    }
+
     pub(super) fn define<M: Module>(
         mut self,
         module: &mut M,
@@ -339,11 +355,11 @@ impl Details {
         }
         Ok(Compiled {
             function: self.function,
-            entry_bounds: self.entry_bounds,
             summary,
             code: compiled.buffer.data().to_vec(),
             composed: self.composed,
             packed_input: self.packed_input,
+            entry_spans: self.entry_spans,
         })
     }
 }
@@ -572,7 +588,7 @@ fn prepare_impl<M: Module>(
     let symbol = format!("mech_compact_numeric_{header}{suffix}");
     let signature = phase_signature(module);
     let error_origin_base = bodies.is_some().then_some(header);
-    let (mut context, report) = phase_ir(
+    let (mut context, mut report) = phase_ir(
         module,
         code,
         region,
@@ -632,6 +648,8 @@ fn prepare_impl<M: Module>(
             packed_input: None,
             unsigned_guards: 0,
             packed_halfword_stores: 0,
+            admitted_index_guards: 0,
+            entry_spans: Vec::new(),
         };
         return Ok(General::Deferred(DeferredGeneral {
             context,
@@ -659,13 +677,58 @@ fn prepare_impl<M: Module>(
         && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
         && std::env::var_os("MECH_PACK_PRIVATE_HALFWORD_READS").is_some();
     let reuse_lengths = std::env::var_os("MECH_REUSE_ADMITTED_VIEW_LENGTHS").is_some();
+    let bitwise_indices = std::env::var_os("MECH_REUSE_ADMITTED_BITWISE_INDEX_RANGES").is_some();
     let pack_halfword_stores = std::env::var_os("MECH_PACK_PRIVATE_HALFWORD_STORES");
     let mut paired_halfword_stores = None;
+    let mut admitted_index_guards = 0;
+    let mut entry_spans = Vec::new();
+    if !observe
+        && cleanup.enabled
+        && no_growth.is_none()
+        && vectors.is_some_and(|contract| contract.extend_bounds)
+        && private.is_some_and(|contract| contract.permits(proof))
+        && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
+    {
+        let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
+        let mut lengths = BTreeMap::new();
+        for (array, view) in proof.arrays.iter().enumerate() {
+            if !view.writable || view.appends || view.width != 4 {
+                continue;
+            }
+            let Ok(at) = packet.binary_search(&(proof.view(array) + 1)) else {
+                continue;
+            };
+            let mut values = loads.iter().filter(|(_, pair)| pair.1 == at);
+            if let Some((&value, _)) = values.next()
+                && values.next().is_none()
+            {
+                lengths.insert(value, array);
+            }
+        }
+        let required = cfg_cleanup::admitted_lengths::required_index_floors(
+            &context.func,
+            &lengths.keys().copied().collect(),
+            bitwise_indices,
+        );
+        for (length, minimum) in required {
+            let array = lengths[&length];
+            if let Some((_, floor)) = report
+                .phase_entry_bounds
+                .iter_mut()
+                .find(|(old, _)| *old == array)
+            {
+                *floor = (*floor).max(minimum);
+            } else {
+                report.phase_entry_bounds.push((array, minimum));
+            }
+        }
+        report.phase_entry_bounds.sort_unstable();
+    }
     if (pack_halfwords || reuse_lengths)
         && !observe
         && cleanup.enabled
         && let Some(vectors) = vectors
-        && !vectors.admitted_lengths.is_empty()
+        && (!vectors.admitted_lengths.is_empty() || vectors.extend_bounds)
         && private.is_some_and(|contract| contract.permits(proof))
         && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
     {
@@ -707,20 +770,49 @@ fn prepare_impl<M: Module>(
             }
         }
         if reuse_lengths {
-            let floors: BTreeMap<_, _> = vectors
-                .admitted_lengths
+            let admitted_lengths = if vectors.extend_bounds {
+                &report.phase_entry_bounds
+            } else {
+                &vectors.admitted_lengths
+            };
+            let floors: BTreeMap<_, _> = admitted_lengths
                 .iter()
                 .filter_map(|&(array, minimum)| {
                     input_word(proof.view(array) + 1).map(|length| (length, minimum))
                 })
                 .collect();
             if !floors.is_empty() {
-                let folded = cfg_cleanup::admitted_lengths::fold(&mut context.func, &floors);
-                if folded != 0 {
+                // Keep the later dense scorer composition's default-read structure.
+                let (folded, ranged) = if no_growth.is_none()
+                    && std::env::var_os("MECH_REUSE_ADMITTED_INDEX_RANGES").is_some()
+                {
+                    cfg_cleanup::admitted_lengths::fold_index_ranges(
+                        &mut context.func,
+                        &floors,
+                        bitwise_indices,
+                    )
+                } else {
+                    (
+                        cfg_cleanup::admitted_lengths::fold(&mut context.func, &floors),
+                        0,
+                    )
+                };
+                admitted_index_guards += ranged;
+                if folded + ranged != 0 {
                     context.flowgraph();
+                    if ranged != 0 {
+                        // Removing a read/default edge can orphan a block that
+                        // still refers to words defined on the old entry path.
+                        context
+                            .eliminate_unreachable_code(module.isa())
+                            .map_err(backend)?;
+                        context.flowgraph();
+                    }
                     context.verify(module.isa()).map_err(backend)?;
                     if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
-                        eprintln!("{symbol} reused admitted view lengths: {folded}");
+                        eprintln!(
+                            "{symbol} reused admitted view lengths: {folded} literal, {ranged} indexed"
+                        );
                     }
                 }
             }
@@ -845,6 +937,30 @@ fn prepare_impl<M: Module>(
             }
         }
     }
+    let bounded_histogram = if std::env::var_os("MECH_BOUNDED_BYTE_HISTOGRAM").is_some()
+        && !observe
+        && vectors.is_some()
+        && no_growth.is_none()
+        && proof.phase.is_none()
+        && proof.exits.is_empty()
+        && proof.prepaid_sites.is_empty()
+        && proof.arrays.iter().all(|array| !array.appends)
+        && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
+    {
+        bounded_histogram::prepare(
+            module,
+            &mut context,
+            proof,
+            region,
+            report.machine_header,
+            input_words,
+            &symbol,
+            &signature,
+            bodies.as_deref_mut(),
+        )?
+    } else {
+        None
+    };
     let word_loops = &report;
     let mut histogram = None;
     if std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM").is_some()
@@ -960,6 +1076,7 @@ fn prepare_impl<M: Module>(
         {
             let mut candidate = module.make_context();
             candidate.func = context.func.clone();
+            let mut composed_previous = phase_cleanup.append_previous.clone();
             let capture = Capture {
                 packet_loads: &loads,
                 views: &views,
@@ -995,7 +1112,7 @@ fn prepare_impl<M: Module>(
                         true,
                         error_origin_base,
                     )?;
-                    optimize_phase(
+                    let fast_cleanup = optimize_phase(
                         &mut fast,
                         &controls,
                         module.isa(),
@@ -1024,6 +1141,7 @@ fn prepare_impl<M: Module>(
                         {
                             composed_header = fast_capture.header;
                             candidate = fast;
+                            composed_previous = fast_cleanup.append_previous;
                         }
                     }
                 }
@@ -1104,10 +1222,92 @@ fn prepare_impl<M: Module>(
                         }
                     }
                 }
+                if admission.immutable_code_bytes.is_some()
+                    && module.isa().name() == "aarch64"
+                    && std::env::var_os("MECH_COMPOSE_SPLIT_COST_LENGTH").is_some()
+                    && let Some(loads) =
+                        phase_storage::input_word_loads(&candidate.func, input_words)
+                {
+                    candidate.flowgraph();
+                    let capture = Capture {
+                        packet_loads: &loads,
+                        header: composed_header,
+                        ..capture
+                    };
+                    let split = cfg_cleanup::defaulted_read_setup::split_admitted_cost_checks(
+                        &mut candidate.func,
+                        &candidate.cfg,
+                        &capture,
+                        admission,
+                    );
+                    if split != 0 {
+                        candidate.flowgraph();
+                        candidate.verify(module.isa()).map_err(backend)?;
+                        eprintln!("{name} split admitted cost checks: {split}");
+                    }
+                }
+                if module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
+                    && let Some(previous) = &composed_previous
+                    && let Some(output_word) = word_at(proof.view(contract.array))
+                    && let Some(length_word) = word_at(proof.view(contract.array) + 1)
+                    && let Some(loads) =
+                        phase_storage::input_word_loads(&candidate.func, input_words)
+                {
+                    candidate.flowgraph();
+                    let forwarded =
+                        previous.apply(&mut candidate, &loads, output_word, length_word);
+                    if forwarded.is_ok()
+                        && std::env::var_os("MECH_FORWARD_PREVIOUS_CLEANUP").is_some()
+                    {
+                        cfg_cleanup::coalesce_equal_join_arguments(
+                            &controls,
+                            &mut candidate,
+                            module.isa(),
+                        )?;
+                        cfg_cleanup::coalesce_parallel_join_arguments(
+                            &controls,
+                            &mut candidate,
+                            module.isa(),
+                        )?;
+                        cfg_cleanup::optimize_final_ordered(
+                            &controls,
+                            &mut candidate,
+                            module.isa(),
+                        )?;
+                    }
+                    candidate.verify(module.isa()).map_err(backend)?;
+                    if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some()
+                        || std::env::var_os("MECH_APPEND_FORWARD_REPORT").is_some()
+                    {
+                        eprintln!("{name} late previous append forwarding: {forwarded:?}");
+                    }
+                }
+                if admission.immutable_code_bytes.is_some()
+                    && std::env::var_os("MECH_FOLD_NARROW_PACKED_WORDS").is_some()
+                {
+                    // A low-word cost must not retain an independently packed
+                    // high field. Full item/store uses keep the original word.
+                    cfg_cleanup::narrow_bits::fold(&mut candidate.func);
+                    if std::env::var("MECH_FOLD_NARROW_PACKED_WORDS").as_deref() == Ok("phis") {
+                        cfg_cleanup::narrow_bits::fold_parallel(&mut candidate.func);
+                    }
+                    candidate.verify(module.isa()).map_err(backend)?;
+                }
                 let id = module
                     .declare_function(&name, Linkage::Local, &signature)
                     .map_err(backend)?;
                 if !observe && module.isa().name() == "aarch64" {
+                    candidate.func.aarch64_branch_on_zero =
+                        admission.immutable_code_bytes.is_some()
+                            && std::env::var_os("MECH_COMPACT_DENSE_BRANCH_ON_ZERO").is_some();
+                    // Numeric phases start with their own Function. The
+                    // enclosing checked entry's register preference does not
+                    // reach this independently admitted immutable-cost body.
+                    if admission.immutable_code_bytes.is_some()
+                        && std::env::var_os("MECH_ORDERED_PREFER_PRESERVED_REGS").is_some()
+                    {
+                        candidate.func.aarch64_prefer_preserved_regs = true;
+                    }
                     phase_layout::apply(&mut candidate, &name).map_err(backend)?;
                 }
                 let inspect_path = std::env::var_os("MECH_INSPECT_PHASE_CLIF")
@@ -1178,6 +1378,170 @@ fn prepare_impl<M: Module>(
         0
     };
     if !observe
+        && vectors.is_some()
+        && prepared.metadata().parallel.regions.is_empty()
+        && std::env::var_os("MECH_REUSE_COMPARED_BYTES").is_some()
+        && let Some(private) = private.filter(|contract| contract.permits(proof))
+        && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
+    {
+        // Only current fixed immutable byte views from this sealed caller
+        // qualify. Later defaults remain unless a current source read has
+        // already proved their exact logical bounds.
+        let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
+        let views = private
+            .immutable_fixed_arrays(proof)
+            .into_iter()
+            .filter(|&array| proof.arrays[array].width == 1)
+            .filter_map(|array| {
+                Some((
+                    array,
+                    (
+                        packet.iter().position(|&word| word == proof.view(array))?,
+                        packet
+                            .iter()
+                            .position(|&word| word == proof.view(array) + 1)?,
+                    ),
+                ))
+            })
+            .collect::<BTreeMap<_, _>>();
+        let pointers = loads
+            .iter()
+            .filter_map(|(&value, &(_, word))| {
+                views
+                    .values()
+                    .any(|&(pointer, _)| pointer == word)
+                    .then_some(value)
+            })
+            .collect();
+        let current_views = views
+            .into_iter()
+            .filter_map(|(array, (pointer, length))| {
+                let word = |at| {
+                    loads
+                        .iter()
+                        .find_map(|(&value, &(_, word))| (word == at).then_some(value))
+                };
+                Some((array, (word(pointer)?, word(length)?)))
+            })
+            .collect();
+        let reused = cfg_cleanup::compared_bytes::fold(
+            &mut context,
+            &pointers,
+            &report.bounded_byte_reads,
+            &current_views,
+        );
+        if reused != 0 {
+            context.verify(module.isa()).map_err(backend)?;
+            eprintln!("{symbol} reused compared byte pairs: {reused}");
+        }
+    }
+    if !observe
+        && let Some(private) = private.filter(|contract| contract.permits(proof))
+        && vectors.is_some()
+        && std::env::var_os("MECH_COMPACT_IMMUTABLE_DEFAULTED_READS")
+            .is_some_and(|target| target == "all" || target == symbol.as_str())
+        && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
+    {
+        let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
+        let views = private
+            .immutable_fixed_arrays(proof)
+            .into_iter()
+            .filter_map(|array| {
+                let pointer_word = packet.iter().position(|&word| word == proof.view(array))?;
+                let length_word = packet
+                    .iter()
+                    .position(|&word| word == proof.view(array) + 1)?;
+                Some(View {
+                    array,
+                    pointer_word,
+                    length_word,
+                    width: proof.arrays[array].width,
+                    literal: None,
+                })
+            })
+            .collect::<Vec<_>>();
+        let rematerialize =
+            std::env::var_os("MECH_COMPACT_REMATERIALIZE_IMMUTABLE_READS").is_some();
+        let (folded, immutable) = cfg_cleanup::defaulted_loads::fold_immutable(
+            module,
+            &mut context,
+            &loads,
+            &views,
+            rematerialize,
+        )?;
+        eprintln!("{symbol} defaulted loads folded: {folded}, immutable: {immutable}");
+    } else if !observe
+        && private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_COMPACT_SELECT_PHASE_DEFAULTED_LOADS")
+            .is_some_and(|target| target == "all" || target == symbol.as_str())
+    {
+        let folded = cfg_cleanup::defaulted_loads::fold(module, &mut context)?;
+        eprintln!("{symbol} defaulted loads folded: {folded}");
+    }
+    if !observe
+        && private.is_some()
+        && vectors.is_some()
+        && controls.enabled(OptimizationPass::ScalarSelects)
+        && std::env::var_os("MECH_COMPACT_PHASE_SELECTS")
+            .is_some_and(|target| target == "all" || target == symbol.as_str())
+    {
+        let selected =
+            crate::native_artifact::codegen::common::scalar_selects::optimize(&mut context.func);
+        if selected != 0 {
+            context.flowgraph();
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        eprintln!("{symbol} scalar choices folded: {selected}");
+    }
+    // Preserve default-read recognition and its readonly load flags before
+    // folding the now-admitted address predicates.
+    if !observe
+        && cleanup.enabled
+        && no_growth.is_none()
+        && vectors.is_some_and(|contract| contract.extend_spans)
+        && private.is_some_and(|contract| contract.permits(proof))
+        && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
+    {
+        let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
+        let lengths = proof
+            .arrays
+            .iter()
+            .enumerate()
+            .filter_map(|(array, view)| {
+                (!view.writable && !view.appends && view.width == 1)
+                    .then(|| packet.binary_search(&(proof.view(array) + 1)).ok())
+                    .flatten()
+            })
+            .collect();
+        entry_spans = cfg_cleanup::admitted_spans::fold(
+            &mut context,
+            &loads,
+            &lengths,
+            std::env::var_os("MECH_REUSE_ADMITTED_INPUT_WINDOWS").is_some(),
+        );
+        if std::env::var_os("MECH_REUSE_ADMITTED_INPUT_WORD_LENGTHS").is_some() {
+            cfg_cleanup::admitted_spans::admit_word_length(
+                &mut context.func,
+                &loads,
+                &mut entry_spans,
+            );
+        }
+        if !entry_spans.is_empty() {
+            if entry_spans
+                .iter()
+                .any(|span| span.window_checks_removed != 0)
+            {
+                context
+                    .compute_flowgraph_and_cleanup(module.isa())
+                    .map_err(backend)?;
+            } else {
+                context.flowgraph();
+            }
+            context.verify(module.isa()).map_err(backend)?;
+        }
+    }
+    if !observe
         && private.is_some()
         && vectors.is_some()
         && std::env::var_os("MECH_COMPACT_SKIP_EMPTY_JUMPS")
@@ -1191,6 +1555,60 @@ fn prepare_impl<M: Module>(
             context.verify(isa).map_err(backend)?;
         }
         eprintln!("{symbol} forwarded empty jumps: {count}");
+    }
+    if !observe
+        && private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_COMPACT_FORWARD_ARGUMENT_JUMPS")
+            .is_some_and(|scope| scope == "vector" || scope == "all")
+    {
+        let count = cfg_cleanup::argument_jumps::forward(&mut context.func);
+        if count != 0 {
+            let isa = module.isa();
+            context.flowgraph();
+            context.eliminate_unreachable_code(isa).map_err(backend)?;
+            context.verify(isa).map_err(backend)?;
+        }
+        eprintln!("{symbol} forwarded argument jumps: {count}");
+    }
+    if !observe
+        && private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_COMPACT_COALESCE_IDENTICAL_ARGUMENTS")
+            .is_some_and(|scope| scope == "vector" || scope == "all")
+    {
+        let removed =
+            cfg_cleanup::coalesce_identical_join_arguments(&controls, &mut context, module.isa())?;
+        eprintln!("{symbol} coalesced identical arguments: {removed}");
+        if removed != 0
+            && let Ok(mode) = std::env::var("MECH_COMPACT_REFINE_COALESCED_ARGUMENTS")
+        {
+            let mut jumps = 0;
+            if matches!(mode.as_str(), "transport" | "all") {
+                jumps = cfg_cleanup::argument_jumps::forward(&mut context.func);
+                if jumps != 0 {
+                    context.flowgraph();
+                    context
+                        .eliminate_unreachable_code(module.isa())
+                        .map_err(backend)?;
+                    context.verify(module.isa()).map_err(backend)?;
+                }
+            }
+            let predicates = if matches!(mode.as_str(), "predicates" | "all") {
+                cfg_cleanup::refine_current_predicates(&controls, &mut context, module.isa())?
+                    .removed_branches
+            } else {
+                0
+            };
+            let widths = if matches!(mode.as_str(), "widths" | "all") {
+                cfg_cleanup::fold_proved_widths(&controls, &mut context, module.isa())?
+            } else {
+                0
+            };
+            eprintln!(
+                "{symbol} after coalescing: {jumps} jumps, {predicates} predicates, {widths} widths"
+            );
+        }
     }
     let packed_input = if pack_input {
         phase_storage::pack_used_input_words(&mut context.func, input_words)
@@ -1206,6 +1624,9 @@ fn prepare_impl<M: Module>(
         }
     }
     let vcode_path = std::env::var_os("MECH_INSPECT_PHASE_VCODE")
+        // Keep register-profile capture on the normal refused-general and
+        // preparation route. The older VCode probe observes the general IR.
+        .or_else(|| std::env::var_os("MECH_INSPECT_PHASE_REGISTER_PROFILE"))
         .map(std::path::PathBuf::from)
         .filter(|path| path.file_stem().is_some_and(|name| name == symbol.as_str()));
     if vcode_path.is_some() {
@@ -1248,6 +1669,17 @@ fn prepare_impl<M: Module>(
         phase_layout::apply(&mut context, &symbol).map_err(backend)?;
     }
     prepare_body(module.isa(), &mut context)?;
+    if !observe && vectors.is_some() {
+        phase_layout::apply_register_weights(&mut context, &symbol).map_err(backend)?;
+    }
+    // Inspect the actual prepared body without requesting the general observed
+    // pipeline or changing disassembly, compilation sharing, or admission.
+    if let Some(path) = std::env::var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF")
+        .map(std::path::PathBuf::from)
+        .filter(|path| path.file_stem().is_some_and(|name| name == symbol.as_str()))
+    {
+        std::fs::write(path, context.func.display().to_string()).map_err(backend)?;
+    }
     let entry_bounds = entry_bounds(proof, &report.phase_entry_bounds);
     Ok(General::Ready(finish_preparation(
         context,
@@ -1268,9 +1700,12 @@ fn prepare_impl<M: Module>(
             packed_input,
             unsigned_guards,
             packed_halfword_stores,
+            admitted_index_guards,
+            entry_spans,
         },
         future_write_hints,
         histogram,
+        bounded_histogram,
         composed,
         vcode_path,
     )))
@@ -1291,6 +1726,8 @@ pub(super) struct SummaryInput {
     packed_input: Option<Vec<usize>>,
     unsigned_guards: usize,
     packed_halfword_stores: usize,
+    admitted_index_guards: usize,
+    entry_spans: Vec<cfg_cleanup::admitted_spans::Admission>,
 }
 
 fn finish_preparation(
@@ -1300,6 +1737,7 @@ fn finish_preparation(
     input: SummaryInput,
     future_write_hints: Vec<cfg_cleanup::future_store::Hint>,
     histogram: Option<serde_json::Value>,
+    bounded_histogram: Option<serde_json::Value>,
     composed: Option<Composed>,
     vcode_path: Option<std::path::PathBuf>,
 ) -> Prepared {
@@ -1318,6 +1756,8 @@ fn finish_preparation(
         packed_input,
         unsigned_guards,
         packed_halfword_stores,
+        admitted_index_guards,
+        entry_spans,
     } = input;
     let PhaseCleanup {
         bit_counts,
@@ -1327,6 +1767,7 @@ fn finish_preparation(
         vector_predicates,
         width_guards,
         window_bounds,
+        append_previous: _,
     } = phase_cleanup;
     let pack_sites = report.read_pack_sites.clone();
     let read_guards = report.proven_scalar_read_guards.clone();
@@ -1335,12 +1776,16 @@ fn finish_preparation(
     let reused_operands = report.reused_scalar_operands.clone();
     let changed_writes = report.proven_changed_writes.clone();
     let private_writes = report.private_write_sites.clone();
+    let span_summary = (!entry_spans.is_empty()).then(|| serde_json::json!(entry_spans));
     let finish_report: FinishReport = Box::new(move |compiled, entry_bounds| {
         let mut summary = serde_json::json!({"read_pack_sites":pack_sites,"wider_equal_loops":equality.wider,"private_write_sites":private_writes,"proven_changed_writes":changed_writes,"phase_entry_bounds":entry_bounds,"header":header,"exit":exit,"symbol":symbol,
         "code_bytes":compiled.code_info().total_size,"stack_bytes":compiled_stack_bytes(&compiled.buffer)?,
         "input_words":input_words,"output_words":output_words,
         "fixed_writable_capacities":fixed_count,"fixed_length_entry_gate":fixed_count != 0,
         "actual_unit_append_growth":actual_unit_append_growth,"unique_writable_owner_gate":true,"cleanup":cleanup});
+        if admitted_index_guards != 0 {
+            summary["admitted_masked_index_guards"] = serde_json::json!(admitted_index_guards);
+        }
         if let Some(checked_regions) = checked_regions {
             summary["checked_regions"] = checked_regions;
         }
@@ -1369,6 +1814,15 @@ fn finish_preparation(
         if window_bounds != 0 {
             summary["shared_window_bounds"] = serde_json::json!(window_bounds);
         }
+        if !equality.mismatch_forwarded.is_empty() {
+            summary["forwarded_vector_mismatches"] = serde_json::json!(equality.mismatch_forwarded);
+        }
+        if !equality.word_probed.is_empty() {
+            summary["first_word_equality_probes"] = serde_json::json!(equality.word_probed);
+        }
+        if !equality.word_reused.is_empty() {
+            summary["word_reuse_loops"] = serde_json::json!(equality.word_reused);
+        }
         if !equality.reused.is_empty() {
             summary["reused_shifted_equality_loops"] = serde_json::json!(equality.reused);
         }
@@ -1393,6 +1847,12 @@ fn finish_preparation(
         if let Some(histogram) = histogram {
             summary["grouped_histogram"] = histogram;
         }
+        if let Some(histogram) = bounded_histogram {
+            summary["bounded_byte_histogram"] = histogram;
+        }
+        if let Some(spans) = span_summary {
+            summary["admitted_input_spans"] = spans;
+        }
 
         Ok(summary)
     });
@@ -1401,6 +1861,7 @@ fn finish_preparation(
         details: Details {
             function,
             entry_bounds,
+            entry_spans,
             finish_report,
             composed,
             packed_input,
@@ -1482,6 +1943,7 @@ pub(super) struct PhaseCleanup {
     vector_predicates: Option<serde_json::Value>,
     width_guards: usize,
     window_bounds: usize,
+    append_previous: Option<crate::native_artifact::program::codegen::append_run::Previous>,
 }
 
 fn optimize_phase(
@@ -1497,6 +1959,16 @@ fn optimize_phase(
     no_growth: Option<&NoGrowth>,
     report_diagnostics: bool,
 ) -> Result<PhaseCleanup, NativeCompileError> {
+    if std::env::var_os("MECH_QUALIFY_PHASE_INPUT_PACKET").is_some_and(|selection| {
+        // An exact phase list permits held-feature experiments without changing
+        // the existing all-phase option or the input packet's proof contract.
+        selection
+            .to_str()
+            .and_then(|value| value.strip_prefix("only:"))
+            .is_none_or(|symbols| symbols.split(',').any(|selected| selected == symbol))
+    }) {
+        super::phase_storage::qualify_input_packet_loads(&mut context.func, input_words);
+    }
     // Numeric phases have their own sealed SSA; never match through packets.
     let mut bit_counts =
         crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
@@ -1528,17 +2000,36 @@ fn optimize_phase(
     } else {
         None
     };
+    let mut append_previous = None;
     if no_growth.is_some() && std::env::var_os("MECH_CHECKED_APPEND_RUN").is_some() {
-        let outcome = crate::native_artifact::program::codegen::append_run::optimize(
-            context,
-            word_loops.machine_header,
-            std::env::var_os("MECH_SPLIT_APPEND_DESCRIPTORS")
-                .map(|value| (input_words, value == "all")),
-            report_diagnostics
-                && isa.name() == "aarch64"
-                && isa.endianness() == cranelift_codegen::ir::Endianness::Little
-                && std::env::var_os("MECH_PAIR_CHECKED_APPENDS").is_some(),
-        );
+        let packet = std::env::var_os("MECH_SPLIT_APPEND_DESCRIPTORS")
+            .map(|value| (input_words, value == "all"));
+        let paired = report_diagnostics
+            && isa.name() == "aarch64"
+            && isa.endianness() == cranelift_codegen::ir::Endianness::Little
+            && std::env::var_os("MECH_PAIR_CHECKED_APPENDS").is_some();
+        let outcome = if std::env::var_os("MECH_FORWARD_PREVIOUS_APPEND").is_some()
+            && let Some(contract) = no_growth
+        {
+            crate::native_artifact::program::codegen::append_run::optimize_with_previous(
+                context,
+                word_loops.machine_header,
+                packet,
+                paired,
+                // The private constructor proved this exact append-only phase.
+                // The numeric proof below additionally excludes indexed writes.
+                // Unsupported recurrences retain the checked implementation.
+                contract,
+                &mut append_previous,
+            )
+        } else {
+            crate::native_artifact::program::codegen::append_run::optimize(
+                context,
+                word_loops.machine_header,
+                packet,
+                paired,
+            )
+        };
         if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!("{symbol} checked append run: {outcome:?}");
         }
@@ -1745,5 +2236,6 @@ fn optimize_phase(
         vector_predicates,
         width_guards,
         window_bounds,
+        append_previous,
     })
 }

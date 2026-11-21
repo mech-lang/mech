@@ -1,0 +1,36 @@
+Acquiring immutable-read-repair-immutable-profiled-focus-forward
+empty {'mech-control': 0.878088, 'mech-experiment': 0.8494, 'roc': 1.0, 'libdeflate': 128.523264} raw bytes 5 / 5
+one-stored {'mech-control': 0.796472, 'mech-experiment': 0.779621, 'roc': 1.0, 'libdeflate': 113.966114} raw bytes 6 / 6
+seven-stored-prefix {'mech-control': 0.905526, 'mech-experiment': 0.911483, 'roc': 1.0, 'libdeflate': 121.29911} raw bytes 12 / 12
+320-overlap {'mech-control': 0.091174, 'mech-experiment': 0.091886, 'roc': 1.0, 'libdeflate': 0.091724} raw bytes 7 / 7
+random-64 {'mech-control': 0.039974, 'mech-experiment': 0.039711, 'roc': 1.0, 'libdeflate': 0.079911} raw bytes 69 / 69
+random-1024 {'mech-control': 0.098172, 'mech-experiment': 0.100086, 'roc': 1.0, 'libdeflate': 0.106441} raw bytes 1029 / 1029
+heldout-mixed-131073 {'mech-control': 0.801799, 'mech-experiment': 0.807009, 'roc': 1.0, 'libdeflate': 0.863976} raw bytes 74907 / 74907
+prefix-natural-4096 {'mech-control': 0.627384, 'mech-experiment': 0.630209, 'roc': 1.0, 'libdeflate': 0.589604} raw bytes 983 / 983
+prefix-natural-8192 {'mech-control': 0.785463, 'mech-experiment': 0.791272, 'roc': 1.0, 'libdeflate': 0.806324} raw bytes 2309 / 2309
+prefix-natural-16384 {'mech-control': 0.899005, 'mech-experiment': 0.902175, 'roc': 1.0, 'libdeflate': 0.995955} raw bytes 4616 / 4616
+prefix-natural-32769 {'mech-control': 0.950763, 'mech-experiment': 0.951749, 'roc': 1.0, 'libdeflate': 1.101302} raw bytes 8964 / 8964
+prefix-random-1024 {'mech-control': 0.100259, 'mech-experiment': 0.102071, 'roc': 1.0, 'libdeflate': 0.107917} raw bytes 1029 / 1029
+prefix-random-4096 {'mech-control': 0.323661, 'mech-experiment': 0.332096, 'roc': 1.0, 'libdeflate': 0.202964} raw bytes 4101 / 4101
+prefix-random-262144 {'mech-control': 0.921, 'mech-experiment': 0.946026, 'roc': 1.0, 'libdeflate': 0.673619} raw bytes 262169 / 262169
+prefix-random-1048576 {'mech-control': 0.953139, 'mech-experiment': 0.979146, 'roc': 1.0, 'libdeflate': 0.705726} raw bytes 1048666 / 1048666
+prefix-periodic-1024 {'mech-control': 0.132496, 'mech-experiment': 0.134224, 'roc': 1.0, 'libdeflate': 0.137092} raw bytes 52 / 52
+prefix-periodic-4096 {'mech-control': 0.22257, 'mech-experiment': 0.224096, 'roc': 1.0, 'libdeflate': 0.238917} raw bytes 67 / 67
+Acquiring immutable-read-repair-immutable-profiled-focus-reverse
+prefix-periodic-4096 {'libdeflate': 0.240271, 'roc': 1.0, 'mech-experiment': 0.222839, 'mech-control': 0.219964} raw bytes 67 / 67
+prefix-periodic-1024 {'libdeflate': 0.137372, 'roc': 1.0, 'mech-experiment': 0.133969, 'mech-control': 0.132904} raw bytes 52 / 52
+prefix-random-1048576 {'libdeflate': 0.705611, 'roc': 1.0, 'mech-experiment': 0.980228, 'mech-control': 0.956597} raw bytes 1048666 / 1048666
+prefix-random-262144 {'libdeflate': 0.673446, 'roc': 1.0, 'mech-experiment': 0.944856, 'mech-control': 0.919521} raw bytes 262169 / 262169
+prefix-random-4096 {'libdeflate': 0.207304, 'roc': 1.0, 'mech-experiment': 0.332525, 'mech-control': 0.323484} raw bytes 4101 / 4101
+prefix-random-1024 {'libdeflate': 0.107293, 'roc': 1.0, 'mech-experiment': 0.101318, 'mech-control': 0.099504} raw bytes 1029 / 1029
+prefix-natural-32769 {'libdeflate': 1.100234, 'roc': 1.0, 'mech-experiment': 0.951389, 'mech-control': 0.948563} raw bytes 8964 / 8964
+prefix-natural-16384 {'libdeflate': 0.987871, 'roc': 1.0, 'mech-experiment': 0.896855, 'mech-control': 0.893214} raw bytes 4616 / 4616
+prefix-natural-8192 {'libdeflate': 0.797873, 'roc': 1.0, 'mech-experiment': 0.786319, 'mech-control': 0.782469} raw bytes 2309 / 2309
+prefix-natural-4096 {'libdeflate': 0.585277, 'roc': 1.0, 'mech-experiment': 0.628964, 'mech-control': 0.622593} raw bytes 983 / 983
+heldout-mixed-131073 {'libdeflate': 0.863883, 'roc': 1.0, 'mech-experiment': 0.807025, 'mech-control': 0.80041} raw bytes 74907 / 74907
+random-1024 {'libdeflate': 0.106632, 'roc': 1.0, 'mech-experiment': 0.100223, 'mech-control': 0.098584} raw bytes 1029 / 1029
+random-64 {'libdeflate': 0.080518, 'roc': 1.0, 'mech-experiment': 0.040098, 'mech-control': 0.04024} raw bytes 69 / 69
+320-overlap {'libdeflate': 0.092109, 'roc': 1.0, 'mech-experiment': 0.091614, 'mech-control': 0.091118} raw bytes 7 / 7
+seven-stored-prefix {'libdeflate': 120.371075, 'roc': 1.0, 'mech-experiment': 0.896701, 'mech-control': 0.895997} raw bytes 12 / 12
+one-stored {'libdeflate': 112.812107, 'roc': 1.0, 'mech-experiment': 0.766181, 'mech-control': 0.77675} raw bytes 6 / 6
+empty {'libdeflate': 127.923796, 'roc': 1.0, 'mech-experiment': 0.836679, 'mech-control': 0.863335} raw bytes 5 / 5

@@ -1,0 +1,21 @@
+{
+  "source_commit": "caa8b22ac5cd4d7c3cf30b5c97f78fd786fe5c16",
+  "compiler_sha256": "c66c37500b0d519a04f1219d617b90075b8f612f76f636310e7fcfe28b7dc107",
+  "observations": [
+    {
+      "samples": {},
+      "sample_sha256": "faf02dc9d941eef9d85484edd722c771781c4a0bac2efdbe241ed0e07c94c845"
+    },
+    {
+      "samples": {},
+      "sample_sha256": "f8e015bc1589df43c49909c0cff9cf874fabb55c351a1c4ef73683951791419b"
+    },
+    {
+      "samples": {},
+      "sample_sha256": "383a5fa201bedb06debc4e87b58e3d5143a3e6ef7350e1a4c796aa1b7dadbf9e"
+    }
+  ],
+  "samples": {},
+  "top_leaves": [],
+  "scope": "Three instrumented source compilations. Samples attribute final cleanup only; they are not matched build timings."
+}

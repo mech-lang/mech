@@ -1,0 +1,99 @@
+{
+  "plan_sha256": "3e6e1d469366361f36cab0fb348e521d34da075ad4a78aac372d01c87c2ef551",
+  "medians": {
+    "mech-control-reference": {
+      "source": 2.184789062710479,
+      "link": 0.0359179163351655,
+      "source_through_link": 2.221099062357098,
+      "strip": 0.0108667085878551,
+      "source_through_strip": 2.232102853944525
+    },
+    "mech-current-spill-pairs": {
+      "source": 2.184327041497454,
+      "link": 0.035492500057443976,
+      "source_through_link": 2.219958021072671,
+      "strip": 0.010864895535632968,
+      "source_through_strip": 2.2311455835588276
+    },
+    "roc": {
+      "source": 2.949136145878583,
+      "link": 0.03495137463323772,
+      "source_through_link": 2.9843746665865183,
+      "strip": 0.010764957871288061,
+      "source_through_strip": 2.995336687657982
+    },
+    "libdeflate": {
+      "source": 0.4466365419793874,
+      "link": 0.03465116652660072,
+      "source_through_link": 0.48160252114757895,
+      "strip": 0.010734249837696552,
+      "source_through_strip": 0.49253431241959333
+    }
+  },
+  "phases": {
+    "mech-control-reference": {
+      "parse": 0.709837021,
+      "catalog": 2.1479e-05,
+      "frontend": 0.2187045835,
+      "artifact": 0.0068296245,
+      "encode": 0.002547208,
+      "native": 1.2181235415
+    },
+    "mech-current-spill-pairs": {
+      "parse": 0.7098135415,
+      "catalog": 2.30205e-05,
+      "frontend": 0.21797352050000002,
+      "artifact": 0.006830271,
+      "encode": 0.0025427495,
+      "native": 1.219664521
+    }
+  },
+  "paired_ratios": {
+    "mech-control-reference": {
+      "roc": 0.7439543509658237,
+      "libdeflate": 4.612097410660644,
+      "mech-control-reference": 1.0
+    },
+    "mech-current-spill-pairs": {
+      "roc": 0.7432249118867276,
+      "libdeflate": 4.609545095050551,
+      "mech-control-reference": 0.9996832643542155
+    }
+  },
+  "source_commit": "388e1087c401cd3b9f87a31b10652372ab720096",
+  "compiler_sha256": "6711160f915f00bb783831fc14f0144ba7949c06ea9df264edd727a62d44e715",
+  "trials": 8,
+  "source_cpu_seconds": {
+    "mech-control-reference": 2.2447860000000004,
+    "mech-current-spill-pairs": 2.2448620000000004,
+    "roc": 2.9415995,
+    "libdeflate": 0.44317949999999995
+  },
+  "source_rss_bytes": {
+    "mech-control-reference": 392806400.0,
+    "mech-current-spill-pairs": 393076736.0,
+    "roc": 392519680.0,
+    "libdeflate": 71540736.0
+  },
+  "stripped_executables": {
+    "mech-control-reference": {
+      "bytes": 276072,
+      "sha256": "95c583c67e0c25c7179a9affe6b3d9ecde604ed0be43f9ec49ab6dc948e66fb5"
+    },
+    "mech-current-spill-pairs": {
+      "bytes": 276072,
+      "sha256": "38251de381d9c1e63a927d73bf1bc51483ea1f1b4dc9827ad87d4c1ed6d08f4b"
+    },
+    "roc": {
+      "bytes": 191912,
+      "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+    },
+    "libdeflate": {
+      "bytes": 155752,
+      "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+    }
+  },
+  "paired_ms_pairs_vs_control": -0.7035625167191029,
+  "pairs_faster_than_control": 4,
+  "timing_boundary": "Fresh process, original encoder source through native artifact and final deployment link; fixed support prebuilt for every actor; strip is reported separately."
+}

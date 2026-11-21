@@ -1,0 +1,16 @@
+{
+  "checked_root_before": 47768,
+  "checked_root_after": 47428,
+  "symbol_changes": {
+    "_mech_compact_closed_checked": -340,
+    "_mech_compact_allocate_backing_stride_8_zeroed_0_from_frame": 24,
+    "_mech_compact_release_three_from_frame": 12,
+    "_mech_compact_allocate_backing_stride_1_zeroed_1_from_frame": 24,
+    "_mech_compact_allocate_backing_from_frame": -24,
+    "_mech_compact_allocate_backing_stride_2_zeroed_0_from_frame": 24,
+    "_mech_compact_allocate_backing_stride_8_zeroed_1_from_frame": 24,
+    "_mech_compact_allocate_backing_stride_4_zeroed_1_from_frame": 24,
+    "_mech_compact_allocate_backing_stride_2_zeroed_1_from_frame": 24
+  },
+  "total_change": -208
+}

@@ -1,0 +1,12 @@
+Traceback (most recent call last):
+  File "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-runtime-target/profile-matcher-guards.py", line 33, in <module>
+    def refine_fast(initial,weights):
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-runtime/fresh-profile.py", line 29, in refine
+    offered = score(trial)
+  File "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-runtime/fresh-profile.py", line 15, in score
+    return sum(weights.get(pair, 0) for pair in zip(items, items[1:]))
+  File "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/current-roadmap/scorer-runtime/fresh-profile.py", line 15, in <genexpr>
+    return sum(weights.get(pair, 0) for pair in zip(items, items[1:]))
+               ~~~~~~~~~~~^^^^^^^^^
+KeyboardInterrupt

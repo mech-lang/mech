@@ -1,0 +1,7 @@
+{
+  "command": [
+    "python3",
+    "scripts/check-rust-module-layout.py"
+  ],
+  "exit_code": 0
+}

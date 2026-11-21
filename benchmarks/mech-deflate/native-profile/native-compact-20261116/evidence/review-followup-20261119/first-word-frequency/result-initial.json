@@ -1,0 +1,207 @@
+{
+  "role": "first-word-complements",
+  "source_object_sha256": "e5350e3f974b4b92ba059046acc9e63ed718c860bdf6aa30153ee9a7859f5936",
+  "shipping_worker_sha256": "90cc462b0ce98e8b812f19c3b329c3eee898a2949e27d7822442e7730e8c517d",
+  "diagnostic_object_sha256": "1157f3591af047ea3e2d16ac6c66c548483ce73bf3bdd63f44d848da036c0751",
+  "symbol": "_mech_compact_numeric_475_vector",
+  "sites": {
+    "0x458": {
+      "register": "x14",
+      "slot": 1022,
+      "length_guard": 1128
+    },
+    "0x7b4": {
+      "register": "x1",
+      "slot": 1023,
+      "length_guard": 1992
+    },
+    "0x468": {
+      "slot": 1020,
+      "kind": "short_tail",
+      "probe": 1112
+    },
+    "0x7c8": {
+      "slot": 1021,
+      "kind": "short_tail",
+      "probe": 1972
+    }
+  },
+  "cases": {
+    "prefix-natural-1024": {
+      "sites": [
+        {
+          "short_scalar_tails": 0,
+          "vector_entries_after_first_word": 0,
+          "site": "0x458",
+          "probes": 0,
+          "first_word_mismatches": 0,
+          "equal_first_words": 0,
+          "failure_fraction": null
+        },
+        {
+          "short_scalar_tails": 1,
+          "vector_entries_after_first_word": 285,
+          "site": "0x7b4",
+          "probes": 710,
+          "first_word_mismatches": 424,
+          "equal_first_words": 286,
+          "failure_fraction": 0.5971830985915493
+        }
+      ],
+      "probes": 710,
+      "first_word_mismatches": 424,
+      "verified_calls": 2
+    },
+    "prefix-natural-4096": {
+      "sites": [
+        {
+          "short_scalar_tails": 0,
+          "vector_entries_after_first_word": 0,
+          "site": "0x458",
+          "probes": 4,
+          "first_word_mismatches": 4,
+          "equal_first_words": 0,
+          "failure_fraction": 1.0
+        },
+        {
+          "short_scalar_tails": 0,
+          "vector_entries_after_first_word": 2579,
+          "site": "0x7b4",
+          "probes": 5558,
+          "first_word_mismatches": 2979,
+          "equal_first_words": 2579,
+          "failure_fraction": 0.5359841669665347
+        }
+      ],
+      "probes": 5562,
+      "first_word_mismatches": 2983,
+      "verified_calls": 2
+    },
+    "prefix-natural-8192": {
+      "sites": [
+        {
+          "short_scalar_tails": 0,
+          "vector_entries_after_first_word": 0,
+          "site": "0x458",
+          "probes": 0,
+          "first_word_mismatches": 0,
+          "equal_first_words": 0,
+          "failure_fraction": null
+        },
+        {
+          "short_scalar_tails": 0,
+          "vector_entries_after_first_word": 3916,
+          "site": "0x7b4",
+          "probes": 12086,
+          "first_word_mismatches": 8170,
+          "equal_first_words": 3916,
+          "failure_fraction": 0.6759887473109383
+        }
+      ],
+      "probes": 12086,
+      "first_word_mismatches": 8170,
+      "verified_calls": 2
+    },
+    "prefix-random-4096": {
+      "sites": [
+        {
+          "short_scalar_tails": 0,
+          "vector_entries_after_first_word": 0,
+          "site": "0x458",
+          "probes": 0,
+          "first_word_mismatches": 0,
+          "equal_first_words": 0,
+          "failure_fraction": null
+        },
+        {
+          "short_scalar_tails": 0,
+          "vector_entries_after_first_word": 0,
+          "site": "0x7b4",
+          "probes": 0,
+          "first_word_mismatches": 0,
+          "equal_first_words": 0,
+          "failure_fraction": null
+        }
+      ],
+      "probes": 0,
+      "first_word_mismatches": 0,
+      "verified_calls": 2
+    },
+    "prefix-random-8192": {
+      "sites": [
+        {
+          "short_scalar_tails": 0,
+          "vector_entries_after_first_word": 0,
+          "site": "0x458",
+          "probes": 0,
+          "first_word_mismatches": 0,
+          "equal_first_words": 0,
+          "failure_fraction": null
+        },
+        {
+          "short_scalar_tails": 0,
+          "vector_entries_after_first_word": 0,
+          "site": "0x7b4",
+          "probes": 0,
+          "first_word_mismatches": 0,
+          "equal_first_words": 0,
+          "failure_fraction": null
+        }
+      ],
+      "probes": 0,
+      "first_word_mismatches": 0,
+      "verified_calls": 2
+    },
+    "prefix-random-1048576": {
+      "sites": [
+        {
+          "short_scalar_tails": 0,
+          "vector_entries_after_first_word": 0,
+          "site": "0x458",
+          "probes": 0,
+          "first_word_mismatches": 0,
+          "equal_first_words": 0,
+          "failure_fraction": null
+        },
+        {
+          "short_scalar_tails": 0,
+          "vector_entries_after_first_word": 0,
+          "site": "0x7b4",
+          "probes": 1962,
+          "first_word_mismatches": 1962,
+          "equal_first_words": 0,
+          "failure_fraction": 1.0
+        }
+      ],
+      "probes": 1962,
+      "first_word_mismatches": 1962,
+      "verified_calls": 2
+    },
+    "16384-distribution-change": {
+      "sites": [
+        {
+          "short_scalar_tails": 0,
+          "vector_entries_after_first_word": 0,
+          "site": "0x458",
+          "probes": 0,
+          "first_word_mismatches": 0,
+          "equal_first_words": 0,
+          "failure_fraction": null
+        },
+        {
+          "short_scalar_tails": 0,
+          "vector_entries_after_first_word": 0,
+          "site": "0x7b4",
+          "probes": 449,
+          "first_word_mismatches": 449,
+          "equal_first_words": 0,
+          "failure_fraction": 1.0
+        }
+      ],
+      "probes": 449,
+      "first_word_mismatches": 449,
+      "verified_calls": 2
+    }
+  },
+  "scope": "Conditional diagnostic counters only. The exact following remaining-length guard separates vector entries from short scalar tails. Counts are per call and per probe, rather than vector iterations. No latency or instruction totals inferred."
+}

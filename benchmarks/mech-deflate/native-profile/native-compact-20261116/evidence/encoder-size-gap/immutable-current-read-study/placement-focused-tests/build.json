@@ -1,0 +1,96 @@
+{
+  "scope": "Focused test harness. Exact production defaulted_loads.rs is compiled including its tests; the surrounding recognizer functions are exact SHA-bound source spans, with only the error adapter represented by String. This does not substitute for private-loan contract or full-worker qualification.",
+  "command": [
+    "rustc",
+    "+nightly-2026-03-03",
+    "--edition=2024",
+    "--test",
+    "-C",
+    "opt-level=3",
+    "-C",
+    "codegen-units=16",
+    "-C",
+    "embed-bitcode=no",
+    "--cfg",
+    "feature=\"jit\"",
+    "-L",
+    "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/placement-focused-tests/tests.rs",
+    "-o",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/collector-read-lifetimes/placement-focused-tests/tests",
+    "--extern",
+    "cranelift_codegen=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_codegen-d7c7fff1066f618e.rlib",
+    "--extern",
+    "cranelift_jit=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_jit-c2b908fd462bd708.rlib",
+    "--extern",
+    "cranelift_module=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_module-66db0da08c7f38f6.rlib",
+    "--extern",
+    "cranelift_frontend=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_frontend-058074d3f4503b68.rlib"
+  ],
+  "source_spans": [
+    {
+      "source": "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/word_ranges/mod.rs",
+      "source_sha256": "772ebced8c080087919f984057f3a0269d44fd7eb73a1760f8ff35517f319c22",
+      "start_marker": "fn word_mask",
+      "end_marker": "#[cfg(test)]",
+      "span_sha256": "37cb674aa1e4d40fc025f480fbd8de236e67be4f149968f24f4104283f426e54"
+    },
+    {
+      "source": "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/boolean_conditions/mod.rs",
+      "source_sha256": "6ab893df9ab4d8b47f075c5098e6f8a8c1cedb1db1fe05dcc1a86fa59ff71493",
+      "start_marker": "pub(in super::super) fn masked_integer_comparison",
+      "end_marker": "fn literal",
+      "span_sha256": "9a8c28981e113e72967a6c6e1fe00a8e0162fa641cec855e103aa98f6dc1ee10"
+    },
+    {
+      "source": "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/window_bounds/mod.rs",
+      "source_sha256": "45653d2852a696ae8d6a73663017e8d8b48a3b0ba8ee6deca6b03c2bc014bf46",
+      "start_marker": "fn predicate_definition",
+      "end_marker": "fn length_test",
+      "span_sha256": "5d61290c25266381f03594ef102e61b8b1b96b96cd4c1bcdf51e22078a6a8e48"
+    },
+    {
+      "source": "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/composed_reads.rs",
+      "source_sha256": "636c334b499e941943af5cef2cdc7d1befa51c697351eada4ca87590a35c952c",
+      "start_marker": "#[derive(Clone)]\npub(in crate::native_artifact) struct Literal",
+      "end_marker": "pub(in crate::native_artifact) struct Capture",
+      "span_sha256": "430eaf77227ed6dc2cfd4337fcd35f3dcee17be595f9fd6ec5830edac4dfc8ff"
+    },
+    {
+      "source": "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/local_phis/mod.rs",
+      "source_sha256": "83e4a9975f6b1487ccab6988207820a19bd5b19eaab29b4e4c97acbc487c7c06",
+      "start_marker": "pub(in crate::native_artifact::program) fn incoming",
+      "end_marker": "fn graph",
+      "span_sha256": "a5df729f3ebf1c1a947e636b45f0fd59eb3b921330e43dad38005c6ecf4b0d82"
+    },
+    {
+      "source": "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/composed_reads.rs",
+      "source_sha256": "636c334b499e941943af5cef2cdc7d1befa51c697351eada4ca87590a35c952c",
+      "start_marker": "#[derive(Clone)]\npub(super) struct Read",
+      "end_marker": "pub(super) fn between",
+      "span_sha256": "6730dc3532edc721d814bae9b16424ebc64abaec4f23a695d13fbb5b30f43593"
+    }
+  ],
+  "production_module_sha256": "e883f4d810ce0928e15f991057805c81e8a376a74f8642dfa1230f3dfc9d6950",
+  "production_helper_sha256": "786257e5a7dbb699f3995f40d3f0a12df0a8d2e3b4a0be086aa3cce6b6d0700d",
+  "dependencies": {
+    "cranelift_codegen": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_codegen-d7c7fff1066f618e.rlib",
+      "sha256": "646b5298f203595d5bc2e5c6ce0c6e7268d307de4242c94e0d180bc9ea4d048f"
+    },
+    "cranelift_jit": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_jit-c2b908fd462bd708.rlib",
+      "sha256": "aa6f37c1368de6ccfdde77de105b75e466c709277845588674a90038077b107a"
+    },
+    "cranelift_module": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_module-66db0da08c7f38f6.rlib",
+      "sha256": "bb3691ac9eddfe2fe120222120325ef344894e9f6d846554eb658ec3db00deff"
+    },
+    "cranelift_frontend": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_frontend-058074d3f4503b68.rlib",
+      "sha256": "468adee593e0e314a462530c3baf69d15430a5fd4318d382282f50dd8fca0b7f"
+    }
+  },
+  "exit_code": 0,
+  "seconds_diagnostic": 0.8541168752126396
+}

@@ -1,0 +1,46 @@
+   Compiling smallvec v1.15.2
+   Compiling cranelift-bitset v0.131.3
+   Compiling cranelift-entity v0.131.3
+   Compiling cranelift-codegen v0.131.3 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/vendor/cranelift-codegen)
+   Compiling regalloc2 v0.15.2 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/vendor/regalloc2)
+   Compiling cranelift-bforest v0.131.3
+   Compiling mech-syntax v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/syntax)
+   Compiling grapheme v1.3.0
+   Compiling mech-engine v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/engine)
+   Compiling cranelift-module v0.131.3
+   Compiling cranelift-native v0.131.3
+   Compiling cranelift-jit v0.131.3
+   Compiling cranelift-object v0.131.3
+   Compiling mech-compute v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/compute)
+   Compiling cranelift-frontend v0.131.3 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/vendor/cranelift-frontend)
+   Compiling mech-gpu v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/hosts/gpu)
+   Compiling mech-stdlib v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/stdlib)
+   Compiling mech-compression-native-profile v0.0.0 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile)
+    Finished `release` profile [optimized] target(s) in 11m 48s
+     Running construction_census_tests.rs (/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/construction_census-2cfbd8f4df41aaf7)
+
+running 1 test
+test clone_clear_compact_and_cross_thread_drop_balance_actual_graph_storage ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running construction_census_serde_tests.rs (/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/construction_census_serde-b0f84f8f4253d322)
+
+running 1 test
+test deserialized_graph_accounts_for_its_maps_without_changing_the_wire_shape ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running partition_plan_tests.rs (/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/partition_plan-acf9fa0dd85dcc75)
+
+running 7 tests
+test partition_plan::tests::a_failure_path_does_not_require_a_success_result_but_keeps_its_source_site ... ok
+test partition_plan::tests::closed_cycles_and_sparse_canonical_values_still_have_small_local_domains ... ok
+test partition_plan::tests::conditional_writes_capture_the_old_live_result_and_keep_local_dense_ids ... ok
+test partition_plan::tests::external_middle_entries_and_split_hidden_resources_are_refused ... ok
+test partition_plan::tests::mutable_initial_values_cannot_be_presented_as_invariant_constants ... ok
+test partition_plan::tests::separate_regions_own_each_original_operation_once ... ok
+test partition_plan::tests::terminal_completion_overlap_invalid_ids_and_word_overflow_are_refused ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

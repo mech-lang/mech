@@ -1,0 +1,13 @@
+{
+  "source_integration_commit": "5ccf097dc02ceb3abb17bccb85cd11a3ae144503",
+  "compiler_sha256": "7fc8647695c26065516d04ee6ae01ef22510bb88fb88bb5b1d9bb76481e22c22",
+  "source_inputs": {
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads.rs": "e883f4d810ce0928e15f991057805c81e8a376a74f8642dfa1230f3dfc9d6950",
+    "hosts/gpu/src/native_artifact/program/compact/private_phase.rs": "243c0dd2325723be45c5efa89a4c6abc3709e89d263d3c3bd3b405a139461dea",
+    "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "f80c6241e657f6933a9d2c154a222deb81e55f8497bc0101a7c34d4de6c91f71",
+    "hosts/gpu/src/native_artifact/program/compact/private_phase_tests.rs": "3540bb2462bc462cb84cff074b817258c5f2bd23bdf863635aea0d734f679167",
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads/immutable.rs": "786257e5a7dbb699f3995f40d3f0a12df0a8d2e3b4a0be086aa3cce6b6d0700d"
+  },
+  "same_source_content": true,
+  "scope": "This committed compiler source exactly matches every modified Rust input of the immutable source-built compiler. Selected recipe remains unchanged until full runtime and complete builds qualify."
+}

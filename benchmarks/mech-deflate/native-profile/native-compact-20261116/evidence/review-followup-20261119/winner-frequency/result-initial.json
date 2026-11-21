@@ -1,0 +1,62 @@
+{
+  "source_object_sha256": "c135e6b0ccdd8124d6f26ef9c738a1cbe374fa4dae61852b886c6f8e3a7cf6b5",
+  "shipping_worker_sha256": "fab303151eca902a95986488684102fc1707ec7f8df1324ebfd9c55543cfc368",
+  "diagnostic_object_sha256": "035b3df7ff8f620f1c2e2df5f08c520c6484540be0f5e747a5bc132f149862d6",
+  "symbol": "_mech_compact_numeric_3009_no_growth_composed",
+  "site": "0x1af8",
+  "original_instruction": [
+    "csel",
+    "x19, x7, x19, ne"
+  ],
+  "predicate": "NE after vector min-index sentinel comparison; true means the vector reduction supplies a replacement winner. This is per reduction, not per SIMD chunk.",
+  "cases": {
+    "prefix-natural-1024": {
+      "vector_reductions": 440,
+      "vector_winners": 153,
+      "fraction": 0.3477272727272727,
+      "verified_calls": 2
+    },
+    "prefix-natural-4096": {
+      "vector_reductions": 3550,
+      "vector_winners": 1449,
+      "fraction": 0.40816901408450706,
+      "verified_calls": 2
+    },
+    "prefix-natural-8192": {
+      "vector_reductions": 6036,
+      "vector_winners": 2516,
+      "fraction": 0.41683233929754804,
+      "verified_calls": 2
+    },
+    "prefix-random-4096": {
+      "vector_reductions": 0,
+      "vector_winners": 0,
+      "fraction": null,
+      "verified_calls": 2
+    },
+    "prefix-random-8192": {
+      "vector_reductions": 0,
+      "vector_winners": 0,
+      "fraction": null,
+      "verified_calls": 2
+    },
+    "prefix-random-1048576": {
+      "vector_reductions": 0,
+      "vector_winners": 0,
+      "fraction": null,
+      "verified_calls": 2
+    },
+    "16384-distribution-change": {
+      "vector_reductions": 0,
+      "vector_winners": 0,
+      "fraction": null,
+      "verified_calls": 2
+    }
+  },
+  "scope": "Diagnostic clone only; no latency values or instruction totals are inferred from conditional slots. All shipping code remains source emitted.",
+  "denominator_cross_check": {
+    "method": "Conditional-site entries exactly match the independent original basic-block counts for every case.",
+    "source_counts": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/word-current-complements-profiled/instruction-counts/counts.json",
+    "passed": true
+  }
+}

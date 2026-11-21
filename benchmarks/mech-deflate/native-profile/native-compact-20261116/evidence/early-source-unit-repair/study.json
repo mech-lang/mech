@@ -1,0 +1,147 @@
+{
+  "source_commit": "44fc9f05304111c6e75cac54a3dc5ec5c4f443bf",
+  "cases": {
+    "selected-map": {
+      "encoder_text_bytes": 63532,
+      "root_code_bytes": 46788,
+      "root_stack_bytes": 3296,
+      "helper_code_bytes": 0,
+      "helper_stack_bytes": 0,
+      "artifacts": {
+        "program.o": "cf15343f1f01089d427122ce51a91ef6fa7b70ef89c50ca4db20901a8d2cefd9",
+        "metadata.json": "169d4b5286cba371400aad6a8e760d2cdb43e1839f8c6b325c9ba542820e6b3d",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      }
+    },
+    "remapped-unsplit": {
+      "encoder_text_bytes": 63532,
+      "root_code_bytes": 46788,
+      "root_stack_bytes": 3296,
+      "helper_code_bytes": 0,
+      "helper_stack_bytes": 0,
+      "artifacts": {
+        "program.o": "764a387ac8137c218d6bfcfbec48bfad0e23c62dc4e056c6ad3442e953447fc5",
+        "metadata.json": "f7766f17e543ecfcc296d4ff0c274ad69d87373bcc7dfce81c66f6f0329ce5be",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      }
+    },
+    "early-no-remap": {
+      "encoder_text_bytes": 69556,
+      "root_code_bytes": 48672,
+      "root_stack_bytes": 3424,
+      "helper_code_bytes": 7348,
+      "helper_stack_bytes": 1072,
+      "artifacts": {
+        "program.o": "38bd70723cb620906fd5fe70d8d15b9dbdaf9aae8b6fee04370bec776278c7a3",
+        "metadata.json": "26e6aee7e84f281922220b8083156971d14e0ab47047b7de043cdbd57f79041c",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      }
+    },
+    "early-remapped": {
+      "encoder_text_bytes": 66204,
+      "root_code_bytes": 42248,
+      "root_stack_bytes": 3680,
+      "helper_code_bytes": 6288,
+      "helper_stack_bytes": 1120,
+      "artifacts": {
+        "program.o": "70a561405c22126dd11508a4c06345f82b834b7315a33a45319ce0630f8f39ca",
+        "metadata.json": "33f92ee0c5a4cae15289d55429e5fa9d5b6e05c24dc26b0fe01683e6361c4a94",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      }
+    },
+    "early-shared-packets": {
+      "encoder_text_bytes": 66188,
+      "root_code_bytes": 42220,
+      "root_stack_bytes": 3248,
+      "helper_code_bytes": 6288,
+      "helper_stack_bytes": 1120,
+      "artifacts": {
+        "program.o": "d41e2671b001f3a8fcb1f435a3d58932f4ad0462cb3b38da62ffe5c0486bb776",
+        "metadata.json": "54f04d445a2f5a9f2efb159f00e106ab177eeae4a42dddd2d9b0af8e4933ae4f",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      }
+    },
+    "early-owner-homes": {
+      "encoder_text_bytes": 65980,
+      "root_code_bytes": 42248,
+      "root_stack_bytes": 3504,
+      "helper_code_bytes": 6056,
+      "helper_stack_bytes": 944,
+      "artifacts": {
+        "program.o": "5dcc48a74adb0dfbba1e6e4a285df3cce471eff052397c6b44beaa1fe5be0d96",
+        "metadata.json": "eb10cafaea2274d80cad1a9b3ebfd5ad818698cb7e05229e9ebea3b98b25561e",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      }
+    },
+    "early-owner-homes-shared": {
+      "encoder_text_bytes": 65964,
+      "root_code_bytes": 42220,
+      "root_stack_bytes": 3168,
+      "helper_code_bytes": 6056,
+      "helper_stack_bytes": 944,
+      "artifacts": {
+        "program.o": "0faefd1957d3b2a9360c6b9619c6bd76c4750ba9e2028107310aa09e633a3e84",
+        "metadata.json": "c02b50d21fcfa49d63dbdaa58753bd8f3bef7ffd2c772ab087fcf3e9ab6d38b0",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      }
+    },
+    "early-shared-output": {
+      "encoder_text_bytes": 66204,
+      "root_code_bytes": 42220,
+      "root_stack_bytes": 3248,
+      "helper_code_bytes": 6304,
+      "helper_stack_bytes": 976,
+      "artifacts": {
+        "program.o": "058c3a2d1e1bd08d5aacf43319202e39595659f5f17857b3998c3721f545c3f2",
+        "metadata.json": "042543e4aa5f889512a907ff5aabff3bab7222a03a4373d200ac58a8aaea5298",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      }
+    },
+    "early-owner-output-shared": {
+      "encoder_text_bytes": 65964,
+      "root_code_bytes": 42220,
+      "root_stack_bytes": 3168,
+      "helper_code_bytes": 6052,
+      "helper_stack_bytes": 816,
+      "artifacts": {
+        "program.o": "6814457e6ff049d289f2a89ee2b16736eac2785979e170a77bcf4a7bd23573c5",
+        "metadata.json": "4cf7582648783a7ba9b9cb93bce64b5dc71fa1d27d8cd1b2faa4dc9349e7d566",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      }
+    },
+    "early-owner-output-root-preserved": {
+      "encoder_text_bytes": 65948,
+      "root_code_bytes": 42220,
+      "root_stack_bytes": 3168,
+      "helper_code_bytes": 6044,
+      "helper_stack_bytes": 800,
+      "artifacts": {
+        "program.o": "8d7872a717efd7820affb98864024844942748c252a40533807079693395399f",
+        "metadata.json": "67a3d0fbbee83339f2b501217e47cc7fde6e46f46fb96335360ffeef32e44dac",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      }
+    }
+  },
+  "source_inputs": {
+    "benchmarks/mech-deflate/native-profile/Cargo.toml": "6969ac31537a38840321c9836bec7d7e5ab35ccd48fd6e144b58a1436a80af00",
+    "benchmarks/mech-deflate/native-profile/source_blocks_tests.rs": "41ea2c74227bff40207a29fcd74b57d88c3bf545cf7b8bdbd6532fb126ae6ab1",
+    "hosts/gpu/src/native_artifact/codegen/common/ssa_packet_homes_tests.rs": "cc7ce7b74faaadbdabac388203ffb2f7b318d8a8a5f438bb58d627213747c69c",
+    "hosts/gpu/src/native_artifact/codegen/common/ssa_words.rs": "6fa1eb7bc0c003100fa49ab62ce7daed2b0b9fdcb8561f37b5103047409bc675",
+    "hosts/gpu/src/native_artifact/program/compact/early_units.rs": "c48c355e4b950e0dbd7e0a40b4ebf713ca525f6c482ca9314a27953f222412cd",
+    "hosts/gpu/src/native_artifact/program/compact/emit.rs": "6548197d306fe45cf06d3eb57cf4d2e30467e2a0217ef0c13c1b4faad47f7f94",
+    "hosts/gpu/src/native_artifact/program/compact/mod.rs": "dea18e50b5074166edbdb4a5b03aa18d274be870bf3d87c1f4cd758fd1cfe0eb",
+    "hosts/gpu/src/native_artifact/program/compact/phase_storage.rs": "e53b1187dd220f2cf5bb3177c09fa794af6c1b0e5927a55f13ef792f50035171",
+    "hosts/gpu/src/native_artifact/program/compact/phase_storage_tests.rs": "542201f33ad2f1c8676d18c7b8b61d1c6900a0ebf71b52918fc2a5339c851a91",
+    "hosts/gpu/src/native_artifact/program/compact/phases.rs": "4af9360a4bff4c24522c35130cb8b6eb86de1a19d724df0c958a302471435b4e",
+    "hosts/gpu/src/native_artifact/program/compact/source_blocks.rs": "bc8623d41645933e1caf295498bab95dc6362376006f6e9dcc82ad099a2c849a",
+    "hosts/gpu/src/native_artifact/program/compact/source_blocks_tests.rs": "687080bc481da210401e4997f487af0ca37533309339aa687a5f6d2ffdf59949",
+    "scripts/unsafe-boundaries.allowlist": "2ca30d1135230730f69d1181f5ccaf4be362b8a18cb72baabcba9d79639002a5"
+  },
+  "selected_worker_sha256": "834c7a7e423a69c46483a3dae74d9450949fdf142b5ad2dede894e0da3ca8693",
+  "runtime_floor": {
+    "roc": 81,
+    "libdeflate": 62
+  },
+  "architecture_selected": false,
+  "reason": "Repaired source unit remains 2416 B larger, loses the existing 320-overlap C win in both focused orders, and adds paired 66.899 ms through final link. Keep the source machinery and repair evidence, without selecting its encoder."
+}

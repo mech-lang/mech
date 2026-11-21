@@ -1,0 +1,12 @@
+{
+  "cpu": "Apple M3",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.2\nBuildVersion:\t\t25C56",
+  "architecture": "arm64",
+  "clock": "Rust Instant in exact archived M1 executables",
+  "python": "3.14.8",
+  "recorded_at": "2026-11-18T00:27:23.217715+00:00",
+  "power": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22413411)\t78%; AC attached; not charging present: true",
+  "thread_environment": {},
+  "before_timing_thermal_state": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded",
+  "comparison_support": "All four actors are exact archived M1 executables."
+}

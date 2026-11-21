@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "source_replays": 10,
+  "scalar_tests": 79,
+  "focused_native_tests": 2,
+  "focused_native_calls": 103424,
+  "saved_runtime_calls": 4674624,
+  "zero_duration_samples_retained": 585974,
+  "actual_training_counter_cases": 54,
+  "complete_build_orders": 12,
+  "deployment_executions": 486,
+  "selected_default_changed": false,
+  "new_qualified_C_win": false
+}

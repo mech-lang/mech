@@ -66,7 +66,7 @@ fn private_fixed_nested_contract_leaves_ordinary_funding_refusal_intact() {
         assert!(proof.phase.as_ref().unwrap().checked_children);
         assert_eq!(proof.exits.len(), 2);
         assert!(proof.exits.iter().all(|e| e.kind != ExitKind::Unsupported));
-        let contract = PrivatePhase::derive(&prepared, region, &layout)
+        let contract = PrivatePhase::derive(&prepared, region, &layout, false)
             .unwrap()
             .unwrap();
         assert!(contract.permits(proof));
@@ -87,7 +87,8 @@ fn private_fixed_nested_handoffs_are_exact_current_scalar_and_alias_exports() {
         let layout = Layout::derive(prepared.plan()).unwrap();
         let mut handoffs = 0;
         for region in &prepared.metadata().closed_tails.regions {
-            if let Some(contract) = PrivatePhase::derive(&prepared, region, &layout).unwrap() {
+            if let Some(contract) = PrivatePhase::derive(&prepared, region, &layout, false).unwrap()
+            {
                 let proof = region.numeric.as_ref().unwrap();
                 let shadow = region.shadow.unwrap();
                 let exports = contract.exports(shadow);
@@ -135,10 +136,45 @@ fn private_fixed_nested_contract_declines_growing_storage() {
                 .regions
                 .iter()
                 .all(|region| {
-                    PrivatePhase::derive(&prepared, region, &layout)
+                    PrivatePhase::derive(&prepared, region, &layout, false)
                         .unwrap()
                         .is_none()
                 })
+        );
+    }
+}
+
+#[test]
+fn private_immutable_default_views_require_the_exact_fixed_source_loan() {
+    let source = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec"
+    ));
+    for artifact in artifacts(source) {
+        let prepared = prepared(&artifact);
+        let layout = Layout::derive(prepared.plan()).unwrap();
+        let mut immutable = 0;
+        let mut mutable = 0;
+        for region in &prepared.metadata().closed_tails.regions {
+            let Some(contract) = PrivatePhase::derive(&prepared, region, &layout, false).unwrap()
+            else {
+                continue;
+            };
+            let proof = region.numeric.as_ref().unwrap();
+            let arrays = contract.immutable_fixed_arrays(proof);
+            for (array, view) in proof.arrays.iter().enumerate() {
+                if view.writable || view.appends {
+                    mutable += 1;
+                    assert!(!arrays.contains(&array));
+                }
+            }
+            immutable += arrays.len();
+            assert!(contract.immutable_fixed_arrays(&proof.clone()).is_empty());
+        }
+        assert!(immutable > 0, "the input has a retained immutable lane");
+        assert!(
+            mutable > 0,
+            "the updated data requires the unique-owner gate"
         );
     }
 }

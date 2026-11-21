@@ -1,0 +1,19 @@
+{
+  "monotonic_seconds": 2335028.722169208,
+  "own_process_ids": [
+    54331,
+    54332,
+    54333,
+    54334,
+    54335,
+    54394
+  ],
+  "heavy_external_processes": [
+    {
+      "pid": 54392,
+      "cpu_percent": 94.1,
+      "command": "/Users/cim310/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc"
+    }
+  ],
+  "sampled_between_blocks_with_all_benchmark_workers_idle": true
+}

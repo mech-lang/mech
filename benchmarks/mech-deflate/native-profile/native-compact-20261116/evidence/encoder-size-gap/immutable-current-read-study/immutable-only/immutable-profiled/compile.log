@@ -1,0 +1,328 @@
+compile-profile: pid=72244 phase=parse
+{"phase":"parse","seconds":0.741925208,"total_seconds":0.742144583}
+{"phase":"catalog","seconds":0.000018667,"total_seconds":0.74227675}
+compile-profile: phase=frontend
+{"phase":"frontend","seconds":0.23864225,"total_seconds":0.980971042}
+{"phase":"artifact","seconds":0.008251292,"total_seconds":0.989305417}
+{"phase":"encode","seconds":0.003738625,"total_seconds":1.005047583}
+compile-profile: phase=native mode=compact
+compact-stage: canonical lowering
+compact-stage: preparation blocks=8223 values=5690
+compact-stage: native module
+compact-stage: numeric phase mech_compact_numeric_475
+compact-stage: skipped general numeric SSA mech_compact_numeric_475
+compact-stage: numeric phase mech_compact_numeric_475_vector
+mech_compact_numeric_475_vector defaulted loads folded: 2, immutable: 2
+compact-stage: numeric phase mech_compact_numeric_3009
+compact-stage: skipped general numeric SSA mech_compact_numeric_3009
+compact-stage: numeric phase mech_compact_numeric_3009_no_growth
+mech_compact_numeric_3009_no_growth_composed split admitted cost checks: 2
+compact-stage: numeric phase mech_compact_numeric_4173
+compact-stage: numeric phase mech_compact_numeric_4173_vector
+compact-stage: numeric phase mech_compact_numeric_3447
+compact-stage: numeric phase mech_compact_numeric_3447_vector
+compact-stage: numeric phase mech_compact_numeric_3956
+compact-stage: numeric phase mech_compact_numeric_3956_vector
+compact-stage: numeric phase mech_compact_numeric_4879
+compact-stage: numeric phase mech_compact_numeric_4879_vector
+compact-stage: numeric phase mech_compact_numeric_4673
+compact-stage: numeric phase mech_compact_numeric_4673_vector
+compact-stage: numeric phase mech_compact_numeric_6633
+compact-stage: numeric phase mech_compact_numeric_6633_vector
+compact-stage: numeric phase mech_compact_numeric_5895
+compact-stage: numeric phase mech_compact_numeric_5895_vector
+compact-stage: numeric phase mech_compact_numeric_3872
+compact-stage: numeric phase mech_compact_numeric_3872_vector
+compact-stage: numeric phase mech_compact_numeric_4799
+compact-stage: numeric phase mech_compact_numeric_4799_vector
+compact-stage: numeric phase mech_compact_numeric_2821
+compact-stage: numeric phase mech_compact_numeric_2821_vector
+compact-stage: numeric phase mech_compact_numeric_8026
+compact-stage: numeric phase mech_compact_numeric_8026_vector
+compact-stage: numeric phase mech_compact_numeric_362
+compact-stage: numeric phase mech_compact_numeric_362_vector
+compact-stage: typed layout
+compact-stage: flow proof
+compact-stage: operation recipes
+compact-stage: direct scalar literals=1389
+compact source empty jumps forwarded: 1837
+compact-stage: source CFG
+compact-stage: source site 0/8223
+compact-stage: source site 4096/8223
+compact-stage: source site 8192/8223
+compact-stage: finalize SSA
+compact direct scalar homes: 9302/9302
+compact scalar array growth sites shared: 3, backing: 19
+compact-stage: compact values before=831378
+compact-values: retained=122162
+compact-stage: CFG cleanup
+compact vector 362 array 1 keeps guard: computed geometry at v1398 Result(inst1395, 0)
+compact vector definition v1398 = load.i64 v1+32
+compact vector 475 array 1 proved with 1 current values
+compact vector 475 array 2 keeps guard: computed geometry at v1398 Result(inst1395, 0)
+compact vector definition v1398 = load.i64 v1+32
+compact vector 475 array 3 keeps guard: different guard expression at v122782 Result(inst109227, 0)
+compact vector definition v122782 = band_imm.i64 v122951, 1
+compact vector 475 array 4 keeps guard: different guard expression at v122783 Result(inst109228, 0)
+compact vector definition v122783 = band_imm.i64 v122954, 1
+compact vector 475 array 5 keeps guard: different guard expression at v122784 Result(inst109229, 0)
+compact vector definition v122784 = band_imm.i64 v122960, 1
+compact vector 475 array 6 keeps guard: different guard expression at v122785 Result(inst109230, 0)
+compact vector definition v122785 = band_imm.i64 v122963, 1
+compact vector 2821 array 0 keeps guard: computed geometry at v1398 Result(inst1395, 0)
+compact vector definition v1398 = load.i64 v1+32
+compact vector 3956 array 0 proved with 3 current values
+compact vector 4673 array 0 proved with 3 current values
+compact vector 4673 array 1 proved with 3 current values
+compact vector 4673 array 2 proved with 3 current values
+compact unit branches proved: 0
+compact checked controller 2184 boundary: 78 blocks, 7 inputs, 1 outputs
+compact checked controller 2388 boundary: 109 blocks, 5 inputs, 4 outputs
+compact checked region 2599 declined: entry or continuation did not survive cleanup
+compact checked region 2314 declined: entry or continuation did not survive cleanup
+compact checked region 2685 declined: entry or continuation did not survive cleanup
+compact checked region 31 declined: entry or continuation did not survive cleanup
+compact checked controller 2184 packet: 7 captures, 1 results
+compact checked controller 2184 524 bytes, 2 arguments, 96 frame bytes
+compact checked controller 2388 retirement sites shared: 1
+compact checked controller 2388 packet: 5 captures, 4 results
+compact checked controller 2388 892 bytes, 2 arguments, 128 frame bytes
+compact checked controller 16147 boundary: 14 blocks, 6 inputs, 2 outputs
+compact checked controller 13159 boundary: 16 blocks, 7 inputs, 2 outputs
+compact checked controller 13100 boundary: 14 blocks, 5 inputs, 2 outputs
+compact checked controller 13019 boundary: 14 blocks, 5 inputs, 2 outputs
+compact checked controller 12907 boundary: 14 blocks, 6 inputs, 2 outputs
+compact checked controller 12570 boundary: 14 blocks, 7 inputs, 2 outputs
+compact checked controller 12485 boundary: 14 blocks, 7 inputs, 2 outputs
+compact checked controller 12473 boundary: 14 blocks, 7 inputs, 2 outputs
+compact checked controller 12243 boundary: 14 blocks, 7 inputs, 2 outputs
+compact checked controller 12103 boundary: 14 blocks, 6 inputs, 2 outputs
+compact checked controller 10939 boundary: 14 blocks, 4 inputs, 2 outputs
+compact checked controller 10936 boundary: 14 blocks, 5 inputs, 2 outputs
+compact checked controller 10856 boundary: 14 blocks, 4 inputs, 2 outputs
+compact checked controller 10854 boundary: 14 blocks, 5 inputs, 2 outputs
+compact checked controller 10647 boundary: 14 blocks, 4 inputs, 2 outputs
+compact checked controller 10645 boundary: 14 blocks, 5 inputs, 2 outputs
+compact checked controller 10572 boundary: 14 blocks, 4 inputs, 2 outputs
+compact checked controller 10569 boundary: 14 blocks, 5 inputs, 2 outputs
+compact checked controller 10308 boundary: 14 blocks, 6 inputs, 2 outputs
+compact checked controller 10273 boundary: 14 blocks, 5 inputs, 2 outputs
+compact checked controller 10234 boundary: 14 blocks, 5 inputs, 2 outputs
+compact checked controller 10214 boundary: 14 blocks, 5 inputs, 2 outputs
+compact checked controller 9468 boundary: 14 blocks, 6 inputs, 2 outputs
+compact checked controller 9084 boundary: 14 blocks, 6 inputs, 2 outputs
+compact checked layout 16147 prepared local IR
+compact checked layout 16147 retirement sites shared: 1
+compact checked layout 16147 packet: 7 captures, 2 results
+compact checked layout 16147 296 bytes, 1 arguments, 48 frame bytes
+compact checked layout 13159 prepared local IR
+compact checked layout 13159 retirement sites shared: 1
+compact checked layout 13159 packet: 7 captures, 2 results
+compact checked layout 13159 296 bytes, 1 arguments, 48 frame bytes
+compact checked layout 13100 prepared local IR
+compact checked layout 13100 retirement sites shared: 1
+compact checked layout 13100 packet: 6 captures, 2 results
+compact checked layout 13100 296 bytes, 1 arguments, 48 frame bytes
+compact checked layout 13019 prepared local IR
+compact checked layout 13019 retirement sites shared: 1
+compact checked layout 13019 packet: 6 captures, 2 results
+compact checked layout 13019 296 bytes, 1 arguments, 48 frame bytes
+compact checked layout 12907 prepared local IR
+compact checked layout 12907 retirement sites shared: 1
+compact checked layout 12907 packet: 7 captures, 2 results
+compact checked layout 12907 296 bytes, 1 arguments, 48 frame bytes
+compact checked layout 12570 prepared local IR
+compact checked layout 12570 retirement sites shared: 1
+compact checked layout 12570 packet: 7 captures, 2 results
+compact checked layout 12570 296 bytes, 1 arguments, 48 frame bytes
+compact checked layout 12485 prepared local IR
+compact checked layout 12485 retirement sites shared: 1
+compact checked layout 12485 packet: 7 captures, 2 results
+compact checked layout 12485 296 bytes, 1 arguments, 48 frame bytes
+compact checked layout 12473 prepared local IR
+compact checked layout 12473 retirement sites shared: 1
+compact checked layout 12473 packet: 7 captures, 2 results
+compact checked layout 12473 296 bytes, 1 arguments, 48 frame bytes
+compact checked layout 12243 prepared local IR
+compact checked layout 12243 retirement sites shared: 1
+compact checked layout 12243 packet: 7 captures, 2 results
+compact checked layout 12243 296 bytes, 1 arguments, 48 frame bytes
+compact checked layout 12103 prepared local IR
+compact checked layout 12103 retirement sites shared: 1
+compact checked layout 12103 packet: 7 captures, 2 results
+compact checked layout 12103 296 bytes, 1 arguments, 48 frame bytes
+compact checked layout 10939 prepared local IR
+compact checked layout 10939 retirement sites shared: 1
+compact checked layout 10939 packet: 5 captures, 2 results
+compact checked layout 10939 300 bytes, 1 arguments, 48 frame bytes
+compact checked layout 10936 prepared local IR
+compact checked layout 10936 retirement sites shared: 1
+compact checked layout 10936 packet: 6 captures, 2 results
+compact checked layout 10936 296 bytes, 1 arguments, 48 frame bytes
+compact checked layout 10856 prepared local IR
+compact checked layout 10856 retirement sites shared: 1
+compact checked layout 10856 packet: 5 captures, 2 results
+compact checked layout 10856 300 bytes, 1 arguments, 48 frame bytes
+compact checked layout 10854 prepared local IR
+compact checked layout 10854 retirement sites shared: 1
+compact checked layout 10854 packet: 6 captures, 2 results
+compact checked layout 10854 296 bytes, 1 arguments, 48 frame bytes
+compact checked layout 10647 prepared local IR
+compact checked layout 10647 retirement sites shared: 1
+compact checked layout 10647 packet: 5 captures, 2 results
+compact checked layout 10647 300 bytes, 1 arguments, 48 frame bytes
+compact checked layout 10645 prepared local IR
+compact checked layout 10645 retirement sites shared: 1
+compact checked layout 10645 packet: 6 captures, 2 results
+compact checked layout 10645 296 bytes, 1 arguments, 48 frame bytes
+compact checked layout 10572 prepared local IR
+compact checked layout 10572 retirement sites shared: 1
+compact checked layout 10572 packet: 5 captures, 2 results
+compact checked layout 10572 300 bytes, 1 arguments, 48 frame bytes
+compact checked layout 10569 prepared local IR
+compact checked layout 10569 retirement sites shared: 1
+compact checked layout 10569 packet: 6 captures, 2 results
+compact checked layout 10569 296 bytes, 1 arguments, 48 frame bytes
+compact checked layout 10308 prepared local IR
+compact checked layout 10308 retirement sites shared: 1
+compact checked layout 10308 packet: 7 captures, 2 results
+compact checked layout 10308 296 bytes, 1 arguments, 48 frame bytes
+compact checked layout 10273 prepared local IR
+compact checked layout 10273 retirement sites shared: 1
+compact checked layout 10273 packet: 6 captures, 2 results
+compact checked layout 10273 296 bytes, 1 arguments, 48 frame bytes
+compact checked layout 10234 prepared local IR
+compact checked layout 10234 retirement sites shared: 1
+compact checked layout 10234 packet: 6 captures, 2 results
+compact checked layout 10234 296 bytes, 1 arguments, 48 frame bytes
+compact checked layout 10214 prepared local IR
+compact checked layout 10214 retirement sites shared: 1
+compact checked layout 10214 packet: 6 captures, 2 results
+compact checked layout 10214 296 bytes, 1 arguments, 48 frame bytes
+compact checked layout 9468 prepared local IR
+compact checked layout 9468 retirement sites shared: 1
+compact checked layout 9468 packet: 7 captures, 2 results
+compact checked layout 9468 296 bytes, 1 arguments, 48 frame bytes
+compact checked layout 9084 prepared local IR
+compact checked layout 9084 retirement sites shared: 1
+compact checked layout 9084 packet: 7 captures, 2 results
+compact checked layout 9084 296 bytes, 1 arguments, 48 frame bytes
+compact owner retirements shared: 109
+compact checked controller 9112 boundary: 15 blocks, 7 inputs, 4 outputs
+compact checked controller 9506 boundary: 13 blocks, 10 inputs, 6 outputs
+compact checked controller 9562 boundary: 15 blocks, 7 inputs, 2 outputs
+compact checked controller 10015 boundary: 15 blocks, 7 inputs, 2 outputs
+compact checked controller 10073 boundary: 15 blocks, 7 inputs, 2 outputs
+compact checked controller 18836 boundary: 15 blocks, 7 inputs, 4 outputs
+compact checked controller 19604 boundary: 15 blocks, 6 inputs, 4 outputs
+compact checked controller 20752 boundary: 15 blocks, 7 inputs, 2 outputs
+compact checked controller 21031 boundary: 15 blocks, 6 inputs, 2 outputs
+compact checked controller 22297 boundary: 15 blocks, 7 inputs, 2 outputs
+compact checked controller 22580 boundary: 15 blocks, 6 inputs, 2 outputs
+compact checked controller 44066 boundary: 34 blocks, 8 inputs, 5 outputs
+compact checked controller 44401 boundary: 34 blocks, 8 inputs, 5 outputs
+compact checked controller 46036 boundary: 34 blocks, 8 inputs, 5 outputs
+compact checked region 46036 retains 1 shared returns
+compact checked controller 46255 boundary: 34 blocks, 8 inputs, 5 outputs
+compact checked region 46255 retains 1 shared returns
+compact checked controller 16644 boundary: 44 blocks, 11 inputs, 6 outputs
+compact checked controller 43299 boundary: 44 blocks, 11 inputs, 6 outputs
+compact checked controller 8603 boundary: 15 blocks, 5 inputs, 1 outputs
+compact checked controller 9179 boundary: 15 blocks, 5 inputs, 1 outputs
+compact checked controller 9193 boundary: 15 blocks, 5 inputs, 1 outputs
+compact checked controller 9259 boundary: 15 blocks, 5 inputs, 1 outputs
+compact checked controller 9273 boundary: 15 blocks, 5 inputs, 1 outputs
+compact checked controller 9512 boundary: 15 blocks, 5 inputs, 1 outputs
+compact checked controller 9526 boundary: 15 blocks, 5 inputs, 1 outputs
+compact checked controller 9714 boundary: 15 blocks, 5 inputs, 1 outputs
+compact checked controller 9728 boundary: 15 blocks, 5 inputs, 1 outputs
+compact checked controller 9803 boundary: 15 blocks, 5 inputs, 1 outputs
+compact checked controller 9817 boundary: 15 blocks, 5 inputs, 1 outputs
+compact checked controller 10023 boundary: 15 blocks, 5 inputs, 1 outputs
+compact checked controller 10037 boundary: 15 blocks, 5 inputs, 1 outputs
+compact checked controller 10239 boundary: 15 blocks, 5 inputs, 1 outputs
+compact checked controller 10289 boundary: 15 blocks, 5 inputs, 1 outputs
+compact checked layout_continuation 9112 prepared local IR
+compact checked layout_continuation 9112 324 bytes, 7 arguments, 48 frame bytes
+compact checked layout_continuation 9506 prepared local IR
+compact checked layout_continuation 9506 316 bytes, 10 arguments, 48 frame bytes
+compact checked layout_continuation 9562 prepared local IR
+compact checked layout_continuation 9562 320 bytes, 7 arguments, 48 frame bytes
+compact checked layout_continuation 10015 prepared local IR
+compact checked layout_continuation 10015 320 bytes, 7 arguments, 48 frame bytes
+compact checked layout_continuation 10073 prepared local IR
+compact checked layout_continuation 10073 320 bytes, 7 arguments, 48 frame bytes
+compact checked layout_continuation 18836 prepared local IR
+compact checked layout_continuation 18836 324 bytes, 7 arguments, 48 frame bytes
+compact checked layout_continuation 19604 prepared local IR
+compact checked layout_continuation 19604 312 bytes, 6 arguments, 48 frame bytes
+compact checked layout_continuation 20752 prepared local IR
+compact checked layout_continuation 20752 320 bytes, 7 arguments, 48 frame bytes
+compact checked layout_continuation 21031 prepared local IR
+compact checked layout_continuation 21031 296 bytes, 6 arguments, 48 frame bytes
+compact checked layout_continuation 22297 prepared local IR
+compact checked layout_continuation 22297 320 bytes, 7 arguments, 48 frame bytes
+compact checked layout_continuation 22580 prepared local IR
+compact checked layout_continuation 22580 296 bytes, 6 arguments, 48 frame bytes
+compact checked layout_continuation 44066 prepared local IR
+compact checked layout_continuation 44066 648 bytes, 8 arguments, 80 frame bytes
+compact checked layout_continuation 44401 prepared local IR
+compact checked layout_continuation 44401 648 bytes, 8 arguments, 80 frame bytes
+compact checked layout_continuation 46036 prepared local IR
+compact checked layout_continuation 46036 648 bytes, 8 arguments, 80 frame bytes
+compact checked layout_continuation 46255 prepared local IR
+compact checked layout_continuation 46255 648 bytes, 8 arguments, 80 frame bytes
+compact checked layout_continuation 16644 prepared local IR
+compact checked layout_continuation 16644 848 bytes, 11 arguments, 128 frame bytes
+compact checked layout_continuation 43299 prepared local IR
+compact checked layout_continuation 43299 848 bytes, 11 arguments, 128 frame bytes
+compact checked layout_continuation 8603 prepared local IR
+compact checked layout_continuation 8603 156 bytes, 5 arguments, 16 frame bytes
+compact checked layout_continuation 9179 prepared local IR
+compact checked layout_continuation 9179 156 bytes, 5 arguments, 16 frame bytes
+compact checked layout_continuation 9193 prepared local IR
+compact checked layout_continuation 9193 156 bytes, 5 arguments, 16 frame bytes
+compact checked layout_continuation 9259 prepared local IR
+compact checked layout_continuation 9259 156 bytes, 5 arguments, 16 frame bytes
+compact checked layout_continuation 9273 prepared local IR
+compact checked layout_continuation 9273 156 bytes, 5 arguments, 16 frame bytes
+compact checked layout_continuation 9512 prepared local IR
+compact checked layout_continuation 9512 156 bytes, 5 arguments, 16 frame bytes
+compact checked layout_continuation 9526 prepared local IR
+compact checked layout_continuation 9526 156 bytes, 5 arguments, 16 frame bytes
+compact checked layout_continuation 9714 prepared local IR
+compact checked layout_continuation 9714 156 bytes, 5 arguments, 16 frame bytes
+compact checked layout_continuation 9728 prepared local IR
+compact checked layout_continuation 9728 156 bytes, 5 arguments, 16 frame bytes
+compact checked layout_continuation 9803 prepared local IR
+compact checked layout_continuation 9803 156 bytes, 5 arguments, 16 frame bytes
+compact checked layout_continuation 9817 prepared local IR
+compact checked layout_continuation 9817 156 bytes, 5 arguments, 16 frame bytes
+compact checked layout_continuation 10023 prepared local IR
+compact checked layout_continuation 10023 156 bytes, 5 arguments, 16 frame bytes
+compact checked layout_continuation 10037 prepared local IR
+compact checked layout_continuation 10037 156 bytes, 5 arguments, 16 frame bytes
+compact checked layout_continuation 10239 prepared local IR
+compact checked layout_continuation 10239 156 bytes, 5 arguments, 16 frame bytes
+compact checked layout_continuation 10289 prepared local IR
+compact checked layout_continuation 10289 156 bytes, 5 arguments, 16 frame bytes
+compact root proved carries: 26
+compact root range proofs: 90 unsigned, 0 repeated, 24 windows, 102 reads, 0 spans, 0 packed
+compact root flow proofs: 3 equal arguments, 0 loop edges, 14 identity routes, 0 current predicates
+compact root literal edge arguments: 209 definitions, 732 parameters removed
+compact parallel join arguments coalesced: 69
+compact fresh owner counts: 20 backings, 20 loads folded
+compact positive backings: 31, owner checks proved: 32
+compact root owner retirement calls trimmed: 70
+compact final CFG cleanup: 15880 to 15466 instructions, 9384 to 9302 blocks
+compact root paired words: 189
+compact static error returns shared: 215
+compact root defaulted loads folded: 63
+compact root shared backing setup: 8 additional stubs
+compact root literal allocation frame stubs: 6
+compact root shared release setup: 259 calls in 13 stubs
+compact-stage: machine code
+compact native preselected inline: 2 bodies, 46788 bytes
+compact-stage: machine code complete
+{"phase":"native","seconds":1.336184917,"total_seconds":2.342448292}
+{"bytecode_bytes":1034027,"bytecode_sha256":"c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3","catalog_overlapped_parse":true,"catalog_work_seconds":0.103687625,"mode":"compact","object_bytes":152544,"object_sha256":"4857b72182f43b47d991d8d5d20bb88ec7209f7423dd973e2426b17b01ac06dc","phases":[{"phase":"parse","seconds":0.741925208,"total_seconds":0.742144583},{"phase":"catalog","seconds":0.000018667,"total_seconds":0.74227675},{"phase":"frontend","seconds":0.23864225,"total_seconds":0.980971042},{"phase":"artifact","seconds":0.008251292,"total_seconds":0.989305417},{"phase":"encode","seconds":0.003738625,"total_seconds":1.005047583},{"phase":"native","seconds":1.336184917,"total_seconds":2.342448292}],"source_bytes":243209,"source_sha256":"653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299","total_seconds":2.342541417}

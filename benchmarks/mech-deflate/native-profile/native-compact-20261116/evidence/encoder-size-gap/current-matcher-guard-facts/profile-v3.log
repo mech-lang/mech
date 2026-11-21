@@ -1,0 +1,2 @@
+Guard-profiled encoder 63692 470e6899a3cfec1e2fc0f9d3d8aef1d427de7d621e6b9ec87b350cb6103d9b38
+Untimed profile prediction {'prefix-random-1048576': {'before': 11720010, 'after': 1496241}, 'prefix-random-1024': {'before': 9498, 'after': 36}, 'random-1024': {'before': 9496, 'after': 23}, 'prefix-natural-4096': {'before': 52879, 'after': 29617.5}, 'prefix-natural-8192': {'before': 108923, 'after': 61596.0}, 'prefix-periodic-1024': {'before': 10193, 'after': 5668.0}}

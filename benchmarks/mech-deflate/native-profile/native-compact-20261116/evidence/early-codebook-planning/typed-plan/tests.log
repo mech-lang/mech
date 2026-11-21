@@ -1,0 +1,12 @@
+
+running 7 tests
+test partition_plan::tests::a_failure_path_does_not_require_a_success_result_but_keeps_its_source_site ... ok
+test partition_plan::tests::closed_cycles_and_sparse_canonical_values_still_have_small_local_domains ... ok
+test partition_plan::tests::conditional_writes_capture_the_old_live_result_and_keep_local_dense_ids ... ok
+test partition_plan::tests::external_middle_entries_and_split_hidden_resources_are_refused ... ok
+test partition_plan::tests::mutable_initial_values_cannot_be_presented_as_invariant_constants ... ok
+test partition_plan::tests::separate_regions_own_each_original_operation_once ... ok
+test partition_plan::tests::terminal_completion_overlap_invalid_ids_and_word_overflow_are_refused ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

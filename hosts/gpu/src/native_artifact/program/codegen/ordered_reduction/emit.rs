@@ -21,50 +21,6 @@ impl Reduction {
         countdown: bool,
     ) -> Block {
         let c = &self.candidate;
-        let start = words.read(b, c.induction);
-        let stop = words.read(b, c.count);
-        let tag = words.read(b, c.tag);
-        let active = b.ins().icmp_imm(IntCC::Equal, tag, c.active as i64);
-        let more = b.ins().icmp(IntCC::UnsignedLessThan, start, stop);
-        let remaining = b.ins().isub(stop, start);
-        let fits = if facts.check(
-            initialize,
-            super::super::traversal_facts::Check::Le(
-                super::super::traversal_facts::Operand::Word(c.count),
-                super::super::traversal_facts::Operand::Constant(u32::MAX as u64),
-            ),
-        ) {
-            b.ins().iconst(types::I8, 1)
-        } else {
-            b.ins()
-                .icmp_imm(IntCC::UnsignedLessThanOrEqual, stop, u32::MAX as i64)
-        };
-        let mut valid = b.ins().band(active, more);
-        valid = b.ins().band(valid, fits);
-        for read in &self.reads {
-            if facts.flat_arrays.contains(&read.array) {
-                continue;
-            }
-            let view = shadow + proof.view(read.array);
-            let rows = words.read(b, view + 2);
-            let columns = words.read(b, view + 3);
-            let row = b.ins().icmp_imm(IntCC::Equal, rows, 1);
-            let column = b.ins().icmp_imm(IntCC::Equal, columns, 1);
-            let flat = b.ins().bor(row, column);
-            valid = b.ins().band(valid, flat);
-        }
-        let setup = b.create_block();
-        b.ins().brif(valid, setup, &[], ordinary, &[]);
-        b.switch_to_block(setup);
-        let best = words.read(b, self.best);
-        let best = b.ins().ireduce(types::I32, best);
-        let inputs = super::cost::Inputs::new(b, words, proof, shadow, &self.cost);
-        let old_item = carry_item.then(|| words.read(b, self.item));
-        let carried = if carry_item { types::I64 } else { types::I32 };
-        let scalar_body = b.create_block();
-        for ty in [types::I64, types::I32, carried] {
-            b.append_block_param(scalar_body, ty);
-        }
         let singleton =
             carry_item && std::env::var_os("MECH_SINGLETON_ORDERED_REDUCTION").is_some();
         let reverse = if singleton
@@ -89,7 +45,74 @@ impl Reduction {
                 .find(|read| !read.reverse && read.delta <= i32::MAX as u64)?;
             Some((window, split_shifted_item(&self.selected, window.delta)?))
         });
+        let encoded_winner = biased.and_then(|(window, offset)| {
+            if std::env::var_os("MECH_ORDERED_ENCODE_WINNER_WITH_OFFSET").is_none() {
+                return None;
+            }
+            let low_bits = shifted_item_low_zeros(offset)?;
+            let max = (1u64 << low_bits).checked_sub(window.delta)?;
+            (max != 0).then_some((offset, max.min(u32::MAX as u64)))
+        });
+        let limit = encoded_winner.map_or(u32::MAX as u64, |(_, limit)| limit);
+        let start = words.read(b, c.induction);
+        let stop = words.read(b, c.count);
+        let tag = words.read(b, c.tag);
+        let active = b.ins().icmp_imm(IntCC::Equal, tag, c.active as i64);
+        let more = b.ins().icmp(IntCC::UnsignedLessThan, start, stop);
+        let remaining = b.ins().isub(stop, start);
+        let fits = if facts.check(
+            initialize,
+            super::super::traversal_facts::Check::Le(
+                super::super::traversal_facts::Operand::Word(c.count),
+                super::super::traversal_facts::Operand::Constant(limit),
+            ),
+        ) {
+            b.ins().iconst(types::I8, 1)
+        } else {
+            b.ins()
+                .icmp_imm(IntCC::UnsignedLessThanOrEqual, stop, limit as i64)
+        };
+        let mut valid = b.ins().band(active, more);
+        valid = b.ins().band(valid, fits);
+        for read in &self.reads {
+            if facts.flat_arrays.contains(&read.array) {
+                continue;
+            }
+            let view = shadow + proof.view(read.array);
+            let rows = words.read(b, view + 2);
+            let columns = words.read(b, view + 3);
+            let row = b.ins().icmp_imm(IntCC::Equal, rows, 1);
+            let column = b.ins().icmp_imm(IntCC::Equal, columns, 1);
+            let flat = b.ins().bor(row, column);
+            valid = b.ins().band(valid, flat);
+        }
+        let setup = b.create_block();
+        b.ins().brif(valid, setup, &[], ordinary, &[]);
+        b.switch_to_block(setup);
+        let best = words.read(b, self.best);
+        let best = b.ins().ireduce(types::I32, best);
+        let mut inputs = super::cost::Inputs::new(b, words, proof, shadow, &self.cost);
+        let key = encoded_winner.map(|(offset, _)| {
+            let low = emit_item_low32(b, words, proof, shadow, offset, start, ordinary);
+            b.ins().uextend(types::I64, low)
+        });
+        let old_item = carry_item.then(|| {
+            let item = words.read(b, self.item);
+            // Restore any unchanged incoming item by applying the same XOR
+            // again. Every admitted biased index lies below the key's first
+            // possible set bit, so XOR packs it exactly like the source OR.
+            key.map_or(item, |key| b.ins().bxor(item, key))
+        });
+        let carried = if carry_item { types::I64 } else { types::I32 };
+        let scalar_body = b.create_block();
+        for ty in [types::I64, types::I32, carried] {
+            b.append_block_param(scalar_body, ty);
+        }
         let forward = biased.map(|(window, _)| window);
+        let deferred = biased.filter(|_| {
+            encoded_winner.is_some()
+                || std::env::var_os("MECH_ORDERED_PACK_WINNER_AT_EXIT").is_some()
+        });
         if reverse.is_some() {
             b.append_block_param(scalar_body, types::I64);
         }
@@ -99,14 +122,43 @@ impl Reduction {
         let scalar_finish = b.create_block();
         b.append_block_param(scalar_finish, types::I32);
         b.append_block_param(scalar_finish, carried);
+        let pair = biased.filter(|_| {
+            cfg!(target_arch = "aarch64")
+                && std::env::var_os("MECH_ORDERED_PAIRED_CONTINUATION").is_some()
+        });
+        let scalar_entry = if pair.is_some() {
+            let entry = b.create_block();
+            for ty in [types::I64, types::I32, types::I64, types::I64, types::I64] {
+                b.append_block_param(entry, ty);
+            }
+            entry
+        } else {
+            scalar_body
+        };
         let vector = b.create_block();
         let missing = b.ins().iconst(types::I32, -1);
         let initial = old_item.unwrap_or(missing);
-        let long = b
-            .ins()
-            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, 16);
+        let count_admitted = std::env::var_os("MECH_ORDERED_PACKED_COST_INDEX").is_some()
+            && facts.check(
+                initialize,
+                super::super::traversal_facts::Check::Le(
+                    super::super::traversal_facts::Operand::Word(c.count),
+                    super::super::traversal_facts::Operand::Constant(65535),
+                ),
+            );
+        let eight_entry = std::env::var_os("MECH_ORDERED_PACKED_EIGHT_ENTRY").is_some()
+            && std::env::var_os("MECH_ORDERED_PACKED_ACCUMULATORS").as_deref()
+                == Some(std::ffi::OsStr::new("2"))
+            && super::vector_loop::packed_enabled(self);
+        let long = b.ins().icmp_imm(
+            IntCC::UnsignedGreaterThanOrEqual,
+            remaining,
+            if eight_entry { 8 } else { 16 },
+        );
+        let short_entry;
         if let Some(old_item) = old_item.filter(|_| singleton) {
             let short = b.create_block();
+            short_entry = Some(short);
             b.ins().brif(long, vector, &[], short, &[]);
             b.switch_to_block(short);
             // Do the first admitted visit directly. Only the continuing
@@ -133,16 +185,24 @@ impl Reduction {
                 let base = words.read(b, shadow + proof.view(front.array));
                 let offset = b.ins().ishl_imm(index, 2);
                 reads.push((front, ScalarRead::LowWord(b.ins().iadd(base, offset))));
-                let view = shadow + proof.view(back.array);
-                let base = words.read(b, view);
-                let length = words.read(b, view + 1);
-                let ordinal = b.ins().isub(length, index);
-                let offset = b.ins().ishl_imm(ordinal, 3);
-                let pointer = b.ins().iadd(base, offset);
+                let from_end = std::env::var_os("MECH_ORDERED_FIRST_REVERSE_FROM_END").is_some();
+                let pointer = if from_end {
+                    // Both addresses use the same admitted U64 cell. Basing
+                    // the reverse access on start leaves the forward ordinal
+                    // available for the winning item and the next visit.
+                    inputs.pointer(b, proof, back, start)
+                } else {
+                    let view = shadow + proof.view(back.array);
+                    let base = words.read(b, view);
+                    let length = words.read(b, view + 1);
+                    let ordinal = b.ins().isub(length, index);
+                    let offset = b.ins().ishl_imm(ordinal, 3);
+                    b.ins().iadd(base, offset)
+                };
                 // The complete-child witness admits this initialized element,
                 // including both halves of the U64. Only its low cost is used.
                 reads.push((back, ScalarRead::PackedWord(pointer)));
-                Some((base, offset, index, other))
+                Some((pointer, index, other, from_end))
             } else {
                 if let Some(window) = reverse {
                     let pointer = inputs.pointer(b, proof, window, start);
@@ -152,7 +212,13 @@ impl Reduction {
             };
             let cost = inputs.scalar(b, proof, &self.cost, start, &reads);
             let less = b.ins().icmp(IntCC::UnsignedLessThan, cost, best);
-            let selected = if let Some((_, _, index, other)) = cursor {
+            let selected = if let Some((window, _)) = deferred {
+                if let Some((_, index, _, _)) = cursor {
+                    index
+                } else {
+                    b.ins().iadd_imm(start, window.delta as i64)
+                }
+            } else if let Some((_, index, other, _)) = cursor {
                 let other = emit_item_low32(b, words, proof, shadow, other, start, ordinary);
                 let index = b.ins().ireduce(types::I32, index);
                 let item = b.ins().bor(index, other);
@@ -184,13 +250,13 @@ impl Reduction {
             let next = b.ins().iadd_imm(start, 1);
             let mut args = vec![next.into(), minimum.into(), item.into()];
             if let Some(window) = reverse {
-                let pointer = if let Some((base, offset, _, _)) = cursor {
-                    if std::env::var_os("MECH_ORDERED_LAZY_REVERSE_CURSOR").is_some() {
+                let pointer = if let Some((pointer, _, _, from_end)) = cursor {
+                    if !from_end && std::env::var_os("MECH_ORDERED_LAZY_REVERSE_CURSOR").is_some() {
                         // The same address expressed from the adjusted reverse
                         // window base. Only the continuing edge needs this cursor.
                         inputs.pointer(b, proof, window, start)
                     } else {
-                        b.ins().iadd(base, offset)
+                        pointer
                     }
                 } else {
                     let (_, ScalarRead::LowWord(pointer)) =
@@ -203,7 +269,13 @@ impl Reduction {
                 args.push(pointer.into());
             }
             if let Some(window) = forward {
-                let index = b.ins().iadd_imm(next, window.delta as i64);
+                let previous = cursor
+                    .filter(|_| std::env::var_os("MECH_ORDERED_REUSE_FIRST_ORDINAL").is_some());
+                let index = if let Some((_, index, _, _)) = previous {
+                    b.ins().iadd_imm(index, 1)
+                } else {
+                    b.ins().iadd_imm(next, window.delta as i64)
+                };
                 let left = if std::env::var_os("MECH_ARM64_SUBTRACT_IMMEDIATE_BRANCH").is_some() {
                     b.ins().iadd_imm(remaining, -1)
                 } else {
@@ -212,76 +284,94 @@ impl Reduction {
                 args[0] = index.into();
                 args.push(left.into());
             }
-            b.ins().jump(scalar_body, &args);
+            b.ins().jump(scalar_entry, &args);
         } else {
+            short_entry = None;
             b.ins().brif(
                 long,
                 vector,
                 &[],
-                scalar_body,
+                scalar_entry,
                 &[start.into(), best.into(), initial.into()],
             );
         }
         b.switch_to_block(vector);
+        let packed_fit = if eight_entry {
+            let fits = super::packed_key::fits(b, best, stop, count_admitted);
+            let original_long = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, 16);
+            let admitted = b.ins().bor(original_long, fits);
+            let body = b.create_block();
+            // Short wide-cost intervals retain the optimized scalar entry.
+            // Only a packed interval can enter with eight candidates; the
+            // original wide vector route still requires sixteen. Reuse this
+            // same fit value in the kernel, without another packed guard.
+            if let Some(short) = short_entry {
+                b.ins().brif(admitted, body, &[], short, &[]);
+            } else {
+                b.ins().brif(
+                    admitted,
+                    body,
+                    &[],
+                    scalar_body,
+                    &[start.into(), best.into(), initial.into()],
+                );
+            }
+            b.switch_to_block(body);
+            Some(fits)
+        } else {
+            None
+        };
+        if std::env::var_os("MECH_ORDERED_VECTOR_HOIST_COST_WORDS").is_some() {
+            inputs.prepare_vector_words(b);
+        }
         let prefix = b.ins().band_imm(remaining, -4);
         let end = b.ins().iadd(start, prefix);
-        let costs = b.ins().splat(types::I32X4, best);
-        let indices = super::cost::constant(b, [u32::MAX; 4]);
-        let lanes = super::cost::constant(b, [0, 1, 2, 3]);
-        let header = b.create_block();
-        let body = b.create_block();
-        let finish = b.create_block();
-        for ty in [types::I64, types::I32X4, types::I32X4] {
-            b.append_block_param(header, ty);
-        }
-        b.ins()
-            .jump(header, &[start.into(), costs.into(), indices.into()]);
-        b.switch_to_block(header);
-        let params = b.block_params(header).to_vec();
-        let k = params[0];
-        let more = b.ins().icmp(IntCC::UnsignedLessThan, k, end);
-        b.ins().brif(more, body, &[], finish, &[]);
-        b.switch_to_block(body);
-        let k32 = b.ins().ireduce(types::I32, k);
-        let index = b.ins().splat(types::I32X4, k32);
-        let index = b.ins().iadd(index, lanes);
-        let cost = inputs.emit(b, proof, &self.cost, k, index);
-        let better = b.ins().icmp(IntCC::UnsignedLessThan, cost, params[1]);
-        let costs = b.ins().umin(cost, params[1]);
-        let indices = b.ins().bitselect(better, index, params[2]);
-        let next = b.ins().iadd_imm(k, 4);
-        b.ins()
-            .jump(header, &[next.into(), costs.into(), indices.into()]);
-        b.switch_to_block(finish);
-        // The incoming best already occupies every cost lane. A lane records
-        // an index only after a strict improvement, so ties with that incoming
-        // best retain the missing sentinel. Among improved lanes, reduce the
-        // matching indices separately: the earliest index need not be in the
-        // lowest lane after multiple vector groups.
-        let minima = minimum_splat(b, params[1]);
-        let equal = b.ins().icmp(IntCC::Equal, params[1], minima);
-        let missing_indices = b.ins().splat(types::I32X4, missing);
-        let indices = b.ins().bitselect(equal, params[2], missing_indices);
-        let winners = minimum_splat(b, indices);
-        let minimum = b.ins().extractlane(minima, 0);
-        let winner = b.ins().extractlane(winners, 0);
-        let carried_value = if let Some(old_item) = old_item {
-            let changed = b.ins().icmp_imm(IntCC::NotEqual, winner, -1);
-            let index = b.ins().uextend(types::I64, winner);
-            let selected = emit_item(
-                b,
-                words,
-                proof,
-                shadow,
-                &self.selected,
-                index,
-                ordinary,
-                true,
-            );
-            b.ins().select(changed, selected, old_item)
-        } else {
-            winner
+        let map = |b: &mut FunctionBuilder<'_>, winner: Value, improved: bool| {
+            if let Some(old_item) = old_item {
+                let changed = (!improved).then(|| b.ins().icmp_imm(IntCC::NotEqual, winner, -1));
+                let index = if b.func.dfg.value_type(winner) == types::I64 {
+                    winner
+                } else {
+                    b.ins().uextend(types::I64, winner)
+                };
+                let selected = if let Some((window, _)) = deferred {
+                    b.ins().iadd_imm(index, window.delta as i64)
+                } else {
+                    emit_item(
+                        b,
+                        words,
+                        proof,
+                        shadow,
+                        &self.selected,
+                        index,
+                        ordinary,
+                        true,
+                    )
+                };
+                changed.map_or(selected, |changed| {
+                    b.ins().select(changed, selected, old_item)
+                })
+            } else {
+                winner
+            }
         };
+        let selected = super::vector_loop::Kernel {
+            reduction: self,
+            proof,
+            inputs: &inputs,
+            start,
+            end,
+            stop,
+            best,
+            count_admitted,
+            packed_fit,
+        }
+        .emit(b, missing, old_item, map);
+        let minimum = selected.minimum;
+        let carried_value = selected.item;
+        let end_pointers = selected.pointers;
         let more = b.ins().icmp(IntCC::UnsignedLessThan, end, stop);
         let finish_args = [minimum.into(), carried_value.into()];
         if let Some(window) = reverse {
@@ -290,9 +380,17 @@ impl Reduction {
                 .brif(more, remainder, &[], scalar_finish, &finish_args);
             b.switch_to_block(remainder);
             // The vector prefix is nonempty. Seed the cursor at the last
-            // vector candidate's low word, without loading it again.
-            let previous = b.ins().iadd_imm(end, -1);
-            let pointer = inputs.pointer(b, proof, window, previous);
+            // vector candidate's low word, without loading it again. Body-only
+            // pointers end at the vector loop: rebuilding this address from
+            // the admitted invariant base keeps remainder setup off its backedge.
+            let pointer =
+                if let Some((_, pointer)) = end_pointers.iter().find(|(read, _)| *read == window) {
+                    b.ins()
+                        .iadd_imm(*pointer, i64::from(proof.arrays[window.array].width))
+                } else {
+                    let previous = b.ins().iadd_imm(end, -1);
+                    inputs.pointer(b, proof, window, previous)
+                };
             let mut args = vec![
                 end.into(),
                 minimum.into(),
@@ -305,15 +403,96 @@ impl Reduction {
                 args[0] = index.into();
                 args.push(left.into());
             }
-            b.ins().jump(scalar_body, &args);
+            b.ins().jump(scalar_entry, &args);
         } else {
             b.ins().brif(
                 more,
-                scalar_body,
+                scalar_entry,
                 &[end.into(), minimum.into(), carried_value.into()],
                 scalar_finish,
                 &finish_args,
             );
+        }
+        if let Some((front, other)) = pair {
+            let back = reverse.expect("paired continuation has a reverse cursor");
+            let item = |b: &mut FunctionBuilder<'_>, winner: Value| {
+                if deferred.is_some() {
+                    winner
+                } else {
+                    let high = emit_item_low32(b, words, proof, shadow, other, winner, ordinary);
+                    let winner = b.ins().ireduce(types::I32, winner);
+                    let selected = b.ins().bor(winner, high);
+                    b.ins().uextend(types::I64, selected)
+                }
+            };
+            if std::env::var_os("MECH_ORDERED_PAIRED_CONTINUATION")
+                .as_deref()
+                .is_some_and(|mode| mode == "sequential" || mode == "sequential-tail")
+            {
+                super::scalar_pair::emit_sequential(
+                    b,
+                    scalar_entry,
+                    scalar_body,
+                    scalar_finish,
+                    |b, index, previous, best, old_item| {
+                        let stride = i64::from(proof.arrays[back.array].width);
+                        let previous = b.ins().iadd_imm(previous, -stride);
+                        let stride = i64::from(proof.arrays[front.array].width);
+                        let base = words.read(b, shadow + proof.view(front.array));
+                        let offset = b.ins().imul_imm(index, stride);
+                        let pointer = b.ins().iadd(base, offset);
+                        let cost = inputs.scalar(
+                            b,
+                            proof,
+                            &self.cost,
+                            index,
+                            &[
+                                (front, ScalarRead::LowWord(pointer)),
+                                (back, ScalarRead::LowWord(previous)),
+                            ],
+                        );
+                        let less = b.ins().icmp(IntCC::UnsignedLessThan, cost, best);
+                        let minimum = b.ins().select(less, cost, best);
+                        let selected = item(b, index);
+                        let choice = b.ins().select(less, selected, old_item);
+                        (minimum, choice, previous)
+                    },
+                );
+            } else {
+                super::scalar_pair::emit(
+                    b,
+                    scalar_entry,
+                    scalar_body,
+                    scalar_finish,
+                    |b, index, previous| {
+                        let next = b.ins().iadd_imm(index, 1);
+                        let stride = i64::from(proof.arrays[back.array].width);
+                        let first_back = b.ins().iadd_imm(previous, -stride);
+                        let second_back = b.ins().iadd_imm(previous, -2 * stride);
+                        let stride = i64::from(proof.arrays[front.array].width);
+                        let base = words.read(b, shadow + proof.view(front.array));
+                        let offset = b.ins().imul_imm(index, stride);
+                        let first_front = b.ins().iadd(base, offset);
+                        let second_front = b.ins().iadd_imm(first_front, stride);
+                        let cost = |b: &mut FunctionBuilder<'_>, k, front_address, back_address| {
+                            inputs.scalar(
+                                b,
+                                proof,
+                                &self.cost,
+                                k,
+                                &[
+                                    (front, ScalarRead::LowWord(front_address)),
+                                    (back, ScalarRead::LowWord(back_address)),
+                                ],
+                            )
+                        };
+                        let first = cost(b, index, first_front, first_back);
+                        let second = cost(b, next, second_front, second_back);
+                        (first, second, second_back)
+                    },
+                    item,
+                );
+            }
         }
         // Short entries have completed their first visit. Vector entries
         // reach this body only with a remainder.
@@ -345,7 +524,9 @@ impl Reduction {
         } else {
             b.ins().umin(cost, params[1])
         };
-        let selected = if let Some((_, other)) = biased {
+        let selected = if deferred.is_some() {
+            params[0]
+        } else if let Some((_, other)) = biased {
             let other = emit_item_low32(b, words, proof, shadow, other, params[0], ordinary);
             let index = b.ins().ireduce(types::I32, params[0]);
             let low = b.ins().bor(index, other);
@@ -365,29 +546,53 @@ impl Reduction {
             b.ins().ireduce(types::I32, params[0])
         };
         let choice = b.ins().select(less, selected, params[2]);
-        let next = b.ins().iadd_imm(params[0], 1);
-        let mut next_args = vec![next.into(), minimum.into(), choice.into()];
-        if let Some((_, pointer)) = reverse_cursor {
-            next_args.push(pointer.into());
-        }
-        let more = if forward.is_some() {
-            let left = b.ins().iadd_imm(params[4], -1);
-            next_args.push(left.into());
-            b.ins().icmp_imm(IntCC::NotEqual, left, 0)
+        if pair.is_some()
+            && std::env::var_os("MECH_ORDERED_PAIRED_CONTINUATION").as_deref()
+                == Some(std::ffi::OsStr::new("sequential-tail"))
+        {
+            // The paired entry rejects only its nonzero count below two;
+            // the paired loop exits with fewer than two visits and reaches
+            // this body only on its odd edge. Both routes therefore carry
+            // exactly one. Other reductions retain the original backedge.
+            b.ins()
+                .jump(scalar_finish, &[minimum.into(), choice.into()]);
         } else {
-            b.ins().icmp(IntCC::UnsignedLessThan, next, stop)
-        };
-        b.ins().brif(
-            more,
-            scalar_body,
-            &next_args,
-            scalar_finish,
-            &[minimum.into(), choice.into()],
-        );
+            let next = b.ins().iadd_imm(params[0], 1);
+            let mut next_args = vec![next.into(), minimum.into(), choice.into()];
+            if let Some((_, pointer)) = reverse_cursor {
+                next_args.push(pointer.into());
+            }
+            let more = if forward.is_some() {
+                let left = b.ins().iadd_imm(params[4], -1);
+                next_args.push(left.into());
+                b.ins().icmp_imm(IntCC::NotEqual, left, 0)
+            } else {
+                b.ins().icmp(IntCC::UnsignedLessThan, next, stop)
+            };
+            b.ins().brif(
+                more,
+                scalar_body,
+                &next_args,
+                scalar_finish,
+                &[minimum.into(), choice.into()],
+            );
+        }
         b.switch_to_block(scalar_finish);
         let params = b.block_params(scalar_finish).to_vec();
         let minimum = params[0];
-        let item = if carry_item {
+        let item = if let Some(key) = key {
+            b.ins().bxor(params[1], key)
+        } else if let Some((_, offset)) = deferred {
+            // All updates strictly reduce the incoming best. It stays
+            // unchanged exactly when the carried word is the original
+            // item. Otherwise that word is the winning biased ordinal.
+            let improved = b.ins().icmp(IntCC::UnsignedLessThan, minimum, best);
+            let other = emit_item_low32(b, words, proof, shadow, offset, params[1], ordinary);
+            let index = b.ins().ireduce(types::I32, params[1]);
+            let low = b.ins().bor(index, other);
+            let packed = b.ins().uextend(types::I64, low);
+            b.ins().select(improved, packed, params[1])
+        } else if carry_item {
             params[1]
         } else {
             let winner = params[1];
@@ -437,7 +642,7 @@ impl Reduction {
 
 /// Broadcast the unsigned minimum using the existing portable vector vocabulary.
 /// Two pairwise shuffles keep both costs and stable indices in vector registers.
-fn minimum_splat(b: &mut FunctionBuilder<'_>, mut values: Value) -> Value {
+pub(super) fn minimum_splat(b: &mut FunctionBuilder<'_>, mut values: Value) -> Value {
     if cfg!(target_arch = "aarch64")
         && std::env::var_os("MECH_ORDERED_HORIZONTAL_MINIMUM").is_some()
     {
@@ -585,6 +790,20 @@ fn emit_item_low32(
     }
     let full = emit_item(b, words, proof, shadow, item, index, error, true);
     b.ins().ireduce(types::I32, full)
+}
+
+/// Guaranteed clear low bits in the projected U32 item component.
+fn shifted_item_low_zeros(item: &Item) -> Option<u32> {
+    let Item::Scalar(op, args) = item else {
+        return None;
+    };
+    match (*op, args.as_slice()) {
+        (Op::U32ToU64 | Op::U64ToU32, [inner]) => shifted_item_low_zeros(inner),
+        (Op::U64ShlWrap, [_, Item::Constant(shift)]) if shift & 63 != 0 => {
+            Some((shift & 63).min(32) as u32)
+        }
+        _ => None,
+    }
 }
 
 fn biased_index(item: &Item, delta: u64) -> bool {

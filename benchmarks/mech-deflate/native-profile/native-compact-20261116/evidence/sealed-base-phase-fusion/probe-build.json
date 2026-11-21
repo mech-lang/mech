@@ -1,0 +1,139 @@
+{
+  "command": [
+    "rustc",
+    "+nightly-2026-03-03",
+    "--edition=2024",
+    "-C",
+    "opt-level=3",
+    "-C",
+    "codegen-units=16",
+    "-C",
+    "embed-bitcode=no",
+    "-D",
+    "warnings",
+    "-L",
+    "dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/parser-probe.rs",
+    "-o",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/sealed-base-execution/current-parser",
+    "--extern",
+    "mech_syntax=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libmech_syntax-d6ccf61cc22fcc4b.rlib",
+    "--extern",
+    "sha2=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libsha2-58c79a6f6dca8f56.rlib",
+    "--extern",
+    "serde_json=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libserde_json-fcf6d49dea77c577.rlib",
+    "--extern",
+    "mimalloc=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libmimalloc-14ebbbc9ab4f8cc1.rlib"
+  ],
+  "probe_sha256": "6a484c52c4a22565f55a42a958da63164e710319759ebd1156fe238207104f84",
+  "binary_sha256": "6d306ae8aa0c21bb4fb4ab7d2c9936ad4a82a7256a3d9b56cf3985b9f633f730",
+  "dependencies": {
+    "mech_syntax": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libmech_syntax-d6ccf61cc22fcc4b.rlib",
+      "sha256": "13d20100d2de4a11561b07b5ca6438ce4da341ac911e64e31925dc4e260ac1a4"
+    },
+    "sha2": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libsha2-58c79a6f6dca8f56.rlib",
+      "sha256": "34872186075bece9d81320a752e0e912fb1f92e721ab317282d73433e18c21e8"
+    },
+    "serde_json": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libserde_json-fcf6d49dea77c577.rlib",
+      "sha256": "481ec6309943e21311064f5c989f1df19ce7dce03cc7afeda552f7227337e794"
+    },
+    "mimalloc": {
+      "path": "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libmimalloc-14ebbbc9ab4f8cc1.rlib",
+      "sha256": "c1b074b319c98b81642d3d34d49c65df94699f0b79b51bc3e6c3d639bfe317ae"
+    }
+  },
+  "parser_fingerprint": {
+    "rustc": 1651193014320533483,
+    "features": "[\"atom\", \"baselib\", \"bool\", \"c64\", \"compiler\", \"complex\", \"dot_indexing\", \"enum\", \"f32\", \"f64\", \"floats\", \"formulas\", \"full\", \"functions\", \"i128\", \"i16\", \"i32\", \"i64\", \"i8\", \"invariant_define\", \"kind_annotation\", \"kind_define\", \"logical_indexing\", \"map\", \"matrix\", \"matrix_horzcat\", \"matrix_vertcat\", \"matrixd\", \"mika\", \"numbers\", \"pretty_print\", \"program\", \"r64\", \"rational\", \"record\", \"row_vectord\", \"semantic-compiler\", \"serde\", \"set\", \"signed_ints\", \"statements\", \"statements_default\", \"string\", \"subscript\", \"subscript_default\", \"subscript_formula\", \"subscript_range\", \"subscript_slice\", \"swizzle\", \"symbol_table\", \"table\", \"tuple\", \"u128\", \"u16\", \"u32\", \"u64\", \"u8\", \"unsigned_ints\", \"variable_assign\", \"variable_define\", \"variables\", \"vectord\"]",
+    "declared_features": "[\"atom\", \"base\", \"baselib\", \"bool\", \"c64\", \"compiler\", \"complex\", \"default\", \"dot_indexing\", \"dynamic_matrix\", \"enum\", \"f32\", \"f64\", \"fixed_matrix\", \"fixed_row_vector\", \"fixed_vector\", \"floats\", \"formulas\", \"full\", \"functions\", \"i128\", \"i16\", \"i32\", \"i64\", \"i8\", \"invariant_define\", \"kind_annotation\", \"kind_define\", \"logical_indexing\", \"map\", \"matrix\", \"matrix1\", \"matrix2\", \"matrix2x3\", \"matrix3\", \"matrix3x2\", \"matrix4\", \"matrix_horzcat\", \"matrix_vertcat\", \"matrixd\", \"mika\", \"no_std\", \"numbers\", \"pretty_print\", \"program\", \"r64\", \"rational\", \"record\", \"rlibc\", \"row_vector2\", \"row_vector3\", \"row_vector4\", \"row_vectord\", \"semantic-compiler\", \"serde\", \"set\", \"signed_ints\", \"statements\", \"statements_default\", \"std\", \"stdlib\", \"string\", \"subscript\", \"subscript_default\", \"subscript_formula\", \"subscript_range\", \"subscript_slice\", \"swizzle\", \"symbol_table\", \"table\", \"tuple\", \"u128\", \"u16\", \"u32\", \"u64\", \"u8\", \"unsigned_ints\", \"variable_assign\", \"variable_define\", \"variables\", \"vector2\", \"vector3\", \"vector4\", \"vectord\"]",
+    "target": 2466459460339436209,
+    "profile": 12929427910671357780,
+    "path": 17032218302238448567,
+    "deps": [
+      [
+        2295442787663447226,
+        "smallvec",
+        false,
+        10887372337440044555
+      ],
+      [
+        3658886216632689132,
+        "colored",
+        false,
+        3220386080340466504
+      ],
+      [
+        5157631553186200874,
+        "num_traits",
+        false,
+        3280363019294337722
+      ],
+      [
+        5330460842384404171,
+        "serde_json",
+        false,
+        18302434230636487179
+      ],
+      [
+        6557439603276904804,
+        "serde",
+        false,
+        7842215902163721127
+      ],
+      [
+        6855376291434336282,
+        "mech_core",
+        false,
+        7723203496152136642
+      ],
+      [
+        8826707145280285270,
+        "indexmap",
+        false,
+        17435586358415134528
+      ],
+      [
+        13312204359551525516,
+        "serde_derive",
+        false,
+        995163495684231503
+      ],
+      [
+        13371037750849177454,
+        "tabled",
+        false,
+        17315307339299241351
+      ],
+      [
+        16198203750081063573,
+        "unicode_segmentation",
+        false,
+        18388552015292383871
+      ],
+      [
+        17605717126308396068,
+        "paste",
+        false,
+        536897148101394490
+      ]
+    ],
+    "local": [
+      {
+        "CheckDepInfo": {
+          "dep_info": "release/.fingerprint/mech-syntax-d6ccf61cc22fcc4b/dep-lib-mech_syntax",
+          "checksum": false
+        }
+      }
+    ],
+    "rustflags": [
+      "-D",
+      "warnings"
+    ],
+    "config": 8247474407144887393,
+    "compile_kind": 0
+  },
+  "scope": "Current-source cached optimized parser library. Diagnostic standalone captures; no build-time claim. Fresh compiler source builds are required for promotion."
+}

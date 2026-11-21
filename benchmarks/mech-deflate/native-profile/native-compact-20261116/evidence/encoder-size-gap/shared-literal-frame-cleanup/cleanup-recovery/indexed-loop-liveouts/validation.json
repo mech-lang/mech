@@ -1,0 +1,31 @@
+{
+  "source_commit": "d49f735b853504725de7b89f81f37bde0298fe05",
+  "compiler_sha256": "a96172619c5fce80baf71a5efaa9f0e662d05de68a4f1dd2f7b950008b7caa7c",
+  "control_flow_tests": {
+    "passed": 113,
+    "failed": 0,
+    "log": "validation-logs.tar.gz:loop-liveout-index-tests-math0-replay.log",
+    "command": "CARGO_PROFILE_RELEASE_OPT_LEVEL=3 CARGO_PROFILE_RELEASE_DEBUG=0 CARGO_INCREMENTAL=0 cargo +nightly-2026-03-03 test --locked --release --config profile.release.package.libmimalloc-sys.opt-level=1 --config profile.release.package.mech-math.opt-level=0 --manifest-path hosts/gpu/Cargo.toml --features canonical-native-program --target-dir <qualification-target> --lib native_artifact::program::codegen::cfg_cleanup",
+    "profile_note": "The GPU/compiler and JIT tests are optimized at level 3. Only the unrelated full math test dependency uses level 0. The measured benchmark compiler uses its normal complete level-3 recipe."
+  },
+  "prior_attempts": [
+    "Two root test setup builds with math at level 3 and then level 1 were interrupted before tests ran.",
+    "The first completed test run passed 112 and failed the new IR-comparison fixture verifier because the test retained stale graph caches. The corrected fixture recomputes both graphs; all 113 pass.",
+    "Sharing a target directory between the root test and isolated benchmark overwrote an unhashed math rlib while the benchmark fingerprint remained fresh. Cleaned only that package and rebuilt before any timings."
+  ],
+  "fixed_worker_reproductions": {
+    "control": "de6f455470e6c07a49ecf53a09d178ab41177c1a54ccd810233eee3dbe7cc361",
+    "unindexed": "f77ad5066a61f30cf67f714e5edc990efe295682e9de1d8bf36ee9a1a93041c6",
+    "indexed": "f77ad5066a61f30cf67f714e5edc990efe295682e9de1d8bf36ee9a1a93041c6"
+  },
+  "source_built_worker_sha256": "c0334d84410a20727043d217154132a9448652210233b69c135478221a0a2e34",
+  "source_built_worker_runtime": "not measured; reported runtime wins belong to the exact fixed-support archived worker",
+  "source_checks": {
+    "success_observations": 162,
+    "failure_cases": 6,
+    "exact_recoveries": 12
+  },
+  "formatting": "passed",
+  "rust_module_layout": "passed",
+  "warning_policy": "passed"
+}

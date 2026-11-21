@@ -1,0 +1,28 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "build",
+    "--locked",
+    "--release",
+    "--config",
+    "profile.release.package.libmimalloc-sys.opt-level=1",
+    "--manifest-path",
+    "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/Cargo.toml",
+    "--target-dir",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target",
+    "--message-format=json",
+    "--features",
+    "early-region-emission",
+    "--bin",
+    "compile_profile"
+  ],
+  "profile": {
+    "CARGO_BUILD_JOBS": "1",
+    "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+    "CARGO_PROFILE_RELEASE_DEBUG": "false",
+    "CARGO_PROFILE_RELEASE_LTO": "false",
+    "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "16"
+  },
+  "start_utc": "2026-11-19T12:02:24Z"
+}

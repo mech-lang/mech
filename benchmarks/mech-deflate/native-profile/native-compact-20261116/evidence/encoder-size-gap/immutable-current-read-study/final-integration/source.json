@@ -1,0 +1,15 @@
+{
+  "source_commit": "2cd17fca3c9d58a5804a18c904fe1daf65598b78",
+  "source_inputs": {
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads/mod.rs": "70ed8e870c41bb7822af33ebaf7a4f7119f022c0621ec7e9717b579e83f0d19d",
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads/immutable.rs": "786257e5a7dbb699f3995f40d3f0a12df0a8d2e3b4a0be086aa3cce6b6d0700d",
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads/tests.rs": "a60be84a750f87ac817ca3c1ced4a6533059666dfe639aab942cfa6c88635189",
+    "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "f80c6241e657f6933a9d2c154a222deb81e55f8497bc0101a7c34d4de6c91f71",
+    "hosts/gpu/src/native_artifact/program/compact/private_phase.rs": "243c0dd2325723be45c5efa89a4c6abc3709e89d263d3c3bd3b405a139461dea",
+    "hosts/gpu/src/native_artifact/program/compact/private_phase_tests.rs": "3540bb2462bc462cb84cff074b817258c5f2bd23bdf863635aea0d734f679167",
+    "hosts/gpu/src/native_artifact/program/compact/mod.rs": "e5f54e93d7eb3621277b15d5ae10b4564cfd07a34a5e185243bafdda278144ea",
+    "src/syntax/src/document/parser/canonical/base/continuation/mod.rs": "07adb748cfdfcdee12a855c9354504f96ee83515201c447d85fe3c0a85569e58"
+  },
+  "prior_source_integration": "5ccf097dc02ceb3abb17bccb85cd11a3ae144503",
+  "scope": "Standard module layout, extracted JIT-test boundary and module declaration formatting; algorithm unchanged. Rebuild must reproduce all selected artifacts before reusing qualification."
+}

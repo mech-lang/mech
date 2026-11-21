@@ -296,6 +296,19 @@ pub(crate) fn verify_context_dominators(
     errors: &mut VerifierErrors,
 ) -> Result<DominatorTree, ()> {
     let _tt = timing::verifier();
+    let expected_domtree = verify_context_graphs(func, cfg, domtree, fisa, errors)?;
+    Verifier::new(func, fisa, &expected_domtree).run(errors)?;
+    Ok(expected_domtree)
+}
+
+/// Independently check both cached graphs. The caller separately validates IR.
+pub(crate) fn verify_context_graphs(
+    func: &Function,
+    cfg: &ControlFlowGraph,
+    domtree: &DominatorTree,
+    fisa: FlagsOrIsa<'_>,
+    errors: &mut VerifierErrors,
+) -> Result<DominatorTree, ()> {
     let expected_cfg = ControlFlowGraph::with_function(func);
     let expected_domtree = DominatorTree::with_function(func, &expected_cfg);
     let verifier = Verifier::new(func, fisa, &expected_domtree);
@@ -305,7 +318,6 @@ pub(crate) fn verify_context_dominators(
     if domtree.is_valid() {
         verifier.domtree_integrity(domtree, errors)?;
     }
-    verifier.run(errors)?;
     Ok(expected_domtree)
 }
 
@@ -320,11 +332,7 @@ pub(crate) fn verify_ir_with_dominators(
     verify_ir(func, domtree, fisa)
 }
 
-fn verify_ir(
-    func: &Function,
-    domtree: &DominatorTree,
-    fisa: FlagsOrIsa<'_>,
-) -> VerifierResult<()> {
+fn verify_ir(func: &Function, domtree: &DominatorTree, fisa: FlagsOrIsa<'_>) -> VerifierResult<()> {
     let mut errors = VerifierErrors::default();
     let result = Verifier::new(func, fisa, domtree).run(&mut errors);
     if errors.is_empty() {
@@ -2129,6 +2137,8 @@ impl<'a> Verifier<'a> {
     }
 
     pub fn run(&self, errors: &mut VerifierErrors) -> VerifierStepResult {
+        #[cfg(feature = "construction-census")]
+        crate::construction_census::full_verification();
         self.verify_global_values(errors)?;
         self.typecheck_entry_block_params(errors)?;
         self.check_entry_not_cold(errors)?;

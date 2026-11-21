@@ -1,0 +1,9 @@
+
+running 4 tests
+test source_blocks::tests::source_boundaries_follow_unit_allocation_instead_of_old_native_numbers ... ok
+test source_blocks::tests::changed_local_lowering_refuses_an_old_auxiliary_offset ... ok
+test source_blocks::tests::malformed_or_out_of_plan_hints_do_not_select_native_blocks ... ok
+test source_blocks::tests::partial_windows_are_omitted_and_original_family_positions_survive ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

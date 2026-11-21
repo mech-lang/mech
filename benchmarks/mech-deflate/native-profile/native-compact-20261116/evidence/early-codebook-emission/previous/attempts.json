@@ -1,0 +1,26 @@
+[
+  {
+    "attempt": "attempt-1",
+    "status": "superseded admission failure before scalar-home adaptation",
+    "text_bytes": null,
+    "runtime_qualification": false
+  },
+  {
+    "attempt": "attempt-2",
+    "status": "raw physical-word transport; no runtime qualification",
+    "text_bytes": 76596,
+    "runtime_qualification": false
+  },
+  {
+    "attempt": "attempt-3",
+    "status": "source-only zero proof; superseded by native-bypass-aware proof",
+    "text_bytes": 71460,
+    "runtime_qualification": false
+  },
+  {
+    "attempt": "attempt-4-normal",
+    "text_bytes": 69828,
+    "status": "source-only copy/zero proof; later physical-bypass proof reproduced the exact encoder object",
+    "runtime_qualification": false
+  }
+]

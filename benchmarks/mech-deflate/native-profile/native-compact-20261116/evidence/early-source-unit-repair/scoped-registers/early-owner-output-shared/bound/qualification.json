@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/controller-source-boundaries/scoped-registers/early-owner-output-shared/bound/mech-worker",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/controller-source-boundaries/scoped-registers/early-owner-output-shared/bound/metadata.json",
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+  ],
+  "complete_smokes": 162,
+  "verified": true,
+  "worker_sha256": "4d65d1c033f433fa32c1d2bbf1dae729e486a8f3612742ddd54b269687dbd12d",
+  "metadata_sha256": "4cf7582648783a7ba9b9cb93bce64b5dc71fa1d27d8cd1b2faa4dc9349e7d566"
+}

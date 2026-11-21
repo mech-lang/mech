@@ -86,6 +86,14 @@ impl DataFlowGraph {
                 })
                 .collect();
         }
+        #[cfg(feature = "construction-census")]
+        {
+            // The replacement table coexists with the old arena until this
+            // assignment. The temporary Value-to-Value map is scratch storage,
+            // not an SSA arena, and is deliberately outside these counters.
+            census::allocate(Arena::Values, count, count);
+            census::release(Arena::Values, before);
+        }
         self.values = values;
         before - count
     }

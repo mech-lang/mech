@@ -1,0 +1,37 @@
+{
+  "role": "tune-read-wide-pinned-profiled",
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "variants": [
+    {
+      "mode": "normal",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/admitted-input-read-window-compiler/compiler/6d0df92ba888afda/compile_profile",
+        "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/public-fixed-read-window-replays/tune-read-wide-pinned-profiled/normal/frontend",
+        "compact"
+      ],
+      "compiler_sha256": "6d0df92ba888afda48ae12771d1529e4f22fdfa0dba4af18b8159bd3b9e9cc6e",
+      "artifacts": {
+        "program.o": "6938a0c003885d51cb18c1be253df540dd66ee29c923aaa593eb3130c7cb0243",
+        "metadata.json": "3734a4e2176df56ed5e795f28b30bfee9dc4b42282924fc7c5cdc9c7688a9c05",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      }
+    },
+    {
+      "mode": "checked",
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/admitted-input-read-window-compiler/compiler/6d0df92ba888afda/compile_profile",
+        "/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-scorer-repair/public-fixed-read-window-replays/tune-read-wide-pinned-profiled/checked/frontend",
+        "compact"
+      ],
+      "compiler_sha256": "6d0df92ba888afda48ae12771d1529e4f22fdfa0dba4af18b8159bd3b9e9cc6e",
+      "artifacts": {
+        "program.o": "6938a0c003885d51cb18c1be253df540dd66ee29c923aaa593eb3130c7cb0243",
+        "metadata.json": "3734a4e2176df56ed5e795f28b30bfee9dc4b42282924fc7c5cdc9c7688a9c05",
+        "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+      }
+    }
+  ],
+  "scope": "Exact source-artifact replay; runtime and complete-build measurements are separate."
+}

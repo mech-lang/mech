@@ -1,0 +1,12 @@
+{
+  "matched": [
+    "object_sha256",
+    "metadata_sha256",
+    "bytecode_sha256"
+  ],
+  "artifacts": {
+    "object_sha256": "973726c04c3a7940dd296008ba86448c682f748014e75ed841241463e85f4248",
+    "metadata_sha256": "67b360d88fd07ec89dc2cda7db534b1552d530872ada6b492c40c5d4437d5090",
+    "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+  }
+}

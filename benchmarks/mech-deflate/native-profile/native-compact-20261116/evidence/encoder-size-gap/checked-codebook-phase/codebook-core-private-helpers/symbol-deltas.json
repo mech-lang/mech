@@ -1,0 +1,52 @@
+{
+  "_mech_compact_allocate_backing_stride_4_zeroed_1_from_frame_phase_12292": {
+    "control_extent_with_padding": 0,
+    "phase_extent_with_padding": 24,
+    "delta": 24
+  },
+  "_mech_compact_allocate_backing_stride_8_zeroed_1_from_frame": {
+    "control_extent_with_padding": 24,
+    "phase_extent_with_padding": 0,
+    "delta": -24
+  },
+  "_mech_compact_allocate_backing_stride_8_zeroed_1_from_frame_phase_12292": {
+    "control_extent_with_padding": 0,
+    "phase_extent_with_padding": 24,
+    "delta": 24
+  },
+  "_mech_compact_checked_phase_12292": {
+    "control_extent_with_padding": 0,
+    "phase_extent_with_padding": 6008,
+    "delta": 6008
+  },
+  "_mech_compact_closed_checked": {
+    "control_extent_with_padding": 46788,
+    "phase_extent_with_padding": 41336,
+    "delta": -5452
+  },
+  "_mech_compact_release_nullable_from_frame_phase_12292": {
+    "control_extent_with_padding": 0,
+    "phase_extent_with_padding": 12,
+    "delta": 12
+  },
+  "_mech_compact_release_owner_from_frame_phase_12292": {
+    "control_extent_with_padding": 0,
+    "phase_extent_with_padding": 12,
+    "delta": 12
+  },
+  "_mech_compact_release_three_from_frame": {
+    "control_extent_with_padding": 32,
+    "phase_extent_with_padding": 20,
+    "delta": -12
+  },
+  "_mech_compact_release_two_from_frame_phase_12292": {
+    "control_extent_with_padding": 0,
+    "phase_extent_with_padding": 16,
+    "delta": 16
+  },
+  "_mech_compact_writable_scalar_backing_from_frame_phase_12292": {
+    "control_extent_with_padding": 0,
+    "phase_extent_with_padding": 32,
+    "delta": 32
+  }
+}

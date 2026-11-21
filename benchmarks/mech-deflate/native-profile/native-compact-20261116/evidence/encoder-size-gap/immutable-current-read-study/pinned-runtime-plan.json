@@ -1,0 +1,23 @@
+{
+  "base": "fb6bbe11695f05f7b071280e6f8dcc5648b198bf",
+  "source_inputs": {
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads.rs": "b69bc84c2cc2ff27f294ce1d3e343ca4bcdbc3f42ad181841f63949c969d8eb1",
+    "hosts/gpu/src/native_artifact/program/codegen/cfg_cleanup/defaulted_loads/immutable.rs": "deb1697471940ffedf8c7225fd9866dfa581d5f60ea0a2800f1f3c08871e7633",
+    "hosts/gpu/src/native_artifact/program/compact/private_phase.rs": "243c0dd2325723be45c5efa89a4c6abc3709e89d263d3c3bd3b405a139461dea",
+    "hosts/gpu/src/native_artifact/program/compact/phase_function.rs": "4f77a59be8d4067f0666a99669a30eedb2f8d52648944c57355e2c5984bae53d",
+    "hosts/gpu/src/native_artifact/program/compact/private_phase_tests.rs": "3540bb2462bc462cb84cff074b817258c5f2bd23bdf863635aea0d734f679167"
+  },
+  "mechanism": "Manual current-index common-dominator reuse with an immutable fixed loan; retain readonly/notrap but omit can_move to prevent e-graph rematerialization. Original codec/canonical bytecode unchanged.",
+  "correctness": "All4 focused executable pass tests plus original/decoded private loan contract, exact outputs/inflation/aliases, allocation failures and12 recoveries, regalloc-checker identical objects, peak active stack<=5280.",
+  "measurement_order": [
+    "Finish optimized test build and all tests before latency.",
+    "Build and pin normal compiler, then source preflight control/candidate/checker.",
+    "Link/validate actual object and worker.",
+    "Count actual collector work in untimed clones only, rebasing diagnostic Mach-O section coordinates with byte-identical linked-worker proof.",
+    "Reconstruct matcher profile from this new graph if needed; other retained profiles require graph equality.",
+    "Focused and full forward/reverse paired campaigns preserve all individual peer wins and81Roc/62C point+precision floors. Small still-winning slowdowns allowed.",
+    "Balanced complete source-through-final-link builds including current compiler reference, candidate, Roc and C with fixed support prebuilt for every actor.",
+    "Publish source and all adverse/control/repaired evidence to PR995; do not inherit runtime qualification for changed bytes."
+  ],
+  "priority": "Large-random collector shared across many losses first; natural4KiB scorer remains the closest next-win check. Early source-region boundary repair remains the main architectural size/build opportunity after this bounded history-based experiment."
+}

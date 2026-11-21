@@ -1,0 +1,9 @@
+{
+  "command": [
+    "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/mech_syntax-e9bd551f67eb9d04",
+    "--test-threads=1"
+  ],
+  "exit_code": 0,
+  "seconds_diagnostic": 37.154856082983315,
+  "scope": "Fresh complete default-feature syntax suite after source-identical continuation module relocation; prior full-feature539-test evidence remains separate."
+}

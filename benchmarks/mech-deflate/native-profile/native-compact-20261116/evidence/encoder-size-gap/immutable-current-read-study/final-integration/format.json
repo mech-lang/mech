@@ -1,0 +1,14 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-03-03",
+    "fmt",
+    "--all",
+    "--",
+    "--check"
+  ],
+  "exit_code": 0,
+  "stdout": "",
+  "stderr": "",
+  "seconds_diagnostic": 9.822304834146053
+}

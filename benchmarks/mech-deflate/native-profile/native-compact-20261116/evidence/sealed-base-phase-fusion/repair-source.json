@@ -1,0 +1,4 @@
+{
+  "mechanism": "Check zero allowance before taking ownership of the pending frame",
+  "source_sha256": "07adb748cfdfcdee12a855c9354504f96ee83515201c447d85fe3c0a85569e58"
+}

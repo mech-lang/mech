@@ -1,0 +1,41 @@
+{
+  "selected_actor": "mech-control",
+  "candidate_name": "word-complement",
+  "native_object_sha256": "3fe8a4cd166f3d8cd77d1f93b4f38e62389565e1b56a56d97d29cf1477035dae",
+  "metadata_sha256": "5abda3dafce9daa02af03b7bd1db7a1517f237556abff3a9c293044ee17eaa7e",
+  "worker_sha256": "3640d5f9d490de5dc83c4d6a321af01d8cefdd35e43f0f67f7c1bacff0a2869e",
+  "native_source_commit": "5f4997a65d3015f901654f8942dc7d7036d69db2",
+  "experimental_challenger": "entry-leaf-canonical-word",
+  "challenger_retained": false,
+  "counts": [
+    {
+      "order": "forward",
+      "cases": 81,
+      "timed_calls": 982656,
+      "wins": {
+        "roc": 81,
+        "libdeflate": 61
+      }
+    },
+    {
+      "order": "reverse",
+      "cases": 81,
+      "timed_calls": 982656,
+      "wins": {
+        "roc": 81,
+        "libdeflate": 61
+      }
+    }
+  ],
+  "initial_full_counts": {
+    "forward": {
+      "roc": 81,
+      "libdeflate": 60
+    },
+    "reverse": {
+      "roc": 81,
+      "libdeflate": 60
+    }
+  },
+  "interpretation": "The same retained binary reached 61 libdeflate wins in the confirmation campaign and 60 in the initial campaign. Near-tied cases change sides; the extra win is not an additional code improvement. The experimental challenger is rejected."
+}

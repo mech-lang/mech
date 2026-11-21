@@ -1,0 +1,14 @@
+{
+  "passed": true,
+  "exact_control_recipes": 2,
+  "diagnostic_native_successes": 162,
+  "checked_errors": 6,
+  "injected_failures_and_recoveries": 12,
+  "normal_checked_all_three_exact": true,
+  "canonical_source_ranges": 752,
+  "known_static_source_bytes": 4020,
+  "diagnostic_code_bytes": 6232,
+  "bulk_large_calls": 31,
+  "selected_default_changed": false,
+  "new_qualified_C_win": false
+}

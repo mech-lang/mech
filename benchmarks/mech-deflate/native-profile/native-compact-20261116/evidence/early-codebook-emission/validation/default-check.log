@@ -1,0 +1,3 @@
+    Checking mech-gpu v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/hosts/gpu)
+    Checking mech-compression-native-profile v0.0.0 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/benchmarks/mech-deflate/native-profile)
+    Finished `release` profile [optimized] target(s) in 12.29s

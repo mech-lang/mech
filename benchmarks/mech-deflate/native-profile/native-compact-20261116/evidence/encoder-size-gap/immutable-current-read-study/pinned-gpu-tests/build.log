@@ -1,0 +1,200 @@
+       Fresh unicode-ident v1.0.24
+       Fresh proc-macro2 v1.0.107
+       Fresh quote v1.0.47
+       Fresh libm v0.2.16
+       Fresh syn v2.0.119
+       Fresh serde_core v1.0.229
+       Fresh foldhash v0.2.0
+       Fresh libc v0.2.189
+       Fresh cfg-if v1.0.4
+       Fresh autocfg v1.5.1
+       Fresh hashbrown v0.17.1
+       Fresh equivalent v1.0.2
+       Fresh typenum v1.20.1
+       Fresh indexmap v2.14.0
+       Fresh fnv v1.0.7
+       Fresh memchr v2.8.3
+       Fresh num-traits v0.2.19
+       Fresh syn v3.0.3
+       Fresh hybrid-array v0.4.14
+       Fresh bytemuck v1.25.2
+       Fresh safe_arch v0.7.4
+       Fresh serde_derive v1.0.229
+       Fresh num-integer v0.1.46
+       Fresh alloc-no-stdlib v2.0.4
+       Fresh alloc-stdlib v0.2.4
+       Fresh num-bigint v0.4.8
+       Fresh serde v1.0.229
+       Fresh crc32fast v1.5.0
+       Fresh paste v1.0.15
+       Fresh wide v0.7.33
+       Fresh zmij v1.0.23
+       Fresh block-buffer v0.12.1
+       Fresh crypto-common v0.2.2
+       Fresh approx v0.5.1
+       Fresh num-complex v0.4.6
+       Fresh rawpointer v0.2.1
+       Fresh itoa v1.0.18
+       Fresh virtue v0.0.18
+       Fresh bytecount v0.6.9
+       Fresh unicode-width v0.2.2
+       Fresh papergrid v0.17.0
+       Fresh bincode_derive v2.0.1
+       Fresh serde_json v1.0.151
+       Fresh matrixmultiply v0.3.11
+       Fresh simba v0.9.1
+       Fresh digest v0.11.3
+       Fresh num-rational v0.4.2
+       Fresh brotli-decompressor v5.0.3
+       Fresh cpufeatures v0.3.0
+       Fresh synstructure v0.13.2
+       Fresh nalgebra-macros v0.3.0
+       Fresh unty v0.0.4
+       Fresh bincode v2.0.1
+       Fresh nalgebra v0.34.2
+       Fresh sha2 v0.11.0
+       Fresh brotli v8.0.4
+       Fresh tabled v0.20.0
+       Fresh byteorder v1.5.0
+       Fresh seahash v4.1.0
+       Fresh base64 v0.22.1
+       Fresh mech-core v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/core)
+       Fresh zerofrom-derive v0.1.7
+       Fresh zerofrom v0.1.8
+       Fresh yoke-derive v0.8.2
+       Fresh stable_deref_trait v1.2.1
+       Fresh yoke v0.8.3
+       Fresh smallvec v1.15.2
+       Fresh zerovec-derive v0.11.3
+       Fresh cranelift-srcgen v0.131.3
+       Fresh cranelift-assembler-x64-meta v0.131.3
+       Fresh zerovec v0.11.6
+       Fresh hashbrown v0.16.1
+       Fresh displaydoc v0.2.6
+       Fresh log v0.4.33
+       Fresh version_check v0.9.5
+       Fresh wasmtime-internal-core v44.0.3
+       Fresh generic-array v0.14.7
+       Fresh tinystr v0.8.3
+       Fresh litemap v0.8.2
+       Fresh allocator-api2 v0.2.21
+       Fresh heck v0.5.0
+       Fresh writeable v0.6.3
+       Fresh icu_locale_core v2.2.0
+       Fresh cranelift-codegen-meta v0.131.3 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/vendor/cranelift-codegen-meta)
+       Fresh cranelift-isle v0.131.3
+       Fresh cranelift-bitset v0.131.3
+       Fresh zerotrie v0.2.4
+       Fresh potential_utf v0.1.5
+       Fresh utf8_iter v1.0.4
+       Fresh tinyvec_macros v0.1.1
+       Fresh tinyvec v1.12.0
+       Fresh icu_collections v2.2.0
+       Fresh icu_provider v2.2.0
+       Fresh cranelift-entity v0.131.3
+       Fresh icu_properties_data v2.2.0
+       Fresh bumpalo v3.20.3
+       Fresh block-buffer v0.10.4
+       Fresh crypto-common v0.1.7
+       Fresh rustc-hash v2.1.3
+       Fresh arbitrary v1.4.2
+       Fresh unicode-segmentation v1.13.3
+       Fresh bitflags v2.13.1
+       Fresh grapheme_macro v2.0.0
+       Fresh cranelift-control v0.131.3
+       Fresh regalloc2 v0.15.2 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/vendor/regalloc2)
+       Fresh digest v0.10.7
+       Fresh icu_properties v2.2.0
+       Fresh cranelift-bforest v0.131.3
+       Fresh cranelift-assembler-x64 v0.131.3
+       Fresh target-lexicon v0.13.5
+       Fresh unicode-normalization v0.1.25
+       Fresh gimli v0.33.0
+       Fresh cpufeatures v0.2.17
+       Fresh shlex v2.0.1
+       Fresh find-msvc-tools v0.1.9
+       Fresh cranelift-codegen-shared v0.131.3
+       Fresh colored v3.1.1
+       Fresh mech-syntax v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/syntax)
+       Fresh cranelift-codegen v0.131.3 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/vendor/cranelift-codegen)
+       Fresh cc v1.3.0
+       Fresh sha2 v0.10.9
+       Fresh grapheme v1.3.0
+       Fresh crossbeam-utils v0.8.22
+       Fresh mech-bytecode v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/bytecode)
+       Fresh aho-corasick v1.1.4
+       Fresh same-file v1.0.6
+       Fresh regex-syntax v0.8.11
+       Fresh regex-automata v0.4.16
+       Fresh walkdir v2.5.0
+       Fresh mech-engine v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/engine)
+       Fresh crossbeam-epoch v0.9.20
+       Fresh getrandom v0.4.3
+       Fresh bstr v1.13.0
+       Fresh cfg_aliases v0.2.2
+       Fresh winnow v1.0.4
+       Fresh toml_parser v1.1.2+spec-1.1.0
+       Fresh globset v0.4.19
+       Fresh crossbeam-deque v0.8.7
+       Fresh anyhow v1.0.104
+       Fresh notify-types v2.1.0
+       Fresh thiserror-impl v2.0.19
+       Fresh fsevent-sys v4.1.0
+       Fresh toml_datetime v0.7.5+spec-1.1.0
+       Fresh arrayvec v0.7.8
+       Fresh constant_time_eq v0.4.2
+       Fresh winnow v0.7.15
+       Fresh toml_writer v1.1.2+spec-1.1.0
+       Fresh either v1.16.0
+       Fresh arrayref v0.3.9
+       Fresh blake3 v1.8.5
+       Fresh itertools v0.14.0
+       Fresh toml_edit v0.23.10+spec-1.0.0
+       Fresh notify v8.2.0
+       Fresh thiserror v2.0.19
+       Fresh cranelift-module v0.131.3
+       Fresh ignore v0.4.31
+       Fresh camino v1.2.5
+       Fresh uuid v1.24.0
+       Fresh mech-compute v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/compute)
+       Fresh errno v0.3.14
+       Fresh mach2 v0.4.3
+       Fresh semver v1.0.28
+       Fresh cargo-platform v0.3.3
+       Fresh bitflags v1.3.2
+       Fresh region v3.0.2
+       Fresh cargo_metadata v0.23.1
+       Fresh rustix v1.1.4
+       Fresh mech-runtime v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/runtime)
+       Fresh nix v0.31.3
+       Fresh object v0.39.1
+       Fresh mech-combinatorics v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/combinatorics)
+       Fresh cranelift-native v0.131.3
+       Fresh wasmtime-internal-jit-icache-coherence v44.0.3
+       Fresh mech-range v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/range)
+       Fresh mech-string v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/string)
+       Fresh mech-logic v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/logic)
+       Fresh mech-set v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/set)
+       Fresh mech-compare v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/compare)
+       Fresh mech-math v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/math)
+       Fresh mech-stats v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/stats)
+       Fresh mech-matrix v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/machines/matrix)
+       Fresh adler2 v2.0.1
+       Fresh once_cell v1.21.4
+       Fresh fastrand v2.5.0
+       Fresh foldhash v0.1.5
+       Fresh hashbrown v0.15.5
+       Fresh tempfile v3.27.0
+       Fresh miniz_oxide v0.8.9
+       Fresh mech-stdlib v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/stdlib)
+       Fresh cranelift-jit v0.131.3
+       Fresh cranelift-object v0.131.3
+       Fresh mech-build v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/src/build)
+       Fresh cranelift-frontend v0.131.3 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/vendor/cranelift-frontend)
+       Fresh libloading v0.8.9
+       Fresh web-time v1.1.0
+       Dirty mech-gpu v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/hosts/gpu): the dependency `mech-compute` was rebuilt (1795081813.927979028s, 4h 25m 24s after last build at 1795065889.592695655s)
+   Compiling mech-gpu v0.3.5 (/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/hosts/gpu)
+     Running `CARGO=/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/cargo CARGO_CRATE_NAME=mech_gpu CARGO_MANIFEST_DIR=/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/hosts/gpu CARGO_MANIFEST_PATH=/Users/coreymontella/.codex/worktrees/pr995-runtime-integration/mech-shared-cold-epilogues.2L6obP/hosts/gpu/Cargo.toml CARGO_PKG_AUTHORS='Corey Montella <corey@mech-lang.org>' CARGO_PKG_DESCRIPTION='Resident CPU and wgpu compute backends for Mech.' CARGO_PKG_HOMEPAGE='https://mech-lang.org' CARGO_PKG_LICENSE=Apache-2.0 CARGO_PKG_LICENSE_FILE='' CARGO_PKG_NAME=mech-gpu CARGO_PKG_README=README.md CARGO_PKG_REPOSITORY='https://github.com/mech-lang/mech' CARGO_PKG_RUST_VERSION=1.92 CARGO_PKG_VERSION=0.3.5 CARGO_PKG_VERSION_MAJOR=0 CARGO_PKG_VERSION_MINOR=3 CARGO_PKG_VERSION_PATCH=5 CARGO_PKG_VERSION_PRE='' CARGO_PRIMARY_PACKAGE=1 DYLD_FALLBACK_LIBRARY_PATH='/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps:/Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/lib:/Users/coreymontella/lib:/usr/local/lib:/usr/lib' RUSTC_BOOTSTRAP=1 /Users/coreymontella/.rustup/toolchains/nightly-2026-03-03-aarch64-apple-darwin/bin/rustc --crate-name mech_gpu --edition=2024 hosts/gpu/src/lib.rs --error-format=json --json=diagnostic-rendered-ansi,artifacts,future-incompat --emit=dep-info,link -C opt-level=3 -C embed-bitcode=no -C codegen-units=16 --test --cfg 'feature="aot"' --cfg 'feature="canonical-native"' --cfg 'feature="canonical-native-program"' --cfg 'feature="canonical-native-program-runtime"' --cfg 'feature="canonical-native-runtime"' --cfg 'feature="default"' --cfg 'feature="early-region-emission"' --cfg 'feature="early-region-planning"' --cfg 'feature="jit"' --check-cfg 'cfg(docsrs,test)' --check-cfg 'cfg(feature, values("aot", "canonical-native", "canonical-native-benchmark-policy", "canonical-native-benchmark-policy-runtime", "canonical-native-program", "canonical-native-program-host", "canonical-native-program-host-runtime", "canonical-native-program-runtime", "canonical-native-runtime", "construction-census", "default", "early-region-emission", "early-region-planning", "fused-cli", "jit", "mech-syntax", "native", "native-build", "native-io", "runtime-host", "sequence-cli", "system-gmp"))' -C metadata=000afbe91fc680b4 -C extra-filename=-b3b0f09228423e85 --out-dir /private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps -C strip=debuginfo -L dependency=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps --extern cranelift_codegen=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_codegen-d7c7fff1066f618e.rlib --extern cranelift_frontend=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_frontend-058074d3f4503b68.rlib --extern cranelift_jit=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_jit-c2b908fd462bd708.rlib --extern cranelift_module=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_module-66db0da08c7f38f6.rlib --extern cranelift_native=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_native-5b1825ab459b993c.rlib --extern cranelift_object=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libcranelift_object-f2100e2b97479971.rlib --extern grapheme=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libgrapheme-715124978050b77e.rlib --extern hashbrown=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libhashbrown-2bf5a24577dc3510.rlib --extern libloading=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/liblibloading-49df371c430408ac.rlib --extern mech_build=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libmech_build-49e09c5844d21992.rlib --extern mech_compute=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libmech_compute-8199da6e29282be2.rlib --extern mech_core=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libmech_core-e404fa50947d54ac.rlib --extern mech_engine=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libmech_engine-1def7fbfa63d4fb5.rlib --extern mech_runtime=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libmech_runtime-3cb80f6887446e03.rlib --extern mech_stdlib=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libmech_stdlib-dc4e5f1180edcd45.rlib --extern mech_syntax=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libmech_syntax-1df5aa4de82bf306.rlib --extern miniz_oxide=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libminiz_oxide-f1b9f0d26c9f2c59.rlib --extern serde=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libserde-ac4efa063ef67534.rlib --extern serde_json=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libserde_json-4144508579574892.rlib --extern sha2=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libsha2-39984b0f19d594ce.rlib --extern tempfile=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libtempfile-b2c69c84876b6d03.rlib --extern toml_edit=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libtoml_edit-447eba7af39c6a95.rlib --extern web_time=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libweb_time-3901ed760e70f67a.rlib --extern wide=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/libwide-d0d09d80734984cd.rlib -D warnings -L native=/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/build/blake3-284de83295dd1066/out`
+    Finished `release` profile [optimized] target(s) in 5m 49s
+  Executable `/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/target/release/deps/mech_gpu-b3b0f09228423e85 defaulted_loads`

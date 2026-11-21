@@ -1,0 +1,63 @@
+{
+  "schema": "mech.pr993.cross-machine.v1",
+  "pinned_commit": "ed99ade92836761bebd2f7357bf46817204433d4",
+  "qualified_object_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b",
+  "environment_sha256": "0ec9ffdc386ad65fdf8c913ed98a5e2e9d4e456cffaf7e8ec80ee40debcfd069",
+  "contract_sha256": "764d184137e36dd3b4ddb1d1f2c152eb50ebe56bcca997dc3de031d38b0855c2",
+  "fixture_inventory_sha256": "b6de359f4e8e5fa47c9ebed9474954f6e7b809e08d4f3b36193412492c4d9490",
+  "local_fixture_inventory_sha256": "5bfd407e42356ac57c61f858ad9920f1f9bf2e2fce1b2853c50cc20eda186b38",
+  "timer_original_sha256": "553b02f6a539c6a2ac623bc688cf9439e2586e5f63d5e7f627dea5fa0711a28a",
+  "timer_sha256": "f48035efcec9f19edb00418d810edf6457fac80e5360941cef346294874b390c",
+  "adaptation": "Relocate inputs and executables; repeat all 24 actor permutations four times, matching the M1 driver. Unused Roc metadata argument is a deliberately absent file.",
+  "runs": [
+    {
+      "id": "full-forward",
+      "kind": "full",
+      "order": "forward",
+      "blocks_per_case": 96
+    },
+    {
+      "id": "full-reverse",
+      "kind": "full",
+      "order": "reverse",
+      "blocks_per_case": 96
+    }
+  ],
+  "worker_sha256": {
+    "mech-control": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+    "mech-experiment": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+    "roc": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c",
+    "libdeflate": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2"
+  },
+  "shared_lock": "/Users/cim310/.codex/worktrees/benchmark-suite/benchmarks/.local/campaign.lock",
+  "execution": "M1 binary replay on M3",
+  "created_at": "2026-11-18T00:27:23.218807+00:00",
+  "artifacts": {
+    "mech-control": {
+      "worker": "m3-control/mech-worker",
+      "worker_sha256": "674d88602946ae07bbb00ccb56a60e2a5353f73b5e2d3b5db9a2b6b98ac237c9",
+      "metadata": "m3-control/metadata.json",
+      "metadata_sha256": "cc65be367c7e31a02539d520cb9698bb715bb1c4575c72ffd328934f982db72e",
+      "encoder": "m3-control/program.o",
+      "encoder_sha256": "7bf9df1aa610ba130490c1092db15fceeace77609c16a60d35ff04e47a48ab7b"
+    },
+    "mech-experiment": {
+      "worker": "m3-qualified/mech-worker",
+      "worker_sha256": "ddefe57e371bb6f072e6e2a3b2cd3a0d20bf108f7285137d3467304b4a84ed0a",
+      "metadata": "m3-qualified/metadata.json",
+      "metadata_sha256": "6d35fb7d9a46193a9febef97427729921739ed7f914abaefc45e16ff0b091437",
+      "encoder": "m3-qualified/program.o",
+      "encoder_sha256": "96696eeed083f0f11b51a8b26a01fe9077735821f65e7f08decea56881c6329b"
+    },
+    "roc": {
+      "worker": "pinned-peers/roc-worker",
+      "worker_sha256": "ed1ab9175cd175d26d453afc26ba1fa7adb4827ec705aa1cf9bcd231ac84860c"
+    },
+    "libdeflate": {
+      "worker": "pinned-peers/libdeflate-worker",
+      "worker_sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2"
+    }
+  },
+  "canonical_fixture_directory": "/private/tmp/mech-pr993-m3-20261117/benchmarks/mech-deflate/native-profile/native-compact-20261116",
+  "driver_sha256": "5c440e35bffeafca8e36a94bcbf8f219d33ae3c08b1289e7d65c6d8365d8ce40"
+}

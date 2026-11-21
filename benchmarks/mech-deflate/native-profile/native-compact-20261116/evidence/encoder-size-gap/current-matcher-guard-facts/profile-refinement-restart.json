@@ -1,0 +1,6 @@
+{
+  "pid": 67561,
+  "sigint_sent": true,
+  "reason": "Offline layout refiner repeatedly rescored all400 blocks for each local move. Use exact affected-edge deltas with full rescoring for accepted improvements; no timed campaign is active.",
+  "time": 1795072450.489436
+}

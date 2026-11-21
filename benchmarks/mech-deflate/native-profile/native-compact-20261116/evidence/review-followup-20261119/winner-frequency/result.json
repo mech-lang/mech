@@ -1,0 +1,107 @@
+{
+  "source_object_sha256": "c135e6b0ccdd8124d6f26ef9c738a1cbe374fa4dae61852b886c6f8e3a7cf6b5",
+  "shipping_worker_sha256": "fab303151eca902a95986488684102fc1707ec7f8df1324ebfd9c55543cfc368",
+  "diagnostic_object_sha256": "035b3df7ff8f620f1c2e2df5f08c520c6484540be0f5e747a5bc132f149862d6",
+  "symbol": "_mech_compact_numeric_3009_no_growth_composed",
+  "leaders": [
+    "0x1730",
+    "0x17b4",
+    "0x17bc",
+    "0x17d0",
+    "0x1808",
+    "0x1810",
+    "0x1814",
+    "0x1824",
+    "0x1834",
+    "0x1860",
+    "0x1878",
+    "0x18a4",
+    "0x18a8",
+    "0x18b0",
+    "0x18b4",
+    "0x18c4",
+    "0x18cc",
+    "0x18d0",
+    "0x18d4",
+    "0x1900",
+    "0x1904",
+    "0x190c",
+    "0x1910",
+    "0x1930",
+    "0x1938",
+    "0x1940",
+    "0x1974",
+    "0x197c",
+    "0x1988",
+    "0x1998",
+    "0x199c",
+    "0x19b0",
+    "0x19b4",
+    "0x19fc",
+    "0x1a24",
+    "0x1a6c",
+    "0x1a7c",
+    "0x1a88",
+    "0x1ac4",
+    "0x1af8",
+    "0x1b04",
+    "0x1b1c",
+    "0x1b24",
+    "0x1b34",
+    "0x1b3c",
+    "0x1b44",
+    "0x1b4c",
+    "0x1b7c"
+  ],
+  "site": "0x1af8",
+  "original_instruction": [
+    "csel",
+    "x19, x7, x19, ne"
+  ],
+  "predicate": "NE after vector min-index sentinel comparison; true means the vector reduction supplies a replacement winner. This is per reduction, not per SIMD chunk.",
+  "cases": {
+    "prefix-natural-1024": {
+      "vector_reductions": 440,
+      "vector_winners": 153,
+      "fraction": 0.3477272727272727,
+      "verified_calls": 2
+    },
+    "prefix-natural-4096": {
+      "vector_reductions": 3550,
+      "vector_winners": 1449,
+      "fraction": 0.40816901408450706,
+      "verified_calls": 2
+    },
+    "prefix-natural-8192": {
+      "vector_reductions": 6036,
+      "vector_winners": 2516,
+      "fraction": 0.41683233929754804,
+      "verified_calls": 2
+    },
+    "prefix-random-4096": {
+      "vector_reductions": 0,
+      "vector_winners": 0,
+      "fraction": null,
+      "verified_calls": 2
+    },
+    "prefix-random-8192": {
+      "vector_reductions": 0,
+      "vector_winners": 0,
+      "fraction": null,
+      "verified_calls": 2
+    },
+    "prefix-random-1048576": {
+      "vector_reductions": 0,
+      "vector_winners": 0,
+      "fraction": null,
+      "verified_calls": 2
+    },
+    "16384-distribution-change": {
+      "vector_reductions": 0,
+      "vector_winners": 0,
+      "fraction": null,
+      "verified_calls": 2
+    }
+  },
+  "scope": "Diagnostic clone only; no latency values or instruction totals are inferred from conditional slots. All shipping code remains source emitted."
+}

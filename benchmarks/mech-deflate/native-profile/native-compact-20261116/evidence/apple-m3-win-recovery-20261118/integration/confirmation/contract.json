@@ -1,0 +1,21 @@
+{
+  "scope": "diagnostic",
+  "level": 12,
+  "timing_boundary": "compress-into invocation through private heap cleanup",
+  "fixture_inventory_sha256": "b6de359f4e8e5fa47c9ebed9474954f6e7b809e08d4f3b36193412492c4d9490",
+  "warmup_ms_per_actor_per_case": 200,
+  "balanced_blocks_per_case": 96,
+  "batch_calls": {
+    "stored_three_cases": 512,
+    "other_inputs_at_most_1024_bytes": 64,
+    "other": 1
+  },
+  "worker_binaries": "Previous complete forward 81/60 worker. The candidate combines the integrated checked heap setup and source-selected literal allocation setup with recorded invocation-local owner storage. Same source, bytecode, pinned allocator, Roc and libdeflate level 12; full physical cleanup inside the call.; source-built candidate; unchanged pinned Roc/libdeflate peers.",
+  "background_activity_guard": {
+    "max_external_cpu_percent": 40,
+    "check_interval_seconds": 2,
+    "boundary": "between balanced blocks with all native benchmark workers idle",
+    "action": "abort acquisition on any observed CPU-heavy nonbenchmark process; retain all completed observations",
+    "score_independent": true
+  }
+}

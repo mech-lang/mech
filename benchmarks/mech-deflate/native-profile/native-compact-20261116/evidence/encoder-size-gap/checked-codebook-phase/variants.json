@@ -1,0 +1,202 @@
+{
+  "codebook-selected": {
+    "compiler_sha256": "716d9de09d48fc36845ec19daecac05edd0abc5a38ba06efba1cb814b740d4af",
+    "window": "3638:5499:-",
+    "text_bytes": 66748,
+    "root_bytes": 36628,
+    "root_stack_bytes": 2928,
+    "phases": [
+      {
+        "code_bytes": 12356,
+        "headers": [
+          11861
+        ],
+        "input_words": 2,
+        "packet_words": [
+          [
+            31,
+            16
+          ]
+        ],
+        "stack_bytes": 496
+      }
+    ],
+    "object_sha256": "68fffa0370ff25ec40c1cb0cf549e84f30d3fa6b7b64879a105910cae26ec862",
+    "metadata_sha256": "f0483beb68061889215a8d843139c0d42f80f1060574da7b54ad5336164b2f11",
+    "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "bytes_vs_qualified": 2944,
+    "runtime": "not qualified"
+  },
+  "codebook-local-policies": {
+    "compiler_sha256": "48dc9138e92aa110559767a3b2608c5dd24f11b6defc0f2c67dd3b538ae3c511",
+    "window": "3638:5499:-",
+    "text_bytes": 65692,
+    "root_bytes": 36628,
+    "root_stack_bytes": 2928,
+    "phases": [
+      {
+        "code_bytes": 11308,
+        "headers": [
+          11861
+        ],
+        "input_words": 2,
+        "packet_words": [
+          [
+            31,
+            16
+          ]
+        ],
+        "stack_bytes": 592
+      }
+    ],
+    "object_sha256": "d37b77932daf72d9d04c1ecbc599b16bac02ac6b8e31f9ebbbcd2d6c5573f31a",
+    "metadata_sha256": "4c6ca51e975e26c0c7b9eb361e53f2bd0bc8c9ca519ba9e2e9832b462ed6a2f1",
+    "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "bytes_vs_qualified": 1888,
+    "runtime": "not qualified"
+  },
+  "codebook-core": {
+    "compiler_sha256": "48dc9138e92aa110559767a3b2608c5dd24f11b6defc0f2c67dd3b538ae3c511",
+    "window": "4069:4954:-",
+    "text_bytes": 64508,
+    "root_bytes": 41336,
+    "root_stack_bytes": 2880,
+    "phases": [
+      {
+        "code_bytes": 5412,
+        "headers": [
+          12292
+        ],
+        "input_words": 1,
+        "packet_words": [
+          [
+            15,
+            2
+          ]
+        ],
+        "register_output_words": 2,
+        "stack_bytes": 304
+      }
+    ],
+    "object_sha256": "e0badcb0e0bf5ed375708a4ec724afcb11acc3fe190497870f30209e7403e08a",
+    "metadata_sha256": "40f5855d663e2bbec6ae4f0d672f4b2890d27018abb32309f34b1e48f94432f0",
+    "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "bytes_vs_qualified": 704,
+    "runtime": "not qualified"
+  },
+  "codebook-core-own-frame": {
+    "compiler_sha256": "aa2c9519f6db5029553e86978d617c39941d2b14745aefadbd45fd446f80f9bd",
+    "window": "4069:4954:-",
+    "text_bytes": 64508,
+    "root_bytes": 41336,
+    "root_stack_bytes": 2880,
+    "phases": [
+      {
+        "code_bytes": 5412,
+        "headers": [
+          12292
+        ],
+        "input_words": 1,
+        "packet_words": [
+          [
+            15,
+            2
+          ]
+        ],
+        "register_output_words": 2,
+        "stack_bytes": 304
+      }
+    ],
+    "object_sha256": "e0badcb0e0bf5ed375708a4ec724afcb11acc3fe190497870f30209e7403e08a",
+    "metadata_sha256": "40f5855d663e2bbec6ae4f0d672f4b2890d27018abb32309f34b1e48f94432f0",
+    "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "bytes_vs_qualified": 704,
+    "runtime": "not qualified"
+  },
+  "codebook-core-paired-heap": {
+    "compiler_sha256": "fa5aef64acb965c0d1e1645444fe577b459dd63b71a5ecd437203738ed22a74d",
+    "window": "4069:4954:-",
+    "text_bytes": 64524,
+    "root_bytes": 41336,
+    "root_stack_bytes": 2880,
+    "phases": [
+      {
+        "code_bytes": 5300,
+        "headers": [
+          12292
+        ],
+        "input_words": 1,
+        "packet_words": [
+          [
+            15,
+            2
+          ]
+        ],
+        "register_output_words": 2,
+        "stack_bytes": 320
+      }
+    ],
+    "object_sha256": "41c72572989cbbb62539ccf8b4ec9d0727bebf2ef0b65579db50d9eb28a58b63",
+    "metadata_sha256": "1e41cb075ca4e4d2d8822b0f94efcf96acd7acdc4f63c9be758fcb28898392a5",
+    "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "bytes_vs_qualified": 720,
+    "runtime": "not qualified"
+  },
+  "codebook-core-private-helpers": {
+    "compiler_sha256": "4e1d5afe0ee1791bfbf4d624ff05a7665f90c5a64e3fb66a6fc08ccf5e4114cb",
+    "window": "4069:4954:-",
+    "text_bytes": 64444,
+    "root_bytes": 41336,
+    "root_stack_bytes": 2880,
+    "phases": [
+      {
+        "code_bytes": 6008,
+        "headers": [
+          12292
+        ],
+        "input_words": 1,
+        "packet_words": [
+          [
+            15,
+            2
+          ]
+        ],
+        "register_output_words": 2,
+        "stack_bytes": 496
+      }
+    ],
+    "object_sha256": "4f6694cf58f512c5001b78f58b0a388004d2a8df5bd50ba626d19bb0072828fa",
+    "metadata_sha256": "df728914febd9aa62c8e6a429813ab4cd132a8d703eefae34d230be3bcaa06e3",
+    "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "bytes_vs_qualified": 640,
+    "runtime": "not qualified"
+  },
+  "codebook-private-helpers": {
+    "compiler_sha256": "4e1d5afe0ee1791bfbf4d624ff05a7665f90c5a64e3fb66a6fc08ccf5e4114cb",
+    "window": "3638:5499:-",
+    "text_bytes": 65772,
+    "root_bytes": 36628,
+    "root_stack_bytes": 2928,
+    "phases": [
+      {
+        "code_bytes": 11996,
+        "headers": [
+          11861
+        ],
+        "input_words": 2,
+        "packet_words": [
+          [
+            31,
+            16
+          ]
+        ],
+        "stack_bytes": 768
+      }
+    ],
+    "object_sha256": "ad71acfa10ca721ac27420516d2154bd52f6c58c2a5ac6520765cee3b0e2707d",
+    "metadata_sha256": "97b765e81cde08d12afe1c28092514fe978663ba83e8323c951e7077b930e1ea",
+    "bytecode_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+    "bytes_vs_qualified": 1968,
+    "runtime": "not qualified"
+  }
+}

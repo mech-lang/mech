@@ -1,0 +1,11 @@
+{
+  "status": "not-promoted",
+  "native_exact_checks": 162,
+  "checked_failures_per_actor": 12,
+  "stack_high_water_bytes": 5280,
+  "independent_control_oracle": "pending: generated controls did not select the compact ordered reduction; no oracle pass is claimed",
+  "accepted_timing_orders": 0,
+  "partial_acquisition": "focus-aborted-other-machine; explicitly excluded",
+  "source_patch": "compiler-wave5-current.patch",
+  "reason": "No accepted runtime improvement is established; preserve experiment without changing qualified compiler."
+}

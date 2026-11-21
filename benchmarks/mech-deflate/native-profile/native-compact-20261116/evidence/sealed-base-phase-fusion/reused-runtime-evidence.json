@@ -1,0 +1,13 @@
+{
+  "scope": "Reuse only for the byte-identical worker reproduced in exact-artifacts.json; no new runtime campaign claimed.",
+  "files": {
+    "evidence/encoder-size-gap/current-matcher-guard-facts/candidate.json": "caae0142a7725d40497523c322c485ca2b43e6b4ddb82e41d8f5b2ea94dfbb82",
+    "evidence/encoder-size-gap/current-matcher-guard-facts/full/full-replay.json.gz": "9e9780d6966b991d39f877a94903a4dda708e898aa95c457a167caee3b648e35",
+    "evidence/encoder-size-gap/current-matcher-guard-facts/full/screen.json": "f013b104d063804e4f2d97e3af6ce14d24c16444aad030b1ef701e7457bda82b",
+    "evidence/encoder-size-gap/current-matcher-guard-facts/guards-profiled/program.o.gz": "3810d3a836a59d63c7569a1040d540b0dc169f6347162116e2f5bf31c0b6b11c",
+    "evidence/encoder-size-gap/current-matcher-guard-facts/guards-profiled/metadata.json.gz": "b32fa7def8b50fcdad5c18d6cfe65540f4fdb47b5571597c9dd2ddf681bfc600",
+    "evidence/encoder-size-gap/current-matcher-guard-facts/guards-profiled/program.mecb.gz": "dfeb0fa798b1985848fdc9de5641c27ca3961f4ef530e93243d91536d45a71f5",
+    "evidence/encoder-size-gap/current-matcher-guard-facts/guards-profiled/mech-worker.gz": "e41b9658dd6ca4514e37a1c5aeac39708e28b01d69584c9e00c3e29066fc5d78",
+    "evidence/encoder-size-gap/current-matcher-guard-facts/guards-profiled/runtime.json": "20000d791cdd06fc2b079bed0dcaafac8ef8cc959314c0595e2f961f2e35c7b2"
+  }
+}

@@ -1,0 +1,46 @@
+{
+  "status": "invalid-harness-settings",
+  "reason": "The first harness omitted MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS=1 from the frame-copies recipe. Its encoder_text_bytes field also read root code_bytes instead of the complete Mach-O text section. No compiler or runtime change was made for the corrected replay.",
+  "actual_total_text_bytes": 64876,
+  "original_record": {
+    "schema": "mech.integrated-m1-object-replay.v1",
+    "recorded_at": "2026-11-18T18:54:55.669223+00:00",
+    "source_commit": "5f8ef0d2015b4a1db05cfa59fbaa2db126f2f8d5",
+    "compiler_source_commit": "e981b748cf3b3d710432ef48c4bd6badea6ba813",
+    "compiler_sha256": "72675cd80a4be625d98fec3b823dbddf6208dd9245ca2616ea99a7715df04834",
+    "compiler_build_receipt_sha256": "6dd4ca8950e18cfde44bbd122c379c90f8f9d484f1f29cd35c7516eae7ae9593",
+    "recipe": "m1-shared-heap-layout",
+    "recipe_manifest_sha256": "d4d0347f37f2e914f1e0c4af7344380ed90c7765026b8a540a4f60b8684da759",
+    "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+    "command": [
+      "/private/tmp/mech-pr993-m3-opt-20261117/win-recovery-20261118/heap-setup-integration/compile_profile",
+      "/private/tmp/mech-pr993-m3-20261117/benchmarks/mech-deflate/native-profile/native-compact-20261116/program.mec",
+      "/private/tmp/mech-pr993-m3-opt-20261117/win-recovery-20261118/integrated-m1-replay/native",
+      "compact"
+    ],
+    "artifacts": {
+      "program.o": {
+        "sha256": "74dee74fecedd5509ad2586243fac8cec76b5a5d2a21b3ddbeadce9fcdae7d8e",
+        "expected_sha256": "a42f47a761ca918853eea1d411e363a0e1456a7a2cec90d70d66a651f4f51b5e",
+        "exact": false
+      },
+      "metadata.json": {
+        "sha256": "46ac061eafe35ac7b0f59e1dfd0bc92e994cd764783061fa3068af61aeb3f2e7",
+        "expected_sha256": "2dbc017e1a5a0f89e669b5caaeb6dbf3d42c30d2ae4161808643c10a7c04f470",
+        "exact": false
+      },
+      "program.mecb": {
+        "sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+        "expected_sha256": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3",
+        "exact": true
+      }
+    },
+    "encoder_text_bytes": 47992,
+    "encoder_text_bytes_expected": 64652,
+    "passed": false,
+    "runtime_timings": "Not measured; the archived M1 runtime results are not new M3 results.",
+    "scope": "Compiler object, complete metadata and bytecode identity. No linked runtime identity or new timing claim."
+  },
+  "corrected_replay": "m1-object-replay.json",
+  "initial_harness_sha256": "136644d8308ba997ed11460d3ff0e1bded24cd7bf5a67d0d049b80cd524be10e"
+}

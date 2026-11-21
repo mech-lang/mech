@@ -1,0 +1,130 @@
+{
+  "plan_sha256": "22e1c0dc5cd819883d0f959d28ce0fc471f971b33c99eb6ad3f24e78959eff3d",
+  "medians": {
+    "mech-control-layout": {
+      "source": 2.133932374883443,
+      "link": 0.035258312011137605,
+      "source_through_link": 2.1698648545425385,
+      "strip": 0.010738125070929527,
+      "source_through_strip": 2.180719666648656
+    },
+    "mech-full-cleanup": {
+      "source": 2.2448817915283144,
+      "link": 0.035067707765847445,
+      "source_through_link": 2.2801337705459446,
+      "strip": 0.010698729660362005,
+      "source_through_strip": 2.2909605836030096
+    },
+    "mech-route-cleanup": {
+      "source": 2.22736170864664,
+      "link": 0.03506025020033121,
+      "source_through_link": 2.2631266247481108,
+      "strip": 0.010647166753187776,
+      "source_through_strip": 2.2739771041087806
+    },
+    "roc": {
+      "source": 2.9421565004158765,
+      "link": 0.0348731039557606,
+      "source_through_link": 2.9772843124810606,
+      "strip": 0.010589520446956158,
+      "source_through_strip": 2.9881219789385796
+    },
+    "libdeflate": {
+      "source": 0.44543685438111424,
+      "link": 0.0347031457349658,
+      "source_through_link": 0.4803968130145222,
+      "strip": 0.010776521638035774,
+      "source_through_strip": 0.4913476041983813
+    }
+  },
+  "phases": {
+    "mech-control-layout": {
+      "parse": 0.706819917,
+      "catalog": 2.15205e-05,
+      "frontend": 0.2127949165,
+      "artifact": 0.0068127085,
+      "encode": 0.0025061455,
+      "native": 1.1791391249999998
+    },
+    "mech-full-cleanup": {
+      "parse": 0.706847792,
+      "catalog": 1.71455e-05,
+      "frontend": 0.2122068125,
+      "artifact": 0.0068177705000000005,
+      "encode": 0.0024990625,
+      "native": 1.2903197915
+    },
+    "mech-route-cleanup": {
+      "parse": 0.7063435419999999,
+      "catalog": 1.74795e-05,
+      "frontend": 0.21269147900000002,
+      "artifact": 0.0068488335,
+      "encode": 0.0024902295,
+      "native": 1.272847271
+    }
+  },
+  "paired_ratios": {
+    "mech-control-layout": {
+      "roc": 0.7286102010294158,
+      "libdeflate": 4.516781493666979,
+      "mech-control-layout": 1.0
+    },
+    "mech-full-cleanup": {
+      "roc": 0.7660968170027928,
+      "libdeflate": 4.747718791110966,
+      "mech-control-layout": 1.051084625523059
+    },
+    "mech-route-cleanup": {
+      "roc": 0.7603374932498232,
+      "libdeflate": 4.715772288625235,
+      "mech-control-layout": 1.0437373505923202
+    }
+  },
+  "source_commit": "caa8b22ac5cd4d7c3cf30b5c97f78fd786fe5c16",
+  "compiler_sha256": "c66c37500b0d519a04f1219d617b90075b8f612f76f636310e7fcfe28b7dc107",
+  "trials": 10,
+  "candidate_schedule": "batched-routes",
+  "source_cpu_seconds": {
+    "mech-control-layout": 2.198015,
+    "mech-full-cleanup": 2.309317,
+    "mech-route-cleanup": 2.2918719999999997,
+    "roc": 2.935612,
+    "libdeflate": 0.4420035
+  },
+  "source_rss_bytes": {
+    "mech-control-layout": 392495104.0,
+    "mech-full-cleanup": 392790016.0,
+    "mech-route-cleanup": 392806400.0,
+    "roc": 392200192.0,
+    "libdeflate": 71540736.0
+  },
+  "stripped_executables": {
+    "mech-control-layout": {
+      "bytes": 276072,
+      "sha256": "b8320a30dc61e2392de0b77419f477e7fed07f733dade58badaf3b3ef7f0c3f1"
+    },
+    "mech-full-cleanup": {
+      "bytes": 276072,
+      "sha256": "a2b16eed3f55512674a724a968c39f1d86ed3140d7abf7e084871036555db698"
+    },
+    "mech-route-cleanup": {
+      "bytes": 276072,
+      "sha256": "a2b16eed3f55512674a724a968c39f1d86ed3140d7abf7e084871036555db698"
+    },
+    "roc": {
+      "bytes": 191912,
+      "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+    },
+    "libdeflate": {
+      "bytes": 155752,
+      "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+    }
+  },
+  "paired_ms_vs_64652": {
+    "mech-control-layout": 0.0,
+    "mech-full-cleanup": 110.79958290793002,
+    "mech-route-cleanup": 94.83489557169378
+  },
+  "paired_ms_routes_vs_full": -17.20004132948816,
+  "routes_faster_than_full": 8
+}

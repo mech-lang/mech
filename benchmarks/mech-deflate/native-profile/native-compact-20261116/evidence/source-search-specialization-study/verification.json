@@ -1,0 +1,46 @@
+{
+  "passed": true,
+  "source_generator_exact": true,
+  "public_native_replays": 4,
+  "full81_orders": [
+    {
+      "roc": {
+        "wins": 81,
+        "required_missing": [],
+        "passed": true
+      },
+      "libdeflate": {
+        "wins": 63,
+        "required_missing": [],
+        "passed": true
+      }
+    },
+    {
+      "roc": {
+        "wins": 81,
+        "required_missing": [],
+        "passed": true
+      },
+      "libdeflate": {
+        "wins": 63,
+        "required_missing": [],
+        "passed": true
+      }
+    }
+  ],
+  "raw_full81_checked_calls": 1965312,
+  "raw_causal_checked_calls": 2242800,
+  "zero_duration_individual_samples_retained": 638047,
+  "complete_build_orders": 10,
+  "selected_default_changed": false,
+  "next_C_target": 64,
+  "inputs_sha256": {
+    "verify.py": "c729abd774cb31a1f4496a9ac03443d298a1dee20d7ffe6dfe19d9220d5616f6",
+    "generate.py": "7811876018aa2a7ff976bfffddd46be03e6fc4c1f31258d8038408f90c39914a",
+    "reproduce.py": "89c9df08f6e26006ed49fce4130ccc02b8216667406b38b58b481dc0544aae3e",
+    "program.mec": "4103bc49114089e902278ceef431daecfd79a5fe4a667c2b7d64bebc037b1f88",
+    "recipes.json": "f53170e2a94f73fa87770a9b7e17114d4d2eb4a0cae83d2893f0b62d68fdd446",
+    "archive-files.json": "1e57b7c400bbdfcdd51eb17654e7e525b23d0ecc014f8fdd0da328eae19f08bc",
+    "summary.json": "5fc4456b290f5aa9433bd840dd9a41142c50b252c9329a2988061284bc9f12e9"
+  }
+}

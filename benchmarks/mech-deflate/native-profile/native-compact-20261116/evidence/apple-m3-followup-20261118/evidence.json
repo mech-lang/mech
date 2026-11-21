@@ -1,0 +1,9 @@
+{
+  "archive": "/private/tmp/pr993-deflate-m3-followup-20261118-3f13e50bf65e.tar.gz",
+  "bytes": 103241084,
+  "sha256": "3f13e50bf65ef3511313bed109ee8c844e9626398b52d40a7b99ce3baf0c87dc",
+  "files": 1263,
+  "url": "https://github.com/mech-lang/mech/releases/download/evidence-native-compression-experiments-6/pr993-deflate-m3-followup-20261118-3f13e50bf65e.tar.gz",
+  "manifest_sha256": "738e40c3dd2f9939a92988136bce841fd13ee5a0ae07b11932b069752d5965d7",
+  "status": "No follow-up experiment meets the requested complete M3 runtime target. Newer upstream candidate rebuild remains in progress."
+}

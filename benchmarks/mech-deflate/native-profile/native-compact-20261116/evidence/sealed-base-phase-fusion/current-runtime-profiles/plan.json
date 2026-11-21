@@ -1,0 +1,34 @@
+{
+  "source_commit": "2bc4014587fda4f31bdade02abd0cd5144d80e23",
+  "cases": [
+    "prefix-random-1048576",
+    "prefix-natural-4096"
+  ],
+  "actors": {
+    "mech": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-runtime-target/hot-matcher-facts/guards-profiled/bound/mech-worker",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/consolidation-995/natural4k-runtime-target/hot-matcher-facts/guards-profiled/bound/metadata.json",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+      ],
+      "sha256": "88321c097d29b7219f639abbc5fcce727f0602de2d05ab24e5e2b47f2996c3b4",
+      "warmups": 32
+    },
+    "libdeflate": {
+      "command": [
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/pinned-peers/libdeflate-worker",
+        "/private/tmp/mech-shared-cold-epilogues.2L6obP/.qualification/fixtures.json"
+      ],
+      "sha256": "06e3b4b11fafb5a79ee4a44a0462682662e72f3520b94fd8dd34b6f5e9c2e1d2",
+      "warmups": 80
+    }
+  },
+  "sample_seconds": 3,
+  "interval_ms": 1,
+  "load_before": [
+    2.0087890625,
+    2.0986328125,
+    2.11474609375
+  ],
+  "scope": "Fresh untimed diagnostic captures on the byte-identical selected 63692B worker and pinned C. Refresh hot-owner attribution after retained spill/guard combinations. Existing full-order ratios remain the latency evidence; no new optimization or runtime campaign is claimed."
+}

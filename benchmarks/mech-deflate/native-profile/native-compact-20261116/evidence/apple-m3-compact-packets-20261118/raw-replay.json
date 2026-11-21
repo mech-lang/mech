@@ -1,0 +1,768 @@
+{
+  "status": "passed",
+  "plan_sha256": "f719967eacd5cabea2432fd7e9a38ebe98a55d1248e85ca33aa19cbaf6226c13",
+  "runs": [
+    {
+      "order": "forward",
+      "cases": 81,
+      "timed_calls": 982656,
+      "wins": {
+        "mech-control": {
+          "roc": 69,
+          "libdeflate": 57
+        },
+        "mech-experiment": {
+          "roc": 78,
+          "libdeflate": 58
+        }
+      },
+      "receipt": {
+        "id": "upstream-67656/full/forward",
+        "kind": "full",
+        "order": "forward",
+        "blocks_per_case": 96,
+        "pins": {
+          "path": "upstream-67656/full/forward/pins.json",
+          "sha256": "d487c1d8fe09e0f48d5bfddfd70b219603791c9f65879523d8c0cc496b6da2e1"
+        },
+        "fixture_inventory": {
+          "path": "upstream-67656/full/fixtures.json",
+          "sha256": "5bfd407e42356ac57c61f858ad9920f1f9bf2e2fce1b2853c50cc20eda186b38"
+        },
+        "summary": {
+          "path": "upstream-67656/full/forward/summary.json",
+          "sha256": "2a9203d44737f7fbf9243bf111a7dc3f9d8f9da79aebad2d730049cdd5a8768e"
+        },
+        "complete": {
+          "path": "upstream-67656/full/forward/complete.json",
+          "sha256": "2e54dfa5984a50621e44303a7cbdd811e578a4c88e1b46ef989159527d443c6f"
+        },
+        "observations": {
+          "heldout-mixed-131073": {
+            "path": "upstream-67656/full/forward/heldout-mixed-131073/observations.json.gz",
+            "sha256": "b6bb1822039a4da7d3db7774e6d705d31a822c405513562ae31275289c9347e0"
+          },
+          "prefix-random-32769": {
+            "path": "upstream-67656/full/forward/prefix-random-32769/observations.json.gz",
+            "sha256": "89cdabd43de3eda74805f5832792303fbafb900eaaa69b67076b02fcbce8612b"
+          },
+          "prefix-natural-1024": {
+            "path": "upstream-67656/full/forward/prefix-natural-1024/observations.json.gz",
+            "sha256": "2b86470b03240133b7f8cc87578554510e31917d92e68694c5043962a53d793c"
+          },
+          "prefix-random-32767": {
+            "path": "upstream-67656/full/forward/prefix-random-32767/observations.json.gz",
+            "sha256": "af94a1bc35b402382a5ea61375532cf6ed570f711928a6142c5b1cd97b7eb1b5"
+          },
+          "prefix-repeated-1024": {
+            "path": "upstream-67656/full/forward/prefix-repeated-1024/observations.json.gz",
+            "sha256": "db65a3d474325bce050717055c7e3a59137bb794683f08dcc7a325c5d7ed73a7"
+          },
+          "random-1024": {
+            "path": "upstream-67656/full/forward/random-1024/observations.json.gz",
+            "sha256": "001c2ddd30f6c49a1a9b2304ab978fbd0e21b7aa6d046958c99dfdf2fa1d91e8"
+          },
+          "prefix-repeated-65537": {
+            "path": "upstream-67656/full/forward/prefix-repeated-65537/observations.json.gz",
+            "sha256": "34638471cbf8657c3004e1a2c157aacc6fa16a14649123e42d09d19d4c15fac5"
+          },
+          "prefix-periodic-4096": {
+            "path": "upstream-67656/full/forward/prefix-periodic-4096/observations.json.gz",
+            "sha256": "ccdf541c03f8c4010aba0a42c5e9804a4fd4e3450dfd0a1781c7740f044146dc"
+          },
+          "prefix-natural-16384": {
+            "path": "upstream-67656/full/forward/prefix-natural-16384/observations.json.gz",
+            "sha256": "dbfef9424203b686c2f5ccbea3c1c03f1809b34b8bd97fba056e2badb8f812bb"
+          },
+          "prefix-random-33027": {
+            "path": "upstream-67656/full/forward/prefix-random-33027/observations.json.gz",
+            "sha256": "175a2fb36ff6ecf401e45833364290cf8c04361f96b86dc096ce3105dc0893f1"
+          },
+          "prefix-random-32768": {
+            "path": "upstream-67656/full/forward/prefix-random-32768/observations.json.gz",
+            "sha256": "07e43ae385d92f4e9dfd0ebad82b51bad092f44392f66462598b1f224d2c5ac2"
+          },
+          "prefix-random-4096": {
+            "path": "upstream-67656/full/forward/prefix-random-4096/observations.json.gz",
+            "sha256": "e511e9cac278a02d4f8266418caf8ef07de047bfdb961d7fa2d42c1286cf24a0"
+          },
+          "prefix-natural-1048576": {
+            "path": "upstream-67656/full/forward/prefix-natural-1048576/observations.json.gz",
+            "sha256": "852c110135e58af92f67e13b63886d0428229748b202ec8e92dae97570dc26d7"
+          },
+          "prefix-repeated-65536": {
+            "path": "upstream-67656/full/forward/prefix-repeated-65536/observations.json.gz",
+            "sha256": "6e127133b1ffa8030bc2ba2614e1b0bc0143bba21ca8f2aeb36096865298fc03"
+          },
+          "prefix-repeated-16384": {
+            "path": "upstream-67656/full/forward/prefix-repeated-16384/observations.json.gz",
+            "sha256": "0bf3907c125486aca48ee41bf27da9f4f1d43b658aaf7ae519f978cb127f5aeb"
+          },
+          "prefix-periodic-65535": {
+            "path": "upstream-67656/full/forward/prefix-periodic-65535/observations.json.gz",
+            "sha256": "6bfcd6fdffee90710ae50e18c9aa38623b3f1f898be13e4c54af32cc7de0a7c9"
+          },
+          "prefix-random-262144": {
+            "path": "upstream-67656/full/forward/prefix-random-262144/observations.json.gz",
+            "sha256": "777c609e4f73f78890d6c71c8d1e7c0b2fe481326f70c030f53da15f8d22d8e9"
+          },
+          "prefix-periodic-1048576": {
+            "path": "upstream-67656/full/forward/prefix-periodic-1048576/observations.json.gz",
+            "sha256": "b329e848a1950cf0cceb70c1d51a29971e1cecf763bd7fe651b5222da6efda8c"
+          },
+          "prefix-repeated-262144": {
+            "path": "upstream-67656/full/forward/prefix-repeated-262144/observations.json.gz",
+            "sha256": "6754f2afe1f0f49d61cd693aa420b89a371bdeb1dab0bc8a48d5e60b8b5a3ef6"
+          },
+          "eight-literals-prefix": {
+            "path": "upstream-67656/full/forward/eight-literals-prefix/observations.json.gz",
+            "sha256": "6904e975fe2da910c5f4c4854590e7ccc4bfbf37682d4b4bfb3162fb202d7e52"
+          },
+          "prefix-natural-65536": {
+            "path": "upstream-67656/full/forward/prefix-natural-65536/observations.json.gz",
+            "sha256": "f33ff85affb4a1bc56547b179c1fa2e519b3a77ae4f889e8f234f65ee4261019"
+          },
+          "empty": {
+            "path": "upstream-67656/full/forward/empty/observations.json.gz",
+            "sha256": "2bf4b674457d36ca9233730a028862734efd0fe3630804e95312fb75cfb2f27f"
+          },
+          "one-stored": {
+            "path": "upstream-67656/full/forward/one-stored/observations.json.gz",
+            "sha256": "e87493728a6a1aa90cb6145a40669254a92fa9a27fbebe5efa5f82722bf0b19b"
+          },
+          "repeated-32769": {
+            "path": "upstream-67656/full/forward/repeated-32769/observations.json.gz",
+            "sha256": "b437594872a92cc7e44046a47cd60cc32139c371a9e80eff3a55e08f27e5539f"
+          },
+          "prefix-natural-65537": {
+            "path": "upstream-67656/full/forward/prefix-natural-65537/observations.json.gz",
+            "sha256": "5caf433a9b96d7958e29fc79820acefabcb4d11e85917e4fa602eeec8f937426"
+          },
+          "prefix-natural-4096": {
+            "path": "upstream-67656/full/forward/prefix-natural-4096/observations.json.gz",
+            "sha256": "34ff027b550a3e8d5ce1c6afd7cb2d74fc90724c061555e13ea4d2c7b95b139c"
+          },
+          "prefix-repeated-4096": {
+            "path": "upstream-67656/full/forward/prefix-repeated-4096/observations.json.gz",
+            "sha256": "e9027f15b33908cf83ed4c5d0b0591e7ff72a9dd8b0a0bf97c941cf218edf5c5"
+          },
+          "320-overlap": {
+            "path": "upstream-67656/full/forward/320-overlap/observations.json.gz",
+            "sha256": "c4caf21a66149552b3df3ff9fd03a9a8a7a54a4172051d2abbd96ebb140de863"
+          },
+          "prefix-periodic-1024": {
+            "path": "upstream-67656/full/forward/prefix-periodic-1024/observations.json.gz",
+            "sha256": "87fe9687f190a517bc5d63a6bc9eb2caa01a00317e91d0d402a36037e37fdde1"
+          },
+          "prefix-random-65535": {
+            "path": "upstream-67656/full/forward/prefix-random-65535/observations.json.gz",
+            "sha256": "bf9949e24616d428361fedba71f38e8bb4994aeb42431ff8d9a72a06dd1f9547"
+          },
+          "prefix-random-1048576": {
+            "path": "upstream-67656/full/forward/prefix-random-1048576/observations.json.gz",
+            "sha256": "4c436519aea0026fc1df7d2d93ccb341b1d4d68210698bf5d00135219aec1007"
+          },
+          "heldout-slides-65537": {
+            "path": "upstream-67656/full/forward/heldout-slides-65537/observations.json.gz",
+            "sha256": "cf2e11867d825f533a86769fef481712a737a4416c6d883e1e19c16919fdd149"
+          },
+          "prefix-random-1024": {
+            "path": "upstream-67656/full/forward/prefix-random-1024/observations.json.gz",
+            "sha256": "f13910aebcdc1fb3da7707f61ce693e4532a21ae01a62240c9097965f005d153"
+          },
+          "random-256": {
+            "path": "upstream-67656/full/forward/random-256/observations.json.gz",
+            "sha256": "8b7910cfbf9e9995ef0ad6d0d252ff25da592e87c808d8bdb7e766937322b54e"
+          },
+          "random-32769": {
+            "path": "upstream-67656/full/forward/random-32769/observations.json.gz",
+            "sha256": "f1ac2dddecf9dba05abd7d62112517e8c3c9496c66ee8d0a13d7c749e19e6f87"
+          },
+          "reymont-prefix-16384": {
+            "path": "upstream-67656/full/forward/reymont-prefix-16384/observations.json.gz",
+            "sha256": "542be28ea7ddcd88d09bdcd6c4900156070cabf666bcc2641d056390d7f11f5b"
+          },
+          "prefix-periodic-32768": {
+            "path": "upstream-67656/full/forward/prefix-periodic-32768/observations.json.gz",
+            "sha256": "e77064b5e8bb3bd94cb85bead153639b6bc54b0e853491e7c2634e92461e6639"
+          },
+          "prefix-periodic-33027": {
+            "path": "upstream-67656/full/forward/prefix-periodic-33027/observations.json.gz",
+            "sha256": "1b0c39ccb9e8197fdf3518b826cc45f7fd03ad4a3be09f7692711f029fd60d46"
+          },
+          "prefix-periodic-131072": {
+            "path": "upstream-67656/full/forward/prefix-periodic-131072/observations.json.gz",
+            "sha256": "22bbec458726d95b27432531f9c71e0a103f1cabb42b81e1202171163597d5e6"
+          },
+          "prefix-repeated-1048576": {
+            "path": "upstream-67656/full/forward/prefix-repeated-1048576/observations.json.gz",
+            "sha256": "1b811e4b1ab11d4bcfa8058cd1dc00ec6531bc105d076ec4170def86af0f0add"
+          },
+          "prefix-periodic-32769": {
+            "path": "upstream-67656/full/forward/prefix-periodic-32769/observations.json.gz",
+            "sha256": "c979de45593466ae92ee6d1b496f1e23623de3d142530607eebb446ea35b6f86"
+          },
+          "repeated-1024": {
+            "path": "upstream-67656/full/forward/repeated-1024/observations.json.gz",
+            "sha256": "e083208b664c7b4ddf39d8570121dd23d8c0b1a43b6247c8dd123332168aa1cb"
+          },
+          "reymont-prefix-1024": {
+            "path": "upstream-67656/full/forward/reymont-prefix-1024/observations.json.gz",
+            "sha256": "0ffd6a2209c5d61a13093e269ada8e2caae671720b180d8faeb25b37aaf29ac9"
+          },
+          "prefix-periodic-32767": {
+            "path": "upstream-67656/full/forward/prefix-periodic-32767/observations.json.gz",
+            "sha256": "b1f8dcef3c4475ee63246eb85343da3c433c65f180404f931ace79de5a88511c"
+          },
+          "seven-stored-prefix": {
+            "path": "upstream-67656/full/forward/seven-stored-prefix/observations.json.gz",
+            "sha256": "b22043354a36508dbf9d92391d52d6a211117291e9b146da6fdd7d11362c030f"
+          },
+          "prefix-natural-262144": {
+            "path": "upstream-67656/full/forward/prefix-natural-262144/observations.json.gz",
+            "sha256": "3a9648a41eb8f1b211d0df6ca7103bcd96ac7a7d4082610ee46eff883c94b9d1"
+          },
+          "prefix-repeated-8192": {
+            "path": "upstream-67656/full/forward/prefix-repeated-8192/observations.json.gz",
+            "sha256": "5e1127d39f56e85c44a6097822a759d1a0f121d2f7b640a6ffc783038655ae77"
+          },
+          "prefix-periodic-262144": {
+            "path": "upstream-67656/full/forward/prefix-periodic-262144/observations.json.gz",
+            "sha256": "645f453c78e4b5ff925f0f60ce238a92dbd3db1df5a6295552e0780e503a5918"
+          },
+          "prefix-natural-8192": {
+            "path": "upstream-67656/full/forward/prefix-natural-8192/observations.json.gz",
+            "sha256": "90f5cba7c0754c3e46f45bbdbd581fedc867db919d78bcf7aa4501b5e6780b2b"
+          },
+          "prefix-periodic-16384": {
+            "path": "upstream-67656/full/forward/prefix-periodic-16384/observations.json.gz",
+            "sha256": "f390a059fb8877c09003441923d19342e5d3d042e04980ecdcbd56f5c5278013"
+          },
+          "prefix-repeated-65535": {
+            "path": "upstream-67656/full/forward/prefix-repeated-65535/observations.json.gz",
+            "sha256": "3a5199b08b5b7e2aa051779aa31479ba18d12b2c65d81814cd7527585cf749ff"
+          },
+          "prefix-natural-131072": {
+            "path": "upstream-67656/full/forward/prefix-natural-131072/observations.json.gz",
+            "sha256": "76c1d36811ad725851219206d085dc43d5156c119110de9d5f8589e46e7e8ca5"
+          },
+          "33027-periodic-window": {
+            "path": "upstream-67656/full/forward/33027-periodic-window/observations.json.gz",
+            "sha256": "684bdefe4caef907f74fbf33dea1425d9ed5ea0456201d95f3279365dd2dc0d0"
+          },
+          "prefix-natural-65535": {
+            "path": "upstream-67656/full/forward/prefix-natural-65535/observations.json.gz",
+            "sha256": "910cbef07f9f721fe08957cd053fbdae09ab1b6c56d42b33addb5df58bc425a4"
+          },
+          "16384-distribution-change": {
+            "path": "upstream-67656/full/forward/16384-distribution-change/observations.json.gz",
+            "sha256": "11667c059c62d908b79748f47bdaa971d7e8710ae556b7b4585e35348fca213e"
+          },
+          "eight-literals": {
+            "path": "upstream-67656/full/forward/eight-literals/observations.json.gz",
+            "sha256": "21ce2b7bfd1a9a143803fedf310c697d77273a1674767e19a64bbb8e5349b221"
+          },
+          "prefix-periodic-65536": {
+            "path": "upstream-67656/full/forward/prefix-periodic-65536/observations.json.gz",
+            "sha256": "a61d7e8ad7588690ed3e096aa97d65728bf4f43f77ec12e02d6867f3f6c33c85"
+          },
+          "heldout-random-65537": {
+            "path": "upstream-67656/full/forward/heldout-random-65537/observations.json.gz",
+            "sha256": "c074c68654b2f88c39ef1b09cb3c45458b323d6c88037d4c5191a9543117ad54"
+          },
+          "random-64": {
+            "path": "upstream-67656/full/forward/random-64/observations.json.gz",
+            "sha256": "61aefa403bf66c39314143f5774e98112e805aaa654aca81f213c79a104ce58f"
+          },
+          "reymont-prefix-32769": {
+            "path": "upstream-67656/full/forward/reymont-prefix-32769/observations.json.gz",
+            "sha256": "ecb508a1841fde7830c1fed2df44c211c60a5e58ef1c2a161cff6246c20df44d"
+          },
+          "32-high-entropy-stored": {
+            "path": "upstream-67656/full/forward/32-high-entropy-stored/observations.json.gz",
+            "sha256": "e1a902c28bb53bdd2a6f9acc95e5e40f00fbb24c9715af9b1bc73eb8b3f56213"
+          },
+          "prefix-periodic-65537": {
+            "path": "upstream-67656/full/forward/prefix-periodic-65537/observations.json.gz",
+            "sha256": "386458fb698c6e1bc7219aeafa24404be5421376deb30133981adb5f79dc3dab"
+          },
+          "prefix-repeated-32767": {
+            "path": "upstream-67656/full/forward/prefix-repeated-32767/observations.json.gz",
+            "sha256": "e005628db4e05edf69749690ef603aebf96ea2c031e2e1ef0750a4dcaa4095c1"
+          },
+          "prefix-random-131072": {
+            "path": "upstream-67656/full/forward/prefix-random-131072/observations.json.gz",
+            "sha256": "01189088895cc2b3dfcb6407256ab66213cfe6f44f4902bfaebf2bd3c46c47c0"
+          },
+          "prefix-repeated-32769": {
+            "path": "upstream-67656/full/forward/prefix-repeated-32769/observations.json.gz",
+            "sha256": "73b079bc5e229686de1b0f867f92875024cd299834d5ba385aad8ade951b6fbb"
+          },
+          "prefix-periodic-8192": {
+            "path": "upstream-67656/full/forward/prefix-periodic-8192/observations.json.gz",
+            "sha256": "e93eddef3563436a8c9c1b22a306799a05e10b395c47514b4d7ccae519aef460"
+          },
+          "eight-overlap": {
+            "path": "upstream-67656/full/forward/eight-overlap/observations.json.gz",
+            "sha256": "209be9449b1026578f805a903f0cd8b661dcb0ace94e6d3554d149121684fbe6"
+          },
+          "prefix-random-65537": {
+            "path": "upstream-67656/full/forward/prefix-random-65537/observations.json.gz",
+            "sha256": "268b1e2319bdd136e04e9bcda3bc9852eef3878c579f2f331f58f2681073c558"
+          },
+          "prefix-repeated-131072": {
+            "path": "upstream-67656/full/forward/prefix-repeated-131072/observations.json.gz",
+            "sha256": "46f78e7fbec35b2a1cd90c25e56c540357aadbc8e2df0ccae7a0fd7d2c9cdd20"
+          },
+          "prefix-repeated-32768": {
+            "path": "upstream-67656/full/forward/prefix-repeated-32768/observations.json.gz",
+            "sha256": "69b7d69adc6470cc2c5e505b61358ce71ff3588362da8d5d9d5d545b8ec1a057"
+          },
+          "prefix-repeated-33027": {
+            "path": "upstream-67656/full/forward/prefix-repeated-33027/observations.json.gz",
+            "sha256": "20fba58b7f9a8dbc574c35f8bed686576fb3cd5570767c279cbae2da4f925a4b"
+          },
+          "128-biased-dynamic": {
+            "path": "upstream-67656/full/forward/128-biased-dynamic/observations.json.gz",
+            "sha256": "649d5ada0a719ff7855237f843928ca61ae042acc91c32bf0adf1ad3c4224598"
+          },
+          "prefix-random-8192": {
+            "path": "upstream-67656/full/forward/prefix-random-8192/observations.json.gz",
+            "sha256": "ed711f3b5203217f256b475bd5773be5addd391783d288f0e8c2c4f7bda9a1e8"
+          },
+          "prefix-random-65536": {
+            "path": "upstream-67656/full/forward/prefix-random-65536/observations.json.gz",
+            "sha256": "f55fc7ad6355f8df1edc62b549742d29e1f03d6d71e8922bacb9ca580a284bf2"
+          },
+          "prefix-natural-33027": {
+            "path": "upstream-67656/full/forward/prefix-natural-33027/observations.json.gz",
+            "sha256": "3c2ec5b1b4b416f2167acdd03ed51eb0797d3d1d71bf4f4c386dcf70e85e7ee1"
+          },
+          "prefix-natural-32768": {
+            "path": "upstream-67656/full/forward/prefix-natural-32768/observations.json.gz",
+            "sha256": "e5c9318ce2dedcbed64cf67c7aed68a1cc5b954eec74cab14c9e85112430505e"
+          },
+          "prefix-random-16384": {
+            "path": "upstream-67656/full/forward/prefix-random-16384/observations.json.gz",
+            "sha256": "c18464b7a524ba278bce0069b0d17ff562db607ecd92e404629a120b9f7230c2"
+          },
+          "heldout-window-32767": {
+            "path": "upstream-67656/full/forward/heldout-window-32767/observations.json.gz",
+            "sha256": "f974802562ac36f5a105f8f56ff43c9552e49db581452561cee875a718bcdb72"
+          },
+          "prefix-natural-32767": {
+            "path": "upstream-67656/full/forward/prefix-natural-32767/observations.json.gz",
+            "sha256": "6963b57064d74d35ff1967104d837231b5b32ea79914616145055488b2cbf470"
+          },
+          "prefix-natural-32769": {
+            "path": "upstream-67656/full/forward/prefix-natural-32769/observations.json.gz",
+            "sha256": "c0e06e23df9e77cf8bbf2410091fc617b244f51454481684319caa1391af46a5"
+          },
+          "heldout-window-32768": {
+            "path": "upstream-67656/full/forward/heldout-window-32768/observations.json.gz",
+            "sha256": "ca9b279bc1001e6c67bbe7a83840793093a31e1ff5fcf2c5852c57118afde29b"
+          }
+        },
+        "cleanup": {
+          "mech-control": {
+            "path": "upstream-67656/full/forward/mech-control.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "mech-experiment": {
+            "path": "upstream-67656/full/forward/mech-experiment.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "roc": {
+            "path": "upstream-67656/full/forward/roc.stderr",
+            "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+          },
+          "libdeflate": {
+            "path": "upstream-67656/full/forward/libdeflate.stderr",
+            "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+          }
+        }
+      }
+    },
+    {
+      "order": "reverse",
+      "cases": 81,
+      "timed_calls": 982656,
+      "wins": {
+        "mech-control": {
+          "roc": 68,
+          "libdeflate": 58
+        },
+        "mech-experiment": {
+          "roc": 76,
+          "libdeflate": 59
+        }
+      },
+      "receipt": {
+        "id": "upstream-67656/full/reverse",
+        "kind": "full",
+        "order": "reverse",
+        "blocks_per_case": 96,
+        "pins": {
+          "path": "upstream-67656/full/reverse/pins.json",
+          "sha256": "d487c1d8fe09e0f48d5bfddfd70b219603791c9f65879523d8c0cc496b6da2e1"
+        },
+        "fixture_inventory": {
+          "path": "upstream-67656/full/fixtures.json",
+          "sha256": "5bfd407e42356ac57c61f858ad9920f1f9bf2e2fce1b2853c50cc20eda186b38"
+        },
+        "summary": {
+          "path": "upstream-67656/full/reverse/summary.json",
+          "sha256": "c73636ea816b09f2aee7512db39efa34aaf1106252cefa9d2c9345ce5dc27ce0"
+        },
+        "complete": {
+          "path": "upstream-67656/full/reverse/complete.json",
+          "sha256": "2e54dfa5984a50621e44303a7cbdd811e578a4c88e1b46ef989159527d443c6f"
+        },
+        "observations": {
+          "heldout-mixed-131073": {
+            "path": "upstream-67656/full/reverse/heldout-mixed-131073/observations.json.gz",
+            "sha256": "d1f023889cc1339d25c29c2b651e0bdc378974733e40b60422e4fd40c66d1754"
+          },
+          "prefix-random-32769": {
+            "path": "upstream-67656/full/reverse/prefix-random-32769/observations.json.gz",
+            "sha256": "0222f37ed242996d4efe2a228729866fd9b969c1a3693b95fc274e914aa8bd58"
+          },
+          "prefix-natural-1024": {
+            "path": "upstream-67656/full/reverse/prefix-natural-1024/observations.json.gz",
+            "sha256": "eeb73d623812aa65c79499baa465fcb8668b699bf0bcad96ccc09d52d554ec59"
+          },
+          "prefix-random-32767": {
+            "path": "upstream-67656/full/reverse/prefix-random-32767/observations.json.gz",
+            "sha256": "61199137360f8d8c450228056ddd20068f297c67731c2824752e1eae4dbe9ee8"
+          },
+          "prefix-repeated-1024": {
+            "path": "upstream-67656/full/reverse/prefix-repeated-1024/observations.json.gz",
+            "sha256": "e1cefb54a75b0378b903d0eb90d8ee0bc2ece11d5b5ae618594be5fe38291aa7"
+          },
+          "random-1024": {
+            "path": "upstream-67656/full/reverse/random-1024/observations.json.gz",
+            "sha256": "2c1c5d444caa01d442b86b868141ec2322a4b58ad6b0e0205d6b7eef32c7fe7a"
+          },
+          "prefix-repeated-65537": {
+            "path": "upstream-67656/full/reverse/prefix-repeated-65537/observations.json.gz",
+            "sha256": "ac12e5fba254f78db3c9b8dfa31ceee0c6d3482d907e94c49e87ad63592b39c4"
+          },
+          "prefix-periodic-4096": {
+            "path": "upstream-67656/full/reverse/prefix-periodic-4096/observations.json.gz",
+            "sha256": "b571a5732ca20db370ae1ca77873f1b26f708eb40f705eb5cfd50b579129bfb1"
+          },
+          "prefix-natural-16384": {
+            "path": "upstream-67656/full/reverse/prefix-natural-16384/observations.json.gz",
+            "sha256": "c56563d859ec0c38d07f381edacbae696020977bd000ff37f5b98a9207737609"
+          },
+          "prefix-random-33027": {
+            "path": "upstream-67656/full/reverse/prefix-random-33027/observations.json.gz",
+            "sha256": "4a242ff88566f582b08693b6ce3421e155571e7bdbcd3d06bfcf449d257f0882"
+          },
+          "prefix-random-32768": {
+            "path": "upstream-67656/full/reverse/prefix-random-32768/observations.json.gz",
+            "sha256": "3ea54c58c7e6fb44d81d910f092733b7adfa452b7ae512798029e2b14cc4616b"
+          },
+          "prefix-random-4096": {
+            "path": "upstream-67656/full/reverse/prefix-random-4096/observations.json.gz",
+            "sha256": "78c6b2efea6227b552d8bd3c2d8c7550b00182897e4a8f682faf2db80ddf2049"
+          },
+          "prefix-natural-1048576": {
+            "path": "upstream-67656/full/reverse/prefix-natural-1048576/observations.json.gz",
+            "sha256": "132f326832a3ff4ffe671d6e6be3ffb685c99383b96ca291f20e1766f007c3ed"
+          },
+          "prefix-repeated-65536": {
+            "path": "upstream-67656/full/reverse/prefix-repeated-65536/observations.json.gz",
+            "sha256": "d016cd8a554d055aa410dc0b8e0c3f3da2df6c609ede8608d28261129e4254af"
+          },
+          "prefix-repeated-16384": {
+            "path": "upstream-67656/full/reverse/prefix-repeated-16384/observations.json.gz",
+            "sha256": "623e225c9cbd969b0314e85815ffe8dc23ad0eeba10392a74a7457ff2dc7c83d"
+          },
+          "prefix-periodic-65535": {
+            "path": "upstream-67656/full/reverse/prefix-periodic-65535/observations.json.gz",
+            "sha256": "e67b1d30f5aee49ce7f7b4a253899efeb68e30a1b6c5b44588be48721a39ce63"
+          },
+          "prefix-random-262144": {
+            "path": "upstream-67656/full/reverse/prefix-random-262144/observations.json.gz",
+            "sha256": "1c09bbde3cc3d6cbce99e7771584a4743df3d7d2f6ee01b8fa60b32b165fcbfc"
+          },
+          "prefix-periodic-1048576": {
+            "path": "upstream-67656/full/reverse/prefix-periodic-1048576/observations.json.gz",
+            "sha256": "5a7511f0e4132948b25eda06ce07fbdd0bfd13629722fd7b6322920fffab51b5"
+          },
+          "prefix-repeated-262144": {
+            "path": "upstream-67656/full/reverse/prefix-repeated-262144/observations.json.gz",
+            "sha256": "9ade4f5acc024a0931c74b87beab3b3542695f77c12fe31fcdc654c6f46e3681"
+          },
+          "eight-literals-prefix": {
+            "path": "upstream-67656/full/reverse/eight-literals-prefix/observations.json.gz",
+            "sha256": "eeb7bc121969c6f6d22926fa014da39aadfb78cc010ffff56057bf90ad05acec"
+          },
+          "prefix-natural-65536": {
+            "path": "upstream-67656/full/reverse/prefix-natural-65536/observations.json.gz",
+            "sha256": "3526a616c344213315a6e2e64bd49f88874981ce70d0012492701dbdcd7c6ba8"
+          },
+          "empty": {
+            "path": "upstream-67656/full/reverse/empty/observations.json.gz",
+            "sha256": "31c699cf001d8cadd2c770d2fe735c226807a5dee18cb7632ec402caa2dc2916"
+          },
+          "one-stored": {
+            "path": "upstream-67656/full/reverse/one-stored/observations.json.gz",
+            "sha256": "bd88177c85b310745fc1ad7e738f2da18db2b00c2057239126841c49cf5dfd09"
+          },
+          "repeated-32769": {
+            "path": "upstream-67656/full/reverse/repeated-32769/observations.json.gz",
+            "sha256": "2ba024b110f7f2d2f05536b83292df01e4dbedbdaf78bcf9fd720663c7c4d645"
+          },
+          "prefix-natural-65537": {
+            "path": "upstream-67656/full/reverse/prefix-natural-65537/observations.json.gz",
+            "sha256": "59a524e019935a78f27a10308b947df94d3848d0ab9077ef5a117667215b3488"
+          },
+          "prefix-natural-4096": {
+            "path": "upstream-67656/full/reverse/prefix-natural-4096/observations.json.gz",
+            "sha256": "05b86b1b07d154e363ce459abf943173a78dff0b3e76e3b8eeb2d03ec2e82b2d"
+          },
+          "prefix-repeated-4096": {
+            "path": "upstream-67656/full/reverse/prefix-repeated-4096/observations.json.gz",
+            "sha256": "d020c3f6bc43fb9e6a56e1718dc639c4ee498ef92716cf4ccc13ab389e108987"
+          },
+          "320-overlap": {
+            "path": "upstream-67656/full/reverse/320-overlap/observations.json.gz",
+            "sha256": "61bde6839e6071f69eb1cca204ea96a42a0299704ab0154796e0dc278c7ca9be"
+          },
+          "prefix-periodic-1024": {
+            "path": "upstream-67656/full/reverse/prefix-periodic-1024/observations.json.gz",
+            "sha256": "fa64401c833495567d1d4dc0461a0ef302fb108fb0fca9e5763ddde8baf9ee9a"
+          },
+          "prefix-random-65535": {
+            "path": "upstream-67656/full/reverse/prefix-random-65535/observations.json.gz",
+            "sha256": "314bdb99c0ad6e24fd30bf5a7581e2926d9e364b81c36b0978d30f2574500d5d"
+          },
+          "prefix-random-1048576": {
+            "path": "upstream-67656/full/reverse/prefix-random-1048576/observations.json.gz",
+            "sha256": "d3153acb0e5663e56cbdf76fb90e33f334867773ea845934404d84c6dd1f33ed"
+          },
+          "heldout-slides-65537": {
+            "path": "upstream-67656/full/reverse/heldout-slides-65537/observations.json.gz",
+            "sha256": "a325e2180a51c5c1d1e42446aba71316cf5b46e804716142422c4d928efa6b57"
+          },
+          "prefix-random-1024": {
+            "path": "upstream-67656/full/reverse/prefix-random-1024/observations.json.gz",
+            "sha256": "f3420adadae2a2eadb5dc8202bdfdac71d2a977134e37d4a3361dea63fb96bdd"
+          },
+          "random-256": {
+            "path": "upstream-67656/full/reverse/random-256/observations.json.gz",
+            "sha256": "4c05a316794c140ac1155293822459ae80cab6dc972660c44d62e1e4b3e66d37"
+          },
+          "random-32769": {
+            "path": "upstream-67656/full/reverse/random-32769/observations.json.gz",
+            "sha256": "435c9f414b1cb612a5bc6ed1ee2a631fd1e9a46133e984fc0426309200099e9c"
+          },
+          "reymont-prefix-16384": {
+            "path": "upstream-67656/full/reverse/reymont-prefix-16384/observations.json.gz",
+            "sha256": "05dd9135838db155c1371e45caaf9c593ef83e9bb5a8e6abf5022ebe871ec902"
+          },
+          "prefix-periodic-32768": {
+            "path": "upstream-67656/full/reverse/prefix-periodic-32768/observations.json.gz",
+            "sha256": "57acbf4febab2ca32c2a4b431498a3a39128730f17fce5ea06c663b2884ca854"
+          },
+          "prefix-periodic-33027": {
+            "path": "upstream-67656/full/reverse/prefix-periodic-33027/observations.json.gz",
+            "sha256": "256b830946d94bd94872d8087a4c90ceb84c3c90672344308e9ba36a35b219a3"
+          },
+          "prefix-periodic-131072": {
+            "path": "upstream-67656/full/reverse/prefix-periodic-131072/observations.json.gz",
+            "sha256": "8a7ad80003df616ea26111158b70f558965925a9633956435d7e107db82a01ad"
+          },
+          "prefix-repeated-1048576": {
+            "path": "upstream-67656/full/reverse/prefix-repeated-1048576/observations.json.gz",
+            "sha256": "b834738e50a3934e7c3d5c0026749ac6260853530ab0dc7a03a4f39313e96edd"
+          },
+          "prefix-periodic-32769": {
+            "path": "upstream-67656/full/reverse/prefix-periodic-32769/observations.json.gz",
+            "sha256": "4f72fc2aae3a12f1b49a657b7292357aefa4351f05a9cf9ff46e9f2db8372cdd"
+          },
+          "repeated-1024": {
+            "path": "upstream-67656/full/reverse/repeated-1024/observations.json.gz",
+            "sha256": "ee6ccde9372ecd435b1d584b37cee2416094928b37ef6b835fc79fa07dfc24e0"
+          },
+          "reymont-prefix-1024": {
+            "path": "upstream-67656/full/reverse/reymont-prefix-1024/observations.json.gz",
+            "sha256": "d1e350b7545dbc06828ac3f58c817d6b4935ac1f08e1f839c2685c07315b086d"
+          },
+          "prefix-periodic-32767": {
+            "path": "upstream-67656/full/reverse/prefix-periodic-32767/observations.json.gz",
+            "sha256": "2284db4007f09f76692bc31c120d2cf47545b723baa841d45a50707a3bbf7f43"
+          },
+          "seven-stored-prefix": {
+            "path": "upstream-67656/full/reverse/seven-stored-prefix/observations.json.gz",
+            "sha256": "1b82eecf8b479f9de253114535f5a05061f5849f257267f70d843f6389d0d60d"
+          },
+          "prefix-natural-262144": {
+            "path": "upstream-67656/full/reverse/prefix-natural-262144/observations.json.gz",
+            "sha256": "e44a171eaf49d12cc0191bf226f6775089c690d6c466510dbe9e19782c7bcee4"
+          },
+          "prefix-repeated-8192": {
+            "path": "upstream-67656/full/reverse/prefix-repeated-8192/observations.json.gz",
+            "sha256": "53ddbb4200422c07c1b3f4cebcbb470abf035f0ec43edda9c1b847e137780c76"
+          },
+          "prefix-periodic-262144": {
+            "path": "upstream-67656/full/reverse/prefix-periodic-262144/observations.json.gz",
+            "sha256": "466e42e66b80e50de7e0c011ab5ed0535be0f784ccdf2ecff156c00aaab6ede2"
+          },
+          "prefix-natural-8192": {
+            "path": "upstream-67656/full/reverse/prefix-natural-8192/observations.json.gz",
+            "sha256": "c4daa4cb67008320c9d7170cbb728689c06d2406e9ebf55d6d69e880698e49ff"
+          },
+          "prefix-periodic-16384": {
+            "path": "upstream-67656/full/reverse/prefix-periodic-16384/observations.json.gz",
+            "sha256": "6378365d89892b2e73a63bb351535579acb0daa53a066102da419bc1535a1e1f"
+          },
+          "prefix-repeated-65535": {
+            "path": "upstream-67656/full/reverse/prefix-repeated-65535/observations.json.gz",
+            "sha256": "84894aa81cd45a721b0a3583234a5a4722248ed1c67aebdc792136ef3746cacc"
+          },
+          "prefix-natural-131072": {
+            "path": "upstream-67656/full/reverse/prefix-natural-131072/observations.json.gz",
+            "sha256": "f6c733610cab5b353b3155fffedb5a11bd53be72cbc23f54d2b4ce6f17b7f33a"
+          },
+          "33027-periodic-window": {
+            "path": "upstream-67656/full/reverse/33027-periodic-window/observations.json.gz",
+            "sha256": "a5d8ec566360f50613431bc968f65f8ed8a9fc6b9f0d42937628c233447992b8"
+          },
+          "prefix-natural-65535": {
+            "path": "upstream-67656/full/reverse/prefix-natural-65535/observations.json.gz",
+            "sha256": "a847455039ea692f6b891da9bccd31d3cd1a960db8e631279e4fe168022f54e2"
+          },
+          "16384-distribution-change": {
+            "path": "upstream-67656/full/reverse/16384-distribution-change/observations.json.gz",
+            "sha256": "ed01c6ad0f2c27b4c1308c3ababc4a60cad7bb358a25146c00b735dd2905dedc"
+          },
+          "eight-literals": {
+            "path": "upstream-67656/full/reverse/eight-literals/observations.json.gz",
+            "sha256": "7467f20e5e6ccb3c2448357e2697909bee6221875b510af872be096f5b96d961"
+          },
+          "prefix-periodic-65536": {
+            "path": "upstream-67656/full/reverse/prefix-periodic-65536/observations.json.gz",
+            "sha256": "6ae438d6982c1a8d2d1c868979526f34dfeb80c3f5207ab6d0438c0cfa578a69"
+          },
+          "heldout-random-65537": {
+            "path": "upstream-67656/full/reverse/heldout-random-65537/observations.json.gz",
+            "sha256": "77df361c7b440823b267970d5447204fd15f68f32b42b2438b2b9700248a38b5"
+          },
+          "random-64": {
+            "path": "upstream-67656/full/reverse/random-64/observations.json.gz",
+            "sha256": "abc8c32422aa51ae3f0568f0b8bbe3ee1ce141c72f1b5d89019dafbcb424599d"
+          },
+          "reymont-prefix-32769": {
+            "path": "upstream-67656/full/reverse/reymont-prefix-32769/observations.json.gz",
+            "sha256": "58ffc1993fd088c4982c8950c2dd96b2d19286eae6f6e3cdd1aafb0004a09e56"
+          },
+          "32-high-entropy-stored": {
+            "path": "upstream-67656/full/reverse/32-high-entropy-stored/observations.json.gz",
+            "sha256": "a8ce53e95462668708bb329d8f0b5d9454bf6553caa432bd40a0b76d8b4126cf"
+          },
+          "prefix-periodic-65537": {
+            "path": "upstream-67656/full/reverse/prefix-periodic-65537/observations.json.gz",
+            "sha256": "130ca943cab0b12504478b860f54d9c12133b945205ec0729bb3f4e2c88af7d0"
+          },
+          "prefix-repeated-32767": {
+            "path": "upstream-67656/full/reverse/prefix-repeated-32767/observations.json.gz",
+            "sha256": "de4ed5739e4844c9c1f60096ca9203b9340838627a40d655216ae3ebd274ba1c"
+          },
+          "prefix-random-131072": {
+            "path": "upstream-67656/full/reverse/prefix-random-131072/observations.json.gz",
+            "sha256": "013d3d5c1a804e8888007079c41f42cae66ee4a6cc1878573f48b50726055d25"
+          },
+          "prefix-repeated-32769": {
+            "path": "upstream-67656/full/reverse/prefix-repeated-32769/observations.json.gz",
+            "sha256": "7feb5ec34a72064c9e68197a9d9d746cdaa0d8c6122e6d3aabdeb63d7674dd8d"
+          },
+          "prefix-periodic-8192": {
+            "path": "upstream-67656/full/reverse/prefix-periodic-8192/observations.json.gz",
+            "sha256": "5282c08a38ea995a716c2159a4b99c59d335b60178cd91de07b6aa5e15fdf6e0"
+          },
+          "eight-overlap": {
+            "path": "upstream-67656/full/reverse/eight-overlap/observations.json.gz",
+            "sha256": "608e7599e153b1cf17196469fc15bfadae39464d8506bcc83b8b43d16fd4131b"
+          },
+          "prefix-random-65537": {
+            "path": "upstream-67656/full/reverse/prefix-random-65537/observations.json.gz",
+            "sha256": "782940b0ad727d638fc8cdea1f701acfce0846954f29bc89444ed4077e057488"
+          },
+          "prefix-repeated-131072": {
+            "path": "upstream-67656/full/reverse/prefix-repeated-131072/observations.json.gz",
+            "sha256": "951b5d3eaa62e8a63bbf823aea90567ebd2b8fd78fdcf9adae7ec66a6879e308"
+          },
+          "prefix-repeated-32768": {
+            "path": "upstream-67656/full/reverse/prefix-repeated-32768/observations.json.gz",
+            "sha256": "a9c4d6d7cb49c1fb556a05f22b4962f5301ff197c31e3a31c184ecd4dd9c7f9e"
+          },
+          "prefix-repeated-33027": {
+            "path": "upstream-67656/full/reverse/prefix-repeated-33027/observations.json.gz",
+            "sha256": "d9a72fc3b6e89c7b76096e181c0b1895a991cdc5622b4b6b11c955876487ecff"
+          },
+          "128-biased-dynamic": {
+            "path": "upstream-67656/full/reverse/128-biased-dynamic/observations.json.gz",
+            "sha256": "92bd5587f0a57089b595302d4f6548dce975f7f5895297088d9caba662efc07d"
+          },
+          "prefix-random-8192": {
+            "path": "upstream-67656/full/reverse/prefix-random-8192/observations.json.gz",
+            "sha256": "da4a81598767da60a63cd981d40efb1e370e9d98165c0cfe68a5bc496386ebb1"
+          },
+          "prefix-random-65536": {
+            "path": "upstream-67656/full/reverse/prefix-random-65536/observations.json.gz",
+            "sha256": "615cd8b53f0f4eb5baf24f0ef8d45ba8b9c80699cbcd520b33acdca52fe46671"
+          },
+          "prefix-natural-33027": {
+            "path": "upstream-67656/full/reverse/prefix-natural-33027/observations.json.gz",
+            "sha256": "71758f2e701a35d1c174de3cd159025699db383649a647196d218aa4964362c3"
+          },
+          "prefix-natural-32768": {
+            "path": "upstream-67656/full/reverse/prefix-natural-32768/observations.json.gz",
+            "sha256": "e8d3f8004dfde27ae42769ff81d34e29e3621458c100d3d54150e9dc2c67e006"
+          },
+          "prefix-random-16384": {
+            "path": "upstream-67656/full/reverse/prefix-random-16384/observations.json.gz",
+            "sha256": "2b39a678c66f94763da6d7ad1bc6c2b8c9251ec8829ee2ed3ce70c35305d2ccb"
+          },
+          "heldout-window-32767": {
+            "path": "upstream-67656/full/reverse/heldout-window-32767/observations.json.gz",
+            "sha256": "7ce5d569b8c9934a6d40507bbbf5dcc0af833bd7d4c3d32e41e8fc08226d4d13"
+          },
+          "prefix-natural-32767": {
+            "path": "upstream-67656/full/reverse/prefix-natural-32767/observations.json.gz",
+            "sha256": "8cd722c63a771ce0c69f732c41457c652ca2ebc2e42bc8dce626d751ef24d782"
+          },
+          "prefix-natural-32769": {
+            "path": "upstream-67656/full/reverse/prefix-natural-32769/observations.json.gz",
+            "sha256": "c96d78ca9407050d9ba99b847aae97bd1a6e0876a1f8fa2d9c530ba1a7238823"
+          },
+          "heldout-window-32768": {
+            "path": "upstream-67656/full/reverse/heldout-window-32768/observations.json.gz",
+            "sha256": "2b0048c2b13ee48a04a76e55179c3b906e53a362989e73f8d70a06be4d1bb3dc"
+          }
+        },
+        "cleanup": {
+          "mech-control": {
+            "path": "upstream-67656/full/reverse/mech-control.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "mech-experiment": {
+            "path": "upstream-67656/full/reverse/mech-experiment.stderr",
+            "sha256": "39726884bb027afb3d5cddd6035427f6b29054902af63a237c5044f030a394e2"
+          },
+          "roc": {
+            "path": "upstream-67656/full/reverse/roc.stderr",
+            "sha256": "20795f3c0e9419829fc350742d956a0f4dff9eddade881eac22387d71ee5de91"
+          },
+          "libdeflate": {
+            "path": "upstream-67656/full/reverse/libdeflate.stderr",
+            "sha256": "baeb82219d55e99dd609d6a30a6bc20d828998c70a0d0a5144bae2f4b2d27031"
+          }
+        }
+      }
+    }
+  ]
+}

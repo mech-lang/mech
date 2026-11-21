@@ -50,8 +50,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/CURRENT.md",
-      "sha256": "52f552fcfaefa1642989b6b847cd60c8585baf54163ec1a85267481ada81d8bc",
-      "bytes": 25297
+      "sha256": "0ca23aa63e7c4351572893c91c0d5f5e283a1292339fe69df4629ce7a341a4f1",
+      "bytes": 31985
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/QUALIFICATION.md",
@@ -60,8 +60,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/README.md",
-      "sha256": "30f0a02b099757ffdc7973fca8fb42f0469b41130cfcf4a31e890351b672366b",
-      "bytes": 36103
+      "sha256": "c663e4b38282e8a9f202f64e74409486f1e657c6f33068dccbb20e4c8f1df144",
+      "bytes": 37762
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/REVIEW.md",
@@ -23299,6 +23299,21 @@
       "bytes": 875
     },
     {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/archive-worker-relink.json",
+      "sha256": "5807497051f6fafee115b0949dd37e2f69ad4fa68ce8ba659ba9dac4fbbbbd9b",
+      "bytes": 5388
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/matched-observations.json.gz",
+      "sha256": "38caf45fbb37c7ea2e4ac92f39b681caf106c8aba1b57c34f5633c969a3df143",
+      "bytes": 69171
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/result.json",
+      "sha256": "971680e49f5c20cab0ff2776b56ea396980e0dcb39fb8d9603a7f20e37555b90",
+      "bytes": 31322
+    },
+    {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/match-cache-offset-slot/PROOF.md",
       "sha256": "8d0a61d48e8d7f482255b3d25368d54200c3822d8ff8e3e81c0975ddff636ff9",
       "bytes": 6322
@@ -42250,8 +42265,13 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py",
-      "sha256": "b4d299fc19f2e7608732d4d2eae50c5179c2a27e6f4642f4a1ead9f804f319bb",
-      "bytes": 11977
+      "sha256": "9847b3581100d25ee8a3a460ca63b4ec7786b10b14d9f203408c8befddfef4d7",
+      "bytes": 14762
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild_checks.py",
+      "sha256": "ca22ae3c5b16b2c2449810492e005cba750cf5830067e82d37b1106098e0f9d8",
+      "bytes": 5745
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/recipe.json",
@@ -42265,8 +42285,8 @@
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/scorecard.json",
-      "sha256": "f001f722549165ef929fdf9406a3c008352b9bc4896aa08a2b325237a9963da1",
-      "bytes": 483596
+      "sha256": "4e986bdc05741bd7a278854106a677fb1420ff4f4298a2c529bdc78734227b88",
+      "bytes": 524095
     },
     {
       "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/size_screens.py",
@@ -42670,8 +42690,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/mod.rs",
-      "sha256": "22633a7a41c927d1e89eab40d4f700ee54ac941c69da35dcd29febb26d2fba63",
-      "bytes": 4459
+      "sha256": "b1ac3e9a461744a09cf4d07b93fee545f58dccd6adced8c98af2911d3958a483",
+      "bytes": 4481
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/object.rs",
@@ -42765,8 +42785,8 @@
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/release_stubs.rs",
-      "sha256": "516d84b2ccad8e78e6d38b295c64d5d3ddbcf2eeb3cbeaf8214e39d1f104a093",
-      "bytes": 6798
+      "sha256": "4cb39ac947f32d33f26d192e38599fc3c74ebcd3112d81f195aafa7e5865a050",
+      "bytes": 8146
     },
     {
       "path": "hosts/gpu/src/native_artifact/program/compact/terminal_appends.rs",
@@ -43282,6 +43302,361 @@
       "path": "vendor/regalloc2/src/lib.rs",
       "sha256": "61348b78638227dce909912d357b11d73fdcffb19d521ce9346be9900a2408e5",
       "bytes": 63070
+    },
+    {
+      "path": "evidence/m1-source-built-20261118/m1-checked-regions-linked-recovery.json",
+      "sha256": "91e4806b5e5d7d69f124ba7b5eb796e14df604b7b2ec1a38ee00996fb2ed479f",
+      "bytes": 12152
+    },
+    {
+      "path": "evidence/m1-source-built-20261118/m1-compact-match-equality-linked-recovery.json",
+      "sha256": "1283c96d07540e55d6d8c48f617fa250fff1130cc478414af39637c78ecea970",
+      "bytes": 12152
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/archive-workers-rebased.json",
+      "sha256": "771358f8df5a13e38527415d187f6314b24a14ed349f46bc8bbb102341a6429d",
+      "bytes": 8888
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/argument-carrier-samples.json",
+      "sha256": "4f904f8131c310680920220f3d730b3ac39c1d5e6f36adbe6b41a5a446b03f54",
+      "bytes": 4751
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/m1-checked-regions-linked-recovery.json",
+      "sha256": "91e4806b5e5d7d69f124ba7b5eb796e14df604b7b2ec1a38ee00996fb2ed479f",
+      "bytes": 12152
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/m1-checked-regions-rebased-recovery.json",
+      "sha256": "5a21da0b29e0475b4557e3d7017044c741611b46fb58cd3cd58d9fb2b15617e2",
+      "bytes": 12215
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/m1-compact-match-equality-linked-recovery.json",
+      "sha256": "1283c96d07540e55d6d8c48f617fa250fff1130cc478414af39637c78ecea970",
+      "bytes": 12152
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/m1-compact-match-equality-rebased-recovery.json",
+      "sha256": "7ced707588d222acfbd905eef701c07aaab76841a2c8fdd371275f107e42f2fa",
+      "bytes": 12215
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/m1-shared-release-setup-rebased-recovery.json",
+      "sha256": "53b09ba8b16fca6c320a156572f57764cf01d5bc6024996ee642601e06757161",
+      "bytes": 12215
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/maintained-runtime/README.md",
+      "sha256": "9236a770a8d4b15d5d05f54d4d2e924c093627e0e304892a2eb881eacd3509bc",
+      "bytes": 2156
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/maintained-runtime/acquire.py",
+      "sha256": "e3efeff6619b6db8eca0bdee541901b10c6c481b12d2d54ecd802b2a08d1b8a7",
+      "bytes": 7703
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/maintained-runtime/case-results.json",
+      "sha256": "028742495e953bc2e2d91608e48c3ab81ac05e00bed8d9b5a532aace703f031d",
+      "bytes": 91343
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/maintained-runtime/forward-balanced-blocks.json.gz",
+      "sha256": "a834d4a8ababa91c624dfede7f9fc448e6f25e0937b064d6522303931123d731",
+      "bytes": 100184
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/maintained-runtime/matcher-blocks.json.gz",
+      "sha256": "993482b837c7ecc4806159e0e5f5c59d8386d0613ca6609b5e8e52620270c586",
+      "bytes": 26808
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/maintained-runtime/matcher-counts.json",
+      "sha256": "0553650eaa4e79ac76fbe765d7afac7177ebf4ab0047b56b6e4973175f4867c0",
+      "bytes": 4398
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/maintained-runtime/plan.json",
+      "sha256": "5daedea12b6713df719abf29f07aa036a635157f5ff698de23b0d46f8c41c3fc",
+      "bytes": 3795
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/maintained-runtime/result.json",
+      "sha256": "3ae37bb720dd2b810b97a59a7a69a04382d9f52ab3c79d80887955a4cda57661",
+      "bytes": 1668
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/maintained-runtime/reverse-balanced-blocks.json.gz",
+      "sha256": "eb27266ebc045af4527919ed69c53b581bbdd86a0a1a075c6752380bc5349950",
+      "bytes": 100061
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/matched-rebased-observations.json.gz",
+      "sha256": "06608e01485cdc0b9d97dd74fc31b8b33fce1111986c8f7b0a30ed399c49e69a",
+      "bytes": 97336
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/native-attribution/README.md",
+      "sha256": "10162742e60021b5fe15fcf07693d3362d69a9a7dd578fb4d34558df448132d6",
+      "bytes": 2041
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/native-attribution/guard-transitions-plan.md",
+      "sha256": "4c1bf730824592adada097dafd62747680b4d6fc7795061f41c59228e4323b00",
+      "bytes": 1113
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/native-attribution/guard-transitions.json.gz",
+      "sha256": "7fb2ccdfb8e2f3d401277446725d004c1c5d2a2d2436a1a8f0882776b1c91073",
+      "bytes": 83066
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/native-attribution/guard-transitions.patch.gz",
+      "sha256": "caef4dcbc90f149bf23717afa9ee8f44996aebf5b323ecd00c67376a2abfa2a6",
+      "bytes": 2391
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/native-attribution/instrumentation.patch.gz",
+      "sha256": "d08b1aff7d2fd8bf2dcc2d2476e70cdbb10747c79e4b745189f3f94123ff91a4",
+      "bytes": 13859
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/native-attribution/observations.json.gz",
+      "sha256": "f83d56e6b920996a444253f6ef2a910cef0e2731fb4096c9949506a2607a371b",
+      "bytes": 153847
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/m1-source-built-20261118/native-attribution/result.json",
+      "sha256": "4d3fdb8972bb288ac3bad05f5e208fa4a3a6d9016b985527c3401c92a0e6babc",
+      "bytes": 21612
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/README.md",
+      "sha256": "eee4494bd0dc8a0810a42143c03178e8048502e66821c5b3f311260a2ba025d5",
+      "bytes": 3144
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/abi-proof.json",
+      "sha256": "2c44e500ea2354eca96e78cca13043f7fc996d4d57228af2814c1d53449151e9",
+      "bytes": 451
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/candidate.json",
+      "sha256": "d4d0347f37f2e914f1e0c4af7344380ed90c7765026b8a540a4f60b8684da759",
+      "bytes": 54660
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/emission.json",
+      "sha256": "93f4c39d21ee5381186055508045eb607611cc82f3c98e13959c1cdeccc0de3a",
+      "bytes": 2648
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/focus-plan.json",
+      "sha256": "ca75374b4ea02238a4a12dfc8048b6b2b5f24f051460ea722551313caf489bbb",
+      "bytes": 867
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/focus-result.json",
+      "sha256": "d165baa9452d7be59bd5396c58c8b07cfd2816ce862d9f33802bc9424550f80f",
+      "bytes": 13719
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/forward-observations.tar",
+      "sha256": "2082456955d0f24621bd978248631def14108bfadbee565bd12bccbe3a2b2fb8",
+      "bytes": 9205760
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/full-fixture-content.json",
+      "sha256": "d6e6a3ca652920b6400884151d5b65e6542a8d6ae76c2ec738198a42cd6b884b",
+      "bytes": 22527
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/full-plan.json",
+      "sha256": "bf25f0cf294adae79cb97bce64f7b744919322d7d79910209481fd8f703d11c3",
+      "bytes": 5079
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/full-replay.json.gz",
+      "sha256": "1fb3e4412f4c6ab2f5e2357396bd9542b1e3e4639dd7b1f7a629062526fe2ae2",
+      "bytes": 18627
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/full-screen.json",
+      "sha256": "3ce6ebe022f53c10daca57fb10f650645c8daf15f2c5da810bd41bc38854364b",
+      "bytes": 3071
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/layout-plan.json",
+      "sha256": "64925d1a74e63edf4b581d7004c0765980f0a7dc32dcc18f6eda07698bdf897a",
+      "bytes": 60540
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/linked-checks.json",
+      "sha256": "c57f1febc955f9416f34d36154441a620e4ed7439d047340e540baf93fcad96d",
+      "bytes": 1392
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/matcher-layout.json",
+      "sha256": "0792ac609c3ec34c7822bb61d7b80ce6dea4238e55d7eacbedb1ab20df24dfbe",
+      "bytes": 4068
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/prediction.json",
+      "sha256": "0a6afdd28e237fa14802d15c68a4ecfb87f5f8f148c13ae94d92c7664e2219c1",
+      "bytes": 853
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/result.json",
+      "sha256": "e9adcc0122d53a24ef3bdba979bf7d15511e9697ab96156f42c5e57da8a6b78b",
+      "bytes": 1971
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/reverse-observations.tar",
+      "sha256": "91cecd2a9f655ff091f17b66b91af6e999b76fc3c17bee2a71f239e5ad726998",
+      "bytes": 9154560
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/source-rebuild-and-timing.json",
+      "sha256": "1f71c30cdc5dfa9af5e06afee85df9bea93961e4608efa6362c1aede162ca22b",
+      "bytes": 58442
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/encoder-size-gap/shared-heap-layout-recovery/matched-build-observations.json.gz",
+      "sha256": "23999499846434999da7d157f5a061ab2cf778de5291a825afbb8548e0c0021c",
+      "bytes": 92523
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/results.json",
+      "sha256": "d99341a3533570abc8abfa91e80fb884f3b21ea2e769ae02b6ee7b107db8ee7f",
+      "bytes": 36960
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/README.md",
+      "sha256": "d5b64a7533c9ca2ba5cdee9337f32b616b34f3b0239cfb8baf963cea5be43b03",
+      "bytes": 3691
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/timings.csv",
+      "sha256": "a5018731f6ac58a5f71fbae89367b09919a25afa5681aeca83b76eb9d9f08be3",
+      "bytes": 233498
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/m1-replay.log",
+      "sha256": "5eca2e1cd1b3a8b6310cbb0ea5f600ec457c9295125a32e490abff3af78bf445",
+      "bytes": 21200
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/reproduce.py",
+      "sha256": "1d5ff014873d6a0315cc230e67b5fccded044e37e6a8aa8a050a22ccf2399f50",
+      "bytes": 6050
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/compiler-build.json",
+      "sha256": "6dd4ca8950e18cfde44bbd122c379c90f8f9d484f1f29cd35c7516eae7ae9593",
+      "bytes": 1338
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/README.md",
+      "sha256": "d75eb3e5e727d1dc25437584a8ac9d94a4c80071cbbd145f8a46c4695d508576",
+      "bytes": 4151
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/common-reference-ready.json",
+      "sha256": "06943a1bcaecab374e8a5ec3e3ceffc44145e1af0ba049402a766bbefcdbc7a5",
+      "bytes": 1763
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/initial-harness-failure.json",
+      "sha256": "6cb8118eba44d7588f87885b0e11b450ae2dfa8e9e6e8f8f7a19b5a7aade86c4",
+      "bytes": 2609
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/m1-object-replay.json",
+      "sha256": "19afdfbd1f72538b0e26f8ef7053352443364ff90d3a77326e17296c1d86faff",
+      "bytes": 2014
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/status.json",
+      "sha256": "824ef9b3016c8e9c9b0e7f6f54be16f9c713234e09679a402132c1ac5302c40e",
+      "bytes": 6616
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/m3-first-full-rejection.json",
+      "sha256": "0287ee07bc11fcb43f1b19c9b8561005b3810c3e18d2e60079b12749def42783",
+      "bytes": 402
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/archive.json",
+      "sha256": "9237275979a497db89f1c34f4827f80e5eb7ee8a2d4d2d8caa6dd5941d8634c2",
+      "bytes": 436
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/m3-focus-replay.json",
+      "sha256": "8a57f23bde17ade1413689c934e7fba0dcf9243e1f0526e9d3933e8480026dc5",
+      "bytes": 8542
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/m3-focus-result.json",
+      "sha256": "c16e7ef7b2df38843124e59b9bd7d46acf868e4940697fdb7fa1d8042273f35a",
+      "bytes": 497
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/m3-focus-timings.csv",
+      "sha256": "1a0bd8ed85dcc94e53052f821dd0e6e4982f70520ac57e76fcead554085c472b",
+      "bytes": 1726
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/confirmation/archive.json",
+      "sha256": "06a9deb7fee59c9e11ad0959a3747ada6896e8b12d13d9d982c988780c1cd48d",
+      "bytes": 436
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/confirmation/plan.json",
+      "sha256": "bd061f7788fa52db812874ee1d63e2d0614b4eeb4bcd4c12b52f2da4de5079c3",
+      "bytes": 5113
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/confirmation/source-replay.json",
+      "sha256": "7eea97d05b0d20b248fdcc5c0ffb37dba290d4f34175ece755adc4a3c14bf754",
+      "bytes": 2009
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/confirmation/result.json",
+      "sha256": "e47ee8d62a9c570521984d66b85c6568b9be24b421069aaafd841696a73ade31",
+      "bytes": 509
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/confirmation/compiler-build.json",
+      "sha256": "92b11c7361d31e23f5e36fc1a496eeccd0f640dfe8344d4c237a03270dd06839",
+      "bytes": 1100
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/confirmation/replay.json",
+      "sha256": "491d61b087339fb0950324c978cba5af36d80a7aa3a97176b9864b461fa4f58f",
+      "bytes": 45780
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/confirmation/README.md",
+      "sha256": "f7de69d770df475d97384592d6d6904d3a7c74bc14eb63f0ff3f1895c0244ae5",
+      "bytes": 3148
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/confirmation/environment.json",
+      "sha256": "11f3434357448223bf35925d3293019ed6778a45cddacd646a48e8be8264f380",
+      "bytes": 498
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/confirmation/timings.csv",
+      "sha256": "739aa16edfc6a7aeeed8d350e88dbc5d54308c35a32e17783a1b895490ed126d",
+      "bytes": 22735
+    },
+    {
+      "path": "benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/apple-m3-win-recovery-20261118/integration/confirmation/contract.json",
+      "sha256": "2210fc544a69762137abc9ae204222614e0a9575feddf67318905033b2260316",
+      "bytes": 1126
     }
   ]
 }

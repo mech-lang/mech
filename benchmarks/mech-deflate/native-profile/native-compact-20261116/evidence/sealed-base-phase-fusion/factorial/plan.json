@@ -1,0 +1,67 @@
+{
+  "scope": "Isolate deterministic chain fusion from the allowance-before-pop repair. Four fresh uninstrumented processes per round; all identity checks preserved. Screening only, not complete build evidence.",
+  "orders": [
+    [
+      "control",
+      "fused",
+      "fused-bounds",
+      "bounds-only"
+    ],
+    [
+      "fused",
+      "bounds-only",
+      "control",
+      "fused-bounds"
+    ],
+    [
+      "bounds-only",
+      "fused-bounds",
+      "fused",
+      "control"
+    ],
+    [
+      "fused-bounds",
+      "control",
+      "bounds-only",
+      "fused"
+    ],
+    [
+      "control",
+      "fused",
+      "fused-bounds",
+      "bounds-only"
+    ],
+    [
+      "fused",
+      "bounds-only",
+      "control",
+      "fused-bounds"
+    ],
+    [
+      "bounds-only",
+      "fused-bounds",
+      "fused",
+      "control"
+    ],
+    [
+      "fused-bounds",
+      "control",
+      "bounds-only",
+      "fused"
+    ]
+  ],
+  "identity_fields": [
+    "source_sha256",
+    "source_bytes",
+    "tree_sha256",
+    "parser_steps",
+    "events"
+  ],
+  "warmups_per_actor": 1,
+  "binary_sha256": {
+    "control": "e3a20b5c6697f7409032928ebfd2f6565ce596b51b0e3917e8996936e23f5e9f",
+    "fused": "fac07c2e8e8bfe9da976d6eb0821e51cb487c74dc054070795983e76b0fbf6e5",
+    "bounds-only": "6ef07bd16e36100b51d359f212c8fc87c2730050aed6499272f762bf40d5141d",
+    "fused-bounds": "0ed392388759c3a2d5da9e17c960d19a016497b9691b3f3e6227e205376e1db5"
+  }
+}

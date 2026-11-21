@@ -1,0 +1,74 @@
+{
+  "plan_sha256": "af7b2195cd3242a4f163153255654307a3a1db88f9b58c1392446e59a8c6afda",
+  "medians": {
+    "mech-control-reference": {
+      "source": 2.191572083393112,
+      "link": 0.03610014612786472,
+      "source_through_link": 2.2298506249208003,
+      "strip": 0.010710250353440642,
+      "source_through_strip": 2.241131041897461
+    },
+    "mech-first-word-disabled": {
+      "source": 2.203017062973231,
+      "link": 0.0365213539917022,
+      "source_through_link": 2.2400532085448503,
+      "strip": 0.01097129168920219,
+      "source_through_strip": 2.2510920625645667
+    },
+    "roc": {
+      "source": 2.9661709999199957,
+      "link": 0.0419797501526773,
+      "source_through_link": 3.007427333621308,
+      "strip": 0.010998958023265004,
+      "source_through_strip": 3.0185137500520796
+    },
+    "libdeflate": {
+      "source": 0.45106293726712465,
+      "link": 0.03447247901931405,
+      "source_through_link": 0.4870458336081356,
+      "strip": 0.010595333529636264,
+      "source_through_strip": 0.49788839602842927
+    }
+  },
+  "phases": {
+    "mech-control-reference": {
+      "parse": 0.7055548545,
+      "catalog": 1.96255e-05,
+      "frontend": 0.218826354,
+      "artifact": 0.0068622915,
+      "encode": 0.0025428125,
+      "native": 1.2245859585
+    },
+    "mech-first-word-disabled": {
+      "parse": 0.7069829375000001,
+      "catalog": 1.9208e-05,
+      "frontend": 0.2240324585,
+      "artifact": 0.006856979,
+      "encode": 0.0025526665,
+      "native": 1.2246359375
+    }
+  },
+  "paired_ratios": {
+    "mech-control-reference": {
+      "roc": 0.7403849613350403,
+      "libdeflate": 4.587441758905269,
+      "mech-control-reference": 1.0
+    },
+    "mech-first-word-disabled": {
+      "roc": 0.7412262025076939,
+      "libdeflate": 4.59345214105557,
+      "mech-control-reference": 1.0012718161516516
+    }
+  },
+  "trials": 8,
+  "source_commit": "7d7eb917ace16bf390c6c29e12401dd26125fe5b",
+  "scope": "Eight serial balanced fresh-process source-through-final-executable-link orders. Compilers and fixed support prebuilt for every actor. Every generated Mech object, complete metadata and bytecode is hash checked. Strip is separate. Bootstrap is excluded equally.",
+  "new_vs_previous_paired_difference": {
+    "median_seconds": 0.0028415420092642307,
+    "ci90_seconds": [
+      -0.0320595633238554,
+      0.05450350046157837
+    ],
+    "trials": 8
+  }
+}

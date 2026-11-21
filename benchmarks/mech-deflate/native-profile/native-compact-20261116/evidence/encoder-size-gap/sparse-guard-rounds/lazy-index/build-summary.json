@@ -1,0 +1,119 @@
+{
+  "plan_sha256": "44938b8e8d54106f5d3281f2639ce51642053de7b42e70c361398b1102601d82",
+  "medians": {
+    "mech-control-reference": {
+      "source": 2.2042781247291714,
+      "link": 0.035816146060824394,
+      "source_through_link": 2.2406041668727994,
+      "strip": 0.010820999508723617,
+      "source_through_strip": 2.251746208174154
+    },
+    "mech-sparse-rounds": {
+      "source": 2.169913313118741,
+      "link": 0.03524616709910333,
+      "source_through_link": 2.2059500210452825,
+      "strip": 0.010934438090771437,
+      "source_through_strip": 2.2170851253904402
+    },
+    "roc": {
+      "source": 2.942587021738291,
+      "link": 0.034719542134553194,
+      "source_through_link": 2.9773858124390244,
+      "strip": 0.010793041670694947,
+      "source_through_strip": 2.9883147289510816
+    },
+    "libdeflate": {
+      "source": 0.44562406255863607,
+      "link": 0.03419550019316375,
+      "source_through_link": 0.48032654146663845,
+      "strip": 0.01081945770420134,
+      "source_through_strip": 0.49105387507006526
+    }
+  },
+  "phases": {
+    "mech-control-reference": {
+      "parse": 0.7077467289999999,
+      "catalog": 1.7188e-05,
+      "frontend": 0.2133967505,
+      "artifact": 0.006855771,
+      "encode": 0.002542437,
+      "native": 1.246280729
+    },
+    "mech-sparse-rounds": {
+      "parse": 0.7075467285,
+      "catalog": 1.91875e-05,
+      "frontend": 0.212987437,
+      "artifact": 0.006835875,
+      "encode": 0.0025529585,
+      "native": 1.212927187
+    }
+  },
+  "paired_ratios": {
+    "mech-control-reference": {
+      "roc": 0.7524286484955479,
+      "libdeflate": 4.668294547409765,
+      "mech-control-reference": 1.0
+    },
+    "mech-sparse-rounds": {
+      "roc": 0.7413141381880202,
+      "libdeflate": 4.595896217536195,
+      "mech-control-reference": 0.9848256296971922
+    }
+  },
+  "source_commit": "fa4c5a497b81cd00a72358d08f187b13080b1876",
+  "compiler_sha256": "e7bb105011a9632bc5d1033494bc46f6d883f21e989df4a9e72757d3f0384eb1",
+  "trials": 8,
+  "paired_ms_cost": [
+    -39.571167435497046,
+    -32.42037491872907,
+    -35.57579219341278,
+    -60.59699971228838,
+    -32.0510845631361,
+    -29.647333081811666,
+    -36.549999844282866,
+    -15.558832790702581
+  ],
+  "paired_median_ms_cost": -33.998083556070924,
+  "cost_90pct_interval_ms": [
+    -38.060583639889956,
+    -30.849208822473884
+  ],
+  "faster": 8,
+  "source_cpu_seconds": {
+    "mech-control-reference": 2.2633894999999997,
+    "mech-sparse-rounds": 2.229214,
+    "roc": 2.935371,
+    "libdeflate": 0.44211849999999997
+  },
+  "source_rss_bytes": {
+    "mech-control-reference": 392355840.0,
+    "mech-sparse-rounds": 392683520.0,
+    "roc": 391708672.0,
+    "libdeflate": 71532544.0
+  },
+  "stripped_executables": {
+    "mech-control-reference": {
+      "bytes": 276072,
+      "sha256": "95c583c67e0c25c7179a9affe6b3d9ecde604ed0be43f9ec49ab6dc948e66fb5"
+    },
+    "mech-sparse-rounds": {
+      "bytes": 276072,
+      "sha256": "95c583c67e0c25c7179a9affe6b3d9ecde604ed0be43f9ec49ab6dc948e66fb5"
+    },
+    "roc": {
+      "bytes": 191912,
+      "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+    },
+    "libdeflate": {
+      "bytes": 155752,
+      "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+    }
+  },
+  "artifact_sha256": {
+    "encoder": "c5aab01c69ff4ed325b5149d2e1402a59477e5858f52052939d51f7eff699ef8",
+    "metadata": "c187c6f40d81d45995eaf3313c3282d41aadbd066413d7f44c0775b1c22225fa",
+    "bytecode": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+  },
+  "seed": 9951119,
+  "bootstrap_resamples": 20000
+}

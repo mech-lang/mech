@@ -1,0 +1,13 @@
+{
+  "passed": true,
+  "public_native_replays": 6,
+  "actual_main_named_recipe_rebuilds": 3,
+  "all_saved_calls_checked": 3041856,
+  "zero_duration_individual_samples_retained": 413283,
+  "balanced_complete_build_orders": 12,
+  "deployment_executions": 486,
+  "selected_default_changed": true,
+  "new_qualified_C_win": false,
+  "next_C_target": 64,
+  "ultimate_C_target": 81
+}

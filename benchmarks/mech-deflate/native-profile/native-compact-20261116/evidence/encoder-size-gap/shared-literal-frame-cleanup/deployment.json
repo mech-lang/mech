@@ -1,0 +1,127 @@
+{
+  "plan_sha256": "701d93043adc7e4a06b085e6f09ec4291d1cd8422bb55941c0ecc16570c56053",
+  "medians": {
+    "mech-control-layout": {
+      "source": 2.166118353838101,
+      "link": 0.03630185383372009,
+      "source_through_link": 2.2021470002364367,
+      "strip": 0.010852479375898838,
+      "source_through_strip": 2.2131131461355835
+    },
+    "mech-final-cfg": {
+      "source": 2.27068014559336,
+      "link": 0.03656891640275717,
+      "source_through_link": 2.312166978837922,
+      "strip": 0.01095812488347292,
+      "source_through_strip": 2.32345581240952
+    },
+    "mech-literal-frame-cleanup": {
+      "source": 2.2701132914517075,
+      "link": 0.035867979284375906,
+      "source_through_link": 2.3108065212145448,
+      "strip": 0.010826770681887865,
+      "source_through_strip": 2.3222015211358666
+    },
+    "roc": {
+      "source": 2.9672808749601245,
+      "link": 0.035760312573984265,
+      "source_through_link": 3.0039694369770586,
+      "strip": 0.010809249943122268,
+      "source_through_strip": 3.0151205000001937
+    },
+    "libdeflate": {
+      "source": 0.455378791783005,
+      "link": 0.03401293745264411,
+      "source_through_link": 0.4893562502693385,
+      "strip": 0.010810979409143329,
+      "source_through_strip": 0.5002529164776206
+    }
+  },
+  "phases": {
+    "mech-control-layout": {
+      "parse": 0.714884042,
+      "catalog": 2.1604e-05,
+      "frontend": 0.2237553335,
+      "artifact": 0.006866854,
+      "encode": 0.002547125,
+      "native": 1.186525938
+    },
+    "mech-final-cfg": {
+      "parse": 0.7152555835000001,
+      "catalog": 2.375e-05,
+      "frontend": 0.2191237295,
+      "artifact": 0.006836166,
+      "encode": 0.0025112915,
+      "native": 1.2998576255
+    },
+    "mech-literal-frame-cleanup": {
+      "parse": 0.713073792,
+      "catalog": 2.0854e-05,
+      "frontend": 0.2188486665,
+      "artifact": 0.006817541999999999,
+      "encode": 0.0024997294999999998,
+      "native": 1.2999004795000002
+    }
+  },
+  "paired_ratios": {
+    "mech-control-layout": {
+      "roc": 0.7307366677541272,
+      "libdeflate": 4.516743254806396,
+      "mech-control-layout": 1.0
+    },
+    "mech-final-cfg": {
+      "roc": 0.7690568389317598,
+      "libdeflate": 4.7182716234740045,
+      "mech-control-layout": 1.0496119999666633
+    },
+    "mech-literal-frame-cleanup": {
+      "roc": 0.7684825980777907,
+      "libdeflate": 4.728600184109016,
+      "mech-control-layout": 1.0503921764247142
+    }
+  },
+  "source_commit": "4f5a94ac3f0546c99f5f88eb9b500f7bd0266527",
+  "compiler_sha256": "76c263ca3ac059b4bf53f36bc3fe6c07bf3b915c01fdf76a96817f49f445bc06",
+  "source_cpu_seconds": {
+    "mech-control-layout": 2.228227,
+    "mech-final-cfg": 2.3327655,
+    "mech-literal-frame-cleanup": 2.3321865,
+    "roc": 2.960111,
+    "libdeflate": 0.445723
+  },
+  "source_rss_bytes": {
+    "mech-control-layout": 392912896.0,
+    "mech-final-cfg": 393273344.0,
+    "mech-literal-frame-cleanup": 393322496.0,
+    "roc": 393199616.0,
+    "libdeflate": 76201984.0
+  },
+  "stripped_executables": {
+    "mech-control-layout": {
+      "bytes": 276072,
+      "sha256": "b8320a30dc61e2392de0b77419f477e7fed07f733dade58badaf3b3ef7f0c3f1"
+    },
+    "mech-final-cfg": {
+      "bytes": 276072,
+      "sha256": "322bc033f599e2962086b9d795e806eb979bc6f5d6aa7131eb784f958b4e7fa9"
+    },
+    "mech-literal-frame-cleanup": {
+      "bytes": 276072,
+      "sha256": "a2b16eed3f55512674a724a968c39f1d86ed3140d7abf7e084871036555db698"
+    },
+    "roc": {
+      "bytes": 191912,
+      "sha256": "dc059ac03caaf860e174d7a4849da2f917b763ec419457ec8a65bf64ffe438d9"
+    },
+    "libdeflate": {
+      "bytes": 155752,
+      "sha256": "a9aa06de120823741ac587e383bab2402eaf43478b3ac4445ecc40a0007faa75"
+    }
+  },
+  "paired_ms_vs_64652": {
+    "mech-control-layout": 0.0,
+    "mech-final-cfg": 109.08347927033901,
+    "mech-literal-frame-cleanup": 111.00239562802017
+  },
+  "trials": 10
+}

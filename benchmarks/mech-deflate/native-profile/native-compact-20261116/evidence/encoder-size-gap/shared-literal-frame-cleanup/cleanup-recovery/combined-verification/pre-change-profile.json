@@ -1,0 +1,162 @@
+{
+  "source_commit": "d49f735b853504725de7b89f81f37bde0298fe05",
+  "compiler_sha256": "a96172619c5fce80baf71a5efaa9f0e662d05de68a4f1dd2f7b950008b7caa7c",
+  "observations": [
+    {
+      "samples": {
+        "final_cleanup": 50,
+        "verification": 17,
+        "constant_phis": 4,
+        "graph_construction": 6,
+        "range_proofs": 6,
+        "other": 4,
+        "local_phis": 2,
+        "liveness": 2,
+        "edge_rewrites": 9
+      },
+      "sample_sha256": "ce484eba368d3ed8c9f819705d741b279e60408c7565412ff9cdb8ce1f9b4c9b"
+    },
+    {
+      "samples": {
+        "final_cleanup": 50,
+        "verification": 18,
+        "graph_construction": 8,
+        "constant_phis": 3,
+        "range_proofs": 6,
+        "other": 3,
+        "local_phis": 1,
+        "liveness": 2,
+        "edge_rewrites": 9
+      },
+      "sample_sha256": "3d928398f6d3de21682fea26642cbb02947e4d38259364662d089545083682d8"
+    },
+    {
+      "samples": {
+        "final_cleanup": 50,
+        "verification": 18,
+        "graph_construction": 8,
+        "constant_phis": 3,
+        "other": 4,
+        "local_phis": 1,
+        "range_proofs": 5,
+        "liveness": 2,
+        "edge_rewrites": 9
+      },
+      "sample_sha256": "abdff483df36334a3d90133fe12a34262e9638b724136dab15b1cc43c6ab3bff"
+    }
+  ],
+  "samples": {
+    "final_cleanup": 150,
+    "verification": 53,
+    "constant_phis": 10,
+    "graph_construction": 22,
+    "range_proofs": 17,
+    "other": 11,
+    "local_phis": 4,
+    "liveness": 6,
+    "edge_rewrites": 27
+  },
+  "top_leaves": [
+    [
+      "_RNvMs2_NtCs8fhUY7PQvvP_17cranelift_codegen14dominator_treeNtB5_13DominatorTree7compute",
+      14
+    ],
+    [
+      "_RNvMs8_NtCs8fhUY7PQvvP_17cranelift_codegen8verifierNtB5_8Verifier3run",
+      9
+    ],
+    [
+      "_RNvMs6_NtNtCs8fhUY7PQvvP_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph19resolve_all_aliases",
+      7
+    ],
+    [
+      "_RNvNtCs8fhUY7PQvvP_17cranelift_codegen20remove_constant_phis23do_remove_constant_phis",
+      6
+    ],
+    [
+      "<deduplicated_symbol>",
+      6
+    ],
+    [
+      "_RNvNtNtCs8fhUY7PQvvP_17cranelift_codegen2ir3dfg21maybe_resolve_aliases",
+      5
+    ],
+    [
+      "_RNvNtNtNtNtNtCs4bZSOWly7k6_8mech_gpu15native_artifact7program7codegen11cfg_cleanup13boolean_words6derive",
+      4
+    ],
+    [
+      "_RNvXs7_NtNtCs8fhUY7PQvvP_17cranelift_codegen2ir6layoutNtB5_5InstsNtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator4next",
+      4
+    ],
+    [
+      "_RNvMsb_NtNtCs8fhUY7PQvvP_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph9inst_args",
+      4
+    ],
+    [
+      "_RNvMsb_NtNtCs8fhUY7PQvvP_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph19compute_result_type",
+      3
+    ],
+    [
+      "_tlv_get_addr",
+      3
+    ],
+    [
+      "_RNvMNtNtNtNtNtCs4bZSOWly7k6_8mech_gpu15native_artifact7program7codegen11cfg_cleanup11word_rangesNtB2_5Facts5range",
+      3
+    ],
+    [
+      "_RNvNtNtNtNtNtCs4bZSOWly7k6_8mech_gpu15native_artifact7program7codegen11cfg_cleanup13boolean_words6inputs",
+      3
+    ],
+    [
+      "_RNvNtNtNtNtNtNtCs4bZSOWly7k6_8mech_gpu15native_artifact7program7codegen11cfg_cleanup15identity_routes5route4find",
+      3
+    ],
+    [
+      "_RNvMs6_NtNtCs8fhUY7PQvvP_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph9value_def",
+      3
+    ],
+    [
+      "_RNvMsb_NtNtCs8fhUY7PQvvP_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph33num_expected_results_for_verifier",
+      3
+    ],
+    [
+      "_RNvXNvMsb_NtNtCs8fhUY7PQvvP_17cranelift_codegen2ir3dfgNtB8_13DataFlowGraph17inst_result_typesNtB2_15InstResultTypesNtNtNtNtCsgDHHaSskbIF_4core4iter6traits8iterator8Iterator4next",
+      2
+    ],
+    [
+      "_RNvNtNtNtNtNtCs4bZSOWly7k6_8mech_gpu15native_artifact7program7codegen11cfg_cleanup18boolean_conditions8optimize",
+      2
+    ],
+    [
+      "_RINvNtNtNtCsgDHHaSskbIF_4core4iter8adapters5chain17and_then_or_clearINtB2_5ChainINtNtB4_6copied6CopiedINtNtNtB8_5slice4iter4IterNtNtNtCs8fhUY7PQvvP_17cranelift_codegen2ir8entities5ValueEEINtNtB4_7flatten7FlatMapIB1D_NtNtB26_12instructions9BlockCallEINtNtB4_10filter_map9FilterMapINtNtB4_3map3MapB1C_NCNvMB3u_B3s_4args0ENCNCNvMsb_NtB26_3dfgNtB5h_13DataFlowGraph11inst_values00ENCB5b_0EEB22_NvYB14_NtNtNtB6_6traits8iterator8Iterator4nextEB28_",
+      2
+    ],
+    [
+      "_RNvMs4_NtCsgKscDXrlV49_5alloc7raw_vecNtB5_11RawVecInner11finish_growCs4bZSOWly7k6_8mech_gpu",
+      2
+    ],
+    [
+      "_RNvMsc_NtNtCs8fhUY7PQvvP_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph12block_params",
+      2
+    ],
+    [
+      "_RNvNtNtNtNtNtCs4bZSOWly7k6_8mech_gpu15native_artifact7program7codegen11cfg_cleanup15identity_routes8optimize",
+      2
+    ],
+    [
+      "_RNvMsb_NtNtCs8fhUY7PQvvP_17cranelift_codegen2ir3dfgNtB5_13DataFlowGraph12inst_results",
+      2
+    ],
+    [
+      "_RNvMNtCs4EMTQjjiagM_17cranelift_bforest4poolINtB2_8NodePoolINtNtB4_3map8MapTypesNtNtNtCs8fhUY7PQvvP_17cranelift_codegen2ir8entities4InstNtB1i_5BlockEE10alloc_nodeB1m_",
+      2
+    ],
+    [
+      "_RINvMsj_NtCsgKscDXrlV49_5alloc3vecINtB6_3VecNtNtCs8fhUY7PQvvP_17cranelift_codegen14dominator_tree14TraversalEventE16extend_desugaredINtNtNtNtCsgDHHaSskbIF_4core4iter8adapters3map3MapINtNtB2b_6filter6FilterINtNtB2b_3rev3RevINtNtB2b_7flatten7FlatMapINtNtB2f_6option8IntoIterNtNtNtBK_2ir8entities4InstEIB27_INtNtNtB2f_5slice4iter4IterNtNtB4q_12instructions9BlockCallENCNCNvMs_NtB4q_8functionNtB5Z_15FunctionStencil16block_successors00ENCB5U_0EENCNvMs2_BI_NtBI_13DominatorTree21compute_spanning_tree0ENCB77_s_0EEBK_",
+      2
+    ]
+  ],
+  "scope": "Three instrumented source compilations. Samples attribute final cleanup only; they are not matched build timings."
+}
