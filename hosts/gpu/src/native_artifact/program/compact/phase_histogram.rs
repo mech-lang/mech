@@ -43,15 +43,27 @@ pub(super) fn prepare<M: Module>(
     }
     let mut specialized = module.make_context();
     specialized.func = context.func.clone();
+    let grouped = std::env::var_os("MECH_HISTOGRAM_GROUP_BYTE_VISITS").is_some();
+    let vector_scan = std::env::var_os("MECH_HISTOGRAM_VECTOR_COUNTER_SCAN").is_some();
     let counter_capacity =
         std::env::var_os("MECH_HISTOGRAM_ENTRY_COUNTER_CAPACITY").and_then(|_| {
-            cfg_cleanup::bounded_byte_histogram::optimize_counter_capacity(
-                &mut specialized,
-                header,
-                &loads,
-                &inputs,
-                &bins,
-            )
+            if grouped {
+                cfg_cleanup::bounded_byte_histogram::optimize_grouped_counter_capacity(
+                    &mut specialized,
+                    header,
+                    &loads,
+                    &inputs,
+                    &bins,
+                )
+            } else {
+                cfg_cleanup::bounded_byte_histogram::optimize_counter_capacity(
+                    &mut specialized,
+                    header,
+                    &loads,
+                    &inputs,
+                    &bins,
+                )
+            }
         });
     let bounded_counters = counter_capacity.is_some();
     let Some(admission) = counter_capacity.or_else(|| {
@@ -88,7 +100,7 @@ pub(super) fn prepare<M: Module>(
             .ok_or_else(|| backend("bounded histogram lacks VCode"))?;
         std::fs::write(path.with_extension("vcode"), vcode).map_err(backend)?;
     }
-    let result = serde_json::json!({
+    let mut result = serde_json::json!({
         "symbol": target,
         "admission": admission,
         "removed_bounds_per_visit": 4,
@@ -96,8 +108,18 @@ pub(super) fn prepare<M: Module>(
         "code_bytes": machine.code_info().total_size,
         "stack_bytes": compiled_stack_bytes(&machine.buffer)?,
     });
+    if bounded_counters && grouped {
+        result["grouped_byte_visits"] = serde_json::json!(4);
+    }
+    if bounded_counters && vector_scan {
+        result["vector_counter_scan"] = serde_json::json!(true);
+    }
     let fast = module.declare_func_in_func(id, &mut context.func);
-    if bounded_counters {
+    if bounded_counters && vector_scan {
+        cfg_cleanup::bounded_byte_histogram::guard_vector_counter_capacity(
+            context, admission, fast,
+        );
+    } else if bounded_counters {
         cfg_cleanup::bounded_byte_histogram::guard_counter_capacity(context, admission, fast);
     } else {
         cfg_cleanup::bounded_byte_histogram::guard_entry(context, admission, fast);

@@ -169,7 +169,11 @@ fn compile(mode: u8) -> (JITModule, Run) {
             .flat_map(|b| fast.func.layout.block_insts(b))
             .filter(|&inst| matches!(fast.func.dfg.insts[inst], Data::Brif { .. }))
             .count();
-        let admitted = if mode == 2 {
+        let grouped = mode == 3 || mode == 5;
+        let vector = mode == 4 || mode == 5;
+        let admitted = if grouped {
+            optimize_grouped_counter_capacity(&mut fast, header, &loads, &input, &bins)
+        } else if mode >= 2 {
             optimize_counter_capacity(&mut fast, header, &loads, &input, &bins)
         } else {
             optimize(&mut fast, header, &loads, &input, &bins)
@@ -182,7 +186,7 @@ fn compile(mode: u8) -> (JITModule, Run) {
             .flat_map(|b| fast.func.layout.block_insts(b))
             .filter(|&inst| matches!(fast.func.dfg.insts[inst], Data::Brif { .. }))
             .count();
-        assert_eq!(before - after, if mode == 2 { 5 } else { 4 });
+        assert_eq!(before - after, if mode >= 2 && !grouped { 5 } else { 4 });
         assert_eq!(
             admitted,
             Admission {
@@ -199,7 +203,9 @@ fn compile(mode: u8) -> (JITModule, Run) {
             .unwrap();
         module.define_function(id, &mut fast).unwrap();
         let call = module.declare_func_in_func(id, &mut ctx.func);
-        if mode == 2 {
+        if vector {
+            guard_vector_counter_capacity(&mut ctx, admitted, call);
+        } else if mode >= 2 {
             guard_counter_capacity(&mut ctx, admitted, call);
         } else {
             guard_entry(&mut ctx, admitted, call);
@@ -235,9 +241,7 @@ fn oracle(input: &[u8], bins: &mut [u32], begin: u64, end: u64, mut at: u64) -> 
 }
 #[test]
 fn bounded_byte_histogram_keeps_defaulting_reads_partial_writes_and_errors() {
-    let (_old, old) = compile(0);
-    let (_bounded, bounded) = compile(1);
-    let (_capacity, capacity) = compile(2);
+    let entries: Vec<_> = (0..=5).map(compile).collect();
     let mut comparisons = 0;
     let bytes: Vec<u8> = (0..256).map(|i| (i as u8).wrapping_mul(197)).collect();
     for begin in [0, 1, 63, 255, 256, 257, u64::MAX] {
@@ -247,7 +251,7 @@ fn bounded_byte_histogram_keeps_defaulting_reads_partial_writes_and_errors() {
                     for seed in [0, u32::MAX - 1, u32::MAX] {
                         let mut expected = vec![seed; length];
                         let (status, origin) = oracle(&bytes, &mut expected, begin, end, at);
-                        for run in [old, bounded, capacity] {
+                        for run in entries.iter().map(|(_, run)| *run) {
                             let mut actual = vec![seed; length];
                             let packet = [
                                 begin,
@@ -274,13 +278,12 @@ fn bounded_byte_histogram_keeps_defaulting_reads_partial_writes_and_errors() {
             }
         }
     }
-    assert_eq!(comparisons, 17640);
+    assert_eq!(comparisons, 35280);
 }
 
 #[test]
 fn histogram_counter_capacity_preserves_seeded_failure_prefixes_and_aliases() {
-    let (_old, old) = compile(0);
-    let (_capacity, capacity) = compile(2);
+    let entries: Vec<_> = [0, 2, 3, 4, 5].into_iter().map(compile).collect();
     let bytes: Vec<u8> = (0..4096).map(|i| (i as u8).wrapping_mul(197)).collect();
     for seed_index in [0, 17, 255] {
         for room in [0, 1, 7, 16, 4096] {
@@ -289,7 +292,7 @@ fn histogram_counter_capacity_preserves_seeded_failure_prefixes_and_aliases() {
                 initial[seed_index] = u32::MAX - room;
                 let mut expected = initial.clone();
                 let status = oracle(&bytes, &mut expected, begin, end, at);
-                for run in [old, capacity] {
+                for run in entries.iter().map(|(_, run)| *run) {
                     let mut actual = initial.clone();
                     let packet = [
                         begin,
@@ -311,36 +314,39 @@ fn histogram_counter_capacity_preserves_seeded_failure_prefixes_and_aliases() {
     }
     // Extra admission reads do not mutate aliased source bytes. Each original
     // input read still observes all preceding source-order counter writes.
-    for seed in [0, u32::MAX - 1, u32::MAX] {
-        for end in [0, 1, 7, 255, 256, 1024] {
-            let mut initial: Vec<u32> = (0..256).map(|i| i * 257).collect();
-            initial[255] = seed;
-            let mut expected = initial.clone();
-            let mut status = (0, 0);
-            for at in 0..end as usize {
-                let byte = expected[at / 4].to_le_bytes()[at % 4] as usize;
-                let Some(updated) = expected[byte].checked_add(1) else {
-                    status = (2, 101);
-                    break;
-                };
-                expected[byte] = updated;
-            }
-            for run in [old, capacity] {
-                let mut actual = initial.clone();
-                let packet = [
-                    0,
-                    end,
-                    0,
-                    actual.as_ptr() as u64,
-                    1024,
-                    actual.as_mut_ptr() as u64,
-                    256,
-                ];
-                let mut origin = 0;
-                // Both views share the same live allocation; the ABI uses raw views.
-                let result = unsafe { run(0, packet.as_ptr(), &mut origin) };
-                assert_eq!((result, origin), status);
-                assert_eq!(actual, expected);
+    for head in [0, 255, 65535, 0x00ff_ffff] {
+        for seed in [0, u32::MAX - 1, u32::MAX] {
+            for end in [0, 1, 7, 255, 256, 1024] {
+                let mut initial: Vec<u32> = (0..256).map(|i| i * 257).collect();
+                initial[0] = head;
+                initial[255] = seed;
+                let mut expected = initial.clone();
+                let mut status = (0, 0);
+                for at in 0..end as usize {
+                    let byte = expected[at / 4].to_le_bytes()[at % 4] as usize;
+                    let Some(updated) = expected[byte].checked_add(1) else {
+                        status = (2, 101);
+                        break;
+                    };
+                    expected[byte] = updated;
+                }
+                for run in entries.iter().map(|(_, run)| *run) {
+                    let mut actual = initial.clone();
+                    let packet = [
+                        0,
+                        end,
+                        0,
+                        actual.as_ptr() as u64,
+                        1024,
+                        actual.as_mut_ptr() as u64,
+                        256,
+                    ];
+                    let mut origin = 0;
+                    // Both views share the same live allocation; the ABI uses raw views.
+                    let result = unsafe { run(0, packet.as_ptr(), &mut origin) };
+                    assert_eq!((result, origin), status);
+                    assert_eq!(actual, expected);
+                }
             }
         }
     }
@@ -377,8 +383,7 @@ fn histogram_counter_capacity_declines_mutations_extra_stores_and_calls() {
     assert_eq!(ctx.func.display().to_string(), before);
 }
 
-#[test]
-fn histogram_counter_capacity_entry_guard_checks_last_bin_and_remaining_span() {
+fn check_counter_capacity_entry_guard(vector: bool) {
     let mut module = JITModule::new(
         JITBuilder::with_flags(
             &[("opt_level", "speed"), ("regalloc_checker", "true")],
@@ -407,17 +412,18 @@ fn histogram_counter_capacity_entry_guard_checks_last_bin_and_remaining_span() {
     module.define_function(id, &mut fast).unwrap();
     let mut ctx = constant(&module, 1);
     let call = module.declare_func_in_func(id, &mut ctx.func);
-    guard_counter_capacity(
-        &mut ctx,
-        Admission {
-            input_word: 3,
-            bin_word: 5,
-            begin_word: 0,
-            end_word: 1,
-            cursor_word: 2,
-        },
-        call,
-    );
+    let admission = Admission {
+        input_word: 3,
+        bin_word: 5,
+        begin_word: 0,
+        end_word: 1,
+        cursor_word: 2,
+    };
+    if vector {
+        guard_vector_counter_capacity(&mut ctx, admission, call);
+    } else {
+        guard_counter_capacity(&mut ctx, admission, call);
+    }
     ctx.verify(module.isa()).unwrap();
     let id = module
         .declare_function("guard", Linkage::Local, &ctx.func.signature)
@@ -466,6 +472,12 @@ fn histogram_counter_capacity_entry_guard_checks_last_bin_and_remaining_span() {
             }
         }
     }
+}
+
+#[test]
+fn histogram_counter_capacity_entry_guard_checks_last_bin_and_remaining_span() {
+    check_counter_capacity_entry_guard(false);
+    check_counter_capacity_entry_guard(true);
 }
 #[test]
 fn bounded_byte_histogram_declines_other_strides_shifted_indices_and_changed_limits() {

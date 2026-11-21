@@ -443,6 +443,27 @@ pub(in crate::native_artifact) fn optimize_counter_capacity(
     input: &[View],
     bins: &[View],
 ) -> Option<Admission> {
+    optimize_capacity(ctx, header, loads, input, bins, false)
+}
+
+pub(in crate::native_artifact) fn optimize_grouped_counter_capacity(
+    ctx: &mut Context,
+    header: Block,
+    loads: &BTreeMap<Value, (Inst, usize)>,
+    input: &[View],
+    bins: &[View],
+) -> Option<Admission> {
+    optimize_capacity(ctx, header, loads, input, bins, true)
+}
+
+fn optimize_capacity(
+    ctx: &mut Context,
+    header: Block,
+    loads: &BTreeMap<Value, (Inst, usize)>,
+    input: &[View],
+    bins: &[View],
+    grouped: bool,
+) -> Option<Admission> {
     ctx.compute_cfg();
     ctx.compute_domtree();
     let histogram = prove(ctx, header, loads, input, bins)?;
@@ -451,8 +472,64 @@ pub(in crate::native_artifact) fn optimize_counter_capacity(
         ctx,
         histogram.bounds.into_iter().chain([histogram.increment]),
     );
+    if grouped {
+        group_visits(ctx, header, loads, histogram.admission);
+    }
     Some(histogram.admission)
 }
+
+// Only the exact, effect-checked histogram reaches this construction. Four
+// visits preserve read/increment/write order, even when the views alias. The
+// original admitted loop handles the last zero to three bytes unchanged.
+fn group_visits(
+    ctx: &mut Context,
+    header: Block,
+    loads: &BTreeMap<Value, (Inst, usize)>,
+    a: Admission,
+) {
+    let f = &mut ctx.func;
+    let field = |word| {
+        loads
+            .iter()
+            .find_map(|(&v, &(_, at))| (word == at).then_some(v))
+            .expect("proved invariant histogram field")
+    };
+    let begin = field(a.begin_word);
+    let end = field(a.end_word);
+    let input = field(a.input_word);
+    let bins = field(a.bin_word);
+    let cursor = f.dfg.block_params(header)[0];
+    let original = f.layout.last_inst(header).expect("proved loop header");
+    let tail = block(f);
+    let group = block(f);
+    f.layout.remove_inst(original);
+    f.layout.append_inst(original, tail);
+    let mut c = FuncCursor::new(f);
+    c.goto_bottom(header);
+    let remaining = c.ins().isub(end, cursor);
+    let four = c
+        .ins()
+        .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, 4);
+    c.ins().brif(four, group, &[], tail, &[]);
+    c.goto_bottom(group);
+    let position = c.ins().iadd(begin, cursor);
+    for offset in 0..4 {
+        let position = c.ins().iadd_imm(position, offset);
+        let source = c.ins().iadd(input, position);
+        let byte = c.ins().uload8(types::I64, MemFlags::new(), source, 0);
+        let bytes = c.ins().ishl_imm(byte, 2);
+        let destination = c.ins().iadd(bins, bytes);
+        let count = c.ins().uload32(MemFlags::new(), destination, 0);
+        let increment = c.ins().iadd_imm(count, 1);
+        let value = c.ins().ireduce(types::I32, increment);
+        c.ins().store(MemFlags::new(), value, destination, 0);
+    }
+    let next = c.ins().iadd_imm(cursor, 4);
+    c.ins().jump(header, &[next.into()]);
+    ctx.compute_cfg();
+    ctx.compute_domtree();
+}
+
 fn block(f: &mut Function) -> Block {
     let b = f.dfg.make_block();
     f.layout.append_block(b);
@@ -463,7 +540,7 @@ fn block(f: &mut Function) -> Block {
 // Source initialization is not assumed: overflowing existing counts still fail
 // at the original checked increment in the specialized function.
 pub(in crate::native_artifact) fn guard_entry(ctx: &mut Context, a: Admission, fast: FuncRef) {
-    guard(ctx, a, fast, false);
+    guard(ctx, a, fast, false, false);
 }
 
 pub(in crate::native_artifact) fn guard_counter_capacity(
@@ -471,10 +548,18 @@ pub(in crate::native_artifact) fn guard_counter_capacity(
     a: Admission,
     fast: FuncRef,
 ) {
-    guard(ctx, a, fast, true);
+    guard(ctx, a, fast, true, false);
 }
 
-fn guard(ctx: &mut Context, a: Admission, fast: FuncRef, counters: bool) {
+pub(in crate::native_artifact) fn guard_vector_counter_capacity(
+    ctx: &mut Context,
+    a: Admission,
+    fast: FuncRef,
+) {
+    guard(ctx, a, fast, true, true);
+}
+
+fn guard(ctx: &mut Context, a: Admission, fast: FuncRef, counters: bool, vector: bool) {
     let f = &mut ctx.func;
     let original = f.layout.entry_block().expect("numeric entry");
     let entry = f.dfg.make_block();
@@ -534,18 +619,51 @@ fn guard(ctx: &mut Context, a: Admission, fast: FuncRef, counters: bool) {
         let limit = c.ins().isub(maximum, work);
         let zero = c.ins().iconst(types::I64, 0);
         let empty = c.ins().icmp_imm(IntCC::Equal, work, 0);
-        c.ins().brif(empty, ready, &[], scan, &[zero.into()]);
-        c.goto_bottom(scan);
-        let offset = c.ins().ishl_imm(index, 2);
-        let address = c.ins().iadd(pointer, offset);
-        let count = c.ins().uload32(MemFlags::new(), address, 0);
-        let safe = c.ins().icmp(IntCC::UnsignedLessThanOrEqual, count, limit);
-        let next = c.ins().iadd_imm(index, 1);
-        c.ins()
-            .brif(safe, step, &[], original, &inputs.map(Into::into));
-        c.goto_bottom(step);
-        let complete = c.ins().icmp_imm(IntCC::Equal, next, 256);
-        c.ins().brif(complete, ready, &[], scan, &[next.into()]);
+        if vector {
+            let maximum = c.func.dfg.append_block_param(scan, types::I32X4);
+            let final_maximum = c.func.dfg.append_block_param(step, types::I32X4);
+            let zero32 = c.ins().iconst(types::I32, 0);
+            let zeroes = c.ins().splat(types::I32X4, zero32);
+            c.ins()
+                .brif(empty, ready, &[], scan, &[zero.into(), zeroes.into()]);
+            c.goto_bottom(scan);
+            let offset = c.ins().ishl_imm(index, 4);
+            let address = c.ins().iadd(pointer, offset);
+            let counts = c.ins().load(types::I32X4, MemFlags::new(), address, 0);
+            let maximum = c.ins().umax(maximum, counts);
+            let next = c.ins().iadd_imm(index, 1);
+            let complete = c.ins().icmp_imm(IntCC::Equal, next, 64);
+            c.ins().brif(
+                complete,
+                step,
+                &[maximum.into()],
+                scan,
+                &[next.into(), maximum.into()],
+            );
+            c.goto_bottom(step);
+            let mut maximum = c.ins().extractlane(final_maximum, 0);
+            for lane in 1..4 {
+                let value = c.ins().extractlane(final_maximum, lane);
+                maximum = c.ins().umax(maximum, value);
+            }
+            let maximum = c.ins().uextend(types::I64, maximum);
+            let safe = c.ins().icmp(IntCC::UnsignedLessThanOrEqual, maximum, limit);
+            c.ins()
+                .brif(safe, ready, &[], original, &inputs.map(Into::into));
+        } else {
+            c.ins().brif(empty, ready, &[], scan, &[zero.into()]);
+            c.goto_bottom(scan);
+            let offset = c.ins().ishl_imm(index, 2);
+            let address = c.ins().iadd(pointer, offset);
+            let count = c.ins().uload32(MemFlags::new(), address, 0);
+            let safe = c.ins().icmp(IntCC::UnsignedLessThanOrEqual, count, limit);
+            let next = c.ins().iadd_imm(index, 1);
+            c.ins()
+                .brif(safe, step, &[], original, &inputs.map(Into::into));
+            c.goto_bottom(step);
+            let complete = c.ins().icmp_imm(IntCC::Equal, next, 256);
+            c.ins().brif(complete, ready, &[], scan, &[next.into()]);
+        }
     } else {
         c.ins()
             .brif(admitted, ready, &[], original, &inputs.map(Into::into));
