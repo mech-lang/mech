@@ -53,7 +53,13 @@ fn pure(function: &Function, inst: Inst) -> bool {
             })
 }
 
-fn arm(function: &Function, root: Block, start: Block, predecessors: &[usize]) -> Option<Arm> {
+fn arm(
+    function: &Function,
+    root: Block,
+    start: Block,
+    predecessors: &[usize],
+    maximum_instructions: usize,
+) -> Option<Arm> {
     let mut blocks = Vec::new();
     let mut current = start;
     let mut instructions = 0;
@@ -77,7 +83,7 @@ fn arm(function: &Function, root: Block, start: Block, predecessors: &[usize]) -
                     return None;
                 }
                 instructions += 1;
-                if instructions > MAX_INSTRUCTIONS {
+                if instructions > maximum_instructions {
                     return None;
                 }
             }
@@ -104,6 +110,19 @@ fn arm(function: &Function, root: Block, start: Block, predecessors: &[usize]) -
 }
 
 pub(in crate::native_artifact) fn optimize(function: &mut Function) -> usize {
+    optimize_with_limits(function, MAX_INSTRUCTIONS, MAX_SELECTS)
+}
+
+/// Keep the same effect/trap proof while bounding speculation and the number
+/// of simultaneously live selected values. Limits are compile-time policy;
+/// they introduce no runtime checks or dispatch.
+pub(in crate::native_artifact) fn optimize_with_limits(
+    function: &mut Function,
+    maximum_instructions: usize,
+    maximum_selects: usize,
+) -> usize {
+    let maximum_instructions = maximum_instructions.min(MAX_INSTRUCTIONS);
+    let maximum_selects = maximum_selects.min(MAX_SELECTS);
     let mut changed = 0;
     for _ in 0..4 {
         let mut predecessors = vec![0usize; function.dfg.num_blocks()];
@@ -139,6 +158,7 @@ pub(in crate::native_artifact) fn optimize(function: &mut Function) -> usize {
                 root,
                 blocks[0].block(&function.dfg.value_lists),
                 &predecessors,
+                maximum_instructions,
             ) else {
                 continue;
             };
@@ -147,6 +167,7 @@ pub(in crate::native_artifact) fn optimize(function: &mut Function) -> usize {
                 root,
                 blocks[1].block(&function.dfg.value_lists),
                 &predecessors,
+                maximum_instructions,
             ) else {
                 continue;
             };
@@ -169,7 +190,7 @@ pub(in crate::native_artifact) fn optimize(function: &mut Function) -> usize {
                 }
             }
             if distinct.is_empty()
-                || distinct.len() > MAX_SELECTS
+                || distinct.len() > maximum_selects
                 || distinct.iter().any(|&(a, b)| {
                     let ty = function.dfg.value_type(a);
                     ty != function.dfg.value_type(b) || !ty.is_int() || ty.bits() > 64
@@ -277,7 +298,19 @@ mod tests {
             b.seal_all_blocks();
             b.finalize();
         }
-        assert_eq!(optimize(&mut context.func), 1);
+        let before = context.func.display().to_string();
+        for (instructions, selects) in [(0, 1), (1, 0)] {
+            let mut limited = context.func.clone();
+            assert_eq!(optimize_with_limits(&mut limited, instructions, selects), 0);
+            assert_eq!(limited.display().to_string(), before);
+        }
+        let mut original_policy = context.func.clone();
+        assert_eq!(optimize(&mut original_policy), 1);
+        assert_eq!(optimize_with_limits(&mut context.func, 1, 1), 1);
+        assert_eq!(
+            context.func.display().to_string(),
+            original_policy.display().to_string()
+        );
         context.compute_cfg();
         context.compute_domtree();
         context.verify(module.isa()).unwrap();
