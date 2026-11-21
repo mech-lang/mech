@@ -38,6 +38,45 @@ pub(in crate::native_artifact) fn fold(
     lengths: &BTreeSet<usize>,
     include_windows: bool,
 ) -> Vec<Admission> {
+    fold_with_existing(ctx, loads, lengths, include_windows, &[])
+}
+
+/// Reuse only already-admitted entry spans after a later pass adds a read
+/// bound. Every cursor, initial word, end word and captured length must still
+/// match. This cannot introduce an admission for a different loop or view.
+pub(in crate::native_artifact) fn refine_windows(
+    ctx: &mut Context,
+    loads: &BTreeMap<Value, (Inst, usize)>,
+    admissions: &mut [Admission],
+) -> usize {
+    if admissions.is_empty() {
+        return 0;
+    }
+    let lengths = admissions.iter().map(|span| span.length_word).collect();
+    let refinements = fold_with_existing(ctx, loads, &lengths, true, admissions);
+    let mut removed = 0;
+    for refined in refinements {
+        let prior = admissions
+            .iter_mut()
+            .find(|prior| {
+                (prior.begin_word, prior.end_word, prior.length_word)
+                    == (refined.begin_word, refined.end_word, refined.length_word)
+            })
+            .expect("refinement retains its admitted entry span");
+        prior.checks_removed += refined.checks_removed;
+        prior.window_checks_removed += refined.window_checks_removed;
+        removed += refined.window_checks_removed;
+    }
+    removed
+}
+
+fn fold_with_existing(
+    ctx: &mut Context,
+    loads: &BTreeMap<Value, (Inst, usize)>,
+    lengths: &BTreeSet<usize>,
+    include_windows: bool,
+    existing: &[Admission],
+) -> Vec<Admission> {
     let f = &ctx.func;
     if lengths.is_empty()
         || f.layout.blocks().count() > 4096
@@ -139,6 +178,17 @@ pub(in crate::native_artifact) fn fold(
                         found.entry(length_word).or_default().push((inst, value));
                         break;
                     }
+                }
+            }
+            if !existing.is_empty() {
+                let admitted = existing
+                    .iter()
+                    .filter(|span| span.begin_word == begin_word && span.end_word == end_word)
+                    .map(|span| span.length_word)
+                    .collect::<BTreeSet<_>>();
+                found.retain(|length_word, _| admitted.contains(length_word));
+                for length_word in admitted {
+                    found.entry(length_word).or_default();
                 }
             }
             for (length_word, mut tests) in found {
