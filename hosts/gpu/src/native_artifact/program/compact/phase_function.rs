@@ -1585,8 +1585,16 @@ fn prepare_impl<M: Module>(
                 })
             })
             .collect::<Vec<_>>();
-        let moved =
-            cfg_cleanup::immutable_word_reads::schedule(module, &mut context, &loads, &views)?;
+        let moved = if std::env::var_os("MECH_COMPACT_DELAY_IMMUTABLE_WORDS").is_some() {
+            cfg_cleanup::immutable_word_reads::schedule_delayed(
+                module,
+                &mut context,
+                &loads,
+                &views,
+            )?
+        } else {
+            cfg_cleanup::immutable_word_reads::schedule(module, &mut context, &loads, &views)?
+        };
         if moved != 0
             && std::env::var_os("MECH_COMPACT_REFINE_IMMUTABLE_WORDS").is_some()
             && !entry_spans.is_empty()

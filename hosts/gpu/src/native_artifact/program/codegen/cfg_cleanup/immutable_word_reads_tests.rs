@@ -92,10 +92,41 @@ fn view(width: u8) -> View {
     }
 }
 
-fn compile(module: &mut JITModule, name: &str, after: bool) -> Entry {
+fn compile(module: &mut JITModule, name: &str, after: bool, delayed: bool) -> Entry {
     let (mut ctx, loads) = fixture(module, true, false);
     if after {
-        assert_eq!(schedule(module, &mut ctx, &loads, &[view(1)]).unwrap(), 1);
+        let moved = if delayed {
+            schedule_delayed(module, &mut ctx, &loads, &[view(1)])
+        } else {
+            schedule(module, &mut ctx, &loads, &[view(1)])
+        }
+        .unwrap();
+        assert_eq!(moved, 1);
+        ctx.flowgraph();
+        let mut ordinary = None;
+        let mut placed = None;
+        for block in ctx.func.layout.blocks() {
+            for inst in ctx.func.layout.block_insts(block) {
+                if let Data::Load {
+                    opcode: Opcode::Uload32,
+                    flags,
+                    ..
+                } = ctx.func.dfg.insts[inst]
+                {
+                    if flags.readonly() {
+                        placed = Some(inst);
+                    } else {
+                        ordinary = Some(inst);
+                    }
+                }
+            }
+        }
+        let (ordinary, placed) = (ordinary.unwrap(), placed.unwrap());
+        assert!(if delayed {
+            ctx.domtree.dominates(ordinary, placed, &ctx.func.layout)
+        } else {
+            ctx.domtree.dominates(placed, ordinary, &ctx.func.layout)
+        });
     }
     ctx.verify(module.isa()).unwrap();
     let id = module
@@ -110,8 +141,11 @@ fn compile(module: &mut JITModule, name: &str, after: bool) -> Entry {
 #[test]
 fn immutable_word_placement_preserves_bounds_defaults_and_current_reads() {
     let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
-    let before = compile(&mut module, "immutable_word_before", false);
-    let after = compile(&mut module, "immutable_word_after", true);
+    let before = compile(&mut module, "immutable_word_before", false, false);
+    let alternatives = [
+        compile(&mut module, "immutable_word_early", true, false),
+        compile(&mut module, "immutable_word_delayed", true, true),
+    ];
     let bytes = (0..512)
         .map(|i| ((i * 131 + i / 7) & 255) as u8)
         .collect::<Vec<_>>();
@@ -166,22 +200,24 @@ fn immutable_word_placement_preserves_bounds_defaults_and_current_reads() {
                     }
                 };
                 // Bounds cover all physical reads; the empty view deliberately has a null pointer.
-                let (a, b) = unsafe {
-                    (
-                        before(packet.as_ptr(), index, enabled),
-                        after(packet.as_ptr(), index, enabled),
-                    )
-                };
-                assert_eq!(
-                    (a, b),
-                    (expected, expected),
-                    "length={length} index={index} enabled={enabled}"
-                );
-                calls += 2;
+                for after in alternatives {
+                    let (a, b) = unsafe {
+                        (
+                            before(packet.as_ptr(), index, enabled),
+                            after(packet.as_ptr(), index, enabled),
+                        )
+                    };
+                    assert_eq!(
+                        (a, b),
+                        (expected, expected),
+                        "length={length} index={index} enabled={enabled}"
+                    );
+                    calls += 2;
+                }
             }
         }
     }
-    assert_eq!(calls, 5712);
+    assert_eq!(calls, 11424);
 }
 
 #[test]
