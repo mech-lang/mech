@@ -4,6 +4,8 @@
 //! and ANDs must all be single-use as reported by lowering's existing use-state
 //! analysis; unknown Boolean inputs, phis, floats and shared prefixes decline.
 //! No instruction emission or sinking occurs before this whole preflight passes.
+#[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
+use crate::ir::condcodes::CondCode;
 use crate::ir::{
     DataFlowGraph, InstructionData as D, Opcode as O, Type, Value, ValueDef, condcodes::IntCC,
     types,
@@ -31,6 +33,99 @@ impl Chain {
     pub(super) fn iter(&self) -> impl Iterator<Item = Comparison> + '_ {
         self.comparisons[..self.len].iter().map(|c| c.unwrap())
     }
+}
+
+/// Prove a shared canonical OR of two integer comparisons. The returned chain
+/// computes the complement: `!a && !b`; invert its final condition to obtain
+/// the original zero-or-one result. Only the root may have multiple uses.
+#[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
+pub(super) fn derive_disjunction(
+    dfg: &DataFlowGraph,
+    root: Value,
+    mut unique: impl FnMut(Value) -> bool,
+) -> Option<Chain> {
+    fn comparison(
+        dfg: &DataFlowGraph,
+        value: Value,
+        unique: &mut impl FnMut(Value) -> bool,
+        depth: usize,
+    ) -> Option<Comparison> {
+        let value = dfg.resolve_aliases(value);
+        let ty = dfg.value_type(value);
+        if depth == 0 || !ty.is_int() || ty.bits() > 64 || !unique(value) {
+            return None;
+        }
+        let ValueDef::Result(inst, 0) = dfg.value_def(value) else {
+            return None;
+        };
+        match dfg.insts[inst] {
+            D::Unary {
+                opcode: O::Uextend | O::Ireduce,
+                arg,
+            } => comparison(dfg, arg, unique, depth - 1),
+            D::BinaryImm64 {
+                opcode: O::BandImm,
+                arg,
+                imm,
+            } if imm.bits() == 1 => comparison(dfg, arg, unique, depth - 1),
+            D::Binary {
+                opcode: O::Band,
+                args: [a, b],
+            } => {
+                if is_one(dfg, a) {
+                    comparison(dfg, b, unique, depth - 1)
+                } else if is_one(dfg, b) {
+                    comparison(dfg, a, unique, depth - 1)
+                } else {
+                    None
+                }
+            }
+            D::IntCompare {
+                cond,
+                args: [left, right],
+                ..
+            } => {
+                let input_ty = dfg.value_type(left);
+                (ty == types::I8
+                    && input_ty == dfg.value_type(right)
+                    && matches!(input_ty, types::I8 | types::I16 | types::I32 | types::I64))
+                .then_some(Comparison {
+                    cc: cond.complement(),
+                    left,
+                    right,
+                    ty: input_ty,
+                })
+            }
+            _ => None,
+        }
+    }
+    let root = dfg.resolve_aliases(root);
+    if !matches!(
+        dfg.value_type(root),
+        types::I8 | types::I16 | types::I32 | types::I64
+    ) || !unique(root)
+    {
+        return None;
+    }
+    let ValueDef::Result(inst, 0) = dfg.value_def(root) else {
+        return None;
+    };
+    let D::Binary {
+        opcode: O::Bor,
+        args: [a, b],
+    } = dfg.insts[inst]
+    else {
+        return None;
+    };
+    let a = comparison(dfg, a, &mut unique, MAX_DEPTH)?;
+    let b = comparison(dfg, b, &mut unique, MAX_DEPTH)?;
+    let mut comparisons = [None; MAX_COMPARISONS];
+    comparisons[0] = Some(a);
+    comparisons[1] = Some(b);
+    Some(Chain {
+        comparisons,
+        len: 2,
+    })
 }
 
 fn is_one(dfg: &DataFlowGraph, value: Value) -> bool {
