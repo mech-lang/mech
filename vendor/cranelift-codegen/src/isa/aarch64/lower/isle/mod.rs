@@ -2,6 +2,8 @@
 
 // Pull in the ISLE generated code.
 pub mod generated_code;
+#[cfg(feature = "std")]
+mod i32_extensions;
 use generated_code::{Context, ImmExtend};
 
 // Types that the generated ISLE code uses via `use super::*`.
@@ -54,6 +56,10 @@ pub(crate) fn lower(
     // TODO: reuse the ISLE context across lowerings so we can reuse its
     // internal heap allocations.
     if let Some(output) = lower_preindexed_word(lower_ctx, inst) {
+        return Some(output);
+    }
+    #[cfg(feature = "std")]
+    if let Some(output) = i32_extensions::lower(lower_ctx, inst) {
         return Some(output);
     }
     let mut isle_ctx = IsleContext { lower_ctx, backend };

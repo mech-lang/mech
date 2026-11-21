@@ -1075,3 +1075,7 @@ pub(in crate::native_artifact) fn share_repeated_bounds(
 
 #[cfg(test)]
 mod verified_cleanup_tests;
+
+#[cfg(all(test, target_arch = "aarch64"))]
+#[path = "i32_arithmetic_extensions_tests.rs"]
+mod arithmetic_word_extensions_tests;
