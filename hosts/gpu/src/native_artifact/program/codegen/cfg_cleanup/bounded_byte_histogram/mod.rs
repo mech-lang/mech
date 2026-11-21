@@ -313,9 +313,18 @@ fn counter_capacity(
     let f = &ctx.func;
     let cfg = &ctx.cfg;
     let mut at = f.layout.entry_block()?;
+    if cfg.pred_iter(at).next().is_some() {
+        return None;
+    }
+    let mut previous = None;
     let mut visited = BTreeSet::new();
     while at != header {
         if !visited.insert(at) {
+            return None;
+        }
+        if let Some(previous) = previous
+            && sole_predecessor(cfg, at)?.1 != previous
+        {
             return None;
         }
         let last = f.layout.last_inst(at)?;
@@ -328,8 +337,10 @@ fn counter_capacity(
         let Data::Jump { destination, .. } = f.dfg.insts[last] else {
             return None;
         };
+        previous = Some(last);
         at = destination.block(&f.dfg.value_lists);
     }
+    let initial = previous?;
 
     let matches_address = |address| {
         let Some((
@@ -402,7 +413,15 @@ fn counter_capacity(
         };
         let target = destination.block(&f.dfg.value_lists);
         if target == header {
-            return (stores == 1).then_some(());
+            // The entry bound covers one traversal of the source span. A
+            // second backedge, or a route back through the entry prefix,
+            // could repeat source work beyond that bound.
+            return (stores == 1
+                && cfg.pred_iter(header).count() == 2
+                && cfg
+                    .pred_iter(header)
+                    .all(|pred| pred.inst == initial || pred.inst == last))
+            .then_some(());
         }
         if sole_predecessor(cfg, target)?.1 != last {
             return None;
