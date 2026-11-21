@@ -3,7 +3,7 @@ use super::{artifacts, inputs, limits};
 use mech_core::{ManagedMemoryBudget, ValueDataDraft as Data};
 use mech_gpu::native_artifact::{JitProgramArtifact, NativeProgramLimitMode};
 
-#[path = "../../../../benchmarks/mech-deflate/source-variants/frequency_reuse.rs"]
+#[path = "../fixtures/native/source-variants/frequency_reuse.rs"]
 mod variant;
 
 const COMPONENTS: &str = concat!(

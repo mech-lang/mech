@@ -878,10 +878,6 @@ struct Completed {
     heap: Heap<'static>,
     status: NativeStatus,
 }
-// SAFETY: after its native call returns, this job exclusively owns every live
-// allocation in this heap. Borrowed captures have no owner records here. The
-// scoped join transfers this exclusive ownership to its invoking thread.
-unsafe impl Send for Completed {}
 impl Heap<'_> {
     fn adopt(&mut self, other: &mut Heap<'static>) {
         debug_assert!(
@@ -958,17 +954,27 @@ pub unsafe extern "C" fn mech_compact_parallel(
     let packets = unsafe { std::slice::from_raw_parts(input, input_length) };
     let output_address = output as usize;
     let mut failed = false;
-    let mut jobs = std::thread::scope(|scope| {
+    // Keep concrete job storage in this caller's scope. Each native worker has
+    // one exclusive slot; no heap or owner type acquires a blanket Send promise.
+    let mut jobs = (0..count)
+        .map(|_| Completed {
+            heap: Heap::new(),
+            status: invalid,
+        })
+        .collect::<Vec<_>>();
+    let completed = std::thread::scope(|scope| {
         let mut threads = Vec::with_capacity(count);
-        for ordinal in 0..count {
+        for (ordinal, job) in jobs.iter_mut().enumerate() {
             let packet = &packets[ordinal * input_words..(ordinal + 1) * input_words];
             let destination = output_address + ordinal * output_words * 8;
+            let job_address = job as *mut Completed as usize;
             match std::thread::Builder::new().spawn_scoped(scope, move || {
-                let mut heap = Heap::new();
-                // SAFETY: each generated worker receives immutable captures,
-                // one private heap and one nonoverlapping native output packet.
-                let status = unsafe { call(&mut heap, packet.as_ptr(), destination as *mut u64) };
-                Completed { heap, status }
+                // SAFETY: jobs never moves or resizes until every scoped join
+                // completes. Only this worker touches its initialized slot;
+                // captures are immutable and output packets do not overlap.
+                let job = unsafe { &mut *(job_address as *mut Completed) };
+                job.status =
+                    unsafe { call(&mut job.heap, packet.as_ptr(), destination as *mut u64) };
             }) {
                 Ok(thread) => threads.push(thread),
                 Err(_) => {
@@ -977,10 +983,10 @@ pub unsafe extern "C" fn mech_compact_parallel(
                 }
             }
         }
-        let mut completed = Vec::with_capacity(threads.len());
+        let mut completed = 0;
         for thread in threads {
             match thread.join() {
-                Ok(job) => completed.push(job),
+                Ok(()) => completed += 1,
                 Err(_) => failed = true,
             }
         }
@@ -989,7 +995,7 @@ pub unsafe extern "C" fn mech_compact_parallel(
     // SAFETY: every spawned worker has joined. Only this thread uses context.
     let parent = unsafe { &mut *context };
     parent.parallel_batches += 1;
-    parent.parallel_peak_workers = parent.parallel_peak_workers.max(jobs.len() as u64);
+    parent.parallel_peak_workers = parent.parallel_peak_workers.max(completed as u64);
     let status = if failed {
         NativeStatus {
             status: ALLOCATION,

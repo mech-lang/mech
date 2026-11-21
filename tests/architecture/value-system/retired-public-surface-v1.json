@@ -216,8 +216,83 @@
       "label": "retired semantic Kind enum",
       "pattern": "\\b(?:pub\\s+)?enum\\s+Kind\\s*\\{",
       "allowed_paths": [
-        "src/core/src/nodes.rs"
+        "src/core/src/nodes.rs",
+        "hosts/gpu/src/native_artifact/program/compact/layout.rs"
       ]
+    }
+  ],
+  "generated_include_sources": [
+    {
+      "path": "vendor/cranelift-codegen/src/ir/builder.rs",
+      "sha256": "ef45821cdb19546ca76368819a43960259520103bf9d0002fc37cfa64828586b"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/ir/instructions.rs",
+      "sha256": "72124bf15a03fb95fff26f28eb1848bd069e5d15c459db58337d807d34a809a5"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/ir/types.rs",
+      "sha256": "b5e3bc6e1be08d33ccdb348bc0144f77db07b1db6a8d331341e0a8714cbf4953"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/isa/aarch64/lower/isle/generated_code.rs",
+      "sha256": "1867dc9a0d4727936b0e663b45cced4a5d4e2aaefecdee4ef69f6c291dd8fad9"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/isa/aarch64/settings.rs",
+      "sha256": "ccf4f7d6181c9888e83cb5e81808e7a49df75a2df55a2a37f31f0e5b0f411d23"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/isa/pulley_shared/inst/mod.rs",
+      "sha256": "78e7d8035e5251cc5a1774ecdd0e6f69709bd72ac9fe41805ff3c499cdab9ec3"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/isa/pulley_shared/lower/isle/generated_code.rs",
+      "sha256": "2d76f49bcdc1b5eb120889000f919909c810a2bf52318bcc13a1a77f3546d26a"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/isa/pulley_shared/settings.rs",
+      "sha256": "8eefc8e67a4250a6eb31e097c8200d046f77dac74f03432eb8b5fc0493850e62"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/isa/riscv64/lower/isle/generated_code.rs",
+      "sha256": "9675ad06d78bc3ae56ad7947cde12b2875a608fc20dfb15e48c8372adf5034be"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/isa/riscv64/settings.rs",
+      "sha256": "6baf736a18642640cd6679504251ce9a0fa67110c2cf199fad7d048c00bb8a8c"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/isa/s390x/lower/isle/generated_code.rs",
+      "sha256": "e0cc4853225a9cea66fd9b590177a4c31c76f6b33096357004d3b9575740519c"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/isa/s390x/settings.rs",
+      "sha256": "7a3a59f4cb2dca7c00c0dc546de974d1f413506be8092bf0c0aea9905b85f43e"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/isa/x64/inst/external.rs",
+      "sha256": "90feb18acb11db032dc21ddfcaa0b0560af22b9a01b22165efe023326f3ad04c"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/isa/x64/lower/isle/generated_code.rs",
+      "sha256": "f5c5067c43c155b8e1ea2445e1262c4861a45c6b232423467bb61c1006bbb508"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/isa/x64/settings.rs",
+      "sha256": "776ceffd5863fb818eeafd626b026bfd1f4a3432a0f1d7122aed48bd9837e719"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/lib.rs",
+      "sha256": "7f2d9b51c208a516a4299cca614fd8ad8fbfa2b05f718e96e1f1ddfcebdbe94b"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/opts/generated_code.rs",
+      "sha256": "b939a0ba7d8988a78cc2c12a19fca5c1540a999d5736b4ccef441d92be78ae51"
+    },
+    {
+      "path": "vendor/cranelift-codegen/src/settings.rs",
+      "sha256": "3fc5192702e88a5889ac96fb3a6983ac32f6e22227e4d134104a3011a765bee9"
     }
   ]
 }

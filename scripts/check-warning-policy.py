@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Enforce warnings-as-errors and audit every intentional lint exception."""
 
+from collections import Counter
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -337,10 +339,37 @@ for exception in contracts.get("deprecated_apis", []):
 
 actual_lints = {}
 actual_deprecations = {}
+upstream_sources = {}
+expected_upstream = Counter()
+actual_upstream = Counter()
+for entry in contracts.get("upstream_attributes", []):
+    if set(entry) != {"path", "sha256", "attributes", "owner"}:
+        fail("pinned upstream attribute fields differ from the reviewed schema")
+    relative = entry["path"]
+    if (
+        not relative.startswith("vendor/")
+        or ".." in Path(relative).parts
+        or not entry["owner"]
+        or re.fullmatch(r"[0-9a-f]{64}", entry["sha256"]) is None
+        or not entry["attributes"]
+    ):
+        fail("upstream attributes require an owned, SHA-256-pinned vendor source")
+    if relative in upstream_sources:
+        fail(f"duplicate upstream source: {relative}")
+    upstream_sources[relative] = entry
+    expected_upstream.update((relative, attribute) for attribute in entry["attributes"])
+
 for path in repository_rust_sources():
     source = path.read_text(encoding="utf-8")
     relative = path.relative_to(ROOT).as_posix()
+    upstream = upstream_sources.get(relative)
+    if upstream is not None and hashlib.sha256(path.read_bytes()).hexdigest() != upstream["sha256"]:
+        fail(f"pinned upstream source changed; re-audit its attributes: {relative}")
     for attribute in rust_attributes(source):
+        upstream_key = (relative, " ".join(attribute.split()))
+        if upstream is not None and upstream_key in expected_upstream:
+            actual_upstream[upstream_key] += 1
+            continue
         conditional = conditional_policy_directive(attribute)
         if conditional is not None:
             if conditional == "indirect":
@@ -374,6 +403,8 @@ for path in repository_rust_sources():
             key = (relative, " ".join(attribute.split()))
             actual_deprecations[key] = actual_deprecations.get(key, 0) + 1
 
+if actual_upstream != expected_upstream:
+    fail("pinned upstream attribute inventory differs from the reviewed source")
 if actual_lints != expected_lints:
     fail(
         "reviewed lint exceptions differ from scripts/warning-exceptions.json: "

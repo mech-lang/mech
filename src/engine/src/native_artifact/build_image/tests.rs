@@ -273,7 +273,13 @@ fn native_children_reject_visitors_that_return_without_consuming_the_record() {
         }
     }
     #[derive(Deserialize)]
-    struct Wrapper(#[allow(dead_code)] Ignored);
+    struct Wrapper(
+        #[allow(
+            dead_code,
+            reason = "the deserialization rejection probe intentionally never reads its wrapped value"
+        )]
+        Ignored,
+    );
     #[derive(Deserialize)]
     enum Variant {
         Value(Ignored),

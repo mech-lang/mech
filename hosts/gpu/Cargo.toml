@@ -96,10 +96,6 @@ name = "particle_benchmark"
 path = "examples/particle_benchmark.rs"
 required-features = ["native"]
 
-[[example]]
-name = "argument_frame_transport"
-required-features = ["canonical-native-program"]
-
 [[bin]]
 name = "mech-native-source"
 path = "src/bin/mech-native-source.rs"
@@ -114,10 +110,6 @@ required-features = ["fused-cli"]
 name = "compute_backend_benchmark"
 path = "examples/compute_backend_benchmark.rs"
 required-features = ["native"]
-
-[[example]]
-name = "native_frame_transport"
-required-features = ["canonical-native-program"]
 
 [[example]]
 name = "parallel_ekf_benchmark"

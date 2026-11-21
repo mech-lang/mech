@@ -3,7 +3,7 @@ use super::{allocation_probe, artifacts, inputs, limits};
 use mech_core::{ManagedMemoryBudget, ValueData, ValueDataDraft as Data};
 use mech_gpu::native_artifact::JitProgramArtifact;
 
-#[path = "../../../../benchmarks/mech-deflate/source-variants/zero_trip.rs"]
+#[path = "../fixtures/native/source-variants/zero_trip.rs"]
 mod zero_trip;
 
 const SOURCE: &str = concat!(

@@ -1,6 +1,6 @@
 # Native compiler architecture
 
-The maintained path is source/bytecode → canonical `ProgramArtifact` → checked native plan → shared JIT/Object emission → current execution. Engine owns language semantics. Native preparation selects representations; runtime image restoration independently reconstructs their source facts. The current retained versions are **IR177 / work107 / private ABI39 / bytecode14**. [Current milestone and qualification](native-compression-status.md).
+The maintained path is source/bytecode → canonical `ProgramArtifact` → checked native plan → shared JIT/Object emission → current execution. Engine owns language semantics. Native preparation selects representations; runtime image restoration independently reconstructs their source facts. The current retained versions are **IR177 / work107 / private ABI39 / bytecode14**. [Current milestone and qualification](https://github.com/mech-lang/benchmarks/blob/4fb50f3879599b4a799e85a73fa39eccd8706e2c/archive/compiler/mech-pr-973-9087b1f077/source/docs/design/native-compression-status.md).
 
 ## Responsibilities and authority
 
@@ -111,4 +111,4 @@ Keep coupled proof, layout, emitter, runtime and identity changes in the same in
 
 Retained coverage, liveness, address/arithmetic and byte-writer capabilities are complete within their documented domains. Full word-bank compaction, direct stores after backing is private, bounded-child trip proofs in dynamically funded phases, source pricing rewrites and further allocation/instruction work are deferred. No safely deletable duplicate or temporary production instrumentation was found in the R130→R140 closure review.
 
-Historical decisions, rejected experiments, source pins and old document snapshots are preserved in the [existing experiment archive](../../benchmarks/mech-deflate/experiments.json). They are evidence, not a second authority over the current module tree.
+Historical decisions, rejected experiments, source pins and old document snapshots are preserved in the [existing experiment archive](https://github.com/mech-lang/benchmarks/blob/4fb50f3879599b4a799e85a73fa39eccd8706e2c/archive/compiler/mech-pr-973-9087b1f077/source/benchmarks/mech-deflate/experiments.json). They are evidence, not a second authority over the current module tree.

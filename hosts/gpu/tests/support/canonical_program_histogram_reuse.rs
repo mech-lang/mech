@@ -3,7 +3,7 @@ use super::{artifacts, inputs, limits};
 use mech_core::{ManagedMemoryBudget, Value, ValueDataDraft as Data};
 use mech_gpu::native_artifact::JitProgramArtifact;
 
-#[path = "../../../../benchmarks/mech-deflate/source-variants/histogram_reuse.rs"]
+#[path = "../fixtures/native/source-variants/histogram_reuse.rs"]
 mod variant;
 
 const HEADER: &str = concat!(

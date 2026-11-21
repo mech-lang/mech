@@ -375,10 +375,7 @@ impl SemanticBuilder {
                         // once, including a document signal input.
                         captures.push((input, schema.clone().into(), true));
                         let ordinal = u16::try_from(parameters.len()).map_err(|_| error())?;
-                        parameters.push((
-                            crate::ControlParameterSource::Capture(capture),
-                            schema,
-                        ));
+                        parameters.push((crate::ControlParameterSource::Capture(capture), schema));
                         parameter_values.push(value);
                         Ok(PendingControlValue::Parameter(ordinal))
                     }

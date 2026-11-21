@@ -189,7 +189,11 @@ impl PreparedObject {
                     pending.extend(text.relocs.iter().filter_map(|reloc| symbol(&reloc.name)));
                 }
                 Some(Body::Native(root)) => {
-                    pending.extend(root.relocations.iter().filter_map(|reloc| symbol(&reloc.name)));
+                    pending.extend(
+                        root.relocations
+                            .iter()
+                            .filter_map(|reloc| symbol(&reloc.name)),
+                    );
                 }
                 Some(Body::Data(data)) => {
                     pending.extend(data.function_decls.values().filter_map(symbol));
@@ -227,7 +231,9 @@ impl PreparedObject {
     pub(in crate::native_artifact::program) fn finish(self) -> ModuleResult<ObjectProduct> {
         let (product, root) = self.finish_product()?;
         if root.is_some() {
-            return Err(llvm_diagnostic_failure("native root requires the compact linker"));
+            return Err(llvm_diagnostic_failure(
+                "native root requires the compact linker",
+            ));
         }
         Ok(product)
     }
@@ -245,7 +251,9 @@ impl PreparedObject {
             .map_err(llvm_diagnostic_failure)
     }
 
-    fn finish_product(mut self) -> ModuleResult<(ObjectProduct, Option<(Vec<u8>, Option<String>)>)> {
+    fn finish_product(
+        mut self,
+    ) -> ModuleResult<(ObjectProduct, Option<(Vec<u8>, Option<String>)>)> {
         let reachable = self.reachable()?;
         let mut roots = self.bodies.iter().filter_map(|(&id, body)| match body {
             Body::Native(root) => Some((id, root)),
@@ -253,12 +261,18 @@ impl PreparedObject {
         });
         let native = roots.next();
         if roots.next().is_some() {
-            return Err(llvm_diagnostic_failure("multiple native roots in the compact Object"));
+            return Err(llvm_diagnostic_failure(
+                "multiple native roots in the compact Object",
+            ));
         }
         let root_id = native.map(|(id, _)| id);
         let native_refs: BTreeSet<_> = native
             .into_iter()
-            .flat_map(|(_, root)| root.relocations.iter().filter_map(|reloc| symbol(&reloc.name)))
+            .flat_map(|(_, root)| {
+                root.relocations
+                    .iter()
+                    .filter_map(|reloc| symbol(&reloc.name))
+            })
             .collect();
         let mut symbols = BTreeMap::new();
         // Preserve declaration and definition order among the retained symbols.

@@ -273,8 +273,7 @@ fn worker_constant_owners_keep_parallel_results_cold_errors_failed_publication_a
 
 #[test]
 fn numeric_related_workers_use_physical_prefixes_with_full_admission_and_checked_handles() {
-    let related =
-        include_str!("../../../../../../../benchmarks/related-post-gen/mech/related_optimized.mec");
+    let related = include_str!("../../../../../tests/fixtures/native/related-optimized.mec");
     for artifact in artifacts(related) {
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
         let restored = super::super::tests::restore_admitted_helper_descriptor(&jit);

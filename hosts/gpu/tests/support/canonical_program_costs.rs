@@ -121,7 +121,7 @@ fn qualify_cost_models(header: &str, source_variant: &str) {
     }
 }
 
-#[path = "../../../../benchmarks/mech-deflate/source-variants/independent_tables.rs"]
+#[path = "../fixtures/native/source-variants/independent_tables.rs"]
 mod independent_tables;
 
 #[test]

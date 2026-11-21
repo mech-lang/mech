@@ -166,7 +166,13 @@ fn packed_arrays_and_raw_children_reject_visitors_that_do_not_consume_their_valu
         }
     }
     #[derive(Deserialize)]
-    struct Wrap(#[allow(dead_code)] Ignored);
+    struct Wrap(
+        #[allow(
+            dead_code,
+            reason = "the deserialization rejection probe intentionally never reads its wrapped value"
+        )]
+        Ignored,
+    );
     struct Early;
     impl<'de> Deserialize<'de> for Early {
         fn deserialize<D: Deserializer<'de>>(reader: D) -> Result<Self, D::Error> {

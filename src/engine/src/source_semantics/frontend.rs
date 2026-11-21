@@ -10096,7 +10096,7 @@ mod tests {
                     id: crate::ControlBlockId(2),
                     parameters: vec![(
                         crate::ControlParameterSource::PatternBinding(0),
-                        schema(SchemaBody::Index),
+                        schema(SchemaBody::Index).into(),
                     )],
                     operations: Vec::new(),
                     yield_value: PendingControlValue::Parameter(0),
@@ -11436,15 +11436,17 @@ fn resolve_pending_match(
                     crate::MatchPattern::Wildcard => crate::MatchPattern::Wildcard,
                     crate::MatchPattern::Bind => crate::MatchPattern::Bind,
                     crate::MatchPattern::Structural(pattern) => crate::MatchPattern::Structural(
-                        pattern.map(&|draft| retained_control_schema(schemas, draft), &|value| match value {
-                            crate::MatchPatternValue::Literal(index) => {
-                                crate::MatchPatternValue::Literal(constants[*index])
-                            }
-                            crate::MatchPatternValue::Binding(local) => {
-                                crate::MatchPatternValue::Binding(*local)
-                            }
-                            crate::MatchPatternValue::Input(input) => {
-                                crate::MatchPatternValue::Input(*input)
+                        pattern.map(&|draft| retained_control_schema(schemas, draft), &|value| {
+                            match value {
+                                crate::MatchPatternValue::Literal(index) => {
+                                    crate::MatchPatternValue::Literal(constants[*index])
+                                }
+                                crate::MatchPatternValue::Binding(local) => {
+                                    crate::MatchPatternValue::Binding(*local)
+                                }
+                                crate::MatchPatternValue::Input(input) => {
+                                    crate::MatchPatternValue::Input(*input)
+                                }
                             }
                         }),
                     ),

@@ -22,10 +22,6 @@ pub struct NativeProgramModule {
     binding: *const [u8; NATIVE_PROGRAM_IMAGE_BINDING_BYTES],
     entry: Entry,
 }
-// SAFETY: fields are private and immutable. The only public consumer is unsafe
-// and requires genuine process-lifetime read-only data and code from one Object.
-unsafe impl Sync for NativeProgramModule {}
-
 pub(super) struct ModuleParts {
     pub image: &'static [u8],
     pub identity: &'static [u8; NATIVE_PROGRAM_LINK_IDENTITY_BYTES],

@@ -18,7 +18,7 @@ mod repeated_output;
 mod assembly;
 use assembly::COMPONENTS;
 
-#[path = "../../../../benchmarks/mech-deflate/source-variants/zero_trip.rs"]
+#[path = "../fixtures/native/source-variants/zero_trip.rs"]
 mod zero_trip;
 
 fn matrix(value: &[u8]) -> Data {

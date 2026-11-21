@@ -281,8 +281,8 @@ jobs:
   canonical-policy:
     name: Same-binary native policy controls
     runs-on: ubuntu-latest
-    # Serial Actions ceilings total 308 minutes, with orchestration headroom.
-    timeout-minutes: 320
+    # Serial Actions ceilings total 314 minutes, with orchestration headroom.
+    timeout-minutes: 326
     env:
       RUSTUP_TOOLCHAIN: nightly-2026-03-03
       CARGO_BUILD_JOBS: "1"
@@ -292,7 +292,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
-        timeout-minutes: 2
+        timeout-minutes: 8
         with:
           ref: ${{ inputs.validation_ref }}
       - name: Record exact benchmark policy checkout
@@ -400,9 +400,9 @@ jobs:
   canonical-native-cli:
     name: Public canonical native CLI
     runs-on: ubuntu-latest
-    # Serial Actions ceilings total 249 minutes, including always-run evidence;
+    # Serial Actions ceilings total 255 minutes, including always-run evidence;
     # leave eleven more for orchestration. These are qualification, not timings.
-    timeout-minutes: 260
+    timeout-minutes: 266
     env:
       RUSTUP_TOOLCHAIN: nightly-2026-03-03
       CARGO_BUILD_JOBS: "1"
@@ -412,7 +412,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
         id: checkout
-        timeout-minutes: 2
+        timeout-minutes: 8
         with:
           ref: ${{ inputs.validation_ref }}
       - name: Record exact public canonical CLI checkout and source pins

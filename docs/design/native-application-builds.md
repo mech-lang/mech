@@ -277,7 +277,7 @@ conversion: widening preserves the value and narrowing rejects excess bits.
 Selected U8 addition and U32 addition/subtraction also have native operations;
 each requires its selected binder witness. This is not support for arbitrary
 narrow arithmetic. The decoded U8-add witness limitation is recorded in
-[native-compression-status.md](native-compression-status.md). This scalar
+[native-compression-status.md](https://github.com/mech-lang/benchmarks/blob/4fb50f3879599b4a799e85a73fa39eccd8706e2c/archive/compiler/mech-pr-973-9087b1f077/source/docs/design/native-compression-status.md). This scalar
 subset rejects resources, constraints,
 compute regions, retained state, computed Activation nodes, matches,
 comprehensions, counted applications, and FSMs. Direct constant output aliases
@@ -326,7 +326,7 @@ limits and the selected width's one/two/four/eight-byte output limit remain enfo
 even though no selector/result snapshot
 is allocated. A later canonical use or publication constructs its real value.
 
-The [DEFLATE Huffman qualification](../../benchmarks/mech-deflate/huffman/README.md)
+The [DEFLATE Huffman qualification](https://github.com/mech-lang/benchmarks/blob/4fb50f3879599b4a799e85a73fa39eccd8706e2c/archive/compiler/mech-pr-973-9087b1f077/source/benchmarks/mech-deflate/huffman/README.md)
 exercises these operations against pinned C reference values. It uses explicit
 finite native work and memory allowances. The ordinary resident whole-control
 limits remain enforced; indexed updates preserve a resource-limit error rather
@@ -352,7 +352,7 @@ compiler planning uses empty CLI grants and does not embed launch authority.
 as strict JSON; omission preserves ordinary compiler defaults. This policy
 only controls compilation. The complete-program public API example and its
 separate finite compilation/launch policies are documented in
-[the compression application instructions](../../benchmarks/mech-deflate/public-application/README.md).
+[the compression application instructions](https://github.com/mech-lang/benchmarks/blob/4fb50f3879599b4a799e85a73fa39eccd8706e2c/archive/compiler/mech-pr-973-9087b1f077/source/benchmarks/mech-deflate/public-application/README.md).
 The same runtime admits original requirements, executes generated closed
 activation, captures provider inputs, resumes the same native session and
 validates/commits effects. There is no runtime parser, JIT or resident body.
