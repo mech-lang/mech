@@ -1571,6 +1571,16 @@ fn prepare_impl<M: Module>(
         }
         eprintln!("{symbol} forwarded argument jumps: {count}");
     }
+    if !observe
+        && private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_COMPACT_COALESCE_IDENTICAL_ARGUMENTS")
+            .is_some_and(|scope| scope == "vector" || scope == "all")
+    {
+        let removed =
+            cfg_cleanup::coalesce_identical_join_arguments(&controls, &mut context, module.isa())?;
+        eprintln!("{symbol} coalesced identical arguments: {removed}");
+    }
     let packed_input = if pack_input {
         phase_storage::pack_used_input_words(&mut context.func, input_words)
     } else {

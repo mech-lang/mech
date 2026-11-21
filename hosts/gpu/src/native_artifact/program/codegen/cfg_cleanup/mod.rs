@@ -681,6 +681,28 @@ pub(in crate::native_artifact::program) fn coalesce_parallel_join_arguments(
     Ok(removed)
 }
 
+pub(in crate::native_artifact::program) fn coalesce_identical_join_arguments(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<usize, NativeCompileError> {
+    if !controls.enabled(OptimizationPass::CfgCleanup) {
+        return Ok(0);
+    }
+    context.func.dfg.resolve_all_aliases();
+    context.flowgraph();
+    let removed = local_phis::identical_arguments::coalesce(
+        &mut context.func,
+        &context.cfg,
+        &context.domtree,
+    );
+    if removed != 0 {
+        context.func.dfg.resolve_all_aliases();
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(removed)
+}
+
 pub(in crate::native_artifact::program) fn coalesce_literal_join_arguments(
     controls: &CompilationControls,
     context: &mut Context,
