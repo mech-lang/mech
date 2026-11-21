@@ -448,6 +448,10 @@ fn cast_object_metadata_has_new_typed_identity_but_is_not_execution() {
         assert_eq!(object.metadata()["linked"], false);
         assert_eq!(object.metadata()["executed"], false);
         assert_eq!(object.metadata()["timing_samples"], 0);
-        assert_eq!(mech_gpu::native_artifact::NATIVE_TYPED_IR_VERSION, 6);
+        assert_eq!(
+            u64::from_le_bytes(object.identity().bytes()[16..24].try_into().unwrap()),
+            mech_gpu::native_artifact::NATIVE_TYPED_IR_VERSION,
+            "the emitted object must carry the current typed IR identity",
+        );
     }
 }
