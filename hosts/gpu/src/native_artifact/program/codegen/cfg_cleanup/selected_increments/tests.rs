@@ -30,8 +30,20 @@ enum Mode {
     UnboundedTrue,
     DroppedMaskBound,
     Permuted,
+    BoundedConst,
+    BoundedMask,
+    BoundedImm,
+    BoundedReversed,
+    BoundedSwapped,
+    BoundedSwappedReversed,
+    BoundedMax,
+    BoundedChanged,
+    BoundedBypass,
+    BoundedPlusTwo,
+    BoundedSigned,
+    BoundedDuplicateEdges,
 }
-const MODES: [Mode; 24] = [
+const MODES: [Mode; 36] = [
     Mode::Plain,
     Mode::Copies,
     Mode::ColdConsumer,
@@ -56,6 +68,18 @@ const MODES: [Mode; 24] = [
     Mode::UnboundedTrue,
     Mode::DroppedMaskBound,
     Mode::Permuted,
+    Mode::BoundedConst,
+    Mode::BoundedMask,
+    Mode::BoundedImm,
+    Mode::BoundedReversed,
+    Mode::BoundedSwapped,
+    Mode::BoundedSwappedReversed,
+    Mode::BoundedMax,
+    Mode::BoundedChanged,
+    Mode::BoundedBypass,
+    Mode::BoundedPlusTwo,
+    Mode::BoundedSigned,
+    Mode::BoundedDuplicateEdges,
 ];
 fn expected_folds(mode: Mode) -> usize {
     usize::from(matches!(
@@ -111,7 +135,7 @@ fn function(mode: Mode) -> Context {
         let memory = b.block_params(entry)[3];
         let zero = b.ins().iconst(types::I64, 0);
         b.ins().store(MemFlags::new(), zero, memory, 0);
-        if matches!(mode, Mode::Bypass) {
+        if matches!(mode, Mode::Bypass | Mode::BoundedBypass) {
             let one = b.ins().iconst(types::I8, 1);
             b.ins()
                 .brif(switch, join, &[x.into(), one.into()], test, &[]);
@@ -121,10 +145,42 @@ fn function(mode: Mode) -> Context {
         b.switch_to_block(test);
         let cc = match mode {
             Mode::Signed => IntCC::SignedLessThan,
-            Mode::NonStrict => IntCC::UnsignedLessThanOrEqual,
+            Mode::BoundedSigned => IntCC::SignedLessThanOrEqual,
+            Mode::BoundedReversed => IntCC::UnsignedGreaterThan,
+            Mode::BoundedSwapped => IntCC::UnsignedGreaterThanOrEqual,
+            Mode::BoundedSwappedReversed => IntCC::UnsignedLessThan,
+            Mode::NonStrict
+            | Mode::BoundedConst
+            | Mode::BoundedMask
+            | Mode::BoundedImm
+            | Mode::BoundedMax
+            | Mode::BoundedChanged
+            | Mode::BoundedBypass
+            | Mode::BoundedPlusTwo
+            | Mode::BoundedDuplicateEdges => IntCC::UnsignedLessThanOrEqual,
             _ => IntCC::UnsignedLessThan,
         };
-        let below = b.ins().icmp(cc, x, end);
+        let bound = match mode {
+            Mode::BoundedMask => b.ins().band_imm(end, 255),
+            Mode::BoundedMax => b.ins().iconst(types::I64, -1),
+            Mode::BoundedPlusTwo => b.ins().iconst(types::I64, -2),
+            Mode::BoundedConst
+            | Mode::BoundedReversed
+            | Mode::BoundedSwapped
+            | Mode::BoundedSwappedReversed
+            | Mode::BoundedChanged
+            | Mode::BoundedBypass
+            | Mode::BoundedSigned
+            | Mode::BoundedDuplicateEdges => b.ins().iconst(types::I64, 258),
+            _ => end,
+        };
+        let below = if matches!(mode, Mode::BoundedImm) {
+            b.ins().icmp_imm(cc, x, 258)
+        } else if matches!(mode, Mode::BoundedSwapped | Mode::BoundedSwappedReversed) {
+            b.ins().icmp(cc, bound, x)
+        } else {
+            b.ins().icmp(cc, x, bound)
+        };
         let below_test = if matches!(mode, Mode::LowBit | Mode::DroppedMaskBound) {
             b.ins().band_imm(
                 below,
@@ -137,7 +193,11 @@ fn function(mode: Mode) -> Context {
         } else {
             below
         };
-        b.ins().brif(below_test, body, &[], outside, &[]);
+        if matches!(mode, Mode::BoundedReversed | Mode::BoundedSwappedReversed) {
+            b.ins().brif(below_test, outside, &[], body, &[]);
+        } else {
+            b.ins().brif(below_test, body, &[], outside, &[]);
+        }
         b.switch_to_block(outside);
         let flag = b.ins().iconst(
             types::I8,
@@ -161,7 +221,7 @@ fn function(mode: Mode) -> Context {
             b.ins().return_(&[failed]);
             b.switch_to_block(admitted);
         }
-        if matches!(mode, Mode::DuplicateEdges) {
+        if matches!(mode, Mode::DuplicateEdges | Mode::BoundedDuplicateEdges) {
             let one = b.ins().iconst(types::I8, 1);
             let changed = b.ins().iconst(types::I64, -1);
             b.ins().brif(
@@ -221,7 +281,7 @@ fn function(mode: Mode) -> Context {
             b.ins().jump(copied, &[x.into()]);
         }
         b.switch_to_block(right);
-        let other = if matches!(mode, Mode::DifferentBase) {
+        let other = if matches!(mode, Mode::DifferentBase | Mode::BoundedChanged) {
             b.ins().iconst(types::I64, -1)
         } else {
             x
@@ -265,9 +325,14 @@ fn function(mode: Mode) -> Context {
         }
         b.ins().brif(branch, add, &[], skip, &[]);
         b.switch_to_block(add);
-        let next = b
-            .ins()
-            .iadd_imm(base, if matches!(mode, Mode::PlusTwo) { 2 } else { 1 });
+        let next = b.ins().iadd_imm(
+            base,
+            if matches!(mode, Mode::PlusTwo | Mode::BoundedPlusTwo) {
+                2
+            } else {
+                1
+            },
+        );
         let good = match mode {
             Mode::BadBranch => b.ins().icmp(IntCC::UnsignedLessThan, next, base),
             Mode::ReversedSuccess => b.ins().icmp(IntCC::UnsignedLessThanOrEqual, base, next),
@@ -306,9 +371,12 @@ fn function(mode: Mode) -> Context {
     c
 }
 fn apply(c: &mut Context, steps: usize) -> usize {
+    apply_mode(c, steps, false)
+}
+fn apply_mode(c: &mut Context, steps: usize, bounded_ranges: bool) -> usize {
     c.compute_cfg();
     c.compute_domtree();
-    let changed = optimize_bounded(&mut c.func, &c.cfg, &c.domtree, steps);
+    let changed = optimize_bounded(&mut c.func, &c.cfg, &c.domtree, steps, bounded_ranges);
     c.compute_cfg();
     c.compute_domtree();
     changed
@@ -320,6 +388,29 @@ fn exact_selected_phi_transport_is_bounded_and_keeps_hard_negative_guards() {
         assert_eq!(apply(&mut c, MAX_STEPS), expected_folds(mode), "{mode:?}");
         let mut zero_budget = function(mode);
         assert_eq!(apply(&mut zero_budget, 0), 0, "{mode:?}");
+        let mut ranged_zero_budget = function(mode);
+        assert_eq!(apply_mode(&mut ranged_zero_budget, 0, true), 0, "{mode:?}");
+        let mut ranged = function(mode);
+        assert_eq!(
+            apply_mode(&mut ranged, MAX_STEPS, true),
+            bounded_folds(mode),
+            "{mode:?}"
+        );
+    }
+}
+fn bounded_folds(mode: Mode) -> usize {
+    if matches!(
+        mode,
+        Mode::BoundedConst
+            | Mode::BoundedMask
+            | Mode::BoundedImm
+            | Mode::BoundedReversed
+            | Mode::BoundedSwapped
+            | Mode::BoundedSwappedReversed
+    ) {
+        1
+    } else {
+        expected_folds(mode)
     }
 }
 #[test]
@@ -334,15 +425,24 @@ fn native_extremes_saved_predicates_cold_users_and_errors_match_original() {
     let mut pairs = Vec::new();
     for (n, mode) in MODES.into_iter().enumerate() {
         let mut ids = Vec::new();
-        for enabled in [false, true] {
+        for (enabled, bounded_ranges) in [(false, false), (true, false), (true, true)] {
             let mut c = function(mode);
             if enabled {
-                assert_eq!(apply(&mut c, MAX_STEPS), expected_folds(mode), "{mode:?}");
+                let expected = if bounded_ranges {
+                    bounded_folds(mode)
+                } else {
+                    expected_folds(mode)
+                };
+                assert_eq!(
+                    apply_mode(&mut c, MAX_STEPS, bounded_ranges),
+                    expected,
+                    "{mode:?}"
+                );
             }
             c.verify(module.isa()).unwrap();
             let id = module
                 .declare_function(
-                    &format!("selected_increment_{n}_{enabled}"),
+                    &format!("selected_increment_{n}_{enabled}_{bounded_ranges}"),
                     Linkage::Local,
                     &c.func.signature,
                 )
@@ -359,6 +459,10 @@ fn native_extremes_saved_predicates_cold_users_and_errors_match_original() {
         2,
         63,
         64,
+        255,
+        256,
+        258,
+        259,
         (1u64 << 63) - 1,
         1u64 << 63,
         u64::MAX - 2,
@@ -371,6 +475,8 @@ fn native_extremes_saved_predicates_cold_users_and_errors_match_original() {
             unsafe { core::mem::transmute(module.get_finalized_function(ids[0])) };
         let b: unsafe extern "C" fn(u64, u64, u64, *mut u64) -> u64 =
             unsafe { core::mem::transmute(module.get_finalized_function(ids[1])) };
+        let ranged: unsafe extern "C" fn(u64, u64, u64, *mut u64) -> u64 =
+            unsafe { core::mem::transmute(module.get_finalized_function(ids[2])) };
         for x in values {
             for end in values {
                 for switch in [0, 1, 3, u64::MAX] {
@@ -378,12 +484,20 @@ fn native_extremes_saved_predicates_cold_users_and_errors_match_original() {
                         let mut before = [0xabcdu64; 5];
                         before[4] = loaded;
                         let mut after = before;
+                        let mut after_ranged = before;
                         let got_before = unsafe { a(x, end, switch, before.as_mut_ptr()) };
                         let got_after = unsafe { b(x, end, switch, after.as_mut_ptr()) };
+                        let got_ranged =
+                            unsafe { ranged(x, end, switch, after_ranged.as_mut_ptr()) };
                         assert_eq!(
                             (got_before, before),
                             (got_after, after),
                             "{mode:?} x={x} end={end} switch={switch} loaded={loaded}"
+                        );
+                        assert_eq!(
+                            (got_before, before),
+                            (got_ranged, after_ranged),
+                            "bounded {mode:?} x={x} end={end} switch={switch} loaded={loaded}"
                         );
                     }
                 }
@@ -448,6 +562,11 @@ fn native_width_boundaries_do_not_inherit_i64_proofs() {
     );
     let mut entries = Vec::new();
     for ty in [types::I8, types::I16, types::I32, types::I64] {
+        let mut ranged = width_function(ty);
+        assert_eq!(
+            apply_mode(&mut ranged, MAX_STEPS, true),
+            usize::from(ty == types::I64)
+        );
         let mut c = width_function(ty);
         assert_eq!(apply(&mut c, MAX_STEPS), usize::from(ty == types::I64));
         c.verify(module.isa()).unwrap();
