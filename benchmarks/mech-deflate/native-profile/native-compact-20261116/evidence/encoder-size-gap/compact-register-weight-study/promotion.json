@@ -1,0 +1,24 @@
+{
+  "selected_default_changed": true,
+  "previous_recipe": "m1-narrow-packet-words",
+  "previous_text_bytes": 63804,
+  "recipe": "m1-profiled-register-sqrt",
+  "text_bytes": 63612,
+  "saved_text_bytes": 192,
+  "artifacts": {
+    "program.o": "315295fe0e7eb472e5622e80426a133f15d1c6e4cebd757be104aaca37d6660c",
+    "metadata.json": "c1fd618863af5172e035dd9af79ad0d06eaf9118ce276cff2461d9455b90c2b9",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+  },
+  "worker_sha256": "e1ce6f6e504a5f2837263d498f94efa7000c6c3c84238d48dad6d3940cb27a89",
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "bytecode_unchanged": true,
+  "all_required_named_wins_preserved": true,
+  "confidence_assessed": false,
+  "selection_basis": "Both complete point orders and every required named win; broad improvements and smaller code. Small slowdowns retained where wins survive.",
+  "compiler_rebuild_py_before_default_sha256": "7bed5d055c326a8cf42b6f6b985612a36c868d4fce6f0b4febe2044e80d6d33a",
+  "compiler_rebuild_py_after_default_sha256": "f1ea1d509a91e7f4ced50eb45520edff2140d7440609f5af92cc9312e4843973",
+  "stack_bytes": 4736,
+  "next_C_target": 64,
+  "ultimate_C_target": 81
+}

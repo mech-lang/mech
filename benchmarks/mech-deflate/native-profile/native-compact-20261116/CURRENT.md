@@ -1,5 +1,19 @@
 # PR #995 current status
 
+**Working selection: `m1-profiled-register-sqrt`, 63,612 B, preserving every named 81/81 Roc and 63/81 libdeflate win in both full 81-case, 96-block orders.** It saves **192 B** from the preceding default. Measured register spill weights combine with the retained carried-low-cost phi proof; the original **2,719-line codec and canonical bytecode remain unchanged**. Confidence has not been reassessed and is separate from selection. No 64th C win is established.
+
+The selected combination takes **3.07–3.14% less time across all 81 cases by geometric mean**, **7.2–7.4% less on random 1 MiB** and **3.2–3.5% less on distribution change** than the preceding selected build. Natural 4 KiB is **0.972895× / 0.984128× C**. The fully qualified linear alternative emits **63,628 B** and saves about **8.5%** on random 1 MiB in both focused panel orders. Small slowdowns are retained when named wins survive.
+
+Latest matched complete builds on **Apple M1**, including final executable link with compilers and fixed support equally prebuilt: **2.236726 s selected Mech**, **2.230153 s preceding Mech**, **2.988907 s Roc**, **0.490598 s C**. Selected paired ratios are **0.746096× Roc / 4.591963× C**. Fourteen balanced serial fresh-process orders check every native artifact. **No compile-time gain is established.** Encoder text is **1.103× Roc / 1.716× C**; the stripped executable remains **276,072 B** and peak stack **4,736 B**.
+
+All four compact combinations pass strict original resource/output/error/recovery/stack checks and both 21-case panels. Both carried combinations pass full qualification. **Eight public normal/checked source replays and both actual main named recipes reproduce all three artifacts exactly.** The portable verifier checks **5,366,016 saved runtime calls**, every named win, four exact matcher-layout transfers, fourteen build orders and **567 actual stripped deployment streams**. The same source compiler feature has **79 optimized scalar tests** passing. [Source recipes, full scoreboard, build phases, every raw observation and verification](evidence/encoder-size-gap/compact-register-weight-study/README.md).
+
+`rebuild.py` now defaults to `m1-profiled-register-sqrt` on Apple ARM64; `--variant m1-profiled-register-linear` selects the alternative. Prior recipes remain available. The compiler implementation and independent spill-weight generator are already rebasable at `5b3a4af26`; this update combines their validated profiles with the compact original-source build. No LLVM dependency or shipping native-byte patch is added.
+
+Broader work now tests generic forward-jump cleanup with fresh register and machine-layout profiles. The initial census reduces matcher construction from **2,124 to 1,147 prepared blocks**; its runtime/build gains are not yet qualified. Remaining work compares actual Mech/C matcher search/skip/tree work and state traffic across random, natural, periodic, repeated and changing distributions. **64 C wins is next; 81 C wins remains the goal.**
+
+Everything below describes earlier checkpoints; their selected/default labels apply to those versions.
+
 **Working selection: `m1-narrow-packet-words`, 63,804 B, 81/81 Roc and 63/81 libdeflate in both complete 96-block orders.** Every required named point win is retained, and all required confidence checks also pass in both directions. This saves 48 B versus the preceding 63,852 B working build and 64 B versus the original eight-entry 63-win build.
 
 Measured register weights now preserve every named **81 Roc / 63 C** win in both orders of 81 cases, with 96 blocks per case, for two variants. Against the qualified HF-U32 control, linear weighting takes **6.3% less time on random 1 MiB**. Square root weighting takes **5.1% less on random 1 MiB**, **4.1% less on random 16 KiB** and **2.3–2.4% less on distribution change**. Neither earns a 64th C win. Their 2,732-line codec source and bytecode are unchanged.

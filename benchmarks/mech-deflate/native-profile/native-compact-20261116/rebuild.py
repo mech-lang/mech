@@ -24,6 +24,8 @@ M1_SOURCE_RECIPES = {
     'm1-packed-eight-entry': 'packed-eight-entry-study',
     'm1-narrow-packed-words': 'packed-word-repair-study',
     'm1-narrow-packet-words': 'packed-word-packet-selection',
+    'm1-profiled-register-linear': 'compact-register-weight-study/linear',
+    'm1-profiled-register-sqrt': 'compact-register-weight-study/sqrt',
     'm1-bounded-index-ranges-experimental': 'bounded-index-range-study',
 }
 
@@ -38,6 +40,16 @@ def source_recipe(directory, name):
             raise SystemExit(f'M1 layout profile changed: {path}')
         profiles.append(f'{profile["symbol"]}@{path}')
     return manifest, pinned, ';'.join(profiles)
+
+
+def source_register_weights(manifest, pinned):
+    profiles = []
+    for profile in pinned.get('register_profiles', []):
+        path = manifest.parent / profile['path']
+        if sha256(path.read_bytes()).hexdigest() != profile['sha256']:
+            raise SystemExit(f'M1 register profile changed: {path}')
+        profiles.append(f'{profile["symbol"]}@{path}')
+    return ';'.join(profiles)
 
 
 def load_recorded_runtime(checkout, output, pin):
@@ -81,7 +93,7 @@ parser.add_argument(
         'frame-copies',
         *M1_SOURCE_RECIPES,
     ],
-    default=('m1-narrow-packet-words' if (platform.system(), platform.machine()) == ('Darwin', 'arm64') else 'baseline'),
+    default=('m1-profiled-register-sqrt' if (platform.system(), platform.machine()) == ('Darwin', 'arm64') else 'baseline'),
 )
 parser.add_argument('--mimalloc-object',type=Path,help='optional fixed comparator allocator; also link and check the worker')
 parser.add_argument('--target-dir',type=Path)
@@ -196,6 +208,9 @@ if named:
         del flags[name]
     flags.update(pinned['override_flags'])
     flags['MECH_COMPACT_PHASE_BLOCK_LAYOUT'] = pinned_layout
+    register_weights = source_register_weights(manifest, pinned)
+    if register_weights:
+        flags['MECH_COMPACT_PHASE_REGISTER_WEIGHTS'] = register_weights
 assert not any('LLVM' in key for key in flags)
 source = here / 'program.mec'
 frontend = out / 'frontend'
@@ -268,6 +283,7 @@ if named:
         'manifest': str(manifest.relative_to(here)),
         'manifest_sha256': sha(manifest),
         'profiles': pinned['profiles'],
+        'register_profiles': pinned.get('register_profiles', []),
         'expected_worker_sha256': pinned['worker_sha256'],
     }
     record['source_commit'] = subprocess.check_output(
