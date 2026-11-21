@@ -75,6 +75,8 @@ python3 reproduce.py /tmp/mech-register-compiler/release/compile_profile /tmp/re
 python3 verify.py
 ```
 
+The source feature is also supplied as a zero-context patch relative to `44400df51`; a separate checkout at that base can apply it with `git apply --unidiff-zero compiler-source.patch`.
+
 The recipes reference the repository’s pinned [HF-U32 source](../huffman-sort-replay-study/program-hybrid-u32.mec). No private temporary directory or built encoder input is required by the reproduction commands. All four public normal/checked rebuilds reproduce the exact native object, full metadata and bytecode. The build manifest preserves the exact compiler source snapshot; the committed feature differs from that snapshot only in error-message formatting. Native reproduction checks the emitted artifacts rather than requiring identical host-compiler binaries.
 
 The native gates pass 162 exact outputs/inflations/alias/cleanup observations per candidate, six source-mapped allocation errors, twelve failure/recovery pairs and the stack cap. The existing HF-U32 counter-allocation delta remains the sole resource difference from the original source. All **79 optimized scalar regression tests** pass, preserving the maintained Bool/U64/I64/F64 native paths.
