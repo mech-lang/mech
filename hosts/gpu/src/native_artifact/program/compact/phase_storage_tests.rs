@@ -1,4 +1,7 @@
-use super::{pack_used_input_words, qualify_input_packet_loads, sink_exit_packet_words};
+use super::{
+    pack_used_input_words, qualify_input_packet_loads, qualify_movable_input_packet_loads,
+    sink_exit_packet_words,
+};
 use cranelift_codegen::ir::types::{I32, I64};
 use cranelift_codegen::ir::{AbiParam, Block, Function, Inst, InstBuilder, MemFlags};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
@@ -127,41 +130,192 @@ enum Shape {
 fn input_packet_flags_require_the_complete_nonescaping_load_contract() {
     use cranelift_codegen::ir::InstructionData;
     let module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
-    for shape in [
-        Shape::ExitCopy,
-        Shape::RepeatedCopy,
-        Shape::ExtraUse,
-        Shape::UnusedInput,
-    ] {
+    for movable in [false, true] {
+        for shape in [
+            Shape::ExitCopy,
+            Shape::RepeatedCopy,
+            Shape::ExtraUse,
+            Shape::UnusedInput,
+        ] {
+            let mut context = module.make_context();
+            build(&mut context.func, shape);
+            let expected = if shape == Shape::UnusedInput { 2 } else { 1 };
+            let changed = if movable {
+                qualify_movable_input_packet_loads(&mut context.func, 2)
+            } else {
+                qualify_input_packet_loads(&mut context.func, 2)
+            };
+            assert_eq!(changed, expected);
+            for block in context.func.layout.blocks() {
+                for inst in context.func.layout.block_insts(block) {
+                    if let InstructionData::Load { flags, .. } = context.func.dfg.insts[inst] {
+                        assert!(flags.notrap() && flags.readonly() && flags.aligned());
+                        assert_eq!(flags.can_move(), movable);
+                    }
+                }
+            }
+            context.verify(module.isa()).unwrap();
+        }
+        for shape in [
+            Shape::InputEscape,
+            Shape::InputWrite,
+            Shape::InputOutside,
+            Shape::OtherWidth,
+        ] {
+            let mut context = module.make_context();
+            build(&mut context.func, shape);
+            let before = context.func.display().to_string();
+            assert_eq!(
+                if movable {
+                    qualify_movable_input_packet_loads(&mut context.func, 2)
+                } else {
+                    qualify_input_packet_loads(&mut context.func, 2)
+                },
+                0,
+                "{shape:?}"
+            );
+            assert_eq!(context.func.display().to_string(), before);
+        }
+    }
+}
+
+#[test]
+fn movable_private_packet_keeps_current_words_finite_budget_and_partial_outputs() {
+    type Call = unsafe extern "C" fn(u64, *const u64, *mut u64) -> u64;
+    let mut module = JITModule::new(
+        JITBuilder::with_flags(
+            &[("opt_level", "speed"), ("regalloc_checker", "true")],
+            default_libcall_names(),
+        )
+        .unwrap(),
+    );
+    let mut calls = Vec::new();
+    for movable in [false, true] {
         let mut context = module.make_context();
-        build(&mut context.func, shape);
-        let expected = if shape == Shape::UnusedInput { 2 } else { 1 };
-        assert_eq!(qualify_input_packet_loads(&mut context.func, 2), expected);
-        for block in context.func.layout.blocks() {
-            for inst in context.func.layout.block_insts(block) {
-                if let InstructionData::Load { flags, .. } = context.func.dfg.insts[inst] {
-                    assert!(flags.notrap() && flags.readonly() && flags.aligned());
+        context.func.signature.params = vec![AbiParam::new(I64); 3];
+        context.func.signature.returns = vec![AbiParam::new(I64)];
+        let mut fc = FunctionBuilderContext::new();
+        let mut b = FunctionBuilder::new(&mut context.func, &mut fc);
+        let [entry, reject, init, header, check, body, done, fail] =
+            [(); 8].map(|()| b.create_block());
+        b.append_block_params_for_function_params(entry);
+        let at = b.append_block_param(header, I64);
+        let acc = b.append_block_param(header, I64);
+        b.switch_to_block(entry);
+        let [enabled, input, output] = b.block_params(entry).try_into().unwrap();
+        b.ins().brif(enabled, init, &[], reject, &[]);
+        b.switch_to_block(reject);
+        let status = b.ins().iconst(I64, 7);
+        b.ins().return_(&[status]);
+        b.switch_to_block(init);
+        let initial = b.ins().load(I64, MemFlags::new(), input, 0);
+        let rounds = b.ins().load(I64, MemFlags::new(), input, 16);
+        let rounds = b.ins().band_imm(rounds, 63);
+        let budget = b.ins().load(I64, MemFlags::new(), input, 24);
+        let zero = b.ins().iconst(I64, 0);
+        b.ins().jump(header, &[zero.into(), initial.into()]);
+        b.switch_to_block(header);
+        let finished = b
+            .ins()
+            .icmp(cranelift_codegen::ir::condcodes::IntCC::Equal, at, rounds);
+        b.ins().brif(finished, done, &[], check, &[]);
+        b.switch_to_block(check);
+        let exhausted = b.ins().icmp(
+            cranelift_codegen::ir::condcodes::IntCC::UnsignedGreaterThanOrEqual,
+            at,
+            budget,
+        );
+        b.ins().brif(exhausted, fail, &[], body, &[]);
+        b.switch_to_block(body);
+        let word = b.ins().load(I64, MemFlags::new(), input, 8);
+        let mixed = b.ins().imul_imm(acc, 17);
+        let mixed = b.ins().bxor(mixed, word);
+        let next_acc = b.ins().iadd(mixed, at);
+        b.ins().store(MemFlags::new(), next_acc, output, 0);
+        let next = b.ins().iadd_imm(at, 1);
+        b.ins().jump(header, &[next.into(), next_acc.into()]);
+        for (block, status) in [(done, 0), (fail, 1)] {
+            b.switch_to_block(block);
+            b.ins().store(MemFlags::new(), at, output, 8);
+            b.ins().store(MemFlags::new(), acc, output, 16);
+            let status = b.ins().iconst(I64, status);
+            b.ins().return_(&[status]);
+        }
+        b.seal_all_blocks();
+        b.finalize();
+        if movable {
+            assert_eq!(qualify_movable_input_packet_loads(&mut context.func, 4), 4);
+        }
+        context.verify(module.isa()).unwrap();
+        let name = if movable {
+            "movable_packet"
+        } else {
+            "ordinary_packet"
+        };
+        let id = module
+            .declare_function(name, Linkage::Local, &context.func.signature)
+            .unwrap();
+        module.define_function(id, &mut context).unwrap();
+        calls.push(id);
+    }
+    module.finalize_definitions().unwrap();
+    let calls: Vec<Call> = calls
+        .into_iter()
+        .map(|id| {
+            // The declared ABI has three word arguments and one word result; module stays live.
+            unsafe { core::mem::transmute(module.get_finalized_function(id)) }
+        })
+        .collect();
+    let mut compared = 0;
+    for a in [
+        0u64,
+        1,
+        u32::MAX as u64,
+        u64::MAX,
+        1 << 63,
+        0xabcdef0123456789,
+    ] {
+        for b in [
+            0u64,
+            1,
+            u32::MAX as u64,
+            u64::MAX,
+            1 << 63,
+            0xabcdef0123456789,
+        ] {
+            for rounds in [0u64, 1, 2, 3, 7, 8, 31, 63, 64, 127, u64::MAX] {
+                for budget in [0u64, 1, 2, 7, 16, 63, 64, u64::MAX] {
+                    for enabled in [0u64, 1, 2, u64::MAX] {
+                        let input = [a, b, rounds, budget];
+                        let mut expected = [0xa5a5a5a5a5a5a5a5; 3];
+                        let status = if enabled == 0 {
+                            7
+                        } else {
+                            let mut at = 0u64;
+                            let mut acc = a;
+                            while at != (rounds & 63) && at < budget {
+                                acc = (acc.wrapping_mul(17) ^ b).wrapping_add(at);
+                                expected[0] = acc;
+                                at += 1;
+                            }
+                            expected[1] = at;
+                            expected[2] = acc;
+                            u64::from(at != (rounds & 63))
+                        };
+                        for call in &calls {
+                            let mut observed = [0xa5a5a5a5a5a5a5a5; 3];
+                            // Slots' contract: all input words initialized, immutable and disjoint from outputs.
+                            let got =
+                                unsafe { call(enabled, input.as_ptr(), observed.as_mut_ptr()) };
+                            assert_eq!((got, observed), (status, expected));
+                            compared += 1;
+                        }
+                    }
                 }
             }
         }
-        context.verify(module.isa()).unwrap();
     }
-    for shape in [
-        Shape::InputEscape,
-        Shape::InputWrite,
-        Shape::InputOutside,
-        Shape::OtherWidth,
-    ] {
-        let mut context = module.make_context();
-        build(&mut context.func, shape);
-        let before = context.func.display().to_string();
-        assert_eq!(
-            qualify_input_packet_loads(&mut context.func, 2),
-            0,
-            "{shape:?}"
-        );
-        assert_eq!(context.func.display().to_string(), before);
-    }
+    eprintln!("movable private packet differential native calls: {compared}");
 }
 
 fn build(function: &mut Function, shape: Shape) -> (Inst, Inst, Block) {

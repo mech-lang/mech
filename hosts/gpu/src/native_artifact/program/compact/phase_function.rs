@@ -1037,15 +1037,25 @@ fn prepare_impl<M: Module>(
                 },
             ) {
                 let name = format!("{symbol}_grouped");
+                phase_layout::apply_register_weights(&mut grouped, &name).map_err(backend)?;
                 let grouped_id = module
                     .declare_function(&name, Linkage::Local, &signature)
                     .map_err(backend)?;
                 grouped.verify(module.isa()).map_err(backend)?;
                 let inspection = std::env::var_os("MECH_INSPECT_PHASE_CLIF")
+                    .or_else(|| std::env::var_os("MECH_INSPECT_PHASE_REGISTER_PROFILE"))
                     .map(std::path::PathBuf::from)
                     .filter(|path| path.file_stem().is_some_and(|stem| stem == name.as_str()));
                 if let Some(path) = &inspection {
-                    std::fs::write(path, grouped.func.display().to_string()).map_err(backend)?;
+                    let clif = if path
+                        .extension()
+                        .is_some_and(|extension| extension == "vcode")
+                    {
+                        path.with_extension("clif")
+                    } else {
+                        path.clone()
+                    };
+                    std::fs::write(clif, grouped.func.display().to_string()).map_err(backend)?;
                     grouped.set_disasm(true);
                 }
                 let (grouped_id, target) = define_body(
@@ -1341,11 +1351,21 @@ fn prepare_impl<M: Module>(
                     }
                     phase_layout::apply(&mut candidate, &name).map_err(backend)?;
                 }
+                phase_layout::apply_register_weights(&mut candidate, &name).map_err(backend)?;
                 let inspect_path = std::env::var_os("MECH_INSPECT_PHASE_CLIF")
+                    .or_else(|| std::env::var_os("MECH_INSPECT_PHASE_REGISTER_PROFILE"))
                     .map(std::path::PathBuf::from)
                     .filter(|path| path.file_stem().is_some_and(|stem| stem == name.as_str()));
                 if let Some(path) = &inspect_path {
-                    std::fs::write(path, candidate.func.display().to_string()).map_err(backend)?;
+                    let clif = if path
+                        .extension()
+                        .is_some_and(|extension| extension == "vcode")
+                    {
+                        path.with_extension("clif")
+                    } else {
+                        path.clone()
+                    };
+                    std::fs::write(clif, candidate.func.display().to_string()).map_err(backend)?;
                     candidate.set_disasm(true);
                 }
                 let (id, target) =
@@ -2074,14 +2094,19 @@ fn optimize_phase(
     no_growth: Option<&NoGrowth>,
     report_diagnostics: bool,
 ) -> Result<PhaseCleanup, NativeCompileError> {
-    if std::env::var_os("MECH_QUALIFY_PHASE_INPUT_PACKET").is_some_and(|selection| {
-        // An exact phase list permits held-feature experiments without changing
-        // the existing all-phase option or the input packet's proof contract.
-        selection
-            .to_str()
-            .and_then(|value| value.strip_prefix("only:"))
-            .is_none_or(|symbols| symbols.split(',').any(|selected| selected == symbol))
-    }) {
+    let selected = |option| {
+        std::env::var_os(option).is_some_and(|selection| {
+            // An exact phase list permits held-feature experiments without changing
+            // the existing all-phase option or the input packet's proof contract.
+            selection
+                .to_str()
+                .and_then(|value| value.strip_prefix("only:"))
+                .is_none_or(|symbols| symbols.split(',').any(|selected| selected == symbol))
+        })
+    };
+    if selected("MECH_MOVE_PHASE_INPUT_PACKET") {
+        super::phase_storage::qualify_movable_input_packet_loads(&mut context.func, input_words);
+    } else if selected("MECH_QUALIFY_PHASE_INPUT_PACKET") {
         super::phase_storage::qualify_input_packet_loads(&mut context.func, input_words);
     }
     // Numeric phases have their own sealed SSA; never match through packets.
