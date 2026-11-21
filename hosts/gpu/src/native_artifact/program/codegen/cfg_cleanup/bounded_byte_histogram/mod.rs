@@ -1,8 +1,9 @@
 //! Hoist four bounds checks out of a fixed byte-indexed histogram loop.
 //! The caller retains the unique-owner/current-view admission. A fresh entry
 //! guard proves the entire source span and 256-bin extent; a proof miss leaves
-//! the original graph unchanged. Counter overflow remains checked per visit.
-use super::composed_reads::{View, between, defaulted_read, definition, packet_word};
+//! the original graph unchanged. An optional counter-capacity admission also
+//! proves that every existing bin can accept the entire remaining input span.
+use super::composed_reads::{View, between, defaulted_read, definition, packet_word, scalar};
 use super::window_bounds::{comparison, sole_predecessor};
 use super::word_ranges::{constant_offset, literal};
 use cranelift_codegen::Context;
@@ -126,13 +127,22 @@ pub(super) fn fixed_word(
     let (_, &(inst, _)) = found.next()?;
     (found.next().is_none() && f.layout.inst_block(inst) == Some(entry)).then_some(word)
 }
+struct Histogram {
+    admission: Admission,
+    bounds: [Inst; 4],
+    increment: Inst,
+    updated: Value,
+    index: Value,
+    bins: View,
+}
+
 fn prove(
     ctx: &Context,
     header: Block,
     loads: &BTreeMap<Value, (Inst, usize)>,
     input: &[View],
     bins: &[View],
-) -> Option<(Admission, Vec<Inst>)> {
+) -> Option<Histogram> {
     let f = &ctx.func;
     let cfg = &ctx.cfg;
     if f.layout.blocks().count() > 512
@@ -274,16 +284,142 @@ fn prove(
     {
         return None;
     }
-    Some((
-        Admission {
+    Some(Histogram {
+        admission: Admission {
             input_word: read.view.pointer_word,
             bin_word: count.view.pointer_word,
             begin_word,
             end_word,
             cursor_word,
         },
-        vec![addition, read_branch, bin_branch, write_branch],
-    ))
+        bounds: [addition, read_branch, bin_branch, write_branch],
+        increment,
+        updated,
+        index: read.result,
+        bins: count.view,
+    })
+}
+
+// The entry capacity bound is valid only if source work cannot change a bin
+// before the loop, and each visit writes exactly its checked count + 1 once.
+// The earlier recognition already admits only scalar setup and the two typed
+// defaulting reads before this selected write arm.
+fn counter_capacity(
+    ctx: &Context,
+    header: Block,
+    loads: &BTreeMap<Value, (Inst, usize)>,
+    histogram: &Histogram,
+) -> Option<()> {
+    let f = &ctx.func;
+    let cfg = &ctx.cfg;
+    let mut at = f.layout.entry_block()?;
+    let mut visited = BTreeSet::new();
+    while at != header {
+        if !visited.insert(at) {
+            return None;
+        }
+        let last = f.layout.last_inst(at)?;
+        for inst in f.layout.block_insts(at).take_while(|&i| i != last) {
+            if !scalar(f.dfg.insts[inst].opcode()) && !loads.values().any(|&(load, _)| load == inst)
+            {
+                return None;
+            }
+        }
+        let Data::Jump { destination, .. } = f.dfg.insts[last] else {
+            return None;
+        };
+        at = destination.block(&f.dfg.value_lists);
+    }
+
+    let matches_address = |address| {
+        let Some((
+            _,
+            Data::Binary {
+                opcode: Opcode::Iadd,
+                args,
+            },
+        )) = definition(f, address)
+        else {
+            return false;
+        };
+        let scaled = |pointer, bytes| {
+            if packet_word(f, cfg, loads, pointer) != Some(histogram.bins.pointer_word) {
+                return false;
+            }
+            match definition(f, bytes) {
+                Some((
+                    _,
+                    Data::BinaryImm64 {
+                        opcode: Opcode::ImulImm,
+                        arg,
+                        imm,
+                    },
+                )) if imm.bits() == 4 => same(f, arg, histogram.index),
+                Some((
+                    _,
+                    Data::BinaryImm64 {
+                        opcode: Opcode::IshlImm,
+                        arg,
+                        imm,
+                    },
+                )) if imm.bits() == 2 => same(f, arg, histogram.index),
+                _ => false,
+            }
+        };
+        scaled(args[0], args[1]) || scaled(args[1], args[0])
+    };
+    at = next(f, cfg, histogram.bounds[3], 0)?;
+    visited.clear();
+    let mut stores = 0;
+    loop {
+        if !visited.insert(at) {
+            return None;
+        }
+        let last = f.layout.last_inst(at)?;
+        for inst in f.layout.block_insts(at).take_while(|&i| i != last) {
+            match f.dfg.insts[inst] {
+                Data::Store {
+                    args: [value, address],
+                    offset,
+                    flags,
+                    ..
+                } if i32::from(offset) == 0
+                    && flags.endianness(Endianness::Little) == Endianness::Little
+                    && f.dfg.value_type(value) == types::I32
+                    && matches_address(address)
+                    && matches!(definition(f, value), Some((_, Data::Unary {
+                            opcode: Opcode::Ireduce, arg,
+                        })) if f.dfg.resolve_aliases(arg) == f.dfg.resolve_aliases(histogram.updated)) =>
+                {
+                    stores += 1;
+                }
+                data if scalar(data.opcode()) => {}
+                _ => return None,
+            }
+        }
+        let Data::Jump { destination, .. } = f.dfg.insts[last] else {
+            return None;
+        };
+        let target = destination.block(&f.dfg.value_lists);
+        if target == header {
+            return (stores == 1).then_some(());
+        }
+        if sole_predecessor(cfg, target)?.1 != last {
+            return None;
+        }
+        at = target;
+    }
+}
+
+fn remove_checks(ctx: &mut Context, checks: impl IntoIterator<Item = Inst>) {
+    for inst in checks {
+        let call = branch(&ctx.func, inst).expect("recognized histogram check")[0];
+        let target = call.block(&ctx.func.dfg.value_lists);
+        let args = call.args(&ctx.func.dfg.value_lists).collect::<Vec<_>>();
+        ctx.func.dfg.replace(inst).jump(target, &args);
+    }
+    ctx.compute_cfg();
+    ctx.compute_domtree();
 }
 
 pub(in crate::native_artifact) fn optimize(
@@ -295,16 +431,27 @@ pub(in crate::native_artifact) fn optimize(
 ) -> Option<Admission> {
     ctx.compute_cfg();
     ctx.compute_domtree();
-    let (admission, branches) = prove(ctx, header, loads, input, bins)?;
-    for inst in branches {
-        let call = branch(&ctx.func, inst)?[0];
-        let target = call.block(&ctx.func.dfg.value_lists);
-        let args = call.args(&ctx.func.dfg.value_lists).collect::<Vec<_>>();
-        ctx.func.dfg.replace(inst).jump(target, &args);
-    }
+    let histogram = prove(ctx, header, loads, input, bins)?;
+    remove_checks(ctx, histogram.bounds);
+    Some(histogram.admission)
+}
+
+pub(in crate::native_artifact) fn optimize_counter_capacity(
+    ctx: &mut Context,
+    header: Block,
+    loads: &BTreeMap<Value, (Inst, usize)>,
+    input: &[View],
+    bins: &[View],
+) -> Option<Admission> {
     ctx.compute_cfg();
     ctx.compute_domtree();
-    Some(admission)
+    let histogram = prove(ctx, header, loads, input, bins)?;
+    counter_capacity(ctx, header, loads, &histogram)?;
+    remove_checks(
+        ctx,
+        histogram.bounds.into_iter().chain([histogram.increment]),
+    );
+    Some(histogram.admission)
 }
 fn block(f: &mut Function) -> Block {
     let b = f.dfg.make_block();
@@ -316,6 +463,18 @@ fn block(f: &mut Function) -> Block {
 // Source initialization is not assumed: overflowing existing counts still fail
 // at the original checked increment in the specialized function.
 pub(in crate::native_artifact) fn guard_entry(ctx: &mut Context, a: Admission, fast: FuncRef) {
+    guard(ctx, a, fast, false);
+}
+
+pub(in crate::native_artifact) fn guard_counter_capacity(
+    ctx: &mut Context,
+    a: Admission,
+    fast: FuncRef,
+) {
+    guard(ctx, a, fast, true);
+}
+
+fn guard(ctx: &mut Context, a: Admission, fast: FuncRef, counters: bool) {
     let f = &mut ctx.func;
     let original = f.layout.entry_block().expect("numeric entry");
     let entry = f.dfg.make_block();
@@ -347,11 +506,50 @@ pub(in crate::native_artifact) fn guard_entry(ctx: &mut Context, a: Admission, f
     let histogram = c
         .ins()
         .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, bins, 256);
-    let a = c.ins().band(start, span);
-    let b = c.ins().band(cursor, histogram);
-    let admitted = c.ins().band(a, b);
-    c.ins()
-        .brif(admitted, ready, &[], original, &inputs.map(Into::into));
+    let left = c.ins().band(start, span);
+    let right = c.ins().band(cursor, histogram);
+    let admitted = c.ins().band(left, right);
+    if counters {
+        // The span is end - cursor, not end - begin: begin is an input offset.
+        // Bounds admission precedes all extra reads. Empty loops need no scan.
+        let work = c.ins().isub(end, at);
+        let fits = c
+            .ins()
+            .icmp_imm(IntCC::UnsignedLessThanOrEqual, work, u32::MAX as i64);
+        let admitted = c.ins().band(admitted, fits);
+        let check = block(c.func);
+        let scan = block(c.func);
+        let step = block(c.func);
+        let index = c.func.dfg.append_block_param(scan, types::I64);
+        c.ins()
+            .brif(admitted, check, &[], original, &inputs.map(Into::into));
+        c.goto_bottom(check);
+        let pointer = c.ins().load(
+            types::I64,
+            MemFlags::new(),
+            packet,
+            i32::try_from(a.bin_word * 8).expect("admitted bin packet word"),
+        );
+        let maximum = c.ins().iconst(types::I64, u32::MAX as i64);
+        let limit = c.ins().isub(maximum, work);
+        let zero = c.ins().iconst(types::I64, 0);
+        let empty = c.ins().icmp_imm(IntCC::Equal, work, 0);
+        c.ins().brif(empty, ready, &[], scan, &[zero.into()]);
+        c.goto_bottom(scan);
+        let offset = c.ins().ishl_imm(index, 2);
+        let address = c.ins().iadd(pointer, offset);
+        let count = c.ins().uload32(MemFlags::new(), address, 0);
+        let safe = c.ins().icmp(IntCC::UnsignedLessThanOrEqual, count, limit);
+        let next = c.ins().iadd_imm(index, 1);
+        c.ins()
+            .brif(safe, step, &[], original, &inputs.map(Into::into));
+        c.goto_bottom(step);
+        let complete = c.ins().icmp_imm(IntCC::Equal, next, 256);
+        c.ins().brif(complete, ready, &[], scan, &[next.into()]);
+    } else {
+        c.ins()
+            .brif(admitted, ready, &[], original, &inputs.map(Into::into));
+    }
     c.goto_bottom(ready);
     let call = c.ins().call(fast, &inputs);
     let results = c.func.dfg.inst_results(call).to_vec();
