@@ -143,7 +143,12 @@ fn add_offset(function: &Function, value: Value) -> Option<(Value, u64)> {
     }
 }
 
-fn rule(function: &Function, incoming: &BTreeMap<Value, Vec<Value>>, value: Value) -> Rule {
+fn rule(
+    function: &Function,
+    incoming: &BTreeMap<Value, Vec<Value>>,
+    value: Value,
+    selected: bool,
+) -> Rule {
     let Some(width) = bits(function, value) else {
         return Rule::Fixed(64);
     };
@@ -206,8 +211,17 @@ fn rule(function: &Function, incoming: &BTreeMap<Value, Vec<Value>>, value: Valu
         } => Rule::Max(args.map(alias).into()),
         Data::Ternary {
             opcode: Opcode::Select,
-            args: [_, yes, no],
-        } => Rule::Max(vec![alias(yes), alias(no)]),
+            args: [condition, yes, no],
+        } => {
+            if selected
+                && super::selected_values::unsigned_minimum(function, condition, yes, no)
+                    == Some(true)
+            {
+                Rule::Min([alias(yes), alias(no)])
+            } else {
+                Rule::Max(vec![alias(yes), alias(no)])
+            }
+        }
         Data::Binary {
             opcode: op @ (Opcode::Ishl | Opcode::Ushr),
             args: [arg, amount],
@@ -259,6 +273,7 @@ fn infer(
     function: &Function,
     cfg: &ControlFlowGraph,
     roots: impl Iterator<Item = Value>,
+    selected: bool,
 ) -> BTreeMap<Value, u32> {
     let incoming = boolean_words::inputs(function, cfg);
     let mut nodes = Vec::new();
@@ -268,7 +283,7 @@ fn infer(
     }
     let mut index = 0;
     while index < nodes.len() {
-        let transfer = rule(function, &incoming, nodes[index].value);
+        let transfer = rule(function, &incoming, nodes[index].value, selected);
         for &source in transfer.sources() {
             let source = intern(source, &mut nodes, &mut indices);
             nodes[source].users.push(index);
@@ -404,6 +419,23 @@ fn current_length_guards(
 }
 
 pub(super) fn fold(function: &mut Function, cfg: &ControlFlowGraph, dom: &DominatorTree) -> usize {
+    fold_inner(function, cfg, dom, false)
+}
+
+pub(super) fn fold_selected(
+    function: &mut Function,
+    cfg: &ControlFlowGraph,
+    dom: &DominatorTree,
+) -> usize {
+    fold_inner(function, cfg, dom, true)
+}
+
+fn fold_inner(
+    function: &mut Function,
+    cfg: &ControlFlowGraph,
+    dom: &DominatorTree,
+    selected: bool,
+) -> usize {
     if function.layout.blocks().any(|block| {
         function
             .layout
@@ -428,7 +460,12 @@ pub(super) fn fold(function: &mut Function, cfg: &ControlFlowGraph, dom: &Domina
     if guards.is_empty() {
         return 0;
     }
-    let widths = infer(function, cfg, guards.iter().map(|(_, word, _, _)| *word));
+    let widths = infer(
+        function,
+        cfg,
+        guards.iter().map(|(_, word, _, _)| *word),
+        selected,
+    );
     let mut removed = 0;
     for (inst, word, width, target) in guards {
         if widths[&word] > width {

@@ -1644,6 +1644,15 @@ fn prepare_impl<M: Module>(
                 context.verify(module.isa()).map_err(backend)?;
             }
             eprintln!("{symbol} late scalar choices folded: {selected}");
+            if selected != 0
+                && std::env::var_os("MECH_COMPACT_REFINE_SELECTED_VALUES")
+                    .is_some_and(|target| target == "all" || target == symbol.as_str())
+            {
+                let ranges = cfg_cleanup::fold_selected_value_ranges(
+                    &controls, &mut context, module.isa(),
+                )?;
+                eprintln!("{symbol} selected value guards folded: {ranges}");
+            }
         }
     }
     let packed_input = if pack_input {

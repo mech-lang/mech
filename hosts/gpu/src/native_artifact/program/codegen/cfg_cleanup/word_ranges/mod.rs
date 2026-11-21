@@ -107,6 +107,7 @@ pub(super) struct Facts<'a> {
     bound_values: bool,
     bitwise_constants: bool,
     bitwise_ranges: bool,
+    select_ranges: bool,
     cfg: Option<&'a ControlFlowGraph>,
 }
 impl<'a> Facts<'a> {
@@ -119,6 +120,7 @@ impl<'a> Facts<'a> {
             bound_values: false,
             bitwise_constants: false,
             bitwise_ranges: false,
+            select_ranges: false,
         }
     }
 
@@ -138,6 +140,7 @@ impl<'a> Facts<'a> {
             bound_values: false,
             bitwise_constants: false,
             bitwise_ranges: false,
+            select_ranges: false,
         }
     }
 
@@ -162,6 +165,7 @@ impl<'a> Facts<'a> {
             bound_values: false,
             bitwise_constants: true,
             bitwise_ranges: false,
+            select_ranges: false,
         }
     }
 
@@ -171,6 +175,11 @@ impl<'a> Facts<'a> {
             bitwise_ranges: true,
             ..Self::across_edges(function, cfg, None)
         }
+    }
+
+    pub(super) fn with_select_ranges(mut self) -> Self {
+        self.select_ranges = true;
+        self
     }
 
     pub fn condition(&mut self, value: Value) -> Option<bool> {
@@ -278,6 +287,25 @@ impl<'a> Facts<'a> {
             _ => return None,
         };
         match self.function.dfg.insts[inst] {
+            Data::Ternary {
+                opcode: Op::Select,
+                args: [condition, yes, no],
+            } if self.select_ranges => {
+                let a = self.range(yes, depth)?;
+                let b = self.range(no, depth)?;
+                Some(
+                    match super::selected_values::unsigned_minimum(
+                        self.function,
+                        condition,
+                        yes,
+                        no,
+                    ) {
+                        Some(true) => Range(a.0.min(b.0), a.1.min(b.1)),
+                        Some(false) => Range(a.0.max(b.0), a.1.max(b.1)),
+                        None => Range(a.0.min(b.0), a.1.max(b.1)),
+                    },
+                )
+            }
             Data::Load { opcode, .. } if self.cfg.is_some() => {
                 let width = match opcode {
                     Op::Uload8 => 8,
