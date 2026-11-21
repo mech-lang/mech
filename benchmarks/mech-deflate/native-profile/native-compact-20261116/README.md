@@ -1,10 +1,10 @@
 # Native compact compiler review handoff
 
-The selected M1 recipe is **`m1-immutable-current-reads`**: **63,532 B**, saving **160 B**, with **81/81 Roc and 62/81 libdeflate wins in both complete orders**, including all configured precision support and every paired control win. Original Mech source and canonical bytecode are unchanged. Final compiler source is `2cd17fca3c9d58a5804a18c904fe1daf65598b78`; no LLVM dependency is added.
+The current selected M1 recipe is **`m1-argument-all-sqrt`**, **64,412 B**, with every named **81/81 Roc and 63/81 libdeflate** win retained in both complete orders. The compact **63,372-B** alternative is also qualified. The original Mech source and canonical bytecode remain unchanged.
 
-The latest matched source-through-final-link build is **2.208667 s**: **0.741248× Roc / 4.602361× C**. The final compiler/configuration costs a paired **3.360 ms** versus the earlier compiler generating the same qualified encoder. The pass-isolation study found no established compilation-time change. Thirteen runtime case slowdowns above 0.5% and fifteen uncertain comparisons are reported; no peer win is lost. The complete stripped executable remains **276,072 B**. [Source, both full orders, all alternatives, profiles and complete builds](evidence/encoder-size-gap/immutable-current-read-study/README.md).
+Random 1 MiB takes **23.68–23.69 ms versus 20.34–20.35 ms C**, or **1.164–1.165× C**. We still need about **14.1% less Mech time** for parity on that test. The selected complete source-through-link build is **2.200294 s**, **0.735180× Roc /4.521701× C**.
 
-Use [CURRENT.md](CURRENT.md) for current identities, timings and tradeoffs; earlier measurements below are historical evidence.
+Use [CURRENT.md](CURRENT.md) for current identities, timings and tradeoffs, and [the complete elapsed-time table](evidence/argument-jump-forwarding/PARITY.md) for all 81 cases. Earlier measurements below are historical evidence.
 
 This PR contains compiler and parser source, a pinned Mech program, native build
 configuration, measured runtime source, and raw benchmark evidence. It targets #993, which is stacked on #973.
