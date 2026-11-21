@@ -20,6 +20,7 @@ fn fixture(
     let mut fc = FunctionBuilderContext::new();
     let mut b = FunctionBuilder::new(&mut ctx.func, &mut fc);
     let entry = b.create_block();
+    let restart = (mode == 11).then(|| b.create_block());
     let header = b.create_block();
     let body = b.create_block();
     let input_check = b.create_block();
@@ -56,6 +57,10 @@ fn fixture(
     if mode == 5 {
         let changed = b.ins().iconst(types::I32, 7);
         b.ins().store(MemFlags::new(), changed, bins, 0);
+    }
+    if let Some(restart) = restart {
+        b.ins().jump(restart, &[]);
+        b.switch_to_block(restart);
     }
     b.ins().jump(header, &[initial.into()]);
     b.switch_to_block(header);
@@ -131,7 +136,14 @@ fn fixture(
     b.ins().jump(header, &[next.into()]);
     b.switch_to_block(done);
     let zero = b.ins().iconst(types::I64, 0);
-    b.ins().return_(&[zero]);
+    if mode == 10 {
+        let next = b.ins().iadd_imm(at, 1);
+        b.ins().jump(header, &[next.into()]);
+    } else if let Some(restart) = restart {
+        b.ins().jump(restart, &[]);
+    } else {
+        b.ins().return_(&[zero]);
+    }
     for (i, block) in errors.into_iter().enumerate() {
         b.switch_to_block(block);
         let origin = b.ins().iconst(types::I64, 100 + i as i64);
@@ -355,7 +367,7 @@ fn histogram_counter_capacity_preserves_seeded_failure_prefixes_and_aliases() {
 #[test]
 fn histogram_counter_capacity_declines_mutations_extra_stores_and_calls() {
     let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
-    for mode in 1..=9 {
+    for mode in 1..=11 {
         let (mut ctx, header, loads, input, bins) = fixture(&module, mode);
         let before = ctx.func.display().to_string();
         assert!(
