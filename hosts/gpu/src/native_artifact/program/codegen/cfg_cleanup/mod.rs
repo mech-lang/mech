@@ -32,6 +32,7 @@ pub(in crate::native_artifact) mod selected_continuations;
 mod selected_homes;
 mod selected_increments;
 mod selected_ranges;
+mod selected_values;
 pub(in crate::native_artifact) mod shared_clamp;
 mod threaded_edges;
 mod unsigned_intervals;
@@ -801,6 +802,33 @@ pub(in crate::native_artifact) fn fold_proved_widths(
     context.compute_cfg();
     context.compute_domtree();
     let removed = known_widths::fold(&mut context.func, &context.cfg, &context.domtree);
+    if removed != 0 {
+        optimize_ordered(controls, context, isa, true)?;
+        context.func.dfg.resolve_all_aliases();
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(removed)
+}
+
+pub(in crate::native_artifact) fn fold_selected_value_ranges(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<usize, NativeCompileError> {
+    if !controls.enabled(OptimizationPass::CfgCleanup)
+        || !controls.enabled(OptimizationPass::ProvedWordWidths)
+    {
+        return Ok(0);
+    }
+    context.compute_cfg();
+    context.compute_domtree();
+    let ranges = selected_values::fold(&mut context.func, &context.cfg, &context.domtree);
+    if ranges != 0 {
+        context.compute_cfg();
+        context.compute_domtree();
+    }
+    let widths = known_widths::fold_selected(&mut context.func, &context.cfg, &context.domtree);
+    let removed = ranges + widths;
     if removed != 0 {
         optimize_ordered(controls, context, isa, true)?;
         context.func.dfg.resolve_all_aliases();
