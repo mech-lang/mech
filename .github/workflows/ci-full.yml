@@ -427,7 +427,7 @@ jobs:
         run: |
           cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --lib -- \
             type_system::resolved_value:: --list | tee canonical-shape-witness-tests.txt
-          test "$(rg -c ': test$' canonical-shape-witness-tests.txt)" -eq 10
+          test "$(rg -c ': test$' canonical-shape-witness-tests.txt)" -eq 12
           cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --lib -- \
             type_system::resolved_value:: --test-threads=1
       - name: Execute the retained release-mode memory safety boundary

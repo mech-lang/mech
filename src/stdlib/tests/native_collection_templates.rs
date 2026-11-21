@@ -947,8 +947,10 @@ fn original_and_decoded_collection_templates_retain_actual_schemas_and_selected_
         NativeCollectionPrimitive::StringHistogram,
         NativeCollectionPrimitive::StringMapKeys,
         NativeCollectionPrimitive::StringMapValues,
+        NativeCollectionPrimitive::CompositePack(3),
     ];
-    for artifact in artifacts(SOURCE) {
+    let source = format!("{SOURCE}more := size + 1u64\n");
+    for artifact in artifacts(&source) {
         let operations = operations(&artifact);
         for primitive in expected {
             let (node, _) = operations
@@ -993,8 +995,8 @@ fn original_and_decoded_collection_templates_retain_actual_schemas_and_selected_
         assert!(
             matches!(native_collection_operation_template(&artifact, invalid, &catalog), Err(NativeArtifactLoweringError::InvalidBinding { node: Some(node) }) if node == invalid)
         );
-        // A local library proof cannot silently cover the enclosing aggregate
-        // constructor or claim the complete program is executable natively.
+        // A local library proof cannot silently cover scalar arithmetic or
+        // claim the complete program is executable natively.
         let (other, _) = operations
             .iter()
             .find(|(_, name)| !expected.iter().any(|primitive| primitive.name() == name))
@@ -1089,7 +1091,10 @@ fn actual_collection_calls_bind_native_host_handles_and_explicit_finite_policy()
                 .is_err()
             );
         }
-        assert_eq!(bound, 7, "all seven actual maintained leaves must bind");
+        assert_eq!(
+            bound, 8,
+            "all seven collection leaves and the tuple constructor must bind"
+        );
     }
 }
 

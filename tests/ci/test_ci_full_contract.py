@@ -293,6 +293,18 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn(f'" -eq {len(names)}', step)
         self.assertIn("--test-threads=1", step)
 
+    def test_shape_witness_selection_tracks_every_declared_regression(self):
+        step = next(step for step in job_steps(FULL, "managed-memory-runtime")
+                    if "Inventory and execute canonical shape witness contracts" in step)
+        sources = [ROOT / "src/core/src/type_system" / name for name in (
+            "resolved_value_witness_tests.rs", "resolved_value_storage_tests.rs",
+        )]
+        names = [name for path in sources for name in
+                 re.findall(r"#\[test\]\s*fn\s+(\w+)\s*\(", path.read_text())]
+        self.assertTrue(names)
+        self.assertIn(f'" -eq {len(names)}', step)
+        self.assertIn("type_system::resolved_value:: --test-threads=1", step)
+
     def test_generated_mixed_program_execution_and_runtime_only_profile_are_selected(self):
         contracts = next(step for step in job_steps(FULL, "canonical-applications")
                          if "Execute canonical native lowering and selected implementation witnesses" in step)
