@@ -4,6 +4,7 @@
 //! later loop visit's values. Backedges, cycles and exhausted proofs decline.
 use cranelift_codegen::dominator_tree::DominatorTree;
 use cranelift_codegen::flowgraph::ControlFlowGraph;
+use cranelift_codegen::ir::condcodes::CondCode;
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{
     Block, Function, Inst, InstBuilder, InstructionData as D, Opcode as O, Value, ValueDef, types,
@@ -121,8 +122,10 @@ fn strict_bounds(
     f: &Function,
     cfg: &ControlFlowGraph,
     budget: &mut Budget,
+    bounded_ranges: bool,
 ) -> Option<Vec<StrictBound>> {
     let mut facts = Vec::new();
+    let mut ranges = super::word_ranges::Facts::across_edges(f, cfg, None);
     for block in f.layout.blocks() {
         budget.spend(1)?;
         let Some(inst) = f.layout.last_inst(block) else {
@@ -140,33 +143,68 @@ fn strict_bounds(
         if selected.mask & 1 == 0 {
             continue;
         }
-        let Some(D::IntCompare { cond, args, .. }) = definition(f, selected.atom) else {
-            continue;
-        };
-        if args.iter().any(|&v| f.dfg.value_type(v) != types::I64) {
-            continue;
-        }
-        let (ordinal, value) = match *cond {
-            IntCC::UnsignedLessThan => (0, args[0]),
-            IntCC::UnsignedGreaterThan => (0, args[1]),
-            IntCC::UnsignedGreaterThanOrEqual => (1, args[0]),
-            IntCC::UnsignedLessThanOrEqual => (1, args[1]),
+        let (cond, words, below_max) = match definition(f, selected.atom) {
+            Some(D::IntCompare { cond, args, .. })
+                if args.iter().all(|&v| f.dfg.value_type(v) == types::I64) =>
+            {
+                (
+                    *cond,
+                    args.map(Some),
+                    args.map(|v| {
+                        bounded_ranges && ranges.value_range(v).is_some_and(|r| r.1 < u64::MAX)
+                    }),
+                )
+            }
+            Some(D::IntCompareImm { cond, arg, imm, .. })
+                if bounded_ranges && f.dfg.value_type(*arg) == types::I64 =>
+            {
+                (
+                    *cond,
+                    [Some(*arg), None],
+                    [
+                        ranges.value_range(*arg).is_some_and(|r| r.1 < u64::MAX),
+                        imm.bits() as u64 != u64::MAX,
+                    ],
+                )
+            }
             _ => continue,
         };
-        let at = blocks[ordinal].block(&f.dfg.value_lists);
-        if Some(at) == f.layout.entry_block()
-            || blocks[0].block(&f.dfg.value_lists) == blocks[1].block(&f.dfg.value_lists)
-        {
+        if blocks[0].block(&f.dfg.value_lists) == blocks[1].block(&f.dfg.value_lists) {
             continue;
         }
-        let mut preds = cfg.pred_iter(at);
-        if preds.next().is_none() || preds.next().is_some() {
-            continue;
+        for ordinal in 0..2 {
+            if bounded_ranges {
+                budget.spend(1)?;
+            }
+            let selected = if ordinal == 0 {
+                cond
+            } else {
+                cond.complement()
+            };
+            // x <= y proves a safe +1 only if y itself cannot be MAX.
+            // These are static immutable-word bounds; no later loop visit's
+            // selected facts or memory permissions enter the proof.
+            let value = match selected {
+                IntCC::UnsignedLessThan => words[0],
+                IntCC::UnsignedGreaterThan => words[1],
+                IntCC::UnsignedLessThanOrEqual if below_max[1] => words[0],
+                IntCC::UnsignedGreaterThanOrEqual if below_max[0] => words[1],
+                _ => None,
+            };
+            let Some(value) = value else { continue };
+            let at = blocks[ordinal].block(&f.dfg.value_lists);
+            if Some(at) == f.layout.entry_block() {
+                continue;
+            }
+            let mut preds = cfg.pred_iter(at);
+            if preds.next().is_none() || preds.next().is_some() {
+                continue;
+            }
+            facts.push(StrictBound {
+                at,
+                value: f.dfg.resolve_aliases(value),
+            });
         }
-        facts.push(StrictBound {
-            at,
-            value: f.dfg.resolve_aliases(value),
-        });
     }
     Some(facts)
 }
@@ -342,13 +380,20 @@ impl Proof<'_> {
 }
 
 pub(super) fn optimize(f: &mut Function, cfg: &ControlFlowGraph, dom: &DominatorTree) -> usize {
-    optimize_bounded(f, cfg, dom, MAX_STEPS)
+    optimize_bounded(
+        f,
+        cfg,
+        dom,
+        MAX_STEPS,
+        std::env::var_os("MECH_PROVE_BOUNDED_UNSIGNED_INCREMENTS").is_some(),
+    )
 }
 fn optimize_bounded(
     f: &mut Function,
     cfg: &ControlFlowGraph,
     dom: &DominatorTree,
     steps: usize,
+    bounded_ranges: bool,
 ) -> usize {
     let mut budget = Budget(steps);
     for (n, block) in f.layout.blocks().enumerate() {
@@ -361,7 +406,7 @@ fn optimize_bounded(
             }
         }
     }
-    let Some(facts) = strict_bounds(f, cfg, &mut budget) else {
+    let Some(facts) = strict_bounds(f, cfg, &mut budget, bounded_ranges) else {
         return 0;
     };
     let mut changes = Vec::<(Inst, Block, Vec<_>)>::new();
