@@ -114,7 +114,8 @@ jobs:
     needs: impact
     if: needs.impact.outputs.static_contracts_required == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    # Include cold checkout, tool installation and cleanup in the job budget.
+    timeout-minutes: 15
     env:
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_TEST_DEBUG: "0"
