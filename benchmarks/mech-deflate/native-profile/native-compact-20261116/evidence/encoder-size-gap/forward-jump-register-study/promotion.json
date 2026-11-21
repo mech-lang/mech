@@ -1,0 +1,24 @@
+{
+  "selected_default_changed": true,
+  "previous_recipe": "m1-profiled-register-sqrt",
+  "previous_text_bytes": 63612,
+  "recipe": "m1-forwarded-register-linear",
+  "text_bytes": 63516,
+  "saved_text_bytes": 96,
+  "artifacts": {
+    "program.o": "b743fb2ee18cf48ab11295656b72516eb3e34190b9b8959694025c15c92c7dcc",
+    "metadata.json": "2c43c57c11c425ed3ab4af66f1791317f8b57fc11c9984c27f821172f3902310",
+    "program.mecb": "c6529d934f020f07f8e59f13fab40927e066649e202269818ad3f009a942a8c3"
+  },
+  "worker_sha256": "a8393c20a2f07a8fa7bfd339ada4252c774b9c3a91ef044d06fbb7570f1a6df8",
+  "source_sha256": "653597f08f889908c48610e90aa65e94a77847fb34500d0cc3a046f83cd3d299",
+  "bytecode_unchanged": true,
+  "all_required_named_wins_preserved": true,
+  "confidence_assessed": false,
+  "selection_basis": "Both full81/96 point orders and every required named81Roc/63Cwin. Broad family gains, smaller code and smaller stack. Alternative sqrt retained with its distribution slowdown and without full81qualification.",
+  "compiler_rebuild_py_before_default_sha256": "30a73f8f42fa82f9b581a501e9f8c8f428a54943a35f14f02754c3975b9a48b9",
+  "compiler_rebuild_py_after_default_sha256": "64ea5c15acc59223d781e07f732af9594f13d87bb00b45a9ab65d265527a1f7c",
+  "stack_bytes": 4720,
+  "next_C_target": 64,
+  "ultimate_C_target": 81
+}

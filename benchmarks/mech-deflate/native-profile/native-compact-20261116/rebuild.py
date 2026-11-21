@@ -26,6 +26,8 @@ M1_SOURCE_RECIPES = {
     'm1-narrow-packet-words': 'packed-word-packet-selection',
     'm1-profiled-register-linear': 'compact-register-weight-study/linear',
     'm1-profiled-register-sqrt': 'compact-register-weight-study/sqrt',
+    'm1-forwarded-register-linear': 'forward-jump-register-study/linear',
+    'm1-forwarded-register-sqrt': 'forward-jump-register-study/sqrt',
     'm1-bounded-index-ranges-experimental': 'bounded-index-range-study',
 }
 
@@ -93,7 +95,7 @@ parser.add_argument(
         'frame-copies',
         *M1_SOURCE_RECIPES,
     ],
-    default=('m1-profiled-register-sqrt' if (platform.system(), platform.machine()) == ('Darwin', 'arm64') else 'baseline'),
+    default=('m1-forwarded-register-linear' if (platform.system(), platform.machine()) == ('Darwin', 'arm64') else 'baseline'),
 )
 parser.add_argument('--mimalloc-object',type=Path,help='optional fixed comparator allocator; also link and check the worker')
 parser.add_argument('--target-dir',type=Path)

@@ -1,5 +1,17 @@
 # PR #995 current status
 
+**Working selection: `m1-forwarded-register-linear`, 63,516 B, preserving every named 81/81 Roc and 63/81 libdeflate win in both full 81-case, 96-block orders.** Generic forward-jump cleanup with fresh register and matcher/Huffman layout profiles saves another **96 B**, takes **1.25–1.33% less random-1-MiB time** and reduces measured peak stack to **4,720 B**. The original **2,719-line codec and canonical bytecode remain unchanged**. Confidence is separate; no 64th C win is established.
+
+Latest matched complete builds on **Apple M1**: **2.229091 s selected Mech**, **2.230269 s preceding Mech**, **2.988087 s Roc**, **0.486367 s C**, including final executable link with compilers/fixed support equally prebuilt. Ten balanced serial fresh-process orders check all artifacts. Selected paired ratios are **0.745744× Roc / 4.595310× C**; encoder text **1.101× Roc / 1.713× C**; stripped executable **276,072 B**. **No compile-time gain is established.**
+
+The actual selected control and both final matcher candidates have fresh nine-case native work counts. On random 1 MiB, selected instructions fall **198,169,162 → 195,425,468** and stack loads **20,228,175 → 18,128,229**, with 35 calls each. Every native output/resource/error/recovery/stack check passes. Four public normal/checked rebuilds and both main named recipes reproduce all three artifacts exactly. The portable verifier checks **2,683,008 saved runtime calls**, seven source/counter bindings, both register-profile derivations, every named full-suite win, ten complete-build orders and **405 actual stripped deployment streams**. The compiler feature has **79 optimized scalar tests** passing. [Current source recipes, raw results, phases and verification](evidence/encoder-size-gap/forward-jump-register-study/README.md).
+
+The **63,468 B** square-root alternative remains available with both panel orders and all native gates, including its **3.0–3.4% distribution slowdown**; it has no full81 qualification. `rebuild.py` now defaults to `m1-forwarded-register-linear` on Apple ARM64. No LLVM dependency or shipping native-byte patch is added.
+
+Broader work now revisits retained input-packet qualification and checked-entry construction across input families. The checked entry remains **46,572 B**. **64 C wins is next; 81 C wins remains the full goal.**
+
+Earlier checkpoints follow; their selected/default labels apply to those versions.
+
 **Working selection: `m1-profiled-register-sqrt`, 63,612 B, preserving every named 81/81 Roc and 63/81 libdeflate win in both full 81-case, 96-block orders.** It saves **192 B** from the preceding default. Measured register spill weights combine with the retained carried-low-cost phi proof; the original **2,719-line codec and canonical bytecode remain unchanged**. Confidence has not been reassessed and is separate from selection. No 64th C win is established.
 
 The selected combination takes **3.07–3.14% less time across all 81 cases by geometric mean**, **7.2–7.4% less on random 1 MiB** and **3.2–3.5% less on distribution change** than the preceding selected build. Natural 4 KiB is **0.972895× / 0.984128× C**. The fully qualified linear alternative emits **63,628 B** and saves about **8.5%** on random 1 MiB in both focused panel orders. Small slowdowns are retained when named wins survive.
