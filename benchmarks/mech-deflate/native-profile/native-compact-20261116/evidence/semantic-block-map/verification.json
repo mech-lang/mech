@@ -1,0 +1,20 @@
+{
+  "passed": true,
+  "source_normal_checked_replays": 8,
+  "vcode_labels": 1176,
+  "emitted_source_sites": 2169,
+  "tree_cases": 9,
+  "exact_private_tree_cases": 7,
+  "native_successes_per_probe": 162,
+  "checked_error_cases": 6,
+  "recoveries": 12,
+  "scalar_tests": 79,
+  "complete_build_orders": 8,
+  "deployment_executions": 324,
+  "selected_bytes_unchanged": true,
+  "selected_score": {
+    "Roc": 81,
+    "libdeflate": 63
+  },
+  "new_C_win": false
+}

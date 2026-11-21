@@ -308,6 +308,22 @@ pub(in crate::native_artifact) fn emit(
             .iter()
             .flat_map(|version| version.sites.iter().map(move |&site| (Some(version), site))),
     );
+    // Keep inspection separate from source locations and IR construction so
+    // the normal admission and optimization route remains measurable.
+    let source_map_path = std::env::var_os("MECH_INSPECT_NUMERIC_SITE_BLOCKS")
+        .map(std::path::PathBuf::from)
+        .filter(|path| {
+            let kind = if vectors.is_some() {
+                "vector"
+            } else if no_growth.is_some() {
+                "no-growth"
+            } else {
+                "general"
+            };
+            path.file_stem()
+                .is_some_and(|name| name == format!("{site}-{kind}").as_str())
+        });
+    let mut source_map_records = source_map_path.as_ref().map(|_| Vec::new());
     let mut read_snapshots = BTreeMap::new();
     for (version, site) in emitted_sites {
         let complete_pack = |pack: &super::numeric_read_packs::Pack| {
@@ -344,6 +360,16 @@ pub(in crate::native_artifact) fn emit(
         };
         let traversal = version.map_or(&traversal, |v| &v.facts);
         b.switch_to_block(target(site as u32));
+        if let Some(records) = &mut source_map_records {
+            records.push(serde_json::json!({
+                "source_site": site,
+                "ir_block": target(site as u32).as_u32(),
+                "version_initialize": version.map(|v| v.initialize),
+                "operation": format!("{:?}", proof.action(site)),
+                "action": format!("{:?}", code.blocks()[site].action()),
+                "terminator": format!("{:?}", code.blocks()[site].terminator()),
+            }));
+        }
         if matches!(proof.action(site), Some(Operation::Fallback)) {
             boundaries.insert(target(site as u32));
             if let Some(count) = native.handoff(b, &words, site)? {
@@ -846,6 +872,20 @@ pub(in crate::native_artifact) fn emit(
             b.ins().jump(failed, &[status.into()]);
         }
         report.source_instructions(b.func.dfg.num_insts() - before)?;
+    }
+    if let (Some(path), Some(records)) = (source_map_path, source_map_records) {
+        let source_blocks = blocks
+            .iter()
+            .map(|(&source_site, &block)| (source_site, block.as_u32()))
+            .collect::<Vec<_>>();
+        let map = serde_json::json!({
+            "header": site,
+            "source_sites": &proof.sites,
+            "source_blocks": source_blocks,
+            "emitted_sites": records,
+            "scope": "Pre-optimization source sites and CLIF blocks. Packed, removed and merged sites are not independent machine observations.",
+        });
+        std::fs::write(path, serde_json::to_vec_pretty(&map).map_err(backend)?).map_err(backend)?;
     }
     let boundary = b.func.dfg.num_insts();
     b.switch_to_block(bailout);
