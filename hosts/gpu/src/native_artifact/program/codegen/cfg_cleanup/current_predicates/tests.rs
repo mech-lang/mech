@@ -10,6 +10,19 @@ use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{Linkage, Module, default_libcall_names};
 type Entry = unsafe extern "C" fn(u64, u64, u64, u64, *mut u64) -> u64;
+
+fn refine_coalesced(module: &JITModule, context: &mut Context) {
+    use crate::native_artifact::program::codegen::cfg_cleanup as cleanup;
+    let controls = CompilationControls::new(OptimizationOptions::default());
+    cleanup::coalesce_identical_join_arguments(&controls, context, module.isa()).unwrap();
+    if cleanup::argument_jumps::forward(&mut context.func) != 0 {
+        context.flowgraph();
+        context.eliminate_unreachable_code(module.isa()).unwrap();
+        context.verify(module.isa()).unwrap();
+    }
+    cleanup::refine_current_predicates(&controls, context, module.isa()).unwrap();
+    cleanup::fold_proved_widths(&controls, context, module.isa()).unwrap();
+}
 unsafe extern "C" fn observe(memory: *mut u64, value: u64) -> u64 {
     unsafe { *memory.add(1) = (*memory.add(1)).wrapping_add(7) };
     value
@@ -193,6 +206,9 @@ fn current_predicates_transport_current_words_float_payloads_and_failure_prefix(
         let report = refine_current_predicates(&on, &mut new, module.isa()).unwrap();
         assert!(report.removed_branches > 0, "{variant}");
         let after = define(&mut module, &mut new, &format!("new{i}"));
+        let mut coalesced = fixture(&module, variant);
+        refine_coalesced(&module, &mut coalesced);
+        let after_coalesced = define(&mut module, &mut coalesced, &format!("coalesced{i}"));
         for flag in [0, 1, 2, u64::MAX] {
             for payload in [0, 17, u64::MAX - 1, u64::MAX] {
                 for n in [0, 1, 2, 4] {
@@ -204,7 +220,7 @@ fn current_predicates_transport_current_words_float_payloads_and_failure_prefix(
                         0x7ff0000000000001,
                     ] {
                         let want = expected(flag, payload, n, bits, variant);
-                        for f in [before, after] {
+                        for f in [before, after, after_coalesced] {
                             let mut memory = [0, 0xabcd];
                             let got = unsafe { f(flag, payload, n, bits, memory.as_mut_ptr()) };
                             assert_eq!(
@@ -292,6 +308,7 @@ fn current_predicates_preserve_previous_predicate_snapshots_and_decline_reentry(
     old.func = c.func.clone();
     let before = define(&mut module, &mut old, "atom_before");
     let on = CompilationControls::new(OptimizationOptions::default());
+    refine_coalesced(&module, &mut c);
     refine_current_predicates(&on, &mut c, module.isa()).unwrap();
     c.verify(module.isa()).unwrap();
     let after = define(&mut module, &mut c, "atom_after");
@@ -348,6 +365,7 @@ fn current_predicates_keep_both_edges_to_one_join_and_parallel_payload_order() {
     old.func = c.func.clone();
     let before = define(&mut module, &mut old, "same_join_before");
     let on = CompilationControls::new(OptimizationOptions::default());
+    refine_coalesced(&module, &mut c);
     let report = refine_current_predicates(&on, &mut c, module.isa()).unwrap();
     assert_eq!(report.removed_branches, 0);
     let after = define(&mut module, &mut c, "same_join_after");
