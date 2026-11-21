@@ -960,6 +960,30 @@
       "path": "vendor/regalloc2/src/lib.rs",
       "production_or_test": "production",
       "reason": "keep the vendored allocator helpers used across feature selections and diagnostics"
+    },
+    {
+      "directive": "allow",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Remove when the focused test can import the ownership proof without the private-function inliner.",
+      "introduced_release": "0.4.0",
+      "lint": "dead_code",
+      "occurrences": 1,
+      "owner": "Fresh owner reference count regression tests",
+      "path": "benchmarks/mech-deflate/native-profile/fresh_owner_counts_tests.rs",
+      "production_or_test": "test",
+      "reason": "The source includes the unrelated private-function inliner"
+    },
+    {
+      "directive": "allow",
+      "expires_release": "0.5.0",
+      "expiry_condition": "Remove when the probe can retain stable ownership records without boxed arena elements.",
+      "introduced_release": "0.4.0",
+      "lint": "clippy::vec_box",
+      "occurrences": 1,
+      "owner": "Fresh owner reference count regression tests",
+      "path": "hosts/gpu/src/native_artifact/program/compact/owner_counts/tests.rs",
+      "production_or_test": "test",
+      "reason": "JIT code retains stable owner addresses across allocations"
     }
   ],
   "policy_release": "0.4.0",
@@ -973,7 +997,7 @@
       ],
       "owner": "Pinned Cranelift/regalloc2 upstream policy",
       "path": "vendor/cranelift-codegen/src/context.rs",
-      "sha256": "62fbe41eaf5634cb5ba020d591d11b2a0bcf0a7d60bb90e16abbecaf45d56895"
+      "sha256": "91f9e3df44ed2fa4d8535781c27f4c4dbbb04a56e9c2324472fcea851d12bbff"
     },
     {
       "attributes": [
@@ -1015,7 +1039,7 @@
         "#[expect( unused_imports, reason = \"used on other backends, used here to suppress warning elsewhere\" )]"
       ],
       "owner": "Pinned Cranelift/regalloc2 upstream policy",
-      "path": "vendor/cranelift-codegen/src/isa/pulley_shared/lower/isle.rs",
+      "path": "vendor/cranelift-codegen/src/isa/pulley_shared/lower/isle/mod.rs",
       "sha256": "73c2dedd84700a31545cbaf8117a982628b58b01454e993f04fc489225768c32"
     },
     {
@@ -1110,7 +1134,7 @@
         "#[allow(dead_code, reason = \"dead code, only on nightly rust at this time\")]"
       ],
       "owner": "Pinned Cranelift/regalloc2 upstream policy",
-      "path": "vendor/cranelift-codegen/src/opts.rs",
+      "path": "vendor/cranelift-codegen/src/opts/mod.rs",
       "sha256": "3cbb7f822d2bf4815717478dffc42e81035d0b16fd01c2110d3539bb2e0256b3"
     },
     {

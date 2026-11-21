@@ -202,8 +202,7 @@ impl LiteralCache {
         Some((result, work))
     }
     /// Complete a fresh, sealed single-grapheme ASCII mismatch. The normal
-    /// scan charges one expected-scalar call, one prefix byte, two source
-    /// calls including lookahead, and one compared byte.
+    /// scan rejects a different head after charging one prefix byte.
     pub fn sealed_ascii_miss<S: ScanSource + ?Sized>(
         &mut self,
         source: &S,
@@ -213,7 +212,7 @@ impl LiteralCache {
         context_end: TextSize,
         allowance: u64,
     ) -> Option<(Option<TextSize>, u64)> {
-        const SCAN_WORK: u64 = 5;
+        const SCAN_WORK: u64 = 1;
         if allowance < SCAN_WORK + 3 {
             return None;
         }
@@ -399,7 +398,7 @@ mod tests {
                 let admitted = candidate.sealed_ascii_miss(text, expected, start, end, end, budget);
                 assert_eq!(
                     admitted.is_some(),
-                    accepts && budget >= 8,
+                    accepts && budget >= 4,
                     "{text:?} {budget}"
                 );
                 if let Some((result, charged)) = admitted {

@@ -215,7 +215,7 @@ jobs:
             --test type_system_catalog
           cargo +nightly-2026-03-03 test --locked -p mech-stdlib \
             --no-default-features --features full_compiler \
-            --test type_system_source
+            --test type_system_source --test optional_set_table_source
           cargo +nightly-2026-03-03 test --locked -p mech-runtime \
             --no-default-features --features full_compiler,resident-routing-source \
             --lib runtime::program::tests::compiled_conversion_executes_after_bytecode_round_trip \
