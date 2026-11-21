@@ -200,7 +200,7 @@
     ]
   },
   "selection_basis": "Both complete forward/reverse point scores and every required named point win. Report confidence outcomes separately; uncertainty alone does not demote the chosen build.",
-  "working_recipe": "m1-identical-shared-vector-linear",
+  "working_recipe": "m1-bounded-increment-vector-linear",
   "compact_working_recipe": "m1-argument-vector-neighbor",
   "balanced_working_recipe": "m1-identical-vector-linear"
 }

@@ -1,5 +1,24 @@
 # Native compact compiler review handoff
 
+**Selected: `m1-bounded-increment-vector-linear`, 64,264 B, every named 81/81 Roc and 63/81 libdeflate win preserved in both full 81-case, 96-block orders.** The compiler now proves that selected non-strict unsigned bounds can make a checked `+1` overflow impossible. The original **2,719-line Mech source and canonical bytecode are unchanged**.
+
+| Random 1 MiB | Mech | Current Mech control | libdeflate | Paired Mech ÷ C | Mech time reduction to parity |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Forward | 23.434895 ms | 23.506791 ms | 20.393270 ms | 1.149165× | 12.98% |
+| Reverse | 23.430417 ms | 23.504812 ms | 20.352646 ms | 1.152650× | 13.24% |
+
+This saves **144 B** versus the prior 64,408-B selection. Paired random-1-MiB time is **0.996426× /0.996761×** control, about **0.32–0.36% less time**. Full-suite geometric-mean point estimates are **0.995072× /0.995243×**; no formal confidence claim is added. Small slower cases remain included. **No 64th libdeflate win is established; about 3.0–3.1 ms, or 13.0–13.24% of Mech's time, still needs to be removed on the closest remaining case.** The earlier qualified **63,372-B compact recipe remains available**.
+
+Matched complete builds take **2.196434 s Mech /2.983926 s Roc /0.480779 s C**, paired **0.735454× Roc /4.565690× C**. Twelve balanced serial fresh-process orders include final executable linking with compilers and fixed support equally prebuilt. The matched prior Mech control takes **2.195559 s**; no compile-time improvement is established. Selected parse/frontend/native medians are **0.703131 /0.216515 /1.203295 s**; final link is **0.035262 s**. Bootstrap and strip are separate.
+
+Encoder text is **1.114× Roc /1.733× C**. The stripped executable remains **276,072 B**, **1.439× Roc /1.773× C**; measured peak stack is **4,832 B**, below the 5,280-B cap. The standard main rebuild command reproduces all three measured artifacts exactly. All seven retained source arms pass strict output/resource/error/recovery/stack gates and public normal/checked source replays. **79 optimized scalar tests**, the native increment/range tests, **169,600 focused native calls**, and **486 actual stripped-executable checks** pass. Portable verification recomputes **3,400,704 saved runtime observations**, including 464,141 retained zero samples, **72 actual counter cases**, register profiles, native-flow constraints, source-label guides and all 12 complete-build orders. Compiler source is rebasable at **`b73335e1c`**. No new LLVM dependency, codec rewrite, generic operation dispatch or shipping native-byte patch is added.
+
+[All seven source arms, tradeoffs and verification](evidence/bounded-unsigned-increments/README.md) · [All 81 elapsed times and remaining parity gaps](evidence/bounded-unsigned-increments/PARITY.md).
+
+The next broad experiment revisits current-word, known-width and argument-transport cleanup after the new SSA coalescing. Count whether it can remove the remaining hot high-word guards. Private input-packet specialization also needs current SSA or all-callsite bounds. Shared comparison ANDs, immutable byte-load reuse and the retained compact recipe remain recorded for later combinations. **64 C wins is next; 1× libdeflate across all 81 remains the goal.**
+
+Previous checkpoints follow; their selected/default labels apply to those versions.
+
 The selected M1 recipe is **`m1-identical-shared-vector-linear`**, **64,408 B**, preserving every named **81/81 Roc and 63/81 libdeflate win** in both full orders. The 64,364-byte alternative is also qualified, and the earlier 63,372-byte compact recipe remains available. The original Mech source and canonical bytecode are unchanged.
 
 Random 1 MiB takes **23.506–23.508 ms versus20.349–20.353 ms C**, paired **1.155–1.156× C**. About **13.4–13.5% less Mech time** is still needed for parity; no 64th C win is established. The complete source-through-final-link build is **2.199275 s**, **0.736279× Roc /4.563207× C**.
