@@ -58,6 +58,10 @@ pub(crate) fn lower(
     }
     let mut isle_ctx = IsleContext { lower_ctx, backend };
     #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
+    if let Some(output) = isle_ctx.lower_disjoined_boolean(inst) {
+        return Some(output);
+    }
+    #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
     if let Some(output) = isle_ctx.lower_conjoined_select(inst) {
         return Some(output);
     }
@@ -150,6 +154,68 @@ type ComparisonInstructions =
     smallvec::SmallVec<[MInst; super::boolean_conjunction::MAX_COMPARISONS + 2]>;
 
 impl IsleContext<'_, '_, MInst, AArch64Backend> {
+    #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
+    fn lower_disjoined_boolean(&mut self, inst: Inst) -> Option<InstOutput> {
+        let lower = &self.lower_ctx;
+        let dfg = lower.dfg();
+        if dfg.insts[inst].opcode() != Opcode::Bor
+            || !matches!(lower.output_ty(inst, 0), I8 | I16 | I32 | I64)
+            || std::env::var_os("MECH_ARM64_CCMP_SHARED_BOOLEAN").is_none()
+        {
+            return None;
+        }
+        let root = dfg.inst_results(inst)[0];
+        let mut tree = smallvec::SmallVec::<[Value; 16]>::new();
+        let chain = super::boolean_conjunction::derive_disjunction(dfg, root, |value| {
+            if tree.contains(&value) {
+                return false;
+            }
+            tree.push(value);
+            true
+        })?;
+        let mut counts = smallvec::SmallVec::<[u8; 16]>::from_elem(0, tree.len());
+        // Direct uses are checked rather than transitive multiple-use state:
+        // the canonical OR result is deliberately shared. Its comparisons and
+        // wrappers must each be consumed exactly once, including edge args.
+        for user in lower
+            .f
+            .layout
+            .blocks()
+            .flat_map(|b| lower.f.layout.block_insts(b))
+        {
+            for value in dfg.inst_values(user) {
+                let value = dfg.resolve_aliases(value);
+                if value == root {
+                    continue;
+                }
+                if let Some(index) = tree.iter().position(|&node| node == value) {
+                    counts[index] += 1;
+                    if counts[index] != 1 {
+                        return None;
+                    }
+                }
+            }
+        }
+        if tree
+            .iter()
+            .zip(counts)
+            .any(|(&node, uses)| node != root && uses != 1)
+        {
+            return None;
+        }
+        let output_ty = self.lower_ctx.output_ty(inst, 0);
+        let rd = self.lower_ctx.alloc_tmp(output_ty).only_reg().unwrap();
+        let (mut instructions, cond) = self.prepare_icmp_conjunction(chain);
+        instructions.push(MInst::CSet {
+            rd,
+            cond: cond.invert(),
+        });
+        for inst in instructions {
+            self.lower_ctx.emit(inst);
+        }
+        Some(smallvec::smallvec![ValueRegs::one(rd.to_reg())])
+    }
+
     #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
     fn lower_conjoined_select(&mut self, inst: Inst) -> Option<InstOutput> {
         let lower = &self.lower_ctx;
