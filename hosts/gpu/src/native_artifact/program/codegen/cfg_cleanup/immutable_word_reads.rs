@@ -13,7 +13,7 @@ use cranelift_codegen::{
     },
 };
 use cranelift_module::{DataDescription, Module};
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 struct Read {
     load: Inst,
@@ -98,6 +98,80 @@ pub(in crate::native_artifact) fn schedule<M: Module>(
     loads: &BTreeMap<Value, (Inst, usize)>,
     views: &[View],
 ) -> Result<usize, NativeCompileError> {
+    schedule_with_delay(module, ctx, loads, views, false)
+}
+
+pub(in crate::native_artifact) fn schedule_delayed<M: Module>(
+    module: &mut M,
+    ctx: &mut Context,
+    loads: &BTreeMap<Value, (Inst, usize)>,
+    views: &[View],
+) -> Result<usize, NativeCompileError> {
+    schedule_with_delay(module, ctx, loads, views, true)
+}
+
+// Stay on a single unconditional path, stopping before its next load, effect,
+// branch or possible trap. Do not extend a value's lifetime across the pure
+// address/hash setup if its load can instead precede the next memory access.
+fn delayed_point(ctx: &Context, anchor: Inst, target: Inst) -> Inst {
+    let f = &ctx.func;
+    let mut point = anchor;
+    let mut next = f.layout.next_inst(anchor);
+    let mut seen = BTreeSet::from([anchor]);
+    for _ in 0..128 {
+        let Some(inst) = next else { break };
+        if !seen.insert(inst) || !ctx.domtree.dominates(inst, target, &f.layout) {
+            break;
+        }
+        point = inst;
+        match f.dfg.insts[inst] {
+            Data::Jump { destination, .. } => {
+                let block = destination.block(&f.dfg.value_lists);
+                if ctx.cfg.pred_iter(block).count() != 1 {
+                    break;
+                }
+                next = f.layout.first_inst(block);
+            }
+            _ if matches!(
+                f.dfg.insts[inst].opcode(),
+                Opcode::Iconst
+                    | Opcode::Iadd
+                    | Opcode::IaddImm
+                    | Opcode::Isub
+                    | Opcode::Imul
+                    | Opcode::ImulImm
+                    | Opcode::Band
+                    | Opcode::BandImm
+                    | Opcode::Bor
+                    | Opcode::BorImm
+                    | Opcode::Bxor
+                    | Opcode::BxorImm
+                    | Opcode::Ishl
+                    | Opcode::IshlImm
+                    | Opcode::Ushr
+                    | Opcode::UshrImm
+                    | Opcode::Icmp
+                    | Opcode::IcmpImm
+                    | Opcode::Uextend
+                    | Opcode::Ireduce
+                    | Opcode::Select
+            ) =>
+            {
+                next = f.layout.next_inst(inst)
+            }
+            _ => break,
+        }
+    }
+    point
+}
+
+fn schedule_with_delay<M: Module>(
+    module: &mut M,
+    ctx: &mut Context,
+    loads: &BTreeMap<Value, (Inst, usize)>,
+    views: &[View],
+    delay: bool,
+) -> Result<usize, NativeCompileError> {
     ctx.flowgraph();
     let f = &ctx.func;
     let reads = f
@@ -127,7 +201,12 @@ pub(in crate::native_artifact) fn schedule<M: Module>(
                     .all(|value| available(f, &ctx.domtree, value, prior.load))
         });
         if let Some(anchor) = anchor {
-            plans.push((target, anchor.load));
+            let point = if delay {
+                delayed_point(ctx, anchor.load, target.load)
+            } else {
+                anchor.load
+            };
+            plans.push((target, point));
         }
     }
     if plans.is_empty() {
