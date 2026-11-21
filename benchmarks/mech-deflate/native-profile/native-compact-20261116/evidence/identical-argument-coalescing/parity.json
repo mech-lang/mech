@@ -1,0 +1,4660 @@
+{
+  "vector-linear": {
+    "role": "vector-linear",
+    "host": "Apple M1, macOS 15.6.1, arm64",
+    "scope": "Full81-case96-block qualification, both orders. Milliseconds are per-call medians; ratios are geometric means of paired block observations, so rounded displayed milliseconds need not divide to the paired ratio. A ratio below one is a win. Remaining reduction uses 1-1/ratio, not ratio-1. Confidence is separate.",
+    "orders": {
+      "forward": {
+        "peer_wins": {
+          "roc": {
+            "wins": 81,
+            "required_missing": [],
+            "passed": true
+          },
+          "libdeflate": {
+            "wins": 63,
+            "required_missing": [],
+            "passed": true
+          }
+        },
+        "cases": [
+          {
+            "case": "empty",
+            "input_bytes": 0,
+            "milliseconds": {
+              "mech-control": 4.1e-05,
+              "mech-experiment": 4.1e-05,
+              "roc": 4.2e-05,
+              "libdeflate": 0.004208
+            },
+            "mech_x_libdeflate": 0.006922902721685716,
+            "mech_x_previous_selected": 1.027779955880735,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "one-stored",
+            "input_bytes": 1,
+            "milliseconds": {
+              "mech-control": 4.1e-05,
+              "mech-experiment": 4.1e-05,
+              "roc": 4.2e-05,
+              "libdeflate": 0.004208
+            },
+            "mech_x_libdeflate": 0.006907180404115951,
+            "mech_x_previous_selected": 0.9671543109300538,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "seven-stored-prefix",
+            "input_bytes": 7,
+            "milliseconds": {
+              "mech-control": 4.1e-05,
+              "mech-experiment": 4.1e-05,
+              "roc": 4.2e-05,
+              "libdeflate": 0.004208
+            },
+            "mech_x_libdeflate": 0.0073281767599375665,
+            "mech_x_previous_selected": 0.9926857889833315,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "eight-literals",
+            "input_bytes": 8,
+            "milliseconds": {
+              "mech-control": 0.008208,
+              "mech-experiment": 0.008208,
+              "roc": 0.28774999999999995,
+              "libdeflate": 0.021333
+            },
+            "mech_x_libdeflate": 0.38317956123310726,
+            "mech_x_previous_selected": 1.0000313855339056,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "eight-overlap",
+            "input_bytes": 8,
+            "milliseconds": {
+              "mech-control": 0.01525,
+              "mech-experiment": 0.015042,
+              "roc": 0.287458,
+              "libdeflate": 0.021083
+            },
+            "mech_x_libdeflate": 0.7003943348740682,
+            "mech_x_previous_selected": 0.9885007184221409,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "320-overlap",
+            "input_bytes": 320,
+            "milliseconds": {
+              "mech-control": 0.026958,
+              "mech-experiment": 0.026708,
+              "roc": 0.298042,
+              "libdeflate": 0.027542
+            },
+            "mech_x_libdeflate": 0.9457025347996598,
+            "mech_x_previous_selected": 0.9897770700671648,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "eight-literals-prefix",
+            "input_bytes": 8,
+            "milliseconds": {
+              "mech-control": 0.00825,
+              "mech-experiment": 0.008209000000000001,
+              "roc": 0.289334,
+              "libdeflate": 0.021375
+            },
+            "mech_x_libdeflate": 0.3848089765382001,
+            "mech_x_previous_selected": 0.9984321977625144,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "128-biased-dynamic",
+            "input_bytes": 128,
+            "milliseconds": {
+              "mech-control": 0.01575,
+              "mech-experiment": 0.0155,
+              "roc": 0.2875,
+              "libdeflate": 0.02025
+            },
+            "mech_x_libdeflate": 0.7490411699905001,
+            "mech_x_previous_selected": 0.9835451711304535,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "32-high-entropy-stored",
+            "input_bytes": 32,
+            "milliseconds": {
+              "mech-control": 0.009541000000000001,
+              "mech-experiment": 0.009542,
+              "roc": 0.28858300000000003,
+              "libdeflate": 0.021540999999999998
+            },
+            "mech_x_libdeflate": 0.44218331241315306,
+            "mech_x_previous_selected": 1.0037554086902687,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "16384-distribution-change",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "mech-control": 0.5780004999999999,
+              "mech-experiment": 0.578021,
+              "roc": 0.844979,
+              "libdeflate": 0.482875
+            },
+            "mech_x_libdeflate": 1.1986847084029264,
+            "mech_x_previous_selected": 1.003346035919154,
+            "mech_time_reduction_to_parity_pct": 16.575226747294124,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "33027-periodic-window",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "mech-control": 0.413833,
+              "mech-experiment": 0.415875,
+              "roc": 1.2613124999999998,
+              "libdeflate": 0.592917
+            },
+            "mech_x_libdeflate": 0.7022948915234393,
+            "mech_x_previous_selected": 1.0037746563449237,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "random-64",
+            "input_bytes": 64,
+            "milliseconds": {
+              "mech-control": 0.010834,
+              "mech-experiment": 0.010792,
+              "roc": 0.2915415,
+              "libdeflate": 0.022375
+            },
+            "mech_x_libdeflate": 0.483279641096878,
+            "mech_x_previous_selected": 0.999577916651919,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "random-256",
+            "input_bytes": 256,
+            "milliseconds": {
+              "mech-control": 0.017541,
+              "mech-experiment": 0.017458,
+              "roc": 0.29712500000000003,
+              "libdeflate": 0.025833000000000002
+            },
+            "mech_x_libdeflate": 0.6875273303974009,
+            "mech_x_previous_selected": 0.990895375219304,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "random-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "mech-control": 0.028125,
+              "mech-experiment": 0.028083,
+              "roc": 0.307667,
+              "libdeflate": 0.032916
+            },
+            "mech_x_libdeflate": 0.8568923088168294,
+            "mech_x_previous_selected": 0.9993857207577882,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "repeated-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "mech-control": 0.039084,
+              "mech-experiment": 0.038875,
+              "roc": 0.3275,
+              "libdeflate": 0.04625
+            },
+            "mech_x_libdeflate": 0.8310160887207881,
+            "mech_x_previous_selected": 0.9931284477457731,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "random-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "mech-control": 0.6690834999999999,
+              "mech-experiment": 0.665104,
+              "roc": 1.071417,
+              "libdeflate": 0.527104
+            },
+            "mech_x_libdeflate": 1.2631044927600972,
+            "mech_x_previous_selected": 0.9959606335486171,
+            "mech_time_reduction_to_parity_pct": 20.82998629710906,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "repeated-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "mech-control": 0.45481249999999995,
+              "mech-experiment": 0.45852099999999996,
+              "roc": 1.3434165,
+              "libdeflate": 0.685896
+            },
+            "mech_x_libdeflate": 0.6672954935645602,
+            "mech_x_previous_selected": 1.005299212912382,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "reymont-prefix-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "mech-control": 0.07145800000000001,
+              "mech-experiment": 0.070958,
+              "roc": 0.333334,
+              "libdeflate": 0.058917
+            },
+            "mech_x_libdeflate": 1.2056754992893144,
+            "mech_x_previous_selected": 0.992297357074795,
+            "mech_time_reduction_to_parity_pct": 17.058943257165783,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "reymont-prefix-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "mech-control": 1.8897294999999998,
+              "mech-experiment": 1.8779375,
+              "roc": 2.1647295,
+              "libdeflate": 2.1539580000000003
+            },
+            "mech_x_libdeflate": 0.8702274646054026,
+            "mech_x_previous_selected": 0.9932682728946146,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "reymont-prefix-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "mech-control": 4.0377085,
+              "mech-experiment": 4.0303755,
+              "roc": 4.3522715000000005,
+              "libdeflate": 4.7985835
+            },
+            "mech_x_libdeflate": 0.8391334180622375,
+            "mech_x_previous_selected": 0.9977107965957379,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "heldout-window-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "mech-control": 4.0255835,
+              "mech-experiment": 4.01475,
+              "roc": 4.347312499999999,
+              "libdeflate": 4.789292
+            },
+            "mech_x_libdeflate": 0.8380623182777451,
+            "mech_x_previous_selected": 0.9958116642243567,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "heldout-window-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "mech-control": 4.0232085,
+              "mech-experiment": 4.014333,
+              "roc": 4.3482080000000005,
+              "libdeflate": 4.7885205
+            },
+            "mech_x_libdeflate": 0.8373648769037434,
+            "mech_x_previous_selected": 0.9968235212542127,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "heldout-slides-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "mech-control": 8.073646,
+              "mech-experiment": 8.034208000000001,
+              "roc": 8.849854,
+              "libdeflate": 10.119292
+            },
+            "mech_x_libdeflate": 0.7930384906557867,
+            "mech_x_previous_selected": 0.9955136892071081,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "heldout-random-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "mech-control": 1.4227495000000001,
+              "mech-experiment": 1.418833,
+              "roc": 1.9475,
+              "libdeflate": 1.1477085
+            },
+            "mech_x_libdeflate": 1.2324672280758107,
+            "mech_x_previous_selected": 0.994779307923091,
+            "mech_time_reduction_to_parity_pct": 18.861939918576986,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "heldout-mixed-131073",
+            "input_bytes": 131073,
+            "milliseconds": {
+              "mech-control": 6.289874500000001,
+              "mech-experiment": 6.269479,
+              "roc": 8.397021,
+              "libdeflate": 7.250729499999999
+            },
+            "mech_x_libdeflate": 0.8645418979199807,
+            "mech_x_previous_selected": 0.997349492526556,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "mech-control": 0.071292,
+              "mech-experiment": 0.070958,
+              "roc": 0.33385450000000005,
+              "libdeflate": 0.058958
+            },
+            "mech_x_libdeflate": 1.2053785452877652,
+            "mech_x_previous_selected": 0.9941534671619456,
+            "mech_time_reduction_to_parity_pct": 17.038510108767056,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "milliseconds": {
+              "mech-control": 0.38081249999999994,
+              "mech-experiment": 0.37931300000000007,
+              "roc": 0.664208,
+              "libdeflate": 0.39325
+            },
+            "mech_x_libdeflate": 0.964112959026451,
+            "mech_x_previous_selected": 0.9969136946232176,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-8192",
+            "input_bytes": 8192,
+            "milliseconds": {
+              "mech-control": 0.853354,
+              "mech-experiment": 0.84875,
+              "roc": 1.129521,
+              "libdeflate": 0.9065
+            },
+            "mech_x_libdeflate": 0.93374141224952,
+            "mech_x_previous_selected": 0.9951149297213584,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "mech-control": 1.8893545,
+              "mech-experiment": 1.8769164999999999,
+              "roc": 2.164271,
+              "libdeflate": 2.1545625000000004
+            },
+            "mech_x_libdeflate": 0.8697784754999491,
+            "mech_x_previous_selected": 0.9931780906915806,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "mech-control": 4.0260620000000005,
+              "mech-experiment": 4.025771,
+              "roc": 4.342375,
+              "libdeflate": 4.7929165000000005
+            },
+            "mech_x_libdeflate": 0.8404924065476999,
+            "mech_x_previous_selected": 0.9962064385560918,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "mech-control": 4.0241454999999995,
+              "mech-experiment": 4.024791499999999,
+              "roc": 4.3386455,
+              "libdeflate": 4.790374999999999
+            },
+            "mech_x_libdeflate": 0.8396111497563606,
+            "mech_x_previous_selected": 0.9999675204613203,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "mech-control": 4.038895500000001,
+              "mech-experiment": 4.023937,
+              "roc": 4.3672705,
+              "libdeflate": 4.800291
+            },
+            "mech_x_libdeflate": 0.8383887532971902,
+            "mech_x_previous_selected": 0.9969856218364611,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-33027",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "mech-control": 4.085292,
+              "mech-experiment": 4.070104499999999,
+              "roc": 4.4040835,
+              "libdeflate": 4.8480620000000005
+            },
+            "mech_x_libdeflate": 0.8387881559541126,
+            "mech_x_previous_selected": 0.9958253983460945,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-65535",
+            "input_bytes": 65535,
+            "milliseconds": {
+              "mech-control": 10.016896000000001,
+              "mech-experiment": 9.9823335,
+              "roc": 10.7373545,
+              "libdeflate": 12.752104000000001
+            },
+            "mech_x_libdeflate": 0.7830674027563769,
+            "mech_x_previous_selected": 0.9966837578606936,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-65536",
+            "input_bytes": 65536,
+            "milliseconds": {
+              "mech-control": 10.013458,
+              "mech-experiment": 9.98525,
+              "roc": 10.74925,
+              "libdeflate": 12.751937
+            },
+            "mech_x_libdeflate": 0.7829754451575563,
+            "mech_x_previous_selected": 0.9974877030940654,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "mech-control": 10.0360625,
+              "mech-experiment": 9.991583499999999,
+              "roc": 10.734333499999998,
+              "libdeflate": 12.756917
+            },
+            "mech_x_libdeflate": 0.7832987439512247,
+            "mech_x_previous_selected": 0.9962466033474532,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-131072",
+            "input_bytes": 131072,
+            "milliseconds": {
+              "mech-control": 19.158708,
+              "mech-experiment": 19.045688,
+              "roc": 22.305333,
+              "libdeflate": 27.096708
+            },
+            "mech_x_libdeflate": 0.7028065345008077,
+            "mech_x_previous_selected": 0.9939002400543211,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-262144",
+            "input_bytes": 262144,
+            "milliseconds": {
+              "mech-control": 39.0197915,
+              "mech-experiment": 38.884958499999996,
+              "roc": 45.329708499999995,
+              "libdeflate": 55.922229
+            },
+            "mech_x_libdeflate": 0.6957882991054084,
+            "mech_x_previous_selected": 0.9963087269812999,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-1048576",
+            "input_bytes": 1048576,
+            "milliseconds": {
+              "mech-control": 140.062084,
+              "mech-experiment": 139.6468335,
+              "roc": 161.12412500000002,
+              "libdeflate": 199.72937499999998
+            },
+            "mech_x_libdeflate": 0.6991013009999535,
+            "mech_x_previous_selected": 0.9970651749377293,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-random-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "mech-control": 0.028666999999999998,
+              "mech-experiment": 0.028583,
+              "roc": 0.307333,
+              "libdeflate": 0.033207999999999994
+            },
+            "mech_x_libdeflate": 0.8637554602951446,
+            "mech_x_previous_selected": 0.9960912188035093,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-random-4096",
+            "input_bytes": 4096,
+            "milliseconds": {
+              "mech-control": 0.109,
+              "mech-experiment": 0.106938,
+              "roc": 0.37187549999999997,
+              "libdeflate": 0.0764585
+            },
+            "mech_x_libdeflate": 1.4171765450780107,
+            "mech_x_previous_selected": 0.9807081621396135,
+            "mech_time_reduction_to_parity_pct": 29.437161271607593,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-8192",
+            "input_bytes": 8192,
+            "milliseconds": {
+              "mech-control": 0.176667,
+              "mech-experiment": 0.1748335,
+              "roc": 0.45185400000000003,
+              "libdeflate": 0.1257295
+            },
+            "mech_x_libdeflate": 1.3924175004544244,
+            "mech_x_previous_selected": 0.9880321984735498,
+            "mech_time_reduction_to_parity_pct": 28.18245966646903,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "mech-control": 0.3230835,
+              "mech-experiment": 0.3166875,
+              "roc": 0.6392295,
+              "libdeflate": 0.2373955
+            },
+            "mech_x_libdeflate": 1.337481463158146,
+            "mech_x_previous_selected": 0.9840718186650432,
+            "mech_time_reduction_to_parity_pct": 25.23260863453489,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "mech-control": 0.6590204999999999,
+              "mech-experiment": 0.655312,
+              "roc": 1.0544165,
+              "libdeflate": 0.518771
+            },
+            "mech_x_libdeflate": 1.2595688982565905,
+            "mech_x_previous_selected": 0.9970432301985206,
+            "mech_time_reduction_to_parity_pct": 20.607757036226293,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "mech-control": 0.6572914999999999,
+              "mech-experiment": 0.653729,
+              "roc": 1.0548125,
+              "libdeflate": 0.518604
+            },
+            "mech_x_libdeflate": 1.2590962868209172,
+            "mech_x_previous_selected": 0.9956959553756862,
+            "mech_time_reduction_to_parity_pct": 20.577956549701813,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "mech-control": 0.6702915,
+              "mech-experiment": 0.6662294999999999,
+              "roc": 1.0685414999999998,
+              "libdeflate": 0.527729
+            },
+            "mech_x_libdeflate": 1.2611496240831799,
+            "mech_x_previous_selected": 0.9946547916114523,
+            "mech_time_reduction_to_parity_pct": 20.707267329443823,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-33027",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "mech-control": 0.678729,
+              "mech-experiment": 0.6733955,
+              "roc": 1.0760830000000001,
+              "libdeflate": 0.5332085
+            },
+            "mech_x_libdeflate": 1.259025015955685,
+            "mech_x_previous_selected": 0.9930467573387289,
+            "mech_time_reduction_to_parity_pct": 20.57346062810893,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-65535",
+            "input_bytes": 65535,
+            "milliseconds": {
+              "mech-control": 1.4261249999999999,
+              "mech-experiment": 1.4232915,
+              "roc": 1.972479,
+              "libdeflate": 1.1595835
+            },
+            "mech_x_libdeflate": 1.2253785346752994,
+            "mech_x_previous_selected": 0.9991132511422919,
+            "mech_time_reduction_to_parity_pct": 18.39256428096484,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-65536",
+            "input_bytes": 65536,
+            "milliseconds": {
+              "mech-control": 1.4248124999999998,
+              "mech-experiment": 1.4232494999999998,
+              "roc": 1.9736874999999998,
+              "libdeflate": 1.1597705
+            },
+            "mech_x_libdeflate": 1.2238565408935154,
+            "mech_x_previous_selected": 0.998304580551499,
+            "mech_time_reduction_to_parity_pct": 18.291076887989,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "mech-control": 1.4382080000000002,
+              "mech-experiment": 1.433188,
+              "roc": 1.9852914999999998,
+              "libdeflate": 1.168542
+            },
+            "mech_x_libdeflate": 1.2229736757742027,
+            "mech_x_previous_selected": 0.9973340169754673,
+            "mech_time_reduction_to_parity_pct": 18.23209118814837,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-131072",
+            "input_bytes": 131072,
+            "milliseconds": {
+              "mech-control": 2.9461875,
+              "mech-experiment": 2.9318545,
+              "roc": 3.847062,
+              "libdeflate": 2.4718120000000003
+            },
+            "mech_x_libdeflate": 1.18534588086981,
+            "mech_x_previous_selected": 0.9942932828856785,
+            "mech_time_reduction_to_parity_pct": 15.636438600841363,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-262144",
+            "input_bytes": 262144,
+            "milliseconds": {
+              "mech-control": 5.9936875,
+              "mech-experiment": 5.977896,
+              "roc": 7.515249999999999,
+              "libdeflate": 5.0543125
+            },
+            "mech_x_libdeflate": 1.1803658953838498,
+            "mech_x_previous_selected": 0.9970115383282466,
+            "mech_time_reduction_to_parity_pct": 15.280507179106163,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-1048576",
+            "input_bytes": 1048576,
+            "milliseconds": {
+              "mech-control": 23.687687999999998,
+              "mech-experiment": 23.591333,
+              "roc": 28.7946455,
+              "libdeflate": 20.348937499999998
+            },
+            "mech_x_libdeflate": 1.1600173446007243,
+            "mech_x_previous_selected": 0.9963298045725703,
+            "mech_time_reduction_to_parity_pct": 13.79439241538254,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-periodic-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "mech-control": 0.039625,
+              "mech-experiment": 0.039458,
+              "roc": 0.324417,
+              "libdeflate": 0.045584
+            },
+            "mech_x_libdeflate": 0.872911703580358,
+            "mech_x_previous_selected": 0.9961216674673655,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-4096",
+            "input_bytes": 4096,
+            "milliseconds": {
+              "mech-control": 0.08124949999999999,
+              "mech-experiment": 0.0807085,
+              "roc": 0.42295849999999996,
+              "libdeflate": 0.101187
+            },
+            "mech_x_libdeflate": 0.8073183480454617,
+            "mech_x_previous_selected": 0.9949146567770581,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-8192",
+            "input_bytes": 8192,
+            "milliseconds": {
+              "mech-control": 0.13177149999999999,
+              "mech-experiment": 0.1325,
+              "roc": 0.5584374999999999,
+              "libdeflate": 0.17539549999999998
+            },
+            "mech_x_libdeflate": 0.7587861821228186,
+            "mech_x_previous_selected": 1.00538607551489,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "mech-control": 0.213,
+              "mech-experiment": 0.2130625,
+              "roc": 0.7649999999999999,
+              "libdeflate": 0.299396
+            },
+            "mech_x_libdeflate": 0.7151430564105276,
+            "mech_x_previous_selected": 1.0015893794890587,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "mech-control": 0.3988755,
+              "mech-experiment": 0.4025835,
+              "roc": 1.2439375000000001,
+              "libdeflate": 0.577458
+            },
+            "mech_x_libdeflate": 0.6965625717484436,
+            "mech_x_previous_selected": 1.0074072797172466,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "mech-control": 0.39710449999999997,
+              "mech-experiment": 0.39964550000000004,
+              "roc": 1.247625,
+              "libdeflate": 0.5784585
+            },
+            "mech_x_libdeflate": 0.6907346519820856,
+            "mech_x_previous_selected": 1.0066650778972315,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "mech-control": 0.41027050000000004,
+              "mech-experiment": 0.4141045,
+              "roc": 1.2541665,
+              "libdeflate": 0.5859795000000001
+            },
+            "mech_x_libdeflate": 0.7044269019776246,
+            "mech_x_previous_selected": 1.0078403799115236,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-33027",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "mech-control": 0.414459,
+              "mech-experiment": 0.41808350000000005,
+              "roc": 1.262938,
+              "libdeflate": 0.5932715
+            },
+            "mech_x_libdeflate": 0.7050946927975699,
+            "mech_x_previous_selected": 1.0104179284692298,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-65535",
+            "input_bytes": 65535,
+            "milliseconds": {
+              "mech-control": 0.781771,
+              "mech-experiment": 0.784313,
+              "roc": 2.2021665,
+              "libdeflate": 1.141604
+            },
+            "mech_x_libdeflate": 0.6875390095008826,
+            "mech_x_previous_selected": 1.0040079857152013,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-65536",
+            "input_bytes": 65536,
+            "milliseconds": {
+              "mech-control": 0.7766875000000001,
+              "mech-experiment": 0.7792294999999999,
+              "roc": 2.2026045,
+              "libdeflate": 1.142479
+            },
+            "mech_x_libdeflate": 0.6813897027541742,
+            "mech_x_previous_selected": 1.0035378289292949,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "mech-control": 0.794729,
+              "mech-experiment": 0.7970835000000001,
+              "roc": 2.2140415,
+              "libdeflate": 1.1515410000000001
+            },
+            "mech_x_libdeflate": 0.6918559442610912,
+            "mech_x_previous_selected": 1.002319174424274,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-131072",
+            "input_bytes": 131072,
+            "milliseconds": {
+              "mech-control": 1.535125,
+              "mech-experiment": 1.5409585,
+              "roc": 4.131666500000001,
+              "libdeflate": 2.2733745
+            },
+            "mech_x_libdeflate": 0.6777771925284737,
+            "mech_x_previous_selected": 1.0014897422067262,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-262144",
+            "input_bytes": 262144,
+            "milliseconds": {
+              "mech-control": 3.0480625,
+              "mech-experiment": 3.0549165,
+              "roc": 7.9902085000000005,
+              "libdeflate": 4.528396000000001
+            },
+            "mech_x_libdeflate": 0.6740763530599302,
+            "mech_x_previous_selected": 1.0017736610369996,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-1048576",
+            "input_bytes": 1048576,
+            "milliseconds": {
+              "mech-control": 12.002708,
+              "mech-experiment": 12.040396,
+              "roc": 31.304146,
+              "libdeflate": 18.465957999999997
+            },
+            "mech_x_libdeflate": 0.6519613123429627,
+            "mech_x_previous_selected": 1.0031443654253396,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "mech-control": 0.039042,
+              "mech-experiment": 0.038875,
+              "roc": 0.3265,
+              "libdeflate": 0.046333
+            },
+            "mech_x_libdeflate": 0.8299203582509024,
+            "mech_x_previous_selected": 0.9956266977594305,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-4096",
+            "input_bytes": 4096,
+            "milliseconds": {
+              "mech-control": 0.08485449999999999,
+              "mech-experiment": 0.085,
+              "roc": 0.43333299999999997,
+              "libdeflate": 0.113917
+            },
+            "mech_x_libdeflate": 0.7544614345999024,
+            "mech_x_previous_selected": 1.0036390398600825,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-8192",
+            "input_bytes": 8192,
+            "milliseconds": {
+              "mech-control": 0.14212550000000002,
+              "mech-experiment": 0.1433335,
+              "roc": 0.578021,
+              "libdeflate": 0.20035450000000002
+            },
+            "mech_x_libdeflate": 0.7176293080494693,
+            "mech_x_previous_selected": 1.00672408354372,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "mech-control": 0.237979,
+              "mech-experiment": 0.239333,
+              "roc": 0.8135205000000001,
+              "libdeflate": 0.351646
+            },
+            "mech_x_libdeflate": 0.6843301537076207,
+            "mech_x_previous_selected": 1.0055776055916945,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "mech-control": 0.4427085,
+              "mech-experiment": 0.445375,
+              "roc": 1.3314584999999999,
+              "libdeflate": 0.679
+            },
+            "mech_x_libdeflate": 0.6565218288955647,
+            "mech_x_previous_selected": 1.0060169445469458,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "mech-control": 0.446125,
+              "mech-experiment": 0.446958,
+              "roc": 1.334937,
+              "libdeflate": 0.6789375000000001
+            },
+            "mech_x_libdeflate": 0.6588660026132659,
+            "mech_x_previous_selected": 1.0027289127963135,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "mech-control": 0.45645850000000004,
+              "mech-experiment": 0.459125,
+              "roc": 1.3440205,
+              "libdeflate": 0.690604
+            },
+            "mech_x_libdeflate": 0.6644964857533462,
+            "mech_x_previous_selected": 1.0043046976697525,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-33027",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "mech-control": 0.459875,
+              "mech-experiment": 0.462167,
+              "roc": 1.3523960000000002,
+              "libdeflate": 0.697271
+            },
+            "mech_x_libdeflate": 0.6639607735770475,
+            "mech_x_previous_selected": 1.0052923603819661,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-65535",
+            "input_bytes": 65535,
+            "milliseconds": {
+              "mech-control": 0.870396,
+              "mech-experiment": 0.8737285,
+              "roc": 2.3846874999999996,
+              "libdeflate": 1.348104
+            },
+            "mech_x_libdeflate": 0.648623409420199,
+            "mech_x_previous_selected": 1.0056349212336353,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-65536",
+            "input_bytes": 65536,
+            "milliseconds": {
+              "mech-control": 0.875771,
+              "mech-experiment": 0.8793955,
+              "roc": 2.384625,
+              "libdeflate": 1.3487084999999999
+            },
+            "mech_x_libdeflate": 0.6515953487584774,
+            "mech_x_previous_selected": 1.002310260533245,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "mech-control": 0.8850205,
+              "mech-experiment": 0.8890625000000001,
+              "roc": 2.398667,
+              "libdeflate": 1.3561459999999999
+            },
+            "mech_x_libdeflate": 0.656319258592484,
+            "mech_x_previous_selected": 1.0049407885503452,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-131072",
+            "input_bytes": 131072,
+            "milliseconds": {
+              "mech-control": 1.7392505,
+              "mech-experiment": 1.7479165,
+              "roc": 4.495208000000001,
+              "libdeflate": 2.6845205
+            },
+            "mech_x_libdeflate": 0.6520013012495613,
+            "mech_x_previous_selected": 1.0055923210291497,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-262144",
+            "input_bytes": 262144,
+            "milliseconds": {
+              "mech-control": 3.457521,
+              "mech-experiment": 3.475896,
+              "roc": 8.7207495,
+              "libdeflate": 5.3588125
+            },
+            "mech_x_libdeflate": 0.6483572937038521,
+            "mech_x_previous_selected": 1.004937078329787,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-1048576",
+            "input_bytes": 1048576,
+            "milliseconds": {
+              "mech-control": 13.5755415,
+              "mech-experiment": 13.621542,
+              "roc": 34.2193545,
+              "libdeflate": 21.753854
+            },
+            "mech_x_libdeflate": 0.626863136906653,
+            "mech_x_previous_selected": 1.003617037071615,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          }
+        ],
+        "geometric_mean_x_previous_selected": 0.9983412240923997
+      },
+      "reverse": {
+        "peer_wins": {
+          "roc": {
+            "wins": 81,
+            "required_missing": [],
+            "passed": true
+          },
+          "libdeflate": {
+            "wins": 63,
+            "required_missing": [],
+            "passed": true
+          }
+        },
+        "cases": [
+          {
+            "case": "prefix-repeated-1048576",
+            "input_bytes": 1048576,
+            "milliseconds": {
+              "libdeflate": 21.694937499999998,
+              "roc": 34.227416999999996,
+              "mech-experiment": 13.619833,
+              "mech-control": 13.563020999999999
+            },
+            "mech_x_libdeflate": 0.6286342527820032,
+            "mech_x_previous_selected": 1.0045314779984582,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-262144",
+            "input_bytes": 262144,
+            "milliseconds": {
+              "libdeflate": 5.3621039999999995,
+              "roc": 8.7182505,
+              "mech-experiment": 3.483646,
+              "mech-control": 3.471354
+            },
+            "mech_x_libdeflate": 0.6498981481888225,
+            "mech_x_previous_selected": 1.0035796874929919,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-131072",
+            "input_bytes": 131072,
+            "milliseconds": {
+              "libdeflate": 2.6836249999999997,
+              "roc": 4.4905835,
+              "mech-experiment": 1.747479,
+              "mech-control": 1.740813
+            },
+            "mech_x_libdeflate": 0.6532439681851369,
+            "mech_x_previous_selected": 1.0058522034408397,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "libdeflate": 1.359791,
+              "roc": 2.4005629999999996,
+              "mech-experiment": 0.8897085000000001,
+              "mech-control": 0.886563
+            },
+            "mech_x_libdeflate": 0.6538788416271305,
+            "mech_x_previous_selected": 1.0019214837491197,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-65536",
+            "input_bytes": 65536,
+            "milliseconds": {
+              "libdeflate": 1.3491045,
+              "roc": 2.387646,
+              "mech-experiment": 0.8825835,
+              "mech-control": 0.876792
+            },
+            "mech_x_libdeflate": 0.6544232076450791,
+            "mech_x_previous_selected": 1.0066071672085015,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-65535",
+            "input_bytes": 65535,
+            "milliseconds": {
+              "libdeflate": 1.348687,
+              "roc": 2.387354,
+              "mech-experiment": 0.8758125000000001,
+              "mech-control": 0.8707705
+            },
+            "mech_x_libdeflate": 0.6498869165888129,
+            "mech_x_previous_selected": 1.0047674487326341,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-33027",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "libdeflate": 0.695271,
+              "roc": 1.3543335,
+              "mech-experiment": 0.4594165,
+              "mech-control": 0.4598125
+            },
+            "mech_x_libdeflate": 0.6607364401155226,
+            "mech_x_previous_selected": 1.000686573755948,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "libdeflate": 0.6872914999999999,
+              "roc": 1.3459370000000002,
+              "mech-experiment": 0.4569795,
+              "mech-control": 0.4557295
+            },
+            "mech_x_libdeflate": 0.666320850729055,
+            "mech_x_previous_selected": 1.0031652257978596,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "libdeflate": 0.679271,
+              "roc": 1.3338335000000001,
+              "mech-experiment": 0.446375,
+              "mech-control": 0.44606250000000003
+            },
+            "mech_x_libdeflate": 0.658736221270082,
+            "mech_x_previous_selected": 1.0036737025042883,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "libdeflate": 0.6790835,
+              "roc": 1.333271,
+              "mech-experiment": 0.4456875,
+              "mech-control": 0.44258299999999995
+            },
+            "mech_x_libdeflate": 0.6574666798490552,
+            "mech_x_previous_selected": 1.0053764357829345,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "libdeflate": 0.350396,
+              "roc": 0.811396,
+              "mech-experiment": 0.23827099999999998,
+              "mech-control": 0.236708
+            },
+            "mech_x_libdeflate": 0.6796590365902195,
+            "mech_x_previous_selected": 1.0049857082219347,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-8192",
+            "input_bytes": 8192,
+            "milliseconds": {
+              "libdeflate": 0.200208,
+              "roc": 0.5835625000000001,
+              "mech-experiment": 0.1435,
+              "mech-control": 0.1432085
+            },
+            "mech_x_libdeflate": 0.7220150979199035,
+            "mech_x_previous_selected": 1.0016111580292566,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-4096",
+            "input_bytes": 4096,
+            "milliseconds": {
+              "libdeflate": 0.113896,
+              "roc": 0.436604,
+              "mech-experiment": 0.085208,
+              "mech-control": 0.085333
+            },
+            "mech_x_libdeflate": 0.7483357636986115,
+            "mech_x_previous_selected": 0.9948286590257385,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "libdeflate": 0.046542,
+              "roc": 0.32733399999999996,
+              "mech-experiment": 0.0390205,
+              "mech-control": 0.039041
+            },
+            "mech_x_libdeflate": 0.8309246749384546,
+            "mech_x_previous_selected": 0.9991631269577396,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-1048576",
+            "input_bytes": 1048576,
+            "milliseconds": {
+              "libdeflate": 18.4040625,
+              "roc": 31.317542000000003,
+              "mech-experiment": 12.040978500000001,
+              "mech-control": 12.003771
+            },
+            "mech_x_libdeflate": 0.6543153333141779,
+            "mech_x_previous_selected": 1.0038584804208806,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-262144",
+            "input_bytes": 262144,
+            "milliseconds": {
+              "libdeflate": 4.529895499999999,
+              "roc": 7.991792000000001,
+              "mech-experiment": 3.0558755,
+              "mech-control": 3.052208
+            },
+            "mech_x_libdeflate": 0.6748957175322342,
+            "mech_x_previous_selected": 1.0015411862495844,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-131072",
+            "input_bytes": 131072,
+            "milliseconds": {
+              "libdeflate": 2.2739374999999997,
+              "roc": 4.130375000000001,
+              "mech-experiment": 1.539646,
+              "mech-control": 1.532729
+            },
+            "mech_x_libdeflate": 0.6763864888969667,
+            "mech_x_previous_selected": 1.0042313549534911,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "libdeflate": 1.1519375,
+              "roc": 2.2135625,
+              "mech-experiment": 0.798833,
+              "mech-control": 0.7958955
+            },
+            "mech_x_libdeflate": 0.6946753767045039,
+            "mech_x_previous_selected": 1.0028283700515541,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-65536",
+            "input_bytes": 65536,
+            "milliseconds": {
+              "libdeflate": 1.1427295,
+              "roc": 2.2021045,
+              "mech-experiment": 0.7779795,
+              "mech-control": 0.7757915
+            },
+            "mech_x_libdeflate": 0.6806361774340605,
+            "mech_x_previous_selected": 1.0018745253042718,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-65535",
+            "input_bytes": 65535,
+            "milliseconds": {
+              "libdeflate": 1.142854,
+              "roc": 2.200583,
+              "mech-experiment": 0.786292,
+              "mech-control": 0.7847295
+            },
+            "mech_x_libdeflate": 0.6887851011303174,
+            "mech_x_previous_selected": 1.0011756197745758,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-33027",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "libdeflate": 0.5936875,
+              "roc": 1.2592915,
+              "mech-experiment": 0.41481250000000003,
+              "mech-control": 0.413458
+            },
+            "mech_x_libdeflate": 0.6981428890734878,
+            "mech_x_previous_selected": 1.0046423432658604,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "libdeflate": 0.5893545,
+              "roc": 1.252125,
+              "mech-experiment": 0.4124585,
+              "mech-control": 0.4101665
+            },
+            "mech_x_libdeflate": 0.7003574501017918,
+            "mech_x_previous_selected": 1.0052793085564715,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "libdeflate": 0.57775,
+              "roc": 1.2394165,
+              "mech-experiment": 0.396188,
+              "mech-control": 0.39489599999999997
+            },
+            "mech_x_libdeflate": 0.6864572114986426,
+            "mech_x_previous_selected": 1.0017324401742578,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "libdeflate": 0.577438,
+              "roc": 1.239458,
+              "mech-experiment": 0.3998955,
+              "mech-control": 0.3985625
+            },
+            "mech_x_libdeflate": 0.6933677625756248,
+            "mech_x_previous_selected": 1.0022305814373706,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "libdeflate": 0.3,
+              "roc": 0.764625,
+              "mech-experiment": 0.21437499999999998,
+              "mech-control": 0.2132705
+            },
+            "mech_x_libdeflate": 0.7157876384086868,
+            "mech_x_previous_selected": 1.0033165827354005,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-8192",
+            "input_bytes": 8192,
+            "milliseconds": {
+              "libdeflate": 0.1749165,
+              "roc": 0.5566460000000001,
+              "mech-experiment": 0.1322295,
+              "mech-control": 0.131979
+            },
+            "mech_x_libdeflate": 0.7576531615198479,
+            "mech_x_previous_selected": 1.004313667730023,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-4096",
+            "input_bytes": 4096,
+            "milliseconds": {
+              "libdeflate": 0.10137499999999999,
+              "roc": 0.42372899999999997,
+              "mech-experiment": 0.0803545,
+              "mech-control": 0.08052100000000001
+            },
+            "mech_x_libdeflate": 0.8008247274446151,
+            "mech_x_previous_selected": 0.9962470910632197,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "libdeflate": 0.045417,
+              "roc": 0.323875,
+              "mech-experiment": 0.039542,
+              "mech-control": 0.039458
+            },
+            "mech_x_libdeflate": 0.8789142657933123,
+            "mech_x_previous_selected": 0.9994541819204456,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-random-1048576",
+            "input_bytes": 1048576,
+            "milliseconds": {
+              "libdeflate": 20.350479,
+              "roc": 28.817666499999998,
+              "mech-experiment": 23.597542,
+              "mech-control": 23.688395500000002
+            },
+            "mech_x_libdeflate": 1.1603084232739933,
+            "mech_x_previous_selected": 0.9961070547111265,
+            "mech_time_reduction_to_parity_pct": 13.816018229158223,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-262144",
+            "input_bytes": 262144,
+            "milliseconds": {
+              "libdeflate": 5.0536045,
+              "roc": 7.515187500000001,
+              "mech-experiment": 5.970187,
+              "mech-control": 5.993979
+            },
+            "mech_x_libdeflate": 1.1803281270637076,
+            "mech_x_previous_selected": 0.9964195059858694,
+            "mech_time_reduction_to_parity_pct": 15.277796311802582,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-131072",
+            "input_bytes": 131072,
+            "milliseconds": {
+              "libdeflate": 2.4741665,
+              "roc": 3.843521,
+              "mech-experiment": 2.9353124999999998,
+              "mech-control": 2.9359165
+            },
+            "mech_x_libdeflate": 1.1874395828472144,
+            "mech_x_previous_selected": 0.9999012805812987,
+            "mech_time_reduction_to_parity_pct": 15.785189036546699,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "libdeflate": 1.1710625000000001,
+              "roc": 1.9900209999999998,
+              "mech-experiment": 1.4357705,
+              "mech-control": 1.4395835000000001
+            },
+            "mech_x_libdeflate": 1.222520329644526,
+            "mech_x_previous_selected": 0.9950162395234032,
+            "mech_time_reduction_to_parity_pct": 18.201769267037747,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-65536",
+            "input_bytes": 65536,
+            "milliseconds": {
+              "libdeflate": 1.162104,
+              "roc": 1.9766455,
+              "mech-experiment": 1.422333,
+              "mech-control": 1.4256249999999997
+            },
+            "mech_x_libdeflate": 1.2207429083475843,
+            "mech_x_previous_selected": 0.9967434933240217,
+            "mech_time_reduction_to_parity_pct": 18.082669728254665,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-65535",
+            "input_bytes": 65535,
+            "milliseconds": {
+              "libdeflate": 1.161,
+              "roc": 1.974917,
+              "mech-experiment": 1.4233955,
+              "mech-control": 1.4279585
+            },
+            "mech_x_libdeflate": 1.224197871678917,
+            "mech_x_previous_selected": 0.9975100257842212,
+            "mech_time_reduction_to_parity_pct": 18.313858965580664,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-33027",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "libdeflate": 0.5340415000000001,
+              "roc": 1.0785,
+              "mech-experiment": 0.6751875,
+              "mech-control": 0.6774995
+            },
+            "mech_x_libdeflate": 1.2625759502536895,
+            "mech_x_previous_selected": 0.9965055240428438,
+            "mech_time_reduction_to_parity_pct": 20.79684396023306,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "libdeflate": 0.5286665,
+              "roc": 1.071125,
+              "mech-experiment": 0.6657085,
+              "mech-control": 0.670354
+            },
+            "mech_x_libdeflate": 1.2599436702408122,
+            "mech_x_previous_selected": 0.9953081951973181,
+            "mech_time_reduction_to_parity_pct": 20.631372368506707,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "libdeflate": 0.5196875,
+              "roc": 1.0563544999999999,
+              "mech-experiment": 0.6552085,
+              "mech-control": 0.658562
+            },
+            "mech_x_libdeflate": 1.2593375945521106,
+            "mech_x_previous_selected": 0.99648117692984,
+            "mech_time_reduction_to_parity_pct": 20.59317498929628,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "libdeflate": 0.5191245,
+              "roc": 1.057,
+              "mech-experiment": 0.655521,
+              "mech-control": 0.6583125000000001
+            },
+            "mech_x_libdeflate": 1.2629059763120722,
+            "mech_x_previous_selected": 0.9942157990909086,
+            "mech_time_reduction_to_parity_pct": 20.817541546505947,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "libdeflate": 0.2371045,
+              "roc": 0.642729,
+              "mech-experiment": 0.31637499999999996,
+              "mech-control": 0.322125
+            },
+            "mech_x_libdeflate": 1.3411167077706772,
+            "mech_x_previous_selected": 0.989433485406101,
+            "mech_time_reduction_to_parity_pct": 25.435273887364474,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-8192",
+            "input_bytes": 8192,
+            "milliseconds": {
+              "libdeflate": 0.125854,
+              "roc": 0.45225000000000004,
+              "mech-experiment": 0.1721875,
+              "mech-control": 0.1763545
+            },
+            "mech_x_libdeflate": 1.3821979657118382,
+            "mech_x_previous_selected": 0.9808266543273496,
+            "mech_time_reduction_to_parity_pct": 27.651463480124892,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-4096",
+            "input_bytes": 4096,
+            "milliseconds": {
+              "libdeflate": 0.076792,
+              "roc": 0.37235399999999996,
+              "mech-experiment": 0.1064795,
+              "mech-control": 0.10872899999999999
+            },
+            "mech_x_libdeflate": 1.400798335429769,
+            "mech_x_previous_selected": 0.9800691963514935,
+            "mech_time_reduction_to_parity_pct": 28.61213675748715,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "libdeflate": 0.033166,
+              "roc": 0.30737499999999995,
+              "mech-experiment": 0.0285,
+              "mech-control": 0.028583
+            },
+            "mech_x_libdeflate": 0.8614527652761854,
+            "mech_x_previous_selected": 0.9962880529063161,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-1048576",
+            "input_bytes": 1048576,
+            "milliseconds": {
+              "libdeflate": 199.59395800000001,
+              "roc": 161.0745835,
+              "mech-experiment": 139.6574995,
+              "mech-control": 140.07810399999997
+            },
+            "mech_x_libdeflate": 0.6994488285819864,
+            "mech_x_previous_selected": 0.9967408696866001,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-262144",
+            "input_bytes": 262144,
+            "milliseconds": {
+              "libdeflate": 56.157125,
+              "roc": 45.3509585,
+              "mech-experiment": 38.8982715,
+              "mech-control": 39.011646
+            },
+            "mech_x_libdeflate": 0.6928105425581997,
+            "mech_x_previous_selected": 0.9972697390511723,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-131072",
+            "input_bytes": 131072,
+            "milliseconds": {
+              "libdeflate": 27.209999999999997,
+              "roc": 22.3714165,
+              "mech-experiment": 19.106625,
+              "mech-control": 19.168125
+            },
+            "mech_x_libdeflate": 0.7028575328286157,
+            "mech_x_previous_selected": 0.996484604017664,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "libdeflate": 12.838104,
+              "roc": 10.7842085,
+              "mech-experiment": 9.989375,
+              "mech-control": 10.0328955
+            },
+            "mech_x_libdeflate": 0.777664289011002,
+            "mech_x_previous_selected": 0.9957015600996074,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-65536",
+            "input_bytes": 65536,
+            "milliseconds": {
+              "libdeflate": 12.908520999999999,
+              "roc": 10.7754995,
+              "mech-experiment": 9.983166,
+              "mech-control": 10.020854
+            },
+            "mech_x_libdeflate": 0.7762259982778272,
+            "mech_x_previous_selected": 0.996101599162849,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-65535",
+            "input_bytes": 65535,
+            "milliseconds": {
+              "libdeflate": 12.891812499999999,
+              "roc": 10.824479499999999,
+              "mech-experiment": 9.980479,
+              "mech-control": 10.015604000000002
+            },
+            "mech_x_libdeflate": 0.7772578564802716,
+            "mech_x_previous_selected": 0.9963776389345547,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-33027",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "libdeflate": 4.850458000000001,
+              "roc": 4.3992505,
+              "mech-experiment": 4.070145500000001,
+              "mech-control": 4.0945415
+            },
+            "mech_x_libdeflate": 0.838751170945604,
+            "mech_x_previous_selected": 0.9932220225399899,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "libdeflate": 4.802666,
+              "roc": 4.3533124999999995,
+              "mech-experiment": 4.0212705,
+              "mech-control": 4.045104000000001
+            },
+            "mech_x_libdeflate": 0.8366066489487884,
+            "mech_x_previous_selected": 0.9940936170354944,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "libdeflate": 4.792583,
+              "roc": 4.3395624999999995,
+              "mech-experiment": 4.0113335,
+              "mech-control": 4.029646
+            },
+            "mech_x_libdeflate": 0.8360330160568579,
+            "mech_x_previous_selected": 0.9935606579317559,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "libdeflate": 4.7913334999999995,
+              "roc": 4.3425835,
+              "mech-experiment": 4.006229,
+              "mech-control": 4.029187
+            },
+            "mech_x_libdeflate": 0.8365733279356098,
+            "mech_x_previous_selected": 0.9933144066238652,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "libdeflate": 2.1586665,
+              "roc": 2.1632499999999997,
+              "mech-experiment": 1.88025,
+              "mech-control": 1.890583
+            },
+            "mech_x_libdeflate": 0.8716297269405918,
+            "mech_x_previous_selected": 0.994982188446476,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-8192",
+            "input_bytes": 8192,
+            "milliseconds": {
+              "libdeflate": 0.9098335000000001,
+              "roc": 1.1285205,
+              "mech-experiment": 0.846917,
+              "mech-control": 0.8529375
+            },
+            "mech_x_libdeflate": 0.9329118833767919,
+            "mech_x_previous_selected": 0.9910241595427687,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "milliseconds": {
+              "libdeflate": 0.393708,
+              "roc": 0.662917,
+              "mech-experiment": 0.379813,
+              "mech-control": 0.38010400000000005
+            },
+            "mech_x_libdeflate": 0.9733808040940197,
+            "mech_x_previous_selected": 0.9975558137533507,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "libdeflate": 0.059,
+              "roc": 0.334708,
+              "mech-experiment": 0.071084,
+              "mech-control": 0.07116700000000001
+            },
+            "mech_x_libdeflate": 1.2093633525599001,
+            "mech_x_previous_selected": 0.9963749946951872,
+            "mech_time_reduction_to_parity_pct": 17.311865132735637,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "heldout-mixed-131073",
+            "input_bytes": 131073,
+            "milliseconds": {
+              "libdeflate": 7.250625,
+              "roc": 8.394584,
+              "mech-experiment": 6.2720625,
+              "mech-control": 6.290042
+            },
+            "mech_x_libdeflate": 0.8649388239082192,
+            "mech_x_previous_selected": 0.9974578605350203,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "heldout-random-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "libdeflate": 1.1494375,
+              "roc": 1.9468750000000001,
+              "mech-experiment": 1.420604,
+              "mech-control": 1.4235630000000001
+            },
+            "mech_x_libdeflate": 1.2335406139510752,
+            "mech_x_previous_selected": 0.9973560246766141,
+            "mech_time_reduction_to_parity_pct": 18.932543550636417,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "heldout-slides-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "libdeflate": 10.119520999999999,
+              "roc": 8.880042,
+              "mech-experiment": 8.025208000000001,
+              "mech-control": 8.075520999999998
+            },
+            "mech_x_libdeflate": 0.7910296299254059,
+            "mech_x_previous_selected": 0.994438383231543,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "heldout-window-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "libdeflate": 4.792917000000001,
+              "roc": 4.3490835,
+              "mech-experiment": 4.009813,
+              "mech-control": 4.0290835
+            },
+            "mech_x_libdeflate": 0.8356401205246892,
+            "mech_x_previous_selected": 0.993765815908776,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "heldout-window-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "libdeflate": 4.793292,
+              "roc": 4.3439375,
+              "mech-experiment": 4.009938,
+              "mech-control": 4.0330415
+            },
+            "mech_x_libdeflate": 0.8359851503406499,
+            "mech_x_previous_selected": 0.9940993022662175,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "reymont-prefix-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "libdeflate": 4.80225,
+              "roc": 4.3572085,
+              "mech-experiment": 4.0190625,
+              "mech-control": 4.044582999999999
+            },
+            "mech_x_libdeflate": 0.8370422932719328,
+            "mech_x_previous_selected": 0.9934688580582638,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "reymont-prefix-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "libdeflate": 2.156125,
+              "roc": 2.1644374999999996,
+              "mech-experiment": 1.879042,
+              "mech-control": 1.8902705
+            },
+            "mech_x_libdeflate": 0.8708093411279055,
+            "mech_x_previous_selected": 0.9943033374665057,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "reymont-prefix-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "libdeflate": 0.059,
+              "roc": 0.3349585,
+              "mech-experiment": 0.07104200000000001,
+              "mech-control": 0.07116600000000001
+            },
+            "mech_x_libdeflate": 1.2100439692537457,
+            "mech_x_previous_selected": 0.9987001519998803,
+            "mech_time_reduction_to_parity_pct": 17.358374950893996,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "repeated-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "libdeflate": 0.691146,
+              "roc": 1.3438130000000001,
+              "mech-experiment": 0.45777049999999997,
+              "mech-control": 0.457833
+            },
+            "mech_x_libdeflate": 0.6643529938070296,
+            "mech_x_previous_selected": 1.0020510048792108,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "random-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "libdeflate": 0.527854,
+              "roc": 1.0717915,
+              "mech-experiment": 0.6676665,
+              "mech-control": 0.669625
+            },
+            "mech_x_libdeflate": 1.26063568730691,
+            "mech_x_previous_selected": 0.9947686615953366,
+            "mech_time_reduction_to_parity_pct": 20.674941216657505,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "repeated-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "libdeflate": 0.04625,
+              "roc": 0.32875,
+              "mech-experiment": 0.039,
+              "mech-control": 0.039166
+            },
+            "mech_x_libdeflate": 0.833092247569402,
+            "mech_x_previous_selected": 0.9957333090616385,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "random-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "libdeflate": 0.032916,
+              "roc": 0.307958,
+              "mech-experiment": 0.028083,
+              "mech-control": 0.028084
+            },
+            "mech_x_libdeflate": 0.8565018283479378,
+            "mech_x_previous_selected": 0.9966205714649409,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "random-256",
+            "input_bytes": 256,
+            "milliseconds": {
+              "libdeflate": 0.025833000000000002,
+              "roc": 0.297625,
+              "mech-experiment": 0.017499999999999998,
+              "mech-control": 0.017584
+            },
+            "mech_x_libdeflate": 0.6906643862129036,
+            "mech_x_previous_selected": 0.9968838055918006,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "random-64",
+            "input_bytes": 64,
+            "milliseconds": {
+              "libdeflate": 0.022333000000000002,
+              "roc": 0.291875,
+              "mech-experiment": 0.011,
+              "mech-control": 0.010832999999999999
+            },
+            "mech_x_libdeflate": 0.49072553103411015,
+            "mech_x_previous_selected": 1.0163916826334283,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "33027-periodic-window",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "libdeflate": 0.5925210000000001,
+              "roc": 1.2611459999999999,
+              "mech-experiment": 0.415854,
+              "mech-control": 0.4150835
+            },
+            "mech_x_libdeflate": 0.7019187486418554,
+            "mech_x_previous_selected": 1.0033397119790959,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "16384-distribution-change",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "libdeflate": 0.48275,
+              "roc": 0.840771,
+              "mech-experiment": 0.5804785,
+              "mech-control": 0.579813
+            },
+            "mech_x_libdeflate": 1.2033178366040398,
+            "mech_x_previous_selected": 1.0010886709746385,
+            "mech_time_reduction_to_parity_pct": 16.896436703525985,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "32-high-entropy-stored",
+            "input_bytes": 32,
+            "milliseconds": {
+              "libdeflate": 0.021584,
+              "roc": 0.29125,
+              "mech-experiment": 0.009583,
+              "mech-control": 0.009625
+            },
+            "mech_x_libdeflate": 0.44004118986789964,
+            "mech_x_previous_selected": 0.991309401093485,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "128-biased-dynamic",
+            "input_bytes": 128,
+            "milliseconds": {
+              "libdeflate": 0.020417,
+              "roc": 0.290125,
+              "mech-experiment": 0.015666,
+              "mech-control": 0.015833
+            },
+            "mech_x_libdeflate": 0.747713437856948,
+            "mech_x_previous_selected": 0.9846706362920778,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "eight-literals-prefix",
+            "input_bytes": 8,
+            "milliseconds": {
+              "libdeflate": 0.021375,
+              "roc": 0.290833,
+              "mech-experiment": 0.00825,
+              "mech-control": 0.00825
+            },
+            "mech_x_libdeflate": 0.385232435476355,
+            "mech_x_previous_selected": 1.0012994250592007,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "320-overlap",
+            "input_bytes": 320,
+            "milliseconds": {
+              "libdeflate": 0.027625,
+              "roc": 0.300209,
+              "mech-experiment": 0.026792,
+              "mech-control": 0.027
+            },
+            "mech_x_libdeflate": 0.9474836877902931,
+            "mech_x_previous_selected": 0.9923160707488726,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "eight-overlap",
+            "input_bytes": 8,
+            "milliseconds": {
+              "libdeflate": 0.021208,
+              "roc": 0.29025,
+              "mech-experiment": 0.015166,
+              "mech-control": 0.015333000000000001
+            },
+            "mech_x_libdeflate": 0.7017143164886877,
+            "mech_x_previous_selected": 0.9950746220464038,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "eight-literals",
+            "input_bytes": 8,
+            "milliseconds": {
+              "libdeflate": 0.021500000000000002,
+              "roc": 0.291209,
+              "mech-experiment": 0.008291000000000001,
+              "mech-control": 0.00825
+            },
+            "mech_x_libdeflate": 0.3860565254027004,
+            "mech_x_previous_selected": 1.0016236829653662,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "seven-stored-prefix",
+            "input_bytes": 7,
+            "milliseconds": {
+              "libdeflate": 0.004208,
+              "roc": 4.2e-05,
+              "mech-experiment": 4.1e-05,
+              "mech-control": 4.1e-05
+            },
+            "mech_x_libdeflate": 0.007318173497442052,
+            "mech_x_previous_selected": 1.0051806249783253,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "one-stored",
+            "input_bytes": 1,
+            "milliseconds": {
+              "libdeflate": 0.004208,
+              "roc": 4.2e-05,
+              "mech-experiment": 4.1e-05,
+              "mech-control": 4.1e-05
+            },
+            "mech_x_libdeflate": 0.006894141631294658,
+            "mech_x_previous_selected": 1.002831361099419,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "empty",
+            "input_bytes": 0,
+            "milliseconds": {
+              "libdeflate": 0.004208,
+              "roc": 4.2e-05,
+              "mech-experiment": 4.1e-05,
+              "mech-control": 4.1e-05
+            },
+            "mech_x_libdeflate": 0.006822179185443053,
+            "mech_x_previous_selected": 1.0379392781192451,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          }
+        ],
+        "geometric_mean_x_previous_selected": 0.9987380459944873
+      }
+    },
+    "remaining_losses_closest_first": [
+      "prefix-random-1048576",
+      "prefix-random-262144",
+      "prefix-random-131072",
+      "16384-distribution-change",
+      "prefix-natural-1024",
+      "reymont-prefix-1024",
+      "prefix-random-65537",
+      "prefix-random-65536",
+      "prefix-random-65535",
+      "heldout-random-65537",
+      "prefix-random-32768",
+      "prefix-random-32769",
+      "prefix-random-33027",
+      "prefix-random-32767",
+      "random-32769",
+      "prefix-random-16384",
+      "prefix-random-8192",
+      "prefix-random-4096"
+    ]
+  },
+  "shared-vector-linear": {
+    "role": "shared-vector-linear",
+    "host": "Apple M1, macOS 15.6.1, arm64",
+    "scope": "Full81-case96-block qualification, both orders. Milliseconds are per-call medians; ratios are geometric means of paired block observations, so rounded displayed milliseconds need not divide to the paired ratio. A ratio below one is a win. Remaining reduction uses 1-1/ratio, not ratio-1. Confidence is separate.",
+    "orders": {
+      "forward": {
+        "peer_wins": {
+          "roc": {
+            "wins": 81,
+            "required_missing": [],
+            "passed": true
+          },
+          "libdeflate": {
+            "wins": 63,
+            "required_missing": [],
+            "passed": true
+          }
+        },
+        "cases": [
+          {
+            "case": "empty",
+            "input_bytes": 0,
+            "milliseconds": {
+              "mech-control": 4.1e-05,
+              "mech-experiment": 4.1e-05,
+              "roc": 4.2e-05,
+              "libdeflate": 0.004208
+            },
+            "mech_x_libdeflate": 0.006875883890415069,
+            "mech_x_previous_selected": 1.0220309314174494,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "one-stored",
+            "input_bytes": 1,
+            "milliseconds": {
+              "mech-control": 4.1e-05,
+              "mech-experiment": 4.1e-05,
+              "roc": 4.2e-05,
+              "libdeflate": 0.004208
+            },
+            "mech_x_libdeflate": 0.007010186203506191,
+            "mech_x_previous_selected": 0.9891268616167422,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "seven-stored-prefix",
+            "input_bytes": 7,
+            "milliseconds": {
+              "mech-control": 4.1e-05,
+              "mech-experiment": 4.1e-05,
+              "roc": 4.2e-05,
+              "libdeflate": 0.004208
+            },
+            "mech_x_libdeflate": 0.007323559228421975,
+            "mech_x_previous_selected": 1.0030914874731407,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "eight-literals",
+            "input_bytes": 8,
+            "milliseconds": {
+              "mech-control": 0.00825,
+              "mech-experiment": 0.00825,
+              "roc": 0.29016699999999995,
+              "libdeflate": 0.021292
+            },
+            "mech_x_libdeflate": 0.384746984656699,
+            "mech_x_previous_selected": 1.0037493063995113,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "eight-overlap",
+            "input_bytes": 8,
+            "milliseconds": {
+              "mech-control": 0.015333000000000001,
+              "mech-experiment": 0.015208000000000001,
+              "roc": 0.29025,
+              "libdeflate": 0.020979499999999998
+            },
+            "mech_x_libdeflate": 0.7002867320283116,
+            "mech_x_previous_selected": 0.9921821086897841,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "320-overlap",
+            "input_bytes": 320,
+            "milliseconds": {
+              "mech-control": 0.026917,
+              "mech-experiment": 0.026958,
+              "roc": 0.30079100000000003,
+              "libdeflate": 0.027583999999999997
+            },
+            "mech_x_libdeflate": 0.9551065527725653,
+            "mech_x_previous_selected": 1.0028840894018305,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "eight-literals-prefix",
+            "input_bytes": 8,
+            "milliseconds": {
+              "mech-control": 0.00825,
+              "mech-experiment": 0.008291999999999999,
+              "roc": 0.290709,
+              "libdeflate": 0.021416
+            },
+            "mech_x_libdeflate": 0.38604244365220314,
+            "mech_x_previous_selected": 1.0036028791600837,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "128-biased-dynamic",
+            "input_bytes": 128,
+            "milliseconds": {
+              "mech-control": 0.015833,
+              "mech-experiment": 0.015583,
+              "roc": 0.290209,
+              "libdeflate": 0.020416
+            },
+            "mech_x_libdeflate": 0.7428013322595399,
+            "mech_x_previous_selected": 0.9793726296152844,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "32-high-entropy-stored",
+            "input_bytes": 32,
+            "milliseconds": {
+              "mech-control": 0.009542,
+              "mech-experiment": 0.0095,
+              "roc": 0.291375,
+              "libdeflate": 0.021542000000000002
+            },
+            "mech_x_libdeflate": 0.43997767100971563,
+            "mech_x_previous_selected": 0.9983969690153915,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "16384-distribution-change",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "mech-control": 0.583042,
+              "mech-experiment": 0.579646,
+              "roc": 0.8445835,
+              "libdeflate": 0.4838535
+            },
+            "mech_x_libdeflate": 1.192901587911526,
+            "mech_x_previous_selected": 0.9905659831528361,
+            "mech_time_reduction_to_parity_pct": 16.17078809067969,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "33027-periodic-window",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "mech-control": 0.41272949999999997,
+              "mech-experiment": 0.414333,
+              "roc": 1.26025,
+              "libdeflate": 0.593187
+            },
+            "mech_x_libdeflate": 0.7003657475261709,
+            "mech_x_previous_selected": 1.003671466057955,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "random-64",
+            "input_bytes": 64,
+            "milliseconds": {
+              "mech-control": 0.010875,
+              "mech-experiment": 0.010832999999999999,
+              "roc": 0.292334,
+              "libdeflate": 0.022375
+            },
+            "mech_x_libdeflate": 0.4806392940225801,
+            "mech_x_previous_selected": 0.9888524610736352,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "random-256",
+            "input_bytes": 256,
+            "milliseconds": {
+              "mech-control": 0.017667,
+              "mech-experiment": 0.017625000000000002,
+              "roc": 0.2994585,
+              "libdeflate": 0.025917
+            },
+            "mech_x_libdeflate": 0.6925754174575616,
+            "mech_x_previous_selected": 0.9941857398937265,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "random-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "mech-control": 0.028125,
+              "mech-experiment": 0.028042,
+              "roc": 0.309167,
+              "libdeflate": 0.032916999999999995
+            },
+            "mech_x_libdeflate": 0.8551422199284786,
+            "mech_x_previous_selected": 0.9957103728940013,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "repeated-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "mech-control": 0.039083,
+              "mech-experiment": 0.039166,
+              "roc": 0.32875,
+              "libdeflate": 0.04625
+            },
+            "mech_x_libdeflate": 0.8367218656002474,
+            "mech_x_previous_selected": 1.0005393134045713,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "random-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "mech-control": 0.6700625000000001,
+              "mech-experiment": 0.6645209999999999,
+              "roc": 1.0739585,
+              "libdeflate": 0.5266875
+            },
+            "mech_x_libdeflate": 1.2579059953249137,
+            "mech_x_previous_selected": 0.9931434858933971,
+            "mech_time_reduction_to_parity_pct": 20.50280357065134,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "repeated-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "mech-control": 0.459229,
+              "mech-experiment": 0.457791,
+              "roc": 1.3453125000000001,
+              "libdeflate": 0.690896
+            },
+            "mech_x_libdeflate": 0.665221813320047,
+            "mech_x_previous_selected": 0.9991093373790342,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "reymont-prefix-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "mech-control": 0.07129100000000001,
+              "mech-experiment": 0.071292,
+              "roc": 0.336958,
+              "libdeflate": 0.059
+            },
+            "mech_x_libdeflate": 1.2119344859834638,
+            "mech_x_previous_selected": 1.0000221457821707,
+            "mech_time_reduction_to_parity_pct": 17.487288994130946,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "reymont-prefix-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "mech-control": 1.887833,
+              "mech-experiment": 1.88375,
+              "roc": 2.158938,
+              "libdeflate": 2.15275
+            },
+            "mech_x_libdeflate": 0.8733987609854074,
+            "mech_x_previous_selected": 0.9971000777239353,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "reymont-prefix-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "mech-control": 4.0488539999999995,
+              "mech-experiment": 4.0330625,
+              "roc": 4.3571875,
+              "libdeflate": 4.801771
+            },
+            "mech_x_libdeflate": 0.8403179524877915,
+            "mech_x_previous_selected": 0.9970861408977495,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "heldout-window-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "mech-control": 4.0336039999999995,
+              "mech-experiment": 4.021438000000001,
+              "roc": 4.348770999999999,
+              "libdeflate": 4.793063
+            },
+            "mech_x_libdeflate": 0.8384854045587022,
+            "mech_x_previous_selected": 0.9972709242464226,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "heldout-window-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "mech-control": 4.032542,
+              "mech-experiment": 4.019062,
+              "roc": 4.359104,
+              "libdeflate": 4.792125
+            },
+            "mech_x_libdeflate": 0.8377624156322173,
+            "mech_x_previous_selected": 0.9959307538834038,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "heldout-slides-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "mech-control": 8.072312000000002,
+              "mech-experiment": 8.0675415,
+              "roc": 8.889583499999999,
+              "libdeflate": 10.1224585
+            },
+            "mech_x_libdeflate": 0.7963515898508088,
+            "mech_x_previous_selected": 0.9994568019480968,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "heldout-random-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "mech-control": 1.425646,
+              "mech-experiment": 1.4153540000000002,
+              "roc": 1.9443124999999999,
+              "libdeflate": 1.1463125
+            },
+            "mech_x_libdeflate": 1.2306869475393294,
+            "mech_x_previous_selected": 0.9919089899506142,
+            "mech_time_reduction_to_parity_pct": 18.744567657971146,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "heldout-mixed-131073",
+            "input_bytes": 131073,
+            "milliseconds": {
+              "mech-control": 6.2899585,
+              "mech-experiment": 6.278896,
+              "roc": 8.401917,
+              "libdeflate": 7.250249999999999
+            },
+            "mech_x_libdeflate": 0.8651710147740459,
+            "mech_x_previous_selected": 0.9979180102342391,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "mech-control": 0.071125,
+              "mech-experiment": 0.07129100000000001,
+              "roc": 0.334083,
+              "libdeflate": 0.058959000000000004
+            },
+            "mech_x_libdeflate": 1.211475354551662,
+            "mech_x_previous_selected": 1.0004483611160258,
+            "mech_time_reduction_to_parity_pct": 17.45601788407194,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "milliseconds": {
+              "mech-control": 0.383854,
+              "mech-experiment": 0.38291650000000005,
+              "roc": 0.6634585,
+              "libdeflate": 0.3918335
+            },
+            "mech_x_libdeflate": 0.9722384013839953,
+            "mech_x_previous_selected": 0.9977743548698206,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-8192",
+            "input_bytes": 8192,
+            "milliseconds": {
+              "mech-control": 0.8545,
+              "mech-experiment": 0.8473335,
+              "roc": 1.127208,
+              "libdeflate": 0.9089375000000001
+            },
+            "mech_x_libdeflate": 0.9284454547959385,
+            "mech_x_previous_selected": 0.9914127877580374,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "mech-control": 1.8874585,
+              "mech-experiment": 1.8853335,
+              "roc": 2.1638125,
+              "libdeflate": 2.1542495
+            },
+            "mech_x_libdeflate": 0.8746439540528556,
+            "mech_x_previous_selected": 0.9995166618649721,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "mech-control": 4.0306875,
+              "mech-experiment": 4.032791500000001,
+              "roc": 4.343208,
+              "libdeflate": 4.7913545
+            },
+            "mech_x_libdeflate": 0.8412440283926107,
+            "mech_x_previous_selected": 1.0003761548361778,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "mech-control": 4.0324165,
+              "mech-experiment": 4.029978999999999,
+              "roc": 4.343312999999999,
+              "libdeflate": 4.792146000000001
+            },
+            "mech_x_libdeflate": 0.8403362844263421,
+            "mech_x_previous_selected": 0.9993123845371716,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "mech-control": 4.0475,
+              "mech-experiment": 4.0345005,
+              "roc": 4.368104,
+              "libdeflate": 4.8012915000000005
+            },
+            "mech_x_libdeflate": 0.8400816042726157,
+            "mech_x_previous_selected": 0.9972630177354818,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-33027",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "mech-control": 4.094520500000001,
+              "mech-experiment": 4.0815625,
+              "roc": 4.395458499999999,
+              "libdeflate": 4.852979
+            },
+            "mech_x_libdeflate": 0.8409557637932182,
+            "mech_x_previous_selected": 0.9965052865838957,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-65535",
+            "input_bytes": 65535,
+            "milliseconds": {
+              "mech-control": 10.0220625,
+              "mech-experiment": 10.0138125,
+              "roc": 10.725937000000002,
+              "libdeflate": 12.765562000000001
+            },
+            "mech_x_libdeflate": 0.78374592347998,
+            "mech_x_previous_selected": 0.9994263018275987,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-65536",
+            "input_bytes": 65536,
+            "milliseconds": {
+              "mech-control": 10.025145499999999,
+              "mech-experiment": 10.012603499999999,
+              "roc": 10.738603999999999,
+              "libdeflate": 12.755458
+            },
+            "mech_x_libdeflate": 0.7855074892684688,
+            "mech_x_previous_selected": 0.9999448649439993,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "mech-control": 10.028521,
+              "mech-experiment": 10.023292,
+              "roc": 10.748770500000001,
+              "libdeflate": 12.766979
+            },
+            "mech_x_libdeflate": 0.7851209181147094,
+            "mech_x_previous_selected": 0.9998227076217314,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-131072",
+            "input_bytes": 131072,
+            "milliseconds": {
+              "mech-control": 19.1631455,
+              "mech-experiment": 19.065833499999997,
+              "roc": 22.3190625,
+              "libdeflate": 27.106436999999996
+            },
+            "mech_x_libdeflate": 0.7033758872488571,
+            "mech_x_previous_selected": 0.9952906131259384,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-262144",
+            "input_bytes": 262144,
+            "milliseconds": {
+              "mech-control": 39.013896,
+              "mech-experiment": 38.897416500000006,
+              "roc": 45.335333,
+              "libdeflate": 55.9305205
+            },
+            "mech_x_libdeflate": 0.6954464268824772,
+            "mech_x_previous_selected": 0.9954635444132958,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-1048576",
+            "input_bytes": 1048576,
+            "milliseconds": {
+              "mech-control": 140.0577915,
+              "mech-experiment": 139.6602915,
+              "roc": 161.1536455,
+              "libdeflate": 199.67393750000002
+            },
+            "mech_x_libdeflate": 0.7012206704310974,
+            "mech_x_previous_selected": 0.999654664251969,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-random-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "mech-control": 0.028625,
+              "mech-experiment": 0.0285,
+              "roc": 0.30737499999999995,
+              "libdeflate": 0.033207999999999994
+            },
+            "mech_x_libdeflate": 0.8606321589808165,
+            "mech_x_previous_selected": 0.9953431919250382,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-random-4096",
+            "input_bytes": 4096,
+            "milliseconds": {
+              "mech-control": 0.1084165,
+              "mech-experiment": 0.10875,
+              "roc": 0.37281200000000003,
+              "libdeflate": 0.077083
+            },
+            "mech_x_libdeflate": 1.4206781929988703,
+            "mech_x_previous_selected": 1.000807381846629,
+            "mech_time_reduction_to_parity_pct": 29.611082585203363,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-8192",
+            "input_bytes": 8192,
+            "milliseconds": {
+              "mech-control": 0.175896,
+              "mech-experiment": 0.175208,
+              "roc": 0.4513125,
+              "libdeflate": 0.12625
+            },
+            "mech_x_libdeflate": 1.3885380679604635,
+            "mech_x_previous_selected": 0.9951724801988004,
+            "mech_time_reduction_to_parity_pct": 27.98180884814795,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "mech-control": 0.3214375,
+              "mech-experiment": 0.31875000000000003,
+              "roc": 0.6415620000000001,
+              "libdeflate": 0.2381875
+            },
+            "mech_x_libdeflate": 1.3394907251266777,
+            "mech_x_previous_selected": 0.9928841443869175,
+            "mech_time_reduction_to_parity_pct": 25.344761166194075,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "mech-control": 0.659188,
+              "mech-experiment": 0.657542,
+              "roc": 1.0600625000000001,
+              "libdeflate": 0.5199999999999999
+            },
+            "mech_x_libdeflate": 1.261813589181958,
+            "mech_x_previous_selected": 0.9966362736395037,
+            "mech_time_reduction_to_parity_pct": 20.74899108922209,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "mech-control": 0.658375,
+              "mech-experiment": 0.6543745000000001,
+              "roc": 1.060083,
+              "libdeflate": 0.5190419999999999
+            },
+            "mech_x_libdeflate": 1.2581848270545601,
+            "mech_x_previous_selected": 0.9938843599527879,
+            "mech_time_reduction_to_parity_pct": 20.520421284921774,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "mech-control": 0.670917,
+              "mech-experiment": 0.668104,
+              "roc": 1.073271,
+              "libdeflate": 0.5293954999999999
+            },
+            "mech_x_libdeflate": 1.259484311348054,
+            "mech_x_previous_selected": 0.9942706489648784,
+            "mech_time_reduction_to_parity_pct": 20.602425056833162,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-33027",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "mech-control": 0.678854,
+              "mech-experiment": 0.6745415,
+              "roc": 1.0797705,
+              "libdeflate": 0.5348544999999999
+            },
+            "mech_x_libdeflate": 1.2600933387671676,
+            "mech_x_previous_selected": 0.9931015075979913,
+            "mech_time_reduction_to_parity_pct": 20.640799436463496,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-65535",
+            "input_bytes": 65535,
+            "milliseconds": {
+              "mech-control": 1.429854,
+              "mech-experiment": 1.4242705,
+              "roc": 1.9762084999999998,
+              "libdeflate": 1.1603335000000001
+            },
+            "mech_x_libdeflate": 1.2230082348616822,
+            "mech_x_previous_selected": 0.9948591805839584,
+            "mech_time_reduction_to_parity_pct": 18.234401740304197,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-65536",
+            "input_bytes": 65536,
+            "milliseconds": {
+              "mech-control": 1.43275,
+              "mech-experiment": 1.4227710000000002,
+              "roc": 1.9759790000000002,
+              "libdeflate": 1.1592704999999999
+            },
+            "mech_x_libdeflate": 1.2227110210256098,
+            "mech_x_previous_selected": 0.9910350664113925,
+            "mech_time_reduction_to_parity_pct": 18.214526343174676,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "mech-control": 1.4417505000000002,
+              "mech-experiment": 1.436021,
+              "roc": 1.9888125,
+              "libdeflate": 1.1685415000000001
+            },
+            "mech_x_libdeflate": 1.22325326941719,
+            "mech_x_previous_selected": 0.9938947679127864,
+            "mech_time_reduction_to_parity_pct": 18.25078052099198,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-131072",
+            "input_bytes": 131072,
+            "milliseconds": {
+              "mech-control": 2.9466455000000003,
+              "mech-experiment": 2.9239165000000003,
+              "roc": 3.847479,
+              "libdeflate": 2.4718750000000003
+            },
+            "mech_x_libdeflate": 1.1802229275316707,
+            "mech_x_previous_selected": 0.9913247907613086,
+            "mech_time_reduction_to_parity_pct": 15.270244572234382,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-262144",
+            "input_bytes": 262144,
+            "milliseconds": {
+              "mech-control": 5.992729000000001,
+              "mech-experiment": 5.9498125,
+              "roc": 7.517521,
+              "libdeflate": 5.0538125
+            },
+            "mech_x_libdeflate": 1.1748275425390529,
+            "mech_x_previous_selected": 0.9918740427378819,
+            "mech_time_reduction_to_parity_pct": 14.88112392745009,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-1048576",
+            "input_bytes": 1048576,
+            "milliseconds": {
+              "mech-control": 23.683104,
+              "mech-experiment": 23.506125000000004,
+              "roc": 28.797603999999996,
+              "libdeflate": 20.3532915
+            },
+            "mech_x_libdeflate": 1.1545923777222125,
+            "mech_x_previous_selected": 0.9927952681222167,
+            "mech_time_reduction_to_parity_pct": 13.389346812352365,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-periodic-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "mech-control": 0.039583,
+              "mech-experiment": 0.039667,
+              "roc": 0.326291,
+              "libdeflate": 0.045625
+            },
+            "mech_x_libdeflate": 0.8774616813068997,
+            "mech_x_previous_selected": 1.0010661344955867,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-4096",
+            "input_bytes": 4096,
+            "milliseconds": {
+              "mech-control": 0.08183349999999999,
+              "mech-experiment": 0.0827705,
+              "roc": 0.424875,
+              "libdeflate": 0.10122899999999999
+            },
+            "mech_x_libdeflate": 0.8214331094693567,
+            "mech_x_previous_selected": 1.0152745656667799,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-8192",
+            "input_bytes": 8192,
+            "milliseconds": {
+              "mech-control": 0.13275,
+              "mech-experiment": 0.133917,
+              "roc": 0.5592914999999999,
+              "libdeflate": 0.1749375
+            },
+            "mech_x_libdeflate": 0.7664564108514482,
+            "mech_x_previous_selected": 1.0114886734100577,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "mech-control": 0.21516649999999998,
+              "mech-experiment": 0.21579199999999998,
+              "roc": 0.767771,
+              "libdeflate": 0.299833
+            },
+            "mech_x_libdeflate": 0.7191209739869765,
+            "mech_x_previous_selected": 1.0021329821571274,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "mech-control": 0.3995,
+              "mech-experiment": 0.4020835,
+              "roc": 1.2403125000000002,
+              "libdeflate": 0.577396
+            },
+            "mech_x_libdeflate": 0.6952686205710997,
+            "mech_x_previous_selected": 1.0045409447215483,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "mech-control": 0.39775,
+              "mech-experiment": 0.39849999999999997,
+              "roc": 1.2403545,
+              "libdeflate": 0.577625
+            },
+            "mech_x_libdeflate": 0.6916593864861305,
+            "mech_x_previous_selected": 1.0028595016580117,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "mech-control": 0.4120415,
+              "mech-experiment": 0.414021,
+              "roc": 1.252167,
+              "libdeflate": 0.5857705
+            },
+            "mech_x_libdeflate": 0.7080983731049073,
+            "mech_x_previous_selected": 1.003813373043898,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-33027",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "mech-control": 0.4170205,
+              "mech-experiment": 0.41868799999999995,
+              "roc": 1.261438,
+              "libdeflate": 0.593083
+            },
+            "mech_x_libdeflate": 0.7047020447421392,
+            "mech_x_previous_selected": 1.0024170506430077,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-65535",
+            "input_bytes": 65535,
+            "milliseconds": {
+              "mech-control": 0.782875,
+              "mech-experiment": 0.785938,
+              "roc": 2.204271,
+              "libdeflate": 1.1411665
+            },
+            "mech_x_libdeflate": 0.6866514267012418,
+            "mech_x_previous_selected": 1.0015380948797403,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-65536",
+            "input_bytes": 65536,
+            "milliseconds": {
+              "mech-control": 0.7804795,
+              "mech-experiment": 0.779875,
+              "roc": 2.2052500000000004,
+              "libdeflate": 1.1419375
+            },
+            "mech_x_libdeflate": 0.6831929497759837,
+            "mech_x_previous_selected": 1.0006371272818513,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "mech-control": 0.7968959999999999,
+              "mech-experiment": 0.7990415000000001,
+              "roc": 2.2167499999999998,
+              "libdeflate": 1.1513955
+            },
+            "mech_x_libdeflate": 0.6937617978220019,
+            "mech_x_previous_selected": 1.0039938691249877,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-131072",
+            "input_bytes": 131072,
+            "milliseconds": {
+              "mech-control": 1.535313,
+              "mech-experiment": 1.5405000000000002,
+              "roc": 4.13,
+              "libdeflate": 2.2736255
+            },
+            "mech_x_libdeflate": 0.6769235073199356,
+            "mech_x_previous_selected": 1.0019388243878222,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-262144",
+            "input_bytes": 262144,
+            "milliseconds": {
+              "mech-control": 3.045354,
+              "mech-experiment": 3.057333,
+              "roc": 7.988770999999999,
+              "libdeflate": 4.528417
+            },
+            "mech_x_libdeflate": 0.674274372980485,
+            "mech_x_previous_selected": 1.0029380956259897,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-1048576",
+            "input_bytes": 1048576,
+            "milliseconds": {
+              "mech-control": 12.000416999999999,
+              "mech-experiment": 12.035146,
+              "roc": 31.3106035,
+              "libdeflate": 18.4619585
+            },
+            "mech_x_libdeflate": 0.6518350419514618,
+            "mech_x_previous_selected": 1.0028448969785806,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "mech-control": 0.039,
+              "mech-experiment": 0.039125,
+              "roc": 0.325291,
+              "libdeflate": 0.04625
+            },
+            "mech_x_libdeflate": 0.8371825320993225,
+            "mech_x_previous_selected": 1.0045066990375198,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-4096",
+            "input_bytes": 4096,
+            "milliseconds": {
+              "mech-control": 0.0860625,
+              "mech-experiment": 0.0881255,
+              "roc": 0.43725,
+              "libdeflate": 0.114
+            },
+            "mech_x_libdeflate": 0.7767873616952233,
+            "mech_x_previous_selected": 1.0174769861199253,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-8192",
+            "input_bytes": 8192,
+            "milliseconds": {
+              "mech-control": 0.1447495,
+              "mech-experiment": 0.1459165,
+              "roc": 0.5787495,
+              "libdeflate": 0.200125
+            },
+            "mech_x_libdeflate": 0.7311435970658411,
+            "mech_x_previous_selected": 1.010869889623152,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "mech-control": 0.2401665,
+              "mech-experiment": 0.23983300000000002,
+              "roc": 0.811771,
+              "libdeflate": 0.35122950000000003
+            },
+            "mech_x_libdeflate": 0.6818510009757766,
+            "mech_x_previous_selected": 0.9995763472055086,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "mech-control": 0.442958,
+              "mech-experiment": 0.4463125,
+              "roc": 1.333396,
+              "libdeflate": 0.6795829999999999
+            },
+            "mech_x_libdeflate": 0.6564778565774766,
+            "mech_x_previous_selected": 1.0076448360212165,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "mech-control": 0.4485415,
+              "mech-experiment": 0.450646,
+              "roc": 1.3318539999999999,
+              "libdeflate": 0.6804994999999999
+            },
+            "mech_x_libdeflate": 0.6628349035040262,
+            "mech_x_previous_selected": 1.00524803206818,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "mech-control": 0.4593545,
+              "mech-experiment": 0.4587705,
+              "roc": 1.345938,
+              "libdeflate": 0.6906035
+            },
+            "mech_x_libdeflate": 0.6665505919868144,
+            "mech_x_previous_selected": 1.0031269564019416,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-33027",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "mech-control": 0.46352150000000003,
+              "mech-experiment": 0.4642705,
+              "roc": 1.3545835000000002,
+              "libdeflate": 0.696021
+            },
+            "mech_x_libdeflate": 0.6674959492310478,
+            "mech_x_previous_selected": 1.0017467423239372,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-65535",
+            "input_bytes": 65535,
+            "milliseconds": {
+              "mech-control": 0.871021,
+              "mech-experiment": 0.874896,
+              "roc": 2.3845,
+              "libdeflate": 1.3499585
+            },
+            "mech_x_libdeflate": 0.648936925704224,
+            "mech_x_previous_selected": 1.0042137189423426,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-65536",
+            "input_bytes": 65536,
+            "milliseconds": {
+              "mech-control": 0.8796455000000001,
+              "mech-experiment": 0.881354,
+              "roc": 2.3877289999999998,
+              "libdeflate": 1.3496664999999999
+            },
+            "mech_x_libdeflate": 0.6536473483876661,
+            "mech_x_previous_selected": 1.0030540404310366,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "mech-control": 0.8868545,
+              "mech-experiment": 0.891125,
+              "roc": 2.3984585,
+              "libdeflate": 1.3594169999999999
+            },
+            "mech_x_libdeflate": 0.6563427905907341,
+            "mech_x_previous_selected": 1.0045996283082619,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-131072",
+            "input_bytes": 131072,
+            "milliseconds": {
+              "mech-control": 1.7415835,
+              "mech-experiment": 1.7478335,
+              "roc": 4.493687499999999,
+              "libdeflate": 2.687667
+            },
+            "mech_x_libdeflate": 0.6504993341560397,
+            "mech_x_previous_selected": 1.0036264765208767,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-262144",
+            "input_bytes": 262144,
+            "milliseconds": {
+              "mech-control": 3.4607915,
+              "mech-experiment": 3.4689165,
+              "roc": 8.722375000000001,
+              "libdeflate": 5.3624375
+            },
+            "mech_x_libdeflate": 0.646960723583255,
+            "mech_x_previous_selected": 1.0020614298323707,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-1048576",
+            "input_bytes": 1048576,
+            "milliseconds": {
+              "mech-control": 13.573229499999998,
+              "mech-experiment": 13.618146000000001,
+              "roc": 34.23681200000001,
+              "libdeflate": 21.7636665
+            },
+            "mech_x_libdeflate": 0.6263357893555093,
+            "mech_x_previous_selected": 1.0040537446242384,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          }
+        ],
+        "geometric_mean_x_previous_selected": 0.9994398176089191
+      },
+      "reverse": {
+        "peer_wins": {
+          "roc": {
+            "wins": 81,
+            "required_missing": [],
+            "passed": true
+          },
+          "libdeflate": {
+            "wins": 63,
+            "required_missing": [],
+            "passed": true
+          }
+        },
+        "cases": [
+          {
+            "case": "prefix-repeated-1048576",
+            "input_bytes": 1048576,
+            "milliseconds": {
+              "libdeflate": 21.6977915,
+              "roc": 34.200624999999995,
+              "mech-experiment": 13.617125000000001,
+              "mech-control": 13.5715625
+            },
+            "mech_x_libdeflate": 0.6280307662908734,
+            "mech_x_previous_selected": 1.0031604001091106,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-262144",
+            "input_bytes": 262144,
+            "milliseconds": {
+              "libdeflate": 5.364021,
+              "roc": 8.725416999999998,
+              "mech-experiment": 3.4867705,
+              "mech-control": 3.471
+            },
+            "mech_x_libdeflate": 0.6504157302800219,
+            "mech_x_previous_selected": 1.0041581219614981,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-131072",
+            "input_bytes": 131072,
+            "milliseconds": {
+              "libdeflate": 2.683979,
+              "roc": 4.4932295,
+              "mech-experiment": 1.747604,
+              "mech-control": 1.739646
+            },
+            "mech_x_libdeflate": 0.6515183699162121,
+            "mech_x_previous_selected": 1.003045257324517,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "libdeflate": 1.3542915,
+              "roc": 2.3953124999999997,
+              "mech-experiment": 0.8909375,
+              "mech-control": 0.8874375
+            },
+            "mech_x_libdeflate": 0.6585371227046005,
+            "mech_x_previous_selected": 1.0058063616633992,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-65536",
+            "input_bytes": 65536,
+            "milliseconds": {
+              "libdeflate": 1.3498545,
+              "roc": 2.383979,
+              "mech-experiment": 0.882813,
+              "mech-control": 0.878104
+            },
+            "mech_x_libdeflate": 0.6541733073025457,
+            "mech_x_previous_selected": 1.0054493534228945,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-65535",
+            "input_bytes": 65535,
+            "milliseconds": {
+              "libdeflate": 1.3499795,
+              "roc": 2.3847500000000004,
+              "mech-experiment": 0.875958,
+              "mech-control": 0.8727290000000001
+            },
+            "mech_x_libdeflate": 0.6497796212544192,
+            "mech_x_previous_selected": 1.0034992660343396,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-33027",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "libdeflate": 0.69625,
+              "roc": 1.351021,
+              "mech-experiment": 0.4609795,
+              "mech-control": 0.459541
+            },
+            "mech_x_libdeflate": 0.662969769284512,
+            "mech_x_previous_selected": 1.0043636442081136,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "libdeflate": 0.6876454999999999,
+              "roc": 1.3422915,
+              "mech-experiment": 0.457729,
+              "mech-control": 0.457458
+            },
+            "mech_x_libdeflate": 0.6666260583952003,
+            "mech_x_previous_selected": 1.0021461959080615,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "libdeflate": 0.6795625000000001,
+              "roc": 1.33,
+              "mech-experiment": 0.44695850000000004,
+              "mech-control": 0.44485450000000004
+            },
+            "mech_x_libdeflate": 0.6581279039356617,
+            "mech_x_previous_selected": 1.0048994959836983,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "libdeflate": 0.680354,
+              "roc": 1.333667,
+              "mech-experiment": 0.44460449999999996,
+              "mech-control": 0.443021
+            },
+            "mech_x_libdeflate": 0.6557280365813885,
+            "mech_x_previous_selected": 1.0010913750165882,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "libdeflate": 0.351709,
+              "roc": 0.8122085,
+              "mech-experiment": 0.2373955,
+              "mech-control": 0.237458
+            },
+            "mech_x_libdeflate": 0.6769701151125522,
+            "mech_x_previous_selected": 1.0022719801517836,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-8192",
+            "input_bytes": 8192,
+            "milliseconds": {
+              "libdeflate": 0.200625,
+              "roc": 0.5807289999999999,
+              "mech-experiment": 0.143583,
+              "mech-control": 0.14312550000000002
+            },
+            "mech_x_libdeflate": 0.7197777858125586,
+            "mech_x_previous_selected": 1.0033593383623327,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-4096",
+            "input_bytes": 4096,
+            "milliseconds": {
+              "libdeflate": 0.114,
+              "roc": 0.434958,
+              "mech-experiment": 0.0850205,
+              "mech-control": 0.08583350000000001
+            },
+            "mech_x_libdeflate": 0.7497797925512475,
+            "mech_x_previous_selected": 0.9943519831090255,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-repeated-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "libdeflate": 0.046541,
+              "roc": 0.326375,
+              "mech-experiment": 0.03925,
+              "mech-control": 0.039042
+            },
+            "mech_x_libdeflate": 0.8349685055488185,
+            "mech_x_previous_selected": 1.0047593886167496,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-1048576",
+            "input_bytes": 1048576,
+            "milliseconds": {
+              "libdeflate": 18.3922715,
+              "roc": 31.288499999999996,
+              "mech-experiment": 12.0428125,
+              "mech-control": 12.002354
+            },
+            "mech_x_libdeflate": 0.6543771905996154,
+            "mech_x_previous_selected": 1.0036156359411157,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-262144",
+            "input_bytes": 262144,
+            "milliseconds": {
+              "libdeflate": 4.5277709999999995,
+              "roc": 7.999000500000001,
+              "mech-experiment": 3.058604,
+              "mech-control": 3.048521
+            },
+            "mech_x_libdeflate": 0.6747084727877287,
+            "mech_x_previous_selected": 1.0025938429577712,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-131072",
+            "input_bytes": 131072,
+            "milliseconds": {
+              "libdeflate": 2.2746455,
+              "roc": 4.1281045,
+              "mech-experiment": 1.537792,
+              "mech-control": 1.5370205
+            },
+            "mech_x_libdeflate": 0.6766279686767439,
+            "mech_x_previous_selected": 1.0012426589489587,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "libdeflate": 1.1531040000000001,
+              "roc": 2.2132915,
+              "mech-experiment": 0.7997494999999999,
+              "mech-control": 0.7960834999999999
+            },
+            "mech_x_libdeflate": 0.6943306577824063,
+            "mech_x_previous_selected": 1.0057051542591509,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-65536",
+            "input_bytes": 65536,
+            "milliseconds": {
+              "libdeflate": 1.1438544999999998,
+              "roc": 2.2021455000000003,
+              "mech-experiment": 0.7808125,
+              "mech-control": 0.7769795
+            },
+            "mech_x_libdeflate": 0.6815899054118821,
+            "mech_x_previous_selected": 1.0037278210511795,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-65535",
+            "input_bytes": 65535,
+            "milliseconds": {
+              "libdeflate": 1.1434585000000002,
+              "roc": 2.20425,
+              "mech-experiment": 0.7858125,
+              "mech-control": 0.784479
+            },
+            "mech_x_libdeflate": 0.6879817684869546,
+            "mech_x_previous_selected": 1.000412956300679,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-33027",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "libdeflate": 0.593521,
+              "roc": 1.2629165,
+              "mech-experiment": 0.414854,
+              "mech-control": 0.4140415
+            },
+            "mech_x_libdeflate": 0.6985590145667787,
+            "mech_x_previous_selected": 1.000551983447786,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "libdeflate": 0.5864375,
+              "roc": 1.253021,
+              "mech-experiment": 0.41195800000000005,
+              "mech-control": 0.411396
+            },
+            "mech_x_libdeflate": 0.7023982213331521,
+            "mech_x_previous_selected": 1.001921944288619,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "libdeflate": 0.5781664999999999,
+              "roc": 1.241813,
+              "mech-experiment": 0.396604,
+              "mech-control": 0.39591699999999996
+            },
+            "mech_x_libdeflate": 0.6862356707444672,
+            "mech_x_previous_selected": 1.0018903275560707,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "libdeflate": 0.578333,
+              "roc": 1.2425835,
+              "mech-experiment": 0.39979149999999997,
+              "mech-control": 0.39860450000000003
+            },
+            "mech_x_libdeflate": 0.6913946335252112,
+            "mech_x_previous_selected": 1.000050755080357,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "libdeflate": 0.3000835,
+              "roc": 0.7654995,
+              "mech-experiment": 0.2135835,
+              "mech-control": 0.2138335
+            },
+            "mech_x_libdeflate": 0.712934192171381,
+            "mech_x_previous_selected": 0.9978834951393576,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-8192",
+            "input_bytes": 8192,
+            "milliseconds": {
+              "libdeflate": 0.17552099999999998,
+              "roc": 0.5587705000000001,
+              "mech-experiment": 0.13210400000000003,
+              "mech-control": 0.1321045
+            },
+            "mech_x_libdeflate": 0.7583928931231464,
+            "mech_x_previous_selected": 1.0035357663172424,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-4096",
+            "input_bytes": 4096,
+            "milliseconds": {
+              "libdeflate": 0.10166649999999999,
+              "roc": 0.4248545,
+              "mech-experiment": 0.0809165,
+              "mech-control": 0.08135400000000001
+            },
+            "mech_x_libdeflate": 0.7998669436720106,
+            "mech_x_previous_selected": 0.9968943768845366,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-periodic-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "libdeflate": 0.045792,
+              "roc": 0.324375,
+              "mech-experiment": 0.039792,
+              "mech-control": 0.039542
+            },
+            "mech_x_libdeflate": 0.8776805876217018,
+            "mech_x_previous_selected": 1.0084476670851772,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-random-1048576",
+            "input_bytes": 1048576,
+            "milliseconds": {
+              "libdeflate": 20.348603999999998,
+              "roc": 28.7592915,
+              "mech-experiment": 23.5079165,
+              "mech-control": 23.6850205
+            },
+            "mech_x_libdeflate": 1.1559608300545112,
+            "mech_x_previous_selected": 0.9919320314319703,
+            "mech_time_reduction_to_parity_pct": 13.491878444285755,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-262144",
+            "input_bytes": 262144,
+            "milliseconds": {
+              "libdeflate": 5.0512084999999995,
+              "roc": 7.5213335,
+              "mech-experiment": 5.9460625,
+              "mech-control": 5.994438
+            },
+            "mech_x_libdeflate": 1.176341680341414,
+            "mech_x_previous_selected": 0.9912205420750195,
+            "mech_time_reduction_to_parity_pct": 14.990685384048763,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-131072",
+            "input_bytes": 131072,
+            "milliseconds": {
+              "libdeflate": 2.4726665,
+              "roc": 3.848771,
+              "mech-experiment": 2.92375,
+              "mech-control": 2.939875
+            },
+            "mech_x_libdeflate": 1.181131309852649,
+            "mech_x_previous_selected": 0.993371595321149,
+            "mech_time_reduction_to_parity_pct": 15.335408378535487,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "libdeflate": 1.1707505,
+              "roc": 1.9921460000000002,
+              "mech-experiment": 1.4293959999999999,
+              "mech-control": 1.43925
+            },
+            "mech_x_libdeflate": 1.2193238952852516,
+            "mech_x_previous_selected": 0.9921948240769893,
+            "mech_time_reduction_to_parity_pct": 17.987336763702356,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-65536",
+            "input_bytes": 65536,
+            "milliseconds": {
+              "libdeflate": 1.1621044999999999,
+              "roc": 1.9757085000000003,
+              "mech-experiment": 1.4183540000000001,
+              "mech-control": 1.4285
+            },
+            "mech_x_libdeflate": 1.2188433935959724,
+            "mech_x_previous_selected": 0.9922731438636537,
+            "mech_time_reduction_to_parity_pct": 17.955005109418963,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-65535",
+            "input_bytes": 65535,
+            "milliseconds": {
+              "libdeflate": 1.1613955,
+              "roc": 1.978021,
+              "mech-experiment": 1.4202914999999998,
+              "mech-control": 1.429875
+            },
+            "mech_x_libdeflate": 1.2174813437066505,
+            "mech_x_previous_selected": 0.9916076825087368,
+            "mech_time_reduction_to_parity_pct": 17.86321776763523,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-33027",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "libdeflate": 0.534875,
+              "roc": 1.0786875,
+              "mech-experiment": 0.6738335,
+              "mech-control": 0.677625
+            },
+            "mech_x_libdeflate": 1.2567303157438314,
+            "mech_x_previous_selected": 0.9939669382702423,
+            "mech_time_reduction_to_parity_pct": 20.428433413884694,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "libdeflate": 0.5299795,
+              "roc": 1.0722505,
+              "mech-experiment": 0.6635,
+              "mech-control": 0.669771
+            },
+            "mech_x_libdeflate": 1.2534303238871107,
+            "mech_x_previous_selected": 0.9916033933039468,
+            "mech_time_reduction_to_parity_pct": 20.218939900957412,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "libdeflate": 0.5199790000000001,
+              "roc": 1.0590415,
+              "mech-experiment": 0.6524795,
+              "mech-control": 0.6570415000000001
+            },
+            "mech_x_libdeflate": 1.252524745832769,
+            "mech_x_previous_selected": 0.9920142273223619,
+            "mech_time_reduction_to_parity_pct": 20.161258024876172,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "libdeflate": 0.519854,
+              "roc": 1.0579585,
+              "mech-experiment": 0.6523334999999999,
+              "mech-control": 0.6577085
+            },
+            "mech_x_libdeflate": 1.2552187139825415,
+            "mech_x_previous_selected": 0.9903974755770393,
+            "mech_time_reduction_to_parity_pct": 20.332609061634123,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "libdeflate": 0.238125,
+              "roc": 0.642271,
+              "mech-experiment": 0.31358350000000007,
+              "mech-control": 0.31975
+            },
+            "mech_x_libdeflate": 1.326042855394444,
+            "mech_x_previous_selected": 0.9849731273176076,
+            "mech_time_reduction_to_parity_pct": 24.58765597718632,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-8192",
+            "input_bytes": 8192,
+            "milliseconds": {
+              "libdeflate": 0.125979,
+              "roc": 0.45191649999999994,
+              "mech-experiment": 0.1713125,
+              "mech-control": 0.1767085
+            },
+            "mech_x_libdeflate": 1.371937668799895,
+            "mech_x_previous_selected": 0.9738573858960928,
+            "mech_time_reduction_to_parity_pct": 27.110391183095672,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-4096",
+            "input_bytes": 4096,
+            "milliseconds": {
+              "libdeflate": 0.076958,
+              "roc": 0.37239550000000005,
+              "mech-experiment": 0.105583,
+              "mech-control": 0.108896
+            },
+            "mech_x_libdeflate": 1.389558520802734,
+            "mech_x_previous_selected": 0.9721910426027168,
+            "mech_time_reduction_to_parity_pct": 28.034696989781327,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "prefix-random-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "libdeflate": 0.033166,
+              "roc": 0.308583,
+              "mech-experiment": 0.028541,
+              "mech-control": 0.028584
+            },
+            "mech_x_libdeflate": 0.8629977325962921,
+            "mech_x_previous_selected": 0.9967126435246608,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-1048576",
+            "input_bytes": 1048576,
+            "milliseconds": {
+              "libdeflate": 199.5871875,
+              "roc": 161.0859165,
+              "mech-experiment": 139.71025,
+              "mech-control": 140.04212500000003
+            },
+            "mech_x_libdeflate": 0.7001508255132498,
+            "mech_x_previous_selected": 0.9972911354337944,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-262144",
+            "input_bytes": 262144,
+            "milliseconds": {
+              "libdeflate": 56.170249500000004,
+              "roc": 45.333021,
+              "mech-experiment": 38.904520999999995,
+              "mech-control": 38.9889585
+            },
+            "mech_x_libdeflate": 0.6930525183897777,
+            "mech_x_previous_selected": 0.9982120327289034,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-131072",
+            "input_bytes": 131072,
+            "milliseconds": {
+              "libdeflate": 27.231729500000004,
+              "roc": 22.3674375,
+              "mech-experiment": 19.124125499999998,
+              "mech-control": 19.177125
+            },
+            "mech_x_libdeflate": 0.7036159181567597,
+            "mech_x_previous_selected": 0.9966604608696121,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "libdeflate": 12.96425,
+              "roc": 10.805499999999999,
+              "mech-experiment": 10.037042,
+              "mech-control": 10.049396
+            },
+            "mech_x_libdeflate": 0.7797574660151084,
+            "mech_x_previous_selected": 0.9978327372885818,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-65536",
+            "input_bytes": 65536,
+            "milliseconds": {
+              "libdeflate": 12.874229000000001,
+              "roc": 10.779104000000002,
+              "mech-experiment": 10.0049585,
+              "mech-control": 10.021895999999998
+            },
+            "mech_x_libdeflate": 0.7794107576180797,
+            "mech_x_previous_selected": 0.9991199183222145,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-65535",
+            "input_bytes": 65535,
+            "milliseconds": {
+              "libdeflate": 12.850104,
+              "roc": 10.7785,
+              "mech-experiment": 10.015604000000002,
+              "mech-control": 10.0185
+            },
+            "mech_x_libdeflate": 0.7792648125375929,
+            "mech_x_previous_selected": 1.0001660951257962,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-33027",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "libdeflate": 4.8495,
+              "roc": 4.4004795,
+              "mech-experiment": 4.070208500000001,
+              "mech-control": 4.092854
+            },
+            "mech_x_libdeflate": 0.8388091435676046,
+            "mech_x_previous_selected": 0.9949145012081368,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "libdeflate": 4.7973545,
+              "roc": 4.3565,
+              "mech-experiment": 4.0303960000000005,
+              "mech-control": 4.040521
+            },
+            "mech_x_libdeflate": 0.8405889449787471,
+            "mech_x_previous_selected": 0.9978202455626841,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "libdeflate": 4.790333500000001,
+              "roc": 4.345833000000001,
+              "mech-experiment": 4.0175415,
+              "mech-control": 4.028708000000001
+            },
+            "mech_x_libdeflate": 0.8391798116773572,
+            "mech_x_previous_selected": 0.9988734776207124,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "libdeflate": 4.7902085,
+              "roc": 4.347749499999999,
+              "mech-experiment": 4.017688000000001,
+              "mech-control": 4.031583
+            },
+            "mech_x_libdeflate": 0.8384255986401493,
+            "mech_x_previous_selected": 0.9952026399715297,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "libdeflate": 2.160021,
+              "roc": 2.166187,
+              "mech-experiment": 1.8855005,
+              "mech-control": 1.8880204999999999
+            },
+            "mech_x_libdeflate": 0.8724090062939437,
+            "mech_x_previous_selected": 0.9990433313910847,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-8192",
+            "input_bytes": 8192,
+            "milliseconds": {
+              "libdeflate": 0.909021,
+              "roc": 1.12925,
+              "mech-experiment": 0.8456670000000001,
+              "mech-control": 0.8524375
+            },
+            "mech_x_libdeflate": 0.932647885103899,
+            "mech_x_previous_selected": 0.9931591540029002,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-4096",
+            "input_bytes": 4096,
+            "milliseconds": {
+              "libdeflate": 0.394958,
+              "roc": 0.6609165,
+              "mech-experiment": 0.38120799999999994,
+              "mech-control": 0.380125
+            },
+            "mech_x_libdeflate": 0.9728583004715872,
+            "mech_x_previous_selected": 0.9998507424242176,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "prefix-natural-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "libdeflate": 0.059,
+              "roc": 0.3354585,
+              "mech-experiment": 0.071542,
+              "mech-control": 0.07116700000000001
+            },
+            "mech_x_libdeflate": 1.21444988250783,
+            "mech_x_previous_selected": 1.0031211670022986,
+            "mech_time_reduction_to_parity_pct": 17.658191218644003,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "heldout-mixed-131073",
+            "input_bytes": 131073,
+            "milliseconds": {
+              "libdeflate": 7.2536465,
+              "roc": 8.399792,
+              "mech-experiment": 6.272145999999999,
+              "mech-control": 6.286146
+            },
+            "mech_x_libdeflate": 0.8641655039636694,
+            "mech_x_previous_selected": 0.9969762043259364,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "heldout-random-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "libdeflate": 1.149896,
+              "roc": 1.9492295,
+              "mech-experiment": 1.412917,
+              "mech-control": 1.424042
+            },
+            "mech_x_libdeflate": 1.2294212537229245,
+            "mech_x_previous_selected": 0.9910993853179257,
+            "mech_time_reduction_to_parity_pct": 18.660914883990554,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "heldout-slides-65537",
+            "input_bytes": 65537,
+            "milliseconds": {
+              "libdeflate": 10.127604,
+              "roc": 8.890271,
+              "mech-experiment": 8.061334,
+              "mech-control": 8.070646
+            },
+            "mech_x_libdeflate": 0.7924962050466757,
+            "mech_x_previous_selected": 0.9989992860521647,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "heldout-window-32768",
+            "input_bytes": 32768,
+            "milliseconds": {
+              "libdeflate": 4.790895999999999,
+              "roc": 4.346895999999999,
+              "mech-experiment": 4.0164165,
+              "mech-control": 4.027729000000001
+            },
+            "mech_x_libdeflate": 0.837965699015311,
+            "mech_x_previous_selected": 0.9973433459900604,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "heldout-window-32767",
+            "input_bytes": 32767,
+            "milliseconds": {
+              "libdeflate": 4.790166999999999,
+              "roc": 4.3441665,
+              "mech-experiment": 4.0153954999999995,
+              "mech-control": 4.029062499999999
+            },
+            "mech_x_libdeflate": 0.8386457433339762,
+            "mech_x_previous_selected": 0.9968752766188851,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "reymont-prefix-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "libdeflate": 4.8001665,
+              "roc": 4.3565000000000005,
+              "mech-experiment": 4.0312705,
+              "mech-control": 4.043604
+            },
+            "mech_x_libdeflate": 0.8408325918318824,
+            "mech_x_previous_selected": 0.9976067378228409,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "reymont-prefix-16384",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "libdeflate": 2.16025,
+              "roc": 2.163542,
+              "mech-experiment": 1.8882085,
+              "mech-control": 1.8889795
+            },
+            "mech_x_libdeflate": 0.8730016401261631,
+            "mech_x_previous_selected": 0.9999327188907169,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "reymont-prefix-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "libdeflate": 0.059,
+              "roc": 0.335625,
+              "mech-experiment": 0.07150000000000001,
+              "mech-control": 0.07116600000000001
+            },
+            "mech_x_libdeflate": 1.2159222091877577,
+            "mech_x_previous_selected": 1.00476448049046,
+            "mech_time_reduction_to_parity_pct": 17.757896644719974,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "repeated-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "libdeflate": 0.6875209999999999,
+              "roc": 1.3452505000000001,
+              "mech-experiment": 0.45679200000000003,
+              "mech-control": 0.45618749999999997
+            },
+            "mech_x_libdeflate": 0.6638720018448393,
+            "mech_x_previous_selected": 1.0027352895268529,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "random-32769",
+            "input_bytes": 32769,
+            "milliseconds": {
+              "libdeflate": 0.5276875,
+              "roc": 1.0718755,
+              "mech-experiment": 0.664833,
+              "mech-control": 0.6692505000000001
+            },
+            "mech_x_libdeflate": 1.2558566019826731,
+            "mech_x_previous_selected": 0.9913838731327115,
+            "mech_time_reduction_to_parity_pct": 20.37307456748977,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "repeated-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "libdeflate": 0.046208,
+              "roc": 0.328125,
+              "mech-experiment": 0.039208,
+              "mech-control": 0.039084
+            },
+            "mech_x_libdeflate": 0.8378422043095022,
+            "mech_x_previous_selected": 1.0011115808576292,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "random-1024",
+            "input_bytes": 1024,
+            "milliseconds": {
+              "libdeflate": 0.032875,
+              "roc": 0.308,
+              "mech-experiment": 0.028,
+              "mech-control": 0.028083
+            },
+            "mech_x_libdeflate": 0.8533130046748737,
+            "mech_x_previous_selected": 0.9948580043382632,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "random-256",
+            "input_bytes": 256,
+            "milliseconds": {
+              "libdeflate": 0.025916,
+              "roc": 0.297875,
+              "mech-experiment": 0.017583,
+              "mech-control": 0.017499999999999998
+            },
+            "mech_x_libdeflate": 0.6914780062070519,
+            "mech_x_previous_selected": 1.003083497668987,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "random-64",
+            "input_bytes": 64,
+            "milliseconds": {
+              "libdeflate": 0.022375,
+              "roc": 0.29191599999999995,
+              "mech-experiment": 0.011,
+              "mech-control": 0.010832999999999999
+            },
+            "mech_x_libdeflate": 0.4877086108005209,
+            "mech_x_previous_selected": 1.015345599453756,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "33027-periodic-window",
+            "input_bytes": 33027,
+            "milliseconds": {
+              "libdeflate": 0.5932080000000001,
+              "roc": 1.2617915000000002,
+              "mech-experiment": 0.4150205,
+              "mech-control": 0.4138335
+            },
+            "mech_x_libdeflate": 0.6994954575533626,
+            "mech_x_previous_selected": 1.0040825574504704,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "16384-distribution-change",
+            "input_bytes": 16384,
+            "milliseconds": {
+              "libdeflate": 0.4834165,
+              "roc": 0.841479,
+              "mech-experiment": 0.577479,
+              "mech-control": 0.5827085000000001
+            },
+            "mech_x_libdeflate": 1.1951106169258625,
+            "mech_x_previous_selected": 0.9913824412446103,
+            "mech_time_reduction_to_parity_pct": 16.3257370625439,
+            "libdeflate_point_win": false
+          },
+          {
+            "case": "32-high-entropy-stored",
+            "input_bytes": 32,
+            "milliseconds": {
+              "libdeflate": 0.021667000000000002,
+              "roc": 0.291083,
+              "mech-experiment": 0.009583,
+              "mech-control": 0.0095
+            },
+            "mech_x_libdeflate": 0.43925083346622784,
+            "mech_x_previous_selected": 1.0023314291935654,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "128-biased-dynamic",
+            "input_bytes": 128,
+            "milliseconds": {
+              "libdeflate": 0.020458,
+              "roc": 0.289917,
+              "mech-experiment": 0.015709,
+              "mech-control": 0.015791
+            },
+            "mech_x_libdeflate": 0.7497451224583154,
+            "mech_x_previous_selected": 0.9965624857550134,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "eight-literals-prefix",
+            "input_bytes": 8,
+            "milliseconds": {
+              "libdeflate": 0.021542000000000002,
+              "roc": 0.29070799999999997,
+              "mech-experiment": 0.008375,
+              "mech-control": 0.00825
+            },
+            "mech_x_libdeflate": 0.38863144453651244,
+            "mech_x_previous_selected": 1.0115441408763874,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "320-overlap",
+            "input_bytes": 320,
+            "milliseconds": {
+              "libdeflate": 0.027625,
+              "roc": 0.300375,
+              "mech-experiment": 0.027,
+              "mech-control": 0.026916000000000002
+            },
+            "mech_x_libdeflate": 0.9502407242625537,
+            "mech_x_previous_selected": 1.000681900814292,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "eight-overlap",
+            "input_bytes": 8,
+            "milliseconds": {
+              "libdeflate": 0.021208,
+              "roc": 0.29016699999999995,
+              "mech-experiment": 0.015290999999999999,
+              "mech-control": 0.015291999999999998
+            },
+            "mech_x_libdeflate": 0.7044043048473381,
+            "mech_x_previous_selected": 0.9980352024535618,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "eight-literals",
+            "input_bytes": 8,
+            "milliseconds": {
+              "libdeflate": 0.021417,
+              "roc": 0.290292,
+              "mech-experiment": 0.008333,
+              "mech-control": 0.00825
+            },
+            "mech_x_libdeflate": 0.3875433885106324,
+            "mech_x_previous_selected": 1.0107449627587952,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "seven-stored-prefix",
+            "input_bytes": 7,
+            "milliseconds": {
+              "libdeflate": 0.004208,
+              "roc": 4.2e-05,
+              "mech-experiment": 4.1e-05,
+              "mech-control": 4.1e-05
+            },
+            "mech_x_libdeflate": 0.007405448553175378,
+            "mech_x_previous_selected": 1.0087171815468083,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "one-stored",
+            "input_bytes": 1,
+            "milliseconds": {
+              "libdeflate": 0.004208,
+              "roc": 4.2e-05,
+              "mech-experiment": 4.1e-05,
+              "mech-control": 4.1e-05
+            },
+            "mech_x_libdeflate": 0.007072515583794207,
+            "mech_x_previous_selected": 1.0222123488685195,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          },
+          {
+            "case": "empty",
+            "input_bytes": 0,
+            "milliseconds": {
+              "libdeflate": 0.004208,
+              "roc": 4.2e-05,
+              "mech-experiment": 4.1e-05,
+              "mech-control": 4.1e-05
+            },
+            "mech_x_libdeflate": 0.006884085437514167,
+            "mech_x_previous_selected": 1.0387551787139027,
+            "mech_time_reduction_to_parity_pct": 0.0,
+            "libdeflate_point_win": true
+          }
+        ],
+        "geometric_mean_x_previous_selected": 0.9995642111499768
+      }
+    },
+    "remaining_losses_closest_first": [
+      "prefix-random-1048576",
+      "prefix-random-262144",
+      "prefix-random-131072",
+      "16384-distribution-change",
+      "prefix-natural-1024",
+      "reymont-prefix-1024",
+      "prefix-random-65536",
+      "prefix-random-65535",
+      "prefix-random-65537",
+      "heldout-random-65537",
+      "random-32769",
+      "prefix-random-32768",
+      "prefix-random-32769",
+      "prefix-random-33027",
+      "prefix-random-32767",
+      "prefix-random-16384",
+      "prefix-random-8192",
+      "prefix-random-4096"
+    ]
+  }
+}

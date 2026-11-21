@@ -33,6 +33,8 @@ M1_SOURCE_RECIPES = {
     'm1-root-packet-combined': 'packet-family-root-study/combined',
     'm1-argument-vector-neighbor': 'argument-jump-forwarding/vector-neighbor',
     'm1-argument-all-sqrt': 'argument-jump-forwarding/all-sqrt',
+    'm1-identical-vector-linear': 'identical-argument-coalescing/vector-linear',
+    'm1-identical-shared-vector-linear': 'identical-argument-coalescing/shared-vector-linear',
     'm1-bounded-index-ranges-experimental': 'bounded-index-range-study',
 }
 
@@ -100,7 +102,7 @@ parser.add_argument(
         'frame-copies',
         *M1_SOURCE_RECIPES,
     ],
-    default=('m1-argument-all-sqrt' if (platform.system(), platform.machine()) == ('Darwin', 'arm64') else 'baseline'),
+    default=('m1-identical-shared-vector-linear' if (platform.system(), platform.machine()) == ('Darwin', 'arm64') else 'baseline'),
 )
 parser.add_argument('--mimalloc-object',type=Path,help='optional fixed comparator allocator; also link and check the worker')
 parser.add_argument('--target-dir',type=Path)

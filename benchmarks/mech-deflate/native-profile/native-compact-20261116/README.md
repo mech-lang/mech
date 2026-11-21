@@ -1,10 +1,10 @@
 # Native compact compiler review handoff
 
-The current selected M1 recipe remains **`m1-argument-all-sqrt`**, **64,412 B**, with every named **81/81 Roc and 63/81 libdeflate** win retained. The qualified compact alternative emits **63,372 B**. Two new shared-Boolean alternatives also retain every named win in both complete orders; the original codec and canonical bytecode are unchanged.
+The selected M1 recipe is **`m1-identical-shared-vector-linear`**, **64,408 B**, preserving every named **81/81 Roc and 63/81 libdeflate win** in both full orders. The 64,364-byte alternative is also qualified, and the earlier 63,372-byte compact recipe remains available. The original Mech source and canonical bytecode are unchanged.
 
-The faster new random-1-MiB arm takes **23.53–23.54 ms versus 20.35 ms C**, or **1.156–1.157× C**. It still needs about **13.5% less Mech time** for parity. Its complete source-through-link build is **2.200958 s**, paired **0.736903× Roc /4.575391× C**. It costs about 4% on distribution change and stays available alongside the square-root arm and smaller current default.
+Random 1 MiB takes **23.506–23.508 ms versus20.349–20.353 ms C**, paired **1.155–1.156× C**. About **13.4–13.5% less Mech time** is still needed for parity; no 64th C win is established. The complete source-through-final-link build is **2.199275 s**, **0.736279× Roc /4.563207× C**.
 
-Use [CURRENT.md](CURRENT.md) for identities, timings and tradeoffs, [the new elapsed-time tables](evidence/shared-comparison-booleans/PARITY.md) for all81 cases in both full-qualified alternatives, and [the source recipes](evidence/shared-comparison-booleans/README.md) to reproduce them. Earlier measurements below are historical evidence.
+Use [CURRENT.md](CURRENT.md), [all 81 timing rows](evidence/identical-argument-coalescing/PARITY.md), and [source recipes, tradeoffs and verification](evidence/identical-argument-coalescing/README.md). Earlier measurements below are historical evidence.
 
 This PR contains compiler and parser source, a pinned Mech program, native build
 configuration, measured runtime source, and raw benchmark evidence. It targets #993, which is stacked on #973.

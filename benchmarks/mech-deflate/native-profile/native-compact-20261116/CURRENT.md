@@ -1,5 +1,24 @@
 # PR #995 current status
 
+**Selected: `m1-identical-shared-vector-linear`, 64,408 B, every named 81/81 Roc and 63/81 libdeflate win held in both full 81-case, 96-block orders.** Dominance-proved SSA argument coalescing with shared-Boolean lowering takes **23.506–23.508 ms versus 20.349–20.353 ms C** on random 1 MiB, paired **1.154592–1.155961× C**. About **3.16 ms, or 13.4–13.5% less Mech time**, is still needed for parity. No 64th C win is established. The original 2,719-line Mech source and canonical bytecode are unchanged.
+
+| Qualified arm | Text B | Random 1 MiB Mech ms, forward /reverse | C ms, forward /reverse | Paired Mech ÷ C |
+| --- | ---: | ---: | ---: | ---: |
+| New default, shared-vector-linear | 64,408 | 23.506125 /23.507917 | 20.353292 /20.348604 | 1.154592 /1.155961× |
+| New vector-linear alternative | 64,364 | 23.591333 /23.597542 | 20.348937 /20.350479 | 1.160017 /1.160308× |
+
+The default saves **4 B** versus the preceding64,412-B selection. The alternative saves **48 B** and also retains all 81 Roc/63 Cwins in both complete orders. Default full-suite geometric means are **0.999440× /0.999564×** control; alternative **0.998341× /0.998738×**. These small broad differences are not an established large runtime gain. Small slower cases remain included; point wins and confidence are separate. The previously qualified **63,372-B compact recipe remains available**.
+
+Matched complete builds take **2.199275 s new default /2.192953 s alternative /2.204447 s prior control /2.986321 s Roc /0.481612 s C**. Twelve balanced serial fresh-process orders include final executable linking with compilers/support equally prebuilt; no compile-time gain is claimed. Default paired time is **0.736279× Roc /4.563207× C**. Parse/frontend/native medians are **0.703250 /0.218701 /1.204642 s**. The stripped Mech image remains **276,072 B**; peak stack is **4,832 B**, below 5,280 B. The alternative has 4,736 B peak stack. Text is **1.116× Roc /1.737× C**; stripped image **1.439× Roc /1.772× C**.
+
+The actual main default and explicit alternative reproduce all three artifacts exactly. **34 public normal/checked source replays**, **79 optimized scalar tests**, **7,360 new focused native executions**, all strict output/resource/error/recovery/stack checks and **486 actual timed stripped-image executions** pass. Portable verification checks **10,031,040 saved runtime calls**, including 1,450,135 retained zero samples, **144 actual training counter cases**, both profile derivations and all 12 complete-build orders. Compiler source is rebasable at `10a4b06f8`.
+
+[All17 retained source recipes, timings and tradeoffs](evidence/identical-argument-coalescing/README.md) · [All81 elapsed times and remaining parity gaps for both new arms](evidence/identical-argument-coalescing/PARITY.md).
+
+The next broad investigation is relational unsigned bounds: the existing selected-edge range code narrows variable comparisons only when one operand is constant. A true `x<y` can prove `x<MAX` even with an unknown upper bound, which may remove redundant checked increments. Count the actual remaining hot guards first, preserve width/signedness and boundary errors, and combine proved facts with the new SSA normalization. Constant private input-packet words, shared comparison ANDs, immutable byte-load reuse and the retained compact recipe are also recorded for follow-up. **64 C wins is next; 1× libdeflate across all 81 remains the goal.**
+
+Earlier checkpoints follow; their selected/default labels apply to those versions.
+
 **New qualified alternatives retain every named 81/81 Roc and 63/81 libdeflate win in both full orders.** The faster random-1-MiB arm takes **23.53–23.54 ms versus 20.35 ms C**, paired **1.156–1.157× C**. About **3.19 ms, or 13.5% less Mech time**, is still needed for parity. No64thCwin is established. Original 2,719-line source and canonical bytecode are unchanged. The 64,412-B current default and qualified 63,372-B compact arm remain available.
 
 | Full-qualified arm | Random 1 MiB Mech ms, forward /reverse | C ms, forward /reverse | Paired Mech ÷ C | Mech time reduction to parity |
