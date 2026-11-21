@@ -1580,6 +1580,35 @@ fn prepare_impl<M: Module>(
         let removed =
             cfg_cleanup::coalesce_identical_join_arguments(&controls, &mut context, module.isa())?;
         eprintln!("{symbol} coalesced identical arguments: {removed}");
+        if removed != 0
+            && let Ok(mode) = std::env::var("MECH_COMPACT_REFINE_COALESCED_ARGUMENTS")
+        {
+            let mut jumps = 0;
+            if matches!(mode.as_str(), "transport" | "all") {
+                jumps = cfg_cleanup::argument_jumps::forward(&mut context.func);
+                if jumps != 0 {
+                    context.flowgraph();
+                    context
+                        .eliminate_unreachable_code(module.isa())
+                        .map_err(backend)?;
+                    context.verify(module.isa()).map_err(backend)?;
+                }
+            }
+            let predicates = if matches!(mode.as_str(), "predicates" | "all") {
+                cfg_cleanup::refine_current_predicates(&controls, &mut context, module.isa())?
+                    .removed_branches
+            } else {
+                0
+            };
+            let widths = if matches!(mode.as_str(), "widths" | "all") {
+                cfg_cleanup::fold_proved_widths(&controls, &mut context, module.isa())?
+            } else {
+                0
+            };
+            eprintln!(
+                "{symbol} after coalescing: {jumps} jumps, {predicates} predicates, {widths} widths"
+            );
+        }
     }
     let packed_input = if pack_input {
         phase_storage::pack_used_input_words(&mut context.func, input_words)
