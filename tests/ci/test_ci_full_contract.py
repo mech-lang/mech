@@ -708,7 +708,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         browser = job_block(FULL, "project-browser")
         steps = job_steps(FULL, "project-browser")
         build = next(step for step in steps if "Build embedded browser server in dedicated target" in step)
-        self.assertIn('--features "serve,bundle_web,formatter,run"', build)
+        self.assertIn('--features "serve,bundle_web,formatter,run,pretty_print"', build)
         self.assertIn('"$CARGO_TARGET_DIR/embedded-browser-mech"', build)
         smoke = next(step for step in steps if "scripts/smoke-served-program-results-browser.py" in step)
         self.assertIn('MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech"', smoke)

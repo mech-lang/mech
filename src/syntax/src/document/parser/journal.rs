@@ -499,6 +499,4 @@ mod tests {
         assert_eq!(journal.allocations, allocations);
         assert!(journal.is_empty());
     }
-
-
 }

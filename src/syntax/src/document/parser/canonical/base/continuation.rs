@@ -166,6 +166,7 @@ impl Continuation {
             .is_some_and(|storage| storage.memo.capture.is_some());
         if optimize
             && final_input
+            && !parser.state.retain_completed_nodes
             && !capturing
             && sealed::parse(parser, rule, fixed, allowance, &mut self.work)
         {
@@ -677,6 +678,7 @@ impl Continuation {
 mod tests {
     use super::*;
     use crate::document::parser::LexicalMode;
+    use crate::document::parser::canonical::FIXED_TERMINALS;
     use crate::document::{DocumentId, IdGenerator, ParseConfig, Revision, TextSnapshot};
     use alloc::string::String;
 
@@ -717,8 +719,6 @@ mod tests {
             &mut ids,
         );
         parser.state.disable_rejections_for_test = reference;
-        // Isolate prediction/cache accounting from the separately tested sealed executor.
-        parser.state.reference_lexical = true;
         let wrapper = parser.start();
         let mut state = parser.suspend();
         let mut continuation = Continuation::new(rule);
@@ -1016,6 +1016,7 @@ mod tests {
             );
             parser.state.reference_lexical = reference;
             parser.state.disable_rejections_for_test = reference;
+            parser.state.retain_completed_nodes = false;
             let wrapper = parser.start();
             let mut continuation = Continuation::new(rule);
             let mut allowance = u64::MAX;
@@ -1071,5 +1072,4 @@ mod tests {
             }
         }
     }
-
 }

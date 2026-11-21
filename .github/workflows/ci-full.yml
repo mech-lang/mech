@@ -2728,26 +2728,26 @@ jobs:
           cargo build \
             --bin mech \
             --no-default-features \
-            --features "serve,bundle_web,formatter,run"
+            --features "serve,bundle_web,formatter,run,pretty_print"
           cp "$CARGO_TARGET_DIR/debug/mech" \
             "$CARGO_TARGET_DIR/embedded-browser-mech"
           cargo test \
             -p mech \
             --no-default-features \
-            --features "serve,bundle_web,formatter,run" \
+            --features "serve,bundle_web,formatter,run,pretty_print" \
             --test mech_format_shims \
             -- --nocapture
           cargo test \
             -p mech \
             --no-default-features \
-            --features "serve,bundle_web,formatter,run" \
+            --features "serve,bundle_web,formatter,run,pretty_print" \
             --test mech_serve \
             formatted_blog_page_executes_when_served \
             -- --exact --nocapture
           cargo test \
             -p mech \
             --no-default-features \
-            --features "serve,bundle_web,formatter,run" \
+            --features "serve,bundle_web,formatter,run,pretty_print" \
             --test mech_serve \
             formatted_docs_page_executes_when_served \
             -- --exact --nocapture

@@ -1,8 +1,8 @@
 use crate::document::{RuleId, SyntaxKind};
 
 pub(crate) mod continuation;
-mod sealed;
 pub(super) mod recognition;
+mod sealed;
 mod spec;
 pub(super) use spec::{Spec, specification};
 mod exact_tag;

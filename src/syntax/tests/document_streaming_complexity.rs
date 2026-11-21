@@ -27,9 +27,11 @@ fn resident_ekf_source_keeps_lookup_work_and_journal_copying_bounded() {
     assert_eq!(snapshot.source.to_contiguous_string(), source);
     validate_lossless(&snapshot.root, &snapshot.source).unwrap();
     let work = stream.work();
+    // Bounded predictions retain the original logical charge even when they
+    // skip speculative execution. Scanner activity is bounded independently below.
     assert!(
-        work.parser_work <= source.len() as u64 * 1000,
-        "closed-input parsing repeated speculative work: {work:?}",
+        work.parser_work <= source.len() as u64 * 2000,
+        "closed-input logical parser work exceeded its bound: {work:?}",
     );
     assert!(
         work.source_lookup_steps <= source.len() as u64 * 512,

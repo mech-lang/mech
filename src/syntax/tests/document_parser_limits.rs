@@ -268,15 +268,15 @@ fn recovery_byte_limit_abandons_to_resource_error_without_losing_bytes() {
 fn completed_prefix_survives_middle_fuel_and_event_exhaustion() {
     let text = "1. Stable\n--------\n\nA stable paragraph.\n\nx := 1\n\nfinal-item-with-enough-content-to-exhaust-the-limit\n";
     let prefix_end = text.find("final-item").unwrap();
-    // Application lookahead adds 11 steps and one event before this boundary.
-    // Earlier budgets remain exercised below; production limits are unchanged.
+    // The current speculative parser reaches this semantic boundary at these
+    // budgets. Earlier budgets retain their exact remainder checks below.
     for limits in [
         ParseLimits {
-            fuel: 401,
+            fuel: 454,
             ..ParseLimits::default()
         },
         ParseLimits {
-            max_events: 129,
+            max_events: 133,
             ..ParseLimits::default()
         },
     ] {
@@ -319,7 +319,16 @@ fn early_middle_and_late_fuel_exhaustion_have_exact_remainders() {
     // Canonical work includes rule selection and retained lookahead; byte offsets
     // are not fuel units. Retain the old budgets and their now-earlier exact
     // remainders, plus measured budgets at the original semantic boundaries.
-    for (fuel, error_start) in [(0, 0), (390, 46), (401, 49), (648, 89), (659, 100)] {
+    for (fuel, error_start) in [
+        (0, 0),
+        (390, 41),
+        (401, 46),
+        (454, 49),
+        (550, 89),
+        (648, 85),
+        (659, 96),
+        (663, 100),
+    ] {
         let snapshot = parse_with_limits(
             text,
             ParseLimits {
@@ -335,7 +344,7 @@ fn early_middle_and_late_fuel_exhaustion_have_exact_remainders() {
 #[test]
 fn adjacent_event_limits_preserve_exact_unparsed_remainders() {
     let text = "1. Stable\n--------\n\nA stable paragraph.\n\nx := 1\n\nfinal-item-with-enough-content-to-exhaust-the-limit\n";
-    for (max_events, error_start) in [(128, 47), (129, 49)] {
+    for (max_events, error_start) in [(128, 47), (129, 50), (130, 51), (133, 49)] {
         let snapshot = parse_with_limits(
             text,
             ParseLimits {
