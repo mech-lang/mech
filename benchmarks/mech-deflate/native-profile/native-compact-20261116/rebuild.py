@@ -36,6 +36,7 @@ M1_SOURCE_RECIPES = {
     'm1-identical-vector-linear': 'identical-argument-coalescing/vector-linear',
     'm1-identical-shared-vector-linear': 'identical-argument-coalescing/shared-vector-linear',
     'm1-bounded-increment-vector-linear': 'bounded-unsigned-increments/bounded-linear',
+    'm1-coalesced-compact-all-linear': 'coalesced-argument-refinement/compact-all-linear',
     'm1-bounded-index-ranges-experimental': 'bounded-index-range-study',
 }
 
@@ -103,7 +104,7 @@ parser.add_argument(
         'frame-copies',
         *M1_SOURCE_RECIPES,
     ],
-    default=('m1-bounded-increment-vector-linear' if (platform.system(), platform.machine()) == ('Darwin', 'arm64') else 'baseline'),
+    default=('m1-coalesced-compact-all-linear' if (platform.system(), platform.machine()) == ('Darwin', 'arm64') else 'baseline'),
 )
 parser.add_argument('--mimalloc-object',type=Path,help='optional fixed comparator allocator; also link and check the worker')
 parser.add_argument('--target-dir',type=Path)

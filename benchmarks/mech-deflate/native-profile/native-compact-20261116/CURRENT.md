@@ -1,5 +1,26 @@
 # PR #995 current status
 
+**Selected: `m1-coalesced-compact-all-linear`, 63,048 B, every named 81/81 Roc and 63/81 libdeflate win preserved in both full 81-case, 96-block orders.** Repeating existing current-word and argument-transport proofs after SSA argument coalescing combines with the earlier compact recipe. The original **2,719-line Mech source and canonical bytecode are unchanged**.
+
+| Random 1 MiB | Mech | Current Mech control | libdeflate | Paired Mech ÷ C | Mech time reduction to parity |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Forward | 23.419542 ms | 23.473645 ms | 20.398521 ms | 1.156924× | 13.56% |
+| Reverse | 23.388208 ms | 23.431687 ms | 20.352874 ms | 1.152030× | 13.20% |
+
+The broader target, random **4 KiB**, takes **108.438 /108.020 µs Mech**, versus **75.667 /76.042 µs libdeflate**. Paired Mech time is **1.440× /1.436× C**, leaving **30.57% /30.38%** to remove.
+
+This saves **1,216 B** versus the prior 64,264-B selection and **324 B** versus the previous qualified 63,372-B compact recipe. Paired target time is **0.998227× /0.999471×** control; full-suite geometric-mean point estimates are **0.993651× /0.992991×**. The timing differences are small; no formal confidence claim is added. Small slower cases remain included. **No 64th C win is established; about 13.2–13.6% of Mech's time still needs to be removed on the closest remaining case.** Earlier qualified named recipes remain available.
+
+Matched complete builds take **2.203537 s Mech /2.988196 s Roc /0.482477 s C**, paired **0.737236× Roc /4.560036× C**. Twelve balanced serial fresh-process orders include final executable linking, with compilers and fixed support equally prebuilt. The matched prior Mech median is **2.197920 s**; no compile-time improvement is established. Parse/frontend/native medians are **0.702318 /0.217598 /1.208162 s**. Bootstrap and strip are separate.
+
+Encoder text is **1.093× Roc /1.700× C**. The stripped executable remains **276,072 B**, **1.439× Roc /1.773× C**. Measured peak stack is **4,736 B**, below the 5,280-B cap. The actual main default reproduces object, full metadata and bytecode exactly. **36 public normal/checked source replays**, **79 optimized scalar tests**, the current-word/SSA/increment tests, strict output/resource/error/recovery/stack checks and **486 actual timed stripped-executable checks** pass. Portable verification recomputes **4,836,096 saved runtime observations**, retaining 708,858 zero samples, **180 actual counter cases**, every profile derivation and all twelve complete-build orders. Compiler source is rebasable at **`c92e9e1a2`**. No new LLVM dependency, codec rewrite, generic operation dispatch or shipping native-byte patch is added.
+
+[All eighteen source arms, profiling and verification](evidence/coalesced-argument-refinement/README.md) · [All 81 elapsed times and remaining parity gaps](evidence/coalesced-argument-refinement/PARITY.md).
+
+Separate native CPU sampling puts the matcher at **73.3%** and scorer at **13.7%** of encoder samples on random 1 MiB. On the larger relative loss at random 4 KiB, the matcher is **44.1%**, with **21.1%** in two histogram kernels. Code boundaries differ across compilers; these are phase guides, not matched phase timings. The next broad target tests a max-bin/remaining-span entry proof for the histogram's per-byte overflow check, keeping the checked loop on a proof miss and preserving partial writes and error origins. **64 C wins is next; 1× libdeflate across all 81 remains the goal.**
+
+Previous checkpoints follow; their selected/default labels apply to those versions.
+
 **Selected: `m1-bounded-increment-vector-linear`, 64,264 B, every named 81/81 Roc and 63/81 libdeflate win preserved in both full 81-case, 96-block orders.** The compiler now proves that selected non-strict unsigned bounds can make a checked `+1` overflow impossible. The original **2,719-line Mech source and canonical bytecode are unchanged**.
 
 | Random 1 MiB | Mech | Current Mech control | libdeflate | Paired Mech ÷ C | Mech time reduction to parity |
