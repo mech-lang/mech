@@ -39,7 +39,7 @@ python3 benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/
 python3 benchmarks/mech-deflate/native-profile/native-compact-20261116/rebuild.py /tmp/mech-bounded
 ```
 
-To build an isolated compiler from the supplied source snapshots and reproduce any retained arm:
+To build the compiler from this checkout and reproduce any retained arm:
 
 ```sh
 study=benchmarks/mech-deflate/native-profile/native-compact-20261116/evidence/bounded-unsigned-increments
