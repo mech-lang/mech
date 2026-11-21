@@ -43,13 +43,26 @@ pub(super) fn prepare<M: Module>(
     }
     let mut specialized = module.make_context();
     specialized.func = context.func.clone();
-    let Some(admission) = cfg_cleanup::bounded_byte_histogram::optimize(
-        &mut specialized,
-        header,
-        &loads,
-        &inputs,
-        &bins,
-    ) else {
+    let counter_capacity =
+        std::env::var_os("MECH_HISTOGRAM_ENTRY_COUNTER_CAPACITY").and_then(|_| {
+            cfg_cleanup::bounded_byte_histogram::optimize_counter_capacity(
+                &mut specialized,
+                header,
+                &loads,
+                &inputs,
+                &bins,
+            )
+        });
+    let bounded_counters = counter_capacity.is_some();
+    let Some(admission) = counter_capacity.or_else(|| {
+        cfg_cleanup::bounded_byte_histogram::optimize(
+            &mut specialized,
+            header,
+            &loads,
+            &inputs,
+            &bins,
+        )
+    }) else {
         return Ok(None);
     };
     specialized.verify(module.isa()).map_err(backend)?;
@@ -79,12 +92,16 @@ pub(super) fn prepare<M: Module>(
         "symbol": target,
         "admission": admission,
         "removed_bounds_per_visit": 4,
-        "counter_overflow_retained": true,
+        "counter_overflow_retained": !bounded_counters,
         "code_bytes": machine.code_info().total_size,
         "stack_bytes": compiled_stack_bytes(&machine.buffer)?,
     });
     let fast = module.declare_func_in_func(id, &mut context.func);
-    cfg_cleanup::bounded_byte_histogram::guard_entry(context, admission, fast);
+    if bounded_counters {
+        cfg_cleanup::bounded_byte_histogram::guard_counter_capacity(context, admission, fast);
+    } else {
+        cfg_cleanup::bounded_byte_histogram::guard_entry(context, admission, fast);
+    }
     context.verify(module.isa()).map_err(backend)?;
     Ok(Some(result))
 }
