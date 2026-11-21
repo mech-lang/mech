@@ -485,6 +485,28 @@ pub(super) fn prepare_general<M: Module>(
     )
 }
 
+fn select_phase_choices(function: &mut cranelift_codegen::ir::Function) -> usize {
+    let limits = std::env::var("MECH_COMPACT_PHASE_SELECT_LIMITS")
+        .ok()
+        .and_then(|value| {
+            let (instructions, selects) = value.split_once(':')?;
+            Some((
+                instructions.parse::<usize>().ok()?,
+                selects.parse::<usize>().ok()?,
+            ))
+        });
+    match limits {
+        Some((instructions, selects)) => {
+            crate::native_artifact::codegen::common::scalar_selects::optimize_with_limits(
+                function,
+                instructions,
+                selects,
+            )
+        }
+        None => crate::native_artifact::codegen::common::scalar_selects::optimize(function),
+    }
+}
+
 fn general_ir_observed() -> bool {
     [
         "MECH_COMPACT_PHASE_CONTROLLER_WINDOWS",
@@ -1486,8 +1508,7 @@ fn prepare_impl<M: Module>(
         && std::env::var_os("MECH_COMPACT_PHASE_SELECTS")
             .is_some_and(|target| target == "all" || target == symbol.as_str())
     {
-        let selected =
-            crate::native_artifact::codegen::common::scalar_selects::optimize(&mut context.func);
+        let selected = select_phase_choices(&mut context.func);
         if selected != 0 {
             context.flowgraph();
             context.verify(module.isa()).map_err(backend)?;
@@ -1608,6 +1629,21 @@ fn prepare_impl<M: Module>(
             eprintln!(
                 "{symbol} after coalescing: {jumps} jumps, {predicates} predicates, {widths} widths"
             );
+        }
+        if removed != 0
+            && controls.enabled(OptimizationPass::ScalarSelects)
+            && std::env::var_os("MECH_COMPACT_LATE_PHASE_SELECTS")
+                .is_some_and(|target| target == "all" || target == symbol.as_str())
+        {
+            let selected = select_phase_choices(&mut context.func);
+            if selected != 0 {
+                context.flowgraph();
+                context
+                    .eliminate_unreachable_code(module.isa())
+                    .map_err(backend)?;
+                context.verify(module.isa()).map_err(backend)?;
+            }
+            eprintln!("{symbol} late scalar choices folded: {selected}");
         }
     }
     let packed_input = if pack_input {
