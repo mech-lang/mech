@@ -180,7 +180,7 @@ impl<T> Journal<T> {
         if let Some(values) = &self.flat {
             return values.get(index);
         }
-        let page = if index / PAGE < self.completed_pages() {
+        let page = if index / PAGE < self.len.saturating_sub(1) / PAGE {
             self.items.get(index / PAGE)?
         } else {
             self.tail.as_ref()?
@@ -219,10 +219,7 @@ impl<T> Journal<T> {
             );
         }
         let (page, steps) = self.items.get_with_work(index / PAGE);
-        (
-            page.and_then(|page| page.0.0.get(index % PAGE)),
-            steps + 1,
-        )
+        (page.and_then(|page| page.0.0.get(index % PAGE)), steps + 1)
     }
     pub fn iter(&self) -> impl Iterator<Item = &T> {
         self.flat.iter().flat_map(|values| values.iter()).chain(
@@ -242,7 +239,11 @@ impl<T> Journal<T> {
             .chain(
                 self.items
                     .iter_from(range.start / PAGE)
-                    .chain(self.tail.iter().filter(move |_| range.start / PAGE <= self.completed_pages()))
+                    .chain(
+                        self.tail
+                            .iter()
+                            .filter(move |_| range.start / PAGE <= self.completed_pages()),
+                    )
                     .flat_map(|page| page.0.0.iter())
                     .skip(range.start % PAGE)
                     .take(count),
@@ -277,7 +278,8 @@ impl<T: Clone> Journal<T> {
             .as_ref()
             .is_some_and(|page| page.0.0.len() == PAGE)
         {
-            self.items.push(self.tail.take().unwrap(), &mut self.allocations);
+            self.items
+                .push(self.tail.take().unwrap(), &mut self.allocations);
         }
         if self.tail.is_none() {
             self.tail = Some(Page(Arc::new(Values(Vec::with_capacity(PAGE)))));
@@ -310,7 +312,7 @@ impl<T: Clone> Journal<T> {
                 self.tail = None;
             }
         } else {
-            if len < self.completed_pages() * PAGE {
+            if (len - 1) / PAGE < self.completed_pages() {
                 let page = (len - 1) / PAGE;
                 let tail = self.items.get(page).unwrap().clone();
                 self.items.truncate(page, &mut self.allocations);
@@ -338,7 +340,7 @@ impl<T: Clone> Journal<T> {
         if let Some(values) = &mut self.flat {
             return flat_mut(values, &mut self.allocations).get_mut(index);
         }
-        let page = if index / PAGE < self.completed_pages() {
+        let page = if index / PAGE < self.len.saturating_sub(1) / PAGE {
             self.items.get_mut(index / PAGE, &mut self.allocations)?
         } else {
             self.tail.as_mut()?
@@ -393,8 +395,6 @@ mod tests {
         );
         assert!(original.iter().copied().eq(0..count));
     }
-
-
 
     #[test]
     fn mutations_and_suffix_views_match_a_vector_across_shared_page_boundaries() {
@@ -660,5 +660,4 @@ mod tests {
         same(&changed, &changed_values);
         same(&extended, &extended_values);
     }
-
 }

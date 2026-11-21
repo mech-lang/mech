@@ -1006,7 +1006,7 @@ class FullWorkflowContractTests(unittest.TestCase):
 
     def test_shared_browser_product_checks_revision_profile_lock_and_contents(self):
         producer = job_block(CI, "browser-compute-build")
-        self.assertLess(producer.index("git diff --exit-code -- Cargo.lock"),
+        self.assertLess(producer.index("git diff --exit-code HEAD -- Cargo.lock"),
                         producer.index("sha256sum Cargo.lock"))
         self.assertIn("sha256sum target/debug/mech", producer)
         self.assertIn("find src/wasm/pkg -type f -print0", producer)
