@@ -237,6 +237,25 @@ pub(super) fn qualify_input_packet_loads(
     function: &mut cranelift_codegen::ir::Function,
     input_words: usize,
 ) -> usize {
+    qualify_packet_loads(function, input_words, false)
+}
+
+/// Slots initializes the complete input packet before the synchronous call;
+/// its address never escapes and outputs use separate storage. Unlike an
+/// array read protected by a bounds branch, these loads are safe at any point
+/// in this invocation where the packet pointer is available.
+pub(super) fn qualify_movable_input_packet_loads(
+    function: &mut cranelift_codegen::ir::Function,
+    input_words: usize,
+) -> usize {
+    qualify_packet_loads(function, input_words, true)
+}
+
+fn qualify_packet_loads(
+    function: &mut cranelift_codegen::ir::Function,
+    input_words: usize,
+    movable: bool,
+) -> usize {
     use cranelift_codegen::ir::InstructionData;
     let Some(loads) = input_word_loads(function, input_words) else {
         return 0;
@@ -248,6 +267,9 @@ pub(super) fn qualify_input_packet_loads(
         flags.set_notrap();
         flags.set_readonly();
         flags.set_aligned();
+        if movable {
+            flags.set_can_move();
+        }
     }
     loads.len()
 }
