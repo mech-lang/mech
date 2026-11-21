@@ -16,6 +16,7 @@ UNIT_NAMES = {
         "retained_source_bundle_survives_deletion_and_bytecode_is_explicitly_unpaired",
         "discovered_runtime_configuration_is_not_native_launch_authority",
         "exact_linked_name_grammar_rejects_before_compilation_without_sanitizing",
+        "explicit_compile_policy_is_strict_and_separate_from_launch_authority",
         "ordinary_turn_inputs_are_rejected_without_another_execution_route",
     )
 }

@@ -8,11 +8,11 @@ use serde::{
 };
 use serde_json::{Error, value::RawValue};
 
-#[path = "build_image/encode.rs"]
+#[path = "encode.rs"]
 mod encode;
-#[path = "build_image/key.rs"]
+#[path = "key.rs"]
 mod key;
-#[path = "build_image/packed.rs"]
+#[path = "packed.rs"]
 mod packed;
 pub use encode::encode_native_metadata_image;
 
@@ -734,7 +734,7 @@ impl<'de> Deserializer<'de> for Node<'de> {
 }
 
 #[cfg(test)]
-#[path = "build_image/tests.rs"]
+#[path = "tests.rs"]
 mod tests;
 struct Enumeration<'a> {
     name: &'a str,
@@ -897,5 +897,5 @@ impl<'de> Deserializer<'de> for &mut BuildOwnedImageReader<'de> {
 }
 
 #[cfg(test)]
-#[path = "build_image/grouped_tests.rs"]
+#[path = "grouped_tests.rs"]
 mod grouped_tests;

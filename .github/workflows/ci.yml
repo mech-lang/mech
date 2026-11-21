@@ -265,6 +265,7 @@ jobs:
           fi
       - name: Check static distribution contracts
         run: |
+          python3 -B -m unittest scripts.tests.test_rust_module_layout
           cargo +nightly-2026-03-03 fetch --locked
           python3 -B scripts/check-distribution-contracts.py --profile standard
           python3 -B scripts/check-distribution-packaging.py

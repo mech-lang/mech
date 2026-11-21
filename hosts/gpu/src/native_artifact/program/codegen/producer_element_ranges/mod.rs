@@ -18,9 +18,9 @@ use mech_engine::native_artifact::{
 };
 use std::cell::Cell;
 use std::collections::{BTreeMap, BTreeSet};
-#[path = "producer_element_ranges/contents.rs"]
+#[path = "contents.rs"]
 mod contents;
-#[path = "producer_element_ranges/length.rs"]
+#[path = "length.rs"]
 mod length;
 
 // Exhaustion is a proof miss, never a compilation or source execution error.

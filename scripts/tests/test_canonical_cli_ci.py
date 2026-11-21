@@ -3,6 +3,7 @@
 
 import importlib.util
 import json
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -16,6 +17,12 @@ SPEC.loader.exec_module(CI)
 class CanonicalCliEvidenceTests(unittest.TestCase):
     def write_json(self, path, value):
         path.write_text(json.dumps(value), encoding="utf-8")
+
+    def test_unit_inventory_tracks_declared_public_cli_contracts(self):
+        source = (SCRIPT.parents[1] / "src/cli/commands/build_cranelift_tests.rs").read_text()
+        names = re.findall(r"#\[test\]\s*fn\s+(\w+)\s*\(", source)
+        self.assertTrue(names)
+        self.assertEqual({CI.UNIT_PREFIX + name for name in names}, CI.UNIT_NAMES)
 
     def test_selection_requires_exact_names_count_and_no_duplicates(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -13,7 +13,7 @@ use mech_engine::native_artifact::{
 };
 use std::collections::BTreeMap;
 
-#[path = "owner_reads.rs"]
+#[path = "../owner_reads.rs"]
 mod owner_reads;
 mod read_borrows;
 mod transfers;

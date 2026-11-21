@@ -189,5 +189,5 @@ pub(super) fn continuation(
 }
 
 #[cfg(test)]
-#[path = "wide_equal_prefix/tests.rs"]
+#[path = "tests.rs"]
 mod tests;

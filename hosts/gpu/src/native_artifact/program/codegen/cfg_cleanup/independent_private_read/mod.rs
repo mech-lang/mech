@@ -403,5 +403,5 @@ pub(in crate::native_artifact) fn schedule(
 }
 
 #[cfg(all(test, feature = "jit", target_arch = "aarch64"))]
-#[path = "independent_private_read/tests.rs"]
+#[path = "tests.rs"]
 mod tests;
