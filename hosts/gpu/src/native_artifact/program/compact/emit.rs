@@ -2306,6 +2306,17 @@ fn define_entry<M: Module>(
             eprintln!("compact root forwarded argument jumps: {forwarded}");
         }
         if outline_allowed
+            && std::env::var_os("MECH_COMPACT_COALESCE_IDENTICAL_ARGUMENTS")
+                .is_some_and(|scope| scope == "root" || scope == "all")
+        {
+            let removed = cfg_cleanup::coalesce_identical_join_arguments(
+                &controls,
+                &mut context,
+                module.isa(),
+            )?;
+            eprintln!("compact root coalesced identical arguments: {removed}");
+        }
+        if outline_allowed
             && let Some(schedule) = std::env::var_os("MECH_COMPACT_FINISH_CFG_CLEANUP")
         {
             let cleanup = if schedule == "ordered" {
