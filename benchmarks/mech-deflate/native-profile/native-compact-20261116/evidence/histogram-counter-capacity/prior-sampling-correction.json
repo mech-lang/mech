@@ -1,0 +1,44 @@
+{
+  "source_report_sha256": "66cf050acdebb7ec8611dc74db5fe85d8f1206f4c115ab787f72bc0eaf4669d5",
+  "encoder": {
+    "encoder_samples": 2900,
+    "exclusive_samples": {
+      "deflate_compress_near_optimal": 1410,
+      "deflate_find_min_cost_path": 603,
+      "_platform_memset_pattern16": 555,
+      "deflate_make_huffman_code": 188,
+      "deflate_optimize_and_flush_block": 53,
+      "OUTLINED_FUNCTION_10": 50,
+      "deflate_precompute_huffman_header": 22,
+      "_platform_memset": 10,
+      "_platform_memmove": 2,
+      "deflate_near_optimal_merge_stats": 2,
+      "__bzero": 1,
+      "deflate_compute_true_cost": 1,
+      "OUTLINED_FUNCTION_2": 1,
+      "OUTLINED_FUNCTION_1": 1,
+      "DYLD-STUB$$bzero": 1,
+      "libdeflate_deflate_compress": 0,
+      "deflate_flush_block": 0
+    },
+    "exclusive_fraction": {
+      "deflate_compress_near_optimal": 0.4862068965517241,
+      "deflate_find_min_cost_path": 0.20793103448275863,
+      "_platform_memset_pattern16": 0.19137931034482758,
+      "deflate_make_huffman_code": 0.06482758620689655,
+      "deflate_optimize_and_flush_block": 0.018275862068965518,
+      "OUTLINED_FUNCTION_10": 0.017241379310344827,
+      "deflate_precompute_huffman_header": 0.007586206896551724,
+      "_platform_memset": 0.0034482758620689655,
+      "_platform_memmove": 0.000689655172413793,
+      "deflate_near_optimal_merge_stats": 0.000689655172413793,
+      "__bzero": 0.0003448275862068965,
+      "deflate_compute_true_cost": 0.0003448275862068965,
+      "OUTLINED_FUNCTION_2": 0.0003448275862068965,
+      "OUTLINED_FUNCTION_1": 0.0003448275862068965,
+      "DYLD-STUB$$bzero": 0.0003448275862068965
+    },
+    "scope": "Exclusive top-of-stack samples only inside the named encoder roots; child samples subtracted once. Root totals include called helpers. These are sampled shares, not exact phase elapsed times."
+  },
+  "scope": "Correction of the earlier C4KiB aggregate: exclusive nodes strictly inside the encoder root. Previously reported Huffman962 and memset569 included helper samples outside that root; correct counts are188 and555. Primary runtime samples and win counts are unaffected."
+}

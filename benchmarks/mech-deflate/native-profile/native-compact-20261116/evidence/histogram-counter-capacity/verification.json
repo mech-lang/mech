@@ -1,0 +1,19 @@
+{
+  "passed": true,
+  "source_replays": 10,
+  "scalar_tests": 79,
+  "current_word_tests": 10,
+  "ssa_tests": 2,
+  "increment_tests": 4,
+  "diagnostic_sampled_observations": 200800,
+  "histogram_tests": 5,
+  "focused_native_calls": 40725,
+  "retained_scalar_focused_native_calls": 20196,
+  "actual_main_source_recipes": 1,
+  "saved_runtime_calls": 6630336,
+  "zero_duration_samples_retained": 995679,
+  "complete_build_orders": 12,
+  "deployment_executions": 486,
+  "selected_default_changed": true,
+  "new_qualified_C_win": false
+}

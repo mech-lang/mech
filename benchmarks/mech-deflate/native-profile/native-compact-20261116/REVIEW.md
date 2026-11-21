@@ -1,3 +1,26 @@
+**Selected: `m1-histogram-capacity-grouped`, 63,192 B, preserving every named 81/81 Roc and 63/81 libdeflate win in both full 81-case, 96-block orders.** A proved entry counter-capacity bound permits four ordered byte histogram visits per iteration. The original **2,719-line Mech codec and canonical bytecode are unchanged**.
+
+| Runtime case / order | Mech | Matched Mech control | libdeflate | Paired Mech ÷ C time | Mech time reduction to parity |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Random 1 MiB, forward | 23.024375 ms | 23.382167 ms | 20.340292 ms | 1.131646× | 11.63% |
+| Random 1 MiB, reverse | 23.033958 ms | 23.393646 ms | 20.342875 ms | 1.132528× | 11.70% |
+| Random 4 KiB, forward | 0.109104 ms | 0.110250 ms | 0.076916 ms | 1.428573× | 30.00% |
+| Random 4 KiB, reverse | 0.108521 ms | 0.109459 ms | 0.075750 ms | 1.448058× | 30.94% |
+
+Paired 1-MiB time is **0.984931× /0.984668×** the matched 63,048-B control, about **1.51–1.53% less time**. The grouped candidate adds **144 B** and remains 180 B below the earlier 63,372-B compact recipe. The original neutral scalar-capacity and SIMD trials remain retained. No formal confidence claim or **64th libdeflate win** is added; the closest remaining case still needs about **11.6–11.7% less Mech time**.
+
+Fresh-process source through final executable linking takes **2.202398 s Mech /2.984846 s Roc /0.480850 s C**, paired **0.738298× Roc /4.582297× C**. Twelve balanced serial orders use equally prebuilt compilers/fixed support. Parse/frontend/native/link medians are **0.702117 /0.218718 /1.209371 /0.035314 s**. Bootstrap and strip are separate; no build, test, profile, counter, archive or Git work overlaps primary clocks.
+
+Encoder text is **1.095× Roc /1.704× C**. Stripped executables remain **276,072 B Mech /191,912 B Roc /155,752 B C**. Measured peak stack remains **4,736 B**, below the 5,280-B cap. The actual main default reproduces object, full metadata and bytecode exactly from the integrated compiler source. All five source arms pass strict output/alias/resource/error/recovery/stack checks and **10 current public normal/checked source replays**. **40,725 focused native calls**, 79 maintained optimized scalar tests and the current-word/SSA/increment families pass. Portable verification checks **6,630,336 saved runtime observations**, retaining 995,679 zero samples, all twelve complete-build orders and **486 actual stripped-executable outputs**. The full GPU suite is not claimed.
+
+[All retained trials and profiling](evidence/histogram-counter-capacity/README.md) · [All 81 elapsed times and parity gaps](evidence/histogram-counter-capacity/PARITY.md). Compiler implementation and stricter admission recognition are integrated at `c41789c828b601512735f89b1476396a89b239d2`. The optional flags remain off globally; only the named qualified source recipe enables the selected combination.
+
+Fresh five-second native samples put matching at **74.3%**, scoring at **13.9%**, the remaining packed histogram at **7.5%**, and the optimized byte histogram at **1.0%** of encoder samples on random1MiB. On random4KiB, matching is **43.4%**, packed histogram **13.5%**, Huffman **11.9%**, scoring **11.1%**, and byte histogram **3.9%**. These encoder-root exclusive shares guide the next broad optimization; they are not exact phase elapsed times. [Sampling derivation and correction](evidence/histogram-counter-capacity/PROFILE.md).
+
+**64 libdeflate wins is next; 1× libdeflate across all 81 remains the goal.** Fresh native CPU sampling is preserved separately from the primary timing and will guide the next broad optimization. All slower cases and unselected candidates remain available.
+
+Previous checkpoints follow; their selected/default labels apply to those versions.
+
 **Selected: `m1-coalesced-compact-all-linear`, 63,048 B, every named 81/81 Roc and 63/81 libdeflate win preserved in both full 81-case, 96-block orders.** Repeating existing current-word and argument-transport proofs after SSA argument coalescing combines with the earlier compact recipe. The original **2,719-line Mech source and canonical bytecode are unchanged**.
 
 | Random 1 MiB | Mech | Current Mech control | libdeflate | Paired Mech ÷ C | Mech time reduction to parity |
