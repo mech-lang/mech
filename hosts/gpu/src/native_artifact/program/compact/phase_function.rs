@@ -1026,6 +1026,15 @@ fn prepare_impl<M: Module>(
                 &loads,
                 &nodes,
                 &bins,
+                cfg_cleanup::grouped_histogram::Options {
+                    visits: std::env::var("MECH_GROUP_PACKED_HISTOGRAM_VISITS")
+                        .ok()
+                        .and_then(|value| value.parse().ok())
+                        .unwrap_or(4),
+                    wide_keys: std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_WIDE_KEYS").is_some(),
+                    progressive: std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_PROGRESSIVE")
+                        .is_some(),
+                },
             ) {
                 let name = format!("{symbol}_grouped");
                 let grouped_id = module

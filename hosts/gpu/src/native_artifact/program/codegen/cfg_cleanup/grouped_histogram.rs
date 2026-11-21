@@ -1,6 +1,6 @@
 //! Batch a selected unit-stride histogram arm of a checked numeric loop.
 //! The caller admits the writable owners and the phase admits current extents.
-//! Every group proves all four original visits before its first increment.
+//! Every group proves all original visits before its first increment.
 use super::composed_reads::{View, between, defaulted_read, scalar};
 use super::window_bounds::{comparison, sole_predecessor};
 use super::{MAX_CONSTANT_DEPTH, MAX_CONSTANT_STEPS, constant_integer};
@@ -15,11 +15,24 @@ use std::collections::BTreeMap;
 #[path = "grouped_histogram_arm.rs"]
 mod arm;
 
+#[path = "grouped_histogram_chunks.rs"]
+mod chunks;
+
+#[cfg(test)]
+#[path = "grouped_histogram_tests.rs"]
+mod tests;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
 pub(in crate::native_artifact) struct Admission {
     pub node_word: usize,
     pub bin_word: usize,
     pub minimum_bins: u64,
+}
+
+pub(in crate::native_artifact) struct Options {
+    pub visits: usize,
+    pub wide_keys: bool,
+    pub progressive: bool,
 }
 
 struct Group {
@@ -205,7 +218,7 @@ fn recognize(
         loads,
         bins,
     )?;
-    // Four visits use the same snapshot even if a bin is updated in between.
+    // Grouped visits use the same snapshot even if a bin is updated in between.
     // Disallow packet reloads of the two views after the phase entry.
     let entry = f.layout.entry_block()?;
     let fixed = |view: &View| {
@@ -259,7 +272,7 @@ fn block(f: &mut Function) -> Block {
     block
 }
 
-fn emit(f: &mut Function, group: Group) {
+fn emit(f: &mut Function, group: Group, visits: usize, wide_keys: bool) {
     let Data::Brif {
         arg, mut blocks, ..
     } = f.dfg.insts[group.literal]
@@ -286,10 +299,12 @@ fn emit(f: &mut Function, group: Group) {
     let remaining = c.ins().isub(group.end, group.cursor);
     let enough = c
         .ins()
-        .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, 4);
-    let readable = c
-        .ins()
-        .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, group.ordinal, 3);
+        .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, visits as i64);
+    let readable = c.ins().icmp_imm(
+        IntCC::UnsignedGreaterThanOrEqual,
+        group.ordinal,
+        (visits - 1) as i64,
+    );
     let enough = c.ins().band(before_end, enough);
     let ready = c.ins().band(enough, readable);
     c.ins().brif(ready, read, &[], scalar, &scalar_args);
@@ -298,20 +313,42 @@ fn emit(f: &mut Function, group: Group) {
     let offset = c.ins().ishl_imm(group.ordinal, 3);
     let address = c.ins().iadd(group.nodes, offset);
     let flags = MemFlags::new().with_notrap();
-    let first = c.ins().ireduce(types::I32, group.packed);
-    let next = [-4, -12, -20].map(|at| c.ins().load(types::I32, flags, address, at));
-    let [a, b, d] = next.map(|value| c.ins().bxor_imm(value, 1));
-    let other = c.ins().bor(a, b);
-    let other = c.ins().bor(other, d);
+    let first = if wide_keys {
+        group.packed
+    } else {
+        c.ins().ireduce(types::I32, group.packed)
+    };
+    let next = (1..visits)
+        .map(|visit| {
+            let at = 4 - 8 * visit as i32;
+            if wide_keys {
+                c.ins().uload32(flags, address, at)
+            } else {
+                c.ins().load(types::I32, flags, address, at)
+            }
+        })
+        .collect::<Vec<_>>();
+    let mut tags = next
+        .iter()
+        .map(|&value| c.ins().bxor_imm(value, 1))
+        .collect::<Vec<_>>();
+    let mut other = tags.remove(0);
+    for tag in tags {
+        other = c.ins().bor(other, tag);
+    }
     let other = c.ins().band_imm(other, i64::from(group.length_mask));
     let literals = c.ins().icmp_imm(IntCC::Equal, other, 0);
     c.ins().brif(literals, update, &[], scalar, &scalar_args);
 
     c.goto_bottom(update);
-    for packed in [first, next[0], next[1], next[2]] {
+    for packed in std::iter::once(first).chain(next) {
         let key = c.ins().ushr_imm(packed, i64::from(group.key_shift));
         let key = c.ins().band_imm(key, i64::from(group.key_mask));
-        let key = c.ins().uextend(types::I64, key);
+        let key = if wide_keys {
+            key
+        } else {
+            c.ins().uextend(types::I64, key)
+        };
         let offset = c.ins().ishl_imm(key, 2);
         let address = c.ins().iadd(group.bins, offset);
         // A later visit must load the new count when two keys agree.
@@ -319,7 +356,7 @@ fn emit(f: &mut Function, group: Group) {
         let updated = c.ins().iadd_imm(count, 1);
         c.ins().store(flags, updated, address, 0);
     }
-    let next = c.ins().iadd_imm(group.cursor, 4);
+    let next = c.ins().iadd_imm(group.cursor, visits as i64);
     c.ins().jump(group.header, &[next.into()]);
 }
 
@@ -329,12 +366,27 @@ pub(in crate::native_artifact) fn optimize(
     loads: &BTreeMap<Value, (Inst, usize)>,
     nodes: &[View],
     bins: &[View],
+    options: Options,
 ) -> Option<Admission> {
+    let Options {
+        visits,
+        wide_keys,
+        progressive,
+    } = options;
+    // Keep code growth finite. Each descending input read is covered by the
+    // original current read and the group's non-wrapping ordinal floor.
+    if !matches!(visits, 4 | 8 | 16) {
+        return None;
+    }
     ctx.compute_cfg();
     ctx.compute_domtree();
     let group = recognize(ctx, header, loads, nodes, bins)?;
     let admission = group.admission;
-    emit(&mut ctx.func, group);
+    if progressive && visits > 4 {
+        chunks::emit(&mut ctx.func, group, visits, wide_keys);
+    } else {
+        emit(&mut ctx.func, group, visits, wide_keys);
+    }
     ctx.compute_cfg();
     ctx.compute_domtree();
     Some(admission)
