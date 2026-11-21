@@ -28176,7 +28176,18 @@
       },
       "scope": "18 balanced serial fresh-process source-through-final-executable-link trials per actor; all compilers and fixed support prebuilt equally. Every generated artifact checked. Strip and compiler bootstrap separate. Reporting label repaired from original saved records after acquisition; no measurements rerun."
     },
-    "latest_source_replay_compiler_sha256": "8021d18c60b34931391099f3728e6e8201ec44ec5258ae8bc2df8d2ea9b13603"
+    "latest_source_replay_compiler_sha256": "8021d18c60b34931391099f3728e6e8201ec44ec5258ae8bc2df8d2ea9b13603",
+    "latest_complete_build": {
+      "seconds": 2.23352404194884,
+      "paired_ratios": {
+        "roc": 0.7463800918349883,
+        "libdeflate": 4.609190710362755,
+        "mech-control-reference": 1.0
+      },
+      "trials": 12,
+      "evidence": "evidence/measured-register-weight-study/README.md",
+      "native_artifacts_unchanged": true
+    }
   },
   "active_scoreboard": "working_selection",
   "scalar_sequential_experiment": {
@@ -29656,62 +29667,341 @@
     "next": "Measured register weights across mixed input paths; comparable Mech/C semantic work remains open."
   },
   "latest_source_through_link_cohort": {
-    "evidence": "evidence/lazy-adaptive-check-study/README.md",
-    "trials": 10,
+    "evidence": "evidence/measured-register-weight-study/README.md",
+    "trials": 12,
+    "compiler_feature_commit": "5b3a4af26c0d39775580ca868e62af36f0049ae2",
     "medians": {
       "mech-control-reference": {
-        "source": 2.18461497919634,
-        "link": 0.035182583378627896,
-        "source_through_link": 2.2209530209656805,
-        "strip": 0.010940271196886897,
-        "source_through_strip": 2.2319821040146053
+        "source": 2.1945038542617112,
+        "link": 0.03554787510074675,
+        "source_through_link": 2.23352404194884,
+        "strip": 0.010919582797214389,
+        "source_through_strip": 2.2445703961420804
       },
       "mech-hybrid-u32": {
-        "source": 2.3119059165474027,
-        "link": 0.035510479006916285,
-        "source_through_link": 2.348570395959541,
-        "strip": 0.01098970859311521,
-        "source_through_strip": 2.3595350419636816
+        "source": 2.32053504162468,
+        "link": 0.0353131250012666,
+        "source_through_link": 2.356827020412311,
+        "strip": 0.010769291315227747,
+        "source_through_strip": 2.3677864163182676
       },
-      "mech-lazy-check": {
-        "source": 2.3120630418416113,
-        "link": 0.03714210446923971,
-        "source_through_link": 2.3506546248681843,
-        "strip": 0.010778832947835326,
-        "source_through_strip": 2.3616420414764434
+      "mech-register-linear": {
+        "source": 2.321701770881191,
+        "link": 0.035268812673166394,
+        "source_through_link": 2.358269312651828,
+        "strip": 0.010802416363731027,
+        "source_through_strip": 2.3693112086039037
+      },
+      "mech-register-sqrt": {
+        "source": 2.3233727710321546,
+        "link": 0.0365237498190254,
+        "source_through_link": 2.3621260619256645,
+        "strip": 0.010898082982748747,
+        "source_through_strip": 2.373307186877355
       },
       "roc": {
-        "source": 2.9529930835124105,
-        "link": 0.034818666288629174,
-        "source_through_link": 2.9882078752852976,
-        "strip": 0.01058379141613841,
-        "source_through_strip": 2.999087041709572
+        "source": 2.950475729070604,
+        "link": 0.035040416987612844,
+        "source_through_link": 2.985901625128463,
+        "strip": 0.010539187584072351,
+        "source_through_strip": 2.996696437476203
       },
       "libdeflate": {
-        "source": 0.4489934169687331,
-        "link": 0.034429895924404263,
-        "source_through_link": 0.4837833335623145,
-        "strip": 0.010739520424976945,
-        "source_through_strip": 0.49475229205563664
+        "source": 0.4484881875105202,
+        "link": 0.03479177155531943,
+        "source_through_link": 0.4832571872975677,
+        "strip": 0.010619812412187457,
+        "source_through_strip": 0.4941376242786646
       }
     },
     "paired_ratios": {
       "mech-control-reference": {
-        "roc": 0.7433699890421421,
-        "libdeflate": 4.590725031480752,
+        "roc": 0.7463800918349883,
+        "libdeflate": 4.609190710362755,
         "mech-control-reference": 1.0
       },
       "mech-hybrid-u32": {
-        "roc": 0.7858222597116689,
-        "libdeflate": 4.853143425152485,
-        "mech-control-reference": 1.0576380818727222
+        "roc": 0.7891128208496755,
+        "libdeflate": 4.875382248353771,
+        "mech-control-reference": 1.0563005788756894
       },
-      "mech-lazy-check": {
-        "roc": 0.7858631435791836,
-        "libdeflate": 4.852381530722569,
-        "mech-control-reference": 1.058776942551375
+      "mech-register-linear": {
+        "roc": 0.789216009182649,
+        "libdeflate": 4.887659791484861,
+        "mech-control-reference": 1.0585882630755368
+      },
+      "mech-register-sqrt": {
+        "roc": 0.7906035086901487,
+        "libdeflate": 4.87935605044035,
+        "mech-control-reference": 1.0583257226419343
       }
     },
-    "scope": "10 balanced serial fresh-process source-through-final-executable-link trials per actor. Fixedsupport/compilers prebuilt equally, artifacthasheschecked, strip/bootstrapseparate. Source variants independent from runtime qualification. Original default and HF source retain full81/63 qualification. Conditional-check source retains all observed wins in both21caseorders but has no newwin and no full81 qualification."
+    "phases": {
+      "mech-control-reference": {
+        "parse": 0.703423042,
+        "catalog": 2.54375e-05,
+        "frontend": 0.217904,
+        "artifact": 0.006839771,
+        "encode": 0.002537333,
+        "native": 1.2344860409999998
+      },
+      "mech-hybrid-u32": {
+        "parse": 0.7060576249999999,
+        "catalog": 2.03335e-05,
+        "frontend": 0.22558854150000002,
+        "artifact": 0.0073523124999999995,
+        "encode": 0.0026948329999999998,
+        "native": 1.3514312915
+      },
+      "mech-register-linear": {
+        "parse": 0.7057819165,
+        "catalog": 2.2458e-05,
+        "frontend": 0.22544583299999998,
+        "artifact": 0.007354563,
+        "encode": 0.0026933955,
+        "native": 1.3531190419999999
+      },
+      "mech-register-sqrt": {
+        "parse": 0.706338687,
+        "catalog": 2.3354e-05,
+        "frontend": 0.2255775625,
+        "artifact": 0.007360083,
+        "encode": 0.0026929165,
+        "native": 1.354134604
+      }
+    },
+    "scope": "12 balanced serial fresh-process source-through-final-executable-link trials per actor. Fixedsupport/compilers prebuilt equally, artifacthasheschecked, strip/bootstrapseparate. Source variants independent from runtime qualification. Original default and HF source retain full81/63 qualification. Register variants have separate runtime/native qualification; the complete full81 results accompany this cohort and do not change the selected default."
+  },
+  "measured_register_weighting": {
+    "compiler_feature_commit": "5b3a4af26c0d39775580ca868e62af36f0049ae2",
+    "codec_source_changed_from_HF_U32": false,
+    "codec_source_sha256": "ecf98df0c4f0ea9bfd2b5ae548a76fdfba178703c224a6e33e987848711a4b22",
+    "selected_default_changed": false,
+    "selected_Roc_wins": 81,
+    "selected_C_wins": 63,
+    "next_C_target": 64,
+    "ultimate_C_target": 81,
+    "confidence_assessed": false,
+    "promoted": false,
+    "variants": {
+      "linear": {
+        "native_text_bytes": 72020,
+        "measured_peak_stack_bytes": 4752,
+        "stripped_executable_bytes": 292568,
+        "full81_point_qualified": true,
+        "full_orders": {
+          "forward": {
+            "roc": {
+              "wins": 81,
+              "required_missing": [],
+              "passed": true
+            },
+            "libdeflate": {
+              "wins": 63,
+              "required_missing": [],
+              "passed": true
+            }
+          },
+          "reverse": {
+            "roc": {
+              "wins": 81,
+              "required_missing": [],
+              "passed": true
+            },
+            "libdeflate": {
+              "wins": 63,
+              "required_missing": [],
+              "passed": true
+            }
+          }
+        },
+        "artifacts": {
+          "program.o": "ab88825d7bbf715d23c369d11c9aa5010676b47aee5713a0cf9222c2ee70ca07",
+          "metadata.json": "6867440a8a55b1b32bde4b491775a6f0250f9026ea54691cc64376887eea1369",
+          "program.mecb": "6d3196588a45ccd53236ffac0e3268dd92ce2071acc851127a0021b148431f78"
+        },
+        "worker_sha256": "3fc20110eca2760154f4cec9a4dca0197faad7caac68d69ce0e07e72a0888016",
+        "panel_orders": 2,
+        "panel_cases": 21,
+        "panel_blocks": 24,
+        "full_blocks": 96,
+        "source_through_final_link_seconds": 2.358269312651828,
+        "paired_build_ratios": {
+          "roc": 0.789216009182649,
+          "libdeflate": 4.887659791484861,
+          "mech-control-reference": 1.0585882630755368
+        }
+      },
+      "sqrt": {
+        "native_text_bytes": 72004,
+        "measured_peak_stack_bytes": 4752,
+        "stripped_executable_bytes": 292568,
+        "full81_point_qualified": true,
+        "full_orders": {
+          "forward": {
+            "roc": {
+              "wins": 81,
+              "required_missing": [],
+              "passed": true
+            },
+            "libdeflate": {
+              "wins": 63,
+              "required_missing": [],
+              "passed": true
+            }
+          },
+          "reverse": {
+            "roc": {
+              "wins": 81,
+              "required_missing": [],
+              "passed": true
+            },
+            "libdeflate": {
+              "wins": 63,
+              "required_missing": [],
+              "passed": true
+            }
+          }
+        },
+        "artifacts": {
+          "program.o": "e87fe32045e9cba9255c324f49b3bead2698f050f9233fd35d4728427ce285bf",
+          "metadata.json": "890d9e41196902fbe2d571175f106e517e44267418be478004d52fba3002e7f3",
+          "program.mecb": "6d3196588a45ccd53236ffac0e3268dd92ce2071acc851127a0021b148431f78"
+        },
+        "worker_sha256": "8aaf58e2d8b2db7728de8c3ce1162670860a16abb966aae02af2a195b5c9378a",
+        "panel_orders": 2,
+        "panel_cases": 21,
+        "panel_blocks": 24,
+        "full_blocks": 96,
+        "source_through_final_link_seconds": 2.3621260619256645,
+        "paired_build_ratios": {
+          "roc": 0.7906035086901487,
+          "libdeflate": 4.87935605044035,
+          "mech-control-reference": 1.0583257226419343
+        }
+      }
+    },
+    "builds": {
+      "plan_sha256": "7a41cf97677cb077d6759797bd18cec08c8204db67f538237be6ed74a2fa016b",
+      "medians": {
+        "mech-control-reference": {
+          "source": 2.1945038542617112,
+          "link": 0.03554787510074675,
+          "source_through_link": 2.23352404194884,
+          "strip": 0.010919582797214389,
+          "source_through_strip": 2.2445703961420804
+        },
+        "mech-hybrid-u32": {
+          "source": 2.32053504162468,
+          "link": 0.0353131250012666,
+          "source_through_link": 2.356827020412311,
+          "strip": 0.010769291315227747,
+          "source_through_strip": 2.3677864163182676
+        },
+        "mech-register-linear": {
+          "source": 2.321701770881191,
+          "link": 0.035268812673166394,
+          "source_through_link": 2.358269312651828,
+          "strip": 0.010802416363731027,
+          "source_through_strip": 2.3693112086039037
+        },
+        "mech-register-sqrt": {
+          "source": 2.3233727710321546,
+          "link": 0.0365237498190254,
+          "source_through_link": 2.3621260619256645,
+          "strip": 0.010898082982748747,
+          "source_through_strip": 2.373307186877355
+        },
+        "roc": {
+          "source": 2.950475729070604,
+          "link": 0.035040416987612844,
+          "source_through_link": 2.985901625128463,
+          "strip": 0.010539187584072351,
+          "source_through_strip": 2.996696437476203
+        },
+        "libdeflate": {
+          "source": 0.4484881875105202,
+          "link": 0.03479177155531943,
+          "source_through_link": 0.4832571872975677,
+          "strip": 0.010619812412187457,
+          "source_through_strip": 0.4941376242786646
+        }
+      },
+      "phases": {
+        "mech-control-reference": {
+          "parse": 0.703423042,
+          "catalog": 2.54375e-05,
+          "frontend": 0.217904,
+          "artifact": 0.006839771,
+          "encode": 0.002537333,
+          "native": 1.2344860409999998
+        },
+        "mech-hybrid-u32": {
+          "parse": 0.7060576249999999,
+          "catalog": 2.03335e-05,
+          "frontend": 0.22558854150000002,
+          "artifact": 0.0073523124999999995,
+          "encode": 0.0026948329999999998,
+          "native": 1.3514312915
+        },
+        "mech-register-linear": {
+          "parse": 0.7057819165,
+          "catalog": 2.2458e-05,
+          "frontend": 0.22544583299999998,
+          "artifact": 0.007354563,
+          "encode": 0.0026933955,
+          "native": 1.3531190419999999
+        },
+        "mech-register-sqrt": {
+          "parse": 0.706338687,
+          "catalog": 2.3354e-05,
+          "frontend": 0.2255775625,
+          "artifact": 0.007360083,
+          "encode": 0.0026929165,
+          "native": 1.354134604
+        }
+      },
+      "paired_ratios": {
+        "mech-control-reference": {
+          "roc": 0.7463800918349883,
+          "libdeflate": 4.609190710362755,
+          "mech-control-reference": 1.0
+        },
+        "mech-hybrid-u32": {
+          "roc": 0.7891128208496755,
+          "libdeflate": 4.875382248353771,
+          "mech-control-reference": 1.0563005788756894
+        },
+        "mech-register-linear": {
+          "roc": 0.789216009182649,
+          "libdeflate": 4.887659791484861,
+          "mech-control-reference": 1.0585882630755368
+        },
+        "mech-register-sqrt": {
+          "roc": 0.7906035086901487,
+          "libdeflate": 4.87935605044035,
+          "mech-control-reference": 1.0583257226419343
+        }
+      },
+      "trials": 12,
+      "source_commit": "5b3a4af26c0d39775580ca868e62af36f0049ae2",
+      "scope": "12 balanced serial fresh-process source-through-final-executable-link trials per actor. Fixedsupport/compilers prebuilt equally, artifacthasheschecked, strip/bootstrapseparate. Source variants independent from runtime qualification. Original default and HF source retain full81/63 qualification. Register variants have separate runtime/native qualification; the complete full81 results accompany this cohort and do not change the selected default."
+    },
+    "verification": {
+      "passed": true,
+      "public_native_replays": 4,
+      "all_saved_calls_checked": 4648320,
+      "zero_duration_individual_samples_retained": 581497,
+      "balanced_complete_build_orders": 12,
+      "deployment_executions": 486,
+      "selected_default_changed": false,
+      "new_qualified_C_win": false,
+      "next_C_target": 64,
+      "ultimate_C_target": 81
+    },
+    "evidence": "evidence/measured-register-weight-study/README.md",
+    "source_reproduction": "evidence/measured-register-weight-study/reproduce.py",
+    "compiler_build": "evidence/measured-register-weight-study/build_compiler.py",
+    "next": "Combine with smaller original source using exactVCode match orfreshcapture, then census argument-forwarding blocks and comparable Mech/C matcher work."
   }
 }
