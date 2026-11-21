@@ -1,5 +1,78 @@
 use super::*;
 
+#[test]
+fn seeded_admitted_windows_preserve_full_width_errors_and_effects() {
+    let mut calls = 0;
+    for mode in 0..=6 {
+        let module = JITModule::new(
+            JITBuilder::with_flags(
+                &[("opt_level", "speed"), ("regalloc_checker", "true")],
+                default_libcall_names(),
+            )
+            .unwrap(),
+        );
+        let (old, loads) = body(&module, mode);
+        let mut fast = module.make_context();
+        fast.func = old.func.clone();
+        let mut spans = fold(&mut fast, &loads, &BTreeSet::from([2]), false);
+        assert_eq!(spans.len(), 1);
+        assert_eq!(spans[0].checks_removed, 1);
+        let mut unseeded = module.make_context();
+        unseeded.func = fast.func.clone();
+        assert!(fold(&mut unseeded, &loads, &BTreeSet::from([2]), true).is_empty());
+        let expected = match mode {
+            0 | 6 => 2,
+            5 => 3,
+            _ => 0,
+        };
+        assert_eq!(refine_windows(&mut fast, &loads, &mut spans), expected);
+        assert_eq!(spans[0].checks_removed, expected + 1);
+        assert_eq!(spans[0].window_checks_removed, expected);
+        let (_module, before, after) = finish(module, old, fast, spans);
+        for begin in [0, 1, 3, 7, u64::MAX - 1, u64::MAX] {
+            for end in [0, 1, 3, 7, 12, u64::MAX] {
+                for length in [0, 3, 5, 12, u64::MAX] {
+                    for cap in [0, 1, 4, 5, 8, u64::MAX] {
+                        for budget in [0, 1, 2, 13] {
+                            for marker in [0, u64::MAX] {
+                                let packet = [begin, end, length, cap, budget];
+                                let mut a = [0, 0, 0, marker];
+                                let mut b = a;
+                                let first = invoke(before, &packet, &mut a);
+                                let second = invoke(after, &packet, &mut b);
+                                assert_eq!(
+                                    (first, a),
+                                    (second, b),
+                                    "mode={mode} packet={packet:?}"
+                                );
+                                calls += 2;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    assert_eq!(calls, 120960);
+}
+
+#[test]
+fn seeded_admitted_windows_reject_different_entry_spans() {
+    let module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+    for field in 0..3 {
+        let (mut ctx, loads) = body(&module, 5);
+        let mut spans = fold(&mut ctx, &loads, &BTreeSet::from([2]), false);
+        match field {
+            0 => spans[0].begin_word = 4,
+            1 => spans[0].end_word = 4,
+            _ => spans[0].length_word = 4,
+        }
+        let before = ctx.func.display().to_string();
+        assert_eq!(refine_windows(&mut ctx, &loads, &mut spans), 0);
+        assert_eq!(ctx.func.display().to_string(), before);
+    }
+}
+
 fn body(module: &JITModule, mode: u8) -> (Context, BTreeMap<Value, (Inst, usize)>) {
     let mut ctx = module.make_context();
     ctx.func.signature.params = vec![AbiParam::new(types::I64); 3];

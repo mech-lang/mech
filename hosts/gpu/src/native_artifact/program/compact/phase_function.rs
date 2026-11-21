@@ -1587,6 +1587,30 @@ fn prepare_impl<M: Module>(
             .collect::<Vec<_>>();
         let moved =
             cfg_cleanup::immutable_word_reads::schedule(module, &mut context, &loads, &views)?;
+        if moved != 0
+            && std::env::var_os("MECH_COMPACT_REFINE_IMMUTABLE_WORDS").is_some()
+            && !entry_spans.is_empty()
+        {
+            let windows =
+                cfg_cleanup::admitted_spans::refine_windows(&mut context, &loads, &mut entry_spans);
+            let lengths = if std::env::var_os("MECH_REUSE_ADMITTED_INPUT_WORD_LENGTHS").is_some() {
+                cfg_cleanup::admitted_spans::admit_word_length(
+                    &mut context.func,
+                    &loads,
+                    &mut entry_spans,
+                )
+            } else {
+                0
+            };
+            if windows != 0 || lengths != 0 {
+                context
+                    .compute_flowgraph_and_cleanup(module.isa())
+                    .map_err(backend)?;
+            }
+            eprintln!(
+                "{symbol} immutable word guards refined: windows={windows}, lengths={lengths}"
+            );
+        }
         if moved != 0 {
             context.verify(module.isa()).map_err(backend)?;
         }
