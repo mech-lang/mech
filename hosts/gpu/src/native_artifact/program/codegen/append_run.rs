@@ -345,7 +345,12 @@ fn optimize_inner(
     let count = reloads.as_ref().map_or(0, packet_reloads::Reloads::count);
     let entry_proved_guards = if trace.window.is_some() { 2 } else { 0 };
     let paired = if pair_appends {
-        match pairs::Pair::derive(context, &trace, &old_params) {
+        match pairs::Pair::derive(
+            context,
+            &trace,
+            &old_params,
+            std::env::var_os("MECH_PAIR_BIASED_APPENDS").is_some(),
+        ) {
             Ok(pair) => Some(pair),
             Err(reason) => {
                 if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
