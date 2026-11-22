@@ -551,6 +551,12 @@
         (rn Reg)
         (size ScalarSize))
 
+       ;; Copy the exact low 64 bits from a scalar FP register to a GPR.
+       ;; This does not convert the floating-point value.
+       (MovFromFpu64
+        (rd WritableReg)
+        (rn Reg))
+
        ;; Loads a floating-point immediate.
        (FpuMoveFPImm
         (rd WritableReg)

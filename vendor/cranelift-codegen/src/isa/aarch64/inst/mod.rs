@@ -721,7 +721,9 @@ fn aarch64_get_operands(inst: &mut Inst, collector: &mut impl OperandVisitor) {
             collector.reg_use(ri);
             collector.reg_use(rn);
         }
-        Inst::MovFromVec { rd, rn, .. } | Inst::MovFromVecSigned { rd, rn, .. } => {
+        Inst::MovFromFpu64 { rd, rn }
+        | Inst::MovFromVec { rd, rn, .. }
+        | Inst::MovFromVecSigned { rd, rn, .. } => {
             collector.reg_def(rd);
             collector.reg_use(rn);
         }
@@ -1139,6 +1141,21 @@ impl MachInst for Inst {
                 }
             }
             RegClass::Vector => unreachable!(),
+        }
+    }
+
+    fn gen_cross_class_move(to_reg: Writable<Reg>, from_reg: Reg) -> Option<Inst> {
+        match (to_reg.to_reg().class(), from_reg.class()) {
+            (RegClass::Float, RegClass::Int) => Some(Inst::MovToFpu {
+                rd: to_reg,
+                rn: from_reg,
+                size: ScalarSize::Size64,
+            }),
+            (RegClass::Int, RegClass::Float) => Some(Inst::MovFromFpu64 {
+                rd: to_reg,
+                rn: from_reg,
+            }),
+            _ => None,
         }
     }
 
@@ -2052,6 +2069,11 @@ impl Inst {
                 let operand_size = size.operand_size();
                 let rd = pretty_print_vreg_scalar(rd.to_reg(), size);
                 let rn = pretty_print_ireg(rn, operand_size);
+                format!("fmov {rd}, {rn}")
+            }
+            &Inst::MovFromFpu64 { rd, rn } => {
+                let rd = pretty_print_ireg(rd.to_reg(), OperandSize::Size64);
+                let rn = pretty_print_vreg_scalar(rn, ScalarSize::Size64);
                 format!("fmov {rd}, {rn}")
             }
             &Inst::FpuMoveFPImm { rd, imm, size } => {

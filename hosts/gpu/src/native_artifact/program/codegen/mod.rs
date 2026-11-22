@@ -120,3 +120,6 @@ pub(in crate::native_artifact) mod numeric_compact;
 
 #[cfg(all(test, feature = "jit"))]
 mod prefetch_base_tests;
+
+#[cfg(all(test, feature = "jit"))]
+mod fp_spill_tests;

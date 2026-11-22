@@ -1553,6 +1553,11 @@ impl<M: ABIMachineSpec> Callee<M> {
         &self.sized_stackslots
     }
 
+    /// Offset of private spill storage within the fixed frame storage area.
+    pub(crate) fn spill_area_offset(&self) -> u32 {
+        self.stackslots_size
+    }
+
     /// The offsets of all dynamic stack slots (not spill slots) for debuginfo purposes.
     pub fn dynamic_stackslot_offsets(&self) -> &PrimaryMap<DynamicStackSlot, u32> {
         &self.dynamic_stackslots

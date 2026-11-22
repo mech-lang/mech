@@ -2345,6 +2345,9 @@ impl Inst {
                 };
                 sink.put4(template | (machreg_to_gpr(rn) << 5) | machreg_to_vec(rd.to_reg()));
             }
+            &Inst::MovFromFpu64 { rd, rn } => {
+                sink.put4(0x9e66_0000 | (machreg_to_vec(rn) << 5) | machreg_to_gpr(rd.to_reg()));
+            }
             &Inst::FpuMoveFPImm { rd, imm, size } => {
                 sink.put4(
                     0b000_11110_00_1_00_000_000100_00000_00000
