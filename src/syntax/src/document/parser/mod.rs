@@ -929,9 +929,8 @@ pub(crate) fn parse_canonical_document_with_ids(
     ids: &mut IdGenerator,
 ) -> SyntaxSnapshot {
     let mut parser = Parser::new(&source, LexicalMode::CanonicalSourceFragment, config, ids);
-    // A complete-file parse has no intermediate views. Build its final tree
-    // once, rather than materializing every speculative completed marker.
-    parser.state.retain_completed_nodes = false;
+    // Completed nodes remain reusable across speculative alternatives. The
+    // one-shot cache avoids materializing trees for discarded markers.
     parser.state.events = Journal::batch();
     parser.state.diagnostics = Journal::transient();
     // One-shot parsing preserves the logical grants and IDs. Streaming work

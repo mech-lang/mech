@@ -451,6 +451,18 @@ mod tests {
         events: u32,
         disabled: bool,
     ) -> (Outcome, u64) {
+        run_mode(rule, text, views, quantum, fuel, events, disabled, false)
+    }
+    fn run_mode(
+        rule: RuleId,
+        text: &str,
+        views: &[(u32, u32)],
+        quantum: u64,
+        fuel: u64,
+        events: u32,
+        disabled: bool,
+        one_shot: bool,
+    ) -> (Outcome, u64) {
         let source =
             crate::document::TextSnapshot::new(DocumentId(514), Revision(1), text).unwrap();
         let mut ids = IdGenerator::new();
@@ -463,6 +475,11 @@ mod tests {
             config,
             &mut ids,
         );
+        if one_shot {
+            p.state.tree_cache.one_shot = true;
+            p.state.events = crate::document::parser::Journal::batch();
+            p.state.diagnostics = crate::document::parser::Journal::transient();
+        }
         p.state
             .base_storage
             .prediction
@@ -556,6 +573,34 @@ mod tests {
         assert!(hits >= 2, "positive replay must actually execute");
         assert_eq!(candidate, reference);
     }
+    #[test]
+    fn one_shot_lexical_replay_preserves_identities_limits_and_work() {
+        for (rule, text) in [
+            (super::super::rules::IDENTIFIER, "alpha3_z-then+"),
+            (super::super::rules::DIGIT_SEQUENCE, "123_456_789!"),
+        ] {
+            let views = vec![(text.len() as u32, text.len() as u32); 3];
+            let (cached, hits) = run_mode(rule, text, &views, u64::MAX, 100000, 1000, false, true);
+            let (reference, _) = run_mode(rule, text, &views, u64::MAX, 100000, 1000, true, true);
+            assert!(
+                hits >= 2,
+                "one-shot parsing must actually reuse lexical results"
+            );
+            assert_eq!(cached, reference);
+            for quantum in [1, 17, 4096, u64::MAX] {
+                for fuel in [0, 1, 2, 5, 32, 100000] {
+                    for events in [7, 12, 64, 1000] {
+                        assert_eq!(
+                            run_mode(rule, text, &views, quantum, fuel, events, false, true).0,
+                            run_mode(rule, text, &views, quantum, fuel, events, true, true).0,
+                            "{rule:?}, quantum {quantum}, fuel {fuel}, events {events}",
+                        );
+                    }
+                }
+            }
+        }
+    }
+
     #[test]
     fn repeated_lexical_replay_preserves_limits_view_bounds_and_fallbacks() {
         for rule in [
