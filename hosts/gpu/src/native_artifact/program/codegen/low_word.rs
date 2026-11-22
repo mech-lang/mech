@@ -138,3 +138,7 @@ pub(in crate::native_artifact) fn narrow_masked_shifts(function: &mut Function) 
     }
     shifts.len()
 }
+
+#[cfg(all(test, feature = "jit", target_arch = "aarch64"))]
+#[path = "low_word_tests.rs"]
+mod tests;
