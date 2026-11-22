@@ -441,6 +441,11 @@ fn aarch64_get_operands(inst: &mut Inst, collector: &mut impl OperandVisitor) {
             collector.reg_use(rn);
             collector.reg_reuse_def(rd, 0); // `rn` == `rd`.
         }
+        Inst::Bfi { rd, old, rn, .. } => {
+            collector.reg_use(old);
+            collector.reg_use(rn);
+            collector.reg_reuse_def(rd, 0);
+        }
         Inst::MovWide { rd, .. } => {
             collector.reg_def(rd);
         }
@@ -1537,6 +1542,19 @@ impl Inst {
                 let rd = pretty_print_ireg(rd.to_reg(), size);
                 let imm = imm.pretty_print(0);
                 format!("movk {rd}, {rn}, {imm}")
+            }
+            &Inst::Bfi {
+                size,
+                rd,
+                old,
+                rn,
+                lsb,
+                width,
+            } => {
+                let rd = pretty_print_ireg(rd.to_reg(), size);
+                let old = pretty_print_ireg(old, size);
+                let rn = pretty_print_ireg(rn, size);
+                format!("bfi {rd}, {old}, {rn}, #{lsb}, #{width}")
             }
             &Inst::CSel { rd, rn, rm, cond } => {
                 let rd = pretty_print_ireg(rd.to_reg(), OperandSize::Size64);
