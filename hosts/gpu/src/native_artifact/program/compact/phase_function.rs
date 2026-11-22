@@ -1808,6 +1808,18 @@ fn prepare_impl<M: Module>(
         {
             context.func.aarch64_branch_on_zero = true;
         }
+        if std::env::var_os("MECH_COMPACT_REFINE_PHASE_PREDICATES")
+            .is_some_and(|target| target == "all" || target == symbol.as_str())
+        {
+            let report =
+                cfg_cleanup::refine_current_predicates(&controls, &mut context, module.isa())?;
+            if std::env::var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF").is_some() {
+                eprintln!(
+                    "{symbol} refined late predicates: {}",
+                    report.removed_branches
+                );
+            }
+        }
     }
     if !observe
         && cleanup.enabled
