@@ -175,7 +175,7 @@ impl Continuation {
             && sealed::parse(parser, rule, fixed, allowance, &mut self.work)
         {
             self.result = true;
-            return;
+            return None;
         }
         if fixed.is_none() && !non_fixed_rule(rule) {
             self.result = false;
