@@ -168,9 +168,17 @@ impl Continuation {
             .prediction
             .as_ref()
             .is_some_and(|storage| storage.memo.capture.is_some());
+        // Repeated lexical nodes already have a replay cache. Direct scanning
+        // would bypass both its lookup and the recording of a reusable result.
+        let cached_repeat = parser.state.tree_cache.one_shot
+            && matches!(specification(rule), Some(Spec::RepeatedNode { .. }));
         if optimize
+            && !cached_repeat
+            // A cached lexical node records its ordinary nested phases,
+            // including their scanner state and logical work.
+            && (!parser.state.tree_cache.one_shot || self.storage.frames.is_empty())
             && final_input
-            && !parser.state.retain_completed_nodes
+            && (!parser.state.retain_completed_nodes || parser.state.tree_cache.one_shot)
             && !capturing
             && sealed::parse(parser, rule, fixed, allowance, &mut self.work)
         {
