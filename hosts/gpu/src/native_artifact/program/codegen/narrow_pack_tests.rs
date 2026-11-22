@@ -407,6 +407,11 @@ enum FieldForm {
     Unsigned32,
     Loaded8,
     Masked8,
+    ZeroBase8,
+    ZeroField,
+    ConstantField,
+    JoinedHigh,
+    Signed8,
 }
 
 fn field_fixture(
@@ -439,7 +444,7 @@ fn field_fixture(
     let mut low = reduce(&mut b, ty, a);
     let mut high = reduce(&mut b, ty, rhs);
     let narrow = match form {
-        FieldForm::Unsigned8 | FieldForm::SameUnsigned8 => Some(types::I8),
+        FieldForm::Unsigned8 | FieldForm::SameUnsigned8 | FieldForm::ZeroBase8 => Some(types::I8),
         FieldForm::Unsigned16 => Some(types::I16),
         FieldForm::Unsigned32 if ty == types::I64 => Some(types::I32),
         _ => None,
@@ -449,6 +454,24 @@ fn field_fixture(
         high = b.ins().uextend(ty, high);
     }
     match form {
+        FieldForm::ZeroBase8 => low = b.ins().iconst(ty, 0),
+        FieldForm::ZeroField => high = b.ins().iconst(ty, 0),
+        FieldForm::ConstantField => high = b.ins().iconst(ty, 0xc0),
+        FieldForm::Signed8 => {
+            let byte = reduce(&mut b, types::I8, rhs);
+            high = b.ins().sextend(ty, byte);
+        }
+        FieldForm::JoinedHigh => {
+            let byte = reduce(&mut b, types::I8, rhs);
+            let clean = b.ins().uextend(ty, byte);
+            let join = b.create_block();
+            let selected = b.append_block_param(join, ty);
+            let choose = b.ins().band_imm(variable, 1);
+            b.ins()
+                .brif(choose, join, &[clean.into()], join, &[low.into()]);
+            b.switch_to_block(join);
+            high = selected;
+        }
         FieldForm::SameUnsigned8 => low = high,
         FieldForm::Masked8 => high = b.ins().band_imm(high, 0xff),
         FieldForm::Loaded8 => {
@@ -614,6 +637,11 @@ fn masked_field_inserts_preserve_values_effects_and_fallbacks() {
                 FieldForm::Unsigned32,
                 FieldForm::Loaded8,
                 FieldForm::Masked8,
+                FieldForm::ZeroBase8,
+                FieldForm::ZeroField,
+                FieldForm::ConstantField,
+                FieldForm::JoinedHigh,
+                FieldForm::Signed8,
             ] {
                 for (spec, masks) in specs.into_iter().enumerate() {
                     for op in [Logical::Or, Logical::And, Logical::Xor] {
@@ -641,13 +669,24 @@ fn masked_field_inserts_preserve_values_effects_and_fallbacks() {
                     & match form {
                         FieldForm::Unsigned8
                         | FieldForm::SameUnsigned8
+                        | FieldForm::ZeroBase8
+                        | FieldForm::JoinedHigh
                         | FieldForm::Loaded8
                         | FieldForm::Masked8 => 0xff,
                         FieldForm::Unsigned16 => 0xffff,
                         FieldForm::Unsigned32 => u32::MAX as u64,
                         _ => mask(bits),
                     };
-                let low = if matches!(form, FieldForm::SameUnsigned8) {
+                let high = match form {
+                    FieldForm::ZeroField => 0,
+                    FieldForm::ConstantField => 0xc0,
+                    FieldForm::JoinedHigh if variable & 1 == 0 => a & mask(bits),
+                    FieldForm::Signed8 => (rhs as i8 as i64 as u64) & mask(bits),
+                    _ => high,
+                };
+                let low = if matches!(form, FieldForm::ZeroBase8) {
+                    0
+                } else if matches!(form, FieldForm::SameUnsigned8) {
                     high
                 } else if matches!(form, FieldForm::Joined) && variable & 1 == 0 {
                     rhs

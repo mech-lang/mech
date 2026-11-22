@@ -102,10 +102,11 @@ pub(super) fn lower(lower: &mut Lower<MInst>, inst: Inst) -> Option<InstOutput> 
         return None;
     }
     let mode = std::env::var_os("MECH_ARM64_INSERT_MASKED_FIELDS")?;
-    if mode != "1" && mode != "wide" {
+    if mode != "1" && mode != "wide" && mode != "wide-copy" {
         return None;
     }
-    let wide = mode == "wide";
+    let tie = mode == "wide";
+    let wide = tie || mode == "wide-copy";
     // Fixed-size, read-only preflight. The original producers retain any
     // independent uses; loads, stores, guards and arithmetic are never moved.
     let mut plan = None;
@@ -138,6 +139,7 @@ pub(super) fn lower(lower: &mut Lower<MInst>, inst: Inst) -> Option<InstOutput> 
             continue;
         };
         let widen = wide
+            && lsb > 0
             && base_mask == (1u64 << lsb) - 1
             && unsigned_bits(dfg, field, ty).is_some_and(|bits| bits <= shift + width);
         plan = Some((
@@ -164,20 +166,30 @@ pub(super) fn lower(lower: &mut Lower<MInst>, inst: Inst) -> Option<InstOutput> 
             rn: field,
             immshift: ImmShift::maybe_from_u64(u64::from(shift)).unwrap(),
         });
-        let old = lower.alloc_tmp(ty).only_reg()?;
-        lower.emit(MInst::Mov {
-            size: OperandSize::Size64,
-            rd: old,
-            rm: base,
-        });
+        let old = if base.is_real() || !tie {
+            // A fixed physical source, including XZR, cannot be tied to a
+            // newly allocated destination. Give it an ordinary virtual copy.
+            let old = lower.alloc_tmp(ty).only_reg()?;
+            lower.emit(MInst::Mov {
+                size: OperandSize::Size64,
+                rd: old,
+                rm: base,
+            });
+            old.to_reg()
+        } else {
+            // reg_reuse_def ties the destination to this use. Regalloc
+            // inserts a copy when the input remains live; a dead input can
+            // be overwritten directly without an emitted self-copy.
+            base
+        };
         let rd = lower.alloc_tmp(ty).only_reg()?;
         // Every bit above the low base field is overwritten. The semantic
         // source bound proves that insertion beyond the original field only
-        // writes zeros. The coalescible copy preserves shared/zero inputs.
+        // writes zeros. Tied allocation preserves shared/physical inputs.
         lower.emit(MInst::Bfi {
             size,
             rd,
-            old: old.to_reg(),
+            old,
             rn: shifted.to_reg(),
             lsb,
             width: ty.bits() as u8 - lsb,
