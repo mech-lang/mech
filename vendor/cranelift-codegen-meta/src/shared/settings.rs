@@ -30,6 +30,47 @@ pub(crate) fn define() -> SettingGroup {
     );
 
     settings.add_bool(
+        "enable_inverted_cset_folding",
+        "Fold an allocated AArch64 conditional set and in-place Boolean inversion.",
+        r#"
+            Emit a single conditional set when the adjacent inversion overwrites
+            the same register and there are no intervening allocator moves or
+            source-location boundaries.
+        "#,
+        false,
+    );
+
+    settings.add_bool(
+        "enable_cset_branch_flags",
+        "Reuse the flags behind an allocated AArch64 conditional set in a branch.",
+        r#"
+            A branch on the conditional set's unchanged result can test the
+            same condition directly through a flag-preserving immediate move.
+        "#,
+        false,
+    );
+
+    settings.add_bool(
+        "enable_redundant_zero_folding",
+        "Elide a repeated allocated AArch64 zero move on a single-predecessor edge.",
+        r#"
+            Skip a block's first zero move when a direct predecessor sets the
+            same physical register to zero and no allocator move intervenes.
+        "#,
+        false,
+    );
+
+    settings.add_bool(
+        "enable_cset_bit_select",
+        "Fuse an allocated conditional mask feeding an AArch64 low-bit branch.",
+        r#"
+            Use a conditional select when the mask and its result have only
+            the adjacent AND and low-bit branch as consumers.
+        "#,
+        false,
+    );
+
+    settings.add_bool(
         "regalloc_verbose_logs",
         "Enable verbose debug logs for regalloc2.",
         r#"
