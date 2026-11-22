@@ -193,7 +193,12 @@ impl Context {
         }
 
         if self.func.aarch64_hoist_prefetch_bases && isa.name() == "aarch64" {
-            crate::prefetch_bases::hoist(&mut self.func);
+            #[cfg(feature = "std")]
+            let reuse_dominating_bases =
+                std::env::var("MECH_ARM64_REUSE_PREFETCH_BASES").as_deref() == Ok("1");
+            #[cfg(not(feature = "std"))]
+            let reuse_dominating_bases = false;
+            crate::prefetch_bases::hoist(&mut self.func, reuse_dominating_bases);
             self.func.dfg.resolve_all_aliases();
             self.verify_if(isa)?;
         }
