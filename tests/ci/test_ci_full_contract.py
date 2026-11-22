@@ -137,7 +137,7 @@ class FullWorkflowContractTests(unittest.TestCase):
     def test_linked_applications_have_an_independent_required_cold_build_budget(self):
         applications = job_block(FULL, "canonical-applications")
         linked = job_block(FULL, "canonical-linked-applications")
-        self.assertEqual(int(re.search(r"timeout-minutes: (\d+)", applications).group(1)), 90)
+        self.assertEqual(int(re.search(r"timeout-minutes: (\d+)", applications).group(1)), 120)
         self.assertEqual(int(re.search(r"timeout-minutes: (\d+)", linked).group(1)), 240)
         self.assertEqual(applications.splitlines()[0], linked.splitlines()[0])
         for setting in (

@@ -26,16 +26,11 @@ fn main() {
     limits.library.max_comparison_work = Some(unsigned(3));
     limits.library.max_temporary_bytes = Some(unsigned(4));
     let catalog = catalog().unwrap();
-    // SAFETY: the unchanged generated build.rs pins this exact descriptor,
-    // source, bytecode, catalog installation, Object and identity before link.
-    // The process retains their symbols throughout all three invocations.
+    // SAFETY: the unchanged generated build.rs pins the source, bytecode,
+    // catalog installation and Object. Its genuine immutable module binds the
+    // descriptor, identity and entry throughout all three invocations.
     let linked = unsafe {
-        LinkedProgramArtifact::from_build_owned_image(
-            include_bytes!("../../native-descriptor.bin"),
-            &catalog,
-            &LINKED_IDENTITY,
-            linked_entry,
-        )
+        LinkedProgramArtifact::from_compiled_module(&LINKED_MODULE, &catalog)
     }
     .unwrap();
     let schemas = Arc::new(linked.descriptor().schemas().clone());

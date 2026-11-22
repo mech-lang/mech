@@ -619,7 +619,9 @@ jobs:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'native') || contains(fromJSON(inputs.contract_families), 'language') }}
     name: Canonical applications and native witnesses (${{ matrix.suite }})
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # The native suite reached 523/600 passing composition tests at 90 minutes,
+    # after 33 minutes of preceding builds. Keep time for the complete suite.
+    timeout-minutes: 120
     # Keep independent source/native/program/CLI builds under the same gate.
     # Complete compressor qualification also needs an optimized compiler host.
     strategy:

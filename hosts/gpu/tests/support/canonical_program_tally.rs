@@ -283,8 +283,8 @@ fn one_program_collects_matches_selects_path_and_builds_codes() {
             let aliases = args.clone();
             let mut output = vec![None; artifact.outputs().len()];
             let mut policy = policy();
-            // The measured combined frame is 1,103,136 bytes. This explicit
-            // finite diagnostic allowance does not alter compiler defaults.
+            // This explicit finite diagnostic allowance covers the complete
+            // current frame without altering compiler defaults.
             policy.execution.max_transport_bytes = 2 * 1024 * 1024;
             policy.library.max_output_elements = Some(1500513);
             let start = std::time::Instant::now();
@@ -295,14 +295,14 @@ fn one_program_collects_matches_selects_path_and_builds_codes() {
                 "{}",
                 serde_json::json!({"witness":"collector-path-tally-huffman","artifact":form,"case":name,"completed_positions":if result.is_ok() {8} else {0},"tree_entries":262144,"cache_words":1500513,"nodes_reservation":305257,"depth":300,"nice":258,"elapsed_seconds":start.elapsed().as_secs_f64(),"allocation_requests":requests,"requested_bytes":requested_bytes,"result":format!("{result:?}")})
             );
-            result.unwrap();
+            let report = result.unwrap();
             check_tally(output.last().unwrap().as_ref().unwrap(), case);
             if name == "eight-literals" {
                 let old = output.clone();
                 let retained = memory.used_bytes();
                 let nodes = memory.retained_snapshot_nodes();
                 let mut denied = policy;
-                denied.execution.max_transport_bytes = 1024 * 1024;
+                denied.execution.max_transport_bytes = report.transport_bytes - 1;
                 let (rejection, requests, bytes) = allocation_probe::measured_with_bytes(|| {
                     jit.evaluate_into(&args, &mut output, denied, &memory)
                 });

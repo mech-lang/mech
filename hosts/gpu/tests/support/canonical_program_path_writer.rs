@@ -178,7 +178,6 @@ fn pinned_path_writer_retains_internal_capacity_without_payload_copies() {
             jit.descriptor().plan().blocks().len()
         );
         for case in fixture["cases"].as_array().unwrap() {
-            let mut allocated = Vec::new();
             for capacity in [512, 6633832] {
                 let memory = ManagedMemoryBudget::new(1024 * 1024 * 1024);
                 let mut data = vec![
@@ -226,9 +225,10 @@ fn pinned_path_writer_retains_internal_capacity_without_payload_copies() {
                 jit.evaluate_into(&args, &mut output, policy, &memory)
                     .unwrap();
                 let start = std::time::Instant::now();
-                let (result, requests, bytes) = allocation_probe::measured_with_bytes(|| {
-                    jit.evaluate_into(&args, &mut output, policy, &memory)
-                });
+                let (result, requests, bytes, payload_allocations) =
+                    allocation_probe::measured_with_allocation_size(capacity as usize, || {
+                        jit.evaluate_into(&args, &mut output, policy, &memory)
+                    });
                 println!(
                     "{}",
                     serde_json::json!({"case":case["name"],"form":form,"seconds":start.elapsed().as_secs_f64(),"allocations":requests,"allocated_bytes":bytes,"result":format!("{result:?}")})
@@ -243,11 +243,17 @@ fn pinned_path_writer_retains_internal_capacity_without_payload_copies() {
                     value.canonical_data_draft().unwrap(),
                     ValueDataDraft::Matrix(vec![ValueDataDraft::U8(17)].into())
                 );
-                allocated.push(bytes);
+                if capacity == 6633832 {
+                    // Count the actual reserved payload, independently of
+                    // metadata allocations and capacity-dependent fast paths.
+                    assert_eq!(
+                        payload_allocations, 1,
+                        "reserved payload must not be copied"
+                    );
+                }
                 drop((args, output));
                 assert_eq!(memory.used_bytes(), 0);
             }
-            assert_eq!(allocated[1] - allocated[0], 6633832 - 512);
         }
     }
 }
