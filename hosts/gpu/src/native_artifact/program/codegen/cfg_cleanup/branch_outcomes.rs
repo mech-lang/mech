@@ -25,9 +25,8 @@ fn comparison_word(f: &Function, value: Value, depth: usize) -> bool {
     }
 }
 
-fn negated_disjunction(f: &Function, condition: Value) -> Option<Value> {
-    let inst = f.dfg.value_def(condition).inst()?;
-    let source = match f.dfg.insts[inst] {
+fn inverted_operand(f: &Function, inst: Inst) -> Option<Value> {
+    let operand = match f.dfg.insts[inst] {
         Data::BinaryImm64 {
             opcode: Opcode::BxorImm,
             arg,
@@ -43,6 +42,11 @@ fn negated_disjunction(f: &Function, condition: Value) -> Option<Value> {
         } if literal(f, left) == Some(1) => right,
         _ => return None,
     };
+    Some(f.dfg.resolve_aliases(operand))
+}
+
+fn negated_disjunction(f: &Function, condition: Value) -> Option<Value> {
+    let source = inverted_operand(f, f.dfg.value_def(condition).inst()?)?;
     let inst = f.dfg.value_def(source).inst()?;
     let Data::Binary {
         opcode: Opcode::Bor,
@@ -84,7 +88,12 @@ fn incoming(
     (edges.len() > 1).then_some(edges)
 }
 
-pub(super) fn carry(f: &mut Function, cfg: &ControlFlowGraph, dom: &DominatorTree) -> usize {
+pub(super) fn carry(
+    f: &mut Function,
+    cfg: &ControlFlowGraph,
+    dom: &DominatorTree,
+    fold_inverted_uses: bool,
+) -> usize {
     let blocks = f.layout.blocks().collect::<Vec<_>>();
     let mut joins = 0;
     for block in blocks.iter().copied() {
@@ -126,6 +135,13 @@ pub(super) fn carry(f: &mut Function, cfg: &ControlFlowGraph, dom: &DominatorTre
             if users.is_empty() {
                 continue;
             }
+            // If every use in the join region inverts the same Boolean,
+            // transport the inverted result and retire those pure operations.
+            let invert = fold_inverted_uses
+                && users
+                    .iter()
+                    .all(|&inst| inverted_operand(f, inst) == Some(source));
+            let direct_value = direct_value ^ i64::from(invert);
             let ty = f.dfg.value_type(source);
             let param = f.dfg.append_block_param(join, ty);
             let mut cursor = FuncCursor::new(f).at_inst(branch);
@@ -143,11 +159,21 @@ pub(super) fn carry(f: &mut Function, cfg: &ControlFlowGraph, dom: &DominatorTre
                 }
             }
             for inst in users {
-                f.dfg
-                    .map_inst_values(inst, |value| if value == source { param } else { value });
+                if invert {
+                    let result = f.dfg.first_result(inst);
+                    f.dfg.detach_inst_results(inst);
+                    f.dfg.change_to_alias(result, param);
+                    f.layout.remove_inst(inst);
+                } else {
+                    f.dfg
+                        .map_inst_values(inst, |value| if value == source { param } else { value });
+                }
             }
             joins += 1;
         }
+    }
+    if fold_inverted_uses && joins != 0 {
+        f.dfg.resolve_all_aliases();
     }
     joins
 }
@@ -160,7 +186,7 @@ mod tests {
 
     #[test]
     fn join_receives_the_outcome_only_when_every_incoming_edge_proves_it() {
-        for bypass in [false, true] {
+        for (bypass, inverted) in [(false, false), (true, false), (false, true), (true, true)] {
             let mut f = Function::new();
             f.signature.params = vec![AbiParam::new(types::I64); 2];
             f.signature.returns.push(AbiParam::new(types::I64));
@@ -189,22 +215,28 @@ mod tests {
             b.switch_to_block(other);
             let indirect = b.ins().jump(join, &[]);
             b.switch_to_block(join);
-            let ret = b.ins().return_(&[source]);
+            let result = if inverted {
+                b.ins().bxor_imm(source, 1)
+            } else {
+                source
+            };
+            let ret = b.ins().return_(&[result]);
             b.seal_all_blocks();
             b.finalize();
 
             let cfg = ControlFlowGraph::with_function(&f);
             let dom = DominatorTree::with_function(&f, &cfg);
-            assert_eq!(carry(&mut f, &cfg, &dom), usize::from(!bypass));
+            assert_eq!(carry(&mut f, &cfg, &dom, inverted), usize::from(!bypass));
             let flags =
                 cranelift_codegen::settings::Flags::new(cranelift_codegen::settings::builder());
             cranelift_codegen::verify_function(&f, &flags).unwrap();
             if bypass {
-                assert_eq!(f.dfg.inst_args(ret), &[source]);
+                assert_eq!(f.dfg.inst_args(ret), &[result]);
                 continue;
             }
             assert_eq!(f.dfg.inst_args(ret), f.dfg.block_params(join));
-            for (edge, expected) in [(branch, 1), (indirect, 0)] {
+            let direct = u64::from(!inverted);
+            for (edge, expected) in [(branch, direct), (indirect, 1 - direct)] {
                 let argument = f.dfg.insts[edge]
                     .branch_destination(&f.dfg.jump_tables, &f.dfg.exception_tables)
                     .iter()

@@ -57,11 +57,17 @@ pub(in crate::native_artifact::program) use local_phis::incoming as incoming_blo
 pub(in crate::native_artifact::program) fn carry_branch_outcomes(
     context: &mut Context,
     isa: &dyn TargetIsa,
+    fold_inverted_uses: bool,
 ) -> Result<usize, NativeCompileError> {
     context.func.dfg.resolve_all_aliases();
     context.compute_cfg();
     context.compute_domtree();
-    let joins = branch_outcomes::carry(&mut context.func, &context.cfg, &context.domtree);
+    let joins = branch_outcomes::carry(
+        &mut context.func,
+        &context.cfg,
+        &context.domtree,
+        fold_inverted_uses,
+    );
     if joins != 0 {
         context.verify(isa).map_err(backend)?;
     }
