@@ -101,7 +101,12 @@ impl TargetIsa for AArch64Backend {
         let inspect_requested = false;
         if func.aarch64_fp_spill_slots != 0 || inspect_requested {
             let plan = if func.debug_tags.is_empty() {
-                fp_spill_cache::apply(&vcode, &mut regalloc_result, func.aarch64_fp_spill_slots)
+                fp_spill_cache::apply(
+                    &vcode,
+                    &mut regalloc_result,
+                    func.aarch64_fp_spill_slots,
+                    func.aarch64_fp_spill_keep_pairs,
+                )
             } else {
                 fp_spill_cache::Plan::rejected("source debug tags")
             };
