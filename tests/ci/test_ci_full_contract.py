@@ -167,7 +167,7 @@ class FullWorkflowContractTests(unittest.TestCase):
     def test_canonical_application_suites_keep_all_commands_in_required_parallel_shards(self):
         block = job_block(FULL, "canonical-applications")
         self.assertIn("fail-fast: false", block)
-        self.assertIn("suite: [source, native, program, cli]", block)
+        self.assertIn("suite: [source, native, composition, program, cli]", block)
         expected = {
             "Execute canonical resident applications and retained tail controls": "source",
             "Execute canonical collection and text source contracts": "source",
@@ -190,6 +190,12 @@ class FullWorkflowContractTests(unittest.TestCase):
                 if suite == "program":
                     self.assertIn("test --release", matching[0])
                     self.assertIn("--test canonical_artifact_program -- --test-threads=1", matching[0])
+        composition = next(step for step in job_steps(FULL, "canonical-applications")
+                           if "Inventory and execute native composition contracts" in step)
+        self.assertIn("if: ${{ matrix.suite == 'composition' }}", composition)
+        self.assertIn("--test-threads=1 --nocapture", composition)
+        self.assertIn('" -eq 600', composition)
+        self.assertNotIn("continue-on-error", composition)
         gate = job_block(FULL, "cargo")
         self.assertIn("      - canonical-applications\n", gate)
         for family in ("language", "native"):

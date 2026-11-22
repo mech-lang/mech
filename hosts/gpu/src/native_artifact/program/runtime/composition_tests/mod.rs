@@ -98,6 +98,20 @@ fn compile_parent_pieces(
     )
 }
 
+// Exact ownership fees include the host's synchronization metadata. The
+// pthread and futex layouts have different owner sizes; neither bill is a
+// universal work constant. Fail explicitly if a new owner layout is introduced.
+fn owner_layout_work(pthread: u64, futex: u64) -> u64 {
+    match (
+        Value::canonical_owner_allocation_bytes(),
+        Value::memory_budget_claim_metadata_bytes(),
+    ) {
+        (384, 216) => pthread,
+        (368, 208) => futex,
+        layout => panic!("unqualified native work owner layout: {layout:?}"),
+    }
+}
+
 #[test]
 fn huffman_parent_cleanup_selects_funded_retirement_batches() {
     let source = include_str!("../../../../../tests/fixtures/native/numeric-parent-child.mec");
@@ -139,7 +153,7 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             // transport and selected String-matrix scalar projections.
             // This fixture has none, so the policy105 decomposition below
             // remains exact and independently checked.
-            // The policy104 checkpoint for this exact fixture was 88,531,834.
+            // The policy104 checkpoint on the pthread owner layout was 88,531,834.
             // Emission ablation preserves the new tree's independently checked
             // proof and fallback inventory. Policy105 pays their larger shared
             // setup and source-site fees even when the smaller pieces execute.
@@ -206,7 +220,7 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             );
             assert_eq!(
                 report.work,
-                88_531_834 + setup + entries + ordinary + pieces
+                owner_layout_work(88_531_834, 88_525_050) + setup + entries + ordinary + pieces
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(
@@ -639,7 +653,8 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase() {
                 127
             );
             assert_eq!(
-                report.work, 41_515_826,
+                report.work,
+                owner_layout_work(41_515_826, 41_513_202),
                 "policy124 retains policy115 child fallback banks (+296 setup work) and exact source prices"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
