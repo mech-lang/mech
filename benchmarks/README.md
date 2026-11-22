@@ -24,3 +24,7 @@ and [PR #995](https://github.com/mech-lang/mech/pull/995) are preserved in
 Their manifests preserve original paths, Git blobs, SHA-256 and byte counts.
 Qualification policy tests now belong to the benchmarks correctness workflow.
 Compiler regression inputs remain local under `hosts/gpu/tests/fixtures/native/`.
+
+PR #995 retains a byte-identical compact compiler regression program at
+`hosts/gpu/tests/fixtures/native/compact-compiler-regression.mec`. The archive
+also preserves its final parser-repair and complete-build checkpoint.
