@@ -483,8 +483,52 @@ jobs:
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_compiler,native-artifact,pure_text \
             --lib -- prepared_schema_header_ --test-threads=1
+
+  managed-memory-native:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'memory') || contains(fromJSON(inputs.contract_families), 'numeric') }}
+    name: Managed memory native integration (${{ matrix.suite }})
+    runs-on: ubuntu-latest
+    # Keep native cold builds independent of the runtime ownership profiles.
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [compiler, ekf, backend]
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+      CARGO_BUILD_JOBS: "1"
+    steps:
+      - uses: actions/checkout@v7.0.1
+        id: checkout
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
+          fetch-depth: 0
+      - name: Record exact-ref checkout identity
+        env:
+          VALIDATION_KIND: exact-ref
+          REQUESTED_REF: ${{ inputs.validation_ref || github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Install CI and bundled native arithmetic build tools
+        run: |
+          if ! command -v rg >/dev/null 2>&1 || ! command -v cc >/dev/null 2>&1 || ! command -v make >/dev/null 2>&1 || ! command -v m4 >/dev/null 2>&1
+          then
+            sudo apt-get update \
+              -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+              -o Dir::Etc::sourceparts=-
+            sudo apt-get install --yes ripgrep build-essential m4
+          fi
+      - name: Fetch locked native-memory dependencies
+        run: cargo +nightly-2026-03-03 fetch --locked
       - name: Execute native compiler and batched array regressions
-        timeout-minutes: 25
+        if: ${{ matrix.suite == 'compiler' }}
+        timeout-minutes: 40
         run: |
           # native-build enables the general sequence and fused compiler paths.
           # GMP is built from the locked dependency; no system-gmp installation
@@ -509,6 +553,7 @@ jobs:
             --no-default-features --features full_compiler,resident-artifact,native-sequence \
             --test native_sequence_effects -- --test-threads=1
       - name: Execute retained engine EKF integration targets
+        if: ${{ matrix.suite == 'ekf' }}
         run: >-
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine
           --no-default-features --features full_compiler,resident-artifact,resident-ekf
@@ -516,6 +561,7 @@ jobs:
           --test resident_ekf_program_activation --test resident_ekf_program_execution
           -- --test-threads=1
       - name: Execute canonical compute and native backend integration targets
+        if: ${{ matrix.suite == 'backend' }}
         run: >-
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu
           --no-default-features --features native,jit
@@ -2032,6 +2078,7 @@ jobs:
       - managed-memory-fixed-profiles
       - managed-memory-miri
       - managed-memory-runtime
+      - managed-memory-native
       - native-cli-collision
       - memory-planner-contract
       - native-engine
@@ -2068,8 +2115,8 @@ jobs:
               'architecture': ['architecture-contracts', 'architecture-mutations'],
               'artifact': ['artifact-closure', 'bytecode-v1-format', 'bytecode-v1-values', 'bytecode-v1-determinism'],
               'language': ['cargo-language', 'canonical-applications', 'canonical-linked-applications'],
-              'memory': ['memory-planner-contract', 'managed-memory-runtime', 'managed-memory-miri', 'native-cli-collision'],
-              'numeric': ['function-system-contracts', 'engine-catalog', 'managed-memory-fixed-profiles', 'managed-memory-runtime', 'cargo-runtime', 'native-cli-collision'],
+              'memory': ['memory-planner-contract', 'managed-memory-runtime', 'managed-memory-native', 'managed-memory-miri', 'native-cli-collision'],
+              'numeric': ['function-system-contracts', 'engine-catalog', 'managed-memory-fixed-profiles', 'managed-memory-runtime', 'managed-memory-native', 'cargo-runtime', 'native-cli-collision'],
               'runtime': ['cargo-runtime', 'macos-runtime', 'windows-runtime-paths', 'windows-cli', 'dynamic-modules'],
               'cli': ['cargo-runtime', 'run-only', 'windows-cli-contracts', 'windows-cli'],
               'linkage': ['native-linkage-owners', 'native-linkage-surfaces', 'native-linkage', 'native-linkage-closures', 'catalog-closure'],

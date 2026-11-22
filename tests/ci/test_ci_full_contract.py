@@ -216,6 +216,33 @@ class FullWorkflowContractTests(unittest.TestCase):
             self.assertIn(f"'{family}'", collision.splitlines()[0])
         self.assertIn("- native-cli-collision", job_block(FULL, "cargo"))
 
+    def test_managed_native_profiles_have_an_independent_required_build_budget(self):
+        runtime = job_block(FULL, "managed-memory-runtime")
+        native = job_block(FULL, "managed-memory-native")
+        gate = job_block(FULL, "cargo")
+        self.assertIn("suite: [compiler, ekf, backend]", native)
+        for step, suite in (
+            ("Execute native compiler and batched array regressions", "compiler"),
+            ("Execute retained engine EKF integration targets", "ekf"),
+            ("Execute canonical compute and native backend integration targets", "backend"),
+        ):
+            self.assertNotIn(step, runtime)
+            self.assertIn(step, native)
+            selected = next(value for value in job_steps(FULL, "managed-memory-native")
+                            if f"- name: {step}\n" in value)
+            self.assertIn("if: ${{ matrix.suite == '" + suite + "' }}", selected)
+        self.assertIn(FULL_CHECKOUT_REF, native)
+        self.assertIn("Record exact-ref checkout identity", native)
+        self.assertIn('CARGO_BUILD_JOBS: "1"', native)
+        self.assertIn("timeout-minutes: 75", native)
+        self.assertIn("timeout-minutes: 40", native)
+        self.assertIn("fetch --locked", native)
+        self.assertIn("--locked --offline", native)
+        self.assertNotIn("continue-on-error", native)
+        self.assertIn("      - managed-memory-native\n", gate)
+        for family in ("memory", "numeric"):
+            self.assertRegex(gate, rf"'{family}': \[[^\n]*'managed-memory-native'")
+
     def test_canonical_iteration_lowering_and_current_visit_proof_are_selected(self):
         steps = job_steps(FULL, "canonical-applications")
         contracts = next(step for step in steps if "Execute canonical native lowering and selected implementation witnesses" in step)

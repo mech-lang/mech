@@ -610,8 +610,7 @@ pub struct ProgramArtifact {
             feature = "sequence_buffers"
         )
     ))]
-    collection_lexical_cache:
-        crate::resident::general::native_collection_templates::NativeCollectionLexicalCache,
+    collection_lexical_cache: crate::native_artifact::NativeCollectionLexicalCache,
 }
 
 impl ProgramArtifact {
@@ -625,7 +624,7 @@ impl ProgramArtifact {
     ))]
     pub(crate) fn collection_lexical_cache(
         &self,
-    ) -> &crate::resident::general::native_collection_templates::NativeCollectionLexicalCache {
+    ) -> &crate::native_artifact::NativeCollectionLexicalCache {
         &self.collection_lexical_cache
     }
 

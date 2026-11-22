@@ -172,6 +172,13 @@ pub use text_line_frontier::{
     feature = "map_ops",
     feature = "sequence_buffers"
 ))]
+pub(crate) use crate::resident::general::native_collection_templates::NativeCollectionLexicalCache;
+
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 pub use crate::resident::general::native_collection_templates::{
     NativeCollectionLexicalSource, NativeCollectionLexicalTemplate,
     NativeCollectionOperationTemplate, NativeCollectionPrimitive,
