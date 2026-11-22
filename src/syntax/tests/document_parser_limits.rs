@@ -268,11 +268,11 @@ fn recovery_byte_limit_abandons_to_resource_error_without_losing_bytes() {
 fn completed_prefix_survives_middle_fuel_and_event_exhaustion() {
     let text = "1. Stable\n--------\n\nA stable paragraph.\n\nx := 1\n\nfinal-item-with-enough-content-to-exhaust-the-limit\n";
     let prefix_end = text.find("final-item").unwrap();
-    // The current speculative parser reaches this semantic boundary at these
-    // budgets. Earlier budgets retain their exact remainder checks below.
+    // Prefix rejection avoids the full-line subtitle probe. Pin its completed
+    // prefix boundary, while retaining the earlier budgets below.
     for limits in [
         ParseLimits {
-            fuel: 451,
+            fuel: 398,
             ..ParseLimits::default()
         },
         ParseLimits {
@@ -321,14 +321,16 @@ fn early_middle_and_late_fuel_exhaustion_have_exact_remainders() {
     // remainders, plus measured budgets at the original semantic boundaries.
     for (fuel, error_start) in [
         (0, 0),
-        (390, 42),
-        (401, 46),
-        (451, 49),
-        (454, 52),
-        (550, 92),
-        (648, 87),
-        (659, 98),
-        (663, 49),
+        (390, 47),
+        (398, 49),
+        (401, 52),
+        (449, 49),
+        (451, 51),
+        (454, 54),
+        (550, 98),
+        (648, 90),
+        (659, 100),
+        (663, 100),
     ] {
         let snapshot = parse_with_limits(
             text,
@@ -345,7 +347,7 @@ fn early_middle_and_late_fuel_exhaustion_have_exact_remainders() {
 #[test]
 fn adjacent_event_limits_preserve_exact_unparsed_remainders() {
     let text = "1. Stable\n--------\n\nA stable paragraph.\n\nx := 1\n\nfinal-item-with-enough-content-to-exhaust-the-limit\n";
-    for (max_events, error_start) in [(128, 47), (129, 50), (130, 51), (133, 49)] {
+    for (max_events, error_start) in [(128, 47), (129, 49), (130, 49), (133, 49)] {
         let snapshot = parse_with_limits(
             text,
             ParseLimits {
@@ -423,5 +425,30 @@ fn tiny_event_budget_uses_the_documented_whole_range_fallback() {
     assert_eq!(
         nodes_of_kind(&snapshot.syntax(), SyntaxKind::UlSubtitle).len(),
         0
+    );
+}
+
+#[test]
+fn non_list_code_rejects_before_the_whole_line_subtitle_probe() {
+    // The ordered-list/subtitle ambiguity must not scan each large code line
+    // as a potential heading. This input used 179,048 steps with that probe
+    // ahead of the list prefix and exhausted this finite budget.
+    let values = (0..512)
+        .map(|value| value.to_string())
+        .collect::<Vec<_>>()
+        .join(" ");
+    let text = format!("x := [u32 {values}]\n");
+    let snapshot = parse_with_limits(
+        &text,
+        ParseLimits {
+            fuel: 178_000,
+            ..ParseLimits::default()
+        },
+    );
+    assert!(snapshot.is_strictly_clean(), "{:?}", snapshot.diagnostics);
+    validate_lossless(&snapshot.root, &snapshot.source).unwrap();
+    assert_eq!(
+        reconstruct_source(&snapshot.root, &snapshot.source).unwrap(),
+        text
     );
 }
