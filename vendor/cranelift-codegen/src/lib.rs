@@ -9,7 +9,10 @@
 // which means we'll always detect truly dead code, otherwise if this is only
 // built for one platform we don't have to worry too much about trimming
 // everything down.
-#![allow(dead_code, reason = "target-specific helpers are unused in single-target builds")]
+#![allow(
+    dead_code,
+    reason = "target-specific helpers are unused in single-target builds"
+)]
 #![cfg_attr(feature = "all-arch", deny(dead_code))]
 
 #[cfg_attr(not(feature = "std"), macro_use)]
@@ -49,6 +52,8 @@ mod machinst;
 
 pub mod binemit;
 pub mod cfg_printer;
+#[cfg(feature = "construction-census")]
+pub mod construction_census;
 pub mod cursor;
 pub mod data_value;
 pub mod dbg;
@@ -57,8 +62,6 @@ pub mod flowgraph;
 pub mod inline;
 pub mod ir;
 pub mod isa;
-#[cfg(feature = "construction-census")]
-pub mod construction_census;
 pub mod loop_analysis;
 pub mod print_errors;
 pub mod settings;
@@ -90,6 +93,7 @@ mod isle_prelude;
 mod legalizer;
 mod nan_canonicalization;
 mod opts;
+mod prefetch_bases;
 mod ranges;
 mod remove_constant_phis;
 mod result;

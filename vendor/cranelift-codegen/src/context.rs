@@ -192,6 +192,12 @@ impl Context {
             self.egraph_pass(isa, ctrl_plane)?;
         }
 
+        if self.func.aarch64_hoist_prefetch_bases && isa.name() == "aarch64" {
+            crate::prefetch_bases::hoist(&mut self.func);
+            self.func.dfg.resolve_all_aliases();
+            self.verify_if(isa)?;
+        }
+
         Ok(())
     }
 
