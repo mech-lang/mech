@@ -2,6 +2,8 @@
 
 // Pull in the ISLE generated code.
 #[cfg(feature = "std")]
+mod bit_fields;
+#[cfg(feature = "std")]
 mod byte_extensions;
 pub mod generated_code;
 #[cfg(feature = "std")]
@@ -68,6 +70,10 @@ pub(crate) fn lower(
     }
     #[cfg(feature = "std")]
     if let Some(output) = byte_extensions::lower(lower_ctx, inst) {
+        return Some(output);
+    }
+    #[cfg(feature = "std")]
+    if let Some(output) = bit_fields::lower(lower_ctx, inst) {
         return Some(output);
     }
     #[cfg(feature = "std")]
