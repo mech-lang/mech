@@ -1828,7 +1828,7 @@ fn prepare_impl<M: Module>(
                 .map_or((selection.as_str(), false), |target| (target, true));
             if target == "all" || target == symbol.as_str() {
                 let isa = module.isa();
-                let joins = cfg_cleanup::carry_branch_outcomes(&mut context, isa)?;
+                let joins = cfg_cleanup::carry_branch_outcomes(&mut context, isa, thread)?;
                 context.func.aarch64_branch_on_negated_disjunction = true;
                 let routes = if thread && joins != 0 {
                     cfg_cleanup::forward_identity_routes(&controls, &mut context, isa)?
