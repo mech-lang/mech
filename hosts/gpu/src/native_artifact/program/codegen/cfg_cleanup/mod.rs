@@ -7,6 +7,7 @@ pub(in crate::native_artifact) mod admitted_spans;
 pub(in crate::native_artifact) mod argument_jumps;
 mod boolean_words;
 pub(in crate::native_artifact) mod bounded_byte_histogram;
+mod branch_outcomes;
 pub(in crate::native_artifact) mod checked_adds;
 pub(in crate::native_artifact) mod compared_bytes;
 pub(in crate::native_artifact) mod composed_reads;
@@ -52,6 +53,20 @@ use cranelift_codegen::isa::TargetIsa;
 pub(in crate::native_artifact::program) use dead_values::eliminate as eliminate_dead_values;
 pub(in crate::native_artifact::program) use local_phis::controller_passthrough;
 pub(in crate::native_artifact::program) use local_phis::incoming as incoming_block_arguments;
+
+pub(in crate::native_artifact::program) fn carry_branch_outcomes(
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<usize, NativeCompileError> {
+    context.func.dfg.resolve_all_aliases();
+    context.compute_cfg();
+    context.compute_domtree();
+    let joins = branch_outcomes::carry(&mut context.func, &context.cfg, &context.domtree);
+    if joins != 0 {
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(joins)
+}
 
 const MAX_ROUNDS: usize = 8;
 const MAX_CONSTANT_DEPTH: usize = 16;

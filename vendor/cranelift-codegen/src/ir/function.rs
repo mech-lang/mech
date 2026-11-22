@@ -211,6 +211,8 @@ pub struct FunctionStencil {
 
     /// Select AArch64 compare-and-branch instructions for integer zero comparisons.
     pub aarch64_branch_on_zero: bool,
+    /// Branch directly on complemented integer comparison disjunctions on AArch64.
+    pub aarch64_branch_on_negated_disjunction: bool,
     /// Share and hoist pure prefetch base additions after egraph rematerialization.
     pub aarch64_hoist_prefetch_bases: bool,
     /// Maximum private integer spill cells kept in unused caller-saved FP registers.
@@ -275,6 +277,7 @@ impl FunctionStencil {
         self.aarch64_prefer_preserved_regs = false;
         self.regalloc_block_frequencies = None;
         self.aarch64_branch_on_zero = false;
+        self.aarch64_branch_on_negated_disjunction = false;
         self.aarch64_hoist_prefetch_bases = false;
         self.aarch64_fp_spill_slots = 0;
         self.aarch64_fp_spill_keep_pairs = false;
@@ -481,6 +484,7 @@ impl Function {
                 aarch64_prefer_preserved_regs: false,
                 regalloc_block_frequencies: None,
                 aarch64_branch_on_zero: false,
+                aarch64_branch_on_negated_disjunction: false,
                 aarch64_hoist_prefetch_bases: false,
                 aarch64_fp_spill_slots: 0,
                 aarch64_fp_spill_keep_pairs: false,

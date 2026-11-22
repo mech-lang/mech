@@ -68,6 +68,50 @@ fn comparison_conjunction_requires_all_consumed_wrappers_and_leaves_unique() {
     }
 }
 
+#[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
+#[test]
+fn negated_disjunction_requires_canonical_single_use_comparisons() {
+    let (mut f, _, first) = fixture(types::I64, IntCC::SignedLessThan, 2, 0);
+    let block = f.layout.entry_block().unwrap();
+    let raw = f.dfg.append_block_param(block, types::I8);
+    let input = f.dfg.block_params(block)[0];
+    let end = f.layout.last_inst(block).unwrap();
+    let mut cursor = FuncCursor::new(&mut f).at_inst(end);
+    let limit = cursor.ins().iconst(types::I64, 4);
+    let second = cursor.ins().icmp(IntCC::UnsignedGreaterThan, input, limit);
+    let narrow_either = cursor.ins().bor(first, second);
+    let normalized = cursor.ins().uextend(types::I64, narrow_either);
+    let normalized_not = cursor.ins().bxor_imm(normalized, 1);
+    let second = cursor.ins().uextend(types::I64, second);
+    let first_wide = cursor.ins().uextend(types::I64, first);
+    let either = cursor.ins().bor(first_wide, second);
+    let inverted = cursor.ins().bxor_imm(either, 1);
+    let partial = cursor.ins().bor(raw, first);
+    let unsupported = cursor.ins().bxor_imm(partial, 1);
+    let raw_mask = cursor.ins().bxor_imm(either, 2);
+    let one = cursor.ins().iconst(types::I64, 1);
+    let commuted = cursor.ins().bxor(one, either);
+    for value in [inverted, commuted] {
+        let chain = derive_negated_disjunction(&f.dfg, value, |_| true).unwrap();
+        let conditions = chain.iter().map(|c| c.cc).collect::<alloc::vec::Vec<_>>();
+        assert_eq!(
+            conditions,
+            [
+                IntCC::SignedGreaterThanOrEqual,
+                IntCC::UnsignedLessThanOrEqual
+            ]
+        );
+        for shared in [value, either, first, second] {
+            assert!(derive_negated_disjunction(&f.dfg, value, |v| v != shared).is_none());
+        }
+    }
+    for value in [either, raw_mask, unsupported] {
+        assert!(derive_negated_disjunction(&f.dfg, value, |_| true).is_none());
+    }
+    assert!(derive_negated_disjunction(&f.dfg, normalized_not, |_| true).is_some());
+    assert!(derive_negated_disjunction(&f.dfg, normalized_not, |v| v != normalized).is_none());
+}
+
 #[test]
 fn comparison_conjunction_declines_raw_boolean_phi_float_and_unsupported_nodes() {
     let (mut f, _, _) = fixture(types::I64, IntCC::Equal, 2, 0);
