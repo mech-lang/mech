@@ -3,6 +3,8 @@
 // Pull in the ISLE generated code.
 pub mod generated_code;
 #[cfg(feature = "std")]
+mod byte_extensions;
+#[cfg(feature = "std")]
 mod i32_extensions;
 use generated_code::{Context, ImmExtend};
 
@@ -60,6 +62,10 @@ pub(crate) fn lower(
     }
     #[cfg(feature = "std")]
     if let Some(output) = i32_extensions::lower(lower_ctx, inst) {
+        return Some(output);
+    }
+    #[cfg(feature = "std")]
+    if let Some(output) = byte_extensions::lower(lower_ctx, inst) {
         return Some(output);
     }
     let mut isle_ctx = IsleContext { lower_ctx, backend };
