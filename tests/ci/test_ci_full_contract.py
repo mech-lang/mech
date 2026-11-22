@@ -167,12 +167,13 @@ class FullWorkflowContractTests(unittest.TestCase):
     def test_canonical_application_suites_keep_all_commands_in_required_parallel_shards(self):
         block = job_block(FULL, "canonical-applications")
         self.assertIn("fail-fast: false", block)
-        self.assertIn("suite: [source, native, cli]", block)
+        self.assertIn("suite: [source, native, program, cli]", block)
         expected = {
             "Execute canonical resident applications and retained tail controls": "source",
             "Execute canonical collection and text source contracts": "source",
             "Execute source assignment and fixed-shape specialization contracts": "source",
             "Execute canonical native lowering and selected implementation witnesses": "native",
+            "Execute canonical native program integration contracts": "program",
             "Execute secured canonical reference bytecode admission": "cli",
             "Execute canonical CLI byte and resource contracts": "cli",
         }
@@ -186,6 +187,9 @@ class FullWorkflowContractTests(unittest.TestCase):
                 self.assertIn("if: ${{ matrix.suite == '" + suite + "' }}", matching[0])
                 self.assertNotIn("continue-on-error", matching[0])
                 self.assertIn("--locked --offline", matching[0])
+                if suite == "program":
+                    self.assertIn("test --release", matching[0])
+                    self.assertIn("--test canonical_artifact_program -- --test-threads=1", matching[0])
         gate = job_block(FULL, "cargo")
         self.assertIn("      - canonical-applications\n", gate)
         for family in ("language", "native"):
@@ -336,7 +340,11 @@ class FullWorkflowContractTests(unittest.TestCase):
         contracts = next(step for step in job_steps(FULL, "canonical-applications")
                          if "Execute canonical native lowering and selected implementation witnesses" in step)
         commands = contracts.replace("\\\n", " ")
-        self.assertRegex(commands, r"--features canonical-native-program\s+--test canonical_artifact_program\s+-- --test-threads=1")
+        program = next(step for step in job_steps(FULL, "canonical-applications")
+                       if "Execute canonical native program integration contracts" in step)
+        self.assertRegex(program, r"--features canonical-native-program\s+--test canonical_artifact_program\s+-- --test-threads=1")
+        self.assertIn("test --release --locked --offline", program)
+        self.assertNotIn("--no-run", program)
         self.assertIn("--features canonical-native-program-runtime --lib", commands)
         self.assertRegex(commands, r"--features canonical-native-program\s+--lib native_artifact::program::runtime::tests\s+-- --test-threads=1")
         manifest = (ROOT / "hosts/gpu/Cargo.toml").read_text()

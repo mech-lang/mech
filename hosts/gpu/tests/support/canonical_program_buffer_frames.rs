@@ -877,11 +877,6 @@ fn restored_numeric_leaf_rejects_stale_views_offsets_prices_and_factory_associat
             serde_json::from_slice(&jit.descriptor().encode_build_owned_image().unwrap()).unwrap();
         let root = "/descriptor/closed_tails/regions/0";
         let mut suffixes = vec![
-            "/numeric/arrays/0/field",
-            "/numeric/arrays/0/width",
-            "/numeric/arrays/0/witness",
-            "/numeric/arrays/0/writable",
-            "/numeric/arrays/0/appends",
             "/numeric/result",
             "/numeric/words",
             "/numeric/scalar_words",
@@ -892,6 +887,28 @@ fn restored_numeric_leaf_rejects_stale_views_offsets_prices_and_factory_associat
         .into_iter()
         .map(str::to_owned)
         .collect::<Vec<_>>();
+        // Scalar-only leaves have no array views. Corrupt every view that the
+        // independently derived proof actually contains, including siblings.
+        let arrays = original
+            .pointer(&format!("{root}/numeric/arrays"))
+            .unwrap()
+            .as_array()
+            .unwrap();
+        for (index, array) in arrays.iter().enumerate() {
+            for field in ["root", "schema", "width", "witness", "writable", "appends"] {
+                suffixes.push(format!("/numeric/arrays/{index}/{field}"));
+            }
+            let storage = array["storage"].as_object().unwrap();
+            assert_eq!(storage.len(), 1);
+            let (variant, fields) = storage.iter().next().unwrap();
+            assert!(matches!(
+                variant.as_str(),
+                "Carrier" | "Capture" | "FrameCapture"
+            ));
+            for field in fields.as_object().unwrap().keys() {
+                suffixes.push(format!("/numeric/arrays/{index}/storage/{variant}/{field}"));
+            }
+        }
         let actions = original
             .pointer(&format!("{root}/numeric/actions"))
             .unwrap()
@@ -970,7 +987,9 @@ fn restored_numeric_leaf_rejects_stale_views_offsets_prices_and_factory_associat
         }
         for suffix in suffixes {
             let mut changed = original.clone();
-            let field = changed.pointer_mut(&format!("{root}{suffix}")).unwrap();
+            let field = changed
+                .pointer_mut(&format!("{root}{suffix}"))
+                .unwrap_or_else(|| panic!("missing numeric proof field: {suffix}"));
             *field = match field {
                 serde_json::Value::Bool(value) => serde_json::json!(!*value),
                 serde_json::Value::Null => serde_json::json!(0),

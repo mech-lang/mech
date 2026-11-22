@@ -620,13 +620,12 @@ jobs:
     name: Canonical applications and native witnesses (${{ matrix.suite }})
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    # Cold builds of the independent feature profiles exhausted the shared
-    # 90-minute job at the last CLI link. Keep EVERY command, but qualify the
-    # independent source/native/CLI suites concurrently under the same gate.
+    # Keep independent source/native/program/CLI builds under the same gate.
+    # Complete compressor qualification also needs an optimized compiler host.
     strategy:
       fail-fast: false
       matrix:
-        suite: [source, native, cli]
+        suite: [source, native, program, cli]
     env:
       RUSTUP_TOOLCHAIN: nightly-2026-03-03
       CARGO_INCREMENTAL: 0
@@ -744,9 +743,6 @@ jobs:
             --test canonical_artifact_iteration -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-program \
-            --test canonical_artifact_program -- --test-threads=1
-          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
-            --no-default-features --features canonical-native-program \
             --test native_architecture_equivalence -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-program \
@@ -775,6 +771,12 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features semantic-compiler,resident-artifact,sequence_buffers \
             --test sequence_buffer_contract -- --test-threads=1
+      - name: Execute canonical native program integration contracts
+        if: ${{ matrix.suite == 'program' }}
+        run: >-
+          cargo +nightly-2026-03-03 test --release --locked --offline -p mech-gpu
+          --no-default-features --features canonical-native-program
+          --test canonical_artifact_program -- --test-threads=1
       - name: Inventory and execute projection budget contracts
         if: ${{ matrix.suite == 'native' }}
         shell: bash

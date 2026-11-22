@@ -143,7 +143,7 @@ fn packed_word_collection_keeps_copy_limits_and_current_output_on_rejection() {
 }
 
 #[test]
-fn nonuniform_packed_collections_retain_admitted_capacity_and_recover() {
+fn nonuniform_packed_collections_admit_exact_capacity_and_recover() {
     use mech_core::{ValueData, snapshot::SequenceView};
     for (kind, width) in [("u8", 1), ("u16", 2), ("u32", 4), ("u64", 8)] {
         let source = format!("[i | i <- input<[{kind}]>]\n");
@@ -168,7 +168,8 @@ fn nonuniform_packed_collections_retain_admitted_capacity_and_recover() {
                     )],
                     &memory,
                 );
-                let capacity = count.next_power_of_two();
+                // The total numeric map allocates its known extent exactly.
+                let capacity = count;
                 let schema = artifact
                     .schemas()
                     .get(artifact.outputs().last().unwrap().schema)
@@ -204,30 +205,33 @@ fn nonuniform_packed_collections_retain_admitted_capacity_and_recover() {
                 equal(&artifact, &output, &reference(&artifact, &args));
                 let prior = output.clone();
                 let retained = memory.used_bytes();
+                let fallback_bytes =
+                    retained_bytes + ((count.next_power_of_two() - count) * width) as u64;
                 for dimension in [Dimension::ClonedBytes, Dimension::OutputBytes] {
                     let mut denied = policy;
-                    let required = match dimension {
-                        Dimension::ClonedBytes => (2 * count * width) as u64,
-                        Dimension::OutputBytes => retained_bytes,
-                        _ => unreachable!(),
-                    };
-                    match dimension {
+                    // Denied fast-path admission replays the growing builder.
+                    // Isolate the clone limit from its larger output capacity.
+                    let (required, limit) = match dimension {
                         Dimension::ClonedBytes => {
-                            denied.library.max_cloned_bytes = Some(required - 1)
+                            let required = (2 * count * width) as u64;
+                            denied.library.max_cloned_bytes = Some(required - 1);
+                            denied.library.max_output_bytes = Some(fallback_bytes);
+                            (required, required - 1)
                         }
                         Dimension::OutputBytes => {
-                            denied.library.max_output_bytes = Some(required - 1)
+                            denied.library.max_output_bytes = Some(retained_bytes - 1);
+                            (fallback_bytes, retained_bytes - 1)
                         }
                         _ => unreachable!(),
-                    }
+                    };
                     let error = jit
                         .evaluate_into(&args, &mut output, denied, &memory)
                         .unwrap_err();
                     assert!(
                         matches!(error, NativeProgramExecutionError::Collection {
-                        error: ResidentKernelError::ResourceLimit { dimension: actual, required: amount, limit, .. }, ..
-                    } if actual == dimension && amount == required && limit == required - 1),
-                        "{kind}/{count}: {error:?}"
+                        error: ResidentKernelError::ResourceLimit { dimension: actual, required: amount, limit: actual_limit, .. }, ..
+                    } if actual == dimension && amount == required && actual_limit == limit),
+                        "{kind}/{count}: expected {dimension:?}/{required}, got {error:?}"
                     );
                     assert_eq!(memory.used_bytes(), retained);
                     assert!(output.iter().zip(&prior).all(|(value, old)| {
