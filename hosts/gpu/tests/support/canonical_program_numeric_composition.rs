@@ -52,7 +52,7 @@ fn check_fused_child_mapping(
         .as_array()
         .unwrap()
         .iter()
-        .position(|array| array["field"] == 1)
+        .position(|array| array.pointer("/storage/Carrier/field") == Some(&serde_json::json!(1)))
         .unwrap();
     let fields = proof["frames"].as_array().unwrap();
     for (value, ordinal) in [

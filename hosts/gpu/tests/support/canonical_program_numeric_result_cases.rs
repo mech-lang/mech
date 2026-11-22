@@ -24,7 +24,7 @@ fn selected(source: &str, expected: bool) {
             .iter()
             .any(|r| r["proof"]["result"]["Frame"].is_object()),
         expected,
-        "{metadata}"
+        "{source}\n{metadata}"
     );
 }
 
@@ -451,7 +451,8 @@ fn mixed_results_stale_and_escaping_returns_keep_the_maintained_path() {
         (escaping, false),
         // Private flat records now use the same current-owner return proof.
         (record, true),
-        (nested, false),
+        // Nested private frames now retain exact scalar spans and owner roots.
+        (nested, true),
         (nested_use, false),
     ] {
         selected(&source, eligible);

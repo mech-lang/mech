@@ -222,13 +222,21 @@ fn linked_assertion_retry_with_oracle(
     oracle_source: &str,
     input_word: fn(u64) -> ValueDataDraft,
 ) {
+    // A process-local dependency cache must not let another test replace the
+    // executable between its checked build and its invocation.
+    static BUILD: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    let _build = BUILD.lock().unwrap_or_else(|error| error.into_inner());
     let temporary = tempfile::tempdir().unwrap();
     let directory = temporary.path();
+    let binary_name = format!(
+        "checked-assertion-{}",
+        &hash(directory.as_os_str().as_encoded_bytes())[..16]
+    );
     let artifact = super::artifacts(source).0.into_iter().next().unwrap();
     let generated = generate_linked_program_application(
         &workspace(),
         &directory.join("project"),
-        "checked-assertion",
+        &binary_name,
         &artifact,
         &mech_stdlib::source_catalog(),
         source.as_bytes(),
@@ -242,11 +250,11 @@ fn linked_assertion_retry_with_oracle(
     // its exact catalog and Object symbols, and supply only a qualification
     // driver against the public same-image binding API.
     let (prefix, _) = shell.split_once("fn main() {").unwrap();
-    let import = "use mech_gpu::native_artifact::{NATIVE_PROGRAM_LINK_IDENTITY_BYTES, launch::{BuildOwnedProgramBinding, run_program_application}};";
+    let import = "use mech_gpu::native_artifact::{NativeProgramModule, launch::{BuildOwnedProgramBinding, run_program_application}};";
     assert_eq!(prefix.matches(import).count(), 1);
     let prefix = prefix.replace(
         import,
-        "use mech_gpu::native_artifact::NATIVE_PROGRAM_LINK_IDENTITY_BYTES;",
+        "use mech_gpu::native_artifact::NativeProgramModule;",
     );
     let driver = format!(
         "#![deny(warnings)]\n{prefix}\n{}",
@@ -273,11 +281,17 @@ fn linked_assertion_retry_with_oracle(
         "{}",
         String::from_utf8_lossy(&resolved.stderr)
     );
+    // Keep each generated Object and input pin independent while letting Cargo
+    // reuse identical runtime dependencies across the nineteen retry drivers.
+    // Cargo's artifact messages below still verify the exact resolved closure.
+    // The unique package name prevents reuse of another driver's link script.
     let mut command = CargoInvocation::build(
         generated.manifest_path(),
         "lexical-retry",
         None,
-        directory.join("cargo-target"),
+        workspace()
+            .join("target/canonical-program-linked-retry")
+            .join(std::process::id().to_string()),
         false,
         true,
     )

@@ -77,7 +77,10 @@ fn private_segment_temporaries_keep_prices_publication_errors_and_retry_without_
                     let report = result.unwrap();
                     assert_eq!(
                         report.work,
-                        [197_475_444, 197_491_776][successes],
+                        owner_layout_work(
+                            [197_475_444, 197_491_776][successes],
+                            [197_462_004, 197_478_272][successes],
+                        ),
                         "policy115 keeps exact work for each publication state and retained fallback inventory"
                     );
                     successes += 1;

@@ -126,15 +126,16 @@ fn path_scan_emits_one_native_phase_with_nested_scalar_children() {
         assert_eq!(report["successful_backedge_helpers"], 0);
         assert_eq!(report["source_sites"], proof["sites"]);
         assert_eq!(report["append_sites"].as_array().unwrap().len(), 1);
-        assert!(
-            metadata["compiled_numeric_segments"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .all(|segment| !loops
-                    .iter()
-                    .any(|child| child["iteration"] == segment["iteration"]))
-        );
+        for segment in metadata["compiled_numeric_segments"].as_array().unwrap() {
+            // Acyclic pieces also serve ordinary fallback paths. They must not
+            // replace the complete phase's loop headers or backedges.
+            let sites = segment["source_sites"].as_array().unwrap();
+            for child in loops {
+                assert!(!sites.contains(&child["header"]));
+                assert!(!sites.contains(&child["latch"]));
+            }
+            assert_eq!(segment["successful_interior_helpers"], 0);
+        }
     }
 }
 

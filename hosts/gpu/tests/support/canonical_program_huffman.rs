@@ -51,8 +51,8 @@ fn deflate_huffman_kernel_matches_the_pinned_c_builder() {
         let mut policy = limits();
         // Explicit finite port-qualification policy. No normal host limits are
         // changed, and these measurements are not full-compression timings.
-        policy.execution.max_work = 100_000_000_000;
-        policy.library.max_compute_work = Some(100_000_000_000);
+        policy.execution.max_work = 1_000_000_000_000;
+        policy.library.max_compute_work = Some(1_000_000_000_000);
         policy.library.max_comparison_work = Some(100_000_000);
         for case in &reference.cases {
             let mut freq = case

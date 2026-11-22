@@ -4,11 +4,19 @@ use std::cell::Cell;
 thread_local! {
     static COUNT: Cell<Option<usize>> = const { Cell::new(None) };
     static BYTES: Cell<Option<usize>> = const { Cell::new(None) };
+    static SIZE_COUNT: Cell<Option<(usize, usize)>> = const { Cell::new(None) };
 }
 
 pub struct ProbeAllocator;
 
 fn count(bytes: usize) {
+    let _ = SIZE_COUNT.try_with(|count| {
+        if let Some((size, current)) = count.get()
+            && size == bytes
+        {
+            count.set(Some((size, current + 1)));
+        }
+    });
     let _ = COUNT.try_with(|count| {
         if let Some(current) = count.get() {
             count.set(Some(current + 1));
@@ -47,19 +55,30 @@ pub fn measured<T>(run: impl FnOnce() -> T) -> (T, usize) {
 }
 
 pub fn measured_with_bytes<T>(run: impl FnOnce() -> T) -> (T, usize, usize) {
+    let (result, requests, bytes, _) = measured_with_allocation_size(usize::MAX, run);
+    (result, requests, bytes)
+}
+
+pub fn measured_with_allocation_size<T>(
+    size: usize,
+    run: impl FnOnce() -> T,
+) -> (T, usize, usize, usize) {
     struct Reset;
     impl Drop for Reset {
         fn drop(&mut self) {
             COUNT.with(|count| count.set(None));
             BYTES.with(|bytes| bytes.set(None));
+            SIZE_COUNT.with(|count| count.set(None));
         }
     }
     COUNT.with(|count| assert!(count.replace(Some(0)).is_none()));
     BYTES.with(|bytes| assert!(bytes.replace(Some(0)).is_none()));
+    SIZE_COUNT.with(|count| assert!(count.replace(Some((size, 0))).is_none()));
     let reset = Reset;
     let result = run();
     let count = COUNT.with(|count| count.get().unwrap());
     let bytes = BYTES.with(|bytes| bytes.get().unwrap());
+    let matching = SIZE_COUNT.with(|count| count.get().unwrap().1);
     drop(reset);
-    (result, count, bytes)
+    (result, count, bytes, matching)
 }
