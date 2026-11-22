@@ -1745,6 +1745,18 @@ fn prepare_impl<M: Module>(
             }
         }
     }
+    if !observe
+        && cleanup.enabled
+        && private.is_some()
+        && vectors.is_some()
+        && let Ok(mode) = std::env::var("MECH_COMPACT_NORMALIZE_INDEXED_ADDRESSES")
+        && matches!(mode.as_str(), "local" | "hoisted")
+    {
+        let changed =
+            cfg_cleanup::indexed_addresses::normalize(&mut context.func, mode == "hoisted");
+        context.verify(module.isa()).map_err(backend)?;
+        eprintln!("{symbol} indexed addresses normalized: {changed}");
+    }
     let packed_input = if pack_input {
         phase_storage::pack_used_input_words(&mut context.func, input_words)
     } else {
