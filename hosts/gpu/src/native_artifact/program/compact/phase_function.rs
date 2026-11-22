@@ -1786,6 +1786,29 @@ fn prepare_impl<M: Module>(
         context.verify(module.isa()).map_err(backend)?;
         eprintln!("{symbol} indexed addresses normalized: {changed}");
     }
+    if !observe && cleanup.enabled && private.is_some() && vectors.is_some() {
+        // Packet and scalar-choice rewrites can leave an incoming edge with
+        // enough information to bypass a later pure branch in this phase.
+        if std::env::var_os("MECH_COMPACT_FORWARD_PHASE_ROUTES")
+            .is_some_and(|target| target == "all" || target == symbol.as_str())
+        {
+            let isa = module.isa();
+            let loops = cfg_cleanup::thread_loop_edges(&controls, &mut context, isa)?;
+            let routes = cfg_cleanup::forward_identity_routes(&controls, &mut context, isa)?;
+            if std::env::var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF").is_some() {
+                eprintln!(
+                    "{symbol} forwarded late routes: {} loop edges, {} acyclic edges",
+                    loops.threaded_edges, routes.threaded_edges
+                );
+            }
+        }
+        if module.isa().name() == "aarch64"
+            && std::env::var_os("MECH_COMPACT_PHASE_BRANCH_ON_ZERO")
+                .is_some_and(|target| target == "all" || target == symbol.as_str())
+        {
+            context.func.aarch64_branch_on_zero = true;
+        }
+    }
     if !observe
         && cleanup.enabled
         && private.is_some()
