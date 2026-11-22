@@ -10,6 +10,7 @@ use cranelift_module::{Linkage, Module, default_libcall_names};
 #[derive(Clone, Copy)]
 enum Shape {
     Ordinary,
+    WordShift,
     WideNext,
     ConditionalEdge,
     LoopLocalBase,
@@ -107,8 +108,11 @@ fn fixture(module: &JITModule, shape: Shape) -> (Context, [Write; 2]) {
     let next = if matches!(shape, Shape::WideNext) {
         product
     } else {
-        let low = b.ins().band_imm(product, 65535);
-        let sixteen = b.ins().iconst(types::I64, 16);
+        let word_shift = matches!(shape, Shape::WordShift);
+        let low = b
+            .ins()
+            .band_imm(product, if word_shift { u32::MAX as i64 } else { 65535 });
+        let sixteen = b.ins().iconst(types::I64, if word_shift { 32 } else { 16 });
         let eight = b.ins().iconst(types::I64, 8);
         let difference = b.ins().isub(sixteen, eight);
         let shift = b.ins().band_imm(difference, 63);
@@ -183,6 +187,42 @@ fn future_store_prefers_the_bounded_dense_returning_write() {
     let before = define(&mut module, &mut before, "future_store_before");
     let after = define(&mut module, &mut after, "future_store_after");
     for seed in [0, 1, 2, 127, 255, 256, u64::MAX] {
+        for count in [0, 1, 2, 17, 300] {
+            let mut expected = [0xface; 600];
+            let mut actual = expected;
+            for (length, reject) in [(600, 0), (599, 0), (600, 1), (600, 0)] {
+                let a = unsafe { before(expected.as_mut_ptr(), length, count, seed, reject) };
+                let b = unsafe { after(actual.as_mut_ptr(), length, count, seed, reject) };
+                assert_eq!((a, expected), (b, actual));
+            }
+        }
+    }
+}
+
+#[test]
+fn future_store_survives_later_word_shift_narrowing() {
+    let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+    let (mut before, _) = fixture(&module, Shape::WordShift);
+    let (mut after, writes) = fixture(&module, Shape::WordShift);
+    assert!(apply(&mut after, &writes, &[(0, 600)]).is_some());
+    assert_eq!(
+        crate::native_artifact::program::codegen::low_word::narrow_masked_shifts(&mut after.func,),
+        1
+    );
+    assert_eq!(
+        after
+            .func
+            .layout
+            .blocks()
+            .flat_map(|block| after.func.layout.block_insts(block))
+            .filter(|&inst| after.func.dfg.insts[inst].opcode() == Op::PrefetchWrite)
+            .count(),
+        1
+    );
+    after.verify(module.isa()).unwrap();
+    let before = define(&mut module, &mut before, "word_shift_without_hint");
+    let after = define(&mut module, &mut after, "word_shift_with_hint");
+    for seed in [0, 1, 255, 256, u32::MAX as u64, u64::MAX] {
         for count in [0, 1, 2, 17, 300] {
             let mut expected = [0xface; 600];
             let mut actual = expected;

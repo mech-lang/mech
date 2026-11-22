@@ -900,6 +900,21 @@ fn prepare_impl<M: Module>(
     }
     if !observe
         && cleanup.enabled
+        && private.is_some()
+        && vectors.is_some()
+        && std::env::var_os("MECH_NARROW_PRIVATE_ARITHMETIC")
+            .is_some_and(|mode| mode == "after-prefetch")
+    {
+        // Admit future-write hints against the original address recurrence
+        // before changing the width of its masked shifts.
+        let shifts = crate::native_artifact::program::codegen::low_word::narrow_masked_shifts(
+            &mut context.func,
+        );
+        context.verify(module.isa()).map_err(backend)?;
+        eprintln!("{symbol} after-prefetch low-word shifts: {shifts}");
+    }
+    if !observe
+        && cleanup.enabled
         && pack_halfwords
         && std::env::var_os("MECH_SCHEDULE_INDEPENDENT_PRIVATE_READS").is_some()
         && let Some(vectors) = vectors
@@ -1333,6 +1348,20 @@ fn prepare_impl<M: Module>(
                         cfg_cleanup::narrow_bits::fold_parallel(&mut candidate.func);
                     }
                     candidate.verify(module.isa()).map_err(backend)?;
+                }
+                if !observe
+                    && cleanup.enabled
+                    && let Ok(mode) = std::env::var("MECH_COMPACT_NORMALIZE_COMPOSED_ADDRESSES")
+                    && matches!(mode.as_str(), "local" | "hoisted")
+                {
+                    // This independently emitted body does not reach the
+                    // private-vector address cleanup below.
+                    let changed = cfg_cleanup::indexed_addresses::normalize(
+                        &mut candidate.func,
+                        mode == "hoisted",
+                    );
+                    candidate.verify(module.isa()).map_err(backend)?;
+                    eprintln!("{name} indexed addresses normalized: {changed}");
                 }
                 let id = module
                     .declare_function(&name, Linkage::Local, &signature)
