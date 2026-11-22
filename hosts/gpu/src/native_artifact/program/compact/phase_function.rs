@@ -2144,7 +2144,7 @@ fn optimize_phase(
     if no_growth.is_some() && std::env::var_os("MECH_CHECKED_APPEND_RUN").is_some() {
         let packet = std::env::var_os("MECH_SPLIT_APPEND_DESCRIPTORS")
             .map(|value| (input_words, value == "all"));
-        let paired = report_diagnostics
+        let paired = (report_diagnostics || std::env::var_os("MECH_PAIR_BIASED_APPENDS").is_some())
             && isa.name() == "aarch64"
             && isa.endianness() == cranelift_codegen::ir::Endianness::Little
             && std::env::var_os("MECH_PAIR_CHECKED_APPENDS").is_some();
