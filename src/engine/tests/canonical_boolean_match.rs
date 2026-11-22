@@ -105,6 +105,7 @@ fn lexical_assertion_signatures_are_validated_even_when_the_result_is_unused() {
 }
 
 #[test]
+#[cfg(feature = "invariant_define")]
 fn function_local_assertions_reject_non_boolean_predicates_at_the_source() {
     use mech_syntax::document::DocumentSyntax;
     for predicate in ["n", "[true false]"] {
