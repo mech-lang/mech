@@ -211,6 +211,8 @@ pub struct FunctionStencil {
 
     /// Select AArch64 compare-and-branch instructions for integer zero comparisons.
     pub aarch64_branch_on_zero: bool,
+    /// Share and hoist pure prefetch base additions after egraph rematerialization.
+    pub aarch64_hoist_prefetch_bases: bool,
 
     /// Measured order of AArch64 machine blocks, expressed in the original byte offsets.
     pub aarch64_block_layout: Vec<u32>,
@@ -269,6 +271,7 @@ impl FunctionStencil {
         self.aarch64_prefer_preserved_regs = false;
         self.regalloc_block_frequencies = None;
         self.aarch64_branch_on_zero = false;
+        self.aarch64_hoist_prefetch_bases = false;
         self.aarch64_block_layout.clear();
         self.aarch64_block_layout_literal_start = None;
         self.aarch64_block_layout_thread_jumps = false;
@@ -472,6 +475,7 @@ impl Function {
                 aarch64_prefer_preserved_regs: false,
                 regalloc_block_frequencies: None,
                 aarch64_branch_on_zero: false,
+                aarch64_hoist_prefetch_bases: false,
                 aarch64_block_layout: Vec::new(),
                 aarch64_block_layout_literal_start: None,
                 aarch64_block_layout_thread_jumps: false,

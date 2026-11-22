@@ -1786,6 +1786,15 @@ fn prepare_impl<M: Module>(
         context.verify(module.isa()).map_err(backend)?;
         eprintln!("{symbol} indexed addresses normalized: {changed}");
     }
+    if !observe
+        && cleanup.enabled
+        && private.is_some()
+        && vectors.is_some()
+        && module.isa().name() == "aarch64"
+        && std::env::var("MECH_COMPACT_HOIST_PREFETCH_BASES").as_deref() == Ok("1")
+    {
+        context.func.aarch64_hoist_prefetch_bases = true;
+    }
     let packed_input = if pack_input {
         phase_storage::pack_used_input_words(&mut context.func, input_words)
     } else {
