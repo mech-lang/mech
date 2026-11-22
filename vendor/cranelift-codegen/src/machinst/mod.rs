@@ -149,6 +149,12 @@ pub trait MachInst: Clone + Debug {
     /// Generate a move.
     fn gen_move(to_reg: Writable<Reg>, from_reg: Reg, ty: Type) -> Self;
 
+    /// Generate an exact 64-bit transfer across register classes for a backend
+    /// that explicitly supports private spill storage in another register bank.
+    fn gen_cross_class_move(_to_reg: Writable<Reg>, _from_reg: Reg) -> Option<Self> {
+        None
+    }
+
     /// Generate a dummy instruction that will keep a value alive but
     /// has no other purpose.
     fn gen_dummy_use(reg: Reg) -> Self;

@@ -1851,6 +1851,9 @@ fn prepare_impl<M: Module>(
         && std::env::var_os("MECH_COMPACT_FORWARD_PHASE_SPILLS")
             .is_some_and(|phase| phase == symbol.as_str());
     if !observe && vectors.is_some() && module.isa().name() == "aarch64" {
+        if private.is_some() {
+            phase_layout::apply_fp_spill_cache(&mut context, &symbol).map_err(backend)?;
+        }
         phase_layout::apply(&mut context, &symbol).map_err(backend)?;
     }
     prepare_body(module.isa(), &mut context)?;

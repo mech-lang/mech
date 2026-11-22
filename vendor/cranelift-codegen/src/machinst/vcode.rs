@@ -1291,9 +1291,13 @@ impl<I: VCodeInst> VCode<I> {
                                 // Reg-to-reg move.
                                 let from_rreg = Reg::from(from);
                                 let to_rreg = Writable::from_reg(Reg::from(to));
-                                debug_assert_eq!(from.class(), to.class());
-                                let ty = I::canonical_type_for_rc(from.class());
-                                let mv = I::gen_move(to_rreg, from_rreg, ty);
+                                let mv = if from.class() == to.class() {
+                                    let ty = I::canonical_type_for_rc(from.class());
+                                    I::gen_move(to_rreg, from_rreg, ty)
+                                } else {
+                                    I::gen_cross_class_move(to_rreg, from_rreg)
+                                        .expect("backend must admit cross-class spill moves")
+                                };
                                 do_emit(&mv, &mut disasm, &mut buffer, &mut state);
                             }
                             (Some(from), None) => {

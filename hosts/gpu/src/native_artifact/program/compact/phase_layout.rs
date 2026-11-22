@@ -25,6 +25,21 @@ pub(super) fn profiles() -> Option<String> {
     std::env::var("MECH_COMPACT_PHASE_BLOCK_LAYOUT").ok()
 }
 
+pub(super) fn apply_fp_spill_cache(context: &mut Context, symbol: &str) -> io::Result<()> {
+    if let Ok(selection) = std::env::var("MECH_COMPACT_FP_SPILL_SLOTS") {
+        for entry in selection.split(';') {
+            let (name, count) = entry
+                .split_once('@')
+                .ok_or_else(|| io::Error::other("expected phase@spill-cell-count"))?;
+            let count = count.parse::<u8>().map_err(io::Error::other)?;
+            if name == "all" || name == symbol {
+                context.func.aarch64_fp_spill_slots = count;
+            }
+        }
+    }
+    Ok(())
+}
+
 fn read(profiles: &str, symbol: &str) -> io::Result<Option<Profile>> {
     profiles
         .split(';')
