@@ -20,6 +20,7 @@ pub(in crate::native_artifact) mod grouped_histogram;
 pub(in crate::native_artifact) mod identity_routes;
 pub(in crate::native_artifact) mod immutable_word_reads;
 pub(in crate::native_artifact) mod independent_private_read;
+pub(in crate::native_artifact) mod indexed_addresses;
 mod known_widths;
 mod local_phis;
 pub(in crate::native_artifact) mod narrow_bits;
