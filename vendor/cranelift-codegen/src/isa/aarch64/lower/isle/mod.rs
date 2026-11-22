@@ -402,12 +402,21 @@ impl Context for IsleContext<'_, '_, MInst, AArch64Backend> {
     fn icmp_conjunction(&mut self, value: Value) -> Option<ComparisonChain> {
         // This is the pure ISLE preflight. It does not normalize operands,
         // lower instructions, sink values or emit machine code.
-        super::boolean_conjunction::derive(self.lower_ctx.dfg(), value, |value| {
+        let unique = |value| {
             matches!(
                 self.lower_ctx.get_value_as_source_or_const(value).inst,
                 InputSourceInst::UniqueUse(_, 0)
             )
-        })
+        };
+        let dfg = self.lower_ctx.dfg();
+        #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
+        if self.lower_ctx.f.aarch64_branch_on_negated_disjunction
+            && let Some(chain) =
+                super::boolean_conjunction::derive_negated_disjunction(dfg, value, unique)
+        {
+            return Some(chain);
+        }
+        super::boolean_conjunction::derive(dfg, value, unique)
     }
 
     fn emit_icmp_conjunction_branch(

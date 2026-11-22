@@ -128,6 +128,61 @@ pub(super) fn derive_disjunction(
     })
 }
 
+/// A single-use XOR of a proved zero-or-one OR with 1 can consume the
+/// disjunction's complemented comparison chain directly.
+#[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
+pub(super) fn derive_negated_disjunction(
+    dfg: &DataFlowGraph,
+    root: Value,
+    mut unique: impl FnMut(Value) -> bool,
+) -> Option<Chain> {
+    let root = dfg.resolve_aliases(root);
+    let ValueDef::Result(inst, 0) = dfg.value_def(root) else {
+        return None;
+    };
+    let mut disjunction = match dfg.insts[inst] {
+        D::BinaryImm64 {
+            opcode: O::BxorImm,
+            arg,
+            imm,
+        } if imm.bits() == 1 => arg,
+        D::Binary {
+            opcode: O::Bxor,
+            args: [left, right],
+        } if is_one(dfg, left) => right,
+        D::Binary {
+            opcode: O::Bxor,
+            args: [left, right],
+        } if is_one(dfg, right) => left,
+        _ => return None,
+    };
+    if !unique(root) {
+        return None;
+    }
+    // Egraph can move a common zero extension to the result of the OR.
+    // Follow conversions only on a chain that will still prove a 0/1 word.
+    for _ in 0..MAX_DEPTH {
+        let value = dfg.resolve_aliases(disjunction);
+        let ValueDef::Result(def, 0) = dfg.value_def(value) else {
+            return None;
+        };
+        match dfg.insts[def] {
+            D::Unary {
+                opcode: O::Uextend | O::Ireduce,
+                arg,
+            } if matches!(
+                dfg.value_type(value),
+                types::I8 | types::I16 | types::I32 | types::I64
+            ) && unique(value) =>
+            {
+                disjunction = arg;
+            }
+            _ => return derive_disjunction(dfg, value, unique),
+        }
+    }
+    None
+}
+
 fn is_one(dfg: &DataFlowGraph, value: Value) -> bool {
     let value = dfg.resolve_aliases(value);
     let ValueDef::Result(inst, 0) = dfg.value_def(value) else {

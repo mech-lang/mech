@@ -1820,6 +1820,16 @@ fn prepare_impl<M: Module>(
                 );
             }
         }
+        if module.isa().name() == "aarch64"
+            && std::env::var_os("MECH_COMPACT_CARRY_BRANCH_OUTCOMES")
+                .is_some_and(|target| target == "all" || target == symbol.as_str())
+        {
+            let joins = cfg_cleanup::carry_branch_outcomes(&mut context, module.isa())?;
+            context.func.aarch64_branch_on_negated_disjunction = true;
+            if std::env::var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF").is_some() {
+                eprintln!("{symbol} carried branch outcomes to {joins} joins");
+            }
+        }
     }
     if !observe
         && cleanup.enabled
