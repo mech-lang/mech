@@ -215,6 +215,8 @@ pub struct FunctionStencil {
     pub aarch64_hoist_prefetch_bases: bool,
     /// Maximum private integer spill cells kept in unused caller-saved FP registers.
     pub aarch64_fp_spill_slots: u8,
+    /// Retain paired spill reloads and mirror their cached cells to memory.
+    pub aarch64_fp_spill_keep_pairs: bool,
 
     /// Measured order of AArch64 machine blocks, expressed in the original byte offsets.
     pub aarch64_block_layout: Vec<u32>,
@@ -275,6 +277,7 @@ impl FunctionStencil {
         self.aarch64_branch_on_zero = false;
         self.aarch64_hoist_prefetch_bases = false;
         self.aarch64_fp_spill_slots = 0;
+        self.aarch64_fp_spill_keep_pairs = false;
         self.aarch64_block_layout.clear();
         self.aarch64_block_layout_literal_start = None;
         self.aarch64_block_layout_thread_jumps = false;
@@ -480,6 +483,7 @@ impl Function {
                 aarch64_branch_on_zero: false,
                 aarch64_hoist_prefetch_bases: false,
                 aarch64_fp_spill_slots: 0,
+                aarch64_fp_spill_keep_pairs: false,
                 aarch64_block_layout: Vec::new(),
                 aarch64_block_layout_literal_start: None,
                 aarch64_block_layout_thread_jumps: false,

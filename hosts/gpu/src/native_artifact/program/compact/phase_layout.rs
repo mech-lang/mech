@@ -26,6 +26,8 @@ pub(super) fn profiles() -> Option<String> {
 }
 
 pub(super) fn apply_fp_spill_cache(context: &mut Context, symbol: &str) -> io::Result<()> {
+    context.func.aarch64_fp_spill_keep_pairs =
+        std::env::var_os("MECH_COMPACT_FP_SPILL_KEEP_PAIRS").is_some();
     if let Ok(selection) = std::env::var("MECH_COMPACT_FP_SPILL_SLOTS") {
         for entry in selection.split(';') {
             let (name, count) = entry

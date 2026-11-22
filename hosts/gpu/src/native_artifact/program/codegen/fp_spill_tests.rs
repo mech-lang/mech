@@ -1,4 +1,4 @@
-#![cfg(target_arch = "aarch64")]
+#![cfg(all(target_arch = "aarch64", target_os = "macos"))]
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{AbiParam, InstBuilder, MemFlags, types};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
@@ -57,6 +57,7 @@ fn compile(
     shape: Shape,
     slots: u8,
     forward: bool,
+    keep_pairs: bool,
     name: &str,
 ) -> (FuncId, Vec<u8>) {
     let mut context = module.make_context();
@@ -64,6 +65,7 @@ fn compile(
     context.func.signature.returns = vec![AbiParam::new(types::I64)];
     context.func.forward_spill_reloads = forward;
     context.func.aarch64_fp_spill_slots = slots;
+    context.func.aarch64_fp_spill_keep_pairs = keep_pairs;
     context.set_disasm(true);
     let mut state = FunctionBuilderContext::new();
     let mut b = FunctionBuilder::new(&mut context.func, &mut state);
@@ -222,7 +224,11 @@ fn fp_spills_preserve_bits_loops_aliases_guards_and_call_clobbers() {
     let mut changed = 0;
     let mut exact_fallbacks = 0;
     let mut records = Vec::new();
-    for opt in ["none", "speed"] {
+    for (opt, keep_pairs) in ["none", "speed"].into_iter().flat_map(|opt| {
+        [false, true]
+            .into_iter()
+            .map(move |keep_pairs| (opt, keep_pairs))
+    }) {
         for forward in [false, true] {
             for shape in [
                 Shape {
@@ -258,7 +264,8 @@ fn fp_spills_preserve_bits_loops_aliases_guards_and_call_clobbers() {
                     )
                     .unwrap(),
                 );
-                let (original, baseline) = compile(&mut module, shape, 0, forward, "original");
+                let (original, baseline) =
+                    compile(&mut module, shape, 0, forward, keep_pairs, "original");
                 let mut entries = Vec::new();
                 for slots in [1, 2, 8, 24, 255] {
                     let (id, bytes) = compile(
@@ -266,6 +273,7 @@ fn fp_spills_preserve_bits_loops_aliases_guards_and_call_clobbers() {
                         shape,
                         slots,
                         forward,
+                        keep_pairs,
                         &format!("cache_{slots}"),
                     );
                     if shape.call || shape.integers == 4 {
@@ -294,7 +302,7 @@ fn fp_spills_preserve_bits_loops_aliases_guards_and_call_clobbers() {
                             "native scalar FP to GPR transfer missing"
                         );
                     }
-                    records.push(serde_json::json!({"opt":opt,"forward":forward,"integers":shape.integers,"floats":shape.floats,"call":shape.call,"slots":slots,"baseline_body":baseline,"body":bytes}));
+                    records.push(serde_json::json!({"opt":opt,"forward":forward,"keep_pairs":keep_pairs,"integers":shape.integers,"floats":shape.floats,"call":shape.call,"slots":slots,"baseline_body":baseline,"body":bytes}));
                     entries.push((slots, id));
                 }
                 module.finalize_definitions().unwrap();
@@ -406,9 +414,9 @@ fn fp_spills_preserve_bits_loops_aliases_guards_and_call_clobbers() {
             }
         }
     }
-    assert_eq!(calls, 256800);
-    assert_eq!(exact_fallbacks, 40);
-    assert!(changed >= 20);
+    assert_eq!(calls, 513600);
+    assert_eq!(exact_fallbacks, 80);
+    assert!(changed >= 40);
     if let Some(path) = std::env::var_os("MECH_FP_SPILL_PROBE") {
         std::fs::write(path,serde_json::to_vec(&serde_json::json!({"native_observations":calls,"changed_functions":changed,"exact_fallbacks":exact_fallbacks,"functions":records})).unwrap()).unwrap();
     }

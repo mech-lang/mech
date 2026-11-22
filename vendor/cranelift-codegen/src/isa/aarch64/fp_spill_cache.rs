@@ -12,6 +12,7 @@ pub(super) struct Assignment {
     pub register: PReg,
     pub weighted_reads: u64,
     pub weighted_writes: u64,
+    pub mirrored: bool,
 }
 
 #[derive(Debug, Default)]
@@ -21,6 +22,8 @@ pub(super) struct Plan {
     pub unused_registers: Vec<PReg>,
     pub assignments: Vec<Assignment>,
     pub rewritten_moves: usize,
+    pub mirrored_writes: usize,
+    pub retained_pair_reads: usize,
 }
 
 impl Plan {
@@ -33,18 +36,24 @@ impl Plan {
 
     pub fn report(&self) -> String {
         let mut text = format!(
-            "rejected={:?}\nspill_area_offset={}\nunused_registers={:?}\nrewritten_moves={}\n",
-            self.rejected, self.spill_area_offset, self.unused_registers, self.rewritten_moves
+            "rejected={:?}\nspill_area_offset={}\nunused_registers={:?}\nrewritten_moves={}\nmirrored_writes={}\nretained_pair_reads={}\n",
+            self.rejected,
+            self.spill_area_offset,
+            self.unused_registers,
+            self.rewritten_moves,
+            self.mirrored_writes,
+            self.retained_pair_reads
         );
         for assignment in &self.assignments {
             writeln!(
                 text,
-                "slot={} offset={} register={:?} reads={} writes={}",
+                "slot={} offset={} register={:?} reads={} writes={} mirrored={}",
                 assignment.slot,
                 u64::from(self.spill_area_offset) + assignment.slot as u64 * 8,
                 assignment.register,
                 assignment.weighted_reads,
-                assignment.weighted_writes
+                assignment.weighted_writes,
+                assignment.mirrored
             )
             .unwrap();
         }
@@ -67,7 +76,44 @@ fn block_cells(cells: &mut [Cell], start: usize, size: usize) -> Option<()> {
     Some(())
 }
 
-pub(super) fn apply(code: &VCode<Inst>, output: &mut Output, limit: u8) -> Plan {
+fn integer_reload(edit: &Edit) -> Option<(usize, PReg)> {
+    let Edit::Move { from, to } = edit;
+    let register = to.as_reg()?;
+    (register.class() == RegClass::Int).then_some((from.as_stack()?.index(), register))
+}
+
+fn integer_store(edit: &Edit) -> bool {
+    let Edit::Move { from, to } = edit;
+    to.as_stack().is_some()
+        && from
+            .as_reg()
+            .is_some_and(|reg| reg.class() == RegClass::Int)
+}
+
+// Preserve adjacent integer reloads at the same program point. They retain
+// their original ordering and addresses, allowing the emitter to keep LDP.
+// Conservative matches outside its immediate range only miss an opportunity.
+fn paired_reloads(edits: &[(ProgPoint, Edit)]) -> Vec<bool> {
+    let mut paired = vec![false; edits.len()];
+    let mut index = 0;
+    while index + 1 < edits.len() {
+        if edits[index].0 == edits[index + 1].0
+            && let Some((a, ra)) = integer_reload(&edits[index].1)
+            && let Some((b, rb)) = integer_reload(&edits[index + 1].1)
+            && a.abs_diff(b) == 1
+            && ra != rb
+        {
+            paired[index] = true;
+            paired[index + 1] = true;
+            index += 2;
+        } else {
+            index += 1;
+        }
+    }
+    paired
+}
+
+pub(super) fn apply(code: &VCode<Inst>, output: &mut Output, limit: u8, keep_pairs: bool) -> Plan {
     if code.abi.call_conv() != CallConv::AppleAarch64 {
         return Plan::rejected("unaudited calling convention");
     }
@@ -172,6 +218,17 @@ pub(super) fn apply(code: &VCode<Inst>, output: &mut Output, limit: u8) -> Plan 
         .map(|(slot, cell)| (slot, cell.reads.saturating_add(cell.writes)))
         .collect::<Vec<_>>();
     ranked.sort_unstable_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+    let paired = if keep_pairs {
+        paired_reloads(&output.edits)
+    } else {
+        vec![false; output.edits.len()]
+    };
+    let mut mirrored_cells = vec![false; cells.len()];
+    for ((_, edit), &paired) in output.edits.iter().zip(&paired) {
+        if paired && let Some((slot, _)) = integer_reload(edit) {
+            mirrored_cells[slot] = true;
+        }
+    }
     let assignments = ranked
         .into_iter()
         .zip(unused_registers.iter().copied())
@@ -181,6 +238,7 @@ pub(super) fn apply(code: &VCode<Inst>, output: &mut Output, limit: u8) -> Plan 
             register,
             weighted_reads: cells[slot].reads,
             weighted_writes: cells[slot].writes,
+            mirrored: mirrored_cells[slot],
         })
         .collect::<Vec<_>>();
     let mut registers = vec![None; cells.len()];
@@ -188,24 +246,99 @@ pub(super) fn apply(code: &VCode<Inst>, output: &mut Output, limit: u8) -> Plan 
         registers[assignment.slot] = Some(assignment.register);
     }
     let mut rewritten_moves = 0;
-    for (_, Edit::Move { from, to }) in &mut output.edits {
-        for allocation in [from, to] {
-            if let Some(slot) = allocation.as_stack()
-                && let Some(register) = registers[slot.index()]
-            {
-                *allocation = Allocation::reg(register);
-                rewritten_moves += 1;
+    let mut mirrored_writes = 0;
+    let mut retained_pair_reads = 0;
+    if keep_pairs {
+        let original = core::mem::take(&mut output.edits);
+        let mut index = 0;
+        while index < original.len() {
+            let point = original[index].0;
+            if integer_store(&original[index].1) {
+                let mut end = index + 1;
+                while end < original.len()
+                    && original[end].0 == point
+                    && integer_store(&original[end].1)
+                {
+                    end += 1;
+                }
+                // These stores change no register. Copy mirrored sources
+                // before the run, preserving adjacent stores for STP too.
+                // Repeated writes to a cell remain ordered; no read occurs
+                // inside this run, and the final register/memory values agree.
+                for (_, Edit::Move { from, to }) in &original[index..end] {
+                    let slot = to.as_stack().unwrap().index();
+                    if mirrored_cells[slot]
+                        && let Some(register) = registers[slot]
+                    {
+                        output.edits.push((
+                            point,
+                            Edit::Move {
+                                from: *from,
+                                to: Allocation::reg(register),
+                            },
+                        ));
+                        mirrored_writes += 1;
+                        rewritten_moves += 1;
+                    }
+                }
+                for (_, Edit::Move { from, to }) in &original[index..end] {
+                    let slot = to.as_stack().unwrap().index();
+                    let destination = if !mirrored_cells[slot]
+                        && let Some(register) = registers[slot]
+                    {
+                        rewritten_moves += 1;
+                        Allocation::reg(register)
+                    } else {
+                        *to
+                    };
+                    output.edits.push((
+                        point,
+                        Edit::Move {
+                            from: *from,
+                            to: destination,
+                        },
+                    ));
+                }
+                index = end;
+            } else {
+                let Edit::Move { mut from, to } = original[index].1.clone();
+                if let Some(slot) = from.as_stack()
+                    && let Some(register) = registers[slot.index()]
+                {
+                    if paired[index] {
+                        retained_pair_reads += 1;
+                    } else {
+                        from = Allocation::reg(register);
+                        rewritten_moves += 1;
+                    }
+                }
+                output.edits.push((point, Edit::Move { from, to }));
+                index += 1;
+            }
+        }
+    } else {
+        for (_, Edit::Move { from, to }) in &mut output.edits {
+            for allocation in [from, to] {
+                if let Some(slot) = allocation.as_stack()
+                    && let Some(register) = registers[slot.index()]
+                {
+                    *allocation = Allocation::reg(register);
+                    rewritten_moves += 1;
+                }
             }
         }
     }
     // Each selected physical cell has one dedicated register for the whole
     // function, including every branch and reuse of the cell. All its writes
-    // and reads are rewritten. The original frame allocation stays intact.
+    // and reads are rewritten, except retained paired reads whose memory
+    // values are mirrored on every write. The frame allocation stays intact.
     Plan {
         rejected: None,
         spill_area_offset: code.abi.spill_area_offset(),
         unused_registers,
         assignments,
         rewritten_moves,
+        mirrored_writes,
+        retained_pair_reads,
     }
 }
