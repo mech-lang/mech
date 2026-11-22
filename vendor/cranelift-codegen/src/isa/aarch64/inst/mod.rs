@@ -995,6 +995,125 @@ impl MachInst for Inst {
         aarch64_get_operands(self, collector);
     }
 
+    fn fold_allocated_pair(&mut self, next: &Self, next_allocs: &[regalloc2::Allocation]) -> bool {
+        if let Self::CSet { rd, cond } = self
+            && !matches!(cond, Cond::Al | Cond::Nv)
+            && let Self::AluRRImmLogic {
+                alu_op: ALUOp::Eor,
+                imml,
+                ..
+            } = next
+            && imml.value() == 1
+            && let [destination, source] = next_allocs
+            && destination == source
+            && let Some(destination) = destination.as_reg()
+            && destination.hw_enc() < 31
+            && Reg::from(destination) == rd.to_reg()
+        {
+            // CSET writes 0 or 1. The in-place EOR replaces that value,
+            // leaves the flags intact, and cannot observe another definition.
+            *cond = cond.invert();
+            return true;
+        }
+        false
+    }
+
+    fn reuse_allocated_branch_flags(&mut self, condition: &Self, between: &Self) {
+        let Self::CondBr { kind, .. } = self else {
+            return;
+        };
+        let Self::CSet { rd, cond } = *condition else {
+            return;
+        };
+        // A move-wide instruction leaves NZCV intact. Keep the two conditions
+        // equivalent only while the CSET result also remains intact.
+        let register = rd.to_reg();
+        if register == zero_reg()
+            || register == stack_reg()
+            || matches!(cond, Cond::Al | Cond::Nv)
+            || !matches!(between, Self::MovWide { rd: other, .. } if *other != rd)
+        {
+            return;
+        }
+        let condition = match *kind {
+            CondBrKind::Zero(reg, _) if reg == register => cond.invert(),
+            CondBrKind::NotZero(reg, _) if reg == register => cond,
+            _ => return,
+        };
+        *kind = CondBrKind::Cond(condition);
+    }
+
+    fn allocated_zero_move(&self, allocs: &[regalloc2::Allocation]) -> Option<Reg> {
+        if let Self::MovWide {
+            op: MoveWideOp::MovZ,
+            imm,
+            ..
+        } = self
+            && imm.bits == 0
+            && let [destination] = allocs
+            && let Some(destination) = destination.as_reg()
+            && destination.hw_enc() < 31
+        {
+            return Some(Reg::from(destination));
+        }
+        None
+    }
+
+    fn is_register_preserving_direct_branch(&self) -> bool {
+        matches!(self, Self::Jump { .. } | Self::CondBr { .. })
+    }
+
+    fn select_allocated_branch_bit(
+        &self,
+        mask: &Self,
+        branch: &Self,
+        allocations: [&[regalloc2::Allocation]; 3],
+    ) -> Option<Self> {
+        let Self::CSet { cond, .. } = *self else {
+            return None;
+        };
+        if !matches!(
+            mask,
+            Self::AluRRR {
+                alu_op: ALUOp::And,
+                ..
+            }
+        ) || !matches!(branch, Self::TestBitAndBranch { bit: 0, .. })
+            || matches!(cond, Cond::Al | Cond::Nv)
+        {
+            return None;
+        }
+        let [[predicate], [destination, lhs, rhs], [tested]] = allocations else {
+            return None;
+        };
+        let predicate = predicate.as_reg()?;
+        let destination = destination.as_reg()?;
+        let lhs = lhs.as_reg()?;
+        let rhs = rhs.as_reg()?;
+        if tested.as_reg()? != destination || predicate.hw_enc() >= 31 || destination.hw_enc() >= 31
+        {
+            return None;
+        }
+        let selected = if lhs == predicate && rhs != predicate {
+            rhs
+        } else if rhs == predicate && lhs != predicate {
+            lhs
+        } else {
+            return None;
+        };
+        if selected.hw_enc() >= 31 {
+            return None;
+        }
+        // Masking a value by CSET and selecting it against zero have the
+        // same bit zero. The branch is the result's sole observer.
+        Some(Self::CSel {
+            rd: Writable::from_reg(Reg::from(destination)),
+            rn: Reg::from(selected),
+            rm: zero_reg(),
+            cond,
+        })
+    }
+
     fn is_move(&self) -> Option<(Writable<Reg>, Reg)> {
         match self {
             &Inst::Mov {
