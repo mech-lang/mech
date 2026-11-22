@@ -1,11 +1,13 @@
 //! ISLE integration glue code for aarch64 lowering.
 
 // Pull in the ISLE generated code.
-pub mod generated_code;
 #[cfg(feature = "std")]
 mod byte_extensions;
+pub mod generated_code;
 #[cfg(feature = "std")]
 mod i32_extensions;
+#[cfg(feature = "std")]
+mod narrow_packs;
 use generated_code::{Context, ImmExtend};
 
 // Types that the generated ISLE code uses via `use super::*`.
@@ -66,6 +68,10 @@ pub(crate) fn lower(
     }
     #[cfg(feature = "std")]
     if let Some(output) = byte_extensions::lower(lower_ctx, inst) {
+        return Some(output);
+    }
+    #[cfg(feature = "std")]
+    if let Some(output) = narrow_packs::lower(lower_ctx, inst) {
         return Some(output);
     }
     let mut isle_ctx = IsleContext { lower_ctx, backend };

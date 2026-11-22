@@ -1485,6 +1485,19 @@ impl Inst {
                 debug_assert_eq!(rn, rd.to_reg());
                 sink.put4(enc_movk(rd, imm, size));
             }
+            &Inst::Bfi {
+                size,
+                rd,
+                old,
+                rn,
+                lsb,
+                width,
+            } => {
+                debug_assert_eq!(old, rd.to_reg());
+                assert!(width != 0 && lsb < size.bits() && width <= size.bits() - lsb);
+                let immr = size.bits().wrapping_sub(lsb) & (size.bits() - 1);
+                sink.put4(enc_bfm(1, size, rd, rn, immr, width - 1));
+            }
             &Inst::CSel { rd, rn, rm, cond } => {
                 sink.put4(enc_csel(rd, rn, rm, cond, 0, 0));
             }
