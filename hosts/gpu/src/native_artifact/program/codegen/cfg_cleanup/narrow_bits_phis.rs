@@ -49,7 +49,7 @@ fn origin(f: &Function, value: Value, bits: u32, depth: usize) -> Origin {
                     }
                 } else if matches!(opcode, Op::Bor | Op::Bxor) {
                     let mut steps = 64;
-                    if super::zero_low_bits(f, field, bits, 8, &mut steps) {
+                    if super::zero_low_bits(f, field, bits, false, 8, &mut steps) {
                         return next(keep);
                     }
                 }

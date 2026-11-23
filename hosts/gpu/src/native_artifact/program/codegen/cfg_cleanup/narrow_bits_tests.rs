@@ -68,7 +68,7 @@ fn ordered_reduction_narrow_costs_preserve_full_packed_words() {
                         b.finalize();
                         if folded {
                             assert_eq!(
-                                super::fold(&mut context.func),
+                                super::fold(&mut context.func, false),
                                 usize::from(
                                     shift.is_some_and(|s| (s & 63) >= u64::from(ty.bits()))
                                 )
@@ -143,4 +143,82 @@ fn ordered_reduction_narrow_costs_preserve_full_packed_words() {
 
 fn mask(ty: Type) -> u64 {
     u64::MAX >> (64 - ty.bits())
+}
+
+#[test]
+fn immediate_fields_preserve_live_full_words_and_unknown_low_bits() {
+    use cranelift_codegen::ir::Opcode::{BandImm, BorImm, BxorImm};
+
+    let mut module = JITModule::new(
+        JITBuilder::with_flags(&[("regalloc_checker", "true")], default_libcall_names()).unwrap(),
+    );
+    let mut entries = Vec::new();
+    for opcode in [BandImm, BorImm, BxorImm] {
+        for immediate in [1u64 << 32, 1] {
+            let mut context = module.make_context();
+            context.func.signature.params = vec![AbiParam::new(types::I64); 3];
+            context.func.signature.returns = vec![AbiParam::new(types::I32)];
+            let mut builder = FunctionBuilderContext::new();
+            let mut b = FunctionBuilder::new(&mut context.func, &mut builder);
+            let entry = b.create_block();
+            b.append_block_params_for_function_params(entry);
+            b.switch_to_block(entry);
+            let [low, high, output] = *b.block_params(entry) else {
+                unreachable!()
+            };
+            let field = match opcode {
+                BandImm => b.ins().band_imm(high, immediate as i64),
+                BorImm | BxorImm => {
+                    let shifted = b.ins().ishl_imm(high, 41);
+                    if opcode == BorImm {
+                        b.ins().bor_imm(shifted, immediate as i64)
+                    } else {
+                        b.ins().bxor_imm(shifted, immediate as i64)
+                    }
+                }
+                _ => unreachable!(),
+            };
+            let packed = b.ins().bor(low, field);
+            b.ins().store(MemFlags::new(), packed, output, 0);
+            let value = b.ins().ireduce(types::I32, packed);
+            b.ins().return_(&[value]);
+            b.seal_all_blocks();
+            b.finalize();
+            assert_eq!(super::fold(&mut context.func, false), 0);
+            assert_eq!(
+                super::fold(&mut context.func, true),
+                usize::from(immediate > u64::from(u32::MAX)),
+            );
+            context.verify(module.isa()).unwrap();
+            let id = module
+                .declare_function(
+                    &format!("immediate_field_{}", entries.len()),
+                    Linkage::Local,
+                    &context.func.signature,
+                )
+                .unwrap();
+            module.define_function(id, &mut context).unwrap();
+            entries.push((id, opcode, immediate));
+        }
+    }
+    module.finalize_definitions().unwrap();
+    for (id, opcode, immediate) in entries {
+        type Entry = unsafe extern "C" fn(u64, u64, *mut u64) -> u32;
+        // The finalized module owns this exact scalar entry.
+        let call: Entry = unsafe { std::mem::transmute(module.get_finalized_function(id)) };
+        for high in [0u64, 1, u64::MAX] {
+            let low = 0x1234_abceu64;
+            let field = match opcode {
+                BandImm => high & immediate,
+                BorImm => high.wrapping_shl(41) | immediate,
+                BxorImm => high.wrapping_shl(41) ^ immediate,
+                _ => unreachable!(),
+            };
+            let expected = low | field;
+            let mut output = 0;
+            let result = unsafe { call(low, high, &mut output) };
+            assert_eq!(output, expected);
+            assert_eq!(result, expected as u32);
+        }
+    }
 }

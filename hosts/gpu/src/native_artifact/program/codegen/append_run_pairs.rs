@@ -9,12 +9,19 @@ use cranelift_codegen::ir::{
 };
 use std::collections::BTreeMap;
 
+#[derive(Clone, Copy, Default)]
+pub(super) struct Options {
+    pub allow_biased_costs: bool,
+    pub rebase_costs: bool,
+}
+
 #[derive(Clone, Copy)]
 pub(super) struct Pair {
     cache: Value,
     literals: Value,
     literal_limit: Word,
     literal_bias: i64,
+    lookup_bias_bytes: Option<i64>,
     output: Value,
     selector_bits: u32,
     item_shift: u32,
@@ -96,7 +103,7 @@ impl Pair {
         context: &Context,
         trace: &Trace,
         params: &[Value],
-        allow_biased_costs: bool,
+        options: Options,
     ) -> Result<Self, &'static str> {
         let window = trace.window.ok_or("missing readable window")?;
         // The trace's operand bindings are the values on the empty edge.
@@ -146,7 +153,7 @@ impl Pair {
         let (literals, literal, literal_bias) = walk
             .scaled_address(cost_addr, 4)
             .ok_or("unsupported cost address")?;
-        if literal_bias != 0 && !allow_biased_costs {
+        if literal_bias != 0 && !options.allow_biased_costs {
             return Err("cost ordinal has an offset");
         }
         let (packed, bits) =
@@ -320,6 +327,9 @@ impl Pair {
             literals,
             literal_limit,
             literal_bias,
+            lookup_bias_bytes: literal_bias
+                .checked_mul(4)
+                .filter(|&bytes| options.rebase_costs && bytes > 0),
             output,
             selector_bits,
             item_shift,
@@ -375,6 +385,22 @@ impl Pair {
         let separated = b.ins().band(cache_clear, lit_clear);
         let valid = b.ins().band(valid, separated);
         let valid = b.ins().band(valid, enough);
+        let (lookup_base, lookup_limit, index_bias, valid) =
+            if let Some(bytes) = self.lookup_bias_bytes {
+                // A header extracts at most 31 bits, so adding a positive
+                // signed bias cannot wrap. The bias must fit in the admitted
+                // original cost span before the adjusted base is dereferenced.
+                let fits = b.ins().icmp_imm(
+                    IntCC::UnsignedGreaterThanOrEqual,
+                    literal_limit,
+                    self.literal_bias,
+                );
+                let base = b.ins().iadd_imm(literals, bytes);
+                let limit = b.ins().iadd_imm(literal_limit, -self.literal_bias);
+                (base, limit, 0, b.ins().band(valid, fits))
+            } else {
+                (literals, literal_limit, self.literal_bias, valid)
+            };
         let first = [count, cache_cursor, length, previous].map(BlockArg::Value);
         b.ins().brif(valid, start, &first, scalar, scalar_args);
 
@@ -410,20 +436,20 @@ impl Pair {
             .band_imm(second, i64::from(u32::MAX >> self.selector_bits));
         // Keep the original modular index arithmetic. A failed lookahead
         // returns to the same scalar visit before either append is committed.
-        let first_index = b.ins().iadd_imm(first, self.literal_bias);
-        let second_index = b.ins().iadd_imm(second, self.literal_bias);
+        let first_index = b.ins().iadd_imm(first, index_bias);
+        let second_index = b.ins().iadd_imm(second, index_bias);
         let first_valid = b
             .ins()
-            .icmp(IntCC::UnsignedLessThan, first_index, literal_limit);
+            .icmp(IntCC::UnsignedLessThan, first_index, lookup_limit);
         let second_valid = b
             .ins()
-            .icmp(IntCC::UnsignedLessThan, second_index, literal_limit);
+            .icmp(IntCC::UnsignedLessThan, second_index, lookup_limit);
         let both = b.ins().band(first_valid, second_valid);
         b.ins().brif(both, append, &[], scalar, &resume);
 
         b.goto_bottom(append);
-        let first_addr = indexed(b, literals, first_index, 4);
-        let second_addr = indexed(b, literals, second_index, 4);
+        let first_addr = indexed(b, lookup_base, first_index, 4);
+        let second_addr = indexed(b, lookup_base, second_index, 4);
         let first_cost = b.ins().load(types::I32, self.cost_flags, first_addr, 0);
         let second_cost = b.ins().load(types::I32, self.cost_flags, second_addr, 0);
         let previous = b.ins().ireduce(types::I32, previous);

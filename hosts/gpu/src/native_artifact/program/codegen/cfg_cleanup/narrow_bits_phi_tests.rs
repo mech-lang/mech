@@ -103,7 +103,7 @@ fn ordered_reduction_parallel_costs_require_every_incoming_full_word() {
                 b.seal_all_blocks();
                 b.finalize();
                 if folded {
-                    super::fold(&mut context.func);
+                    super::fold(&mut context.func, false);
                     assert_eq!(
                         super::fold_parallel(&mut context.func),
                         usize::from(mode == 0)
