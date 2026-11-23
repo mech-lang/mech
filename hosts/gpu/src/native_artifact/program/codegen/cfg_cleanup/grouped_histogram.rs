@@ -33,6 +33,8 @@ pub(in crate::native_artifact) struct Options {
     pub visits: usize,
     pub wide_keys: bool,
     pub progressive: bool,
+    pub vector_chunks: bool,
+    pub stream_chunks: bool,
 }
 
 struct Group {
@@ -372,6 +374,8 @@ pub(in crate::native_artifact) fn optimize(
         visits,
         wide_keys,
         progressive,
+        vector_chunks,
+        stream_chunks,
     } = options;
     // Keep code growth finite. Each descending input read is covered by the
     // original current read and the group's non-wrapping ordinal floor.
@@ -383,7 +387,14 @@ pub(in crate::native_artifact) fn optimize(
     let group = recognize(ctx, header, loads, nodes, bins)?;
     let admission = group.admission;
     if progressive && visits > 4 {
-        chunks::emit(&mut ctx.func, group, visits, wide_keys);
+        chunks::emit(
+            &mut ctx.func,
+            group,
+            visits,
+            wide_keys,
+            vector_chunks,
+            stream_chunks,
+        );
     } else {
         emit(&mut ctx.func, group, visits, wide_keys);
     }

@@ -104,7 +104,7 @@ fn fixture(module: &JITModule, shift: u32) -> Fixture {
     (ctx, header, loads, vec![view(0, 0, 8)], vec![view(1, 2, 4)])
 }
 
-fn compile(shift: u32, tuning: Option<(usize, bool, bool)>) -> (JITModule, Run) {
+fn compile(shift: u32, tuning: Option<Options>) -> (JITModule, Run) {
     let mut module = JITModule::new(
         JITBuilder::with_flags(
             &[("opt_level", "speed"), ("regalloc_checker", "true")],
@@ -113,22 +113,11 @@ fn compile(shift: u32, tuning: Option<(usize, bool, bool)>) -> (JITModule, Run) 
         .unwrap(),
     );
     let (mut ctx, header, loads, nodes, bins) = fixture(&module, shift);
-    if let Some((visits, wide, progressive)) = tuning {
+    if let Some(options) = tuning {
         let mut fast = module.make_context();
         fast.func = ctx.func.clone();
-        let admission = optimize(
-            &mut fast,
-            header,
-            &loads,
-            &nodes,
-            &bins,
-            Options {
-                visits,
-                wide_keys: wide,
-                progressive,
-            },
-        )
-        .expect("recognized descending packed-node histogram");
+        let admission = optimize(&mut fast, header, &loads, &nodes, &bins, options)
+            .expect("recognized descending packed-node histogram");
         assert_eq!(
             admission,
             Admission {
@@ -203,19 +192,37 @@ fn oracle(
     (0, at)
 }
 
+fn variants() -> impl Iterator<Item = Options> {
+    [4, 8, 16].into_iter().flat_map(|visits| {
+        [false, true].into_iter().flat_map(move |wide_keys| {
+            [
+                (false, false, false),
+                (true, false, false),
+                (true, true, false),
+                (true, false, true),
+                (true, true, true),
+            ]
+            .into_iter()
+            .filter(move |&(_, vector, stream)| {
+                (!vector || cfg!(target_arch = "aarch64")) && (visits > 4 || !(vector || stream))
+            })
+            .map(move |(progressive, vector_chunks, stream_chunks)| Options {
+                visits,
+                wide_keys,
+                progressive,
+                vector_chunks,
+                stream_chunks,
+            })
+        })
+    })
+}
+
 #[test]
 fn grouped_histogram_batches_preserve_tails_full_words_collisions_wrap_and_errors() {
     let mut calls = 0;
     for shift in [0, 9, 31] {
         let entries: Vec<_> = std::iter::once(None)
-            .chain([4, 8, 16].into_iter().flat_map(|n| {
-                [
-                    Some((n, false, false)),
-                    Some((n, true, false)),
-                    Some((n, false, true)),
-                    Some((n, true, true)),
-                ]
-            }))
+            .chain(variants().map(Some))
             .map(|tuning| compile(shift, tuning))
             .collect();
         for pattern in 0..4 {
@@ -226,7 +233,7 @@ fn grouped_histogram_batches_preserve_tails_full_words_collisions_wrap_and_error
                     } else {
                         (i * 197 + 3) & 255
                     };
-                    let tag = if pattern == 2 && i % 7 == 0 { 2 } else { 1 };
+                    let tag = if pattern == 2 && i % 7 == 0 { i % 3 } else { 1 };
                     let high = (0xff00_0000 | (key << 9) | tag) << 32;
                     high | (i.wrapping_mul(0xabcdef01) & u32::MAX as u64)
                 })
@@ -242,8 +249,10 @@ fn grouped_histogram_batches_preserve_tails_full_words_collisions_wrap_and_error
                     (0, 15),
                     (0, 16),
                     (0, 17),
+                    (0, 80),
                     (2, 39),
                     (u64::MAX - 7, 9),
+                    (u64::MAX - 20, u64::MAX),
                 ] {
                     for top in [0, 3, 15, 63, 95, u64::MAX] {
                         for cells in [0, 1, 17, 255, 256] {
@@ -298,7 +307,9 @@ fn grouped_histogram_declines_unsupported_group_widths_without_mutation() {
                 Options {
                     visits,
                     wide_keys: true,
-                    progressive: false
+                    progressive: false,
+                    vector_chunks: false,
+                    stream_chunks: false,
                 }
             ),
             None
@@ -309,13 +320,8 @@ fn grouped_histogram_declines_unsupported_group_widths_without_mutation() {
 
 #[test]
 fn grouped_histogram_current_entry_preserves_overlapping_node_bin_observations() {
-    let entries: Vec<_> = [4, 8, 16]
-        .into_iter()
-        .flat_map(|visits| {
-            [false, true].into_iter().flat_map(move |wide| {
-                [false, true].map(move |progressive| compile(9, Some((visits, wide, progressive))))
-            })
-        })
+    let entries: Vec<_> = variants()
+        .map(|options| compile(9, Some(options)))
         .collect();
     let mut calls = 0;
     for bin_base in [0, 1, 96, 191, 192] {
