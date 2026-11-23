@@ -1073,6 +1073,10 @@ fn prepare_impl<M: Module>(
                     wide_keys: std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_WIDE_KEYS").is_some(),
                     progressive: std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_PROGRESSIVE")
                         .is_some(),
+                    vector_chunks: module.isa().name() == "aarch64"
+                        && std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_VECTOR_CHUNKS").is_some(),
+                    stream_chunks: std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_STREAM_CHUNKS")
+                        .is_some(),
                 },
             ) {
                 let name = format!("{symbol}_grouped");
