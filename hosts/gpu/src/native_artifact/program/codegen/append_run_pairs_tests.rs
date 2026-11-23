@@ -167,7 +167,18 @@ fn compile(bias: i64, mode: u8) -> (JITModule, Run) {
         let trace = super::super::trace::capture(&context, header).unwrap();
         assert!(trace.window.is_some());
         let params = context.func.dfg.block_params(header).to_vec();
-        let pair = (mode == 2).then(|| Pair::derive(&context, &trace, &params, true).unwrap());
+        let pair = (mode >= 2).then(|| {
+            Pair::derive(
+                &context,
+                &trace,
+                &params,
+                Options {
+                    allow_biased_costs: true,
+                    rebase_costs: mode == 3,
+                },
+            )
+            .unwrap()
+        });
         super::super::emit(&mut context.func, header, &params, trace, None, pair);
     }
     context.flowgraph();
@@ -211,7 +222,7 @@ fn call(
 fn biased_pairs_preserve_wrapping_costs_ordered_failures_and_scalar_tails() {
     let mut calls = 0;
     for bias in [0, 1, 259, -1, -256, i64::MAX] {
-        let compiled = [0, 1, 2].map(|mode| compile(bias, mode));
+        let compiled = [0, 1, 2, 3].map(|mode| compile(bias, mode));
         let costs = (0..547)
             .map(|i| (i as u32).wrapping_mul(0xfedc_ba97).wrapping_add(u32::MAX))
             .collect::<Vec<_>>();
@@ -268,6 +279,18 @@ fn biased_pairs_preserve_wrapping_costs_ordered_failures_and_scalar_tails() {
             assert_eq!(call(*run, &cache, 8, &costs, u64::MAX, 8, 1), expected);
             calls += 1;
         }
+        if bias == 259 {
+            let cache = [0; 16];
+            for length in [258, 259, 260, 261] {
+                let costs = &costs[..length];
+                let expected = call(compiled[0].1, &cache, 16, costs, 16, 16, 1);
+                calls += 1;
+                for (_, run) in &compiled[1..] {
+                    assert_eq!(call(*run, &cache, 16, costs, 16, 16, 1), expected);
+                    calls += 1;
+                }
+            }
+        }
     }
     eprintln!("biased append differential native calls: {calls}");
 }
@@ -282,11 +305,19 @@ fn biased_pair_recognition_requires_the_exact_cost_index_guard() {
             context.compute_domtree();
             let trace = super::super::trace::capture(&context, header).unwrap();
             let params = context.func.dfg.block_params(header);
-            let result = Pair::derive(&context, &trace, params, true);
+            let result = Pair::derive(
+                &context,
+                &trace,
+                params,
+                Options {
+                    allow_biased_costs: true,
+                    ..Options::default()
+                },
+            );
             assert_eq!(result.is_ok(), guard == bias);
             if guard == bias && bias != 0 {
                 assert!(matches!(
-                    Pair::derive(&context, &trace, params, false),
+                    Pair::derive(&context, &trace, params, Options::default()),
                     Err("cost ordinal has an offset")
                 ));
             }
@@ -298,7 +329,7 @@ fn biased_pair_recognition_requires_the_exact_cost_index_guard() {
 fn biased_pairs_preserve_alias_fallbacks_and_adjacent_views() {
     for bias in [0, 259, -256] {
         let reference = compile(bias, 0);
-        let candidate = compile(bias, 2);
+        let candidates = [2, 3].map(|mode| compile(bias, mode));
         for layout in 0..3 {
             let execute = |run: Run| {
                 let mut storage = vec![0xfeed_cafe_ffff_ffc0_u64; 320];
@@ -346,11 +377,14 @@ fn biased_pairs_preserve_alias_fallbacks_and_adjacent_views() {
                 let result = unsafe { run(0, packet.as_ptr(), 0) };
                 (result, storage)
             };
-            assert_eq!(
-                execute(candidate.1),
-                execute(reference.1),
-                "bias {bias}, layout {layout}"
-            );
+            let expected = execute(reference.1);
+            for (_, candidate) in &candidates {
+                assert_eq!(
+                    execute(*candidate),
+                    expected,
+                    "bias {bias}, layout {layout}"
+                );
+            }
         }
     }
 }

@@ -1411,12 +1411,12 @@ fn prepare_impl<M: Module>(
                     }
                 }
                 if admission.immutable_code_bytes.is_some()
-                    && std::env::var_os("MECH_FOLD_NARROW_PACKED_WORDS").is_some()
+                    && let Some(mode) = std::env::var_os("MECH_FOLD_NARROW_PACKED_WORDS")
                 {
                     // A low-word cost must not retain an independently packed
                     // high field. Full item/store uses keep the original word.
-                    cfg_cleanup::narrow_bits::fold(&mut candidate.func);
-                    if std::env::var("MECH_FOLD_NARROW_PACKED_WORDS").as_deref() == Ok("phis") {
+                    cfg_cleanup::narrow_bits::fold(&mut candidate.func, mode == "immediates");
+                    if mode == "phis" {
                         cfg_cleanup::narrow_bits::fold_parallel(&mut candidate.func);
                     }
                     candidate.verify(module.isa()).map_err(backend)?;
