@@ -12,6 +12,7 @@ mod array_growth;
 pub(in crate::native_artifact) mod arrays;
 mod backing_owners;
 mod body_relocations;
+mod checked_byte_append;
 mod checked_region_discovery;
 mod checked_traversals;
 mod cold_status;
