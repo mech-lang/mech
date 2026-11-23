@@ -1880,6 +1880,18 @@ fn prepare_impl<M: Module>(
         {
             context.func.aarch64_branch_on_zero = true;
         }
+        if module.isa().name() == "aarch64"
+            && std::env::var_os("MECH_COMPACT_FOLD_SINGLE_USE_CSET")
+                .is_some_and(|target| target == "all" || target == symbol.as_str())
+        {
+            context.func.aarch64_fold_single_use_cset = true;
+        }
+        if module.isa().name() == "aarch64"
+            && std::env::var_os("MECH_COMPACT_CCMP_LITERAL_CONSTANTS")
+                .is_some_and(|target| target == "all" || target == symbol.as_str())
+        {
+            context.func.aarch64_ccmp_literal_constants = true;
+        }
         if std::env::var_os("MECH_COMPACT_REFINE_PHASE_PREDICATES")
             .is_some_and(|target| target == "all" || target == symbol.as_str())
         {

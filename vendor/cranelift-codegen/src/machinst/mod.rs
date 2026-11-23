@@ -140,11 +140,13 @@ pub trait MachInst: Clone + Debug {
     }
 
     /// Replace this allocated instruction and its adjacent successor with one
-    /// instruction. The successor still has its virtual operands.
+    /// instruction. The successor still has its virtual operands. A sole-use
+    /// proof includes instruction operands and outgoing block arguments.
     fn fold_allocated_pair(
         &mut self,
         _next: &Self,
         _next_allocs: &[regalloc2::Allocation],
+        _next_is_sole_use: bool,
     ) -> bool {
         false
     }

@@ -995,7 +995,12 @@ impl MachInst for Inst {
         aarch64_get_operands(self, collector);
     }
 
-    fn fold_allocated_pair(&mut self, next: &Self, next_allocs: &[regalloc2::Allocation]) -> bool {
+    fn fold_allocated_pair(
+        &mut self,
+        next: &Self,
+        next_allocs: &[regalloc2::Allocation],
+        next_is_sole_use: bool,
+    ) -> bool {
         if let Self::CSet { rd, cond } = self
             && !matches!(cond, Cond::Al | Cond::Nv)
             && let Self::AluRRImmLogic {
@@ -1005,13 +1010,16 @@ impl MachInst for Inst {
             } = next
             && imml.value() == 1
             && let [destination, source] = next_allocs
-            && destination == source
+            && (destination == source || next_is_sole_use)
+            && let Some(source) = source.as_reg()
+            && source.hw_enc() < 31
+            && Reg::from(source) == rd.to_reg()
             && let Some(destination) = destination.as_reg()
             && destination.hw_enc() < 31
-            && Reg::from(destination) == rd.to_reg()
         {
-            // CSET writes 0 or 1. The in-place EOR replaces that value,
-            // leaves the flags intact, and cannot observe another definition.
+            // EOR inverts the zero-or-one result. A separate destination can
+            // receive the complemented condition when it consumes the only use.
+            *rd = Writable::from_reg(Reg::from(destination));
             *cond = cond.invert();
             return true;
         }
@@ -3314,6 +3322,30 @@ impl MachInstLabelUse for LabelUse {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn allocated_inversion_uses_the_destination_with_a_sole_use_proof() {
+        let source = regs::xreg_preg(3);
+        let destination = regs::xreg_preg(12);
+        let source_reg = Reg::from(source);
+        let destination_reg = Reg::from(destination);
+        let invert = Inst::AluRRImmLogic {
+            alu_op: ALUOp::Eor,
+            size: OperandSize::Size64,
+            rd: Writable::from_reg(destination_reg),
+            rn: source_reg,
+            imml: ImmLogic::maybe_from_u64(1, I64).unwrap(),
+        };
+        let allocations = [source, destination].map(regalloc2::Allocation::reg);
+        let mut set = Inst::CSet {
+            rd: Writable::from_reg(source_reg),
+            cond: Cond::Hs,
+        };
+        let reversed = [allocations[1], allocations[0]];
+        assert!(!set.fold_allocated_pair(&invert, &reversed, false));
+        assert!(set.fold_allocated_pair(&invert, &reversed, true));
+        assert!(matches!(set, Inst::CSet { rd, cond: Cond::Lo } if rd.to_reg() == destination_reg));
+    }
 
     #[test]
     fn inst_size_test() {

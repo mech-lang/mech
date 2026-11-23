@@ -174,6 +174,7 @@ fn out_of_range_returns_emit_another_epilogue() {
             &backend.flags,
             &mut control,
             range,
+            false,
         )
     };
     let control = emit(None);
