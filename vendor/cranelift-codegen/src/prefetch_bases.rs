@@ -1,4 +1,4 @@
-//! Keep pure biased prefetch bases after egraph rematerialization.
+//! Keep pure biased bases for prefetches and indexed loads after rematerialization.
 use crate::cursor::{Cursor, FuncCursor};
 use crate::dominator_tree::DominatorTree;
 use crate::flowgraph::ControlFlowGraph;
@@ -51,7 +51,12 @@ fn replace_base(f: &mut Function, inst: Inst, replacement: Value) {
     f.layout.remove_inst(inst);
 }
 
-pub(crate) fn hoist(f: &mut Function, reuse_dominating_bases: bool) -> usize {
+pub(crate) fn hoist(
+    f: &mut Function,
+    reuse_dominating_bases: bool,
+    prefetches: bool,
+    indexed_loads: bool,
+) -> usize {
     let mut available = BTreeMap::<_, Vec<Inst>>::new();
     let mut candidates = BTreeSet::new();
     for block in f.layout.blocks() {
@@ -62,12 +67,24 @@ pub(crate) fn hoist(f: &mut Function, reuse_dominating_bases: bool) -> usize {
                     group.push(inst);
                 }
             }
-            let Data::Unary {
-                opcode: Opcode::PrefetchWrite,
-                arg,
-            } = f.dfg.insts[inst]
-            else {
-                continue;
+            let arg = match f.dfg.insts[inst] {
+                Data::Unary {
+                    opcode: Opcode::PrefetchWrite,
+                    arg,
+                } if prefetches => arg,
+                Data::Load {
+                    opcode: Opcode::Uload8 | Opcode::Uload32,
+                    arg,
+                    ..
+                } if indexed_loads => arg,
+                Data::Load {
+                    opcode: Opcode::Load,
+                    arg,
+                    ..
+                } if indexed_loads && f.dfg.value_type(f.dfg.first_result(inst)) == types::I32 => {
+                    arg
+                }
+                _ => continue,
             };
             let pointer = f.dfg.resolve_aliases(arg);
             if f.dfg.value_type(pointer) != types::I64 {
@@ -163,8 +180,8 @@ pub(crate) fn hoist(f: &mut Function, reuse_dominating_bases: bool) -> usize {
         if reuse_dominating_bases {
             let definition = f.dfg.value_def(replacement).inst().unwrap();
             for &duplicate in &available[&key] {
-                // Equal wrapping additions can share the base already used by
-                // prefetch when that definition dominates the duplicate.
+                // Equal wrapping additions can share the selected base when
+                // that definition dominates the duplicate.
                 // Consumers and their memory ordering stay in place.
                 if duplicate != definition
                     && f.layout.inst_block(duplicate).is_some()

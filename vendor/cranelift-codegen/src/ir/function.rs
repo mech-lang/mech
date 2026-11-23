@@ -221,6 +221,8 @@ pub struct FunctionStencil {
     pub aarch64_fold_single_use_cset: bool,
     /// Share and hoist pure prefetch base additions after egraph rematerialization.
     pub aarch64_hoist_prefetch_bases: bool,
+    /// Share biased bases used by indexed loads after egraph rematerialization.
+    pub aarch64_hoist_indexed_load_bases: bool,
     /// Maximum private integer spill cells kept in unused caller-saved FP registers.
     pub aarch64_fp_spill_slots: u8,
     /// Retain paired spill reloads and mirror their cached cells to memory.
@@ -287,6 +289,7 @@ impl FunctionStencil {
         self.aarch64_ccmp_literal_constants = false;
         self.aarch64_fold_single_use_cset = false;
         self.aarch64_hoist_prefetch_bases = false;
+        self.aarch64_hoist_indexed_load_bases = false;
         self.aarch64_fp_spill_slots = 0;
         self.aarch64_fp_spill_keep_pairs = false;
         self.aarch64_block_layout.clear();
@@ -496,6 +499,7 @@ impl Function {
                 aarch64_ccmp_literal_constants: false,
                 aarch64_fold_single_use_cset: false,
                 aarch64_hoist_prefetch_bases: false,
+                aarch64_hoist_indexed_load_bases: false,
                 aarch64_fp_spill_slots: 0,
                 aarch64_fp_spill_keep_pairs: false,
                 aarch64_block_layout: Vec::new(),

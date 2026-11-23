@@ -1421,6 +1421,26 @@ fn prepare_impl<M: Module>(
                     }
                     candidate.verify(module.isa()).map_err(backend)?;
                 }
+                if admission.immutable_code_bytes.is_some()
+                    && std::env::var_os("MECH_COMPOSE_FOLD_ADMITTED_COST_MINIMUM").is_some()
+                    && let Some(loads) =
+                        phase_storage::input_word_loads(&candidate.func, input_words)
+                {
+                    candidate.flowgraph();
+                    let capture = Capture {
+                        packet_loads: &loads,
+                        header: composed_header,
+                        ..capture
+                    };
+                    let folded = cfg_cleanup::defaulted_read_setup::fold_admitted_cost_minimum(
+                        &mut candidate.func,
+                        &candidate.cfg,
+                        &capture,
+                        admission,
+                    );
+                    candidate.verify(module.isa()).map_err(backend)?;
+                    eprintln!("{name} folded admitted cost minimum checks: {folded}");
+                }
                 if !observe
                     && cleanup.enabled
                     && let Ok(mode) = std::env::var("MECH_COMPACT_NORMALIZE_COMPOSED_ADDRESSES")
@@ -1442,6 +1462,9 @@ fn prepare_impl<M: Module>(
                     candidate.func.aarch64_branch_on_zero =
                         admission.immutable_code_bytes.is_some()
                             && std::env::var_os("MECH_COMPACT_DENSE_BRANCH_ON_ZERO").is_some();
+                    candidate.func.aarch64_hoist_indexed_load_bases =
+                        std::env::var_os("MECH_COMPACT_HOIST_INDEXED_LOAD_BASES")
+                            .is_some_and(|target| target == "all" || target == name.as_str());
                     // Numeric phases start with their own Function. The
                     // enclosing checked entry's register preference does not
                     // reach this independently admitted immutable-cost body.

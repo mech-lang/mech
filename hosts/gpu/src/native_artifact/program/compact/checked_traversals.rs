@@ -1785,6 +1785,8 @@ fn share_families<M: Module>(
         }
     }
     let mut report = Vec::new();
+    let inline_short_appends = std::env::var_os("MECH_COMPACT_INLINE_SHORT_BYTE_APPENDS").is_some();
+    let mut short_bodies = BTreeMap::new();
     for selected in groups {
         let mut code_bytes = selected.bytes.len();
         let mut stack_bytes = selected.stack;
@@ -1806,6 +1808,9 @@ fn share_families<M: Module>(
                 "checked_code_bytes": selected.bytes.len(),
                 "checked_stack_bytes": selected.stack,
             }));
+            if inline_short_appends {
+                short_bodies.insert(entry, context.func);
+            }
             entry
         } else {
             selected.function
@@ -1885,6 +1890,19 @@ fn share_families<M: Module>(
                 serde_json::json!(selected.traversals[0].output_words());
         }
         report.push(entry);
+    }
+    if !short_bodies.is_empty() {
+        let bodies = short_bodies.iter().map(|(&id, body)| (id, body)).collect();
+        let mut context = Context::for_function(root.clone());
+        // The short body retains the call to the original checked continuation.
+        // Its inlined hot path returns through the same continuation arguments.
+        if context
+            .inline(super::inlining::OnceCalled(&bodies))
+            .map_err(backend)?
+        {
+            context.verify(module.isa()).map_err(backend)?;
+            *root = context.func;
+        }
     }
     Ok((!report.is_empty()).then_some(serde_json::Value::Array(report)))
 }

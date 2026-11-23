@@ -192,13 +192,20 @@ impl Context {
             self.egraph_pass(isa, ctrl_plane)?;
         }
 
-        if self.func.aarch64_hoist_prefetch_bases && isa.name() == "aarch64" {
+        let prefetches = self.func.aarch64_hoist_prefetch_bases;
+        let indexed_loads = self.func.aarch64_hoist_indexed_load_bases;
+        if (prefetches || indexed_loads) && isa.name() == "aarch64" {
             #[cfg(feature = "std")]
             let reuse_dominating_bases =
                 std::env::var("MECH_ARM64_REUSE_PREFETCH_BASES").as_deref() == Ok("1");
             #[cfg(not(feature = "std"))]
             let reuse_dominating_bases = false;
-            crate::prefetch_bases::hoist(&mut self.func, reuse_dominating_bases);
+            crate::prefetch_bases::hoist(
+                &mut self.func,
+                reuse_dominating_bases,
+                prefetches,
+                indexed_loads,
+            );
             self.func.dfg.resolve_all_aliases();
             self.verify_if(isa)?;
         }
