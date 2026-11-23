@@ -1077,6 +1077,11 @@ fn prepare_impl<M: Module>(
                         && std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_VECTOR_CHUNKS").is_some(),
                     stream_chunks: std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_STREAM_CHUNKS")
                         .is_some(),
+                    byte_keys: std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_BYTE_KEYS").is_some(),
+                    pair_vector_chunks: std::env::var_os(
+                        "MECH_GROUP_PACKED_HISTOGRAM_PAIR_VECTOR_CHUNKS",
+                    )
+                    .is_some(),
                 },
             ) {
                 let name = format!("{symbol}_grouped");

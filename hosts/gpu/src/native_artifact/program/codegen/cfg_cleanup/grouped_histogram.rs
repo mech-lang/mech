@@ -35,6 +35,8 @@ pub(in crate::native_artifact) struct Options {
     pub progressive: bool,
     pub vector_chunks: bool,
     pub stream_chunks: bool,
+    pub byte_keys: bool,
+    pub pair_vector_chunks: bool,
 }
 
 struct Group {
@@ -370,33 +372,19 @@ pub(in crate::native_artifact) fn optimize(
     bins: &[View],
     options: Options,
 ) -> Option<Admission> {
-    let Options {
-        visits,
-        wide_keys,
-        progressive,
-        vector_chunks,
-        stream_chunks,
-    } = options;
     // Keep code growth finite. Each descending input read is covered by the
     // original current read and the group's non-wrapping ordinal floor.
-    if !matches!(visits, 4 | 8 | 16) {
+    if !matches!(options.visits, 4 | 8 | 16) {
         return None;
     }
     ctx.compute_cfg();
     ctx.compute_domtree();
     let group = recognize(ctx, header, loads, nodes, bins)?;
     let admission = group.admission;
-    if progressive && visits > 4 {
-        chunks::emit(
-            &mut ctx.func,
-            group,
-            visits,
-            wide_keys,
-            vector_chunks,
-            stream_chunks,
-        );
+    if options.progressive && options.visits > 4 {
+        chunks::emit(&mut ctx.func, group, options);
     } else {
-        emit(&mut ctx.func, group, visits, wide_keys);
+        emit(&mut ctx.func, group, options.visits, options.wide_keys);
     }
     ctx.compute_cfg();
     ctx.compute_domtree();
