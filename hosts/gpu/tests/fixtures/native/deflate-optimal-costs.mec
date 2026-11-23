@@ -1,0 +1,134 @@
+// Cost-table updates from CompressOptimal.roc at
+// 671077457ff7ef3a3d44caf715a3fc595addf379.
+// Include deflate-huffman-level12.mec for the checked access/update helpers.
+// See deflate-huffman-LICENSES.md for source attribution and licenses.
+<optimal-costs> := <{literal<[u32]> length<[u32]> offset-slot<[u32]>}>
+
+optimal-default-length-cost(length<u64>, symbol-cost<u64>, length-slots<[u8]>, extra-length-bits<[u8]>) => (out<u64>) :=
+  slot<u64> := huff-get8(length-slots, length)
+  extra<u64> := huff-get8(extra-length-bits, slot)
+  out := symbol-cost + extra * 16u64.
+optimal-default-offset-cost(slot<u64>, extra-offset-bits<[u8]>) => (out<u64>) :=
+  extra<u64> := huff-get8(extra-offset-bits, slot)
+  out := 78u64 + extra * 16u64.
+optimal-default-literals(values<[u32]>, cost<u64>, i<u64>) => <[u32]>
+  | (values, cost, i) => ((i < 256u64)? | true => optimal-default-literals(huff-set32(values, i, huff-packed(cost)), cost, i + 1u64) | false => values).
+optimal-default-lengths(values<[u32]>, cost<u64>, i<u64>, slots<[u8]>, extras<[u8]>) => <[u32]>
+  | (values, cost, i, slots, extras) => ((i <= 258u64)? | true => optimal-default-lengths(huff-set32(values, i, huff-packed(optimal-default-length-cost(i, cost, slots, extras))), cost, i + 1u64, slots, extras) | false => values).
+optimal-default-offsets(values<[u32]>, i<u64>, extras<[u8]>) => <[u32]>
+  | (values, i, extras) => ((i < 32u64)? | true => optimal-default-offsets(huff-set32(values, i, huff-packed(optimal-default-offset-cost(i, extras))), i + 1u64, extras) | false => values).
+optimal-set-default-costs(literal-cost<u64>, length-cost<u64>, literal0<[u32]>, length0<[u32]>, offset0<[u32]>, slots<[u8]>, extra-lengths<[u8]>, extra-offsets<[u8]>) => (out<optimal-costs>) :=
+  literal := optimal-default-literals(literal0, literal-cost, 0u64)
+  length := optimal-default-lengths(length0, length-cost, 3u64, slots, extra-lengths)
+  offsets := optimal-default-offsets(offset0, 0u64, extra-offsets)
+  out := {literal: literal, length: length, offset-slot: offsets}.
+
+optimal-cost-bits(width<u8>, fallback<u64>) => (out<u64>) :=
+  wide<u64> := width
+  out := ((wide != 0u64)? | true => wide | false => fallback).
+optimal-code-literal-step(values<[u32]>, lens<[u8]>, i<u64>) => (out<[u32]>) :=
+  cost := optimal-cost-bits(huff-get8(lens, i), 13u64)
+  out := huff-set32(values, i, huff-packed(cost * 16u64)).
+optimal-code-literals(values<[u32]>, lens<[u8]>, i<u64>) => <[u32]>
+  | (values, lens, i) => ((i < 256u64)? | true => optimal-code-literals(optimal-code-literal-step(values, lens, i), lens, i + 1u64) | false => values).
+optimal-code-length-step(values<[u32]>, lens<[u8]>, i<u64>, slots<[u8]>, extras<[u8]>) => (out<[u32]>) :=
+  slot<u64> := huff-get8(slots, i)
+  sym := 257u64 + slot
+  cost := optimal-cost-bits(huff-get8(lens, sym), 13u64)
+  extra<u64> := huff-get8(extras, slot)
+  total := cost + extra
+  out := huff-set32(values, i, huff-packed(total * 16u64)).
+optimal-code-lengths(values<[u32]>, lens<[u8]>, i<u64>, slots<[u8]>, extras<[u8]>) => <[u32]>
+  | (values, lens, i, slots, extras) => ((i <= 258u64)? | true => optimal-code-lengths(optimal-code-length-step(values, lens, i, slots, extras), lens, i + 1u64, slots, extras) | false => values).
+optimal-code-offset-step(values<[u32]>, lens<[u8]>, i<u64>, extras<[u8]>) => (out<[u32]>) :=
+  cost := optimal-cost-bits(huff-get8(lens, i), 10u64)
+  extra<u64> := huff-get8(extras, i)
+  total := cost + extra
+  out := huff-set32(values, i, huff-packed(total * 16u64)).
+optimal-code-offsets(values<[u32]>, lens<[u8]>, i<u64>, extras<[u8]>) => <[u32]>
+  | (values, lens, i, extras) => ((i < 32u64)? | true => optimal-code-offsets(optimal-code-offset-step(values, lens, i, extras), lens, i + 1u64, extras) | false => values).
+optimal-set-costs-from-codes(litlen-lens<[u8]>, offset-lens<[u8]>, literal0<[u32]>, length0<[u32]>, offset0<[u32]>, slots<[u8]>, extra-lengths<[u8]>, extra-offsets<[u8]>) => (out<optimal-costs>) :=
+  literal := optimal-code-literals(literal0, litlen-lens, 0u64)
+  length := optimal-code-lengths(length0, litlen-lens, 3u64, slots, extra-lengths)
+  offsets := optimal-code-offsets(offset0, offset-lens, 0u64, extra-offsets)
+  out := {literal: literal, length: length, offset-slot: offsets}.
+
+optimal-adjust-cost(cur<u32>, default-cost<u64>, change<u64>) => (out<u32>) :=
+  current<u64> := cur
+  out := ((change == 0u64)?
+    | true => huff-packed((default-cost + 3u64 * current) / 4u64)
+    | false => ((change == 1u64)?
+      | true => huff-packed((default-cost + current) / 2u64)
+      | false => ((change == 2u64)? | true => huff-packed((5u64 * default-cost + 3u64 * current) / 8u64) | false => huff-packed((3u64 * default-cost + current) / 4u64)))).
+optimal-adjust-literal-step(values<[u32]>, cost<u64>, change<u64>, i<u64>) => (out<[u32]>) :=
+  cur := huff-get32(values, i)
+  out := huff-set32(values, i, optimal-adjust-cost(cur, cost, change)).
+optimal-adjust-literals(values<[u32]>, cost<u64>, change<u64>, i<u64>) => <[u32]>
+  | (values, cost, change, i) => ((i < 256u64)? | true => optimal-adjust-literals(optimal-adjust-literal-step(values, cost, change, i), cost, change, i + 1u64) | false => values).
+optimal-adjust-length-step(values<[u32]>, cost<u64>, change<u64>, i<u64>, slots<[u8]>, extras<[u8]>) => (out<[u32]>) :=
+  cur := huff-get32(values, i)
+  default-cost := optimal-default-length-cost(i, cost, slots, extras)
+  out := huff-set32(values, i, optimal-adjust-cost(cur, default-cost, change)).
+optimal-adjust-lengths(values<[u32]>, cost<u64>, change<u64>, i<u64>, slots<[u8]>, extras<[u8]>) => <[u32]>
+  | (values, cost, change, i, slots, extras) => ((i <= 258u64)? | true => optimal-adjust-lengths(optimal-adjust-length-step(values, cost, change, i, slots, extras), cost, change, i + 1u64, slots, extras) | false => values).
+optimal-adjust-offset-step(values<[u32]>, change<u64>, i<u64>, extras<[u8]>) => (out<[u32]>) :=
+  cur := huff-get32(values, i)
+  default-cost := optimal-default-offset-cost(i, extras)
+  out := huff-set32(values, i, optimal-adjust-cost(cur, default-cost, change)).
+optimal-adjust-offsets(values<[u32]>, change<u64>, i<u64>, extras<[u8]>) => <[u32]>
+  | (values, change, i, extras) => ((i < 32u64)? | true => optimal-adjust-offsets(optimal-adjust-offset-step(values, change, i, extras), change, i + 1u64, extras) | false => values).
+optimal-adjust-costs-impl(literal-cost<u64>, length-cost<u64>, change<u64>, literal0<[u32]>, length0<[u32]>, offset0<[u32]>, slots<[u8]>, extra-lengths<[u8]>, extra-offsets<[u8]>) => (out<optimal-costs>) :=
+  literal := optimal-adjust-literals(literal0, literal-cost, change, 0u64)
+  length := optimal-adjust-lengths(length0, length-cost, change, 3u64, slots, extra-lengths)
+  offsets := optimal-adjust-offsets(offset0, change, 0u64, extra-offsets)
+  out := {literal: literal, length: length, offset-slot: offsets}.
+
+<optimal-default-costs> := <{lit-cost<u64> len-sym-cost<u64>}>
+optimal-to-i64-wrap(value<u64>) => (out<i64>) :=
+  low<i64> := bits/and(value, 9223372036854775807u64)
+  out := ((value <= 9223372036854775807u64)? | true => low | false => low + (-9223372036854775807i64 - 1i64)).
+optimal-cost-count-step(counts<[u32]>, input<[u8]>, begin<u64>, i<u64>) => (out<[u32]>) :=
+  literal<u64> := huff-get8(input, begin + i)
+  count := huff-get32(counts, literal) + 1u32
+  out := huff-set32(counts, literal, count).
+optimal-cost-count-literals(counts<[u32]>, input<[u8]>, begin<u64>, length<u64>, i<u64>) => <[u32]>
+  | (counts, input, begin, length, i) => ((i < length)? | true => optimal-cost-count-literals(optimal-cost-count-step(counts, input, begin, i), input, begin, length, i + 1u64) | false => counts).
+optimal-cost-count-used(counts<[u32]>, cutoff<u64>, i<u64>, used<u64>) => (out<u64>) :=
+  more := i < 256u64
+  count := (more? | true => huff-word(huff-get32(counts, i)) | false => 0u64)
+  next := ((count > cutoff)? | true => used + 1u64 | false => used)
+  out := (more? | true => optimal-cost-count-used(counts, cutoff, i + 1u64, next) | false => used).
+optimal-cost-minimum-shallow(minimum<u64>, depth<u64>) => (out<u64>) :=
+  out := ((depth < 5u64)? | true => huff-minimum(minimum, 4u64) | false => ((depth < 10u64)? | true => huff-minimum(minimum, 5u64) | false => huff-minimum(minimum, 7u64))).
+optimal-cost-minimum(used<u64>, depth<u64>) => (out<u64>) :=
+  minimum := optimal-choose-minimum(used)
+  out := ((used >= 80u64)? | true => 3u64 | false => ((depth < 16u64)? | true => optimal-cost-minimum-shallow(minimum, depth) | false => minimum)).
+optimal-default-frequency-step(freqs<[u32]>, j<u64>, matches<i64>, literals<i64>) => (out<(i64,i64)>) :=
+  f<i64> := huff-word(huff-get32(freqs, j))
+  next-matches := matches + f
+  signed-j := optimal-to-i64-wrap(j)
+  next-literals := literals - signed-j * f
+  out := (next-matches, next-literals).
+optimal-default-frequencies(freqs<[u32]>, j<u64>, matches<i64>, literals<i64>) => (out<(i64,i64)>) :=
+  more := j <= 258u64
+  step := (more? | true => optimal-default-frequency-step(freqs, j, matches, literals) | false => (matches, literals))
+  (next-matches, next-literals) := step
+  out := (more? | true => optimal-default-frequencies(freqs, j + 1u64, next-matches, next-literals) | false => (matches, literals)).
+optimal-default-which(matches<i64>, literals<i64>) => (out<u64>) :=
+  clamped := ((literals < 0i64)? | true => 0i64 | false => literals)
+  out := ((matches > clamped)? | true => 2u64 | false => ((matches * 4i64 > clamped)? | true => 1u64 | false => 0u64)).
+optimal-choose-default-costs(input<[u8]>, begin<u64>, length<u64>, match-freqs<[u32]>, depth<u64>, table0<[u8]>, table1<[u8]>, table2<[u8]>, symbol-costs<[u8]>) => (out<optimal-default-costs>) :=
+  zero := [0u32 | i <- 0u64..=256u64, i < 256u64]
+  cutoff := bits/shift-right-wrap(length, 11u64)
+  counts := optimal-cost-count-literals(zero, input, begin, length, 0u64)
+  number := optimal-cost-count-used(counts, cutoff, 0u64, 0u64)
+  used := ((number == 0u64)? | true => 1u64 | false => number)
+  matches0 := 0i64
+  literals0 := optimal-to-i64-wrap(length)
+  minimum := optimal-cost-minimum(used, depth)
+  (matches, literals) := optimal-default-frequencies(match-freqs, minimum, matches0, literals0)
+  which := optimal-default-which(matches, literals)
+  table := ((which == 2u64)? | true => table2 | false => ((which == 1u64)? | true => table1 | false => table0))
+  lit-cost<u64> := huff-get8(table, used)
+  sym-cost<u64> := huff-get8(symbol-costs, which)
+  out := {lit-cost: lit-cost, len-sym-cost: sym-cost}.

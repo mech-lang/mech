@@ -1,0 +1,128 @@
+// BlockOut.write_sequences, pinned at 671077457ff7ef3a3d44caf715a3fc595addf379.
+// Include deflate-huffman-level12.mec and deflate-matchfinder.mec first.
+// See deflate-huffman-LICENSES.md for source attribution and licenses.
+<block-sequence> := <{litrunlen-and-length<u32> offset<u16> offset-slot<u16>}>
+<block-writer-state> := <{bytes<[u8]> bitbuf<u64> bitcount<u64> in-next<u64>}>
+<block-literal-state> := <{bytes<[u8]> bitbuf<u64> bitcount<u64> in-next<u64> left<u64>}>
+<block-written> := <{bytes<[u8]> bitbuf<u64> bitcount<u64>}>
+
+block-write-literals-4(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, input<[u8]>, in-next<u64>, packed<[u64]>) => (out<block-writer-state>) :=
+  word<u64> := load-prefix(input, in-next)
+  lit0 := bits/and(word, 255u64)
+  packed0 := huff-get64(packed, lit0)
+  buf0 := bits/or(bitbuf, bits/shift-left-wrap(bits/and(packed0, 4294967295u64), bits/and(bitcount, 255u64)))
+  count0 := bits/wrapping-add(bitcount, bits/shift-right-wrap(packed0, 32u64))
+  lit1 := bits/and(bits/shift-right-wrap(word, 8u64), 255u64)
+  packed1 := huff-get64(packed, lit1)
+  buf1 := bits/or(buf0, bits/shift-left-wrap(bits/and(packed1, 4294967295u64), bits/and(count0, 255u64)))
+  count1 := bits/wrapping-add(count0, bits/shift-right-wrap(packed1, 32u64))
+  lit2 := bits/and(bits/shift-right-wrap(word, 16u64), 255u64)
+  packed2 := huff-get64(packed, lit2)
+  buf2 := bits/or(buf1, bits/shift-left-wrap(bits/and(packed2, 4294967295u64), bits/and(count1, 255u64)))
+  count2 := bits/wrapping-add(count1, bits/shift-right-wrap(packed2, 32u64))
+  lit3 := bits/shift-right-wrap(word, 24u64)
+  packed3 := huff-get64(packed, lit3)
+  buf3 := bits/or(buf2, bits/shift-left-wrap(bits/and(packed3, 4294967295u64), bits/and(count2, 255u64)))
+  count3 := bits/wrapping-add(count2, bits/shift-right-wrap(packed3, 32u64))
+  next3 := bits/wrapping-add(in-next, 4u64)
+  whole := bits/and(bits/shift-right-wrap(count3, 3u64), 7u64)
+  byte-count<u8> := whole
+  written := sequence/append-le-bytes(bytes, buf3, byte-count)
+  remaining := bits/shift-right-wrap(buf3, bits/and(bits/shift-left-wrap(whole, 3u64), 255u64))
+  out := {bytes: written, bitbuf: remaining, bitcount: bits/and(count3, 7u64), in-next: next3}.
+
+block-write-literals-1(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, input<[u8]>, in-next<u64>, packed<[u64]>) => (out<block-writer-state>) :=
+  lit0<u64> := huff-get8(input, in-next)
+  packed0 := huff-get64(packed, lit0)
+  buf0 := bits/or(bitbuf, bits/shift-left-wrap(bits/and(packed0, 4294967295u64), bits/and(bitcount, 255u64)))
+  count0 := bits/wrapping-add(bitcount, bits/shift-right-wrap(packed0, 32u64))
+  next0 := bits/wrapping-add(in-next, 1u64)
+  whole := bits/and(bits/shift-right-wrap(count0, 3u64), 7u64)
+  byte-count<u8> := whole
+  written := sequence/append-le-bytes(bytes, buf0, byte-count)
+  remaining := bits/shift-right-wrap(buf0, bits/and(bits/shift-left-wrap(whole, 3u64), 255u64))
+  out := {bytes: written, bitbuf: remaining, bitcount: bits/and(count0, 7u64), in-next: next0}.
+
+block-write-literals-2(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, input<[u8]>, in-next<u64>, packed<[u64]>) => (out<block-writer-state>) :=
+  lit0<u64> := huff-get8(input, in-next)
+  packed0 := huff-get64(packed, lit0)
+  buf0 := bits/or(bitbuf, bits/shift-left-wrap(bits/and(packed0, 4294967295u64), bits/and(bitcount, 255u64)))
+  count0 := bits/wrapping-add(bitcount, bits/shift-right-wrap(packed0, 32u64))
+  next0 := bits/wrapping-add(in-next, 1u64)
+  lit1<u64> := huff-get8(input, next0)
+  packed1 := huff-get64(packed, lit1)
+  buf1 := bits/or(buf0, bits/shift-left-wrap(bits/and(packed1, 4294967295u64), bits/and(count0, 255u64)))
+  count1 := bits/wrapping-add(count0, bits/shift-right-wrap(packed1, 32u64))
+  next1 := bits/wrapping-add(next0, 1u64)
+  whole := bits/and(bits/shift-right-wrap(count1, 3u64), 7u64)
+  byte-count<u8> := whole
+  written := sequence/append-le-bytes(bytes, buf1, byte-count)
+  remaining := bits/shift-right-wrap(buf1, bits/and(bits/shift-left-wrap(whole, 3u64), 255u64))
+  out := {bytes: written, bitbuf: remaining, bitcount: bits/and(count1, 7u64), in-next: next1}.
+
+block-write-literals-3(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, input<[u8]>, in-next<u64>, packed<[u64]>) => (out<block-writer-state>) :=
+  lit0<u64> := huff-get8(input, in-next)
+  packed0 := huff-get64(packed, lit0)
+  buf0 := bits/or(bitbuf, bits/shift-left-wrap(bits/and(packed0, 4294967295u64), bits/and(bitcount, 255u64)))
+  count0 := bits/wrapping-add(bitcount, bits/shift-right-wrap(packed0, 32u64))
+  next0 := bits/wrapping-add(in-next, 1u64)
+  lit1<u64> := huff-get8(input, next0)
+  packed1 := huff-get64(packed, lit1)
+  buf1 := bits/or(buf0, bits/shift-left-wrap(bits/and(packed1, 4294967295u64), bits/and(count0, 255u64)))
+  count1 := bits/wrapping-add(count0, bits/shift-right-wrap(packed1, 32u64))
+  next1 := bits/wrapping-add(next0, 1u64)
+  lit2<u64> := huff-get8(input, next1)
+  packed2 := huff-get64(packed, lit2)
+  buf2 := bits/or(buf1, bits/shift-left-wrap(bits/and(packed2, 4294967295u64), bits/and(count1, 255u64)))
+  count2 := bits/wrapping-add(count1, bits/shift-right-wrap(packed2, 32u64))
+  next2 := bits/wrapping-add(next1, 1u64)
+  whole := bits/and(bits/shift-right-wrap(count2, 3u64), 7u64)
+  byte-count<u8> := whole
+  written := sequence/append-le-bytes(bytes, buf2, byte-count)
+  remaining := bits/shift-right-wrap(buf2, bits/and(bits/shift-left-wrap(whole, 3u64), 255u64))
+  out := {bytes: written, bitbuf: remaining, bitcount: bits/and(count2, 7u64), in-next: next2}.
+
+block-write-fours(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, input<[u8]>, in-next<u64>, packed<[u64]>, left<u64>) => (out<block-literal-state>) :=
+  more := left >= 4u64
+  step := (more? | true => block-write-literals-4(bytes, bitbuf, bitcount, input, in-next, packed) | false => {bytes: bytes, bitbuf: bitbuf, bitcount: bitcount, in-next: in-next})
+  out := (more? | true => block-write-fours(step.bytes, step.bitbuf, step.bitcount, input, step.in-next, packed, bits/wrapping-sub(left, 4u64)) | false => {bytes: step.bytes, bitbuf: step.bitbuf, bitcount: step.bitcount, in-next: step.in-next, left: left}).
+
+block-write-tail(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, input<[u8]>, in-next<u64>, packed<[u64]>, left<u64>) => (out<block-writer-state>) :=
+  out := (left? | 0u64 => {bytes: bytes, bitbuf: bitbuf, bitcount: bitcount, in-next: in-next} | 1u64 => block-write-literals-1(bytes, bitbuf, bitcount, input, in-next, packed) | 2u64 => block-write-literals-2(bytes, bitbuf, bitcount, input, in-next, packed) | * => block-write-literals-3(bytes, bitbuf, bitcount, input, in-next, packed)).
+
+block-write-match(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, in-next<u64>, packed<[u64]>, length<u64>, offset<u64>, slot<u64>) => (out<block-writer-state>) :=
+  packed-len := huff-get64(packed, bits/wrapping-add(288u64, length))
+  buf0 := bits/or(bitbuf, bits/shift-left-wrap(bits/and(packed-len, 4294967295u64), bits/and(bitcount, 255u64)))
+  count0 := bits/wrapping-add(bitcount, bits/shift-right-wrap(packed-len, 32u64))
+  packed-off := huff-get64(packed, bits/wrapping-add(800u64, bits/and(slot, 31u64)))
+  buf1 := bits/or(buf0, bits/shift-left-wrap(bits/and(packed-off, 65535u64), bits/and(count0, 255u64)))
+  count1 := bits/wrapping-add(count0, bits/and(bits/shift-right-wrap(packed-off, 16u64), 255u64))
+  buf2 := bits/or(buf1, bits/shift-left-wrap(bits/wrapping-sub(offset, bits/shift-right-wrap(packed-off, 32u64)), bits/and(count1, 255u64)))
+  count2 := bits/wrapping-add(count1, bits/and(bits/shift-right-wrap(packed-off, 24u64), 255u64))
+  whole := bits/and(bits/shift-right-wrap(count2, 3u64), 7u64)
+  byte-count<u8> := whole
+  written := sequence/append-le-bytes(bytes, buf2, byte-count)
+  remaining := bits/shift-right-wrap(buf2, bits/and(bits/shift-left-wrap(whole, 3u64), 255u64))
+  out := {bytes: written, bitbuf: remaining, bitcount: bits/and(count2, 7u64), in-next: bits/wrapping-add(in-next, length)}.
+
+block-write-selected-match(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, in-next<u64>, packed<[u64]>, length<u64>, current<block-sequence>) => (out<block-writer-state>) :=
+  offset<u64> := current.offset
+  slot<u64> := current.offset-slot
+  out := block-write-match(bytes, bitbuf, bitcount, in-next, packed, length, offset, slot).
+
+block-write-sequence(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, input<[u8]>, in-next<u64>, packed<[u64]>, current<block-sequence>) => (out<block-writer-state>) :=
+  combined<u64> := current.litrunlen-and-length
+  literals := bits/and(combined, 8388607u64)
+  length := bits/shift-right-wrap(combined, 23u64)
+  groups := block-write-fours(bytes, bitbuf, bitcount, input, in-next, packed, literals)
+  tail := block-write-tail(groups.bytes, groups.bitbuf, groups.bitcount, input, groups.in-next, packed, groups.left)
+  out := ((length != 0u64)? | true => block-write-selected-match(tail.bytes, tail.bitbuf, tail.bitcount, tail.in-next, packed, length, current) | false => tail).
+
+block-write-sequences-at(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, input<[u8]>, in-next<u64>, seqs<[block-sequence]>, packed<[u64]>, at<u64>) => (out<block-written>) :=
+  more := at < sequence/length(seqs)
+  step := (more? | true => block-write-sequence(bytes, bitbuf, bitcount, input, in-next, packed, seqs[bits/wrapping-add(at, 1u64)]) | false => {bytes: bytes, bitbuf: bitbuf, bitcount: bitcount, in-next: in-next})
+  out := (more? | true => block-write-sequences-at(step.bytes, step.bitbuf, step.bitcount, input, step.in-next, seqs, packed, bits/wrapping-add(at, 1u64)) | false => {bytes: step.bytes, bitbuf: step.bitbuf, bitcount: step.bitcount}).
+
+block-write-sequences(bytes<[u8]>, bitbuf<u64>, bitcount<u64>, input<[u8]>, in-next<u64>, seqs<[block-sequence]>, packed<[u64]>) => (out<block-written>) :=
+  packed-readable! := sequence/length(packed) >= 832u64
+  out := block-write-sequences-at(bytes, bitbuf, bitcount, input, in-next, seqs, packed, 0u64).

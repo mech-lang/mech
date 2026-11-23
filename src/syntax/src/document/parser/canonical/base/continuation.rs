@@ -4,7 +4,7 @@ use crate::document::parser::grapheme_scan::{GraphemeScan, ScanProgress};
 use crate::document::parser::literal_scan::{LiteralProgress, LiteralScan};
 use crate::document::parser::{checkpoint::ParserCheckpoint, marker::Marker};
 use crate::document::{TextRange, TextSize};
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 
 pub(crate) enum Progress {
     Complete(bool),
@@ -33,11 +33,11 @@ enum Frame {
     Fixed(&'static FixedTerminalSpec),
     FixedAfterLeading(&'static FixedTerminalSpec),
     FixedAfterToken,
-    Literal(LiteralScan<'static>, Option<SyntaxKind>),
+    Literal(Option<SyntaxKind>),
     LiteralResult(Option<TextSize>, Option<SyntaxKind>),
     Classified(SyntaxKind, fn(char) -> bool),
     Raw(Option<SyntaxKind>),
-    Grapheme(GraphemeScan, Option<SyntaxKind>),
+    Grapheme(Option<SyntaxKind>),
     GraphemeResult(Option<TextRange>, Option<SyntaxKind>),
     EscapeAfterSlash,
     EscapeZero,
@@ -52,8 +52,21 @@ enum Frame {
     UnicodeComplete(UnicodeEscape),
 }
 
-pub(crate) struct Continuation {
+#[derive(Default)]
+pub(crate) struct FrameStorage {
     frames: Vec<Frame>,
+    scanner: Option<Box<Scanner>>,
+    pub(super) prediction: Option<Box<super::recognition::Storage>>,
+}
+enum Scanner {
+    Literal(LiteralScan<'static>),
+    Grapheme(GraphemeScan),
+}
+
+pub(crate) struct Continuation {
+    initial: Option<RuleId>,
+    storage: FrameStorage,
+    active: bool,
     result: bool,
     raw_range: Option<TextRange>,
     pub work: u64,
@@ -61,14 +74,23 @@ pub(crate) struct Continuation {
 impl Continuation {
     pub fn new(rule: RuleId) -> Self {
         Self {
-            frames: alloc::vec![Frame::Call(rule)],
+            initial: Some(rule),
+            storage: FrameStorage::default(),
+            active: false,
             result: false,
             raw_range: None,
             work: 0,
         }
     }
+    fn scanner(&mut self, scanner: Scanner) {
+        if let Some(slot) = &mut self.storage.scanner {
+            **slot = scanner;
+        } else {
+            self.storage.scanner = Some(Box::new(scanner));
+        }
+    }
     fn push(&mut self, frame: Frame) {
-        self.frames.push(frame);
+        self.storage.frames.push(frame);
     }
     fn choice(&mut self, rules: &'static [RuleId]) {
         self.result = false;
@@ -110,152 +132,209 @@ impl Continuation {
             self.result = false;
             return;
         }
-        self.push(Frame::Literal(
+        self.scanner(Scanner::Literal(
             LiteralScan::new(
                 literal,
                 parser.offset(),
                 final_input.then_some(parser.cursor().context_end()),
             )
             .expect("nonempty canonical literal"),
-            kind,
         ));
+        self.push(Frame::Literal(kind));
     }
     fn unless(&mut self, parser: &Parser<'_>, excluded: &'static [RuleId], rule: RuleId) {
         self.push(Frame::Unless(parser.checkpoint(), rule));
         self.choice(excluded);
     }
-    fn call(&mut self, parser: &mut Parser<'_>, rule: RuleId) {
-        if !supports(rule) {
+    fn call(
+        &mut self,
+        parser: &mut Parser<'_>,
+        rule: RuleId,
+        final_input: bool,
+        allowance: &mut u64,
+    ) {
+        let fixed = fixed_terminal_spec(rule);
+        if fixed.is_none() && !non_fixed_rule(rule) {
             self.result = false;
             return;
         }
         let checkpoint = parser.checkpoint();
         parser.state.rules.push_canonical(rule);
+        if final_input
+            && let Some(spec) = fixed
+            && spec.spacing == TerminalSpacing::Exact
+            && let Some((end, work)) = parser.state.literal_cache.replay(
+                spec.literal,
+                parser.offset(),
+                parser.cursor().end(),
+                parser.cursor().context_end(),
+                *allowance,
+            )
+        {
+            *allowance -= work + 2;
+            self.work += work + 2;
+            self.result = match end {
+                Some(end) => parser
+                    .bump_bytes_token((end - parser.offset()).0, spec.kind)
+                    .is_some(),
+                None => false,
+            };
+            *allowance -= 1;
+            self.work += 1;
+            parser.state.rules.truncate(checkpoint.rule_depth);
+            if !self.result {
+                parser.rewind(checkpoint);
+            }
+            return;
+        }
         self.push(Frame::Exit(checkpoint));
-        if let Some(spec) = fixed_terminal_spec(rule) {
+        if let Some(spec) = fixed {
             self.push(Frame::Fixed(spec));
             return;
         }
-        match rule {
-            rules::TRANSITION_OPERATOR => {
-                self.choice(&[rules::TRANSITION_OPERATOR_A, rules::TRANSITION_OPERATOR_U])
+        match specification(rule).expect("supported non-fixed base rule") {
+            Spec::Alias(rule) => self.push(Frame::Call(rule)),
+            Spec::Choice(rules) => self.choice(rules),
+            Spec::Sequence(rules) => self.sequence(rules),
+            Spec::Repeat { required, choices } => {
+                if required {
+                    self.one_or_more(choices)
+                } else {
+                    self.repeat(parser, choices)
+                }
             }
-            rules::OUTPUT_OPERATOR => {
-                self.choice(&[rules::OUTPUT_OPERATOR_A, rules::OUTPUT_OPERATOR_U])
+            Spec::RepeatedNode {
+                kind,
+                first,
+                rest,
+                single_first,
+            } => {
+                if final_input && !parser.is_halted() {
+                    let state = self
+                        .storage
+                        .prediction
+                        .get_or_insert_with(|| Box::new(super::recognition::Storage::default()));
+                    let cache = &mut state.memo;
+                    if cache.capture.is_none() && cache.kind(rule, kind, first, rest).is_some() {
+                        if let Some((work, raw)) =
+                            cache.replay(parser, rule, checkpoint.rule_depth, *allowance + 1)
+                        {
+                            let exit = self
+                                .storage
+                                .frames
+                                .pop()
+                                .expect("pending repeated-node exit");
+                            debug_assert!(matches!(exit, Frame::Exit(_)));
+                            parser.state.rules.truncate(checkpoint.rule_depth);
+                            *allowance -= work - 1;
+                            self.work += work - 1;
+                            self.raw_range = Some(raw);
+                            self.result = true;
+                            return;
+                        }
+                        cache.capture = Some(super::recognition::Capture::new(
+                            parser,
+                            rule,
+                            kind,
+                            self.storage.frames.len() - 1,
+                            checkpoint,
+                            self.work - 1,
+                        ));
+                    }
+                }
+                self.node(parser, kind);
+                self.push(Frame::FirstRepeat(rest));
+                if single_first {
+                    self.push(Frame::Call(first[0]));
+                } else {
+                    self.choice(first);
+                }
             }
-            rules::EMOJI_GRAPHEME => self.push(Frame::Classified(SyntaxKind::Emoji, is_emoji)),
-            rules::ALPHA => self.push(Frame::Classified(SyntaxKind::Alpha, char::is_alphabetic)),
-            rules::DIGIT => self.push(Frame::Classified(SyntaxKind::Digit, char::is_numeric)),
-            rules::ANY => self.push(Frame::Raw(Some(SyntaxKind::Any))),
-            rules::ANY_TOKEN => self.push(Frame::Call(rules::ANY)),
-            rules::ALPHA_TOKEN => self.push(Frame::Call(rules::ALPHA)),
-            rules::DIGIT_TOKEN => self.push(Frame::Call(rules::DIGIT)),
-            rules::FORBIDDEN_EMOJI => self.choice(FORBIDDEN_EMOJI_RULES),
-            rules::EMOJI => self.unless(parser, &[rules::FORBIDDEN_EMOJI], rules::EMOJI_GRAPHEME),
-            rules::ALPHANUMERIC => self.choice(&[rules::ALPHA_TOKEN, rules::DIGIT_TOKEN]),
-            rules::UNDERSCORE_DIGIT => self.sequence(&[rules::UNDERSCORE, rules::DIGIT_TOKEN]),
-            rules::DIGIT_SEQUENCE => {
-                self.node(parser, SyntaxKind::DigitSequence);
-                self.push(Frame::FirstRepeat(&[
-                    rules::UNDERSCORE_DIGIT,
-                    rules::DIGIT_TOKEN,
-                ]));
-                self.push(Frame::Call(rules::DIGIT_TOKEN));
+            Spec::Classified(kind, classify) => self.push(Frame::Classified(kind, classify)),
+            Spec::Raw(kind) => self.push(Frame::Raw(kind)),
+            Spec::Unless { excluded, rule } => self.unless(parser, excluded, rule),
+            Spec::NewlineIndent => {
+                self.push(Frame::FirstRepeat(&[rules::SPACE_TAB]));
+                self.push(Frame::Call(rules::NEW_LINE));
             }
-            rules::GROUPING_SYMBOL => self.choice(GROUPING_SYMBOL_RULES),
-            rules::PUNCTUATION => self.choice(PUNCTUATION_RULES),
-            rules::ESCAPED_CHAR => {
+            Spec::Escape => {
                 self.node(parser, SyntaxKind::EscapedCharacter);
                 self.push(Frame::EscapeAfterSlash);
                 self.push(Frame::Call(rules::BACKSLASH));
             }
-            rules::SYMBOL => self.choice(SYMBOL_RULES),
-            rules::IDENTIFIER_SYMBOL => self.choice(IDENTIFIER_SYMBOL_RULES),
-            rules::TEXT => self.choice(TEXT_RULES),
-            rules::RAW_TEXT => self.choice(RAW_TEXT_RULES),
-            rules::NEW_LINE => self.choice(&[
-                rules::CARRIAGE_RETURN_NEW_LINE,
-                rules::NEW_LINE_CHAR,
-                rules::CARRIAGE_RETURN,
-            ]),
-            rules::WHITESPACE => self.choice(&[rules::SPACE, rules::TAB, rules::NEW_LINE]),
-            rules::WHITESPACE0 => self.repeat(parser, &[rules::WHITESPACE]),
-            rules::WHITESPACE1 => self.one_or_more(&[rules::WHITESPACE]),
-            rules::NEWLINE_INDENT => {
-                self.push(Frame::FirstRepeat(&[rules::SPACE_TAB]));
-                self.push(Frame::Call(rules::NEW_LINE));
-            }
-            rules::WS1E | rules::SPACE_TAB1 => self.one_or_more(&[rules::SPACE_TAB]),
-            rules::WS0E | rules::SPACE_TAB0 => self.repeat(parser, &[rules::SPACE_TAB]),
-            rules::SPACE_TAB => {
-                self.choice(&[rules::SPACE, rules::TAB, rules::NBSP, rules::THIN_SPACE])
-            }
-            rules::LIST_SEPARATOR => {
-                self.sequence(&[rules::WHITESPACE0, rules::COMMA, rules::WHITESPACE0])
-            }
-            rules::ENUM_SEPARATOR => {
-                self.sequence(&[rules::WHITESPACE0, rules::BAR, rules::WHITESPACE0])
-            }
-            rules::IDENTIFIER => {
-                self.node(parser, SyntaxKind::Identifier);
-                self.push(Frame::FirstRepeat(&[
-                    rules::ALPHA_TOKEN,
-                    rules::DIGIT_TOKEN,
-                    rules::UNDERSCORE,
-                    rules::IDENTIFIER_SYMBOL,
-                    rules::EMOJI,
-                ]));
-                self.choice(&[rules::ALPHA_TOKEN, rules::EMOJI]);
-            }
-            rules::IDENTIFIER_PATH_SEGMENT_EMOJI => {
-                self.unless(parser, PATH_EMOJI_EXCLUSIONS, rules::EMOJI)
-            }
-            rules::IDENTIFIER_PATH_SEGMENT => {
-                self.node(parser, SyntaxKind::IdentifierPathSegment);
-                self.push(Frame::FirstRepeat(&[
-                    rules::ALPHA_TOKEN,
-                    rules::DIGIT_TOKEN,
-                    rules::DASH,
-                    rules::IDENTIFIER_PATH_SEGMENT_EMOJI,
-                ]));
-                self.choice(&[rules::ALPHA_TOKEN, rules::IDENTIFIER_PATH_SEGMENT_EMOJI]);
-            }
-            rules::LEFT_ANGLE => self.choice(&[rules::LEFT_ANGLE1, rules::LEFT_ANGLE2]),
-            rules::RIGHT_ANGLE => self.choice(&[rules::RIGHT_ANGLE1, rules::RIGHT_ANGLE2]),
-            rules::BOX_DRAWING_CHAR => self.choice(BOX_DRAWING_CHAR_RULES),
-            rules::BOX_DRAWING_EMOJI => self.choice(BOX_DRAWING_EMOJI_RULES),
-            rules::TAG => self.result = false,
-            _ => unreachable!("supported base rule"),
+            Spec::Never => self.result = false,
         }
     }
+
     pub fn advance(
         &mut self,
         parser: &mut Parser<'_>,
         final_input: bool,
         allowance: &mut u64,
     ) -> Progress {
-        while !self.frames.is_empty() {
+        if let Some(rule) = self.initial.take() {
+            self.storage = core::mem::take(&mut parser.state.base_storage);
+            self.active = true;
+            debug_assert!(self.storage.frames.is_empty());
+            self.push(Frame::Call(rule));
+        }
+        while !self.storage.frames.is_empty() {
             // Stop before unwinding markers can publish a resource remainder
             // against temporary EOF. The stream owner seals accepted input and
             // drains these same phases to construct its terminal limited view.
             if !final_input && parser.is_halted() {
                 return Progress::Limited;
             }
-            let frame = self.frames.pop().expect("pending base phase");
+            let frame = self.storage.frames.pop().expect("pending base phase");
             if *allowance == 0 {
                 self.push(frame);
                 return Progress::NeedsProcessing;
+            }
+            // Predict before charging this call frame: summaries include its
+            // original work, including every failed nested alternative. The
+            // cache belongs to this active continuation until storage returns.
+            if let Frame::Call(rule) = &frame
+                && final_input
+                && let Some(index) = non_fixed_index(*rule)
+                && let Some((result, work)) = super::super::prediction::predict_base(
+                    parser,
+                    *rule,
+                    index,
+                    *allowance,
+                    &mut self.storage.prediction,
+                )
+            {
+                *allowance -= work;
+                self.work += work;
+                self.result = result;
+                continue;
             }
             if !matches!(frame, Frame::Literal(..) | Frame::Grapheme(..)) {
                 *allowance -= 1;
                 self.work += 1;
             }
             match frame {
-                Frame::Call(rule) => self.call(parser, rule),
+                Frame::Call(rule) => self.call(parser, rule, final_input, allowance),
                 Frame::Exit(checkpoint) => {
                     parser.state.rules.truncate(checkpoint.rule_depth);
                     if !self.result {
                         parser.rewind(checkpoint);
+                    }
+                    if self
+                        .storage
+                        .prediction
+                        .as_ref()
+                        .and_then(|state| state.memo.capture.as_ref())
+                        .is_some_and(|capture| capture.depth == self.storage.frames.len())
+                    {
+                        let cache = &mut self
+                            .storage
+                            .prediction
+                            .as_mut()
+                            .expect("lexical cache owner")
+                            .memo;
+                        let capture = cache.capture.take().expect("completed lexical capture");
+                        capture.complete(cache, parser, self.result, self.work, self.raw_range);
                     }
                 }
                 Frame::Sequence(rules, index) => {
@@ -319,14 +398,18 @@ impl Continuation {
                         self.push(Frame::Call(rules::WHITESPACE0));
                     }
                 }
-                Frame::Literal(mut scan, kind) => {
+                Frame::Literal(kind) => {
+                    let Some(Scanner::Literal(scan)) = self.storage.scanner.as_deref_mut() else {
+                        unreachable!("pending literal scanner")
+                    };
                     let before = *allowance;
-                    let progress = scan.advance(
-                        parser.source(),
+                    let progress = scan.advance_cached(
+                        parser.source,
                         parser.cursor().end(),
                         parser.cursor().context_end(),
                         final_input,
                         allowance,
+                        &mut parser.state.literal_cache,
                     );
                     self.work += before - *allowance;
                     match progress {
@@ -334,7 +417,7 @@ impl Continuation {
                             self.push(Frame::LiteralResult(end, kind))
                         }
                         LiteralProgress::NeedsProcessing | LiteralProgress::NeedInput => {
-                            self.push(Frame::Literal(scan, kind));
+                            self.push(Frame::Literal(kind));
                             return if progress == LiteralProgress::NeedInput {
                                 Progress::NeedInput
                             } else {
@@ -370,6 +453,14 @@ impl Continuation {
                     }
                 }
                 Frame::Raw(kind) => {
+                    if let Some(capture) = self
+                        .storage
+                        .prediction
+                        .as_mut()
+                        .and_then(|state| state.memo.capture.as_mut())
+                    {
+                        capture.raw(parser);
+                    }
                     if parser.charge() {
                         let end = final_input.then_some(parser.cursor().context_end());
                         let scan = parser
@@ -378,13 +469,17 @@ impl Continuation {
                             .take()
                             .filter(|scan| scan.resumes_at(parser.offset(), end))
                             .unwrap_or_else(|| GraphemeScan::new(parser.offset(), end));
-                        self.push(Frame::Grapheme(scan, kind));
+                        self.scanner(Scanner::Grapheme(scan));
+                        self.push(Frame::Grapheme(kind));
                     } else {
                         self.raw_range = None;
                         self.result = false;
                     }
                 }
-                Frame::Grapheme(mut scan, kind) => {
+                Frame::Grapheme(kind) => {
+                    let Some(Scanner::Grapheme(scan)) = self.storage.scanner.as_deref_mut() else {
+                        unreachable!("pending grapheme scanner")
+                    };
                     let before = *allowance;
                     let progress = scan.advance(
                         parser.source(),
@@ -395,7 +490,7 @@ impl Continuation {
                     self.work += before - *allowance;
                     match progress {
                         ScanProgress::Grapheme(range) => {
-                            parser.state.grapheme_tail = Some(scan);
+                            parser.state.grapheme_tail = Some(scan.clone());
                             self.push(Frame::GraphemeResult(
                                 (range.end <= parser.cursor().end()).then_some(range),
                                 kind,
@@ -403,7 +498,7 @@ impl Continuation {
                         }
                         ScanProgress::End => self.push(Frame::GraphemeResult(None, kind)),
                         ScanProgress::NeedInput | ScanProgress::NeedsProcessing => {
-                            self.push(Frame::Grapheme(scan, kind));
+                            self.push(Frame::Grapheme(kind));
                             return if progress == ScanProgress::NeedInput {
                                 Progress::NeedInput
                             } else {
@@ -552,6 +647,10 @@ impl Continuation {
                 }
             }
         }
+        if self.active {
+            parser.state.base_storage = core::mem::take(&mut self.storage);
+            self.active = false;
+        }
         Progress::Complete(self.result)
     }
 }
@@ -570,6 +669,25 @@ mod tests {
         allowance_size: u64,
         fuel: u64,
     ) -> (bool, TextSize, String, crate::document::ParseStats, u64) {
+        run_with_prediction(
+            rule,
+            text,
+            chunks,
+            allowance_size,
+            fuel,
+            false,
+            allowance_size,
+        )
+    }
+    fn run_with_prediction(
+        rule: RuleId,
+        text: &str,
+        chunks: &[&str],
+        allowance_size: u64,
+        fuel: u64,
+        reference: bool,
+        final_allowance: u64,
+    ) -> (bool, TextSize, String, crate::document::ParseStats, u64) {
         let mut source = TextSnapshot::new(DocumentId(826), Revision(0), "").unwrap();
         let mut ids = IdGenerator::new();
         let mut config = ParseConfig::default();
@@ -580,6 +698,7 @@ mod tests {
             config,
             &mut ids,
         );
+        parser.state.disable_rejections_for_test = reference;
         let wrapper = parser.start();
         let mut state = parser.suspend();
         let mut continuation = Continuation::new(rule);
@@ -610,9 +729,9 @@ mod tests {
         let mut parser = Parser::resume(&source, state, &mut ids);
         let result = loop {
             let before = continuation.work;
-            let mut allowance = allowance_size;
+            let mut allowance = final_allowance;
             let progress = continuation.advance(&mut parser, true, &mut allowance);
-            assert!(continuation.work - before <= allowance_size);
+            assert!(continuation.work - before <= final_allowance);
             match progress {
                 Progress::Complete(result) => break result,
                 Progress::NeedInput | Progress::Limited => panic!("final input failed to drain"),
@@ -796,6 +915,57 @@ mod tests {
                 }
                 previous = Some(observed.4);
             }
+        }
+    }
+
+    #[test]
+    fn nested_predictions_survive_input_sealing_and_suspended_storage() {
+        for (rule, text) in [
+            (rules::IDENTIFIER, "alphaβe\u{301}123+tail!"),
+            (rules::IDENTIFIER, "alphabet123__more+tail!"),
+            (rules::TEXT, "letters 12_34,!? é👩\u{200d}💻"),
+            (rules::DIGIT_SEQUENCE, "12_34_56x"),
+            (rules::WHITESPACE0, " \r\n\t x"),
+            (rules::ESCAPED_CHAR, "\\u{0001f600}x"),
+        ] {
+            for split in text.char_indices().map(|(at, _)| at).chain([text.len()]) {
+                let chunks = [&text[..split], &text[split..]];
+                for fuel in [0, 1, 4, 16, u64::MAX] {
+                    assert_eq!(
+                        run_with_prediction(rule, text, &chunks, 1, fuel, false, 8192),
+                        run_with_prediction(rule, text, &chunks, 1, fuel, true, 8192),
+                        "rule {rule:?}, text {text:?}, split {split}, fuel {fuel}"
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn prediction_cache_returns_from_nested_calls_to_the_same_parser() {
+        let source = TextSnapshot::new(DocumentId(826), Revision(0), "alpha123 ").unwrap();
+        let mut ids = IdGenerator::new();
+        let mut parser = Parser::new(
+            &source,
+            LexicalMode::CanonicalSourceFragment,
+            ParseConfig::default(),
+            &mut ids,
+        );
+        let _wrapper = parser.start();
+        let mut continuation = Continuation::new(rules::IDENTIFIER);
+        let mut allowance = u64::MAX;
+        assert!(matches!(
+            continuation.advance(&mut parser, true, &mut allowance),
+            Progress::Complete(true)
+        ));
+        assert!(!continuation.active);
+        assert!(continuation.storage.prediction.is_none());
+        let cache = parser.state.base_storage.prediction.as_ref().unwrap();
+        for rule in [rules::IDENTIFIER, rules::ALPHA, rules::DIGIT] {
+            assert!(
+                cache[non_fixed_index(rule).unwrap()].is_some(),
+                "uncached nested rule {rule:?}"
+            );
         }
     }
 }

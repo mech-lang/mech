@@ -188,3 +188,92 @@ fn both_edges_to_one_successor_cannot_fake_eof_dominance() {
         assert!(changed.text_line_count_frontiers().is_empty());
     }
 }
+
+#[test]
+fn shared_boolean_edge_facts_keep_literal_polarity_and_unique_copies() {
+    let source = "predicate := first<u64> < second<u64>\ncopied := predicate\nanswer := (copied? | true => 7u64 | false => 11u64)\n(answer, copied, true, false)\n";
+    for plan in plans(source) {
+        let facts = plan.facts();
+        let (site, predicate, (no, yes)) = plan
+            .blocks()
+            .iter()
+            .enumerate()
+            .find_map(|(site, block)| {
+                let candidates = match block.terminator() {
+                    Terminator::Scalar(Term::Branch { condition, .. }) => vec![condition],
+                    Terminator::Scalar(Term::LiteralBranch { left, right, .. }) => {
+                        vec![left, right]
+                    }
+                    _ => return None,
+                };
+                candidates.into_iter().find_map(|v| {
+                    facts
+                        .boolean_branch_edges(site as u32, v)
+                        .map(|edges| (site, v, edges))
+                })
+            })
+            .unwrap();
+        let literal = |wanted| {
+            plan.constants()
+                .iter()
+                .find_map(|c| {
+                    matches!(c.constant().data(),mech_core::ValueData::Bool(v) if *v == wanted)
+                        .then_some(c.value())
+                })
+                .unwrap()
+        };
+        for truth in [false, true] {
+            for swapped in [false, true] {
+                let mut changed = plan.clone();
+                let (left, right) = if swapped {
+                    (literal(truth), predicate)
+                } else {
+                    (predicate, literal(truth))
+                };
+                changed.blocks[site].terminator = Terminator::Scalar(Term::LiteralBranch {
+                    left,
+                    right,
+                    yes,
+                    no,
+                });
+                assert_eq!(
+                    changed.facts().boolean_branch_edges(site as u32, predicate),
+                    Some(if truth { (no, yes) } else { (yes, no) })
+                );
+            }
+        }
+        let mut changed = plan.clone();
+        changed.blocks[site].terminator = Terminator::Scalar(Term::Branch {
+            condition: predicate,
+            yes,
+            no: yes,
+        });
+        assert!(
+            changed
+                .facts()
+                .boolean_branch_edges(site as u32, predicate)
+                .is_none()
+        );
+        // Source aliases are normally eliminated. Exercise the actual Copy
+        // fact by replacing the unique producer in this descriptive test plan.
+        let [definition] = facts.definition_sites(predicate.get()).unwrap() else {
+            panic!("the comparison must have one current definition")
+        };
+        let copy = definition.site().unwrap() as usize;
+        let source = literal(true);
+        let output = predicate;
+        let mut copied = plan.clone();
+        copied.blocks[copy].action = Action::Scalar(Scalar::Copy { source, output });
+        assert_eq!(copied.facts().unique_identity_copy(output), Some(source));
+        let mut redefined = copied;
+        let other = plan
+            .blocks()
+            .iter()
+            .enumerate()
+            .find(|(s, b)| *s != copy && matches!(b.action(), Action::Scalar(Scalar::None)))
+            .map(|(s, _)| s)
+            .unwrap();
+        redefined.blocks[other].action = Action::Scalar(Scalar::Copy { source, output });
+        assert!(redefined.facts().unique_identity_copy(output).is_none());
+    }
+}

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import hashlib
 import tempfile
 import unittest
 import json
@@ -105,6 +106,42 @@ class RetiredValueSystemAbsenceTests(unittest.TestCase):
             self.fixture('include!(concat!(env!("OUT_DIR"), "/generated.rs"));\n')
         )
         self.assertTrue(any("not a static path" in failure for failure in failures))
+
+    def pinned_generated_fixture(self, source):
+        root = self.fixture()
+        relative = "vendor/cranelift-codegen/src/generated.rs"
+        path = root / relative
+        path.parent.mkdir(parents=True)
+        path.write_text(source, encoding="utf-8")
+        surface = root / CHECKER.SURFACE_PATH.relative_to(CHECKER.ROOT)
+        inventory = json.loads(surface.read_text(encoding="utf-8"))
+        inventory["generated_include_sources"] = [{
+            "path": relative,
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        }]
+        surface.write_text(json.dumps(inventory), encoding="utf-8")
+        return root, path
+
+    def test_pinned_upstream_generated_include_passes(self):
+        root, _ = self.pinned_generated_fixture(
+            'include!(concat!(env!("OUT_DIR"), "/generated.rs"));\n'
+        )
+        self.assertEqual(CHECKER.failures(root), [])
+
+    def test_changed_upstream_generated_include_fails_closed(self):
+        root, path = self.pinned_generated_fixture(
+            'include!(concat!(env!("OUT_DIR"), "/generated.rs"));\n'
+        )
+        with path.open("a", encoding="utf-8") as source:
+            source.write("fn changed() {}\n")
+        self.assertTrue(any("not a static path" in item for item in CHECKER.failures(root)))
+
+    def test_pinned_upstream_source_is_still_scanned_for_retired_symbols(self):
+        root, _ = self.pinned_generated_fixture(
+            'include!(concat!(env!("OUT_DIR"), "/generated.rs"));\n'
+            'fn escape(_: LegacyValue) {}\n'
+        )
+        self.assertTrue(any("retired symbol" in item for item in CHECKER.failures(root)))
 
     def test_every_retained_canonical_declaration_is_required(self):
         surface = CHECKER.retired_surface(self.fixture())

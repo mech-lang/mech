@@ -207,9 +207,40 @@ fn structurally_valid_noncanonical_dimensions_are_rejected() {}
             "artifact_fields": ["revision"],
             "forbidden_artifact_tokens": [],
         }
-        source = "pub struct ProgramArtifact {\n pub revision: u64,\n}\nimpl ProgramArtifact { pub fn revision(&self) {} }\n"
-        failures = CHECKER.validate_model(source, manifest)
-        self.assertTrue(any("must be private" in failure for failure in failures))
+        for visibility in ("pub", "pub(crate)"):
+            source = f"pub struct ProgramArtifact {{\n {visibility} revision: u64,\n}}\nimpl ProgramArtifact {{ pub fn revision(&self) {{}} }}\n"
+            failures = CHECKER.validate_model(source, manifest)
+            self.assertTrue(any("must be private" in failure for failure in failures))
+
+    def test_namespace_qualified_multiline_types_are_not_extra_fields(self) -> None:
+        self.assertEqual(CHECKER.declared_fields("""
+    cache:
+        crate::resident::Cache,
+    hints: std::collections::BTreeMap<u64, u64>,
+"""), ["cache", "hints"])
+
+    def test_internal_cache_accessor_keeps_its_declared_visibility(self) -> None:
+        manifest = {
+            "artifact_fields": ["revision"],
+            "artifact_internal_sidecars": [{
+                "field": "cache", "read_accessor": "cache", "read_visibility": "crate",
+            }],
+            "forbidden_artifact_tokens": [],
+        }
+        source = """
+pub struct ProgramArtifact {
+    revision: u64,
+    cache:
+        crate::resident::Cache,
+}
+impl ProgramArtifact {
+    pub fn revision(&self) {}
+    pub(crate) fn cache(&self) {}
+}
+"""
+        self.assertEqual(CHECKER.validate_model(source, manifest), [])
+        failures = CHECKER.validate_model(source.replace("pub(crate)", "pub"), manifest)
+        self.assertTrue(any("cache() is missing" in failure for failure in failures))
 
     def test_declared_nonwire_sidecar_is_accepted(self) -> None:
         manifest = {

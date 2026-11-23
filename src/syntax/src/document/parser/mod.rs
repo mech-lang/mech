@@ -85,11 +85,16 @@ pub(crate) struct CursorScope {
 /// Input-independent ownership of a live parse. Moving this state never
 /// finalizes events, loses rule/marker context, or replenishes resource fuel.
 pub(crate) struct ParserState {
+    #[cfg(test)]
+    disable_rejections_for_test: bool,
     lexical_mode: LexicalMode,
     parse_range: TextRange,
     events: Journal<Event>,
     tree_cache: tree_cache::TreeCache,
     grapheme_tail: Option<grapheme_scan::GraphemeScan>,
+    literal_cache: literal_scan::LiteralCache,
+    base_storage: canonical::base::continuation::FrameStorage,
+    operator_storage: canonical::operators::FrameStorage,
     open_markers: Vec<usize>,
     peak_open_markers: usize,
     peak_events: usize,
@@ -132,11 +137,16 @@ impl ParserState {
         input_frontier: bool,
     ) -> Self {
         Self {
+            #[cfg(test)]
+            disable_rejections_for_test: false,
             lexical_mode,
             parse_range: range,
             events: Journal::default(),
             tree_cache: tree_cache::TreeCache::default(),
             grapheme_tail: None,
+            literal_cache: literal_scan::LiteralCache::default(),
+            base_storage: canonical::base::continuation::FrameStorage::default(),
+            operator_storage: canonical::operators::FrameStorage::default(),
             open_markers: Vec::new(),
             peak_open_markers: 0,
             peak_events: 0,

@@ -1,0 +1,96 @@
+// Near-optimal backward path search from roc-deflate
+// 671077457ff7ef3a3d44caf715a3fc595addf379, CompressOptimal.roc.
+// U64 nodes contain U32 cost and item halves. Cost arithmetic wraps at 32 bits.
+// See deflate-huffman-LICENSES.md for source attribution and licenses.
++> bits
++> sequence
+<optimal-path> := <{nodes<[u64]>}>
+<optimal-choice> := <{best<u32> item<u32> k<u64>}>
+<optimal-matches> := <{best<u32> item<u32> cache-ptr<u64>}>
+
+optimal-word32(value<u32>) => (out<u64>) :=
+  out<u64> := value.
+optimal-narrow32(value<u64>) => (out<u32>) :=
+  out<u32> := bits/and(value, 4294967295u64).
+optimal-add-cost(left<u32>, right<u32>) => (out<u32>) :=
+  out := optimal-narrow32(bits/wrapping-add(optimal-word32(left), optimal-word32(right))).
+optimal-get32(values<[u32]>, at<u64>) => <u32>
+  | (values, at) => ((at < sequence/length(values))? | true => values[bits/wrapping-add(at, 1u64)] | false => 0u32).
+optimal-get64(values<[u64]>, at<u64>) => <u64>
+  | (values, at) => ((at < sequence/length(values))? | true => values[bits/wrapping-add(at, 1u64)] | false => 0u64).
+optimal-offset-slot(offset<u64>, slots<[u8]>) => (out<u64>) :=
+  n := bits/shift-right-wrap(bits/and(bits/wrapping-sub(256u64, optimal-word32(optimal-narrow32(offset))), 4294967295u64), 29u64)
+  at := bits/shift-right-wrap(bits/wrapping-sub(offset, 1u64), n)
+  byte := ((at < sequence/length(slots))? | true => slots[bits/wrapping-add(at, 1u64)] | false => 0u8)
+  wide<u64> := byte
+  out := bits/wrapping-add(wide, bits/shift-left-wrap(n, 1u64)).
+optimal-node-top(block-length<u64>) => (out<u64>) :=
+  out := bits/wrapping-add(bits/wrapping-sub(block-length, 1u64), 258u64).
+optimal-checked-match-length(value<u64>) => (out<u64>) :=
+  cached-length! := (value <= 258u64) && (value >= 3u64)
+  out := value.
+
+optimal-path-guards(nodes<[u64]>, guard<u64>, block-length<u64>) => <[u64]>
+  | (nodes, guard, block-length) => ((guard != block-length)?
+      | true => optimal-path-guards(sequence/append(nodes, 2147483648u64), bits/wrapping-sub(guard, 1u64), block-length)
+      | false => nodes).
+
+// The read-only tables are captures; only scalar cursors and choices change.
+#OptimalPathLengths(nodes<[u64]>, length-costs<[u32]>, offset-cost<u32>, offset<u64>, len-count<u64>, k<u64>, best<u32>, item<u32>) => <optimal-choice>
+  | :Try(k<u64>, best<u32>, item<u32>)
+  | :Done(k<u64>, best<u32>, item<u32>).
+#OptimalPathLengths(nodes, length-costs, offset-cost, offset, len-count, k, best, item) -> :Try(k, best, item)
+  :Try(k, best, item)
+    | k < len-count -> {
+        length := bits/wrapping-add(k, 3u64)
+        length-cost := optimal-get32(length-costs, length)
+        partial-cost := optimal-add-cost(offset-cost, length-cost)
+        tail-cost := optimal-narrow32(optimal-get64(nodes, bits/wrapping-sub(sequence/length(nodes), length)))
+        cost := optimal-add-cost(partial-cost, tail-cost)
+        next-best := ((cost < best)? | true => cost | false => best)
+        next-item := ((cost < best)? | true => optimal-narrow32(bits/or(length, bits/shift-left-wrap(optimal-word32(optimal-narrow32(offset)), 9u64))) | false => item)
+      } -> :Try(bits/wrapping-add(k, 1u64), next-best, next-item)
+    | * -> :Done(k, best, item)
+  :Done(k, best, item) => {best: best, item: item, k: k}.
+
+#OptimalPathMatches(nodes<[u64]>, cache<[u32]>, cp<u64>, number<u64>, length-costs<[u32]>, offset-costs<[u32]>, slots<[u8]>, best<u32>, item<u32>) => <optimal-matches>
+  | :Try(m<u64>, k<u64>, best<u32>, item<u32>)
+  | :Done(best<u32>, item<u32>).
+#OptimalPathMatches(nodes, cache, cp, number, length-costs, offset-costs, slots, best, item) -> :Try(bits/wrapping-sub(cp, number), 0u64, best, item)
+  :Try(m, k, best, item)
+    | m != cp -> {
+        offset := bits/shift-right-wrap(optimal-word32(optimal-get32(cache, m)), 16u64)
+        offset-cost := optimal-get32(offset-costs, optimal-offset-slot(offset, slots))
+        this-length := bits/and(optimal-word32(optimal-get32(cache, m)), 65535u64)
+        len-count := optimal-checked-match-length(this-length) - 2u64
+        choice := #OptimalPathLengths(nodes, length-costs, offset-cost, offset, len-count, k, best, item)
+      } -> :Try(bits/wrapping-add(m, 1u64), choice.k, choice.best, choice.item)
+    | * -> :Done(best, item)
+  :Done(best, item) => {best: best, item: item, cache-ptr: bits/wrapping-sub(cp, number)}.
+
+optimal-path-position(nodes<[u64]>, cur<u64>, cp<u64>, cache<[u32]>, literal-costs<[u32]>, length-costs<[u32]>, offset-costs<[u32]>, slots<[u8]>) => (out<([u64],u64,u64)>) :=
+  next-cur := bits/wrapping-sub(cur, 1u64)
+  header-ptr := bits/wrapping-sub(cp, 1u64)
+  number := bits/and(optimal-word32(optimal-get32(cache, header-ptr)), 65535u64)
+  literal := bits/shift-right-wrap(optimal-word32(optimal-get32(cache, header-ptr)), 16u64)
+  best := optimal-add-cost(optimal-get32(literal-costs, literal), optimal-narrow32(optimal-get64(nodes, bits/wrapping-sub(sequence/length(nodes), 1u64))))
+  item := optimal-narrow32(bits/or(bits/shift-left-wrap(optimal-word32(optimal-narrow32(literal)), 9u64), 1u64))
+  choice := #OptimalPathMatches(nodes, cache, header-ptr, number, length-costs, offset-costs, slots, best, item)
+  node := bits/or(optimal-word32(choice.best), bits/shift-left-wrap(optimal-word32(choice.item), 32u64))
+  out := (sequence/append(nodes, node), next-cur, choice.cache-ptr).
+
+optimal-path-scan(nodes<[u64]>, cur<u64>, cp<u64>, cache<[u32]>, literal-costs<[u32]>, length-costs<[u32]>, offset-costs<[u32]>, slots<[u8]>) => (out<[u64]>) :=
+  more := cur != 0u64
+  step := (more? | true => optimal-path-position(nodes, cur, cp, cache, literal-costs, length-costs, offset-costs, slots) | false => (nodes, cur, cp))
+  (next-nodes, next-cur, next-cp) := step
+  out := (more? | true => optimal-path-scan(next-nodes, next-cur, next-cp, cache, literal-costs, length-costs, offset-costs, slots) | false => nodes).
+
+optimal-find-min-cost-path(block-length<u64>, cache<[u32]>, cache-end<u64>, nodes0<[u64]>, literal-costs<[u32]>, length-costs<[u32]>, offset-costs<[u32]>, slots<[u8]>) => (out<optimal-path>) :=
+  top := optimal-node-top(block-length)
+  length-table! := sequence/length(length-costs) >= 259u64
+  cleared := sequence/clear(nodes0)
+  guarded := optimal-path-guards(cleared, top, block-length)
+  nodes := sequence/append(guarded, 0u64)
+  node-window! := sequence/length(nodes) >= 258u64
+  result := optimal-path-scan(nodes, block-length, cache-end, cache, literal-costs, length-costs, offset-costs, slots)
+  out := {nodes: result}.

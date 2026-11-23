@@ -208,14 +208,11 @@ impl SemanticBuilder {
                             RawTypeDeclaration::Alias { syntax, .. }
                             | RawTypeDeclaration::Enum { syntax, .. } => syntax,
                         };
-                        schema
-                            .clone()
-                            .finalize()
-                            .map_err(|error| SourceSemanticError {
-                                code: "source-semantics/invalid-kind-declaration",
-                                message: format!("kind {name} is invalid: {error:?}"),
-                                anchor: SourceSemanticAnchor::for_node(syntax),
-                            })?;
+                        schema.finalize_ref().map_err(|error| SourceSemanticError {
+                            code: "source-semantics/invalid-kind-declaration",
+                            message: format!("kind {name} is invalid: {error:?}"),
+                            anchor: SourceSemanticAnchor::for_node(syntax),
+                        })?;
                         pending.remove(&name);
                         resolved.insert(name, schema);
                         progressed = true;

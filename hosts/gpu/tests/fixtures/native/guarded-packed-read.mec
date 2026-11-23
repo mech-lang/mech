@@ -1,0 +1,18 @@
++> bits
++> sequence
+
+read-word(xs<[u8]>, at<u64>) => (out<u64>) :=
+  a<u64> := xs[at + 1u64]
+  b<u64> := xs[(at + 1u64) + 1u64]
+  c<u64> := xs[(at + 2u64) + 1u64]
+  d<u64> := xs[(at + 3u64) + 1u64]
+  out := bits/or(bits/or(a, bits/shift-left-wrap(b, 8u64)), bits/shift-left-wrap(bits/or(c, bits/shift-left-wrap(d, 8u64)), 16u64)).
+
+walk(xs<[u8]>, at<u64>, left<u64>, total<u64>) => (out<u64>) :=
+  available := sequence/length(xs)
+  word := ((left > 0u64)?
+    | true => ((at <= available - 4u64)? | true => read-word(xs, at) | false => 0u64)
+    | false => 0u64)
+  out := ((left > 0u64)? | true => walk(xs, at + 1u64, left - 1u64, bits/xor(total, word)) | false => total).
+
+walk(bytes<[u8]>, at<u64>, steps<u64>, seed<u64>)

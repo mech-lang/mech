@@ -14,6 +14,57 @@ impl NativePreparedLibraryCall {
         Err(InvokeError::InvalidInput)
     }
 
+    /// Exact maintained family eligible for a compiled immutable-matrix batch.
+    /// This checks semantic schema shape, not a source name or key contents.
+    pub fn supports_compiled_string_histogram(&self) -> bool {
+        use mech_core::{CardinalitySpec, IntegerWidth, SchemaBody};
+        self.require_selected_histogram().is_ok()
+            && self.template.inputs().len() == 1
+            && self.template.output().dimension_parameters().is_empty()
+            && matches!(self.template.inputs()[0].body(),
+                SchemaBody::Matrix { element, dimensions }
+                if element.as_ref() == &SchemaBody::String && dimensions.len() == 2)
+            && matches!(self.template.output().body(),
+                SchemaBody::Map { key, value, cardinality }
+                if key.as_ref() == &SchemaBody::String
+                    && value.as_ref() == &SchemaBody::UnsignedInteger(IntegerWidth::W64)
+                    && cardinality == &CardinalitySpec::Dynamic { upper_bound: None })
+            && matches!(self.template.contract(),
+                mech_core::ResolvedOperationContract::Declared(contract)
+                if contract.inputs.len() == 1 && contract.outputs.len() == 1)
+    }
+
+    /// Storage-only immutable view. The caller must separately fund validation,
+    /// retain genuine current ownership, and admit physical work/publication.
+    /// A declined representation leaves the original selected call available.
+    pub fn compiled_histogram_strings<'a>(
+        &self,
+        source: &'a mech_core::Value,
+    ) -> Option<&'a [Box<str>]> {
+        if !self.supports_compiled_string_histogram() {
+            return None;
+        }
+        let mech_core::ResolvedOperationContract::Declared(contract) = self.template.contract()
+        else {
+            return None;
+        };
+        if source.schema() != contract.inputs[0].schema
+            || source.schema_key() != self.input_keys[0]
+            || source.shape().parameter_values().len()
+                != self.template.inputs()[0].dimension_parameters().len()
+            || source.validate_against(&self.schemas).is_err()
+        {
+            return None;
+        }
+        let mech_core::ValueData::Matrix(matrix) = source.data() else {
+            return None;
+        };
+        let mech_core::snapshot::SequenceView::String(strings) = matrix.elements() else {
+            return None;
+        };
+        Some(strings)
+    }
+
     /// The caller has already paid for every byte that this comparison may
     /// inspect. Use the ordinary family's exact raw UTF-8 key order.
     pub fn selected_histogram_compare(

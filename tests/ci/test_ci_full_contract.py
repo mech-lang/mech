@@ -137,7 +137,7 @@ class FullWorkflowContractTests(unittest.TestCase):
     def test_linked_applications_have_an_independent_required_cold_build_budget(self):
         applications = job_block(FULL, "canonical-applications")
         linked = job_block(FULL, "canonical-linked-applications")
-        self.assertEqual(int(re.search(r"timeout-minutes: (\d+)", applications).group(1)), 90)
+        self.assertEqual(int(re.search(r"timeout-minutes: (\d+)", applications).group(1)), 120)
         self.assertEqual(int(re.search(r"timeout-minutes: (\d+)", linked).group(1)), 240)
         self.assertEqual(applications.splitlines()[0], linked.splitlines()[0])
         for setting in (
@@ -167,12 +167,13 @@ class FullWorkflowContractTests(unittest.TestCase):
     def test_canonical_application_suites_keep_all_commands_in_required_parallel_shards(self):
         block = job_block(FULL, "canonical-applications")
         self.assertIn("fail-fast: false", block)
-        self.assertIn("suite: [source, native, cli]", block)
+        self.assertIn("suite: [source, native, composition, program, cli]", block)
         expected = {
             "Execute canonical resident applications and retained tail controls": "source",
             "Execute canonical collection and text source contracts": "source",
             "Execute source assignment and fixed-shape specialization contracts": "source",
             "Execute canonical native lowering and selected implementation witnesses": "native",
+            "Execute canonical native program integration contracts": "program",
             "Execute secured canonical reference bytecode admission": "cli",
             "Execute canonical CLI byte and resource contracts": "cli",
         }
@@ -186,6 +187,15 @@ class FullWorkflowContractTests(unittest.TestCase):
                 self.assertIn("if: ${{ matrix.suite == '" + suite + "' }}", matching[0])
                 self.assertNotIn("continue-on-error", matching[0])
                 self.assertIn("--locked --offline", matching[0])
+                if suite == "program":
+                    self.assertIn("test --release", matching[0])
+                    self.assertIn("--test canonical_artifact_program -- --test-threads=1", matching[0])
+        composition = next(step for step in job_steps(FULL, "canonical-applications")
+                           if "Inventory and execute native composition contracts" in step)
+        self.assertIn("if: ${{ matrix.suite == 'composition' }}", composition)
+        self.assertIn("--test-threads=1 --nocapture", composition)
+        self.assertIn('" -eq 600', composition)
+        self.assertNotIn("continue-on-error", composition)
         gate = job_block(FULL, "cargo")
         self.assertIn("      - canonical-applications\n", gate)
         for family in ("language", "native"):
@@ -215,6 +225,33 @@ class FullWorkflowContractTests(unittest.TestCase):
         for family in ("memory", "numeric"):
             self.assertIn(f"'{family}'", collision.splitlines()[0])
         self.assertIn("- native-cli-collision", job_block(FULL, "cargo"))
+
+    def test_managed_native_profiles_have_an_independent_required_build_budget(self):
+        runtime = job_block(FULL, "managed-memory-runtime")
+        native = job_block(FULL, "managed-memory-native")
+        gate = job_block(FULL, "cargo")
+        self.assertIn("suite: [compiler, ekf, backend]", native)
+        for step, suite in (
+            ("Execute native compiler and batched array regressions", "compiler"),
+            ("Execute retained engine EKF integration targets", "ekf"),
+            ("Execute canonical compute and native backend integration targets", "backend"),
+        ):
+            self.assertNotIn(step, runtime)
+            self.assertIn(step, native)
+            selected = next(value for value in job_steps(FULL, "managed-memory-native")
+                            if f"- name: {step}\n" in value)
+            self.assertIn("if: ${{ matrix.suite == '" + suite + "' }}", selected)
+        self.assertIn(FULL_CHECKOUT_REF, native)
+        self.assertIn("Record exact-ref checkout identity", native)
+        self.assertIn('CARGO_BUILD_JOBS: "1"', native)
+        self.assertIn("timeout-minutes: 75", native)
+        self.assertIn("timeout-minutes: 40", native)
+        self.assertIn("fetch --locked", native)
+        self.assertIn("--locked --offline", native)
+        self.assertNotIn("continue-on-error", native)
+        self.assertIn("      - managed-memory-native\n", gate)
+        for family in ("memory", "numeric"):
+            self.assertRegex(gate, rf"'{family}': \[[^\n]*'managed-memory-native'")
 
     def test_canonical_iteration_lowering_and_current_visit_proof_are_selected(self):
         steps = job_steps(FULL, "canonical-applications")
@@ -284,11 +321,36 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn('" -eq 1', step)
         self.assertNotIn("--no-run", step)
 
+    def test_exclusive_snapshot_selection_tracks_every_declared_regression(self):
+        step = next(step for step in job_steps(FULL, "managed-memory-runtime")
+                    if "Execute exclusive snapshot first-admission regressions" in step)
+        source = (ROOT / "src/core/src/snapshot/unique_admission_tests.rs").read_text()
+        names = re.findall(r"#\[test\]\s*fn\s+(\w+)\s*\(", source)
+        self.assertTrue(names)
+        self.assertIn(f'" -eq {len(names)}', step)
+        self.assertIn("--test-threads=1", step)
+
+    def test_shape_witness_selection_tracks_every_declared_regression(self):
+        step = next(step for step in job_steps(FULL, "managed-memory-runtime")
+                    if "Inventory and execute canonical shape witness contracts" in step)
+        sources = [ROOT / "src/core/src/type_system" / name for name in (
+            "resolved_value_witness_tests.rs", "resolved_value_storage_tests.rs",
+        )]
+        names = [name for path in sources for name in
+                 re.findall(r"#\[test\]\s*fn\s+(\w+)\s*\(", path.read_text())]
+        self.assertTrue(names)
+        self.assertIn(f'" -eq {len(names)}', step)
+        self.assertIn("type_system::resolved_value:: --test-threads=1", step)
+
     def test_generated_mixed_program_execution_and_runtime_only_profile_are_selected(self):
         contracts = next(step for step in job_steps(FULL, "canonical-applications")
                          if "Execute canonical native lowering and selected implementation witnesses" in step)
         commands = contracts.replace("\\\n", " ")
-        self.assertRegex(commands, r"--features canonical-native-program\s+--test canonical_artifact_program\s+-- --test-threads=1")
+        program = next(step for step in job_steps(FULL, "canonical-applications")
+                       if "Execute canonical native program integration contracts" in step)
+        self.assertRegex(program, r"--features canonical-native-program\s+--test canonical_artifact_program\s+-- --test-threads=1")
+        self.assertIn("test --release --locked --offline", program)
+        self.assertNotIn("--no-run", program)
         self.assertIn("--features canonical-native-program-runtime --lib", commands)
         self.assertRegex(commands, r"--features canonical-native-program\s+--lib native_artifact::program::runtime::tests\s+-- --test-threads=1")
         manifest = (ROOT / "hosts/gpu/Cargo.toml").read_text()
@@ -375,6 +437,9 @@ class FullWorkflowContractTests(unittest.TestCase):
         contracts = next(step for step in steps if "Execute canonical native lowering and selected implementation witnesses" in step)
         self.assertIn("--test native_artifact_cast_lowering", contracts)
         self.assertIn("--test canonical_artifact_cast", contracts)
+        self.assertIn("--test canonical_artifact_bits", contracts)
+        self.assertIn("--features integer_bits", contracts)
+        self.assertIn("--test integer_bits", contracts)
         self.assertIn("--features full_compiler,native-artifact", contracts)
         self.assertIn("--features canonical-native", contracts)
         self.assertNotIn("--ignored", contracts)
@@ -882,6 +947,8 @@ class FullWorkflowContractTests(unittest.TestCase):
 
     def test_shared_browser_product_checks_revision_profile_lock_and_contents(self):
         producer = job_block(CI, "browser-compute-build")
+        self.assertLess(producer.index("git diff --exit-code -- Cargo.lock"),
+                        producer.index("sha256sum Cargo.lock"))
         self.assertIn("sha256sum target/debug/mech", producer)
         self.assertIn("find src/wasm/pkg -type f -print0", producer)
         for consumer in ("browser-compute-smoke", "browser-ekf-cpu", "browser-ekf-wgpu"):
@@ -1256,8 +1323,8 @@ class FullWorkflowContractTests(unittest.TestCase):
         native = job_block(NATIVE, "canonical-native-cli")
         checker = (ROOT / "scripts/check_canonical_cli_ci.py").read_text(encoding="utf-8")
         self.assertIn("len(names) == len(expected) and set(names) == expected", checker)
-        self.assertIn('passed_count(log_dir / "canonical-cli-unit-contracts.log", 5)', checker)
-        self.assertIn('passed_count(log_dir / "canonical-cli-public-qualification.log", 3)', checker)
+        self.assertIn('passed_count(log_dir / "canonical-cli-unit-contracts.log", len(UNIT_NAMES))', checker)
+        self.assertIn('passed_count(log_dir / "canonical-cli-public-qualification.log", len(PUBLIC_NAMES))', checker)
         for required in ('"owned_group_cleanup") == "complete"', '"command_exit_status") == 0',
                          '"reason") == "exit"', 'target.get("kind") == ["bin"]',
                          'message.get("reason") == "compiler-artifact"',
@@ -1434,6 +1501,45 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("tempfile.TemporaryDirectory", NATIVE_DETERMINISM)
         self.assertIn('generate(projects_root, "first")', NATIVE_DETERMINISM)
         self.assertIn('generate(projects_root, "second")', NATIVE_DETERMINISM)
+
+    def test_macos_cache_tests_cannot_compile_inside_execution_deadline(self):
+        steps = job_steps(FULL, "native-macos")
+        compile_step = next(step for step in steps if "- name: Compile macOS native cache" in step)
+        execution = next(step for step in steps if "- name: Check native cache" in step)
+        prepare = next(step for step in steps if "- name: Prepare macOS native owner runners" in step)
+        self.assertLess(steps.index(compile_step), steps.index(execution))
+        self.assertLess(steps.index(execution), steps.index(prepare))
+        self.assertIn("--record-test-executable mech_gpu", compile_step)
+        self.assertIn("--features aot --lib --no-run --message-format=json-render-diagnostics", compile_step)
+        executable = "--test-executable-file target/native-plan-logs/macos-cache-executable"
+        self.assertIn(executable, compile_step)
+        self.assertEqual(execution.count(executable), 2)
+        self.assertNotIn("cargo +", execution)
+        for family in ("aot", "jit"):
+            self.assertIn(f"batched::{family}::tests --test-threads=1 --nocapture", execution)
+        for step in (compile_step, execution):
+            timeouts = [int(value) for value in re.findall(r"--timeout-secs (\d+)", step)]
+            limit = int(re.search(r"timeout-minutes: (\d+)", step).group(1)) * 60
+            self.assertTrue(timeouts)
+            self.assertGreater(limit, sum(value + 30 + 5 + 15 for value in timeouts))
+        retained = next(step for step in steps if "uses: actions/upload-artifact@" in step)
+        self.assertGreater(steps.index(retained), steps.index(execution))
+        self.assertIn("if: always()", retained)
+        self.assertIn("target/native-plan-logs", retained)
+
+    def test_linkage_surfaces_retain_bounded_runner_diagnostics_on_failure(self):
+        steps = job_steps(FULL, "native-linkage-surfaces")
+        generate = next(step for step in steps if "- name: Generate and validate exact linkage surface" in step)
+        self.assertIn("scripts/run-native-plan-stage.py --stage linkage-surface", generate)
+        self.assertIn('scripts/check-native-linkage-coverage.py surface "${{ matrix.surface }}"', generate)
+        timeout = int(re.search(r"--timeout-secs (\d+)", generate).group(1))
+        limit = int(re.search(r"timeout-minutes: (\d+)", generate).group(1)) * 60
+        self.assertGreater(limit, timeout + 30 + 5 + 15)
+        retained = next(step for step in steps if "- name: Retain linkage runner diagnostics" in step)
+        self.assertGreater(steps.index(retained), steps.index(generate))
+        self.assertIn("if: always()", retained)
+        self.assertIn("target/native-plan-logs", retained)
+        self.assertIn("${{ matrix.surface }}-${{ github.run_id }}-${{ github.run_attempt }}", retained)
 
     def test_generated_program_selectors_are_live_and_fail_closed(self):
         generated_commands = re.findall(

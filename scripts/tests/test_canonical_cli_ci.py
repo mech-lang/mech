@@ -3,6 +3,7 @@
 
 import importlib.util
 import json
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -16,6 +17,12 @@ SPEC.loader.exec_module(CI)
 class CanonicalCliEvidenceTests(unittest.TestCase):
     def write_json(self, path, value):
         path.write_text(json.dumps(value), encoding="utf-8")
+
+    def test_unit_inventory_tracks_declared_public_cli_contracts(self):
+        source = (SCRIPT.parents[1] / "src/cli/commands/build_cranelift_tests.rs").read_text()
+        names = re.findall(r"#\[test\]\s*fn\s+(\w+)\s*\(", source)
+        self.assertTrue(names)
+        self.assertEqual({CI.UNIT_PREFIX + name for name in names}, CI.UNIT_NAMES)
 
     def test_selection_requires_exact_names_count_and_no_duplicates(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -106,6 +113,39 @@ class CanonicalCliEvidenceTests(unittest.TestCase):
             (case / "qualification-result.json").unlink()
             with self.assertRaises((ValueError, FileNotFoundError)):
                 CI.case_evidence(root)
+
+    def test_complete_uses_the_exact_selected_unit_and_public_counts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            logs = root / "logs"
+            evidence = root / "evidence"
+            logs.mkdir()
+            evidence.mkdir()
+            self.pin_fixture(logs)
+            CI.pin_executables(logs)
+            self.evidence_fixture(evidence)
+            for stage in CI.STAGES:
+                self.write_json(logs / f"{stage}.summary.json", {
+                    "stage": stage, "reason": "exit", "command_exit_status": 0,
+                    "owned_group_cleanup": "complete",
+                })
+            for kind, names, execution in (
+                ("unit", CI.UNIT_NAMES, "unit-contracts"),
+                ("public", CI.PUBLIC_NAMES, "public-qualification"),
+            ):
+                (logs / f"canonical-cli-{kind}-selection.log").write_text(
+                    "\n".join(name + ": test" for name in names) + "\n"
+                )
+                (logs / f"canonical-cli-{execution}.log").write_text(
+                    f"test result: ok. {len(names)} passed; 0 failed; 0 ignored; "
+                    "0 measured; 0 filtered out\n"
+                )
+            CI.complete(logs, evidence)
+            (logs / "canonical-cli-unit-contracts.log").write_text(
+                f"test result: ok. {len(CI.UNIT_NAMES) - 1} passed; 0 failed; 0 ignored;\n"
+            )
+            with self.assertRaisesRegex(ValueError, "wrong execution counts"):
+                CI.complete(logs, evidence)
 
     def test_launch_policies_and_failed_child_outcomes_cannot_disappear(self):
         with tempfile.TemporaryDirectory() as directory:

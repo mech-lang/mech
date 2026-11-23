@@ -54,6 +54,10 @@ impl JitMatchArtifact {
     pub fn descriptor(&self) -> &NativeMatchDescriptor {
         &self.descriptor
     }
+    #[cfg(test)]
+    pub(super) fn test_checked_entry(&self) -> Entry {
+        self.entry
+    }
     pub fn evaluate_into(
         &self,
         inputs: &[NativeScalarValue],
@@ -241,6 +245,10 @@ fn validate(plan: &NativeMatchArtifactPlan) -> Result<(), NativeCompileError> {
         }
         let kind = match constant.scalar() {
             NativeScalarValue::Bool(_) => NativeScalarKind::Bool,
+            NativeScalarValue::U8(_) => NativeScalarKind::U8,
+            NativeScalarValue::U16(_) => NativeScalarKind::U16,
+            NativeScalarValue::U32(_) => NativeScalarKind::U32,
+
             NativeScalarValue::U64(_) => NativeScalarKind::U64,
             NativeScalarValue::I64(_) => NativeScalarKind::I64,
             NativeScalarValue::F64(_) => NativeScalarKind::F64,
@@ -418,8 +426,12 @@ fn define<M: Module>(
             let word = b
                 .ins()
                 .load(types::I64, MemFlags::new(), inputs, offset(index)?);
-            if input.declaration().ty().kind() == NativeScalarKind::Bool {
-                let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, word, 1);
+            if let Some(maximum) =
+                super::compiler::word_upper_bound(input.declaration().ty().kind())
+            {
+                let valid = b
+                    .ins()
+                    .icmp_imm(IntCC::UnsignedLessThanOrEqual, word, maximum as i64);
                 guard(&mut b, valid, error, STATUS_ABI);
             }
             b.ins().store(
@@ -432,6 +444,10 @@ fn define<M: Module>(
         for constant in plan.constants() {
             let word = match constant.scalar() {
                 NativeScalarValue::Bool(value) => u64::from(value),
+                NativeScalarValue::U8(value) => u64::from(value),
+                NativeScalarValue::U16(value) => u64::from(value),
+                NativeScalarValue::U32(value) => u64::from(value),
+
                 NativeScalarValue::U64(value) => value,
                 NativeScalarValue::I64(value) => value as u64,
                 NativeScalarValue::F64(value) => value.bits(),
@@ -662,6 +678,12 @@ pub(in crate::native_artifact) fn emit_branch_terminator(
         }
         NativeMatchTerminator::Reject => {
             let status = b.ins().iconst(types::I64, STATUS_REJECT as i64);
+            b.ins().return_(&[status]);
+        }
+        NativeMatchTerminator::IntegrityFailure => {
+            let status = b
+                .ins()
+                .iconst(types::I64, super::abi::STATUS_INTEGRITY as i64);
             b.ins().return_(&[status]);
         }
         NativeMatchTerminator::Complete => {

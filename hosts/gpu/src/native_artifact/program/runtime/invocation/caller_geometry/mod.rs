@@ -23,6 +23,30 @@ pub(in crate::native_artifact::program::runtime) fn fixed_nodes() -> Result<u64,
 }
 
 impl Invocation<'_, '_, '_> {
+    /// These private loans have no ordinary canonical-owner census yet.
+    /// Every selecting consumer retains its own check order and fallback.
+    pub(in crate::native_artifact::program::runtime) fn has_uninventoried_private_owners(
+        &self,
+    ) -> bool {
+        self.histogram.is_some()
+            || self.line_window.is_some()
+            || self.window_region.is_some()
+            || self.window_hashes.is_some()
+            || self.closed_tail.is_some()
+            || self.prefix.as_ref().is_some_and(|prefix| !prefix.input.eof)
+    }
+    pub(in crate::native_artifact::program::runtime) fn retained_caller_dynamic_private_nodes(
+        &self,
+        site: usize,
+    ) -> Result<u64, Error> {
+        self.state
+            .call_caches
+            .caller_retained_nodes(&self.state.library)
+            .map_err(|error| Error::Library {
+                origin: self.descriptor.metadata().plan.blocks()[site].origin(),
+                error,
+            })
+    }
     pub(in crate::native_artifact::program::runtime) fn retained_caller_dynamic_nodes(
         &self,
         site: usize,
@@ -91,12 +115,7 @@ impl Invocation<'_, '_, '_> {
         // A source/window loan needs its own live-owner witness. Decline this
         // view instead of treating borrowed producer storage as empty. Ordinary
         // canonical execution remains available to the future selecting caller.
-        if self.line_window.is_some()
-            || self.window_region.is_some()
-            || self.window_hashes.is_some()
-            || self.closed_tail.is_some()
-            || self.prefix.as_ref().is_some_and(|prefix| !prefix.input.eof)
-        {
+        if self.has_uninventoried_private_owners() {
             return Ok(None);
         }
         let memory = self.state.library.memory_budget();
@@ -108,12 +127,31 @@ impl Invocation<'_, '_, '_> {
         // Fixed invocation/frame/transport roots. This bound excludes variable
         // payload backing, so a long String is never priced as one node/byte.
         let mut nodes = fixed_nodes()?;
+        nodes = add(nodes, self.state.buffer_frames.retained_nodes())?;
+        nodes = add(
+            nodes,
+            self.state
+                .map_owners
+                .matrix_key_retained_nodes(&mut self.state.control.work)?,
+        )?;
         if let Some(collections) = &self.state.collections {
             nodes = add(
                 nodes,
                 collections.caller_retained_nodes(&mut self.state.control.work)?,
             )?;
         }
+        nodes = add(
+            nodes,
+            self.state
+                .map_owners
+                .dictionary_nodes(&mut self.state.control.work)?,
+        )?;
+        nodes = add(
+            nodes,
+            self.state
+                .map_owners
+                .seed_nodes(&mut self.state.control.work)?,
+        )?;
         nodes = add(nodes, self.line_matrix_coexistence(None)?.retained_nodes)?;
         if self.borrowed_strings.is_some() {
             // Two flat metadata backings; genuine canonical pins are already

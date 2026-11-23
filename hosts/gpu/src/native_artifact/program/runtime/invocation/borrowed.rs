@@ -503,7 +503,7 @@ impl Invocation<'_, '_, '_> {
         let descriptor = self.descriptor;
         self.state.control.work.charge(
             NativeExecutionPhase::Setup,
-            amount(self.state.call_inputs.values().len(), 16, 128)?,
+            amount(self.state.call_inputs.funded_len(), 16, 128)?,
         )?;
         let NativeIterationAction::LibraryCall {
             operands, output, ..

@@ -105,7 +105,7 @@ impl State {
     ) -> Result<u64, Error> {
         add(
             add(self.query_scalar_nodes, self.string_span_nodes)?,
-            self.string_map_nodes,
+            add(self.string_map_nodes, self.class_nodes())?,
         )
     }
 
@@ -244,8 +244,10 @@ impl State {
             );
             (builder.cloned_bytes, builder.compute, comparison)
         };
-        let crate::native_artifact::program::runtime::session::CallCacheEntry::Repeated(cache, _) =
-            &ctx.caches().entries[site]
+        let Some(crate::native_artifact::program::runtime::session::CallCacheEntry::Repeated(
+            cache,
+            _,
+        )) = ctx.caches().entry(site)
         else {
             return Err(invalid(
                 "String span projection lacks its repeated-site cache",
@@ -286,8 +288,10 @@ impl State {
                 coexistence,
             )
         });
-        let crate::native_artifact::program::runtime::session::CallCacheEntry::Repeated(cache, _) =
-            &ctx.caches().entries[site]
+        let Some(crate::native_artifact::program::runtime::session::CallCacheEntry::Repeated(
+            cache,
+            _,
+        )) = ctx.caches().entry(site)
         else {
             unreachable!("retained cache kind");
         };

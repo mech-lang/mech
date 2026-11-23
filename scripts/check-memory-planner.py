@@ -416,7 +416,22 @@ def failures(root: Path) -> list[str]:
     ):
         if required not in turn:
             found.append(f"turn planning omits deferred budget closure: {required}")
-    for name in ("plan_turn_memory", "apply_observed_turn_demand", "check_turn_planning_progress", "try_admit_fixed_turn_memory"):
+    # Both public-program and private single-call projections enter the same
+    # derivation. Check the current limit transfer at each entry as well as
+    # the shared closure; checking only the helper could hide an unbounded
+    # projection, while checking only the entries misses a removed recheck.
+    for name, limits in (
+        ("plan_turn_memory", "plan.budget_limits"),
+        ("plan_single_call_turn_memory", "call.target.limits"),
+    ):
+        body = dict(function_bodies(turn, name)).get(name, "")
+        if not re.search(
+            r"derive_turn_memory\(\s*TurnPlanSource\s*\{[\s\S]*?budget_limits:\s*"
+            + re.escape(limits) + r",",
+            body,
+        ):
+            found.append(f"turn planning omits deferred budget closure: {name} {limits}")
+    for name in ("derive_turn_memory", "apply_observed_turn_demand", "check_turn_planning_progress", "try_admit_fixed_turn_memory"):
         body = dict(function_bodies(turn, name)).get(name, "")
         if not re.search(
             r"evaluate_call_memory_budget\([\s\S]*?plan\.budget_limits,\s*\)",

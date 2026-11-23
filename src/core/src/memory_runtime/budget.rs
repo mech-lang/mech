@@ -18,6 +18,17 @@ struct ManagedMemoryBudgetAccount {
     snapshot_import_failure_countdown: AtomicU64,
 }
 
+/// Read-only native observation addresses in one pinned memory account.
+/// These counters describe current usage, not quota, reservation, source,
+/// execution or publication authority. Generated code must use atomic loads
+/// and retain a clone of this exact account throughout every observation.
+#[repr(C)]
+#[derive(Clone, Copy, Debug)]
+pub struct NativeMemoryBudgetCounters {
+    pub used_bytes: u64,
+    pub snapshot_nodes: u64,
+}
+
 /// A configured limit on admitted Mech-owned backing, including unconsumed
 /// reservations and retained owners. Clones share one account across domains,
 /// so replacement activation includes the old and candidate storage together.
@@ -49,6 +60,16 @@ impl ManagedMemoryBudget {
             }),
             byte_limit: limit_bytes,
             node_limit: u64::MAX,
+        }
+    }
+
+    /// Descriptive counter geometry for a synchronous native loan. The Arc
+    /// account stays immovable while this budget (or any clone) is retained.
+    /// No source Value or serialized descriptor can supply these addresses.
+    pub fn native_counters(&self) -> NativeMemoryBudgetCounters {
+        NativeMemoryBudgetCounters {
+            used_bytes: self.account.used.as_ptr() as u64,
+            snapshot_nodes: self.account.snapshot_nodes.as_ptr() as u64,
         }
     }
 
@@ -143,8 +164,9 @@ impl ManagedMemoryBudget {
     }
 
     /// One-shot account-scoped fixture for immutable import allocation tests.
-    /// Zero fails the next allocation; one lets the registration allocation
-    /// succeed and rejects the subsequent owning-wrapper allocation.
+    /// Zero fails the next allocation. One lets registration succeed and
+    /// rejects a replacement wrapper when one is needed. Exclusive unadmitted
+    /// roots reuse their wrapper and leave that next failure armed.
     #[doc(hidden)]
     pub fn inject_snapshot_import_failure_after(&self, successful_steps: u32) {
         self.account

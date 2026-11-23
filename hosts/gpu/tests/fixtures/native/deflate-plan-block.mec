@@ -1,0 +1,48 @@
+// Level-12 candidate setup and model carryover from CompressOptimal.roc:970-1106
+// and 1319-1349, pinned at 671077457ff7ef3a3d44caf715a3fc595addf379.
+// Include block heuristics, cost/path/tally/header/optimization and selection.
+// See deflate-huffman-LICENSES.md for attribution and licenses.
+<optimal-static-pass> := <{nodes<[u64]> cost<u64>}>
+<optimal-planned-block> := <{selected<optimal-selected-block> saved<optimal-costs>}>
+
+optimal-static-candidate(length<u64>, cache<[u32]>, cache-end<u64>, nodes<[u64]>, static-litlen-lens<[u8]>, static-offset-lens<[u8]>, length-slots<[u8]>, extra-lengths<[u8]>, extra-offsets<[u8]>, offset-slots<[u8]>) => (out<optimal-static-pass>) :=
+  literal0 := [0u32 | i <- 0u64..=256u64, i < 256u64]
+  length0 := [0u32 | i <- 0u64..=259u64, i < 259u64]
+  offset0 := [0u32 | i <- 0u64..=32u64, i < 32u64]
+  costs := optimal-set-costs-from-codes(static-litlen-lens, static-offset-lens, literal0, length0, offset0, length-slots, extra-lengths, extra-offsets)
+  path := optimal-find-min-cost-path(length, cache, cache-end, nodes, costs.literal, costs.length, costs.offset-slot, offset-slots)
+  count := sequence/length(path.nodes)
+  last := ((count != 0u64)? | true => path.nodes[count] | false => 0u64)
+  cost := bits/and(last, 4294967295u64) / 16u64 + 7u64
+  out := {nodes: path.nodes, cost: cost}.
+
+optimal-adjust-block-costs(literal-cost<u64>, length-cost<u64>, previous-observations<[u32]>, previous-number<u64>, observations<[u32]>, number<u64>, literal0<[u32]>, length0<[u32]>, offset0<[u32]>, length-slots<[u8]>, extra-lengths<[u8]>, extra-offsets<[u8]>) => (out<optimal-costs>) :=
+  delta := optimal-observation-delta(observations, previous-observations, number, previous-number, 0u64, 0u64)
+  cutoff := previous-number * number * 200u64 / 512u64
+  out := ((delta > 3u64 * cutoff)?
+    | true => optimal-set-default-costs(literal-cost, length-cost, literal0, length0, offset0, length-slots, extra-lengths, extra-offsets)
+    | false => ((4u64 * delta > 9u64 * cutoff)?
+      | true => optimal-adjust-costs-impl(literal-cost, length-cost, 3u64, literal0, length0, offset0, length-slots, extra-lengths, extra-offsets)
+      | false => ((2u64 * delta > 3u64 * cutoff)?
+        | true => optimal-adjust-costs-impl(literal-cost, length-cost, 2u64, literal0, length0, offset0, length-slots, extra-lengths, extra-offsets)
+        | false => ((2u64 * delta > cutoff)?
+          | true => optimal-adjust-costs-impl(literal-cost, length-cost, 1u64, literal0, length0, offset0, length-slots, extra-lengths, extra-offsets)
+          | false => optimal-adjust-costs-impl(literal-cost, length-cost, 0u64, literal0, length0, offset0, length-slots, extra-lengths, extra-offsets))))).
+
+optimal-plan-block(input<[u8]>, begin<u64>, length<u64>, first<u64>, frequencies<[u32]>, cache<[u32]>, cache-end<u64>, nodes<[u64]>, literal0<[u32]>, length0<[u32]>, offset0<[u32]>, saved-literal<[u32]>, saved-length<[u32]>, saved-offset<[u32]>, previous-observations<[u32]>, previous-number<u64>, observations<[u32]>, number<u64>, seqs<[block-sequence]>, static-litlen-lens<[u8]>, static-offset-lens<[u8]>, length-slots<[u8]>, extra-lengths<[u8]>, extra-offsets<[u8]>, offset-slots<[u8]>, table0<[u8]>, table1<[u8]>, table2<[u8]>, symbol-costs<[u8]>, permutation<[u8]>, extra-precode<[u8]>, reversed<[u8]>) => (out<optimal-planned-block>) :=
+  literals := optimal-choose-all-literals(input, begin, length, reversed)
+  only-literals-cost := optimal-compute-true-cost(literals.litlen-lens, literals.offset-lens, literals.freqs-litlen, literals.freqs-offset, permutation, extra-precode, extra-lengths, extra-offsets, reversed)
+  static := ((length <= 10000u64)? | true => optimal-static-candidate(length, cache, cache-end, nodes, static-litlen-lens, static-offset-lens, length-slots, extra-lengths, extra-offsets, offset-slots) | false => {nodes: nodes, cost: 18446744073709551615u64})
+  defaults := optimal-choose-default-costs(input, begin, length, frequencies, 300u64, table0, table1, table2, symbol-costs)
+  initial := ((first == 1u64)?
+    | true => optimal-set-default-costs(defaults.lit-cost, defaults.len-sym-cost, literal0, length0, offset0, length-slots, extra-lengths, extra-offsets)
+    | false => optimal-adjust-block-costs(defaults.lit-cost, defaults.len-sym-cost, previous-observations, previous-number, observations, number, literal0, length0, offset0, length-slots, extra-lengths, extra-offsets))
+  initial-freqs-litlen := [0u32 | i <- 0u64..=288u64, i < 288u64]
+  initial-freqs-offset := [0u32 | i <- 0u64..=32u64, i < 32u64]
+  initial-litlen-lens := [0u8 | i <- 0u64..=288u64, i < 288u64]
+  initial-litlen-codewords := [0u32 | i <- 0u64..=288u64, i < 288u64]
+  initial-offset-lens := [0u8 | i <- 0u64..=32u64, i < 32u64]
+  initial-offset-codewords := [0u32 | i <- 0u64..=32u64, i < 32u64]
+  optimized := optimal-optimize-loop(length, cache, cache-end, static.nodes, initial.literal, initial.length, initial.offset-slot, saved-literal, saved-length, saved-offset, 18446744073709551615u64, 10u64, length-slots, extra-lengths, extra-offsets, offset-slots, permutation, extra-precode, reversed)
+  selected := optimal-select-block(input, begin, length, cache, cache-end, optimized, seqs, only-literals-cost, static.cost, static-litlen-lens, static-offset-lens, length-slots, extra-lengths, extra-offsets, offset-slots, reversed)
+  out := {selected: selected, saved: optimized.saved}.

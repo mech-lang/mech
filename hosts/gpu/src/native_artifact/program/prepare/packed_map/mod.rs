@@ -11,7 +11,7 @@ use mech_engine::native_artifact::{
 };
 
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.Proof")]
 pub(in crate::native_artifact) struct Proof {
     // These indices come only from derive or the enclosing unsafe build-owned
     // descriptor reader. No public source/image constructor grants this proof.

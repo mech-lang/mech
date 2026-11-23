@@ -4,7 +4,8 @@ use crate::dimension::{
     rewrite_dimension_references,
 };
 use crate::{
-    DimensionEnvironmentBuilder, DimensionParameterId, SchemaNameCategory, SemanticModelError,
+    DimensionEnvironmentBuilder, DimensionParameterDeclaration, DimensionParameterId,
+    SchemaNameCategory, SemanticModelError,
 };
 
 /// Clone a declared schema's dimension parameters into a consuming annotation.
@@ -33,12 +34,15 @@ use alloc::{boxed::Box, collections::BTreeSet, string::String, vec::Vec};
 #[cfg(not(feature = "no_std"))]
 use std::{boxed::Box, collections::BTreeSet, string::String, vec::Vec};
 
-pub(super) fn finalize_schema(draft: SchemaDraft) -> Result<Schema, SemanticModelError> {
-    validate_names_and_keyability(&draft.body)?;
-    let body = normalize_body_dimensions(draft.body, draft.dimension_parameters.len())?;
+pub(super) fn finalize_schema(
+    body: SchemaBody,
+    dimension_parameters: &[DimensionParameterDeclaration],
+) -> Result<Schema, SemanticModelError> {
+    validate_names_and_keyability(&body)?;
+    let body = normalize_body_dimensions(body, dimension_parameters.len())?;
     let mut references = Vec::new();
     collect_body_dimension_references(&body, &mut references);
-    let environment = canonicalize_dimension_environment(&draft.dimension_parameters, &references)?;
+    let environment = canonicalize_dimension_environment(dimension_parameters, &references)?;
     let body = rewrite_body_dimensions(&body, &environment.old_to_new)?;
     let body = normalize_body_dimensions(body, environment.parameters.len())?;
     validate_names_and_keyability(&body)?;

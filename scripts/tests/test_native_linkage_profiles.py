@@ -31,8 +31,9 @@ class NativeLinkageProfileTests(unittest.TestCase):
                 "retained_runtime_surface_digest": surface_digest,
             }
         }
+        pre_bits_count = report["complete_catalog"]["entry_count"] - len(LINKAGE.CURRENT_BITS_ADDITIONS)
         contract = (
-            f"const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = {report['complete_catalog']['entry_count']};\n"
+            f"const EXPECTED_EXTENDED_RUNTIME_FACTORIES: usize = {pre_bits_count};\n"
             "const EXPECTED_EXTENDED_RUNTIME_SURFACE_DIGEST: &str =\n"
             f'    "{surface_digest}";\n'
         )
@@ -82,7 +83,8 @@ class NativeLinkageProfileTests(unittest.TestCase):
     def test_additive_surface_preserves_every_retained_factory(self):
         retained = {"runtime_factory_name": "Old", "runtime_factory_id": "01"}
         additions = [
-            {"runtime_factory_name": name, "runtime_factory_id": f"{index + 2:02x}"}
+            {"runtime_factory_name": name,
+             "runtime_factory_id": LINKAGE.EXPECTED_BITS_RUNTIME_IDS.get(name, f"{index + 2:02x}")}
             for index, name in enumerate(sorted(LINKAGE.ADDITIVE_RUNTIME_FACTORIES))
         ]
         entries = [retained, *additions]
@@ -94,18 +96,20 @@ class NativeLinkageProfileTests(unittest.TestCase):
             path = Path(directory) / "frozen.json"
             raw = json.dumps({"runtime_factories": [
                 {"name": entry["runtime_factory_name"], "id_hex": entry["runtime_factory_id"]}
-                for entry in entries if entry["runtime_factory_name"] not in LINKAGE.CURRENT_MAP_ADDITIONS
+                for entry in entries if entry["runtime_factory_name"] not in LINKAGE.CURRENT_FULL_ADDITIONS
             ]}).encode()
             path.write_bytes(raw)
             contract = Path(directory) / "profile_contracts.rs"
+            pre_bits = [entry for entry in entries
+                        if entry["runtime_factory_name"] not in LINKAGE.CURRENT_BITS_ADDITIONS]
             contract.write_text(
-                f"const EXPECTED_RUNTIME_FACTORIES: usize = {len(entries)};\n"
-                "const EXPECTED_CURRENT_RUNTIME_SURFACE_DIGEST: &str =\n"
-                f'    "{LINKAGE.catalog_surface_digest(entries)}";\n'
+                f"const EXPECTED_RUNTIME_FACTORIES: usize = {len(pre_bits)};\n"
+                "const EXPECTED_PRE_BITS_RUNTIME_SURFACE_DIGEST: &str =\n"
+                f'    "{LINKAGE.catalog_surface_digest(pre_bits)}";\n'
             )
             with patch.object(LINKAGE, "FROZEN_SURFACE", path), \
                  patch.object(LINKAGE, "STDLIB_PROFILE_CONTRACT", contract), \
-                 patch.object(LINKAGE, "EXPECTED_FULL_COUNT", len(entries) - len(LINKAGE.CURRENT_MAP_ADDITIONS)), \
+                 patch.object(LINKAGE, "EXPECTED_FULL_COUNT", len(entries) - len(LINKAGE.CURRENT_FULL_ADDITIONS)), \
                  patch.object(LINKAGE, "EXPECTED_FULL_SURFACE_SHA256", LINKAGE.sha256(raw).hexdigest()), \
                  patch.object(LINKAGE, "EXPECTED_RETAINED_FULL_RUNTIME_SURFACE_DIGEST",
                               LINKAGE.digest([retained])):
@@ -118,7 +122,7 @@ class NativeLinkageProfileTests(unittest.TestCase):
                 ]:
                     with self.assertRaisesRegex(LINKAGE.ContractError, "frozen full surface"):
                         LINKAGE.verify_full_surface(malformed)
-                for name in LINKAGE.CURRENT_MAP_ADDITIONS:
+                for name in LINKAGE.CURRENT_FULL_ADDITIONS:
                     changed = [{**entry, "runtime_factory_id": "ff"}
                                if entry["runtime_factory_name"] == name else entry
                                for entry in entries]

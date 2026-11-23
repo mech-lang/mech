@@ -197,15 +197,58 @@ pub(crate) fn radix_sort_string_positions<'a, E>(
         let frame_work =
             string_radix_frame_compute_work(end - start).ok_or(StringRadixError::Overflow)?;
         admit_frame(frame_work).map_err(StringRadixError::Admission)?;
-        let mut occupied = [0u64; 5];
-        for &index in &order[start..end] {
-            let symbol = key(index)
+        // A common prefix (including the remaining suffix of duplicate keys)
+        // leaves this frame in exactly the same order. Scan that prefix before
+        // updating dependent bucket counters. If it covers the frame, no
+        // redistribution or index copy is necessary. Admission and the order
+        // of subsequent frames remain identical to the ordinary radix path.
+        let mut indices = order[start..end].iter().copied();
+        let symbol_at = |index| {
+            key(index)
                 .as_bytes()
                 .get(byte)
-                .map_or(0, |value| usize::from(*value) + 1);
+                .map_or(0, |value| usize::from(*value) + 1)
+        };
+        let first = symbol_at(indices.next().ok_or(StringRadixError::InvalidWorkspace)?);
+        let mut prefix = 1usize;
+        let mut different = None;
+        for index in indices.by_ref() {
+            let symbol = symbol_at(index);
+            if symbol != first {
+                different = Some(symbol);
+                break;
+            }
+            prefix += 1;
+        }
+        visits = visits
+            .checked_add(u64::try_from(end - start).map_err(|_| StringRadixError::Overflow)?)
+            .ok_or(StringRadixError::Overflow)?;
+        let Some(different) = different else {
+            if first == 0 {
+                scratch[start..end].fill(0);
+                scratch[start] = 1;
+            } else {
+                let slot = frames
+                    .get_mut(pending)
+                    .ok_or(StringRadixError::FrameBound)?;
+                *slot = StringRadixFrame {
+                    start,
+                    end,
+                    byte: byte.checked_add(1).ok_or(StringRadixError::Overflow)?,
+                };
+                pending += 1;
+            }
+            continue;
+        };
+        let mut occupied = [0u64; 5];
+        counts[first] = prefix;
+        counts[different] = 1;
+        occupied[first / 64] |= 1u64 << (first % 64);
+        occupied[different / 64] |= 1u64 << (different % 64);
+        for index in indices {
+            let symbol = symbol_at(index);
             counts[symbol] += 1;
             occupied[symbol / 64] |= 1u64 << (symbol % 64);
-            visits = visits.checked_add(1).ok_or(StringRadixError::Overflow)?;
         }
         let mut position = start;
         for (word, &bits) in occupied.iter().enumerate() {
@@ -419,7 +462,9 @@ mod string_radix_tests {
             assert!(
                 matches!(result, Err(StringRadixError::Admission((required, limit))) if required > limit && limit == allowance)
             );
-            assert_eq!(reads.get(), if allowance == 0 { 0 } else { 8 });
+            // The first frame has a single 'a' bucket, so it reads each key
+            // once and retains its original order without redistribution.
+            assert_eq!(reads.get(), if allowance == 0 { 0 } else { 4 });
         }
         radix_sort_string_positions(
             &mut order,
@@ -458,6 +503,33 @@ mod string_radix_tests {
         assert_eq!(charged, string_radix_frame_compute_work(2).unwrap());
         assert_eq!(scratch, [1, 1]);
         check(&strings);
+    }
+
+    #[test]
+    fn string_radix_single_bucket_retains_frame_charges_and_stable_duplicate_order() {
+        let strings = ["aa", "ab", "aa", "ac"];
+        let mut order = [0; 4];
+        let mut scratch = [0; 4];
+        let mut frames = [StringRadixFrame::default(); 4];
+        let mut charges = Vec::new();
+        let visits = radix_sort_string_positions(
+            &mut order,
+            &mut scratch,
+            &mut frames,
+            |index| strings[index],
+            |work| {
+                charges.push(work);
+                Ok::<_, core::convert::Infallible>(())
+            },
+        )
+        .unwrap();
+        assert_eq!(order, [0, 2, 1, 3]);
+        assert_eq!(scratch, [1, 0, 1, 1]);
+        assert_eq!(
+            charges,
+            [4, 4, 2].map(|n| string_radix_frame_compute_work(n).unwrap())
+        );
+        assert_eq!(visits, 4 + 8 + 2);
     }
 }
 

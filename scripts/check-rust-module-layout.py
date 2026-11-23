@@ -42,8 +42,15 @@ def main() -> int:
     failures: list[str] = []
     source_files: set[Path] = set()
     for root in workspace_source_roots():
-        if root.is_relative_to(REPOSITORY_ROOT):
-            source_files.update(root.rglob("*.rs"))
+        # Vendored crates retain upstream's valid foo.rs + foo/ convention.
+        # The normalized mod.rs layout is a boundary rule for Mech sources.
+        if root.is_relative_to(REPOSITORY_ROOT) and not root.is_relative_to(
+            REPOSITORY_ROOT / "vendor"
+        ):
+            source_files.update(
+                path for path in root.rglob("*.rs")
+                if not path.is_relative_to(REPOSITORY_ROOT / "vendor")
+            )
 
     for source_file in sorted(source_files):
         if source_file.with_suffix("").is_dir():

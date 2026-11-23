@@ -3,6 +3,63 @@
 use super::*;
 
 impl SemanticBuilder {
+    /// A transition-local mutable binding is an SSA value, not retained
+    /// document state. Each write consumes the preceding local version.
+    pub(super) fn document_local_assignment(
+        &mut self,
+        name: &str,
+        current: PendingValue,
+        target: &SliceRefSyntax,
+        expression: &ExpressionSyntax,
+        arithmetic: Option<&str>,
+        statement: &SyntaxNode,
+    ) -> Result<PendingValue, SourceSemanticError> {
+        let expected = self.schema_draft_of(current)?;
+        let mut value = if arithmetic.is_none() && target.subscripts().is_none() {
+            self.expression_with_expected(expression, Some(ExpectedSchema::Value(&expected)))?
+                .0
+        } else {
+            self.expression(expression)?.0
+        };
+        if let Some(subscripts) = target.subscripts() {
+            value = self.document_selected_update(
+                current,
+                &subscripts.items(),
+                value,
+                arithmetic,
+                statement,
+                expression.syntax(),
+            )?;
+        } else if let Some(operation) = arithmetic {
+            let Some((inputs, schema)) =
+                self.resolve_maintained_call(operation, vec![current, value], statement)?
+            else {
+                return Err(internal(
+                    SourceSemanticAnchor::for_node(statement),
+                    format!("assignment operation {operation} has no maintained type declaration"),
+                ));
+            };
+            value = self.emit_with_schema_draft(
+                operation,
+                inputs,
+                schema,
+                statement,
+                "local-update",
+                None,
+            );
+        }
+        value = self.conform_schema_draft(
+            value,
+            &expected,
+            expression.syntax(),
+            "source-semantics/incompatible-assignment-kind",
+            "assignment value does not satisfy the local binding's schema",
+        )?;
+        self.bindings
+            .insert(name.to_owned(), PendingBinding::MutableLocal(value));
+        Ok(value)
+    }
+
     pub(super) fn document_selected_update(
         &mut self,
         base: PendingValue,
@@ -34,7 +91,7 @@ impl SemanticBuilder {
                 );
             }
             let expected = self.schema_draft_of(base)?;
-            return self.conform_assignment_value(replacement, expected, value_syntax);
+            return self.conform_assignment_value(replacement, expected.into(), value_syntax);
         };
         let schema = self.schema_draft_of(base)?;
         if !matches!(
@@ -92,7 +149,7 @@ impl SemanticBuilder {
                 );
                 (
                     Some(selected),
-                    self.schema_draft_of(selected)?,
+                    self.schema_draft_of(selected)?.into_owned(),
                     vec![selector],
                     "core/assign/collection-entry",
                 )
@@ -239,11 +296,11 @@ impl SemanticBuilder {
                 _ => unreachable!("selection validation checks arity"),
             };
             let (_, selectors, next_schema) =
-                self.prepare_selection_schema(selected_schema, selectors, item.syntax())?;
+                self.prepare_selection_schema(selected_schema.into(), selectors, item.syntax())?;
             selection_plan
                 .push(self.constant_exact(SchemaBody::Index, ValueDataDraft::Index(mode)));
             selection_plan.extend(selectors);
-            selected_schema = next_schema;
+            selected_schema = next_schema.into();
         }
         let declaration = self.source_type_declaration(arithmetic).map_err(|_| {
             internal(
@@ -256,7 +313,7 @@ impl SemanticBuilder {
             vec![base, replacement],
             statement,
             declaration,
-            Some(selected_schema),
+            Some(selected_schema.into()),
         )?;
         let operation = format!(
             "core/assign/nested/{}",
@@ -321,7 +378,7 @@ impl SemanticBuilder {
             PendingSelection {
                 operation: None,
                 inputs: vec![base],
-                schema: self.schema_draft_of(base)?,
+                schema: self.schema_draft_of(base)?.into(),
             }
         } else {
             self.prepare_selection(base, selectors.clone(), syntax)?

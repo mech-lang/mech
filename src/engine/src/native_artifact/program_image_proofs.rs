@@ -29,7 +29,7 @@ macro_rules! image_struct {
         impl $crate::native_artifact::program_image_proofs::ImageRead for $name {
             fn read<'de, D: serde::Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
                 #[derive(serde::Deserialize)]
-                #[serde(deny_unknown_fields)]
+                #[serde(deny_unknown_fields, rename = "mech.native.image.Wire")]
                 struct Wire {
                     $(#[serde(deserialize_with = "crate::native_artifact::program_image_proofs::field")]
                     $field: $ty,)*
@@ -51,11 +51,31 @@ macro_rules! image_struct {
                 <Self as $crate::native_artifact::program_image_proofs::ImageRead>::read(image)
                     .map_err(|error| error.to_string())
             }
+
+            /// Restore compiler-owned metadata directly from a typed reader,
+            /// without first constructing an owned JSON tree.
+            ///
+            /// # Safety
+            /// The reader must describe unchanged output from the SAME checked
+            /// compiler build and linked Object. Keep the result confined until
+            /// that association is established. Reading fields neither proves
+            /// source semantics nor authenticates caller-supplied metadata.
+            /// Runtime admission and current-owner checks remain mandatory.
+            pub unsafe fn from_build_owned_image_reader<'de, D: serde::Deserializer<'de>>(
+                image: D,
+            ) -> Result<Self, D::Error> {
+                <Self as $crate::native_artifact::program_image_proofs::ImageRead>::read(image)
+            }
         }
     };
 }
 pub(crate) use image_struct;
 
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 macro_rules! image_enum {
     ($name:ident { $($variant:ident { $($field:ident: $ty:ty),* $(,)? }),* $(,)? }) => {
         impl $crate::native_artifact::program_image_proofs::ImageRead for $name {
@@ -74,6 +94,11 @@ macro_rules! image_enum {
         }
     };
 }
+#[cfg(any(
+    feature = "pure_text",
+    feature = "map_ops",
+    feature = "sequence_buffers"
+))]
 pub(crate) use image_enum;
 
 macro_rules! primitives {
@@ -89,8 +114,32 @@ primitives!(
     usize,
     bool,
     mech_core::NodeId,
+    mech_core::SchemaId,
     mech_core::ProgramRevision
 );
+impl ImageRead for super::NativeScalarKind {
+    fn read<'de, D: serde::Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
+        #[derive(serde::Deserialize)]
+        enum Wire {
+            Bool,
+            U8,
+            U16,
+            U32,
+            U64,
+            I64,
+            F64,
+        }
+        Ok(match <Wire as serde::Deserialize>::deserialize(image)? {
+            Wire::Bool => Self::Bool,
+            Wire::U8 => Self::U8,
+            Wire::U16 => Self::U16,
+            Wire::U32 => Self::U32,
+            Wire::U64 => Self::U64,
+            Wire::I64 => Self::I64,
+            Wire::F64 => Self::F64,
+        })
+    }
+}
 impl ImageRead for NativeMatchValue {
     fn read<'de, D: Deserializer<'de>>(image: D) -> Result<Self, D::Error> {
         u32::read(image).map(Self)
@@ -146,7 +195,8 @@ mod tests {
     fn direct_proof_fields_preserve_nested_options_tuples_and_full_width_words() {
         let bytes = serde_json::to_vec(&image()).unwrap();
         let mut reader = serde_json::Deserializer::from_slice(&bytes);
-        let loaded = WireFixture::read(&mut reader).unwrap();
+        // SAFETY: this fixture never reaches a native descriptor or execution.
+        let loaded = unsafe { WireFixture::from_build_owned_image_reader(&mut reader) }.unwrap();
         reader.end().unwrap();
         assert_eq!(loaded.origin.node.get(), 7);
         assert_eq!(loaded.origin.block, None);

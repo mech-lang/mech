@@ -1,7 +1,7 @@
 use super::{
     EnumVariantSchema, FloatWidth, IntegerInterval, IntegerWidth, Schema, SchemaBody, SchemaField,
 };
-use crate::dimension::{encode_dimension_parameters, encode_normalized_dimension};
+use crate::dimension::{encode_dimension_parameters, encode_normalized_dimension_into};
 use crate::{DimensionParameter, ExtentEvolution, SchemaKey, extent_evolution};
 use sha2::{Digest, Sha256};
 
@@ -44,9 +44,13 @@ impl CanonicalWriter {
         self.write_bytes(value.as_bytes());
     }
 
-    fn write_node(&mut self, value: &[u8]) {
-        self.write_u64_le(value.len() as u64);
-        self.write_bytes(value);
+    fn write_node(&mut self, encode: impl FnOnce(&mut Self)) {
+        let length_at = self.bytes.len();
+        self.write_u64_le(0);
+        let start = self.bytes.len();
+        encode(self);
+        let length = (self.bytes.len() - start) as u64;
+        self.bytes[length_at..length_at + 8].copy_from_slice(&length.to_le_bytes());
     }
 
     fn finish(self) -> Box<[u8]> {
@@ -60,15 +64,18 @@ impl Schema {
         writer.write_u8(0x01);
         writer.write_u32_le(self.dimension_parameters.len() as u32);
         encode_dimension_parameters(&self.dimension_parameters, &mut writer.bytes);
-        let body = encode_schema_body(&self.body);
-        writer.write_node(&body);
+        writer.write_node(|writer| encode_schema_body(&self.body, writer));
         writer.finish()
     }
 
     pub fn key(&self) -> SchemaKey {
+        Self::key_for_canonical_bytes(&self.canonical_bytes())
+    }
+
+    pub(crate) fn key_for_canonical_bytes(bytes: &[u8]) -> SchemaKey {
         let mut hash = Sha256::new();
         hash.update(b"mech-schema-v1\0");
-        hash.update(self.canonical_bytes());
+        hash.update(bytes);
         SchemaKey::from_bytes(hash.finalize().into())
     }
 
@@ -89,8 +96,7 @@ impl Schema {
     }
 }
 
-fn encode_schema_body(body: &SchemaBody) -> Box<[u8]> {
-    let mut writer = CanonicalWriter::new();
+fn encode_schema_body(body: &SchemaBody, writer: &mut CanonicalWriter) {
     match body {
         SchemaBody::Dynamic => writer.write_u8(0x14),
         SchemaBody::Bool => writer.write_u8(0x01),
@@ -154,46 +160,48 @@ fn encode_schema_body(body: &SchemaBody) -> Box<[u8]> {
         SchemaBody::Enum { key, variants } => {
             writer.write_u8(0x0b);
             writer.write_bytes(key.as_bytes());
-            encode_variants(&mut writer, variants);
+            encode_variants(writer, variants);
         }
         SchemaBody::Option(element) => {
             writer.write_u8(0x0c);
-            writer.write_node(&encode_schema_body(element));
+            writer.write_node(|writer| encode_schema_body(element, writer));
         }
         SchemaBody::Tuple(elements) => {
             writer.write_u8(0x0d);
             writer.write_u32_le(elements.len() as u32);
             for element in elements {
-                writer.write_node(&encode_schema_body(element));
+                writer.write_node(|writer| encode_schema_body(element, writer));
             }
         }
         SchemaBody::Record(fields) => {
             writer.write_u8(0x0e);
-            encode_fields(&mut writer, fields);
+            encode_fields(writer, fields);
         }
         SchemaBody::Matrix {
             element,
             dimensions,
         } => {
             writer.write_u8(0x0f);
-            writer.write_node(&encode_schema_body(element));
+            writer.write_node(|writer| encode_schema_body(element, writer));
             writer.write_u32_le(dimensions.len() as u32);
             for dimension in dimensions {
-                writer.write_node(&encode_normalized_dimension(dimension));
+                writer.write_node(|writer| {
+                    encode_normalized_dimension_into(dimension, &mut writer.bytes)
+                });
             }
         }
         SchemaBody::Table { columns, rows } => {
             writer.write_u8(0x10);
-            encode_fields(&mut writer, columns);
-            writer.write_node(&encode_extent(rows));
+            encode_fields(writer, columns);
+            writer.write_node(|writer| encode_extent(rows, writer));
         }
         SchemaBody::Set {
             element,
             cardinality,
         } => {
             writer.write_u8(0x11);
-            writer.write_node(&encode_schema_body(element));
-            writer.write_node(&encode_extent(cardinality));
+            writer.write_node(|writer| encode_schema_body(element, writer));
+            writer.write_node(|writer| encode_extent(cardinality, writer));
         }
         SchemaBody::Map {
             key,
@@ -201,35 +209,27 @@ fn encode_schema_body(body: &SchemaBody) -> Box<[u8]> {
             cardinality,
         } => {
             writer.write_u8(0x12);
-            writer.write_node(&encode_schema_body(key));
-            writer.write_node(&encode_schema_body(value));
-            writer.write_node(&encode_extent(cardinality));
+            writer.write_node(|writer| encode_schema_body(key, writer));
+            writer.write_node(|writer| encode_schema_body(value, writer));
+            writer.write_node(|writer| encode_extent(cardinality, writer));
         }
         SchemaBody::ReifiedType => writer.write_u8(0x13),
     }
-    writer.finish()
 }
 
-fn encode_extent(extent: &crate::ExtentSpec) -> Box<[u8]> {
+fn encode_extent(extent: &crate::ExtentSpec, writer: &mut CanonicalWriter) {
     match extent {
-        crate::ExtentSpec::Exact(value) => encode_normalized_dimension(value).into_boxed_slice(),
-        dynamic @ crate::ExtentSpec::Dynamic { .. } => encode_dynamic_extent(dynamic),
-    }
-}
-
-fn encode_dynamic_extent(cardinality: &crate::ExtentSpec) -> Box<[u8]> {
-    let mut writer = CanonicalWriter::new();
-    match cardinality {
-        crate::CardinalitySpec::Exact(_) => unreachable!("exact cardinality uses the v1 encoding"),
+        crate::ExtentSpec::Exact(value) => {
+            encode_normalized_dimension_into(value, &mut writer.bytes)
+        }
         crate::CardinalitySpec::Dynamic { upper_bound: None } => writer.write_u8(0x80),
         crate::CardinalitySpec::Dynamic {
             upper_bound: Some(value),
         } => {
             writer.write_u8(0x81);
-            writer.write_node(&encode_normalized_dimension(value));
+            writer.write_node(|writer| encode_normalized_dimension_into(value, &mut writer.bytes));
         }
     }
-    writer.finish()
 }
 
 fn encode_variants(writer: &mut CanonicalWriter, variants: &[EnumVariantSchema]) {
@@ -240,7 +240,7 @@ fn encode_variants(writer: &mut CanonicalWriter, variants: &[EnumVariantSchema])
             None => writer.write_u8(0),
             Some(payload) => {
                 writer.write_u8(1);
-                writer.write_node(&encode_schema_body(payload));
+                writer.write_node(|writer| encode_schema_body(payload, writer));
             }
         }
     }
@@ -250,7 +250,7 @@ fn encode_fields(writer: &mut CanonicalWriter, fields: &[SchemaField]) {
     writer.write_u32_le(fields.len() as u32);
     for field in fields {
         writer.write_utf8(&field.name);
-        writer.write_node(&encode_schema_body(&field.schema));
+        writer.write_node(|writer| encode_schema_body(&field.schema, writer));
     }
 }
 
@@ -261,3 +261,7 @@ const fn integer_width(width: IntegerWidth) -> u16 {
 const fn float_width(width: FloatWidth) -> u16 {
     width as u16
 }
+
+#[cfg(test)]
+#[path = "encoding_reference_tests.rs"]
+mod reference_tests;

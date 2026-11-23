@@ -59,6 +59,7 @@ def main() -> None:
         "--no-default-features",
         "--features",
         features,
+        "--locked",
     )
 
     glue = PACKAGE / "mech_wasm.js"

@@ -387,6 +387,49 @@ jobs:
           cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --lib \
             snapshot::validation::tests::budget_registration_removal_and_same_owner_reuse_ignore_later_foreign_imports \
             -- --exact --test-threads=1
+      - name: Execute exclusive snapshot first-admission regressions
+        run: |
+          ADMISSION_TESTS=$(cargo +nightly-2026-03-03 test --locked -p mech-core \
+            --all-features --lib -- snapshot::validation::unique_admission_tests:: --list)
+          test "$(printf '%s\n' "$ADMISSION_TESTS" | awk '/^snapshot::validation::unique_admission_tests::.*: test$/ { count += 1 } END { print count + 0 }')" -eq 12
+          cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --lib -- \
+            snapshot::validation::unique_admission_tests:: --test-threads=1
+      - name: Execute retained unsigned buffer ownership and allocation regressions
+        run: |
+          BUFFER_TESTS=$(cargo +nightly-2026-03-03 test --locked -p mech-core \
+            --all-features --test unsigned_buffer_capacity -- --list --exact \
+            retained_capacity_roundtrips_allocate_only_size_independent_snapshot_metadata)
+          test "$(printf '%s\n' "$BUFFER_TESTS" | awk '/^retained_capacity_roundtrips_allocate_only_size_independent_snapshot_metadata: test$/ { count += 1 } END { print count + 0 }')" -eq 1
+          cargo +nightly-2026-03-03 test --locked -p mech-core --all-features \
+            --test unsigned_buffer_capacity -- \
+            retained_capacity_roundtrips_allocate_only_size_independent_snapshot_metadata \
+            --exact --nocapture --test-threads=1
+          BUFFER_OWNERSHIP_TESTS=$(cargo +nightly-2026-03-03 test --locked -p mech-core \
+            --all-features --lib -- snapshot::validation::owned_unsigned_matrix::tests:: --list)
+          test "$(printf '%s\n' "$BUFFER_OWNERSHIP_TESTS" | awk '/^snapshot::validation::owned_unsigned_matrix::tests::.*: test$/ { count += 1 } END { print count + 0 }')" -eq 14
+          cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --lib -- \
+            snapshot::validation::owned_unsigned_matrix::tests:: \
+            snapshot::validation::owned_string::tests:: --test-threads=1
+      - name: Execute numeric matrix validation and constructor allocation regressions
+        run: |
+          MATRIX_TESTS=$(cargo +nightly-2026-03-03 test --locked -p mech-core \
+            --all-features --lib -- snapshot::validation::numeric_matrix::tests:: --list)
+          test "$(printf '%s\n' "$MATRIX_TESTS" | awk '/^snapshot::validation::numeric_matrix::tests::.*: test$/ { count += 1 } END { print count + 0 }')" -eq 8
+          cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --lib -- \
+            snapshot::validation::numeric_matrix::tests:: --test-threads=1
+          CONSTRUCTOR_TESTS=$(cargo +nightly-2026-03-03 test --locked --release -p mech-core \
+            --all-features --test composite_constructor_allocation -- --list)
+          test "$(printf '%s\n' "$CONSTRUCTOR_TESTS" | awk '/: test$/ { count += 1 } END { print count + 0 }')" -eq 4
+          cargo +nightly-2026-03-03 test --locked --release -p mech-core --all-features \
+            --test composite_constructor_allocation -- --nocapture --test-threads=1
+      - name: Inventory and execute canonical shape witness contracts
+        shell: bash
+        run: |
+          cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --lib -- \
+            type_system::resolved_value:: --list | tee canonical-shape-witness-tests.txt
+          test "$(rg -c ': test$' canonical-shape-witness-tests.txt)" -eq 12
+          cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --lib -- \
+            type_system::resolved_value:: --test-threads=1
       - name: Execute the retained release-mode memory safety boundary
         run: |
           RUSTFLAGS="${RUSTFLAGS:-} -C debug-assertions=no" \
@@ -424,8 +467,68 @@ jobs:
           cargo +nightly-2026-03-03 test --locked -p mech-gpu \
             --features jit --test memory_runtime
           cargo +nightly-2026-03-03 check --locked -p mech-gpu --features native
+      - name: Execute private append shape ownership contracts
+        run: |
+          APPEND_SHAPE_TESTS=$(cargo +nightly-2026-03-03 test --locked -p mech-core \
+            --all-features --lib -- snapshot::validation::private_unsigned_matrix::appends::tests:: --list)
+          test "$(printf '%s\n' "$APPEND_SHAPE_TESTS" | awk '/^snapshot::validation::private_unsigned_matrix::appends::tests::.*: test$/ { count += 1 } END { print count + 0 }')" -eq 4
+          cargo +nightly-2026-03-03 test --locked -p mech-core --all-features --lib -- \
+            snapshot::validation::private_unsigned_matrix::appends::tests:: --test-threads=1
+      - name: Execute prepared schema header measurement contracts
+        run: |
+          HEADER_TESTS=$(cargo +nightly-2026-03-03 test --locked -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact,pure_text \
+            --lib -- prepared_schema_header_ --list)
+          test "$(printf '%s\n' "$HEADER_TESTS" | awk '/prepared_schema_header_.*: test$/ { count += 1 } END { print count + 0 }')" -eq 2
+          cargo +nightly-2026-03-03 test --locked -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact,pure_text \
+            --lib -- prepared_schema_header_ --test-threads=1
+
+  managed-memory-native:
+    if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'memory') || contains(fromJSON(inputs.contract_families), 'numeric') }}
+    name: Managed memory native integration (${{ matrix.suite }})
+    runs-on: ubuntu-latest
+    # Keep native cold builds independent of the runtime ownership profiles.
+    timeout-minutes: 75
+    strategy:
+      fail-fast: false
+      matrix:
+        suite: [compiler, ekf, backend]
+    env:
+      CARGO_INCREMENTAL: 0
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+      CARGO_BUILD_JOBS: "1"
+    steps:
+      - uses: actions/checkout@v7.0.1
+        id: checkout
+        with:
+          ref: ${{ inputs.validation_ref || github.sha }}
+          fetch-depth: 0
+      - name: Record exact-ref checkout identity
+        env:
+          VALIDATION_KIND: exact-ref
+          REQUESTED_REF: ${{ inputs.validation_ref || github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
+      - name: Install Rust nightly-2026-03-03
+        run: rustup toolchain install nightly-2026-03-03 --profile minimal
+      - name: Install CI and bundled native arithmetic build tools
+        run: |
+          if ! command -v rg >/dev/null 2>&1 || ! command -v cc >/dev/null 2>&1 || ! command -v make >/dev/null 2>&1 || ! command -v m4 >/dev/null 2>&1
+          then
+            sudo apt-get update \
+              -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources \
+              -o Dir::Etc::sourceparts=-
+            sudo apt-get install --yes ripgrep build-essential m4
+          fi
+      - name: Fetch locked native-memory dependencies
+        run: cargo +nightly-2026-03-03 fetch --locked
       - name: Execute native compiler and batched array regressions
-        timeout-minutes: 25
+        if: ${{ matrix.suite == 'compiler' }}
+        timeout-minutes: 40
         run: |
           # native-build enables the general sequence and fused compiler paths.
           # GMP is built from the locked dependency; no system-gmp installation
@@ -444,6 +547,7 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features native-build --lib native_build::tests -- --test-threads=1
       - name: Execute native sequence effect regressions
+        if: ${{ matrix.suite == 'compiler' }}
         timeout-minutes: 25
         run: |
           # The engine has a separate test build after the GPU cold build.
@@ -454,6 +558,7 @@ jobs:
             --no-default-features --features full_compiler,resident-artifact,native-sequence \
             --test native_sequence_effects -- --test-threads=1
       - name: Execute retained engine EKF integration targets
+        if: ${{ matrix.suite == 'ekf' }}
         run: >-
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine
           --no-default-features --features full_compiler,resident-artifact,resident-ekf
@@ -461,6 +566,7 @@ jobs:
           --test resident_ekf_program_activation --test resident_ekf_program_execution
           -- --test-threads=1
       - name: Execute canonical compute and native backend integration targets
+        if: ${{ matrix.suite == 'backend' }}
         run: >-
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu
           --no-default-features --features native,jit
@@ -518,14 +624,15 @@ jobs:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'native') || contains(fromJSON(inputs.contract_families), 'language') }}
     name: Canonical applications and native witnesses (${{ matrix.suite }})
     runs-on: ubuntu-latest
-    timeout-minutes: 90
-    # Cold builds of the independent feature profiles exhausted the shared
-    # 90-minute job at the last CLI link. Keep EVERY command, but qualify the
-    # independent source/native/CLI suites concurrently under the same gate.
+    # Keep cold builds and complete native qualification within each job budget.
+    timeout-minutes: 120
+    # Composition reached 584/600 tests after 43 minutes of preceding builds.
+    # Give it an independent cold build under the same required gate.
+    # Complete compressor qualification also needs an optimized compiler host.
     strategy:
       fail-fast: false
       matrix:
-        suite: [source, native, cli]
+        suite: [source, native, composition, program, cli]
     env:
       RUSTUP_TOOLCHAIN: nightly-2026-03-03
       CARGO_INCREMENTAL: 0
@@ -625,14 +732,22 @@ jobs:
           cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
             --no-default-features --features full_source,native-artifact \
             --lib source_semantics::frontend::annotation_conversion_shape_tests:: -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features integer_bits \
+            --test integer_bits -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact \
+            --test program_artifact_contract committed_ -- --test-threads=1
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features compiler,native-artifact \
+            --test matrix_block_legacy_fixtures \
+            retained_legacy_comprehension_bytes_and_revisions_remain_stable \
+            -- --exact --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native \
             --test canonical_artifact_native --test canonical_artifact_i64 --test canonical_artifact_f64 \
-            --test canonical_artifact_cast --test canonical_artifact_match \
+            --test canonical_artifact_cast --test canonical_artifact_bits --test canonical_artifact_match \
             --test canonical_artifact_iteration -- --test-threads=1
-          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
-            --no-default-features --features canonical-native-program \
-            --test canonical_artifact_program -- --test-threads=1
           cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-program \
             --test native_architecture_equivalence -- --test-threads=1
@@ -660,6 +775,52 @@ jobs:
             --lib resident::general::native_match_lowering::iteration_proof_tests -- --test-threads=1
           cargo +nightly-2026-03-03 check --locked --offline -p mech-gpu \
             --no-default-features --features canonical-native-runtime --lib
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features semantic-compiler,resident-artifact,sequence_buffers \
+            --test sequence_buffer_contract -- --test-threads=1
+      - name: Execute canonical native program integration contracts
+        if: ${{ matrix.suite == 'program' }}
+        run: >-
+          cargo +nightly-2026-03-03 test --release --locked --offline -p mech-gpu
+          --no-default-features --features canonical-native-program
+          --test canonical_artifact_program -- --test-threads=1
+      - name: Inventory and execute projection budget contracts
+        if: ${{ matrix.suite == 'native' }}
+        shell: bash
+        run: |
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact,sequence_buffers \
+            --lib -- native_projection_meter_tests --list | tee native-projection-budget-tests.txt
+          test "$(rg -c ': test$' native-projection-budget-tests.txt)" -eq 12
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact,sequence_buffers \
+            --lib -- native_projection_meter_tests --test-threads=1
+      - name: Inventory and execute private frame shape contracts
+        if: ${{ matrix.suite == 'native' }}
+        shell: bash
+        run: |
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact,sequence_buffers \
+            --lib -- frame_shape::tests:: --list | tee native-frame-shape-tests.txt
+          test "$(rg -c ': test$' native-frame-shape-tests.txt)" -eq 6
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-engine \
+            --no-default-features --features full_compiler,native-artifact,sequence_buffers \
+            --lib -- frame_shape::tests:: --test-threads=1
+      - name: Inventory and execute native composition contracts
+        if: ${{ matrix.suite == 'composition' }}
+        shell: bash
+        run: |
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native-program --lib -- \
+            composition_tests parent_continuation_is_single_use native_parent_continuation_prepares native_paid_iteration_guard native_runtime_consolidation \
+            buffer_frames::tests::batching buffer_frames::tests::transfer work::retirement::tests exhausted_retirement_generation cleanup_effects::tests numeric_shadow numeric_words::tests numeric_branches::tests numeric_read_packs::tests numeric_retirement::tests traversal_facts::tests traversal_facts::completion:: ordered_reduction::tests cfg_cleanup captured_window numeric_first_change entry_locals_snapshot admitted_helper_tests invocation::numeric_segments::tests maps::admission_tests utf8_word_chunks dead_constant_owners worker_constant_owners argument_bank_tests ssa_words::tests phase_numeric::exits::liveness_tests checked_unsigned_tests canonical_relation numeric_captured_reads::tests matrix_length_lowering_tests packed_row_payload borrowed_parent_frame_metadata borrowed_frame_metadata_field_count matrix_map_keys_prove_generic matrix_map_keys_refuse_an_escaping borrowed_map_keys_prove virtual_value_definitions generic_dictionary_proves generic_dictionary_rejects frozen_generic_dictionary dictionary_seed_frames_prove dictionary_seed_frames_keep borrowed_dictionary_values_require borrowed_dictionary_values_pin borrowed_dictionary_values_equal borrowed_dictionary_values_deny fixed_key_native_loops_require \
+            --list | tee native-composition-tests.txt
+          test "$(rg -c ': test$' native-composition-tests.txt)" -eq 600
+          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features canonical-native-program --lib -- \
+            composition_tests parent_continuation_is_single_use native_parent_continuation_prepares native_paid_iteration_guard native_runtime_consolidation \
+            buffer_frames::tests::batching buffer_frames::tests::transfer work::retirement::tests exhausted_retirement_generation cleanup_effects::tests numeric_shadow numeric_words::tests numeric_branches::tests numeric_read_packs::tests numeric_retirement::tests traversal_facts::tests traversal_facts::completion:: ordered_reduction::tests cfg_cleanup captured_window numeric_first_change entry_locals_snapshot admitted_helper_tests invocation::numeric_segments::tests maps::admission_tests utf8_word_chunks dead_constant_owners worker_constant_owners argument_bank_tests ssa_words::tests phase_numeric::exits::liveness_tests checked_unsigned_tests canonical_relation numeric_captured_reads::tests matrix_length_lowering_tests packed_row_payload borrowed_parent_frame_metadata borrowed_frame_metadata_field_count matrix_map_keys_prove_generic matrix_map_keys_refuse_an_escaping borrowed_map_keys_prove virtual_value_definitions generic_dictionary_proves generic_dictionary_rejects frozen_generic_dictionary dictionary_seed_frames_prove dictionary_seed_frames_keep borrowed_dictionary_values_require borrowed_dictionary_values_pin borrowed_dictionary_values_equal borrowed_dictionary_values_deny fixed_key_native_loops_require \
+            --test-threads=1 --nocapture
       - name: Execute secured canonical reference bytecode admission
         if: ${{ matrix.suite == 'cli' }}
         run: >-
@@ -1476,7 +1637,18 @@ jobs:
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Generate and validate exact linkage surface
-        run: python3 scripts/check-native-linkage-coverage.py surface "${{ matrix.surface }}"
+        timeout-minutes: 95
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage linkage-surface --timeout-secs 5400 -- \
+            python3 scripts/check-native-linkage-coverage.py surface "${{ matrix.surface }}"
+      - name: Retain linkage runner diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-linkage-diagnostics-${{ matrix.surface }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: target/native-plan-logs
+          if-no-files-found: warn
+          retention-days: 14
       - name: Upload linkage surface
         uses: actions/upload-artifact@v4
         with:
@@ -1785,6 +1957,25 @@ jobs:
         run: |
           cargo +nightly-2026-03-03 fetch --locked
           cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
+      # GPU test dev-dependencies include the full compiler. Build them once,
+      # outside the execution deadline, before the generated application work.
+      - name: Compile macOS native cache and ownership tests
+        timeout-minutes: 65
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage macos-cache-compile --timeout-secs 3600 \
+            --record-test-executable mech_gpu \
+            --test-executable-file target/native-plan-logs/macos-cache-executable -- \
+            cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features aot --lib --no-run --message-format=json-render-diagnostics
+      - name: Check native cache and input ownership on macOS
+        timeout-minutes: 20
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage macos-aot-cache --timeout-secs 480 \
+            --test-executable-file target/native-plan-logs/macos-cache-executable -- \
+            batched::aot::tests --test-threads=1 --nocapture
+          python3 scripts/run-native-plan-stage.py --stage macos-jit-input --timeout-secs 480 \
+            --test-executable-file target/native-plan-logs/macos-cache-executable -- \
+            batched::jit::tests --test-threads=1 --nocapture
       # Cold compiler-owner construction has a separate bounded budget; fixture
       # execution must consume those runners rather than starting hidden builds.
       - name: Prepare macOS native owner runners
@@ -1815,18 +2006,6 @@ jobs:
             target/bytecode-v1-fixtures/owner-runner/logs
           if-no-files-found: error
           retention-days: 14
-
-      - name: Check native cache and input ownership on macOS
-        timeout-minutes: 20
-        env:
-          CARGO_INCREMENTAL: 0
-          CARGO_PROFILE_TEST_DEBUG: "0"
-          CARGO_BUILD_JOBS: "1"
-        run: |
-          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
-            --no-default-features --features aot --lib batched::aot::tests -- --test-threads=1
-          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
-            --no-default-features --features aot --lib batched::jit::tests -- --test-threads=1
 
   wasm-bytecode-v1:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'browser') }}
@@ -1926,6 +2105,7 @@ jobs:
       - managed-memory-fixed-profiles
       - managed-memory-miri
       - managed-memory-runtime
+      - managed-memory-native
       - native-cli-collision
       - memory-planner-contract
       - native-engine
@@ -1962,8 +2142,8 @@ jobs:
               'architecture': ['architecture-contracts', 'architecture-mutations'],
               'artifact': ['artifact-closure', 'bytecode-v1-format', 'bytecode-v1-values', 'bytecode-v1-determinism'],
               'language': ['cargo-language', 'canonical-applications', 'canonical-linked-applications'],
-              'memory': ['memory-planner-contract', 'managed-memory-runtime', 'managed-memory-miri', 'native-cli-collision'],
-              'numeric': ['function-system-contracts', 'engine-catalog', 'managed-memory-fixed-profiles', 'managed-memory-runtime', 'cargo-runtime', 'native-cli-collision'],
+              'memory': ['memory-planner-contract', 'managed-memory-runtime', 'managed-memory-native', 'managed-memory-miri', 'native-cli-collision'],
+              'numeric': ['function-system-contracts', 'engine-catalog', 'managed-memory-fixed-profiles', 'managed-memory-runtime', 'managed-memory-native', 'cargo-runtime', 'native-cli-collision'],
               'runtime': ['cargo-runtime', 'macos-runtime', 'windows-runtime-paths', 'windows-cli', 'dynamic-modules'],
               'cli': ['cargo-runtime', 'run-only', 'windows-cli-contracts', 'windows-cli'],
               'linkage': ['native-linkage-owners', 'native-linkage-surfaces', 'native-linkage', 'native-linkage-closures', 'catalog-closure'],

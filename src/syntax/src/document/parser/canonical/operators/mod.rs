@@ -11,7 +11,7 @@ use super::combinator::Attempt;
 use super::{base, statements};
 
 mod continuation;
-mod spec;
+pub(super) mod spec;
 pub(crate) use continuation::{Continuation, Progress};
 
 /// The complete closed operator set directly ported by expression grammar.
@@ -72,13 +72,13 @@ pub(crate) const EXPRESSION_OPERATOR_RULES: &[RuleId; 53] = &[
 ];
 
 #[derive(Clone, Copy)]
-enum OperatorAtom {
+pub(super) enum OperatorAtom {
     CanonicalRule(RuleId),
     Text(&'static str),
 }
 
 #[derive(Clone, Copy)]
-enum OperatorGuard {
+pub(super) enum OperatorGuard {
     None,
     NotCommentSigil,
     NotMatrixMultiply,
@@ -426,3 +426,5 @@ pub(crate) fn parse_not_element_of(parser: &mut Parser<'_>) -> Attempt {
 pub(crate) fn parse_symmetric_difference(parser: &mut Parser<'_>) -> Attempt {
     drive(parser, rules::SYMMETRIC_DIFFERENCE)
 }
+
+pub(crate) use continuation::FrameStorage;

@@ -17,6 +17,11 @@
 //! Only Program layouts emit these accesses. This does not promise readonly,
 //! alignment or movement across control flow, and never covers pointed-to
 //! source bytes, row offsets, map storage or callback argument/result buffers.
+//!
+//! The ordinary Program local-word bank has the same initialized, checked
+//! backing lifetime. It retains the default alias region because source actions
+//! and callbacks also access it. Nontrapping reads grant no readonly, alignment
+//! or control-flow movement permission.
 use cranelift_codegen::ir::{AliasRegion, MemFlags};
 
 use crate::native_artifact::codegen::options::OptimizationOptions;
@@ -49,6 +54,15 @@ pub(in crate::native_artifact) fn scalar_tail(options: OptimizationOptions) -> M
     flags(options, AliasRegion::Table)
 }
 
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) fn program_locals(options: OptimizationOptions) -> MemFlags {
+    if options.enabled(OptimizationPass::NontrappingHomes) {
+        MemFlags::new().with_notrap()
+    } else {
+        MemFlags::new()
+    }
+}
+
 #[test]
 #[cfg(feature = "canonical-native-program")]
 fn private_home_flags_keep_mutability_and_control_flow_constraints() {
@@ -71,4 +85,19 @@ fn private_home_flags_keep_mutability_and_control_flow_constraints() {
         );
         assert_eq!(get(OptimizationOptions::default()), optimized);
     }
+    let locals = program_locals(OptimizationOptions::default());
+    assert_eq!(locals, MemFlags::new().with_notrap());
+    assert_eq!(
+        program_locals(OptimizationOptions::without(
+            OptimizationPass::NontrappingHomes
+        )),
+        MemFlags::new()
+    );
+    assert_eq!(
+        program_locals(OptimizationOptions::without(
+            OptimizationPass::DisjointState
+        )),
+        locals,
+        "ordinary homes retain the default alias region"
+    );
 }

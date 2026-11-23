@@ -1383,6 +1383,8 @@ def assert_fullscreen_accessibility():
     wait_for(
         "document.querySelector('[data-mech-console-fullscreen]')?.getAttribute('aria-pressed') === 'false' && "
         "document.querySelector('[data-mech-console-fullscreen]')?.getAttribute('aria-label') === 'Enter fullscreen workspace' && "
+        "document.fullscreenElement === null && "
+        "document.querySelector('[data-mech-repl-host]')?.dataset.mechConsoleMode === 'docked' && "
         "document.querySelectorAll('[data-mech-console-panel]:not([hidden])').length === 1",
         "the fullscreen control restoring its accessible inactive state",
     )

@@ -1,3 +1,4 @@
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -82,6 +83,54 @@ pub const OldName: usize = 1;
                 process = self.run_checker(root)
                 self.assertNotEqual(process.returncode, 0)
                 self.assertIn("must name one lint and a literal reason", process.stderr)
+
+    def upstream_fixture(self):
+        root = self.fixture("fn maintained() {}\n", [])
+        path = root / "vendor/upstream/src/lib.rs"
+        path.parent.mkdir(parents=True)
+        path.write_text("#![allow(dead_code)]\nfn upstream_helper() {}\n")
+        contract = root / "scripts/warning-exceptions.json"
+        data = json.loads(contract.read_text())
+        data["upstream_attributes"] = [{
+            "path": path.relative_to(root).as_posix(),
+            "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            "attributes": ["#![allow(dead_code)]"],
+            "owner": "test upstream owner",
+        }]
+        contract.write_text(json.dumps(data))
+        return root, path
+
+    def test_exact_upstream_policy_is_retained(self):
+        root, _ = self.upstream_fixture()
+        process = self.run_checker(root)
+        self.assertEqual(process.returncode, 0, process.stderr)
+
+    def test_changed_upstream_source_requires_reaudit(self):
+        root, path = self.upstream_fixture()
+        path.write_text(path.read_text() + "fn changed() {}\n")
+        process = self.run_checker(root)
+        self.assertNotEqual(process.returncode, 0)
+        self.assertIn("pinned upstream source changed", process.stderr)
+
+    def test_upstream_pin_cannot_exempt_maintained_source(self):
+        root, _ = self.upstream_fixture()
+        contract = root / "scripts/warning-exceptions.json"
+        data = json.loads(contract.read_text())
+        data["upstream_attributes"][0]["path"] = "src/lib.rs"
+        contract.write_text(json.dumps(data))
+        process = self.run_checker(root)
+        self.assertNotEqual(process.returncode, 0)
+        self.assertIn("vendor source", process.stderr)
+
+    def test_stale_upstream_attribute_inventory_is_rejected(self):
+        root, _ = self.upstream_fixture()
+        contract = root / "scripts/warning-exceptions.json"
+        data = json.loads(contract.read_text())
+        data["upstream_attributes"][0]["attributes"].append("#![allow(unused_imports)]")
+        contract.write_text(json.dumps(data))
+        process = self.run_checker(root)
+        self.assertNotEqual(process.returncode, 0)
+        self.assertIn("upstream attribute inventory differs", process.stderr)
 
     def test_conditional_policy_directives_are_rejected_recursively(self):
         cases = {

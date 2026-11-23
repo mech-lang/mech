@@ -1,0 +1,20 @@
++> sequence
+projection-child(data<[u8]>, size<u64>) => (out<[u8]>) :=
+  ~next := data
+  next[1u64] = data[1u64] + (size > 0u64? | true => 1u8 | false => 0u8)
+  out := ((size > 0u64)? | true => projection-child(next, size - 1u64) | false => next).
+projection-boundary(data<[u8]>) => (out<[u8]>) :=
+  ~next := data
+  next[1u64] = data[1u64] + 1u8
+  out := next.
+projection-parent(data<[u8]>, left<u64>) => (out<[u8]>) :=
+  changed := ((left > 0u64)? | true => projection-boundary(data) | false => data)
+  future := left + 1u64
+  chosen := ((future > 1u64)? | true => left | false => 0u64)
+  state := {buffer: changed, steps: chosen}
+  window := state.buffer
+  size := sequence/length(window)
+  more := state.steps > 0u64
+  child := (more? | true => projection-child(changed, size) | false => data)
+  out := (more? | true => projection-parent(child, left - 1u64) | false => data).
+projection-parent(bytes<[u8]>, steps<u64>)

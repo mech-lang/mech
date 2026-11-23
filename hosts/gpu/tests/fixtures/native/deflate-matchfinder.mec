@@ -1,0 +1,83 @@
+// Shared DEFLATE match-finder routines, translated from libdeflate
+// b122c8be1d78b19f6d0a6efc5bb79bfcbb30dd51 and roc-deflate
+// 671077457ff7ef3a3d44caf715a3fc595addf379. See deflate-huffman-LICENSES.md.
+// Input positions below are zero-based; Mech's matrix selectors are one-based.
++> bits
++> sequence
+
+byte-readable(input<[u8]>, at<u64>) => (out<u64>) :=
+  out<u64> := input[at + 1u64].
+// List.get defaults to zero; the one-based selector is only formed on the
+// readable path, so an arbitrary zero-based U64 offset cannot overflow it.
+byte(input<[u8]>, at<u64>) => (out<u64>) :=
+  out := ((at < sequence/length(input))? | true => byte-readable(input, at) | false => 0u64).
+prefix-readable(input<[u8]>, at<u64>) => (out<u32>) :=
+  lo := bits/or(byte-readable(input, at), bits/shift-left-wrap(byte-readable(input, at + 1u64), 8u64))
+  hi := bits/or(byte-readable(input, at + 2u64), bits/shift-left-wrap(byte-readable(input, at + 3u64), 8u64))
+  out<u32> := bits/or(lo, bits/shift-left-wrap(hi, 16u64)).
+// from_le_bytes defaults the entire word to zero when its window is short.
+// Guard subtraction before forming any index; this also covers U64::MAX.
+load-prefix(input<[u8]>, at<u64>) => (out<u32>) :=
+  available := sequence/length(input)
+  out := ((available >= 4u64)? | true => ((at <= available - 4u64)? | true => prefix-readable(input, at) | false => 0u32) | false => 0u32).
+word-readable(input<[u8]>, at<u64>) => (out<u64>) :=
+  a := bits/or(byte-readable(input, at), bits/shift-left-wrap(byte-readable(input, at + 1u64), 8u64))
+  b := bits/or(byte-readable(input, at + 2u64), bits/shift-left-wrap(byte-readable(input, at + 3u64), 8u64))
+  c := bits/or(byte-readable(input, at + 4u64), bits/shift-left-wrap(byte-readable(input, at + 5u64), 8u64))
+  d := bits/or(byte-readable(input, at + 6u64), bits/shift-left-wrap(byte-readable(input, at + 7u64), 8u64))
+  lo := bits/or(a, bits/shift-left-wrap(b, 16u64))
+  hi := bits/or(c, bits/shift-left-wrap(d, 16u64))
+  out := bits/or(lo, bits/shift-left-wrap(hi, 32u64)).
+load-word(input<[u8]>, at<u64>) => (out<u64>) :=
+  available := sequence/length(input)
+  out := ((available >= 8u64)? | true => ((at <= available - 8u64)? | true => word-readable(input, at) | false => 0u64) | false => 0u64).
+lz-hash(sequence<u32>, num-bits<u64>) => (out<u64>) :=
+  wide<u64> := sequence
+  product := bits/and(bits/wrapping-mul(wide, 506832829u64), 4294967295u64)
+  out := bits/shift-right-wrap(product, 32u64 - num-bits).
+
+// The caller supplies start <= maximum and an already matched prefix. Roc's
+// entry predicate checks the readable window and candidate ordering before
+// any loop work. The compressor limits maximum to 258.
+// The same three loops as pinned Roc: the first four words, remaining words,
+// then trailing bytes. Source recursion keeps each loop's actual arguments.
+word-difference(input<[u8]>, str-at<u64>, match-at<u64>, length<u64>) => (out<u64>) :=
+  str-word := load-word(input, bits/wrapping-add(str-at, length))
+  match-word := load-word(input, bits/wrapping-add(match-at, length))
+  out := bits/xor(match-word, str-word).
+extend-tail(input<[u8]>, str-at<u64>, match-at<u64>, length<u64>, maximum<u64>) => <u64>
+  | (input, str-at, match-at, length, maximum) => ((length < maximum)?
+      | false => length
+      | true => ((byte(input, bits/wrapping-add(str-at, length)) == byte(input, bits/wrapping-add(match-at, length)))?
+          | true => extend-tail(input, str-at, match-at, bits/wrapping-add(length, 1u64), maximum)
+          | false => length)).
+extend-words(input<[u8]>, str-at<u64>, match-at<u64>, length<u64>, maximum<u64>) => <u64>
+  | (input, str-at, match-at, length, maximum) => ((length + 8u64 <= maximum)?
+      | false => extend-tail(input, str-at, match-at, length, maximum)
+      | true => (word-difference(input, str-at, match-at, length)?
+          | 0u64 => extend-words(input, str-at, match-at, bits/wrapping-add(length, 8u64), maximum)
+          | difference => bits/wrapping-add(length, bits/shift-right-wrap(bits/trailing-zeros(difference), 3u64)))).
+extend-four(input<[u8]>, str-at<u64>, match-at<u64>, length<u64>, four-end<u64>, maximum<u64>) => <u64>
+  | (input, str-at, match-at, length, four-end, maximum) => ((length + 8u64 <= four-end)?
+      | false => extend-words(input, str-at, match-at, length, maximum)
+      | true => (word-difference(input, str-at, match-at, length)?
+          | 0u64 => extend-four(input, str-at, match-at, bits/wrapping-add(length, 8u64), four-end, maximum)
+          | difference => bits/wrapping-add(length, bits/shift-right-wrap(bits/trailing-zeros(difference), 3u64)))).
+extend-length(input<[u8]>, str-at<u64>, match-at<u64>, start<u64>, maximum<u64>) => (out<u64>) :=
+  window! := (str-at + maximum <= sequence/length(input)) && (match-at < str-at)
+  four-end := start + 32u64
+  out := ((four-end <= maximum)?
+    | true => extend-four(input, str-at, match-at, start, four-end, maximum)
+    | false => extend-words(input, str-at, match-at, start, maximum)).
+
+
+initial-nodes(count<u64>) => (out<[u16]>) :=
+  out := [0u16 | i <- 0u64..=count, i < count].
+rebase-node(node<u16>) => (out<u16>) :=
+  wide<u64> := node
+  out<u16> := ((wide < 32768u64)? | true => 0u64 | false => wide - 32768u64).
+rebase-nodes(nodes<[u16]>) => (out<[u16]>) :=
+  out := rebase-node(nodes).
+node-index(base<u64>, node<u16>) => (out<u64>) :=
+  wide<u64> := node
+  out := bits/wrapping-sub(bits/wrapping-add(base, wide), 32768u64).

@@ -114,7 +114,8 @@ jobs:
     needs: impact
     if: needs.impact.outputs.static_contracts_required == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    # Include cold checkout, tool installation and cleanup in the job budget.
+    timeout-minutes: 15
     env:
       CARGO_INCREMENTAL: 0
       CARGO_PROFILE_TEST_DEBUG: "0"
@@ -265,6 +266,7 @@ jobs:
           fi
       - name: Check static distribution contracts
         run: |
+          python3 -B -m unittest scripts.tests.test_rust_module_layout
           cargo +nightly-2026-03-03 fetch --locked
           python3 -B scripts/check-distribution-contracts.py --profile standard
           python3 -B scripts/check-distribution-packaging.py
@@ -669,6 +671,7 @@ jobs:
           grep -q '^export class WasmMixedComputeProject' src/wasm/pkg/mech_wasm.js
           python3 scripts/smoke-canonical-compute-browser.py --software-adapter
           cargo build --locked --bin mech --features compute_backends_native
+          git diff --exit-code -- Cargo.lock
           mkdir -p target/browser-compute-provenance
           git rev-parse HEAD > target/browser-compute-provenance/revision
           git rev-parse 'HEAD^{tree}' > target/browser-compute-provenance/tree

@@ -6,13 +6,78 @@ use crate::native_artifact::{
 };
 use mech_core::{FunctionCatalog, ManagedMemoryBudget, Value};
 use mech_engine::ProgramArtifact;
-use mech_engine::native_artifact::lower_native_program_artifact;
+use mech_engine::native_artifact::lower_native_program_artifact_with_definition_table_limit;
 use std::ffi::c_void;
 pub struct LinkedProgramArtifact {
     entry: unsafe extern "C" fn(*mut c_void) -> u64,
     descriptor: NativeProgramDescriptor,
 }
 impl LinkedProgramArtifact {
+    /// Bind a compiler-emitted immutable module without rehashing its own data.
+    /// Catalog/factory validation, complete identity and runtime admission stay
+    /// unchanged. External image APIs still verify SHA256 or rederive proofs.
+    ///
+    /// # Safety
+    /// Module MUST be the genuine immutable compiler-emitted export from the
+    /// same unchanged checked Object as every pointer it contains. All metadata,
+    /// identity, binding and entry relocations must retain process lifetime.
+    /// Verify source/bytecode/Object/generated-input pins before linking. A
+    /// caller-created record, matching digest, static lifetime or read-only
+    /// mapping cannot establish this provenance. Catalog must contain only the
+    /// actual maintained factories from that build.
+    pub unsafe fn from_compiled_module(
+        module: &'static crate::native_artifact::NativeProgramModule,
+        catalog: &FunctionCatalog,
+    ) -> Result<Self, NativeLinkError> {
+        // SAFETY: delegated exact immutable same-Object module provenance.
+        let parts = unsafe { module.parts()? };
+        let descriptor = unsafe {
+            NativeProgramDescriptor::decode_compiled_module_image(
+                parts.image,
+                catalog,
+                parts.binding,
+            )
+        }
+        .map_err(|_| NativeLinkError::new("compiled module descriptor could not be restored"))?;
+        check_identity(&descriptor, parts.identity)?;
+        Ok(Self {
+            entry: parts.entry,
+            descriptor,
+        })
+    }
+
+    /// Bind descriptor bytes to their read-only compiler-emitted Object record.
+    /// Independent source-proof reconstruction remains in from_build_owned_image;
+    /// this path checks exact bytes against the Object that already proved them.
+    ///
+    /// # Safety
+    /// Entry, identity and image_binding must be process-lifetime exports from
+    /// the SAME unchanged checked compiler Object. Verify source/bytecode/Object
+    /// and generated-input pins before linking. A supplied digest or matching
+    /// metadata cannot authenticate arbitrary code. Only actual maintained
+    /// factories may populate catalog; runtime resource checks are unchanged.
+    pub unsafe fn from_object_bound_image(
+        image: &[u8],
+        catalog: &FunctionCatalog,
+        identity: &'static [u8; NATIVE_PROGRAM_LINK_IDENTITY_BYTES],
+        image_binding: &'static [u8; crate::native_artifact::NATIVE_PROGRAM_IMAGE_BINDING_BYTES],
+        entry: unsafe extern "C" fn(*mut c_void) -> u64,
+    ) -> Result<Self, NativeLinkError> {
+        // SAFETY: caller establishes the same trusted checked Object/symbols.
+        let descriptor = unsafe {
+            NativeProgramDescriptor::decode_object_bound_image(
+                image,
+                catalog,
+                identity,
+                image_binding,
+            )
+        }
+        .map_err(|_| {
+            NativeLinkError::new("program descriptor differs from its checked Object image")
+        })?;
+        check_identity(&descriptor, identity)?;
+        Ok(Self { entry, descriptor })
+    }
     /// Execute only generated closed activation before provider capture.
     /// The opaque result borrows this checked code owner and can resume once,
     /// with the SAME runtime transaction, limits, arena and cumulative ledger.
@@ -122,8 +187,11 @@ pub(in crate::native_artifact) fn prepare_descriptor(
             "program Object lacks checked stack/code metadata",
         ));
     }
-    let plan = lower_native_program_artifact(artifact, catalog)
-        .map_err(|_| NativeLinkError::new("program Object has no current canonical selection"))?;
+    let plan =
+        lower_native_program_artifact_with_definition_table_limit(artifact, catalog, u64::MAX)
+            .map_err(|_| {
+                NativeLinkError::new("program Object has no current canonical selection")
+            })?;
     let prepared = crate::native_artifact::program::prepare::PreparedNativeProgram::prepare(
         artifact, catalog, plan,
     )

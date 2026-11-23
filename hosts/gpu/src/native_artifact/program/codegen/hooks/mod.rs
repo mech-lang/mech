@@ -30,6 +30,47 @@ pub(in crate::native_artifact) struct Hooks {
 mod tests;
 impl Hooks {
     #[cfg(feature = "canonical-native-program")]
+    pub(in crate::native_artifact) fn numeric_outline_arguments(
+        &self,
+        frame: Value,
+        locals: Value,
+    ) -> [Value; 7] {
+        [
+            frame,
+            locals,
+            self.function,
+            self.context,
+            self.result,
+            self.arguments,
+            self.argument_capacity,
+        ]
+    }
+    /// Only the private compiler-emitted callee consumes these already-admitted
+    /// current entry words. Keep the caller's checked locals and hook snapshots;
+    /// reloading the root frame after a callback could observe replacements.
+    #[cfg(feature = "canonical-native-program")]
+    pub(in crate::native_artifact) fn from_numeric_outline<M: Module>(
+        b: &mut FunctionBuilder<'_>,
+        module: &M,
+        args: [Value; 7],
+    ) -> Self {
+        let mut signature = module.make_signature();
+        signature.params = vec![cranelift_codegen::ir::AbiParam::new(types::I64); 7];
+        signature
+            .returns
+            .push(cranelift_codegen::ir::AbiParam::new(types::I64));
+        Self {
+            signature: b.import_signature(signature),
+            function: args[2],
+            context: args[3],
+            result: args[4],
+            arguments: args[5],
+            argument_capacity: args[6],
+            bound_shim: None,
+            bound_shim_calls: std::cell::Cell::new(0),
+        }
+    }
+    #[cfg(feature = "canonical-native-program")]
     pub(in crate::native_artifact) fn with_bound_shim<M: Module>(
         mut self,
         b: &mut FunctionBuilder<'_>,
@@ -327,6 +368,81 @@ impl Hooks {
         b.switch_to_block(ordinary);
         Ok(())
     }
+    #[cfg(feature = "canonical-native-program")]
+    pub fn uniform_words(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        site: usize,
+        region: &mech_engine::native_artifact::NativeUniformWordCollection,
+        locals: Value,
+        counter_slot: usize,
+        exit: Block,
+        error: Block,
+    ) -> Result<(), NativeCompileError> {
+        super::constant_fill::emit_entry(b, locals, site, self, region, counter_slot, exit, error)
+    }
+    #[cfg(feature = "canonical-native-program")]
+    pub fn word_collection(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        site: usize,
+        region: &crate::native_artifact::program::prepare::word_collections::Region,
+        function: cranelift_codegen::ir::FuncRef,
+        locals: Value,
+        counter_slot: usize,
+        exit: Block,
+        error: Block,
+    ) -> Result<(), NativeCompileError> {
+        use crate::native_artifact::compiler::offset;
+        let remaining = b
+            .ins()
+            .load(types::I64, MemFlags::new(), locals, offset(counter_slot)?);
+        let collection = b.ins().iconst(types::I64, i64::from(region.collection));
+        let zero = b.ins().iconst(types::I64, 0);
+        self.call(
+            b,
+            site,
+            GlobalHelper::WordCollectionPrepare,
+            [collection, remaining, zero],
+            error,
+        );
+        let ready = b.ins().load(types::I64, MemFlags::new(), self.result, 0);
+        let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, ready, 1);
+        guard(b, valid, error, crate::native_artifact::abi::STATUS_ABI);
+        let selected = b.create_block();
+        let ordinary = b.create_block();
+        b.ins().brif(ready, selected, &[], ordinary, &[]);
+        b.switch_to_block(selected);
+        self.require_argument_words(b, 3, error);
+        let source = b.ins().load(types::I64, MemFlags::new(), self.arguments, 0);
+        let sink = b.ins().load(types::I64, MemFlags::new(), self.arguments, 8);
+        let count = b
+            .ins()
+            .load(types::I64, MemFlags::new(), self.arguments, 16);
+        let call = b.ins().call(function, &[locals, source, sink, count]);
+        let status = b.inst_results(call)[0];
+        let valid = b.ins().icmp_imm(
+            IntCC::Equal,
+            status,
+            crate::native_artifact::abi::STATUS_OK as i64,
+        );
+        // A reached scalar error contradicts the independently reconstructed
+        // totality proof. Never publish any partially initialized sink.
+        guard(b, valid, error, crate::native_artifact::abi::STATUS_ABI);
+        self.call(
+            b,
+            site,
+            GlobalHelper::WordCollectionFinish,
+            [collection, count, zero],
+            error,
+        );
+        b.ins()
+            .store(MemFlags::new(), zero, locals, offset(counter_slot)?);
+        b.ins().jump(exit, &[]);
+        b.switch_to_block(ordinary);
+        Ok(())
+    }
+
     pub fn load<M: Module>(
         mixed: bool,
         b: &mut FunctionBuilder<'_>,
@@ -400,6 +516,7 @@ impl Hooks {
             }))
         }
     }
+    #[cfg(feature = "canonical-native-program")]
     pub fn library(
         &self,
         b: &mut FunctionBuilder<'_>,

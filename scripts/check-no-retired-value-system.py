@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import sys
@@ -50,6 +51,13 @@ def executable_rust_sources(root: Path) -> tuple[list[Path], list[str]]:
     found: list[Path] = []
     seen: set[Path] = set()
     failures: list[str] = []
+    # Pinned third-party compiler sources generate Rust at build time. Still
+    # scan their checked-in code for retired symbols; only their exact reviewed
+    # source bytes may omit the static include closure required of Mech code.
+    generated = {
+        entry["path"]: entry["sha256"]
+        for entry in retired_surface(root).get("generated_include_sources", [])
+    }
     while pending:
         path = pending.pop()
         resolved = path.resolve()
@@ -64,6 +72,12 @@ def executable_rust_sources(root: Path) -> tuple[list[Path], list[str]]:
             argument = STATIC_INCLUDE_ARGUMENT.match(source, include.end())
             line = source.count("\n", 0, include.start()) + 1
             if argument is None:
+                if (
+                    relative.startswith("vendor/cranelift-codegen/")
+                    and hashlib.sha256(path.read_bytes()).hexdigest()
+                    == generated.get(relative)
+                ):
+                    continue
                 failures.append(
                     f"{relative}:{line}: executable include! target is not a static path"
                 )

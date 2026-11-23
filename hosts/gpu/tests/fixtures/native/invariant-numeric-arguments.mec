@@ -1,0 +1,8 @@
++> sequence
+gather(values<[u64]>, at<u64>, end<u64>, output<[u64]>) => (out<[u64]>) :=
+  more := at < end
+  next := (more? | true => sequence/append(output, values[at + 1u64]) | false => output)
+  out := (more? | true => gather(values, at + 1u64, end, next) | false => output).
+values := input<[u64]>
+answer := gather(values, 0u64, steps<u64>, sequence/with-capacity(0u64, capacity<u64>))
+(answer, values)

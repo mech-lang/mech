@@ -8,6 +8,26 @@ use mech_core::{
 };
 use std::sync::Arc;
 
+/// Shared logical constructor envelope. Child clone bytes include the
+/// ValueData slot as well as the maintained canonical child footprint. Fixed
+/// native owners use this same calculation without cloning their payload.
+pub(crate) fn constructor_output_envelope(
+    root_bytes: usize,
+    child_clone_bytes: usize,
+) -> Option<(usize, usize)> {
+    Some((
+        root_bytes.checked_add(child_clone_bytes)?,
+        child_clone_bytes,
+    ))
+}
+
+pub(crate) fn constructor_child_clone_bytes(
+    container_bytes: usize,
+    payload_bytes: usize,
+) -> Option<usize> {
+    container_bytes.checked_add(payload_bytes)
+}
+
 #[derive(Clone, Debug)]
 struct CompositeChildPlan {
     matrix_dimensions: Option<Box<[DimensionExpr]>>,
@@ -42,6 +62,10 @@ struct CompositePackPlan {
     // and bind a newly witnessed constructor per execution.
     constructor: mech_core::snapshot::CompositeSnapshotConstructor,
     constructor_is_fixed: bool,
+    // Closed tuple/record schemas have no current shape parameters to infer.
+    // Keep the ordinary normalization envelope and validate fresh child headers
+    // at the original visit; only reuse the already checked constructor.
+    reuse_closed_constructor: bool,
     normalization: mech_core::snapshot::CompositeBindingCost,
 }
 
@@ -50,6 +74,10 @@ struct CompositeTablePlan {
     rows: CardinalitySpec,
     row_count: usize,
 }
+
+#[cfg(all(test, feature = "native-artifact"))]
+#[path = "composite_closed_constructor_tests.rs"]
+mod closed_constructor_tests;
 
 #[derive(Clone, Debug)]
 struct EnumPackPlan {
@@ -81,18 +109,34 @@ fn cardinality_accepts(
 }
 
 pub(crate) fn install(builder: &mut FunctionCatalogBuilder) -> MResult<()> {
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     super::native_collection_semantics::register_composite_pack(builder)?;
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     builder.insert_resident_factory(
         ["core"],
         "composite-pack",
         mech_core::ImplementationMemoryClass::CanonicalFinalize,
         bind_composite_pack,
     )?;
-    #[cfg(any(feature = "pure_text", feature = "map_ops"))]
+    #[cfg(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    ))]
     super::native_collection_semantics::register_enum_pack(builder)?;
-    #[cfg(not(any(feature = "pure_text", feature = "map_ops")))]
+    #[cfg(not(any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )))]
     builder.insert_resident_factory(
         ["core"],
         "enum-pack",
@@ -283,6 +327,18 @@ fn composite_pack_plan(request: &ResidentKernelBindRequest<'_>) -> Option<Compos
                 .inputs
                 .iter()
                 .all(|input| input.activation_fixed_shape),
+        reuse_closed_constructor: matches!(
+            output.body(),
+            SchemaBody::Tuple(_) | SchemaBody::Record(_)
+        ) && output.dimension_parameters().is_empty()
+            && request.output.shape_instance.parameter_values().is_empty()
+            && request.inputs.iter().all(|input| {
+                input.shape_instance.parameter_values().is_empty()
+                    && request
+                        .schemas
+                        .get(input.schema_id)
+                        .is_some_and(|schema| schema.dimension_parameters().is_empty())
+            }),
         output: request.output.clone(),
         schemas: Arc::new(request.schemas.clone()),
     })
@@ -686,8 +742,7 @@ fn enum_pack(
     )
     .and_then(|bytes| bytes.checked_add(core::mem::size_of::<ValueData>()))
     .ok_or(ResidentKernelError::InvalidShape)?;
-    let output_bytes = root_bytes
-        .checked_add(payload_bytes)
+    let (output_bytes, payload_bytes) = constructor_output_envelope(root_bytes, payload_bytes)
         .ok_or(ResidentKernelError::InvalidShape)?;
     let output_nodes = super::budget::checked_u64(payload_nodes)?
         .checked_add(2)
@@ -716,6 +771,21 @@ fn enum_pack(
     if borrowed_inventory {
         meter.charge_compute_work(super::budget::checked_u64(payload_bytes)?)?;
     }
+    let expansion = if !borrowed_inventory {
+        if let ResidentValueRef::Snapshot([Some(value)]) = payload_input {
+            let schema = plan
+                .schemas
+                .get(payload_plan.source.schema_id)
+                .ok_or(ResidentKernelError::InvalidInput)?;
+            super::budget::unsigned_word_draft_expansion(&mut meter, schema.body(), value.data())?
+        } else {
+            0
+        }
+    } else {
+        0
+    };
+    meter.charge_compute_work(super::budget::checked_cost_product(&[expansion, 8])?)?;
+    let expansion = checked_cost_usize(expansion)?;
     let measured = meter.estimate();
     let draft_bytes = core::mem::size_of::<ValueDataDraft>()
         .checked_add(payload_bytes)
@@ -729,6 +799,7 @@ fn enum_pack(
             output_bytes,
             temporary_bytes: output_bytes
                 .checked_add(draft_bytes)
+                .and_then(|bytes| bytes.checked_add(expansion))
                 .ok_or(ResidentKernelError::InvalidShape)?,
             cloned_bytes: payload_bytes,
             container_bytes: root_bytes
@@ -1024,8 +1095,7 @@ fn resident_child_clone_cost(
             .ok_or(ResidentKernelError::InvalidShape)?;
     }
     Ok((
-        container
-            .checked_add(payload)
+        constructor_child_clone_bytes(container, payload)
             .and_then(|bytes| bytes.checked_add(dynamic_overhead))
             .ok_or(ResidentKernelError::InvalidShape)?,
         nodes
@@ -1090,6 +1160,25 @@ fn current_constructor(
         Arc::clone(&plan.schemas),
     )
     .map_err(|_| ResidentKernelError::InvalidShape)
+}
+
+fn closed_constructor_matches_current(
+    plan: &CompositePackPlan,
+    inputs: &dyn ResidentKernelInputs,
+) -> bool {
+    plan.reuse_closed_constructor
+        && plan
+            .children
+            .iter()
+            .enumerate()
+            .all(|(index, child)| match inputs.get(index) {
+                Some(ResidentValueRef::Snapshot([Some(value)])) => {
+                    value.schema_key() == child.source.schema_key
+                        && value.shape().parameter_values().is_empty()
+                }
+                Some(ResidentValueRef::Snapshot(_)) | None => false,
+                Some(_) => true,
+            })
 }
 
 fn composite_pack(
@@ -1199,8 +1288,7 @@ fn composite_pack(
         .len()
         .checked_mul(core::mem::size_of::<mech_core::Value>() + core::mem::size_of::<ValueData>())
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let output_bytes = child_bytes
-        .checked_add(output_containers)
+    let (output_bytes, child_bytes) = constructor_output_envelope(output_containers, child_bytes)
         .ok_or(ResidentKernelError::InvalidShape)?;
     // These phases can coexist: typed native children, cloned canonical output,
     // native drafts, and key normalization / table packing scratch. Payload
@@ -1312,12 +1400,13 @@ fn composite_pack(
     .admit()?
     .into_plan();
     let dynamic_constructor;
-    let constructor = if plan.constructor_is_fixed {
-        &plan.constructor
-    } else {
-        dynamic_constructor = current_constructor(plan, inputs)?;
-        &dynamic_constructor
-    };
+    let constructor =
+        if plan.constructor_is_fixed || closed_constructor_matches_current(plan, inputs) {
+            &plan.constructor
+        } else {
+            dynamic_constructor = current_constructor(plan, inputs)?;
+            &dynamic_constructor
+        };
     let context =
         mech_core::snapshot::SnapshotValidationContext::with_shared_schemas(&plan.schemas);
     let children = (0..admitted_children)
@@ -1441,7 +1530,7 @@ mod tests {
 
     use mech_core::ValueDataDraft;
 
-    struct Inputs<'a>(&'a [ResidentValueRef<'a>]);
+    pub(super) struct Inputs<'a>(pub(super) &'a [ResidentValueRef<'a>]);
 
     impl ResidentKernelInputs for Inputs<'_> {
         fn len(&self) -> usize {
@@ -1453,7 +1542,7 @@ mod tests {
         }
     }
 
-    fn schema(body: SchemaBody) -> mech_core::Schema {
+    pub(super) fn schema(body: SchemaBody) -> mech_core::Schema {
         mech_core::SchemaDraft {
             dimension_parameters: Box::new([]),
             body,
@@ -1462,7 +1551,7 @@ mod tests {
         .unwrap()
     }
 
-    fn layout(
+    pub(super) fn layout(
         schemas: &mech_core::SchemaTable,
         schema_id: mech_core::SchemaId,
         kind: ResidentValueKind,
@@ -1981,6 +2070,7 @@ mod tests {
         let mismatched = CompositePackPlan {
             normalization: mech_core::snapshot::CompositeBindingCost::default(),
             constructor_is_fixed: true,
+            reuse_closed_constructor: false,
             children: vec![CompositeChildPlan {
                 matrix_dimensions: Some(dimensions.clone()),
                 input_is_matrix: true,
@@ -2012,6 +2102,7 @@ mod tests {
         let matching = CompositePackPlan {
             normalization: mech_core::snapshot::CompositeBindingCost::default(),
             constructor_is_fixed: true,
+            reuse_closed_constructor: false,
             children: vec![CompositeChildPlan {
                 matrix_dimensions: Some(dimensions),
                 input_is_matrix: true,

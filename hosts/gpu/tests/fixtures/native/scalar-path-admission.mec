@@ -1,0 +1,14 @@
++> sequence
+calculate(word<u64>, flag<bool>, permit<bool>, divisor<u64>) => (out<u64>) :=
+  allowed! := permit
+  advanced := word + 1u64
+  selected := (flag? | true => advanced * 3u64 + 5u64 | false => advanced * 7u64 + 11u64)
+  divided := selected / divisor
+  out := divided + 17u64.
+store(data<[u64]>, answer<u64>) => (out<[u64]>) :=
+  ~next := data
+  next[1u64] = answer
+  out := next.
+data := words<[u64]>
+answer := calculate(data[1u64], flag<bool>, permit<bool>, divisor<u64>)
+store(data, answer)

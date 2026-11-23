@@ -45,13 +45,16 @@ pub use self::relations::{
 pub use self::sequence::SequenceView;
 pub use self::validation::{
     CompositeSnapshotConstructor, FrozenSnapshotIdentity, MatrixSnapshotConstructor,
-    OwnedSnapshotBytes, OwnedSnapshotString, SnapshotCanonicalizationBudget,
+    OwnedSnapshotBytes, OwnedSnapshotString, OwnedSnapshotUnsignedMatrix,
+    PrivateUnsignedAppendPreparation, PrivateUnsignedMatrix, SnapshotCanonicalizationBudget,
     SnapshotValidationContext, StringMatrixSnapshotConstructor, StringOwnershipTransfer,
-    StringSnapshotConstructor, TableSnapshotBuilder, Value, build_f64_set_snapshot,
-    build_f64_set_snapshot_after_remove, canonical_snapshot_data_draft,
-    canonical_snapshot_data_draft_in, canonical_snapshot_data_draft_with_context,
-    dynamic_canonical_allocation_bound_bytes, f64_set_snapshot_contains, rebuild_f64_set_snapshot,
-    wrap_resident_dynamic_data, wrap_resident_dynamic_value,
+    StringSnapshotConstructor, TableSnapshotBuilder, UnsignedMatrixBuffer,
+    UnsignedMatrixOwnershipTransfer, UnsignedMatrixSnapshotConstructor, UnsignedMatrixViewMut,
+    Value, build_f64_set_snapshot, build_f64_set_snapshot_after_remove,
+    canonical_snapshot_data_draft, canonical_snapshot_data_draft_in,
+    canonical_snapshot_data_draft_with_context, dynamic_canonical_allocation_bound_bytes,
+    f64_set_snapshot_contains, rebuild_f64_set_snapshot, wrap_resident_dynamic_data,
+    wrap_resident_dynamic_value,
 };
 pub use self::views::{EnumView, MapView, MatrixView, RecordView, SetView, TableView, TupleView};
 pub use crate::{ConstantId, KeyHash, ValueHash};

@@ -336,10 +336,10 @@ fn unscoped_debit_rejects_active_scopes_and_respects_root_restrictions() {
     struct RootGuard(Option<(u64, u64)>);
     impl Drop for RootGuard {
         fn drop(&mut self) {
-            CONTROL_ROOT_LIMITS.with(|root| root.set(self.0));
+            with_control_root_limits(|root| root.set(self.0));
         }
     }
-    let _guard = RootGuard(CONTROL_ROOT_LIMITS.with(|root| root.replace(Some((8, 3)))));
+    let _guard = RootGuard(with_control_root_limits(|root| root.replace(Some((8, 3)))));
     let before = work.used();
     assert!(
         work.with_unscoped_debit(|remaining| {

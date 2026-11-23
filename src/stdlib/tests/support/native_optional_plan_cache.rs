@@ -91,23 +91,62 @@ fn optional_plan_cache_refusal_keeps_fresh_execution_authority_and_real_denials(
             prepared
                 .invoke_current_cached(&mut cache, &args[1], &mut output, limits, &work)
                 .unwrap();
-            let prior = output.as_ref().unwrap().clone();
+            let prior = finite_cap_refusal.then(|| output.as_ref().unwrap().clone());
             let held = memory.used_bytes();
+            let demand = cache.retained_metadata_demand(&work).unwrap();
+            assert_eq!(demand.turn_peak_bytes > 0, finite_cap_refusal);
             let mut changed = limits;
             changed.max_output_elements = Some(limits.max_output_elements.unwrap() + 1);
             for (site, policy, ledger) in [
                 (&other_site, limits, &work),
                 (&prepared, changed, &work),
                 (&prepared, limits, &independent),
-                (&prepared, limits, &foreign_work),
             ] {
-                assert_eq!(
-                    site.invoke_current_cached(&mut cache, &args[1], &mut output, policy, ledger),
-                    Err(Error::InvalidInput)
-                );
-                assert!(output.as_ref().unwrap().shares_frozen_storage(&prior));
+                let before = ledger.used();
+                let result =
+                    site.invoke_current_cached(&mut cache, &args[1], &mut output, policy, ledger);
+                if finite_cap_refusal {
+                    // The outer binding is retained even when its optional
+                    // planner populations are refused. Its context stays sealed.
+                    assert_eq!(result, Err(Error::InvalidInput));
+                    assert!(
+                        output
+                            .as_ref()
+                            .unwrap()
+                            .shares_frozen_storage(prior.as_ref().unwrap())
+                    );
+                } else {
+                    // The complete-ceiling probe declines the outer binding
+                    // too. An empty cache has no identity, plans or work credit
+                    // to reuse: each context must bind and execute afresh.
+                    result.unwrap();
+                    assert!(ledger.used().0 > before.0);
+                    assert!(matches!(output.as_ref().unwrap().data(),
+                        ValueData::String(text) if text.as_ref() == "A"));
+                    let demand = cache.retained_metadata_demand(ledger).unwrap();
+                    assert_eq!((demand.turn_peak_bytes, demand.retained_nodes), (0, 0));
+                }
                 assert_eq!(memory.used_bytes(), held);
             }
+            drop(prior);
+            let prior = output.as_ref().unwrap().clone();
+            let held = memory.used_bytes();
+            assert_eq!(
+                prepared.invoke_current_cached(
+                    &mut cache,
+                    &args[1],
+                    &mut output,
+                    limits,
+                    &foreign_work,
+                ),
+                Err(if finite_cap_refusal {
+                    Error::InvalidInput
+                } else {
+                    Error::UnadmittedValue
+                }),
+            );
+            assert!(output.as_ref().unwrap().shares_frozen_storage(&prior));
+            assert_eq!(memory.used_bytes(), held);
             // An actual mandatory scope allocation refusal still propagates.
             let blocker = memory
                 .reserve_capacity(memory.limit_bytes() - memory.used_bytes())
@@ -129,7 +168,7 @@ fn optional_plan_cache_refusal_keeps_fresh_execution_authority_and_real_denials(
             assert_eq!(memory.used_bytes(), baseline);
 
             // The kernel's genuine output-byte denial remains unchanged in
-            // the same sticky no-planner-cache mode and on the same ledger.
+            // the same cache-refusal mode and on the same ledger.
             let mut bounded = limits;
             bounded.max_output_bytes = Some(
                 mech_core::snapshot::prospective_string_value_footprint(0, false, 1, 1)

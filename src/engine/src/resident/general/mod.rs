@@ -16,12 +16,20 @@ pub use comprehension::{
 mod live;
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 pub(crate) mod native_collection_calls;
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 pub(crate) mod native_collection_templates;
 #[cfg(feature = "native-artifact")]
@@ -32,7 +40,11 @@ pub(crate) mod native_lowering;
 pub(crate) mod native_match_lowering;
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 pub(crate) mod native_structural_projection;
 #[cfg(feature = "native-artifact")]
@@ -312,8 +324,18 @@ pub struct ActivatedPublication {
     pub value: ResidentReadLocation,
 }
 
+#[derive(Clone, Copy, Debug)]
+pub struct ActivatedAssertion {
+    pub artifact_node: NodeId,
+    pub block: crate::ControlBlockId,
+    pub local: u32,
+    pub condition: ResidentReadLocation,
+    pub write: ResidentWriteLocation,
+}
+
 #[derive(Clone, Debug)]
 pub enum ActivatedTurnStep {
+    Assert(ActivatedAssertion),
     Iteration(std::sync::Arc<ActivatedIterationNode>),
     Match(ActivatedMatchNode),
     Recur(ActivatedRecursiveCall),
@@ -358,6 +380,7 @@ impl ActivatedTurnStep {
 
     pub fn artifact_node(&self) -> NodeId {
         match self {
+            Self::Assert(node) => node.artifact_node,
             Self::Kernel(node) => node.artifact_node,
             Self::Match(node) => node.artifact_node,
             Self::Iteration(node) => node.artifact_node,
@@ -471,6 +494,7 @@ fn read_location_depends_on_match(
     }
     let producer = plan.steps.iter().position(|step| {
         let write = match step {
+            ActivatedTurnStep::Assert(node) => Some(node.write),
             ActivatedTurnStep::Kernel(node) => Some(node.write),
             ActivatedTurnStep::Match(node) => Some(node.write),
             ActivatedTurnStep::Recur(node) => Some(node.write),
@@ -2385,7 +2409,8 @@ fn append_comprehension_execution_cases(
                     cases,
                 )?;
             }
-            crate::ControlOperationBody::Recur(_)
+            crate::ControlOperationBody::Assert
+            | crate::ControlOperationBody::Recur(_)
             | crate::ControlOperationBody::Suspend
             | crate::ControlOperationBody::Publish => {}
         }
@@ -2474,6 +2499,7 @@ fn append_iteration_execution_cases(
                     targets: ExecutionTargetSet::RESIDENT_CPU,
                 });
             }
+            crate::ControlOperationBody::Assert => {}
             crate::ControlOperationBody::Recur(_)
             | crate::ControlOperationBody::Suspend
             | crate::ControlOperationBody::Publish => {
@@ -2563,7 +2589,8 @@ fn append_match_execution_cases(
                         cases,
                     )?;
                 }
-                crate::ControlOperationBody::Recur(_)
+                crate::ControlOperationBody::Assert
+                | crate::ControlOperationBody::Recur(_)
                 | crate::ControlOperationBody::Suspend
                 | crate::ControlOperationBody::Publish => {}
                 crate::ControlOperationBody::Operation {
@@ -5462,6 +5489,16 @@ fn closed_producer_disposition(
         || operation.module_path.as_ref() == ["text"]
             && matches!(operation.operation_name.as_str(), "join" | "lines")
     {
+        return Some(ClosedProducerDisposition::DeferredPureValue);
+    }
+    #[cfg(feature = "integer_bits")]
+    if operation.module_path.as_ref() == ["bits"]
+        && crate::intrinsics::bits::OPERATIONS
+            .iter()
+            .any(|operation_kind| operation_kind.item() == operation.operation_name)
+    {
+        // These exact pure factories execute through their maintained kernels;
+        // this classification does not claim a closed-value folding owner.
         return Some(ClosedProducerDisposition::DeferredPureValue);
     }
     if operation.module_path.as_ref() == ["set"] {
@@ -14068,6 +14105,9 @@ fn build_plan(
             steps
                 .iter()
                 .map(|step| match step {
+                    ActivatedTurnStep::Assert(_) => {
+                        unreachable!("assertion is not a library kernel")
+                    }
                     ActivatedTurnStep::Kernel(node) => node.clone(),
                     ActivatedTurnStep::External(_)
                     | ActivatedTurnStep::Match(_)
@@ -14126,6 +14166,7 @@ fn build_plan(
         .map_err(|error| ResidentActivationError::ResidentMemoryPlanRejected { error })?;
     ensure_resident_plan_admitted(&layout.memory_plan)?;
     let structural_match = steps.iter().find_map(|step| match step {
+        ActivatedTurnStep::Assert(_) => None,
         ActivatedTurnStep::Match(control) => control
             .arms
             .iter()
@@ -14340,6 +14381,15 @@ fn operation_storage_descriptor(
     }
     let representation = match descriptor.schema().body() {
         SchemaBody::Bool => mech_core::FunctionValueRepresentation::Bool,
+        SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W8) => {
+            mech_core::FunctionValueRepresentation::U8
+        }
+        SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W16) => {
+            mech_core::FunctionValueRepresentation::U16
+        }
+        SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W32) => {
+            mech_core::FunctionValueRepresentation::U32
+        }
         SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64) => {
             mech_core::FunctionValueRepresentation::U64
         }
@@ -24632,7 +24682,7 @@ fn bind_control_block(
                     schema_key: value.schema_key(),
                     shape_instance: value.shape().clone(),
                     activation_fixed_shape: true,
-                    resolved_selector: None,
+                    resolved_selector: resident_resolved_selector(value),
                 })
             }
         }
@@ -24710,6 +24760,19 @@ fn bind_control_block(
         } = &operation.body
         else {
             match &operation.body {
+                crate::ControlOperationBody::Assert => {
+                    steps.push(ActivatedTurnStep::Assert(ActivatedAssertion {
+                        artifact_node: owner,
+                        block: block.id,
+                        local: operation.node,
+                        condition: input_reads[0],
+                        write: ResidentWriteLocation {
+                            slot: output_slot,
+                            storage: output.storage,
+                            region: output.region,
+                        },
+                    }))
+                }
                 crate::ControlOperationBody::Match(nested) => {
                     let prepared = prepare_match_node(
                         artifact,
@@ -24922,14 +24985,24 @@ fn bind_control_block(
             },
             memory_plan,
         ));
-        let read_start = reads.len() as u32;
-        reads.extend(input_reads);
         let mech_core::ResolvedOperationContract::Declared(contract) =
             artifact.contracts().get(*contract_id).unwrap()
         else {
             unreachable!()
         };
         let policy = &contract.outputs[0];
+        let base = match policy.construction {
+            OutputConstruction::ReadModifyWrite { base_input, .. } => Some(usize::from(base_input)),
+            _ => None,
+        };
+        let rmw_base = base.and_then(|index| input_reads.get(index).copied());
+        let read_start = reads.len() as u32;
+        reads.extend(
+            input_reads
+                .into_iter()
+                .enumerate()
+                .filter_map(|(index, read)| (Some(index) != base).then_some(read)),
+        );
         if policy.change_detection == ChangeDetectionPolicy::SemanticHash {
             return Err(ResidentActivationError::UnsupportedChangeDetection { node: owner });
         }
@@ -24943,7 +25016,7 @@ fn bind_control_block(
                 region: output.region,
             },
             construction: policy.construction.clone(),
-            rmw_base: None,
+            rmw_base,
             rmw_previous: None,
             change_detection: policy.change_detection,
             reads_state: reads[read_start as usize..]

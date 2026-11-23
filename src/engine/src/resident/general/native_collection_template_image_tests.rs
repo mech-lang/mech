@@ -37,6 +37,25 @@ fn fixture() -> (
 }
 
 #[test]
+fn source_template_clones_share_immutable_metadata_and_keep_source_headers() {
+    let (_, _, template) = fixture();
+    let bytes = serde_json::to_vec(&template).unwrap();
+    let weak = Arc::downgrade(&template.leaf.metadata);
+    let cloned = template.clone();
+    assert!(Arc::ptr_eq(&template.leaf.metadata, &cloned.leaf.metadata));
+    assert_eq!(cloned.node(), template.node());
+    assert_eq!(cloned.target(), template.target());
+    assert_eq!(cloned.sources(), template.sources());
+    assert!(!template.sources().is_empty());
+    assert_ne!(cloned.sources().as_ptr(), template.sources().as_ptr());
+    drop(template);
+    assert_eq!(serde_json::to_vec(&cloned).unwrap(), bytes);
+    assert_eq!(Arc::strong_count(&cloned.leaf.metadata), 1);
+    drop(cloned);
+    assert!(weak.upgrade().is_none());
+}
+
+#[test]
 fn build_owned_template_image_roundtrips_with_the_actual_factory() {
     let (artifact, catalog, template) = fixture();
     let image = serde_json::to_value(&template).unwrap();
@@ -47,6 +66,10 @@ fn build_owned_template_image_roundtrips_with_the_actual_factory() {
     }
     .unwrap();
     assert_eq!(loaded, template);
+    assert!(
+        !Arc::ptr_eq(&loaded.leaf.metadata, &template.leaf.metadata),
+        "an independent restoration must retain its freshly checked metadata"
+    );
     let outer = crate::native_artifact::NativeProgramLibraryTemplate::from_root(template.clone());
     let outer_image = serde_json::to_value(&outer).unwrap();
     // Keep the preexisting wire contract independently of its compact private

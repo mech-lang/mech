@@ -247,14 +247,12 @@ fn generated_launcher_references_individual_factories_and_pins_profile() {
             .unwrap();
         assert!(!main.contains("decode_program_artifact"));
         assert!(!main.contains("let artifact ="));
-        assert!(
-            main.find("BuildOwnedHostedBinding::from_build_owned_image(")
-                .unwrap()
-                < main
-                    .find("run_hosted_program_application(binding,")
-                    .unwrap()
+        crate::assert_compiled_hosted_launcher(
+            &generated,
+            &main,
+            "run_hosted_program_application(binding,",
         );
-        assert!(binding.contains("LinkedProgramArtifact::from_build_owned_image("));
+        assert!(binding.contains("LinkedProgramArtifact::from_compiled_module(module, catalog)"));
         assert!(launcher.find("binding.code.bind(&catalog)").unwrap() < capture);
         assert!(
             launcher

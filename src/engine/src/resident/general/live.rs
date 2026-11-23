@@ -63,12 +63,46 @@ pub(super) fn footprint_with_check(
     work: &mut ResourceDemand,
     check: &mut impl MeasurementCheck,
 ) -> Result<CurrentMemoryFootprint, MemoryPlanError> {
-    footprint_impl(value, descriptor, work, check, InputDataMemo::None)
+    footprint_impl(value, descriptor, work, check, None, InputDataMemo::None)
+}
+
+/// A retained schema header is immutable geometry, independent of a DATA
+/// transaction. Current snapshots and every payload chunk are still checked.
+#[cfg(all(
+    feature = "native-artifact",
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
+))]
+pub(super) fn footprint_with_schema_check(
+    value: ResidentValueRef<'_>,
+    descriptor: &mech_core::ResolvedValueDescriptor,
+    entry: &mech_core::SchemaEntry,
+    work: &mut ResourceDemand,
+    check: &mut impl MeasurementCheck,
+) -> Result<CurrentMemoryFootprint, MemoryPlanError> {
+    if entry.schema() != descriptor.schema() {
+        return Err(MemoryPlanError::DescriptorMismatch);
+    }
+    footprint_impl(
+        value,
+        descriptor,
+        work,
+        check,
+        Some((entry.canonical_bytes().len() as u64, entry.key())),
+        InputDataMemo::None,
+    )
 }
 
 #[cfg(all(
     feature = "native-artifact",
-    any(feature = "pure_text", feature = "map_ops")
+    any(
+        feature = "pure_text",
+        feature = "map_ops",
+        feature = "sequence_buffers"
+    )
 ))]
 pub(super) fn footprint_with_data_check(
     value: ResidentValueRef<'_>,
@@ -84,6 +118,7 @@ pub(super) fn footprint_with_data_check(
         descriptor,
         work,
         check,
+        None,
         InputDataMemo::Borrowed {
             transaction,
             ordinal,
@@ -97,7 +132,11 @@ enum InputDataMemo<'a> {
     None,
     #[cfg(all(
         feature = "native-artifact",
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     ))]
     Borrowed {
         transaction:
@@ -109,7 +148,11 @@ enum InputDataMemo<'a> {
     // disabled; it does not enable any native-cache module in those profiles.
     #[cfg(not(all(
         feature = "native-artifact",
-        any(feature = "pure_text", feature = "map_ops")
+        any(
+            feature = "pure_text",
+            feature = "map_ops",
+            feature = "sequence_buffers"
+        )
     )))]
     _Lifetime(core::marker::PhantomData<&'a ()>),
 }
@@ -119,7 +162,11 @@ impl InputDataMemo<'_> {
         match self {
             #[cfg(all(
                 feature = "native-artifact",
-                any(feature = "pure_text", feature = "map_ops")
+                any(
+                    feature = "pure_text",
+                    feature = "map_ops",
+                    feature = "sequence_buffers"
+                )
             ))]
             Self::Borrowed {
                 transaction,
@@ -138,7 +185,11 @@ impl InputDataMemo<'_> {
     ) -> Result<(), MemoryPlanError> {
         #[cfg(all(
             feature = "native-artifact",
-            any(feature = "pure_text", feature = "map_ops")
+            any(
+                feature = "pure_text",
+                feature = "map_ops",
+                feature = "sequence_buffers"
+            )
         ))]
         if let Self::Borrowed {
             transaction,
@@ -170,6 +221,7 @@ fn footprint_impl(
     descriptor: &mech_core::ResolvedValueDescriptor,
     work: &mut ResourceDemand,
     check: &mut impl MeasurementCheck,
+    header: Option<(u64, mech_core::SchemaKey)>,
     memo: InputDataMemo<'_>,
 ) -> Result<CurrentMemoryFootprint, MemoryPlanError> {
     // Only a single native Snapshot input is a memo candidate. All other
@@ -178,7 +230,7 @@ fn footprint_impl(
         ResidentValueRef::Snapshot([Some(_)]) => memo,
         _ => InputDataMemo::None,
     };
-    let header = memo.header()?;
+    let header = memo.header()?.or(header);
     let mut result = CurrentMemoryFootprint {
         logical_elements: value.len() as u64,
         schema_bytes: header.map_or_else(
@@ -561,13 +613,34 @@ mod tests {
         .unwrap();
         assert!(matches!(
             footprint(
-                ResidentValueRef::Snapshot(&[Some(wrong)]),
+                ResidentValueRef::Snapshot(&[Some(wrong.clone())]),
                 &descriptor,
                 &schemas,
                 &mut ResourceDemand::default()
             ),
             Err(MemoryPlanError::DescriptorMismatch)
         ));
+        #[cfg(all(
+            feature = "native-artifact",
+            any(
+                feature = "pure_text",
+                feature = "map_ops",
+                feature = "sequence_buffers"
+            )
+        ))]
+        {
+            assert_eq!(id, SchemaId::new(0));
+            assert!(matches!(
+                footprint_with_schema_check(
+                    ResidentValueRef::Snapshot(&[Some(wrong)]),
+                    &descriptor,
+                    schemas.entry(id).unwrap(),
+                    &mut ResourceDemand::default(),
+                    &mut check_measurement,
+                ),
+                Err(MemoryPlanError::DescriptorMismatch)
+            ));
+        }
         for (lifetime, allowed) in [
             (mech_core::DimensionLifetime::Activation, false),
             (mech_core::DimensionLifetime::Turn, true),

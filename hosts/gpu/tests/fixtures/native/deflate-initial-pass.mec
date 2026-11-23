@@ -1,0 +1,13 @@
+// First dynamic optimization pass from CompressOptimal.roc:1008-1100,
+// pinned at 671077457ff7ef3a3d44caf715a3fc595addf379.
+// Include the collector, costs, path, Huffman and tally components first.
+// This component stops before compute_true_cost and does not choose a block.
+// See deflate-huffman-LICENSES.md for source attribution and licenses.
+<optimal-initial-pass> := <{defaults<optimal-default-costs> costs<optimal-costs> nodes<[u64]> tallied<optimal-tally>}>
+
+optimal-initial-pass(input<[u8]>, begin<u64>, length<u64>, frequencies<[u32]>, cache<[u32]>, cache-end<u64>, nodes0<[u64]>, literal0<[u32]>, length0<[u32]>, offset0<[u32]>, length-slots<[u8]>, extra-lengths<[u8]>, extra-offsets<[u8]>, offset-slots<[u8]>, table0<[u8]>, table1<[u8]>, table2<[u8]>, symbol-costs<[u8]>, reversed<[u8]>) => (out<optimal-initial-pass>) :=
+  defaults := optimal-choose-default-costs(input, begin, length, frequencies, 300u64, table0, table1, table2, symbol-costs)
+  costs := optimal-set-default-costs(defaults.lit-cost, defaults.len-sym-cost, literal0, length0, offset0, length-slots, extra-lengths, extra-offsets)
+  path := optimal-find-min-cost-path(length, cache, cache-end, nodes0, costs.literal, costs.length, costs.offset-slot, offset-slots)
+  tallied := optimal-tally-and-build-codes(path.nodes, length, length-slots, offset-slots, reversed)
+  out := {defaults: defaults, costs: costs, nodes: path.nodes, tallied: tallied}.

@@ -11,6 +11,12 @@ constant, interface, slot/producer, node, binding, output, constraint, and
 operation sections directly. Earlier pre-launch bytecode-v1 layouts have no
 compatibility adapter.
 
+The manifest separately lists non-wire planning sidecars. The collection lexical
+cache has a crate-private accessor and stores descriptive lookup metadata only;
+it contributes neither revision nor bytecode bytes, selected factories, current
+visit proofs, nor admission authority. Encoding and decoding tests check that
+warming the cache leaves bytes unchanged and decoded artifacts start uncached.
+
 Source enum and FSM declarations retain their defining document, relative path,
 and actual schema in an optional graph field committed by `ProgramRevision`.
 The field is omitted when empty, preserving existing non-nominal bytes and
