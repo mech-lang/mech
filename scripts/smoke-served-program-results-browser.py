@@ -65,18 +65,18 @@ def native_result(binary: Path, source: Path, artifacts: Path, *, invalid: bool 
 
 
 @contextmanager
-def serve(binary: Path, package: Path, source: Path, artifacts: Path,
+def serve(binary: Path, package: Path | None, source: Path, artifacts: Path,
           *, input_paths: tuple[Path, ...] | None = None):
     port = free_port()
     config = source.parent / "mech.mcfg"
     config_args = ["--config", str(config)] if config.is_file() else ["--no-config"]
+    package_args = (["--wasm", str(package), "--allow-read", str(package),
+                     "--allow-serve", str(package)] if package is not None else [])
     with (artifacts / "server.log").open("wb") as log:
         process = subprocess.Popen(
             [str(binary), *config_args, "serve", *(str(path) for path in input_paths or (source,)),
              "--address", "127.0.0.1",
-             "--port", str(port), "--wasm", str(package),
-             "--cap-root", str(source.parent),
-             "--allow-read", str(package), "--allow-serve", str(package)],
+             "--port", str(port), "--cap-root", str(source.parent), *package_args],
             cwd=source.parent, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
             start_new_session=os.name != "nt",
         )
@@ -165,8 +165,8 @@ SNAPSHOT = r"""(() => {
       .map(name => [name, document.documentElement.dataset[name]])),
     outputs, reflected, yText: yOutput?.textContent.trim() || '',
     yVisible: Boolean(yOutput && visible(yOutput)), cells,
-    diagnostic: document.querySelector('[data-mech-errors-panel]')?.innerText.trim() ||
-      document.querySelector('body > pre')?.innerText.trim() || '',
+    diagnostic: [...document.querySelectorAll('[data-mech-errors-panel], [data-mech-source-diagnostic], body > pre')]
+      .filter(visible).map(node => node.innerText.trim()).join('\n'),
   };
 })()"""
 
@@ -192,6 +192,25 @@ def browser_result(browser: ChromeSession, url: str, artifacts: Path, names: lis
     elif not any(output["visible"] and output["text"] for output in result["outputs"]):
         raise BrowserFailure(f"document became ready with no visible result: {result}")
     return result
+
+
+def checked_browser_result(browser: ChromeSession, response: tuple[int, str] | None,
+                           url: str, artifacts: Path, names: list[str], timeout: float,
+                           *, invalid: bool = False) -> dict:
+    if response is None:
+        raise BrowserFailure("server terminated before a browser diagnostic could be verified")
+    if response[0] >= 400:
+        (artifacts / "request-error.html").write_text(response[1], encoding="utf-8")
+        if not invalid:
+            raise BrowserFailure(f"unexpected HTTP {response[0]}: {response[1][-2000:]}")
+    return browser_result(browser, url, artifacts, names, timeout, invalid=invalid)
+
+
+def wait_for_live_document(process: subprocess.Popen, url: str, timeout: float) -> None:
+    # Raw source responses can see the edit before the workspace has admitted
+    # it. Wait for publication of the executable page before testing the browser.
+    wait_for_content(process, url, lambda status, body:
+                     status == 200 and 'data-mech-document-controller' in body, timeout)
 
 
 def require_answer(result: dict, expected: str, description: str) -> None:
@@ -233,6 +252,7 @@ def import_recovery(binary: Path, browser: ChromeSession, process: subprocess.Po
         raise BrowserFailure("repairing the imported source did not produce native 42")
     raw_url = url.rsplit("/", 1)[0] + "/source/support.mec"
     wait_for_content(process, raw_url, lambda status, body: status == 200 and body == fixed, timeout)
+    wait_for_live_document(process, url, timeout)
     result = browser_result(browser, url + "?import=repaired", repaired_artifacts, ["answer"], timeout)
     require_answer(result, "42", "root after repairing only its imported source")
     if source.read_bytes() != original:
@@ -273,8 +293,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--browser", help="path to Chrome or Edge")
     parser.add_argument("--timeout", type=float, default=60)
-    parser.add_argument("--wasm", type=Path, default=ROOT / "src/wasm/pkg",
-                        help="real browser package to serve (never modified)")
+    assets = parser.add_mutually_exclusive_group()
+    assets.add_argument("--wasm", type=Path, help="real browser package to serve (never modified)")
+    assets.add_argument("--embedded-assets", action="store_true",
+                        help="use only the executable's embedded browser assets")
     parser.add_argument("--keep-artifacts", action="store_true")
     parser.add_argument("--case", action="append", choices=(
         "plain", "fenced", "fizzbuzz", "watch-recovery", "syntax-error",
@@ -285,10 +307,10 @@ def main() -> None:
     if args.timeout <= 0:
         parser.error("--timeout must be positive")
     binary = Path(os.environ.get("MECH_BIN", ROOT / "target/debug/mech")).resolve()
-    package = args.wasm.resolve()
+    package = None if args.embedded_assets else (args.wasm or ROOT / "src/wasm/pkg").resolve()
     if not binary.is_file():
         parser.error(f"Mech binary does not exist: {binary}; set MECH_BIN")
-    if not all((package / filename).is_file() for filename in ("mech_wasm.js", "mech_wasm_bg.wasm")):
+    if package is not None and not all((package / filename).is_file() for filename in ("mech_wasm.js", "mech_wasm_bg.wasm")):
         parser.error(f"real browser package is missing: {package}; run scripts/build-wasm.py --profile browser")
     work = Path(tempfile.mkdtemp(prefix="mech-served-program-results-"))
     browser = None
@@ -350,11 +372,11 @@ def main() -> None:
                        input_paths=(valid, current) if mixed else
                        (source, current) if directory_import else None) as (process, url):
                 response = wait_for_page(process, url, args.timeout)
+                if response is None:
+                    raise BrowserFailure("server terminated before its browser result could be verified")
                 if file_import:
                     require_private_sibling(process, url, args.timeout)
                 if mixed:
-                    if response is None:
-                        raise BrowserFailure("mixed workspace failed before its valid root could execute")
                     main_result = browser_result(
                         browser, url.rsplit("/", 1)[0] + "/main.mec", current,
                         ["answer"], args.timeout,
@@ -362,23 +384,11 @@ def main() -> None:
                     if main_result["reflected"].get("answer") != "42":
                         raise BrowserFailure("valid mixed-workspace source did not render 42")
                 if rejected_import:
-                    if response is None:
-                        raise BrowserFailure("server stopped before its rejected import could be repaired")
-                    browser_result(browser, url, current, [], args.timeout, invalid=True)
+                    checked_browser_result(browser, response, url, current, [], args.timeout, invalid=True)
                     import_recovery(binary, browser, process, url, source, current, args.timeout)
-                elif response is None:
-                    log = (current / "server.log").read_text(errors="replace")
-                    if not invalid or process.returncode == 0 or not SOURCE_DIAGNOSTIC.search(log):
-                        raise BrowserFailure(f"server exited without an expected diagnostic: {log[-2000:]}")
-                    result = {"rejected": "server", "exitCode": process.returncode}
-                elif response[0] >= 400:
-                    (current / "request-error.html").write_text(response[1], encoding="utf-8")
-                    if not invalid or not SOURCE_DIAGNOSTIC.search(response[1]):
-                        raise BrowserFailure(f"unexpected HTTP {response[0]}: {response[1][-2000:]}")
-                    result = {"rejected": "request", "status": response[0]}
                 else:
                     names = ["y", *INVARIANTS] if name == "fizzbuzz" else [] if invalid else ["answer"]
-                    result = browser_result(browser, url, current, names, args.timeout, invalid=invalid)
+                    result = checked_browser_result(browser, response, url, current, names, args.timeout, invalid=invalid)
                     if name in ("plain", "fenced", "watch-recovery", "file-import-recovery"):
                         require_answer(result, "42", name)
                         if name == "watch-recovery":

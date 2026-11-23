@@ -719,7 +719,10 @@ impl ServerSourceRegistry {
                     extra_slots.insert("DOCUMENT_SCRIPT", document_controller);
                     extra_slots.insert("WASM_MODULE_URL", "/_mech/pkg/mech_wasm.js");
                 } else {
-                    extra_slots.insert("DOCUMENT_SCRIPT", "");
+                    extra_slots.insert(
+                        "DOCUMENT_SCRIPT",
+                        include_str!("../include/presentation.js"),
+                    );
                     extra_slots.insert("WASM_MODULE_URL", "");
                 }
                 // Served documents load their complete source map from the
@@ -886,6 +889,11 @@ impl ServerSourceRegistry {
         for (path, messages) in diagnostics {
             self.check(FS_READ, &path)?;
             self.check(FS_SERVE, &path)?;
+            // A removed target remains a workspace diagnostic, but no longer
+            // owns a public document route.
+            if !path.is_file() {
+                continue;
+            }
             let Some(specifier) = path.strip_prefix(&root).ok().and_then(url_key) else {
                 continue;
             };
@@ -2732,6 +2740,55 @@ mod tests {
 
         drop(registry);
         drop(guard);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn static_and_non_root_pages_keep_presentation_without_executable_controller() {
+        let root = temp_root("static-presentation");
+        std::fs::write(root.join("main.mec"), "answer := 42\nanswer\n").unwrap();
+        std::fs::write(
+            root.join("notes.mec"),
+            "Notes\n=====\n\n```mermaid\nflowchart LR\n  A --> B\n```\n",
+        )
+        .unwrap();
+        std::fs::write(root.join("helper.mec"), "value := true\n").unwrap();
+        let session = ServerWorkspaceSession::open(
+            &root,
+            vec![RuntimeWorkspaceTarget {
+                name: "main".into(),
+                specifier: "main.mec".into(),
+            }],
+            vec![RuntimeWorkspaceFolder {
+                specifier: ".".into(),
+                recursive: true,
+            }],
+            module_options(),
+        )
+        .unwrap();
+        for (name, shim) in [
+            ("include/index.html", include_str!("../include/index.html")),
+            ("include/docs.html", include_str!("../include/docs.html")),
+            ("include/blog.html", include_str!("../include/blog.html")),
+        ] {
+            let mut registry = ServerSourceRegistry::default();
+            registry.set_document_controller(
+                Some("const executableController = true;".into()),
+                Some(name.into()),
+            );
+            registry
+                .sync_workspace_snapshot(&root, session.snapshot().unwrap(), "", shim, &[])
+                .unwrap();
+            for path in ["/notes.mec", "/helper.mec"] {
+                let html = String::from_utf8(registry.get_route(path).unwrap().bytes).unwrap();
+                assert!(html.contains("window.MechPresentation"), "{name} {path}");
+                assert!(
+                    !html.contains("const executableController"),
+                    "{name} {path}"
+                );
+                assert!(html.contains("data-mech-wasm-module=\"\""), "{name} {path}");
+            }
+        }
         std::fs::remove_dir_all(root).unwrap();
     }
 

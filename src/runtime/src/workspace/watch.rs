@@ -69,7 +69,19 @@ pub enum RuntimeWorkspaceWatchEventKind {
     Created,
     Modified,
     Removed,
+    Renamed,
+    DirectoryChanged,
     Other,
+}
+
+impl RuntimeWorkspaceWatchEvent {
+    pub(super) fn may_repair_rejected_target(&self) -> bool {
+        matches!(crate::SourceKind::from_path(&self.path), crate::SourceKind::Mech)
+            || self.path.is_dir()
+            // Rename notifications can be the only event for a directory
+            // moved into or out of the watched tree.
+            || matches!(self.kind, RuntimeWorkspaceWatchEventKind::DirectoryChanged | RuntimeWorkspaceWatchEventKind::Renamed)
+    }
 }
 
 impl RuntimeWorkspaceWatcher {
@@ -235,7 +247,13 @@ impl RuntimeWorkspaceWatcher {
             events.extend(
                 watch_events_from_notify_event(event)
                     .into_iter()
-                    .filter(|event| event_allowed_by_watches(&self.watched_paths, &event.path)),
+                    .filter(|event| {
+                        event_allowed_by_watches_inner(
+                            &self.watched_paths,
+                            &event.path,
+                            event.may_repair_rejected_target(),
+                        )
+                    }),
             );
         }
 
@@ -434,9 +452,18 @@ fn push_unique_path(paths: &mut Vec<PathBuf>, path: PathBuf) {
 }
 
 fn event_allowed_by_watches(watches: &BTreeSet<RuntimeWorkspaceWatchedPath>, path: &Path) -> bool {
+    event_allowed_by_watches_inner(watches, path, false)
+}
+
+fn event_allowed_by_watches_inner(
+    watches: &BTreeSet<RuntimeWorkspaceWatchedPath>,
+    path: &Path,
+    structural_change: bool,
+) -> bool {
     let normalized = normalize_workspace_watch_path(path);
     watches.iter().any(|watch| {
         if watch.scope == RuntimeWorkspaceWatchScope::RejectedSources
+            && !structural_change
             && !matches!(crate::SourceKind::from_path(path), crate::SourceKind::Mech)
         {
             return false;
@@ -556,6 +583,13 @@ fn watch_events_from_notify_event(event: Event) -> Vec<RuntimeWorkspaceWatchEven
 
 fn watch_event_kind(kind: &EventKind) -> RuntimeWorkspaceWatchEventKind {
     match kind {
+        EventKind::Create(notify::event::CreateKind::Folder)
+        | EventKind::Remove(notify::event::RemoveKind::Folder) => {
+            RuntimeWorkspaceWatchEventKind::DirectoryChanged
+        }
+        EventKind::Modify(notify::event::ModifyKind::Name(_)) => {
+            RuntimeWorkspaceWatchEventKind::Renamed
+        }
         EventKind::Create(_) => RuntimeWorkspaceWatchEventKind::Created,
         EventKind::Modify(_) => RuntimeWorkspaceWatchEventKind::Modified,
         EventKind::Remove(_) => RuntimeWorkspaceWatchEventKind::Removed,
@@ -663,14 +697,26 @@ mod tests {
     ) -> RuntimeWorkspaceWatchPoll {
         // Exercise the platform event boundary deterministically. The watcher
         // registrations and authorization filters remain the production ones.
-        let (sender, receiver) = mpsc::channel();
-        sender
-            .send(Ok(Event {
+        poll_event(
+            watcher,
+            workspace,
+            runtime,
+            Event {
                 kind: EventKind::Modify(notify::event::ModifyKind::Any),
                 paths: vec![path],
                 attrs: Default::default(),
-            }))
-            .unwrap();
+            },
+        )
+    }
+
+    fn poll_event(
+        watcher: &mut RuntimeWorkspaceWatcher,
+        workspace: &mut RuntimeWorkspace,
+        runtime: &mut MechRuntime,
+        event: Event,
+    ) -> RuntimeWorkspaceWatchPoll {
+        let (sender, receiver) = mpsc::channel();
+        sender.send(Ok(event)).unwrap();
         watcher.receiver = receiver;
         watcher.poll(workspace, runtime, module_options()).unwrap()
     }
@@ -779,6 +825,57 @@ mod tests {
         assert!(workspace.has_rejected_targets());
         drop(watcher);
         std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn authorized_directory_events_retry_rejected_file_only_imports() {
+        for root_watch in [false, true] {
+            for kind in [
+                EventKind::Create(notify::event::CreateKind::Folder),
+                EventKind::Modify(notify::event::ModifyKind::Name(
+                    notify::event::RenameMode::Both,
+                )),
+                EventKind::Remove(notify::event::RemoveKind::Folder),
+            ] {
+                let (root, mut workspace, mut runtime) =
+                    import_workspace("value := [\n", root_watch);
+                let mut watcher = RuntimeWorkspaceWatcher::open(&workspace, &mut runtime).unwrap();
+                let incoming = root.join("incoming");
+                std::fs::create_dir(&incoming).unwrap();
+                std::fs::write(incoming.join("support.mec"), "value := 42\n<+ value\n").unwrap();
+                std::fs::remove_dir_all(root.join("lib")).unwrap();
+                std::fs::rename(&incoming, root.join("lib")).unwrap();
+                // A removal/rename may be the only notification for a replaced
+                // directory; no individual source-file notification is required.
+                let path = if matches!(kind, EventKind::Remove(_)) {
+                    incoming
+                } else {
+                    root.join("lib")
+                };
+                let poll = poll_event(
+                    &mut watcher,
+                    &mut workspace,
+                    &mut runtime,
+                    Event {
+                        kind,
+                        paths: vec![path],
+                        attrs: Default::default(),
+                    },
+                );
+                if root_watch {
+                    let refresh = poll.refresh.unwrap();
+                    assert_eq!(refresh.affected_targets, ["main"]);
+                    assert!(refresh.snapshot.targets.contains_key("main"));
+                    assert!(refresh.snapshot.diagnostics.is_empty());
+                } else {
+                    assert!(poll.events.is_empty());
+                    assert!(poll.refresh.is_none());
+                    assert!(workspace.has_rejected_targets());
+                }
+                drop(watcher);
+                std::fs::remove_dir_all(root).unwrap();
+            }
+        }
     }
 
     fn single_target_watch(root: &Path, specifier: &str) -> RuntimeWorkspaceWatchedPath {
@@ -1607,7 +1704,7 @@ mod tests {
             events,
             vec![RuntimeWorkspaceWatchEvent {
                 path: app,
-                kind: RuntimeWorkspaceWatchEventKind::Created
+                kind: RuntimeWorkspaceWatchEventKind::DirectoryChanged
             }]
         );
         std::fs::remove_dir_all(root).unwrap();
