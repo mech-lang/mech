@@ -9,10 +9,13 @@ use cranelift_codegen::ir::{
 };
 use std::collections::BTreeMap;
 
+const BYTE_LITERAL_COUNT: i64 = 1_i64 << u8::BITS;
+
 #[derive(Clone, Copy, Default)]
 pub(super) struct Options {
     pub allow_biased_costs: bool,
     pub rebase_costs: bool,
+    pub check_literal_bytes: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -22,6 +25,7 @@ pub(super) struct Pair {
     literal_limit: Word,
     literal_bias: i64,
     lookup_bias_bytes: Option<i64>,
+    check_literal_bytes: bool,
     output: Value,
     selector_bits: u32,
     item_shift: u32,
@@ -322,14 +326,18 @@ impl Pair {
         {
             return Err("packet words are unavailable at pair entry");
         }
+        let lookup_bias_bytes = literal_bias
+            .checked_mul(4)
+            .filter(|&bytes| options.rebase_costs && bytes > 0);
         Ok(Self {
             cache,
             literals,
             literal_limit,
             literal_bias,
-            lookup_bias_bytes: literal_bias
-                .checked_mul(4)
-                .filter(|&bytes| options.rebase_costs && bytes > 0),
+            lookup_bias_bytes,
+            check_literal_bytes: options.check_literal_bytes
+                && selector_bits <= u32::BITS - u8::BITS
+                && (literal_bias == 0 || lookup_bias_bytes.is_some()),
             output,
             selector_bits,
             item_shift,
@@ -401,6 +409,16 @@ impl Pair {
             } else {
                 (literals, literal_limit, self.literal_bias, valid)
             };
+        let valid = if self.check_literal_bytes {
+            let covers_bytes = b.ins().icmp_imm(
+                IntCC::UnsignedGreaterThanOrEqual,
+                lookup_limit,
+                BYTE_LITERAL_COUNT,
+            );
+            b.ins().band(valid, covers_bytes)
+        } else {
+            valid
+        };
         let first = [count, cache_cursor, length, previous].map(BlockArg::Value);
         b.ins().brif(valid, start, &first, scalar, scalar_args);
 
@@ -422,8 +440,14 @@ impl Pair {
             .with_endianness(Endianness::Little)
             .with_trap_code(self.header_flags.trap_code());
         let packed = b.ins().load(types::I64, flags, address, 0);
-        let selector_mask = (1_i64 << self.selector_bits) - 1;
-        let mask = selector_mask | (selector_mask << 32);
+        let mask = if self.check_literal_bytes {
+            // Entry admits the entire byte-indexed cost span. Reject
+            // selector bits and wider literal indices in the same check.
+            i64::from(u32::MAX) ^ ((BYTE_LITERAL_COUNT - 1) << self.selector_bits)
+        } else {
+            (1_i64 << self.selector_bits) - 1
+        };
+        let mask = mask | (mask << 32);
         let selectors = b.ins().band_imm(packed, mask);
         let empty = b.ins().icmp_imm(IntCC::Equal, selectors, 0);
         b.ins().brif(empty, check_literals, &[], scalar, &resume);
@@ -438,14 +462,18 @@ impl Pair {
         // returns to the same scalar visit before either append is committed.
         let first_index = b.ins().iadd_imm(first, index_bias);
         let second_index = b.ins().iadd_imm(second, index_bias);
-        let first_valid = b
-            .ins()
-            .icmp(IntCC::UnsignedLessThan, first_index, lookup_limit);
-        let second_valid = b
-            .ins()
-            .icmp(IntCC::UnsignedLessThan, second_index, lookup_limit);
-        let both = b.ins().band(first_valid, second_valid);
-        b.ins().brif(both, append, &[], scalar, &resume);
+        if self.check_literal_bytes {
+            b.ins().jump(append, &[]);
+        } else {
+            let first_valid = b
+                .ins()
+                .icmp(IntCC::UnsignedLessThan, first_index, lookup_limit);
+            let second_valid = b
+                .ins()
+                .icmp(IntCC::UnsignedLessThan, second_index, lookup_limit);
+            let both = b.ins().band(first_valid, second_valid);
+            b.ins().brif(both, append, &[], scalar, &resume);
+        }
 
         b.goto_bottom(append);
         let first_addr = indexed(b, lookup_base, first_index, 4);

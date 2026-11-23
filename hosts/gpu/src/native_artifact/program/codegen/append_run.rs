@@ -352,6 +352,7 @@ fn optimize_inner(
             pairs::Options {
                 allow_biased_costs: std::env::var_os("MECH_PAIR_BIASED_APPENDS").is_some(),
                 rebase_costs: std::env::var_os("MECH_PAIR_REBASE_LITERAL_COSTS").is_some(),
+                check_literal_bytes: std::env::var_os("MECH_CHECK_GROUPED_LITERAL_BYTES").is_some(),
             },
         ) {
             Ok(pair) => Some(pair),

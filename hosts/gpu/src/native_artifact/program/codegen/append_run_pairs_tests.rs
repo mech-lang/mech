@@ -174,7 +174,8 @@ fn compile(bias: i64, mode: u8) -> (JITModule, Run) {
                 &params,
                 Options {
                     allow_biased_costs: true,
-                    rebase_costs: mode == 3,
+                    rebase_costs: mode % 2 == 1,
+                    check_literal_bytes: mode >= 4,
                 },
             )
             .unwrap()
@@ -222,11 +223,11 @@ fn call(
 fn biased_pairs_preserve_wrapping_costs_ordered_failures_and_scalar_tails() {
     let mut calls = 0;
     for bias in [0, 1, 259, -1, -256, i64::MAX] {
-        let compiled = [0, 1, 2, 3].map(|mode| compile(bias, mode));
+        let compiled = core::array::from_fn::<_, 6, _>(|mode| compile(bias, mode as u8));
         let costs = (0..547)
             .map(|i| (i as u32).wrapping_mul(0xfedc_ba97).wrapping_add(u32::MAX))
             .collect::<Vec<_>>();
-        for n in [0_usize, 1, 2, 8, 9, 10, 17, 32] {
+        for n in [0_usize, 1, 2, 8, 9, 10, 11, 12, 17, 32] {
             let floor = if bias < 0 {
                 bias.wrapping_neg() as u32
             } else {
@@ -236,7 +237,13 @@ fn biased_pairs_preserve_wrapping_costs_ordered_failures_and_scalar_tails() {
                 .map(|i| ((floor.wrapping_add(i as u32 % 32)) & 0xffff) << 16)
                 .collect::<Vec<_>>();
             let mut inputs = vec![cache.clone()];
-            for at in [0, n.saturating_sub(2), n.saturating_sub(3)] {
+            for at in [
+                0,
+                n.saturating_sub(2),
+                n.saturating_sub(3),
+                n.saturating_sub(4),
+                n.saturating_sub(5),
+            ] {
                 if at < n {
                     let mut bad = cache.clone();
                     bad[at] = 0xffff_0000;
@@ -280,14 +287,17 @@ fn biased_pairs_preserve_wrapping_costs_ordered_failures_and_scalar_tails() {
             calls += 1;
         }
         if bias == 259 {
-            let cache = [0; 16];
-            for length in [258, 259, 260, 261] {
-                let costs = &costs[..length];
-                let expected = call(compiled[0].1, &cache, 16, costs, 16, 16, 1);
-                calls += 1;
-                for (_, run) in &compiled[1..] {
-                    assert_eq!(call(*run, &cache, 16, costs, 16, 16, 1), expected);
+            let mut mixed = [0xff_0000; 16];
+            mixed[13] = 0x100_0000;
+            for cache in [[0; 16], [0xff_0000; 16], mixed] {
+                for length in [258, 259, 260, 261, 514, 515, 516, 547] {
+                    let costs = &costs[..length];
+                    let expected = call(compiled[0].1, &cache, 16, costs, 16, 16, 1);
                     calls += 1;
+                    for (_, run) in &compiled[1..] {
+                        assert_eq!(call(*run, &cache, 16, costs, 16, 16, 1), expected);
+                        calls += 1;
+                    }
                 }
             }
         }
@@ -329,7 +339,7 @@ fn biased_pair_recognition_requires_the_exact_cost_index_guard() {
 fn biased_pairs_preserve_alias_fallbacks_and_adjacent_views() {
     for bias in [0, 259, -256] {
         let reference = compile(bias, 0);
-        let candidates = [2, 3].map(|mode| compile(bias, mode));
+        let candidates = core::array::from_fn::<_, 4, _>(|mode| compile(bias, mode as u8 + 2));
         for layout in 0..3 {
             let execute = |run: Run| {
                 let mut storage = vec![0xfeed_cafe_ffff_ffc0_u64; 320];
