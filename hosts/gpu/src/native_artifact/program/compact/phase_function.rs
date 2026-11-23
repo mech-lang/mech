@@ -522,6 +522,14 @@ fn select_phase_choices(function: &mut cranelift_codegen::ir::Function) -> usize
     }
 }
 
+fn phase_selected(option: &str, symbol: &str) -> bool {
+    std::env::var(option).is_ok_and(|targets| {
+        targets
+            .split(';')
+            .any(|target| target == "all" || target == symbol)
+    })
+}
+
 fn general_ir_observed() -> bool {
     [
         "MECH_COMPACT_PHASE_CONTROLLER_WINDOWS",
@@ -1884,9 +1892,7 @@ fn prepare_impl<M: Module>(
     if !observe && cleanup.enabled && private.is_some() && vectors.is_some() {
         // Packet and scalar-choice rewrites can leave an incoming edge with
         // enough information to bypass a later pure branch in this phase.
-        if std::env::var_os("MECH_COMPACT_FORWARD_PHASE_ROUTES")
-            .is_some_and(|target| target == "all" || target == symbol.as_str())
-        {
+        if phase_selected("MECH_COMPACT_FORWARD_PHASE_ROUTES", &symbol) {
             let isa = module.isa();
             let loops = cfg_cleanup::thread_loop_edges(&controls, &mut context, isa)?;
             let routes = cfg_cleanup::forward_identity_routes(&controls, &mut context, isa)?;
@@ -2033,6 +2039,27 @@ fn prepare_impl<M: Module>(
             .collect();
         context.compute_cfg();
         entry_halfwords = cfg_cleanup::admit_loop_masks(&mut context.func, &context.cfg, &captures);
+    }
+    if !observe
+        && cleanup.enabled
+        && vectors.is_some()
+        && !entry_spans.is_empty()
+        && private.is_some_and(|contract| contract.permits(proof))
+        && phase_selected("MECH_COMPACT_SPECIALIZE_TAGGED_STORE_TAILS", &symbol)
+    {
+        // Only the already-admitted tail is eligible for specialization.
+        let isa = module.isa();
+        let tails = cfg_cleanup::specialize_tagged_store_tails(&mut context, isa)?;
+        let routes = if tails != 0 && phase_selected("MECH_COMPACT_FORWARD_PHASE_ROUTES", &symbol) {
+            cfg_cleanup::forward_identity_routes(&controls, &mut context, isa)?.threaded_edges
+        } else {
+            0
+        };
+        if std::env::var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF").is_some() {
+            eprintln!(
+                "{symbol} specialized tagged store tails: {tails}, forwarded routes: {routes}"
+            );
+        }
     }
     let packed_input = if pack_input {
         phase_storage::pack_used_input_words(&mut context.func, input_words)
