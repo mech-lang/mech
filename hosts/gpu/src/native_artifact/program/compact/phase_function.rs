@@ -2123,6 +2123,24 @@ fn prepare_impl<M: Module>(
         }
         phase_layout::apply(&mut context, &symbol).map_err(backend)?;
     }
+    if !observe
+        && cleanup.enabled
+        && phase_selected("MECH_COMPACT_FOLD_PHASE_CHECKED_ARITHMETIC", &symbol)
+    {
+        context.compute_cfg();
+        let carries =
+            cfg_cleanup::checked_adds::fold_lowered_carries(&mut context.func, &context.cfg);
+        let products =
+            cfg_cleanup::checked_adds::fold_zero_high_products(&mut context.func, &context.cfg);
+        if carries != 0 || products != 0 {
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        if std::env::var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF").is_some() {
+            eprintln!(
+                "{symbol} proved checked arithmetic: {carries} carry tests, {products} high products"
+            );
+        }
+    }
     prepare_body(module.isa(), &mut context)?;
     if !observe && vectors.is_some() {
         phase_layout::apply_register_weights(&mut context, &symbol).map_err(backend)?;
