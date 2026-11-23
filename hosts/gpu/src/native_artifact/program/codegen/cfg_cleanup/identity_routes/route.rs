@@ -43,12 +43,38 @@ pub(super) fn pure(f: &Function, block: Block, last: Inst) -> bool {
         })
 }
 
+// A pure route can pass the same SSA value into two different comparison
+// operands. Their exact unsigned or signed relation does not need a range.
+fn identical_comparison(f: &Function, inst: Inst, words: &BTreeMap<Value, Word>) -> Option<Range> {
+    let Data::IntCompare { cond, args, .. } = f.dfg.insts[inst] else {
+        return None;
+    };
+    let ty = f.dfg.value_type(args[0]);
+    if !ty.is_int() || ty.is_vector() || ty.bits() > 64 {
+        return None;
+    }
+    let source = |value| {
+        let value = f.dfg.resolve_aliases(value);
+        match words.get(&value) {
+            Some(Word::Value(source, _)) => Some(f.dfg.resolve_aliases(*source)),
+            Some(Word::Constant(_, _)) => None,
+            None => Some(value),
+        }
+    };
+    if source(args[0])? != source(args[1])? {
+        return None;
+    }
+    let truth = u64::from(super::super::integer_comparison(cond, 0, 0, ty.bits()));
+    Some(Range(truth, truth))
+}
+
 pub(super) fn find(
     f: &Function,
     dom: &DominatorTree,
     uses: &Uses,
     edge: Edge,
     mut known: BTreeMap<Value, Range>,
+    equate_transports: bool,
 ) -> Option<Plan> {
     let source = f.layout.inst_block(edge.inst)?;
     if !dom.is_reachable(source) {
@@ -109,7 +135,11 @@ pub(super) fn find(
             }
             for &result in f.dfg.inst_results(inst) {
                 next_known.remove(&result);
-                if let Some(r) = Facts::bound(f, &next_known).value_range(result) {
+                let range = equate_transports
+                    .then(|| identical_comparison(f, inst, &words))
+                    .flatten()
+                    .or_else(|| Facts::bound(f, &next_known).value_range(result));
+                if let Some(r) = range {
                     next_known.insert(result, r);
                 }
             }
@@ -177,4 +207,41 @@ pub(super) fn find(
         repairs,
         conditions,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use cranelift_codegen::ir::{AbiParam, InstBuilder, condcodes::IntCC, types};
+    use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
+
+    #[test]
+    fn transported_comparisons_require_the_same_source_word() {
+        let mut f = Function::new();
+        f.signature.params = vec![AbiParam::new(types::I64); 2];
+        let mut state = FunctionBuilderContext::new();
+        let mut b = FunctionBuilder::new(&mut f, &mut state);
+        let entry = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        let [left, right] = b.block_params(entry).try_into().unwrap();
+        b.switch_to_block(entry);
+        let greater = b.ins().icmp(IntCC::UnsignedGreaterThan, left, right);
+        let less_equal = b.ins().icmp(IntCC::SignedLessThanOrEqual, left, right);
+        b.ins().return_(&[]);
+        b.seal_all_blocks();
+        b.finalize();
+
+        let greater = f.dfg.value_def(greater).inst().unwrap();
+        let less_equal = f.dfg.value_def(less_equal).inst().unwrap();
+        let mut words = BTreeMap::new();
+        words.insert(left, Word::Value(left, Some(Range(0, 255))));
+        words.insert(right, Word::Value(right, Some(Range(0, 255))));
+        assert!(identical_comparison(&f, greater, &words).is_none());
+        words.insert(right, Word::Value(left, None));
+        assert_eq!(identical_comparison(&f, greater, &words), Some(Range(0, 0)));
+        assert_eq!(
+            identical_comparison(&f, less_equal, &words),
+            Some(Range(1, 1))
+        );
+    }
 }

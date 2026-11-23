@@ -2051,7 +2051,8 @@ fn prepare_impl<M: Module>(
         let isa = module.isa();
         let tails = cfg_cleanup::specialize_tagged_store_tails(&mut context, isa)?;
         let routes = if tails != 0 && phase_selected("MECH_COMPACT_FORWARD_PHASE_ROUTES", &symbol) {
-            cfg_cleanup::forward_identity_routes(&controls, &mut context, isa)?.threaded_edges
+            cfg_cleanup::forward_identity_routes_from(&controls, &mut context, isa, None, true)?
+                .threaded_edges
         } else {
             0
         };
@@ -2545,6 +2546,7 @@ fn optimize_phase(
             context,
             isa,
             Some(&word_loops.reduction_completions),
+            false,
         )?;
         if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             eprintln!(
