@@ -1,5 +1,5 @@
 //! The first owner remains in Heap; secondary slots are allocated on demand.
-use super::{Owner, small_scratch::SmallScratch};
+use super::{Owner, fixed_transform::FixedTransforms, small_scratch::SmallScratch};
 use std::ptr;
 
 const INLINE: usize = 24;
@@ -12,6 +12,7 @@ pub(super) struct OwnerRegistry {
     overflow: Vec<*mut Owner>,
     free: Vec<usize>,
     pub(super) scratch: SmallScratch,
+    pub(super) fixed_transforms: Option<Box<FixedTransforms>>,
 }
 
 impl OwnerRegistry {
