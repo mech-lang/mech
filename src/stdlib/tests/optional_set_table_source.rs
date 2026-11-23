@@ -416,3 +416,56 @@ fn table_filter_preserves_current_matrix_column_shapes() {
         }
     }
 }
+
+#[test]
+fn live_positional_table_gather_projects_columns_and_recovers_after_rejection() {
+    let (artifacts, output) = artifacts(
+        "indices := input<[u64]>\nrobots := |id<f64> ready<bool>| 1 true | 2 false | 3 true |\nselected := robots[indices,:]\nselected.id\n",
+    );
+    for artifact in artifacts {
+        let mut instance = instance(&artifact);
+        for indices in [&[3, 1, 3][..], &[], &[2], &[1, 2, 3, 1]] {
+            let value = input(
+                &artifact,
+                ValueDataDraft::Matrix(indices.iter().copied().map(ValueDataDraft::U64).collect()),
+            );
+            turn(&mut instance, &value).unwrap();
+            let result = instance.copied_output(output).unwrap();
+            let ValueData::Matrix(matrix) = result.data() else {
+                panic!("{result:?}")
+            };
+            let mech_core::snapshot::SequenceView::F64(ids) = matrix.elements() else {
+                panic!("{result:?}")
+            };
+            assert_eq!(
+                ids.iter().map(|id| id.to_f64() as u64).collect::<Vec<_>>(),
+                indices,
+            );
+        }
+        let accepted = instance.copied_output(output).unwrap();
+        for index in [0, 4] {
+            let invalid = input(
+                &artifact,
+                ValueDataDraft::Matrix(vec![ValueDataDraft::U64(index)].into_boxed_slice()),
+            );
+            assert!(turn(&mut instance, &invalid).is_err());
+            assert!(
+                accepted
+                    .snapshot_eq(
+                        artifact.schemas(),
+                        &instance.copied_output(output).unwrap(),
+                        artifact.schemas()
+                    )
+                    .unwrap()
+            );
+        }
+        let valid = input(
+            &artifact,
+            ValueDataDraft::Matrix(vec![ValueDataDraft::U64(3)].into_boxed_slice()),
+        );
+        turn(&mut instance, &valid).unwrap();
+        let result = instance.copied_output(output).unwrap();
+        assert!(matches!(result.data(), ValueData::Matrix(matrix)
+            if matches!(matrix.elements().value_at(0), Some(ValueData::F64(id)) if id.to_f64() == 3.0)));
+    }
+}
