@@ -413,9 +413,14 @@ pub(in crate::native_artifact) fn optimize_final_batched_routes(
         context.func.dfg.resolve_all_aliases();
         context.compute_cfg();
         context.compute_domtree();
-        report.identity_edges =
-            identity_routes::optimize(&mut context.func, &context.cfg, &context.domtree, None)
-                .threaded_edges;
+        report.identity_edges = identity_routes::optimize(
+            &mut context.func,
+            &context.cfg,
+            &context.domtree,
+            None,
+            false,
+        )
+        .threaded_edges;
         if report.identity_edges != 0 {
             finish_route(context)?;
         }
@@ -586,7 +591,7 @@ pub(in crate::native_artifact) fn forward_identity_routes(
     context: &mut Context,
     isa: &dyn TargetIsa,
 ) -> Result<identity_routes::Report, NativeCompileError> {
-    forward_identity_routes_from(controls, context, isa, None)
+    forward_identity_routes_from(controls, context, isa, None, false)
 }
 
 pub(in crate::native_artifact) fn forward_identity_routes_from(
@@ -594,6 +599,7 @@ pub(in crate::native_artifact) fn forward_identity_routes_from(
     context: &mut Context,
     isa: &dyn TargetIsa,
     origins: Option<&[Block]>,
+    equate_transports: bool,
 ) -> Result<identity_routes::Report, NativeCompileError> {
     if !controls.enabled(OptimizationPass::CfgCleanup)
         || !controls.enabled(OptimizationPass::IdentityRoutes)
@@ -603,8 +609,13 @@ pub(in crate::native_artifact) fn forward_identity_routes_from(
     context.func.dfg.resolve_all_aliases();
     context.compute_cfg();
     context.compute_domtree();
-    let report =
-        identity_routes::optimize(&mut context.func, &context.cfg, &context.domtree, origins);
+    let report = identity_routes::optimize(
+        &mut context.func,
+        &context.cfg,
+        &context.domtree,
+        origins,
+        equate_transports,
+    );
     if report.threaded_edges != 0 {
         optimize_ordered(controls, context, isa, true)?;
         context.func.dfg.resolve_all_aliases();
