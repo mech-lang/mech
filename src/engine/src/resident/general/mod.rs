@@ -11744,7 +11744,13 @@ fn complete_activation_shape_facts_with_analysis(
                             })?;
                         facts.slot_shape_seeds.insert(output, shape);
                     }
-                    _ => return Err(ResidentActivationError::UnresolvedShape { slot: output }),
+                    CardinalitySpec::Exact(_) => {
+                        let shape = mech_core::shape_for_declared_lower_bounds(output_schema)
+                            .map_err(|_| ResidentActivationError::UnresolvedShape {
+                                slot: output,
+                            })?;
+                        facts.slot_shape_seeds.insert(output, shape);
+                    }
                 }
                 continue;
             }

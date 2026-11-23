@@ -1972,12 +1972,12 @@ fn adapt_resolved_pattern_item(
     }
 }
 
-fn binding_shape_observation(target: &SchemaBody, actual: &SchemaBody) -> Option<SchemaBody> {
+fn binding_shape_observation(target: &SchemaBody, actual: &SchemaBody) -> SchemaBody {
     if matches!(target, SchemaBody::Dynamic) {
-        return Some(SchemaBody::Dynamic);
+        return SchemaBody::Dynamic;
     }
     if target == actual {
-        return Some(actual.clone());
+        return actual.clone();
     }
     match (target, actual) {
         (
@@ -1988,21 +1988,23 @@ fn binding_shape_observation(target: &SchemaBody, actual: &SchemaBody) -> Option
                 element: actual,
                 dimensions,
             },
-        ) => Some(SchemaBody::Matrix {
-            element: Box::new(binding_shape_observation(target, actual)?),
+        ) => SchemaBody::Matrix {
+            element: Box::new(binding_shape_observation(target, actual)),
             dimensions: dimensions.clone(),
-        }),
+        },
         (SchemaBody::Tuple(target), SchemaBody::Tuple(actual)) if target.len() == actual.len() => {
-            Some(SchemaBody::Tuple(
+            SchemaBody::Tuple(
                 target
                     .iter()
                     .zip(actual)
                     .map(|(target, actual)| binding_shape_observation(target, actual))
-                    .collect::<Option<Vec<_>>>()?
+                    .collect::<Vec<_>>()
                     .into_boxed_slice(),
-            ))
+            )
         }
-        _ => None,
+        // Core's component solver checks composite structure, nominal identity,
+        // and dimension bounds against this concrete observation.
+        _ => actual.clone(),
     }
 }
 
@@ -2908,10 +2910,22 @@ impl PatternItem {
         };
         // A payload-typed match binding is refutable for an optional source.
         // Resolve presence before the guard or body can observe that binding.
-        if let SchemaBody::Option(payload) = &item.body
-            && binding_shape_observation(binding.body(), payload).is_some()
-            && binding.body() != &item.body
-        {
+        let payload_binding_shape = match &item.body {
+            SchemaBody::Option(payload) if binding.body() != &item.body => {
+                let observation = binding_shape_observation(binding.body(), payload);
+                mech_core::shape_for_schema_components(
+                    binding,
+                    &[(binding.body(), observation)],
+                    None,
+                )
+                .ok()
+            }
+            _ => None,
+        };
+        if payload_binding_shape.is_some() {
+            let SchemaBody::Option(payload) = &item.body else {
+                return Err(ResidentKernelError::InvalidInput);
+            };
             let ValueDataDraft::Option(option) = item.data else {
                 return Err(ResidentKernelError::InvalidInput);
             };
@@ -2930,10 +2944,10 @@ impl PatternItem {
         }
         let binding_shape = if matches!(binding.body(), SchemaBody::Dynamic) {
             dynamic_binding_shape(binding, Some(&item.shape_values), source_shape_values)?
+        } else if let Some(shape) = payload_binding_shape {
+            shape
         } else {
-            let Some(observation) = binding_shape_observation(binding.body(), &item.body) else {
-                return Ok(None);
-            };
+            let observation = binding_shape_observation(binding.body(), &item.body);
             // A projected child carries the selected parent's dimension
             // witnesses even when its own body does not mention every one.
             let selected_projection_shape = item.projection_schema.is_some()
@@ -9815,6 +9829,117 @@ mod tests {
             "the fixed annotation owns no shape parameters"
         );
         assert!(matches!(binding.data, ValueDataDraft::Matrix(values) if values.len() == 3));
+    }
+
+    #[test]
+    fn optional_record_bindings_resolve_nested_shapes_and_preserve_explicit_wrappers() {
+        let record = |name: &str| {
+            SchemaBody::Record(
+                vec![mech_core::SchemaField {
+                    name: name.to_owned(),
+                    schema: SchemaBody::Matrix {
+                        element: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+                        dimensions: vec![
+                            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+                            DimensionExpr::Constant(1),
+                        ]
+                        .into_boxed_slice(),
+                    },
+                }]
+                .into_boxed_slice(),
+            )
+        };
+        let mut builder = SchemaTableBuilder::new();
+        let handles = [
+            record("samples"),
+            SchemaBody::Option(Box::new(record("samples"))),
+            record("other"),
+        ]
+        .into_iter()
+        .map(|body| {
+            builder
+                .insert(
+                    SchemaDraft {
+                        body,
+                        dimension_parameters: vec![DimensionParameterDeclaration {
+                            id: DimensionParameterId::new(0),
+                            origin: DimensionParameterOrigin::Explicit,
+                            lifetime: DimensionLifetime::Turn,
+                            lower_bound: DimensionExpr::Constant(0),
+                            upper_bound: Some(DimensionExpr::Constant(4)),
+                        }]
+                        .into_boxed_slice(),
+                    }
+                    .finalize()
+                    .unwrap(),
+                )
+                .unwrap()
+        })
+        .collect::<Vec<_>>();
+        let build = builder.finish().unwrap();
+        let [payload, optional, incompatible] = handles
+            .into_iter()
+            .map(|handle| build.resolve(handle).unwrap())
+            .collect::<Vec<_>>()
+            .try_into()
+            .unwrap();
+        let (schemas, _) = build.into_parts();
+        let projections = StructuralProjectionTable::default();
+
+        for count in [0, 2, 4] {
+            let schema = schemas.get(payload).unwrap();
+            let shape = schema
+                .instantiate_shape(vec![count].into_boxed_slice())
+                .unwrap();
+            let body = SchemaBody::Option(Box::new(schema.closed_body(&shape).unwrap()));
+            for present in [false, true] {
+                let item = || {
+                    PatternItem::component(
+                        None,
+                        body.clone(),
+                        vec![count].into_boxed_slice(),
+                        ValueDataDraft::Option(mech_core::snapshot::OptionDraft {
+                            present,
+                            value: present.then(|| {
+                                Box::new(ValueDataDraft::Record(
+                                    vec![mech_core::snapshot::NamedValueDraft {
+                                        name: "samples".to_owned(),
+                                        value: ValueDataDraft::Matrix(
+                                            (0..count).map(ValueDataDraft::U64).collect(),
+                                        ),
+                                    }]
+                                    .into_boxed_slice(),
+                                ))
+                            }),
+                        }),
+                    )
+                };
+                // The enclosing owner's witness is unrelated to this binding.
+                let binding = item()
+                    .into_binding(payload, &[99], &schemas, &projections)
+                    .unwrap();
+                assert_eq!(binding.is_some(), present);
+                if let Some(binding) = binding {
+                    assert_eq!(binding.shape_values.as_ref(), &[count]);
+                    assert!(matches!(binding.data, ValueDataDraft::Record(fields)
+                        if matches!(&fields[0].value, ValueDataDraft::Matrix(values)
+                            if values.len() == count as usize)));
+                }
+                let binding = item()
+                    .into_binding(optional, &[99], &schemas, &projections)
+                    .unwrap()
+                    .expect("an explicitly optional binding retains an absent or present wrapper");
+                assert_eq!(binding.shape_values.as_ref(), &[count]);
+                assert!(matches!(binding.data, ValueDataDraft::Option(option)
+                    if option.present == present));
+                assert!(
+                    item()
+                        .into_binding(incompatible, &[99], &schemas, &projections)
+                        .unwrap()
+                        .is_none()
+                );
+            }
+        }
     }
 
     #[test]
