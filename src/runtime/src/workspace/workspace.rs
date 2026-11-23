@@ -123,6 +123,12 @@ impl RuntimeWorkspace {
         !self.rejected_targets.is_empty()
     }
 
+    pub(crate) fn has_unresolved_target_source(&self, name: &str) -> bool {
+        self.rejected_targets
+            .get(name)
+            .is_some_and(|source| source.content_hash.is_none())
+    }
+
     fn refresh_inner(
         &mut self,
         runtime: &mut MechRuntime,
