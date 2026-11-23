@@ -42,6 +42,7 @@ pub(super) struct Compiled {
     pub composed: Option<Composed>,
     pub packed_input: Option<Vec<usize>>,
     pub entry_spans: Vec<cfg_cleanup::admitted_spans::Admission>,
+    pub entry_halfwords: Vec<usize>,
     pub histogram: Option<Histogram>,
     pub seeded: Option<cfg_cleanup::grouped_histogram::seeded::Seeded>,
 }
@@ -60,6 +61,7 @@ struct Details {
     function: FuncId,
     entry_bounds: Vec<(usize, u64, bool)>,
     entry_spans: Vec<cfg_cleanup::admitted_spans::Admission>,
+    entry_halfwords: Vec<usize>,
     histogram: Option<Histogram>,
     seeded: Option<cfg_cleanup::grouped_histogram::seeded::Seeded>,
     finish_report: FinishReport,
@@ -370,6 +372,7 @@ impl Details {
             composed: self.composed,
             packed_input: self.packed_input,
             entry_spans: self.entry_spans,
+            entry_halfwords: self.entry_halfwords,
             histogram: self.histogram,
             seeded: self.seeded,
         })
@@ -684,6 +687,7 @@ fn prepare_impl<M: Module>(
             packed_halfword_stores: 0,
             admitted_index_guards: 0,
             entry_spans: Vec::new(),
+            entry_halfwords: Vec::new(),
             seeded: None,
         };
         return Ok(General::Deferred(DeferredGeneral {
@@ -1974,6 +1978,27 @@ fn prepare_impl<M: Module>(
             entry_spans.push(span);
         }
     }
+    let mut entry_halfwords = Vec::new();
+    if !observe
+        && cleanup.enabled
+        && no_growth.is_none()
+        && vectors.is_some()
+        && entry_spans.iter().any(|span| span.begin_word.is_some())
+        && private.is_some_and(|contract| contract.permits(proof))
+        && std::env::var_os("MECH_COMPACT_ADMIT_CARRIED_HALFWORDS")
+            .is_some_and(|target| target == "all" || target == symbol.as_str())
+        && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
+    {
+        let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
+        let captures = loads
+            .into_iter()
+            .filter_map(|(value, (_, at))| {
+                (packet.get(at).copied()? < proof.scalar_words).then_some((value, at))
+            })
+            .collect();
+        context.compute_cfg();
+        entry_halfwords = cfg_cleanup::admit_loop_masks(&mut context.func, &context.cfg, &captures);
+    }
     let packed_input = if pack_input {
         phase_storage::pack_used_input_words(&mut context.func, input_words)
     } else {
@@ -2069,6 +2094,7 @@ fn prepare_impl<M: Module>(
             packed_halfword_stores,
             admitted_index_guards,
             entry_spans,
+            entry_halfwords,
             seeded,
         },
         future_write_hints,
@@ -2096,6 +2122,7 @@ pub(super) struct SummaryInput {
     packed_halfword_stores: usize,
     admitted_index_guards: usize,
     entry_spans: Vec<cfg_cleanup::admitted_spans::Admission>,
+    entry_halfwords: Vec<usize>,
     seeded: Option<cfg_cleanup::grouped_histogram::seeded::Seeded>,
 }
 
@@ -2130,6 +2157,7 @@ fn finish_preparation(
         packed_halfword_stores,
         admitted_index_guards,
         entry_spans,
+        entry_halfwords,
         seeded,
     } = input;
     let PhaseCleanup {
@@ -2150,6 +2178,8 @@ fn finish_preparation(
     let changed_writes = report.proven_changed_writes.clone();
     let private_writes = report.private_write_sites.clone();
     let span_summary = (!entry_spans.is_empty()).then(|| serde_json::json!(entry_spans));
+    let halfword_summary =
+        (!entry_halfwords.is_empty()).then(|| serde_json::json!(entry_halfwords));
     let histogram_shape = histogram
         .as_ref()
         .map(|(admission, _)| Histogram::Packed(*admission))
@@ -2234,6 +2264,9 @@ fn finish_preparation(
         if let Some(spans) = span_summary {
             summary["admitted_input_spans"] = spans;
         }
+        if let Some(words) = halfword_summary {
+            summary["admitted_input_halfwords"] = words;
+        }
 
         Ok(summary)
     });
@@ -2243,6 +2276,7 @@ fn finish_preparation(
             function,
             entry_bounds,
             entry_spans,
+            entry_halfwords,
             histogram: histogram_shape,
             seeded,
             finish_report,

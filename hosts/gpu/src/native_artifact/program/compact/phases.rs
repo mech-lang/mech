@@ -184,6 +184,7 @@ pub(super) struct Phase {
     fixed_arrays: Vec<usize>,
     entry_bounds: Vec<(usize, u64, bool)>,
     entry_spans: Vec<cfg_cleanup::admitted_spans::Admission>,
+    entry_halfwords: Vec<usize>,
     invariant_views: BTreeSet<usize>,
     outputs: Vec<(usize, Output)>,
     output_owners: Vec<usize>,
@@ -207,6 +208,9 @@ impl Phase {
             |site: usize, outputs: &[(usize, Output)], output_owners: &[usize], normal: bool| {
                 let mut effect = Effects::default();
                 for &word in &self.inputs {
+                    effect.read(word);
+                }
+                for &word in &self.entry_halfwords {
                     effect.read(word);
                 }
                 for span in &self.entry_spans {
@@ -497,6 +501,7 @@ impl Phase {
             b.ins().brif(valid, next, &[], fallback, &[]);
             b.switch_to_block(next);
         }
+        let mut halfwords = self.entry_halfwords.split_first();
         for span in &self.entry_spans {
             let Some(begin) = span.begin_word else {
                 continue;
@@ -515,9 +520,25 @@ impl Phase {
                 );
                 valid = b.ins().band(valid, enough);
             }
+            if let Some((&first, rest)) = halfwords.take() {
+                // Check the carried words on the same refusal edge as the span.
+                let combined = rest.iter().fold(words.read(b, first), |bits, &word| {
+                    let value = words.read(b, word);
+                    b.ins().bor(bits, value)
+                });
+                let narrow = b.ins().icmp_imm(
+                    IntCC::UnsignedLessThanOrEqual,
+                    combined,
+                    i64::from(u16::MAX),
+                );
+                valid = b.ins().band(valid, narrow);
+            }
             let next = b.create_block();
             b.ins().brif(valid, next, &[], fallback, &[]);
             b.switch_to_block(next);
+        }
+        if halfwords.is_some() {
+            return Err(backend("halfword admission lacks a scalar span guard"));
         }
         if let Some(observe) = observe.filter(|_| self.vector.is_none()) {
             let header = b.ins().iconst(types::I64, self.header as i64);
@@ -1520,6 +1541,7 @@ pub(super) fn define<M: Module>(
         let mut vector = None;
         let mut packed_input = None;
         let mut entry_spans = Vec::new();
+        let mut entry_halfwords = Vec::new();
         let mut histogram = general.as_ref().and_then(|body| body.histogram);
         if let Some(fast) = fast {
             let contract = vector_contract.unwrap();
@@ -1550,6 +1572,16 @@ pub(super) fn define<M: Module>(
                     }
                     entry_spans.push(span);
                 }
+                entry_halfwords = fast
+                    .entry_halfwords
+                    .into_iter()
+                    .map(|at| {
+                        inputs
+                            .get(at)
+                            .copied()
+                            .ok_or_else(|| backend("halfword guard lacks input word"))
+                    })
+                    .collect::<Result<_, _>>()?;
                 packed_input = fast.packed_input;
                 vector = Some(VectorAlternative {
                     function: fast.function,
@@ -1673,6 +1705,7 @@ pub(super) fn define<M: Module>(
             fixed_arrays,
             entry_bounds,
             entry_spans,
+            entry_halfwords,
             invariant_views,
             outputs,
             output_owners,

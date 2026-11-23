@@ -51,6 +51,7 @@ use cranelift_codegen::ir::{
 };
 use cranelift_codegen::isa::TargetIsa;
 pub(in crate::native_artifact::program) use dead_values::eliminate as eliminate_dead_values;
+pub(in crate::native_artifact::program) use known_widths::admit_loop_masks;
 pub(in crate::native_artifact::program) use local_phis::controller_passthrough;
 pub(in crate::native_artifact::program) use local_phis::incoming as incoming_block_arguments;
 
