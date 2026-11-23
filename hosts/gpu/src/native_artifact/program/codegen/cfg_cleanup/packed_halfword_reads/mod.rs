@@ -100,7 +100,7 @@ fn load(f: &Function, inst: Inst, floors: &BTreeMap<Value, u64>) -> Option<(Cell
     Some((cell(f, arg, offset, floors)?, arg, offset))
 }
 
-fn store(f: &Function, inst: Inst, floors: &BTreeMap<Value, u64>) -> Option<(Cell, Value)> {
+fn halfword_store(f: &Function, inst: Inst) -> Option<(Value, Value, i32)> {
     let Data::Store {
         opcode: Opcode::Store,
         args: [value, addr],
@@ -113,7 +113,12 @@ fn store(f: &Function, inst: Inst, floors: &BTreeMap<Value, u64>) -> Option<(Cel
     if flags != MemFlags::new() || f.dfg.value_type(value) != types::I16 {
         return None;
     }
-    Some((cell(f, addr, offset.into(), floors)?, value))
+    Some((value, addr, offset.into()))
+}
+
+fn store(f: &Function, inst: Inst, floors: &BTreeMap<Value, u64>) -> Option<(Cell, Value)> {
+    let (value, address, offset) = halfword_store(f, inst)?;
+    Some((cell(f, address, offset, floors)?, value))
 }
 
 fn following(f: &Function, cfg: &ControlFlowGraph, mut from: Inst) -> Option<Inst> {
@@ -154,6 +159,82 @@ fn following(f: &Function, cfg: &ControlFlowGraph, mut from: Inst) -> Option<Ins
         from = first;
     }
     None
+}
+
+pub(in crate::native_artifact) fn fold_zero_stores(
+    f: &mut Function,
+    cfg: &ControlFlowGraph,
+    dom: &DominatorTree,
+    floors: &BTreeMap<Value, u64>,
+) -> usize {
+    let floors: BTreeMap<_, _> = floors
+        .iter()
+        .map(|(&base, &bytes)| (f.dfg.resolve_aliases(base), bytes))
+        .collect();
+    let mut facts = Facts::across_edges(f, cfg, None);
+    let mut used = BTreeSet::new();
+    let mut pairs = Vec::new();
+    for block in f.layout.blocks().filter(|&block| dom.is_reachable(block)) {
+        for first in f.layout.block_insts(block) {
+            let Some((low, address, offset)) = halfword_store(f, first) else {
+                continue;
+            };
+            if used.contains(&first) || facts.value_range(low).map(|range| range.1) != Some(0) {
+                continue;
+            }
+            let Some(second) = following(f, cfg, first) else {
+                continue;
+            };
+            let Some((high, next_address, next_offset)) = halfword_store(f, second) else {
+                continue;
+            };
+            let address = f.dfg.resolve_aliases(address);
+            if used.contains(&second)
+                || f.dfg.resolve_aliases(next_address) != address
+                || offset.checked_add(2) != Some(next_offset)
+                || facts.value_range(high).map(|range| range.1) != Some(0)
+            {
+                continue;
+            }
+            let Ok(byte_offset) = u64::try_from(offset) else {
+                continue;
+            };
+            let Some(Data::Binary {
+                opcode: Opcode::Iadd,
+                args: [a, b],
+            }) = definition(f, address)
+            else {
+                continue;
+            };
+            let admitted = [(a, b), (b, a)].into_iter().any(|(base, index)| {
+                floors
+                    .get(&f.dfg.resolve_aliases(base))
+                    .is_some_and(|&floor| {
+                        bound(f, &mut facts, index)
+                            .and_then(|limit| limit.checked_add(byte_offset)?.checked_add(4))
+                            .is_some_and(|end| end <= floor)
+                    })
+            });
+            if admitted {
+                used.extend([first, second]);
+                pairs.push((first, second, address, offset));
+            }
+        }
+    }
+    let mut cursor = FuncCursor::new(f);
+    for &(first, second, address, offset) in &pairs {
+        cursor.goto_inst(second);
+        cursor.use_srcloc(second);
+        let zero = cursor.ins().iconst(types::I32, 0);
+        let flags = MemFlags::new().with_endianness(Endianness::Little);
+        cursor
+            .func
+            .dfg
+            .replace(second)
+            .store(flags, zero, address, offset);
+        cursor.func.layout.remove_inst(first);
+    }
+    pairs.len()
 }
 
 /// Keep the original typed stores available to prefetch and load scheduling.
