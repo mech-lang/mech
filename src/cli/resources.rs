@@ -20,6 +20,8 @@ pub(crate) static PROJECTJS: &str = concat!(
 
 #[cfg(has_file_document_js)]
 pub(crate) static DOCUMENTJS: &str = concat!(
+    include_str!("../../include/presentation.js"),
+    "\n",
     include_str!("../../include/browser-compute.js"),
     "\n",
     include_str!("../../include/document.js")

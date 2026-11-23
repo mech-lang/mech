@@ -1119,10 +1119,10 @@ function rendererFixture() {
     head: { append(script) { scripts.push(script); } },
   };
   const context = vm.createContext({ document: rendererDocument, window: rendererWindow, AbortController });
-  vm.runInContext(`${documentSource}\nasync function main() {}\n`, context);
+  vm.runInContext(readFileSync(new URL("../include/presentation.js", import.meta.url), "utf8"), context);
   return {
     scripts, equations, diagrams, stylesheet, window: rendererWindow,
-    refresh() { return vm.runInContext("initializeOptionalRenderers()", context); },
+    refresh() { return rendererWindow.MechPresentation.refresh(); },
     async complete(index, event = "load") {
       scripts[index].listeners.get(event)();
       await new Promise(resolve => setImmediate(resolve));

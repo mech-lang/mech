@@ -14,7 +14,9 @@ SPEC = importlib.util.spec_from_file_location(
 BUILDER = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(BUILDER)
 
-CURRENT_WRAPPER = """export class WasmDocument {
+CURRENT_WRAPPER = """function browserMemory() { return wasm.memory.buffer; }
+function execute() { return wasm.execute(); }
+export class WasmDocument {
     static fromEncodedWithBundle(encoded, root, sources, resolutions, provenance) {}
     static fromServedEncodedWithBundle(encoded, root, config, sources, resolutions, provenance) {}
     renderedDocumentValue(name) {}
@@ -27,7 +29,15 @@ export class WasmProject {
     static supportsServedDocumentProvenance() {}
 }
 """
-WASM_MODULE = b"\0asm\x01\0\0\0\0\x01\0"
+# One callable export and one memory, with real type/function/code sections.
+WASM_MODULE = (
+    b"\0asm\x01\0\0\0"
+    b"\x01\x04\x01\x60\x00\x00"
+    b"\x03\x02\x01\x00"
+    b"\x05\x03\x01\x00\x00"
+    b"\x07\x14\x02\x06memory\x02\x00\x07execute\x00\x00"
+    b"\x0a\x04\x01\x02\x00\x0b"
+)
 
 
 class DistributionBrowserRuntimeTests(unittest.TestCase):
@@ -68,6 +78,23 @@ class DistributionBrowserRuntimeTests(unittest.TestCase):
                 self.write_package(wasm=wasm)
                 with self.assertRaisesRegex(RuntimeError, "not a complete WebAssembly module"):
                     BUILDER.require_browser_package()
+
+    def test_truncated_sections_and_nonexecutable_modules_are_rejected(self):
+        for module in (WASM_MODULE[:-1], b"\0asm\x01\0\0\0\0\x01\0"):
+            with self.subTest(module=module):
+                self.write_package(wasm=module)
+                with self.assertRaisesRegex(RuntimeError, "incompatible or not a complete"):
+                    BUILDER.require_browser_package()
+
+    def test_wrapper_and_module_export_mismatch_is_rejected(self):
+        self.write_package(wrapper=CURRENT_WRAPPER.replace("wasm.execute()", "wasm.absent()"))
+        with self.assertRaisesRegex(RuntimeError, "module export absent"):
+            BUILDER.require_browser_package()
+
+    def test_invalid_javascript_with_controller_names_is_rejected(self):
+        self.write_package(wrapper=CURRENT_WRAPPER + "\nexport class")
+        with self.assertRaisesRegex(RuntimeError, "incompatible or not a complete"):
+            BUILDER.require_browser_package()
 
     def test_matching_runtime_preserves_native_clean_build_timing(self):
         self.write_package()

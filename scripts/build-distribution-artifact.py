@@ -49,6 +49,19 @@ def require_browser_package() -> None:
             "distribution browser runtime is incompatible with the document controller "
             f"(missing exports: {', '.join(missing)}); {rebuild}"
         )
+    try:
+        probe = subprocess.run(
+            ["node", str(Path(__file__).with_name("validate-browser-package.mjs")),
+             str(javascript), str(wasm)],
+            capture_output=True, text=True, timeout=60,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise RuntimeError(f"cannot validate distribution browser runtime with Node.js: {error}; {rebuild}") from error
+    if probe.returncode:
+        raise RuntimeError(
+            f"distribution browser runtime is incompatible or not a complete WebAssembly module: "
+            f"{probe.stderr.strip()}; {rebuild}"
+        )
 
 
 def parse_args() -> argparse.Namespace:

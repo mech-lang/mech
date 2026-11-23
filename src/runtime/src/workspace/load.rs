@@ -156,7 +156,7 @@ pub(super) fn workspace_target_specifier(root: &Path, specifier: &str) -> MResul
         root.join(path)
     };
 
-    let canonical = joined.canonicalize().map_err(|error| {
+    let canonical = canonicalize_target_or_missing(&joined).map_err(|error| {
         MechError::new(
             RuntimeWorkspaceInvalidConfig {
                 reason: format!(
@@ -184,6 +184,40 @@ pub(super) fn workspace_target_specifier(root: &Path, specifier: &str) -> MResul
     }
 
     Ok(canonical.to_string_lossy().to_string())
+}
+
+// Retain missing targets only through an existing, canonical ancestor. A
+// dangling symlink or an inaccessible ancestor is not an authorized absence.
+fn canonicalize_target_or_missing(path: &Path) -> std::io::Result<PathBuf> {
+    match path.canonicalize() {
+        Ok(path) => return Ok(path),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => return Err(error),
+    }
+    let mut ancestor = path;
+    let mut missing = Vec::new();
+    loop {
+        match ancestor.symlink_metadata() {
+            Ok(_) => {
+                let mut resolved = ancestor.canonicalize()?;
+                for component in missing.into_iter().rev() {
+                    resolved.push(component);
+                }
+                return Ok(resolved);
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                let Some(component) = ancestor.file_name() else {
+                    return Err(error);
+                };
+                missing.push(component.to_owned());
+                let Some(parent) = ancestor.parent() else {
+                    return Err(error);
+                };
+                ancestor = parent;
+            }
+            Err(error) => return Err(error),
+        }
+    }
 }
 
 fn collect_loaded_modules(

@@ -113,12 +113,9 @@ impl RuntimeWorkspace {
         options: ModuleBuildOptions,
         events: &[RuntimeWorkspaceWatchEvent],
     ) -> MResult<RuntimeWorkspaceRefresh> {
-        let retry_rejected = events.iter().any(|event| {
-            matches!(
-                crate::SourceKind::from_path(&event.path),
-                crate::SourceKind::Mech
-            )
-        });
+        let retry_rejected = events
+            .iter()
+            .any(RuntimeWorkspaceWatchEvent::may_repair_rejected_target);
         self.refresh_inner(runtime, options, retry_rejected)
     }
 
@@ -147,6 +144,14 @@ impl RuntimeWorkspace {
         changes.extend(added_folder_file_changes(&previous, &discovered_files));
         let mut affected = BTreeSet::new();
         for (name, source) in &self.rejected_targets {
+            // Revalidate containment and symlinks before observing a formerly
+            // admitted path, including after removal or replacement.
+            let Ok(resolved) =
+                workspace_target_specifier(&self.config.root, &source.path.to_string_lossy())
+            else {
+                continue;
+            };
+            let current_path = Path::new(&resolved);
             if let Some(subject) = self.config.capability_subject.as_deref() {
                 let authorized = [crate::FS_RESOLVE, crate::FS_READ]
                     .into_iter()
@@ -155,7 +160,7 @@ impl RuntimeWorkspace {
                             runtime.capability_kernel_mut(),
                             subject,
                             operation,
-                            &source.path,
+                            current_path,
                         )
                         .is_ok()
                     });
@@ -163,7 +168,7 @@ impl RuntimeWorkspace {
                     continue;
                 }
             }
-            let current_hash = std::fs::read(&source.path).ok().map(hash_content);
+            let current_hash = std::fs::read(current_path).ok().map(hash_content);
             if current_hash == source.content_hash {
                 continue;
             }
@@ -546,6 +551,44 @@ mod tests {
         assert!(repaired.snapshot.diagnostics.is_empty());
         assert!(repaired.refresh_diagnostics.is_empty());
         assert_idle(&mut workspace, &mut runtime);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+    #[test]
+    fn removed_targets_become_idle_and_recover_for_accepted_and_rejected_sources() {
+        for source in ["value := true\n", "value := [\n"] {
+            let (root, mut workspace, mut runtime) = setup_workspace(source);
+            workspace.load(&mut runtime, options()).unwrap();
+            std::fs::remove_file(root.join("main.mec")).unwrap();
+            let removed = workspace.refresh(&mut runtime, options()).unwrap();
+            assert_eq!(removed.changes.len(), 1);
+            assert_eq!(removed.changes[0].kind, RuntimeWorkspaceChangeKind::Removed);
+            assert_eq!(workspace.rejected_targets["main"].content_hash, None);
+            assert_idle(&mut workspace, &mut runtime);
+            std::fs::write(root.join("main.mec"), "value := false\n").unwrap();
+            let restored = workspace.refresh(&mut runtime, options()).unwrap();
+            assert_eq!(restored.affected_targets, ["main"]);
+            assert_eq!(restored.changes[0].kind, RuntimeWorkspaceChangeKind::Added);
+            assert!(restored.snapshot.targets.contains_key("main"));
+            assert!(restored.snapshot.diagnostics.is_empty());
+            assert_idle(&mut workspace, &mut runtime);
+            std::fs::remove_dir_all(root).unwrap();
+        }
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn missing_target_does_not_follow_a_symlink_outside_the_workspace() {
+        let (root, mut workspace, mut runtime) = setup_workspace("value := [\n");
+        workspace.load(&mut runtime, options()).unwrap();
+        std::fs::remove_file(root.join("main.mec")).unwrap();
+        workspace.refresh(&mut runtime, options()).unwrap();
+        let outside = root.with_extension("outside");
+        std::fs::write(&outside, "value := true\n").unwrap();
+        std::os::unix::fs::symlink(&outside, root.join("main.mec")).unwrap();
+        assert_idle(&mut workspace, &mut runtime);
+        assert_eq!(workspace.rejected_targets["main"].content_hash, None);
+        assert!(workspace.snapshot().unwrap().targets.is_empty());
+        std::fs::remove_file(outside).unwrap();
         std::fs::remove_dir_all(root).unwrap();
     }
 }

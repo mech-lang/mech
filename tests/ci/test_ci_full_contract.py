@@ -718,6 +718,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn('"$CARGO_TARGET_DIR/embedded-browser-mech"', build)
         smoke = next(step for step in steps if "scripts/smoke-served-program-results-browser.py" in step)
         self.assertIn('MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech"', smoke)
+        self.assertIn("--embedded-assets", smoke)
         self.assertNotIn("if:", smoke)
         self.assertNotIn("continue-on-error", smoke)
         self.assertLess(browser.index(build), browser.index(smoke))

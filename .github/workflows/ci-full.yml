@@ -2764,7 +2764,7 @@ jobs:
       - name: Verify visible served results and source diagnostics against native execution
         run: |
           MECH_BIN="$CARGO_TARGET_DIR/embedded-browser-mech" \
-            python3 scripts/smoke-served-program-results-browser.py
+            python3 scripts/smoke-served-program-results-browser.py --embedded-assets
 
       - name: Verify actual browser-package admission before publication
         env:
@@ -3102,6 +3102,10 @@ jobs:
           CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
         shell: bash
         run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
+      - name: Install Node for exact browser-package validation
+        uses: actions/setup-node@v7.0.0
+        with:
+          node-version: 24
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Restore matching browser runtime before embedding
