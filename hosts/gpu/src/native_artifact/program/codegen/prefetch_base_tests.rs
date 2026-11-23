@@ -23,10 +23,17 @@ fn effects(f: &Function) -> Vec<Opcode> {
         .filter(|&inst| {
             matches!(
                 f.dfg.insts[inst].opcode(),
-                Opcode::PrefetchWrite | Opcode::Load | Opcode::Store | Opcode::Return
+                Opcode::PrefetchWrite
+                    | Opcode::Load
+                    | Opcode::Uload32
+                    | Opcode::Store
+                    | Opcode::Return
             )
         })
-        .map(|inst| f.dfg.insts[inst].opcode())
+        .map(|inst| match f.dfg.insts[inst].opcode() {
+            Opcode::Uload32 => Opcode::Load,
+            op => op,
+        })
         .collect()
 }
 
@@ -34,6 +41,7 @@ fn compile(
     module: &mut JITModule,
     placement: Placement,
     bias: i64,
+    prefetch: bool,
     optimized: bool,
     name: &str,
 ) -> FuncId {
@@ -98,12 +106,18 @@ fn compile(
     // Exercise both commutative positions. The same biased value also feeds
     // ordinary memory and an observable address word.
     let second = b.ins().iadd(next, biased);
-    b.ins().prefetch_write(first);
-    b.ins().prefetch_write(second);
+    if prefetch {
+        b.ins().prefetch_write(first);
+        b.ins().prefetch_write(second);
+    }
     if matches!(placement, Placement::Later) {
         b.ins().iadd_imm(base, bias);
     }
-    let loaded = b.ins().load(types::I64, MemFlags::new(), first, 0);
+    let loaded = if prefetch {
+        b.ins().load(types::I64, MemFlags::new(), first, 0)
+    } else {
+        b.ins().uload32(MemFlags::new(), first, 0)
+    };
     let changed = b.ins().bxor_imm(loaded, 0xdeadbeef);
     b.ins().store(MemFlags::new(), changed, second, 0);
     let result = b.ins().bxor(loaded, first);
@@ -112,7 +126,8 @@ fn compile(
     b.finalize();
     context.verify(module.isa()).unwrap();
     let before = effects(&context.func);
-    context.func.aarch64_hoist_prefetch_bases = optimized;
+    context.func.aarch64_hoist_prefetch_bases = optimized && prefetch;
+    context.func.aarch64_hoist_indexed_load_bases = optimized && !prefetch;
     context
         .optimize(
             module.isa(),
@@ -132,8 +147,7 @@ fn compile(
     id
 }
 
-#[test]
-fn prefetch_bases_preserve_wrapping_addresses_and_shared_memory_uses() {
+fn check_wrapping_addresses(prefetch: bool) {
     let mut inputs = vec![
         0,
         1,
@@ -170,8 +184,8 @@ fn prefetch_bases_preserve_wrapping_addresses_and_shared_memory_uses() {
                     )
                     .unwrap(),
                 );
-                let original = compile(&mut module, placement, bias, false, "original");
-                let shared = compile(&mut module, placement, bias, true, "shared");
+                let original = compile(&mut module, placement, bias, prefetch, false, "original");
+                let shared = compile(&mut module, placement, bias, prefetch, true, "shared");
                 module.finalize_definitions().unwrap();
                 // SAFETY: both owned JIT functions have precisely this declared
                 // ABI. The module stays live through every invocation below.
@@ -206,7 +220,14 @@ fn prefetch_bases_preserve_wrapping_addresses_and_shared_memory_uses() {
                     calls += 2;
                     assert_eq!(results.0 ^ first_a, results.1 ^ first_b);
                     assert_eq!(a, b, "{placement:?} {index:#x}");
-                    assert_eq!(a[1], a[0] ^ 0xdeadbeef);
+                    let loaded = if prefetch {
+                        a[0]
+                    } else {
+                        u64::from(u32::from_ne_bytes(
+                            a[0].to_ne_bytes()[..4].try_into().unwrap(),
+                        ))
+                    };
+                    assert_eq!(a[1], loaded ^ 0xdeadbeef);
                     assert_eq!(a[2], 0xfedcba9876543210);
                 }
                 for (base, index, limit) in [(0, 0, 0), (0, 1, 1), (u64::MAX, u64::MAX, 1)] {
@@ -222,5 +243,15 @@ fn prefetch_bases_preserve_wrapping_addresses_and_shared_memory_uses() {
         }
     }
     assert_eq!(calls, 202_860);
-    eprintln!("prefetch base native calls: {calls}");
+    eprintln!("biased base native calls (prefetch {prefetch}): {calls}");
+}
+
+#[test]
+fn prefetch_bases_preserve_wrapping_addresses_and_shared_memory_uses() {
+    check_wrapping_addresses(true);
+}
+
+#[test]
+fn indexed_load_bases_preserve_wrapping_addresses_and_guarded_memory_uses() {
+    check_wrapping_addresses(false);
 }

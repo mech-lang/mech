@@ -16,6 +16,7 @@ pub(super) struct Options {
     pub allow_biased_costs: bool,
     pub rebase_costs: bool,
     pub check_literal_bytes: bool,
+    pub limit_literal_span: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -26,6 +27,7 @@ pub(super) struct Pair {
     literal_bias: i64,
     lookup_bias_bytes: Option<i64>,
     check_literal_bytes: bool,
+    literal_prefix_bytes: Option<i64>,
     output: Value,
     selector_bits: u32,
     item_shift: u32,
@@ -329,15 +331,24 @@ impl Pair {
         let lookup_bias_bytes = literal_bias
             .checked_mul(4)
             .filter(|&bytes| options.rebase_costs && bytes > 0);
+        let check_literal_bytes = options.check_literal_bytes
+            && selector_bits <= u32::BITS - u8::BITS
+            && (literal_bias == 0 || lookup_bias_bytes.is_some());
+        let literal_prefix_bytes = if options.limit_literal_span && check_literal_bytes {
+            lookup_bias_bytes
+                .unwrap_or(0)
+                .checked_add(BYTE_LITERAL_COUNT * 4)
+        } else {
+            None
+        };
         Ok(Self {
             cache,
             literals,
             literal_limit,
             literal_bias,
             lookup_bias_bytes,
-            check_literal_bytes: options.check_literal_bytes
-                && selector_bits <= u32::BITS - u8::BITS
-                && (literal_bias == 0 || lookup_bias_bytes.is_some()),
+            check_literal_bytes,
+            literal_prefix_bytes,
             output,
             selector_bits,
             item_shift,
@@ -382,7 +393,15 @@ impl Pair {
         let end = b.ins().iadd(length, count);
         let (out_end, out_valid) = span(b, output, end, 8);
         let (cache_end, cache_valid) = span(b, cache, cache_cursor, 4);
-        let (lit_end, lit_valid) = span(b, literals, literal_limit, 4);
+        let (lit_end, lit_valid) = if let Some(bytes) = self.literal_prefix_bytes {
+            // The byte check admits only indices below 256. The entry gate
+            // admits the biased prefix before any lookup can be reached.
+            let end = b.ins().iadd_imm(literals, bytes);
+            let ordered = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, literals, end);
+            (end, ordered)
+        } else {
+            span(b, literals, literal_limit, 4)
+        };
         let cache_clear = disjoint(b, output, out_end, cache, cache_end);
         let lit_clear = disjoint(b, output, out_end, literals, lit_end);
         let enough = b

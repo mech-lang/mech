@@ -5,6 +5,7 @@ use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{Linkage, Module, default_libcall_names};
 
 type Run = unsafe extern "C" fn(u64, *const u64, u64) -> u64;
+const APPEND_MODES: [u8; 8] = [0, 1, 2, 3, 4, 5, 12, 13];
 
 fn fixture(module: &JITModule, bias: i64, guard_bias: i64) -> (Context, Block) {
     let mut context = module.make_context();
@@ -168,14 +169,16 @@ fn compile(bias: i64, mode: u8) -> (JITModule, Run) {
         assert!(trace.window.is_some());
         let params = context.func.dfg.block_params(header).to_vec();
         let pair = (mode >= 2).then(|| {
+            let options = mode - 2;
             Pair::derive(
                 &context,
                 &trace,
                 &params,
                 Options {
                     allow_biased_costs: true,
-                    rebase_costs: mode % 2 == 1,
-                    check_literal_bytes: mode >= 4,
+                    rebase_costs: options & 1 != 0,
+                    check_literal_bytes: options & 2 != 0,
+                    limit_literal_span: options & 8 != 0,
                 },
             )
             .unwrap()
@@ -223,7 +226,7 @@ fn call(
 fn biased_pairs_preserve_wrapping_costs_ordered_failures_and_scalar_tails() {
     let mut calls = 0;
     for bias in [0, 1, 259, -1, -256, i64::MAX] {
-        let compiled = core::array::from_fn::<_, 6, _>(|mode| compile(bias, mode as u8));
+        let compiled = APPEND_MODES.map(|mode| compile(bias, mode));
         let costs = (0..547)
             .map(|i| (i as u32).wrapping_mul(0xfedc_ba97).wrapping_add(u32::MAX))
             .collect::<Vec<_>>();
@@ -339,8 +342,11 @@ fn biased_pair_recognition_requires_the_exact_cost_index_guard() {
 fn biased_pairs_preserve_alias_fallbacks_and_adjacent_views() {
     for bias in [0, 259, -256] {
         let reference = compile(bias, 0);
-        let candidates = core::array::from_fn::<_, 4, _>(|mode| compile(bias, mode as u8 + 2));
-        for layout in 0..3 {
+        let candidates = APPEND_MODES[2..]
+            .iter()
+            .map(|&mode| compile(bias, mode))
+            .collect::<Vec<_>>();
+        for layout in 0..4 {
             let execute = |run: Run| {
                 let mut storage = vec![0xfeed_cafe_ffff_ffc0_u64; 320];
                 let floor = if bias < 0 {
@@ -353,6 +359,7 @@ fn biased_pairs_preserve_alias_fallbacks_and_adjacent_views() {
                     .map(|i| (i as u32).wrapping_mul(0x8765_4321))
                     .collect::<Vec<_>>();
                 let words = storage.as_mut_ptr().cast::<u32>();
+                let mut output = storage.as_mut_ptr();
                 let (cache_ptr, cost_ptr) = match layout {
                     0 => {
                         for (i, &word) in cache.iter().enumerate() {
@@ -366,12 +373,21 @@ fn biased_pairs_preserve_alias_fallbacks_and_adjacent_views() {
                         }
                         (cache.as_ptr(), words.cast_const())
                     }
-                    _ => {
+                    2 => {
                         // The output's maximum end exactly touches this cache.
                         for (i, &word) in cache.iter().enumerate() {
                             unsafe { words.add(66 + i).write(word) };
                         }
                         (unsafe { words.add(66) }.cast_const(), costs.as_ptr())
+                    }
+                    _ => {
+                        // The output begins in the unused tail of a cost view.
+                        for (i, &word) in costs.iter().enumerate() {
+                            unsafe { words.add(i).write(word) };
+                        }
+                        let prefix = 256 + bias.max(0) as usize;
+                        output = unsafe { output.add(prefix.div_ceil(2)) };
+                        (cache.as_ptr(), words.cast_const())
                     }
                 };
                 let packet = [
@@ -379,7 +395,7 @@ fn biased_pairs_preserve_alias_fallbacks_and_adjacent_views() {
                     32,
                     cost_ptr as u64,
                     547,
-                    storage.as_mut_ptr() as u64,
+                    output as u64,
                     32,
                     32,
                     1,
