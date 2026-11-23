@@ -1,7 +1,7 @@
 //! Specialize a byte histogram only under the existing numeric caller's
 //! ownership/current-view gates and a new whole-span guard before source work.
 use super::*;
-use cfg_cleanup::bounded_byte_histogram::{self, ByteGrouping};
+use cfg_cleanup::bounded_byte_histogram::{self, Admission, ByteGrouping};
 
 pub(super) fn prepare<M: Module>(
     module: &mut M,
@@ -13,7 +13,7 @@ pub(super) fn prepare<M: Module>(
     symbol: &str,
     signature: &Signature,
     bodies: Option<&mut PhaseBodies>,
-) -> Result<Option<serde_json::Value>, NativeCompileError> {
+) -> Result<Option<(Option<Admission>, serde_json::Value)>, NativeCompileError> {
     let Some(loads) = phase_storage::input_word_loads(&context.func, input_words) else {
         return Ok(None);
     };
@@ -137,5 +137,5 @@ pub(super) fn prepare<M: Module>(
         bounded_byte_histogram::guard_entry(context, admission, fast);
     }
     context.verify(module.isa()).map_err(backend)?;
-    Ok(Some(result))
+    Ok(Some((bounded_counters.then_some(admission), result)))
 }

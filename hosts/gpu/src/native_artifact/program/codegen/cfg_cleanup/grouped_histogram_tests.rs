@@ -124,6 +124,7 @@ fn compile(shift: u32, key_mask: u32, tuning: Option<Options>) -> (JITModule, Ru
                 node_word: 0,
                 bin_word: 2,
                 minimum_bins: u64::from(key_mask) + 1,
+                end_word: Some(5),
             }
         );
         fast.verify(module.isa()).unwrap();
