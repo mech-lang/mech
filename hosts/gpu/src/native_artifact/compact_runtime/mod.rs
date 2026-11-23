@@ -69,6 +69,7 @@ const CACHE_WORDS: usize = 1_500_513;
 mod owner_storage;
 mod small_scratch;
 mod owner_registry;
+mod fixed_transform;
 use owner_registry::OwnerRegistry;
 pub use owner_storage::OwnerStorage;
 

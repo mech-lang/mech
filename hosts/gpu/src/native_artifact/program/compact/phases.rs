@@ -196,6 +196,7 @@ pub(super) struct Phase {
     relative_error_origins: bool,
     histogram: Option<function::Histogram>,
     seeded: Option<cfg_cleanup::grouped_histogram::seeded::Seeded>,
+    fixed_transform_scalars: Option<usize>,
 }
 impl Phase {
     #[cfg(feature = "early-region-emission")]
@@ -617,6 +618,28 @@ impl Phase {
             } else {
                 None
             };
+        let replay = self
+            .fixed_transform_scalars
+            .filter(|_| root_entry && observe.is_none() && phase_timer.is_none());
+        let call_fixed = |module: &mut M, b: &mut FunctionBuilder<'_>, function| {
+            let function = module.declare_func_in_func(function, b.func);
+            let call = if let Some(scalars) = replay {
+                let mut signature = module.make_signature();
+                signature.params.extend([AbiParam::new(types::I64); 5]);
+                signature.returns.extend([AbiParam::new(types::I64); 2]);
+                let replay = module
+                    .declare_function("mech_compact_fixed_transform", Linkage::Import, &signature)
+                    .map_err(backend)?;
+                let replay = module.declare_func_in_func(replay, b.func);
+                let address = b.ins().func_addr(types::I64, function);
+                let scalars = b.ins().iconst(types::I64, scalars as i64);
+                b.ins().call(replay, &[storage.heap, input, out, address, scalars])
+            } else {
+                b.ins().call(function, &[storage.heap, input, out])
+            };
+            let result = b.inst_results(call);
+            Ok::<_, NativeCompileError>((result[0], result[1]))
+        };
         let (status, at) = if let Some((_, composed)) = dense {
             let function = module.declare_func_in_func(composed.function, b.func);
             let call = b.ins().call(function, &[storage.heap, input, out]);
@@ -694,27 +717,21 @@ impl Phase {
                 let yes = b.ins().iconst(types::I64, 2);
                 b.ins().call(observe, &[storage.heap, header, yes]);
             }
-            let function = module.declare_func_in_func(vector.function, b.func);
-            let call = b.ins().call(function, &[storage.heap, input, out]);
-            let result = b.inst_results(call).to_vec();
-            b.ins()
-                .jump(returned, &[result[0].into(), result[1].into()]);
+            let (status, at) = call_fixed(module, b, vector.function)?;
+            b.ins().jump(returned, &[status.into(), at.into()]);
             b.switch_to_block(general);
             if let Some(observe) = observe {
                 let header = b.ins().iconst(types::I64, self.header as i64);
                 let yes = b.ins().iconst(types::I64, 1);
                 b.ins().call(observe, &[storage.heap, header, yes]);
             }
-            let function = module.declare_func_in_func(self.function, b.func);
-            let call = b.ins().call(function, &[storage.heap, input, out]);
-            let result = b.inst_results(call).to_vec();
-            b.ins()
-                .jump(returned, &[result[0].into(), result[1].into()]);
+            let (status, at) = call_fixed(module, b, self.function)?;
+            b.ins().jump(returned, &[status.into(), at.into()]);
             b.switch_to_block(returned);
             let result = b.block_params(returned);
             (result[0], result[1])
         } else {
-            let call = if let Some(route) = seeded {
+            if let Some(route) = seeded {
                 let target = module.declare_func_in_func(route.target, b.func);
                 let raw = route.seed.raw_view;
                 let seed = route.seed.seed_view;
@@ -723,7 +740,7 @@ impl Phase {
                 let begin = words.read(b, route.seed.begin);
                 let seed_ptr = words.read(b, seed);
                 let seed_len = words.read(b, seed + 1);
-                b.ins().call(
+                let call = b.ins().call(
                     target,
                     &[
                         storage.heap,
@@ -735,13 +752,12 @@ impl Phase {
                         seed_ptr,
                         seed_len,
                     ],
-                )
+                );
+                let result = b.inst_results(call);
+                (result[0], result[1])
             } else {
-                let function: FuncRef = module.declare_func_in_func(self.function, b.func);
-                b.ins().call(function, &[storage.heap, input, out])
-            };
-            let result = b.inst_results(call);
-            (result[0], result[1])
+                call_fixed(module, b, self.function)?
+            }
         };
         if let Some((callback, header)) = phase_timer {
             let returned = b.ins().iconst(types::I64, 1);
@@ -1693,6 +1709,46 @@ pub(super) fn define<M: Module>(
         } else {
             (inputs, input_words)
         };
+        // The same-plan proof accounts for all scalar captures and aliased
+        // views. Select only a single fixed writable U32 body with its direct
+        // result, no other effects, and the exact runtime replay packet.
+        let fixed_transform_scalars = (|| {
+            use crate::native_artifact::program::prepare::numeric_plan::ExitKind;
+            let enabled = std::env::var("MECH_COMPACT_FIXED_TRANSFORMS").ok()?;
+            if !cfg!(all(target_os = "macos", target_arch = "aarch64"))
+                || !enabled.split(',').any(|item| item.parse() == Ok(header))
+                || compact_packet
+                || no_growth.is_some()
+                || seeded.is_some()
+                || fixed_arrays.as_slice() != [0]
+                || !invariant_views.contains(&0)
+                || proof.result.direct_array() != Some(0)
+                || !proof.scalar_captures.is_empty()
+                || !proof.scalar_outputs.is_empty()
+                || !proof.prepaid_sites.is_empty()
+                || proof.actions.iter().any(|(_, action)| {
+                    matches!(action, Operation::Fallback) || action.grows()
+                })
+                || proof.exits.iter().any(|exit| exit.kind == ExitKind::Unsupported)
+                || private.as_ref().is_some_and(|phase| !phase.handoffs.is_empty())
+                || outputs.iter().any(|(_, source)| matches!(source, Output::Stack(_)))
+            {
+                return None;
+            }
+            let [array] = proof.arrays.as_slice() else { return None };
+            let [(base, true)] = arrays.as_slice() else { return None };
+            let [scalars @ .., data, len, rows, cols] = inputs.as_slice() else { return None };
+            (array.width == 4
+                && array.witness != usize::MAX
+                && !array.appends
+                && scalars.len() <= 4
+                && [*data, *len, *rows, *cols] == [*base, base + 1, base + 3, base + 4]
+                && input_words == inputs.len() + 2)
+                .then_some(scalars.len())
+        })();
+        if let Some(scalars) = fixed_transform_scalars {
+            summary["fixed_transform_scalar_words"] = serde_json::json!(scalars);
+        }
         result.push(Phase {
             header,
             exit: region.tail.exit() as usize,
@@ -1717,6 +1773,7 @@ pub(super) fn define<M: Module>(
             relative_error_origins,
             histogram,
             seeded,
+            fixed_transform_scalars,
         });
         covered.extend(proof.sites.iter().copied());
     }
