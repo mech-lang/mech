@@ -213,6 +213,12 @@ pub struct FunctionStencil {
     pub aarch64_branch_on_zero: bool,
     /// Branch directly on complemented integer comparison disjunctions on AArch64.
     pub aarch64_branch_on_negated_disjunction: bool,
+    /// Load wide integer constants for conditional comparisons from the literal pool.
+    #[cfg_attr(feature = "enable-serde", serde(default))]
+    pub aarch64_ccmp_literal_constants: bool,
+    /// Fold an adjacent CSET inversion into its sole user's register on AArch64.
+    #[cfg_attr(feature = "enable-serde", serde(default))]
+    pub aarch64_fold_single_use_cset: bool,
     /// Share and hoist pure prefetch base additions after egraph rematerialization.
     pub aarch64_hoist_prefetch_bases: bool,
     /// Maximum private integer spill cells kept in unused caller-saved FP registers.
@@ -278,6 +284,8 @@ impl FunctionStencil {
         self.regalloc_block_frequencies = None;
         self.aarch64_branch_on_zero = false;
         self.aarch64_branch_on_negated_disjunction = false;
+        self.aarch64_ccmp_literal_constants = false;
+        self.aarch64_fold_single_use_cset = false;
         self.aarch64_hoist_prefetch_bases = false;
         self.aarch64_fp_spill_slots = 0;
         self.aarch64_fp_spill_keep_pairs = false;
@@ -485,6 +493,8 @@ impl Function {
                 regalloc_block_frequencies: None,
                 aarch64_branch_on_zero: false,
                 aarch64_branch_on_negated_disjunction: false,
+                aarch64_ccmp_literal_constants: false,
+                aarch64_fold_single_use_cset: false,
                 aarch64_hoist_prefetch_bases: false,
                 aarch64_fp_spill_slots: 0,
                 aarch64_fp_spill_keep_pairs: false,

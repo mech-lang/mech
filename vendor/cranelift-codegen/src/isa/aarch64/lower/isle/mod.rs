@@ -345,6 +345,8 @@ impl IsleContext<'_, '_, MInst, AArch64Backend> {
                     generated_code::constructor_put_in_reg_sext32(self, value)
                 } else if narrow {
                     generated_code::constructor_put_in_reg_zext32(self, value)
+                } else if let Some(reg) = self.ccmp_literal(value, comparison.ty) {
+                    reg
                 } else {
                     self.put_in_reg(value)
                 }
@@ -393,6 +395,46 @@ impl IsleContext<'_, '_, MInst, AArch64Backend> {
             cc = next_cc;
         }
         (instructions, lower_condcode(cc))
+    }
+
+    fn ccmp_literal(&mut self, value: Value, ty: Type) -> Option<Reg> {
+        if !self.lower_ctx.f.aarch64_ccmp_literal_constants || !matches!(ty, I32 | I64) {
+            return None;
+        }
+        let (definition, 0) = self
+            .lower_ctx
+            .get_value_as_source_or_const(value)
+            .inst
+            .as_inst()?
+        else {
+            return None;
+        };
+        let InstructionData::UnaryImm {
+            opcode: Opcode::Iconst,
+            imm,
+        } = self.lower_ctx.dfg().insts[definition]
+        else {
+            return None;
+        };
+        let word = if ty == I32 {
+            u64::from(imm.bits() as u32)
+        } else {
+            imm.bits() as u64
+        };
+        // Keep constants already encodable as a single move or logical immediate.
+        if MInst::load_constant(writable_zero_reg(), word).len() == 1 {
+            return None;
+        }
+        let addr = self
+            .lower_ctx
+            .use_constant(VCodeConstantData::U64(word.to_le_bytes()));
+        let rd = self.temp_writable_reg(I64);
+        self.lower_ctx.emit(MInst::ULoad64 {
+            rd,
+            mem: super::AMode::Const { addr },
+            flags: MemFlags::trusted(),
+        });
+        Some(rd.to_reg())
     }
 }
 
