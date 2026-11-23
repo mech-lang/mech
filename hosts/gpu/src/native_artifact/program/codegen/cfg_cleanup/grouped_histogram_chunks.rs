@@ -61,8 +61,10 @@ impl Chunk {
         visit: usize,
         paired: bool,
     ) -> Self {
-        let words = vector_words(c, address, visit);
-        let second = paired.then(|| vector_words(c, address, visit + 4));
+        // The visit address is the highest of the four admitted U64 records.
+        let start = -8 * (visit + 3) as i32;
+        let words = vector_words(c, address, start);
+        let second = paired.then(|| vector_words(c, address, start - 32));
         let mixed = vector_mixed(c, group.length_mask, words, second);
         Self::Vector {
             words,
@@ -102,13 +104,12 @@ impl Chunk {
     }
 }
 
-pub(super) fn vector_words(c: &mut FuncCursor<'_>, address: Value, visit: usize) -> Value {
+pub(super) fn vector_words(c: &mut FuncCursor<'_>, address: Value, offset: i32) -> Value {
     // Both loads stay inside the four admitted U64 records. Little endian
-    // places the packed fields in odd lanes, with the first visit last.
-    let at = -8 * (visit + 3) as i32;
+    // places the packed fields in odd lanes in ascending address order.
     let flags = MemFlags::new().with_notrap();
-    let lo = c.ins().load(types::I8X16, flags, address, at);
-    let hi = c.ins().load(types::I8X16, flags, address, at + 16);
+    let lo = c.ins().load(types::I8X16, flags, address, offset);
+    let hi = c.ins().load(types::I8X16, flags, address, offset + 16);
     let pick = c.func.dfg.immediates.push(ConstantData::from(
         &[4, 5, 6, 7, 12, 13, 14, 15, 20, 21, 22, 23, 28, 29, 30, 31][..],
     ));

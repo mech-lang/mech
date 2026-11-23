@@ -2,11 +2,12 @@
 //! The match and checked retry paths keep the original tally operations.
 use super::super::{bounded_byte_histogram::fixed_word, word_ranges};
 use super::*;
-use cranelift_codegen::ir::{AbiParam, StackSlotData, StackSlotKind};
+use cranelift_codegen::ir::{AbiParam, ConstantData, StackSlotData, StackSlotKind};
 use std::collections::BTreeSet;
 
 const PREFIX: u64 = 256;
 const CHUNK: u64 = 64;
+const LITERAL_BATCH: u8 = 16;
 const MINIMUM_INPUT: i64 = 8 * PREFIX as i64;
 
 pub(in crate::native_artifact) struct Seeded {
@@ -452,49 +453,85 @@ fn write_bins(
     c.ins().brif(more, write, &[next.into()], done, args);
 }
 
-fn try_literals(c: &mut FuncCursor<'_>, group: Group, at: Value, raw: Value, vector: Block) {
+fn try_literals(
+    c: &mut FuncCursor<'_>,
+    group: Group,
+    at: Value,
+    raw: Value,
+    node_base: Value,
+    last_batch: Value,
+    vector: Block,
+) {
     let compare = block(c.func);
-    let remaining = c.ins().isub(group.end, at);
-    let fits = c
-        .ins()
-        .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, 4);
+    let extend = block(c.func);
+    let fits = c.ins().icmp(IntCC::UnsignedLessThanOrEqual, at, last_batch);
     c.ins().brif(fits, compare, &[], group.header, &[at.into()]);
     c.goto_bottom(compare);
-    let ordinal = c.ins().isub(group.top, at);
-    let bytes = c.ins().ishl_imm(ordinal, 3);
-    let nodes = c.ins().iadd(group.nodes, bytes);
-    let packed = chunks::vector_words(c, nodes, 0);
+    let node_offset = c.ins().ishl_imm(at, 3);
+    let nodes = c.ins().isub(node_base, node_offset);
     let address = c.ins().iadd(raw, at);
-    let word = c.ins().load(
-        types::I32,
+    let bytes = c.ins().load(
+        types::I8X16,
         MemFlags::new().with_notrap().with_readonly(),
         address,
         0,
     );
-    let word = c.ins().bswap(word);
-    let bytes = c.ins().scalar_to_vector(types::I32X4, word);
-    let bytes = c.ins().bitcast(
-        types::I8X16,
-        MemFlags::new().with_endianness(Endianness::Little),
-        bytes,
-    );
-    let half = c.ins().uwiden_low(bytes);
-    let wide = c.ins().uwiden_low(half);
-    let shift = c.ins().ishl_imm(wide, i64::from(group.key_shift));
     let one = c.ins().iconst(types::I32, 1);
     let one = c.ins().splat(types::I32X4, one);
-    let expected = c.ins().bor(shift, one);
-    let difference = c.ins().bxor(expected, packed);
+    let difference = |c: &mut FuncCursor<'_>, word| {
+        let packed = chunks::vector_words(c, nodes, 32 * i32::from(word));
+        // Nodes are visited in descending address order. Swizzle the source
+        // byte into bits 8..15 and zero the other bytes of each lane.
+        let mut indices = [u8::MAX; 16];
+        for (lane, index) in indices[1..].iter_mut().step_by(4).enumerate() {
+            *index = LITERAL_BATCH - 1 - 4 * word - lane as u8;
+        }
+        let indices = c
+            .func
+            .dfg
+            .constants
+            .insert(ConstantData::from(&indices[..]));
+        let indices = c.ins().vconst(types::I8X16, indices);
+        let keys = c.ins().swizzle(bytes, indices);
+        let keys = c.ins().bitcast(
+            types::I32X4,
+            MemFlags::new().with_endianness(Endianness::Little),
+            keys,
+        );
+        let keys = c.ins().ishl_imm(keys, i64::from(group.key_shift - 8));
+        let expected = c.ins().bor(keys, one);
+        c.ins().bxor(expected, packed)
+    };
     let mask = c.ins().iconst(
         types::I32,
         i64::from(group.length_mask | (group.key_mask << group.key_shift)),
     );
     let mask = c.ins().splat(types::I32X4, mask);
-    let difference = c.ins().band(mask, difference);
-    let mismatch = c.ins().vany_true(difference);
-    let next = c.ins().iadd_imm(at, 4);
-    c.ins()
-        .brif(mismatch, group.header, &[at.into()], vector, &[next.into()]);
+    let first_word = LITERAL_BATCH / 4 - 1;
+    let first = difference(c, first_word);
+    let first = c.ins().band(mask, first);
+    let mixed = c.ins().vany_true(first);
+    c.ins().brif(mixed, group.header, &[at.into()], extend, &[]);
+
+    // A verified prefix can be skipped even when the rest of the batch
+    // contains a match. Resume the checked visit at the first unverified word.
+    c.goto_bottom(extend);
+    let mut tail = difference(c, first_word - 1);
+    for word in (0..first_word - 1).rev() {
+        let part = difference(c, word);
+        tail = c.ins().bor(tail, part);
+    }
+    let tail = c.ins().band(mask, tail);
+    let mixed = c.ins().vany_true(tail);
+    let partial = c.ins().iadd_imm(at, 4);
+    let next = c.ins().iadd_imm(at, i64::from(LITERAL_BATCH));
+    c.ins().brif(
+        mixed,
+        group.header,
+        &[partial.into()],
+        vector,
+        &[next.into()],
+    );
 }
 
 impl Seeded {
@@ -655,6 +692,13 @@ impl Seeded {
         c.goto_bottom(scan);
         scan_zero(&mut c, bins, bytes as i64, copy, fallback);
         c.goto_bottom(copy);
+        // The accepted span has at least one full batch and top >= end - 1.
+        // Form the lowest node address once. Each whole batch stays between
+        // this window's admitted last and first nodes.
+        let last_batch = c.ins().iadd_imm(end, -i64::from(LITERAL_BATCH));
+        let low_node = c.ins().iadd_imm(top, 1 - i64::from(LITERAL_BATCH));
+        let node_offset = c.ins().ishl_imm(low_node, 3);
+        let node_base = c.ins().iadd(nodes, node_offset);
         let zero = c.ins().iconst(types::I64, 0);
         c.ins().stack_store(zero, scratch, 0);
         let shadow = c.ins().stack_addr(types::I64, scratch, 0);
@@ -668,7 +712,7 @@ impl Seeded {
         );
 
         c.goto_bottom(vector);
-        try_literals(&mut c, group, at, raw, vector);
+        try_literals(&mut c, group, at, raw, node_base, last_batch, vector);
         c.goto_bottom(literal);
         let address = c.ins().iadd(raw, group.cursor);
         let byte = c.ins().uload8(
