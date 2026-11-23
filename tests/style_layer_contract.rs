@@ -330,10 +330,13 @@ fn shipped_documents_load_and_activate_math_and_diagram_renderers() {
     }
 
     let controller = include("document.js");
-    assert!(controller.contains("[data-mech-equation]:not([data-mech-rendered])"));
-    assert!(controller.contains("element.getAttribute(\"equation\") ?? element.textContent"));
-    assert!(controller.contains(".mermaid:not([data-processed])"));
-    assert!(controller.contains("window.mermaid.run({ nodes })"));
+    assert!(controller.contains("window.MechPresentation?.refresh(appendError)"));
+    let presentation = include("presentation.js");
+    assert!(presentation.contains("[data-mech-equation]:not([data-mech-rendered])"));
+    assert!(presentation.contains("element.getAttribute(\"equation\") ?? element.textContent"));
+    assert!(presentation.contains(".mermaid:not([data-processed])"));
+    assert!(presentation.contains("window.mermaid.run({ nodes })"));
+    assert!(presentation.contains("window.MechPresentation.refresh();"));
 }
 
 #[test]
