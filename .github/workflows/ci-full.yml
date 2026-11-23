@@ -455,6 +455,9 @@ jobs:
             --lib resident::general::execution::tests::
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_compiler,resident-artifact \
+            --lib resident::general::execution::comprehension_execution::tests::
+          cargo +nightly-2026-03-03 test --locked -p mech-engine \
+            --no-default-features --features full_compiler,resident-artifact \
             --lib resident::native_semantics::
           cargo +nightly-2026-03-03 test --locked -p mech-engine \
             --no-default-features --features full_compiler,resident-artifact \
@@ -682,6 +685,7 @@ jobs:
           --test knucleotide_record_source --test map_keys_comprehensions
           --test map_source --test source_map_entry_contract --test source_map_lookup_contract
           --test match_result_schemas --test matrix_block_comprehensions
+          --test optional_set_table_source
           --test postfix_selection --test primitive_snapshot_constructors
           --test pure_text_managed --test pure_text_source --test retention_work
           --test sequence_sort --test set_comprehension_operands
