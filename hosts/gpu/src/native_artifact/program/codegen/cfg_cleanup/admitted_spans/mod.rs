@@ -1,6 +1,6 @@
-//! Reuse a caller-admitted immutable span for a unit-stride loop cursor.
-//! A proof miss changes neither the graph nor its entry contract. The private
-//! caller must check begin <= end <= length before any phase effects.
+//! Reuse a caller-admitted span for a loop cursor. The private caller guards
+//! the current words before any phase effects.
+mod decreasing;
 mod induction;
 mod windows;
 mod word_length;
@@ -9,12 +9,15 @@ use super::window_bounds::{comparison, sole_predecessor};
 use cranelift_codegen::Context;
 use cranelift_codegen::ir::condcodes::{CondCode, IntCC};
 use cranelift_codegen::ir::{Inst, InstBuilder, InstructionData as Data, Value, ValueDef, types};
+pub(in crate::native_artifact) use decreasing::fold as fold_decreasing_indices;
 use std::collections::{BTreeMap, BTreeSet};
 pub(in crate::native_artifact) use word_length::admit as admit_word_length;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
 pub(in crate::native_artifact) struct Admission {
-    pub begin_word: usize,
+    /// An absent begin word gives the span an implicit unsigned zero start.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub begin_word: Option<usize>,
     pub end_word: usize,
     pub length_word: usize,
     #[serde(skip_serializing_if = "zero_length")]
@@ -183,7 +186,7 @@ fn fold_with_existing(
             if !existing.is_empty() {
                 let admitted = existing
                     .iter()
-                    .filter(|span| span.begin_word == begin_word && span.end_word == end_word)
+                    .filter(|span| span.begin_word == Some(begin_word) && span.end_word == end_word)
                     .map(|span| span.length_word)
                     .collect::<BTreeSet<_>>();
                 found.retain(|length_word, _| admitted.contains(length_word));
@@ -200,7 +203,7 @@ fn fold_with_existing(
                 let window_checks_removed = windows.len();
                 tests.extend(windows);
                 admissions.push(Admission {
-                    begin_word,
+                    begin_word: Some(begin_word),
                     end_word,
                     length_word,
                     minimum_length: 0,

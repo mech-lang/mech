@@ -49,7 +49,7 @@ fn compile(normalized: bool, word_floor: bool) -> (JITModule, Run, Run) {
     assert_eq!(
         spans,
         vec![Admission {
-            begin_word: 0,
+            begin_word: Some(0),
             end_word: 1,
             length_word: 2,
             minimum_length: if word_floor { 8 } else { 0 },

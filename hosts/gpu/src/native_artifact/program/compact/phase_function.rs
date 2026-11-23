@@ -1903,6 +1903,42 @@ fn prepare_impl<M: Module>(
             eprintln!("{symbol} packed private zero stores: {zeroes}");
         }
     }
+    if !observe
+        && cleanup.enabled
+        && no_growth.is_none()
+        && vectors.is_some()
+        && private.is_some_and(|contract| contract.permits(proof))
+        && std::env::var_os("MECH_COMPACT_ADMIT_DECREASING_INDICES")
+            .is_some_and(|target| target == "all" || target == symbol.as_str())
+        && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
+    {
+        let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
+        let lengths = proof
+            .arrays
+            .iter()
+            .enumerate()
+            .filter_map(|(array, view)| {
+                (view.writable
+                    && !view.appends
+                    && view.width == 4
+                    && proof.capacity(array).is_none())
+                .then(|| packet.binary_search(&(proof.view(array) + 1)).ok())
+                .flatten()
+            })
+            .collect();
+        if let Some(span) =
+            cfg_cleanup::admitted_spans::fold_decreasing_indices(&mut context, &loads, &lengths)
+        {
+            context
+                .compute_flowgraph_cleanup_and_verify(module.isa())
+                .map_err(backend)?;
+            eprintln!(
+                "{symbol} admitted decreasing indices: {} checks",
+                span.checks_removed
+            );
+            entry_spans.push(span);
+        }
+    }
     let packed_input = if pack_input {
         phase_storage::pack_used_input_words(&mut context.func, input_words)
     } else {

@@ -205,7 +205,11 @@ impl Phase {
                     effect.read(word);
                 }
                 for span in &self.entry_spans {
-                    for word in [span.begin_word, span.end_word, span.length_word] {
+                    for word in span
+                        .begin_word
+                        .into_iter()
+                        .chain([span.end_word, span.length_word])
+                    {
                         effect.read(word);
                     }
                 }
@@ -448,9 +452,19 @@ impl Phase {
             let base = self.arrays[array].0;
             let length = words.read(b, base + 1);
             let capacity = words.read(b, base + 2);
-            let fits = b
+            let mut fits = b
                 .ins()
                 .icmp(IntCC::UnsignedLessThanOrEqual, length, capacity);
+            // A fixed writable extent shares the capacity refusal edge.
+            for span in self
+                .entry_spans
+                .iter()
+                .filter(|span| span.begin_word.is_none() && span.length_word == base + 1)
+            {
+                let end = words.read(b, span.end_word);
+                let within = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, end, length);
+                fits = b.ins().band(fits, within);
+            }
             let next = b.create_block();
             b.ins().brif(fits, next, &[], fallback, &[]);
             b.switch_to_block(next);
@@ -478,7 +492,10 @@ impl Phase {
             b.switch_to_block(next);
         }
         for span in &self.entry_spans {
-            let begin = words.read(b, span.begin_word);
+            let Some(begin) = span.begin_word else {
+                continue;
+            };
+            let begin = words.read(b, begin);
             let end = words.read(b, span.end_word);
             let length = words.read(b, span.length_word);
             let ordered = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, begin, end);
@@ -1488,9 +1505,17 @@ pub(super) fn define<M: Module>(
                             .copied()
                             .ok_or_else(|| backend("span guard lacks input word"))
                     };
-                    span.begin_word = slot(span.begin_word)?;
+                    span.begin_word = span.begin_word.map(slot).transpose()?;
                     span.end_word = slot(span.end_word)?;
                     span.length_word = slot(span.length_word)?;
+                    if span.begin_word.is_none()
+                        && (span.minimum_length != 0
+                            || !fixed_arrays
+                                .iter()
+                                .any(|&array| arrays[array].0 + 1 == span.length_word))
+                    {
+                        return Err(backend("entry extent needs a fixed writable length"));
+                    }
                     entry_spans.push(span);
                 }
                 packed_input = fast.packed_input;

@@ -63,7 +63,7 @@ fn seeded_admitted_windows_reject_different_entry_spans() {
         let (mut ctx, loads) = body(&module, 5);
         let mut spans = fold(&mut ctx, &loads, &BTreeSet::from([2]), false);
         match field {
-            0 => spans[0].begin_word = 4,
+            0 => spans[0].begin_word = Some(4),
             1 => spans[0].end_word = 4,
             _ => spans[0].length_word = 4,
         }
