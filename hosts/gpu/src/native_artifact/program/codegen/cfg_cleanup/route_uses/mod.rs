@@ -4,7 +4,10 @@ mod reach;
 
 use cranelift_codegen::dominator_tree::DominatorTree;
 use cranelift_codegen::ir::{Block, Function, Value};
-use std::{collections::BTreeMap, sync::Arc};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    sync::Arc,
+};
 
 pub(super) struct Uses {
     values: Vec<Vec<Block>>,
@@ -31,23 +34,11 @@ impl Uses {
                 );
             }
             for inst in f.layout.block_insts(block) {
-                let mut add = |value: Value| {
+                for value in f.dfg.inst_values(inst) {
                     let value = f.dfg.resolve_aliases(value);
                     let list = &mut values[value.as_u32() as usize];
                     if list.last() != Some(&block) {
                         list.push(block)
-                    }
-                };
-                for &value in f.dfg.inst_args(inst) {
-                    add(value)
-                }
-                for call in f.dfg.insts[inst]
-                    .branch_destination(&f.dfg.jump_tables, &f.dfg.exception_tables)
-                {
-                    for arg in call.args(&f.dfg.value_lists) {
-                        if let Some(value) = arg.as_value() {
-                            add(value)
-                        }
                     }
                 }
             }
@@ -64,6 +55,12 @@ impl Uses {
             target,
             reach: BTreeMap::new(),
         }
+    }
+
+    pub fn used_outside(&self, value: Value, blocks: &BTreeSet<Block>) -> bool {
+        self.values[value.as_u32() as usize]
+            .iter()
+            .any(|block| !blocks.contains(block))
     }
 }
 

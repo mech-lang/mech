@@ -37,6 +37,7 @@ mod selected_increments;
 mod selected_ranges;
 mod selected_values;
 pub(in crate::native_artifact) mod shared_clamp;
+mod tagged_store_tail;
 mod threaded_edges;
 mod unsigned_intervals;
 mod window_bounds;
@@ -73,6 +74,28 @@ pub(in crate::native_artifact::program) fn carry_branch_outcomes(
         context.verify(isa).map_err(backend)?;
     }
     Ok(joins)
+}
+
+pub(in crate::native_artifact::program) fn specialize_tagged_store_tails(
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<usize, NativeCompileError> {
+    context.func.dfg.resolve_all_aliases();
+    context.compute_cfg();
+    let mut changed = 0;
+    // Each specialization copies a bounded tail. Cap growth per function.
+    for _ in 0..MAX_ROUNDS {
+        if !tagged_store_tail::specialize(&mut context.func, &context.cfg) {
+            break;
+        }
+        context.flowgraph();
+        context.eliminate_unreachable_code(isa).map_err(backend)?;
+        changed += 1;
+    }
+    if changed != 0 {
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(changed)
 }
 
 const MAX_ROUNDS: usize = 8;
