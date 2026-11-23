@@ -701,7 +701,13 @@ fn prepare_impl<M: Module>(
     let reuse_lengths = std::env::var_os("MECH_REUSE_ADMITTED_VIEW_LENGTHS").is_some();
     let bitwise_indices = std::env::var_os("MECH_REUSE_ADMITTED_BITWISE_INDEX_RANGES").is_some();
     let pack_halfword_stores = std::env::var_os("MECH_PACK_PRIVATE_HALFWORD_STORES");
+    let pack_zero_stores = pack_halfword_stores
+        .as_deref()
+        .and_then(|mode| mode.to_str())
+        .and_then(|mode| mode.strip_prefix("zero:"))
+        .is_some_and(|target| target == "all" || target == symbol.as_str());
     let mut paired_halfword_stores = None;
+    let mut zero_store_floors = None;
     let mut admitted_index_guards = 0;
     let mut entry_spans = Vec::new();
     if !observe
@@ -790,6 +796,24 @@ fn prepare_impl<M: Module>(
                     }
                 }
             }
+        }
+        if pack_halfwords && pack_zero_stores {
+            let admitted = if vectors.extend_bounds {
+                &report.phase_entry_bounds
+            } else {
+                &vectors.admitted_lengths
+            };
+            let floors: BTreeMap<_, _> = admitted
+                .iter()
+                .filter_map(|&(array, minimum)| {
+                    let view = &proof.arrays[array];
+                    if view.width != 2 || !view.writable {
+                        return None;
+                    }
+                    Some((input_word(proof.view(array))?, minimum.checked_mul(2)?))
+                })
+                .collect();
+            zero_store_floors = Some(floors);
         }
         if reuse_lengths {
             let admitted_lengths = if vectors.extend_bounds {
@@ -1420,7 +1444,7 @@ fn prepare_impl<M: Module>(
             }
         }
     }
-    let packed_halfword_stores = if pack_halfword_stores.is_some()
+    let mut packed_halfword_stores = if pack_halfword_stores.is_some()
         && let Some(stores) = paired_halfword_stores
     {
         context.compute_cfg();
@@ -1852,6 +1876,23 @@ fn prepare_impl<M: Module>(
         && std::env::var("MECH_COMPACT_HOIST_PREFETCH_BASES").as_deref() == Ok("1")
     {
         context.func.aarch64_hoist_prefetch_bases = true;
+    }
+    if let Some(floors) = zero_store_floors {
+        context.flowgraph();
+        let zeroes = cfg_cleanup::packed_halfword_reads::fold_zero_stores(
+            &mut context.func,
+            &context.cfg,
+            &context.domtree,
+            &floors,
+        );
+        if zeroes != 0 {
+            packed_halfword_stores += zeroes;
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        if std::env::var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF").is_some() {
+            eprintln!("{symbol} admitted zero-store byte bounds: {floors:?}");
+            eprintln!("{symbol} packed private zero stores: {zeroes}");
+        }
     }
     let packed_input = if pack_input {
         phase_storage::pack_used_input_words(&mut context.func, input_words)
