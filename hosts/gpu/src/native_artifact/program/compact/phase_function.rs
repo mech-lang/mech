@@ -29,6 +29,12 @@ pub(super) struct Composed {
     pub summary: serde_json::Value,
 }
 
+#[derive(Clone, Copy)]
+pub(super) enum Histogram {
+    Bytes(cfg_cleanup::bounded_byte_histogram::Admission),
+    Packed(cfg_cleanup::grouped_histogram::Admission),
+}
+
 pub(super) struct Compiled {
     pub function: FuncId,
     pub summary: serde_json::Value,
@@ -36,6 +42,8 @@ pub(super) struct Compiled {
     pub composed: Option<Composed>,
     pub packed_input: Option<Vec<usize>>,
     pub entry_spans: Vec<cfg_cleanup::admitted_spans::Admission>,
+    pub histogram: Option<Histogram>,
+    pub seeded: Option<cfg_cleanup::grouped_histogram::seeded::Seeded>,
 }
 type FinishReport = Box<
     dyn FnOnce(
@@ -52,6 +60,8 @@ struct Details {
     function: FuncId,
     entry_bounds: Vec<(usize, u64, bool)>,
     entry_spans: Vec<cfg_cleanup::admitted_spans::Admission>,
+    histogram: Option<Histogram>,
+    seeded: Option<cfg_cleanup::grouped_histogram::seeded::Seeded>,
     finish_report: FinishReport,
     composed: Option<Composed>,
     packed_input: Option<Vec<usize>>,
@@ -360,6 +370,8 @@ impl Details {
             composed: self.composed,
             packed_input: self.packed_input,
             entry_spans: self.entry_spans,
+            histogram: self.histogram,
+            seeded: self.seeded,
         })
     }
 }
@@ -672,6 +684,7 @@ fn prepare_impl<M: Module>(
             packed_halfword_stores: 0,
             admitted_index_guards: 0,
             entry_spans: Vec::new(),
+            seeded: None,
         };
         return Ok(General::Deferred(DeferredGeneral {
             context,
@@ -1024,6 +1037,7 @@ fn prepare_impl<M: Module>(
     };
     let word_loops = &report;
     let mut histogram = None;
+    let mut seeded = None;
     if std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM").is_some()
         && !observe
         && no_growth.is_none()
@@ -1038,10 +1052,12 @@ fn prepare_impl<M: Module>(
         let word_at = |word| packet.iter().position(|&at| at == word);
         let mut nodes = Vec::new();
         let mut bins = Vec::new();
+        let mut lookups = Vec::new();
         for (array, definition) in proof.arrays.iter().enumerate() {
             let destination = match (definition.width, definition.writable) {
                 (8, false) => &mut nodes,
                 (4, true) => &mut bins,
+                (1, false) => &mut lookups,
                 _ => continue,
             };
             if let (Some(pointer_word), Some(length_word)) =
@@ -1057,6 +1073,22 @@ fn prepare_impl<M: Module>(
             }
         }
         if !nodes.is_empty() && !bins.is_empty() {
+            if std::env::var_os("MECH_COMPACT_SEEDED_HISTOGRAM").is_some()
+                && module.isa().name() == "aarch64"
+                && selected_output.is_some_and(BTreeSet::is_empty)
+                && private.is_none()
+                && vectors.is_none()
+                && !pack_input
+            {
+                seeded = cfg_cleanup::grouped_histogram::seeded::prepare(
+                    &mut context,
+                    word_loops.machine_header,
+                    &loads,
+                    &nodes,
+                    &bins,
+                    &lookups,
+                );
+            }
             let mut grouped = module.make_context();
             grouped.func = context.func.clone();
             if let Some(admission) = cfg_cleanup::grouped_histogram::optimize(
@@ -1123,12 +1155,15 @@ fn prepare_impl<M: Module>(
                         .ok_or_else(|| backend("grouped phase VCode was not emitted"))?;
                     std::fs::write(path.with_extension("vcode"), vcode).map_err(backend)?;
                 }
-                histogram = Some(serde_json::json!({
-                    "symbol": target,
-                    "admission": admission,
-                    "code_bytes": machine.code_info().total_size,
-                    "stack_bytes": compiled_stack_bytes(&machine.buffer)?,
-                }));
+                histogram = Some((
+                    admission,
+                    serde_json::json!({
+                        "symbol": target,
+                        "admission": admission,
+                        "code_bytes": machine.code_info().total_size,
+                        "stack_bytes": compiled_stack_bytes(&machine.buffer)?,
+                    }),
+                ));
                 let fast = module.declare_func_in_func(grouped_id, &mut context.func);
                 cfg_cleanup::grouped_histogram::guard_entry(&mut context, admission, fast);
                 context.verify(module.isa()).map_err(backend)?;
@@ -2034,6 +2069,7 @@ fn prepare_impl<M: Module>(
             packed_halfword_stores,
             admitted_index_guards,
             entry_spans,
+            seeded,
         },
         future_write_hints,
         histogram,
@@ -2060,6 +2096,7 @@ pub(super) struct SummaryInput {
     packed_halfword_stores: usize,
     admitted_index_guards: usize,
     entry_spans: Vec<cfg_cleanup::admitted_spans::Admission>,
+    seeded: Option<cfg_cleanup::grouped_histogram::seeded::Seeded>,
 }
 
 fn finish_preparation(
@@ -2068,8 +2105,11 @@ fn finish_preparation(
     phase_cleanup: PhaseCleanup,
     input: SummaryInput,
     future_write_hints: Vec<cfg_cleanup::future_store::Hint>,
-    histogram: Option<serde_json::Value>,
-    bounded_histogram: Option<serde_json::Value>,
+    histogram: Option<(cfg_cleanup::grouped_histogram::Admission, serde_json::Value)>,
+    bounded_histogram: Option<(
+        Option<cfg_cleanup::bounded_byte_histogram::Admission>,
+        serde_json::Value,
+    )>,
     composed: Option<Composed>,
     vcode_path: Option<std::path::PathBuf>,
 ) -> Prepared {
@@ -2090,6 +2130,7 @@ fn finish_preparation(
         packed_halfword_stores,
         admitted_index_guards,
         entry_spans,
+        seeded,
     } = input;
     let PhaseCleanup {
         bit_counts,
@@ -2109,6 +2150,14 @@ fn finish_preparation(
     let changed_writes = report.proven_changed_writes.clone();
     let private_writes = report.private_write_sites.clone();
     let span_summary = (!entry_spans.is_empty()).then(|| serde_json::json!(entry_spans));
+    let histogram_shape = histogram
+        .as_ref()
+        .map(|(admission, _)| Histogram::Packed(*admission))
+        .or_else(|| {
+            bounded_histogram
+                .as_ref()
+                .and_then(|(admission, _)| admission.map(Histogram::Bytes))
+        });
     let finish_report: FinishReport = Box::new(move |compiled, entry_bounds| {
         let mut summary = serde_json::json!({"read_pack_sites":pack_sites,"wider_equal_loops":equality.wider,"private_write_sites":private_writes,"proven_changed_writes":changed_writes,"phase_entry_bounds":entry_bounds,"header":header,"exit":exit,"symbol":symbol,
         "code_bytes":compiled.code_info().total_size,"stack_bytes":compiled_stack_bytes(&compiled.buffer)?,
@@ -2176,10 +2225,10 @@ fn finish_preparation(
         if !reused_operands.is_empty() {
             summary["reused_scalar_operands"] = serde_json::json!(reused_operands);
         }
-        if let Some(histogram) = histogram {
+        if let Some((_, histogram)) = histogram {
             summary["grouped_histogram"] = histogram;
         }
-        if let Some(histogram) = bounded_histogram {
+        if let Some((_, histogram)) = bounded_histogram {
             summary["bounded_byte_histogram"] = histogram;
         }
         if let Some(spans) = span_summary {
@@ -2194,6 +2243,8 @@ fn finish_preparation(
             function,
             entry_bounds,
             entry_spans,
+            histogram: histogram_shape,
+            seeded,
             finish_report,
             composed,
             packed_input,

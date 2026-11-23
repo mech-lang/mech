@@ -28,7 +28,10 @@ use std::collections::{BTreeMap, BTreeSet};
 mod function;
 #[path = "private_phase.rs"]
 mod private;
+#[path = "phase_seed.rs"]
+mod seeded_histograms;
 pub(in crate::native_artifact) use private::{HANDOFF as PRIVATE_HANDOFF, PrivatePhase};
+pub(super) use seeded_histograms::{define_seeded_histograms, prove_seeded_histograms};
 
 // Only this caller constructs the contract and emits its current-view guards.
 // General matrices retain the original native body, not a weakened index rule.
@@ -190,6 +193,8 @@ pub(super) struct Phase {
     observe: bool,
     private: Option<PrivatePhase>,
     relative_error_origins: bool,
+    histogram: Option<function::Histogram>,
+    seeded: Option<cfg_cleanup::grouped_histogram::seeded::Seeded>,
 }
 impl Phase {
     #[cfg(feature = "early-region-emission")]
@@ -422,6 +427,7 @@ impl Phase {
         source_blocks: &[Option<Block>],
         error: Block,
         root_entry: bool,
+        seeded: Option<&seeded_histograms::Route>,
         mut vector_guards: Option<&mut Vec<vector_guard_facts::Guard>>,
     ) -> Result<(), NativeCompileError> {
         let observe = observer(module, b, self.observe)?;
@@ -687,8 +693,32 @@ impl Phase {
             let result = b.block_params(returned);
             (result[0], result[1])
         } else {
-            let function: FuncRef = module.declare_func_in_func(self.function, b.func);
-            let call = b.ins().call(function, &[storage.heap, input, out]);
+            let call = if let Some(route) = seeded {
+                let target = module.declare_func_in_func(route.target, b.func);
+                let raw = route.seed.raw_view;
+                let seed = route.seed.seed_view;
+                let raw_ptr = words.read(b, raw);
+                let raw_len = words.read(b, raw + 1);
+                let begin = words.read(b, route.seed.begin);
+                let seed_ptr = words.read(b, seed);
+                let seed_len = words.read(b, seed + 1);
+                b.ins().call(
+                    target,
+                    &[
+                        storage.heap,
+                        input,
+                        out,
+                        raw_ptr,
+                        raw_len,
+                        begin,
+                        seed_ptr,
+                        seed_len,
+                    ],
+                )
+            } else {
+                let function: FuncRef = module.declare_func_in_func(self.function, b.func);
+                b.ins().call(function, &[storage.heap, input, out])
+            };
             let result = b.inst_results(call);
             (result[0], result[1])
         };
@@ -1490,6 +1520,7 @@ pub(super) fn define<M: Module>(
         let mut vector = None;
         let mut packed_input = None;
         let mut entry_spans = Vec::new();
+        let mut histogram = general.as_ref().and_then(|body| body.histogram);
         if let Some(fast) = fast {
             let contract = vector_contract.unwrap();
             let used = general.as_ref().is_none_or(|body| fast.code != body.code);
@@ -1498,6 +1529,7 @@ pub(super) fn define<M: Module>(
             info["selected_by_guard"] = serde_json::json!(used);
             summary["vector_variant"] = info;
             if used {
+                histogram = fast.histogram.or(histogram);
                 for mut span in fast.entry_spans {
                     let slot = |at| {
                         inputs
@@ -1615,6 +1647,7 @@ pub(super) fn define<M: Module>(
         } else {
             None
         };
+        let seeded = general.and_then(|body| body.seeded);
         let (inputs, input_words) = if let Some(words) = packed_input {
             // Only the selected vector body can read this layout. Geometry
             // refusal still branches to the source continuation before the call.
@@ -1622,6 +1655,7 @@ pub(super) fn define<M: Module>(
                 return Err(backend("packed phase inputs require one selected body"));
             }
             let compact = words.iter().map(|&word| inputs[word]).collect::<Vec<_>>();
+            histogram = None;
             summary["private_packed_input_words"] = serde_json::json!(compact.len());
             (compact, words.len())
         } else {
@@ -1648,6 +1682,8 @@ pub(super) fn define<M: Module>(
             observe,
             private,
             relative_error_origins,
+            histogram,
+            seeded,
         });
         covered.extend(proof.sites.iter().copied());
     }

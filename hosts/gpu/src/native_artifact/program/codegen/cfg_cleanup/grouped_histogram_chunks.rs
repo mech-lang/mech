@@ -102,7 +102,7 @@ impl Chunk {
     }
 }
 
-fn vector_words(c: &mut FuncCursor<'_>, address: Value, visit: usize) -> Value {
+pub(super) fn vector_words(c: &mut FuncCursor<'_>, address: Value, visit: usize) -> Value {
     // Both loads stay inside the four admitted U64 records. Little endian
     // places the packed fields in odd lanes, with the first visit last.
     let at = -8 * (visit + 3) as i32;
