@@ -14,6 +14,7 @@ enum Word {
     GapBytes,
     SourceIndex,
     DestinationIndex,
+    Cursor(usize),
     Constant(u64),
     Binary(Op, Box<Word>, Box<Word>),
     Compare(IntCC, Box<Word>, Box<Word>),
@@ -26,6 +27,9 @@ impl Word {
         if let (Self::Constant(a), Self::Constant(b)) = (&a, &b) {
             let value = match op {
                 Op::Band => Some(a & b),
+                Op::Bor => Some(a | b),
+                Op::Bxor => Some(a ^ b),
+                Op::Imul => Some(a.wrapping_mul(*b)),
                 Op::Iadd => Some(a.wrapping_add(*b)),
                 Op::Isub => Some(a.wrapping_sub(*b)),
                 Op::Ishl => Some(a.wrapping_shl(*b as u32)),
@@ -35,6 +39,25 @@ impl Word {
             if let Some(value) = value {
                 return Self::Constant(value);
             }
+        }
+        if op == Op::Iadd
+            && let Self::Constant(delta) = b
+        {
+            if delta == 0 {
+                return a;
+            }
+            if let Self::Binary(Op::Iadd, base, previous) = &a
+                && let Self::Constant(previous) = **previous
+            {
+                return Self::binary(
+                    Op::Iadd,
+                    base.as_ref().clone(),
+                    Self::Constant(previous.wrapping_add(delta)),
+                );
+            }
+        }
+        if op == Op::Imul && b == Self::Constant(4) {
+            return Self::binary(Op::Ishl, a, Self::Constant(2));
         }
         Self::Binary(op, Box::new(a), Box::new(b))
     }
@@ -46,7 +69,8 @@ impl Word {
     fn boolean(&self) -> bool {
         match self {
             Self::Compare(..) => true,
-            Self::Binary(Op::Band, a, b) => a.boolean() && b.boolean(),
+            Self::Constant(n) => *n <= 1,
+            Self::Binary(Op::Band | Op::Bor | Op::Bxor, a, b) => a.boolean() && b.boolean(),
             _ => false,
         }
     }
@@ -64,6 +88,7 @@ struct Path<'a> {
     f: &'a Function,
     words: BTreeMap<Value, Word>,
     effects: Vec<Effect>,
+    input_bytes: i32,
 }
 
 enum Boundary {
@@ -140,13 +165,26 @@ impl Path<'_> {
                         imm,
                     } if self.single_type(result, types::I64) => Word::Constant(imm.bits() as u64),
                     Data::Binary {
-                        opcode: op @ (Op::Iadd | Op::Isub | Op::Ishl | Op::Ushr | Op::Band),
+                        opcode:
+                            op @ (Op::Iadd
+                            | Op::Isub
+                            | Op::Ishl
+                            | Op::Ushr
+                            | Op::Band
+                            | Op::Bor
+                            | Op::Bxor),
                         args,
                     } if self.single_type(result, types::I64) => {
                         Word::binary(op, self.word(args[0])?, self.word(args[1])?)
                     }
                     Data::BinaryImm64 {
-                        opcode: op @ (Op::IaddImm | Op::IshlImm | Op::UshrImm | Op::BandImm),
+                        opcode:
+                            op @ (Op::IaddImm
+                            | Op::IshlImm
+                            | Op::UshrImm
+                            | Op::BandImm
+                            | Op::ImulImm
+                            | Op::BxorImm),
                         arg,
                         imm,
                     } => {
@@ -163,6 +201,8 @@ impl Path<'_> {
                                 Op::IshlImm => Op::Ishl,
                                 Op::UshrImm => Op::Ushr,
                                 Op::BandImm => Op::Band,
+                                Op::ImulImm => Op::Imul,
+                                Op::BxorImm => Op::Bxor,
                                 _ => unreachable!(),
                             };
                             Word::binary(op, word, Word::Constant(value))
@@ -182,7 +222,13 @@ impl Path<'_> {
                         opcode: Op::Ireduce,
                         arg,
                     } if self.single_type(result, types::I32) => {
-                        Word::LowWord(Box::new(self.word(arg)?))
+                        let mut word = self.word(arg)?;
+                        if let Word::Binary(Op::Band, inner, mask) = &word
+                            && **mask == Word::Constant(u64::from(u32::MAX))
+                        {
+                            word = inner.as_ref().clone();
+                        }
+                        Word::LowWord(Box::new(word))
                     }
                     Data::IntCompare { cond, args, .. }
                         if args
@@ -203,7 +249,7 @@ impl Path<'_> {
                         let address = self.word(arg)?;
                         if opcode == Op::Load
                             && address == Word::InputPacket
-                            && (0..64).contains(&offset)
+                            && (0..self.input_bytes).contains(&offset)
                             && offset % 8 == 0
                         {
                             Word::Input(offset as usize)
@@ -322,6 +368,7 @@ pub(super) fn prove(f: &Function) -> Option<Sort> {
         ]
         .into(),
         effects: Vec::new(),
+        input_bytes: 64,
     };
     let Boundary::Jump(entry, original) = path.step(entry)? else {
         return None;
@@ -403,6 +450,11 @@ pub(super) fn prove(f: &Function) -> Option<Sort> {
         gaps,
     })
 }
+
+#[path = "tree_proof.rs"]
+pub(super) mod tree;
+#[path = "tree_emit.rs"]
+pub(super) mod tree_emit;
 
 #[cfg(test)]
 #[path = "gap_proof_tests.rs"]

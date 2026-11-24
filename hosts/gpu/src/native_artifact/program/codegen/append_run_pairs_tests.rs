@@ -5,7 +5,7 @@ use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{Linkage, Module, default_libcall_names};
 
 type Run = unsafe extern "C" fn(u64, *const u64, u64) -> u64;
-const APPEND_MODES: [u8; 8] = [0, 1, 2, 3, 4, 5, 12, 13];
+const APPEND_MODES: [u8; 10] = [0, 1, 2, 3, 4, 5, 12, 13, 28, 29];
 
 fn fixture(module: &JITModule, bias: i64, guard_bias: i64) -> (Context, Block) {
     let mut context = module.make_context();
@@ -179,6 +179,7 @@ fn compile(bias: i64, mode: u8) -> (JITModule, Run) {
                     rebase_costs: options & 1 != 0,
                     check_literal_bytes: options & 2 != 0,
                     limit_literal_span: options & 8 != 0,
+                    group_four: options & 16 != 0,
                 },
             )
             .unwrap()
@@ -230,7 +231,7 @@ fn biased_pairs_preserve_wrapping_costs_ordered_failures_and_scalar_tails() {
         let costs = (0..547)
             .map(|i| (i as u32).wrapping_mul(0xfedc_ba97).wrapping_add(u32::MAX))
             .collect::<Vec<_>>();
-        for n in [0_usize, 1, 2, 8, 9, 10, 11, 12, 17, 32] {
+        for n in [0_usize, 1, 2, 8, 9, 10, 11, 12, 17, 19, 20, 21, 32, 63] {
             let floor = if bias < 0 {
                 bias.wrapping_neg() as u32
             } else {
@@ -246,6 +247,10 @@ fn biased_pairs_preserve_wrapping_costs_ordered_failures_and_scalar_tails() {
                 n.saturating_sub(3),
                 n.saturating_sub(4),
                 n.saturating_sub(5),
+                n.saturating_sub(16),
+                n.saturating_sub(17),
+                n.saturating_sub(20),
+                n.saturating_sub(21),
             ] {
                 if at < n {
                     let mut bad = cache.clone();
