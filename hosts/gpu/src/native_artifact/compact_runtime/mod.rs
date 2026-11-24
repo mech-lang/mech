@@ -66,11 +66,11 @@ pub struct ScratchAudit {
 // cannot be a legal packed level-12 match/header.
 const CACHE_WORDS: usize = 1_500_513;
 
-mod owner_storage;
-mod small_scratch;
-mod owner_registry;
 mod fixed_transform;
 mod gap_kernel;
+mod owner_registry;
+mod owner_storage;
+mod small_scratch;
 use owner_registry::OwnerRegistry;
 pub use owner_storage::OwnerStorage;
 
@@ -130,7 +130,10 @@ impl<'storage> Heap<'storage> {
         if slot == 0 {
             self.first_owner = ptr::null_mut();
         } else {
-            self.registry.as_mut().expect("registered secondary slot").remove(slot);
+            self.registry
+                .as_mut()
+                .expect("registered secondary slot")
+                .remove(slot);
         }
     }
 
@@ -146,7 +149,9 @@ impl<'storage> Heap<'storage> {
         let slots = if self.counters.live_payload_bytes == 0 {
             0
         } else {
-            self.registry.as_ref().map_or(0, |registry| registry.slots())
+            self.registry
+                .as_ref()
+                .map_or(0, |registry| registry.slots())
         };
         for slot in 1..=slots {
             if let Some(owner) = self.owner_at(slot).filter(|owner| !owner.is_null()) {
@@ -199,7 +204,12 @@ impl<'storage> Heap<'storage> {
         let data = if let Some(header) = small {
             // SAFETY: the acquired span includes this complete payload and
             // is exclusively reserved for the current logical allocation.
-            let payload = unsafe { header.as_ptr().cast::<u8>().add(std::mem::size_of::<Owner>()) };
+            let payload = unsafe {
+                header
+                    .as_ptr()
+                    .cast::<u8>()
+                    .add(std::mem::size_of::<Owner>())
+            };
             if zeroed {
                 unsafe { payload.write_bytes(0, bytes) };
             }
@@ -253,7 +263,9 @@ impl<'storage> Heap<'storage> {
             let vacant = if self.first_owner.is_null() {
                 0
             } else {
-                self.registry.as_ref().map_or(1, |registry| registry.next_slot())
+                self.registry
+                    .as_ref()
+                    .map_or(1, |registry| registry.next_slot())
             };
             // SAFETY: this heap exclusively borrows the storage, and vacant is
             // exactly the unoccupied slot that register consumes next.
@@ -319,7 +331,11 @@ impl<'storage> Heap<'storage> {
                 }
             }
         }
-        if let Some(registry) = self.registry.as_mut().filter(|registry| registry.scratch.contains(owner)) {
+        if let Some(registry) = self
+            .registry
+            .as_mut()
+            .filter(|registry| registry.scratch.contains(owner))
+        {
             // SAFETY: owner and payload are the two disjoint parts of this
             // live scratch reservation. No source reference remains.
             unsafe { owner.drop_in_place() };
@@ -826,7 +842,11 @@ mod tests {
         assert_eq!(published.capacity(), 13);
         assert_eq!(heap.owner_at(0), Some(ptr::null_mut()));
         assert_eq!(heap.owner_at(1), Some(scratch_owner));
-        assert!(heap.registry.as_ref().is_some_and(|r| r.get(1) == Some(scratch_owner)));
+        assert!(
+            heap.registry
+                .as_ref()
+                .is_some_and(|r| r.get(1) == Some(scratch_owner))
+        );
         let next = heap.allocate(9, 2, 2, false).unwrap();
         assert_eq!(heap.owner_at(0), Some(next[5] as *mut Owner));
         heap.discard_private();

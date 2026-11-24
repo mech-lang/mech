@@ -108,7 +108,11 @@ mod tests {
             for _ in 0..number {
                 let owner = scratch.acquire(layout).unwrap();
                 let at = owner.as_ptr().addr();
-                assert!(occupied.iter().all(|&(other, _, size)| at + bytes <= other || other + size <= at));
+                assert!(
+                    occupied
+                        .iter()
+                        .all(|&(other, _, size)| at + bytes <= other || other + size <= at)
+                );
                 occupied.push((at, payload, bytes));
             }
             assert!(scratch.acquire(layout).is_none());

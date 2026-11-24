@@ -232,7 +232,9 @@ pub(crate) fn lower_codes(f: &mut Function, codes: super::price::Codes) {
     let mut b = FuncCursor::new(f).at_inst(codes.entry);
     // The same checked loop may resume after prior cells have already been
     // priced. Wide groups and the short tail are admitted at each cursor.
-    let initial = b.ins().icmp_imm(IntCC::UnsignedLessThan, codes.at, END as i64);
+    let initial = b
+        .ins()
+        .icmp_imm(IntCC::UnsignedLessThan, codes.at, END as i64);
     let prices_fit = b.ins().icmp_imm(
         IntCC::UnsignedGreaterThanOrEqual,
         codes.price_len,
