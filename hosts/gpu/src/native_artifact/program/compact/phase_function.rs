@@ -684,8 +684,38 @@ fn prepare_impl<M: Module>(
         && fixed_count == 1
         && module.isa().name() == "aarch64"
         && std::env::var_os("MECH_COMPACT_BOUNDED_U32_TREE").is_some();
+    let bounded_price = !observe
+        && private.is_none()
+        && proof.phase.is_none()
+        && proof.exits.is_empty()
+        && proof.prepaid_sites.is_empty()
+        && proof.result.direct_array() == Some(0)
+        && matches!(proof.arrays.as_slice(), [price, entries] if price.writable && price.width == 4
+            && !price.appends && !entries.writable && entries.width == 2)
+        && input_words == 14
+        && output_words == 11
+        && fixed_count == 1
+        && module.isa().name() == "aarch64"
+        && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
+        && std::env::var_os("MECH_COMPACT_BOUNDED_PRICE_BLEND").is_some();
+    let code_prices = !observe
+        && private.is_none()
+        && proof.phase.is_none()
+        && proof.exits.is_empty()
+        && proof.prepaid_sites.is_empty()
+        && proof.result.direct_array() == Some(0)
+        && matches!(proof.arrays.as_slice(), [price, codes, entries] if price.writable && price.width == 4
+            && !price.appends && !codes.writable && codes.width == 4 && !entries.writable && entries.width == 2)
+        && input_words == 15
+        && output_words == 11
+        && fixed_count == 1
+        && module.isa().name() == "aarch64"
+        && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
+        && std::env::var_os("MECH_COMPACT_GROUP_CODE_PRICES").is_some();
     if defer_general
         && !bounded_tree
+        && !bounded_price
+        && !code_prices
         && !pack_input
         && bodies.is_none()
         && !general_ir_observed()
@@ -2177,6 +2207,18 @@ fn prepare_impl<M: Module>(
         context.flowgraph();
         context.verify(module.isa()).map_err(backend)?;
         eprintln!("{symbol} verified bounded U32 tree");
+    }
+    if bounded_price && let Some(blend) = gap_proof::price::prove(&context.func) {
+        gap_proof::price_emit::lower(&mut context.func, blend);
+        context.flowgraph();
+        context.verify(module.isa()).map_err(backend)?;
+        eprintln!("{symbol} verified bounded packed price blend");
+    }
+    if code_prices && let Some(codes) = gap_proof::price::code_prices(&context.func) {
+        gap_proof::price_emit::lower_codes(&mut context.func, codes);
+        context.flowgraph();
+        context.verify(module.isa()).map_err(backend)?;
+        eprintln!("{symbol} verified grouped code prices");
     }
     if !observe && vectors.is_some() && module.isa().name() == "aarch64" {
         if private.is_some() {

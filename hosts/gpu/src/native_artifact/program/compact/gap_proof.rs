@@ -20,6 +20,7 @@ enum Word {
     Compare(IntCC, Box<Word>, Box<Word>),
     LowWord(Box<Word>),
     Read(Box<Word>),
+    Halfword(Box<Word>),
 }
 
 impl Word {
@@ -56,8 +57,10 @@ impl Word {
                 );
             }
         }
-        if op == Op::Imul && b == Self::Constant(4) {
-            return Self::binary(Op::Ishl, a, Self::Constant(2));
+        if op == Op::Imul
+            && let Self::Constant(scale @ (2 | 4)) = b
+        {
+            return Self::binary(Op::Ishl, a, Self::Constant(scale.trailing_zeros().into()));
         }
         Self::Binary(op, Box::new(a), Box::new(b))
     }
@@ -79,6 +82,7 @@ impl Word {
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum Effect {
     Read(Word),
+    ReadHalfword(Word),
     Store(Word, Word),
     Output,
 }
@@ -125,6 +129,27 @@ impl Path<'_> {
         Some(block)
     }
 
+    fn enter(&mut self, edge: BlockCall) -> Option<Block> {
+        let lists = &self.f.dfg.value_lists;
+        let block = edge.block(lists);
+        let params = self.f.dfg.block_params(block);
+        let mut args = edge.args(lists);
+        let mut values = Vec::with_capacity(params.len());
+        for &param in params {
+            let word = self.word(args.next()?.as_value()?)?;
+            let kind = self.f.dfg.value_type(param);
+            if kind != types::I64 && !(kind == types::I8 && word.boolean()) {
+                return None;
+            }
+            values.push((param, word));
+        }
+        if args.next().is_some() {
+            return None;
+        }
+        self.words.extend(values);
+        Some(block)
+    }
+
     fn empty_edge(&self, edge: BlockCall) -> Option<Block> {
         let lists = &self.f.dfg.value_lists;
         let target = edge.block(lists);
@@ -163,7 +188,11 @@ impl Path<'_> {
                     Data::UnaryImm {
                         opcode: Op::Iconst,
                         imm,
-                    } if self.single_type(result, types::I64) => Word::Constant(imm.bits() as u64),
+                    } if self.single_type(result, types::I64)
+                        || self.single_type(result, types::I8) && (0..=1).contains(&imm.bits()) =>
+                    {
+                        Word::Constant(imm.bits() as u64)
+                    }
                     Data::Binary {
                         opcode:
                             op @ (Op::Iadd
@@ -172,7 +201,10 @@ impl Path<'_> {
                             | Op::Ushr
                             | Op::Band
                             | Op::Bor
-                            | Op::Bxor),
+                            | Op::Bxor
+                            | Op::Imul
+                            | Op::Umulhi
+                            | Op::Udiv),
                         args,
                     } if self.single_type(result, types::I64) => {
                         Word::binary(op, self.word(args[0])?, self.word(args[1])?)
@@ -237,6 +269,11 @@ impl Path<'_> {
                     {
                         Word::comparison(cond, self.word(args[0])?, self.word(args[1])?)
                     }
+                    Data::IntCompareImm { cond, arg, imm, .. }
+                        if self.f.dfg.value_type(arg) == types::I64 =>
+                    {
+                        Word::comparison(cond, self.word(arg)?, Word::Constant(imm.bits() as u64))
+                    }
                     Data::Load {
                         opcode,
                         flags,
@@ -256,6 +293,9 @@ impl Path<'_> {
                         } else if opcode == Op::Uload32 && offset == 0 {
                             self.effects.push(Effect::Read(address.clone()));
                             Word::Read(Box::new(address))
+                        } else if opcode == Op::Uload16 && offset == 0 {
+                            self.effects.push(Effect::ReadHalfword(address.clone()));
+                            Word::Halfword(Box::new(address))
                         } else {
                             return None;
                         }
@@ -451,6 +491,10 @@ pub(super) fn prove(f: &Function) -> Option<Sort> {
     })
 }
 
+#[path = "price_proof.rs"]
+pub(super) mod price;
+#[path = "price_emit.rs"]
+pub(super) mod price_emit;
 #[path = "tree_proof.rs"]
 pub(super) mod tree;
 #[path = "tree_emit.rs"]

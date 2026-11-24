@@ -110,25 +110,6 @@ impl Choices {
     }
 }
 
-fn bind(path: &mut Path<'_>, edge: BlockCall) -> Option<Block> {
-    let lists = &path.f.dfg.value_lists;
-    let block = edge.block(lists);
-    let mut args = edge.args(lists);
-    let params = path.f.dfg.block_params(block);
-    let mut values = Vec::with_capacity(params.len());
-    for &param in params {
-        if path.f.dfg.value_type(param) != types::I64 {
-            return None;
-        }
-        values.push((param, path.word(args.next()?.as_value()?)?));
-    }
-    if args.next().is_some() {
-        return None;
-    }
-    path.words.extend(values);
-    Some(block)
-}
-
 fn packet_loop(path: &Path<'_>, edge: BlockCall, words: [&Word; 3]) -> Option<Block> {
     let lists = &path.f.dfg.value_lists;
     let target = edge.block(lists);
@@ -163,7 +144,7 @@ fn visit(
             packet_loop(path, edge, next)?;
             return (path.effects == effects).then_some(());
         }
-        let block = bind(path, edge)?;
+        let block = path.enter(edge)?;
         edge = match path.step(block)? {
             Boundary::Jump(_, target) => target,
             Boundary::Branch(condition, edges) => edges[usize::from(!routes.evaluate(&condition)?)],
