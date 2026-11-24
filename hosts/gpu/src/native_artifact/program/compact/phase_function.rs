@@ -14,6 +14,7 @@ use crate::native_artifact::{
     },
 };
 use cfg_cleanup::composed_reads::{Admission, Capture, DenseTables, Literal, View};
+use cranelift_codegen::cursor::{Cursor, FuncCursor};
 use cranelift_codegen::{
     Context,
     ir::{self, Signature},
@@ -22,6 +23,8 @@ use cranelift_codegen::{
 use std::sync::mpsc;
 #[path = "phase_histogram.rs"]
 mod bounded_histogram;
+#[path = "gap_proof.rs"]
+mod gap_proof;
 
 pub(super) struct Composed {
     pub function: FuncId,
@@ -2117,6 +2120,39 @@ fn prepare_impl<M: Module>(
         && vectors.is_some()
         && std::env::var_os("MECH_COMPACT_FORWARD_PHASE_SPILLS")
             .is_some_and(|phase| phase == symbol.as_str());
+    if !observe
+        && vectors.is_some()
+        && private.is_some_and(|phase| phase.permits(proof) && phase.handoffs.is_empty())
+        && proof.result.direct_array() == Some(0)
+        && matches!(proof.arrays.as_slice(), [view] if view.writable && view.width == 4 && !view.appends)
+        && input_words == 8
+        && output_words == 11
+        && fixed_count == 1
+        && module.isa().name() == "aarch64"
+        && entry_spans.iter().any(|span| {
+            span.begin_word.is_none() && span.end_word == 0 && span.length_word == 3
+        })
+        && std::env::var_os("MECH_COMPACT_NATIVE_GAP_SORT").is_some()
+        && let Some(sort) = gap_proof::prove(&context.func)
+    {
+        let mut signature = module.make_signature();
+        signature.params.extend([AbiParam::new(types::I64); 3]);
+        signature.returns.push(AbiParam::new(types::I64));
+        let kernel = module
+            .declare_function("mech_compact_sort_gapped_u32", Linkage::Import, &signature)
+            .map_err(backend)?;
+        let kernel = module.declare_func_in_func(kernel, &mut context.func);
+        let mut cursor = FuncCursor::new(&mut context.func).at_inst(sort.entry);
+        let call = cursor.ins().call(kernel, &[sort.data, sort.length, sort.gaps]);
+        let sorted = cursor.func.dfg.first_result(call);
+        let lists = &cursor.func.dfg.value_lists;
+        let original = sort.original.block(lists);
+        let args = sort.original.args(lists).collect::<Vec<_>>();
+        cursor.func.dfg.replace(sort.entry).brif(sorted, sort.success, &[], original, &args);
+        context.flowgraph();
+        context.verify(module.isa()).map_err(backend)?;
+        eprintln!("{symbol} verified native gapped sort");
+    }
     if !observe && vectors.is_some() && module.isa().name() == "aarch64" {
         if private.is_some() {
             phase_layout::apply_fp_spill_cache(&mut context, &symbol).map_err(backend)?;
