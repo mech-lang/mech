@@ -126,3 +126,85 @@ fn proves_the_whole_recurrence_and_rejects_different_observable_semantics() {
         assert!(prove(&table(variant)).is_none(), "variant {variant}");
     }
 }
+
+#[test]
+fn nonzero_pack_requires_both_cursor_updates_and_preserves_faults() {
+    use super::nonzero_pack::prove;
+    use cranelift_codegen::cursor::{Cursor, FuncCursor};
+
+    let mut f = Function::new();
+    f.signature.params.extend([AbiParam::new(types::I64); 3]);
+    f.signature.returns.extend([AbiParam::new(types::I64); 2]);
+    let mut context = FunctionBuilderContext::new();
+    let mut b = FunctionBuilder::new(&mut f, &mut context);
+    let [entry, head, bounds, read, empty, space, store, done, error] =
+        core::array::from_fn(|_| b.create_block());
+    b.append_block_params_for_function_params(entry);
+    let index = b.append_block_param(head, types::I64);
+    let used = b.append_block_param(head, types::I64);
+    b.switch_to_block(entry);
+    let packet = b.block_params(entry)[1];
+    let mem = MemFlags::new();
+    let mut field = |offset| b.ins().load(types::I64, mem, packet, offset);
+    let [start, limit, first, used0] = [0, 8, 16, 24].map(&mut field);
+    let [input, input_len, output, output_len] = [32, 40, 64, 72].map(field);
+    let zero = b.ins().iconst(types::I64, 0);
+    let one = b.ins().iconst(types::I64, 1);
+    b.ins().jump(head, &[first.into(), used0.into()]);
+    b.switch_to_block(head);
+    let more = b.ins().icmp(IntCC::UnsignedLessThan, index, limit);
+    let next = b.ins().iadd_imm(index, 1);
+    let incremented = b.ins().iadd_imm(used, 1);
+    b.ins().brif(more, bounds, &[], done, &[]);
+    b.switch_to_block(bounds);
+    let at = b.ins().iadd(start, index);
+    let fits = b.ins().icmp(IntCC::UnsignedLessThan, at, input_len);
+    b.ins().brif(fits, read, &[], empty, &[]);
+    b.switch_to_block(read);
+    let address = indexed(&mut b, input, at);
+    let frequency = b.ins().uload32(mem, address, 0);
+    let active = b.ins().icmp_imm(IntCC::NotEqual, frequency, 0);
+    b.ins().brif(active, space, &[], empty, &[]);
+    b.switch_to_block(empty);
+    let skip = b.ins().jump(head, &[next.into(), used.into()]);
+    b.switch_to_block(space);
+    let fits = b.ins().icmp(IntCC::UnsignedLessThan, used, output_len);
+    let capacity_gate = b.ins().brif(fits, store, &[], error, &[]);
+    b.switch_to_block(store);
+    let high = b.ins().ishl_imm(frequency, 10);
+    let key = b.ins().bor(index, high);
+    let narrowed = b.ins().ireduce(types::I32, key);
+    let address = indexed(&mut b, output, used);
+    b.ins().store(mem, narrowed, address, 0);
+    b.ins().jump(head, &[next.into(), incremented.into()]);
+    b.switch_to_block(error);
+    b.ins().return_(&[one, zero]);
+    b.switch_to_block(done);
+    b.ins().return_(&[zero, zero]);
+    b.seal_all_blocks();
+    b.finalize();
+    assert!(prove(&f).is_some());
+
+    let mut wrong_key = f.clone();
+    let shift = f.dfg.value_def(high).unwrap_inst();
+    wrong_key.dfg.replace(shift).ishl_imm(frequency, 9);
+    assert!(prove(&wrong_key).is_none());
+
+    let mut count_zero = f.clone();
+    count_zero
+        .dfg
+        .replace(skip)
+        .jump(head, &[next.into(), incremented.into()]);
+    assert!(prove(&count_zero).is_none());
+
+    let mut unexpected_fault = f.clone();
+    unexpected_fault
+        .dfg
+        .replace(capacity_gate)
+        .brif(fits, error, &[], store, &[]);
+    assert!(prove(&unexpected_fault).is_none());
+
+    // The divide traps, even though no later instruction reads its result.
+    FuncCursor::new(&mut f).at_inst(skip).ins().udiv(one, zero);
+    assert!(prove(&f).is_none());
+}

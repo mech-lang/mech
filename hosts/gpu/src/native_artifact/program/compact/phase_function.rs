@@ -684,6 +684,19 @@ fn prepare_impl<M: Module>(
         && fixed_count == 1
         && module.isa().name() == "aarch64"
         && std::env::var_os("MECH_COMPACT_BOUNDED_U32_TREE").is_some();
+    let nonzero_pack = !observe
+        && private.is_none()
+        && proof.phase.is_none()
+        && proof.exits.is_empty()
+        && proof.prepaid_sites.is_empty()
+        && matches!(proof.arrays.as_slice(), [input, output] if input.width == 4 && !input.writable && !input.appends
+            && output.width == 4 && output.writable && !output.appends)
+        && input_words == 14
+        && output_words == 12
+        && fixed_count == 1
+        && module.isa().name() == "aarch64"
+        && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
+        && std::env::var_os("MECH_COMPACT_NONZERO_U32_PACK").is_some();
     let bounded_price = !observe
         && private.is_none()
         && proof.phase.is_none()
@@ -714,6 +727,7 @@ fn prepare_impl<M: Module>(
         && std::env::var_os("MECH_COMPACT_GROUP_CODE_PRICES").is_some();
     if defer_general
         && !bounded_tree
+        && !nonzero_pack
         && !bounded_price
         && !code_prices
         && !pack_input
@@ -2201,6 +2215,12 @@ fn prepare_impl<M: Module>(
         context.flowgraph();
         context.verify(module.isa()).map_err(backend)?;
         eprintln!("{symbol} verified native gapped sort");
+    }
+    if nonzero_pack && let Some(pack) = gap_proof::nonzero_pack::prove(&context.func) {
+        gap_proof::nonzero_pack_emit::lower(&mut context.func, pack);
+        context.flowgraph();
+        context.verify(module.isa()).map_err(backend)?;
+        eprintln!("{symbol} verified stable nonzero U32 pack");
     }
     if bounded_tree && let Some(tree) = gap_proof::tree::prove(&context.func) {
         gap_proof::tree_emit::lower(&mut context.func, tree);
