@@ -5,7 +5,6 @@ use mech_engine::native_artifact::{NativeIterationAction, NativeProgramArtifactP
 
 pub(in crate::native_artifact) mod binding;
 pub(in crate::native_artifact) mod decode;
-pub(in crate::native_artifact) mod machine_backend;
 mod static_layouts;
 
 #[derive(Debug)]
@@ -14,7 +13,6 @@ pub struct NativeProgramDescriptor {
         crate::native_artifact::program::prepare::ProgramMetadata,
     pub(in crate::native_artifact) footprint: NativeCodeFootprint,
     pub(in crate::native_artifact) identity: [u8; 32],
-    pub(in crate::native_artifact) machine_backend: Option<machine_backend::MachineBackend>,
 }
 #[derive(Clone, Copy, Debug)]
 pub(in crate::native_artifact) struct NativeCodeFootprint {
@@ -33,10 +31,8 @@ impl NativeProgramDescriptor {
         serializer: S,
     ) -> Result<S::Ok, S::Error> {
         use serde::ser::SerializeStruct;
-        let mut fields = serializer.serialize_struct(
-            "NativeProgramDescriptor",
-            (if TABLES { 32 } else { 29 }) + usize::from(self.machine_backend.is_some()),
-        )?;
+        let mut fields =
+            serializer.serialize_struct("NativeProgramDescriptor", if TABLES { 32 } else { 29 })?;
         if TABLES {
             fields.serialize_field("plan", &TablePlan(&self.metadata.plan))?;
         } else {
@@ -91,9 +87,6 @@ impl NativeProgramDescriptor {
         fields.serialize_field("stack", &self.footprint.stack_bytes)?;
         fields.serialize_field("code", &self.footprint.code_bytes)?;
         fields.serialize_field("identity", &self.identity)?;
-        if let Some(backend) = &self.machine_backend {
-            fields.serialize_field("machine_backend", backend)?;
-        }
         if TABLES {
             fields.serialize_field(
                 "static_layouts",
@@ -117,10 +110,9 @@ impl NativeProgramDescriptor {
             metadata: prepared.into_metadata(),
             footprint,
             identity,
-            machine_backend: None,
         }
     }
-    pub(in crate::native_artifact) fn source_identity(
+    fn source_identity(
         prepared: &crate::native_artifact::program::prepare::PreparedNativeProgram,
     ) -> [u8; 32] {
         let metadata = prepared.metadata();
@@ -137,19 +129,6 @@ impl NativeProgramDescriptor {
             &metadata.string_map_regions,
         );
         identity
-    }
-    #[cfg(feature = "canonical-native-program")]
-    pub(in crate::native_artifact) fn bind_machine_backend(
-        mut self,
-        backend: machine_backend::MachineBackend,
-    ) -> Result<Self, String> {
-        backend.validate()?;
-        if backend.source_ir() != &self.identity || self.machine_backend.is_some() {
-            return Err("machine backend differs from prepared source identity".into());
-        }
-        self.identity = backend.identity();
-        self.machine_backend = Some(backend);
-        Ok(self)
     }
     pub(in crate::native_artifact) fn metadata(
         &self,

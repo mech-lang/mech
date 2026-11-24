@@ -195,7 +195,6 @@ pub struct NativeProgramObject {
     compiled_module_symbol: String,
     native_metadata_binding: super::image::binding::NativeProgramImageBinding,
     codegen: crate::native_artifact::codegen::control::CodegenReport,
-    machine_facts: Option<serde_json::Value>,
 }
 impl NativeProgramObject {
     pub fn bytes(&self) -> &[u8] {
@@ -285,17 +284,7 @@ impl NativeProgramObject {
         metadata["native_metadata_binding_symbol"] =
             serde_json::json!(self.native_metadata_binding.symbol());
         metadata["native_metadata_format"] = serde_json::json!("mech.typed-build-image.v4");
-        metadata["native_descriptor_version"] =
-            serde_json::json!(if self.descriptor.machine_backend.is_some() {
-                12
-            } else {
-                11
-            });
-        if let Some(backend) = &self.descriptor.machine_backend {
-            metadata["machine_backend"] = serde_json::json!(backend);
-            metadata["object_optimization"] = serde_json::json!("llvm-O3-apple-m3");
-            metadata["compiled_machine_facts"] = serde_json::json!(&self.machine_facts);
-        }
+        metadata["native_descriptor_version"] = serde_json::json!(11);
         metadata["ordinary_scalar_admission_groups"] = serde_json::json!(
             self.descriptor
                 .metadata()
@@ -413,95 +402,19 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
     )
 }
 
-/// Compile the ordinary source-proved native definition graph to inspectable
-/// LLVM IR. This is compiler output only, not a NativeProgramObject: LLVM
-/// machine admission and backend-bound image construction are separate steps.
-pub fn emit_program_llvm_ir(
-    artifact: &ProgramArtifact,
-    catalog: &FunctionCatalog,
-) -> Result<String, NativeCompileError> {
-    emit_program_llvm_ir_with_limits(artifact, catalog, NativeCompileLimits::default())
-}
-
-pub fn emit_program_llvm_ir_with_limits(
-    artifact: &ProgramArtifact,
-    catalog: &FunctionCatalog,
-    limits: NativeCompileLimits,
-) -> Result<String, NativeCompileError> {
-    host_supported()?;
-    let plan = lower_native_program_artifact_with_definition_table_limit(
-        artifact,
-        catalog,
-        limits.max_definition_table_bytes,
-    )
-    .map_err(backend)?;
-    let mut module = super::llvm_backend::RecordingModule::new(codegen_backend::object(
-        "mech_canonical_program_llvm_ssa",
-        PROGRAM_CODEGEN_FLAGS,
-    )?);
-    preflight(&plan, &module, limits)?;
-    let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
-    crate::native_artifact::codegen::control::define_cfg(
-        CodePlan::Program(&prepared),
-        ENTRY,
-        VERSION,
-        &mut module,
-        limits,
-        &crate::native_artifact::codegen::options::OptimizationOptions::default(),
-    )?;
-    module.llvm_ir().map_err(backend)
-}
-
-// Code and stack admission must be derived by the selected machine emitter
-// before this same-Object identity, image and compiled-module binding is made.
-// Keeping finalization separate prevents a second backend from substituting
-// machine text under a descriptor which describes different code.
 fn finish_program_object(
-    module: cranelift_object::ObjectModule,
-    prepared: PreparedNativeProgram,
-    entry: cranelift_module::FuncId,
-    footprint: NativeCodeFootprint,
-    codegen: crate::native_artifact::codegen::control::CodegenReport,
-) -> Result<NativeProgramObject, NativeCompileError> {
-    finish_program_object_using(
-        module,
-        prepared,
-        entry,
-        footprint,
-        codegen,
-        None,
-        None,
-        |module| module.finish().emit().map_err(backend),
-    )
-}
-
-fn finish_program_object_using(
     mut module: cranelift_object::ObjectModule,
     prepared: PreparedNativeProgram,
     entry: cranelift_module::FuncId,
     footprint: NativeCodeFootprint,
     codegen: crate::native_artifact::codegen::control::CodegenReport,
-    machine_backend: Option<super::image::machine_backend::MachineBackend>,
-    machine_facts: Option<serde_json::Value>,
-    finish: impl FnOnce(cranelift_object::ObjectModule) -> Result<Vec<u8>, NativeCompileError>,
 ) -> Result<NativeProgramObject, NativeCompileError> {
-    let separate_machine_metadata = machine_backend.is_some();
     let descriptor = NativeProgramDescriptor::from_prepared(prepared, footprint);
-    let descriptor = if let Some(backend_stamp) = machine_backend {
-        descriptor
-            .bind_machine_backend(backend_stamp)
-            .map_err(backend)?
-    } else {
-        descriptor
-    };
     let identity = NativeProgramObjectIdentity::from_descriptor(&descriptor).map_err(backend)?;
     let identity_id = module
         .declare_data(identity.symbol(), Linkage::Export, false, false)
         .map_err(backend)?;
     let mut data = DataDescription::new();
-    if separate_machine_metadata {
-        data.set_segment_section("__TEXT", "__mech_meta");
-    }
     data.define(identity.bytes().to_vec().into_boxed_slice());
     data.set_align(8);
     module.define_data(identity_id, &data).map_err(backend)?;
@@ -514,9 +427,6 @@ fn finish_program_object_using(
         .declare_data(image_binding.symbol(), Linkage::Export, false, false)
         .map_err(backend)?;
     let mut binding_data = DataDescription::new();
-    if separate_machine_metadata {
-        binding_data.set_segment_section("__TEXT", "__mech_meta");
-    }
     binding_data.define(image_binding.bytes().to_vec().into_boxed_slice());
     binding_data.set_align(8);
     module
@@ -546,9 +456,6 @@ fn finish_program_object_using(
             .declare_data(symbol, Linkage::Export, false, false)
             .map_err(backend)?;
         let mut data = DataDescription::new();
-        if separate_machine_metadata {
-            data.set_segment_section("__TEXT", "__mech_meta");
-        }
         data.define(bytes.to_vec().into_boxed_slice());
         data.set_align(8);
         module.define_data(id, &data).map_err(backend)?;
@@ -565,7 +472,7 @@ fn finish_program_object_using(
         entry,
     )?;
     Ok(NativeProgramObject {
-        bytes: finish(module)?,
+        bytes: module.finish().emit().map_err(backend)?,
         descriptor,
         identity,
         image_binding,
@@ -574,175 +481,7 @@ fn finish_program_object_using(
         compiled_module_symbol,
         native_metadata_binding,
         codegen,
-        machine_facts,
     })
-}
-
-/// Compile a genuine LLVM native Object. All source proofs are prepared through
-/// the ordinary compiler; machine facts and backend association precede image
-/// finalization. LLVM and the linker run only during this AOT compilation.
-pub fn emit_program_llvm_object_with_limits(
-    artifact: &ProgramArtifact,
-    catalog: &FunctionCatalog,
-    limits: NativeCompileLimits,
-    toolchain: &super::llvm_backend::NativeLlvmToolchain,
-) -> Result<NativeProgramObject, NativeCompileError> {
-    use crate::native_artifact::compiler::limit;
-    use sha2::{Digest, Sha256};
-    if !cfg!(all(target_arch = "aarch64", target_os = "macos")) {
-        return Err(NativeCompileError::UnsupportedHost);
-    }
-    let plan = lower_native_program_artifact_with_definition_table_limit(
-        artifact,
-        catalog,
-        limits.max_definition_table_bytes,
-    )
-    .map_err(backend)?;
-    let mut source = super::llvm_backend::RecordingModule::new(codegen_backend::object(
-        "mech_llvm_source_ssa",
-        PROGRAM_CODEGEN_FLAGS,
-    )?);
-    preflight(&plan, &source, limits)?;
-    let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
-    // Source/definition limits remain intact. Discarded Cranelift machine sizes
-    // must neither admit nor reject a different machine emitter's output.
-    let source_limits = NativeCompileLimits {
-        max_code_bytes: u64::MAX,
-        max_stack_bytes: u64::MAX,
-        ..limits
-    };
-    let (_, _, _, mut codegen) = crate::native_artifact::codegen::control::define_cfg(
-        CodePlan::Program(&prepared),
-        ENTRY,
-        VERSION,
-        &mut source,
-        source_limits,
-        &crate::native_artifact::codegen::options::OptimizationOptions::default(),
-    )?;
-    let names = source.definition_names().map_err(backend)?;
-    let ir = source.llvm_ir().map_err(backend)?;
-    let llvm = toolchain.compile(&ir, &names).map_err(backend)?;
-    let root = llvm
-        .facts
-        .functions
-        .get(ENTRY)
-        .ok_or_else(|| backend("LLVM root lacks machine facts"))?;
-    let helper = llvm
-        .facts
-        .functions
-        .iter()
-        .filter(|(name, _)| name.as_str() != ENTRY)
-        .map(|(_, f)| f.stack_bytes)
-        .max()
-        .unwrap_or(0);
-    let stack = root
-        .stack_bytes
-        .checked_add(helper)
-        .ok_or_else(|| backend("LLVM native stack envelope overflows"))?;
-    limit("Iteration stack", stack, limits.max_stack_bytes)?;
-    limit(
-        "Iteration code",
-        llvm.facts.code_bytes,
-        limits.max_code_bytes,
-    )?;
-    for function in &mut codegen.numeric_functions {
-        let actual = llvm
-            .facts
-            .functions
-            .get(&function.symbol)
-            .ok_or_else(|| backend("LLVM outlined function lacks machine facts"))?;
-        function.stack_bytes = actual.stack_bytes;
-        function.code_bytes = actual.code_bytes;
-    }
-    for function in &mut codegen.outlined_loops {
-        let actual = llvm
-            .facts
-            .functions
-            .get(&function.symbol)
-            .ok_or_else(|| backend("LLVM packed function lacks machine facts"))?;
-        function.stack_bytes = actual.stack_bytes;
-        function.code_bytes = actual.code_bytes;
-    }
-    for function in &mut codegen.join_map_copies {
-        let actual = llvm
-            .facts
-            .functions
-            .get(&function.symbol)
-            .ok_or_else(|| backend("LLVM join-map copy lacks machine facts"))?;
-        function.stack_bytes = actual.stack_bytes;
-        function.code_bytes = actual.code_bytes;
-    }
-    for function in &mut codegen.steady_loops {
-        let mut current = Some(function);
-        while let Some(function) = current {
-            let actual = llvm
-                .facts
-                .functions
-                .get(&function.symbol)
-                .ok_or_else(|| backend("LLVM steady loop lacks machine facts"))?;
-            function.stack_bytes = actual.stack_bytes;
-            function.code_bytes = actual.code_bytes;
-            current = function.lookup_cache_function.as_deref_mut();
-        }
-    }
-    if let Some(function) = &mut codegen.utf8_histogram {
-        let actual = llvm
-            .facts
-            .functions
-            .get(&function.symbol)
-            .ok_or_else(|| backend("LLVM histogram lacks machine facts"))?;
-        function.stack_bytes = actual.stack_bytes;
-        function.code_bytes = actual.code_bytes;
-    }
-    if let Some(function) = &mut codegen.bound_call_shim {
-        let actual = llvm
-            .facts
-            .functions
-            .get(&function.symbol)
-            .ok_or_else(|| backend("LLVM preserving bridge lacks machine facts"))?;
-        if actual.code_bytes % 4 != 0 || actual.code_bytes / 4 > function.template_bound as u64 {
-            return Err(backend(
-                "LLVM preserving bridge exceeds source template envelope",
-            ));
-        }
-        function.stack_bytes = actual.stack_bytes;
-        function.code_bytes = actual.code_bytes;
-    }
-    let stamp = super::image::machine_backend::MachineBackend::llvm(
-        NativeProgramDescriptor::source_identity(&prepared),
-        llvm.toolchain,
-        Sha256::digest(&llvm.object).into(),
-    )
-    .map_err(backend)?;
-    let mut metadata =
-        codegen_backend::object("mech_llvm_program_metadata", PROGRAM_CODEGEN_FLAGS)?;
-    let mut signature = metadata.make_signature();
-    signature.params.push(cranelift_codegen::ir::AbiParam::new(
-        cranelift_codegen::ir::types::I64,
-    ));
-    signature.returns.push(cranelift_codegen::ir::AbiParam::new(
-        cranelift_codegen::ir::types::I64,
-    ));
-    let entry = metadata
-        .declare_function(ENTRY, Linkage::Import, &signature)
-        .map_err(backend)?;
-    let facts = serde_json::to_value(&llvm.facts).map_err(backend)?;
-    finish_program_object_using(
-        metadata,
-        prepared,
-        entry,
-        NativeCodeFootprint {
-            stack_bytes: stack,
-            code_bytes: llvm.facts.code_bytes,
-        },
-        codegen,
-        Some(stamp),
-        Some(facts),
-        |module| {
-            let bytes = module.finish().emit().map_err(backend)?;
-            llvm.assemble(&bytes).map_err(backend)
-        },
-    )
 }
 
 fn preflight<M: Module>(
@@ -842,25 +581,6 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
     catalog: &FunctionCatalog,
     observe: bool,
 ) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
-    emit_compact_closed_object(artifact, catalog, observe, None)
-}
-
-/// Emit the compact diagnostic Object on Apple AArch64 with the checked root
-/// optimized for size by the selected LLVM toolchain.
-pub fn emit_compact_closed_object_with_llvm_root_for_diagnostic(
-    artifact: &ProgramArtifact,
-    catalog: &FunctionCatalog,
-    toolchain: &super::llvm_backend::NativeLlvmToolchain,
-) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
-    emit_compact_closed_object(artifact, catalog, false, Some(toolchain))
-}
-
-fn emit_compact_closed_object(
-    artifact: &ProgramArtifact,
-    catalog: &FunctionCatalog,
-    observe: bool,
-    llvm_root: Option<&super::llvm_backend::NativeLlvmToolchain>,
-) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
     host_supported()?;
     eprintln!("compact-stage: canonical lowering");
     let limits = crate::native_artifact::NativeProgramLimitMode::NoLimits.compilation();
@@ -877,8 +597,6 @@ fn emit_compact_closed_object(
     );
     let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
     eprintln!("compact-stage: native module");
-    // LLVM replaces the checked root. Its outlined phases still use this ISA
-    // and must retain their selected machine settings and checked profiles.
     let mut flags = PROGRAM_CODEGEN_FLAGS.to_vec();
     if cfg!(target_arch = "aarch64")
         && !observe
@@ -919,10 +637,9 @@ fn emit_compact_closed_object(
         }
         flags.push(("log2_min_function_alignment", alignment));
     }
-    let direct_literals = !observe
-        && llvm_root.is_none()
-        && std::env::var_os("MECH_COMPACT_DIRECT_ENTRY_LITERALS").is_some();
-    let emit = |direct| emit_prepared_compact_object(&prepared, observe, llvm_root, &flags, direct);
+    let direct_literals =
+        !observe && std::env::var_os("MECH_COMPACT_DIRECT_ENTRY_LITERALS").is_some();
+    let emit = |direct| emit_prepared_compact_object(&prepared, observe, &flags, direct);
     match emit(direct_literals) {
         Err(error) if direct_literals => {
             eprintln!("compact-stage: direct literal attempt withdrew: {error}");
@@ -935,15 +652,11 @@ fn emit_compact_closed_object(
 fn emit_prepared_compact_object(
     prepared: &PreparedNativeProgram,
     observe: bool,
-    llvm_root: Option<&super::llvm_backend::NativeLlvmToolchain>,
     flags: &[(&str, &str)],
     direct_literals: bool,
 ) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
     let (object, isa) = codegen_backend::object_with_isa("mech_compact_closed_diagnostic", flags)?;
     let mut module = super::compact::PreparedObject::new(object);
-    if llvm_root.is_some() {
-        module.name_llvm_anonymous_data();
-    }
     if !observe && let Ok(mode) = std::env::var("MECH_COMPACT_DIRECT_RUNTIME_CALLS") {
         module.use_direct_runtime_calls(&mode);
     }
@@ -954,24 +667,7 @@ fn emit_prepared_compact_object(
         .unwrap_or(0)
         .min(4);
     let share_phase_bodies = std::env::var_os("MECH_COMPACT_SHARE_PHASE_BODIES").is_some();
-    let metadata = if let Some(toolchain) = llvm_root {
-        let compile = |module: &mut super::compact::PreparedObject,
-                       id,
-                       context: &cranelift_codegen::Context| {
-            module.define_llvm_root(id, context, toolchain)
-        };
-        super::compact::define_with_isa(
-            &mut module,
-            prepared,
-            observe,
-            share_phase_bodies,
-            isa,
-            threads,
-            direct_runtime_calls,
-            Some(&compile),
-            false,
-        )?
-    } else if threads == 0 && !direct_literals {
+    let metadata = if threads == 0 && !direct_literals {
         super::compact::define(&mut module, prepared, observe, share_phase_bodies)?
     } else {
         super::compact::define_with_isa(
@@ -982,7 +678,6 @@ fn emit_prepared_compact_object(
             isa,
             threads,
             direct_runtime_calls,
-            None,
             direct_literals,
         )?
     };
@@ -992,11 +687,7 @@ fn emit_prepared_compact_object(
     if !observe && std::env::var_os("MECH_COMPACT_LAYOUT_REGIONS_LAST").is_some() {
         module.place_layout_regions_last();
     }
-    let bytes = if let Some(toolchain) = llvm_root {
-        module.finish_linked(toolchain).map_err(backend)?
-    } else {
-        module.finish().map_err(backend)?.emit().map_err(backend)?
-    };
+    let bytes = module.finish().map_err(backend)?.emit().map_err(backend)?;
     Ok((bytes, metadata))
 }
 

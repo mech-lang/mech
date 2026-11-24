@@ -1,5 +1,9 @@
 # Native execution requirements
 
+Cranelift is the sole native code generator for Mech source. Apply this rule
+to build scripts, diagnostic tools, and benchmark recipes. Rust host code and
+native object linking use the platform Rust toolchain.
+
 Fast scalar native execution is a first-class maintained capability. Bool, U64,
 I64 and F64 arithmetic, comparisons and conversions must retain direct native
 instruction emission, checked errors and finite resource admission. Scalar-only

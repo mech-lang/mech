@@ -9,6 +9,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import sys
 import tempfile
 import textwrap
 import unittest
@@ -1681,6 +1682,35 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn("if: inputs.verify_reuse", reuse)
         self.assertIn('MECH_NATIVE_OWNER_REQUIRE_PREBUILT: "1"', reuse)
 
+    def test_native_codegen_contract_rejects_tooling_and_accepts_platform_records(self):
+        script = "scripts/check-native-codegen-contract.py"
+        with tempfile.TemporaryDirectory() as path:
+            repo = Path(path)
+            (repo / "scripts").mkdir()
+            shutil.copyfile(ROOT / script, repo / script)
+            subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
+            (repo / "Cargo.lock").write_text('name = "windows_x86_64_gnu' 'l' 'lvm"\n')
+            subprocess.run(["git", "add", "."], cwd=repo, check=True)
+            check = [sys.executable, str(repo / script)]
+            self.assertEqual(subprocess.run(check, capture_output=True).returncode, 0)
+            for name, source in (
+                ("Cargo.toml", '[dependencies]\nl' 'lvm-sys = "=220.0.0"\n'),
+                ("build.rs", 'fn main() { std::process::Command::new("l' 'lc"); }\n'),
+                ("root.ll", ""),
+                ("vendor/cranelift-codegen/build.rs",
+                 '#[link(name = "L' 'LVM")] unsafe extern "C" {}\n'),
+            ):
+                with self.subTest(name=name):
+                    tracked = repo / name
+                    tracked.parent.mkdir(parents=True, exist_ok=True)
+                    tracked.write_text(source)
+                    subprocess.run(["git", "add", name], cwd=repo, check=True)
+                    failed = subprocess.run(check, capture_output=True, text=True)
+                    self.assertEqual(failed.returncode, 1)
+                    self.assertIn(name, failed.stderr)
+                    tracked.unlink()
+                    subprocess.run(["git", "add", "-u", "--", name], cwd=repo, check=True)
+
     def test_native_plan_handoff_gates_fail_closed(self):
         def accepts(block, **overrides):
             script = textwrap.dedent(block.split("        run: |\n", 1)[1])
@@ -1700,6 +1730,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         for result in ("failure", "cancelled", "skipped", ""):
             with self.subTest(result=result):
                 self.assertFalse(accepts(pr, DOCS_ONLY="false", CONTRACTS_REQUIRED="true", NATIVE_PLAN_RESULT=result))
+                self.assertFalse(accepts(pr, DOCS_ONLY="false", CONTRACTS_REQUIRED="true", NATIVE_CODEGEN_RESULT=result))
                 self.assertFalse(accepts(pr, DOCS_ONLY="false", CONTRACTS_REQUIRED="true", SOURCE_RESULT=result))
                 self.assertFalse(accepts(pr, DOCS_ONLY="false", CONTRACTS_REQUIRED="true", OWNER_RESULT=result))
         self.assertTrue(accepts(pr, DOCS_ONLY="false", CONTRACTS_REQUIRED="false", NATIVE_REQUIRED="false", FULL_RESULT="skipped", NATIVE_PLAN_RESULT="skipped"))
@@ -1713,7 +1744,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         block = job_block(CI, "pr-gate")
         script = textwrap.dedent(block.split("        run: |\n", 1)[1])
         environment = dict.fromkeys(re.findall(r"^          ([A-Z0-9_]+):", block, re.M), "skipped")
-        environment.update(DOCS_ONLY="true", CONTRACTS_REQUIRED="false", NATIVE_REQUIRED="false", OWNERS_REQUIRED="false", IMPACT_RESULT="success", BROWSER_RESULT="success", SOURCE_REQUIRED="false", WINDOWS_REQUIRED="false")
+        environment.update(DOCS_ONLY="true", CONTRACTS_REQUIRED="false", NATIVE_REQUIRED="false", OWNERS_REQUIRED="false", IMPACT_RESULT="success", NATIVE_CODEGEN_RESULT="success", BROWSER_RESULT="success", SOURCE_REQUIRED="false", WINDOWS_REQUIRED="false")
         def accepts(**changes):
             return subprocess.run(["/bin/bash", "-e", "-c", script],
                 env=environment | changes, capture_output=True).returncode == 0

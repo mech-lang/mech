@@ -186,8 +186,6 @@ struct Descriptor<'a, Frame> {
     stack: u64,
     code: u64,
     identity: [u8; 32],
-    #[serde(default, deserialize_with = "present_machine_backend")]
-    machine_backend: Option<native::program::image::machine_backend::MachineBackend>,
     #[serde(borrow, default, deserialize_with = "present_raw")]
     static_layouts: Option<BuildOwnedImageRecord<'a>>,
     #[serde(borrow, default, deserialize_with = "present_raw")]
@@ -204,13 +202,6 @@ struct Image<'a, Frame> {
 
 fn present_visits<'de, D: Deserializer<'de>>(reader: D) -> Result<Option<Box<[Visit]>>, D::Error> {
     Box::<[Visit]>::deserialize(reader).map(Some)
-}
-
-fn present_machine_backend<'de, D: Deserializer<'de>>(
-    d: D,
-) -> Result<Option<native::program::image::machine_backend::MachineBackend>, D::Error> {
-    // An explicitly null field is not the legacy absent field.
-    native::program::image::machine_backend::MachineBackend::deserialize(d).map(Some)
 }
 
 fn present_numeric_maps<'de, D: Deserializer<'de>>(
@@ -259,29 +250,16 @@ fn decode_inner<
     let image: Image<'a, Frame> = Image::deserialize(&mut reader).map_err(|e| e.to_string())?;
     reader.end().map_err(|e| e.to_string())?;
     if image.format != "mech.build-owned-native-descriptor"
-        || (OBJECT_BOUND && !matches!(image.version, 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12))
-        || (!OBJECT_BOUND
-            && !matches!(
-                image.version,
-                1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12
-            ))
+        || !matches!(image.version, 1..=9 | 11)
+        || (OBJECT_BOUND && image.version == 1)
     {
         return Err("unsupported native descriptor image format".into());
     }
     let table_rows = image.version >= 3;
     let mut w = image.descriptor;
-    if matches!(image.version, 10 | 12) != w.machine_backend.is_some() {
-        return Err("native image version differs from its machine backend".into());
-    }
     if (image.version >= 11) != w.visit_work.is_some() || (image.version < 11) != w.visits.is_some()
     {
         return Err("native image version differs from its visit representation".into());
-    }
-    if let Some(backend) = &w.machine_backend {
-        backend.validate()?;
-        if backend.identity() != w.identity {
-            return Err("native machine-backend identity differs".into());
-        }
     }
     if (image.version >= 2) != w.buffer_frames.is_some() {
         return Err("native descriptor version differs from its frame inventory".into());
@@ -907,35 +885,11 @@ fn decode_inner<
             code_bytes: w.code,
         },
         identity: w.identity,
-        machine_backend: w.machine_backend,
     };
     native::program::prepare::utf8_reads::derive_replay_facts(&mut descriptor.metadata)
         .map_err(str::to_owned)?;
     descriptor.metadata.worker_value_slots =
         native::program::prepare::worker_values::derive(&descriptor.metadata)?;
-    if !OBJECT_BOUND {
-        if let Some(backend) = &descriptor.machine_backend {
-            let metadata = descriptor.metadata();
-            let facts = descriptor.plan().facts();
-            let source = super::super::identity::typed_ir_sha256(
-                descriptor.plan(),
-                &facts.text_line_retention_frontiers(),
-                &metadata.selected_joins.regions,
-                &metadata.line_matrices.regions,
-                metadata.map_owner_words.as_ref(),
-                &metadata.frozen_maps,
-                &metadata.borrowed_record_maps,
-                &metadata.utf8_reads,
-                &metadata.numeric_maps,
-                &metadata.string_map_regions,
-            );
-            if backend.source_ir() != &source {
-                return Err(
-                    "machine backend source identity differs from independent derivation".into(),
-                );
-            }
-        }
-    }
     // Wire shape, canonical schemas and actual factories were checked above.
     // Full round-trip fidelity is tested at build time; re-encoding here would
     // retain compiler-side serializers without proving source/Object provenance.

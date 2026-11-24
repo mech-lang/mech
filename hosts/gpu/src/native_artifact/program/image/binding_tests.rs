@@ -83,6 +83,24 @@ fn object_image_binding_rejects_changed_bytes_identity_and_every_binding_byte() 
 }
 
 #[test]
+fn retired_native_image_versions_are_rejected() {
+    let catalog = mech_stdlib::source_catalog();
+    let [artifact, _] = artifacts("input<u64> + 1u64\n");
+    let object = emit_program_object(&artifact, &catalog).unwrap();
+    let bytes = object.descriptor().encode_build_owned_image().unwrap();
+    let mut image: serde_json::Value = serde_json::from_slice(&bytes).unwrap();
+    for version in [10, 12] {
+        image["version"] = version.into();
+        let retired = serde_json::to_vec(&image).unwrap();
+        // SAFETY: this fixture only decodes metadata and supplies no native entry.
+        let error =
+            unsafe { NativeProgramDescriptor::decode_build_owned_image(&retired, &catalog) }
+                .unwrap_err();
+        assert_eq!(error, "unsupported native descriptor image format");
+    }
+}
+
+#[test]
 fn object_bound_and_independent_images_preserve_all_prepared_metadata() {
     let catalog = mech_stdlib::source_catalog();
     for source in [

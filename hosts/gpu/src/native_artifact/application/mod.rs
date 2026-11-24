@@ -350,7 +350,7 @@ incremental = false
 strip = "symbols"
 opt-level = 3
 # Optimize the Rust host across crate boundaries; the checked Mech Object is
-# already native machine code and is linked unchanged, not lowered through LLVM.
+# already native machine code and is linked unchanged.
 lto = "thin"
 "#,
         name = json_string(binary_name),

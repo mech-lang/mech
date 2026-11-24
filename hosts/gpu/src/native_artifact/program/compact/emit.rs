@@ -28,10 +28,10 @@ use crate::native_artifact::{
     NativeCompileError,
     compiler::{backend, compiled_stack_bytes, guard, offset, primitive},
 };
+use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{AbiParam, Block, InstBuilder, MemFlags, types};
-use cranelift_codegen::{Context, ir::condcodes::IntCC};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
-use cranelift_module::{FuncId, Linkage, Module, ModuleResult};
+use cranelift_module::{FuncId, Linkage, Module};
 use mech_engine::native_artifact::{
     NativeControlLoop as Loop, NativeIterationAction as Action, NativeIterationTerminator as Term,
     NativeMatchAction as Scalar, NativeScalarAggregateAction as Aggregate,
@@ -72,33 +72,13 @@ pub(super) struct Shared {
     pub classes: Vec<super::utf8_classes::Proof>,
 }
 
-type CompileRoot<'a, M> = &'a dyn Fn(&mut M, FuncId, &Context) -> ModuleResult<(u32, u64)>;
-
 pub(in crate::native_artifact) fn define<M: Module>(
     module: &mut M,
     prepared: &PreparedNativeProgram,
     observe: bool,
     share_phase_bodies: bool,
 ) -> Result<serde_json::Value, NativeCompileError> {
-    define_with_root(module, prepared, observe, share_phase_bodies, None)
-}
-
-pub(in crate::native_artifact::program) fn define_with_root<M: Module>(
-    module: &mut M,
-    prepared: &PreparedNativeProgram,
-    observe: bool,
-    share_phase_bodies: bool,
-    compile_root: Option<CompileRoot<'_, M>>,
-) -> Result<serde_json::Value, NativeCompileError> {
-    define_with_pool(
-        module,
-        prepared,
-        observe,
-        share_phase_bodies,
-        None,
-        compile_root,
-        false,
-    )
+    define_with_pool(module, prepared, observe, share_phase_bodies, None, false)
 }
 
 pub(in crate::native_artifact::program) fn define_with_isa<M: Module>(
@@ -109,7 +89,6 @@ pub(in crate::native_artifact::program) fn define_with_isa<M: Module>(
     isa: cranelift_codegen::isa::OwnedTargetIsa,
     threads: usize,
     direct_runtime_calls: super::object::DirectRuntimeCalls,
-    compile_root: Option<CompileRoot<'_, M>>,
     direct_literals: bool,
 ) -> Result<serde_json::Value, NativeCompileError> {
     let pool = (threads != 0)
@@ -121,7 +100,6 @@ pub(in crate::native_artifact::program) fn define_with_isa<M: Module>(
         observe,
         share_phase_bodies,
         pool.as_ref(),
-        compile_root,
         direct_literals,
     )
 }
@@ -132,7 +110,6 @@ fn define_with_pool<M: Module>(
     observe: bool,
     share_phase_bodies: bool,
     pool: Option<&super::compile_jobs::Pool>,
-    compile_root: Option<CompileRoot<'_, M>>,
     direct_literals: bool,
 ) -> Result<serde_json::Value, NativeCompileError> {
     let plan = prepared.plan();
@@ -202,16 +179,7 @@ fn define_with_pool<M: Module>(
     let mut workers = Vec::new();
     for region in &prepared.metadata().parallel.regions {
         let entry = super::parallel::Entry::derive(plan, region)?;
-        let report = define_entry(
-            module,
-            prepared,
-            observe,
-            &shared,
-            Some(&entry),
-            &[],
-            None,
-            false,
-        )?;
+        let report = define_entry(module, prepared, observe, &shared, Some(&entry), &[], false)?;
         workers.push(super::parallel::Worker::new(
             module, plan, region, entry, report,
         )?);
@@ -223,7 +191,6 @@ fn define_with_pool<M: Module>(
         &shared,
         None,
         &workers,
-        compile_root,
         direct_literals,
     )?;
     report["native_worker_entries"] =
@@ -342,7 +309,6 @@ fn define_entry<M: Module>(
     shared: &Shared,
     worker: Option<&super::parallel::Entry>,
     workers: &[super::parallel::Worker],
-    compile_root: Option<CompileRoot<'_, M>>,
     direct_literals: bool,
 ) -> Result<serde_json::Value, NativeCompileError> {
     let plan = prepared.plan();
@@ -553,7 +519,6 @@ fn define_entry<M: Module>(
         if observe
             || worker.is_some()
             || !workers.is_empty()
-            || compile_root.is_some()
             || !route_sites.is_empty()
             || route_locations
         {
@@ -614,7 +579,6 @@ fn define_entry<M: Module>(
         let partitioned = unit.is_some();
         #[cfg(not(feature = "early-region-emission"))]
         let partitioned = false;
-        let compile_root = if is_helper { None } else { compile_root };
         #[cfg(feature = "early-region-emission")]
         let owns_source = |site| unit.is_none_or(|u| u.owns_source(site));
         #[cfg(not(feature = "early-region-emission"))]
@@ -2458,7 +2422,6 @@ fn define_entry<M: Module>(
         }
         let release_stubs = if outline_allowed
             && memory
-            && compile_root.is_none()
             && terminal_appends.is_some()
             && std::env::var_os("MECH_COMPACT_SHARE_RELEASE_SETUP").is_some()
         {
@@ -2486,48 +2449,38 @@ fn define_entry<M: Module>(
                 )
                 .map_err(backend)?
         };
-        let root_machine = compile_root
-            .map(|compile| compile(module, function, &context))
-            .transpose()
+        module
+            .define_function(function, &mut context)
             .map_err(backend)?;
-        let (code_bytes, stack_bytes) = if let Some(machine) = root_machine {
-            machine
-        } else {
-            module
-                .define_function(function, &mut context)
-                .map_err(backend)?;
-            let compiled = context
-                .compiled_code()
-                .ok_or_else(|| backend("compact function lacks native code"))?;
-            if let Some(folder) = std::env::var_os("MECH_COMPACT_ROUTE_DUMP") {
-                let folder = std::path::PathBuf::from(folder);
-                if let Some(vcode) = &compiled.vcode {
-                    std::fs::write(folder.join("native-vcode.asm"), vcode).map_err(backend)?;
-                }
-                let locations = compiled
-                    .buffer
-                    .get_srclocs_sorted()
-                    .iter()
-                    .map(|v| serde_json::json!({"start":v.start,"end":v.end,"site":v.loc.bits()}))
-                    .collect::<Vec<_>>();
-                std::fs::write(
-                    folder.join("machine-source-ranges.json"),
-                    serde_json::to_vec_pretty(&locations).map_err(backend)?,
-                )
-                .map_err(backend)?;
+        let compiled = context
+            .compiled_code()
+            .ok_or_else(|| backend("compact function lacks native code"))?;
+        if let Some(folder) = std::env::var_os("MECH_COMPACT_ROUTE_DUMP") {
+            let folder = std::path::PathBuf::from(folder);
+            if let Some(vcode) = &compiled.vcode {
+                std::fs::write(folder.join("native-vcode.asm"), vcode).map_err(backend)?;
             }
-            if let Some(stubs) = release_stubs {
-                let frame = compiled
-                    .buffer
-                    .frame_layout()
-                    .ok_or_else(|| backend("release setup needs a checked frame"))?;
-                stubs.define(module, frame)?;
-            }
-            (
-                compiled.code_info().total_size,
-                compiled_stack_bytes(&compiled.buffer)?,
+            let locations = compiled
+                .buffer
+                .get_srclocs_sorted()
+                .iter()
+                .map(|v| serde_json::json!({"start":v.start,"end":v.end,"site":v.loc.bits()}))
+                .collect::<Vec<_>>();
+            std::fs::write(
+                folder.join("machine-source-ranges.json"),
+                serde_json::to_vec_pretty(&locations).map_err(backend)?,
             )
-        };
+            .map_err(backend)?;
+        }
+        if let Some(stubs) = release_stubs {
+            let frame = compiled
+                .buffer
+                .frame_layout()
+                .ok_or_else(|| backend("release setup needs a checked frame"))?;
+            stubs.define(module, frame)?;
+        }
+        let code_bytes = compiled.code_info().total_size;
+        let stack_bytes = compiled_stack_bytes(&compiled.buffer)?;
         eprintln!("compact-stage: machine code complete");
         let terminal_report = if let Some((_, report)) = early_entry {
             Some(report)
@@ -2538,9 +2491,6 @@ fn define_entry<M: Module>(
         };
         Ok({
             let mut report = serde_json::json!({"private_indexed_chains":chains.iter().map(|chain|chain.summary()).collect::<Vec<_>>(),"phase_call_storage":phase_geometry.map(|g|g.summary()),"symbol":symbol,"buffer_result_sites":buffer_results.iter().enumerate().filter_map(|(site, value)|value.map(|(source, destination, allowed)|serde_json::json!({"site":site,"source_owner_slot":source,"result_owner_slot":destination,"consume":consuming[site],"can_finish_source":allowed}))).collect::<Vec<_>>(),"omitted_copy_owner_lanes":omitted_copy_owners,"prechange_retirement_sites":retire_before_change.iter().enumerate().filter_map(|(site, slots)|(!slots.is_empty()).then_some(serde_json::json!({"site":site,"slots":slots}))).collect::<Vec<_>>(),"source_error_origins":"cold-return constants","owner_transfer_lanes":transfers.iter().map(Vec::len).sum::<usize>(),"owner_transfer_sites":transfers.iter().enumerate().filter_map(|(site, lanes)|(!lanes.is_empty()).then_some(serde_json::json!({"site":site,"lanes":lanes}))).collect::<Vec<_>>(),"phase_observer":observe,"word_pack_sites":packs.iter().map(|p|serde_json::json!({"first":p.first,"last":p.last,"width":p.width,"next":p.next})).collect::<Vec<_>>(),"word_collections":word_kernels.iter().map(|k|&k.summary).collect::<Vec<_>>(),"numeric_phases":phases.iter().map(|p|p.summary(&owner_flow)).collect::<Vec<_>>(),"concrete_heap_context":memory,"inputs":ports,"input_words":input_words,"output_words":output_words,"output_types":flow.outputs.iter().map(|&v|layout.ty(v).summary()).collect::<Vec<_>>(),"code_bytes":code_bytes,"stack_bytes":stack_bytes,"source_blocks":plan.blocks().len(),"reachable_blocks":cfg_reachable.iter().filter(|&&v|v).count(),"all_path_initialization_proved":true,"calls":calls,"guarded_consuming_sites":consuming.iter().enumerate().filter_map(|(site, &yes)| yes.then_some(site)).collect::<Vec<_>>(),"cleanup":cleanup,"origins":plan.blocks().iter().map(|b|b.origin()).collect::<Vec<_>>(),"typed_ir_version":crate::native_artifact::program::image::identity::NATIVE_PROGRAM_TYPED_IR_VERSION,"contract":"Diagnostic typed closed computation; ordinary exact resource/admission/recovery contract omitted. Not NoLimits or qualified ordinary entry."});
-            if root_machine.is_some() {
-                report["checked_root_backend"] = serde_json::json!("llvm-size");
-            }
             if let Some(checked_traversals) = checked_traversals {
                 report["checked_traversals"] = checked_traversals;
             }

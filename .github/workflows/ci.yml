@@ -110,6 +110,26 @@ jobs:
           fi
           cat /tmp/ci-impact.json >> "$GITHUB_STEP_SUMMARY"
 
+  native-codegen-contract:
+    name: Native codegen contract
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7.0.1
+        id: checkout
+        with:
+          ref: ${{ github.sha }}
+      - name: Record selected checkout identity
+        env:
+          VALIDATION_KIND: ${{ github.event_name == 'pull_request' && 'integration-merge' || 'exact-ref' }}
+          REQUESTED_REF: ${{ github.sha }}
+          CHECKOUT_REF: ${{ steps.checkout.outputs.ref }}
+          CHECKOUT_SHA: ${{ steps.checkout.outputs.commit }}
+        shell: bash
+        run: bash --noprofile --norc -euo pipefail -c "$RECORD_CHECKOUT_IDENTITY"
+      - name: Enforce the Cranelift-only source and dependency policy
+        run: python3 -B scripts/check-native-codegen-contract.py
+
   early-native-plan:
     name: Early native plan
     needs: impact
@@ -1021,6 +1041,7 @@ jobs:
     if: always() && needs.impact.result != 'cancelled'
     needs:
       - impact
+      - native-codegen-contract
       - full-source-profile
       - static-contracts
       - standard-linux
@@ -1037,6 +1058,7 @@ jobs:
           DOCS_ONLY: ${{ needs.impact.outputs.docs_only }}
           CONTRACTS_REQUIRED: ${{ needs.impact.outputs.dependent_contracts_required }}
           NATIVE_REQUIRED: ${{ needs.impact.outputs.native_validation_required }}
+          NATIVE_CODEGEN_RESULT: ${{ needs.native-codegen-contract.result }}
           IMPACT_RESULT: ${{ needs.impact.result }}
           SOURCE_REQUIRED: ${{ needs.impact.outputs.standard_canaries_required }}
           SOURCE_RESULT: ${{ needs.full-source-profile.result }}
@@ -1051,6 +1073,7 @@ jobs:
           NATIVE_PLAN_RESULT: ${{ needs.early-native-plan.result }}
         run: |
           test "$IMPACT_RESULT" = success
+          test "$NATIVE_CODEGEN_RESULT" = success
           case "$SOURCE_REQUIRED" in
             true) test "$SOURCE_RESULT" = success ;;
             false) test "$SOURCE_RESULT" = skipped ;;

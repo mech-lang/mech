@@ -97,7 +97,6 @@
   "all_pinned_backend_allocator_code_changes_exact": true,
   "allocator_test_only_addition": "src/ion/moves.rs imports eight real-resolver tests from src/ion/forward_copy_tests.rs; Cargo declares the inherited test-control cfg name",
   "checker_diagnostic_stop_patch_applied": false,
-  "LLVM_required": false,
   "files": {
     "cranelift-codegen/Cargo.toml": "cbdc66bf76e8ebf2722e316540835ebf4bab44ff75decc6fdfdfdf442b6025dc",
     "cranelift-codegen/LICENSE": "268872b9816f90fd8e85db5a28d33f8150ebb8dd016653fb39ef1f94f2686bc5",
