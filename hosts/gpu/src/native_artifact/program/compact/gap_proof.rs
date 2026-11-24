@@ -491,6 +491,10 @@ pub(super) fn prove(f: &Function) -> Option<Sort> {
     })
 }
 
+#[path = "nonzero_pack.rs"]
+pub(super) mod nonzero_pack;
+#[path = "nonzero_pack_emit.rs"]
+pub(super) mod nonzero_pack_emit;
 #[path = "price_proof.rs"]
 pub(super) mod price;
 #[path = "price_emit.rs"]
