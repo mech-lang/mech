@@ -1,10 +1,10 @@
-//! Use the existing backing directly for a checked zero- or one-byte append.
+//! Use uniquely owned backing directly for checked little-endian byte appends.
 use crate::native_artifact::{NativeCompileError, compiler::backend};
 use cranelift_codegen::{
     Context,
     ir::{
-        Block, BlockCall, FuncRef, Function, Inst, InstBuilder, InstructionData as Data, MemFlags,
-        Opcode as Op, Value, ValueDef, condcodes::IntCC, types,
+        Block, BlockCall, Endianness, FuncRef, Function, Inst, InstBuilder,
+        InstructionData as Data, MemFlags, Opcode as Op, Value, ValueDef, condcodes::IntCC, types,
     },
     isa::CallConv,
 };
@@ -23,6 +23,7 @@ pub(super) struct ShortAppend {
     shift: usize,
     owner_flags: MemFlags,
     store_flags: MemFlags,
+    pub(super) maximum: u8,
 }
 
 fn definition(f: &Function, value: Value) -> Option<(Inst, usize)> {
@@ -135,6 +136,95 @@ fn skip_owner_update(f: &Function, block: Block, current: Value, previous: Value
     plain_edge(f, no)
 }
 
+fn adding(f: &Function, value: Value, base: Value, offset: i64) -> bool {
+    if let Some([a, b]) = binary(f, value, Op::Iadd) {
+        return (a == base && literal(f, b) == Some(offset))
+            || (b == base && literal(f, a) == Some(offset));
+    }
+    let Some((inst, 0)) = definition(f, value) else {
+        return false;
+    };
+    matches!(f.dfg.insts[inst], Data::BinaryImm64 { opcode: Op::IaddImm, arg, imm }
+        if f.dfg.resolve_aliases(arg) == base && imm.bits() == offset)
+}
+
+fn following_store(
+    f: &Function,
+    block: Block,
+    data: Value,
+    length: Value,
+    word: Value,
+    index: i64,
+    expected_flags: MemFlags,
+) -> Option<Block> {
+    if !setup(
+        f,
+        block,
+        &[
+            Op::Iadd,
+            Op::IaddImm,
+            Op::Ushr,
+            Op::UshrImm,
+            Op::Ireduce,
+            Op::Store,
+        ],
+    ) {
+        return None;
+    }
+    let mut stores = f
+        .layout
+        .block_insts(block)
+        .filter(|&i| f.dfg.insts[i].opcode() == Op::Store);
+    let Data::Store {
+        args: [byte, address],
+        offset,
+        flags,
+        ..
+    } = f.dfg.insts[stores.next()?]
+    else {
+        return None;
+    };
+    if stores.next().is_some() || flags != expected_flags || f.dfg.value_type(byte) != types::I8 {
+        return None;
+    }
+    let (cast, 0) = definition(f, byte)? else {
+        return None;
+    };
+    let Data::Unary {
+        opcode: Op::Ireduce,
+        arg: shifted,
+    } = f.dfg.insts[cast]
+    else {
+        return None;
+    };
+    let shift = index * 8;
+    if let Some([a, b]) = binary(f, shifted, Op::Ushr) {
+        if a != word || literal(f, b) != Some(shift) {
+            return None;
+        }
+    } else {
+        let (inst, 0) = definition(f, shifted)? else {
+            return None;
+        };
+        if !matches!(f.dfg.insts[inst], Data::BinaryImm64 { opcode: Op::UshrImm, arg, imm }
+            if f.dfg.resolve_aliases(arg) == word && imm.bits() == shift)
+        {
+            return None;
+        }
+    }
+    let [left, right] = binary(f, address, Op::Iadd)?;
+    let other = if left == data {
+        right
+    } else if right == data {
+        left
+    } else {
+        return None;
+    };
+    let exact = (other == length && i64::from(i32::from(offset)) == index)
+        || (i32::from(offset) == 0 && adding(f, other, length, index));
+    exact.then(|| jump(f, block)).flatten()
+}
+
 impl ShortAppend {
     pub(super) fn recognize(f: &Function) -> Option<Self> {
         if f.signature.call_conv != CallConv::AppleAarch64
@@ -217,7 +307,7 @@ impl ShortAppend {
         let write = plain_edge(f, put)?;
         let done = plain_edge(f, skip)?;
         let second = jump(f, write)?;
-        let (more, [_, one]) = branch(f, second)?;
+        let (more, [two, one]) = branch(f, second)?;
         if ![first, second].into_iter().all(|at| setup(f, at, &[]))
             || compare_literal(f, nonempty, IntCC::NotEqual, 0)? != count
             || compare_literal(f, more, IntCC::UnsignedGreaterThan, 1)? != count
@@ -258,6 +348,41 @@ impl ShortAppend {
         {
             return None;
         }
+
+        let maximum = if std::env::var_os("MECH_COMPACT_SHORT_BYTE_APPENDS")
+            .is_some_and(|mode| mode == "wide")
+        {
+            let mut next_store = plain_edge(f, two);
+            let mut proved = 1;
+            for index in 1..8 {
+                let Some(after) = next_store.and_then(|block| {
+                    following_store(f, block, current, length, value, index, store_flags)
+                }) else {
+                    break;
+                };
+                if after == done {
+                    if index == 7 {
+                        proved = 8;
+                    }
+                    break;
+                }
+                let Some((condition, [next, end])) = branch(f, after) else {
+                    break;
+                };
+                if !setup(f, after, &[])
+                    || compare_literal(f, condition, IntCC::UnsignedGreaterThan, index + 1)
+                        != Some(count)
+                    || plain_edge(f, end) != Some(done)
+                {
+                    break;
+                }
+                proved = (index + 1) as u8;
+                next_store = plain_edge(f, next);
+            }
+            proved
+        } else {
+            1
+        };
 
         // On the reuse edge the owner aliases its input exactly, so both
         // ownership updates select zero. All remaining instructions are pure.
@@ -303,6 +428,7 @@ impl ShortAppend {
                     shift: slot(shift)?,
                     owner_flags,
                     store_flags,
+                    maximum,
                 });
             }
             if !setup(f, tail, &[]) {
@@ -335,6 +461,51 @@ impl ShortAppend {
         Ok(context)
     }
 
+    fn emit_many(
+        self,
+        b: &mut FunctionBuilder<'_>,
+        address: Value,
+        word: Value,
+        count: Value,
+        done: Block,
+    ) {
+        let little = MemFlags::new().with_endianness(Endianness::Little);
+        if self.maximum >= 4 {
+            let wide = b.create_block();
+            let half = b.create_block();
+            let four = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, count, 4);
+            b.ins().brif(four, wide, &[], half, &[]);
+            b.switch_to_block(wide);
+            let offset = b.ins().iadd_imm(count, -4);
+            let tail = b.ins().iadd(address, offset);
+            let shift = b.ins().ishl_imm(offset, 3);
+            let high = b.ins().ushr(word, shift);
+            let low = b.ins().ireduce(types::I32, word);
+            let high = b.ins().ireduce(types::I32, high);
+            // The end stores cover four through eight bytes exactly.
+            // Overlapping bytes receive the same bits.
+            b.ins().store(little, low, address, 0);
+            b.ins().store(little, high, tail, 0);
+            b.ins().jump(done, &[]);
+            b.switch_to_block(half);
+        }
+
+        let low = b.ins().ireduce(types::I16, word);
+        b.ins().store(little, low, address, 0);
+        if self.maximum >= 3 {
+            let last = b.create_block();
+            let three = b.ins().icmp_imm(IntCC::Equal, count, 3);
+            b.ins().brif(three, last, &[], done, &[]);
+            b.switch_to_block(last);
+            let high = b.ins().ushr_imm(word, 16);
+            let byte = b.ins().ireduce(types::I8, high);
+            b.ins().store(little, byte, address, 2);
+        }
+        b.ins().jump(done, &[]);
+    }
+
     fn emit(self, function: &mut Function, fallback: FuncRef) {
         let mut builder = FunctionBuilderContext::new();
         let mut b = FunctionBuilder::new(function, &mut builder);
@@ -356,7 +527,11 @@ impl ShortAppend {
         let owner = args[self.owner];
         let data = args[self.data];
         let word = args[self.value];
-        let width = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, count, 1);
+        let width = b.ins().icmp_imm(
+            IntCC::UnsignedLessThanOrEqual,
+            count,
+            i64::from(self.maximum),
+        );
         b.ins().brif(width, extent, &[], slow, &[]);
         b.switch_to_block(extent);
         let end = b.ins().iadd(length, count);
@@ -375,6 +550,15 @@ impl ShortAppend {
         b.switch_to_block(write);
         let byte = b.ins().ireduce(types::I8, word);
         let address = b.ins().iadd(data, length);
+        if self.maximum > 1 {
+            let one = b.create_block();
+            let many = b.create_block();
+            let is_one = b.ins().icmp_imm(IntCC::Equal, count, 1);
+            b.ins().brif(is_one, one, &[], many, &[]);
+            b.switch_to_block(many);
+            self.emit_many(&mut b, address, word, count, finish);
+            b.switch_to_block(one);
+        }
         b.ins().store(self.store_flags, byte, address, 0);
         b.ins().jump(finish, &[]);
         b.switch_to_block(finish);

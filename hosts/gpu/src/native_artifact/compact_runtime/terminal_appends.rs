@@ -73,7 +73,10 @@ pub unsafe extern "C" fn mech_compact_finish_byte_appends(
         let tail = dest.add(length);
         // The first and last words cover the exact extent. Overlapping
         // writes store the same bytes where they meet.
-        if packed_len >= 4 {
+        if packed_len == 5 {
+            tail.cast::<u32>().write_unaligned((packed as u32).to_le());
+            tail.add(4).write((packed >> 32) as u8);
+        } else if packed_len >= 4 {
             let last = packed_len - 4;
             tail.cast::<u32>().write_unaligned((packed as u32).to_le());
             tail.add(last)
@@ -113,14 +116,19 @@ unsafe fn copy_short_bytes(src: *const u8, dst: *mut u8, len: usize) {
     debug_assert!(len < 16);
     // SAFETY: each selected word fits, and the two words cover the full range.
     unsafe {
-        if len >= 8 {
+        if len < 4 {
+            if len & 2 != 0 {
+                dst.cast::<u16>()
+                    .write_unaligned(src.cast::<u16>().read_unaligned());
+            }
+            if len & 1 != 0 {
+                let last = len - 1;
+                dst.add(last).write(src.add(last).read());
+            }
+        } else if len >= 8 {
             copy_ends::<u64>(src, dst, len);
-        } else if len >= 4 {
+        } else {
             copy_ends::<u32>(src, dst, len);
-        } else if len >= 2 {
-            copy_ends::<u16>(src, dst, len);
-        } else if len == 1 {
-            dst.write(src.read());
         }
     }
 }

@@ -1808,6 +1808,10 @@ fn share_families<M: Module>(
                 "checked_code_bytes": selected.bytes.len(),
                 "checked_stack_bytes": selected.stack,
             }));
+            if append.maximum > 1 {
+                short_append_report.as_mut().expect("short append report")["maximum_bytes"] =
+                    serde_json::json!(append.maximum);
+            }
             if inline_short_appends {
                 short_bodies.insert(entry, context.func);
             }
