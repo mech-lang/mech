@@ -23,13 +23,12 @@ set
 
 A set is declared using curly braces `{}`.
 
-Elements are separated by commas `,`. Duplicate elements are automatically removed.
+Elements are separated by commas `,`. Every element must have a distinct canonical key; duplicate elements are rejected.
 
 ```
 {}                 -- An empty set
 {1, 2, 3}          -- A set of numbers
 {"a", "b", "c"}    -- A set of strings
-{1, 1, 2, 3}       -- Duplicates are removed
 ```
 
 When parsed and rendered, this code will appear as:
@@ -37,7 +36,10 @@ When parsed and rendered, this code will appear as:
 {}                 -- An empty set
 {1, 2, 3}          -- A set of numbers
 {"a", "b", "c"}    -- A set of strings
-{1, 1, 2, 3}       -- Duplicates are removed
+
+Duplicate literals such as `{1, 1, 2, 3}` are errors. Keys that become equal
+after canonicalization, such as `0` and `-0`, also count as duplicates. A live
+input that creates a duplicate is rejected before the set is published.
 
 Sets are unordered. The order in which elements appear does not affect equality or behavior.
 

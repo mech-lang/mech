@@ -7147,6 +7147,69 @@ impl SemanticBuilder {
         if matches!(body, SchemaBody::String) && matches!(selectors.as_slice(), [None]) {
             return Ok((None, Vec::new(), source.into_owned()));
         }
+        if let SchemaBody::Table { columns, rows } = &body {
+            if selectors.iter().all(Option::is_none) {
+                return Ok((None, Vec::new(), source.into_owned()));
+            }
+            if selectors.len() == 2 && selectors[1].is_some() {
+                return Err(SourceSemanticError {
+                    code: "source-semantics/incompatible-selection-kind",
+                    message: "table row selection preserves all named columns".to_owned(),
+                    anchor: SourceSemanticAnchor::for_node(syntax),
+                });
+            }
+            let selected = selectors[0].expect("nonempty table row selector");
+            let selector = embed_schema_draft(
+                self.schema_draft_of(selected)?.as_ref(),
+                &mut parameters,
+                SourceSemanticAnchor::for_node(syntax),
+            )?;
+            let cardinality = match selector {
+                SchemaBody::Matrix { element, .. } if element.as_ref() == &SchemaBody::Bool => {
+                    // The source's current turn parameter is not observable
+                    // from a filtered population. Retain closed bounds only;
+                    // the selector still checks the full actual row count.
+                    let upper_bound = match rows {
+                        CardinalitySpec::Exact(count @ DimensionExpr::Constant(_)) => {
+                            Some(count.clone())
+                        }
+                        CardinalitySpec::Dynamic {
+                            upper_bound: Some(count @ DimensionExpr::Constant(_)),
+                        } => Some(count.clone()),
+                        _ => None,
+                    };
+                    CardinalitySpec::Dynamic { upper_bound }
+                }
+                SchemaBody::Matrix {
+                    element,
+                    dimensions,
+                } if mech_core::is_positional_selector_schema(&element) => {
+                    CardinalitySpec::Exact(DimensionExpr::Multiply(dimensions))
+                }
+                scalar if mech_core::is_positional_selector_schema(&scalar) => {
+                    CardinalitySpec::Exact(DimensionExpr::Constant(1))
+                }
+                _ => {
+                    return Err(SourceSemanticError {
+                        code: "source-semantics/incompatible-selection-kind",
+                        message: "table rows require a positional selector or Boolean mask"
+                            .to_owned(),
+                        anchor: SourceSemanticAnchor::for_node(syntax),
+                    });
+                }
+            };
+            return Ok((
+                Some("access/rows"),
+                vec![selected],
+                SchemaDraft {
+                    body: SchemaBody::Table {
+                        columns: columns.clone(),
+                        rows: cardinality,
+                    },
+                    dimension_parameters: parameters.into_boxed_slice(),
+                },
+            ));
+        }
         let mut inputs = Vec::new();
         let mut counts = Vec::new();
         let mut scalar = Vec::new();
@@ -10614,21 +10677,36 @@ impl SemanticBuilder {
                                         variable.syntax(),
                                     ));
                                 };
+                                let mut binding_schema: PendingSchema = match &scrutinee_schema.body
+                                {
+                                    SchemaBody::Option(payload) if !activation => {
+                                        schema_component(&scrutinee_schema, payload).into()
+                                    }
+                                    _ => scrutinee_schema.clone(),
+                                };
                                 if let Some(annotation) = variable.annotation() {
                                     let mut schema = self.annotation_schema_draft(&annotation)?;
                                     if !schema.dimension_parameters.is_empty() {
                                         schema = specialize_annotation_dimensions(
-                                            &scrutinee_schema,
+                                            &binding_schema,
                                             &schema,
                                             variable.syntax(),
-                                        )?;
+                                        )
+                                        .or_else(|_| {
+                                            specialize_annotation_dimensions(
+                                                &scrutinee_schema,
+                                                &schema,
+                                                variable.syntax(),
+                                            )
+                                        })?;
                                     }
-                                    if schema != scrutinee_schema {
+                                    if schema != binding_schema && schema != scrutinee_schema {
                                         return Err(error(
-                                            "match binding requires the scrutinee schema",
+                                            "match binding requires the scrutinee or its optional payload schema",
                                             variable.syntax(),
                                         ));
                                     }
+                                    binding_schema = schema.into();
                                 }
                                 // Give a lexical binding its own call-local region. Besides
                                 // making ordinary matches explicit, this lets a recursive
@@ -10640,7 +10718,7 @@ impl SemanticBuilder {
                                     body: PendingNodeBody::CollectionBinding,
                                     inferable_projection: variable.annotation().is_none(),
                                     inputs: Vec::new(),
-                                    schema: scrutinee_schema.clone(),
+                                    schema: binding_schema.clone(),
                                     exposes_output: true,
                                     state: None,
                                     semantic: SourceSemanticNode {
@@ -10657,7 +10735,7 @@ impl SemanticBuilder {
                                 pattern_bindings.insert(node, 0);
                                 crate::MatchPattern::Structural(crate::CollectionPattern::Bind {
                                     local: 0,
-                                    schema: scrutinee_schema.clone().into_owned(),
+                                    schema: binding_schema.into_owned(),
                                 })
                             } else {
                                 let start = self.nodes.len();
