@@ -2203,17 +2203,33 @@ fn prepare_impl<M: Module>(
         && std::env::var_os("MECH_COMPACT_NATIVE_GAP_SORT").is_some()
         && let Some(sort) = gap_proof::prove(&context.func)
     {
+        let scratch = std::env::var_os("MECH_COMPACT_SORT_SNAPSHOT_SCRATCH").is_some();
         let mut signature = module.make_signature();
-        signature.params.extend([AbiParam::new(types::I64); 3]);
+        signature
+            .params
+            .extend(vec![AbiParam::new(types::I64); if scratch { 4 } else { 3 }]);
         signature.returns.push(AbiParam::new(types::I64));
+        let name = if scratch {
+            "mech_compact_sort_gapped_u32_with_scratch"
+        } else {
+            "mech_compact_sort_gapped_u32"
+        };
         let kernel = module
-            .declare_function("mech_compact_sort_gapped_u32", Linkage::Import, &signature)
+            .declare_function(name, Linkage::Import, &signature)
             .map_err(backend)?;
         let kernel = module.declare_func_in_func(kernel, &mut context.func);
+        let mut arguments = Vec::with_capacity(4);
+        if scratch {
+            let entry = context
+                .func
+                .layout
+                .entry_block()
+                .expect("numeric phase entry");
+            arguments.push(context.func.dfg.block_params(entry)[0]);
+        }
+        arguments.extend([sort.data, sort.length, sort.gaps]);
         let mut cursor = FuncCursor::new(&mut context.func).at_inst(sort.entry);
-        let call = cursor
-            .ins()
-            .call(kernel, &[sort.data, sort.length, sort.gaps]);
+        let call = cursor.ins().call(kernel, &arguments);
         let sorted = cursor.func.dfg.first_result(call);
         let lists = &cursor.func.dfg.value_lists;
         let original = sort.original.block(lists);

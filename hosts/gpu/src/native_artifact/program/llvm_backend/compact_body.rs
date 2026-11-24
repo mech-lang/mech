@@ -89,7 +89,13 @@ pub(super) fn read_body(
             (macho::ARM64_RELOC_PAGE21, true, FuncOrDataId::Data(id)) => {
                 (Reloc::Aarch64AdrPrelPgHi21, id.into())
             }
+            (macho::ARM64_RELOC_PAGE21, true, FuncOrDataId::Func(id)) => {
+                (Reloc::Aarch64AdrPrelPgHi21, id.into())
+            }
             (macho::ARM64_RELOC_PAGEOFF12, false, FuncOrDataId::Data(id)) => {
+                (Reloc::Aarch64AddAbsLo12Nc, id.into())
+            }
+            (macho::ARM64_RELOC_PAGEOFF12, false, FuncOrDataId::Func(id)) => {
                 (Reloc::Aarch64AddAbsLo12Nc, id.into())
             }
             _ => return Err(format!("unsupported compact LLVM relocation for {name}")),
@@ -100,6 +106,23 @@ pub(super) fn read_body(
             .filter(|_| offset % 4 == 0)
             .ok_or("compact LLVM relocation lies outside an instruction")?;
         let instruction = u32::from_le_bytes(instruction.try_into().unwrap());
+        // A module-owned helper's address may be passed to another witnessed
+        // helper. Admit its exact ADRP/ADD materialization, with no entry offset.
+        if let FuncOrDataId::Func(id) = declaration
+            && kind != Reloc::Arm64Call
+        {
+            let opcode = match kind {
+                Reloc::Aarch64AdrPrelPgHi21 => instruction & 0x9f00_0000 == 0x9000_0000,
+                Reloc::Aarch64AddAbsLo12Nc => instruction & 0xffc0_0000 == 0x9100_0000,
+                _ => false,
+            };
+            if !declarations.get_function_decl(id).linkage.is_final()
+                || !opcode
+                || relocation.addend() != 0
+            {
+                return Err("unexpected compact LLVM function address".into());
+            }
+        }
         // An LLVM Mach-O ADDEND pair has already been decoded by Object.
         // Reject implicit offsets that would need to be read out of the word.
         let zero_field = match kind {
@@ -148,4 +171,69 @@ pub(super) fn verify_linked_unwind(root: &[u8], linked: &[u8]) -> Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(all(test, target_arch = "aarch64", target_os = "macos"))]
+mod tests {
+    use super::*;
+    use cranelift_codegen::{ir::Signature, isa::CallConv};
+    use cranelift_module::Linkage;
+
+    fn address_object(second: &str) -> Vec<u8> {
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let out = std::env::temp_dir().join(format!(
+            "mech-llvm-function-address-{}-{unique}",
+            std::process::id()
+        ));
+        std::fs::create_dir(&out).unwrap();
+        std::fs::write(out.join("entry.s"), format!(".text\n.globl _entry\n.p2align 2\n_entry:\n adrp x0, _target@PAGE\n {second}\n ret\n")).unwrap();
+        let result = std::process::Command::new("cc")
+            .current_dir(&out)
+            .args(["-c", "entry.s", "-o", "entry.o"])
+            .output()
+            .unwrap();
+        assert!(
+            result.status.success(),
+            "{}",
+            String::from_utf8_lossy(&result.stderr)
+        );
+        let bytes = std::fs::read(out.join("entry.o")).unwrap();
+        std::fs::remove_dir_all(out).unwrap();
+        bytes
+    }
+
+    #[test]
+    fn compact_llvm_function_addresses_require_known_local_exact_entries() {
+        let mut declarations = ModuleDeclarations::default();
+        declarations
+            .declare_function(
+                "target",
+                Linkage::Local,
+                &Signature::new(CallConv::AppleAarch64),
+            )
+            .unwrap();
+        let exact = address_object("add x0, x0, _target@PAGEOFF");
+        let body = read_body(exact.clone(), 0, "entry", &declarations).unwrap();
+        assert_eq!(body.code_bytes, 12);
+        assert_eq!(body.relocations.len(), 2);
+        for instruction in [
+            "add x0, x0, _target@PAGEOFF+4",
+            "ldr x0, [x0, _target@PAGEOFF]",
+        ] {
+            assert!(read_body(address_object(instruction), 0, "entry", &declarations).is_err());
+        }
+        let mut imported = ModuleDeclarations::default();
+        imported
+            .declare_function(
+                "target",
+                Linkage::Import,
+                &Signature::new(CallConv::AppleAarch64),
+            )
+            .unwrap();
+        assert!(read_body(exact.clone(), 0, "entry", &imported).is_err());
+        assert!(read_body(exact, 0, "entry", &ModuleDeclarations::default()).is_err());
+    }
 }

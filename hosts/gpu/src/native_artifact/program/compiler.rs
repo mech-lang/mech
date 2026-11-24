@@ -877,10 +877,11 @@ fn emit_compact_closed_object(
     );
     let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
     eprintln!("compact-stage: native module");
+    // LLVM replaces the checked root. Its outlined phases still use this ISA
+    // and must retain their selected machine settings and checked profiles.
     let mut flags = PROGRAM_CODEGEN_FLAGS.to_vec();
     if cfg!(target_arch = "aarch64")
         && !observe
-        && llvm_root.is_none()
         && let Some(mode) = std::env::var_os("MECH_COMPACT_PAIR_REGISTER_SPILLS")
     {
         flags.push(("enable_regalloc_spill_pairs", "true"));
@@ -890,7 +891,6 @@ fn emit_compact_closed_object(
     }
     if cfg!(target_arch = "aarch64")
         && !observe
-        && llvm_root.is_none()
         && let Some(mode) = std::env::var_os("MECH_COMPACT_FOLD_INVERTED_CSET")
     {
         flags.push(("enable_inverted_cset_folding", "true"));
@@ -903,7 +903,6 @@ fn emit_compact_closed_object(
     }
     if cfg!(target_arch = "aarch64")
         && !observe
-        && llvm_root.is_none()
         && std::env::var_os("MECH_COMPACT_FOLD_REDUNDANT_ZERO").is_some()
     {
         flags.push(("enable_redundant_zero_folding", "true"));
@@ -911,7 +910,6 @@ fn emit_compact_closed_object(
     let alignment = std::env::var("MECH_COMPACT_FUNCTION_ALIGNMENT_LOG2").ok();
     if cfg!(target_arch = "aarch64")
         && !observe
-        && llvm_root.is_none()
         && let Some(alignment) = alignment.as_deref()
     {
         if !matches!(alignment, "4" | "5" | "6" | "7") {
@@ -943,6 +941,9 @@ fn emit_prepared_compact_object(
 ) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
     let (object, isa) = codegen_backend::object_with_isa("mech_compact_closed_diagnostic", flags)?;
     let mut module = super::compact::PreparedObject::new(object);
+    if llvm_root.is_some() {
+        module.name_llvm_anonymous_data();
+    }
     if !observe && let Ok(mode) = std::env::var("MECH_COMPACT_DIRECT_RUNTIME_CALLS") {
         module.use_direct_runtime_calls(&mode);
     }

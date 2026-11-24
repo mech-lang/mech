@@ -15,3 +15,5 @@ pub use toolchain::NativeLlvmToolchain;
 mod image_tests;
 #[cfg(all(test, target_arch = "aarch64", target_os = "macos"))]
 mod tests;
+#[cfg(all(test, target_arch = "aarch64", target_os = "macos"))]
+mod register_results_tests;

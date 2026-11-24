@@ -50,12 +50,15 @@ fn signature(sig: &ir::Signature) -> Result<(Vec<String>, String)> {
     };
     let params = sig.params.iter().map(param).collect::<Result<Vec<_>>>()?;
     let returns = sig.returns.iter().map(param).collect::<Result<Vec<_>>>()?;
-    // Apple AArch64 returns a pair of U64 words in x0/x1. This is the
-    // outlined status/continuation ABI. Other multiple-return layouts decline.
+    // These are the compiler's already-lowered register results, rather than
+    // a C aggregate requiring frontend ABI classification. Both backends
+    // return up to eight I64 results in x0..x7 on Apple AArch64.
     let ret = match returns.as_slice() {
         [] => "void".into(),
         [one] => one.clone(),
-        [a, b] if a == "i64" && b == "i64" => "{ i64, i64 }".into(),
+        words if (2..=8).contains(&words.len()) && words.iter().all(|ty| ty == "i64") => {
+            format!("{{ {} }}", words.join(", "))
+        }
         _ => return Err("unsupported LLVM multiple-return ABI".into()),
     };
     Ok((params, ret))
@@ -168,7 +171,8 @@ pub(in crate::native_artifact::program) fn compact_definition(
         let (params, ret) = signature(&decl.signature)?;
         let name = symbol(decl.name.as_deref().ok_or("anonymous LLVM callee")?)?;
         let cc = calling_convention(&decl.signature)?;
-        imports.insert(format!("declare {cc}{ret} {name}({})", params.join(", ")));
+        let local = if decl.linkage.is_final() { "dso_local " } else { "" };
+        imports.insert(format!("declare {local}{cc}{ret} {name}({})", params.join(", ")));
     }
     let globals = function
         .global_values
@@ -779,13 +783,16 @@ impl<'a> Function<'a> {
             } => match args {
                 [] => self.line("ret void"),
                 [v] => self.line(format!("ret {}", self.typed(*v)?)),
-                [a, b] => {
+                values if (2..=8).contains(&values.len()) => {
                     let ret = signature(&self.f.signature)?.1;
-                    let first =
-                        self.temporary(format!("insertvalue {ret} poison, {}, 0", self.typed(*a)?));
-                    let pair = self
-                        .temporary(format!("insertvalue {ret} {first}, {}, 1", self.typed(*b)?));
-                    self.line(format!("ret {ret} {pair}"));
+                    let mut aggregate = "poison".to_owned();
+                    for (index, value) in values.iter().enumerate() {
+                        aggregate = self.temporary(format!(
+                            "insertvalue {ret} {aggregate}, {}, {index}",
+                            self.typed(*value)?
+                        ));
+                    }
+                    self.line(format!("ret {ret} {aggregate}"));
                 }
                 _ => return Err("unsupported LLVM multiple-return ABI".into()),
             },
@@ -877,10 +884,14 @@ impl<'a> Function<'a> {
         match results {
             [] => self.line(call),
             [one] => self.line(format!("{} = {call}", self.value(*one))),
-            [a, b] => {
-                let pair = self.temporary(call);
-                self.line(format!("{} = extractvalue {ret} {pair}, 0", self.value(*a)));
-                self.line(format!("{} = extractvalue {ret} {pair}, 1", self.value(*b)));
+            values if (2..=8).contains(&values.len()) => {
+                let aggregate = self.temporary(call);
+                for (index, value) in values.iter().enumerate() {
+                    self.line(format!(
+                        "{} = extractvalue {ret} {aggregate}, {index}",
+                        self.value(*value)
+                    ));
+                }
             }
             _ => return Err("unsupported LLVM call result shape".into()),
         }

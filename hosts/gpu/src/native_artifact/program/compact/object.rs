@@ -109,6 +109,7 @@ pub(in crate::native_artifact::program) struct PreparedObject {
     bodies: BTreeMap<FuncOrDataId, Body>,
     direct_runtime_calls: DirectRuntimeCalls,
     llvm_dump: Option<LlvmDump>,
+    llvm_anonymous_data: Option<u64>,
     inline_bodies: Option<BTreeMap<FuncId, ir::Function>>,
 }
 
@@ -128,9 +129,16 @@ impl PreparedObject {
             bodies: BTreeMap::new(),
             direct_runtime_calls: DirectRuntimeCalls::Disabled,
             llvm_dump,
+            llvm_anonymous_data: None,
             inline_bodies: std::env::var_os("MECH_COMPACT_INLINE_SINGLE_CALLS")
                 .map(|_| BTreeMap::new()),
         }
+    }
+
+    /// LLVM needs an IR symbol for each referenced table. Keep one owned data
+    /// definition shared by both backends; only this build's private name changes.
+    pub(in crate::native_artifact::program) fn name_llvm_anonymous_data(&mut self) {
+        self.llvm_anonymous_data.get_or_insert(0);
     }
 
     fn inline_private_helpers(
@@ -717,6 +725,19 @@ impl Module for PreparedObject {
     }
 
     fn declare_anonymous_data(&mut self, writable: bool, tls: bool) -> ModuleResult<DataId> {
+        if self.llvm_anonymous_data.is_some() {
+            loop {
+                let next = self.llvm_anonymous_data.as_mut().unwrap();
+                let index = *next;
+                *next = next.checked_add(1).ok_or_else(|| {
+                    llvm_diagnostic_failure("LLVM private data symbol space exhausted")
+                })?;
+                let name = format!("mech_compact_llvm_anonymous_data_{index}");
+                if self.declarations.get_name(&name).is_none() {
+                    return self.declare_data(&name, Linkage::Local, writable, tls);
+                }
+            }
+        }
         let id = self.declarations.declare_anonymous_data(writable, tls)?;
         self.declaration_order.push(FuncOrDataId::Data(id));
         Ok(id)

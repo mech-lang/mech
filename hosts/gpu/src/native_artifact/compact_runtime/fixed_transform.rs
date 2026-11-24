@@ -36,6 +36,21 @@ impl FixedTransforms {
         let cache = NonNull::new(unsafe { alloc_zeroed(Layout::new::<Self>()) })?;
         Some(unsafe { Box::from_raw(cache.cast().as_ptr()) })
     }
+
+    /// A pending entry has not published its output. A completed entry uses
+    /// only the prefix fixed by its admitted geometry. Neither spare region
+    /// participates in a future snapshot comparison or restore.
+    pub(super) fn sort_scratch(&mut self, words: usize) -> Option<&mut [u32]> {
+        self.entries.iter_mut().find_map(|entry| {
+            let used = if entry.key.phase == 0 {
+                0
+            } else {
+                usize::try_from(entry.key.rows.checked_mul(entry.key.columns)?).ok()?
+            };
+            let end = used.checked_add(words)?;
+            entry.output.get_mut(used..end)
+        })
+    }
 }
 
 // Compact numeric functions return the two native words in x0 and x1.
@@ -121,22 +136,33 @@ pub unsafe extern "C" fn mech_compact_fixed_transform(
             cache
                 .entries
                 .iter_mut()
-                .find(|entry| entry.key.phase == 0)
-                .map(|entry| {
+                .enumerate()
+                .find(|(_, entry)| entry.key.phase == 0)
+                .map(|(index, entry)| {
                     // Record the first completed visit. Differing input on later
                     // visits runs normally and leaves this snapshot available.
                     unsafe { ptr::copy_nonoverlapping(data, entry.input.as_mut_ptr(), length) };
-                    NonNull::from(entry)
+                    index
                 })
         }
     };
     let result = unsafe { phase(context, input, output) };
     if result.status == 0
-        && let Some(mut entry) = entry
+        && let Some(index) = entry
     {
-        // SAFETY: the fixed transform cannot replace this invocation's
-        // registry, the current view or the private cache.
-        let entry = unsafe { entry.as_mut() };
+        // The phase may borrow spare cache words as scratch. Reacquire the
+        // saved slot after that loan ends instead of retaining an entry
+        // pointer across a mutable borrow of the cache.
+        // SAFETY: the phase cannot replace this invocation's registry/cache.
+        let heap = unsafe { &mut *context };
+        let entry = &mut heap
+            .registry
+            .as_mut()
+            .unwrap()
+            .fixed_transforms
+            .as_mut()
+            .unwrap()
+            .entries[index];
         unsafe { ptr::copy_nonoverlapping(data, entry.output.as_mut_ptr(), length) };
         entry.key = key;
     }
@@ -146,6 +172,126 @@ pub unsafe extern "C" fn mech_compact_fixed_transform(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    unsafe extern "C" fn sort_with_scratch(
+        heap: *mut Heap,
+        input: *const u64,
+        output: *mut u64,
+    ) -> PhaseResult {
+        let [data, length, _, _, _, _] = unsafe { *input.cast::<[u64; 6]>() };
+        unsafe { output.write(17) };
+        let sorted = unsafe {
+            super::super::gap_kernel::mech_compact_sort_gapped_u32_with_scratch(
+                heap,
+                ptr::with_exposed_provenance_mut(data as usize),
+                length as usize,
+                1,
+            )
+        };
+        PhaseResult {
+            status: u64::from(sorted != 1),
+            site: 0,
+        }
+    }
+
+    #[test]
+    fn phase_can_borrow_workspace_before_its_snapshot_is_published() {
+        for length in [64, 136, 288] {
+            let mut heap = Heap::new();
+            heap.registry();
+            let original = (0..length)
+                .map(|i| (((i * 37) % 176 + 80) << 10) as u32 | i as u32)
+                .collect::<Vec<_>>();
+            let mut expected = original.clone();
+            expected.sort_unstable();
+            let mut words = original.clone();
+            for expected_marker in [17, 0, 0] {
+                words.copy_from_slice(&original);
+                let packet = [
+                    words.as_mut_ptr().expose_provenance() as u64,
+                    length as u64,
+                    1,
+                    length as u64,
+                    1,
+                    length as u64,
+                ];
+                let mut marker = 0;
+                let result = unsafe {
+                    mech_compact_fixed_transform(
+                        &mut heap,
+                        packet.as_ptr(),
+                        &mut marker,
+                        sort_with_scratch,
+                        0,
+                    )
+                };
+                assert_eq!((result.status, marker), (0, expected_marker));
+                assert_eq!(words, expected);
+                assert_eq!(heap.counters.payload_requests, 0);
+            }
+        }
+    }
+
+    #[test]
+    fn sort_workspace_never_overwrites_saved_prefixes() {
+        let mut cache = FixedTransforms::try_allocate().unwrap();
+        cache.sort_scratch(MAX_WORDS).unwrap().fill(17);
+        for (index, entry) in cache.entries.iter_mut().enumerate() {
+            entry.key = Key {
+                phase: index + 1,
+                scalar_count: 0,
+                rows: 1,
+                columns: 288,
+                scalars: [0; SCALARS],
+            };
+            entry.input.fill(0x1234_5678);
+            entry.output.fill(0x7654_3210);
+        }
+        assert!(cache.sort_scratch(MAX_WORDS - 288 + 1).is_none());
+        let mut heap = Heap::new();
+        heap.registry().fixed_transforms = Some(cache);
+        for length in [31, 32, 63, 81, 136, 257, 288, 512, 513] {
+            for gaps in [0, 1, 0x01_07_2e, 0x01_00_23, 0x02_ff] {
+                let mut words: Vec<u32> = (0..length)
+                    .map(|index| (((index * 37) % 256) << 10) as u32 | index as u32)
+                    .collect();
+                let mut expected = words.clone();
+                let result = unsafe {
+                    super::super::gap_kernel::mech_compact_sort_gapped_u32(
+                        expected.as_mut_ptr(),
+                        length,
+                        gaps,
+                    )
+                };
+                let actual = unsafe {
+                    super::super::gap_kernel::mech_compact_sort_gapped_u32_with_scratch(
+                        &mut heap,
+                        words.as_mut_ptr(),
+                        length,
+                        gaps,
+                    )
+                };
+                assert_eq!((actual, words), (result, expected));
+                let cache = heap
+                    .registry
+                    .as_ref()
+                    .unwrap()
+                    .fixed_transforms
+                    .as_ref()
+                    .unwrap();
+                for entry in &cache.entries {
+                    assert!(entry.input.iter().all(|&value| value == 0x1234_5678));
+                    assert!(
+                        entry.output[..288]
+                            .iter()
+                            .all(|&value| value == 0x7654_3210)
+                    );
+                }
+                assert_eq!(heap.counters.payload_requests, 0);
+                assert_eq!(heap.counters.live_payload_bytes, 0);
+            }
+        }
+    }
 
     // The packet writes distinguish actual calls from a restored result.
     // Make the first operation visible even on failure to model a partially
