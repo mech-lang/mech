@@ -672,7 +672,20 @@ fn prepare_impl<M: Module>(
         && proof.prepaid_sites.is_empty()
         && proof.arrays.iter().all(|array| !array.appends)
         && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little;
+    let bounded_tree = !observe
+        && private.is_none()
+        && proof.phase.is_none()
+        && proof.exits.is_empty()
+        && proof.prepaid_sites.is_empty()
+        && proof.result.direct_array() == Some(0)
+        && matches!(proof.arrays.as_slice(), [view] if view.writable && view.width == 4 && !view.appends)
+        && input_words == 10
+        && output_words == 11
+        && fixed_count == 1
+        && module.isa().name() == "aarch64"
+        && std::env::var_os("MECH_COMPACT_BOUNDED_U32_TREE").is_some();
     if defer_general
+        && !bounded_tree
         && !pack_input
         && bodies.is_none()
         && !general_ir_observed()
@@ -2129,9 +2142,9 @@ fn prepare_impl<M: Module>(
         && output_words == 11
         && fixed_count == 1
         && module.isa().name() == "aarch64"
-        && entry_spans.iter().any(|span| {
-            span.begin_word.is_none() && span.end_word == 0 && span.length_word == 3
-        })
+        && entry_spans
+            .iter()
+            .any(|span| span.begin_word.is_none() && span.end_word == 0 && span.length_word == 3)
         && std::env::var_os("MECH_COMPACT_NATIVE_GAP_SORT").is_some()
         && let Some(sort) = gap_proof::prove(&context.func)
     {
@@ -2143,15 +2156,27 @@ fn prepare_impl<M: Module>(
             .map_err(backend)?;
         let kernel = module.declare_func_in_func(kernel, &mut context.func);
         let mut cursor = FuncCursor::new(&mut context.func).at_inst(sort.entry);
-        let call = cursor.ins().call(kernel, &[sort.data, sort.length, sort.gaps]);
+        let call = cursor
+            .ins()
+            .call(kernel, &[sort.data, sort.length, sort.gaps]);
         let sorted = cursor.func.dfg.first_result(call);
         let lists = &cursor.func.dfg.value_lists;
         let original = sort.original.block(lists);
         let args = sort.original.args(lists).collect::<Vec<_>>();
-        cursor.func.dfg.replace(sort.entry).brif(sorted, sort.success, &[], original, &args);
+        cursor
+            .func
+            .dfg
+            .replace(sort.entry)
+            .brif(sorted, sort.success, &[], original, &args);
         context.flowgraph();
         context.verify(module.isa()).map_err(backend)?;
         eprintln!("{symbol} verified native gapped sort");
+    }
+    if bounded_tree && let Some(tree) = gap_proof::tree::prove(&context.func) {
+        gap_proof::tree_emit::lower(&mut context.func, tree);
+        context.flowgraph();
+        context.verify(module.isa()).map_err(backend)?;
+        eprintln!("{symbol} verified bounded U32 tree");
     }
     if !observe && vectors.is_some() && module.isa().name() == "aarch64" {
         if private.is_some() {

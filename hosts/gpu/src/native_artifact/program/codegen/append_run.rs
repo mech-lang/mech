@@ -354,6 +354,7 @@ fn optimize_inner(
                 rebase_costs: std::env::var_os("MECH_PAIR_REBASE_LITERAL_COSTS").is_some(),
                 check_literal_bytes: std::env::var_os("MECH_CHECK_GROUPED_LITERAL_BYTES").is_some(),
                 limit_literal_span: std::env::var_os("MECH_GROUPED_LITERAL_PREFIX_SPAN").is_some(),
+                group_four: std::env::var_os("MECH_COMPACT_GROUP_FOUR_LITERAL_APPENDS").is_some(),
             },
         ) {
             Ok(pair) => Some(pair),

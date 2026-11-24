@@ -17,6 +17,7 @@ pub(super) struct Options {
     pub rebase_costs: bool,
     pub check_literal_bytes: bool,
     pub limit_literal_span: bool,
+    pub group_four: bool,
 }
 
 #[derive(Clone, Copy)]
@@ -28,6 +29,7 @@ pub(super) struct Pair {
     lookup_bias_bytes: Option<i64>,
     check_literal_bytes: bool,
     literal_prefix_bytes: Option<i64>,
+    group_four: bool,
     output: Value,
     selector_bits: u32,
     item_shift: u32,
@@ -349,6 +351,7 @@ impl Pair {
             lookup_bias_bytes,
             check_literal_bytes,
             literal_prefix_bytes,
+            group_four: options.group_four && check_literal_bytes,
             output,
             selector_bits,
             item_shift,
@@ -438,17 +441,43 @@ impl Pair {
         } else {
             valid
         };
-        let first = [count, cache_cursor, length, previous].map(BlockArg::Value);
+        let mut first = Vec::from([count, cache_cursor, length, previous].map(BlockArg::Value));
+        let four = self.group_four.then(|| {
+            let entry = block(b.func);
+            for _ in 0..4 {
+                b.func.dfg.append_block_param(entry, types::I64);
+            }
+            let stop = b.func.dfg.append_block_param(start, types::I64);
+            // Finish eight ordinary pairs before promotion. The position is
+            // exactly reachable by the two-visit loop and leaves four words.
+            let enough = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, count, 20);
+            let prefix_end = b.ins().iadd_imm(count, -16);
+            let one = b.ins().iconst(types::I64, 1);
+            first.push(b.ins().select(enough, prefix_end, one).into());
+            (entry, stop)
+        });
         b.ins().brif(valid, start, &first, scalar, scalar_args);
 
         b.goto_bottom(start);
         let [count, cache_cursor, length, previous] =
-            b.func.dfg.block_params(start).try_into().unwrap();
+            b.func.dfg.block_params(start)[..4].try_into().unwrap();
         let resume = [count, cache_cursor, length, previous].map(BlockArg::Value);
-        let enough = b
-            .ins()
-            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, count, 2);
-        b.ins().brif(enough, load, &[], scalar, &resume);
+        if let Some((entry, stop)) = four {
+            let leave = block(b.func);
+            let more = b.ins().icmp(IntCC::UnsignedGreaterThan, count, stop);
+            b.ins().brif(more, load, &[], leave, &[]);
+            b.goto_bottom(leave);
+            let prefix_finished = b.ins().icmp_imm(IntCC::NotEqual, stop, 1);
+            b.ins()
+                .brif(prefix_finished, entry, &resume, scalar, &resume);
+        } else {
+            let enough = b
+                .ins()
+                .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, count, 2);
+            b.ins().brif(enough, load, &[], scalar, &resume);
+        }
 
         b.goto_bottom(load);
         let next_cache = b.ins().iadd_imm(cache_cursor, -2);
@@ -509,8 +538,100 @@ impl Pair {
         stores.push(b.ins().store(self.output_flags, second_word, address, 8));
         let next_count = b.ins().iadd_imm(count, -2);
         let next_length = b.ins().iadd_imm(length, 2);
-        let args = [next_count, next_cache, next_length, second_word].map(BlockArg::Value);
+        let mut args =
+            Vec::from([next_count, next_cache, next_length, second_word].map(BlockArg::Value));
+        if let Some((_, stop)) = four {
+            args.push(stop.into());
+        }
         b.ins().jump(start, &args);
+
+        if let Some((entry, _)) = four {
+            self.emit_four_loop(
+                b,
+                entry,
+                start,
+                cache,
+                lookup_base,
+                output,
+                mask,
+                flags,
+                stores,
+            );
+        }
+    }
+
+    fn emit_four_loop(
+        self,
+        b: &mut FuncCursor<'_>,
+        entry: Block,
+        pairs: Block,
+        cache: Value,
+        lookup_base: Value,
+        output: Value,
+        mask: i64,
+        flags: MemFlags,
+        stores: &mut Vec<Inst>,
+    ) {
+        let load = block(b.func);
+        let append = block(b.func);
+        b.goto_bottom(entry);
+        let [count, cache_cursor, length, previous] =
+            b.func.dfg.block_params(entry).try_into().unwrap();
+        // A failed group returns to the existing pair loop at the same cursor.
+        // Its cutoff of one keeps that loop active for the rest of this run.
+        let tail = b.ins().iconst(types::I64, 1);
+        let resume = [count, cache_cursor, length, previous, tail].map(BlockArg::Value);
+        let enough = b
+            .ins()
+            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, count, 4);
+        b.ins().brif(enough, load, &[], pairs, &resume);
+
+        b.goto_bottom(load);
+        let source = b.ins().iadd_imm(cache_cursor, -4);
+        let address = indexed(b, cache, source, 4);
+        let earlier = b.ins().load(types::I64, flags, address, 0);
+        let packed = b.ins().load(types::I64, flags, address, 8);
+        let bits = b.ins().bor(earlier, packed);
+        let bits = b.ins().band_imm(bits, mask);
+        let literals_only = b.ins().icmp_imm(IntCC::Equal, bits, 0);
+        b.ins().brif(literals_only, append, &[], pairs, &resume);
+
+        b.goto_bottom(append);
+        let mut literals = [packed; 4];
+        for (words, half) in [packed, earlier]
+            .into_iter()
+            .zip(literals.chunks_exact_mut(2))
+        {
+            half[0] = b.ins().ushr_imm(words, i64::from(self.selector_bits + 32));
+            let lower = b.ins().ushr_imm(words, i64::from(self.selector_bits));
+            half[1] = b.ins().band_imm(lower, BYTE_LITERAL_COUNT - 1);
+        }
+        let [first, second, third, fourth] = literals.map(|literal| {
+            let address = indexed(b, lookup_base, literal, 4);
+            b.ins().load(types::I32, self.cost_flags, address, 0)
+        });
+        let before = b.ins().ireduce(types::I32, previous);
+        let first = b.ins().iadd(before, first);
+        let second = b.ins().iadd(first, second);
+        let final_pair = b.ins().iadd(third, fourth);
+        let third = b.ins().iadd(second, third);
+        let fourth = b.ins().iadd(second, final_pair);
+        let costs = [first, second, third, fourth];
+        let target = indexed(b, output, length, 8);
+        let words = core::array::from_fn::<_, 4, _>(|index| {
+            let value = self.pack(b, literals[index], costs[index]);
+            stores.push(
+                b.ins()
+                    .store(self.output_flags, value, target, index as i32 * 8),
+            );
+            value
+        });
+        let left = b.ins().iadd_imm(count, -4);
+        let length = b.ins().iadd_imm(length, 4);
+        b.ins().jump(
+            entry,
+            &[left, source, length, words[3]].map(BlockArg::Value),
+        );
     }
 
     fn pack(self, b: &mut FuncCursor<'_>, item: Value, cost: Value) -> Value {
