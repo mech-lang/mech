@@ -20,6 +20,7 @@ enum Word {
     Compare(IntCC, Box<Word>, Box<Word>),
     LowWord(Box<Word>),
     Read(Box<Word>),
+    Byte(Box<Word>),
     Halfword(Box<Word>),
 }
 
@@ -69,6 +70,24 @@ impl Word {
         Self::Compare(kind, Box::new(a), Box::new(b))
     }
 
+    // Bound each intermediate before the scatter walk can clone it into two
+    // operands of another expression. Its largest matched address tree is small.
+    fn within_budget(&self, remaining: &mut usize) -> bool {
+        if *remaining == 0 {
+            return false;
+        }
+        *remaining -= 1;
+        match self {
+            Self::Binary(_, a, b) | Self::Compare(_, a, b) => {
+                a.within_budget(remaining) && b.within_budget(remaining)
+            }
+            Self::LowWord(a) | Self::Read(a) | Self::Halfword(a) | Self::Byte(a) => {
+                a.within_budget(remaining)
+            }
+            _ => true,
+        }
+    }
+
     fn boolean(&self) -> bool {
         match self {
             Self::Compare(..) => true,
@@ -83,6 +102,8 @@ impl Word {
 enum Effect {
     Read(Word),
     ReadHalfword(Word),
+    ReadByte(Word),
+    StoreByte(Word, Word),
     Store(Word, Word),
     Output,
 }
@@ -93,6 +114,13 @@ struct Path<'a> {
     words: BTreeMap<Value, Word>,
     effects: Vec<Effect>,
     input_bytes: i32,
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum Walk {
+    Ordinary,
+    ScatterEntry,
+    ScatterBody,
 }
 
 enum Boundary {
@@ -157,7 +185,12 @@ impl Path<'_> {
             .then_some(target)
     }
 
-    fn step(&mut self, mut block: Block) -> Option<Boundary> {
+    fn step(&mut self, block: Block) -> Option<Boundary> {
+        self.step_mode(block, Walk::Ordinary)
+    }
+
+    fn step_mode(&mut self, mut block: Block, walk: Walk) -> Option<Boundary> {
+        let byte_scatter = walk == Walk::ScatterBody;
         // A bounded scan follows straight-line forwarding blocks. Loops and
         // branches are visited explicitly by the recurrence below.
         for _ in 0..128 {
@@ -250,6 +283,11 @@ impl Path<'_> {
                         }
                         word
                     }
+                    Data::Unary { opcode: Op::Ireduce, arg }
+                        if byte_scatter && self.single_type(result, types::I8) => {
+                        let Word::Constant(value) = self.word(arg)? else { return None };
+                        Word::Constant(value & 255)
+                    }
                     Data::Unary {
                         opcode: Op::Ireduce,
                         arg,
@@ -284,12 +322,15 @@ impl Path<'_> {
                     {
                         let offset = i32::from(offset);
                         let address = self.word(arg)?;
-                        if opcode == Op::Load
+                        if opcode == Op::Load && !byte_scatter
                             && address == Word::InputPacket
                             && (0..self.input_bytes).contains(&offset)
                             && offset % 8 == 0
                         {
                             Word::Input(offset as usize)
+                        } else if byte_scatter && opcode == Op::Uload8 && offset == 0 {
+                            self.effects.push(Effect::ReadByte(address.clone()));
+                            Word::Byte(Box::new(address))
                         } else if opcode == Op::Uload32 && offset == 0 {
                             self.effects.push(Effect::Read(address.clone()));
                             Word::Read(Box::new(address))
@@ -315,6 +356,8 @@ impl Path<'_> {
                             && offset % 8 == 0
                         {
                             self.effects.push(Effect::Output);
+                        } else if byte_scatter && width == types::I8 && offset == 0 {
+                            self.effects.push(Effect::StoreByte(address, self.word(args[0])?));
                         } else if width == types::I32 && offset == 0 {
                             self.effects
                                 .push(Effect::Store(address, self.word(args[0])?));
@@ -326,6 +369,9 @@ impl Path<'_> {
                     _ => return None,
                 };
                 let [value] = result else { return None };
+                if walk != Walk::Ordinary && !out.within_budget(&mut 32) {
+                    return None;
+                }
                 self.words.insert(*value, out);
             }
         }
@@ -491,6 +537,8 @@ pub(super) fn prove(f: &Function) -> Option<Sort> {
     })
 }
 
+#[path = "byte_scatter.rs"]
+pub(super) mod byte_scatter;
 #[path = "nonzero_pack.rs"]
 pub(super) mod nonzero_pack;
 #[path = "nonzero_pack_emit.rs"]
