@@ -17,6 +17,9 @@ mod arm;
 
 #[path = "grouped_histogram_chunks.rs"]
 mod chunks;
+#[path = "grouped_histogram_fields.rs"]
+mod fields;
+pub(in crate::native_artifact) use fields::fold as fold_fields;
 #[path = "grouped_histogram_seed.rs"]
 pub(in crate::native_artifact) mod seeded;
 
@@ -31,6 +34,12 @@ pub(in crate::native_artifact) struct Admission {
     pub minimum_bins: u64,
     #[serde(skip)]
     pub end_word: Option<usize>,
+}
+
+pub(in crate::native_artifact) struct LiteralSample {
+    top_word: usize,
+    end_word: usize,
+    length_mask: u32,
 }
 
 pub(in crate::native_artifact) struct Options {
@@ -406,12 +415,46 @@ pub(in crate::native_artifact) fn optimize(
     Some(admission)
 }
 
+pub(in crate::native_artifact) fn specialize_single_literals(
+    context: &mut Context,
+    header: Block,
+    loads: &BTreeMap<Value, (Inst, usize)>,
+    nodes: &[View],
+    bins: &[View],
+) -> Option<LiteralSample> {
+    context.compute_cfg();
+    context.compute_domtree();
+    let group = recognize(context, header, loads, nodes, bins)?;
+    let sample = LiteralSample {
+        top_word: super::bounded_byte_histogram::fixed_word(
+            &context.func,
+            &context.cfg,
+            loads,
+            group.top,
+        )?,
+        end_word: group.admission.end_word?,
+        length_mask: group.length_mask,
+    };
+    chunks::emit_single(&mut context.func, group);
+    context.flowgraph();
+    Some(sample)
+}
+
+fn call_phase(cursor: &mut FuncCursor<'_>, phase: FuncRef, inputs: &[Value; 3]) {
+    let call = cursor.ins().call(phase, inputs);
+    let [status, at] = *cursor.func.dfg.inst_results(call) else {
+        unreachable!("numeric phase alternatives have the same signature")
+    };
+    cursor.ins().return_(&[status, at]);
+}
+
 // Check the current packet once on entry. The phase caller has already
 // admitted exclusive writable owners and their initialized lengths.
 pub(in crate::native_artifact) fn guard_entry(
     context: &mut Context,
     admission: Admission,
     fast: FuncRef,
+    single: Option<(FuncRef, LiteralSample)>,
 ) {
     let f = &mut context.func;
     let original = f.layout.entry_block().expect("numeric phase has an entry");
@@ -422,7 +465,7 @@ pub(in crate::native_artifact) fn guard_entry(
     let [_, packet, _] = inputs;
     let mut cursor = FuncCursor::new(f);
     cursor.goto_bottom(entry);
-    let mut load = |word| {
+    let load = |cursor: &mut FuncCursor<'_>, word| {
         cursor.ins().load(
             types::I64,
             MemFlags::new(),
@@ -430,10 +473,10 @@ pub(in crate::native_artifact) fn guard_entry(
             i32::try_from(word * 8).expect("word was loaded from the input packet"),
         )
     };
-    let start = load(admission.node_word);
-    let len = load(admission.node_word + 1);
-    let bins = load(admission.bin_word);
-    let count = load(admission.bin_word + 1);
+    let start = load(&mut cursor, admission.node_word);
+    let len = load(&mut cursor, admission.node_word + 1);
+    let bins = load(&mut cursor, admission.bin_word);
+    let count = load(&mut cursor, admission.bin_word + 1);
     let fits = cursor
         .ins()
         .icmp_imm(IntCC::UnsignedLessThanOrEqual, len, (u64::MAX / 8) as i64);
@@ -466,11 +509,47 @@ pub(in crate::native_artifact) fn guard_entry(
         .ins()
         .brif(admitted, ready, &[], original, &inputs.map(Into::into));
     cursor.goto_bottom(ready);
-    let call = cursor.ins().call(fast, &inputs);
-    let [status, at] = *cursor.func.dfg.inst_results(call) else {
-        unreachable!("numeric phase alternatives have the same signature")
-    };
-    cursor.ins().return_(&[status, at]);
+    if let Some((single, sample)) = single {
+        let grouped = block(cursor.func);
+        let probe = block(cursor.func);
+        let scalar = block(cursor.func);
+        let top = load(&mut cursor, sample.top_word);
+        let end = load(&mut cursor, sample.end_word);
+        let last = cursor.ins().iadd_imm(end, -1);
+        // Sample only spans long enough to amortize the selection. The
+        // admitted node length bounds every word inspected below.
+        let enough = cursor
+            .ins()
+            .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, end, 8192);
+        let bounded = cursor.ins().icmp(IntCC::UnsignedLessThan, top, len);
+        let reaches = cursor.ins().icmp(IntCC::UnsignedLessThanOrEqual, last, top);
+        let within = cursor.ins().band(bounded, reaches);
+        let can_sample = cursor.ins().band(enough, within);
+        cursor.ins().brif(can_sample, probe, &[], grouped, &[]);
+
+        cursor.goto_bottom(probe);
+        // Each cursor is below end-4. With top >= end-1, the sampled
+        // ordinal and its three preceding records lie inside the view.
+        let mixed = [2, 1].map(|shift| {
+            let position = cursor.ins().ushr_imm(end, shift);
+            let ordinal = cursor.ins().isub(top, position);
+            let offset = cursor.ins().ishl_imm(ordinal, 3);
+            let address = cursor.ins().iadd(start, offset);
+            let words = chunks::vector_words(&mut cursor, address, -24);
+            chunks::vector_mixed(&mut cursor, sample.length_mask, words, None)
+        });
+        let prefer_scalar =
+            if std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_MIXED_IF_EITHER").is_some() {
+                cursor.ins().bor(mixed[0], mixed[1])
+            } else {
+                cursor.ins().band(mixed[0], mixed[1])
+            };
+        cursor.ins().brif(prefer_scalar, scalar, &[], grouped, &[]);
+        cursor.goto_bottom(scalar);
+        call_phase(&mut cursor, single, &inputs);
+        cursor.goto_bottom(grouped);
+    }
+    call_phase(&mut cursor, fast, &inputs);
     context.compute_cfg();
     context.compute_domtree();
 }

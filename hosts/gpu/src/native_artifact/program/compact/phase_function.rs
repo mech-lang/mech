@@ -1202,6 +1202,12 @@ fn prepare_impl<M: Module>(
                 },
             ) {
                 let name = format!("{symbol}_grouped");
+                let field_mode = std::env::var("MECH_GROUP_PACKED_HISTOGRAM_FOLD_FIELDS").ok();
+                if let Some(mode) = &field_mode {
+                    let (masks, borrows) =
+                        cfg_cleanup::grouped_histogram::fold_fields(&mut grouped, mode);
+                    eprintln!("{name} proved tally fields: {masks} masks, {borrows} borrows");
+                }
                 phase_layout::apply_register_weights(&mut grouped, &name).map_err(backend)?;
                 let grouped_id = module
                     .declare_function(&name, Linkage::Local, &signature)
@@ -1250,7 +1256,44 @@ fn prepare_impl<M: Module>(
                     }),
                 ));
                 let fast = module.declare_func_in_func(grouped_id, &mut context.func);
-                cfg_cleanup::grouped_histogram::guard_entry(&mut context, admission, fast);
+                let single = if module.isa().name() == "aarch64"
+                    && std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_MIXED_DISPATCH").is_some()
+                {
+                    let mut scalar = module.make_context();
+                    scalar.func = context.func.clone();
+                    if let Some(sample) = cfg_cleanup::grouped_histogram::specialize_single_literals(
+                        &mut scalar,
+                        word_loops.machine_header,
+                        &loads,
+                        &nodes,
+                        &bins,
+                    ) {
+                        let name = format!("{symbol}_single_literals");
+                        if let Some(mode) = &field_mode {
+                            let (masks, borrows) =
+                                cfg_cleanup::grouped_histogram::fold_fields(&mut scalar, mode);
+                            eprintln!(
+                                "{name} proved tally fields: {masks} masks, {borrows} borrows"
+                            );
+                        }
+                        phase_layout::apply_register_weights(&mut scalar, &name)
+                            .map_err(backend)?;
+                        scalar.verify(module.isa()).map_err(backend)?;
+                        let id = module
+                            .declare_function(&name, Linkage::Local, &signature)
+                            .map_err(backend)?;
+                        let (id, _) =
+                            define_body(module, id, &name, &mut scalar, bodies.as_deref_mut())?;
+                        let single = module.declare_func_in_func(id, &mut context.func);
+                        eprintln!("{symbol} admitted separate literal tally");
+                        Some((single, sample))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
+                cfg_cleanup::grouped_histogram::guard_entry(&mut context, admission, fast, single);
                 context.verify(module.isa()).map_err(backend)?;
             }
         }

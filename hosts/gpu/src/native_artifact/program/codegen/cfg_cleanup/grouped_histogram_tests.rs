@@ -133,7 +133,7 @@ fn compile(shift: u32, key_mask: u32, tuning: Option<Options>) -> (JITModule, Ru
             .unwrap();
         module.define_function(id, &mut fast).unwrap();
         let call = module.declare_func_in_func(id, &mut ctx.func);
-        guard_entry(&mut ctx, admission, call);
+        guard_entry(&mut ctx, admission, call, None);
     }
     ctx.verify(module.isa()).unwrap();
     let id = module
