@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 const REQUIRED_CANONICAL_SOURCES: &[&str] = &[
     "mod.rs",
     "base/mod.rs",
-    "base/continuation.rs",
+    "base/continuation/mod.rs",
     "terminal_spec.rs",
     "combinator.rs",
     "found/mod.rs",
