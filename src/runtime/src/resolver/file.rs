@@ -56,6 +56,13 @@ enum FilesystemSourceSpecifier {
     OtherScheme,
 }
 
+#[cfg(feature = "source")]
+#[derive(Clone, Debug)]
+struct RetainedFileSource {
+    text: String,
+    document: super::SourceDocument,
+}
+
 #[derive(Clone, Debug)]
 pub struct FileSourceResolver {
     roots: Vec<PathBuf>,
@@ -63,7 +70,7 @@ pub struct FileSourceResolver {
     capability_kernel: Option<SharedCapabilityKernel>,
     capability_subject: Option<String>,
     #[cfg(feature = "source")]
-    source_revisions: Arc<Mutex<HashMap<String, (String, mech_syntax::document::Revision)>>>,
+    source_revisions: Arc<Mutex<HashMap<String, RetainedFileSource>>>,
 }
 
 impl FileSourceResolver {
@@ -321,8 +328,11 @@ impl FileSourceResolver {
         })?;
         let revision = match revisions.get(&canonical_uri) {
             None => mech_syntax::document::Revision(0),
-            Some((previous_source, revision)) if previous_source == &source => *revision,
-            Some((_, revision)) => revision
+            Some(previous) if previous.text == source => previous.document.source().revision(),
+            Some(previous) => previous
+                .document
+                .source()
+                .revision()
                 .0
                 .checked_add(1)
                 .map(mech_syntax::document::Revision)
@@ -333,10 +343,31 @@ impl FileSourceResolver {
                     )
                 })?,
         };
-        let resolved = resolved
-            .retain_source_document(revision, mech_syntax::document::ParseConfig::default())?;
+        // Resolution still reads and authorizes the current file on every call.
+        // Only the immutable syntax of the exact accepted revision is reusable;
+        // changes to source or package provenance require a fresh document.
+        let retained = revisions.get(&canonical_uri).filter(|previous| {
+            previous.text == source
+                && previous.document.nominal_origin() == resolved.nominal_origin.as_ref()
+                && previous.document.nominal_package_id() == resolved.nominal_package_id.as_deref()
+        });
+        let resolved = if let Some(previous) = retained {
+            resolved.with_source_document(previous.document.clone())?
+        } else {
+            resolved
+                .retain_source_document(revision, mech_syntax::document::ParseConfig::default())?
+        };
         let resolved = admit(resolved)?;
-        revisions.insert(canonical_uri, (source, revision));
+        revisions.insert(
+            canonical_uri,
+            RetainedFileSource {
+                text: source,
+                document: resolved
+                    .source_document()
+                    .expect("admitted textual source retains its document")
+                    .clone(),
+            },
+        );
         Ok(resolved)
     }
 
@@ -1400,6 +1431,78 @@ mod tests {
                 .collect::<Vec<_>>(),
             (0..8).collect::<Vec<_>>()
         );
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn unchanged_file_reuses_admitted_syntax_but_rechecks_the_current_file() {
+        let root = temp_root("mech-runtime-retained-file-test");
+        std::fs::create_dir_all(&root).unwrap();
+        let path = root.join("index.mec");
+        std::fs::write(&path, "value := 1\n").unwrap();
+        let resolver = FileSourceResolver::new(&root);
+        let request = SourceRequest::new("index.mec");
+        let first = resolver.resolve_canonical(&request).unwrap().unwrap();
+        let repeated = resolver
+            .clone()
+            .resolve_canonical(&request)
+            .unwrap()
+            .unwrap();
+        assert!(std::ptr::eq(
+            first.source_document().unwrap().snapshot(),
+            repeated.source_document().unwrap().snapshot(),
+        ));
+
+        // A bad edit must not be hidden by the accepted revision. Restoring the
+        // exact source can reuse that revision without losing its identities.
+        std::fs::write(&path, "value := [\n").unwrap();
+        assert!(resolver.resolve_canonical(&request).is_err());
+        std::fs::write(&path, "value := 1\n").unwrap();
+        let restored = resolver.resolve_canonical(&request).unwrap().unwrap();
+        assert!(std::ptr::eq(
+            first.source_document().unwrap().snapshot(),
+            restored.source_document().unwrap().snapshot(),
+        ));
+        std::fs::remove_file(&path).unwrap();
+        assert!(resolver.resolve_canonical(&request).unwrap().is_none());
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(feature = "source")]
+    #[test]
+    fn retained_file_syntax_does_not_reuse_previous_package_provenance() {
+        let root = temp_root("mech-runtime-retained-file-provenance-test");
+        std::fs::create_dir_all(&root).unwrap();
+        let path = root.join("index.mec");
+        std::fs::write(&path, "value := 1\n").unwrap();
+        let uri = path_to_file_uri(&path.canonicalize().unwrap()).unwrap();
+        let origin = mech_core::CanonicalNominalPath::new(vec!["package".to_owned()]).unwrap();
+        let resolver = FileSourceResolver::new(&root).with_nominal_provenance(
+            &uri,
+            origin.clone(),
+            "package@1",
+        );
+        let request = SourceRequest::new("index.mec");
+        let before = resolver.resolve_canonical(&request).unwrap().unwrap();
+        let after = resolver
+            .clone()
+            .with_nominal_provenance(&uri, origin, "package@2")
+            .resolve_canonical(&request)
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            before.source_document().unwrap().nominal_package_id(),
+            Some("package@1")
+        );
+        assert_eq!(
+            after.source_document().unwrap().nominal_package_id(),
+            Some("package@2")
+        );
+        assert_eq!(
+            before.source_document().unwrap().source().revision(),
+            after.source_document().unwrap().source().revision()
+        );
+        std::fs::remove_dir_all(root).unwrap();
     }
 
     #[cfg(feature = "source")]

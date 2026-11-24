@@ -326,7 +326,15 @@ impl ServerWorkspaceSession {
         events: &mut dyn EventSink,
     ) -> MResult<()> {
         for diagnostic in diagnostics {
-            if let Some(canonical_uri) = &diagnostic.canonical_uri {
+            // An authorized missing path is retained for recreation tracking,
+            // but no source was resolved to compile.
+            let unresolved = diagnostic
+                .target
+                .as_deref()
+                .is_some_and(|name| self.workspace.has_unresolved_target_source(name));
+            if let Some(canonical_uri) = &diagnostic.canonical_uri
+                && !unresolved
+            {
                 self.emit_event(
                     RuntimeEventKind::ModuleCompileFailed {
                         canonical_uri: canonical_uri.clone(),

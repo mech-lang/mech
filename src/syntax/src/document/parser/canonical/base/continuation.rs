@@ -154,6 +154,25 @@ impl Continuation {
         allowance: &mut u64,
     ) {
         let fixed = fixed_terminal_spec(rule);
+        #[cfg(test)]
+        let optimize = !parser.state.reference_lexical;
+        #[cfg(not(test))]
+        let optimize = true;
+        // A retained recognition capture must observe its original raw phases.
+        let capturing = self
+            .storage
+            .prediction
+            .as_ref()
+            .is_some_and(|storage| storage.memo.capture.is_some());
+        if optimize
+            && final_input
+            && !parser.state.retain_completed_nodes
+            && !capturing
+            && sealed::parse(parser, rule, fixed, allowance, &mut self.work)
+        {
+            self.result = true;
+            return;
+        }
         if fixed.is_none() && !non_fixed_rule(rule) {
             self.result = false;
             return;
@@ -659,6 +678,7 @@ impl Continuation {
 mod tests {
     use super::*;
     use crate::document::parser::LexicalMode;
+    use crate::document::parser::canonical::FIXED_TERMINALS;
     use crate::document::{DocumentId, IdGenerator, ParseConfig, Revision, TextSnapshot};
     use alloc::string::String;
 
@@ -966,6 +986,90 @@ mod tests {
                 cache[non_fixed_index(rule).unwrap()].is_some(),
                 "uncached nested rule {rule:?}"
             );
+        }
+    }
+
+    #[test]
+    fn control_frames_keep_unicode_scan_state_indirect() {
+        // Control-only alternatives must not pay for an embedded Unicode scan.
+        assert!(core::mem::size_of::<Frame>() * 2 < core::mem::size_of::<LiteralScan<'static>>());
+    }
+    #[test]
+    fn optimized_lexical_execution_matches_the_reference_vm() {
+        fn sealed(
+            rule: RuleId,
+            text: &str,
+            fuel: u64,
+            events: u32,
+            reference: bool,
+        ) -> (bool, TextSize, String, String, crate::document::ParseStats) {
+            let source = TextSnapshot::new(DocumentId(826), Revision(0), text).unwrap();
+            let mut ids = IdGenerator::new();
+            let mut config = ParseConfig::default();
+            config.limits.fuel = fuel;
+            config.limits.max_events = events;
+            let mut parser = Parser::new(
+                &source,
+                LexicalMode::CanonicalSourceFragment,
+                config,
+                &mut ids,
+            );
+            parser.state.reference_lexical = reference;
+            parser.state.disable_rejections_for_test = reference;
+            parser.state.retain_completed_nodes = false;
+            let wrapper = parser.start();
+            let mut continuation = Continuation::new(rule);
+            let mut allowance = u64::MAX;
+            let result = match continuation.advance(&mut parser, true, &mut allowance) {
+                Progress::Complete(result) => result,
+                _ => panic!("sealed input with unlimited allowance must complete"),
+            };
+            let end = parser.offset();
+            wrapper.complete(&mut parser, SyntaxKind::Document);
+            let output = parser.finish();
+            (
+                result,
+                end,
+                alloc::format!("{:?}", output.events),
+                alloc::format!("{:?}", output.diagnostics),
+                output.stats,
+            )
+        }
+        let mut inputs = alloc::vec![
+            String::from("  \t\r\nx"),
+            String::from("e\u{301}x"),
+            String::from("é💡"),
+            String::from("ab--x"),
+            String::from("1_2_3_"),
+            String::from("hello\tworld"),
+            String::from("\r\n"),
+            "a".repeat(1024),
+            " ".repeat(1024),
+            "1_".repeat(128),
+        ];
+        for byte in 0..=127_u8 {
+            inputs.push(alloc::format!("{}x", byte as char));
+            inputs.push(alloc::format!("{}\u{301}x", byte as char));
+        }
+        for rule in FIXED_TERMINALS
+            .iter()
+            .map(|spec| spec.rule)
+            .chain(NON_FIXED_RULES.iter().copied())
+        {
+            for text in &inputs {
+                for fuel in [0, 1, 2, 16, u64::MAX] {
+                    let optimized = sealed(rule, text, fuel, 1_000_000, false);
+                    let reference = sealed(rule, text, fuel, 1_000_000, true);
+                    assert_eq!(optimized, reference, "{rule:?} {text:?}, fuel {fuel}",);
+                }
+                for events in [7, 17, 64] {
+                    assert_eq!(
+                        sealed(rule, text, u64::MAX, events, false),
+                        sealed(rule, text, u64::MAX, events, true),
+                        "{rule:?} {text:?}, event limit {events}",
+                    );
+                }
+            }
         }
     }
 }

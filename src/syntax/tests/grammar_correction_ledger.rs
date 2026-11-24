@@ -146,13 +146,20 @@ fn grammar_correction_ledger_is_well_formed_and_applied_to_the_canonical_grammar
         );
         if matches!(
             fields[0],
-            "IMPORT-001" | "MATCH-001" | "COUNT-001" | "ADDRESS-001"
+            "IMPORT-001" | "MATCH-001" | "COUNT-001" | "ADDRESS-001" | "TITLE-001" | "LIST-001"
         ) {
             assert_eq!(fields[2], "applied");
             applied.insert(fields[0]);
         }
     }
-    let expected = BTreeSet::from(["IMPORT-001", "MATCH-001", "COUNT-001", "ADDRESS-001"]);
+    let expected = BTreeSet::from([
+        "IMPORT-001",
+        "MATCH-001",
+        "COUNT-001",
+        "ADDRESS-001",
+        "TITLE-001",
+        "LIST-001",
+    ]);
     assert_eq!(applied, expected);
     assert_eq!(ids, expected);
 

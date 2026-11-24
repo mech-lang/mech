@@ -9,7 +9,7 @@ use super::operators::{EXPRESSION_OPERATOR_RULES, OperatorAtom, OperatorGuard};
 use super::{base, statements};
 use crate::document::RuleId;
 use crate::document::TextSize;
-use crate::document::parser::grapheme_scan::{GraphemeScan, ScanProgress};
+use crate::document::parser::literal_scan::{LiteralProgress, LiteralScan};
 const OPERATOR_COUNT: usize = EXPRESSION_OPERATOR_RULES.len();
 const MIN_ANALYSIS_ALLOWANCE: u64 = 4096;
 const MAX_WHITESPACE_PREFIX: u64 = 128;
@@ -199,27 +199,22 @@ fn whitespace_token(byte: u8) -> Option<(u64, u64)> {
         if spec.spacing != super::terminal_spec::TerminalSpacing::Exact {
             return None;
         }
-        work += literal(spec.literal).work + 5;
         if spec.literal.as_bytes()[0] == byte {
-            return (spec.literal.len() == 1).then_some((work, rewinds));
+            if spec.literal.len() != 1 {
+                return None;
+            }
+            work += matched_literal_work(spec.literal)? + 5;
+            return Some((work, rewinds));
         }
+        work += literal(spec.literal).work + 5;
         rewinds += 1;
     }
     None
 }
 
-// The admitted source window has a one-byte ASCII grapheme with an ASCII
-// successor. Its fresh scan costs two calls. Expected segmentation remains in
-// the pinned Unicode scanner; a differing first byte proves failure without a
-// token, including literals whose first grapheme occupies several bytes.
+// Final-input literals reject a differing leading byte before either Unicode
+// cursor runs. Keep prediction work equal to that actual one-read failure.
 fn literal(text: &'static str) -> Plan {
-    let end = TextSize::checked_from_usize(text.len()).unwrap();
-    let mut scan = GraphemeScan::new(TextSize::ZERO, Some(end));
-    let mut allowance = u64::MAX;
-    let range = match scan.advance(text, end, true, &mut allowance) {
-        ScanProgress::Grapheme(range) => range,
-        _ => return Plan::none(),
-    };
     let first = text.as_bytes()[0];
     Plan {
         mask: if first.is_ascii() {
@@ -227,7 +222,7 @@ fn literal(text: &'static str) -> Plan {
         } else {
             ASCII_HEADS
         },
-        work: u64::MAX - allowance + 3 + u64::from(range.len().0 == 1),
+        work: 1,
         rewinds: 0,
         marker_depth: 0,
         rule_depth: 0,
@@ -235,6 +230,19 @@ fn literal(text: &'static str) -> Plan {
         literal_scans: 1,
     }
 }
+
+fn matched_literal_work(text: &'static str) -> Option<u64> {
+    let source = alloc::format!("{text}x");
+    let end = TextSize::checked_from_usize(text.len()).ok()?;
+    let context_end = TextSize::checked_from_usize(source.len()).ok()?;
+    let mut scan = LiteralScan::new(text, TextSize::ZERO, Some(context_end))?;
+    let mut allowance = u64::MAX;
+    match scan.advance(source.as_str(), end, context_end, true, &mut allowance) {
+        LiteralProgress::Complete(Some(actual)) if actual == end => Some(u64::MAX - allowance),
+        _ => None,
+    }
+}
+
 fn fixed(rule: RuleId) -> Plan {
     let Some(spec) = super::terminal_spec::fixed_terminal_spec(rule) else {
         return Plan::none();

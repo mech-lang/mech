@@ -87,7 +87,10 @@ pub(crate) struct CursorScope {
 pub(crate) struct ParserState {
     #[cfg(test)]
     disable_rejections_for_test: bool,
+    retain_completed_nodes: bool,
     lexical_mode: LexicalMode,
+    #[cfg(test)]
+    reference_lexical: bool,
     parse_range: TextRange,
     events: Journal<Event>,
     tree_cache: tree_cache::TreeCache,
@@ -140,6 +143,9 @@ impl ParserState {
             #[cfg(test)]
             disable_rejections_for_test: false,
             lexical_mode,
+            retain_completed_nodes: true,
+            #[cfg(test)]
+            reference_lexical: false,
             parse_range: range,
             events: Journal::default(),
             tree_cache: tree_cache::TreeCache::default(),
@@ -413,9 +419,14 @@ impl<'a> Parser<'a> {
             "accepted marker start must reserve capacity for its finish"
         );
         self.state.open_markers.pop();
-        self.state
-            .tree_cache
-            .enqueue(&self.state.events, marker.position, marker.offset, identity);
+        if self.state.retain_completed_nodes {
+            self.state.tree_cache.enqueue(
+                &self.state.events,
+                marker.position,
+                marker.offset,
+                identity,
+            );
+        }
         CompletedMarker {
             position: marker.position,
             kind,
@@ -885,6 +896,11 @@ pub(crate) fn parse_canonical_document_with_ids(
     ids: &mut IdGenerator,
 ) -> SyntaxSnapshot {
     let mut parser = Parser::new(&source, LexicalMode::CanonicalSourceFragment, config, ids);
+    // A complete-file parse has no intermediate views. Build its final tree
+    // once, rather than materializing every speculative completed marker.
+    parser.state.retain_completed_nodes = false;
+    parser.state.events = Journal::transient();
+    parser.state.diagnostics = Journal::transient();
     parser.set_resource_rule(rules::PARSE);
     canonical::document::parse_document_root(&mut parser);
     let output = parser.finish();

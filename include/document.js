@@ -44,7 +44,6 @@ const state = {
   tocUpdateFrame: null,
   tocEventCleanup: null,
   tocLinkHandlers: new Map(),
-  mermaidInitialized: false,
   outputFullscreenController: null,
   fullscreenGeneration: 0,
   fullscreenRequest: null,
@@ -4001,47 +4000,7 @@ function initializeToc() {
 }
 
 function initializeOptionalRenderers() {
-  if (window.katex && typeof window.katex.render === "function") {
-    const equationSelector = [
-      "[data-mech-equation]:not([data-mech-rendered])",
-      "[data-katex]:not([data-mech-rendered])",
-      ".mech-inline-equation:not([data-mech-rendered])",
-      ".mech-equation:not([data-mech-rendered])",
-      ".math-inline:not([data-mech-rendered])",
-      ".math-display:not([data-mech-rendered])",
-    ].join(", ");
-    for (const element of document.querySelectorAll(equationSelector)) {
-      try {
-        const source = element.getAttribute("equation") ?? element.textContent;
-        window.katex.render(source, element, {
-          displayMode:
-            element.classList.contains("mech-equation") ||
-            element.classList.contains("math-display"),
-          throwOnError: false,
-        });
-        element.dataset.mechRendered = "katex";
-      } catch (error) {
-        appendError(error);
-      }
-    }
-  }
-  if (
-    window.mermaid &&
-    typeof window.mermaid.run === "function" &&
-    document.querySelector(".mermaid:not([data-processed])")
-  ) {
-    try {
-      if (!state.mermaidInitialized && typeof window.mermaid.initialize === "function") {
-        window.mermaid.initialize({ startOnLoad: false, theme: "dark" });
-        state.mermaidInitialized = true;
-      }
-      const nodes = document.querySelectorAll(".mermaid:not([data-processed])");
-      Promise.resolve(window.mermaid.run({ nodes }))
-        .catch(appendError);
-    } catch (error) {
-      appendError(error);
-    }
-  }
+  window.MechPresentation?.refresh(appendError);
 }
 
 function syncReplHostOffset() {

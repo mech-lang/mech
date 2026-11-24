@@ -14,7 +14,7 @@ use crate::document::{
     FsmGuardArmSyntax, FsmGuardSyntax, FsmImplementationSyntax, FsmOutputSyntax,
     FsmSpecificationSyntax, FsmStateDefinitionSyntax, FsmStateDefinitionVariablesSyntax,
     FsmStateTransitionSyntax, FsmStatementTransitionSyntax, FsmTransitionSyntax, FsmValueSyntax,
-    KindAnnotationSyntax, KindDefineSyntax, MechCodeAltSyntax, MechCodeSyntax,
+    KindAnnotationSyntax, KindDefineSyntax, MechCodeAltSyntax, MechCodeSyntax, ModuleImportSyntax,
     OpAssignOperatorSyntax, OpAssignSyntax, OptionMapSyntax, ParagraphElementSyntax, PatternSyntax,
     SectionElementSyntax, SliceRefSyntax, SliceStemSyntax, StatementSyntax, SubscriptListSyntax,
     SyntaxKind, TextRange, TitleFrontMatterSyntax, TitleSyntax, TupleDestructureSyntax,
@@ -355,6 +355,11 @@ impl DocumentSyntax {
             if EvalInlineMechCodeSyntax::cast(node.clone()).is_some() {
                 return true;
             }
+            // Title imports are retained directly under front matter rather
+            // than a MechCode wrapper, but remain ordinary root declarations.
+            if include_declarations && node.kind() == SyntaxKind::ModuleImport {
+                return true;
+            }
             if let Some(code) = MechCodeSyntax::cast(node.clone()) {
                 if code
                     .items()
@@ -437,6 +442,14 @@ impl TitleFrontMatterSyntax {
         self.syntax()
             .children()
             .filter_map(IdentifierSyntax::cast)
+            .collect()
+    }
+
+    /// Root imports share the title's retained source without becoming fields.
+    pub fn imports(&self) -> Vec<ModuleImportSyntax> {
+        self.syntax()
+            .children()
+            .filter_map(ModuleImportSyntax::cast)
             .collect()
     }
 }
