@@ -507,6 +507,8 @@ impl ShortAppend {
     }
 
     fn emit(self, function: &mut Function, fallback: FuncRef) {
+        let store_word = std::env::var_os("MECH_COMPACT_SHORT_APPEND_SPARE_STORE")
+            .is_some_and(|mode| mode == "8-direct");
         let mut builder = FunctionBuilderContext::new();
         let mut b = FunctionBuilder::new(function, &mut builder);
         let entry = b.create_block();
@@ -535,8 +537,17 @@ impl ShortAppend {
         b.ins().brif(width, extent, &[], slow, &[]);
         b.switch_to_block(extent);
         let end = b.ins().iadd(length, count);
-        let no_wrap = b.ins().icmp(IntCC::UnsignedGreaterThanOrEqual, end, length);
-        let fits = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, end, capacity);
+        let store_end = if store_word {
+            b.ins().iadd_imm(length, 8)
+        } else {
+            end
+        };
+        let no_wrap = b
+            .ins()
+            .icmp(IntCC::UnsignedGreaterThanOrEqual, store_end, length);
+        let fits = b
+            .ins()
+            .icmp(IntCC::UnsignedLessThanOrEqual, store_end, capacity);
         let same_backing = b.ins().band(no_wrap, fits);
         b.ins().brif(same_backing, owner_gate, &[], slow, &[]);
         b.switch_to_block(owner_gate);
@@ -550,16 +561,24 @@ impl ShortAppend {
         b.switch_to_block(write);
         let byte = b.ins().ireduce(types::I8, word);
         let address = b.ins().iadd(data, length);
-        if self.maximum > 1 {
-            let one = b.create_block();
-            let many = b.create_block();
-            let is_one = b.ins().icmp_imm(IntCC::Equal, count, 1);
-            b.ins().brif(is_one, one, &[], many, &[]);
-            b.switch_to_block(many);
-            self.emit_many(&mut b, address, word, count, finish);
-            b.switch_to_block(one);
+        if store_word {
+            // The full word fits and the original byte backing has one owner.
+            // Publish only the requested bytes. Subsequent sequence writes
+            // initialize their own extent before making it readable.
+            let little = MemFlags::new().with_endianness(Endianness::Little);
+            b.ins().store(little, word, address, 0);
+        } else {
+            if self.maximum > 1 {
+                let one = b.create_block();
+                let many = b.create_block();
+                let is_one = b.ins().icmp_imm(IntCC::Equal, count, 1);
+                b.ins().brif(is_one, one, &[], many, &[]);
+                b.switch_to_block(many);
+                self.emit_many(&mut b, address, word, count, finish);
+                b.switch_to_block(one);
+            }
+            b.ins().store(self.store_flags, byte, address, 0);
         }
-        b.ins().store(self.store_flags, byte, address, 0);
         b.ins().jump(finish, &[]);
         b.switch_to_block(finish);
         let bits = b.ins().ishl_imm(args[self.shift], 3);
