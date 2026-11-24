@@ -70,6 +70,7 @@ mod owner_storage;
 mod small_scratch;
 mod owner_registry;
 mod fixed_transform;
+mod gap_kernel;
 use owner_registry::OwnerRegistry;
 pub use owner_storage::OwnerStorage;
 
