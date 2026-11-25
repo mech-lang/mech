@@ -42,7 +42,7 @@ status
   assert.equal(result.replace(/^"|"$/g, ''), expected);
 }
 
-assert.equal(evaluate('known := {1, 2, 2, 3}\nknown == {1, 2, 3}\n'), 'true');
+assert.equal(evaluate('known := {3, 1, 2}\nknown == {1, 2, 3}\n'), 'true');
 assert.equal(Number(evaluate(`robots := |id<f64> ready<bool>| 1 true | 2 false | 3 true |
 selected := robots[robots.ready]
 selected.id[2]
@@ -51,6 +51,16 @@ selected.id[2]
 const repl = new WasmRepl();
 try {
   assert.equal(valueText(repl.submit('accepted := 42\naccepted')), '42');
+  for (const source of [
+    'known := {1, 2, 2, 3}\nknown',
+    '{0, -0}',
+    '{"robot", "camera", "robot"}',
+  ]) {
+    const duplicate = repl.submit(source);
+    assert.equal(duplicate.result, null, source);
+    assert.ok(errors(duplicate).length > 0, source);
+    assert.equal(valueText(repl.submit('accepted')), '42');
+  }
   const response = repl.submit(`battery<f64?> := 40
 status := battery?
   ├ charge, charge < 0.4 => "recharge"
@@ -64,4 +74,4 @@ status := battery?
   repl.shutdown();
   repl.free();
 }
-console.log('PASS Wasm: optional guards and absence, duplicate set literals, table masks, mixed-arm diagnostics and preserved accepted state');
+console.log('PASS Wasm: optional guards and absence, duplicate set rejection, table masks, mixed-arm diagnostics and preserved accepted state');
