@@ -408,3 +408,19 @@ retired. Absence from the winning recipe alone does not establish retirement.
 | `MECH_WHOLE_PHASE_CAPACITY` | Profitability | OS presence | `program/compact/phases.rs` · `define` |
 | `MECH_WIDENING_REDUCTION` | Profitability | OS presence | `program/compact/widening_reduction.rs` · `derive` |
 | `MECH_WIDE_ANY_BITS` | Profitability | OS presence | `program/codegen/wide_equal.rs` · `any_bits` |
+
+## Additional comparison and root selections
+
+`MECH_COMPACT_CCMP_IMMEDIATES` is an optional Unicode symbol list separated by
+literal semicolons; an exact `all` selects every function. Unset, non-Unicode,
+and unmatched values leave ordinary lowering enabled. The selected AArch64
+functions use immediate conditional comparisons for I32/I64 constants in
+0..31 and conditional additions for negative constants in -31..-1. Zero uses
+conditional comparison to retain its carry semantics. I8/I16 normalization,
+checked branches and the language remain unchanged. Selection comes from the
+same immutable compilation inputs as the other native options.
+
+`MECH_COMPACT_PHASE_REGISTER_WEIGHTS` also accepts the checked root symbol.
+Its expected VCode is validated after inlining and lowering. Root route dumps
+retain the inlined body's disassembly and allocation input for deriving those
+profiles. Ordinary builds do not request this inspection.

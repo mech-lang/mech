@@ -310,6 +310,13 @@ impl PreparedObject {
             return Ok(false);
         }
         let mut candidate = Context::for_function(prepared.func);
+        if self
+            .compiler_inputs
+            .var_os("MECH_COMPACT_ROUTE_DUMP")
+            .is_some()
+        {
+            candidate.set_disasm(true);
+        }
         if !candidate
             .inline(super::inlining::OnceCalled(&selected))
             .map_err(|error| ModuleError::Backend(error.into()))?

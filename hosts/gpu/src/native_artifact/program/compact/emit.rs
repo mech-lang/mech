@@ -2614,6 +2614,14 @@ fn define_entry<M: Module>(
                 )
                 .map_err(backend)?
         };
+        if outline_allowed {
+            super::phase_layout::apply_register_weights(
+                compiler_inputs,
+                &mut context,
+                checked_symbol,
+            )
+            .map_err(backend)?;
+        }
         module
             .define_function(function, &mut context)
             .map_err(backend)?;
