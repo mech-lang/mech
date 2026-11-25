@@ -1,0 +1,6 @@
++> stats
+-- Center columns by broadcasting the mean, then normalize their Gram matrix.
+observations := data<[f64]>
+mean := stats/sum/row(observations) / float-n<f64>
+centered := observations - mean
+(centered' ** centered) / (float-n - 1.0)

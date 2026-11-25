@@ -593,7 +593,12 @@ impl SemanticBuilder {
         let body = self.required(pattern.value(), pattern.syntax(), "an FSM value")?;
         match body {
             PatternValueSyntax::Expression(expression) => {
-                let value = self.expression(&expression)?.0;
+                let value = self
+                    .expression_with_expected(
+                        &expression,
+                        Some(ExpectedSchema::CallArgument(expected)),
+                    )?
+                    .0;
                 self.conform_schema_draft(
                     value,
                     expected,

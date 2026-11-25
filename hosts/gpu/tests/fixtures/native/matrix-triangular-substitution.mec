@@ -1,0 +1,16 @@
++> stats
+-- A solved prefix supplies the next row. The first row has no prefix.
+#Solve(a<[f64]:3,3>, rhs<[f64]:3,1>, initial<[f64]:3,1>) => <[f64]:3,1>
+  | :Row(values<[f64]:3,1>, row<u64>)
+  | :Done(values<[f64]:3,1>).
+#Solve(a, rhs, initial) -> :Row(initial, 1u64)
+  :Row(values, row)
+    | row <= 3u64 -> {
+        total := (row == 1u64? | true => 0.0 | false => stats/sum/column([a[row,j] * values[j] | j <- 1u64..row])[1u64])
+        value := (rhs[row] - total) / a[row,row]
+        ~next := values
+        next[row] = value
+      } -> :Row(next, row + 1u64)
+    | * -> :Done(values)
+  :Done(values) => values.
+#Solve(matrix<[f64]:3,3>, rhs<[f64]:3,1>, initial<[f64]:3,1>)

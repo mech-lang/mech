@@ -6,7 +6,8 @@ use mech_core::{
 };
 use mech_engine::{CanonicalSourceFrontend, ProgramArtifact};
 use mech_gpu::native_artifact::{
-    JitProgramArtifact, NativeExecutionLimits, NativeProgramExecutionLimits, emit_program_object,
+    JitProgramArtifact, NativeExecutionLimits, NativeProgramDescriptor,
+    NativeProgramExecutionLimits, emit_program_object,
 };
 use mech_syntax::document::{
     AstNode, DocumentId, DocumentSyntax, ParseConfig, Revision, TextSnapshot,
@@ -30,6 +31,16 @@ fn artifacts(source: &str) -> [ProgramArtifact; 2] {
     )
     .unwrap();
     [original, decoded]
+}
+
+fn check_restored_image(jit: &JitProgramArtifact) {
+    let image = jit.descriptor().encode_build_owned_image().unwrap();
+    // SAFETY: this JIT build owns the unmodified image; only metadata is inspected.
+    let restored = unsafe {
+        NativeProgramDescriptor::decode_build_owned_image(&image, &mech_stdlib::source_catalog())
+    }
+    .unwrap();
+    assert_eq!(restored.encode_build_owned_image().unwrap(), image);
 }
 
 fn limits() -> NativeProgramExecutionLimits {
@@ -69,18 +80,30 @@ fn inputs(
             let (_, rows, columns, numbers) = named.iter().find(|(key, ..)| *key == name).unwrap();
             assert_eq!(numbers.len() as u64, rows * columns);
             let schema = artifact.schemas().get(input.schema).unwrap();
+            let (data, shape_values) = if matches!(schema.body(), SchemaBody::Matrix { .. }) {
+                (
+                    Data::Matrix(
+                        numbers
+                            .iter()
+                            .map(|v| Data::F64(F64Bits::from_f64(*v)))
+                            .collect(),
+                    ),
+                    mech_core::shape_for_resolved_extents(schema, &[*rows, *columns])
+                        .unwrap()
+                        .parameter_values()
+                        .into(),
+                )
+            } else {
+                assert_eq!(numbers.len(), 1);
+                (
+                    Data::F64(F64Bits::from_f64(numbers[0])),
+                    Box::new([]) as Box<[u64]>,
+                )
+            };
             let value = ValueDraft {
                 schema: input.schema,
-                shape_values: mech_core::shape_for_resolved_extents(schema, &[*rows, *columns])
-                    .unwrap()
-                    .parameter_values()
-                    .into(),
-                data: Data::Matrix(
-                    numbers
-                        .iter()
-                        .map(|v| Data::F64(F64Bits::from_f64(*v)))
-                        .collect(),
-                ),
+                shape_values,
+                data,
             }
             .finalize(&SnapshotValidationContext::new(artifact.schemas()))
             .unwrap();
@@ -161,6 +184,54 @@ fn rectangular_products_and_transposes_preserve_original_and_decoded_geometry() 
 }
 
 #[test]
+fn packed_f64_products_preserve_reduction_order_and_empty_inner_axes() {
+    for artifact in artifacts("left<[f64]> ** right<[f64]>\n") {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        // Reassociation would retain the middle term and produce a different
+        // result. Packed products retain the generic numeric sum's left fold.
+        let args = inputs(
+            &artifact,
+            &[
+                ("left", 1, 3, &[1e16, 1., -1e16]),
+                ("right", 3, 2, &[1., 2., 1., 2., 1., 2.]),
+            ],
+            &memory,
+        );
+        jit.evaluate_into(&args, &mut output, limits(), &memory)
+            .unwrap();
+        check_output(&artifact, &output, [1, 2], &[0., 0.]);
+        let args = inputs(
+            &artifact,
+            &[("left", 2, 0, &[]), ("right", 0, 3, &[])],
+            &memory,
+        );
+        jit.evaluate_into(&args, &mut output, limits(), &memory)
+            .unwrap();
+        check_output(&artifact, &output, [2, 3], &[0.; 6]);
+        let args = inputs(
+            &artifact,
+            &[("left", 1, 2, &[-0., -0.]), ("right", 2, 1, &[1., 1.])],
+            &memory,
+        );
+        jit.evaluate_into(&args, &mut output, limits(), &memory)
+            .unwrap();
+        let Data::Matrix(cells) = output
+            .last()
+            .unwrap()
+            .as_ref()
+            .unwrap()
+            .canonical_data_draft()
+            .unwrap()
+        else {
+            panic!("matrix")
+        };
+        assert_eq!(cells[0], Data::F64(F64Bits::from_f64(0.0)));
+    }
+}
+
+#[test]
 fn atax_composes_the_existing_matrix_leaves_without_a_resident_program() {
     for artifact in artifacts("a := matrix<[f64]>\na' ** (a ** vector<[f64]>)\n") {
         let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
@@ -177,6 +248,420 @@ fn atax_composes_the_existing_matrix_leaves_without_a_resident_program() {
         jit.evaluate_into(&args, &mut output, limits(), &memory)
             .unwrap();
         check_output(&artifact, &output, [3, 1], &[142., 188., 234.]);
+    }
+}
+
+#[test]
+fn matrix_arithmetic_reuses_scalar_row_column_and_exact_broadcasting() {
+    for (source, rows, columns, right, expected) in [
+        (
+            "left<[f64]> + right<[f64]>\n",
+            1,
+            3,
+            vec![10., 20., 30.],
+            vec![11., 22., 33., 14., 25., 36.],
+        ),
+        (
+            "left<[f64]> - right<[f64]>\n",
+            2,
+            1,
+            vec![1., 2.],
+            vec![0., 1., 2., 2., 3., 4.],
+        ),
+        (
+            "left<[f64]> * right<[f64]>\n",
+            2,
+            3,
+            vec![2., 3., 4., 5., 6., 7.],
+            vec![2., 6., 12., 20., 30., 42.],
+        ),
+        (
+            "left<[f64]> / right<[f64]>\n",
+            1,
+            1,
+            vec![2.],
+            vec![0.5, 1., 1.5, 2., 2.5, 3.],
+        ),
+        (
+            "2.0 * left<[f64]> + right<[f64]> / 2.0\n",
+            1,
+            3,
+            vec![10., 20., 30.],
+            vec![7., 14., 21., 13., 20., 27.],
+        ),
+        (
+            "10.0 - left<[f64]>\n",
+            1,
+            1,
+            vec![0.],
+            vec![9., 8., 7., 6., 5., 4.],
+        ),
+    ] {
+        for artifact in artifacts(source) {
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            assert!(
+                !emit_program_object(&artifact, &mech_stdlib::source_catalog())
+                    .unwrap()
+                    .bytes()
+                    .is_empty()
+            );
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let args = inputs(
+                &artifact,
+                &[
+                    ("left", 2, 3, &[1., 2., 3., 4., 5., 6.]),
+                    ("right", rows, columns, &right),
+                ],
+                &memory,
+            );
+            let mut output = vec![None; artifact.outputs().len()];
+            jit.evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            check_output(&artifact, &output, [2, 3], &expected);
+        }
+    }
+}
+
+#[test]
+fn numeric_registration_preserves_direct_scalar_arithmetic() {
+    for artifact in artifacts("left<f64> * right<f64> + 10.0\n") {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let args = inputs(
+            &artifact,
+            &[("left", 1, 1, &[3.]), ("right", 1, 1, &[4.])],
+            &memory,
+        );
+        let mut output = vec![None; artifact.outputs().len()];
+        assert!(
+            jit.descriptor()
+                .plan()
+                .library_operation_references()
+                .is_empty(),
+            "scalar arithmetic must not invoke library leaves"
+        );
+        jit.evaluate_into(&args, &mut output, limits(), &memory)
+            .unwrap();
+        assert_eq!(
+            output
+                .last()
+                .unwrap()
+                .as_ref()
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            Data::F64(F64Bits::from_f64(22.))
+        );
+    }
+}
+
+#[test]
+fn independently_shaped_f64_matrices_can_be_packed_and_projected() {
+    for source in [
+        "pair := (left<[f64]>, right<[f64]>)\npair[1u64]\n",
+        "pair := (left<[f64]>, right<[f64]>)\npair[2u64]\n",
+    ] {
+        for artifact in artifacts(source) {
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let args = inputs(
+                &artifact,
+                &[
+                    ("left", 2, 3, &[1., 2., 3., 4., 5., 6.]),
+                    ("right", 3, 1, &[7., 8., 9.]),
+                ],
+                &memory,
+            );
+            let mut output = vec![None; artifact.outputs().len()];
+            jit.evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            if source.contains("pair[1u64]") {
+                check_output(&artifact, &output, [2, 3], &[1., 2., 3., 4., 5., 6.]);
+            } else {
+                check_output(&artifact, &output, [3, 1], &[7., 8., 9.]);
+            }
+        }
+    }
+}
+
+#[test]
+fn nested_comprehensions_preserve_rectangular_matrix_blocks_and_coordinate_access() {
+    for artifact in
+        artifacts("a := left<[f64]>\n[[a[i,j] * 2.0 | i <- 1u64..=2u64]' | j <- 1u64..=3u64]\n")
+    {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let args = inputs(
+            &artifact,
+            &[("left", 2, 3, &[1., 2., 3., 4., 5., 6.])],
+            &memory,
+        );
+        let mut output = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&args, &mut output, limits(), &memory)
+            .unwrap();
+        check_output(&artifact, &output, [2, 3], &[2., 4., 6., 8., 10., 12.]);
+    }
+}
+
+#[test]
+fn dynamic_matrix_blocks_keep_empty_axes_and_reclose_each_invocation() {
+    for artifact in artifacts("a := left<[f64]>\n[a | * <- 1u64..=2u64]\n") {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        for (rows, columns, values, expected) in [
+            (
+                2,
+                3,
+                vec![1., 2., 3., 4., 5., 6.],
+                vec![1., 2., 3., 1., 2., 3., 4., 5., 6., 4., 5., 6.],
+            ),
+            (0, 3, vec![], vec![]),
+            (3, 0, vec![], vec![]),
+            (1, 2, vec![7., 9.], vec![7., 9., 7., 9.]),
+        ] {
+            let args = inputs(&artifact, &[("left", rows, columns, &values)], &memory);
+            jit.evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            check_output(&artifact, &output, [rows, columns * 2], &expected);
+            let prior = output.clone();
+            let retained = memory.used_bytes();
+            let mut denied = limits();
+            denied.library.max_compute_work = Some(1);
+            assert!(
+                jit.evaluate_into(&args, &mut output, denied, &memory)
+                    .is_err()
+            );
+            assert_eq!(memory.used_bytes(), retained);
+            assert!(output.iter().zip(&prior).all(|(a, b)| {
+                a.as_ref()
+                    .unwrap()
+                    .shares_frozen_storage(b.as_ref().unwrap())
+            }));
+        }
+    }
+}
+
+#[test]
+fn inconsistent_matrix_blocks_reject_without_publishing_and_recover() {
+    let source =
+        "a := left<[f64]>\n[[a[i,j] | i <- 1u64..=j]' | j <- 1u64..=2u64, j<f64> <= limit<f64>]\n";
+    for artifact in artifacts(source) {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let good = inputs(
+            &artifact,
+            &[("left", 2, 2, &[1., 2., 3., 4.]), ("limit", 1, 1, &[1.])],
+            &memory,
+        );
+        let bad = inputs(
+            &artifact,
+            &[("left", 2, 2, &[1., 2., 3., 4.]), ("limit", 1, 1, &[2.])],
+            &memory,
+        );
+        let mut output = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&good, &mut output, limits(), &memory)
+            .unwrap();
+        let prior = output.clone();
+        let retained = memory.used_bytes();
+        assert!(
+            jit.evaluate_into(&bad, &mut output, limits(), &memory)
+                .is_err()
+        );
+        assert_eq!(memory.used_bytes(), retained);
+        assert!(output.iter().zip(&prior).all(|(a, b)| {
+            a.as_ref()
+                .unwrap()
+                .shares_frozen_storage(b.as_ref().unwrap())
+        }));
+        jit.evaluate_into(&good, &mut output, limits(), &memory)
+            .unwrap();
+        check_output(&artifact, &output, [1, 1], &[1.]);
+    }
+}
+
+#[test]
+fn square_root_uses_the_existing_matrix_leaf() {
+    for artifact in artifacts("+> math\nmath/sqrt(left<[f64]>)\n") {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let args = inputs(
+            &artifact,
+            &[("left", 2, 3, &[0., 1., 4., 9., 16., 25.])],
+            &memory,
+        );
+        let mut output = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&args, &mut output, limits(), &memory)
+            .unwrap();
+        check_output(&artifact, &output, [2, 3], &[0., 1., 2., 3., 4., 5.]);
+    }
+}
+
+#[test]
+fn f64_cell_reads_check_each_axis_preserve_prior_output_and_recover() {
+    for artifact in artifacts("a := left<[f64]>\na[2u64,3u64]\n") {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let good = inputs(
+            &artifact,
+            &[("left", 2, 3, &[1., 2., 3., 4., 5., 6.])],
+            &memory,
+        );
+        let mut output = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&good, &mut output, limits(), &memory)
+            .unwrap();
+        let prior = output.clone();
+        for (rows, columns, values) in [(1, 6, vec![1.; 6]), (3, 2, vec![1.; 6]), (0, 3, vec![])] {
+            let bad = inputs(&artifact, &[("left", rows, columns, &values)], &memory);
+            let retained = memory.used_bytes();
+            assert!(
+                jit.evaluate_into(&bad, &mut output, limits(), &memory)
+                    .is_err()
+            );
+            assert_eq!(memory.used_bytes(), retained);
+            assert!(output.iter().zip(&prior).all(|(a, b)| {
+                a.as_ref()
+                    .unwrap()
+                    .shares_frozen_storage(b.as_ref().unwrap())
+            }));
+        }
+        let mut denied = limits();
+        denied.library.max_output_bytes = Some(7);
+        assert!(
+            jit.evaluate_into(&good, &mut output, denied, &memory)
+                .is_err()
+        );
+        jit.evaluate_into(&good, &mut output, limits(), &memory)
+            .unwrap();
+        assert_eq!(
+            output
+                .last()
+                .unwrap()
+                .as_ref()
+                .unwrap()
+                .canonical_data_draft()
+                .unwrap(),
+            Data::F64(F64Bits::from_f64(6.))
+        );
+    }
+}
+
+#[test]
+fn f64_linear_reads_reclose_column_major_indices_without_changing_bits() {
+    for artifact in artifacts("a := left<[f64]>\na[2u64]\n") {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let mut output = vec![None; artifact.outputs().len()];
+        for (rows, columns, values, expected) in [
+            (2, 3, vec![1., 2., 3., 4., 5., 6.], 4.),
+            (1, 6, vec![1., 2., 3., 4., 5., 6.], 2.),
+            (2, 1, vec![1., -0.], -0.),
+        ] {
+            let args = inputs(&artifact, &[("left", rows, columns, &values)], &memory);
+            jit.evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            assert_eq!(
+                output
+                    .last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                Data::F64(F64Bits::from_f64(expected))
+            );
+        }
+    }
+}
+
+#[test]
+fn fixed_cardinality_comprehensions_can_cross_f64_fsm_state_transitions() {
+    let source = "#Twice(input<[f64]:2,1>) => <[f64]:2,1>\n\
+      | :Next(values<[f64]:2,1>, remaining<u64>)\n\
+      | :Done(values<[f64]:2,1>).\n\
+    #Twice(input) -> :Next(input, 2u64)\n\
+      :Next(values, remaining)\n\
+        | remaining > 0u64 -> {\n\
+            next := [values[i] * 2.0 | i <- 1u64..=2u64]'\n\
+          } -> :Next(next, remaining - 1u64)\n\
+        | * -> :Done(values)\n\
+      :Done(values) => values.\n\
+    #Twice(left<[f64]:2,1>)\n";
+    for artifact in artifacts(source) {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let args = inputs(&artifact, &[("left", 2, 1, &[3., 5.])], &memory);
+        let mut output = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&args, &mut output, limits(), &memory)
+            .unwrap();
+        check_output(&artifact, &output, [2, 1], &[12., 20.]);
+    }
+}
+
+#[test]
+fn triangular_substitution_combines_f64_state_indexing_reduction_and_replacement() {
+    for artifact in artifacts(include_str!(
+        "fixtures/native/matrix-triangular-substitution.mec"
+    )) {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let args = inputs(
+            &artifact,
+            &[
+                ("matrix", 3, 3, &[2., 0., 0., 3., 1., 0., 1., -1., 2.]),
+                ("rhs", 3, 1, &[2., 5., 3.]),
+                ("initial", 3, 1, &[0.; 3]),
+            ],
+            &memory,
+        );
+        let mut output = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&args, &mut output, limits(), &memory)
+            .unwrap();
+        check_output(&artifact, &output, [3, 1], &[1., 2., 2.]);
+    }
+}
+
+#[test]
+fn incompatible_broadcasts_preserve_outputs_and_recover() {
+    for artifact in artifacts("left<[f64]> + right<[f64]>\n") {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let good = inputs(
+            &artifact,
+            &[
+                ("left", 2, 3, &[1., 2., 3., 4., 5., 6.]),
+                ("right", 1, 3, &[1., 2., 3.]),
+            ],
+            &memory,
+        );
+        let bad = inputs(
+            &artifact,
+            &[
+                ("left", 2, 3, &[1., 2., 3., 4., 5., 6.]),
+                ("right", 2, 2, &[1., 2., 3., 4.]),
+            ],
+            &memory,
+        );
+        let mut output = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&good, &mut output, limits(), &memory)
+            .unwrap();
+        let prior = output.clone();
+        let retained = memory.used_bytes();
+        assert!(
+            jit.evaluate_into(&bad, &mut output, limits(), &memory)
+                .is_err()
+        );
+        assert_eq!(memory.used_bytes(), retained);
+        assert!(output.iter().zip(&prior).all(|(a, b)| {
+            a.as_ref()
+                .unwrap()
+                .shares_frozen_storage(b.as_ref().unwrap())
+        }));
+        jit.evaluate_into(&good, &mut output, limits(), &memory)
+            .unwrap();
+        check_output(&artifact, &output, [2, 3], &[2., 4., 6., 5., 7., 9.]);
     }
 }
 
@@ -245,26 +730,203 @@ fn matrix_geometry_and_finite_budget_rejections_preserve_output_and_recover() {
 }
 
 #[test]
+fn rectangular_cell_replacement_checks_axes_and_preserves_inputs_and_outputs() {
+    let source = "replace(source<[f64]>, value<f64>) => (out<[f64]>) :=\n  ~next := source\n  next[2u64,3u64] = value\n  out := next.\nreplace(source<[f64]>, value<f64>)\n";
+    for artifact in artifacts(source) {
+        let catalog = mech_stdlib::source_catalog();
+        let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        check_restored_image(&jit);
+        assert!(
+            !emit_program_object(&artifact, &catalog)
+                .unwrap()
+                .bytes()
+                .is_empty()
+        );
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let good = inputs(
+            &artifact,
+            &[
+                ("source", 2, 3, &[1., 2., 3., 4., 5., 6.]),
+                ("value", 1, 1, &[9.]),
+            ],
+            &memory,
+        );
+        let aliases = good.clone();
+        let mut output = vec![None; artifact.outputs().len()];
+        jit.evaluate_into(&good, &mut output, limits(), &memory)
+            .unwrap();
+        check_output(&artifact, &output, [2, 3], &[1., 2., 3., 4., 5., 9.]);
+        for (rows, cols, data) in [(3, 2, vec![1.; 6]), (0, 3, vec![])] {
+            let bad = inputs(
+                &artifact,
+                &[("source", rows, cols, &data), ("value", 1, 1, &[9.])],
+                &memory,
+            );
+            let prior = output.clone();
+            let retained = memory.used_bytes();
+            assert!(
+                jit.evaluate_into(&bad, &mut output, limits(), &memory)
+                    .is_err()
+            );
+            assert_eq!(memory.used_bytes(), retained);
+            assert!(output.iter().zip(&prior).all(|(a, b)| {
+                a.as_ref()
+                    .unwrap()
+                    .shares_frozen_storage(b.as_ref().unwrap())
+            }));
+        }
+        let prior = output.clone();
+        let retained = memory.used_bytes();
+        let denied = NativeProgramExecutionLimits {
+            library: MemoryBudgetLimits {
+                max_compute_work: Some(1),
+                ..limits().library
+            },
+            ..limits()
+        };
+        assert!(
+            jit.evaluate_into(&good, &mut output, denied, &memory)
+                .is_err()
+        );
+        assert_eq!(memory.used_bytes(), retained);
+        assert!(output.iter().zip(&prior).all(|(a, b)| {
+            a.as_ref()
+                .unwrap()
+                .shares_frozen_storage(b.as_ref().unwrap())
+        }));
+        assert!(
+            good.iter()
+                .zip(&aliases)
+                .all(|(a, b)| a.shares_frozen_storage(b))
+        );
+        jit.evaluate_into(&good, &mut output, limits(), &memory)
+            .unwrap();
+        check_output(&artifact, &output, [2, 3], &[1., 2., 3., 4., 5., 9.]);
+        drop((good, aliases, output, prior));
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+
+        let entry = catalog
+            .resident_factory(&["core".into(), "assign".into()], "indexed-rectangle")
+            .unwrap();
+        let mut builder = FunctionCatalogBuilder::new();
+        builder
+            .insert_resident_factory_entry(ResidentKernelFactoryEntry::new(
+                entry.key().clone(),
+                entry.implementation_memory(),
+                entry.factory(),
+            ))
+            .unwrap();
+        let forged = builder.build().unwrap();
+        assert!(
+            format!(
+                "{:?}",
+                JitProgramArtifact::compile(&artifact, &forged)
+                    .err()
+                    .unwrap()
+            )
+            .contains("MissingSemanticWitness")
+        );
+    }
+}
+
+#[test]
+fn maintained_real_power_supports_scalars_and_matrix_broadcasts() {
+    for (source, expected) in [
+        (
+            "+> math\nmath/pow(left<[f64]>, right<f64>)\n",
+            vec![1., 4., 9., 16., 25., 36.],
+        ),
+        ("+> math\nmath/pow(left<f64>, right<f64>)\n", vec![4.]),
+    ] {
+        for artifact in artifacts(source) {
+            let catalog = mech_stdlib::source_catalog();
+            let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+            check_restored_image(&jit);
+            assert!(
+                !emit_program_object(&artifact, &catalog)
+                    .unwrap()
+                    .bytes()
+                    .is_empty()
+            );
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let matrix = matches!(
+                artifact
+                    .schemas()
+                    .get(
+                        artifact
+                            .inputs()
+                            .iter()
+                            .find(
+                                |i| mech_engine::decode_source_input_name(&i.name).as_deref()
+                                    == Some("left")
+                            )
+                            .unwrap()
+                            .schema
+                    )
+                    .unwrap()
+                    .body(),
+                SchemaBody::Matrix { .. }
+            );
+            let args = if matrix {
+                inputs(
+                    &artifact,
+                    &[
+                        ("left", 2, 3, &[1., 2., 3., 4., 5., 6.]),
+                        ("right", 1, 1, &[2.]),
+                    ],
+                    &memory,
+                )
+            } else {
+                inputs(
+                    &artifact,
+                    &[("left", 1, 1, &[2.]), ("right", 1, 1, &[2.])],
+                    &memory,
+                )
+            };
+            let mut output = vec![None; artifact.outputs().len()];
+            jit.evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            if matrix {
+                check_output(&artifact, &output, [2, 3], &expected);
+            } else {
+                assert!(
+                    matches!(output.last().unwrap().as_ref().unwrap().canonical_data_draft().unwrap(), Data::F64(v) if v.to_f64() == expected[0])
+                );
+            }
+        }
+    }
+}
+
+#[test]
 fn copied_public_factory_metadata_cannot_authorize_native_matrix_lowering() {
-    let artifact = artifacts("left<[f64]> ** right<[f64]>\n")
-        .into_iter()
-        .next()
-        .unwrap();
-    let catalog = mech_stdlib::source_catalog();
-    let entry = catalog
-        .resident_factory(&["matrix".into()], "matmul")
-        .unwrap();
-    let mut builder = FunctionCatalogBuilder::new();
-    builder
-        .insert_resident_factory_entry(ResidentKernelFactoryEntry::new(
-            entry.key().clone(),
-            entry.implementation_memory(),
-            entry.factory(),
-        ))
-        .unwrap();
-    let forged = builder.build().unwrap();
-    let error = JitProgramArtifact::compile(&artifact, &forged)
-        .err()
-        .expect("private witness is required");
-    assert!(format!("{error:?}").contains("MissingSemanticWitness"));
+    for (source, module, name) in [
+        ("left<[f64]> ** right<[f64]>\n", "matrix", "matmul"),
+        ("left<[f64]> + right<[f64]>\n", "math", "add"),
+        ("left<[f64]> - right<[f64]>\n", "math", "sub"),
+        ("left<[f64]> * right<[f64]>\n", "math", "mul"),
+        ("left<[f64]> / right<[f64]>\n", "math", "div"),
+        ("+> math\nmath/pow(left<f64>, right<f64>)\n", "math", "pow"),
+        ("+> math\nmath/sqrt(left<[f64]>)\n", "math", "sqrt"),
+        ("a := left<[f64]>\na[1u64,1u64]\n", "access", "scalar"),
+    ] {
+        let artifact = artifacts(source).into_iter().next().unwrap();
+        let catalog = mech_stdlib::source_catalog();
+        let entry = catalog.resident_factory(&[module.into()], name).unwrap();
+        let mut builder = FunctionCatalogBuilder::new();
+        builder
+            .insert_resident_factory_entry(ResidentKernelFactoryEntry::new(
+                entry.key().clone(),
+                entry.implementation_memory(),
+                entry.factory(),
+            ))
+            .unwrap();
+        let forged = builder.build().unwrap();
+        let error = JitProgramArtifact::compile(&artifact, &forged)
+            .err()
+            .expect("private witness is required");
+        assert!(format!("{error:?}").contains("MissingSemanticWitness"));
+    }
 }

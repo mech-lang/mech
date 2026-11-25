@@ -17,6 +17,12 @@ pub enum NativeCollectionPrimitive {
     MatrixVertical(usize),
     MatrixTranspose,
     MatrixMatmul,
+    MatrixAdd,
+    MatrixSubtract,
+    MatrixMultiply,
+    MatrixDivide,
+    MatrixSqrt,
+    F64Power,
     EnumPack,
     RangeExclusive,
     RangeInclusive,
@@ -26,11 +32,14 @@ pub enum NativeCollectionPrimitive {
     #[cfg(feature = "native-artifact")]
     MatrixScalarAccess,
     #[cfg(feature = "native-artifact")]
+    MatrixCellAccess,
+    #[cfg(feature = "native-artifact")]
     TupleScalarProjection,
     RecordFieldAccess,
     #[cfg(feature = "native-artifact")]
     MatrixRangeAccess,
     MatrixIndexedReplace,
+    MatrixCellReplace,
     #[cfg(feature = "native-artifact")]
     MapKeyAccess,
     SetContains,

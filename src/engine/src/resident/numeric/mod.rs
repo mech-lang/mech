@@ -18259,6 +18259,17 @@ fn snapshot_access_node_phases(
     })
 }
 
+// One typed product stream for dense executor buffers and canonical packed
+// F64 matrices. Each caller retains its original reduction identity/order and
+// physical layout; no generic value is constructed for an inner-loop term.
+fn f64_product_terms(
+    inner: usize,
+    mut left: impl FnMut(usize) -> f64,
+    mut right: impl FnMut(usize) -> f64,
+) -> impl Iterator<Item = f64> {
+    (0..inner).map(move |offset| left(offset) * right(offset))
+}
+
 fn matrix_multiply(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -18305,9 +18316,12 @@ fn matrix_multiply(
     Ok(replace_f64(output, |target| {
         let row = target % rows;
         let column = target / rows;
-        (0..inner)
-            .map(|offset| lhs[row + offset * rows] * rhs[offset + column * inner])
-            .sum()
+        f64_product_terms(
+            inner,
+            |offset| lhs[row + offset * rows],
+            |offset| rhs[offset + column * inner],
+        )
+        .sum()
     }))
 }
 
@@ -18547,6 +18561,32 @@ fn matrix_multiply_snapshot(
         output_len,
         compute_work.saturating_sub(output_len),
     )?;
+    if let (SequenceView::F64(left), SequenceView::F64(right)) =
+        (lhs_matrix.elements(), rhs_matrix.elements())
+    {
+        // Reuse the dense F64 product stream while borrowing the canonical
+        // row-major banks. Keep the complete existing conservative admission
+        // and atomic publisher; only per-term draft cloning/dispatch vanishes.
+        let mut result = Vec::with_capacity(output_len);
+        for row in 0..rows {
+            for column in 0..columns {
+                let sum = f64_product_terms(
+                    inner,
+                    |offset| left[row * inner + offset].to_f64(),
+                    |offset| right[offset * columns + column].to_f64(),
+                )
+                .fold(0.0, |sum, term| sum + term);
+                result.push(ValueDataDraft::F64(F64Bits::from_f64(sum)));
+            }
+        }
+        return write_snapshot_data_for_shape_with_work_budget(
+            kernel,
+            output,
+            &output_shape,
+            ValueDataDraft::Matrix(result.into_boxed_slice()),
+            Some(0),
+        );
+    }
     let ValueDataDraft::Matrix(lhs) = lhs
         .canonical_data_draft()
         .map_err(|_| ResidentKernelError::InvalidInput)?

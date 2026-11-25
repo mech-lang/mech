@@ -1,0 +1,5 @@
+-- Rank-one updates followed by the transposed and forward products.
+a := A<[f64]>
+updated := a + u1<[f64]> ** v1<[f64]>' + u2<[f64]> ** v2<[f64]>'
+next-x := x<[f64]> + beta<f64> * (updated' ** y<[f64]>) + z<[f64]>
+w<[f64]> + alpha<f64> * (updated ** next-x)

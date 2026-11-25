@@ -96,6 +96,89 @@ fn same_report(
 }
 
 #[test]
+fn rectangular_blocks_keep_canonical_order_in_original_decoded_and_restored_execution() {
+    let mode = NativeProgramLimitMode::NoLimits;
+    for kind in ["u64", "f64", "string"] {
+        let source = format!("[row<[{kind}]> | * <- items<[u64]>]\n");
+        for artifact in artifacts(&source) {
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            for image in descriptors(&jit) {
+                for descriptor in [jit.descriptor(), &image] {
+                    for (rows, columns, count) in
+                        [(2, 3, 2), (3, 2, 3), (1, 2, 2), (3, 0, 2), (2, 3, 0)]
+                    {
+                        let values = (0..rows * columns)
+                            .map(|index| match kind {
+                                "u64" => ValueDataDraft::U64(index + 1),
+                                "f64" => ValueDataDraft::F64(
+                                    mech_core::snapshot::F64Bits::from_f64(index as f64 + 0.5),
+                                ),
+                                "string" => ValueDataDraft::String(format!("界{index}")),
+                                _ => unreachable!(),
+                            })
+                            .collect::<Vec<_>>();
+                        let expected = if columns == 0 {
+                            Vec::new()
+                        } else {
+                            values
+                                .chunks(columns as usize)
+                                .flat_map(|row| (0..count).flat_map(move |_| row.iter().cloned()))
+                                .collect()
+                        };
+                        let memory = mode.memory_budget();
+                        let args = inputs(&artifact, &memory, count, Some((rows, &values)), 1);
+                        let aliases = args.clone();
+                        let mut output = vec![None; artifact.outputs().len()];
+                        crate::native_artifact::program::runtime::execute(
+                            descriptor,
+                            jit.test_generated_entry(),
+                            &args,
+                            &mut output,
+                            mode.execution(),
+                            &memory,
+                        )
+                        .unwrap();
+                        let value = output.last().unwrap().as_ref().unwrap();
+                        assert_eq!(
+                            value.canonical_data_draft().unwrap(),
+                            ValueDataDraft::Matrix(expected.into_boxed_slice())
+                        );
+                        let mech_core::SchemaBody::Matrix { dimensions, .. } =
+                            artifact.schemas().get(value.schema()).unwrap().body()
+                        else {
+                            panic!("matrix")
+                        };
+                        let extents = dimensions
+                            .iter()
+                            .map(|d| value.shape().resolve_dimension(d).unwrap())
+                            .collect::<Vec<_>>();
+                        assert_eq!(
+                            extents,
+                            if count == 0 {
+                                vec![0, 0]
+                            } else {
+                                vec![rows, columns * count]
+                            }
+                        );
+                        assert!(
+                            args.iter()
+                                .zip(&aliases)
+                                .all(|(a, b)| a.shares_frozen_storage(b))
+                        );
+                        drop((args, aliases, output));
+                        assert_eq!(
+                            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                            (0, 0)
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
 fn packed_row_payload_keeps_all_scalar_kinds_unicode_empty_shapes_and_exact_prices() {
     let mode = NativeProgramLimitMode::NoLimits;
     for (literal, packed) in [
@@ -171,10 +254,9 @@ fn packed_row_payload_keeps_all_scalar_kinds_unicode_empty_shapes_and_exact_pric
     }
 }
 
-// The measured worker returns a row produced by sequence operations. General
-// multirow horizontal concatenation also permutes cells and is a separate,
-// currently unadmitted native family; it is not a one-row error fixture.
-// Maintained sequence/append itself requires exactly one row when visited.
+// This worker returns a row produced by sequence operations. Maintained
+// sequence/append itself requires exactly one row when visited, independently
+// of the comprehension's general matrix-block construction support.
 const DYNAMIC: &str = "+> sequence\nchoices := items<[u64]>\n[sequence/append(row<[u64]>, 12u64 / divisor<u64>) | * <- choices]\n";
 
 #[test]

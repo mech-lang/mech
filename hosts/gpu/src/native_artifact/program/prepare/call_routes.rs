@@ -15,6 +15,7 @@ pub(in crate::native_artifact) enum LibraryCallRoute {
     UnsignedMatrixLength,
     MatrixLength,
     UnsignedMatrixElement,
+    F64MatrixElement,
     StringMatrixElement,
     UnsignedMatrixReplace,
 }
@@ -63,6 +64,8 @@ pub(in crate::native_artifact) fn derive(
                 LibraryCallRoute::MatrixLength
             } else if call.supports_unsigned_matrix_element() {
                 LibraryCallRoute::UnsignedMatrixElement
+            } else if call.supports_f64_matrix_element() {
+                LibraryCallRoute::F64MatrixElement
             } else if call.supports_string_matrix_element() {
                 LibraryCallRoute::StringMatrixElement
             } else {

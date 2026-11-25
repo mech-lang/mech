@@ -1,0 +1,22 @@
+-- Dynamic-programming cells advance by dependency; competing splits use a scalar maximum.
+most(a<f64>, b<f64>) => <f64> := (a >= b? | true => a | false => b).
+#Fold(initial<[f64]:60,60>, bases<[f64]:60,1>, size<u64>) => <[f64]:60,60>
+  | :Cell(table<[f64]:60,60>, i<u64>, j<u64>)
+  | :Split(table<[f64]:60,60>, i<u64>, j<u64>, k<u64>, best<f64>)
+  | :Done(table<[f64]:60,60>).
+#Fold(initial, bases, size) -> :Cell(initial, size, size + 1u64)
+  :Cell(table, i, j)
+    | i == 0u64 -> :Done(table)
+    | j > size -> :Cell(table, i - 1u64, i)
+    | * -> {
+        bond := ((i + 1u64 < j && bases[i] + bases[j] == 3.0)? | true => 1.0 | false => 0.0)
+        best := most(most(most(table[i,j], table[i,j - 1u64]), table[i + 1u64,j]), table[i + 1u64,j - 1u64] + bond)
+      } -> :Split(table, i, j, i + 1u64, best)
+  :Split(table, i, j, k, best)
+    | k < j -> :Split(table, i, j, k + 1u64, most(best, table[i,k] + table[k + 1u64,j]))
+    | * -> {
+        ~next := table
+        next[i,j] = best
+      } -> :Cell(next, i, j + 1u64)
+  :Done(table) => table.
+#Fold(table<[f64]:60,60>, seq<[f64]:60,1>, n<u64>)

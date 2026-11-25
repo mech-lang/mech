@@ -1,0 +1,17 @@
+-- Electric fields update together; the magnetic phase consumes both new fields.
+#Fields(x<[f64]:20,30>, y<[f64]:20,30>, z<[f64]:20,30>, boundary<[f64]:20,1>, steps<u64>) => <([f64]:20,30, [f64]:20,30, [f64]:20,30)>
+  | :Electric(x<[f64]:20,30>, y<[f64]:20,30>, z<[f64]:20,30>, t<u64>)
+  | :Magnetic(x<[f64]:20,30>, y<[f64]:20,30>, z<[f64]:20,30>, t<u64>)
+  | :Done(x<[f64]:20,30>, y<[f64]:20,30>, z<[f64]:20,30>).
+#Fields(x, y, z, boundary, steps) -> :Electric(x, y, z, 1u64)
+  :Electric(x, y, z, t)
+    | t <= steps -> {
+        next-y := [[((i == 1u64)? | true => boundary[t] | false => y[i,j] - 0.5 * (z[i,j] - z[i - 1u64,j])) | i <- 1u64..=20u64]' | j <- 1u64..=30u64]
+        next-x := [[((j == 1u64)? | true => x[i,j] | false => x[i,j] - 0.5 * (z[i,j] - z[i,j - 1u64])) | i <- 1u64..=20u64]' | j <- 1u64..=30u64]
+      } -> :Magnetic(next-x, next-y, z, t)
+    | * -> :Done(x, y, z)
+  :Magnetic(x, y, z, t) -> {
+      next-z := [[((i == 20u64 || j == 30u64)? | true => z[i,j] | false => z[i,j] - 0.7 * (x[i,j + 1u64] - x[i,j] + y[i + 1u64,j] - y[i,j])) | i <- 1u64..=20u64]' | j <- 1u64..=30u64]
+    } -> :Electric(x, y, next-z, t + 1u64)
+  :Done(x, y, z) => (x, y, z).
+#Fields(ex<[f64]:20,30>, ey<[f64]:20,30>, hz<[f64]:20,30>, fict<[f64]:20,1>, tmax<u64>)

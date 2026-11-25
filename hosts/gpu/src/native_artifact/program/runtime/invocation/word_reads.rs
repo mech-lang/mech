@@ -3,6 +3,61 @@ use super::{Error, Invocation, invalid};
 use mech_engine::native_artifact::{NativeIterationAction as Action, NativeScalarKind};
 
 impl Invocation<'_, '_, '_> {
+    pub(super) fn f64_matrix_element_call(
+        &mut self,
+        site: usize,
+        words: &[u64],
+    ) -> Result<Option<u64>, Error> {
+        let descriptor = self.descriptor;
+        let Some(call) = descriptor.metadata().calls[site].as_ref() else {
+            return Ok(None);
+        };
+        if !call.supports_f64_matrix_element() {
+            return Ok(None);
+        }
+        let Action::LibraryCall {
+            operands, output, ..
+        } = descriptor.metadata().plan.blocks()[site].action()
+        else {
+            return Err(invalid("F64 read outside selected call"));
+        };
+        if words.len() != operands.len()
+            || words.first() != Some(&0)
+            || descriptor.metadata().plan.values()[operands[0].get() as usize]
+                .scalar_kind()
+                .is_some()
+            || operands[1..].iter().any(|value| {
+                descriptor.metadata().plan.values()[value.get() as usize].scalar_kind()
+                    != Some(NativeScalarKind::U64)
+            })
+            || descriptor.metadata().plan.values()[output.get() as usize].scalar_kind()
+                != Some(NativeScalarKind::F64)
+        {
+            return Err(invalid("F64 read native transport differs"));
+        }
+        if self.has_uninventoried_private_owners() {
+            return Ok(None);
+        }
+        let coexistence = self.selected_join_coexistence(None)?;
+        let source = self
+            .state
+            .arena
+            .copy_current(operands[0].get(), &mut self.state.control.work)?;
+        let word = call
+            .f64_matrix_element(
+                &source,
+                &words[1..],
+                self.limits,
+                &self.state.library,
+                coexistence,
+            )
+            .map_err(|error| Error::Library {
+                origin: descriptor.metadata().plan.blocks()[site].origin(),
+                error,
+            })?;
+        Ok(Some(word))
+    }
+
     pub(super) fn record_scalar_field_call(
         &mut self,
         site: usize,

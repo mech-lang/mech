@@ -106,6 +106,8 @@ struct Builder {
     join: Option<text_join::Builder>,
     query: Option<histogram_query::Builder>,
     histogram: Option<histogram::Builder>,
+    block_rows: Option<u64>,
+    block_columns: u64,
     payload_bytes: u64,
     cloned_bytes: u64,
     compute: u64,
@@ -551,6 +553,7 @@ impl State {
                 }
                 charge(&mut ctx.work(), 64)?;
                 let nodes = ctx.library().memory_budget().reserve_nodes(2)?;
+                let block_rows = self.initial_block_rows(ctx, *collection)?;
                 self.builders[*collection as usize] = Some(Builder {
                     values: data::CollectedValues::new(
                         plan.values()[definition.output().get() as usize]
@@ -560,6 +563,8 @@ impl State {
                     join: None,
                     query: None,
                     histogram: None,
+                    block_rows,
+                    block_columns: 0,
                     payload_bytes: 0,
                     cloned_bytes: 0,
                     compute: 0,
@@ -1056,6 +1061,7 @@ impl State {
         let descriptor = ctx.descriptor();
         let definition = &descriptor.metadata().plan.collections()[id as usize];
         let output = &descriptor.metadata().plan.values()[definition.output().get() as usize];
+        let block_extents = self.finish_block_order(ctx, id)?;
         let builder = self.builder(id)?;
         let count = builder.values.len() as u64;
         let payload = builder.payload_bytes;
@@ -1141,6 +1147,8 @@ impl State {
                 return Err(invalid("preserved collection cardinality differs"));
             }
             [rows, columns]
+        } else if let Some(extents) = block_extents {
+            extents
         } else {
             [1, count]
         };

@@ -13,6 +13,50 @@ use mech_core::{
 };
 
 impl NativePreparedLibraryCall {
+    /// Exact F64 reads reuse the admitted scalar-word boundary. The result is
+    /// transported as its bits, without inventing a canonical scalar owner.
+    pub fn supports_f64_matrix_element(&self) -> bool {
+        let inputs = self.template.inputs();
+        let Some(matrix) = inputs.first() else {
+            return false;
+        };
+        let SchemaBody::Matrix {
+            element,
+            dimensions,
+        } = matrix.body()
+        else {
+            return false;
+        };
+        dimensions.len() == 2
+            && element.as_ref() == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+            && self.template.output().body() == element.as_ref()
+            && self.template.output().dimension_parameters().is_empty()
+            && matches!(
+                (self.template.primitive(), inputs.len()),
+                (Primitive::MatrixScalarAccess, 2) | (Primitive::MatrixCellAccess, 3)
+            )
+            && inputs[1..].iter().all(|selector| {
+                selector.body() == &SchemaBody::UnsignedInteger(IntegerWidth::W64)
+                    && selector.dimension_parameters().is_empty()
+            })
+    }
+
+    pub fn f64_matrix_element(
+        &self,
+        source: &Value,
+        indices: &[u64],
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+    ) -> Result<u64, InvokeError> {
+        finite_limits(self.template.origin().node(), limits).map_err(InvokeError::Binding)?;
+        if !self.supports_f64_matrix_element() || indices.len() + 1 != self.template.inputs().len()
+        {
+            return Err(InvokeError::InvalidInput);
+        }
+        self.matrix_element_word(source, indices, None, limits, work, coexistence)
+    }
+
     fn unsigned_matrix_element_width(&self) -> Option<IntegerWidth> {
         let [matrix, selector] = self.template.inputs() else {
             return None;
@@ -76,17 +120,29 @@ impl NativePreparedLibraryCall {
         index: u64,
         limits: MemoryBudgetLimits,
         work: &NativeLibraryWorkBudget,
-        mut coexistence: ResourceDemand,
+        coexistence: ResourceDemand,
     ) -> Result<u64, InvokeError> {
         finite_limits(self.template.origin().node(), limits).map_err(InvokeError::Binding)?;
         let width = self
             .unsigned_matrix_element_width()
             .ok_or(InvokeError::InvalidInput)?;
+        self.matrix_element_word(source, &[index], Some(width), limits, work, coexistence)
+    }
+
+    fn matrix_element_word(
+        &self,
+        source: &Value,
+        indices: &[u64],
+        width: Option<IntegerWidth>,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        mut coexistence: ResourceDemand,
+    ) -> Result<u64, InvokeError> {
         let output_bytes = match width {
-            IntegerWidth::W8 => 1,
-            IntegerWidth::W16 => 2,
-            IntegerWidth::W32 => 4,
-            IntegerWidth::W64 => 8,
+            Some(IntegerWidth::W8) => 1,
+            Some(IntegerWidth::W16) => 2,
+            Some(IntegerWidth::W32) => 4,
+            Some(IntegerWidth::W64) | None => 8,
             _ => return Err(InvokeError::InvalidInput),
         };
         work.with_call_limits(
@@ -147,8 +203,12 @@ impl NativePreparedLibraryCall {
                 // and two already admitted scalar words, not unrelated roots
                 // elsewhere in the program's separate shared memory account.
                 let context = context.with_added_capacity(
-                    bytes.checked_add(16).ok_or(InvokeError::InvalidInput)?,
-                    nodes.checked_add(2).ok_or(InvokeError::InvalidInput)?,
+                    bytes
+                        .checked_add((indices.len() as u64 + 1) * 8)
+                        .ok_or(InvokeError::InvalidInput)?,
+                    nodes
+                        .checked_add(indices.len() as u64 + 1)
+                        .ok_or(InvokeError::InvalidInput)?,
                 )?;
                 context.check_capacity(0, 0)?;
                 context.charge(128, 0)?;
@@ -158,45 +218,77 @@ impl NativePreparedLibraryCall {
                 let cells = matrix.elements();
                 // Reuse the maintained linear scalar selector's one-based check
                 // and error, including zero, empty input, and oversized ordinals.
-                let ordinal = crate::resident::numeric::available_scalar_index(index, cells.len())?;
-                let (rows, columns) = crate::resident::numeric::snapshot_matrix_dimensions(
-                    source,
-                    self.template.inputs()[0].body(),
-                )?;
-                // Linear selection is column-major; canonical cells are row-major.
-                // The index check and validated dimensions ensure nonempty axes.
-                let ordinal = if rows == 1 || columns == 1 {
-                    ordinal
-                } else {
-                    (ordinal % rows) * columns + ordinal / rows
+                let ordinal = match indices {
+                    [index] => {
+                        let ordinal =
+                            crate::resident::numeric::available_scalar_index(*index, cells.len())?;
+                        let (rows, columns) = crate::resident::numeric::snapshot_matrix_dimensions(
+                            source,
+                            self.template.inputs()[0].body(),
+                        )?;
+                        // Linear selection is column-major; canonical cells are row-major.
+                        if rows == 1 || columns == 1 {
+                            ordinal
+                        } else {
+                            (ordinal % rows) * columns + ordinal / rows
+                        }
+                    }
+                    [row, column] => {
+                        let (rows, columns) = crate::resident::numeric::snapshot_matrix_dimensions(
+                            source,
+                            self.template.inputs()[0].body(),
+                        )?;
+                        let row = crate::resident::numeric::available_scalar_index(*row, rows)?;
+                        let column =
+                            crate::resident::numeric::available_scalar_index(*column, columns)?;
+                        context.charge(16, 0)?;
+                        row.checked_mul(columns)
+                            .and_then(|index| index.checked_add(column))
+                            .ok_or(InvokeError::InvalidInput)?
+                    }
+                    _ => return Err(InvokeError::InvalidInput),
                 };
                 match (width, cells) {
-                    (IntegerWidth::W8, SequenceView::U8(values)) => values
+                    (Some(IntegerWidth::W8), SequenceView::U8(values)) => values
                         .get(ordinal)
                         .copied()
                         .map(u64::from)
                         .ok_or(InvokeError::InvalidInput),
-                    (IntegerWidth::W16, SequenceView::U16(values)) => values
+                    (Some(IntegerWidth::W16), SequenceView::U16(values)) => values
                         .get(ordinal)
                         .copied()
                         .map(u64::from)
                         .ok_or(InvokeError::InvalidInput),
-                    (IntegerWidth::W32, SequenceView::U32(values)) => values
+                    (Some(IntegerWidth::W32), SequenceView::U32(values)) => values
                         .get(ordinal)
                         .copied()
                         .map(u64::from)
                         .ok_or(InvokeError::InvalidInput),
-                    (IntegerWidth::W64, SequenceView::U64(values)) => values
+                    (Some(IntegerWidth::W64), SequenceView::U64(values)) => values
                         .get(ordinal)
                         .copied()
                         .ok_or(InvokeError::InvalidInput),
-                    (width, SequenceView::Values(values)) => match (width, values.get(ordinal)) {
-                        (IntegerWidth::W8, Some(ValueData::U8(value))) => Ok(u64::from(*value)),
-                        (IntegerWidth::W16, Some(ValueData::U16(value))) => Ok(u64::from(*value)),
-                        (IntegerWidth::W32, Some(ValueData::U32(value))) => Ok(u64::from(*value)),
-                        (IntegerWidth::W64, Some(ValueData::U64(value))) => Ok(*value),
+                    (None, SequenceView::F64(values)) => values
+                        .get(ordinal)
+                        .map(|value| value.bits())
+                        .ok_or(InvokeError::InvalidInput),
+                    (None, SequenceView::Values(values)) => match values.get(ordinal) {
+                        Some(ValueData::F64(value)) => Ok(value.bits()),
                         _ => Err(InvokeError::InvalidInput),
                     },
+                    (Some(width), SequenceView::Values(values)) => {
+                        match (width, values.get(ordinal)) {
+                            (IntegerWidth::W8, Some(ValueData::U8(value))) => Ok(u64::from(*value)),
+                            (IntegerWidth::W16, Some(ValueData::U16(value))) => {
+                                Ok(u64::from(*value))
+                            }
+                            (IntegerWidth::W32, Some(ValueData::U32(value))) => {
+                                Ok(u64::from(*value))
+                            }
+                            (IntegerWidth::W64, Some(ValueData::U64(value))) => Ok(*value),
+                            _ => Err(InvokeError::InvalidInput),
+                        }
+                    }
                     _ => Err(InvokeError::InvalidInput),
                 }
             },

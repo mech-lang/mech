@@ -117,6 +117,7 @@ pub(super) fn specialize_primitive(
             P::UnsignedWordConversion
         }
         P::StringScalarAccess => match inputs.first().map(Schema::body) {
+            Some(SchemaBody::Matrix { .. }) if inputs.len() == 3 => P::MatrixCellAccess,
             Some(SchemaBody::Matrix { .. }) => P::MatrixScalarAccess,
             Some(SchemaBody::Tuple(_)) => P::TupleScalarProjection,
             Some(SchemaBody::Map { .. }) => P::MapKeyAccess,

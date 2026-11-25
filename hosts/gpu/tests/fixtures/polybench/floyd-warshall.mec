@@ -1,0 +1,12 @@
+-- One pivot closes all independent source/destination pairs simultaneously.
+#Paths(initial<[f64]:60,60>, size<u64>) => <[f64]:60,60>
+  | :Pivot(paths<[f64]:60,60>, k<u64>)
+  | :Done(paths<[f64]:60,60>).
+#Paths(initial, size) -> :Pivot(initial, 1u64)
+  :Pivot(paths, k)
+    | k <= size -> {
+        next := [[((paths[i,j] < paths[i,k] + paths[k,j])? | true => paths[i,j] | false => paths[i,k] + paths[k,j]) | i <- 1u64..=60u64]' | j <- 1u64..=60u64]
+      } -> :Pivot(next, k + 1u64)
+    | * -> :Done(paths)
+  :Done(paths) => paths.
+#Paths(path<[f64]:60,60>, n<u64>)

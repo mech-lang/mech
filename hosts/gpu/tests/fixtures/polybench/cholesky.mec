@@ -1,0 +1,21 @@
++> stats
++> math
+-- Each completed lower-triangular cell becomes available to the next factor step.
+#Cholesky(initial<[f64]:40,40>, size<u64>) => <[f64]:40,40>
+  | :Cell(a<[f64]:40,40>, i<u64>, j<u64>)
+  | :Done(a<[f64]:40,40>).
+#Cholesky(initial, size) -> :Cell(initial, 1u64, 1u64)
+  :Cell(a, i, j)
+    | i > size -> :Done(a)
+    | j < i -> {
+        total := (j == 1u64? | true => 0.0 | false => stats/sum/column([a[i,k] * a[j,k] | k <- 1u64..j])[1u64])
+        ~next := a
+        next[i,j] = (a[i,j] - total) / a[j,j]
+      } -> :Cell(next, i, j + 1u64)
+    | * -> {
+        total := (i == 1u64? | true => 0.0 | false => stats/sum/column([a[i,k] * a[i,k] | k <- 1u64..i])[1u64])
+        ~next := a
+        next[i,i] = math/sqrt(a[i,i] - total)
+      } -> :Cell(next, i + 1u64, 1u64)
+  :Done(a) => a.
+#Cholesky(A<[f64]:40,40>, n<u64>)

@@ -1,0 +1,16 @@
+-- Flatten the first two tensor axes into rows; keep the six-neighbor stencil.
+heat(a<[f64]:100,10>, boundary<[f64]:100,10>, size<u64>) => <[f64]:100,10> :=
+  [[((r <= size || r > (size - 1u64) * size || r % size == 1u64 || r % size == 0u64 || k == 1u64 || k == size)?
+    | true => boundary[r,k]
+    | false => 0.125 * (a[r + size,k] - 2.0 * a[r,k] + a[r - size,k]) + 0.125 * (a[r + 1u64,k] - 2.0 * a[r,k] + a[r - 1u64,k]) + 0.125 * (a[r,k + 1u64] - 2.0 * a[r,k] + a[r,k - 1u64]) + a[r,k]) | r <- 1u64..=100u64]' | k <- 1u64..=10u64].
+#Heat(a<[f64]:100,10>, b<[f64]:100,10>, size<u64>, steps<u64>) => <[f64]:100,10>
+  | :Forward(a<[f64]:100,10>, b<[f64]:100,10>, remaining<u64>)
+  | :Backward(a<[f64]:100,10>, b<[f64]:100,10>, remaining<u64>)
+  | :Done(a<[f64]:100,10>).
+#Heat(a, b, size, steps) -> :Forward(a, b, steps)
+  :Forward(a, b, remaining)
+    | remaining > 0u64 -> :Backward(a, heat(a, b, size), remaining)
+    | * -> :Done(a)
+  :Backward(a, b, remaining) -> :Forward(heat(b, a, size), b, remaining - 1u64)
+  :Done(a) => a.
+#Heat(A<[f64]:100,10>, B<[f64]:100,10>, n<u64>, tsteps<u64>)

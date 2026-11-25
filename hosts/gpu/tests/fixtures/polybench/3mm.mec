@@ -1,0 +1,8 @@
+-- Three products, with the same association as the reference kernel.
+a := A<[f64]>
+b := B<[f64]>
+c := C<[f64]>
+d := D<[f64]>
+e := a ** b
+f := c ** d
+e ** f

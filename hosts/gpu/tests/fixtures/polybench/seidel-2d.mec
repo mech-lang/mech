@@ -1,0 +1,16 @@
+-- In-place Gauss-Seidel dependencies require a row-major cell sweep.
+#Seidel(initial<[f64]:40,40>, steps<u64>, size<u64>) => <[f64]:40,40>
+  | :Sweep(a<[f64]:40,40>, remaining<u64>, i<u64>, j<u64>)
+  | :Done(a<[f64]:40,40>).
+#Seidel(initial, steps, size) -> :Sweep(initial, steps, 2u64, 2u64)
+  :Sweep(a, remaining, i, j)
+    | remaining == 0u64 -> :Done(a)
+    | i >= size -> :Sweep(a, remaining - 1u64, 2u64, 2u64)
+    | j >= size -> :Sweep(a, remaining, i + 1u64, 2u64)
+    | * -> {
+        value := (a[i - 1u64,j - 1u64] + a[i - 1u64,j] + a[i - 1u64,j + 1u64] + a[i,j - 1u64] + a[i,j] + a[i,j + 1u64] + a[i + 1u64,j - 1u64] + a[i + 1u64,j] + a[i + 1u64,j + 1u64]) / 9.0
+        ~next := a
+        next[i,j] = value
+      } -> :Sweep(next, remaining, i, j + 1u64)
+  :Done(a) => a.
+#Seidel(A<[f64]:40,40>, tsteps<u64>, n<u64>)
