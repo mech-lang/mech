@@ -6,7 +6,7 @@ use std::{
 };
 
 const DETAIL_LIMIT: usize = 4096;
-const SCOPE: &str = "explicit CFG and dominance builds owned by route searches; excludes cleanup, verifier and other pass builds";
+const SCOPE: &str = "Explicit CFG and dominance builds owned by route searches. Counts exclude cleanup, verifier and other pass builds.";
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq, Serialize)]
 pub(in crate::native_artifact) struct RouteWork {

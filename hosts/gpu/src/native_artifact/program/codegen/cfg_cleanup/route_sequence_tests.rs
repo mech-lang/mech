@@ -208,3 +208,91 @@ fn final_schedule_preserves_exact_legacy_os_modes() {
         );
     }
 }
+
+#[cfg(feature = "construction-census")]
+#[test]
+fn route_sequence_reuses_only_zero_edge_graphs() {
+    use cranelift_codegen::construction_census::snapshot;
+    let module = module();
+    let controls = controls(OptimizationOptions::default());
+    for (fixture, expected_saved) in [
+        (identity_fixture(&module, true), 1),
+        (
+            threaded_edges::test_support::fixture(&module, "duplicate"),
+            0,
+        ),
+    ] {
+        for cleanup in [
+            RouteCleanup::Ordered,
+            RouteCleanup::Structural {
+                combined_verification: true,
+            },
+            RouteCleanup::Structural {
+                combined_verification: false,
+            },
+        ] {
+            let mut fresh = Context::for_function(fixture.func.clone());
+            let mut paired = Context::for_function(fixture.func.clone());
+            let run_case = |context: &mut Context, paired| {
+                let before = snapshot();
+                let report = run(
+                    context,
+                    module.isa(),
+                    &controls,
+                    cleanup,
+                    IdentityRouteOptions::default(),
+                    paired,
+                )
+                .unwrap();
+                let after = snapshot();
+                (
+                    report,
+                    [
+                        after.cfg_builds - before.cfg_builds,
+                        after.dominator_builds - before.dominator_builds,
+                        after.full_verifications - before.full_verifications,
+                    ],
+                )
+            };
+            let (fresh_report, fresh_counts) = run_case(&mut fresh, false);
+            let (paired_report, paired_counts) = run_case(&mut paired, true);
+            assert_eq!(fresh_report, paired_report);
+            assert_eq!(paired.func.to_string(), fresh.func.to_string());
+            assert_eq!(fresh_counts[0] - paired_counts[0], expected_saved);
+            assert_eq!(fresh_counts[1] - paired_counts[1], expected_saved);
+            assert_eq!(fresh_counts[2], paired_counts[2]);
+            if expected_saved == 1 {
+                assert_eq!(paired_report[0]["threaded_edges"], 0);
+                assert!(paired_report[1]["threaded_edges"].as_u64().unwrap() > 0);
+            } else {
+                assert!(paired_report[0]["threaded_edges"].as_u64().unwrap() > 0);
+            }
+        }
+    }
+
+    let work = RouteWorkCollector::new();
+    let controls = self::controls(OptimizationOptions::default())
+        .with_route_recorder(Some(work.register("one reuse")));
+    let mut repeated = identity_fixture(&module, true);
+    {
+        let mut sequence = RouteSequence::new(
+            &controls,
+            &mut repeated,
+            module.isa(),
+            RouteCleanup::Ordered,
+        );
+        assert_eq!(sequence.thread_loops().unwrap().threaded_edges, 0);
+        sequence
+            .forward_identity(IdentityRouteOptions::default())
+            .unwrap();
+        sequence
+            .forward_identity(IdentityRouteOptions::default())
+            .unwrap();
+    }
+    drop(controls);
+    let data = work.json();
+    assert_eq!(data["totals"]["cfg_requests"], 3);
+    assert_eq!(data["totals"]["cfg_builds"], 2);
+    assert_eq!(data["totals"]["dom_builds"], 2);
+    assert_eq!(data["totals"]["graph_pair_reuses"], 1);
+}

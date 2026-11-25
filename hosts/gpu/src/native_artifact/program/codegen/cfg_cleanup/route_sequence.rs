@@ -33,6 +33,7 @@ pub(in crate::native_artifact) struct RouteSequence<'a> {
     context: &'a mut Context,
     isa: &'a dyn TargetIsa,
     cleanup: RouteCleanup,
+    reuse_for_identity: bool,
 }
 
 impl<'a> RouteSequence<'a> {
@@ -47,10 +48,12 @@ impl<'a> RouteSequence<'a> {
             context,
             isa,
             cleanup,
+            reuse_for_identity: false,
         }
     }
 
     pub fn thread_loops(&mut self) -> Result<threaded_edges::Report, NativeCompileError> {
+        self.reuse_for_identity = false;
         if !self.controls.enabled(OptimizationPass::CfgCleanup)
             || !self.controls.enabled(OptimizationPass::LoopEdgeThreading)
         {
@@ -72,7 +75,11 @@ impl<'a> RouteSequence<'a> {
             work.dom_builds += 1;
             work.loop_edges_rewritten += report.threaded_edges;
         });
-        if report.threaded_edges != 0 {
+        if report.threaded_edges == 0 {
+            // The zero-edge path can rewrite BlockCall arguments and aliases.
+            // It preserves branch identities, destination order and layout.
+            self.reuse_for_identity = true;
+        } else {
             self.finish_route()?;
         }
         Ok(report)
@@ -82,13 +89,17 @@ impl<'a> RouteSequence<'a> {
         &mut self,
         options: IdentityRouteOptions<'_>,
     ) -> Result<identity_routes::Report, NativeCompileError> {
+        let reuse = std::mem::replace(&mut self.reuse_for_identity, false);
         if !self.controls.enabled(OptimizationPass::CfgCleanup)
             || !self.controls.enabled(OptimizationPass::IdentityRoutes)
         {
             return Ok(identity_routes::Report::default());
         }
         self.context.func.dfg.resolve_all_aliases();
-        self.build_graphs();
+        if !reuse {
+            self.build_graphs();
+        }
+        // Identity forwarding still derives its own use inventory.
         let report = identity_routes::optimize(
             &mut self.context.func,
             &self.context.cfg,
@@ -99,9 +110,10 @@ impl<'a> RouteSequence<'a> {
         self.controls.record_route_work(|work| {
             work.identity_searches += 1;
             work.cfg_requests += 1;
-            work.cfg_builds += 1;
+            work.cfg_builds += usize::from(!reuse);
             work.dom_requests += 1;
-            work.dom_builds += 1;
+            work.dom_builds += usize::from(!reuse);
+            work.graph_pair_reuses += usize::from(reuse);
             work.identity_edges_rewritten += report.threaded_edges;
         });
         if report.threaded_edges != 0 {

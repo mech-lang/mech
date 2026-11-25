@@ -41,6 +41,8 @@ recipe separately identifies its path-relative settings and profile pins.
 
 | Setting | Interpretation |
 | --- | --- |
+| `MECH_COMPACT_FINISH_CFG_CLEANUP` | Absent disables the optional pass. Exact OS values `ordered`, `routes`, `batched-routes` and `lean-routes` select their existing schedules. All other present values select full cleanup. |
+| `MECH_COMPACT_VERIFY_CLEANUP_ONCE` | Presence at the enabled structural cleanup selects the existing combined verification path. |
 | `MECH_COMPACT_COMPILE_THREADS` | Parse a Unicode unsigned integer, use zero when absent or invalid, and cap at four. Worker publication follows the existing ordered tickets. |
 | `MECH_COMPACT_FUNCTION_ALIGNMENT_LOG2` | On AArch64 with runtime observation disabled, accept only the Unicode strings `4` to `7`. Other present Unicode values return the existing alignment error. |
 | `MECH_COMPACT_DIRECT_CONTROLLER_WORDS`, `MECH_COMPACT_DIRECT_CONTINUATION_WORDS` | When the respective preparation route asks for a limit, absent or non-Unicode means zero, a malformed unsigned integer is an error, and values above 40 reject. The controller route first requires enough candidates to share. |
@@ -145,7 +147,7 @@ retired. Absence from the winning recipe alone does not establish retirement.
 | `MECH_COMPACT_EMPTY_SOURCE_ROUTES` | Profitability | OS presence | `program/compact/emit.rs` · `define_entry` |
 | `MECH_COMPACT_EXPORTS_FIRST` | Implementation | OS presence | `program/compiler.rs` · `emit_prepared_compact_object` |
 | `MECH_COMPACT_FAILURE_DIR` | Diagnostic | OS presence / OS value interpreted at consumer | `program/compact/phase_function.rs` · `general_ir_observed` / `program/compact/phase_function.rs` · `prepare_impl` |
-| `MECH_COMPACT_FINISH_CFG_CLEANUP` | Profitability | OS value interpreted at consumer | `program/compact/emit.rs` · `define_entry` |
+| `MECH_COMPACT_FINISH_CFG_CLEANUP` | Profitability | Exact OS schedule | `program/codegen/cfg_cleanup/mod.rs` · `FinalCleanupSchedule::from_legacy` |
 | `MECH_COMPACT_FINISH_CFG_REPORT` | Diagnostic | OS value interpreted at consumer | `program/compact/emit.rs` · `define_entry` |
 | `MECH_COMPACT_FIXED_PHASE_PACKET` | Profitability | OS value interpreted at consumer | `program/compact/phases.rs` · `define` |
 | `MECH_COMPACT_FIXED_TRANSFORMS` | Profitability | Unicode number at consumer | `program/compact/phases.rs` · `define` |

@@ -36,6 +36,26 @@ flowchart TD
 
 Representation modules do not own global dispatch. Session orchestration does not perform compiler analysis. Runtime-only features do not import parsing, Cranelift, JIT or Object emission. Engine proof constructors remain private; serialized proof bytes are not source authority.
 
+## Compact route sequencing
+
+| Owner | Responsibility |
+| --- | --- |
+| Compact entry and coordinator | Capture raw inputs, resolve selected files at their original consumer, share the results across direct-literal attempts and publish worker outputs in order. |
+| Final cleanup schedule | Interpret the one existing schedule setting. Preserve ordered cleanup, batched cleanup with ordered finish, and lean finish. |
+| Route sequence | Run loop threading and identity forwarding with their existing distinct cleanup policies. When the loop search changes zero edges, the following identity search may reuse its CFG and dominance. |
+| Route proof kernels and backend | Reconstruct current use inventories, apply the existing proofs, and keep the ordinary final backend optimization pass. |
+| Optional host report | Collect route-search requests and explicit graph builds per attempt, including discarded units and failed attempts. |
+
+The reuse ends at the next identity search or when the sequence is dropped.
+Zero rewritten edges preserves branch identities, destinations, successor
+order and block layout. The kernels can still rewrite argument storage and
+aliases. Identity forwarding resolves aliases and builds a fresh use inventory
+from the current function.
+
+The next architectural boundary is bounded IR-unit construction with explicit
+stage and proof ownership. The existing checked plans, Cranelift IR and
+artifact containers serve their current roles.
+
 ## Checked preparation
 
 One `PreparedNativeProgram` owns metadata and complete frontiers. Emission borrows it; finalization moves the checked inventories into the descriptor. Source-backed reconstruction uses the maintained preparer; build-owned restoration independently rebuilds the required facts without trusting serialized recipes.
