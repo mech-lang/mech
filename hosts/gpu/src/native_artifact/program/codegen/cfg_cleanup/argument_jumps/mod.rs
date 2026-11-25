@@ -142,5 +142,4 @@ pub(in crate::native_artifact) fn forward(function: &mut Function) -> usize {
 }
 
 #[cfg(test)]
-#[path = "argument_jumps/tests.rs"]
 mod tests;
