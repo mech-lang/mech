@@ -37,11 +37,14 @@ pub(in crate::native_artifact) fn input_words(
 }
 pub(in crate::native_artifact) fn output_words(
     proof: &Proof,
+    compact_packet: bool,
 ) -> Result<Vec<usize>, NativeCompileError> {
     let mut out = Vec::new();
     if let Some(array) = proof.result.direct_array() {
-        out.extend(proof.view(array)..proof.view(array) + 4);
-        out.extend(proof.capacity(array));
+        if !compact_packet {
+            out.extend(proof.view(array)..proof.view(array) + 4);
+            out.extend(proof.capacity(array));
+        }
     } else if let Some(frame) = proof.result.frame() {
         let recipe = proof
             .frames
@@ -51,8 +54,10 @@ pub(in crate::native_artifact) fn output_words(
         let mut scalars = recipe.scalar_paths.iter();
         for array in &recipe.arrays {
             if let Some(array) = array {
-                out.extend(proof.view(*array)..proof.view(*array) + 4);
-                out.extend(proof.capacity(*array));
+                if !compact_packet {
+                    out.extend(proof.view(*array)..proof.view(*array) + 4);
+                    out.extend(proof.capacity(*array));
+                }
             } else {
                 let (_, word) = scalars
                     .next()
@@ -99,7 +104,6 @@ pub(in crate::native_artifact) struct Boundary<'a> {
     storage: Option<&'a crate::native_artifact::program::compact::arrays::Arrays>,
     owners: Vec<Option<cranelift_frontend::Variable>>,
     fixed_capacities: Vec<Option<Value>>,
-    arrays: usize,
     no_growth: Option<&'a crate::native_artifact::program::compact::NoGrowth>,
     error_origin_base: usize,
     pub input: Value,
@@ -109,6 +113,7 @@ pub(in crate::native_artifact) struct Boundary<'a> {
     pub shadow: usize,
     pub exit: usize,
     handoffs: BTreeMap<usize, Vec<(usize, usize)>>,
+    selected_output: Option<&'a BTreeSet<usize>>,
 }
 impl<'a> Boundary<'a> {
     pub fn new(
@@ -139,8 +144,11 @@ impl<'a> Boundary<'a> {
             ));
         }
         let entry = input_words(proof, region.tail.carrier().get())?;
+        // This transport is selected only for the same checked private
+        // fixed-view phase. Its caller keeps every owner and capacity.
+        let compact_packet = private.is_some_and(|contract| contract.compact_packet());
         let mut ordinal = 0;
-        let owners = if storage.is_some() {
+        let owners = if storage.is_some() && !compact_packet {
             proof
                 .arrays
                 .iter()
@@ -171,7 +179,11 @@ impl<'a> Boundary<'a> {
             .iter()
             .enumerate()
             .map(|(array, definition)| {
-                if storage.is_none() || !definition.writable || proof.capacity(array).is_some() {
+                if storage.is_none()
+                    || compact_packet
+                    || !definition.writable
+                    || proof.capacity(array).is_some()
+                {
                     return Ok(None);
                 }
                 let value = b.ins().load(
@@ -188,13 +200,12 @@ impl<'a> Boundary<'a> {
             storage,
             owners,
             fixed_capacities,
-            arrays: proof.arrays.len(),
             no_growth,
             error_origin_base: 0,
             input,
             output,
             entry: input_words(proof, region.tail.carrier().get())?,
-            result: output_words(proof)?,
+            result: output_words(proof, compact_packet)?,
             shadow: region
                 .shadow
                 .ok_or_else(|| backend("native plan lacks logical field coordinates"))?,
@@ -202,7 +213,12 @@ impl<'a> Boundary<'a> {
             handoffs: private
                 .map(|contract| contract.exports(region.shadow.unwrap()))
                 .unwrap_or_default(),
+            selected_output: None,
         })
+    }
+    pub fn with_selected_output(mut self, words: Option<&'a BTreeSet<usize>>) -> Self {
+        self.selected_output = words;
+        self
     }
     pub fn with_error_origin_base(mut self, base: usize) -> Self {
         assert!(self.handoffs.is_empty());
@@ -393,16 +409,30 @@ impl<'a> Boundary<'a> {
         proof: &Proof,
     ) -> Result<(), NativeCompileError> {
         for (at, &word) in self.result.iter().enumerate() {
+            if self
+                .selected_output
+                .is_some_and(|words| !words.contains(&(1 + at)))
+            {
+                continue;
+            }
             let value = words.read(b, self.shadow + word);
             b.ins()
                 .store(MemFlags::new(), value, self.output, offset(1 + at)?);
         }
-        if self.storage.is_some() {
+        if !self.owners.is_empty() {
             let mut ordinal = 0;
-            for array in 0..self.arrays {
-                let Some(owner) = self.owners[array] else {
+            for (array, &owner) in self.owners.iter().enumerate() {
+                let Some(owner) = owner else {
                     continue;
                 };
+                let first = 1 + self.result.len() + ordinal * 6;
+                ordinal += 1;
+                if self
+                    .selected_output
+                    .is_some_and(|words| words.range(first..first + 6).next().is_none())
+                {
+                    continue;
+                }
                 let view = self.shadow + proof.view(array);
                 let capacity = if let Some(capacity) = proof.capacity(array) {
                     words.read(b, self.shadow + capacity)
@@ -419,14 +449,15 @@ impl<'a> Boundary<'a> {
                     b.use_var(owner),
                 ];
                 for (lane, value) in current.into_iter().enumerate() {
-                    b.ins().store(
-                        MemFlags::new(),
-                        value,
-                        self.output,
-                        offset(1 + self.result.len() + ordinal * 6 + lane)?,
-                    );
+                    if self
+                        .selected_output
+                        .is_some_and(|words| !words.contains(&(first + lane)))
+                    {
+                        continue;
+                    }
+                    b.ins()
+                        .store(MemFlags::new(), value, self.output, offset(first + lane)?);
                 }
-                ordinal += 1;
             }
         }
         Ok(())

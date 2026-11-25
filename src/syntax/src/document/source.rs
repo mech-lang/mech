@@ -111,6 +111,15 @@ impl TextSnapshot {
         self.record_lookups(steps);
         piece
     }
+    /// Borrow a single retained piece when no storage-lookup report is active.
+    /// The slice is the piece's current extent, including after an edit.
+    #[inline]
+    pub(crate) fn contiguous_without_lookup_work(&self) -> Option<&str> {
+        if self.lookup_work.is_some() {
+            return None;
+        }
+        self.pieces.single().map(Piece::text)
+    }
     pub fn document(&self) -> DocumentId {
         self.document
     }
@@ -233,6 +242,9 @@ impl TextSnapshot {
     }
 
     pub fn byte_at(&self, offset: TextSize) -> Option<u8> {
+        if let Some(text) = self.contiguous_without_lookup_work() {
+            return text.as_bytes().get(offset.to_usize()).copied();
+        }
         let (base, piece) = self.piece_at(offset.to_usize())?;
         piece
             .text()
@@ -242,6 +254,12 @@ impl TextSnapshot {
     }
 
     pub(crate) fn chunk_at(&self, offset: TextSize) -> Option<SourceChunk<'_>> {
+        if let Some(text) = self.contiguous_without_lookup_work() {
+            return (offset < self.byte_len).then(|| SourceChunk {
+                text,
+                range: self.full_range(),
+            });
+        }
         let (base, piece) = self.piece_at(offset.to_usize())?;
         Some(SourceChunk {
             text: piece.text(),
@@ -250,7 +268,16 @@ impl TextSnapshot {
     }
 
     pub(crate) fn chunk_before(&self, offset: TextSize) -> Option<SourceChunk<'_>> {
-        if offset.0 == 0 || offset.0 > self.byte_len.0 || !self.is_char_boundary(offset) {
+        if offset.0 == 0 || offset.0 > self.byte_len.0 {
+            return None;
+        }
+        if let Some(text) = self.contiguous_without_lookup_work() {
+            return Some(SourceChunk {
+                text: text.get(..offset.to_usize())?,
+                range: TextRange::new(TextSize::ZERO, offset),
+            });
+        }
+        if !self.is_char_boundary(offset) {
             return None;
         }
         let (base, piece) = self.piece_at(offset.to_usize() - 1)?;
@@ -464,6 +491,38 @@ mod tests {
         } else {
             TextSnapshot::new(DocumentId(91), Revision(0), text).unwrap()
         }
+    }
+
+    #[test]
+    fn single_piece_reads_preserve_the_retained_slice_and_byte_boundaries() {
+        let original = TextSnapshot::new(DocumentId(1), Revision(1), "skipéβ").unwrap();
+        let edited = original
+            .apply_edits(&[TextEdit {
+                delete: TextRange::new(TextSize::ZERO, TextSize(4)),
+                insert: String::new(),
+            }])
+            .unwrap();
+        assert_eq!(edited.contiguous_without_lookup_work(), Some("éβ"));
+        let work = Arc::new(AtomicU64::new(0));
+        let metered = edited.with_lookup_work(work.clone());
+        assert_eq!(metered.contiguous_without_lookup_work(), None);
+        for index in 0..=5 {
+            let at = TextSize(index);
+            assert_eq!(edited.byte_at(at), metered.byte_at(at));
+            assert_eq!(
+                edited.chunk_at(at).map(|chunk| (chunk.text, chunk.range)),
+                metered.chunk_at(at).map(|chunk| (chunk.text, chunk.range))
+            );
+            assert_eq!(
+                edited
+                    .chunk_before(at)
+                    .map(|chunk| (chunk.text, chunk.range)),
+                metered
+                    .chunk_before(at)
+                    .map(|chunk| (chunk.text, chunk.range))
+            );
+        }
+        assert!(work.load(Ordering::Relaxed) > 0);
     }
 
     #[test]

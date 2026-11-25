@@ -10,8 +10,14 @@ pub(crate) trait ScanSource {
     fn boundary(&self, offset: usize) -> bool;
     fn scalar_at(&self, offset: usize) -> Option<&str>;
     fn scalar_before(&self, offset: usize) -> Option<&str>;
+    fn contiguous_without_lookup_work(&self) -> Option<&str> {
+        None
+    }
 }
 impl ScanSource for str {
+    fn contiguous_without_lookup_work(&self) -> Option<&str> {
+        Some(self)
+    }
     fn scan_byte_at(&self, offset: usize) -> Option<u8> {
         self.as_bytes().get(offset).copied()
     }
@@ -31,6 +37,9 @@ impl ScanSource for str {
     }
 }
 impl ScanSource for TextSnapshot {
+    fn contiguous_without_lookup_work(&self) -> Option<&str> {
+        TextSnapshot::contiguous_without_lookup_work(self)
+    }
     fn scan_byte_at(&self, offset: usize) -> Option<u8> {
         self.byte_at(TextSize::checked_from_usize(offset).ok()?)
     }
@@ -106,6 +115,72 @@ impl GraphemeScan {
     /// forward scalar and one preceding scalar (eight bytes). Context requests
     /// are suspended and charged too.
     pub fn advance<S: ScanSource + ?Sized>(
+        &mut self,
+        source: &S,
+        end: TextSize,
+        final_input: bool,
+        allowance: &mut u64,
+    ) -> ScanProgress {
+        if let Some(text) = source.contiguous_without_lookup_work() {
+            if final_input && let Some(progress) = self.advance_sealed_ascii(text, end, allowance) {
+                return progress;
+            }
+            return self.advance_in(text, end, final_input, allowance);
+        }
+        self.advance_in(source, end, final_input, allowance)
+    }
+
+    fn advance_sealed_ascii(
+        &mut self,
+        source: &str,
+        end: TextSize,
+        allowance: &mut u64,
+    ) -> Option<ScanProgress> {
+        let start = self.start.to_usize();
+        if self.final_end != Some(end)
+            || self.context.is_some()
+            || self.cursor.cur_cursor() != start
+        {
+            return None;
+        }
+        let text = source.get(..end.to_usize())?;
+        let bytes = text.as_bytes();
+        let first = *bytes.get(start)?;
+        if !first.is_ascii() {
+            return None;
+        }
+        // CRLF is the only pair of adjacent ASCII scalars in one grapheme.
+        // An ASCII lookahead also gives the cursor a settled next origin.
+        let width = if first == b'\r' && bytes.get(start + 1) == Some(&b'\n') {
+            2
+        } else {
+            1
+        };
+        let boundary = start + width;
+        let calls = match bytes.get(boundary) {
+            None => width as u64,
+            Some(byte) if byte.is_ascii() => (width + 1) as u64,
+            Some(_) => return None,
+        };
+        if *allowance < calls {
+            return None;
+        }
+
+        // The ordinary scanner charges a bounded Unicode call for each
+        // forward scalar and for the lookahead at a non-final boundary.
+        let preceding = text[..start].chars().next_back().map_or(0, char::len_utf8);
+        *allowance -= calls;
+        self.work.calls += calls;
+        self.work.forward_bytes += calls;
+        self.work.lookbehind_bytes += preceding as u64 + calls - 1;
+        self.cursor.set_cursor(boundary);
+        let next = TextSize(boundary as u32);
+        let range = TextRange::new(self.start, next);
+        self.start = next;
+        Some(ScanProgress::Grapheme(range))
+    }
+
+    fn advance_in<S: ScanSource + ?Sized>(
         &mut self,
         source: &S,
         end: TextSize,
@@ -205,6 +280,49 @@ mod tests {
     use super::*;
     use crate::document::{DocumentId, Revision};
     use unicode_segmentation::UnicodeSegmentation;
+
+    #[test]
+    fn sealed_ascii_preserves_poll_partitions_and_scanner_work() {
+        for text in [
+            "",
+            "abc",
+            "\r\n\r\t\0",
+            "a\r\nb",
+            "éa\r\nβ",
+            "ae\u{301}b",
+            "a👩\u{200d}💻b",
+            "a🇦🇧🇨z",
+        ] {
+            for start in (0..=text.len()).filter(|&i| text.is_char_boundary(i)) {
+                for end in (start..=text.len()).filter(|&i| text.is_char_boundary(i)) {
+                    for budget in 1..=5 {
+                        let start = TextSize(start as u32);
+                        let end = TextSize(end as u32);
+                        let mut reference = GraphemeScan::new(start, Some(end));
+                        let mut shortcut = reference.clone();
+                        for poll in 0.. {
+                            let mut a = if poll == 0 { 0 } else { budget };
+                            let mut b = a;
+                            let expected = reference.advance_in(text, end, true, &mut a);
+                            let observed = shortcut.advance(text, end, true, &mut b);
+                            assert_eq!(
+                                (observed, b, shortcut.work),
+                                (expected, a, reference.work),
+                                "{text:?} {start:?} {end:?} {budget}"
+                            );
+                            if observed == ScanProgress::End {
+                                break;
+                            }
+                            assert!(!matches!(
+                                observed,
+                                ScanProgress::InvalidSource | ScanProgress::NeedInput
+                            ));
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     fn drain(
         scan: &mut GraphemeScan,

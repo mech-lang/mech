@@ -325,6 +325,15 @@ pub(in crate::native_artifact) fn optimize_with_options(
     known: &[(Value, u64)],
     modular_addition: bool,
 ) -> usize {
+    optimize_with_ranges(context, known, modular_addition, false)
+}
+
+pub(in crate::native_artifact) fn optimize_with_ranges(
+    context: &mut Context,
+    known: &[(Value, u64)],
+    modular_addition: bool,
+    extrema: bool,
+) -> usize {
     context.compute_cfg();
     context.compute_domtree();
     let function = &context.func;
@@ -363,6 +372,7 @@ pub(in crate::native_artifact) fn optimize_with_options(
             lower,
             at,
             modular_addition,
+            extrema,
         }
         .operand(operand)
     };

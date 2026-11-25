@@ -664,14 +664,15 @@ jobs:
           node-version: '22'
       - name: Build mixed compute WASM and refresh the server
         run: |
+          python3 -B scripts/tests/test_build_wasm.py
           node --test scripts/tests/static-project.test.mjs
           node scripts/test-browser-compute-lifecycle.mjs
-          python3 scripts/build-wasm.py --profile browser-compute-canary
+          python3 scripts/build-wasm.py --profile browser-compute-canary --locked
           grep -q '^export class WasmDocument' src/wasm/pkg/mech_wasm.js
           grep -q '^export class WasmMixedComputeProject' src/wasm/pkg/mech_wasm.js
           python3 scripts/smoke-canonical-compute-browser.py --software-adapter
           cargo build --locked --bin mech --features compute_backends_native
-          git diff --exit-code -- Cargo.lock
+          git diff --exit-code HEAD -- Cargo.lock
           mkdir -p target/browser-compute-provenance
           git rev-parse HEAD > target/browser-compute-provenance/revision
           git rev-parse 'HEAD^{tree}' > target/browser-compute-provenance/tree

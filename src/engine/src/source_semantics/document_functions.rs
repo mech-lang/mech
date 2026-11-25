@@ -12,10 +12,31 @@ use mech_syntax::document::{
 #[path = "recursive_statement_functions.rs"]
 mod recursive_statements;
 
+#[derive(Clone)]
 enum DocumentFunctionBody {
     Expression(SyntaxNode),
     Statements(SyntaxNode),
     Patterns(SyntaxNode),
+}
+
+/// Descriptor owned by the current document's function and nominal scopes.
+pub(in super::super) struct DocumentFunctionPlan {
+    parameters: Vec<(String, SchemaDraft)>,
+    body: Option<DocumentFunctionBody>,
+    calls_self: std::sync::OnceLock<bool>,
+    contains_check: std::sync::OnceLock<bool>,
+}
+
+fn remember_check(
+    cached: &std::sync::OnceLock<bool>,
+    check: impl FnOnce() -> Result<bool, SourceSemanticError>,
+) -> Result<bool, SourceSemanticError> {
+    if let Some(result) = cached.get() {
+        return Ok(*result);
+    }
+    let result = check()?;
+    let _ = cached.set(result);
+    Ok(result)
 }
 
 enum PatternLiftOutput {
@@ -301,6 +322,7 @@ impl SemanticBuilder {
         &mut self,
         units: &[DocumentUnit],
     ) -> Result<(), SourceSemanticError> {
+        self.document_function_plans.clear();
         for unit in units {
             match unit {
                 DocumentUnit::Function(function) => {
@@ -363,6 +385,36 @@ impl SemanticBuilder {
         Ok(())
     }
 
+    fn document_function_plan(
+        &mut self,
+        name: &str,
+    ) -> Result<Arc<DocumentFunctionPlan>, SourceSemanticError> {
+        if let Some(plan) = self.document_function_plans.get(name) {
+            return Ok(Arc::clone(plan));
+        }
+        let function = &self.local_functions[name];
+        let parameters = function
+            .children()
+            .filter(|child| child.kind() == SyntaxKind::FunctionArg)
+            .map(|node| function_parameter(self, &node))
+            .collect::<Result<Vec<_>, _>>()?;
+        let body = function.children().find_map(|child| match child.kind() {
+            SyntaxKind::FunctionDefineExpression => Some(DocumentFunctionBody::Expression(child)),
+            SyntaxKind::FunctionDefineStatements => Some(DocumentFunctionBody::Statements(child)),
+            SyntaxKind::FunctionDefineMatchArms => Some(DocumentFunctionBody::Patterns(child)),
+            _ => None,
+        });
+        let plan = Arc::new(DocumentFunctionPlan {
+            parameters,
+            body,
+            calls_self: std::sync::OnceLock::new(),
+            contains_check: std::sync::OnceLock::new(),
+        });
+        self.document_function_plans
+            .insert(name.to_owned(), Arc::clone(&plan));
+        Ok(plan)
+    }
+
     pub(in super::super) fn unary_document_parameter_schema(
         &self,
         name: &str,
@@ -399,59 +451,50 @@ impl SemanticBuilder {
             message,
             anchor: SourceSemanticAnchor::for_node(call),
         };
-        let function = self.local_functions[name].clone();
-        let parameters = function
-            .children()
-            .filter(|child| child.kind() == SyntaxKind::FunctionArg)
-            .map(|node| function_parameter(self, &node))
-            .collect::<Result<Vec<_>, _>>()?;
-        let mut selected = vec![None; parameters.len()];
-        for (input, supplied) in inputs.into_iter().zip(names) {
-            let ordinal = if supplied.is_empty() {
-                selected.iter().position(Option::is_none)
-            } else {
-                parameters.iter().position(|(name, _)| name == supplied)
-            }
-            .ok_or_else(|| {
-                error(
-                    "source-semantics/invalid-call-argument",
-                    format!("function {name} has no available parameter {supplied}"),
-                )
-            })?;
-            if selected[ordinal].replace(input).is_some() {
-                return Err(error(
-                    "source-semantics/duplicate-call-argument",
-                    format!("parameter {} is supplied twice", parameters[ordinal].0),
-                ));
-            }
-        }
-        let selected = selected
-            .into_iter()
-            .collect::<Option<Vec<_>>>()
-            .ok_or_else(|| {
-                error(
-                    "source-semantics/missing-call-argument",
-                    format!("function {name} requires all declared arguments"),
-                )
-            })?;
-        let body = function
-            .children()
-            .find_map(|child| match child.kind() {
-                SyntaxKind::FunctionDefineExpression => {
-                    Some(DocumentFunctionBody::Expression(child))
+        let plan = self.document_function_plan(name)?;
+        let parameters = &plan.parameters;
+        let selected = if inputs.len() == parameters.len()
+            && inputs.len() == names.len()
+            && names.iter().all(String::is_empty)
+        {
+            inputs
+        } else {
+            let mut selected = vec![None; parameters.len()];
+            for (input, supplied) in inputs.into_iter().zip(names) {
+                let ordinal = if supplied.is_empty() {
+                    selected.iter().position(Option::is_none)
+                } else {
+                    parameters.iter().position(|(name, _)| name == supplied)
                 }
-                SyntaxKind::FunctionDefineStatements => {
-                    Some(DocumentFunctionBody::Statements(child))
+                .ok_or_else(|| {
+                    error(
+                        "source-semantics/invalid-call-argument",
+                        format!("function {name} has no available parameter {supplied}"),
+                    )
+                })?;
+                if selected[ordinal].replace(input).is_some() {
+                    return Err(error(
+                        "source-semantics/duplicate-call-argument",
+                        format!("parameter {} is supplied twice", parameters[ordinal].0),
+                    ));
                 }
-                SyntaxKind::FunctionDefineMatchArms => Some(DocumentFunctionBody::Patterns(child)),
-                _ => None,
-            })
-            .ok_or_else(|| {
-                error(
-                    "source-semantics/unsupported-function-body",
-                    "canonical function has no supported body".to_owned(),
-                )
-            })?;
+            }
+            selected
+                .into_iter()
+                .collect::<Option<Vec<_>>>()
+                .ok_or_else(|| {
+                    error(
+                        "source-semantics/missing-call-argument",
+                        format!("function {name} requires all declared arguments"),
+                    )
+                })?
+        };
+        let body = plan.body.clone().ok_or_else(|| {
+            error(
+                "source-semantics/unsupported-function-body",
+                "canonical function has no supported body".to_owned(),
+            )
+        })?;
         if self.active_functions.iter().any(|active| active == name) {
             if self
                 .active_functions
@@ -691,13 +734,15 @@ impl SemanticBuilder {
         let result = (|| match body {
             DocumentFunctionBody::Expression(body) => {
                 if self.control_depth == 0
-                    && contains_invariant(&body, &self.local_functions, &mut BTreeSet::new(), 0)?
+                    && remember_check(&plan.contains_check, || {
+                        contains_invariant(&body, &self.local_functions, &mut BTreeSet::new(), 0)
+                    })?
                 {
                     let expected = self.expression_function_schema(name, &body)?;
                     self.inline_function_body_frame(
                         name,
                         &body,
-                        &parameters,
+                        parameters,
                         &arguments,
                         call,
                         expected,
@@ -714,22 +759,19 @@ impl SemanticBuilder {
                 // document scope ahead of an input-dependent entry check.
                 // An existing selected body already orders all inlined work.
                 // Recursion still needs its own argument frame and loop target.
-                if calls_function(&body, name)?
+                if remember_check(&plan.calls_self, || calls_function(&body, name))?
                     || (self.control_depth == 0
-                        && contains_invariant(
-                            &body,
-                            &self.local_functions,
-                            &mut BTreeSet::new(),
-                            0,
-                        )?)
+                        && remember_check(&plan.contains_check, || {
+                            contains_invariant(
+                                &body,
+                                &self.local_functions,
+                                &mut BTreeSet::new(),
+                                0,
+                            )
+                        })?)
                 {
                     self.inline_recursive_statement_function_body(
-                        name,
-                        &body,
-                        &parameters,
-                        &arguments,
-                        call,
-                        &error,
+                        name, &body, parameters, &arguments, call, &error,
                     )
                 } else {
                     self.inline_statement_function_body(name, &body, call, &error)

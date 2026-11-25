@@ -208,18 +208,23 @@ impl SolverState {
         self.absvals.get(&actual)
     }
 
-    fn set(&mut self, actual: Value, lp: AbstractValue) {
-        match self.absvals.insert(actual, lp) {
-            Some(_old_lp) => {}
-            None => panic!("SolverState::set: formal param {actual:?} is untracked?!"),
-        }
+    fn join(&mut self, formal: Value, incoming: AbstractValue) -> bool {
+        let current = self
+            .absvals
+            .get_mut(&formal)
+            .unwrap_or_else(|| panic!("SolverState::join: formal param {formal:?} is untracked?!"));
+        let joined = current.join(incoming);
+        let changed = joined != *current;
+        *current = joined;
+        changed
     }
 }
 
 /// Detect phis in `func` that will only ever produce one value, using a
-/// classic forward dataflow analysis.  Then remove them.
+/// classic forward dataflow analysis. Then remove them and report whether the function changed.
+/// Block and instruction layout, branch instructions and ordered destinations stay unchanged.
 #[inline(never)]
-pub fn do_remove_constant_phis(func: &mut Function, domtree: &mut DominatorTree) {
+pub fn do_remove_constant_phis(func: &mut Function, domtree: &DominatorTree) -> bool {
     let _tt = timing::remove_constant_phis();
     debug_assert!(domtree.is_valid());
 
@@ -311,13 +316,7 @@ pub fn do_remove_constant_phis(func: &mut Function, domtree: &mut DominatorTree)
                         _ => AbstractValue::Many,
                     };
 
-                    // And `join` the new value with the old.
-                    let formal_absval_old = state.get(*formal);
-                    let formal_absval_new = formal_absval_old.join(actual_absval);
-                    if formal_absval_new != formal_absval_old {
-                        changed = true;
-                        state.set(*formal, formal_absval_new);
-                    }
+                    changed |= state.join(*formal, actual_absval);
                 }
             }
         }
@@ -352,26 +351,18 @@ pub fn do_remove_constant_phis(func: &mut Function, domtree: &mut DominatorTree)
         }
     }
 
-    // Firstly, deal with the formals.  For each formal which is redundant,
-    // remove it, and also add a reroute from it to the constant value which
-    // it we know it to be.
+    // Remove redundant formals and alias each one to its proven value.
     for b in &need_editing {
-        let mut del_these = SmallVec::<[(Value, Value); 32]>::new();
-        let formals: &[Value] = func.dfg.block_params(*b);
-        for formal in formals {
-            // The state must give an absval for `formal`.
-            if let AbstractValue::One(replacement_val) = state.get(*formal) {
-                del_these.push((*formal, replacement_val));
+        let mut aliases = SmallVec::<[(Value, Value); 32]>::new();
+        func.dfg.retain_block_params(*b, |formal| {
+            if let AbstractValue::One(replacement) = state.get(formal) {
+                aliases.push((formal, replacement));
+                return false;
             }
-        }
-        // We can delete the formals in any order.  However,
-        // `remove_block_param` works by sliding backwards all arguments to
-        // the right of the value it is asked to delete.  Hence when removing more
-        // than one formal, it is significantly more efficient to ask it to
-        // remove the rightmost formal first, and hence this `rev()`.
-        for (redundant_formal, replacement_val) in del_these.into_iter().rev() {
-            func.dfg.remove_block_param(redundant_formal);
-            func.dfg.change_to_alias(redundant_formal, replacement_val);
+            true
+        });
+        for (formal, replacement) in aliases.into_iter().rev() {
+            func.dfg.change_to_alias(formal, replacement);
         }
     }
 
@@ -417,4 +408,5 @@ pub fn do_remove_constant_phis(func: &mut Function, domtree: &mut DominatorTree)
         state.absvals.len(),
         n_consts
     );
+    !need_editing.is_empty()
 }

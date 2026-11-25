@@ -4,10 +4,13 @@
 mod adjacent_addresses;
 pub(in crate::native_artifact) mod admitted_lengths;
 mod boolean_words;
+pub(in crate::native_artifact) mod checked_adds;
 pub(in crate::native_artifact) mod composed_reads;
 mod current_predicates;
 mod dead_values;
+pub(in crate::native_artifact) mod defaulted_loads;
 pub(in crate::native_artifact) mod defaulted_read_setup;
+pub(in crate::native_artifact) mod empty_jumps;
 pub(in crate::native_artifact) mod future_store;
 pub(in crate::native_artifact) mod grouped_histogram;
 pub(in crate::native_artifact) mod identity_routes;
@@ -86,7 +89,7 @@ fn integer_comparison(condition: IntCC, left: u64, right: u64, bits: u32) -> boo
 // reads a source home, memory, a block parameter or a call result; each root
 // has both a depth bound and a shared step budget. Unsupported/trapping
 // expressions retain their branch. Work/debits are separate emitted effects.
-fn constant_integer(
+pub(super) fn constant_integer(
     function: &Function,
     value: Value,
     depth: usize,
@@ -368,10 +371,9 @@ fn optimize_ordered(
         if controls.enabled(OptimizationPass::EarlyIdentities) {
             report.neutral_operations_removed += fold_identities(&mut context.func);
         }
-        context.compute_cfg();
-        context.compute_domtree();
-        context.eliminate_unreachable_code(isa).map_err(backend)?;
-        context.remove_constant_phis(isa).map_err(backend)?;
+        context
+            .compute_flowgraph_and_cleanup(isa)
+            .map_err(backend)?;
         if early_boolean_conditions {
             finish_boolean_conditions(controls, context, &mut report);
         }
@@ -387,10 +389,9 @@ fn optimize_ordered(
     // inputs. Repeating that exact sweep cannot expose another branch. Only a
     // final fold at the round limit leaves changed edges requiring cleanup.
     if !report.fixed_point {
-        context.compute_cfg();
-        context.compute_domtree();
-        context.eliminate_unreachable_code(isa).map_err(backend)?;
-        context.remove_constant_phis(isa).map_err(backend)?;
+        context
+            .compute_flowgraph_and_cleanup(isa)
+            .map_err(backend)?;
     }
     report.local_phi_preheaders =
         preheaders::normalize(&mut context.func, &context.cfg, &context.domtree);
@@ -406,19 +407,17 @@ fn optimize_ordered(
         report.boolean_phi_values,
     ) = selected_ranges::fold(&mut context.func, &context.cfg, &context.domtree);
     if report.selected_range_branches_removed != 0 {
-        context.compute_cfg();
-        context.compute_domtree();
-        context.eliminate_unreachable_code(isa).map_err(backend)?;
-        context.remove_constant_phis(isa).map_err(backend)?;
+        context
+            .compute_flowgraph_and_cleanup(isa)
+            .map_err(backend)?;
     }
     if controls.enabled(OptimizationPass::ProvedWordWidths) {
         report.known_width_branches_removed =
             known_widths::fold(&mut context.func, &context.cfg, &context.domtree);
         if report.known_width_branches_removed != 0 {
-            context.compute_cfg();
-            context.compute_domtree();
-            context.eliminate_unreachable_code(isa).map_err(backend)?;
-            context.remove_constant_phis(isa).map_err(backend)?;
+            context
+                .compute_flowgraph_and_cleanup(isa)
+                .map_err(backend)?;
         }
     }
     if controls.enabled(OptimizationPass::DemandLiveness) {
@@ -504,10 +503,9 @@ pub(in crate::native_artifact) fn reuse_dominating_window_facts(
     let replaced =
         current_predicates::relations::fold(&mut context.func, &context.cfg, &context.domtree);
     if replaced != 0 {
-        context.compute_cfg();
-        context.compute_domtree();
-        context.eliminate_unreachable_code(isa).map_err(backend)?;
-        context.remove_constant_phis(isa).map_err(backend)?;
+        context
+            .compute_flowgraph_and_cleanup(isa)
+            .map_err(backend)?;
         context.verify(isa).map_err(backend)?;
     }
     Ok(replaced)
@@ -516,7 +514,7 @@ pub(in crate::native_artifact) fn reuse_dominating_window_facts(
 enum ScalarSpanProof {
     CheckedWindow,
     SelectedRead,
-    PackedBase,
+    PackedBase { offsets: bool },
 }
 
 pub(in crate::native_artifact) fn prove_scalar_spans(
@@ -531,8 +529,14 @@ pub(in crate::native_artifact) fn prove_packed_bases(
     controls: &CompilationControls,
     context: &mut Context,
     isa: &dyn TargetIsa,
+    offsets: bool,
 ) -> Result<usize, NativeCompileError> {
-    fold_scalar_span_guards(controls, context, isa, ScalarSpanProof::PackedBase)
+    fold_scalar_span_guards(
+        controls,
+        context,
+        isa,
+        ScalarSpanProof::PackedBase { offsets },
+    )
 }
 
 pub(in crate::native_artifact) fn coalesce_equal_join_arguments(
@@ -550,10 +554,9 @@ pub(in crate::native_artifact) fn coalesce_equal_join_arguments(
         context.func.dfg.resolve_all_aliases();
         let branches = fold(&mut context.func);
         if branches != 0 {
-            context.compute_cfg();
-            context.compute_domtree();
-            context.eliminate_unreachable_code(isa).map_err(backend)?;
-            context.remove_constant_phis(isa).map_err(backend)?;
+            context
+                .compute_flowgraph_and_cleanup(isa)
+                .map_err(backend)?;
             if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
                 eprintln!("constant branches after equal argument coalescing: {branches}");
             }
@@ -561,6 +564,74 @@ pub(in crate::native_artifact) fn coalesce_equal_join_arguments(
         context.verify(isa).map_err(backend)?;
     }
     Ok(removed)
+}
+
+pub(in crate::native_artifact::program) fn coalesce_parallel_join_arguments(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<usize, NativeCompileError> {
+    if !controls.enabled(OptimizationPass::CfgCleanup) {
+        return Ok(0);
+    }
+    context.func.dfg.resolve_all_aliases();
+    context.compute_cfg();
+    let removed = local_phis::coalesce_parallel(&mut context.func, &context.cfg);
+    if removed != 0 {
+        context.func.dfg.resolve_all_aliases();
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(removed)
+}
+
+pub(in crate::native_artifact::program) fn coalesce_literal_join_arguments(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+    fold_branches: bool,
+) -> Result<(usize, usize), NativeCompileError> {
+    if !controls.enabled(OptimizationPass::CfgCleanup) {
+        return Ok((0, 0));
+    }
+    context.func.dfg.resolve_all_aliases();
+    context.flowgraph();
+    let literals = local_phis::literal_arguments::coalesce(&mut context.func, &context.domtree);
+    if literals == 0 {
+        return Ok((0, 0));
+    }
+    context.eliminate_unreachable_code(isa).map_err(backend)?;
+    context.flowgraph();
+    let parameters = |function: &Function| {
+        function
+            .layout
+            .blocks()
+            .map(|block| function.dfg.block_params(block).len())
+            .sum::<usize>()
+    };
+    let before = parameters(&context.func);
+    context.remove_constant_phis(isa).map_err(backend)?;
+    context.func.dfg.resolve_all_aliases();
+    let removed = before - parameters(&context.func);
+    if fold_branches && fold(&mut context.func) != 0 {
+        context.flowgraph();
+        context.eliminate_unreachable_code(isa).map_err(backend)?;
+        context.flowgraph();
+        context.remove_constant_phis(isa).map_err(backend)?;
+        context.func.dfg.resolve_all_aliases();
+    }
+    context.verify(isa).map_err(backend)?;
+    Ok((literals, removed))
+}
+
+pub(in crate::native_artifact::program) fn positive_word(
+    function: &Function,
+    cfg: &cranelift_codegen::flowgraph::ControlFlowGraph,
+    value: Value,
+) -> bool {
+    function.dfg.value_type(value) == cranelift_codegen::ir::types::I64
+        && word_ranges::Facts::across_edges(function, cfg, None)
+            .value_range(value)
+            .is_some_and(|range| range.0 > 0)
 }
 
 pub(in crate::native_artifact) fn reuse_selected_read_bounds(
@@ -590,10 +661,9 @@ fn fold_scalar_span_guards(
         source,
     );
     if replaced != 0 {
-        context.compute_cfg();
-        context.compute_domtree();
-        context.eliminate_unreachable_code(isa).map_err(backend)?;
-        context.remove_constant_phis(isa).map_err(backend)?;
+        context
+            .compute_flowgraph_and_cleanup(isa)
+            .map_err(backend)?;
         context.verify(isa).map_err(backend)?;
     }
     Ok(replaced)
@@ -847,10 +917,9 @@ pub(in crate::native_artifact) fn share_repeated_bounds(
     context.compute_domtree();
     let changed = repeated_bounds::fold(&mut context.func, &context.domtree);
     if changed != 0 {
-        context.compute_cfg();
-        context.compute_domtree();
-        context.eliminate_unreachable_code(isa).map_err(backend)?;
-        context.remove_constant_phis(isa).map_err(backend)?;
+        context
+            .compute_flowgraph_and_cleanup(isa)
+            .map_err(backend)?;
         context.verify(isa).map_err(backend)?;
     }
     Ok(changed)

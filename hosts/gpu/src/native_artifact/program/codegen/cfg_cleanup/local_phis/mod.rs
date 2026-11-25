@@ -8,6 +8,8 @@ use cranelift_codegen::ir::{Block, BlockCall, Function, Value, ValueDef};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 pub(super) mod equal_arguments;
+pub(super) mod literal_arguments;
+mod parallel_arguments;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Fact {
@@ -212,6 +214,12 @@ pub(in crate::native_artifact::program) fn controller_passthrough(
     found
 }
 
+pub(super) fn coalesce_parallel(function: &mut Function, cfg: &ControlFlowGraph) -> usize {
+    let replacements = parallel_arguments::equivalents(function, cfg);
+    apply(function, cfg, &replacements);
+    replacements.len()
+}
+
 fn apply(function: &mut Function, cfg: &ControlFlowGraph, replacements: &BTreeMap<Value, Value>) {
     let mut blocks = BTreeMap::new();
     for &value in replacements.keys() {
@@ -226,10 +234,12 @@ fn apply(function: &mut Function, cfg: &ControlFlowGraph, replacements: &BTreeMa
         .keys()
         .flat_map(|&block| cfg.pred_iter(block).map(|pred| pred.inst))
         .collect::<BTreeSet<_>>();
-    for params in blocks.values() {
+    for (&block, params) in &blocks {
+        function
+            .dfg
+            .retain_block_params(block, |value| !replacements.contains_key(&value));
         for &value in params.iter().rev() {
             if let Some(&source) = replacements.get(&value) {
-                function.dfg.remove_block_param(value);
                 function.dfg.change_to_alias(value, source);
             }
         }

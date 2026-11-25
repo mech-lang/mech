@@ -151,6 +151,7 @@ pub(super) struct Phase {
     outputs: Vec<(usize, Output)>,
     output_owners: Vec<usize>,
     result_words: usize,
+    packet_words: (usize, usize),
     summary: serde_json::Value,
     observe: bool,
     private: Option<PrivatePhase>,
@@ -191,12 +192,7 @@ impl Phase {
             .collect()
     }
     pub fn packet_words(&self) -> (usize, usize) {
-        let writable = self.arrays.iter().filter(|a| a.1).count();
-        (
-            self.inputs.len() + writable + self.fixed_arrays.len(),
-            (1 + self.result_words + writable * 6)
-                .max(self.private.as_ref().map_or(0, PrivatePhase::packet_words)),
-        )
+        self.packet_words
     }
 
     fn guard_vector_geometry(
@@ -308,22 +304,28 @@ impl Phase {
             let yes = b.ins().iconst(types::I64, 1);
             b.ins().call(observe, &[storage.heap, header, yes]);
         }
-        let writable = self.arrays.iter().filter(|a| a.1).count();
         let (input_words, output_words) = self.packet_words();
         let (input, output) = packets.for_call(input_words, output_words)?;
         for (at, &slot) in self.inputs.iter().enumerate() {
             let value = words.read(b, slot);
             b.ins().stack_store(value, input, offset(at)?);
         }
-        for (at, &(base, _)) in self.arrays.iter().filter(|a| a.1).enumerate() {
-            let owner = words.read(b, base + 5);
-            b.ins()
-                .stack_store(owner, input, offset(self.inputs.len() + at)?);
-        }
-        for (at, &array) in self.fixed_arrays.iter().enumerate() {
-            let capacity = words.read(b, self.arrays[array].0 + 2);
-            b.ins()
-                .stack_store(capacity, input, offset(self.inputs.len() + writable + at)?);
+        if !self
+            .private
+            .as_ref()
+            .is_some_and(PrivatePhase::compact_packet)
+        {
+            let writable = self.arrays.iter().filter(|a| a.1).count();
+            for (at, &(base, _)) in self.arrays.iter().filter(|a| a.1).enumerate() {
+                let owner = words.read(b, base + 5);
+                b.ins()
+                    .stack_store(owner, input, offset(self.inputs.len() + at)?);
+            }
+            for (at, &array) in self.fixed_arrays.iter().enumerate() {
+                let capacity = words.read(b, self.arrays[array].0 + 2);
+                b.ins()
+                    .stack_store(capacity, input, offset(self.inputs.len() + writable + at)?);
+            }
         }
         let prior = self
             .output_owners
@@ -333,6 +335,25 @@ impl Phase {
             .collect::<Vec<_>>();
         let input = b.ins().stack_addr(types::I64, input, 0);
         let out = b.ins().stack_addr(types::I64, output, 0);
+        let phase_timer =
+            if root_entry && std::env::var_os("MECH_COMPACT_PROFILE_PHASE_CALLS").is_some() {
+                let mut signature = module.make_signature();
+                signature.params.extend([AbiParam::new(types::I64); 2]);
+                let callback = module
+                    .declare_function(
+                        "mech_compact_profile_phase_call",
+                        Linkage::Import,
+                        &signature,
+                    )
+                    .map_err(backend)?;
+                let callback = module.declare_func_in_func(callback, b.func);
+                let header = b.ins().iconst(types::I64, self.header as i64);
+                let enter = b.ins().iconst(types::I64, 0);
+                b.ins().call(callback, &[header, enter]);
+                Some((callback, header))
+            } else {
+                None
+            };
         let (status, at) = if let Some(no_growth) = &self.no_growth {
             let base = self.arrays[no_growth.array].0;
             let length = words.read(b, base + 1);
@@ -435,6 +456,10 @@ impl Phase {
             let result = b.inst_results(call);
             (result[0], result[1])
         };
+        if let Some((callback, header)) = phase_timer {
+            let returned = b.ins().iconst(types::I64, 1);
+            b.ins().call(callback, &[header, returned]);
+        }
         if let Some(private) = &self.private
             && !private.handoffs.is_empty()
         {
@@ -673,7 +698,17 @@ pub(super) fn define<M: Module>(
 ) -> Result<Vec<Phase>, NativeCompileError> {
     // Body sharing chooses earlier call targets as each definition is published.
     // Keep that choice in serial order; independent bodies can use the pool.
-    let pool = pool.filter(|_| !share_phase_bodies);
+    // The inliner captures legalized IR on the coordinator. With a named
+    // inlining scope, other function families can still compile in workers.
+    let inlining = std::env::var_os("MECH_COMPACT_INLINE_SINGLE_CALLS").is_some();
+    let inline_symbols = std::env::var("MECH_COMPACT_INLINE_SYMBOLS").ok();
+    let pool = pool.filter(|_| !share_phase_bodies && (!inlining || inline_symbols.is_some()));
+    let compare_vector_ir =
+        !observe && std::env::var_os("MECH_COMPACT_REUSE_EQUIVALENT_VECTOR_IR").is_some();
+    let skip_refused_general_ssa = !observe
+        && !compare_vector_ir
+        && std::env::var_os("MECH_COMPACT_SKIP_REFUSED_GENERAL_SSA").is_some()
+        && function::refused_general_ssa_unobserved();
     // Selected LLVM exports read the verified IR on the coordinator. Keep all
     // variants of those phases there while other phases can use the workers.
     let exported_phases = std::env::var_os("MECH_COMPACT_DUMP_LLVM_DIRECTORY")
@@ -758,7 +793,20 @@ pub(super) fn define<M: Module>(
     for (id, private) in candidates {
         let region = &closed.regions[id];
         let header = region.tail.header() as usize;
-        let pool = pool.filter(|_| !exported_phases.contains(&header));
+        let pool = pool.filter(|_| {
+            if exported_phases.contains(&header) {
+                return false;
+            }
+            !inlining
+                || !inline_symbols.as_deref().is_some_and(|symbols| {
+                    let family = format!("mech_compact_numeric_{header}");
+                    symbols.split(',').any(|symbol| {
+                        symbol
+                            .strip_prefix(&family)
+                            .is_some_and(|suffix| suffix.is_empty() || suffix.starts_with('_'))
+                    })
+                })
+        });
         let proof = region.numeric.as_ref().unwrap();
         if proof.sites.iter().any(|site| covered.contains(site))
             || (region.cold_resume().is_some() && private.is_none())
@@ -809,7 +857,8 @@ pub(super) fn define<M: Module>(
                     .ok_or_else(|| backend("compact numeric input lacks a current typed binding"))
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let result_words = numeric_minimal::output_words(proof)?.len();
+        let compact_packet = private.as_ref().is_some_and(PrivatePhase::compact_packet);
+        let result_words = numeric_minimal::output_words(proof, compact_packet)?.len();
         // Only the admitted same-Plan proof constructs this contract. Unknown
         // operations/rebinding already decline that proof. All append/bulk
         // append arrays keep the original refresh, even on zero-trip visits.
@@ -864,7 +913,9 @@ pub(super) fn define<M: Module>(
                         result_words,
                         &invariant_views,
                     );
-                    at += 4 + usize::from(proof.capacity(*array).is_some());
+                    if !compact_packet {
+                        at += 4 + usize::from(proof.capacity(*array).is_some());
+                    }
                 } else {
                     let (path, _) = scalars
                         .next()
@@ -889,41 +940,142 @@ pub(super) fn define<M: Module>(
             .map(|&lane| layout.slot(target) + lane)
             .collect();
         let writable = arrays.iter().filter(|a| a.1).count();
-        let input_words = inputs.len() + writable + fixed_arrays.len();
-        let output_words = (1 + result_words + writable * 6)
-            .max(private.as_ref().map_or(0, PrivatePhase::packet_words));
+        let (input_words, output_words) = if compact_packet {
+            (inputs.len(), 1 + result_words)
+        } else {
+            (
+                inputs.len() + writable + fixed_arrays.len(),
+                1 + result_words + writable * 6,
+            )
+        };
+        let fixed_count = fixed_arrays.len();
+        let output_words = output_words.max(private.as_ref().map_or(0, PrivatePhase::packet_words));
+        // Each synchronous alternative returns to this same reader. Retain
+        // the existing packet offsets while selecting only the normal-return
+        // words the reader can consume. Failure and handoff have separate layouts.
+        let selected_output = std::env::var_os("MECH_COMPACT_SELECT_PHASE_OUTPUT_WORDS")
+            .is_some()
+            .then(|| {
+                let mut selected = outputs
+                    .iter()
+                    .filter_map(|(_, source)| match *source {
+                        Output::Stack(at) => Some(at),
+                        Output::Word(_) => None,
+                    })
+                    .collect::<BTreeSet<_>>();
+                for (ordinal, (array, _)) in arrays
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, view)| view.1)
+                    .enumerate()
+                {
+                    if !invariant_views.contains(&array) {
+                        let first = 1 + result_words + ordinal * 6;
+                        selected.extend(first..first + 6);
+                    }
+                }
+                selected
+            });
         let relative_error_origins = share_phase_bodies
             && !observe
             && private
                 .as_ref()
                 .is_none_or(|phase| phase.handoffs.is_empty());
         let mut bodies = relative_error_origins.then_some(&mut shared_bodies);
-        let ready = function::prepare_general(
-            module,
-            prepared,
-            id,
-            observe,
-            input_words,
-            output_words,
-            fixed_arrays.len(),
-            None,
-            private.as_ref(),
-            None,
-            &BTreeMap::new(),
-            &mut dense_tables,
-            bodies.as_deref_mut(),
-            "",
-            pool.is_some(),
-        )?;
-        let entry_bounds = ready.entry_bounds().to_vec();
-        let vector_contract = if std::env::var_os("MECH_PHASE_VECTOR_FAST").is_some() {
-            VectorContract::additional(proof, &entry_bounds)
+        // A refused general geometry uses the checked source continuation.
+        // Once a vector contract is available this declaration has no callers.
+        // Keep body-sharing definitions intact because another phase can use
+        // their published identity. Diagnostics may also request the old body.
+        let omit_general = refuse_general.contains(&header)
+            && !share_phase_bodies
+            && std::env::var_os("MECH_COMPACT_KEEP_REFUSED_PHASE_CODE").is_none();
+        let vector_fast = std::env::var_os("MECH_PHASE_VECTOR_FAST").is_some();
+        let source_admission = if skip_refused_general_ssa && omit_general && vector_fast {
+            private
+                .as_ref()
+                .and_then(|private| {
+                    function::refused_general_bounds(CodePlan::Program(prepared), region, private)
+                })
+                .and_then(|bounds| {
+                    VectorContract::additional(proof, &bounds).map(|contract| (bounds, contract))
+                })
         } else {
             None
         };
-        let (general, fast) = if let (Some(pool), Some(contract)) = (pool, vector_contract.as_ref())
-        {
-            let general = ready.start(pool)?;
+        let (ready, general_declaration, entry_bounds, vector_contract) =
+            if let Some((bounds, contract)) = source_admission {
+                let declaration = function::declare_refused_general(module, header)?;
+                (None, declaration, bounds, Some(contract))
+            } else {
+                let ready = function::prepare_general(
+                    module,
+                    prepared,
+                    id,
+                    observe,
+                    input_words,
+                    output_words,
+                    fixed_count,
+                    selected_output.as_ref(),
+                    false,
+                    None,
+                    private.as_ref(),
+                    None,
+                    &BTreeMap::new(),
+                    &mut dense_tables,
+                    bodies.as_deref_mut(),
+                    "",
+                    pool.is_some() || omit_general,
+                )?;
+                let declaration = ready.function();
+                let bounds = ready.entry_bounds().to_vec();
+                let contract = if vector_fast {
+                    VectorContract::additional(proof, &bounds)
+                } else {
+                    None
+                };
+                (Some(ready), declaration, bounds, contract)
+            };
+        let pack_input = compact_packet
+            && refuse_general.contains(&header)
+            && std::env::var_os("MECH_COMPACT_PACK_PHASE_INPUTS").is_some();
+        let (general, fast) = if omit_general && let Some(contract) = vector_contract.as_ref() {
+            let skipped_general_ssa = ready.is_none();
+            // The source proof or the verified general IR supplied the same
+            // bounds. No general code or cleanup result is needed here.
+            drop(ready);
+            let fast = function::prepare(
+                module,
+                prepared,
+                id,
+                observe,
+                input_words,
+                output_words,
+                fixed_count,
+                selected_output.as_ref(),
+                pack_input,
+                Some(contract),
+                private.as_ref(),
+                None,
+                &BTreeMap::new(),
+                &mut dense_tables,
+                None,
+                "_vector",
+            )?;
+            if skipped_general_ssa && fast.entry_bounds() != entry_bounds.as_slice() {
+                return Err(backend(
+                    "refused phase source bounds differ from its vector body",
+                ));
+            }
+            let fast = if let Some(pool) = pool {
+                fast.start(pool)?.finish(module)?
+            } else {
+                fast.define(module, None)?
+            };
+            (None, Some(fast))
+        } else if let (Some(pool), Some(contract)) = (pool, vector_contract.as_ref()) {
+            let mut general = ready
+                .expect("a compared phase needs its general body")
+                .start(pool, compare_vector_ir && !pack_input)?;
             let mut recorded = pool.record(module)?;
             let fast = function::prepare(
                 &mut recorded,
@@ -932,7 +1084,9 @@ pub(super) fn define<M: Module>(
                 observe,
                 input_words,
                 output_words,
-                fixed_arrays.len(),
+                fixed_count,
+                selected_output.as_ref(),
+                pack_input,
                 Some(contract),
                 private.as_ref(),
                 None,
@@ -941,15 +1095,17 @@ pub(super) fn define<M: Module>(
                 bodies.as_deref_mut(),
                 "_vector",
             )
-            .and_then(|ready| ready.start(pool));
+            .and_then(|ready| general.start_vector(ready, pool));
             // Complete and publish the earlier function before replaying ANY
             // later declaration/data/function event, including an error.
-            let general = general.finish(module)?;
+            let (general, context) = general.finish(module)?;
             recorded.replay(module)?;
-            let fast = fast?.finish(module)?;
-            (general, Some(fast))
+            let fast = fast?.finish(module, &context)?;
+            (Some(general), Some(fast))
         } else {
-            let general = ready.define(module, bodies.as_deref_mut())?;
+            let general = ready
+                .expect("a retained phase needs its general body")
+                .define(module, bodies.as_deref_mut())?;
             let fast = if let Some(contract) = vector_contract.as_ref() {
                 Some(function::define(
                     module,
@@ -958,7 +1114,9 @@ pub(super) fn define<M: Module>(
                     observe,
                     input_words,
                     output_words,
-                    fixed_arrays.len(),
+                    fixed_count,
+                    selected_output.as_ref(),
+                    pack_input,
                     Some(contract),
                     private.as_ref(),
                     None,
@@ -970,18 +1128,38 @@ pub(super) fn define<M: Module>(
             } else {
                 None
             };
-            (general, fast)
+            (Some(general), fast)
         };
-        let mut summary = general.summary;
+        let function = general
+            .as_ref()
+            .map_or(general_declaration, |body| body.function);
+        let mut summary = general.as_ref().map_or_else(
+            || {
+                serde_json::json!({
+                    "header": header, "exit": region.tail.exit(),
+                    "symbol": format!("mech_compact_numeric_{header}"),
+                    "phase_entry_bounds": entry_bounds,
+                    "code_bytes": 0, "stack_bytes": 0,
+                    "compilation": "omitted: geometry uses checked continuation",
+                    "input_words": input_words, "output_words": output_words,
+                    "fixed_writable_capacities": fixed_count,
+                    "fixed_length_entry_gate": fixed_count != 0,
+                    "unique_writable_owner_gate": true,
+                })
+            },
+            |body| body.summary.clone(),
+        );
         let mut vector = None;
+        let mut packed_input = None;
         if let Some(fast) = fast {
             let contract = vector_contract.unwrap();
-            let used = fast.code != general.code;
+            let used = general.as_ref().is_none_or(|body| fast.code != body.code);
             let mut info = fast.summary;
             info["guard_arrays"] = serde_json::json!(contract.guards);
             info["selected_by_guard"] = serde_json::json!(used);
             summary["vector_variant"] = info;
             if used {
+                packed_input = fast.packed_input;
                 vector = Some(VectorAlternative {
                     function: fast.function,
                     contract,
@@ -995,6 +1173,9 @@ pub(super) fn define<M: Module>(
                 "loops":proof.phase.as_ref().unwrap().loops.iter().map(|l|l.header).collect::<Vec<_>>(),
                 "cold_exports":private.handoffs.iter().map(|e|serde_json::json!({"site":e.site,"scalar_words":e.exports.len(),"owner_outputs":e.owners.len()})).collect::<Vec<_>>()
             });
+            if compact_packet {
+                summary["private_compact_packet"] = serde_json::json!(true);
+            }
         }
         let refuse_general_vector = vector.is_some() && refuse_general.remove(&header);
         if refuse_general_vector {
@@ -1023,9 +1204,11 @@ pub(super) fn define<M: Module>(
                 prepared,
                 id,
                 observe,
-                inputs.len() + writable + fixed_arrays.len(),
-                1 + result_words + writable * 6,
-                fixed_arrays.len(),
+                input_words,
+                output_words,
+                fixed_count,
+                selected_output.as_ref(),
+                false,
                 None,
                 None,
                 Some(&contract),
@@ -1052,10 +1235,22 @@ pub(super) fn define<M: Module>(
         } else {
             None
         };
+        let (inputs, input_words) = if let Some(words) = packed_input {
+            // Only the selected vector body can read this layout. Geometry
+            // refusal still branches to the source continuation before the call.
+            if !refuse_general_vector {
+                return Err(backend("packed phase inputs require one selected body"));
+            }
+            let compact = words.iter().map(|&word| inputs[word]).collect::<Vec<_>>();
+            summary["private_packed_input_words"] = serde_json::json!(compact.len());
+            (compact, words.len())
+        } else {
+            (inputs, input_words)
+        };
         result.push(Phase {
             header,
             exit: region.tail.exit() as usize,
-            function: general.function,
+            function,
             vector,
             refuse_general_vector,
             no_growth,
@@ -1067,6 +1262,7 @@ pub(super) fn define<M: Module>(
             outputs,
             output_owners,
             result_words,
+            packet_words: (input_words, output_words),
             summary,
             observe,
             private,

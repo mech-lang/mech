@@ -3,6 +3,106 @@ use cranelift_codegen::ir::{AbiParam, MemFlags};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_module::{Linkage, Module, default_libcall_names};
 
+#[test]
+fn extrema_only_refine_unsigned_selected_operands() {
+    let mut module = cranelift_jit::JITModule::new(
+        cranelift_jit::JITBuilder::with_flags(&[("opt_level", "speed")], default_libcall_names())
+            .unwrap(),
+    );
+    let mut entries = Vec::new();
+    for mode in 0..6 {
+        let mut context = module.make_context();
+        context.func.signature.params = vec![AbiParam::new(types::I64); 2];
+        context.func.signature.returns = vec![AbiParam::new(types::I64)];
+        let mut builder = FunctionBuilderContext::new();
+        let mut b = FunctionBuilder::new(&mut context.func, &mut builder);
+        let entry = b.create_block();
+        let admitted = b.create_block();
+        let refused = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let &[value, other] = b.block_params(entry) else {
+            unreachable!("two tested words")
+        };
+        let limit = b.ins().iconst(types::I64, 31);
+        let below = b.ins().icmp_imm(IntCC::UnsignedLessThan, value, 31);
+        let after = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, limit, value);
+        let signed = b.ins().icmp_imm(IntCC::SignedLessThan, value, 31);
+        let chosen = match mode {
+            0 => b.ins().umin(value, limit),
+            1 => b.ins().umax(value, limit),
+            2 => b.ins().select(below, value, limit),
+            3 => b.ins().select(after, limit, value),
+            4 => b.ins().select(below, other, limit),
+            5 => b.ins().select(signed, value, limit),
+            _ => unreachable!(),
+        };
+        let condition = if mode == 1 {
+            IntCC::UnsignedGreaterThanOrEqual
+        } else {
+            IntCC::UnsignedLessThanOrEqual
+        };
+        let valid = b.ins().icmp_imm(condition, chosen, 31);
+        b.ins().brif(valid, admitted, &[], refused, &[]);
+        b.switch_to_block(admitted);
+        b.ins().return_(&[chosen]);
+        b.switch_to_block(refused);
+        let sentinel = b.ins().iconst(types::I64, -2);
+        b.ins().return_(&[sentinel]);
+        b.seal_all_blocks();
+        b.finalize();
+        assert_eq!(
+            optimize_with_ranges(&mut context, &[], true, true),
+            usize::from(mode < 4)
+        );
+        context.verify(module.isa()).unwrap();
+        let id = module
+            .declare_function(
+                &format!("extreme_{mode}"),
+                Linkage::Local,
+                &context.func.signature,
+            )
+            .unwrap();
+        module.define_function(id, &mut context).unwrap();
+        entries.push((mode, id));
+    }
+    module.finalize_definitions().unwrap();
+    for (mode, id) in entries {
+        // SAFETY: both inputs and the result use the single-word native ABI.
+        let run: unsafe extern "C" fn(u64, u64) -> u64 =
+            unsafe { core::mem::transmute(module.get_finalized_function(id)) };
+        for x in [0u64, 1, 30, 31, 32, 1 << 63, u64::MAX] {
+            for y in [0, 30, 31, 32, u64::MAX] {
+                let chosen = match mode {
+                    0 | 2 | 3 => x.min(31),
+                    1 => x.max(31),
+                    4 => {
+                        if x < 31 {
+                            y
+                        } else {
+                            31
+                        }
+                    }
+                    5 => {
+                        if (x as i64) < 31 {
+                            x
+                        } else {
+                            31
+                        }
+                    }
+                    _ => unreachable!(),
+                };
+                let expected = if mode == 1 || chosen <= 31 {
+                    chosen
+                } else {
+                    u64::MAX - 1
+                };
+                assert_eq!(unsafe { run(x, y) }, expected);
+            }
+        }
+    }
+}
+
 fn product_function(mode: usize) -> Context {
     let mut c = Context::new();
     c.func.signature.params = vec![AbiParam::new(types::I64); 4];

@@ -206,7 +206,7 @@ class FullWorkflowContractTests(unittest.TestCase):
                            if "Inventory and execute native composition contracts" in step)
         self.assertIn("if: ${{ matrix.suite == 'composition' }}", composition)
         self.assertIn("--test-threads=1 --nocapture", composition)
-        self.assertIn('" -eq 600', composition)
+        self.assertIn('" -eq 604', composition)
         self.assertNotIn("continue-on-error", composition)
         gate = job_block(FULL, "cargo")
         self.assertIn("      - canonical-applications\n", gate)
@@ -1006,7 +1006,7 @@ class FullWorkflowContractTests(unittest.TestCase):
 
     def test_shared_browser_product_checks_revision_profile_lock_and_contents(self):
         producer = job_block(CI, "browser-compute-build")
-        self.assertLess(producer.index("git diff --exit-code -- Cargo.lock"),
+        self.assertLess(producer.index("git diff --exit-code HEAD -- Cargo.lock"),
                         producer.index("sha256sum Cargo.lock"))
         self.assertIn("sha256sum target/debug/mech", producer)
         self.assertIn("find src/wasm/pkg -type f -print0", producer)
@@ -1382,6 +1382,7 @@ class FullWorkflowContractTests(unittest.TestCase):
         native = job_block(NATIVE, "canonical-native-cli")
         checker = (ROOT / "scripts/check_canonical_cli_ci.py").read_text(encoding="utf-8")
         self.assertIn("len(names) == len(expected) and set(names) == expected", checker)
+        self.assertIn("explicit_compile_policy_is_strict_and_separate_from_launch_authority", checker)
         self.assertIn('passed_count(log_dir / "canonical-cli-unit-contracts.log", len(UNIT_NAMES))', checker)
         self.assertIn('passed_count(log_dir / "canonical-cli-public-qualification.log", len(PUBLIC_NAMES))', checker)
         for required in ('"owned_group_cleanup") == "complete"', '"command_exit_status") == 0',

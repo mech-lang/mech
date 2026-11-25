@@ -8,10 +8,15 @@
 //! copy span descriptors, never managed String identities or transient owners.
 //! Operations that need a new String allocation remain explicit compiler gaps
 //! until an invocation-owned native String representation is implemented.
+mod array_growth;
 pub(in crate::native_artifact) mod arrays;
+mod backing_owners;
 mod body_relocations;
 mod checked_region_discovery;
 mod checked_traversals;
+mod cold_status;
+#[cfg(all(test, target_arch = "aarch64", target_os = "macos"))]
+mod cold_tail_tests;
 mod collections;
 mod compile_jobs;
 mod constants;
@@ -19,10 +24,14 @@ mod emit;
 mod flow;
 mod histogram;
 mod immutable_arrays;
+mod indexed_stores;
+mod inlining;
 mod layout;
+mod le_scalar_stores;
 mod packed;
 mod parallel;
 mod phase_bodies;
+mod phase_layout;
 mod phase_storage;
 mod phases;
 mod vector_guard_facts;
@@ -32,9 +41,11 @@ pub(in crate::native_artifact) use phases::{
 mod map_index;
 mod maps;
 mod object;
+mod owner_counts;
 mod owner_retirement;
 mod private_chains;
 mod recipes;
+mod release_stubs;
 mod strings;
 mod terminal_appends;
 mod utf8_classes;
@@ -43,7 +54,8 @@ mod word_collections;
 mod word_packs;
 mod word_pairs;
 
-pub(in crate::native_artifact) use emit::{define, define_with_isa};
+pub(in crate::native_artifact) use emit::define;
+pub(super) use emit::define_with_isa;
 pub(super) use object::PreparedObject;
 
 use crate::native_artifact::NativeCompileError;
@@ -99,7 +111,7 @@ pub(in crate::native_artifact) fn inventory(
     let arrays = layout
         .types
         .iter()
-        .filter(|t| matches!(t.kind, layout::Kind::Array { .. }))
+        .filter(|t| matches!(t.kind, layout::LayoutKind::Array { .. }))
         .count();
     let owners: usize = layout.types.iter().map(|t| t.owners.len()).sum();
     Ok(

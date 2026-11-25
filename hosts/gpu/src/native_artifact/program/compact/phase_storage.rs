@@ -139,13 +139,56 @@ pub(super) fn input_word_loads(
     Some(loads)
 }
 
+/// Compact a caller's initialized, nonescaping input slot to the offsets
+/// still read by this body's finalized IR. Return their original word order.
+pub(super) fn pack_used_input_words(
+    function: &mut cranelift_codegen::ir::Function,
+    input_words: usize,
+) -> Option<Vec<usize>> {
+    use cranelift_codegen::ir::InstructionData;
+    use std::collections::BTreeSet;
+
+    let loads = input_word_loads(function, input_words)?;
+    let live = function
+        .layout
+        .blocks()
+        .flat_map(|block| function.layout.block_insts(block))
+        .flat_map(|inst| function.dfg.inst_values(inst))
+        .map(|word| function.dfg.resolve_aliases(word))
+        .collect::<BTreeSet<_>>();
+    let kept = loads
+        .iter()
+        .filter_map(|(value, &(_, word))| live.contains(value).then_some(word))
+        .collect::<BTreeSet<_>>()
+        .into_iter()
+        .collect::<Vec<_>>();
+    if kept.len() == input_words {
+        return None;
+    }
+    for (value, (inst, word)) in loads {
+        if !live.contains(&value) {
+            // Every original offset was validated within the readable stack
+            // extent. An unused input load cannot trap or observe other storage.
+            function.layout.remove_inst(inst);
+            continue;
+        }
+        let at = kept.binary_search(&word).expect("live input word");
+        let InstructionData::Load { offset, .. } = &mut function.dfg.insts[inst] else {
+            unreachable!("validated input load");
+        };
+        *offset = ((at * 8) as i32).into();
+    }
+    Some(kept)
+}
+
 /// The local numeric callee receives two disjoint stack packets from Slots.
-/// A directly copied input word can be loaded at its only use on a terminal
-/// route. The caller's input slot stays initialized and immutable throughout.
+/// Load an input word at its first copy on a terminal route. The caller's
+/// input slot stays initialized and immutable throughout.
 pub(super) fn sink_exit_packet_words(
     function: &mut cranelift_codegen::ir::Function,
     input_words: usize,
     output_words: usize,
+    repeated_copies: bool,
 ) -> usize {
     use cranelift_codegen::ir::{InstructionData as Data, Opcode as Op};
     use std::collections::BTreeMap;
@@ -177,26 +220,33 @@ pub(super) fn sink_exit_packet_words(
     let edits = uses
         .into_iter()
         .filter_map(|(word, sites)| {
-            let [store] = sites[..] else {
-                return None;
-            };
-            let Data::Store {
-                opcode: Op::Store,
-                args: [value, address],
-                offset,
-                ..
-            } = function.dfg.insts[store]
-            else {
-                return None;
-            };
-            if function.dfg.resolve_aliases(value) != word
-                || function.dfg.resolve_aliases(address) != output
-                || !within(i32::from(offset), output_words)
-                || !terminal_route(function, function.layout.inst_block(store)?)
-            {
+            let (&first, remaining) = sites.split_first()?;
+            if !remaining.is_empty() && !repeated_copies {
                 return None;
             }
-            Some((loads[&word].0, store))
+            let exit = function.layout.inst_block(first)?;
+            if !terminal_route(function, exit) {
+                return None;
+            }
+            for store in sites {
+                let Data::Store {
+                    opcode: Op::Store,
+                    args: [value, address],
+                    offset,
+                    ..
+                } = function.dfg.insts[store]
+                else {
+                    return None;
+                };
+                if function.dfg.resolve_aliases(value) != word
+                    || function.dfg.resolve_aliases(address) != output
+                    || !within(i32::from(offset), output_words)
+                    || function.layout.inst_block(store) != Some(exit)
+                {
+                    return None;
+                }
+            }
+            Some((loads[&word].0, first))
         })
         .collect::<Vec<_>>();
     for &(load, store) in &edits {

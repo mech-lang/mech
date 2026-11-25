@@ -260,16 +260,19 @@ pub fn verify_function<'a, FOI: Into<FlagsOrIsa<'a>>>(
     func: &Function,
     fisa: FOI,
 ) -> VerifierResult<()> {
+    verify_function_and_flowgraph(func, fisa).map(|_| ())
+}
+
+/// Verify the function and return the graphs built directly from its IR.
+pub(crate) fn verify_function_and_flowgraph<'a, FOI: Into<FlagsOrIsa<'a>>>(
+    func: &Function,
+    fisa: FOI,
+) -> Result<(ControlFlowGraph, DominatorTree), VerifierErrors> {
     let _tt = timing::verifier();
-    let mut errors = VerifierErrors::default();
-    let verifier = Verifier::new(func, fisa.into());
-    let result = verifier.run(&mut errors);
-    if errors.is_empty() {
-        result.unwrap();
-        Ok(())
-    } else {
-        Err(errors)
-    }
+    let cfg = ControlFlowGraph::with_function(func);
+    let domtree = DominatorTree::with_function(func, &cfg);
+    verify_ir(func, &domtree, fisa.into())?;
+    Ok((cfg, domtree))
 }
 
 /// Verify `func` after checking the integrity of associated context data structures `cfg` and
@@ -281,15 +284,53 @@ pub fn verify_context<'a, FOI: Into<FlagsOrIsa<'a>>>(
     fisa: FOI,
     errors: &mut VerifierErrors,
 ) -> VerifierStepResult {
+    verify_context_dominators(func, cfg, domtree, fisa.into(), errors).map(drop)
+}
+
+/// Verify the context and return the independently computed dominator tree.
+pub(crate) fn verify_context_dominators(
+    func: &Function,
+    cfg: &ControlFlowGraph,
+    domtree: &DominatorTree,
+    fisa: FlagsOrIsa<'_>,
+    errors: &mut VerifierErrors,
+) -> Result<DominatorTree, ()> {
     let _tt = timing::verifier();
-    let verifier = Verifier::new(func, fisa.into());
+    let expected_cfg = ControlFlowGraph::with_function(func);
+    let expected_domtree = DominatorTree::with_function(func, &expected_cfg);
+    let verifier = Verifier::new(func, fisa, &expected_domtree);
     if cfg.is_valid() {
-        verifier.cfg_integrity(cfg, errors)?;
+        verifier.cfg_integrity(&expected_cfg, cfg, errors)?;
     }
     if domtree.is_valid() {
         verifier.domtree_integrity(domtree, errors)?;
     }
-    verifier.run(errors)
+    verifier.run(errors)?;
+    Ok(expected_domtree)
+}
+
+/// Run the full IR checks with a dominator tree known to match the current
+/// function's control flow. The caller must own the analyses and any edits.
+pub(crate) fn verify_ir_with_dominators(
+    func: &Function,
+    domtree: &DominatorTree,
+    fisa: FlagsOrIsa<'_>,
+) -> VerifierResult<()> {
+    let _tt = timing::verifier();
+    verify_ir(func, domtree, fisa)
+}
+
+fn verify_ir(
+    func: &Function,
+    domtree: &DominatorTree,
+    fisa: FlagsOrIsa<'_>,
+) -> VerifierResult<()> {
+    let mut errors = VerifierErrors::default();
+    let result = Verifier::new(func, fisa, domtree).run(&mut errors);
+    if errors.is_empty() {
+        result.unwrap();
+    }
+    errors.into()
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -301,18 +342,14 @@ enum BlockCallTargetType {
 
 struct Verifier<'a> {
     func: &'a Function,
-    expected_cfg: ControlFlowGraph,
-    expected_domtree: DominatorTree,
+    expected_domtree: &'a DominatorTree,
     isa: Option<&'a dyn TargetIsa>,
 }
 
 impl<'a> Verifier<'a> {
-    pub fn new(func: &'a Function, fisa: FlagsOrIsa<'a>) -> Self {
-        let expected_cfg = ControlFlowGraph::with_function(func);
-        let expected_domtree = DominatorTree::with_function(func, &expected_cfg);
+    fn new(func: &'a Function, fisa: FlagsOrIsa<'a>, expected_domtree: &'a DominatorTree) -> Self {
         Self {
             func,
-            expected_cfg,
             expected_domtree,
             isa: fisa.isa,
         }
@@ -1750,16 +1787,29 @@ impl<'a> Verifier<'a> {
 
     fn cfg_integrity(
         &self,
+        expected_cfg: &ControlFlowGraph,
         cfg: &ControlFlowGraph,
         errors: &mut VerifierErrors,
     ) -> VerifierStepResult {
+        // The CFG stores successors by block and predecessors by instruction.
+        // Equal ordered edges prove equal sets without allocating per block.
+        // Keep the set comparison for mismatches and their diagnostics.
+        if self.func.layout.blocks().all(|block| {
+            expected_cfg.succ_iter(block).eq(cfg.succ_iter(block))
+                && expected_cfg
+                    .pred_iter(block)
+                    .map(|edge| edge.inst)
+                    .eq(cfg.pred_iter(block).map(|edge| edge.inst))
+        }) {
+            return errors.as_result();
+        }
         let mut expected_succs = BTreeSet::<Block>::new();
         let mut got_succs = BTreeSet::<Block>::new();
         let mut expected_preds = BTreeSet::<Inst>::new();
         let mut got_preds = BTreeSet::<Inst>::new();
 
         for block in self.func.layout.blocks() {
-            expected_succs.extend(self.expected_cfg.succ_iter(block));
+            expected_succs.extend(expected_cfg.succ_iter(block));
             got_succs.extend(cfg.succ_iter(block));
 
             let missing_succs: Vec<Block> =
@@ -1782,7 +1832,7 @@ impl<'a> Verifier<'a> {
             }
 
             expected_preds.extend(
-                self.expected_cfg
+                expected_cfg
                     .pred_iter(block)
                     .map(|BlockPredecessor { inst, .. }| inst),
             );
@@ -2116,6 +2166,8 @@ impl<'a> Verifier<'a> {
 #[cfg(test)]
 mod tests {
     use super::{Verifier, VerifierError, VerifierErrors};
+    use crate::dominator_tree::DominatorTree;
+    use crate::flowgraph::ControlFlowGraph;
     use crate::ir::instructions::{InstructionData, Opcode};
     use crate::ir::{AbiParam, Function, Type, types};
     use crate::settings;
@@ -2140,7 +2192,9 @@ mod tests {
     fn empty() {
         let func = Function::new();
         let flags = &settings::Flags::new(settings::builder());
-        let verifier = Verifier::new(&func, flags.into());
+        let cfg = ControlFlowGraph::with_function(&func);
+        let domtree = DominatorTree::with_function(&func, &cfg);
+        let verifier = Verifier::new(&func, flags.into(), &domtree);
         let mut errors = VerifierErrors::default();
 
         assert_eq!(verifier.run(&mut errors), Ok(()));
@@ -2166,7 +2220,9 @@ mod tests {
             block0,
         );
         let flags = &settings::Flags::new(settings::builder());
-        let verifier = Verifier::new(&func, flags.into());
+        let cfg = ControlFlowGraph::with_function(&func);
+        let domtree = DominatorTree::with_function(&func, &cfg);
+        let verifier = Verifier::new(&func, flags.into(), &domtree);
         let mut errors = VerifierErrors::default();
 
         let _ = verifier.run(&mut errors);
@@ -2194,7 +2250,9 @@ mod tests {
         func.layout.append_inst(end_inst, block0);
 
         let flags = &settings::Flags::new(settings::builder());
-        let verifier = Verifier::new(&func, flags.into());
+        let cfg = ControlFlowGraph::with_function(&func);
+        let domtree = DominatorTree::with_function(&func, &cfg);
+        let verifier = Verifier::new(&func, flags.into(), &domtree);
         let mut errors = VerifierErrors::default();
 
         let _ = verifier.run(&mut errors);
@@ -2249,7 +2307,9 @@ mod tests {
 
         let mut errors = VerifierErrors::default();
         let flags = &settings::Flags::new(settings::builder());
-        let verifier = Verifier::new(&func, flags.into());
+        let cfg = ControlFlowGraph::with_function(&func);
+        let domtree = DominatorTree::with_function(&func, &cfg);
+        let verifier = Verifier::new(&func, flags.into(), &domtree);
 
         let _ = verifier.typecheck_function_signature(&mut errors);
         assert_err_with_msg!(errors, "Parameter at position 0 has an invalid type");
@@ -2262,7 +2322,9 @@ mod tests {
 
         let mut errors = VerifierErrors::default();
         let flags = &settings::Flags::new(settings::builder());
-        let verifier = Verifier::new(&func, flags.into());
+        let cfg = ControlFlowGraph::with_function(&func);
+        let domtree = DominatorTree::with_function(&func, &cfg);
+        let verifier = Verifier::new(&func, flags.into(), &domtree);
 
         let _ = verifier.typecheck_function_signature(&mut errors);
         assert_err_with_msg!(errors, "Return value at position 0 has an invalid type");
@@ -2285,7 +2347,9 @@ mod tests {
         // Setup verifier.
         let mut errors = VerifierErrors::default();
         let flags = &settings::Flags::new(settings::builder());
-        let verifier = Verifier::new(&func, flags.into());
+        let cfg = ControlFlowGraph::with_function(&func);
+        let domtree = DominatorTree::with_function(&func, &cfg);
+        let verifier = Verifier::new(&func, flags.into(), &domtree);
 
         // Now the error message, when printed, should contain the instruction sequence causing the
         // error (i.e. f64const 0.0) and not only its entity value (i.e. inst0)
@@ -2303,7 +2367,9 @@ mod tests {
         func.layout.append_block(block0);
 
         let flags = &settings::Flags::new(settings::builder());
-        let verifier = Verifier::new(&func, flags.into());
+        let cfg = ControlFlowGraph::with_function(&func);
+        let domtree = DominatorTree::with_function(&func, &cfg);
+        let verifier = Verifier::new(&func, flags.into(), &domtree);
         let mut errors = VerifierErrors::default();
         let _ = verifier.run(&mut errors);
 

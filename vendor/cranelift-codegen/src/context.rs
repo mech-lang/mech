@@ -25,7 +25,10 @@ use crate::result::{CodegenResult, CompileResult};
 use crate::settings::{FlagsOrIsa, OptLevel};
 use crate::trace;
 use crate::unreachable_code::eliminate_unreachable_code;
-use crate::verifier::{VerifierErrors, VerifierResult, verify_context};
+use crate::verifier::{
+    VerifierErrors, VerifierResult, verify_context, verify_context_dominators,
+    verify_function_and_flowgraph, verify_ir_with_dominators,
+};
 use crate::{CompileError, timing};
 #[cfg(feature = "souper-harvest")]
 use alloc::string::String;
@@ -173,12 +176,15 @@ impl Context {
             self.canonicalize_nans(isa)?;
         }
 
-        self.legalize(isa)?;
-
-        self.compute_cfg();
-        self.compute_domtree();
-        self.eliminate_unreachable_code(isa)?;
-        self.remove_constant_phis(isa)?;
+        self.legalize_ir(isa);
+        if isa.flags().enable_verifier() {
+            // The verifier builds both graphs from the legalized function.
+            // Keep those graphs for the next pass instead of rebuilding them.
+            (self.cfg, self.domtree) = verify_function_and_flowgraph(&self.func, isa)?;
+        } else {
+            self.flowgraph();
+        }
+        self.prune_and_remove_constant_phis(isa, true)?;
 
         self.func.dfg.resolve_all_aliases();
 
@@ -274,7 +280,7 @@ impl Context {
         &mut self,
         fisa: FOI,
     ) -> CodegenResult<()> {
-        do_remove_constant_phis(&mut self.func, &mut self.domtree);
+        do_remove_constant_phis(&mut self.func, &self.domtree);
         self.verify_if(fisa)?;
         Ok(())
     }
@@ -295,6 +301,11 @@ impl Context {
 
     /// Run the legalizer for `isa` on the function.
     pub fn legalize(&mut self, isa: &dyn TargetIsa) -> CodegenResult<()> {
+        self.legalize_ir(isa);
+        self.verify_if(isa)
+    }
+
+    fn legalize_ir(&mut self, isa: &dyn TargetIsa) {
         // Legalization invalidates the domtree and loop_analysis by mutating the CFG.
         // TODO: Avoid doing this when legalization doesn't actually mutate the CFG.
         self.domtree.clear();
@@ -303,7 +314,6 @@ impl Context {
 
         // Run some specific legalizations only.
         simple_legalize(&mut self.func, isa);
-        self.verify_if(isa)
     }
 
     /// Compute the control flow graph.
@@ -335,6 +345,63 @@ impl Context {
     {
         eliminate_unreachable_code(&mut self.func, &mut self.cfg, &self.domtree);
         self.verify_if(fisa)
+    }
+
+    /// Prune unreachable blocks and then remove constant phis.
+    ///
+    /// Verification of the pruned function also covers the final state when
+    /// the phi pass leaves the function intact. The standalone pass still
+    /// verifies its result, since its caller may pass an unverified function.
+    pub fn prune_unreachable_and_remove_constant_phis(
+        &mut self,
+        isa: &dyn TargetIsa,
+    ) -> CodegenResult<()> {
+        self.prune_and_remove_constant_phis(isa, false)
+    }
+
+    /// Build the flowgraph, prune unreachable blocks, and remove constant phis.
+    pub fn compute_flowgraph_and_cleanup(&mut self, isa: &dyn TargetIsa) -> CodegenResult<()> {
+        self.flowgraph();
+        self.prune_and_remove_constant_phis(isa, true)
+    }
+
+    fn prune_and_remove_constant_phis(
+        &mut self,
+        isa: &dyn TargetIsa,
+        fresh_flowgraph: bool,
+    ) -> CodegenResult<()> {
+        let pruned = eliminate_unreachable_code(&mut self.func, &mut self.cfg, &self.domtree);
+        let fisa = FlagsOrIsa::from(isa);
+        if !fisa.flags.enable_verifier() {
+            do_remove_constant_phis(&mut self.func, &self.domtree);
+            return Ok(());
+        }
+
+        let verified;
+        let dominators = if fresh_flowgraph && !pruned {
+            // The caller built both graphs immediately before pruning. With
+            // no removed blocks, only unused jump and exception tables can
+            // have changed, so the complete control-flow layout still matches.
+            verify_ir_with_dominators(&self.func, &self.domtree, fisa)?;
+            &self.domtree
+        } else {
+            let mut errors = VerifierErrors::default();
+            let result =
+                verify_context_dominators(&self.func, &self.cfg, &self.domtree, fisa, &mut errors);
+            if !errors.is_empty() {
+                return Err(errors.into());
+            }
+            verified = result.expect("verification failed without errors");
+            &verified
+        };
+
+        if do_remove_constant_phis(&mut self.func, &self.domtree) {
+            // The edit changes formals, aliases, and actual arguments. Both
+            // graphs still apply because the pass preserves block and
+            // instruction layout and the order and destinations of all edges.
+            verify_ir_with_dominators(&self.func, dominators, fisa)?;
+        }
+        Ok(())
     }
 
     /// Replace all redundant loads with the known values in

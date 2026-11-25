@@ -3,8 +3,8 @@ use crate::native_artifact::{NativeCompileError, compiler::backend};
 use cranelift_codegen::{
     flowgraph::ControlFlowGraph,
     ir::{
-        Block, BlockCall, ExternalName, Function, Inst, InstructionData as Data, MemFlags, Opcode,
-        types,
+        AbiParam, Block, BlockCall, ExternalName, Function, Inst, InstBuilder,
+        InstructionData as Data, MemFlags, Opcode, Value, ValueDef, types,
     },
 };
 use cranelift_module::{FuncId, FuncOrDataId, Linkage, Module};
@@ -210,6 +210,93 @@ pub(super) fn share<M: Module>(
         }
     }
     Ok(retirements.len())
+}
+
+fn is_null_owner(function: &Function, owner: Value) -> bool {
+    let owner = function.dfg.resolve_aliases(owner);
+    let ValueDef::Result(inst, 0) = function.dfg.value_def(owner) else {
+        return false;
+    };
+    function.dfg.value_type(owner) == types::I64
+        && matches!(function.dfg.insts[inst],
+            Data::UnaryImm { opcode: Opcode::Iconst, imm } if imm.bits() == 0)
+}
+
+/// Reuse the ordered release of fewer owners when some arguments are null.
+/// The remaining arguments can still be null or alias each other.
+pub(super) fn trim_empty_owners<M: Module>(
+    module: &mut M,
+    function: &mut Function,
+) -> Result<usize, NativeCompileError> {
+    let grouped = ["mech_compact_release_two", "mech_compact_release_four"];
+    let mut edits = Vec::new();
+    for block in function.layout.blocks() {
+        for inst in function.layout.block_insts(block) {
+            let Data::Call {
+                opcode: Opcode::Call,
+                func_ref,
+                ..
+            } = function.dfg.insts[inst]
+            else {
+                continue;
+            };
+            let Some(id) = super::inlining::module_callee(function, func_ref) else {
+                continue;
+            };
+            let callee = module.declarations().get_function_decl(id);
+            if callee.linkage != Linkage::Import
+                || !callee
+                    .name
+                    .as_deref()
+                    .is_some_and(|name| grouped.contains(&name))
+            {
+                continue;
+            }
+            let args = function.dfg.inst_args(inst);
+            let keep = std::iter::once(args[0])
+                .chain(
+                    args[1..]
+                        .iter()
+                        .copied()
+                        .filter(|&owner| !is_null_owner(function, owner)),
+                )
+                .collect::<Vec<_>>();
+            if keep.len() < args.len() {
+                edits.push((inst, keep));
+            }
+        }
+    }
+    let mut providers = [None; 3];
+    let names = [
+        "mech_compact_release_nullable",
+        grouped[0],
+        "mech_compact_release_three",
+    ];
+    for (inst, args) in &edits {
+        if args.len() == 1 {
+            function.dfg.replace(*inst).iconst(types::I64, 0);
+            continue;
+        }
+        let index = args.len() - 2;
+        let provider = match providers[index] {
+            Some(provider) => provider,
+            None => {
+                let mut signature = module.make_signature();
+                signature
+                    .params
+                    .resize(args.len(), AbiParam::new(types::I64));
+                signature.returns.push(AbiParam::new(types::I64));
+                let id = module
+                    .declare_function(names[index], Linkage::Import, &signature)
+                    .map_err(backend)?;
+                let provider = module.declare_func_in_func(id, function);
+                providers[index] = Some(provider);
+                provider
+            }
+        };
+        function.dfg.replace(*inst).call(provider, args);
+    }
+    Ok(edits.len())
 }
 
 #[cfg(test)]

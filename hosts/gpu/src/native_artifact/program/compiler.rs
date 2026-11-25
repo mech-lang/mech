@@ -877,12 +877,56 @@ fn emit_compact_closed_object(
     );
     let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
     eprintln!("compact-stage: native module");
-    let (object, isa) =
-        codegen_backend::object_with_isa("mech_compact_closed_diagnostic", PROGRAM_CODEGEN_FLAGS)?;
+    let mut flags = PROGRAM_CODEGEN_FLAGS.to_vec();
+    if cfg!(target_arch = "aarch64")
+        && !observe
+        && llvm_root.is_none()
+        && let Some(mode) = std::env::var_os("MECH_COMPACT_PAIR_REGISTER_SPILLS")
+    {
+        flags.push(("enable_regalloc_spill_pairs", "true"));
+        if mode == "checked" {
+            flags.push(("regalloc_checker", "true"));
+        }
+    }
+    let alignment = std::env::var("MECH_COMPACT_FUNCTION_ALIGNMENT_LOG2").ok();
+    if cfg!(target_arch = "aarch64")
+        && !observe
+        && llvm_root.is_none()
+        && let Some(alignment) = alignment.as_deref()
+    {
+        if !matches!(alignment, "4" | "5" | "6" | "7") {
+            return Err(backend(
+                "compact function alignment must be 16, 32, 64 or 128 bytes",
+            ));
+        }
+        flags.push(("log2_min_function_alignment", alignment));
+    }
+    let direct_literals = !observe
+        && llvm_root.is_none()
+        && std::env::var_os("MECH_COMPACT_DIRECT_ENTRY_LITERALS").is_some();
+    let emit = |direct| emit_prepared_compact_object(&prepared, observe, llvm_root, &flags, direct);
+    match emit(direct_literals) {
+        Err(error) if direct_literals => {
+            eprintln!("compact-stage: direct literal attempt withdrew: {error}");
+            emit(false)
+        }
+        result => result,
+    }
+}
+
+fn emit_prepared_compact_object(
+    prepared: &PreparedNativeProgram,
+    observe: bool,
+    llvm_root: Option<&super::llvm_backend::NativeLlvmToolchain>,
+    flags: &[(&str, &str)],
+    direct_literals: bool,
+) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
+    let (object, isa) = codegen_backend::object_with_isa("mech_compact_closed_diagnostic", flags)?;
     let mut module = super::compact::PreparedObject::new(object);
     if !observe && let Ok(mode) = std::env::var("MECH_COMPACT_DIRECT_RUNTIME_CALLS") {
         module.use_direct_runtime_calls(&mode);
     }
+    let direct_runtime_calls = module.direct_runtime_calls();
     let threads = std::env::var("MECH_COMPACT_COMPILE_THREADS")
         .ok()
         .and_then(|value| value.parse::<usize>().ok())
@@ -897,24 +941,28 @@ fn emit_compact_closed_object(
         };
         super::compact::define_with_isa(
             &mut module,
-            &prepared,
+            prepared,
             observe,
             share_phase_bodies,
             isa,
             threads,
+            direct_runtime_calls,
             Some(&compile),
+            false,
         )?
-    } else if threads == 0 {
-        super::compact::define(&mut module, &prepared, observe, share_phase_bodies)?
+    } else if threads == 0 && !direct_literals {
+        super::compact::define(&mut module, prepared, observe, share_phase_bodies)?
     } else {
         super::compact::define_with_isa(
             &mut module,
-            &prepared,
+            prepared,
             observe,
             share_phase_bodies,
             isa,
             threads,
+            direct_runtime_calls,
             None,
+            direct_literals,
         )?
     };
     if !observe && std::env::var_os("MECH_COMPACT_EXPORTS_FIRST").is_some() {
@@ -1034,7 +1082,7 @@ pub fn emit_minimal_numeric_object_for_diagnostic(
         let compiled = context
             .compiled_code()
             .ok_or_else(|| backend("minimal numeric function lacks machine code"))?;
-        functions.push(serde_json::json!({"header":site,"symbol":symbol,"input_words":numeric_minimal::input_words(proof,region.tail.carrier().get())?,"output_words":numeric_minimal::output_words(proof)?,"arrays":proof.arrays,"scalar_words":proof.scalar_words,"code_bytes":compiled.code_info().total_size,"stack_bytes":compiled_stack_bytes(&compiled.buffer)?,"cleanup":cleanup,"calls":calls,"bit_counts":bit_counts}));
+        functions.push(serde_json::json!({"header":site,"symbol":symbol,"input_words":numeric_minimal::input_words(proof,region.tail.carrier().get())?,"output_words":numeric_minimal::output_words(proof,false)?,"arrays":proof.arrays,"scalar_words":proof.scalar_words,"code_bytes":compiled.code_info().total_size,"stack_bytes":compiled_stack_bytes(&compiled.buffer)?,"cleanup":cleanup,"calls":calls,"bit_counts":bit_counts}));
     }
     let metadata = serde_json::json!({"contract":"Diagnostic typed computation, exact ordinary accounting/publication/recovery omitted; not NoLimits or a qualified Program entry.","shared_semantic_plan":true,"shared_scalar_array_emitter_and_backend":true,"source_names_not_used_for_selection":true,"functions":functions,"numeric_reports":reports,"codegen_flags":PROGRAM_CODEGEN_FLAGS});
     Ok((module.finish().emit().map_err(backend)?, metadata))

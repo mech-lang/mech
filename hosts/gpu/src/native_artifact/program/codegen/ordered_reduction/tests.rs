@@ -1,6 +1,219 @@
 use super::*;
 use std::collections::{BTreeMap, BTreeSet};
 
+#[cfg(target_arch = "aarch64")]
+#[test]
+fn horizontal_minima_keep_unsigned_values_ties_and_vector_identity() {
+    use super::emit::minimum_word;
+    use cranelift_codegen::ir::condcodes::IntCC;
+    use cranelift_codegen::ir::{AbiParam, InstBuilder, MemFlags, types};
+    use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
+    use cranelift_jit::{JITBuilder, JITModule};
+    use cranelift_module::{Linkage, Module, default_libcall_names};
+
+    let mut module = JITModule::new(
+        JITBuilder::with_flags(
+            &[("opt_level", "speed"), ("enable_verifier", "true")],
+            default_libcall_names(),
+        )
+        .unwrap(),
+    );
+    let mut entries = Vec::new();
+    for mode in 0..5 {
+        let mut context = module.make_context();
+        context.set_disasm(true);
+        context.func.signature.params = vec![AbiParam::new(types::I64); 3];
+        context.func.signature.returns = vec![AbiParam::new(types::I32)];
+        let mut builder = FunctionBuilderContext::new();
+        let mut b = FunctionBuilder::new(&mut context.func, &mut builder);
+        let entry = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let [input, other, output] = b.block_params(entry)[..] else {
+            unreachable!()
+        };
+        let values = b.ins().load(types::I32X4, MemFlags::new(), input, 0);
+        let other = b.ins().load(types::I32X4, MemFlags::new(), other, 0);
+        let minimum = if mode == 3 {
+            // Almost the same tree, but the last lane belongs to another
+            // vector. A same-vector reduction would be incorrect here.
+            let a = b.ins().extractlane(values, 0);
+            let b1 = b.ins().extractlane(values, 1);
+            let c = b.ins().extractlane(values, 2);
+            let d = b.ins().extractlane(other, 3);
+            let low = b.ins().umin(a, b1);
+            let high = b.ins().umin(c, d);
+            b.ins().umin(low, high)
+        } else {
+            minimum_word(&mut b, values)
+        };
+        let broadcast = b.ins().splat(types::I32X4, minimum);
+        if mode != 0 {
+            b.ins().store(MemFlags::new(), broadcast, output, 0);
+        }
+        let result = if mode == 1 {
+            b.ins().iconst(types::I32, 0)
+        } else if mode == 4 {
+            // Costs tied across different lanes still choose the earliest
+            // original index, including an unchanged all-missing sentinel.
+            let equal = b.ins().icmp(IntCC::Equal, values, broadcast);
+            let missing = b.ins().iconst(types::I32, -1);
+            let missing = b.ins().splat(types::I32X4, missing);
+            let indices = b.ins().bitselect(equal, other, missing);
+            minimum_word(&mut b, indices)
+        } else {
+            minimum
+        };
+        b.ins().return_(&[result]);
+        b.seal_all_blocks();
+        b.finalize();
+        let id = module
+            .declare_function(
+                &format!("horizontal_minimum_{mode}"),
+                Linkage::Local,
+                &context.func.signature,
+            )
+            .unwrap();
+        module.define_function(id, &mut context).unwrap();
+        let assembly = context.compiled_code().unwrap().vcode.as_ref().unwrap();
+        assert_eq!(assembly.contains("uminv"), mode != 3, "{assembly}");
+        entries.push(id);
+    }
+    module.finalize_definitions().unwrap();
+    type Entry = unsafe extern "C" fn(*const u32, *const u32, *mut u32) -> u32;
+    let mut seed = 0x0123_4567_89ab_cdefu64;
+    for (mode, id) in entries.into_iter().enumerate() {
+        // SAFETY: the live module owns each function with this exact signature.
+        let call: Entry = unsafe { std::mem::transmute(module.get_finalized_function(id)) };
+        for sample in 0..512 {
+            let mut next = || {
+                seed ^= seed << 13;
+                seed ^= seed >> 7;
+                seed ^= seed << 17;
+                seed as u32
+            };
+            let mut input = std::array::from_fn::<_, 4, _>(|_| next());
+            let mut indices = std::array::from_fn::<_, 4, _>(|_| next());
+            match sample % 8 {
+                0 => input = [u32::MAX; 4],
+                1 => input = [0; 4],
+                2 => input = [u32::MAX, 0x8000_0000, 0x7fff_ffff, 0xffff_fffe],
+                3 => input = [7, 7, 8, 7],
+                4 => indices = [u32::MAX; 4],
+                _ => {}
+            }
+            let minimum = if mode == 3 {
+                *[input[0], input[1], input[2], indices[3]]
+                    .iter()
+                    .min()
+                    .unwrap()
+            } else {
+                *input.iter().min().unwrap()
+            };
+            let expected = match mode {
+                1 => 0,
+                4 => input
+                    .iter()
+                    .zip(indices)
+                    .filter_map(|(&cost, index)| (cost == minimum).then_some(index))
+                    .min()
+                    .unwrap(),
+                _ => minimum,
+            };
+            let old_input = input;
+            let old_indices = indices;
+            let mut output = [0xa5a5_a5a5; 6];
+            // SAFETY: input vectors and disjoint output have their full live
+            // initialized extent. The output has one guard word on each side.
+            let actual =
+                unsafe { call(input.as_ptr(), indices.as_ptr(), output.as_mut_ptr().add(1)) };
+            assert_eq!(actual, expected, "mode {mode}, sample {sample}");
+            assert_eq!(input, old_input);
+            assert_eq!(indices, old_indices);
+            assert_eq!(output[0], 0xa5a5_a5a5);
+            assert_eq!(output[5], 0xa5a5_a5a5);
+            assert_eq!(
+                output[1..5],
+                [if mode == 0 { 0xa5a5_a5a5 } else { minimum }; 4]
+            );
+        }
+    }
+}
+
+#[cfg(all(target_arch = "aarch64", target_endian = "little"))]
+#[test]
+fn reverse_packed_low_words_keeps_lane_order_and_unaligned_storage() {
+    use super::cost::reverse_low_words;
+    use cranelift_codegen::ir::{AbiParam, InstBuilder, MemFlags, types};
+    use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
+    use cranelift_jit::{JITBuilder, JITModule};
+    use cranelift_module::{Linkage, Module, default_libcall_names};
+
+    let mut module = JITModule::new(
+        JITBuilder::with_flags(
+            &[("opt_level", "speed"), ("enable_verifier", "true")],
+            default_libcall_names(),
+        )
+        .unwrap(),
+    );
+    let mut context = module.make_context();
+    context.func.signature.params = vec![AbiParam::new(types::I64); 2];
+    let mut builder = FunctionBuilderContext::new();
+    let mut b = FunctionBuilder::new(&mut context.func, &mut builder);
+    let entry = b.create_block();
+    b.append_block_params_for_function_params(entry);
+    b.switch_to_block(entry);
+    let [input, output] = b.block_params(entry)[..] else {
+        unreachable!()
+    };
+    let first = b.ins().load(types::I8X16, MemFlags::new(), input, 0);
+    let second = b.ins().load(types::I8X16, MemFlags::new(), input, 16);
+    let result = reverse_low_words(&mut b, first, second);
+    b.ins().store(MemFlags::new(), result, output, 0);
+    b.ins().return_(&[]);
+    b.seal_all_blocks();
+    b.finalize();
+    let id = module
+        .declare_function(
+            "reverse_packed_words",
+            Linkage::Local,
+            &context.func.signature,
+        )
+        .unwrap();
+    module.define_function(id, &mut context).unwrap();
+    module.finalize_definitions().unwrap();
+    type Entry = unsafe extern "C" fn(*const u8, *mut u8);
+    // SAFETY: the module stays live and its declared signature matches Entry.
+    let call: Entry = unsafe { std::mem::transmute(module.get_finalized_function(id)) };
+    for offset in 0..16 {
+        for seed in [0u64, 1, u32::MAX.into(), u64::MAX, 0x0123_4567_89ab_cdef] {
+            let words = std::array::from_fn::<_, 4, _>(|i| {
+                seed.wrapping_add(0x071b_4a93_de68_25cfu64.wrapping_mul(i as u64))
+            });
+            let mut input = [0xa5; 64];
+            for (i, word) in words.into_iter().enumerate() {
+                input[offset + i * 8..offset + i * 8 + 8].copy_from_slice(&word.to_le_bytes());
+            }
+            let prior = input;
+            let mut output = [0x5a; 64];
+            // SAFETY: each unaligned pointer has its full initialized extent;
+            // the exclusive output and shared input belong to separate arrays.
+            unsafe { call(input.as_ptr().add(offset), output.as_mut_ptr().add(offset)) };
+            assert_eq!(input, prior);
+            assert!(output[..offset].iter().all(|&value| value == 0x5a));
+            assert!(output[offset + 16..].iter().all(|&value| value == 0x5a));
+            for (i, expected) in words.into_iter().rev().enumerate() {
+                let actual = u32::from_le_bytes(
+                    output[offset + i * 4..offset + i * 4 + 4]
+                        .try_into()
+                        .unwrap(),
+                );
+                assert_eq!(actual, expected as u32);
+            }
+        }
+    }
+}
+
 fn candidate() -> Candidate {
     Candidate {
         tag: 100,

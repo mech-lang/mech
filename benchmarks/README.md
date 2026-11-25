@@ -16,3 +16,11 @@ and its [pinned payload release](https://github.com/mech-lang/benchmarks/release
 The archive manifest records every original path, Git blob, SHA-256 and byte count.
 Maintained regression inputs live under `hosts/gpu/tests/fixtures/native/`;
 correctness tests do not download benchmark records.
+
+The follow-up records from [PR #993](https://github.com/mech-lang/mech/pull/993)
+and [PR #995](https://github.com/mech-lang/mech/pull/995) are preserved in
+[benchmarks PR #10](https://github.com/mech-lang/benchmarks/pull/10), with
+[pinned payloads](https://github.com/mech-lang/benchmarks/releases/tag/mech-pr-993-995-evidence-20261121).
+Their manifests preserve original paths, Git blobs, SHA-256 and byte counts.
+Qualification policy tests now belong to the benchmarks correctness workflow.
+Compiler regression inputs remain local under `hosts/gpu/tests/fixtures/native/`.

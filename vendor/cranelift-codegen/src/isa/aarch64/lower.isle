@@ -1190,6 +1190,18 @@
       (with_flags_reg (cmp (operand_size ty) x y)
                       (csel cc x y))))
 
+;; A scalar tree that visits every lane of one I32X4 value is an unsigned
+;; horizontal minimum. The repeated `x` requires the same source vector for
+;; all four lanes; mixed-vector minima must retain their ordinary lowering.
+(rule 4 (lower (has_type $I32
+                (umin _
+                  (umin _ (extractlane _ x @ (value_type $I32X4) (u8_from_uimm8 0))
+                          (extractlane _ x (u8_from_uimm8 1)))
+                  (umin _ (extractlane _ x (u8_from_uimm8 2))
+                          (extractlane _ x (u8_from_uimm8 3))))))
+      (mov_from_vec (vec_lanes (VecLanesOp.Uminv) x (VectorSize.Size32x4))
+                    0 (ScalarSize.Size32)))
+
 (rule umin 2 (lower (has_type (and (fits_in_64 ty) (ty_int _)) (umin _ x y)))
       (cmp_and_choose ty (Cond.Lo) false x y))
 (rule smin 2 (lower (has_type (and (fits_in_64 ty) (ty_int _)) (smin _ x y)))
@@ -2320,6 +2332,19 @@
 
 ;;;; Rules for `splat` ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;; Keep a broadcast horizontal minimum in SIMD registers. This also avoids
+;; a general-register round trip when the scalar minimum has another use.
+(rule 1 (lower (has_type $I32X4
+                (splat _
+                  (umin _
+                    (umin _ (extractlane _ x @ (value_type $I32X4) (u8_from_uimm8 0))
+                            (extractlane _ x (u8_from_uimm8 1)))
+                    (umin _ (extractlane _ x (u8_from_uimm8 2))
+                            (extractlane _ x (u8_from_uimm8 3)))))))
+      (vec_dup_from_fpu
+        (vec_lanes (VecLanesOp.Uminv) x (VectorSize.Size32x4))
+        (VectorSize.Size32x4) 0))
+
 (rule -1 (lower (has_type ty (splat _ x @ (value_type in_ty))))
       (if (ty_int_ref_scalar_64 in_ty))
       (vec_dup x (vector_size ty)))
@@ -3226,14 +3251,14 @@
 (extern constructor icmp_conjunction icmp_conjunction)
 (decl emit_icmp_conjunction_branch (ComparisonChain MachLabel MachLabel) Unit)
 (extern constructor emit_icmp_conjunction_branch emit_icmp_conjunction_branch)
-(rule 3 (lower_branch (brif value _ _) (two_targets taken not_taken))
+(rule 4 (lower_branch (brif value _ _) (two_targets taken not_taken))
       (if-let chain (icmp_conjunction value))
       (emit_icmp_conjunction_branch chain taken not_taken))
 
 ;; A vector truth observed only by a branch needs no canonical scalar Boolean.
 ;; Pairwise unsigned maxima preserve whether any of the 128 bits is nonzero.
 ;; Keep the separate value-producing lowering for Boolean storage/other uses.
-(rule 2 (lower_branch (brif (maybe_uextend (vany_true _ x @ (value_type (ty_vec128 _)))) _ _)
+(rule 3 (lower_branch (brif (maybe_uextend (vany_true _ x @ (value_type (ty_vec128 _)))) _ _)
                       (two_targets taken not_taken))
       (let ((flags ProducesFlags (flags_to_producesflags x))
             (src Reg (put_in_reg x))
@@ -3242,6 +3267,18 @@
         (emit_side_effect
           (with_flags_side_effect flags
             (cond_br taken not_taken (cond_br_not_zero word (OperandSize.Size64)))))))
+
+;; A native-width zero comparison needs no flags. Leave wider and
+;; sub-register values to their regular lowering.
+(decl pure partial zero_comparison_branch (IntCC Type) bool)
+(extern constructor zero_comparison_branch zero_comparison_branch)
+(decl reg_zero_branch (bool Reg OperandSize) CondBrKind)
+(extern constructor reg_zero_branch reg_zero_branch)
+(rule 1 (lower_branch (brif (maybe_uextend (icmp _ cc x @ (value_type ty) (u64_from_iconst 0))) _ _)
+                      (two_targets taken not_taken))
+      (if-let zero (zero_comparison_branch cc ty))
+      (let ((kind CondBrKind (reg_zero_branch zero (put_in_reg x) (operand_size ty))))
+        (emit_side_effect (SideEffectNoResult.Inst (MInst.CondBr taken not_taken kind)))))
 
 ;; `brif` following `icmp`
 (rule (lower_branch (brif (maybe_uextend (icmp _ cc x @ (value_type ty) y)) _ _) (two_targets taken not_taken))
@@ -3280,13 +3317,13 @@
          (cond_br taken not_taken (cond_br_not_zero rt (operand_size $I64)))))))
 
 ;; Special lowerings for `tbnz` - "Test bit and Branch if Nonzero"
-(rule 1 (lower_branch (brif (band _ x @ (value_type ty) (u64_from_iconst n)) _ _)
+(rule 2 (lower_branch (brif (band _ x @ (value_type ty) (u64_from_iconst n)) _ _)
                      (two_targets taken not_taken))
   (if-let bit (test_and_compare_bit_const ty n))
   (emit_side_effect (tbnz taken not_taken x bit)))
 
 ;; Special lowering for `tbz` - "Test bit and Branch if Zero"
-(rule 1 (lower_branch (brif (icmp _ (IntCC.Equal)
+(rule 2 (lower_branch (brif (icmp _ (IntCC.Equal)
                                   (band _ x @ (value_type (fits_in_64 ty))
                                         (u64_from_iconst n))
                                   (u64_from_iconst 0)) _ _)
