@@ -1646,7 +1646,18 @@ jobs:
       - name: Install Rust nightly-2026-03-03
         run: rustup toolchain install nightly-2026-03-03 --profile minimal
       - name: Generate and validate exact linkage surface
-        run: python3 scripts/check-native-linkage-coverage.py surface "${{ matrix.surface }}"
+        timeout-minutes: 95
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage linkage-surface --timeout-secs 5400 -- \
+            python3 scripts/check-native-linkage-coverage.py surface "${{ matrix.surface }}"
+      - name: Retain linkage runner diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-linkage-diagnostics-${{ matrix.surface }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: target/native-plan-logs
+          if-no-files-found: warn
+          retention-days: 14
       - name: Upload linkage surface
         uses: actions/upload-artifact@v4
         with:
@@ -1955,6 +1966,25 @@ jobs:
         run: |
           cargo +nightly-2026-03-03 fetch --locked
           cargo +nightly-2026-03-03 fetch --locked --manifest-path tests/fixtures/native-build-owner-runner/Cargo.toml
+      # GPU test dev-dependencies include the full compiler. Build them once,
+      # outside the execution deadline, before the generated application work.
+      - name: Compile macOS native cache and ownership tests
+        timeout-minutes: 65
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage macos-cache-compile --timeout-secs 3600 \
+            --record-test-executable mech_gpu \
+            --test-executable-file target/native-plan-logs/macos-cache-executable -- \
+            cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
+            --no-default-features --features aot --lib --no-run --message-format=json-render-diagnostics
+      - name: Check native cache and input ownership on macOS
+        timeout-minutes: 20
+        run: |
+          python3 scripts/run-native-plan-stage.py --stage macos-aot-cache --timeout-secs 480 \
+            --test-executable-file target/native-plan-logs/macos-cache-executable -- \
+            batched::aot::tests --test-threads=1 --nocapture
+          python3 scripts/run-native-plan-stage.py --stage macos-jit-input --timeout-secs 480 \
+            --test-executable-file target/native-plan-logs/macos-cache-executable -- \
+            batched::jit::tests --test-threads=1 --nocapture
       # Cold compiler-owner construction has a separate bounded budget; fixture
       # execution must consume those runners rather than starting hidden builds.
       - name: Prepare macOS native owner runners
@@ -1985,18 +2015,6 @@ jobs:
             target/bytecode-v1-fixtures/owner-runner/logs
           if-no-files-found: error
           retention-days: 14
-
-      - name: Check native cache and input ownership on macOS
-        timeout-minutes: 20
-        env:
-          CARGO_INCREMENTAL: 0
-          CARGO_PROFILE_TEST_DEBUG: "0"
-          CARGO_BUILD_JOBS: "1"
-        run: |
-          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
-            --no-default-features --features aot --lib batched::aot::tests -- --test-threads=1
-          cargo +nightly-2026-03-03 test --locked --offline -p mech-gpu \
-            --no-default-features --features aot --lib batched::jit::tests -- --test-threads=1
 
   wasm-bytecode-v1:
     if: ${{ contains(fromJSON(inputs.contract_families), 'all') || contains(fromJSON(inputs.contract_families), 'browser') }}
