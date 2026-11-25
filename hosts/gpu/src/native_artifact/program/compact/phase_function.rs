@@ -8,6 +8,7 @@ use super::super::{
 };
 use super::*;
 use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
+use crate::native_artifact::codegen::route_work::RouteWorkCollector;
 use crate::native_artifact::{
     codegen::{common::unsigned_guard_facts, control::CfgCleanup, options::OptimizationPass},
     program::{
@@ -388,6 +389,7 @@ pub(super) fn define<M: Module>(
     module: &mut M,
     compiler_inputs: &CompilationInputs,
     selected_profiles: &SelectedProfiles,
+    route_work: Option<&RouteWorkCollector>,
     prepared: &PreparedNativeProgram,
     id: usize,
     observe: bool,
@@ -408,6 +410,7 @@ pub(super) fn define<M: Module>(
         module,
         compiler_inputs,
         selected_profiles,
+        route_work,
         prepared,
         id,
         observe,
@@ -431,6 +434,7 @@ pub(super) fn prepare<M: Module>(
     module: &mut M,
     compiler_inputs: &CompilationInputs,
     selected_profiles: &SelectedProfiles,
+    route_work: Option<&RouteWorkCollector>,
     prepared: &PreparedNativeProgram,
     id: usize,
     observe: bool,
@@ -451,6 +455,7 @@ pub(super) fn prepare<M: Module>(
         module,
         compiler_inputs,
         selected_profiles,
+        route_work,
         prepared,
         id,
         observe,
@@ -477,6 +482,7 @@ pub(super) fn prepare_general<M: Module>(
     module: &mut M,
     compiler_inputs: &CompilationInputs,
     selected_profiles: &SelectedProfiles,
+    route_work: Option<&RouteWorkCollector>,
     prepared: &PreparedNativeProgram,
     id: usize,
     observe: bool,
@@ -498,6 +504,7 @@ pub(super) fn prepare_general<M: Module>(
         module,
         compiler_inputs,
         selected_profiles,
+        route_work,
         prepared,
         id,
         observe,
@@ -705,6 +712,7 @@ fn prepare_impl<M: Module>(
     module: &mut M,
     compiler_inputs: &CompilationInputs,
     selected_profiles: &SelectedProfiles,
+    route_work: Option<&RouteWorkCollector>,
     prepared: &PreparedNativeProgram,
     id: usize,
     observe: bool,
@@ -730,9 +738,10 @@ fn prepare_impl<M: Module>(
         .numeric
         .as_ref()
         .ok_or_else(|| backend("phase lacks checked numeric proof"))?;
-    let controls =
-        CompilationControls::with_inputs(OptimizationOptions::default(), compiler_inputs);
     let symbol = format!("mech_compact_numeric_{header}{suffix}");
+    let controls =
+        CompilationControls::with_inputs(OptimizationOptions::default(), compiler_inputs)
+            .with_route_recorder(route_work.map(|work| work.register(&symbol)));
     let signature = phase_signature(module);
     let error_origin_base = bodies.is_some().then_some(header);
     let (mut context, mut report) = phase_ir(
@@ -2241,8 +2250,14 @@ fn prepare_impl<M: Module>(
             &symbol,
         ) {
             let isa = module.isa();
-            let loops = cfg_cleanup::thread_loop_edges(&controls, &mut context, isa)?;
-            let routes = cfg_cleanup::forward_identity_routes(&controls, &mut context, isa)?;
+            let mut sequence = cfg_cleanup::RouteSequence::new(
+                &controls,
+                &mut context,
+                isa,
+                cfg_cleanup::RouteCleanup::Ordered,
+            );
+            let loops = sequence.thread_loops()?;
+            let routes = sequence.forward_identity(cfg_cleanup::IdentityRouteOptions::default())?;
             if compiler_inputs
                 .var_os("MECH_INSPECT_OPTIMIZED_PHASE_CLIF")
                 .is_some()

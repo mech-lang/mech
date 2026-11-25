@@ -776,9 +776,16 @@ fn emit_prepared_compact_object(
     selected_profiles: &SelectedProfiles,
     measurements: &mut Measurements<'_>,
 ) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
-    let (object, isa) = measurements.stage("module_setup", || {
-        codegen_backend::object_with_isa("mech_compact_closed_diagnostic", flags, compiler_inputs)
-    })?;
+    let route_work = measurements.route_collector();
+    let (object, isa) = measurements
+        .stage("module_setup", || {
+            codegen_backend::object_with_isa(
+                "mech_compact_closed_diagnostic",
+                flags,
+                compiler_inputs,
+            )
+        })
+        .inspect_err(|_| measurements.record_route_work(route_work.as_ref()))?;
     let mut module =
         super::compact::PreparedObject::new(object, compiler_inputs, selected_profiles);
     if !observe && let Ok(mode) = compiler_inputs.var("MECH_COMPACT_DIRECT_RUNTIME_CALLS") {
@@ -803,6 +810,7 @@ fn emit_prepared_compact_object(
                 observe,
                 share_phase_bodies,
                 selected_profiles,
+                route_work.as_ref(),
             )
         } else {
             super::compact::define_with_isa(
@@ -815,9 +823,12 @@ fn emit_prepared_compact_object(
                 direct_runtime_calls,
                 direct_literals,
                 selected_profiles,
+                route_work.as_ref(),
             )
         }
-    })?;
+    });
+    measurements.record_route_work(route_work.as_ref());
+    let metadata = metadata?;
     if !observe
         && compiler_inputs
             .var_os("MECH_COMPACT_EXPORTS_FIRST")

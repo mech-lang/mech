@@ -7,6 +7,7 @@ use super::{
     phase_bodies::PhaseBodies, phase_storage, vector_guard_facts,
 };
 use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
+use crate::native_artifact::codegen::route_work::RouteWorkCollector;
 use crate::native_artifact::codegen::{
     common::ssa_words::Words,
     control::plan::CodePlan,
@@ -1020,6 +1021,7 @@ pub(super) fn define<M: Module>(
     module: &mut M,
     compiler_inputs: &CompilationInputs,
     selected_profiles: &SelectedProfiles,
+    route_work: Option<&RouteWorkCollector>,
     prepared: &PreparedNativeProgram,
     layout: &Layout,
     literals: &LiteralViews,
@@ -1376,6 +1378,7 @@ pub(super) fn define<M: Module>(
                     &mut recorded,
                     compiler_inputs,
                     selected_profiles,
+                    route_work,
                     prepared,
                     id,
                     observe,
@@ -1459,6 +1462,7 @@ pub(super) fn define<M: Module>(
                     module,
                     compiler_inputs,
                     selected_profiles,
+                    route_work,
                     prepared,
                     id,
                     observe,
@@ -1501,6 +1505,7 @@ pub(super) fn define<M: Module>(
                 module,
                 compiler_inputs,
                 selected_profiles,
+                route_work,
                 prepared,
                 id,
                 observe,
@@ -1539,6 +1544,7 @@ pub(super) fn define<M: Module>(
                 &mut recorded,
                 compiler_inputs,
                 selected_profiles,
+                route_work,
                 prepared,
                 id,
                 observe,
@@ -1571,6 +1577,7 @@ pub(super) fn define<M: Module>(
                     module,
                     compiler_inputs,
                     selected_profiles,
+                    route_work,
                     prepared,
                     id,
                     observe,
@@ -1707,6 +1714,7 @@ pub(super) fn define<M: Module>(
                     module,
                     compiler_inputs,
                     selected_profiles,
+                    route_work,
                     prepared,
                     id,
                     observe,

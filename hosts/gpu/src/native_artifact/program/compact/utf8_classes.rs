@@ -399,6 +399,7 @@ mod tests {
                 false,
                 false,
                 &super::super::profile_inputs::SelectedProfiles::new(),
+                None,
             )
             .unwrap();
             assert_eq!(

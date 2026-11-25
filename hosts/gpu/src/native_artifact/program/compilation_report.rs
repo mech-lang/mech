@@ -1,6 +1,7 @@
 //! Optional host measurements for the compact compiler diagnostic.
 use super::compact::profile_inputs::SelectedProfiles;
 use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
+use crate::native_artifact::codegen::route_work::RouteWorkCollector;
 use crate::native_artifact::identity::{hex, transcript::bytes};
 use cranelift_codegen::isa::TargetIsa;
 use cranelift_object::ObjectProduct;
@@ -142,6 +143,19 @@ impl Measurements<'_> {
             report
                 .attempts
                 .push(serde_json::json!({"direct_entry_literals": direct_literals}));
+        }
+    }
+
+    pub(super) fn route_collector(&self) -> Option<RouteWorkCollector> {
+        self.0.as_ref().map(|_| RouteWorkCollector::new())
+    }
+
+    pub(super) fn record_route_work(&mut self, work: Option<&RouteWorkCollector>) {
+        if let Some(work) = work
+            && let Some(report) = &mut self.0
+            && let Some(attempt) = report.active_attempt
+        {
+            report.attempts[attempt]["route_sequence_work"] = work.json();
         }
     }
 

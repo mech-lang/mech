@@ -250,7 +250,7 @@ fn optimize_with_index(
 }
 
 #[cfg(test)]
-mod test_support;
+pub(super) mod test_support;
 #[cfg(test)]
 mod tests;
 #[cfg(test)]

@@ -19,6 +19,10 @@ pub(in crate::native_artifact) mod empty_jumps;
 pub(in crate::native_artifact) mod future_store;
 pub(in crate::native_artifact) mod grouped_histogram;
 pub(in crate::native_artifact) mod identity_routes;
+mod route_sequence;
+pub(in crate::native_artifact) use route_sequence::{
+    IdentityRouteOptions, RouteCleanup, RouteSequence,
+};
 pub(in crate::native_artifact) mod immutable_word_reads;
 pub(in crate::native_artifact) mod independent_private_read;
 pub(in crate::native_artifact) mod indexed_addresses;
@@ -345,6 +349,29 @@ pub(in crate::native_artifact) fn optimize(
     Ok(report)
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(in crate::native_artifact) enum FinalCleanupSchedule {
+    Disabled,
+    Ordered,
+    Routes,
+    BatchedRoutes,
+    LeanRoutes,
+    Full,
+}
+
+impl FinalCleanupSchedule {
+    pub fn from_legacy(value: Option<&std::ffi::OsStr>) -> Self {
+        match value {
+            None => Self::Disabled,
+            Some(mode) if mode == "ordered" => Self::Ordered,
+            Some(mode) if mode == "routes" => Self::Routes,
+            Some(mode) if mode == "batched-routes" => Self::BatchedRoutes,
+            Some(mode) if mode == "lean-routes" => Self::LeanRoutes,
+            Some(_) => Self::Full,
+        }
+    }
+}
+
 // Optional compact final cleanup can repeat the ordered CFG/phi/liveness
 // schedule without rerunning the imported source-specialization searches.
 // Every retained fold still derives its facts from the current function.
@@ -364,8 +391,11 @@ pub(in crate::native_artifact) fn optimize_final_routes(
     isa: &dyn TargetIsa,
 ) -> Result<CfgCleanup, NativeCompileError> {
     let mut report = optimize_final_ordered(controls, context, isa)?;
-    report.loop_edges += thread_loop_edges(controls, context, isa)?.threaded_edges;
-    report.identity_edges += forward_identity_routes(controls, context, isa)?.threaded_edges;
+    let mut routes = RouteSequence::new(controls, context, isa, RouteCleanup::Ordered);
+    report.loop_edges += routes.thread_loops()?.threaded_edges;
+    report.identity_edges += routes
+        .forward_identity(IdentityRouteOptions::default())?
+        .threaded_edges;
     report.adjacent_addresses_reused += reuse_adjacent_addresses(controls, context, isa)?;
     (report.after_blocks, report.after_instructions) = counts(&context.func);
     Ok(report)
@@ -385,53 +415,18 @@ pub(in crate::native_artifact) fn optimize_final_batched_routes(
         .inputs()
         .var_os("MECH_COMPACT_VERIFY_CLEANUP_ONCE")
         .is_some();
-    let finish_route = |context: &mut Context| -> Result<(), NativeCompileError> {
-        if combine_verification {
-            context
-                .compute_flowgraph_cleanup_and_verify(isa)
-                .map_err(backend)?;
-        } else {
-            context
-                .compute_flowgraph_and_cleanup(isa)
-                .map_err(backend)?;
-            context.verify(isa).map_err(backend)?;
-        }
-        Ok(())
-    };
-    // Each search reconstructs its current CFG and dominance facts. Between
-    // rewrites retire unreachable routes/constant phis, retaining valid SSA,
-    // without rerunning every ordered source-range search after each edge.
-    if controls.enabled(OptimizationPass::LoopEdgeThreading) {
-        context.func.dfg.resolve_all_aliases();
-        context.compute_cfg();
-        context.compute_domtree();
-        report.loop_edges = threaded_edges::optimize(
-            controls.inputs(),
-            &mut context.func,
-            &context.cfg,
-            &context.domtree,
-        )
+    let mut routes = RouteSequence::new(
+        controls,
+        context,
+        isa,
+        RouteCleanup::Structural {
+            combined_verification: combine_verification,
+        },
+    );
+    report.loop_edges = routes.thread_loops()?.threaded_edges;
+    report.identity_edges = routes
+        .forward_identity(IdentityRouteOptions::default())?
         .threaded_edges;
-        if report.loop_edges != 0 {
-            finish_route(context)?;
-        }
-    }
-    if controls.enabled(OptimizationPass::IdentityRoutes) {
-        context.func.dfg.resolve_all_aliases();
-        context.compute_cfg();
-        context.compute_domtree();
-        report.identity_edges = identity_routes::optimize(
-            &mut context.func,
-            &context.cfg,
-            &context.domtree,
-            None,
-            false,
-        )
-        .threaded_edges;
-        if report.identity_edges != 0 {
-            finish_route(context)?;
-        }
-    }
     if report.loop_edges != 0 || report.identity_edges != 0 {
         if ordered_finish {
             optimize_final_ordered(controls, context, isa)?;
@@ -608,27 +603,8 @@ pub(in crate::native_artifact) fn forward_identity_routes_from(
     origins: Option<&[Block]>,
     equate_transports: bool,
 ) -> Result<identity_routes::Report, NativeCompileError> {
-    if !controls.enabled(OptimizationPass::CfgCleanup)
-        || !controls.enabled(OptimizationPass::IdentityRoutes)
-    {
-        return Ok(identity_routes::Report::default());
-    }
-    context.func.dfg.resolve_all_aliases();
-    context.compute_cfg();
-    context.compute_domtree();
-    let report = identity_routes::optimize(
-        &mut context.func,
-        &context.cfg,
-        &context.domtree,
-        origins,
-        equate_transports,
-    );
-    if report.threaded_edges != 0 {
-        optimize_ordered(controls, context, isa, true)?;
-        context.func.dfg.resolve_all_aliases();
-        context.verify(isa).map_err(backend)?;
-    }
-    Ok(report)
+    RouteSequence::new(controls, context, isa, RouteCleanup::Ordered)
+        .forward_identity(IdentityRouteOptions::new(origins, equate_transports))
 }
 
 pub(in crate::native_artifact) fn refine_current_predicates(
@@ -1008,28 +984,7 @@ pub(in crate::native_artifact) fn thread_loop_edges(
     context: &mut Context,
     isa: &dyn TargetIsa,
 ) -> Result<threaded_edges::Report, NativeCompileError> {
-    if !controls.enabled(OptimizationPass::CfgCleanup)
-        || !controls.enabled(OptimizationPass::LoopEdgeThreading)
-    {
-        return Ok(threaded_edges::Report::default());
-    }
-    context.func.dfg.resolve_all_aliases();
-    context.compute_cfg();
-    context.compute_domtree();
-    let report = threaded_edges::optimize(
-        controls.inputs(),
-        &mut context.func,
-        &context.cfg,
-        &context.domtree,
-    );
-    if report.threaded_edges != 0 {
-        // No data/egraph pass is added. The existing structural cleanup now
-        // retires dispatch tags whose only remaining incoming value is fixed.
-        optimize_ordered(controls, context, isa, true)?;
-        context.func.dfg.resolve_all_aliases();
-        context.verify(isa).map_err(backend)?;
-    }
-    Ok(report)
+    RouteSequence::new(controls, context, isa, RouteCleanup::Ordered).thread_loops()
 }
 
 /// Run retained DEFLATE SSA passes after the ordinary checked numeric guard
@@ -1050,8 +1005,11 @@ pub(in crate::native_artifact) fn finish_imported_passes(
             optimize_ordered(controls, context, isa, true)?;
         }
     }
-    report.loop_edges += thread_loop_edges(controls, context, isa)?.threaded_edges;
-    report.identity_edges += forward_identity_routes(controls, context, isa)?.threaded_edges;
+    let mut routes = RouteSequence::new(controls, context, isa, RouteCleanup::Ordered);
+    report.loop_edges += routes.thread_loops()?.threaded_edges;
+    report.identity_edges += routes
+        .forward_identity(IdentityRouteOptions::default())?
+        .threaded_edges;
     report.current_predicate_branches +=
         refine_current_predicates(controls, context, isa)?.removed_branches;
     report.known_width_branches_removed += fold_proved_widths(controls, context, isa)?;

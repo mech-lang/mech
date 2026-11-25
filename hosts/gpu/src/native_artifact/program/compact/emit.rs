@@ -14,6 +14,7 @@ use super::{
     terminal_appends::TerminalAppends,
     vector_guard_facts, widening_reduction, word_collections, word_packs,
 };
+use crate::native_artifact::codegen::route_work::RouteWorkCollector;
 use crate::native_artifact::codegen::{
     common::{
         aggregates::{self, CheckedGuards},
@@ -65,6 +66,7 @@ fn seal_auxiliary(
 pub(super) struct Shared<'a> {
     compiler_inputs: &'a CompilationInputs,
     selected_profiles: &'a SelectedProfiles,
+    route_work: Option<&'a RouteWorkCollector>,
     pub layout: Layout,
     pub actions: Vec<Recipe>,
     pub phases: Vec<phases::Phase>,
@@ -82,6 +84,7 @@ pub(in crate::native_artifact) fn define<M: Module>(
     observe: bool,
     share_phase_bodies: bool,
     selected_profiles: &SelectedProfiles,
+    route_work: Option<&RouteWorkCollector>,
 ) -> Result<serde_json::Value, NativeCompileError> {
     define_with_pool(
         module,
@@ -92,6 +95,7 @@ pub(in crate::native_artifact) fn define<M: Module>(
         false,
         prepared.compiler_inputs(),
         selected_profiles,
+        route_work,
     )
 }
 
@@ -105,6 +109,7 @@ pub(in crate::native_artifact::program) fn define_with_isa<M: Module>(
     direct_runtime_calls: super::object::DirectRuntimeCalls,
     direct_literals: bool,
     selected_profiles: &SelectedProfiles,
+    route_work: Option<&RouteWorkCollector>,
 ) -> Result<serde_json::Value, NativeCompileError> {
     let compiler_inputs = prepared.compiler_inputs();
     let pool = (threads != 0)
@@ -128,6 +133,7 @@ pub(in crate::native_artifact::program) fn define_with_isa<M: Module>(
         direct_literals,
         compiler_inputs,
         selected_profiles,
+        route_work,
     )
 }
 
@@ -140,6 +146,7 @@ fn define_with_pool<M: Module>(
     direct_literals: bool,
     compiler_inputs: &CompilationInputs,
     selected_profiles: &SelectedProfiles,
+    route_work: Option<&RouteWorkCollector>,
 ) -> Result<serde_json::Value, NativeCompileError> {
     let plan = prepared.plan();
     let layout = Layout::derive(plan)?;
@@ -177,6 +184,7 @@ fn define_with_pool<M: Module>(
         module,
         compiler_inputs,
         selected_profiles,
+        route_work,
         prepared,
         &layout,
         &literals,
@@ -212,6 +220,7 @@ fn define_with_pool<M: Module>(
     let shared = Shared {
         compiler_inputs,
         selected_profiles,
+        route_work,
         layout,
         actions,
         phases,
@@ -2097,7 +2106,8 @@ fn define_entry<M: Module>(
         eprintln!("compact-values: retained={}", context.func.dfg.num_values());
         eprintln!("compact-stage: CFG cleanup");
         let controls =
-            CompilationControls::with_inputs(OptimizationOptions::default(), compiler_inputs);
+            CompilationControls::with_inputs(OptimizationOptions::default(), compiler_inputs)
+                .with_route_recorder(shared.route_work.map(|work| work.register(symbol)));
         // Match pure numeric idioms only after SSA is sealed. A later pass also
         // sees aliases exposed by CFG/identity forwarding; packet loads stay opaque.
         let mut bit_counts =
@@ -2320,13 +2330,20 @@ fn define_entry<M: Module>(
                 } else {
                     0
                 };
+                let mut routes = cfg_cleanup::RouteSequence::new(
+                    &controls,
+                    &mut context,
+                    isa,
+                    cfg_cleanup::RouteCleanup::Ordered,
+                );
                 let loop_edges = if enabled("thread") {
-                    cfg_cleanup::thread_loop_edges(&controls, &mut context, isa)?.threaded_edges
+                    routes.thread_loops()?.threaded_edges
                 } else {
                     0
                 };
                 let identity = if enabled("identity") {
-                    cfg_cleanup::forward_identity_routes(&controls, &mut context, isa)?
+                    routes
+                        .forward_identity(cfg_cleanup::IdentityRouteOptions::default())?
                         .threaded_edges
                 } else {
                     0
@@ -2452,23 +2469,43 @@ fn define_entry<M: Module>(
             )?;
             eprintln!("compact root coalesced identical arguments: {removed}");
         }
-        if outline_allowed
-            && let Some(schedule) = compiler_inputs.var_os("MECH_COMPACT_FINISH_CFG_CLEANUP")
-        {
-            let cleanup = if schedule == "ordered" {
-                cfg_cleanup::optimize_final_ordered(&controls, &mut context, module.isa())?
-            } else if schedule == "routes" {
-                cfg_cleanup::optimize_final_routes(&controls, &mut context, module.isa())?
-            } else if schedule == "batched-routes" || schedule == "lean-routes" {
-                cfg_cleanup::optimize_final_batched_routes(
+        use cfg_cleanup::FinalCleanupSchedule;
+        let schedule = if outline_allowed {
+            FinalCleanupSchedule::from_legacy(
+                compiler_inputs
+                    .var_os("MECH_COMPACT_FINISH_CFG_CLEANUP")
+                    .as_deref(),
+            )
+        } else {
+            FinalCleanupSchedule::Disabled
+        };
+        let final_cleanup = match schedule {
+            FinalCleanupSchedule::Disabled => None,
+            FinalCleanupSchedule::Ordered => Some(cfg_cleanup::optimize_final_ordered(
+                &controls,
+                &mut context,
+                module.isa(),
+            )?),
+            FinalCleanupSchedule::Routes => Some(cfg_cleanup::optimize_final_routes(
+                &controls,
+                &mut context,
+                module.isa(),
+            )?),
+            FinalCleanupSchedule::BatchedRoutes | FinalCleanupSchedule::LeanRoutes => {
+                Some(cfg_cleanup::optimize_final_batched_routes(
                     &controls,
                     &mut context,
                     module.isa(),
-                    schedule == "batched-routes",
-                )?
-            } else {
-                cfg_cleanup::optimize(&controls, &mut context, module.isa())?
-            };
+                    schedule == FinalCleanupSchedule::BatchedRoutes,
+                )?)
+            }
+            FinalCleanupSchedule::Full => Some(cfg_cleanup::optimize(
+                &controls,
+                &mut context,
+                module.isa(),
+            )?),
+        };
+        if let Some(cleanup) = final_cleanup {
             context.verify(module.isa()).map_err(backend)?;
             eprintln!(
                 "compact final CFG cleanup: {} to {} instructions, {} to {} blocks",

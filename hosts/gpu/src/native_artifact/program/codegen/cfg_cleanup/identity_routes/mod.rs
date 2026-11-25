@@ -243,4 +243,4 @@ pub(super) fn optimize(
 }
 
 #[cfg(test)]
-mod tests;
+pub(super) mod tests;

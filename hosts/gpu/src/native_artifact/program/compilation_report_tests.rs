@@ -1,4 +1,11 @@
-use super::{NativeCompilationReport, NativeCompilerConfiguration};
+use super::{Measurements, NativeCompilationReport, NativeCompilerConfiguration};
+#[test]
+fn route_work_collection_requires_a_host_report() {
+    assert!(Measurements(None).route_collector().is_none());
+    let mut report = NativeCompilationReport::default();
+    assert!(Measurements(Some(&mut report)).route_collector().is_some());
+}
+
 use crate::native_artifact::emit_compact_closed_object_with_configuration_for_diagnostic as compile;
 use mech_core::FunctionCatalog;
 use mech_engine::{CanonicalSourceFrontend, ProgramArtifact};
@@ -67,6 +74,7 @@ fn report_and_compile_workers_preserve_object_and_descriptor() {
                     > 0
             );
             assert_eq!(json["object_attempts"][0]["status"], "emitted");
+            assert!(json["object_attempts"][0]["route_sequence_work"]["units"].is_array());
             assert!(json["stages"].as_array().unwrap().len() >= 6);
         }
     }
@@ -411,6 +419,8 @@ mod qualified {
                     }
                     Ok(bytes)
                 });
+                #[cfg(feature = "construction-census")]
+                let before = cranelift_codegen::construction_census::snapshot();
                 let mut report = NativeCompilationReport::default();
                 let output = emit_compact_with_selected_profiles(
                     &artifact,
@@ -432,6 +442,28 @@ mod qualified {
                 assert_eq!(profiles.len(), ledger.borrow().len());
                 assert!(profiles.iter().all(|row| row["sha256"].as_str().is_some()));
                 assert_eq!(json["compile_workers"], threads.parse::<usize>().unwrap());
+                if mutation == "baseline" {
+                    let mut row = serde_json::json!({
+                        "workers": threads, "object_sha256": digest(&output.0),
+                        "descriptor_sha256": digest(&serde_json::to_vec(&output.1).unwrap()),
+                        "object_sizes": json["object_sizes"],
+                        "attempts": json["object_attempts"],
+                    });
+                    #[cfg(feature = "construction-census")]
+                    {
+                        let after = cranelift_codegen::construction_census::snapshot();
+                        row["census"] = serde_json::json!({
+                            "cfg_builds": after.cfg_builds - before.cfg_builds,
+                            "dom_builds": after.dominator_builds - before.dominator_builds,
+                            "full_verifications": after.full_verifications - before.full_verifications,
+                        });
+                    }
+                    #[cfg(not(feature = "construction-census"))]
+                    {
+                        row["census"] = serde_json::Value::Null;
+                    }
+                    eprintln!("qualified-encoder-work {}", row);
+                }
             }
         }
 
@@ -492,6 +524,13 @@ mod qualified {
         let attempts = report["object_attempts"].as_array().unwrap();
         assert_eq!(attempts.len(), 2);
         assert_eq!(attempts[0]["status"], "failed");
+        for attempt in attempts {
+            assert!(
+                attempt["route_sequence_work"]["units"]
+                    .as_array()
+                    .is_some_and(|units| !units.is_empty())
+            );
+        }
         assert_eq!(attempts[1]["status"], "failed");
         assert_eq!(attempts[0]["error"], attempts[1]["error"]);
         assert_eq!(attempts[0]["direct_entry_literals"], true);
@@ -515,4 +554,45 @@ mod qualified {
 #[ignore = "requires the pinned benchmark checkout and Apple arm64 qualification host"]
 fn qualified_encoder_profile_resolution_and_retry() {
     qualified::run();
+}
+
+#[cfg(not(feature = "construction-census"))]
+#[test]
+fn simultaneous_compilations_keep_route_work_with_their_attempts() {
+    let plain = NativeCompilerConfiguration::capture([]);
+    let identity = NativeCompilerConfiguration::capture([(
+        "MECH_IDENTITY_ROUTE_FORWARDING".into(),
+        "1".into(),
+    )]);
+    let run = |config: &NativeCompilerConfiguration| {
+        let (artifact, catalog) = input();
+        let mut report = NativeCompilationReport::default();
+        let artifact = compile(&artifact, &catalog, config, false, Some(&mut report)).unwrap();
+        let attempts = report.json(&artifact.1)["object_attempts"].clone();
+        attempts[0]["route_sequence_work"].clone()
+    };
+    let reference_plain = run(&plain);
+    let reference_identity = run(&identity);
+    assert_eq!(
+        reference_plain["totals"]["identity_searches"]
+            .as_u64()
+            .unwrap()
+            + 1,
+        reference_identity["totals"]["identity_searches"]
+            .as_u64()
+            .unwrap()
+    );
+    let barrier = std::sync::Barrier::new(2);
+    std::thread::scope(|scope| {
+        let a = scope.spawn(|| {
+            barrier.wait();
+            run(&plain)
+        });
+        let b = scope.spawn(|| {
+            barrier.wait();
+            run(&identity)
+        });
+        assert_eq!(a.join().unwrap(), reference_plain);
+        assert_eq!(b.join().unwrap(), reference_identity);
+    });
 }

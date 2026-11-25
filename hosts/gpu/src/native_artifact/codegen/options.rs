@@ -165,6 +165,7 @@ pub(in crate::native_artifact) struct CompilationControls {
     invariant: EmissionBudget,
     mutation: EmissionBudget,
     count_value: EmissionBudget,
+    route_work: Option<super::route_work::RouteUnitRecorder>,
     steady: EmissionBudget,
 }
 #[cfg(feature = "canonical-native-program")]
@@ -184,9 +185,24 @@ impl CompilationControls {
             invariant: Default::default(),
             mutation: Default::default(),
             count_value: Default::default(),
+            route_work: None,
             steady: Default::default(),
         }
     }
+    pub fn with_route_recorder(
+        mut self,
+        recorder: Option<super::route_work::RouteUnitRecorder>,
+    ) -> Self {
+        self.route_work = recorder;
+        self
+    }
+
+    pub fn record_route_work(&self, update: impl FnOnce(&mut super::route_work::RouteWork)) {
+        if let Some(recorder) = &self.route_work {
+            recorder.record(update);
+        }
+    }
+
     pub fn enabled(&self, pass: OptimizationPass) -> bool {
         self.options.enabled(pass)
     }

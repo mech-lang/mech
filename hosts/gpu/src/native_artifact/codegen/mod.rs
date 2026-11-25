@@ -7,3 +7,6 @@ pub(in crate::native_artifact) mod compilation_inputs;
 
 #[cfg(feature = "canonical-native")]
 pub(in crate::native_artifact) mod options;
+
+#[cfg(feature = "canonical-native-program")]
+pub(in crate::native_artifact) mod route_work;

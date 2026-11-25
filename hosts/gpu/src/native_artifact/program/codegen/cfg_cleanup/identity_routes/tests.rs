@@ -9,7 +9,7 @@ use cranelift_codegen::{
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{Linkage, Module, default_libcall_names};
-type Entry = unsafe extern "C" fn(u64, u64, u64, u64, *mut u64) -> u64;
+pub(in super::super) type Entry = unsafe extern "C" fn(u64, u64, u64, u64, *mut u64) -> u64;
 unsafe extern "C" fn observe(memory: *mut u64, value: u64) -> u64 {
     unsafe { *memory.add(1) = (*memory.add(1)).wrapping_add(7) };
     value
@@ -141,7 +141,7 @@ fn fixture(module: &JITModule, variant: &str) -> Context {
     c.verify(module.isa()).unwrap();
     c
 }
-fn define(module: &mut JITModule, c: &mut Context, name: &str) -> Entry {
+pub(in super::super) fn define(module: &mut JITModule, c: &mut Context, name: &str) -> Entry {
     let id = module
         .declare_function(name, Linkage::Local, &c.func.signature)
         .unwrap();
@@ -306,9 +306,7 @@ fn identity_routes_preserve_previous_predicate_snapshots_and_decline_reentry() {
         assert_eq!(unsafe { after(seed, 0, 0, 0, memory.as_mut_ptr()) }, 123);
     }
 }
-#[test]
-fn identity_routes_keep_both_edges_to_one_join_and_parallel_payload_order() {
-    let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+pub(in super::super) fn same_join_fixture(module: &JITModule) -> Context {
     let mut c = module.make_context();
     c.func.signature.params = vec![AbiParam::new(types::I64); 5];
     c.func.signature.returns = vec![AbiParam::new(types::I64)];
@@ -349,6 +347,13 @@ fn identity_routes_keep_both_edges_to_one_join_and_parallel_payload_order() {
         b.seal_all_blocks();
         b.finalize();
     }
+    c
+}
+
+#[test]
+fn identity_routes_keep_both_edges_to_one_join_and_parallel_payload_order() {
+    let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+    let mut c = same_join_fixture(&module);
     let mut old = module.make_context();
     old.func = c.func.clone();
     let before = define(&mut module, &mut old, "same_join_before");

@@ -13,7 +13,7 @@ const OVERFLOW: u64 = u64::MAX - 18;
 const MULTIPLIER: u64 = 0x9e37_79b9;
 pub(super) type Entry = unsafe extern "C" fn(u64, u64, u64, *mut u64) -> u64;
 
-pub(super) fn fixture(module: &JITModule, variant: &str) -> Context {
+pub(in super::super) fn fixture(module: &JITModule, variant: &str) -> Context {
     let mut c = module.make_context();
     c.func.signature.params = vec![AbiParam::new(types::I64); 4];
     c.func.signature.returns = vec![AbiParam::new(types::I64)];
