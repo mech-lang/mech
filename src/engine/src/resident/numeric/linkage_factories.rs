@@ -3,6 +3,29 @@ use crate::resident::native_factory_linkage::{NativeLinkedFactory, raw_entry};
 use mech_core::ImplementationMemoryClass;
 
 macro_rules! factory {
+    ($token:ident, $module:expr, $name:literal, $memory:ident, $binder:path, $primitive:ident) => {
+        pub const $token: NativeLinkedFactory = NativeLinkedFactory::new(
+            concat!("mech_engine::linked_factories::", stringify!($token)),
+            &[],
+            || {
+                #[cfg(any(feature = "pure_text", feature = "map_ops", feature = "sequence_buffers"))]
+                {
+                    super::super::native_collection_semantics::make_entry(
+                        $module,
+                        $name,
+                        ImplementationMemoryClass::$memory,
+                        $binder,
+                        super::super::native_collection_semantics::NativeCollectionPrimitive::$primitive,
+                        &$token,
+                    )
+                }
+                #[cfg(not(any(feature = "pure_text", feature = "map_ops", feature = "sequence_buffers")))]
+                {
+                    raw_entry($module, $name, ImplementationMemoryClass::$memory, $binder, &$token)
+                }
+            },
+        );
+    };
     ($token:ident, $module:expr, $name:literal, $memory:ident, $binder:path) => {
         pub const $token: NativeLinkedFactory = NativeLinkedFactory::new(
             concat!("mech_engine::linked_factories::", stringify!($token)),
@@ -660,7 +683,8 @@ factory!(
     &["matrix"],
     "matmul",
     NoAdditionalScratch,
-    super::bind_matmul
+    super::bind_matmul,
+    MatrixMatmul
 );
 factory!(
     NUMERIC_MATRIX_DOT,
@@ -674,7 +698,8 @@ factory!(
     &["matrix"],
     "transpose",
     CanonicalFinalize,
-    super::bind_semantic_transpose
+    super::bind_semantic_transpose,
+    MatrixTranspose
 );
 factory!(
     NUMERIC_CORE_ASSIGN,

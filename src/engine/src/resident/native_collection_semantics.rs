@@ -15,6 +15,8 @@ pub enum NativeCollectionPrimitive {
     CompositePack(usize),
     MatrixHorizontal(usize),
     MatrixVertical(usize),
+    MatrixTranspose,
+    MatrixMatmul,
     EnumPack,
     RangeExclusive,
     RangeInclusive,
@@ -459,7 +461,7 @@ struct FactoryWitness {
     linkage: &'static super::native_factory_linkage::NativeLinkedFactory,
 }
 
-fn make_entry(
+pub(in crate::resident) fn make_entry(
     module: &[&str],
     name: &str,
     memory: ImplementationMemoryClass,

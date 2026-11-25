@@ -168,6 +168,8 @@ impl NativeCollectionPrimitive {
             Self::CompositePack(_) => "core/composite-pack",
             Self::MatrixHorizontal(_) => "matrix/horzcat",
             Self::MatrixVertical(_) => "matrix/vertcat",
+            Self::MatrixTranspose => "matrix/transpose",
+            Self::MatrixMatmul => "matrix/matmul",
             Self::EnumPack => "core/enum-pack",
             Self::RangeExclusive => "range/exclusive",
             Self::RangeInclusive => "range/inclusive",
@@ -261,6 +263,7 @@ impl NativeCollectionPrimitive {
             | Self::StringEqual
             | Self::StringNotEqual
             | Self::StringConcat
+            | Self::MatrixMatmul
             | Self::MatrixRangeAccess
             | Self::StringRangeAccess => 2,
             #[cfg(feature = "pure_text")]
@@ -297,6 +300,11 @@ fn source_schema_id(artifact: &ProgramArtifact, source: ArtifactSource) -> Resul
 }
 fn is_matrix(body: &SchemaBody) -> bool {
     matches!(body, SchemaBody::Matrix { dimensions, .. } if dimensions.len() == 2)
+}
+fn is_f64_matrix(body: &SchemaBody) -> bool {
+    matches!(body, SchemaBody::Matrix { element, dimensions }
+        if dimensions.len() == 2
+            && element.as_ref() == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64))
 }
 #[cfg(any(feature = "pure_text", feature = "map_ops"))]
 fn is_string_matrix(body: &SchemaBody, row: bool) -> bool {
@@ -467,6 +475,10 @@ fn validate_schemas(
         return false;
     };
     match primitive {
+        NativeCollectionPrimitive::MatrixTranspose => is_f64_matrix(first) && is_f64_matrix(output),
+        NativeCollectionPrimitive::MatrixMatmul => {
+            is_f64_matrix(first) && is_f64_matrix(inputs[1].body()) && is_f64_matrix(output)
+        }
         NativeCollectionPrimitive::CompositePack(_)
         | NativeCollectionPrimitive::MatrixHorizontal(_)
         | NativeCollectionPrimitive::MatrixVertical(_) => unreachable!("validated above"),

@@ -145,6 +145,14 @@ for migration context; current implemented and pending scope is detailed below.
 
 ### Scalar native execution is a primary capability
 
+Canonical native programs also admit F64 matrix transpose and matrix products
+through the maintained resident matrix factories. Their private factory witnesses
+select checked native library calls, retaining the existing shape contracts,
+finite resource admission and atomic output publication. Rectangular and empty
+matrices use the same kernels as resident execution. The focused
+`canonical_artifact_matrix` test covers original/decoded artifacts, Object
+emission, shape and budget failures, recovery and factory-witness rejection.
+
 Efficient Bool, U64, I64 and F64 execution is part of the maintained native
 backend's contract. This includes short invocations, where transport/setup
 latency and allocations matter, as well as arithmetic throughput. Scalar kinds
