@@ -72,7 +72,8 @@ invocation.
 | Resource bounds | The managed Program route carries finite stack, work and runtime limits. Compact diagnostics record measured stack and selected implementation sizes. | Entry enforces specified per-call resource bounds for its target, runtime and admitted layout. | Define the compact entry's finite resource admission and establish failure accounting and bounds under nested execution. |
 | Target/runtime | The current packet verifies the Apple arm64 object, descriptor and runtime support. Scalar emission has separate direct native coverage. | Linkage requires the exact compatible target, codegen ABI, runtime and allocation contract. | Define library admission based on those identities and test mismatches, including other operating systems and runtime versions. |
 
-The compact diagnostic remains useful for isolated compiler and codec evidence.
-That evidence leaves the library's caller-facing ABI, finite compact resource
-admission and compatibility tests open. Managed execution retains its existing
+The compact diagnostic supplies compiler and codec evidence. Its host report
+records selected profile identity, retry outcomes and emitted worker entries.
+The library's caller-facing ABI, finite compact resource admission and
+compatibility tests remain open. Managed execution retains its existing
 admission and recovery contract. [Native compiler architecture](native-compiler-architecture.md)

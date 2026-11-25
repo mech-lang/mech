@@ -59,7 +59,7 @@ impl NativeCompilationReport {
             "guarded_consuming_sites",
             "seeded_histograms",
             "calls",
-            "workers",
+            "native_worker_entries",
         ];
         let selection: serde_json::Map<_, _> = decisions
             .into_iter()

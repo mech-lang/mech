@@ -761,3 +761,117 @@ fn masked_field_inserts_preserve_values_effects_and_fallbacks() {
         .unwrap();
     }
 }
+
+#[cfg(target_arch = "aarch64")]
+#[test]
+fn explicit_aarch64_options_ignore_a_fixed_opposing_environment() {
+    use crate::native_artifact::codegen::{backend, compilation_inputs::CompilationInputs};
+    use std::{env, fs, path::PathBuf, process::Command};
+
+    const MODE: &str = "NATIVE_PACK_ISOLATION_CHILD";
+    const OUTPUT: &str = "NATIVE_PACK_ISOLATION_OUTPUT";
+    const KNOB: &str = "MECH_ARM64_PACK_NARROW_HALVES";
+    const FLAGS: &[(&str, &str)] = &[("opt_level", "speed"), ("regalloc_checker", "true")];
+
+    fn run(mut module: JITModule) -> Vec<u8> {
+        let mut context = fixture(
+            &module,
+            Form::Basic,
+            Logical::Or,
+            types::I64,
+            types::I32,
+            32,
+            false,
+        );
+        let entry = module
+            .declare_function("fixed_pack", Linkage::Local, &context.func.signature)
+            .unwrap();
+        module.define_function(entry, &mut context).unwrap();
+        let code = context.compiled_code().unwrap().buffer.data().to_owned();
+        module.finalize_definitions().unwrap();
+        let call: Entry = unsafe { std::mem::transmute(module.get_finalized_function(entry)) };
+        for (a, rhs, variable) in [
+            (0, 0, 0),
+            (u64::MAX, 0xfeed_face_0000_0123, 7),
+            (0xfedc_ba98_1234_0123, u64::MAX, 1 << 32),
+        ] {
+            let expected = (a as u32 as u64) | ((rhs as u32 as u64) << 32);
+            let mut memory = [SENTINEL; 9];
+            assert_eq!(
+                unsafe { call(a, rhs, variable, memory.as_mut_ptr(), 1) },
+                expected
+            );
+            assert_eq!(
+                memory,
+                [
+                    expected, expected, a, rhs, variable, expected, 0x1122, 0x3344, SENTINEL
+                ]
+            );
+            assert_eq!(
+                unsafe { call(a, rhs, variable, std::ptr::null_mut(), 0) },
+                u64::MAX
+            );
+        }
+        code
+    }
+
+    if let Some(mode) = env::var_os(MODE) {
+        let output = PathBuf::from(env::var_os(OUTPUT).unwrap());
+        let code = match mode.to_str().unwrap() {
+            "legacy-a" | "legacy-b" => vec![run(backend::jit(FLAGS).unwrap())],
+            "explicit-ambient-a" | "explicit-ambient-b" => {
+                let off = CompilationInputs::capture([]);
+                let on = CompilationInputs::capture([(KNOB.into(), "1".into())]);
+                [&off, &on]
+                    .into_iter()
+                    .map(|inputs| run(backend::jit_with_inputs(FLAGS, inputs).unwrap()))
+                    .collect()
+            }
+            _ => panic!("unexpected child mode {mode:?}"),
+        };
+        fs::write(output, serde_json::to_vec(&code).unwrap()).unwrap();
+        return;
+    }
+
+    let folder = tempfile::tempdir().unwrap();
+    let module = module_path!().split_once("::").unwrap().1;
+    let test = format!("{module}::explicit_aarch64_options_ignore_a_fixed_opposing_environment");
+    let child = |mode: &str, enabled: bool| -> Vec<Vec<u8>> {
+        let path = folder.path().join(mode);
+        let mut command = Command::new(env::current_exe().unwrap());
+        command
+            .args(["--exact", &test, "--test-threads=1"])
+            .env(MODE, mode)
+            .env(OUTPUT, &path);
+        for (key, _) in env::vars_os() {
+            if key
+                .to_ascii_uppercase()
+                .as_encoded_bytes()
+                .starts_with(b"MECH_")
+            {
+                command.env_remove(key);
+            }
+        }
+        if enabled {
+            command.env(KNOB, "1");
+        }
+        let result = command.output().unwrap();
+        assert!(
+            result.status.success(),
+            "{mode}: {}{}",
+            String::from_utf8_lossy(&result.stdout),
+            String::from_utf8_lossy(&result.stderr)
+        );
+        serde_json::from_slice(&fs::read(path).unwrap()).unwrap()
+    };
+    let mut a = child("legacy-a", false);
+    let mut b = child("legacy-b", true);
+    assert_eq!((a.len(), b.len()), (1, 1));
+    let references = [a.pop().unwrap(), b.pop().unwrap()];
+    assert_ne!(
+        references[0], references[1],
+        "fixture did not activate the backend pack rule"
+    );
+    assert_eq!(child("explicit-ambient-a", false), references);
+    assert_eq!(child("explicit-ambient-b", true), references);
+}

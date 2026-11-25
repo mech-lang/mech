@@ -328,4 +328,145 @@ mod tests {
         );
         assert_eq!(&*code, &[0; 8]);
     }
+
+    #[test]
+    fn explicit_profile_inputs_ignore_a_fixed_opposing_environment() {
+        use std::{env, process::Command};
+
+        const MODE: &str = "NATIVE_PROFILE_ISOLATION_CHILD";
+        const OUTPUT: &str = "NATIVE_PROFILE_ISOLATION_OUTPUT";
+        const LAYOUT_KEY: &str = "MECH_COMPACT_PHASE_BLOCK_LAYOUT";
+        const WEIGHTS_KEY: &str = "MECH_COMPACT_PHASE_REGISTER_WEIGHTS";
+        fn settings(folder: &Path, mode: &str) -> [(std::ffi::OsString, std::ffi::OsString); 2] {
+            let layout = format!(
+                "selected@{};missing@{}",
+                folder.join(format!("layout-{mode}")).display(),
+                folder.join("missing-profile").display()
+            );
+            let weights = format!(
+                "selected@{}",
+                folder.join(format!("weights-{mode}")).display()
+            );
+            [
+                (LAYOUT_KEY.into(), layout.into()),
+                (WEIGHTS_KEY.into(), weights.into()),
+            ]
+        }
+        fn applied(raw: &CompilationInputs) -> serde_json::Value {
+            let paths = Rc::new(RefCell::new(Vec::new()));
+            let ledger = paths.clone();
+            let selected = SelectedProfiles::with_reader(move |path| {
+                ledger.borrow_mut().push(path.to_owned());
+                fs::read(path)
+            });
+            let mut context = Context::new();
+            apply(raw, &selected, &mut context, "unselected").unwrap();
+            apply_register_weights(raw, &selected, &mut context, "unselected").unwrap();
+            assert!(paths.borrow().is_empty());
+            apply(raw, &selected, &mut context, "selected").unwrap();
+            apply_register_weights(raw, &selected, &mut context, "selected").unwrap();
+            let selected_paths = paths.borrow().clone();
+            let error = apply(raw, &selected, &mut context, "missing").unwrap_err();
+            let (weight_id, weights) = context.func.regalloc_block_frequencies.as_ref().unwrap();
+            serde_json::json!({
+                "order": context.func.aarch64_block_layout,
+                "literal_offset": context.func.aarch64_block_layout_literal_start,
+                "thread_jumps": context.func.aarch64_block_layout_thread_jumps,
+                "expected_vcode": weight_id, "block_frequencies": weights,
+                "selected_paths": selected_paths,
+                "missing": {"kind": format!("{:?}", error.kind()), "os_code": error.raw_os_error(),
+                            "message": error.to_string(), "read_path": paths.borrow().last()},
+            })
+        }
+        if let Some(mode) = env::var_os(MODE) {
+            let path = PathBuf::from(env::var_os(OUTPUT).unwrap());
+            let folder = path.parent().unwrap();
+            let rows = match mode.to_str().unwrap() {
+                "legacy-a" | "legacy-b" => vec![applied(&CompilationInputs::legacy())],
+                "explicit-ambient-a" | "explicit-ambient-b" => {
+                    let a = CompilationInputs::capture(settings(folder, "a"));
+                    let b = CompilationInputs::capture(settings(folder, "b"));
+                    [&a, &b, &a].into_iter().map(applied).collect()
+                }
+                _ => panic!("unexpected child mode {mode:?}"),
+            };
+            fs::write(path, serde_json::to_vec(&rows).unwrap()).unwrap();
+            return;
+        }
+
+        let folder = tempfile::tempdir().unwrap();
+        let base = folder.path();
+        fs::write(base.join("layout-a"), LAYOUT).unwrap();
+        fs::write(
+            base.join("layout-b"),
+            br#"{"order":[0,2,1],"literal_offset":64,"thread_jumps":true}"#,
+        )
+        .unwrap();
+        fs::write(
+            base.join("weights-a"),
+            br#"{"expected_vcode":"profile-a","block_frequencies":[100,10,1]}"#,
+        )
+        .unwrap();
+        fs::write(
+            base.join("weights-b"),
+            br#"{"expected_vcode":"profile-b","block_frequencies":[200,1,20]}"#,
+        )
+        .unwrap();
+        let module = module_path!().split_once("::").unwrap().1;
+        let test = format!("{module}::explicit_profile_inputs_ignore_a_fixed_opposing_environment");
+        let child = |mode: &str, ambient: &str| -> Vec<serde_json::Value> {
+            let path = base.join(mode);
+            let mut command = Command::new(env::current_exe().unwrap());
+            command
+                .args(["--exact", &test, "--test-threads=1"])
+                .env(MODE, mode)
+                .env(OUTPUT, &path);
+            for (key, _) in env::vars_os() {
+                if key
+                    .to_ascii_uppercase()
+                    .as_encoded_bytes()
+                    .starts_with(b"MECH_")
+                {
+                    command.env_remove(key);
+                }
+            }
+            let result = command.envs(settings(base, ambient)).output().unwrap();
+            assert!(
+                result.status.success(),
+                "{mode}: {}{}",
+                String::from_utf8_lossy(&result.stdout),
+                String::from_utf8_lossy(&result.stderr)
+            );
+            serde_json::from_slice(&fs::read(path).unwrap()).unwrap()
+        };
+        let [a]: [_; 1] = child("legacy-a", "a").try_into().unwrap();
+        let [b]: [_; 1] = child("legacy-b", "b").try_into().unwrap();
+        for (row, mode, order, offset, thread, weights) in [
+            (&a, "a", [0, 1, 2], 32, false, [100, 10, 1]),
+            (&b, "b", [0, 2, 1], 64, true, [200, 1, 20]),
+        ] {
+            assert_eq!(row["order"], serde_json::json!(order));
+            assert_eq!(row["literal_offset"], offset);
+            assert_eq!(row["thread_jumps"], thread);
+            assert_eq!(row["expected_vcode"], format!("profile-{mode}"));
+            assert_eq!(row["block_frequencies"], serde_json::json!(weights));
+            assert_eq!(
+                row["selected_paths"],
+                serde_json::json!([
+                    base.join(format!("layout-{mode}")),
+                    base.join(format!("weights-{mode}"))
+                ])
+            );
+            assert_eq!(row["missing"]["kind"], "NotFound");
+            assert!(row["missing"]["os_code"].is_i64());
+            assert!(!row["missing"]["message"].as_str().unwrap().is_empty());
+            assert_eq!(
+                row["missing"]["read_path"],
+                serde_json::json!(base.join("missing-profile"))
+            );
+        }
+        let expected = [a.clone(), b, a];
+        assert_eq!(child("explicit-ambient-a", "a"), expected);
+        assert_eq!(child("explicit-ambient-b", "b"), expected);
+    }
 }

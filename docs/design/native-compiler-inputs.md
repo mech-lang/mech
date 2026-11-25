@@ -1,8 +1,7 @@
 # Native compiler input compatibility
 
 This inventory covers the canonical native scalar, iteration and Program entry
-points, the compact diagnostic and its Cranelift fork. It records the
-Reconciled source snapshot at `5b9f252fc7e775bf8e4d850ca368da581e9f5386`.
+points, the compact diagnostic and its Cranelift fork. The original inventory was taken at `5b9f252fc7e775bf8e4d850ca368da581e9f5386`.
 The fixed recipe sets 233 of the indexed native values. The compiler driver
 separately owns `MECH_COMPILE_OVERLAP_SOURCE_CATALOG`, an OS-presence switch for
 overlapping catalog construction with parsing. Its fallback is synchronous
@@ -17,8 +16,12 @@ diagnostic can receive an explicitly captured configuration instead. Its
 unstable benchmark options authorize only the selection their existing proof
 and applicability checks admit.
 
-Preparation retains the immutable owner through root and helper lowering.
-Phase jobs carry an immutable snapshot and a configured Cranelift ISA.
+Preparation and lowering use the captured raw settings. The coordinator reads
+a profile file only when an eligible consumer selects its path. The first read
+stores bytes or a reconstructed I/O error for the rest of that compilation,
+including both direct-literal attempts. A new compilation starts with a fresh
+cache even when it shares the same raw configuration. Workers receive prepared
+IR fields and a configured Cranelift ISA.
 Coordinator-owned accounting, IR construction and ordered publication retain
 their original ordering. Each independently built object and each retry has
 separate mutable accounting. The sparse guard choice formerly cached for the
@@ -29,10 +32,10 @@ OS presence accepts any set value, including empty and non-Unicode input. OS
 mode comparisons preserve exact matches. Unicode reads treat unset values and
 non-Unicode values according to the original consumer. Settings can be inactive
 under a target, observe mode, proof, phase name, selected recipe or feature.
-The snapshot stores raw settings and profile read outcomes. Consumers keep
-their original checks and parse only on the route that would have parsed
-before. The input fingerprint includes raw local path bytes. The benchmark
-recipe supplies a separately comparable, path-relative configuration identity.
+Consumers retain their applicability and parsing order. The v2 host report
+identifies the raw settings and the paths actually read, including errors.
+It hashes exact OS bytes and successful content digests. The benchmark
+recipe separately identifies its path-relative settings and profile pins.
 
 ### Compatibility cases with distinct defaults or errors
 
@@ -49,8 +52,8 @@ recipe supplies a separately comparable, path-relative configuration identity.
 | `MECH_COMPACT_PHASE_SELECT_LIMITS` | Read `instructions:selects` as two `usize` values. Missing or malformed input keeps the default selector limits. |
 | `MECH_GROUP_PACKED_HISTOGRAM_VISITS` | Use four if the existing unsigned parse fails or the Unicode value is unavailable. The grouped histogram retains its applicability checks. |
 | `MECH_COMPOSE_IMMUTABLE_COST_CODE_PAGE_SHIFT` | Require a Unicode `u8` in `4..=12`. Otherwise retain the dense representation. Packed storage still has to save bytes. |
-| `MECH_COMPACT_PHASE_BLOCK_LAYOUT`, `MECH_COMPACT_PHASE_REGISTER_WEIGHTS` | Read the first exact `symbol@path` match in a Unicode list delimited by literal `;`. Entries without `@` do not match. A selected path uses captured bytes or the captured read error. Layout and register applicability remain independent. |
-| `MECH_COMPACT_ROOT_TAIL_PROFILE` | Capture the raw OS path. The checked root reads its captured bytes only on the existing branch-zero route and validates the target extent and padding. |
+| `MECH_COMPACT_PHASE_BLOCK_LAYOUT`, `MECH_COMPACT_PHASE_REGISTER_WEIGHTS` | Read the first exact `symbol@path` match in a Unicode list delimited by literal `;`. Entries without `@` do not match. The coordinator resolves only the selected path and caches its bytes or read error. Layout and register applicability remain independent. |
+| `MECH_COMPACT_ROOT_TAIL_PROFILE` | Capture the raw OS path. The checked root resolves the file on the existing branch-zero route and validates the target extent and padding. |
 | `MECH_COMPACT_FP_SPILL_SLOTS` | On entry to its phase consumer, each Unicode `phase@u8` member must parse. Matching symbols and `all` can select a slot count. |
 | `MECH_ARM64_REUSE_I8_DEFINITIONS`, `MECH_ARM64_REUSE_I32_ARITHMETIC` | Unicode modes select the named load or compare, or the named add, sub or mul. `all` and `1` select all classes of the respective input. Other values leave them disabled. |
 | `MECH_ARM64_INSERT_MASKED_FIELDS` | `1`, `wide` and `wide-copy` select the original narrow, wide and separated-destination paths. Other values keep ordinary lowering. |
@@ -60,7 +63,9 @@ The host report flag stays outside the legacy code-affecting observation modes.
 Those modes keep their existing meaning, including any argument, instrumentation
 and selection effects. A diagnostic can therefore have code effects even when
 its main purpose is observation. Construction counters come from a separate
-instrumented run. Current experimental switches remain implementation details.
+instrumented run. The report records native worker entries from the object
+descriptor and the separate compiler thread budget. Current experimental
+switches remain implementation details.
 
 ## Consumer index
 
