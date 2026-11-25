@@ -1,0 +1,422 @@
+{
+  "schema": "mech.polybench.native-validation.v1",
+  "suite": "PolyBench/C 4.2.1 beta",
+  "dataset": "MINI",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "all_live_outs": true,
+    "finite_required": true
+  },
+  "driver_sha256": "52298504b6a7b7abf44b399ed42f56bb2ee9f335f2601c683a7928041a0b883a",
+  "cases": {
+    "2mm": {
+      "status": "ok",
+      "actual_count": 384,
+      "expected_count": 384,
+      "max_absolute_error": 1.4210854715202004e-14,
+      "mismatches": [],
+      "source_sha256": "7ba60323744d94a886cbf88a6925c4a7d298a451bf62c405eede86fcecd7b5b6",
+      "error": null,
+      "native_work": 52915806
+    },
+    "3mm": {
+      "status": "ok",
+      "actual_count": 352,
+      "expected_count": 352,
+      "max_absolute_error": 2.220446049250313e-16,
+      "mismatches": [],
+      "source_sha256": "8b044fe251822fd8b585b1accfe084d4c322af5abd48601aa04b578994418646",
+      "error": null,
+      "native_work": 32436726
+    },
+    "adi": {
+      "status": "ok",
+      "actual_count": 400,
+      "expected_count": 400,
+      "max_absolute_error": 0.0,
+      "mismatches": [],
+      "source_sha256": "4eef6deb3462a70ad1a4f04bec4ed4420670091b3f4846e978b1af19c950e621",
+      "error": null,
+      "native_work": 631668836089
+    },
+    "atax": {
+      "status": "ok",
+      "actual_count": 42,
+      "expected_count": 42,
+      "max_absolute_error": 7.105427357601002e-15,
+      "mismatches": [],
+      "source_sha256": "509a9938a750b830994e8d5f4846c247e6eead3471a395038fa435b012c7cfb9",
+      "error": null,
+      "native_work": 30518694
+    },
+    "bicg": {
+      "status": "ok",
+      "actual_count": 80,
+      "expected_count": 80,
+      "max_absolute_error": 1.7763568394002505e-15,
+      "mismatches": [],
+      "source_sha256": "ad80eb32865012a68fd64dc0a32cf16139b20c882b4d9a165aacda59666f2084",
+      "error": null,
+      "native_work": 42120840
+    },
+    "cholesky": {
+      "status": "ok",
+      "actual_count": 1600,
+      "expected_count": 1600,
+      "max_absolute_error": 3.2751579226442118e-15,
+      "mismatches": [],
+      "source_sha256": "5c11d488f791bfd3da69a37b9dfc3ff4eec4d7fd64b54d5f823adf9b9ac452fa",
+      "error": null,
+      "native_work": 44814898834
+    },
+    "correlation": {
+      "status": "ok",
+      "actual_count": 784,
+      "expected_count": 784,
+      "max_absolute_error": 0.0,
+      "mismatches": [],
+      "source_sha256": "17eab510250df6dc8ba959f8c83bb2bdd96d11dd1042aeb1100a960b85026515",
+      "error": null,
+      "native_work": 630926531
+    },
+    "covariance": {
+      "status": "ok",
+      "actual_count": 784,
+      "expected_count": 784,
+      "max_absolute_error": 1.4210854715202004e-14,
+      "mismatches": [],
+      "source_sha256": "354aeb3e176cd327c8660206ca163bbc6e87fcbfaae4ddbd195c5aa4455c3f87",
+      "error": null,
+      "native_work": 59516943
+    },
+    "deriche": {
+      "status": "ok",
+      "actual_count": 4096,
+      "expected_count": 4096,
+      "max_absolute_error": 4.85722573273506e-17,
+      "mismatches": [],
+      "source_sha256": "73dd0bbdc2048cb3dea73a499f9e6557b4ab2b0eff988da2ad6cea344e7daf6c",
+      "error": null,
+      "native_work": 708124491679
+    },
+    "doitgen": {
+      "status": "ok",
+      "actual_count": 960,
+      "expected_count": 960,
+      "max_absolute_error": 0.0,
+      "mismatches": [],
+      "source_sha256": "fdcdb96925e013d913ed4ed88043636116c13e225d4124d0a0495dec97e81f37",
+      "error": null,
+      "native_work": 10960690
+    },
+    "durbin": {
+      "status": "ok",
+      "actual_count": 40,
+      "expected_count": 40,
+      "max_absolute_error": 0.0,
+      "mismatches": [],
+      "source_sha256": "62da21e96d894e89a7f94f39d14795e70413a86053487aa7cb2e2c35fa4edf77",
+      "error": null,
+      "native_work": 2521872520
+    },
+    "fdtd-2d": {
+      "status": "ok",
+      "actual_count": 1800,
+      "expected_count": 1800,
+      "max_absolute_error": 1.2434497875801753e-14,
+      "mismatches": [],
+      "source_sha256": "8e46cb2addaf56d522e75b690735ef39f066e7768b06322100697a4e0da26491",
+      "error": null,
+      "native_work": 34976882271
+    },
+    "floyd-warshall": {
+      "status": "ok",
+      "actual_count": 3600,
+      "expected_count": 3600,
+      "max_absolute_error": 0.0,
+      "mismatches": [],
+      "source_sha256": "d46ae4cfd3e5bb6d6afdb6967dc7be317e3d71443b1cfe7b0be5a2950b376ec6",
+      "error": null,
+      "native_work": 69808426685
+    },
+    "gemm": {
+      "status": "ok",
+      "actual_count": 500,
+      "expected_count": 500,
+      "max_absolute_error": 7.105427357601002e-15,
+      "mismatches": [],
+      "source_sha256": "3f738611433fdade00258c76485f6c63634268fc95bf4f9e74b9a685ad178111",
+      "error": null,
+      "native_work": 42275816
+    },
+    "gemver": {
+      "status": "ok",
+      "actual_count": 40,
+      "expected_count": 40,
+      "max_absolute_error": 1.3642420526593924e-12,
+      "mismatches": [],
+      "source_sha256": "cadbb064acc0b2ba4399e64c12d518b5968e8ab010ce11bd1b48cfed346cebec",
+      "error": null,
+      "native_work": 144006348
+    },
+    "gesummv": {
+      "status": "ok",
+      "actual_count": 30,
+      "expected_count": 30,
+      "max_absolute_error": 7.105427357601002e-15,
+      "mismatches": [],
+      "source_sha256": "00221010bd148c6308132c0c20d85edc794ea445140a8509f062fce6403f8f41",
+      "error": null,
+      "native_work": 52745716
+    },
+    "gramschmidt": {
+      "status": "ok",
+      "actual_count": 2100,
+      "expected_count": 2100,
+      "max_absolute_error": 0.0,
+      "mismatches": [],
+      "source_sha256": "9d49c8c808089de3b4dc0c47f66619952fffe8691afd865cda8871fb21e16bfd",
+      "error": null,
+      "native_work": 60651883772
+    },
+    "heat-3d": {
+      "status": "ok",
+      "actual_count": 1000,
+      "expected_count": 1000,
+      "max_absolute_error": 0.0,
+      "mismatches": [],
+      "source_sha256": "5c1df9f38726634ed9b0407320c7c84cbd212e54805996c36ec0a969ea2553e8",
+      "error": null,
+      "native_work": 10075128377
+    },
+    "jacobi-1d": {
+      "status": "ok",
+      "actual_count": 30,
+      "expected_count": 30,
+      "max_absolute_error": 3.3306690738754696e-16,
+      "mismatches": [],
+      "source_sha256": "8323ac8a0b980045166aab68fda04fa74d3f800a366871bfc3f8d9e2423d71a9",
+      "error": null,
+      "native_work": 1799676339
+    },
+    "jacobi-2d": {
+      "status": "ok",
+      "actual_count": 900,
+      "expected_count": 900,
+      "max_absolute_error": 3.552713678800501e-15,
+      "mismatches": [],
+      "source_sha256": "07d9a1d89939fd28f7fb945b798de1b382108acdaeac368d121acb1a338050f2",
+      "error": null,
+      "native_work": 24050499631
+    },
+    "lu": {
+      "status": "ok",
+      "actual_count": 1600,
+      "expected_count": 1600,
+      "max_absolute_error": 3.9968028886505635e-15,
+      "mismatches": [],
+      "source_sha256": "7fb265c2d68670d34a1e6ff86f6e2440ae114b20768a19c78016e37e90a310d8",
+      "error": null,
+      "native_work": 89957069453
+    },
+    "ludcmp": {
+      "status": "ok",
+      "actual_count": 40,
+      "expected_count": 40,
+      "max_absolute_error": 8.881784197001252e-16,
+      "mismatches": [],
+      "source_sha256": "a652f9599cb42263da892b83aa1fbe9662e1b20df6cadfb058274a0abc0cfcf5",
+      "error": null,
+      "native_work": 95609549270
+    },
+    "mvt": {
+      "status": "ok",
+      "actual_count": 80,
+      "expected_count": 80,
+      "max_absolute_error": 3.552713678800501e-15,
+      "mismatches": [],
+      "source_sha256": "dcdbc81b044cf721648a6527ed9f6c6c5d99304f9d65fca4b7590e615a2f1f83",
+      "error": null,
+      "native_work": 63510256
+    },
+    "nussinov": {
+      "status": "ok",
+      "actual_count": 3600,
+      "expected_count": 3600,
+      "max_absolute_error": 0.0,
+      "mismatches": [],
+      "source_sha256": "13e227bd65e4a450fe3a1ac48995911d214c9e070c6eccf3ffde41ac6cb0f6fd",
+      "error": null,
+      "native_work": 1165683153170
+    },
+    "seidel-2d": {
+      "status": "ok",
+      "actual_count": 1600,
+      "expected_count": 1600,
+      "max_absolute_error": 0.0,
+      "mismatches": [],
+      "source_sha256": "16e7ea753a2825eec81f7068cc49d689ba2aa8db38189927286507fec8d2f93e",
+      "error": null,
+      "native_work": 1194043743237
+    },
+    "symm": {
+      "status": "ok",
+      "actual_count": 600,
+      "expected_count": 600,
+      "max_absolute_error": 2.842170943040401e-14,
+      "mismatches": [],
+      "source_sha256": "6d71a90011f9b57928b2184710f19e0491147d2d1eaddac79ee974e93a49fef7",
+      "error": null,
+      "native_work": 417186146
+    },
+    "syr2k": {
+      "status": "ok",
+      "actual_count": 900,
+      "expected_count": 900,
+      "max_absolute_error": 7.105427357601002e-15,
+      "mismatches": [],
+      "source_sha256": "0aca0944ba571592754e6f8358b42d7a8fdb62147d37acf4f066a8debe3a6d14",
+      "error": null,
+      "native_work": 651343002
+    },
+    "syrk": {
+      "status": "ok",
+      "actual_count": 900,
+      "expected_count": 900,
+      "max_absolute_error": 5.329070518200751e-15,
+      "mismatches": [],
+      "source_sha256": "8da7871082a91840b9fcc3cbee206cc86f2e85ae740fa9a38ca0f563569ab4b5",
+      "error": null,
+      "native_work": 610457872
+    },
+    "trisolv": {
+      "status": "ok",
+      "actual_count": 40,
+      "expected_count": 40,
+      "max_absolute_error": 6.63358257213531e-15,
+      "mismatches": [],
+      "source_sha256": "be9fde0ca616e82d3a37a511a6a9cfba29026c42eae5d66d45956d8ca3aacb11",
+      "error": null,
+      "native_work": 2047561715
+    },
+    "trmm": {
+      "status": "ok",
+      "actual_count": 600,
+      "expected_count": 600,
+      "max_absolute_error": 1.7763568394002505e-15,
+      "mismatches": [],
+      "source_sha256": "14c42b4a82f8ac4302fa90b3cf32cac2e96f2bc41cf4a55b8882883f1a5179b5",
+      "error": null,
+      "native_work": 396998488
+    }
+  },
+  "source_commit": "58c085a5e508b21766482d5c12c45009d53871f3",
+  "numeric_profile": "F64 (DATA_TYPE_IS_DOUBLE); nucleotide bases remain the upstream byte-valued input.",
+  "c_flags": [
+    "-DDATA_TYPE_IS_DOUBLE",
+    "-O3",
+    "-ffp-contract=off",
+    "-fno-fast-math",
+    "-DMINI_DATASET",
+    "-DPOLYBENCH_TIME"
+  ],
+  "unique_c_live_outs": 29482,
+  "artifact_forms": [
+    "original",
+    "decoded"
+  ],
+  "tests": {
+    "matrix": {
+      "passed": 19
+    },
+    "polybench_mini": {
+      "passed": 30,
+      "c_value_comparisons": 58964,
+      "object_emission": true,
+      "input_aliases_preserved": true,
+      "managed_memory_released": true
+    },
+    "related_program_regressions": {
+      "passed": 66,
+      "filters": [
+        {
+          "filter": "access_qualification::",
+          "returncode": 0,
+          "summary": "test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 503 filtered out; finished in 0.94s"
+        },
+        {
+          "filter": "buffer_frame_qualification::",
+          "returncode": 0,
+          "summary": "test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 503 filtered out; finished in 1.59s"
+        },
+        {
+          "filter": "collection_qualification::",
+          "returncode": 0,
+          "summary": "test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 500 filtered out; finished in 0.32s"
+        },
+        {
+          "filter": "function_axes_qualification::",
+          "returncode": 0,
+          "summary": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 516 filtered out; finished in 0.07s"
+        },
+        {
+          "filter": "function_broadcast_qualification::",
+          "returncode": 0,
+          "summary": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 514 filtered out; finished in 0.06s"
+        },
+        {
+          "filter": "scalar_path_qualification::",
+          "returncode": 0,
+          "summary": "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 513 filtered out; finished in 0.19s"
+        },
+        {
+          "filter": "scalar_record_qualification::",
+          "returncode": 0,
+          "summary": "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 513 filtered out; finished in 0.26s"
+        },
+        {
+          "filter": "scalar_state_qualification::",
+          "returncode": 0,
+          "summary": "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 512 filtered out; finished in 0.22s"
+        },
+        {
+          "filter": "generated_dynamic_matrix_format_uses_live_shape_in_root_and_match_calls",
+          "returncode": 0,
+          "summary": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 516 filtered out; finished in 0.08s"
+        },
+        {
+          "filter": "generated_nested_managed_carriers_rebind_scalar_captures_each_visit",
+          "returncode": 0,
+          "summary": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 516 filtered out; finished in 0.06s"
+        },
+        {
+          "filter": "generated_root_calls_execute_all_seven_families_and_scalar_add",
+          "returncode": 0,
+          "summary": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 516 filtered out; finished in 0.05s"
+        },
+        {
+          "filter": "repeated_native_parameterized_leaf_visits_reuse_exact_shapes_and_recompute_values",
+          "returncode": 0,
+          "summary": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 516 filtered out; finished in 0.05s"
+        }
+      ]
+    },
+    "row_blocks_during_implementation": {
+      "passed": 5
+    },
+    "selected_route_image_restore_during_implementation": {
+      "passed": 1
+    }
+  },
+  "budget": {
+    "max_work": 1000000000000000,
+    "max_library_compute_work": 1000000000000000,
+    "regression_memory_bytes": 268435456,
+    "timing_driver_memory_bytes": 2147483648
+  },
+  "limitations": [
+    "The full 517-test program suite was interrupted during the unrelated long Level12 compression test; the 66 relevant compiler regressions were then run separately and passed.",
+    "MINI F64 qualification; larger datasets are not covered by the closed FSM fixtures."
+  ]
+}
