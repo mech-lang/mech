@@ -291,6 +291,7 @@ fn compact_bit_count_source_original_decoded_object_errors_and_retry() {
                     &prepared,
                     false,
                     false,
+                    &crate::native_artifact::program::compact::profile_inputs::SelectedProfiles::new(),
                 )
                 .unwrap();
                 assert_eq!(

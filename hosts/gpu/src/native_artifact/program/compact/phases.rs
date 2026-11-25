@@ -1,6 +1,7 @@
 //! Existing same-Plan numeric phases through a compact concrete array boundary.
 //! The generic source CFG remains the fallback when an actual writable owner
 //! is shared. Real unit append growth uses the existing concrete array helper.
+use super::profile_inputs::SelectedProfiles;
 use super::{
     arrays::Arrays, immutable_arrays::LiteralViews, layout::Layout, owner_flow::OwnerFlow,
     phase_bodies::PhaseBodies, phase_storage, vector_guard_facts,
@@ -1018,6 +1019,7 @@ impl Phase {
 pub(super) fn define<M: Module>(
     module: &mut M,
     compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
     prepared: &PreparedNativeProgram,
     layout: &Layout,
     literals: &LiteralViews,
@@ -1373,6 +1375,7 @@ pub(super) fn define<M: Module>(
                 let fast = function::prepare(
                     &mut recorded,
                     compiler_inputs,
+                    selected_profiles,
                     prepared,
                     id,
                     observe,
@@ -1455,6 +1458,7 @@ pub(super) fn define<M: Module>(
                 let ready = function::prepare_general(
                     module,
                     compiler_inputs,
+                    selected_profiles,
                     prepared,
                     id,
                     observe,
@@ -1496,6 +1500,7 @@ pub(super) fn define<M: Module>(
             let fast = function::prepare(
                 module,
                 compiler_inputs,
+                selected_profiles,
                 prepared,
                 id,
                 observe,
@@ -1533,6 +1538,7 @@ pub(super) fn define<M: Module>(
             let fast = function::prepare(
                 &mut recorded,
                 compiler_inputs,
+                selected_profiles,
                 prepared,
                 id,
                 observe,
@@ -1564,6 +1570,7 @@ pub(super) fn define<M: Module>(
                 Some(function::define(
                     module,
                     compiler_inputs,
+                    selected_profiles,
                     prepared,
                     id,
                     observe,
@@ -1699,6 +1706,7 @@ pub(super) fn define<M: Module>(
                 function::prepare(
                     module,
                     compiler_inputs,
+                    selected_profiles,
                     prepared,
                     id,
                     observe,

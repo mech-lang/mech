@@ -1,28 +1,8 @@
 //! Captured inputs for one native compilation.
 use cranelift_codegen::isa::{Aarch64CompilationOptions, Aarch64MaskedFields};
 use std::{collections::BTreeMap, env::VarError, ffi::OsString, sync::Arc};
-#[cfg(feature = "canonical-native-program")]
-use std::{
-    io,
-    path::{Path, PathBuf},
-};
-
-#[cfg(feature = "canonical-native-program")]
-const SYMBOL_PROFILES: &[&str] = &[
-    "MECH_COMPACT_PHASE_BLOCK_LAYOUT",
-    "MECH_COMPACT_PHASE_REGISTER_WEIGHTS",
-];
-#[cfg(feature = "canonical-native-program")]
-const ROOT_TAIL_PROFILE: &str = "MECH_COMPACT_ROOT_TAIL_PROFILE";
-
 #[derive(Clone)]
-pub(in crate::native_artifact) struct CompilationInputs(Arc<Captured>);
-
-struct Captured {
-    values: BTreeMap<OsString, OsString>,
-    #[cfg(feature = "canonical-native-program")]
-    profiles: BTreeMap<PathBuf, io::Result<Vec<u8>>>,
-}
+pub(in crate::native_artifact) struct CompilationInputs(Arc<BTreeMap<OsString, OsString>>);
 
 impl CompilationInputs {
     pub fn legacy() -> Self {
@@ -37,39 +17,11 @@ impl CompilationInputs {
         let values: BTreeMap<_, _> = values
             .filter(|(key, _)| key.as_encoded_bytes().starts_with(b"MECH_"))
             .collect();
-        #[cfg(feature = "canonical-native-program")]
-        let profiles = {
-            let mut profiles = BTreeMap::new();
-            let mut capture = |path: &Path| {
-                // Only the phase selecting a profile observes its read error.
-                if !profiles.contains_key(path) {
-                    profiles.insert(path.to_owned(), std::fs::read(path));
-                }
-            };
-            for key in SYMBOL_PROFILES {
-                if let Some(value) = values
-                    .get(std::ffi::OsStr::new(key))
-                    .and_then(|value| value.to_str())
-                {
-                    for (_, path) in value.split(';').filter_map(|entry| entry.split_once('@')) {
-                        capture(Path::new(path));
-                    }
-                }
-            }
-            if let Some(path) = values.get(std::ffi::OsStr::new(ROOT_TAIL_PROFILE)) {
-                capture(Path::new(path));
-            }
-            profiles
-        };
-        Self(Arc::new(Captured {
-            values,
-            #[cfg(feature = "canonical-native-program")]
-            profiles,
-        }))
+        Self(Arc::new(values))
     }
 
     pub fn var_os(&self, key: &str) -> Option<OsString> {
-        self.0.values.get(std::ffi::OsStr::new(key)).cloned()
+        self.0.get(std::ffi::OsStr::new(key)).cloned()
     }
 
     pub fn var(&self, key: &str) -> Result<String, VarError> {
@@ -111,68 +63,17 @@ impl CompilationInputs {
     }
 
     #[cfg(feature = "canonical-native-program")]
-    pub fn profile(&self, path: &Path) -> io::Result<&[u8]> {
-        let record = self.0.profiles.get(path).ok_or_else(|| {
-            io::Error::new(io::ErrorKind::InvalidInput, "profile path was not captured")
-        })?;
-        match record {
-            Ok(bytes) => Ok(bytes),
-            Err(error) => Err(match error.raw_os_error() {
-                Some(code) => io::Error::from_raw_os_error(code),
-                None => io::Error::new(error.kind(), error.to_string()),
-            }),
-        }
-    }
-
-    #[cfg(feature = "canonical-native-program")]
-    pub fn report_identity(&self) -> serde_json::Value {
+    pub fn raw_settings_identity(&self) -> ([u8; 32], usize) {
+        use crate::native_artifact::identity::transcript::bytes;
         use sha2::{Digest, Sha256};
         let mut hash = Sha256::new();
-        let mut frame = |bytes: &[u8]| {
-            hash.update((bytes.len() as u64).to_le_bytes());
-            hash.update(bytes);
-        };
-        frame(b"mech-native-inputs-v1");
-        frame(&(self.0.values.len() as u64).to_le_bytes());
-        for (key, value) in &self.0.values {
-            frame(key.as_encoded_bytes());
-            frame(value.as_encoded_bytes());
+        bytes(&mut hash, b"mech-native-settings-v2");
+        bytes(&mut hash, &(self.0.len() as u64).to_le_bytes());
+        for (key, value) in self.0.iter() {
+            bytes(&mut hash, key.as_encoded_bytes());
+            bytes(&mut hash, value.as_encoded_bytes());
         }
-        frame(&(self.0.profiles.len() as u64).to_le_bytes());
-        let profiles = self
-            .0
-            .profiles
-            .iter()
-            .map(|(path, contents)| {
-                frame(path.as_os_str().as_encoded_bytes());
-                match contents {
-                    Ok(bytes) => {
-                        let digest = Sha256::digest(bytes);
-                        frame(b"read");
-                        frame(&digest);
-                        serde_json::json!({
-                            "path": path.to_string_lossy(), "path_encoding": "os",
-                            "sha256": super::super::identity::hex(&digest), "bytes": bytes.len(),
-                        })
-                    }
-                    Err(error) => {
-                        frame(b"error");
-                        frame(format!("{:?}", error.kind()).as_bytes());
-                        frame(&error.raw_os_error().unwrap_or_default().to_le_bytes());
-                        serde_json::json!({
-                            "path": path.to_string_lossy(), "path_encoding": "os",
-                            "unavailable": format!("{:?}", error.kind()),
-                            "os_error": error.raw_os_error(),
-                        })
-                    }
-                }
-            })
-            .collect::<Vec<_>>();
-        serde_json::json!({
-            "sha256": super::super::identity::hex(&hash.finalize()),
-            "scope": "captured native settings and raw profile contents; includes local path bytes",
-            "profiles": profiles,
-        })
+        (hash.finalize().into(), self.0.len())
     }
 }
 
@@ -180,26 +81,20 @@ impl CompilationInputs {
 mod tests {
     use super::*;
 
-    #[cfg(feature = "canonical-native-program")]
     #[test]
-    fn selected_profile_retains_bytes_across_replacement_and_deletion() {
-        let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("layout.json");
-        std::fs::write(&path, b"first").unwrap();
-        let capture = || {
-            CompilationInputs::capture([(ROOT_TAIL_PROFILE.into(), path.as_os_str().to_owned())])
-        };
-        let first = capture();
-        std::fs::write(&path, b"second").unwrap();
-        let second = capture();
-        std::fs::remove_file(&path).unwrap();
-        let unavailable = capture();
-        assert_eq!(first.profile(&path).unwrap(), b"first");
-        assert_eq!(second.profile(&path).unwrap(), b"second");
-        assert_eq!(
-            unavailable.profile(&path).unwrap_err().kind(),
-            io::ErrorKind::NotFound
-        );
+    fn raw_settings_remain_lossless_and_shareable() {
+        fn require_send_sync<T: Send + Sync>() {}
+        require_send_sync::<CompilationInputs>();
+        let key = "MECH_COMPACT_ROOT_TAIL_PROFILE";
+        let path = OsString::from("a deliberately unresolved profile.json");
+        let original = CompilationInputs::capture([
+            (key.into(), path.clone()),
+            ("UNRELATED_SETTINGS".into(), "ignored".into()),
+        ]);
+        let cloned = original.clone();
+        assert_eq!(original.var_os(key), Some(path.clone()));
+        assert_eq!(cloned.var_os(key), Some(path));
+        assert_eq!(cloned.var_os("UNRELATED_SETTINGS"), None);
     }
 
     #[test]

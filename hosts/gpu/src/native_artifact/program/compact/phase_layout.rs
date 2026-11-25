@@ -1,5 +1,6 @@
 //! Optional layout profiles for diagnostic AArch64 phases.
 
+use super::profile_inputs::SelectedProfiles;
 use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::Context;
 use std::{io, path::Path};
@@ -51,7 +52,7 @@ pub(super) fn apply_fp_spill_cache(
 }
 
 fn read(
-    compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
     profiles: &str,
     symbol: &str,
 ) -> io::Result<Option<Profile>> {
@@ -61,7 +62,9 @@ fn read(
         .find_map(|(name, path)| (name == symbol).then_some(path))
         .map(|path| {
             Ok(serde_json::from_slice(
-                compiler_inputs.profile(Path::new(path))?,
+                selected_profiles
+                    .resolve_selected(Path::new(path))
+                    .bytes()?,
             )?)
         })
         .transpose()
@@ -69,11 +72,12 @@ fn read(
 
 pub(super) fn apply(
     compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
     context: &mut Context,
     symbol: &str,
 ) -> io::Result<()> {
     if let Some(profiles) = profiles(compiler_inputs)
-        && let Some(profile) = read(compiler_inputs, &profiles, symbol)?
+        && let Some(profile) = read(selected_profiles, &profiles, symbol)?
     {
         context.func.aarch64_block_layout = profile.order;
         context.func.aarch64_block_layout_literal_start = profile.literal_offset;
@@ -86,6 +90,7 @@ pub(super) fn apply(
 /// in a previously allocated machine body. Validation occurs after lowering.
 pub(super) fn apply_register_weights(
     compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
     context: &mut Context,
     symbol: &str,
 ) -> io::Result<()> {
@@ -100,53 +105,24 @@ pub(super) fn apply_register_weights(
             .filter_map(|entry| entry.split_once('@'))
             .find_map(|(name, path)| (name == symbol).then_some(path))
     {
-        let weights: RegisterWeights =
-            serde_json::from_slice(compiler_inputs.profile(Path::new(path))?)?;
+        let weights: RegisterWeights = serde_json::from_slice(
+            selected_profiles
+                .resolve_selected(Path::new(path))
+                .bytes()?,
+        )?;
         context.func.regalloc_block_frequencies =
             Some((weights.expected_vcode, weights.block_frequencies));
     }
     Ok(())
 }
 
-#[cfg(test)]
-#[test]
-fn phase_layout_consumes_captured_bytes_and_defers_profile_errors() {
-    let dir = tempfile::tempdir().unwrap();
-    let path = dir.path().join("layout.json");
-    std::fs::write(&path, br#"{"order":[0,8],"literal_offset":12}"#).unwrap();
-    let capture = || {
-        CompilationInputs::capture([(
-            "MECH_COMPACT_PHASE_BLOCK_LAYOUT".into(),
-            format!("selected@{}", path.display()).into(),
-        )])
-    };
-    let original = capture();
-    std::fs::write(&path, b"malformed").unwrap();
-    let malformed = capture();
-    std::fs::remove_file(&path).unwrap();
-    let missing = capture();
-    let mut context = Context::new();
-    apply(&original, &mut context, "selected").unwrap();
-    assert_eq!(context.func.aarch64_block_layout, [0, 8]);
-    assert_eq!(context.func.aarch64_block_layout_literal_start, Some(12));
-    apply(&malformed, &mut context, "irrelevant").unwrap();
-    assert!(apply(&malformed, &mut context, "selected").is_err());
-    apply(&missing, &mut context, "irrelevant").unwrap();
-    assert_eq!(
-        apply(&missing, &mut context, "selected")
-            .unwrap_err()
-            .kind(),
-        io::ErrorKind::NotFound,
-    );
-}
-
 pub(super) fn pad_object_tail(
-    compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
     profiles: &str,
     symbol: &str,
     code: &mut Box<[u8]>,
 ) -> io::Result<()> {
-    if let Some(profile) = read(compiler_inputs, profiles, symbol)?
+    if let Some(profile) = read(selected_profiles, profiles, symbol)?
         && let Some(tail) = profile.object_tail
     {
         if profile.order.is_empty() {
@@ -168,12 +144,13 @@ pub(super) fn pad_object_tail(
 }
 
 pub(super) fn pad_checked_root_tail(
-    compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
     profile: &Path,
     alignment: u32,
     code: &mut Box<[u8]>,
 ) -> io::Result<()> {
-    let tail: ObjectTail = serde_json::from_slice(compiler_inputs.profile(profile)?)?;
+    let tail: ObjectTail =
+        serde_json::from_slice(selected_profiles.resolve_selected(profile).bytes()?)?;
     let alignment = alignment as usize;
     let padding = tail
         .padding(code.len())
@@ -228,7 +205,8 @@ impl ObjectTail {
 
 #[cfg(test)]
 mod tests {
-    use super::ObjectTail;
+    use super::*;
+    use std::{cell::RefCell, fs, path::PathBuf, rc::Rc};
 
     #[test]
     fn restores_reference_extent_residue_and_rejects_stale_size() {
@@ -249,5 +227,105 @@ mod tests {
             .padding(496),
             None
         );
+    }
+
+    const LAYOUT: &[u8] = br#"{"order":[0,1,2],"literal_offset":32,"thread_jumps":false}"#;
+
+    fn layout_inputs(value: String) -> CompilationInputs {
+        CompilationInputs::capture([("MECH_COMPACT_PHASE_BLOCK_LAYOUT".into(), value.into())])
+    }
+
+    #[test]
+    fn only_the_first_selected_layout_is_read_and_survives_mutation() {
+        for delete in [false, true] {
+            let folder = tempfile::tempdir().unwrap();
+            let first = folder.path().join("first.json");
+            let ignored = folder.path().join("unused.json");
+            let raw = layout_inputs(format!(
+                "malformed;unused@{ignored};selected@{first};selected@{ignored}",
+                first = first.display(),
+                ignored = ignored.display(),
+            ));
+            let cloned = raw.clone();
+            fs::write(&first, LAYOUT).unwrap();
+            let reads = Rc::new(RefCell::new(Vec::new()));
+            let ledger = reads.clone();
+            let selected = SelectedProfiles::with_reader(move |path| {
+                ledger.borrow_mut().push(path.to_owned());
+                let contents = fs::read(path)?;
+                if delete {
+                    fs::remove_file(path)?;
+                } else {
+                    fs::write(path, b"invalid")?;
+                }
+                Ok(contents)
+            });
+            for setting in [&raw, &cloned] {
+                let mut context = Context::new();
+                apply(setting, &selected, &mut context, "irrelevant").unwrap();
+                apply(setting, &selected, &mut context, "selected").unwrap();
+                assert_eq!(context.func.aarch64_block_layout, [0, 1, 2]);
+                assert_eq!(context.func.aarch64_block_layout_literal_start, Some(32));
+                assert!(!context.func.aarch64_block_layout_thread_jumps);
+            }
+            assert_eq!(*reads.borrow(), [first]);
+        }
+    }
+
+    #[test]
+    fn selected_error_is_cached_until_a_new_compilation() {
+        let folder = tempfile::tempdir().unwrap();
+        let path = folder.path().join("missing-first.json");
+        let raw = layout_inputs(format!("selected@{}", path.display()));
+        let ledger = Rc::new(RefCell::new(Vec::<PathBuf>::new()));
+        let reader_ledger = ledger.clone();
+        let selected = SelectedProfiles::with_reader(move |path| {
+            reader_ledger.borrow_mut().push(path.to_owned());
+            let result = fs::read(path);
+            fs::write(path, LAYOUT).unwrap();
+            result
+        });
+        let mut context = Context::new();
+        apply(&raw, &selected, &mut context, "unmatched").unwrap();
+        assert!(ledger.borrow().is_empty());
+        let first = apply(&raw, &selected, &mut context, "selected").unwrap_err();
+        let second = apply(&raw, &selected, &mut context, "selected").unwrap_err();
+        assert_eq!(first.kind(), io::ErrorKind::NotFound);
+        assert_eq!(first.kind(), second.kind());
+        assert_eq!(first.raw_os_error(), second.raw_os_error());
+        assert_eq!(first.to_string(), second.to_string());
+        assert_eq!(*ledger.borrow(), [path]);
+        apply(&raw, &SelectedProfiles::new(), &mut context, "selected").unwrap();
+        assert_eq!(context.func.aarch64_block_layout, [0, 1, 2]);
+    }
+
+    #[test]
+    fn reached_consumers_preserve_parse_and_tail_validation_order() {
+        let selected = SelectedProfiles::with_reader(|path| {
+            match path.to_str().unwrap() {
+            "malformed" => Ok(b"invalid".to_vec()),
+            "layout" => Ok(br#"{"order":[],"object_tail":{"code_bytes":4,"reference_code_bytes":8,"alignment":16}}"#.to_vec()),
+            "root" => Ok(br#"{"code_bytes":4,"reference_code_bytes":8,"alignment":16}"#.to_vec()),
+            _ => unreachable!(),
+        }
+        });
+        let raw = layout_inputs("other@malformed;selected@layout".into());
+        let mut context = Context::new();
+        apply(&raw, &selected, &mut context, "selected").unwrap();
+        assert!(context.func.aarch64_block_layout.is_empty());
+        let mut code = vec![0; 8].into_boxed_slice();
+        let error = pad_object_tail(&selected, &profiles(&raw).unwrap(), "selected", &mut code)
+            .unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "object tail padding requires a block layout"
+        );
+        assert!(apply(&raw, &selected, &mut context, "other").is_err());
+        let error = pad_checked_root_tail(&selected, Path::new("root"), 4, &mut code).unwrap_err();
+        assert_eq!(
+            error.to_string(),
+            "object tail profile does not match the checked root"
+        );
+        assert_eq!(&*code, &[0; 8]);
     }
 }

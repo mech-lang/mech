@@ -1,4 +1,5 @@
 //! Relate a packed tally to a current byte histogram through the checked source CFG.
+use super::super::profile_inputs::SelectedProfiles;
 use super::{Output, Phase, function::Histogram};
 use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use crate::native_artifact::program::codegen::cfg_cleanup::bounded_byte_histogram::Admission;
@@ -587,6 +588,7 @@ pub(in crate::native_artifact::program::compact) struct Route {
 pub(in crate::native_artifact::program::compact) fn define_seeded_histograms<M: Module>(
     module: &mut M,
     compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
     phases: &[&Phase],
     proofs: &[SeedProof],
 ) -> Result<BTreeMap<usize, Route>, NativeCompileError> {
@@ -631,8 +633,13 @@ pub(in crate::native_artifact::program::compact) fn define_seeded_histograms<M: 
             .map_err(backend)?;
             context.set_disasm(true);
         }
-        phase_layout::apply_register_weights(compiler_inputs, &mut context, &name)
-            .map_err(backend)?;
+        phase_layout::apply_register_weights(
+            compiler_inputs,
+            selected_profiles,
+            &mut context,
+            &name,
+        )
+        .map_err(backend)?;
         let id = module
             .declare_function(&name, Linkage::Local, &context.func.signature)
             .map_err(backend)?;

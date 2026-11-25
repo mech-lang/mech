@@ -41,6 +41,7 @@ mod phase_bodies;
 mod phase_layout;
 mod phase_storage;
 mod phases;
+pub(in crate::native_artifact) mod profile_inputs;
 #[cfg(feature = "early-region-emission")]
 mod source_blocks;
 mod vector_guard_facts;

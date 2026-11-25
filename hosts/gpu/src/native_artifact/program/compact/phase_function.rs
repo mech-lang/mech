@@ -1,4 +1,5 @@
 //! Compile the same checked numeric plan under an explicit entry contract.
+use super::super::profile_inputs::SelectedProfiles;
 use super::super::{
     arrays::ArrayImports,
     checked_region_discovery, checked_traversals,
@@ -386,6 +387,7 @@ impl Details {
 pub(super) fn define<M: Module>(
     module: &mut M,
     compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
     prepared: &PreparedNativeProgram,
     id: usize,
     observe: bool,
@@ -405,6 +407,7 @@ pub(super) fn define<M: Module>(
     prepare(
         module,
         compiler_inputs,
+        selected_profiles,
         prepared,
         id,
         observe,
@@ -427,6 +430,7 @@ pub(super) fn define<M: Module>(
 pub(super) fn prepare<M: Module>(
     module: &mut M,
     compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
     prepared: &PreparedNativeProgram,
     id: usize,
     observe: bool,
@@ -446,6 +450,7 @@ pub(super) fn prepare<M: Module>(
     match prepare_impl(
         module,
         compiler_inputs,
+        selected_profiles,
         prepared,
         id,
         observe,
@@ -471,6 +476,7 @@ pub(super) fn prepare<M: Module>(
 pub(super) fn prepare_general<M: Module>(
     module: &mut M,
     compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
     prepared: &PreparedNativeProgram,
     id: usize,
     observe: bool,
@@ -491,6 +497,7 @@ pub(super) fn prepare_general<M: Module>(
     prepare_impl(
         module,
         compiler_inputs,
+        selected_profiles,
         prepared,
         id,
         observe,
@@ -697,6 +704,7 @@ pub(super) fn refused_general_bounds(
 fn prepare_impl<M: Module>(
     module: &mut M,
     compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
     prepared: &PreparedNativeProgram,
     id: usize,
     observe: bool,
@@ -1350,8 +1358,13 @@ fn prepare_impl<M: Module>(
                         cfg_cleanup::grouped_histogram::fold_fields(&mut grouped, mode);
                     eprintln!("{name} proved tally fields: {masks} masks, {borrows} borrows");
                 }
-                phase_layout::apply_register_weights(compiler_inputs, &mut grouped, &name)
-                    .map_err(backend)?;
+                phase_layout::apply_register_weights(
+                    compiler_inputs,
+                    selected_profiles,
+                    &mut grouped,
+                    &name,
+                )
+                .map_err(backend)?;
                 let grouped_id = module
                     .declare_function(&name, Linkage::Local, &signature)
                     .map_err(backend)?;
@@ -1424,8 +1437,13 @@ fn prepare_impl<M: Module>(
                                 "{name} proved tally fields: {masks} masks, {borrows} borrows"
                             );
                         }
-                        phase_layout::apply_register_weights(compiler_inputs, &mut scalar, &name)
-                            .map_err(backend)?;
+                        phase_layout::apply_register_weights(
+                            compiler_inputs,
+                            selected_profiles,
+                            &mut scalar,
+                            &name,
+                        )
+                        .map_err(backend)?;
                         scalar.verify(module.isa()).map_err(backend)?;
                         let id = module
                             .declare_function(&name, Linkage::Local, &signature)
@@ -1800,10 +1818,16 @@ fn prepare_impl<M: Module>(
                     {
                         candidate.func.aarch64_prefer_preserved_regs = true;
                     }
-                    phase_layout::apply(compiler_inputs, &mut candidate, &name).map_err(backend)?;
+                    phase_layout::apply(compiler_inputs, selected_profiles, &mut candidate, &name)
+                        .map_err(backend)?;
                 }
-                phase_layout::apply_register_weights(compiler_inputs, &mut candidate, &name)
-                    .map_err(backend)?;
+                phase_layout::apply_register_weights(
+                    compiler_inputs,
+                    selected_profiles,
+                    &mut candidate,
+                    &name,
+                )
+                .map_err(backend)?;
                 let inspect_path = compiler_inputs
                     .var_os("MECH_INSPECT_PHASE_CLIF")
                     .or_else(|| compiler_inputs.var_os("MECH_INSPECT_PHASE_REGISTER_PROFILE"))
@@ -2623,7 +2647,8 @@ fn prepare_impl<M: Module>(
             phase_layout::apply_fp_spill_cache(compiler_inputs, &mut context, &symbol)
                 .map_err(backend)?;
         }
-        phase_layout::apply(compiler_inputs, &mut context, &symbol).map_err(backend)?;
+        phase_layout::apply(compiler_inputs, selected_profiles, &mut context, &symbol)
+            .map_err(backend)?;
     }
     if !observe
         && cleanup.enabled
@@ -2652,8 +2677,13 @@ fn prepare_impl<M: Module>(
     }
     prepare_body(compiler_inputs, module.isa(), &mut context)?;
     if !observe && vectors.is_some() {
-        phase_layout::apply_register_weights(compiler_inputs, &mut context, &symbol)
-            .map_err(backend)?;
+        phase_layout::apply_register_weights(
+            compiler_inputs,
+            selected_profiles,
+            &mut context,
+            &symbol,
+        )
+        .map_err(backend)?;
     }
     // Inspect the actual prepared body without requesting the general observed
     // pipeline or changing disassembly, compilation sharing, or admission.

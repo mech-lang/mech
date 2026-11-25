@@ -1,4 +1,5 @@
 //! ABI16 facade over the SAME canonical iteration CFG definition pass.
+use super::compact::profile_inputs::SelectedProfiles;
 use super::compilation_report::{
     Measurements, NativeCompilationReport, NativeCompilerConfiguration,
 };
@@ -627,13 +628,52 @@ fn emit_compact_with_inputs(
     compiler_inputs: &CompilationInputs,
     report: Option<&mut NativeCompilationReport>,
 ) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
-    host_supported()?;
+    let selected_profiles = SelectedProfiles::new();
+    emit_compact_with_selected_profiles(
+        artifact,
+        catalog,
+        observe,
+        compiler_inputs,
+        &selected_profiles,
+        report,
+    )
+}
+
+pub(super) fn emit_compact_with_selected_profiles(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    observe: bool,
+    compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
+    report: Option<&mut NativeCompilationReport>,
+) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
     let mut measurements = Measurements(report);
-    measurements.identify(
+    let raw = measurements.identify(
         || format!("{:?}", artifact.revision()),
         compiler_inputs,
         observe,
     );
+    let result = compile_compact(
+        artifact,
+        catalog,
+        observe,
+        compiler_inputs,
+        selected_profiles,
+        &mut measurements,
+    );
+    measurements.finish_inputs(raw, selected_profiles);
+    result
+}
+
+fn compile_compact(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    observe: bool,
+    compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
+    measurements: &mut Measurements<'_>,
+) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
+    host_supported()?;
     eprintln!("compact-stage: canonical lowering");
     let limits = crate::native_artifact::NativeProgramLimitMode::NoLimits.compilation();
     let plan = measurements
@@ -712,7 +752,8 @@ fn emit_compact_with_inputs(
             &flags,
             direct,
             compiler_inputs,
-            &mut measurements,
+            selected_profiles,
+            measurements,
         );
         measurements.finish_attempt(&result);
         result
@@ -732,12 +773,14 @@ fn emit_prepared_compact_object(
     flags: &[(&'static str, &str)],
     direct_literals: bool,
     compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
     measurements: &mut Measurements<'_>,
 ) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
     let (object, isa) = measurements.stage("module_setup", || {
         codegen_backend::object_with_isa("mech_compact_closed_diagnostic", flags, compiler_inputs)
     })?;
-    let mut module = super::compact::PreparedObject::new(object, compiler_inputs);
+    let mut module =
+        super::compact::PreparedObject::new(object, compiler_inputs, selected_profiles);
     if !observe && let Ok(mode) = compiler_inputs.var("MECH_COMPACT_DIRECT_RUNTIME_CALLS") {
         module.use_direct_runtime_calls(&mode);
     }
@@ -754,7 +797,13 @@ fn emit_prepared_compact_object(
     measurements.module(isa.as_ref(), flags, threads);
     let metadata = measurements.stage("lower_and_define", || {
         if threads == 0 && !direct_literals {
-            super::compact::define(&mut module, prepared, observe, share_phase_bodies)
+            super::compact::define(
+                &mut module,
+                prepared,
+                observe,
+                share_phase_bodies,
+                selected_profiles,
+            )
         } else {
             super::compact::define_with_isa(
                 &mut module,
@@ -765,6 +814,7 @@ fn emit_prepared_compact_object(
                 threads,
                 direct_runtime_calls,
                 direct_literals,
+                selected_profiles,
             )
         }
     })?;

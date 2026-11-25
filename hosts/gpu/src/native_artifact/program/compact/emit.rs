@@ -1,4 +1,5 @@
 //! Native typed CFG using the shared scalar, aggregate and branch emitters.
+use super::profile_inputs::SelectedProfiles;
 use super::{
     arrays::{self, Arrays},
     checked_traversals,
@@ -63,6 +64,7 @@ fn seal_auxiliary(
 }
 pub(super) struct Shared<'a> {
     compiler_inputs: &'a CompilationInputs,
+    selected_profiles: &'a SelectedProfiles,
     pub layout: Layout,
     pub actions: Vec<Recipe>,
     pub phases: Vec<phases::Phase>,
@@ -79,6 +81,7 @@ pub(in crate::native_artifact) fn define<M: Module>(
     prepared: &PreparedNativeProgram,
     observe: bool,
     share_phase_bodies: bool,
+    selected_profiles: &SelectedProfiles,
 ) -> Result<serde_json::Value, NativeCompileError> {
     define_with_pool(
         module,
@@ -88,6 +91,7 @@ pub(in crate::native_artifact) fn define<M: Module>(
         None,
         false,
         prepared.compiler_inputs(),
+        selected_profiles,
     )
 }
 
@@ -100,6 +104,7 @@ pub(in crate::native_artifact::program) fn define_with_isa<M: Module>(
     threads: usize,
     direct_runtime_calls: super::object::DirectRuntimeCalls,
     direct_literals: bool,
+    selected_profiles: &SelectedProfiles,
 ) -> Result<serde_json::Value, NativeCompileError> {
     let compiler_inputs = prepared.compiler_inputs();
     let pool = (threads != 0)
@@ -122,6 +127,7 @@ pub(in crate::native_artifact::program) fn define_with_isa<M: Module>(
         pool.as_ref(),
         direct_literals,
         compiler_inputs,
+        selected_profiles,
     )
 }
 
@@ -133,6 +139,7 @@ fn define_with_pool<M: Module>(
     pool: Option<&super::compile_jobs::Pool>,
     direct_literals: bool,
     compiler_inputs: &CompilationInputs,
+    selected_profiles: &SelectedProfiles,
 ) -> Result<serde_json::Value, NativeCompileError> {
     let plan = prepared.plan();
     let layout = Layout::derive(plan)?;
@@ -169,6 +176,7 @@ fn define_with_pool<M: Module>(
     let phases = phases::define(
         module,
         compiler_inputs,
+        selected_profiles,
         prepared,
         &layout,
         &literals,
@@ -203,6 +211,7 @@ fn define_with_pool<M: Module>(
     .transpose()?;
     let shared = Shared {
         compiler_inputs,
+        selected_profiles,
         layout,
         actions,
         phases,
@@ -626,7 +635,13 @@ fn define_entry<M: Module>(
         phases::prove_seeded_histograms(prepared, layout, &flow, actions, &owner_flow, &phases)
     });
     let seeded = if let Some(proofs) = &seed_proofs {
-        phases::define_seeded_histograms(module, compiler_inputs, &phases, proofs)?
+        phases::define_seeded_histograms(
+            module,
+            compiler_inputs,
+            shared.selected_profiles,
+            &phases,
+            proofs,
+        )?
     } else {
         BTreeMap::new()
     };

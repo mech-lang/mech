@@ -1,5 +1,6 @@
 //! Select the compact Object's native definitions before writing them.
 
+use super::profile_inputs::SelectedProfiles;
 use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::{Context, control::ControlPlane, ir, ir::Signature, isa::TargetIsa};
 use cranelift_module::{
@@ -95,6 +96,7 @@ impl DirectRuntimeCalls {
 pub(in crate::native_artifact::program) struct PreparedObject {
     object: ObjectModule,
     compiler_inputs: CompilationInputs,
+    selected_profiles: SelectedProfiles,
     declarations: ModuleDeclarations,
     declaration_order: Vec<FuncOrDataId>,
     definition_order: Vec<FuncOrDataId>,
@@ -107,10 +109,12 @@ impl PreparedObject {
     pub(in crate::native_artifact::program) fn new(
         object: ObjectModule,
         compiler_inputs: &CompilationInputs,
+        selected_profiles: &SelectedProfiles,
     ) -> Self {
         Self {
             object,
             compiler_inputs: compiler_inputs.clone(),
+            selected_profiles: selected_profiles.clone(),
             declarations: ModuleDeclarations::default(),
             declaration_order: Vec::new(),
             definition_order: Vec::new(),
@@ -477,7 +481,7 @@ impl PreparedObject {
                             && let Some(name) = &decl.name
                         {
                             phase_layout::pad_object_tail(
-                                &self.compiler_inputs,
+                                &self.selected_profiles,
                                 profiles,
                                 name,
                                 &mut text.bytes,
@@ -652,7 +656,7 @@ impl Module for PreparedObject {
                 .var_os("MECH_COMPACT_ROOT_TAIL_PROFILE")
         {
             phase_layout::pad_checked_root_tail(
-                &self.compiler_inputs,
+                &self.selected_profiles,
                 std::path::Path::new(&profile),
                 buffer.alignment,
                 &mut bytes,
@@ -710,7 +714,11 @@ mod tests {
             .finish(settings::Flags::new(settings::builder()))
             .unwrap();
         let builder = ObjectBuilder::new(isa, "compact_test", default_libcall_names()).unwrap();
-        PreparedObject::new(ObjectModule::new(builder), &CompilationInputs::legacy())
+        PreparedObject::new(
+            ObjectModule::new(builder),
+            &CompilationInputs::legacy(),
+            &SelectedProfiles::new(),
+        )
     }
 
     fn function(module: &mut PreparedObject, name: &str, linkage: Linkage) -> FuncId {
