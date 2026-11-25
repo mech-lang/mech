@@ -79,7 +79,6 @@ pub(in crate::native_artifact) fn define<M: Module>(
     prepared: &PreparedNativeProgram,
     observe: bool,
     share_phase_bodies: bool,
-    compiler_inputs: &CompilationInputs,
 ) -> Result<serde_json::Value, NativeCompileError> {
     define_with_pool(
         module,
@@ -88,7 +87,7 @@ pub(in crate::native_artifact) fn define<M: Module>(
         share_phase_bodies,
         None,
         false,
-        compiler_inputs,
+        prepared.compiler_inputs(),
     )
 }
 
@@ -101,8 +100,8 @@ pub(in crate::native_artifact::program) fn define_with_isa<M: Module>(
     threads: usize,
     direct_runtime_calls: super::object::DirectRuntimeCalls,
     direct_literals: bool,
-    compiler_inputs: &CompilationInputs,
 ) -> Result<serde_json::Value, NativeCompileError> {
+    let compiler_inputs = prepared.compiler_inputs();
     let pool = (threads != 0)
         .then(|| {
             super::compile_jobs::Pool::new(

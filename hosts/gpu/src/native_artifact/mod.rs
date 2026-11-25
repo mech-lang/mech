@@ -128,9 +128,14 @@ pub use crate::native_artifact::program::application::{
     generate_linked_program_application, generate_linked_program_application_with_limits,
 };
 #[cfg(feature = "canonical-native-program")]
+pub use crate::native_artifact::program::compilation_report::{
+    NativeCompilationReport, NativeCompilerConfiguration,
+};
+#[cfg(feature = "canonical-native-program")]
 pub use crate::native_artifact::program::compiler::{
     JitProgramArtifact, NativeProgramObject, compact_native_layout_for_diagnostic,
     emit_compact_closed_object_for_diagnostic,
+    emit_compact_closed_object_with_configuration_for_diagnostic,
     emit_compact_closed_object_with_phase_observer_for_diagnostic,
     emit_minimal_numeric_object_for_diagnostic, emit_program_object,
     emit_program_object_with_limits,

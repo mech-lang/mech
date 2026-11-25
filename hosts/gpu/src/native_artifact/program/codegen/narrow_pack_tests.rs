@@ -4,8 +4,8 @@ use cranelift_codegen::{
     ir::{AbiParam, InstBuilder, MemFlags, Type, Value, condcodes::IntCC, types},
 };
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
-use cranelift_jit::{JITBuilder, JITModule};
-use cranelift_module::{Linkage, Module, default_libcall_names};
+use cranelift_jit::JITModule;
+use cranelift_module::{Linkage, Module};
 
 #[derive(Clone, Copy, Debug)]
 enum Form {
@@ -223,13 +223,11 @@ fn exercise(group: &str, forms: &[Form]) {
     let mut observations = 0;
     let mut bodies = Vec::new();
     for opt in ["none", "speed"] {
-        let mut module = JITModule::new(
-            JITBuilder::with_flags(
-                &[("opt_level", opt), ("regalloc_checker", "true")],
-                default_libcall_names(),
-            )
-            .unwrap(),
-        );
+        let mut module = crate::native_artifact::codegen::backend::jit(&[
+            ("opt_level", opt),
+            ("regalloc_checker", "true"),
+        ])
+        .unwrap();
         let mut entries = Vec::new();
         for &form in forms {
             for (ty, narrow) in [
@@ -592,13 +590,11 @@ fn masked_field_inserts_preserve_values_effects_and_fallbacks() {
     let mut bodies = Vec::new();
     let mut observations = 0;
     for opt in ["none", "speed"] {
-        let mut module = JITModule::new(
-            JITBuilder::with_flags(
-                &[("opt_level", opt), ("regalloc_checker", "true")],
-                default_libcall_names(),
-            )
-            .unwrap(),
-        );
+        let mut module = crate::native_artifact::codegen::backend::jit(&[
+            ("opt_level", opt),
+            ("regalloc_checker", "true"),
+        ])
+        .unwrap();
         let mut entries = Vec::new();
         for ty in [types::I32, types::I64] {
             let top = 1u64 << (ty.bits() - 1);

@@ -123,6 +123,57 @@ impl CompilationInputs {
             }),
         }
     }
+
+    #[cfg(feature = "canonical-native-program")]
+    pub fn report_identity(&self) -> serde_json::Value {
+        use sha2::{Digest, Sha256};
+        let mut hash = Sha256::new();
+        let mut frame = |bytes: &[u8]| {
+            hash.update((bytes.len() as u64).to_le_bytes());
+            hash.update(bytes);
+        };
+        frame(b"mech-native-inputs-v1");
+        frame(&(self.0.values.len() as u64).to_le_bytes());
+        for (key, value) in &self.0.values {
+            frame(key.as_encoded_bytes());
+            frame(value.as_encoded_bytes());
+        }
+        frame(&(self.0.profiles.len() as u64).to_le_bytes());
+        let profiles = self
+            .0
+            .profiles
+            .iter()
+            .map(|(path, contents)| {
+                frame(path.as_os_str().as_encoded_bytes());
+                match contents {
+                    Ok(bytes) => {
+                        let digest = Sha256::digest(bytes);
+                        frame(b"read");
+                        frame(&digest);
+                        serde_json::json!({
+                            "path": path.to_string_lossy(), "path_encoding": "os",
+                            "sha256": super::super::identity::hex(&digest), "bytes": bytes.len(),
+                        })
+                    }
+                    Err(error) => {
+                        frame(b"error");
+                        frame(format!("{:?}", error.kind()).as_bytes());
+                        frame(&error.raw_os_error().unwrap_or_default().to_le_bytes());
+                        serde_json::json!({
+                            "path": path.to_string_lossy(), "path_encoding": "os",
+                            "unavailable": format!("{:?}", error.kind()),
+                            "os_error": error.raw_os_error(),
+                        })
+                    }
+                }
+            })
+            .collect::<Vec<_>>();
+        serde_json::json!({
+            "sha256": super::super::identity::hex(&hash.finalize()),
+            "scope": "captured native settings and raw profile contents; includes local path bytes",
+            "profiles": profiles,
+        })
+    }
 }
 
 #[cfg(test)]

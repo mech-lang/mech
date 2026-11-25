@@ -345,6 +345,7 @@ mod tests {
         }
         fn chains(&self) -> Vec<Chain> {
             derive(
+                &CompilationInputs::capture([]),
                 &self.plan,
                 &self.layout,
                 &self.flow,

@@ -98,7 +98,16 @@ fn threaded_edges_keep_pure_cycles_without_compile_time_execution() {
     c.compute_cfg();
     c.compute_domtree();
     let before = c.func.display().to_string();
-    assert_eq!(optimize(&mut c.func, &c.cfg, &c.domtree).threaded_edges, 0);
+    assert_eq!(
+        optimize(
+            &CompilationInputs::capture([]),
+            &mut c.func,
+            &c.cfg,
+            &c.domtree
+        )
+        .threaded_edges,
+        0
+    );
     assert_eq!(c.func.display().to_string(), before);
 }
 
@@ -140,7 +149,16 @@ fn threaded_edges_do_not_speculate_unsupported_header_computations() {
     c.compute_cfg();
     c.compute_domtree();
     let before = c.func.display().to_string();
-    assert_eq!(optimize(&mut c.func, &c.cfg, &c.domtree).threaded_edges, 0);
+    assert_eq!(
+        optimize(
+            &CompilationInputs::capture([]),
+            &mut c.func,
+            &c.cfg,
+            &c.domtree
+        )
+        .threaded_edges,
+        0
+    );
     assert_eq!(c.func.display().to_string(), before);
     c.verify(module.isa()).unwrap();
 }

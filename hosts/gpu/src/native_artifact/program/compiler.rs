@@ -1,4 +1,7 @@
 //! ABI16 facade over the SAME canonical iteration CFG definition pass.
+use super::compilation_report::{
+    Measurements, NativeCompilationReport, NativeCompilerConfiguration,
+};
 use crate::native_artifact::codegen::backend as codegen_backend;
 use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use crate::native_artifact::codegen::control::plan::CodePlan;
@@ -596,7 +599,25 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
     catalog: &FunctionCatalog,
     observe: bool,
 ) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
-    emit_compact_with_inputs(artifact, catalog, observe, &CompilationInputs::legacy())
+    emit_compact_with_inputs(
+        artifact,
+        catalog,
+        observe,
+        &CompilationInputs::legacy(),
+        None,
+    )
+}
+
+/// Compile the compact diagnostic with explicit immutable settings and optional host reporting.
+#[doc(hidden)]
+pub fn emit_compact_closed_object_with_configuration_for_diagnostic(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    configuration: &NativeCompilerConfiguration,
+    observe: bool,
+    report: Option<&mut NativeCompilationReport>,
+) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
+    emit_compact_with_inputs(artifact, catalog, observe, &configuration.0, report)
 }
 
 fn emit_compact_with_inputs(
@@ -604,24 +625,36 @@ fn emit_compact_with_inputs(
     catalog: &FunctionCatalog,
     observe: bool,
     compiler_inputs: &CompilationInputs,
+    report: Option<&mut NativeCompilationReport>,
 ) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
     host_supported()?;
+    let mut measurements = Measurements(report);
+    measurements.identify(
+        || format!("{:?}", artifact.revision()),
+        compiler_inputs,
+        observe,
+    );
     eprintln!("compact-stage: canonical lowering");
     let limits = crate::native_artifact::NativeProgramLimitMode::NoLimits.compilation();
-    let plan = lower_native_program_artifact_with_definition_table_limit(
-        artifact,
-        catalog,
-        limits.max_definition_table_bytes,
-    )
-    .map_err(backend)?;
+    let plan = measurements
+        .stage("native_plan", || {
+            lower_native_program_artifact_with_definition_table_limit(
+                artifact,
+                catalog,
+                limits.max_definition_table_bytes,
+            )
+        })
+        .map_err(backend)?;
     eprintln!(
         "compact-stage: preparation blocks={} values={}",
         plan.blocks().len(),
         plan.values().len()
     );
-    let prepared =
-        PreparedNativeProgram::prepare_with_inputs(artifact, catalog, plan, compiler_inputs)
-            .map_err(backend)?;
+    let prepared = measurements
+        .stage("prepare", || {
+            PreparedNativeProgram::prepare_with_inputs(artifact, catalog, plan, compiler_inputs)
+        })
+        .map_err(backend)?;
     eprintln!("compact-stage: native module");
     let mut flags = PROGRAM_CODEGEN_FLAGS.to_vec();
     if cfg!(target_arch = "aarch64")
@@ -671,8 +704,19 @@ fn emit_compact_with_inputs(
         && compiler_inputs
             .var_os("MECH_COMPACT_DIRECT_ENTRY_LITERALS")
             .is_some();
-    let emit =
-        |direct| emit_prepared_compact_object(&prepared, observe, &flags, direct, compiler_inputs);
+    let mut emit = |direct| {
+        measurements.start_attempt(direct);
+        let result = emit_prepared_compact_object(
+            &prepared,
+            observe,
+            &flags,
+            direct,
+            compiler_inputs,
+            &mut measurements,
+        );
+        measurements.finish_attempt(&result);
+        result
+    };
     match emit(direct_literals) {
         Err(error) if direct_literals => {
             eprintln!("compact-stage: direct literal attempt withdrew: {error}");
@@ -685,12 +729,14 @@ fn emit_compact_with_inputs(
 fn emit_prepared_compact_object(
     prepared: &PreparedNativeProgram,
     observe: bool,
-    flags: &[(&str, &str)],
+    flags: &[(&'static str, &str)],
     direct_literals: bool,
     compiler_inputs: &CompilationInputs,
+    measurements: &mut Measurements<'_>,
 ) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
-    let (object, isa) =
-        codegen_backend::object_with_isa("mech_compact_closed_diagnostic", flags, compiler_inputs)?;
+    let (object, isa) = measurements.stage("module_setup", || {
+        codegen_backend::object_with_isa("mech_compact_closed_diagnostic", flags, compiler_inputs)
+    })?;
     let mut module = super::compact::PreparedObject::new(object, compiler_inputs);
     if !observe && let Ok(mode) = compiler_inputs.var("MECH_COMPACT_DIRECT_RUNTIME_CALLS") {
         module.use_direct_runtime_calls(&mode);
@@ -705,27 +751,23 @@ fn emit_prepared_compact_object(
     let share_phase_bodies = compiler_inputs
         .var_os("MECH_COMPACT_SHARE_PHASE_BODIES")
         .is_some();
-    let metadata = if threads == 0 && !direct_literals {
-        super::compact::define(
-            &mut module,
-            prepared,
-            observe,
-            share_phase_bodies,
-            compiler_inputs,
-        )?
-    } else {
-        super::compact::define_with_isa(
-            &mut module,
-            prepared,
-            observe,
-            share_phase_bodies,
-            isa,
-            threads,
-            direct_runtime_calls,
-            direct_literals,
-            compiler_inputs,
-        )?
-    };
+    measurements.module(isa.as_ref(), flags, threads);
+    let metadata = measurements.stage("lower_and_define", || {
+        if threads == 0 && !direct_literals {
+            super::compact::define(&mut module, prepared, observe, share_phase_bodies)
+        } else {
+            super::compact::define_with_isa(
+                &mut module,
+                prepared,
+                observe,
+                share_phase_bodies,
+                isa,
+                threads,
+                direct_runtime_calls,
+                direct_literals,
+            )
+        }
+    })?;
     if !observe
         && compiler_inputs
             .var_os("MECH_COMPACT_EXPORTS_FIRST")
@@ -740,7 +782,14 @@ fn emit_prepared_compact_object(
     {
         module.place_layout_regions_last();
     }
-    let bytes = module.finish().map_err(backend)?.emit().map_err(backend)?;
+    let product = measurements
+        .stage("object_finalization", || module.finish())
+        .map_err(backend)?;
+    measurements.object(&product);
+    let bytes = measurements
+        .stage("object_serialization", || product.emit())
+        .map_err(backend)?;
+    measurements.object_bytes(bytes.len());
     Ok((bytes, metadata))
 }
 

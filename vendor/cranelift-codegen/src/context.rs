@@ -195,9 +195,10 @@ impl Context {
         let prefetches = self.func.aarch64_hoist_prefetch_bases;
         let indexed_loads = self.func.aarch64_hoist_indexed_load_bases;
         if (prefetches || indexed_loads) && isa.name() == "aarch64" {
-            let reuse_dominating_bases = isa
-                .aarch64_compilation_options()
-                .is_some_and(|options| options.reuse_prefetch_bases);
+            let reuse_dominating_bases = cfg!(feature = "std")
+                && isa
+                    .aarch64_compilation_options()
+                    .is_some_and(|options| options.reuse_prefetch_bases);
             crate::prefetch_bases::hoist(
                 &mut self.func,
                 reuse_dominating_bases,

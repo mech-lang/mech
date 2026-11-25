@@ -761,7 +761,13 @@ mod tests {
             .blocks()
             .flat_map(|block| context.func.layout.block_insts(block))
             .collect::<BTreeSet<_>>();
-        let result = super::super::optimize(&mut context, header, None, true);
+        let result = super::super::optimize(
+            &crate::native_artifact::codegen::compilation_inputs::CompilationInputs::capture([]),
+            &mut context,
+            header,
+            None,
+            true,
+        );
         let settings =
             cranelift_codegen::settings::Flags::new(cranelift_codegen::settings::builder());
         context.verify(&settings).unwrap();

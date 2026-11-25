@@ -1,16 +1,14 @@
 use cranelift_codegen::ir::{AbiParam, InstBuilder, MemFlags, condcodes::IntCC, types};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
-use cranelift_jit::{JITBuilder, JITModule};
-use cranelift_module::{Linkage, Module, default_libcall_names};
+use cranelift_jit::JITModule;
+use cranelift_module::{Linkage, Module};
 
 fn module() -> JITModule {
-    JITModule::new(
-        JITBuilder::with_flags(
-            &[("opt_level", "speed"), ("regalloc_checker", "true")],
-            default_libcall_names(),
-        )
-        .unwrap(),
-    )
+    crate::native_artifact::codegen::backend::jit(&[
+        ("opt_level", "speed"),
+        ("regalloc_checker", "true"),
+    ])
+    .unwrap()
 }
 
 const CONDITIONS: [IntCC; 10] = [

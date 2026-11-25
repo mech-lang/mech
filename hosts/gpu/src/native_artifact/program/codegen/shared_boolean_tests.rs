@@ -1,8 +1,8 @@
 //! Machine-executed witnesses for shared canonical comparison results.
 use cranelift_codegen::ir::{AbiParam, InstBuilder, MemFlags, Type, condcodes::IntCC, types};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
-use cranelift_jit::{JITBuilder, JITModule};
-use cranelift_module::{Linkage, Module, default_libcall_names};
+
+use cranelift_module::{Linkage, Module};
 
 type Run = unsafe extern "C" fn(u64, u64, u64, u64, u64) -> u64;
 const CCS: [IntCC; 10] = [
@@ -65,13 +65,11 @@ fn comparison(cc: IntCC, a: u64, b: u64, ty: Type) -> bool {
 }
 
 fn check(tys: [Type; 2], cc: [IntCC; 2], shape: Shape) {
-    let mut module = JITModule::new(
-        JITBuilder::with_flags(
-            &[("opt_level", "speed"), ("regalloc_checker", "true")],
-            default_libcall_names(),
-        )
-        .unwrap(),
-    );
+    let mut module = crate::native_artifact::codegen::backend::jit(&[
+        ("opt_level", "speed"),
+        ("regalloc_checker", "true"),
+    ])
+    .unwrap();
     let mut context = module.make_context();
     context.set_disasm(true);
     context.func.signature.params = vec![AbiParam::new(types::I64); 5];

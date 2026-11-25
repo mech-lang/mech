@@ -108,6 +108,38 @@ pub(super) fn apply_register_weights(
     Ok(())
 }
 
+#[cfg(test)]
+#[test]
+fn phase_layout_consumes_captured_bytes_and_defers_profile_errors() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("layout.json");
+    std::fs::write(&path, br#"{"order":[0,8],"literal_offset":12}"#).unwrap();
+    let capture = || {
+        CompilationInputs::capture([(
+            "MECH_COMPACT_PHASE_BLOCK_LAYOUT".into(),
+            format!("selected@{}", path.display()).into(),
+        )])
+    };
+    let original = capture();
+    std::fs::write(&path, b"malformed").unwrap();
+    let malformed = capture();
+    std::fs::remove_file(&path).unwrap();
+    let missing = capture();
+    let mut context = Context::new();
+    apply(&original, &mut context, "selected").unwrap();
+    assert_eq!(context.func.aarch64_block_layout, [0, 8]);
+    assert_eq!(context.func.aarch64_block_layout_literal_start, Some(12));
+    apply(&malformed, &mut context, "irrelevant").unwrap();
+    assert!(apply(&malformed, &mut context, "selected").is_err());
+    apply(&missing, &mut context, "irrelevant").unwrap();
+    assert_eq!(
+        apply(&missing, &mut context, "selected")
+            .unwrap_err()
+            .kind(),
+        io::ErrorKind::NotFound,
+    );
+}
+
 pub(super) fn pad_object_tail(
     compiler_inputs: &CompilationInputs,
     profiles: &str,
