@@ -1729,6 +1729,12 @@ class FullWorkflowContractTests(unittest.TestCase):
             shutil.copyfile(ROOT / script, repo / script)
             subprocess.run(["git", "init", "-q"], cwd=repo, check=True)
             (repo / "Cargo.lock").write_text('name = "windows_x86_64_gnu' 'l' 'lvm"\n')
+            examples = repo / "docs" / "examples"
+            examples.mkdir(parents=True)
+            (examples / ("l" "lvm-alternatives.MD")).write_text(
+                "The compiler does not use L" "LVM or l" "lc.\n"
+            )
+            (repo / "architecture.md").write_text("Reject i" "nkwell manifests.\n")
             subprocess.run(["git", "add", "."], cwd=repo, check=True)
             check = [sys.executable, str(repo / script)]
             self.assertEqual(subprocess.run(check, capture_output=True).returncode, 0)
@@ -1736,6 +1742,10 @@ class FullWorkflowContractTests(unittest.TestCase):
                 ("Cargo.toml", '[dependencies]\nl' 'lvm-sys = "=220.0.0"\n'),
                 ("build.rs", 'fn main() { std::process::Command::new("l' 'lc"); }\n'),
                 ("root.ll", ""),
+                ("docs/examples/Cargo.toml", '[dependencies]\ni' 'nkwell = "=0.8.0"\n'),
+                ("docs/examples/build.rs", 'fn main() { std::process::Command::new("l' 'lc"); }\n'),
+                ("docs/examples/sample.ll", ""),
+                ("docs/examples/sample.bc", ""),
                 ("vendor/cranelift-codegen/build.rs",
                  '#[link(name = "L' 'LVM")] unsafe extern "C" {}\n'),
             ):

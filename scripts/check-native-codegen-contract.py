@@ -40,7 +40,10 @@ def upstream_reference(path, line):
 def main():
     paths = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT)
     names = paths.decode(errors="replace").split("\0")
-    violations = [name for name in names if FILE_PATTERN.search(name)]
+    violations = [
+        name for name in names
+        if Path(name).suffix.lower() != ".md" and FILE_PATTERN.search(name)
+    ]
     matches = subprocess.run(
         ["git", "grep", "--cached", "-IinE", SOURCE_PATTERN, "--"],
         cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace",
@@ -49,6 +52,8 @@ def main():
         sys.exit(matches.stderr.strip())
     for match in matches.stdout.splitlines():
         path, _, location = match.partition(":")
+        if Path(path).suffix.lower() == ".md":
+            continue
         _, _, line = location.partition(":")
         line = line.strip()
         if path in {"Cargo.lock", "src/build/native-resolution-seed.lock"} and WINDOWS_TARGET.fullmatch(line):
