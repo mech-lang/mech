@@ -236,7 +236,7 @@
     },
     {
       "path": "vendor/cranelift-codegen/src/isa/aarch64/lower/isle/generated_code.rs",
-      "sha256": "1867dc9a0d4727936b0e663b45cced4a5d4e2aaefecdee4ef69f6c291dd8fad9"
+      "sha256": "9b3f62ddb4be59e1ed57cfd79389e72271bc712edcb8566c08dee1a463c72c85"
     },
     {
       "path": "vendor/cranelift-codegen/src/isa/aarch64/settings.rs",
@@ -248,7 +248,7 @@
     },
     {
       "path": "vendor/cranelift-codegen/src/isa/pulley_shared/lower/isle/generated_code.rs",
-      "sha256": "2d76f49bcdc1b5eb120889000f919909c810a2bf52318bcc13a1a77f3546d26a"
+      "sha256": "0bb3c5c29712734f3c299eff60500c8ba1221dfe113e0db273404304d48a18d4"
     },
     {
       "path": "vendor/cranelift-codegen/src/isa/pulley_shared/settings.rs",
@@ -256,7 +256,7 @@
     },
     {
       "path": "vendor/cranelift-codegen/src/isa/riscv64/lower/isle/generated_code.rs",
-      "sha256": "9675ad06d78bc3ae56ad7947cde12b2875a608fc20dfb15e48c8372adf5034be"
+      "sha256": "ce82f6085562d74808804132e405579cd85074dd698374a23d9e87ddb772d902"
     },
     {
       "path": "vendor/cranelift-codegen/src/isa/riscv64/settings.rs",
@@ -264,7 +264,7 @@
     },
     {
       "path": "vendor/cranelift-codegen/src/isa/s390x/lower/isle/generated_code.rs",
-      "sha256": "e0cc4853225a9cea66fd9b590177a4c31c76f6b33096357004d3b9575740519c"
+      "sha256": "9ebdd336aa63be8561291c449262921fa4aa0b79c26e0d835c7248acd3802a94"
     },
     {
       "path": "vendor/cranelift-codegen/src/isa/s390x/settings.rs",
@@ -276,7 +276,7 @@
     },
     {
       "path": "vendor/cranelift-codegen/src/isa/x64/lower/isle/generated_code.rs",
-      "sha256": "f5c5067c43c155b8e1ea2445e1262c4861a45c6b232423467bb61c1006bbb508"
+      "sha256": "77e750125a94d3ac1272a9f104ab354c8f10a1e60bbdfa3c4a17d154375cc0a2"
     },
     {
       "path": "vendor/cranelift-codegen/src/isa/x64/settings.rs",
@@ -284,15 +284,15 @@
     },
     {
       "path": "vendor/cranelift-codegen/src/lib.rs",
-      "sha256": "7f2d9b51c208a516a4299cca614fd8ad8fbfa2b05f718e96e1f1ddfcebdbe94b"
+      "sha256": "323511d499dac84de979aa8d0200615600d030af18b70dfafd8ba32087febe31"
     },
     {
       "path": "vendor/cranelift-codegen/src/opts/generated_code.rs",
-      "sha256": "b939a0ba7d8988a78cc2c12a19fca5c1540a999d5736b4ccef441d92be78ae51"
+      "sha256": "e3d3a7fab0071481300d780ba4bec73e963dd69ed4c8dd12ae1d6db8a48b238b"
     },
     {
       "path": "vendor/cranelift-codegen/src/settings.rs",
-      "sha256": "3fc5192702e88a5889ac96fb3a6983ac32f6e22227e4d134104a3011a765bee9"
+      "sha256": "6308129b598742518eafa1f4146b762bd60429af55fd7fe4d790ff61df9009ba"
     }
   ]
 }
