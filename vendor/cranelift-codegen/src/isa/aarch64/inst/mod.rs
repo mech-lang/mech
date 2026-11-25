@@ -466,7 +466,7 @@ fn aarch64_get_operands(inst: &mut Inst, collector: &mut impl OperandVisitor) {
             collector.reg_use(rn);
             collector.reg_use(rm);
         }
-        Inst::CCmpImm { rn, .. } => {
+        Inst::CCmpImm { rn, .. } | Inst::CCmnImm { rn, .. } => {
             collector.reg_use(rn);
         }
         Inst::AtomicRMWLoop {
@@ -1749,6 +1749,19 @@ impl Inst {
                 let nzcv = nzcv.pretty_print(0);
                 let cond = cond.pretty_print(0);
                 format!("ccmp {rn}, {imm}, {nzcv}, {cond}")
+            }
+            &Inst::CCmnImm {
+                size,
+                rn,
+                imm,
+                nzcv,
+                cond,
+            } => {
+                let rn = pretty_print_ireg(rn, size);
+                let imm = imm.pretty_print(0);
+                let nzcv = nzcv.pretty_print(0);
+                let cond = cond.pretty_print(0);
+                format!("ccmn {rn}, {imm}, {nzcv}, {cond}")
             }
             &Inst::AtomicRMW {
                 rs, rt, rn, ty, op, ..

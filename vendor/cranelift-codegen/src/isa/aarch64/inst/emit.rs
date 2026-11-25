@@ -1528,6 +1528,16 @@ impl Inst {
             } => {
                 sink.put4(enc_ccmp_imm(size, rn, imm, nzcv, cond));
             }
+            &Inst::CCmnImm {
+                size,
+                rn,
+                imm,
+                nzcv,
+                cond,
+            } => {
+                // CCMN differs from CCMP only in its add/subtract bit.
+                sink.put4(enc_ccmp_imm(size, rn, imm, nzcv, cond) & !(1 << 30));
+            }
             &Inst::AtomicRMW {
                 ty,
                 op,

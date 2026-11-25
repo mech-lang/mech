@@ -61,6 +61,7 @@ pub(super) fn define_prepared_body<M: Module>(
     context: &mut Context,
     bodies: Option<&mut PhaseBodies>,
 ) -> Result<(FuncId, String), NativeCompileError> {
+    super::phase_layout::apply_comparison_options(context, symbol);
     let Some(bodies) = bodies else {
         module.define_function(function, context).map_err(backend)?;
         return Ok((function, symbol.into()));

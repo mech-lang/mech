@@ -27,6 +27,18 @@ pub(super) fn profiles() -> Option<String> {
     std::env::var("MECH_COMPACT_PHASE_BLOCK_LAYOUT").ok()
 }
 
+/// Pure comparison lowering also applies to checked roots and composed bodies.
+/// Set it before profile inspection and before any direct body compilation.
+pub(super) fn apply_comparison_options(context: &mut Context, symbol: &str) {
+    if std::env::var("MECH_COMPACT_CCMP_IMMEDIATES").is_ok_and(|targets| {
+        targets
+            .split(';')
+            .any(|target| target == "all" || target == symbol)
+    }) {
+        context.func.aarch64_ccmp_immediates = true;
+    }
+}
+
 pub(super) fn apply_fp_spill_cache(context: &mut Context, symbol: &str) -> io::Result<()> {
     context.func.aarch64_fp_spill_keep_pairs =
         std::env::var_os("MECH_COMPACT_FP_SPILL_KEEP_PAIRS").is_some();
@@ -67,6 +79,7 @@ pub(super) fn apply(context: &mut Context, symbol: &str) -> io::Result<()> {
 /// Register weights refer to the full lowered VCode, rather than byte offsets
 /// in a previously allocated machine body. Validation occurs after lowering.
 pub(super) fn apply_register_weights(context: &mut Context, symbol: &str) -> io::Result<()> {
+    apply_comparison_options(context, symbol);
     #[derive(serde::Deserialize)]
     struct RegisterWeights {
         expected_vcode: String,

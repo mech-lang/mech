@@ -589,6 +589,9 @@ impl Module for PreparedObject {
         control: &mut ControlPlane,
     ) -> ModuleResult<()> {
         let declaration = self.declarations.get_function_decl(id);
+        if let Some(symbol) = declaration.name.as_deref() {
+            phase_layout::apply_comparison_options(context, symbol);
+        }
         let checked_root = declaration.name.as_deref() == Some("mech_compact_closed_checked");
         let checked_body = checked_root
             || declaration.name.as_deref().is_some_and(|name| {
