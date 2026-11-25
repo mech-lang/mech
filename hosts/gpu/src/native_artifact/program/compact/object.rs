@@ -1,5 +1,6 @@
 //! Select the compact Object's native definitions before writing them.
 
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::{Context, control::ControlPlane, ir, ir::Signature, isa::TargetIsa};
 use cranelift_module::{
     DataDescription, DataId, FuncId, FuncOrDataId, Linkage, Module, ModuleDeclarations,
@@ -93,6 +94,7 @@ impl DirectRuntimeCalls {
 /// their bytes and relocations so unused alternatives never need Object symbols.
 pub(in crate::native_artifact::program) struct PreparedObject {
     object: ObjectModule,
+    compiler_inputs: CompilationInputs,
     declarations: ModuleDeclarations,
     declaration_order: Vec<FuncOrDataId>,
     definition_order: Vec<FuncOrDataId>,
@@ -102,15 +104,20 @@ pub(in crate::native_artifact::program) struct PreparedObject {
 }
 
 impl PreparedObject {
-    pub(in crate::native_artifact::program) fn new(object: ObjectModule) -> Self {
+    pub(in crate::native_artifact::program) fn new(
+        object: ObjectModule,
+        compiler_inputs: &CompilationInputs,
+    ) -> Self {
         Self {
             object,
+            compiler_inputs: compiler_inputs.clone(),
             declarations: ModuleDeclarations::default(),
             declaration_order: Vec::new(),
             definition_order: Vec::new(),
             bodies: BTreeMap::new(),
             direct_runtime_calls: DirectRuntimeCalls::Disabled,
-            inline_bodies: std::env::var_os("MECH_COMPACT_INLINE_SINGLE_CALLS")
+            inline_bodies: compiler_inputs
+                .var_os("MECH_COMPACT_INLINE_SINGLE_CALLS")
                 .map(|_| BTreeMap::new()),
         }
     }
@@ -126,7 +133,10 @@ impl PreparedObject {
         let Some(bodies) = &self.inline_bodies else {
             return Ok(());
         };
-        let outside_loops = (std::env::var_os("MECH_COMPACT_INLINE_SINGLE_CALLS").as_deref()
+        let outside_loops = (self
+            .compiler_inputs
+            .var_os("MECH_COMPACT_INLINE_SINGLE_CALLS")
+            .as_deref()
             == Some(std::ffi::OsStr::new("outside-loops")))
         .then(|| {
             context.compute_cfg();
@@ -214,7 +224,7 @@ impl PreparedObject {
                 Body::Data(data) => outside.extend(data.function_decls.values().filter_map(symbol)),
             }
         }
-        let names = std::env::var("MECH_COMPACT_INLINE_SYMBOLS").ok();
+        let names = self.compiler_inputs.var("MECH_COMPACT_INLINE_SYMBOLS").ok();
         bodies
             .iter()
             .filter(|(target, _)| {
@@ -449,7 +459,7 @@ impl PreparedObject {
         }
         let tail_layout = (self.isa().name() == "aarch64"
             && self.isa().flags().enable_regalloc_spill_pairs())
-        .then(phase_layout::profiles)
+        .then(|| phase_layout::profiles(&self.compiler_inputs))
         .flatten();
         for id in self.definition_order {
             let body = self.bodies.remove(&id).unwrap();
@@ -466,8 +476,13 @@ impl PreparedObject {
                         if decl.linkage == Linkage::Local
                             && let Some(name) = &decl.name
                         {
-                            phase_layout::pad_object_tail(profiles, name, &mut text.bytes)
-                                .map_err(|error| ModuleError::Backend(error.into()))?;
+                            phase_layout::pad_object_tail(
+                                &self.compiler_inputs,
+                                profiles,
+                                name,
+                                &mut text.bytes,
+                            )
+                            .map_err(|error| ModuleError::Backend(error.into()))?;
                         }
                     }
                     self.object.define_function_bytes(
@@ -597,7 +612,10 @@ impl Module for PreparedObject {
             });
         let preselected = checked_body
             && self.isa().name() == "aarch64"
-            && std::env::var_os("MECH_COMPACT_INLINE_SINGLE_CALLS").as_deref()
+            && self
+                .compiler_inputs
+                .var_os("MECH_COMPACT_INLINE_SINGLE_CALLS")
+                .as_deref()
                 == Some(std::ffi::OsStr::new("preselected"))
             && self.compile_preselected_root(context, control)?;
         if !preselected {
@@ -611,7 +629,9 @@ impl Module for PreparedObject {
             && context.compiled_code().unwrap().buffer.data().len() <= MAX_INLINE_BYTES
             && context.func.dfg.num_values() <= MAX_INLINE_VALUES
             && let Some(bodies) = &mut self.inline_bodies
-            && std::env::var("MECH_COMPACT_INLINE_SYMBOLS")
+            && self
+                .compiler_inputs
+                .var("MECH_COMPACT_INLINE_SYMBOLS")
                 .ok()
                 .is_none_or(|symbols| {
                     declaration
@@ -627,9 +647,12 @@ impl Module for PreparedObject {
         let mut bytes = buffer.data().into();
         if checked_root
             && context.func.aarch64_branch_on_zero
-            && let Some(profile) = std::env::var_os("MECH_COMPACT_ROOT_TAIL_PROFILE")
+            && let Some(profile) = self
+                .compiler_inputs
+                .var_os("MECH_COMPACT_ROOT_TAIL_PROFILE")
         {
             phase_layout::pad_checked_root_tail(
+                &self.compiler_inputs,
                 std::path::Path::new(&profile),
                 buffer.alignment,
                 &mut bytes,
@@ -687,7 +710,7 @@ mod tests {
             .finish(settings::Flags::new(settings::builder()))
             .unwrap();
         let builder = ObjectBuilder::new(isa, "compact_test", default_libcall_names()).unwrap();
-        PreparedObject::new(ObjectModule::new(builder))
+        PreparedObject::new(ObjectModule::new(builder), &CompilationInputs::legacy())
     }
 
     fn function(module: &mut PreparedObject, name: &str, linkage: Linkage) -> FuncId {

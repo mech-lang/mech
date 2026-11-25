@@ -1,5 +1,6 @@
 //! ABI16 facade over the SAME canonical iteration CFG definition pass.
 use crate::native_artifact::codegen::backend as codegen_backend;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use crate::native_artifact::codegen::control::plan::CodePlan;
 use crate::native_artifact::compiler::{backend, host_supported};
 use crate::native_artifact::program::image::NativeCodeFootprint;
@@ -528,6 +529,7 @@ pub fn compact_native_layout_for_diagnostic(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
 ) -> Result<serde_json::Value, NativeCompileError> {
+    let compiler_inputs = CompilationInputs::legacy();
     let limits = crate::native_artifact::NativeProgramLimitMode::NoLimits.compilation();
     let plan = lower_native_program_artifact_with_definition_table_limit(
         artifact,
@@ -536,10 +538,14 @@ pub fn compact_native_layout_for_diagnostic(
     )
     .map_err(backend)?;
     let mut inventory = crate::native_artifact::program::compact::inventory(&plan)?;
-    if std::env::var_os("MECH_COMPACT_PROOF_INVENTORY").is_some() {
+    if compiler_inputs
+        .var_os("MECH_COMPACT_PROOF_INVENTORY")
+        .is_some()
+    {
         let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
         let meta = prepared.metadata();
-        let complete_headers = std::env::var("MECH_COMPACT_COMPLETE_PROOF_HEADERS")
+        let complete_headers = compiler_inputs
+            .var("MECH_COMPACT_COMPLETE_PROOF_HEADERS")
             .ok()
             .map(|text| {
                 text.split(',')
@@ -581,6 +587,15 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
     catalog: &FunctionCatalog,
     observe: bool,
 ) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
+    emit_compact_with_inputs(artifact, catalog, observe, &CompilationInputs::legacy())
+}
+
+fn emit_compact_with_inputs(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    observe: bool,
+    compiler_inputs: &CompilationInputs,
+) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
     host_supported()?;
     eprintln!("compact-stage: canonical lowering");
     let limits = crate::native_artifact::NativeProgramLimitMode::NoLimits.compilation();
@@ -600,7 +615,7 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
     let mut flags = PROGRAM_CODEGEN_FLAGS.to_vec();
     if cfg!(target_arch = "aarch64")
         && !observe
-        && let Some(mode) = std::env::var_os("MECH_COMPACT_PAIR_REGISTER_SPILLS")
+        && let Some(mode) = compiler_inputs.var_os("MECH_COMPACT_PAIR_REGISTER_SPILLS")
     {
         flags.push(("enable_regalloc_spill_pairs", "true"));
         if mode == "checked" {
@@ -609,7 +624,7 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
     }
     if cfg!(target_arch = "aarch64")
         && !observe
-        && let Some(mode) = std::env::var_os("MECH_COMPACT_FOLD_INVERTED_CSET")
+        && let Some(mode) = compiler_inputs.var_os("MECH_COMPACT_FOLD_INVERTED_CSET")
     {
         flags.push(("enable_inverted_cset_folding", "true"));
         if mode == "branch" || mode == "select" {
@@ -621,11 +636,15 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
     }
     if cfg!(target_arch = "aarch64")
         && !observe
-        && std::env::var_os("MECH_COMPACT_FOLD_REDUNDANT_ZERO").is_some()
+        && compiler_inputs
+            .var_os("MECH_COMPACT_FOLD_REDUNDANT_ZERO")
+            .is_some()
     {
         flags.push(("enable_redundant_zero_folding", "true"));
     }
-    let alignment = std::env::var("MECH_COMPACT_FUNCTION_ALIGNMENT_LOG2").ok();
+    let alignment = compiler_inputs
+        .var("MECH_COMPACT_FUNCTION_ALIGNMENT_LOG2")
+        .ok();
     if cfg!(target_arch = "aarch64")
         && !observe
         && let Some(alignment) = alignment.as_deref()
@@ -637,9 +656,12 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
         }
         flags.push(("log2_min_function_alignment", alignment));
     }
-    let direct_literals =
-        !observe && std::env::var_os("MECH_COMPACT_DIRECT_ENTRY_LITERALS").is_some();
-    let emit = |direct| emit_prepared_compact_object(&prepared, observe, &flags, direct);
+    let direct_literals = !observe
+        && compiler_inputs
+            .var_os("MECH_COMPACT_DIRECT_ENTRY_LITERALS")
+            .is_some();
+    let emit =
+        |direct| emit_prepared_compact_object(&prepared, observe, &flags, direct, compiler_inputs);
     match emit(direct_literals) {
         Err(error) if direct_literals => {
             eprintln!("compact-stage: direct literal attempt withdrew: {error}");
@@ -654,21 +676,31 @@ fn emit_prepared_compact_object(
     observe: bool,
     flags: &[(&str, &str)],
     direct_literals: bool,
+    compiler_inputs: &CompilationInputs,
 ) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
     let (object, isa) = codegen_backend::object_with_isa("mech_compact_closed_diagnostic", flags)?;
-    let mut module = super::compact::PreparedObject::new(object);
-    if !observe && let Ok(mode) = std::env::var("MECH_COMPACT_DIRECT_RUNTIME_CALLS") {
+    let mut module = super::compact::PreparedObject::new(object, compiler_inputs);
+    if !observe && let Ok(mode) = compiler_inputs.var("MECH_COMPACT_DIRECT_RUNTIME_CALLS") {
         module.use_direct_runtime_calls(&mode);
     }
     let direct_runtime_calls = module.direct_runtime_calls();
-    let threads = std::env::var("MECH_COMPACT_COMPILE_THREADS")
+    let threads = compiler_inputs
+        .var("MECH_COMPACT_COMPILE_THREADS")
         .ok()
         .and_then(|value| value.parse::<usize>().ok())
         .unwrap_or(0)
         .min(4);
-    let share_phase_bodies = std::env::var_os("MECH_COMPACT_SHARE_PHASE_BODIES").is_some();
+    let share_phase_bodies = compiler_inputs
+        .var_os("MECH_COMPACT_SHARE_PHASE_BODIES")
+        .is_some();
     let metadata = if threads == 0 && !direct_literals {
-        super::compact::define(&mut module, prepared, observe, share_phase_bodies)?
+        super::compact::define(
+            &mut module,
+            prepared,
+            observe,
+            share_phase_bodies,
+            compiler_inputs,
+        )?
     } else {
         super::compact::define_with_isa(
             &mut module,
@@ -679,12 +711,21 @@ fn emit_prepared_compact_object(
             threads,
             direct_runtime_calls,
             direct_literals,
+            compiler_inputs,
         )?
     };
-    if !observe && std::env::var_os("MECH_COMPACT_EXPORTS_FIRST").is_some() {
+    if !observe
+        && compiler_inputs
+            .var_os("MECH_COMPACT_EXPORTS_FIRST")
+            .is_some()
+    {
         module.place_exports_first();
     }
-    if !observe && std::env::var_os("MECH_COMPACT_LAYOUT_REGIONS_LAST").is_some() {
+    if !observe
+        && compiler_inputs
+            .var_os("MECH_COMPACT_LAYOUT_REGIONS_LAST")
+            .is_some()
+    {
         module.place_layout_regions_last();
     }
     let bytes = module.finish().map_err(backend)?.emit().map_err(backend)?;

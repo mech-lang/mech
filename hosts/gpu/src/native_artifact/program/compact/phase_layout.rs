@@ -1,5 +1,6 @@
 //! Optional layout profiles for diagnostic AArch64 phases.
 
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::Context;
 use std::{io, path::Path};
 
@@ -23,14 +24,19 @@ struct ObjectTail {
     exact_root_extent: bool,
 }
 
-pub(super) fn profiles() -> Option<String> {
-    std::env::var("MECH_COMPACT_PHASE_BLOCK_LAYOUT").ok()
+pub(super) fn profiles(compiler_inputs: &CompilationInputs) -> Option<String> {
+    compiler_inputs.var("MECH_COMPACT_PHASE_BLOCK_LAYOUT").ok()
 }
 
-pub(super) fn apply_fp_spill_cache(context: &mut Context, symbol: &str) -> io::Result<()> {
-    context.func.aarch64_fp_spill_keep_pairs =
-        std::env::var_os("MECH_COMPACT_FP_SPILL_KEEP_PAIRS").is_some();
-    if let Ok(selection) = std::env::var("MECH_COMPACT_FP_SPILL_SLOTS") {
+pub(super) fn apply_fp_spill_cache(
+    compiler_inputs: &CompilationInputs,
+    context: &mut Context,
+    symbol: &str,
+) -> io::Result<()> {
+    context.func.aarch64_fp_spill_keep_pairs = compiler_inputs
+        .var_os("MECH_COMPACT_FP_SPILL_KEEP_PAIRS")
+        .is_some();
+    if let Ok(selection) = compiler_inputs.var("MECH_COMPACT_FP_SPILL_SLOTS") {
         for entry in selection.split(';') {
             let (name, count) = entry
                 .split_once('@')
@@ -44,18 +50,30 @@ pub(super) fn apply_fp_spill_cache(context: &mut Context, symbol: &str) -> io::R
     Ok(())
 }
 
-fn read(profiles: &str, symbol: &str) -> io::Result<Option<Profile>> {
+fn read(
+    compiler_inputs: &CompilationInputs,
+    profiles: &str,
+    symbol: &str,
+) -> io::Result<Option<Profile>> {
     profiles
         .split(';')
         .filter_map(|entry| entry.split_once('@'))
         .find_map(|(name, path)| (name == symbol).then_some(path))
-        .map(|path| Ok(serde_json::from_slice(&std::fs::read(path)?)?))
+        .map(|path| {
+            Ok(serde_json::from_slice(
+                compiler_inputs.profile(Path::new(path))?,
+            )?)
+        })
         .transpose()
 }
 
-pub(super) fn apply(context: &mut Context, symbol: &str) -> io::Result<()> {
-    if let Some(profiles) = profiles()
-        && let Some(profile) = read(&profiles, symbol)?
+pub(super) fn apply(
+    compiler_inputs: &CompilationInputs,
+    context: &mut Context,
+    symbol: &str,
+) -> io::Result<()> {
+    if let Some(profiles) = profiles(compiler_inputs)
+        && let Some(profile) = read(compiler_inputs, &profiles, symbol)?
     {
         context.func.aarch64_block_layout = profile.order;
         context.func.aarch64_block_layout_literal_start = profile.literal_offset;
@@ -66,19 +84,24 @@ pub(super) fn apply(context: &mut Context, symbol: &str) -> io::Result<()> {
 
 /// Register weights refer to the full lowered VCode, rather than byte offsets
 /// in a previously allocated machine body. Validation occurs after lowering.
-pub(super) fn apply_register_weights(context: &mut Context, symbol: &str) -> io::Result<()> {
+pub(super) fn apply_register_weights(
+    compiler_inputs: &CompilationInputs,
+    context: &mut Context,
+    symbol: &str,
+) -> io::Result<()> {
     #[derive(serde::Deserialize)]
     struct RegisterWeights {
         expected_vcode: String,
         block_frequencies: Vec<u32>,
     }
-    if let Ok(profiles) = std::env::var("MECH_COMPACT_PHASE_REGISTER_WEIGHTS")
+    if let Ok(profiles) = compiler_inputs.var("MECH_COMPACT_PHASE_REGISTER_WEIGHTS")
         && let Some(path) = profiles
             .split(';')
             .filter_map(|entry| entry.split_once('@'))
             .find_map(|(name, path)| (name == symbol).then_some(path))
     {
-        let weights: RegisterWeights = serde_json::from_slice(&std::fs::read(path)?)?;
+        let weights: RegisterWeights =
+            serde_json::from_slice(compiler_inputs.profile(Path::new(path))?)?;
         context.func.regalloc_block_frequencies =
             Some((weights.expected_vcode, weights.block_frequencies));
     }
@@ -86,11 +109,12 @@ pub(super) fn apply_register_weights(context: &mut Context, symbol: &str) -> io:
 }
 
 pub(super) fn pad_object_tail(
+    compiler_inputs: &CompilationInputs,
     profiles: &str,
     symbol: &str,
     code: &mut Box<[u8]>,
 ) -> io::Result<()> {
-    if let Some(profile) = read(profiles, symbol)?
+    if let Some(profile) = read(compiler_inputs, profiles, symbol)?
         && let Some(tail) = profile.object_tail
     {
         if profile.order.is_empty() {
@@ -112,11 +136,12 @@ pub(super) fn pad_object_tail(
 }
 
 pub(super) fn pad_checked_root_tail(
+    compiler_inputs: &CompilationInputs,
     profile: &Path,
     alignment: u32,
     code: &mut Box<[u8]>,
 ) -> io::Result<()> {
-    let tail: ObjectTail = serde_json::from_slice(&std::fs::read(profile)?)?;
+    let tail: ObjectTail = serde_json::from_slice(compiler_inputs.profile(profile)?)?;
     let alignment = alignment as usize;
     let padding = tail
         .padding(code.len())

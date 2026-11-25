@@ -1,5 +1,7 @@
 //! Explicit compile-time choices. Public entry points always use the fixed
 //! default; no option grants source proof or changes runtime admission.
+#[cfg(feature = "canonical-native-program")]
+use super::compilation_inputs::CompilationInputs;
 #[derive(Clone, Copy, Default)]
 pub(in crate::native_artifact) struct OptimizationOptions {
     #[cfg(feature = "canonical-native-program")]
@@ -156,6 +158,7 @@ pub(in crate::native_artifact) struct EmissionCounters {
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) struct CompilationControls {
     options: OptimizationOptions,
+    inputs: CompilationInputs,
     packed_regions: std::cell::Cell<usize>,
     scalar_regions: std::cell::Cell<usize>,
     scalar_captures: std::cell::RefCell<std::collections::BTreeSet<usize>>,
@@ -167,8 +170,13 @@ pub(in crate::native_artifact) struct CompilationControls {
 #[cfg(feature = "canonical-native-program")]
 impl CompilationControls {
     pub fn new(options: OptimizationOptions) -> Self {
+        Self::with_inputs(options, &CompilationInputs::legacy())
+    }
+
+    pub fn with_inputs(options: OptimizationOptions, inputs: &CompilationInputs) -> Self {
         Self {
             options,
+            inputs: inputs.clone(),
             packed_regions: Default::default(),
             scalar_regions: Default::default(),
             scalar_captures: Default::default(),
@@ -180,6 +188,9 @@ impl CompilationControls {
     }
     pub fn enabled(&self, pass: OptimizationPass) -> bool {
         self.options.enabled(pass)
+    }
+    pub fn inputs(&self) -> &CompilationInputs {
+        &self.inputs
     }
     pub fn options(&self) -> OptimizationOptions {
         self.options
