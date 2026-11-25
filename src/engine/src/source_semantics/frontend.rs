@@ -6750,28 +6750,6 @@ impl SemanticBuilder {
             inputs.push(input);
         }
         require_keyable_set_element(&element.body, &element.dimension_parameters, set.syntax())?;
-        // Closed literal keys have a known population after normalization.
-        // Live elements instead retain a bound and may become equal on a turn.
-        let exact_cardinality = (|| {
-            let values = inputs
-                .iter()
-                .map(|input| match input {
-                    PendingValue::Constant(index) => Some(self.constants[*index].data.clone()),
-                    _ => None,
-                })
-                .collect::<Option<Vec<_>>>()?;
-            let schema = element.clone().finalize().ok()?;
-            let shape = schema.instantiate_shape(Box::new([])).ok()?;
-            let (schemas, _) = SchemaTableBuilder::new().finish().ok()?.into_parts();
-            mech_core::snapshot::normalize_set_element_drafts(
-                schema.body(),
-                values.into_boxed_slice(),
-                &shape,
-                &mech_core::snapshot::SnapshotValidationContext::new(&schemas),
-            )
-            .ok()
-            .map(|values| values.len() as u64)
-        })();
         let mut parameters = Vec::new();
         let element = embed_schema_draft(
             &element,
@@ -6785,12 +6763,9 @@ impl SemanticBuilder {
                 dimension_parameters: parameters.into_boxed_slice(),
                 body: SchemaBody::Set {
                     element: Box::new(element),
-                    cardinality: exact_cardinality.map_or_else(
-                        || CardinalitySpec::Dynamic {
-                            upper_bound: Some(DimensionExpr::Constant(set.items().len() as u64)),
-                        },
-                        |count| CardinalitySpec::Exact(DimensionExpr::Constant(count)),
-                    ),
+                    cardinality: CardinalitySpec::Exact(DimensionExpr::Constant(
+                        set.items().len() as u64
+                    )),
                 },
             },
             set.syntax(),
