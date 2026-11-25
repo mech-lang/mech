@@ -125,7 +125,7 @@ pub(super) struct Read {
     pub(super) view: View,
     pub(super) join: Block,
     pub(super) result: Value,
-    arms: Vec<Block>,
+    pub(super) arms: Vec<Block>,
 }
 
 pub(super) fn definition(f: &Function, value: Value) -> Option<(Inst, Data)> {

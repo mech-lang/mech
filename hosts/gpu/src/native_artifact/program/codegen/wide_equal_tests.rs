@@ -125,6 +125,7 @@ fn fixture(module: &JITModule, variant: &str) -> (Context, Certificate) {
             header,
             blocks: BTreeSet::from([header, body, back]),
             source_header: 7,
+            shared_array: None,
             reuse_scope: None,
         };
     }

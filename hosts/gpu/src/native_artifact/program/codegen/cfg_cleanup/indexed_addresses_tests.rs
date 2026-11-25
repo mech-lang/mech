@@ -245,3 +245,36 @@ fn indexed_addresses_keep_the_guard_before_memory_access() {
         }
     }
 }
+
+#[test]
+fn bounded_compare_rebases_a_shifted_index_and_preserves_a_wrapping_one() {
+    let module =
+        JITModule::new(JITBuilder::new(cranelift_module::default_libcall_names()).unwrap());
+    let mut context = module.make_context();
+    context.func.signature.params = vec![AbiParam::new(types::I64)];
+    context.func.signature.returns = vec![AbiParam::new(types::I8); 2];
+    let mut state = FunctionBuilderContext::new();
+    let mut builder = FunctionBuilder::new(&mut context.func, &mut state);
+    let entry = builder.create_block();
+    builder.append_block_params_for_function_params(entry);
+    builder.switch_to_block(entry);
+    let index = builder.block_params(entry)[0];
+    let shifted = builder.ins().ushr_imm(index, 16);
+    let cond = IntCC::UnsignedLessThan;
+    let safe = builder.ins().iadd_imm(shifted, 259);
+    let rebased = builder.ins().icmp_imm(cond, safe, 545);
+    let wrapping = builder.ins().iadd_imm(index, 259);
+    let original = builder.ins().icmp_imm(cond, wrapping, 545);
+    builder.ins().return_(&[rebased, original]);
+    builder.seal_all_blocks();
+    builder.finalize();
+
+    assert_eq!(rebase_bounded_comparisons(&mut context.func), 1);
+    for (result, arg, bound) in [(rebased, shifted, 286), (original, wrapping, 545)] {
+        let inst = context.func.dfg.value_def(result).inst().unwrap();
+        assert!(matches!(context.func.dfg.insts[inst], Data::IntCompareImm {
+            cond: IntCC::UnsignedLessThan, arg: found, imm, ..
+        } if found == arg && imm.bits() == bound));
+    }
+    context.verify(module.isa()).unwrap();
+}

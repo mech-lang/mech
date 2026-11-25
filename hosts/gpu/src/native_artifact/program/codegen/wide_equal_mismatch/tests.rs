@@ -134,6 +134,7 @@ fn fixture(module: &JITModule, variant: &str) -> (Context, Certificate) {
             header,
             blocks: BTreeSet::from([header, body, back]),
             source_header: 7,
+            shared_array: None,
             reuse_scope: None,
         },
     )
@@ -179,7 +180,7 @@ fn compile(variant: &str, optimize: bool, probe_word: bool) -> (JITModule, Entry
         let mut cursor = FuncCursor::new(&mut c.func).at_bottom(entry);
         if probe_word {
             let initial = cursor.func.dfg.block_params(entry)[0];
-            let initial = direct.probe_word(&mut cursor, &cert, change, initial);
+            let initial = direct.probe_word(&mut cursor, &cert, change, initial, &mut Vec::new());
             cursor.ins().jump(check, &[initial.into()]);
             cursor.goto_bottom(check);
         }

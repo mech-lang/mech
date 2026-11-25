@@ -88,8 +88,10 @@ impl Walk<'_> {
         };
         let Some(actual) = args
             .map(|v| {
-                self.value(values, v)
-                    .and_then(|s| self.symbols.address(self.f, self.cfg, s, 0))
+                self.value(values, v).and_then(|s| {
+                    self.symbols
+                        .address_with_offset(self.f, self.cfg, s, 0, self.byte_offset)
+                })
             })
             .into_iter()
             .collect::<Option<Vec<_>>>()

@@ -533,6 +533,76 @@ fn phase_selected(option: &str, symbol: &str) -> bool {
     })
 }
 
+enum ComparedReads<'a> {
+    Bytes(&'a [cfg_cleanup::compared_bytes::BoundedRead]),
+    Words(&'a [wide_equal::AdmittedWordMismatch], bool),
+}
+
+fn reuse_phase_compared_reads(
+    context: &mut Context,
+    proof: &Proof,
+    region: &Region,
+    private: &PrivatePhase,
+    input_words: usize,
+    source: ComparedReads<'_>,
+) -> Result<(usize, usize), NativeCompileError> {
+    let Some(loads) = phase_storage::input_word_loads(&context.func, input_words) else {
+        return Ok((0, 0));
+    };
+    // Only current fixed immutable byte views from this sealed caller
+    // qualify. Later defaults remain unless a current source read has
+    // already proved their exact logical bounds.
+    let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
+    let views = private
+        .immutable_fixed_arrays(proof)
+        .into_iter()
+        .filter(|&array| proof.arrays[array].width == 1)
+        .filter_map(|array| {
+            Some((
+                array,
+                (
+                    packet.iter().position(|&word| word == proof.view(array))?,
+                    packet
+                        .iter()
+                        .position(|&word| word == proof.view(array) + 1)?,
+                ),
+            ))
+        })
+        .collect::<BTreeMap<_, _>>();
+    let pointers = loads
+        .iter()
+        .filter_map(|(&value, &(_, word))| {
+            views
+                .values()
+                .any(|&(pointer, _)| pointer == word)
+                .then_some(value)
+        })
+        .collect();
+    let current_views = views
+        .into_iter()
+        .filter_map(|(array, (pointer, length))| {
+            let word = |at| {
+                loads
+                    .iter()
+                    .find_map(|(&value, &(_, word))| (word == at).then_some(value))
+            };
+            Some((array, (word(pointer)?, word(length)?)))
+        })
+        .collect();
+    Ok(match source {
+        ComparedReads::Bytes(bounded_reads) => (
+            cfg_cleanup::compared_bytes::fold(context, &pointers, bounded_reads, &current_views),
+            0,
+        ),
+        ComparedReads::Words(witnesses, reverse) => cfg_cleanup::compared_bytes::fold_word_order(
+            context,
+            witnesses,
+            &current_views,
+            reverse,
+        ),
+    })
+}
+
 fn general_ir_observed() -> bool {
     [
         "MECH_COMPACT_PHASE_CONTROLLER_WINDOWS",
@@ -1579,6 +1649,18 @@ fn prepare_impl<M: Module>(
                     candidate.verify(module.isa()).map_err(backend)?;
                     eprintln!("{name} indexed addresses normalized: {changed}");
                 }
+                if !observe
+                    && cleanup.enabled
+                    && admission.immutable_code_bytes.is_some()
+                    && module.isa().name() == "aarch64"
+                    && phase_selected("MECH_COMPACT_REBASE_BOUNDED_COMPOSED_INDICES", &name)
+                {
+                    let changed = cfg_cleanup::indexed_addresses::rebase_bounded_comparisons(
+                        &mut candidate.func,
+                    );
+                    candidate.verify(module.isa()).map_err(backend)?;
+                    eprintln!("{name} rebased bounded comparisons: {changed}");
+                }
                 let id = module
                     .declare_function(&name, Linkage::Local, &signature)
                     .map_err(backend)?;
@@ -1681,54 +1763,15 @@ fn prepare_impl<M: Module>(
         && prepared.metadata().parallel.regions.is_empty()
         && std::env::var_os("MECH_REUSE_COMPARED_BYTES").is_some()
         && let Some(private) = private.filter(|contract| contract.permits(proof))
-        && let Some(loads) = phase_storage::input_word_loads(&context.func, input_words)
     {
-        // Only current fixed immutable byte views from this sealed caller
-        // qualify. Later defaults remain unless a current source read has
-        // already proved their exact logical bounds.
-        let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
-        let views = private
-            .immutable_fixed_arrays(proof)
-            .into_iter()
-            .filter(|&array| proof.arrays[array].width == 1)
-            .filter_map(|array| {
-                Some((
-                    array,
-                    (
-                        packet.iter().position(|&word| word == proof.view(array))?,
-                        packet
-                            .iter()
-                            .position(|&word| word == proof.view(array) + 1)?,
-                    ),
-                ))
-            })
-            .collect::<BTreeMap<_, _>>();
-        let pointers = loads
-            .iter()
-            .filter_map(|(&value, &(_, word))| {
-                views
-                    .values()
-                    .any(|&(pointer, _)| pointer == word)
-                    .then_some(value)
-            })
-            .collect();
-        let current_views = views
-            .into_iter()
-            .filter_map(|(array, (pointer, length))| {
-                let word = |at| {
-                    loads
-                        .iter()
-                        .find_map(|(&value, &(_, word))| (word == at).then_some(value))
-                };
-                Some((array, (word(pointer)?, word(length)?)))
-            })
-            .collect();
-        let reused = cfg_cleanup::compared_bytes::fold(
+        let (reused, _) = reuse_phase_compared_reads(
             &mut context,
-            &pointers,
-            &report.bounded_byte_reads,
-            &current_views,
-        );
+            proof,
+            region,
+            private,
+            input_words,
+            ComparedReads::Bytes(&report.bounded_byte_reads),
+        )?;
         if reused != 0 {
             context.verify(module.isa()).map_err(backend)?;
             eprintln!("{symbol} reused compared byte pairs: {reused}");
@@ -2081,6 +2124,30 @@ fn prepare_impl<M: Module>(
         && std::env::var("MECH_COMPACT_HOIST_PREFETCH_BASES").as_deref() == Ok("1")
     {
         context.func.aarch64_hoist_prefetch_bases = true;
+    }
+    if !observe
+        && cleanup.enabled
+        && vectors.is_some()
+        && prepared.metadata().parallel.regions.is_empty()
+        && phase_selected("MECH_COMPACT_REUSE_WORD_MISMATCH_ORDER", &symbol)
+        && !phase_cleanup.equality.word_mismatches.is_empty()
+        && let Some(private) = private.filter(|contract| contract.permits(proof))
+    {
+        let (forwarded, reversed) = reuse_phase_compared_reads(
+            &mut context,
+            proof,
+            region,
+            private,
+            input_words,
+            ComparedReads::Words(
+                &phase_cleanup.equality.word_mismatches,
+                std::env::var_os("MECH_COMPACT_WORD_MISMATCH_EXTRACT").is_none(),
+            ),
+        )?;
+        if forwarded != 0 {
+            context.verify(module.isa()).map_err(backend)?;
+        }
+        eprintln!("{symbol} forwarded word mismatches: {forwarded}, reversed: {reversed}");
     }
     if let Some(floors) = zero_store_floors {
         context.flowgraph();

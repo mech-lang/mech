@@ -119,9 +119,7 @@ pub(super) fn apply(
     }
     let code_end = literal_start.map_or(Some(buffer.data.len()), |offset| {
         let offset = usize::try_from(offset).ok()?;
-        // Preserving this alignment preserves every 4/8/16-byte pool entry's
-        // original alignment when the entire trailing pool moves together.
-        (offset > 0 && offset % 16 == 0 && offset < buffer.data.len()).then_some(offset)
+        (offset > 0 && offset % WORD_BYTES == 0 && offset < buffer.data.len()).then_some(offset)
     })?;
     let mut original: Vec<_> = buffer
         .data
@@ -319,8 +317,12 @@ pub(super) fn apply(
         code[at] = branch.with_target(code[at], at, *targets.get(branch.target)?)?;
     }
     if literal_start.is_some() {
-        while code.len() % 4 != 0 {
-            code.push(0xd503_201f); // NOP padding before the aligned literal pool.
+        // Preserve the trailing pool's position modulo 16, so all aligned
+        // 4/8/16-byte entries remain aligned when the pool moves together.
+        let alignment = 16 / WORD_BYTES;
+        let original_residue = (code_end / WORD_BYTES) % alignment;
+        while code.len() % alignment != original_residue {
+            code.push(0xd503_201f);
         }
         let pool = code.len();
         for (old, target) in literals {
@@ -374,6 +376,39 @@ mod tests {
     use crate::machinst::{MachBuffer, VCodeConstants};
     use alloc::vec::Vec;
     use cranelift_control::ControlPlane;
+
+    #[test]
+    fn preserves_alignment_of_an_eight_byte_literal_pool_after_reordering() {
+        let mut buffer = MachBuffer::<Inst>::new();
+        let nop = 0xd503_201f;
+        let ret = 0xd65f_03c0;
+        let literal = [0x89ab_cdef, 0x0123_4567];
+        for word in [
+            0x5800_0140,
+            0x1400_0003,
+            0xd280_0000,
+            ret,
+            ret,
+            nop,
+            nop,
+            nop,
+            nop,
+            nop,
+        ]
+        .into_iter()
+        .chain(literal)
+        {
+            buffer.put4(word);
+        }
+        let mut buffer = buffer.finish(&VCodeConstants::default(), &mut ControlPlane::default());
+        assert_eq!(apply(&mut buffer, &[0, 16, 8], Some(40), true), Some(()));
+        let expected = [0x5800_00c0, ret, 0xd280_0000, ret, nop, nop]
+            .into_iter()
+            .chain(literal)
+            .flat_map(u32::to_le_bytes)
+            .collect::<Vec<_>>();
+        assert_eq!(buffer.data(), expected);
+    }
 
     #[test]
     fn hot_loop_backedge_bypasses_empty_jump_block() {

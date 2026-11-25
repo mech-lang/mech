@@ -189,7 +189,7 @@ impl<'storage> Heap<'storage> {
         let small = if stride != 1
             && !self.first_owner.is_null()
             && self.owner_storage.is_some()
-            && owner_storage::RECORDS == 1
+            && (owner_storage::RECORDS == 1 || self.counters.live_payload_bytes <= 2 * 1024 * 1024)
         {
             self.registry().scratch.acquire(layout)
         } else {

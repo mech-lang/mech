@@ -68,6 +68,7 @@ struct Group {
     length_mask: u32,
     key_mask: u32,
     key_shift: u32,
+    boundary: Inst,
     literal: Inst,
     selected: usize,
     admission: Admission,
@@ -283,6 +284,7 @@ fn recognize(
         length_mask: u32::try_from(length_mask).ok()?,
         key_mask: tail.key_mask,
         key_shift: tail.key_shift,
+        boundary,
         literal,
         selected,
         admission: Admission {
@@ -435,9 +437,76 @@ pub(in crate::native_artifact) fn specialize_single_literals(
         end_word: group.admission.end_word?,
         length_mask: group.length_mask,
     };
+    if std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_ADMITTED_PREFIX_READS").is_some() {
+        admit_prefix_read(context, group, loads, nodes);
+    }
     chunks::emit_single(&mut context.func, group);
     context.flowgraph();
     Some(sample)
+}
+
+fn admit_prefix_read(
+    context: &mut Context,
+    group: Group,
+    loads: &BTreeMap<Value, (Inst, usize)>,
+    nodes: &[View],
+) {
+    let f = &context.func;
+    let Some((branch, setup)) = between(f, &context.cfg, group.body) else {
+        return;
+    };
+    let Some(read) = defaulted_read(f, &context.cfg, loads, nodes, branch, Endianness::Little)
+    else {
+        return;
+    };
+    let bypassed = setup.into_iter().chain(read.arms).collect::<Vec<_>>();
+    let closed = f
+        .layout
+        .blocks()
+        .filter(|block| !bypassed.contains(block))
+        .all(|block| {
+            f.layout.block_insts(block).all(|inst| {
+                f.dfg.inst_values(inst).all(|value| {
+                    let definition = match f.dfg.value_def(f.dfg.resolve_aliases(value)) {
+                        ValueDef::Result(inst, _) => f.layout.inst_block(inst),
+                        ValueDef::Param(block, _) => Some(block),
+                        ValueDef::Union(..) => None,
+                    };
+                    definition.is_none_or(|block| !bypassed.contains(&block))
+                })
+            })
+        });
+    if !closed {
+        return;
+    }
+
+    // This alternative is entered only after top < node_len and
+    // end - 1 <= top. Every cursor below end therefore has an initialized
+    // node at top - cursor. The original branch handles the boundary and
+    // any cursor outside that interval.
+    let f = &mut context.func;
+    let unchecked = block(f);
+    let fallback = block(f);
+    let boundary = f.dfg.insts[group.boundary];
+    let original = f.dfg.make_inst(boundary);
+    f.layout.append_inst(original, fallback);
+    let mut c = FuncCursor::new(f).at_inst(group.boundary);
+    let active = c
+        .ins()
+        .icmp(IntCC::UnsignedLessThan, group.cursor, group.end);
+    c.func
+        .dfg
+        .replace(group.boundary)
+        .brif(active, unchecked, &[], fallback, &[]);
+
+    c.goto_bottom(unchecked);
+    let ordinal = c.ins().isub(group.top, group.cursor);
+    let offset = c.ins().ishl_imm(ordinal, 3);
+    let address = c.ins().iadd(group.nodes, offset);
+    let node = c
+        .ins()
+        .load(types::I64, MemFlags::new().with_notrap(), address, 0);
+    c.ins().jump(read.join, &[node.into()]);
 }
 
 fn call_phase(cursor: &mut FuncCursor<'_>, phase: FuncRef, inputs: &[Value; 3]) {

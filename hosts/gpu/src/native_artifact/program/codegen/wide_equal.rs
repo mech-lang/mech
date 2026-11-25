@@ -27,6 +27,7 @@ pub(in crate::native_artifact) struct Certificate {
     header: Block,
     blocks: BTreeSet<Block>,
     source_header: usize,
+    shared_array: Option<usize>,
     reuse_scope: Option<reuse::Scope>,
 }
 
@@ -67,6 +68,7 @@ pub(super) fn certify(version: &Version, proof: &Proof, packs: &[Pack]) -> Optio
         header: *version.blocks.get(&(version.header as u32))?,
         blocks: version.blocks.values().copied().collect(),
         source_header: version.header,
+        shared_array: (a.array == b.array).then_some(a.array),
         reuse_scope: None,
     })
 }
@@ -519,6 +521,7 @@ fn apply(
     wide_tier: bool,
     direct: Option<mismatch::Handoff>,
     probe_word: bool,
+    word_mismatches: &mut Vec<AdmittedWordMismatch>,
 ) -> Option<(usize, reuse::State, Value)> {
     let check = f.dfg.make_block();
     let initial = f.dfg.append_block_param(check, types::I64);
@@ -547,7 +550,7 @@ fn apply(
     let mut c = FuncCursor::new(f).at_bottom(check);
     let (initial, forwarded) = advance(&mut c, cert, change, initial, state);
     let initial = if probe_word && let Some(direct) = &direct {
-        direct.probe_word(&mut c, cert, change, initial)
+        direct.probe_word(&mut c, cert, change, initial, word_mismatches)
     } else {
         initial
     };
@@ -658,6 +661,15 @@ fn apply(
     forwarded
 }
 
+/// A nonzero XOR of two complete words from the same current immutable view.
+/// The capture gate admits both words below the supplied limit.
+pub(in crate::native_artifact) struct AdmittedWordMismatch {
+    pub(super) branch: Inst,
+    pub(super) guard: Inst,
+    pub(super) array: usize,
+    pub(super) loads: [Inst; 2],
+}
+
 #[derive(Default)]
 pub(in crate::native_artifact) struct Outcome {
     pub wider: Vec<usize>,
@@ -666,6 +678,7 @@ pub(in crate::native_artifact) struct Outcome {
     pub word_reused: Vec<usize>,
     pub mismatch_forwarded: Vec<usize>,
     pub word_probed: Vec<usize>,
+    pub word_mismatches: Vec<AdmittedWordMismatch>,
 }
 
 pub(in crate::native_artifact) fn optimize(
@@ -780,6 +793,7 @@ fn optimize_with_strategy(
                 wide_tier,
                 direct,
                 probe_word,
+                &mut outcome.word_mismatches,
             )
         };
         if let Some((header, state, end)) = forwarded {

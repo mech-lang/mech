@@ -278,6 +278,7 @@ impl Handoff {
         cert: &Certificate,
         change: Change,
         at: Value,
+        word_mismatches: &mut Vec<AdmittedWordMismatch>,
     ) -> Value {
         let load = c.func.dfg.make_block();
         let unequal = c.func.dfg.make_block();
@@ -291,7 +292,7 @@ impl Handoff {
         let fits = c
             .ins()
             .icmp_imm(IntCC::UnsignedGreaterThanOrEqual, remaining, 8);
-        c.ins().brif(fits, load, &[], cert.header, &[at.into()]);
+        let guard = c.ins().brif(fits, load, &[], cert.header, &[at.into()]);
         c.goto_bottom(load);
         let left = c.ins().iadd(change.bases[0], at);
         let right = c.ins().iadd(change.bases[1], at);
@@ -299,7 +300,21 @@ impl Handoff {
         let left = c.ins().load(types::I64, flags, left, 0);
         let right = c.ins().load(types::I64, flags, right, 0);
         let difference = c.ins().bxor(left, right);
-        c.ins().brif(difference, unequal, &[], equal, &[]);
+        let branch = c.ins().brif(difference, unequal, &[], equal, &[]);
+        if let Some(array) = cert.shared_array {
+            let [left, right] = [left, right].map(|value| {
+                let ValueDef::Result(load, 0) = c.func.dfg.value_def(value) else {
+                    unreachable!("a newly emitted word load")
+                };
+                load
+            });
+            word_mismatches.push(AdmittedWordMismatch {
+                branch,
+                guard,
+                array,
+                loads: [left, right],
+            });
+        }
         c.goto_bottom(unequal);
         let args = self.arguments(c, at, difference);
         c.ins().jump(self.target, &args);

@@ -13,6 +13,7 @@ enum Node {
     Existing(Value),
     Copy(Inst, Vec<Symbol>),
     Choice(Symbol, Symbol, Symbol),
+    WordByte(Value, Symbol),
 }
 #[derive(Default)]
 pub(super) struct Symbols {
@@ -22,15 +23,22 @@ pub(super) struct Symbols {
 pub(super) struct Address {
     constant: u64,
     pub words: BTreeMap<Value, u64>,
+    byte_offset: u64,
 }
 impl Address {
     fn add(mut self, other: Self) -> Self {
         self.constant = self.constant.wrapping_add(other.constant);
+        self.byte_offset = self.byte_offset.wrapping_add(other.byte_offset);
         for (value, times) in other.words {
             let n = self.words.entry(value).or_default();
             *n = n.wrapping_add(times);
         }
         self.words.retain(|_, times| *times != 0);
+        self
+    }
+
+    pub(super) fn plus_byte_offset(mut self) -> Self {
+        self.byte_offset = self.byte_offset.wrapping_add(1);
         self
     }
 }
@@ -146,6 +154,101 @@ impl Symbols {
             self.intern(Node::Choice(condition, yes, no))
         }
     }
+    pub(super) fn word_byte(&mut self, word: Value, byte_offset: Symbol) -> Symbol {
+        self.intern(Node::WordByte(word, byte_offset))
+    }
+
+    pub(super) fn byte_word(&self, symbol: Symbol) -> Option<Value> {
+        match self.nodes.get(symbol)? {
+            Node::WordByte(word, _) => Some(*word),
+            _ => None,
+        }
+    }
+
+    pub(super) fn depends_on_word_byte(&self, symbol: Symbol) -> bool {
+        let mut pending = vec![symbol];
+        let mut visited = BTreeSet::new();
+        while let Some(symbol) = pending.pop() {
+            if !visited.insert(symbol) {
+                continue;
+            }
+            match &self.nodes[symbol] {
+                Node::WordByte(..) => return true,
+                Node::Copy(_, args) => pending.extend(args),
+                Node::Choice(condition, yes, no) => pending.extend([*condition, *yes, *no]),
+                Node::Existing(_) => {}
+            }
+        }
+        false
+    }
+
+    fn constant_word(
+        &self,
+        f: &Function,
+        cfg: &ControlFlowGraph,
+        symbol: Symbol,
+        depth: usize,
+    ) -> Option<u64> {
+        if depth > 8 {
+            return None;
+        }
+        let inst = match &self.nodes[symbol] {
+            Node::Existing(value) => {
+                return super::super::word_ranges::literal(f, current(f, cfg, *value));
+            }
+            Node::Copy(inst, _) => *inst,
+            _ => return None,
+        };
+        match f.dfg.insts[inst] {
+            Data::UnaryImm {
+                opcode: Op::Iconst,
+                imm,
+            } => Some(imm.bits() as u64),
+            Data::BinaryImm64 {
+                opcode: Op::BandImm,
+                imm,
+                ..
+            } => {
+                let Node::Copy(_, args) = &self.nodes[symbol] else {
+                    return None;
+                };
+                Some(self.constant_word(f, cfg, args[0], depth + 1)? & imm.bits() as u64)
+            }
+            _ => None,
+        }
+    }
+
+    /// A nonzero I64 XOR makes this exact byte offset fall within its word.
+    pub(super) fn first_bad_byte(
+        &self,
+        f: &Function,
+        cfg: &ControlFlowGraph,
+        symbol: Symbol,
+        difference: Value,
+    ) -> bool {
+        let Node::Copy(shift, args) = &self.nodes[symbol] else {
+            return false;
+        };
+        if f.dfg.value_type(f.dfg.first_result(*shift)) != types::I64 {
+            return false;
+        }
+        let count = match f.dfg.insts[*shift] {
+            Data::Binary {
+                opcode: Op::Ushr, ..
+            } if self.constant_word(f, cfg, args[1], 0) == Some(3) => args[0],
+            Data::BinaryImm64 {
+                opcode: Op::UshrImm,
+                imm,
+                ..
+            } if imm.bits() == 3 => args[0],
+            _ => return false,
+        };
+        let Node::Copy(ctz, args) = &self.nodes[count] else {
+            return false;
+        };
+        f.dfg.insts[*ctz].opcode() == Op::Ctz
+            && matches!(self.nodes[args[0]], Node::Existing(value) if current(f, cfg, value) == difference)
+    }
     pub fn zero(&self, f: &Function, symbol: Symbol) -> bool {
         match &self.nodes[symbol] {
             Node::Existing(value) => {
@@ -165,8 +268,19 @@ impl Symbols {
         symbol: Symbol,
         offset: i32,
     ) -> Option<Address> {
+        self.address_with_offset(f, cfg, symbol, offset, None)
+    }
+
+    pub(super) fn address_with_offset(
+        &self,
+        f: &Function,
+        cfg: &ControlFlowGraph,
+        symbol: Symbol,
+        offset: i32,
+        byte_offset: Option<Symbol>,
+    ) -> Option<Address> {
         let mut budget = 256;
-        let mut key = self.key(f, cfg, symbol, 0, &mut budget)?;
+        let mut key = self.key(f, cfg, symbol, byte_offset, 0, &mut budget)?;
         key.constant = key.constant.wrapping_add(offset as i64 as u64);
         Some(key)
     }
@@ -175,6 +289,7 @@ impl Symbols {
         f: &Function,
         cfg: &ControlFlowGraph,
         symbol: Symbol,
+        byte_offset: Option<Symbol>,
         depth: usize,
         budget: &mut usize,
     ) -> Option<Address> {
@@ -182,10 +297,15 @@ impl Symbols {
             return None;
         }
         *budget -= 1;
+        if Some(symbol) == byte_offset {
+            return Some(Address::default().plus_byte_offset());
+        }
         match &self.nodes[symbol] {
-            Node::Choice(..) => None,
+            Node::Choice(..) | Node::WordByte(..) => None,
             Node::Existing(value) => self.original_key(f, cfg, *value, depth + 1, budget),
-            Node::Copy(inst, args) => self.instruction_key(f, cfg, *inst, args, depth + 1, budget),
+            Node::Copy(inst, args) => {
+                self.instruction_key(f, cfg, *inst, args, byte_offset, depth + 1, budget)
+            }
         }
     }
     fn original_key(
@@ -213,7 +333,7 @@ impl Symbols {
                 } => {
                     return Some(Address {
                         constant: imm.bits() as u64,
-                        words: BTreeMap::new(),
+                        ..Address::default()
                     });
                 }
                 Data::Binary {
@@ -238,8 +358,8 @@ impl Symbols {
             }
         }
         Some(Address {
-            constant: 0,
             words: BTreeMap::from([(value, 1)]),
+            ..Address::default()
         })
     }
     fn instruction_key(
@@ -248,6 +368,7 @@ impl Symbols {
         cfg: &ControlFlowGraph,
         inst: Inst,
         args: &[Symbol],
+        byte_offset: Option<Symbol>,
         depth: usize,
         budget: &mut usize,
     ) -> Option<Address> {
@@ -257,35 +378,117 @@ impl Symbols {
                 imm,
             } => Some(Address {
                 constant: imm.bits() as u64,
-                words: BTreeMap::new(),
+                ..Address::default()
             }),
             Data::Binary {
                 opcode: Op::Iadd, ..
-            } => Some(self.key(f, cfg, args[0], depth + 1, budget)?.add(self.key(
-                f,
-                cfg,
-                args[1],
-                depth + 1,
-                budget,
-            )?)),
+            } => Some(
+                self.key(f, cfg, args[0], byte_offset, depth + 1, budget)?
+                    .add(self.key(f, cfg, args[1], byte_offset, depth + 1, budget)?),
+            ),
             Data::BinaryImm64 {
                 opcode: Op::IaddImm,
                 imm,
                 ..
             } => {
-                let mut key = self.key(f, cfg, args[0], depth + 1, budget)?;
+                let mut key = self.key(f, cfg, args[0], byte_offset, depth + 1, budget)?;
                 key.constant = key.constant.wrapping_add(imm.bits() as u64);
                 Some(key)
             }
             _ => None,
         }
     }
-    pub fn emit(&self, cursor: &mut FuncCursor<'_>, symbols: &[Symbol]) -> Vec<Value> {
+    /// Evaluate only exact booleans and comparisons known from dominating
+    /// edges. Copies use the values transported along the replayed edge.
+    pub(super) fn truth(
+        &mut self,
+        f: &Function,
+        cfg: &ControlFlowGraph,
+        symbol: Symbol,
+        facts: &[super::Fact],
+        byte_offset: Option<Symbol>,
+        depth: usize,
+    ) -> Option<bool> {
+        use cranelift_codegen::ir::condcodes::IntCC;
+        if depth > 24 || self.nodes.len() >= 512 {
+            return None;
+        }
+        let (inst, args) = match self.nodes.get(symbol)?.clone() {
+            Node::Existing(value) => {
+                let ValueDef::Result(inst, 0) = f.dfg.value_def(current(f, cfg, value)) else {
+                    return None;
+                };
+                let args = f
+                    .dfg
+                    .inst_args(inst)
+                    .iter()
+                    .map(|&arg| self.existing(arg))
+                    .collect();
+                (inst, args)
+            }
+            Node::Copy(inst, args) => (inst, args),
+            Node::Choice(..) | Node::WordByte(..) => return None,
+        };
+        let mut next = |value| self.truth(f, cfg, value, facts, byte_offset, depth + 1);
+        match f.dfg.insts[inst] {
+            Data::UnaryImm {
+                opcode: Op::Iconst,
+                imm,
+            } => match imm.bits() {
+                0 => Some(false),
+                1 => Some(true),
+                _ => None,
+            },
+            Data::Unary {
+                opcode: Op::Uextend | Op::Ireduce,
+                ..
+            } => next(args[0]),
+            Data::BinaryImm64 {
+                opcode: Op::BandImm,
+                imm,
+                ..
+            } if imm.bits() == 1 => next(args[0]),
+            Data::Binary {
+                opcode: Op::Band, ..
+            } => match (next(args[0]), next(args[1])) {
+                (Some(false), _) | (_, Some(false)) => Some(false),
+                (Some(true), Some(true)) => Some(true),
+                _ => None,
+            },
+            Data::IntCompare { cond, .. } => {
+                let left = self.address_with_offset(f, cfg, args[0], 0, byte_offset)?;
+                let right = self.address_with_offset(f, cfg, args[1], 0, byte_offset)?;
+                if left == right {
+                    return match cond {
+                        IntCC::Equal
+                        | IntCC::UnsignedLessThanOrEqual
+                        | IntCC::UnsignedGreaterThanOrEqual => Some(true),
+                        IntCC::NotEqual | IntCC::UnsignedLessThan | IntCC::UnsignedGreaterThan => {
+                            Some(false)
+                        }
+                        _ => None,
+                    };
+                }
+                facts
+                    .iter()
+                    .find_map(|fact| fact.relates(cond, &left, &right))
+            }
+            _ => None,
+        }
+    }
+
+    pub fn emit(
+        &self,
+        cursor: &mut FuncCursor<'_>,
+        symbols: &[Symbol],
+        reverse_words: bool,
+    ) -> Vec<Value> {
         fn value(
             nodes: &[Node],
             cache: &mut BTreeMap<Symbol, Value>,
             c: &mut FuncCursor<'_>,
             at: Symbol,
+            reverse_words: bool,
         ) -> Value {
             if let Some(&result) = cache.get(&at) {
                 return result;
@@ -295,7 +498,7 @@ impl Symbols {
                 Node::Copy(inst, args) => {
                     let args = args
                         .iter()
-                        .map(|&arg| value(nodes, cache, c, arg))
+                        .map(|&arg| value(nodes, cache, c, arg, reverse_words))
                         .collect::<Vec<_>>();
                     let copy = c.func.dfg.clone_inst(*inst);
                     c.func.dfg.inst_args_mut(copy).copy_from_slice(&args);
@@ -303,10 +506,17 @@ impl Symbols {
                     c.func.dfg.first_result(copy)
                 }
                 Node::Choice(condition, yes, no) => {
-                    let condition = value(nodes, cache, c, *condition);
-                    let yes = value(nodes, cache, c, *yes);
-                    let no = value(nodes, cache, c, *no);
+                    let condition = value(nodes, cache, c, *condition, reverse_words);
+                    let yes = value(nodes, cache, c, *yes, reverse_words);
+                    let no = value(nodes, cache, c, *no, reverse_words);
                     c.ins().select(condition, yes, no)
+                }
+                Node::WordByte(word, _) if reverse_words => c.ins().bswap(*word),
+                Node::WordByte(word, byte_offset) => {
+                    let byte_offset = value(nodes, cache, c, *byte_offset, reverse_words);
+                    let shift = c.ins().ishl_imm(byte_offset, 3);
+                    let shifted = c.ins().ushr(*word, shift);
+                    c.ins().band_imm(shifted, 255)
                 }
             };
             cache.insert(at, result);
@@ -315,7 +525,7 @@ impl Symbols {
         let mut cache = BTreeMap::new();
         symbols
             .iter()
-            .map(|&symbol| value(&self.nodes, &mut cache, cursor, symbol))
+            .map(|&symbol| value(&self.nodes, &mut cache, cursor, symbol, reverse_words))
             .collect()
     }
 }
