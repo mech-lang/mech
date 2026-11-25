@@ -381,7 +381,10 @@ pub(in crate::native_artifact) fn optimize_final_batched_routes(
     if !report.enabled {
         return Ok(report);
     }
-    let combine_verification = std::env::var_os("MECH_COMPACT_VERIFY_CLEANUP_ONCE").is_some();
+    let combine_verification = controls
+        .inputs()
+        .var_os("MECH_COMPACT_VERIFY_CLEANUP_ONCE")
+        .is_some();
     let finish_route = |context: &mut Context| -> Result<(), NativeCompileError> {
         if combine_verification {
             context
@@ -402,9 +405,13 @@ pub(in crate::native_artifact) fn optimize_final_batched_routes(
         context.func.dfg.resolve_all_aliases();
         context.compute_cfg();
         context.compute_domtree();
-        report.loop_edges =
-            threaded_edges::optimize(&mut context.func, &context.cfg, &context.domtree)
-                .threaded_edges;
+        report.loop_edges = threaded_edges::optimize(
+            controls.inputs(),
+            &mut context.func,
+            &context.cfg,
+            &context.domtree,
+        )
+        .threaded_edges;
         if report.loop_edges != 0 {
             finish_route(context)?;
         }
@@ -656,8 +663,12 @@ pub(in crate::native_artifact) fn reuse_dominating_window_facts(
     context.func.dfg.resolve_all_aliases();
     context.compute_cfg();
     context.compute_domtree();
-    let replaced =
-        current_predicates::relations::fold(&mut context.func, &context.cfg, &context.domtree);
+    let replaced = current_predicates::relations::fold(
+        controls.inputs(),
+        &mut context.func,
+        &context.cfg,
+        &context.domtree,
+    );
     if replaced != 0 {
         context
             .compute_flowgraph_and_cleanup(isa)
@@ -713,7 +724,11 @@ pub(in crate::native_artifact) fn coalesce_equal_join_arguments(
             context
                 .compute_flowgraph_and_cleanup(isa)
                 .map_err(backend)?;
-            if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+            if controls
+                .inputs()
+                .var_os("MECH_INSPECT_PHASE_CLIF")
+                .is_some()
+            {
                 eprintln!("constant branches after equal argument coalescing: {branches}");
             }
         }
@@ -908,6 +923,7 @@ pub(in crate::native_artifact) fn compose_readonly_lookups<M: cranelift_module::
     context.compute_cfg();
     context.compute_domtree();
     let selected = composed_reads::compose(
+        controls.inputs(),
         module,
         tables,
         &mut context.func,
@@ -1000,7 +1016,12 @@ pub(in crate::native_artifact) fn thread_loop_edges(
     context.func.dfg.resolve_all_aliases();
     context.compute_cfg();
     context.compute_domtree();
-    let report = threaded_edges::optimize(&mut context.func, &context.cfg, &context.domtree);
+    let report = threaded_edges::optimize(
+        controls.inputs(),
+        &mut context.func,
+        &context.cfg,
+        &context.domtree,
+    );
     if report.threaded_edges != 0 {
         // No data/egraph pass is added. The existing structural cleanup now
         // retires dispatch tags whose only remaining incoming value is fixed.
@@ -1043,8 +1064,12 @@ pub(in crate::native_artifact) fn finish_imported_passes(
     if controls.enabled(OptimizationPass::SelectedUnsignedIncrements) {
         context.compute_cfg();
         context.compute_domtree();
-        let removed =
-            selected_increments::optimize(&mut context.func, &context.cfg, &context.domtree);
+        let removed = selected_increments::optimize(
+            controls.inputs(),
+            &mut context.func,
+            &context.cfg,
+            &context.domtree,
+        );
         report.selected_increment_guards_removed += removed;
         if removed != 0 {
             optimize_ordered(controls, context, isa, true)?;

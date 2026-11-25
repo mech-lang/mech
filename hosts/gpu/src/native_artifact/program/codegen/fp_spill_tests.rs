@@ -2,7 +2,7 @@
 use cranelift_codegen::ir::condcodes::IntCC;
 use cranelift_codegen::ir::{AbiParam, InstBuilder, MemFlags, types};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
-use cranelift_jit::{JITBuilder, JITModule};
+use cranelift_jit::JITModule;
 use cranelift_module::{FuncId, Linkage, Module};
 
 const SALT: u64 = 0x1e35a7bd;
@@ -257,13 +257,11 @@ fn fp_spills_preserve_bits_loops_aliases_guards_and_call_clobbers() {
                     call: true,
                 },
             ] {
-                let mut module = JITModule::new(
-                    JITBuilder::with_flags(
-                        &[("opt_level", opt), ("regalloc_checker", "true")],
-                        cranelift_module::default_libcall_names(),
-                    )
-                    .unwrap(),
-                );
+                let mut module = crate::native_artifact::codegen::backend::jit(&[
+                    ("opt_level", opt),
+                    ("regalloc_checker", "true"),
+                ])
+                .unwrap();
                 let (original, baseline) =
                     compile(&mut module, shape, 0, forward, keep_pairs, "original");
                 let mut entries = Vec::new();

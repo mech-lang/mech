@@ -20,6 +20,7 @@ use crate::native_artifact::codegen::{
         terminators::emit_source_terminator,
         word_access::SsaWords,
     },
+    compilation_inputs::CompilationInputs,
     control::plan::CodePlan,
     options::{CompilationControls, OptimizationOptions},
 };
@@ -60,7 +61,8 @@ fn seal_auxiliary(
         next = b.func.layout.next_block(block);
     }
 }
-pub(super) struct Shared {
+pub(super) struct Shared<'a> {
+    compiler_inputs: &'a CompilationInputs,
     pub layout: Layout,
     pub actions: Vec<Recipe>,
     pub phases: Vec<phases::Phase>,
@@ -78,7 +80,15 @@ pub(in crate::native_artifact) fn define<M: Module>(
     observe: bool,
     share_phase_bodies: bool,
 ) -> Result<serde_json::Value, NativeCompileError> {
-    define_with_pool(module, prepared, observe, share_phase_bodies, None, false)
+    define_with_pool(
+        module,
+        prepared,
+        observe,
+        share_phase_bodies,
+        None,
+        false,
+        prepared.compiler_inputs(),
+    )
 }
 
 pub(in crate::native_artifact::program) fn define_with_isa<M: Module>(
@@ -91,8 +101,18 @@ pub(in crate::native_artifact::program) fn define_with_isa<M: Module>(
     direct_runtime_calls: super::object::DirectRuntimeCalls,
     direct_literals: bool,
 ) -> Result<serde_json::Value, NativeCompileError> {
+    let compiler_inputs = prepared.compiler_inputs();
     let pool = (threads != 0)
-        .then(|| super::compile_jobs::Pool::new(isa, threads, direct_runtime_calls))
+        .then(|| {
+            super::compile_jobs::Pool::new(
+                isa,
+                threads,
+                direct_runtime_calls,
+                compiler_inputs
+                    .var_os("MECH_PROFILE_COMPILE_JOBS")
+                    .is_some(),
+            )
+        })
         .transpose()?;
     define_with_pool(
         module,
@@ -101,6 +121,7 @@ pub(in crate::native_artifact::program) fn define_with_isa<M: Module>(
         share_phase_bodies,
         pool.as_ref(),
         direct_literals,
+        compiler_inputs,
     )
 }
 
@@ -111,12 +132,14 @@ fn define_with_pool<M: Module>(
     share_phase_bodies: bool,
     pool: Option<&super::compile_jobs::Pool>,
     direct_literals: bool,
+    compiler_inputs: &CompilationInputs,
 ) -> Result<serde_json::Value, NativeCompileError> {
     let plan = prepared.plan();
     let layout = Layout::derive(plan)?;
     #[cfg(feature = "early-region-planning")]
-    if let Some(windows) = std::env::var_os("MECH_COMPACT_EARLY_REGION_PREVIEW") {
-        let path = std::env::var_os("MECH_COMPACT_EARLY_REGION_REPORT")
+    if let Some(windows) = compiler_inputs.var_os("MECH_COMPACT_EARLY_REGION_PREVIEW") {
+        let path = compiler_inputs
+            .var_os("MECH_COMPACT_EARLY_REGION_REPORT")
             .ok_or_else(|| backend("early source preview requires an explicit report path"))?;
         super::early_regions::preview(
             plan,
@@ -128,14 +151,24 @@ fn define_with_pool<M: Module>(
     let actions = (0..plan.blocks().len())
         .map(|site| recipes::derive(plan, &layout, site))
         .collect::<Result<Vec<_>, _>>()?;
-    let literals = if std::env::var_os("MECH_COMPOSE_READONLY_LOOKUPS").is_some() {
+    let literals = if compiler_inputs
+        .var_os("MECH_COMPOSE_READONLY_LOOKUPS")
+        .is_some()
+    {
         let root_flow = Flow::derive(plan)?;
-        super::immutable_arrays::LiteralViews::derive(plan, &layout, &root_flow, &actions)
+        super::immutable_arrays::LiteralViews::derive(
+            compiler_inputs,
+            plan,
+            &layout,
+            &root_flow,
+            &actions,
+        )
     } else {
         super::immutable_arrays::LiteralViews::default()
     };
     let phases = phases::define(
         module,
+        compiler_inputs,
         prepared,
         &layout,
         &literals,
@@ -162,10 +195,14 @@ fn define_with_pool<M: Module>(
             .0,
         )
     };
-    let matrix_word = (!observe && std::env::var_os("MECH_COMPACT_SHARE_MATRIX_WORDS").is_some())
-        .then(|| word_packs::define_matrix_word(module))
-        .transpose()?;
+    let matrix_word = (!observe
+        && compiler_inputs
+            .var_os("MECH_COMPACT_SHARE_MATRIX_WORDS")
+            .is_some())
+    .then(|| word_packs::define_matrix_word(module))
+    .transpose()?;
     let shared = Shared {
+        compiler_inputs,
         layout,
         actions,
         phases,
@@ -306,14 +343,16 @@ fn define_entry<M: Module>(
     module: &mut M,
     prepared: &PreparedNativeProgram,
     observe: bool,
-    shared: &Shared,
+    shared: &Shared<'_>,
     worker: Option<&super::parallel::Entry>,
     workers: &[super::parallel::Worker],
     direct_literals: bool,
 ) -> Result<serde_json::Value, NativeCompileError> {
+    let compiler_inputs = shared.compiler_inputs;
     let plan = prepared.plan();
     let endian = module.isa().endianness();
-    let route_sites = std::env::var("MECH_COMPACT_ROUTE_SITES")
+    let route_sites = compiler_inputs
+        .var("MECH_COMPACT_ROUTE_SITES")
         .ok()
         .map(|text| {
             text.split(',')
@@ -328,7 +367,9 @@ fn define_entry<M: Module>(
             "diagnostic route site is outside current source plan",
         ));
     }
-    let route_locations = std::env::var_os("MECH_COMPACT_ROUTE_SOURCELOCS").is_some();
+    let route_locations = compiler_inputs
+        .var_os("MECH_COMPACT_ROUTE_SOURCELOCS")
+        .is_some();
     eprintln!("compact-stage: typed layout");
     let layout = &shared.layout;
     eprintln!("compact-stage: flow proof");
@@ -377,8 +418,16 @@ fn define_entry<M: Module>(
     let owner_flow = OwnerFlow::derive(plan, &layout, &flow, &actions)?;
     let reuse_pointwise_sources = worker.is_none()
         && !observe
-        && std::env::var_os("MECH_COMPACT_REUSE_POINTWISE_SOURCE").is_some();
-    let guards = Guards::derive(plan, &flow);
+        && compiler_inputs
+            .var_os("MECH_COMPACT_REUSE_POINTWISE_SOURCE")
+            .is_some();
+    let guards = Guards::derive(
+        plan,
+        &flow,
+        compiler_inputs
+            .var("MECH_GUARD_SPARSE_ROUNDS")
+            .is_ok_and(|value| value == "1"),
+    );
     let transfers = owner_flow.transfers(&flow, &guards);
     let initial = &shared.initial;
     let reductions = if memory {
@@ -386,7 +435,11 @@ fn define_entry<M: Module>(
     } else {
         BTreeMap::new()
     };
-    let read_borrows = if memory && std::env::var_os("MECH_BORROW_COMPACT_READ_COPIES").is_some() {
+    let read_borrows = if memory
+        && compiler_inputs
+            .var_os("MECH_BORROW_COMPACT_READ_COPIES")
+            .is_some()
+    {
         // A specialized native route may read or settle different owner
         // lanes. Confine this proof to the ordinary checked source actions.
         let boundaries = phases
@@ -476,13 +529,17 @@ fn define_entry<M: Module>(
             ))
         })
         .collect::<Vec<_>>();
-    let chains = if std::env::var_os("MECH_PRIVATE_INDEXED_CHAINS").is_some() {
+    let chains = if compiler_inputs
+        .var_os("MECH_PRIVATE_INDEXED_CHAINS")
+        .is_some()
+    {
         let boundaries = phases
             .iter()
             .map(|phase| phase.header)
             .chain(packs.iter().map(|pack| pack.first))
             .collect::<BTreeSet<_>>();
         super::private_chains::derive(
+            compiler_inputs,
             plan,
             &layout,
             &flow,
@@ -497,9 +554,12 @@ fn define_entry<M: Module>(
     };
     let overwrite_reuse = if worker.is_none()
         && memory
-        && std::env::var_os("MECH_COMPACT_REUSE_OVERWRITTEN_RESULT").is_some()
+        && compiler_inputs
+            .var_os("MECH_COMPACT_REUSE_OVERWRITTEN_RESULT")
+            .is_some()
     {
         super::overwrite_reuse::derive(
+            compiler_inputs,
             plan,
             layout,
             &flow,
@@ -515,7 +575,7 @@ fn define_entry<M: Module>(
         .then(|| widening_reduction::declare(module))
         .transpose()?;
     #[cfg(feature = "early-region-emission")]
-    let early = if let Ok(windows) = std::env::var("MECH_COMPACT_EARLY_SOURCE_REGION") {
+    let early = if let Ok(windows) = compiler_inputs.var("MECH_COMPACT_EARLY_SOURCE_REGION") {
         if observe
             || worker.is_some()
             || !workers.is_empty()
@@ -527,6 +587,7 @@ fn define_entry<M: Module>(
             ));
         }
         let split = super::early_units::Split::derive(
+            compiler_inputs,
             module,
             plan,
             layout,
@@ -554,15 +615,18 @@ fn define_entry<M: Module>(
     } else {
         None
     };
-    let use_seed =
-        worker.is_none() && !observe && std::env::var_os("MECH_COMPACT_SEEDED_HISTOGRAM").is_some();
+    let use_seed = worker.is_none()
+        && !observe
+        && compiler_inputs
+            .var_os("MECH_COMPACT_SEEDED_HISTOGRAM")
+            .is_some();
     #[cfg(feature = "early-region-emission")]
     let use_seed = use_seed && early.is_none();
     let seed_proofs = use_seed.then(|| {
         phases::prove_seeded_histograms(prepared, layout, &flow, actions, &owner_flow, &phases)
     });
     let seeded = if let Some(proofs) = &seed_proofs {
-        phases::define_seeded_histograms(module, &phases, proofs)?
+        phases::define_seeded_histograms(module, compiler_inputs, &phases, proofs)?
     } else {
         BTreeMap::new()
     };
@@ -626,7 +690,9 @@ fn define_entry<M: Module>(
         let packet_requirements = phases.iter().map(|p| p.packet_words());
         #[cfg(feature = "early-region-emission")]
         let share_source_packets = unit.is_some_and(|u| !u.helper)
-            && std::env::var_os("MECH_COMPACT_SHARE_SOURCE_CALL_PACKETS").is_some();
+            && compiler_inputs
+                .var_os("MECH_COMPACT_SHARE_SOURCE_CALL_PACKETS")
+                .is_some();
         #[cfg(feature = "early-region-emission")]
         let packet_requirements = packet_requirements.chain(
             unit.filter(|_| share_source_packets)
@@ -668,7 +734,9 @@ fn define_entry<M: Module>(
             && memory
             && !observe
             && route_sites.is_empty()
-            && std::env::var_os("MECH_TERMINAL_BYTE_APPENDS").is_some())
+            && compiler_inputs
+                .var_os("MECH_TERMINAL_BYTE_APPENDS")
+                .is_some())
         .then(|| {
             TerminalAppends::derive(
                 plan,
@@ -692,7 +760,9 @@ fn define_entry<M: Module>(
         // Give the independent small-input entry a stable position while other
         // functions change size. Its checked fallback keeps the same signature.
         let early_entry = if let Some(appends) = terminal_appends.as_ref()
-            && std::env::var_os("MECH_COMPACT_DEFINE_TERMINAL_ENTRY_FIRST").is_some()
+            && compiler_inputs
+                .var_os("MECH_COMPACT_DEFINE_TERMINAL_ENTRY_FIRST")
+                .is_some()
         {
             let checked = module
                 .declare_function(checked_symbol, Linkage::Local, &signature)
@@ -706,37 +776,50 @@ fn define_entry<M: Module>(
         context.func.signature = signature.clone();
         context.func.share_cold_epilogues = worker.is_none()
             && !route_locations
-            && std::env::var_os("MECH_COMPACT_SHARE_COLD_EPILOGUES").is_some();
+            && compiler_inputs
+                .var_os("MECH_COMPACT_SHARE_COLD_EPILOGUES")
+                .is_some();
         let mut fb = FunctionBuilderContext::new();
-        let traversal_stage = std::env::var_os("MECH_COMPACT_SHARE_CHECKED_TRAVERSALS");
+        let traversal_stage = compiler_inputs.var_os("MECH_COMPACT_SHARE_CHECKED_TRAVERSALS");
         let outline_allowed =
             worker.is_none() && !observe && route_sites.is_empty() && !route_locations;
         let census_homes = outline_allowed
-            .then(|| std::env::var_os("MECH_COMPACT_DIRECT_SCALAR_HOME_CENSUS"))
+            .then(|| compiler_inputs.var_os("MECH_COMPACT_DIRECT_SCALAR_HOME_CENSUS"))
             .flatten();
         let direct_homes = outline_allowed
-            .then(|| std::env::var("MECH_COMPACT_DIRECT_SCALAR_HOMES").ok())
+            .then(|| compiler_inputs.var("MECH_COMPACT_DIRECT_SCALAR_HOMES").ok())
             .flatten();
         if census_homes.is_some() && direct_homes.is_some() {
             return Err(backend("use one direct scalar home mode at a time"));
         }
-        let forward_empty_source =
-            outline_allowed && std::env::var_os("MECH_COMPACT_EMPTY_SOURCE_ROUTES").is_some();
-        context.func.forward_spill_reloads =
-            outline_allowed && std::env::var_os("MECH_COMPACT_FORWARD_SPILL_RELOADS").is_some();
+        let forward_empty_source = outline_allowed
+            && compiler_inputs
+                .var_os("MECH_COMPACT_EMPTY_SOURCE_ROUTES")
+                .is_some();
+        context.func.forward_spill_reloads = outline_allowed
+            && compiler_inputs
+                .var_os("MECH_COMPACT_FORWARD_SPILL_RELOADS")
+                .is_some();
         context.func.aarch64_prefer_preserved_regs = outline_allowed
             && memory
-            && std::env::var_os("MECH_COMPACT_PREFER_PRESERVED_REGS")
+            && compiler_inputs
+                .var_os("MECH_COMPACT_PREFER_PRESERVED_REGS")
                 .is_some_and(|scope| scope != "root" || !is_helper);
-        context.func.aarch64_share_cold_tails =
-            outline_allowed && std::env::var_os("MECH_COMPACT_SHARE_COLD_TAILS").is_some();
-        context.func.aarch64_share_frame_copies =
-            outline_allowed && std::env::var_os("MECH_COMPACT_SHARE_FRAME_COPIES").is_some();
+        context.func.aarch64_share_cold_tails = outline_allowed
+            && compiler_inputs
+                .var_os("MECH_COMPACT_SHARE_COLD_TAILS")
+                .is_some();
+        context.func.aarch64_share_frame_copies = outline_allowed
+            && compiler_inputs
+                .var_os("MECH_COMPACT_SHARE_FRAME_COPIES")
+                .is_some();
         context.func.aarch64_branch_on_zero = outline_allowed
             && module.isa().name() == "aarch64"
-            && std::env::var_os("MECH_COMPACT_BRANCH_ON_ZERO").is_some();
+            && compiler_inputs
+                .var_os("MECH_COMPACT_BRANCH_ON_ZERO")
+                .is_some();
         let vector_facts = outline_allowed
-            .then(|| std::env::var_os("MECH_COMPACT_VECTOR_FACTS"))
+            .then(|| compiler_inputs.var_os("MECH_COMPACT_VECTOR_FACTS"))
             .flatten();
         let mut vector_guards = vector_facts.as_ref().map(|_| Vec::new());
         let outline_traversals = outline_allowed && traversal_stage.is_some();
@@ -745,15 +828,23 @@ fn define_entry<M: Module>(
         let native_windows_allowed = outline_allowed && !partitioned;
         #[cfg(feature = "early-region-emission")]
         let source_controller_windows = outline_allowed
-            .then(|| std::env::var("MECH_COMPACT_SOURCE_CONTROLLER_WINDOWS").ok())
+            .then(|| {
+                compiler_inputs
+                    .var("MECH_COMPACT_SOURCE_CONTROLLER_WINDOWS")
+                    .ok()
+            })
             .flatten();
         #[cfg(feature = "early-region-emission")]
         let source_continuation_windows = outline_allowed
-            .then(|| std::env::var("MECH_COMPACT_SOURCE_CONTINUATION_WINDOWS").ok())
+            .then(|| {
+                compiler_inputs
+                    .var("MECH_COMPACT_SOURCE_CONTINUATION_WINDOWS")
+                    .ok()
+            })
             .flatten();
         #[cfg(feature = "early-region-emission")]
         let source_block_report = outline_allowed
-            .then(|| std::env::var_os("MECH_COMPACT_SOURCE_BLOCK_REPORT"))
+            .then(|| compiler_inputs.var_os("MECH_COMPACT_SOURCE_BLOCK_REPORT"))
             .flatten();
         #[cfg(feature = "early-region-emission")]
         let record_source_blocks = source_controller_windows.is_some()
@@ -762,7 +853,11 @@ fn define_entry<M: Module>(
         #[cfg(feature = "early-region-emission")]
         let mut boundary_blocks = None;
         let controller_windows = (outline_allowed && memory)
-            .then(|| std::env::var("MECH_COMPACT_SHARE_CONTROLLER_WINDOWS").ok())
+            .then(|| {
+                compiler_inputs
+                    .var("MECH_COMPACT_SHARE_CONTROLLER_WINDOWS")
+                    .ok()
+            })
             .flatten();
         let controllers;
         let capacity_growth;
@@ -780,9 +875,10 @@ fn define_entry<M: Module>(
             let zero = b.ins().iconst(types::I64, 0);
             let arrays = if memory {
                 let heap = b.block_params(entry)[0];
-                let mut arrays = Arrays::new(module, &mut b, heap, observe)?;
+                let mut arrays = Arrays::new(compiler_inputs, module, &mut b, heap, observe)?;
                 if outline_allowed
-                    && let Some(strategy) = std::env::var_os("MECH_COMPACT_PACK_LE_SCALAR_STORES")
+                    && let Some(strategy) =
+                        compiler_inputs.var_os("MECH_COMPACT_PACK_LE_SCALAR_STORES")
                 {
                     use super::le_scalar_stores::Packing;
                     arrays.pack_le_stores = Some(if strategy == "ends" {
@@ -792,22 +888,22 @@ fn define_entry<M: Module>(
                     });
                 }
                 if outline_allowed
-                    && let Some(mode) = std::env::var_os("MECH_COMPACT_SHARE_CAPACITY_GROWTH")
+                    && let Some(mode) = compiler_inputs.var_os("MECH_COMPACT_SHARE_CAPACITY_GROWTH")
                 {
                     use super::array_growth::BackingResults;
-                    let combined =
-                        std::env::var("MECH_COMPACT_FUSE_WRITABLE_GROWTH")
-                            .ok()
-                            .map(|mode| match mode.as_str() {
-                                "preserve" => BackingResults::Preserve,
-                                "registers" => BackingResults::Registers,
-                                "byte-registers" => BackingResults::ByteRegisters,
-                                _ => BackingResults::Packet,
-                            });
+                    let combined = compiler_inputs
+                        .var("MECH_COMPACT_FUSE_WRITABLE_GROWTH")
+                        .ok()
+                        .map(|mode| match mode.as_str() {
+                            "preserve" => BackingResults::Preserve,
+                            "registers" => BackingResults::Registers,
+                            "byte-registers" => BackingResults::ByteRegisters,
+                            _ => BackingResults::Packet,
+                        });
                     arrays.share_capacity_growth(module, &mut b, mode == "preserve", combined)?;
                 }
                 if outline_allowed
-                    && let Some(mode) = std::env::var_os("MECH_COMPACT_SHARE_INDEXED_STORES")
+                    && let Some(mode) = compiler_inputs.var_os("MECH_COMPACT_SHARE_INDEXED_STORES")
                 {
                     arrays.share_indexed_stores(
                         module,
@@ -876,7 +972,9 @@ fn define_entry<M: Module>(
                 module,
                 &mut b,
                 !overwrite_reuse.is_empty()
-                    && std::env::var_os("MECH_COMPACT_REUSE_CENSUS").is_some(),
+                    && compiler_inputs
+                        .var_os("MECH_COMPACT_REUSE_CENSUS")
+                        .is_some(),
             )?;
             let mut slots = BTreeSet::new();
             for (value, ty) in layout.types.iter().enumerate() {
@@ -943,7 +1041,10 @@ fn define_entry<M: Module>(
                 let eligibility_inputs = &inputs;
                 let mut eligible =
                     single_definition_scalar_homes(layout, &flow, eligibility_inputs, initial);
-                if std::env::var_os("MECH_COMPACT_PROVE_NONOWNER_FIELDS").is_some() {
+                if compiler_inputs
+                    .var_os("MECH_COMPACT_PROVE_NONOWNER_FIELDS")
+                    .is_some()
+                {
                     eligible.extend(nonowner_field_homes(
                         layout,
                         &flow,
@@ -1842,7 +1943,7 @@ fn define_entry<M: Module>(
                 }
             }
             assert!(remaining.iter().all(|&n| n == 0));
-            if let Some(folder) = std::env::var_os("MECH_COMPACT_ROUTE_DUMP") {
+            if let Some(folder) = compiler_inputs.var_os("MECH_COMPACT_ROUTE_DUMP") {
                 let folder = std::path::PathBuf::from(folder);
                 std::fs::create_dir_all(&folder).map_err(backend)?;
                 let sites = plan.blocks().iter().enumerate().map(|(site, source)| {
@@ -1964,7 +2065,7 @@ fn define_entry<M: Module>(
                 "compact scalar array growth sites shared: {standalone}, backing: {combined}"
             );
         }
-        if let Some(folder) = std::env::var_os("MECH_COMPACT_ROUTE_DUMP") {
+        if let Some(folder) = compiler_inputs.var_os("MECH_COMPACT_ROUTE_DUMP") {
             let folder = std::path::PathBuf::from(folder);
             std::fs::write(folder.join("before-cleanup.clif"), context.func.to_string())
                 .map_err(backend)?;
@@ -1980,17 +2081,20 @@ fn define_entry<M: Module>(
         context.func.dfg.compact_values();
         eprintln!("compact-values: retained={}", context.func.dfg.num_values());
         eprintln!("compact-stage: CFG cleanup");
-        let controls = CompilationControls::new(OptimizationOptions::default());
+        let controls =
+            CompilationControls::with_inputs(OptimizationOptions::default(), compiler_inputs);
         // Match pure numeric idioms only after SSA is sealed. A later pass also
         // sees aliases exposed by CFG/identity forwarding; packet loads stay opaque.
         let mut bit_counts =
             crate::native_artifact::codegen::common::bit_counts::optimize(&mut context.func);
         let cleanup = cfg_cleanup::optimize(&controls, &mut context, module.isa())?;
-        let current_predicates = std::env::var_os("MECH_CURRENT_PREDICATES")
+        let current_predicates = compiler_inputs
+            .var_os("MECH_CURRENT_PREDICATES")
             .is_some()
             .then(|| cfg_cleanup::refine_current_predicates(&controls, &mut context, module.isa()))
             .transpose()?;
-        let identity_routes = std::env::var_os("MECH_IDENTITY_ROUTE_FORWARDING")
+        let identity_routes = compiler_inputs
+            .var_os("MECH_IDENTITY_ROUTE_FORWARDING")
             .is_some()
             .then(|| cfg_cleanup::forward_identity_routes(&controls, &mut context, module.isa()))
             .transpose()?;
@@ -2008,7 +2112,9 @@ fn define_entry<M: Module>(
                 context.verify(module.isa()).map_err(backend)?;
             }
         }
-        if outline_allowed && let Some(mode) = std::env::var_os("MECH_COMPACT_FOLD_UNIT_BRANCHES") {
+        if outline_allowed
+            && let Some(mode) = compiler_inputs.var_os("MECH_COMPACT_FOLD_UNIT_BRANCHES")
+        {
             let apply = mode != std::ffi::OsStr::new("trace");
             let proved = vector_guard_facts::fold_unit_branches(&mut context, apply);
             eprintln!("compact unit branches proved: {proved}");
@@ -2021,7 +2127,13 @@ fn define_entry<M: Module>(
         }
         let checked_traversals = if outline_traversals {
             let all = traversal_stage.as_deref() == Some(std::ffi::OsStr::new("all"));
-            let shared = checked_traversals::share(module, &mut context.func, traversals, all)?;
+            let shared = checked_traversals::share(
+                compiler_inputs,
+                module,
+                &mut context.func,
+                traversals,
+                all,
+            )?;
             if shared.is_some() {
                 context.flowgraph();
                 context.verify(module.isa()).map_err(backend)?;
@@ -2031,6 +2143,7 @@ fn define_entry<M: Module>(
             None
         };
         let checked_controllers = checked_traversals::share_controllers(
+            compiler_inputs,
             module,
             &mut context.func,
             vec![controllers],
@@ -2041,7 +2154,7 @@ fn define_entry<M: Module>(
             context.verify(module.isa()).map_err(backend)?;
         }
         let controller_families = if native_windows_allowed
-            && let Ok(windows) = std::env::var("MECH_COMPACT_LAYOUT_CONTROLLER_WINDOWS")
+            && let Ok(windows) = compiler_inputs.var("MECH_COMPACT_LAYOUT_CONTROLLER_WINDOWS")
         {
             Some(super::checked_region_discovery::families(
                 &context.func,
@@ -2059,10 +2172,11 @@ fn define_entry<M: Module>(
         };
         let discovered_controllers = if let Some(families) = controller_families {
             let shared = checked_traversals::share_controllers(
+                compiler_inputs,
                 module,
                 &mut context.func,
                 families,
-                checked_traversals::CaptureBindings::from_environment(),
+                checked_traversals::CaptureBindings::capture(compiler_inputs),
             )?;
             if shared.is_some() {
                 context.flowgraph();
@@ -2073,7 +2187,8 @@ fn define_entry<M: Module>(
             None
         };
         if outline_allowed
-            && std::env::var_os("MECH_COMPACT_SHARE_OWNER_RETIREMENT")
+            && compiler_inputs
+                .var_os("MECH_COMPACT_SHARE_OWNER_RETIREMENT")
                 .is_some_and(|scope| scope != "helpers")
         {
             let shared = super::owner_retirement::share(module, &mut context.func)?;
@@ -2086,13 +2201,13 @@ fn define_entry<M: Module>(
         // Close repeated callers after their leaf callees have selected shared
         // targets. Each region re-proves its boundaries on the resulting graph.
         if outline_allowed
-            && let Some(path) = std::env::var_os("MECH_COMPACT_CONTINUATION_REGION_REPORT")
+            && let Some(path) = compiler_inputs.var_os("MECH_COMPACT_CONTINUATION_REGION_REPORT")
         {
             super::checked_region_discovery::report(&context.func, path.as_ref())
                 .map_err(backend)?;
         }
         let continuation_families = if native_windows_allowed
-            && let Ok(windows) = std::env::var("MECH_COMPACT_CONTINUATION_WINDOWS")
+            && let Ok(windows) = compiler_inputs.var("MECH_COMPACT_CONTINUATION_WINDOWS")
         {
             Some(super::checked_region_discovery::families(
                 &context.func,
@@ -2109,8 +2224,12 @@ fn define_entry<M: Module>(
             continuation_families
         };
         let checked_continuations = if let Some(families) = continuation_families {
-            let shared =
-                checked_traversals::share_continuations(module, &mut context.func, families)?;
+            let shared = checked_traversals::share_continuations(
+                compiler_inputs,
+                module,
+                &mut context.func,
+                families,
+            )?;
             if shared.is_some() {
                 context.flowgraph();
                 context.verify(module.isa()).map_err(backend)?;
@@ -2119,7 +2238,11 @@ fn define_entry<M: Module>(
         } else {
             None
         };
-        if outline_allowed && std::env::var_os("MECH_COMPACT_ROOT_SELECTS").is_some() {
+        if outline_allowed
+            && compiler_inputs
+                .var_os("MECH_COMPACT_ROOT_SELECTS")
+                .is_some()
+        {
             let selected = crate::native_artifact::codegen::common::scalar_selects::optimize(
                 &mut context.func,
             );
@@ -2129,7 +2252,11 @@ fn define_entry<M: Module>(
             }
             eprintln!("compact root scalar choices folded: {selected}");
         }
-        if outline_allowed && std::env::var_os("MECH_COMPACT_FOLD_CHECKED_ADDS").is_some() {
+        if outline_allowed
+            && compiler_inputs
+                .var_os("MECH_COMPACT_FOLD_CHECKED_ADDS")
+                .is_some()
+        {
             context.compute_cfg();
             let folded = cfg_cleanup::checked_adds::fold(&mut context.func, &context.cfg);
             if folded != 0 {
@@ -2137,10 +2264,12 @@ fn define_entry<M: Module>(
             }
             eprintln!("compact root proved carries: {folded}");
         }
-        if outline_allowed && let Ok(proofs) = std::env::var("MECH_COMPACT_ROOT_PROOFS") {
+        if outline_allowed && let Ok(proofs) = compiler_inputs.var("MECH_COMPACT_ROOT_PROOFS") {
             let isa = module.isa();
             if proofs == "ranges" || proofs == "all" {
-                let extrema = std::env::var_os("MECH_COMPACT_PROVE_UNSIGNED_EXTREMA").is_some();
+                let extrema = compiler_inputs
+                    .var_os("MECH_COMPACT_PROVE_UNSIGNED_EXTREMA")
+                    .is_some();
                 let unsigned =
                 crate::native_artifact::codegen::common::unsigned_guard_facts::optimize_with_ranges(
                     &mut context,
@@ -2165,7 +2294,7 @@ fn define_entry<M: Module>(
                 );
             }
             if proofs == "joins" || proofs == "all" {
-                let selected = std::env::var("MECH_COMPACT_ROOT_FLOW_PASSES").ok();
+                let selected = compiler_inputs.var("MECH_COMPACT_ROOT_FLOW_PASSES").ok();
                 let enabled = |name| {
                     selected
                         .as_deref()
@@ -2199,7 +2328,7 @@ fn define_entry<M: Module>(
             }
         }
         if outline_allowed
-            && let Some(mode) = std::env::var_os("MECH_COMPACT_LITERAL_EDGE_ARGUMENTS")
+            && let Some(mode) = compiler_inputs.var_os("MECH_COMPACT_LITERAL_EDGE_ARGUMENTS")
         {
             let (literals, params) = cfg_cleanup::coalesce_literal_join_arguments(
                 &controls,
@@ -2211,7 +2340,11 @@ fn define_entry<M: Module>(
                 "compact root literal edge arguments: {literals} definitions, {params} parameters removed"
             );
         }
-        if outline_allowed && std::env::var_os("MECH_COMPACT_COALESCE_PARALLEL_PHIS").is_some() {
+        if outline_allowed
+            && compiler_inputs
+                .var_os("MECH_COMPACT_COALESCE_PARALLEL_PHIS")
+                .is_some()
+        {
             let removed = cfg_cleanup::coalesce_parallel_join_arguments(
                 &controls,
                 &mut context,
@@ -2219,13 +2352,17 @@ fn define_entry<M: Module>(
             )?;
             eprintln!("compact parallel join arguments coalesced: {removed}");
         }
-        if outline_allowed && std::env::var_os("MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS").is_some() {
+        if outline_allowed
+            && compiler_inputs
+                .var_os("MECH_COMPACT_FOLD_FRESH_OWNER_COUNTS")
+                .is_some()
+        {
             let (backings, loads) = super::owner_counts::fold(module, &mut context);
             context.verify(module.isa()).map_err(backend)?;
             eprintln!("compact fresh owner counts: {backings} backings, {loads} loads folded");
         }
         if outline_allowed
-            && let Some(scope) = std::env::var_os("MECH_COMPACT_PROVE_BACKING_OWNERS")
+            && let Some(scope) = compiler_inputs.var_os("MECH_COMPACT_PROVE_BACKING_OWNERS")
         {
             use super::backing_owners::Scope;
             let scope = match scope.to_str() {
@@ -2249,7 +2386,11 @@ fn define_entry<M: Module>(
             }
             eprintln!("compact positive backings: {backings}, owner checks proved: {guards}");
         }
-        if outline_allowed && std::env::var_os("MECH_COMPACT_TRIM_RETIREMENTS").is_some() {
+        if outline_allowed
+            && compiler_inputs
+                .var_os("MECH_COMPACT_TRIM_RETIREMENTS")
+                .is_some()
+        {
             let trimmed = super::owner_retirement::trim_empty_owners(module, &mut context.func)?;
             if trimmed != 0 {
                 context.verify(module.isa()).map_err(backend)?;
@@ -2257,7 +2398,8 @@ fn define_entry<M: Module>(
             eprintln!("compact root owner retirement calls trimmed: {trimmed}");
         }
         if outline_allowed
-            && std::env::var_os("MECH_COMPACT_SKIP_EMPTY_JUMPS")
+            && compiler_inputs
+                .var_os("MECH_COMPACT_SKIP_EMPTY_JUMPS")
                 .is_some_and(|scope| scope == "root" || scope == "all")
         {
             let forwarded = cfg_cleanup::empty_jumps::forward(&mut context.func);
@@ -2270,7 +2412,8 @@ fn define_entry<M: Module>(
             eprintln!("compact root forwarded empty jumps: {forwarded}");
         }
         if outline_allowed
-            && std::env::var_os("MECH_COMPACT_FORWARD_ARGUMENT_JUMPS")
+            && compiler_inputs
+                .var_os("MECH_COMPACT_FORWARD_ARGUMENT_JUMPS")
                 .is_some_and(|scope| scope == "root" || scope == "all")
         {
             let forwarded = cfg_cleanup::argument_jumps::forward(&mut context.func);
@@ -2283,7 +2426,8 @@ fn define_entry<M: Module>(
             eprintln!("compact root forwarded argument jumps: {forwarded}");
         }
         if outline_allowed
-            && std::env::var_os("MECH_COMPACT_COALESCE_IDENTICAL_ARGUMENTS")
+            && compiler_inputs
+                .var_os("MECH_COMPACT_COALESCE_IDENTICAL_ARGUMENTS")
                 .is_some_and(|scope| scope == "root" || scope == "all")
         {
             let removed = cfg_cleanup::coalesce_identical_join_arguments(
@@ -2294,7 +2438,7 @@ fn define_entry<M: Module>(
             eprintln!("compact root coalesced identical arguments: {removed}");
         }
         if outline_allowed
-            && let Some(schedule) = std::env::var_os("MECH_COMPACT_FINISH_CFG_CLEANUP")
+            && let Some(schedule) = compiler_inputs.var_os("MECH_COMPACT_FINISH_CFG_CLEANUP")
         {
             let cleanup = if schedule == "ordered" {
                 cfg_cleanup::optimize_final_ordered(&controls, &mut context, module.isa())?
@@ -2318,16 +2462,19 @@ fn define_entry<M: Module>(
                 cleanup.before_blocks,
                 cleanup.after_blocks,
             );
-            if let Some(path) = std::env::var_os("MECH_COMPACT_FINISH_CFG_REPORT") {
+            if let Some(path) = compiler_inputs.var_os("MECH_COMPACT_FINISH_CFG_REPORT") {
                 let report = serde_json::to_vec_pretty(&cleanup).map_err(backend)?;
                 std::fs::write(path, report).map_err(backend)?;
             }
         }
-        let stack_pairs = std::env::var_os("MECH_COMPACT_PAIR_STACK_WORDS").is_some();
+        let stack_pairs = compiler_inputs
+            .var_os("MECH_COMPACT_PAIR_STACK_WORDS")
+            .is_some();
         if outline_allowed
             && super::word_pairs::available(module.isa())
             && (stack_pairs
-                || std::env::var_os("MECH_COMPACT_PAIR_WORDS")
+                || compiler_inputs
+                    .var_os("MECH_COMPACT_PAIR_WORDS")
                     .is_some_and(|scope| scope == "root" || scope == "all"))
         {
             let paired = super::word_pairs::fold(&mut context.func, None, stack_pairs);
@@ -2336,7 +2483,8 @@ fn define_entry<M: Module>(
             }
             eprintln!("compact root paired words: {paired}");
         }
-        if outline_allowed && let Some(path) = std::env::var_os("MECH_COMPACT_LAYOUT_REGION_REPORT")
+        if outline_allowed
+            && let Some(path) = compiler_inputs.var_os("MECH_COMPACT_LAYOUT_REGION_REPORT")
         {
             super::checked_region_discovery::report(&context.func, path.as_ref())
                 .map_err(backend)?;
@@ -2344,7 +2492,7 @@ fn define_entry<M: Module>(
         // Split checked phases before allocation/release specializations acquire
         // dependencies on this function's native frame.
         let checked_phase_regions = if native_windows_allowed
-            && let Ok(windows) = std::env::var("MECH_COMPACT_CHECKED_PHASE_WINDOWS")
+            && let Ok(windows) = compiler_inputs.var("MECH_COMPACT_CHECKED_PHASE_WINDOWS")
         {
             let families = super::checked_region_discovery::phase_candidates(
                 &context.func,
@@ -2352,10 +2500,11 @@ fn define_entry<M: Module>(
                 plan.blocks().len(),
             )?;
             let outlined = checked_traversals::share_phase_regions(
+                compiler_inputs,
                 module,
                 &mut context.func,
                 families,
-                checked_traversals::CaptureBindings::from_environment(),
+                checked_traversals::CaptureBindings::capture(compiler_inputs),
             )?;
             if outlined.is_some() {
                 context.flowgraph();
@@ -2368,7 +2517,11 @@ fn define_entry<M: Module>(
         } else {
             None
         };
-        if outline_allowed && std::env::var_os("MECH_COMPACT_SHARE_STATIC_ERROR_STATUS").is_some() {
+        if outline_allowed
+            && compiler_inputs
+                .var_os("MECH_COMPACT_SHARE_STATIC_ERROR_STATUS")
+                .is_some()
+        {
             context.flowgraph();
             let shared = super::cold_status::share(&mut context.func, &context.cfg);
             if shared != 0 {
@@ -2401,19 +2554,25 @@ fn define_entry<M: Module>(
         if outline_allowed
             && memory
             && super::word_pairs::available(module.isa())
-            && std::env::var_os("MECH_COMPACT_SELECT_DEFAULTED_LOADS").is_some()
+            && compiler_inputs
+                .var_os("MECH_COMPACT_SELECT_DEFAULTED_LOADS")
+                .is_some()
         {
             let folded = cfg_cleanup::defaulted_loads::fold(module, &mut context)?;
             eprintln!("compact root defaulted loads folded: {folded}");
         }
-        if let Some(folder) = std::env::var_os("MECH_COMPACT_ROUTE_DUMP") {
+        if let Some(folder) = compiler_inputs.var_os("MECH_COMPACT_ROUTE_DUMP") {
             std::fs::write(
                 std::path::PathBuf::from(folder).join("after-cleanup.clif"),
                 context.func.to_string(),
             )
             .map_err(backend)?;
         }
-        if outline_allowed && std::env::var_os("MECH_COMPACT_LITERAL_ALLOCATION_SETUP").is_some() {
+        if outline_allowed
+            && compiler_inputs
+                .var_os("MECH_COMPACT_LITERAL_ALLOCATION_SETUP")
+                .is_some()
+        {
             let count = super::allocation_stubs::specialize(module, &mut context.func)?;
             if count != 0 {
                 context.verify(module.isa()).map_err(backend)?;
@@ -2423,9 +2582,15 @@ fn define_entry<M: Module>(
         let release_stubs = if outline_allowed
             && memory
             && terminal_appends.is_some()
-            && std::env::var_os("MECH_COMPACT_SHARE_RELEASE_SETUP").is_some()
+            && compiler_inputs
+                .var_os("MECH_COMPACT_SHARE_RELEASE_SETUP")
+                .is_some()
         {
-            let stubs = super::release_stubs::ReleaseStubs::prepare(module, &mut context.func)?;
+            let stubs = super::release_stubs::ReleaseStubs::prepare(
+                compiler_inputs,
+                module,
+                &mut context.func,
+            )?;
             if stubs.is_some() {
                 context.verify(module.isa()).map_err(backend)?;
             }
@@ -2455,7 +2620,7 @@ fn define_entry<M: Module>(
         let compiled = context
             .compiled_code()
             .ok_or_else(|| backend("compact function lacks native code"))?;
-        if let Some(folder) = std::env::var_os("MECH_COMPACT_ROUTE_DUMP") {
+        if let Some(folder) = compiler_inputs.var_os("MECH_COMPACT_ROUTE_DUMP") {
             let folder = std::path::PathBuf::from(folder);
             if let Some(vcode) = &compiled.vcode {
                 std::fs::write(folder.join("native-vcode.asm"), vcode).map_err(backend)?;

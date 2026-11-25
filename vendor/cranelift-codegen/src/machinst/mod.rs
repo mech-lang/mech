@@ -117,7 +117,7 @@ pub trait MachInst: Clone + Debug {
     fn call_type(&self) -> CallType;
 
     /// Whether the backend requests a local VCode rewrite before allocation.
-    fn preallocation_rewrite_enabled(_flags: &settings::Flags) -> bool {
+    fn preallocation_rewrite_enabled(_isa: &dyn crate::isa::TargetIsa) -> bool {
         false
     }
 
@@ -125,13 +125,14 @@ pub trait MachInst: Clone + Debug {
     fn preallocation_rewrite(_block: &mut [Self], _canonical: impl Fn(Reg) -> Reg) {}
 
     /// Whether this backend can combine a branch and successor instruction.
-    fn preallocation_branch_rewrite_enabled(_flags: &settings::Flags) -> bool {
+    fn preallocation_branch_rewrite_enabled(_isa: &dyn crate::isa::TargetIsa) -> bool {
         false
     }
 
     /// Replace the branch tail and one of the first two successor instructions.
     /// The successor is distinct from the entry and has only this predecessor.
     fn preallocation_rewrite_branch(
+        _isa: &dyn crate::isa::TargetIsa,
         _tail: &[Self],
         _head: &[Self],
         _canonical: impl Fn(Reg) -> Reg,

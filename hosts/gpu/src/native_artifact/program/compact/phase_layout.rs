@@ -1,5 +1,6 @@
 //! Optional layout profiles for diagnostic AArch64 phases.
 
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::Context;
 use std::{io, path::Path};
 
@@ -23,26 +24,38 @@ struct ObjectTail {
     exact_root_extent: bool,
 }
 
-pub(super) fn profiles() -> Option<String> {
-    std::env::var("MECH_COMPACT_PHASE_BLOCK_LAYOUT").ok()
+pub(super) fn profiles(compiler_inputs: &CompilationInputs) -> Option<String> {
+    compiler_inputs.var("MECH_COMPACT_PHASE_BLOCK_LAYOUT").ok()
 }
 
 /// Pure comparison lowering also applies to checked roots and composed bodies.
-/// Set it before profile inspection and before any direct body compilation.
-pub(super) fn apply_comparison_options(context: &mut Context, symbol: &str) {
-    if std::env::var("MECH_COMPACT_CCMP_IMMEDIATES").is_ok_and(|targets| {
-        targets
-            .split(';')
-            .any(|target| target == "all" || target == symbol)
-    }) {
+/// Set it from the captured inputs before inspection or body compilation.
+pub(super) fn apply_comparison_options(
+    compiler_inputs: &CompilationInputs,
+    context: &mut Context,
+    symbol: &str,
+) {
+    if compiler_inputs
+        .var("MECH_COMPACT_CCMP_IMMEDIATES")
+        .is_ok_and(|targets| {
+            targets
+                .split(';')
+                .any(|target| target == "all" || target == symbol)
+        })
+    {
         context.func.aarch64_ccmp_immediates = true;
     }
 }
 
-pub(super) fn apply_fp_spill_cache(context: &mut Context, symbol: &str) -> io::Result<()> {
-    context.func.aarch64_fp_spill_keep_pairs =
-        std::env::var_os("MECH_COMPACT_FP_SPILL_KEEP_PAIRS").is_some();
-    if let Ok(selection) = std::env::var("MECH_COMPACT_FP_SPILL_SLOTS") {
+pub(super) fn apply_fp_spill_cache(
+    compiler_inputs: &CompilationInputs,
+    context: &mut Context,
+    symbol: &str,
+) -> io::Result<()> {
+    context.func.aarch64_fp_spill_keep_pairs = compiler_inputs
+        .var_os("MECH_COMPACT_FP_SPILL_KEEP_PAIRS")
+        .is_some();
+    if let Ok(selection) = compiler_inputs.var("MECH_COMPACT_FP_SPILL_SLOTS") {
         for entry in selection.split(';') {
             let (name, count) = entry
                 .split_once('@')
@@ -56,18 +69,30 @@ pub(super) fn apply_fp_spill_cache(context: &mut Context, symbol: &str) -> io::R
     Ok(())
 }
 
-fn read(profiles: &str, symbol: &str) -> io::Result<Option<Profile>> {
+fn read(
+    compiler_inputs: &CompilationInputs,
+    profiles: &str,
+    symbol: &str,
+) -> io::Result<Option<Profile>> {
     profiles
         .split(';')
         .filter_map(|entry| entry.split_once('@'))
         .find_map(|(name, path)| (name == symbol).then_some(path))
-        .map(|path| Ok(serde_json::from_slice(&std::fs::read(path)?)?))
+        .map(|path| {
+            Ok(serde_json::from_slice(
+                compiler_inputs.profile(Path::new(path))?,
+            )?)
+        })
         .transpose()
 }
 
-pub(super) fn apply(context: &mut Context, symbol: &str) -> io::Result<()> {
-    if let Some(profiles) = profiles()
-        && let Some(profile) = read(&profiles, symbol)?
+pub(super) fn apply(
+    compiler_inputs: &CompilationInputs,
+    context: &mut Context,
+    symbol: &str,
+) -> io::Result<()> {
+    if let Some(profiles) = profiles(compiler_inputs)
+        && let Some(profile) = read(compiler_inputs, &profiles, symbol)?
     {
         context.func.aarch64_block_layout = profile.order;
         context.func.aarch64_block_layout_literal_start = profile.literal_offset;
@@ -78,32 +103,70 @@ pub(super) fn apply(context: &mut Context, symbol: &str) -> io::Result<()> {
 
 /// Register weights refer to the full lowered VCode, rather than byte offsets
 /// in a previously allocated machine body. Validation occurs after lowering.
-pub(super) fn apply_register_weights(context: &mut Context, symbol: &str) -> io::Result<()> {
-    apply_comparison_options(context, symbol);
+pub(super) fn apply_register_weights(
+    compiler_inputs: &CompilationInputs,
+    context: &mut Context,
+    symbol: &str,
+) -> io::Result<()> {
+    apply_comparison_options(compiler_inputs, context, symbol);
     #[derive(serde::Deserialize)]
     struct RegisterWeights {
         expected_vcode: String,
         block_frequencies: Vec<u32>,
     }
-    if let Ok(profiles) = std::env::var("MECH_COMPACT_PHASE_REGISTER_WEIGHTS")
+    if let Ok(profiles) = compiler_inputs.var("MECH_COMPACT_PHASE_REGISTER_WEIGHTS")
         && let Some(path) = profiles
             .split(';')
             .filter_map(|entry| entry.split_once('@'))
             .find_map(|(name, path)| (name == symbol).then_some(path))
     {
-        let weights: RegisterWeights = serde_json::from_slice(&std::fs::read(path)?)?;
+        let weights: RegisterWeights =
+            serde_json::from_slice(compiler_inputs.profile(Path::new(path))?)?;
         context.func.regalloc_block_frequencies =
             Some((weights.expected_vcode, weights.block_frequencies));
     }
     Ok(())
 }
 
+#[cfg(test)]
+#[test]
+fn phase_layout_consumes_captured_bytes_and_defers_profile_errors() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("layout.json");
+    std::fs::write(&path, br#"{"order":[0,8],"literal_offset":12}"#).unwrap();
+    let capture = || {
+        CompilationInputs::capture([(
+            "MECH_COMPACT_PHASE_BLOCK_LAYOUT".into(),
+            format!("selected@{}", path.display()).into(),
+        )])
+    };
+    let original = capture();
+    std::fs::write(&path, b"malformed").unwrap();
+    let malformed = capture();
+    std::fs::remove_file(&path).unwrap();
+    let missing = capture();
+    let mut context = Context::new();
+    apply(&original, &mut context, "selected").unwrap();
+    assert_eq!(context.func.aarch64_block_layout, [0, 8]);
+    assert_eq!(context.func.aarch64_block_layout_literal_start, Some(12));
+    apply(&malformed, &mut context, "irrelevant").unwrap();
+    assert!(apply(&malformed, &mut context, "selected").is_err());
+    apply(&missing, &mut context, "irrelevant").unwrap();
+    assert_eq!(
+        apply(&missing, &mut context, "selected")
+            .unwrap_err()
+            .kind(),
+        io::ErrorKind::NotFound,
+    );
+}
+
 pub(super) fn pad_object_tail(
+    compiler_inputs: &CompilationInputs,
     profiles: &str,
     symbol: &str,
     code: &mut Box<[u8]>,
 ) -> io::Result<()> {
-    if let Some(profile) = read(profiles, symbol)?
+    if let Some(profile) = read(compiler_inputs, profiles, symbol)?
         && let Some(tail) = profile.object_tail
     {
         if profile.order.is_empty() {
@@ -125,11 +188,12 @@ pub(super) fn pad_object_tail(
 }
 
 pub(super) fn pad_checked_root_tail(
+    compiler_inputs: &CompilationInputs,
     profile: &Path,
     alignment: u32,
     code: &mut Box<[u8]>,
 ) -> io::Result<()> {
-    let tail: ObjectTail = serde_json::from_slice(&std::fs::read(profile)?)?;
+    let tail: ObjectTail = serde_json::from_slice(compiler_inputs.profile(profile)?)?;
     let alignment = alignment as usize;
     let padding = tail
         .padding(code.len())
@@ -206,4 +270,23 @@ mod tests {
             None
         );
     }
+}
+
+#[cfg(test)]
+#[test]
+fn comparison_options_use_captured_phase_selection() {
+    let inputs = CompilationInputs::capture([(
+        "MECH_COMPACT_CCMP_IMMEDIATES".into(),
+        "first;selected".into(),
+    )]);
+    let mut selected = Context::new();
+    let mut other = Context::new();
+    apply_comparison_options(&inputs, &mut selected, "selected");
+    apply_comparison_options(&inputs, &mut other, "other");
+    assert!(selected.func.aarch64_ccmp_immediates);
+    assert!(!other.func.aarch64_ccmp_immediates);
+    let inputs =
+        CompilationInputs::capture([("MECH_COMPACT_CCMP_IMMEDIATES".into(), "all".into())]);
+    apply_comparison_options(&inputs, &mut other, "other");
+    assert!(other.func.aarch64_ccmp_immediates);
 }

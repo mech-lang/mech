@@ -567,7 +567,11 @@ impl<I: VCodeInst> VCodeBuilder<I> {
         }
     }
 
-    fn rewrite_branch_successors(&mut self, vregs: &VRegAllocator<I>) {
+    fn rewrite_branch_successors(
+        &mut self,
+        vregs: &VRegAllocator<I>,
+        isa: &dyn crate::isa::TargetIsa,
+    ) {
         for (index, range) in self.vcode.block_ranges.iter() {
             let block = BlockIndex::new(index);
             if range.len() < 2 || self.vcode.block_succs(block).len() != 2 {
@@ -592,6 +596,7 @@ impl<I: VCodeInst> VCodeBuilder<I> {
                 let canonical = |reg: Reg| Reg::from(vregs.resolve_vreg_alias(reg.into()));
                 if let Some(([first, branch], offset, replacement)) =
                     I::preallocation_rewrite_branch(
+                        isa,
                         &self.vcode.insts[tail.clone()],
                         &self.vcode.insts[arms.start..arms.start + count],
                         canonical,
@@ -607,13 +612,17 @@ impl<I: VCodeInst> VCodeBuilder<I> {
     }
 
     /// Build the final VCode.
-    pub fn build(mut self, mut vregs: VRegAllocator<I>, flags: &settings::Flags) -> VCode<I> {
+    pub fn build(
+        mut self,
+        mut vregs: VRegAllocator<I>,
+        isa: &dyn crate::isa::TargetIsa,
+    ) -> VCode<I> {
         self.vcode.vreg_types = take(&mut vregs.vreg_types);
 
         if self.direction == VCodeBuildDirection::Backward {
             self.reverse_and_finalize(&vregs);
         }
-        if I::preallocation_rewrite_enabled(flags)
+        if I::preallocation_rewrite_enabled(isa)
             && self.vcode.debug_value_labels.is_empty()
             && self.vcode.user_stack_maps.is_empty()
         {
@@ -637,12 +646,12 @@ impl<I: VCodeInst> VCodeBuilder<I> {
             }
         }
         self.compute_preds_from_succs();
-        if I::preallocation_branch_rewrite_enabled(flags)
+        if I::preallocation_branch_rewrite_enabled(isa)
             && self.vcode.debug_value_labels.is_empty()
             && self.vcode.user_stack_maps.is_empty()
             && self.vcode.debug_tags.is_empty()
         {
-            self.rewrite_branch_successors(&vregs);
+            self.rewrite_branch_successors(&vregs, isa);
         }
         self.collect_operands(&vregs);
 

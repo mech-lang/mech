@@ -30,7 +30,15 @@ fn unchanged_vector_minimum_skips_index_reconstruction_and_preserves_order() {
         let best = b.ins().load(types::I32, MemFlags::new(), input, 16);
         let positions = b.ins().load(types::I32X4, MemFlags::new(), positions, 0);
         let missing = b.ins().iconst(types::I32, -1);
-        let (minimum, winner) = super::winner::emit(&mut b, costs, positions, best, missing, defer);
+        let (minimum, winner) = super::winner::emit(
+            &crate::native_artifact::codegen::compilation_inputs::CompilationInputs::capture([]),
+            &mut b,
+            costs,
+            positions,
+            best,
+            missing,
+            defer,
+        );
         b.ins().store(MemFlags::new(), minimum, output, 0);
         b.ins().store(MemFlags::new(), winner, output, 4);
         b.ins().return_(&[winner]);
@@ -173,6 +181,7 @@ fn unchanged_vector_choice_keeps_full_item_and_maps_only_strict_winners() {
         let positions = b.ins().load(types::I32X4, MemFlags::new(), positions, 0);
         let missing = b.ins().iconst(types::I32, -1);
         let (minimum, item) = super::winner::emit_mapped(
+            &crate::native_artifact::codegen::compilation_inputs::CompilationInputs::capture([]),
             &mut b,
             costs,
             positions,

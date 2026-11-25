@@ -1,5 +1,6 @@
 //! Relate a packed tally to a current byte histogram through the checked source CFG.
 use super::{Output, Phase, function::Histogram};
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use crate::native_artifact::program::codegen::cfg_cleanup::bounded_byte_histogram::Admission;
 use crate::native_artifact::program::compact::{
     flow::Flow,
@@ -585,6 +586,7 @@ pub(in crate::native_artifact::program::compact) struct Route {
 
 pub(in crate::native_artifact::program::compact) fn define_seeded_histograms<M: Module>(
     module: &mut M,
+    compiler_inputs: &CompilationInputs,
     phases: &[&Phase],
     proofs: &[SeedProof],
 ) -> Result<BTreeMap<usize, Route>, NativeCompileError> {
@@ -617,7 +619,8 @@ pub(in crate::native_artifact::program::compact) fn define_seeded_histograms<M: 
             .eliminate_unreachable_code(module.isa())
             .map_err(backend)?;
         context.verify(module.isa()).map_err(backend)?;
-        let inspection = std::env::var_os("MECH_INSPECT_PHASE_REGISTER_PROFILE")
+        let inspection = compiler_inputs
+            .var_os("MECH_INSPECT_PHASE_REGISTER_PROFILE")
             .map(std::path::PathBuf::from)
             .filter(|path| path.file_stem().is_some_and(|stem| stem == name.as_str()));
         if let Some(path) = &inspection {
@@ -628,11 +631,12 @@ pub(in crate::native_artifact::program::compact) fn define_seeded_histograms<M: 
             .map_err(backend)?;
             context.set_disasm(true);
         }
-        phase_layout::apply_register_weights(&mut context, &name).map_err(backend)?;
+        phase_layout::apply_register_weights(compiler_inputs, &mut context, &name)
+            .map_err(backend)?;
         let id = module
             .declare_function(&name, Linkage::Local, &context.func.signature)
             .map_err(backend)?;
-        let (target, _) = define_body(module, id, &name, &mut context, None)?;
+        let (target, _) = define_body(compiler_inputs, module, id, &name, &mut context, None)?;
         let compiled = context
             .compiled_code()
             .ok_or_else(|| backend("seeded tally lacks code"))?;
@@ -653,7 +657,14 @@ pub(in crate::native_artifact::program::compact) fn define_seeded_histograms<M: 
         let entry_id = module
             .declare_function(&entry_name, Linkage::Local, &entry.func.signature)
             .map_err(backend)?;
-        let (target, _) = define_body(module, entry_id, &entry_name, &mut entry, None)?;
+        let (target, _) = define_body(
+            compiler_inputs,
+            module,
+            entry_id,
+            &entry_name,
+            &mut entry,
+            None,
+        )?;
         let adapter = entry
             .compiled_code()
             .ok_or_else(|| backend("seeded tally entry lacks code"))?;

@@ -88,7 +88,12 @@ fn unsigned_bits(dfg: &DataFlowGraph, value: Value, ty: Type) -> Option<u32> {
     masked(dfg, value, ty).map(|(_, mask)| 64 - mask.leading_zeros())
 }
 
-pub(super) fn lower(lower: &mut Lower<MInst>, inst: Inst) -> Option<InstOutput> {
+pub(super) fn lower(
+    lower: &mut Lower<MInst>,
+    inst: Inst,
+    mode: crate::isa::Aarch64MaskedFields,
+) -> Option<InstOutput> {
+    use crate::isa::Aarch64MaskedFields::{Off, Wide, WideCopy};
     let dfg = lower.dfg();
     let InstructionData::Binary {
         opcode: Opcode::Bor | Opcode::Bxor,
@@ -101,12 +106,11 @@ pub(super) fn lower(lower: &mut Lower<MInst>, inst: Inst) -> Option<InstOutput> 
     if !matches!(ty, I32 | I64) {
         return None;
     }
-    let mode = std::env::var_os("MECH_ARM64_INSERT_MASKED_FIELDS")?;
-    if mode != "1" && mode != "wide" && mode != "wide-copy" {
+    if mode == Off {
         return None;
     }
-    let tie = mode == "wide";
-    let wide = tie || mode == "wide-copy";
+    let tie = mode == Wide;
+    let wide = tie || mode == WideCopy;
     // Fixed-size, read-only preflight. The original producers retain any
     // independent uses; loads, stores, guards and arithmetic are never moved.
     let mut plan = None;

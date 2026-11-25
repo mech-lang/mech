@@ -1,4 +1,5 @@
 //! Optional shared pages for an already admitted, immutable byte lookup table.
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::{
     cursor::FuncCursor,
     ir::{InstBuilder, MemFlags, Value, types},
@@ -11,8 +12,9 @@ pub(super) struct Packed {
     pub bytes: Box<[u8]>,
 }
 
-pub(super) fn selected_shift() -> Option<u8> {
-    std::env::var("MECH_COMPOSE_IMMUTABLE_COST_CODE_PAGE_SHIFT")
+pub(super) fn selected_shift(compiler_inputs: &CompilationInputs) -> Option<u8> {
+    compiler_inputs
+        .var("MECH_COMPOSE_IMMUTABLE_COST_CODE_PAGE_SHIFT")
         .ok()?
         .parse::<u8>()
         .ok()

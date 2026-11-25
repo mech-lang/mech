@@ -2,6 +2,7 @@ use super::{
     Candidate, CaptureBindings, RegionKind, controller_candidates, share, share_controllers,
     share_families, share_phase_regions,
 };
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::ir::{
     AbiParam, InstBuilder, MemFlags, StackSlotData, StackSlotKind, condcodes::IntCC, types,
 };
@@ -129,10 +130,17 @@ fn define(
         .unwrap();
     if enabled {
         let report = if extra_inputs == 0 {
-            share(module, &mut ctx.func, BTreeMap::from([(id, parts)]), false)
+            share(
+                &CompilationInputs::capture([]),
+                module,
+                &mut ctx.func,
+                BTreeMap::from([(id, parts)]),
+                false,
+            )
         } else {
             assert!(
                 share_families(
+                    &CompilationInputs::capture([]),
                     module,
                     &mut ctx.func,
                     vec![parts.clone()],
@@ -144,6 +152,7 @@ fn define(
                 .is_none()
             );
             share_phase_regions(
+                &CompilationInputs::capture([]),
                 module,
                 &mut ctx.func,
                 vec![parts],
@@ -336,6 +345,7 @@ fn define_controller(
             candidate.header += 100;
         }
         let report = share_controllers(
+            &CompilationInputs::capture([]),
             module,
             &mut ctx.func,
             vec![candidates],
@@ -520,6 +530,7 @@ fn check_nested_continuation(direct_inputs: usize, register_outputs: bool, offse
     b.seal_all_blocks();
     b.finalize();
     let leaves = share_controllers(
+        &CompilationInputs::capture([]),
         &mut module,
         &mut ctx.func,
         vec![inner],
@@ -532,6 +543,7 @@ fn check_nested_continuation(direct_inputs: usize, register_outputs: bool, offse
     .unwrap();
     assert_eq!(leaves[0]["headers"], serde_json::json!([30, 90]));
     let callers = share_families(
+        &CompilationInputs::capture([]),
         &mut module,
         &mut ctx.func,
         vec![outer],
@@ -636,6 +648,7 @@ fn direct_refusal_shares_a_bound_used_by_multiple_constants() {
     b.seal_all_blocks();
     b.finalize();
     let report = share_families(
+        &CompilationInputs::capture([]),
         &mut module,
         &mut context.func,
         candidates
@@ -735,6 +748,7 @@ fn single_phase_keeps_live_outs_partial_writes_and_a_bypassed_failure() {
     b.finalize();
 
     let report = share_phase_regions(
+        &CompilationInputs::capture([]),
         &mut module,
         &mut context.func,
         vec![vec![Candidate {
@@ -838,7 +852,13 @@ fn captured_heap_setup_uses_each_phase_frame_and_refuses_a_non_entry_load() {
         b.ins().return_(&[sum, carried]);
         b.seal_all_blocks();
         b.finalize();
-        let stubs = ReleaseStubs::prepare_captured(&mut module, &mut context.func, phase).unwrap();
+        let stubs = ReleaseStubs::prepare_captured(
+            &crate::native_artifact::codegen::compilation_inputs::CompilationInputs::capture([]),
+            &mut module,
+            &mut context.func,
+            phase,
+        )
+        .unwrap();
         assert_eq!(stubs.is_some(), !non_entry);
         context.verify(module.isa()).unwrap();
         let id = module
@@ -938,6 +958,7 @@ fn phase_regions_keep_the_value_used_after_success_and_the_shared_failure() {
     b.seal_all_blocks();
     b.finalize();
     let report = share_phase_regions(
+        &CompilationInputs::capture([]),
         &mut module,
         &mut context.func,
         vec![sites],
@@ -1004,6 +1025,7 @@ fn shared_body_takes_distinct_operand_roles_even_when_a_caller_repeats_a_value()
     b.seal_all_blocks();
     b.finalize();
     let report = share_controllers(
+        &CompilationInputs::capture([]),
         &mut module,
         &mut context.func,
         vec![sites],
@@ -1108,6 +1130,7 @@ fn verify_loop_output_packets(bindings: CaptureBindings) {
     b.finalize();
     assert!(
         share_controllers(
+            &CompilationInputs::capture([]),
             &mut module,
             &mut context.func.clone(),
             vec![candidates.clone()],
@@ -1116,9 +1139,15 @@ fn verify_loop_output_packets(bindings: CaptureBindings) {
         .unwrap()
         .is_none()
     );
-    let report = share_controllers(&mut module, &mut context.func, vec![candidates], bindings)
-        .unwrap()
-        .expect("the checked bodies publish the same union of three words");
+    let report = share_controllers(
+        &CompilationInputs::capture([]),
+        &mut module,
+        &mut context.func,
+        vec![candidates],
+        bindings,
+    )
+    .unwrap()
+    .expect("the checked bodies publish the same union of three words");
     assert_eq!(report[0]["aligned_outputs"], true);
     assert_eq!(
         report[0]["packet_words"],

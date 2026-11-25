@@ -1,5 +1,9 @@
 //! ABI16 facade over the SAME canonical iteration CFG definition pass.
+use super::compilation_report::{
+    Measurements, NativeCompilationReport, NativeCompilerConfiguration,
+};
 use crate::native_artifact::codegen::backend as codegen_backend;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use crate::native_artifact::codegen::control::plan::CodePlan;
 use crate::native_artifact::compiler::{backend, host_supported};
 use crate::native_artifact::program::image::NativeCodeFootprint;
@@ -86,15 +90,17 @@ impl JitProgramArtifact {
         options: &crate::native_artifact::codegen::options::OptimizationOptions,
     ) -> Result<Self, NativeCompileError> {
         host_supported()?;
+        let inputs = CompilationInputs::legacy();
         let plan = lower_native_program_artifact_with_definition_table_limit(
             artifact,
             catalog,
             limits.max_definition_table_bytes,
         )
         .map_err(backend)?;
-        let mut module = codegen_backend::jit(PROGRAM_CODEGEN_FLAGS)?;
+        let mut module = codegen_backend::jit_with_inputs(PROGRAM_CODEGEN_FLAGS, &inputs)?;
         preflight(&plan, &module, limits)?;
-        let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
+        let prepared = PreparedNativeProgram::prepare_with_inputs(artifact, catalog, plan, &inputs)
+            .map_err(backend)?;
         let (function, stack, code, _codegen) =
             crate::native_artifact::codegen::control::define_cfg(
                 CodePlan::Program(&prepared),
@@ -103,6 +109,7 @@ impl JitProgramArtifact {
                 &mut module,
                 limits,
                 options,
+                &inputs,
             )?;
         let descriptor = NativeProgramDescriptor::from_prepared(
             prepared,
@@ -373,15 +380,18 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
     options: &crate::native_artifact::codegen::options::OptimizationOptions,
 ) -> Result<NativeProgramObject, NativeCompileError> {
     host_supported()?;
+    let inputs = CompilationInputs::legacy();
     let plan = lower_native_program_artifact_with_definition_table_limit(
         artifact,
         catalog,
         limits.max_definition_table_bytes,
     )
     .map_err(backend)?;
-    let mut module = codegen_backend::object("mech_canonical_program", PROGRAM_CODEGEN_FLAGS)?;
+    let (mut module, _) =
+        codegen_backend::object_with_isa("mech_canonical_program", PROGRAM_CODEGEN_FLAGS, &inputs)?;
     preflight(&plan, &module, limits)?;
-    let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
+    let prepared = PreparedNativeProgram::prepare_with_inputs(artifact, catalog, plan, &inputs)
+        .map_err(backend)?;
     let (entry, stack, code, codegen) = crate::native_artifact::codegen::control::define_cfg(
         CodePlan::Program(&prepared),
         ENTRY,
@@ -389,6 +399,7 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
         &mut module,
         limits,
         options,
+        &inputs,
     )?;
     finish_program_object(
         module,
@@ -528,6 +539,7 @@ pub fn compact_native_layout_for_diagnostic(
     artifact: &ProgramArtifact,
     catalog: &FunctionCatalog,
 ) -> Result<serde_json::Value, NativeCompileError> {
+    let compiler_inputs = CompilationInputs::legacy();
     let limits = crate::native_artifact::NativeProgramLimitMode::NoLimits.compilation();
     let plan = lower_native_program_artifact_with_definition_table_limit(
         artifact,
@@ -536,10 +548,16 @@ pub fn compact_native_layout_for_diagnostic(
     )
     .map_err(backend)?;
     let mut inventory = crate::native_artifact::program::compact::inventory(&plan)?;
-    if std::env::var_os("MECH_COMPACT_PROOF_INVENTORY").is_some() {
-        let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
+    if compiler_inputs
+        .var_os("MECH_COMPACT_PROOF_INVENTORY")
+        .is_some()
+    {
+        let prepared =
+            PreparedNativeProgram::prepare_with_inputs(artifact, catalog, plan, &compiler_inputs)
+                .map_err(backend)?;
         let meta = prepared.metadata();
-        let complete_headers = std::env::var("MECH_COMPACT_COMPLETE_PROOF_HEADERS")
+        let complete_headers = compiler_inputs
+            .var("MECH_COMPACT_COMPLETE_PROOF_HEADERS")
             .ok()
             .map(|text| {
                 text.split(',')
@@ -581,26 +599,67 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
     catalog: &FunctionCatalog,
     observe: bool,
 ) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
-    host_supported()?;
-    eprintln!("compact-stage: canonical lowering");
-    let limits = crate::native_artifact::NativeProgramLimitMode::NoLimits.compilation();
-    let plan = lower_native_program_artifact_with_definition_table_limit(
+    emit_compact_with_inputs(
         artifact,
         catalog,
-        limits.max_definition_table_bytes,
+        observe,
+        &CompilationInputs::legacy(),
+        None,
     )
-    .map_err(backend)?;
+}
+
+/// Compile the compact diagnostic with explicit immutable settings and optional host reporting.
+#[doc(hidden)]
+pub fn emit_compact_closed_object_with_configuration_for_diagnostic(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    configuration: &NativeCompilerConfiguration,
+    observe: bool,
+    report: Option<&mut NativeCompilationReport>,
+) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
+    emit_compact_with_inputs(artifact, catalog, observe, &configuration.0, report)
+}
+
+fn emit_compact_with_inputs(
+    artifact: &ProgramArtifact,
+    catalog: &FunctionCatalog,
+    observe: bool,
+    compiler_inputs: &CompilationInputs,
+    report: Option<&mut NativeCompilationReport>,
+) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
+    host_supported()?;
+    let mut measurements = Measurements(report);
+    measurements.identify(
+        || format!("{:?}", artifact.revision()),
+        compiler_inputs,
+        observe,
+    );
+    eprintln!("compact-stage: canonical lowering");
+    let limits = crate::native_artifact::NativeProgramLimitMode::NoLimits.compilation();
+    let plan = measurements
+        .stage("native_plan", || {
+            lower_native_program_artifact_with_definition_table_limit(
+                artifact,
+                catalog,
+                limits.max_definition_table_bytes,
+            )
+        })
+        .map_err(backend)?;
     eprintln!(
         "compact-stage: preparation blocks={} values={}",
         plan.blocks().len(),
         plan.values().len()
     );
-    let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
+    let prepared = measurements
+        .stage("prepare", || {
+            PreparedNativeProgram::prepare_with_inputs(artifact, catalog, plan, compiler_inputs)
+        })
+        .map_err(backend)?;
     eprintln!("compact-stage: native module");
     let mut flags = PROGRAM_CODEGEN_FLAGS.to_vec();
     if cfg!(target_arch = "aarch64")
         && !observe
-        && let Some(mode) = std::env::var_os("MECH_COMPACT_PAIR_REGISTER_SPILLS")
+        && let Some(mode) = compiler_inputs.var_os("MECH_COMPACT_PAIR_REGISTER_SPILLS")
     {
         flags.push(("enable_regalloc_spill_pairs", "true"));
         if mode == "checked" {
@@ -609,7 +668,7 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
     }
     if cfg!(target_arch = "aarch64")
         && !observe
-        && let Some(mode) = std::env::var_os("MECH_COMPACT_FOLD_INVERTED_CSET")
+        && let Some(mode) = compiler_inputs.var_os("MECH_COMPACT_FOLD_INVERTED_CSET")
     {
         flags.push(("enable_inverted_cset_folding", "true"));
         if mode == "branch" || mode == "select" {
@@ -621,11 +680,15 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
     }
     if cfg!(target_arch = "aarch64")
         && !observe
-        && std::env::var_os("MECH_COMPACT_FOLD_REDUNDANT_ZERO").is_some()
+        && compiler_inputs
+            .var_os("MECH_COMPACT_FOLD_REDUNDANT_ZERO")
+            .is_some()
     {
         flags.push(("enable_redundant_zero_folding", "true"));
     }
-    let alignment = std::env::var("MECH_COMPACT_FUNCTION_ALIGNMENT_LOG2").ok();
+    let alignment = compiler_inputs
+        .var("MECH_COMPACT_FUNCTION_ALIGNMENT_LOG2")
+        .ok();
     if cfg!(target_arch = "aarch64")
         && !observe
         && let Some(alignment) = alignment.as_deref()
@@ -637,9 +700,23 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
         }
         flags.push(("log2_min_function_alignment", alignment));
     }
-    let direct_literals =
-        !observe && std::env::var_os("MECH_COMPACT_DIRECT_ENTRY_LITERALS").is_some();
-    let emit = |direct| emit_prepared_compact_object(&prepared, observe, &flags, direct);
+    let direct_literals = !observe
+        && compiler_inputs
+            .var_os("MECH_COMPACT_DIRECT_ENTRY_LITERALS")
+            .is_some();
+    let mut emit = |direct| {
+        measurements.start_attempt(direct);
+        let result = emit_prepared_compact_object(
+            &prepared,
+            observe,
+            &flags,
+            direct,
+            compiler_inputs,
+            &mut measurements,
+        );
+        measurements.finish_attempt(&result);
+        result
+    };
     match emit(direct_literals) {
         Err(error) if direct_literals => {
             eprintln!("compact-stage: direct literal attempt withdrew: {error}");
@@ -652,42 +729,67 @@ pub fn emit_compact_closed_object_with_phase_observer_for_diagnostic(
 fn emit_prepared_compact_object(
     prepared: &PreparedNativeProgram,
     observe: bool,
-    flags: &[(&str, &str)],
+    flags: &[(&'static str, &str)],
     direct_literals: bool,
+    compiler_inputs: &CompilationInputs,
+    measurements: &mut Measurements<'_>,
 ) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
-    let (object, isa) = codegen_backend::object_with_isa("mech_compact_closed_diagnostic", flags)?;
-    let mut module = super::compact::PreparedObject::new(object);
-    if !observe && let Ok(mode) = std::env::var("MECH_COMPACT_DIRECT_RUNTIME_CALLS") {
+    let (object, isa) = measurements.stage("module_setup", || {
+        codegen_backend::object_with_isa("mech_compact_closed_diagnostic", flags, compiler_inputs)
+    })?;
+    let mut module = super::compact::PreparedObject::new(object, compiler_inputs);
+    if !observe && let Ok(mode) = compiler_inputs.var("MECH_COMPACT_DIRECT_RUNTIME_CALLS") {
         module.use_direct_runtime_calls(&mode);
     }
     let direct_runtime_calls = module.direct_runtime_calls();
-    let threads = std::env::var("MECH_COMPACT_COMPILE_THREADS")
+    let threads = compiler_inputs
+        .var("MECH_COMPACT_COMPILE_THREADS")
         .ok()
         .and_then(|value| value.parse::<usize>().ok())
         .unwrap_or(0)
         .min(4);
-    let share_phase_bodies = std::env::var_os("MECH_COMPACT_SHARE_PHASE_BODIES").is_some();
-    let metadata = if threads == 0 && !direct_literals {
-        super::compact::define(&mut module, prepared, observe, share_phase_bodies)?
-    } else {
-        super::compact::define_with_isa(
-            &mut module,
-            prepared,
-            observe,
-            share_phase_bodies,
-            isa,
-            threads,
-            direct_runtime_calls,
-            direct_literals,
-        )?
-    };
-    if !observe && std::env::var_os("MECH_COMPACT_EXPORTS_FIRST").is_some() {
+    let share_phase_bodies = compiler_inputs
+        .var_os("MECH_COMPACT_SHARE_PHASE_BODIES")
+        .is_some();
+    measurements.module(isa.as_ref(), flags, threads);
+    let metadata = measurements.stage("lower_and_define", || {
+        if threads == 0 && !direct_literals {
+            super::compact::define(&mut module, prepared, observe, share_phase_bodies)
+        } else {
+            super::compact::define_with_isa(
+                &mut module,
+                prepared,
+                observe,
+                share_phase_bodies,
+                isa,
+                threads,
+                direct_runtime_calls,
+                direct_literals,
+            )
+        }
+    })?;
+    if !observe
+        && compiler_inputs
+            .var_os("MECH_COMPACT_EXPORTS_FIRST")
+            .is_some()
+    {
         module.place_exports_first();
     }
-    if !observe && std::env::var_os("MECH_COMPACT_LAYOUT_REGIONS_LAST").is_some() {
+    if !observe
+        && compiler_inputs
+            .var_os("MECH_COMPACT_LAYOUT_REGIONS_LAST")
+            .is_some()
+    {
         module.place_layout_regions_last();
     }
-    let bytes = module.finish().map_err(backend)?.emit().map_err(backend)?;
+    let product = measurements
+        .stage("object_finalization", || module.finish())
+        .map_err(backend)?;
+    measurements.object(&product);
+    let bytes = measurements
+        .stage("object_serialization", || product.emit())
+        .map_err(backend)?;
+    measurements.object_bytes(bytes.len());
     Ok((bytes, metadata))
 }
 
@@ -704,6 +806,7 @@ pub fn emit_minimal_numeric_object_for_diagnostic(
     use cranelift_codegen::ir::{AbiParam, InstBuilder, MemFlags, types};
     use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
     host_supported()?;
+    let inputs = CompilationInputs::legacy();
     let limits = crate::native_artifact::NativeProgramLimitMode::NoLimits.compilation();
     let plan = lower_native_program_artifact_with_definition_table_limit(
         artifact,
@@ -711,12 +814,16 @@ pub fn emit_minimal_numeric_object_for_diagnostic(
         limits.max_definition_table_bytes,
     )
     .map_err(backend)?;
-    let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
-    let mut module =
-        codegen_backend::object("mech_minimal_numeric_diagnostic", PROGRAM_CODEGEN_FLAGS)?;
+    let prepared = PreparedNativeProgram::prepare_with_inputs(artifact, catalog, plan, &inputs)
+        .map_err(backend)?;
+    let (mut module, _) = codegen_backend::object_with_isa(
+        "mech_minimal_numeric_diagnostic",
+        PROGRAM_CODEGEN_FLAGS,
+        &inputs,
+    )?;
     let code = CodePlan::Program(&prepared);
     let closed = &prepared.metadata().closed_tails;
-    let controls = CompilationControls::new(OptimizationOptions::default());
+    let controls = CompilationControls::with_inputs(OptimizationOptions::default(), &inputs);
     let mut reports = Vec::new();
     let mut functions = Vec::new();
     for (id, region) in closed.regions.iter().enumerate() {

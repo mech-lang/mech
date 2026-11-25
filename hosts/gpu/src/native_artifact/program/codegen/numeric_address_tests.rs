@@ -77,11 +77,12 @@ fn general_numeric_addresses_emit_one_machine_division() {
     for width in [1, 2, 4, 8] {
         let (_module, _, assembly) = native_address(width);
         if cfg!(target_arch = "aarch64") {
-            let divisions = assembly
+            let emitted = assembly.split(";; REGALLOC_INPUT_BEGIN").next().unwrap();
+            let divisions = emitted
                 .lines()
                 .filter(|line| line.contains("udiv "))
                 .count();
-            assert_eq!(divisions, 1, "width={width}\n{assembly}");
+            assert_eq!(divisions, 1, "width={width}\n{emitted}");
         }
         let function = address_function(&general_schema(width), width);
         let divisions = function

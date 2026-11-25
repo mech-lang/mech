@@ -1,4 +1,5 @@
 use super::rotate;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::{
     Context,
     ir::{AbiParam, InstBuilder, MemFlags, condcodes::IntCC, types},
@@ -117,6 +118,7 @@ fn preserves_the_initial_test_typed_results_and_every_reached_visit() {
     let mut candidate = fixture(&module, Shape::Current);
     candidate.flowgraph();
     assert!(rotate(
+        &CompilationInputs::capture([]),
         &mut candidate.func,
         &candidate.cfg,
         &candidate.domtree
@@ -170,7 +172,12 @@ fn refuses_a_changing_stop_observable_corridor_and_computed_exit() {
         context.verify(module.isa()).unwrap();
         let previous = context.func.display().to_string();
         assert!(
-            !rotate(&mut context.func, &context.cfg, &context.domtree),
+            !rotate(
+                &CompilationInputs::capture([]),
+                &mut context.func,
+                &context.cfg,
+                &context.domtree
+            ),
             "{shape:?}"
         );
         assert_eq!(context.func.display().to_string(), previous);

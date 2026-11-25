@@ -7,6 +7,7 @@ use super::{
     recipes::Recipe,
 };
 use crate::native_artifact::codegen::common::ssa_words::Words;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{
@@ -145,6 +146,7 @@ fn scalar_read(layout: &Layout, actions: &[Recipe], site: usize, current: V) -> 
 }
 
 pub(super) fn derive(
+    compiler_inputs: &CompilationInputs,
     plan: &Plan,
     layout: &Layout,
     flow: &Flow,
@@ -154,7 +156,9 @@ pub(super) fn derive(
     retire_before_change: &[Vec<usize>],
     boundaries: &BTreeSet<usize>,
 ) -> Vec<Chain> {
-    let permit_reads = std::env::var_os("MECH_PRIVATE_READ_INTERVALS").is_some();
+    let permit_reads = compiler_inputs
+        .var_os("MECH_PRIVATE_READ_INTERVALS")
+        .is_some();
     let mut predecessors = vec![BTreeSet::new(); actions.len()];
     for (site, edges) in flow.successors.iter().enumerate() {
         if flow.reachable[site] {
@@ -295,7 +299,7 @@ mod tests {
                 .map(|site| recipes::derive(&plan, &layout, site).unwrap())
                 .collect::<Vec<_>>();
             let owners = OwnerFlow::derive(&plan, &layout, &flow, &actions).unwrap();
-            let guards = Guards::derive(&plan, &flow);
+            let guards = Guards::derive(&plan, &flow, false);
             let mut consuming = vec![false; actions.len()];
             let mut results = vec![None; actions.len()];
             let mut retirements = vec![Vec::new(); actions.len()];
@@ -341,6 +345,7 @@ mod tests {
         }
         fn chains(&self) -> Vec<Chain> {
             derive(
+                &CompilationInputs::capture([]),
                 &self.plan,
                 &self.layout,
                 &self.flow,

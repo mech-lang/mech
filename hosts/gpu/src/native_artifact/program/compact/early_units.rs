@@ -8,6 +8,7 @@ use super::{
     word_boundary::{Boundary, Effects, Expanded},
 };
 use crate::native_artifact::codegen::common::ssa_words::Words;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use crate::native_artifact::{
     NativeCompileError,
     compiler::{backend, offset},
@@ -70,6 +71,7 @@ impl<'a> View<'a> {
 
 impl Split {
     pub fn derive<M: Module>(
+        compiler_inputs: &CompilationInputs,
         module: &mut M,
         plan: &Plan,
         layout: &Layout,
@@ -348,7 +350,9 @@ impl Split {
         // position, and this synchronous unit alone reads/writes it. Returning
         // immediately on error preserves the existing invocation cleanup.
         let inout_owners = if memory
-            && std::env::var_os("MECH_COMPACT_SOURCE_OWNER_HOMES").is_some()
+            && compiler_inputs
+                .var_os("MECH_COMPACT_SOURCE_OWNER_HOMES")
+                .is_some()
         {
             boundary
                 .inputs
@@ -362,20 +366,22 @@ impl Split {
         } else {
             BTreeMap::new()
         };
-        let output_scratch = std::env::var_os("MECH_COMPACT_SOURCE_OUTPUT_SCRATCH").map(|_| {
-            phases
-                .iter()
-                .filter(|phase| {
-                    typed.owners[phase.header] == Some(1)
-                        && phase
-                            .destinations()
-                            .iter()
-                            .all(|&exit| unit_reaches(phase.header, exit))
-                })
-                .map(|phase| phase.packet_words().1)
-                .max()
-                .unwrap_or(0)
-        });
+        let output_scratch = compiler_inputs
+            .var_os("MECH_COMPACT_SOURCE_OUTPUT_SCRATCH")
+            .map(|_| {
+                phases
+                    .iter()
+                    .filter(|phase| {
+                        typed.owners[phase.header] == Some(1)
+                            && phase
+                                .destinations()
+                                .iter()
+                                .all(|&exit| unit_reaches(phase.header, exit))
+                    })
+                    .map(|phase| phase.packet_words().1)
+                    .max()
+                    .unwrap_or(0)
+            });
         let mut root_words = graph.root_words(&model.unit_sites(&typed.root_sites), &boundary);
         root_words.extend(&zero_outputs);
         for value in flow.inputs.iter().chain(&flow.outputs) {

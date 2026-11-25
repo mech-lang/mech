@@ -2,6 +2,13 @@
 
 The maintained path is source/bytecode → canonical `ProgramArtifact` → checked native plan → shared JIT/Object emission → current execution. Engine owns language semantics. Native preparation selects representations; runtime image restoration independently reconstructs their source facts. The current retained versions are **IR177 / work107 / private ABI39 / bytecode14**. [Current milestone and qualification](https://github.com/mech-lang/benchmarks/blob/4fb50f3879599b4a799e85a73fa39eccd8706e2c/archive/compiler/mech-pr-973-9087b1f077/source/docs/design/native-compression-status.md).
 
+Cranelift is the sole native code generator for Mech source. The compact
+diagnostic captures each compilation's compiler settings and selected profile
+contents before lowering. The host report observes that compilation alongside
+its existing descriptor. The proposed library boundary records separate
+admission, ownership and resource guarantees for callers.
+[Compiler inputs](native-compiler-inputs.md) · [Closed library contract](native-closed-library.md)
+
 ## Responsibilities and authority
 
 ```mermaid

@@ -1,5 +1,6 @@
 //! Retain one definition for identical local direct-call numeric bodies.
 use super::body_relocations::matching_relocations;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use crate::native_artifact::{NativeCompileError, compiler::backend};
 use cranelift_codegen::{Context, control::ControlPlane, ir::Signature};
 use cranelift_module::{FuncId, Module, ModuleError, ModuleReloc};
@@ -28,22 +29,26 @@ impl PhaseBodies {
 }
 
 pub(super) fn define_body<M: Module>(
+    compiler_inputs: &CompilationInputs,
     module: &mut M,
     function: FuncId,
     symbol: &str,
     context: &mut Context,
     bodies: Option<&mut PhaseBodies>,
 ) -> Result<(FuncId, String), NativeCompileError> {
-    prepare_body(module.isa(), context)?;
+    super::phase_layout::apply_comparison_options(compiler_inputs, context, symbol);
+    prepare_body(compiler_inputs, module.isa(), context)?;
     define_prepared_body(module, function, symbol, context, bodies)
 }
 
 pub(super) fn prepare_body(
+    compiler_inputs: &CompilationInputs,
     isa: &dyn cranelift_codegen::isa::TargetIsa,
     context: &mut Context,
 ) -> Result<(), NativeCompileError> {
     if super::word_pairs::available(isa)
-        && std::env::var_os("MECH_COMPACT_PAIR_WORDS")
+        && compiler_inputs
+            .var_os("MECH_COMPACT_PAIR_WORDS")
             .is_some_and(|scope| scope == "helpers" || scope == "all")
     {
         let paired = super::word_pairs::fold(&mut context.func, None, false);
@@ -61,7 +66,6 @@ pub(super) fn define_prepared_body<M: Module>(
     context: &mut Context,
     bodies: Option<&mut PhaseBodies>,
 ) -> Result<(FuncId, String), NativeCompileError> {
-    super::phase_layout::apply_comparison_options(context, symbol);
     let Some(bodies) = bodies else {
         module.define_function(function, context).map_err(backend)?;
         return Ok((function, symbol.into()));

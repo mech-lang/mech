@@ -3,6 +3,7 @@
 //! proves those exact logical bounds. Only effect-free paths are bypassed;
 //! no read permission, index bound or work allowance grows.
 use super::window_bounds::comparison;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::{
     Context,
     cursor::{Cursor, FuncCursor},
@@ -296,9 +297,16 @@ impl Walk<'_> {
             call = destination;
         }
     }
-    fn trace(mut self, edge: usize, mut call: BlockCall) -> Option<Plan> {
+    fn trace(
+        mut self,
+        compiler_inputs: &CompilationInputs,
+        edge: usize,
+        mut call: BlockCall,
+    ) -> Option<Plan> {
         let inspect_word = self.word_difference.is_some()
-            && std::env::var_os("MECH_INSPECT_WORD_MISMATCH_ORDER").is_some();
+            && compiler_inputs
+                .var_os("MECH_INSPECT_WORD_MISMATCH_ORDER")
+                .is_some();
         let mut values = Values::new();
         let mut visited = BTreeSet::new();
         let mut reused = BTreeSet::new();
@@ -565,6 +573,7 @@ fn install(context: &mut Context, mut plan: Plan, repairs: Vec<(Value, Symbol)>)
 }
 
 pub(in crate::native_artifact) fn fold(
+    compiler_inputs: &CompilationInputs,
     context: &mut Context,
     immutable_bytes: &BTreeSet<Value>,
     bounded_reads: &[BoundedRead],
@@ -673,7 +682,7 @@ pub(in crate::native_artifact) fn fold(
                     word_difference: None,
                     byte_offset: None,
                 };
-                if let Some(found) = walk.trace(edge, call) {
+                if let Some(found) = walk.trace(compiler_inputs, edge, call) {
                     if let Some(repairs) = repairs(f, &context.domtree, &found, false) {
                         plan = Some((found, repairs));
                         break 'search;

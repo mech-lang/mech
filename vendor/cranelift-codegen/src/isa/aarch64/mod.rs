@@ -5,7 +5,10 @@ use crate::ir::{self, Function, Type};
 use crate::isa::aarch64::settings as aarch64_settings;
 #[cfg(feature = "unwind")]
 use crate::isa::unwind::systemv;
-use crate::isa::{Builder as IsaBuilder, FunctionAlignment, IsaFlagsHashKey, TargetIsa};
+use crate::isa::{
+    Aarch64CompilationOptions, Builder as IsaBuilder, FunctionAlignment, IsaFlagsHashKey,
+    OwnedTargetIsa, TargetIsa,
+};
 #[cfg(feature = "unwind")]
 use crate::machinst::CompiledCode;
 use crate::machinst::{
@@ -42,6 +45,7 @@ pub struct AArch64Backend {
     triple: Triple,
     flags: shared_settings::Flags,
     isa_flags: aarch64_settings::Flags,
+    compilation_options: Aarch64CompilationOptions,
 }
 
 impl AArch64Backend {
@@ -55,6 +59,7 @@ impl AArch64Backend {
             triple,
             flags,
             isa_flags,
+            compilation_options: Aarch64CompilationOptions::default(),
         }
     }
 
@@ -94,7 +99,7 @@ impl TargetIsa for AArch64Backend {
         }
 
         #[cfg(feature = "std")]
-        let inspect_spills = std::env::var_os("MECH_INSPECT_FP_SPILL_CACHE");
+        let inspect_spills = self.compilation_options.inspect_spill_cache.as_ref();
         #[cfg(feature = "std")]
         let inspect_requested = inspect_spills.is_some();
         #[cfg(not(feature = "std"))]
@@ -123,8 +128,7 @@ impl TargetIsa for AArch64Backend {
                 use core::hash::{Hash, Hasher};
                 let mut hash = std::collections::hash_map::DefaultHasher::new();
                 func.stencil.hash(&mut hash);
-                let directory = std::path::PathBuf::from(directory);
-                std::fs::create_dir_all(&directory).map_err(|e| {
+                std::fs::create_dir_all(directory).map_err(|e| {
                     crate::CodegenError::Unsupported(alloc::format!(
                         "spill inspection directory: {e}"
                     ))
@@ -235,6 +239,10 @@ impl TargetIsa for AArch64Backend {
 
     fn isa_flags_hash_key(&self) -> IsaFlagsHashKey<'_> {
         IsaFlagsHashKey(self.isa_flags.hash_key())
+    }
+
+    fn aarch64_compilation_options(&self) -> Option<&Aarch64CompilationOptions> {
+        Some(&self.compilation_options)
     }
 
     fn is_branch_protection_enabled(&self) -> bool {
@@ -404,4 +412,20 @@ pub fn isa_builder(triple: Triple) -> IsaBuilder {
             Ok(backend.wrapped())
         },
     }
+}
+
+pub(super) fn finish_with_options(
+    triple: Triple,
+    flags: shared_settings::Flags,
+    builder: &shared_settings::Builder,
+    compilation_options: Aarch64CompilationOptions,
+) -> OwnedTargetIsa {
+    let isa_flags = aarch64_settings::Flags::new(&flags, builder);
+    AArch64Backend {
+        triple,
+        flags,
+        isa_flags,
+        compilation_options,
+    }
+    .wrapped()
 }

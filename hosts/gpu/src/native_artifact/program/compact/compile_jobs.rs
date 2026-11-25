@@ -22,6 +22,7 @@ pub(super) struct Pool {
     submitted: std::cell::Cell<usize>,
     cleanup_submitted: std::cell::Cell<usize>,
     direct_runtime_calls: DirectRuntimeCalls,
+    log_jobs: bool,
 }
 
 pub(super) struct Ticket<T = Context>(mpsc::Receiver<Result<T, NativeCompileError>>);
@@ -31,6 +32,7 @@ impl Pool {
         isa: OwnedTargetIsa,
         count: usize,
         direct_runtime_calls: DirectRuntimeCalls,
+        log_jobs: bool,
     ) -> Result<Self, NativeCompileError> {
         assert!(count > 0);
         let (queue, jobs) = mpsc::sync_channel::<Job>(count);
@@ -42,6 +44,7 @@ impl Pool {
             submitted: std::cell::Cell::new(0),
             cleanup_submitted: std::cell::Cell::new(0),
             direct_runtime_calls,
+            log_jobs,
         };
         for index in 0..count {
             let jobs = jobs.clone();
@@ -220,7 +223,7 @@ mod tests {
             let (second, mut context) = later(&mut module);
             module.define_function(second, &mut context).unwrap();
         } else {
-            let pool = Pool::new(isa, count, DirectRuntimeCalls::default()).unwrap();
+            let pool = Pool::new(isa, count, DirectRuntimeCalls::default(), false).unwrap();
             let mut recorded = pool.record(&module).unwrap();
             let (second, context) = later(&mut recorded);
             let (first_job, second_job) = if reverse_submission {
@@ -261,7 +264,7 @@ mod tests {
             .define_function(first, &mut context)
             .unwrap_err()
             .to_string();
-        let pool = Pool::new(isa, 2, DirectRuntimeCalls::default()).unwrap();
+        let pool = Pool::new(isa, 2, DirectRuntimeCalls::default(), false).unwrap();
         let first_job = pool.submit(body(&mut module, false)).unwrap();
         let mut recorded = pool.record(&module).unwrap();
         let data = recorded.declare_anonymous_data(false, false).unwrap();
@@ -318,7 +321,7 @@ mod tests {
             clean(&mut context, isa.as_ref()).unwrap();
             module.define_function(function, &mut context).unwrap();
         } else {
-            let pool = Pool::new(isa, count, DirectRuntimeCalls::default()).unwrap();
+            let pool = Pool::new(isa, count, DirectRuntimeCalls::default(), false).unwrap();
             let ticket = pool
                 .submit_work(move |isa| {
                     let ir = clean(&mut context, isa)?;
@@ -346,7 +349,7 @@ mod tests {
     #[test]
     fn typed_cleanup_errors_remain_ordered_by_their_tickets() {
         let (_, isa) = module();
-        let pool = Pool::new(isa, 2, DirectRuntimeCalls::default()).unwrap();
+        let pool = Pool::new(isa, 2, DirectRuntimeCalls::default(), false).unwrap();
         let first = pool
             .submit_work::<()>(|_| Err(backend("earlier cleanup")))
             .unwrap();
@@ -360,7 +363,7 @@ mod tests {
 
 impl Drop for Pool {
     fn drop(&mut self) {
-        if std::env::var_os("MECH_PROFILE_COMPILE_JOBS").is_some() {
+        if self.log_jobs {
             eprintln!(
                 "compact-compile-jobs: workers={} submitted={} cleanup={}",
                 self.workers.len(),

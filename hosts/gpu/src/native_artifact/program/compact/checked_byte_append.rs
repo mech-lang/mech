@@ -1,4 +1,5 @@
 //! Use uniquely owned backing directly for checked little-endian byte appends.
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use crate::native_artifact::{NativeCompileError, compiler::backend};
 use cranelift_codegen::{
     Context,
@@ -226,7 +227,7 @@ fn following_store(
 }
 
 impl ShortAppend {
-    pub(super) fn recognize(f: &Function) -> Option<Self> {
+    pub(super) fn recognize(compiler_inputs: &CompilationInputs, f: &Function) -> Option<Self> {
         if f.signature.call_conv != CallConv::AppleAarch64
             || f.signature.params.len() > 8
             || f.signature.returns.len() != 7
@@ -349,7 +350,8 @@ impl ShortAppend {
             return None;
         }
 
-        let maximum = if std::env::var_os("MECH_COMPACT_SHORT_BYTE_APPENDS")
+        let maximum = if compiler_inputs
+            .var_os("MECH_COMPACT_SHORT_BYTE_APPENDS")
             .is_some_and(|mode| mode == "wide")
         {
             let mut next_store = plain_edge(f, two);
@@ -441,6 +443,7 @@ impl ShortAppend {
 
     pub(super) fn define<M: Module>(
         self,
+        compiler_inputs: &CompilationInputs,
         module: &mut M,
         function: FuncId,
         fallback: FuncId,
@@ -453,7 +456,7 @@ impl ShortAppend {
             .clone();
         context.func.aarch64_branch_on_zero = true;
         let fallback = module.declare_func_in_func(fallback, &mut context.func);
-        self.emit(&mut context.func, fallback);
+        self.emit(compiler_inputs, &mut context.func, fallback);
         context.verify(module.isa()).map_err(backend)?;
         module
             .define_function(function, &mut context)
@@ -506,8 +509,9 @@ impl ShortAppend {
         b.ins().jump(done, &[]);
     }
 
-    fn emit(self, function: &mut Function, fallback: FuncRef) {
-        let store_word = std::env::var_os("MECH_COMPACT_SHORT_APPEND_SPARE_STORE")
+    fn emit(self, compiler_inputs: &CompilationInputs, function: &mut Function, fallback: FuncRef) {
+        let store_word = compiler_inputs
+            .var_os("MECH_COMPACT_SHORT_APPEND_SPARE_STORE")
             .is_some_and(|mode| mode == "8-direct");
         let mut builder = FunctionBuilderContext::new();
         let mut b = FunctionBuilder::new(function, &mut builder);

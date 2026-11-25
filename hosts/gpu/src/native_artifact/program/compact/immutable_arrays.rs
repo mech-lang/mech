@@ -6,6 +6,7 @@ use super::{
     layout::{ARRAY_OWNER, ARRAY_WORDS, Layout, LayoutKind},
     recipes::Recipe,
 };
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use crate::native_artifact::program::codegen::cfg_cleanup::composed_reads::Literal;
 use mech_core::ValueData;
 use mech_engine::native_artifact::{
@@ -23,13 +24,15 @@ enum Source {
 #[derive(Default)]
 pub(super) struct LiteralViews(BTreeMap<usize, Vec<Source>>);
 
-fn literal(data: &ValueData) -> Option<Literal> {
+fn literal(compiler_inputs: &CompilationInputs, data: &ValueData) -> Option<Literal> {
     let ValueData::Matrix(matrix) = data else {
         return None;
     };
     let elements = matrix.elements();
-    let retain_bytes =
-        elements.len() <= 256 && std::env::var_os("MECH_COMPOSE_IMMUTABLE_COST_CODES").is_some();
+    let retain_bytes = elements.len() <= 256
+        && compiler_inputs
+            .var_os("MECH_COMPOSE_IMMUTABLE_COST_CODES")
+            .is_some();
     let mut bytes = retain_bytes.then(|| Vec::with_capacity(elements.len()));
     let mut maximum = 0;
     for index in 0..elements.len() {
@@ -58,7 +61,13 @@ fn literal(data: &ValueData) -> Option<Literal> {
 }
 
 impl LiteralViews {
-    pub fn derive(plan: &Plan, layout: &Layout, flow: &Flow, recipes: &[Recipe]) -> Self {
+    pub fn derive(
+        compiler_inputs: &CompilationInputs,
+        plan: &Plan,
+        layout: &Layout,
+        flow: &Flow,
+        recipes: &[Recipe],
+    ) -> Self {
         let mut views = Self::default();
         for port in plan.inputs() {
             let value = port.value().get();
@@ -70,7 +79,7 @@ impl LiteralViews {
             let value = constant.value().get();
             let ty = layout.ty(value);
             let maximum = if matches!(ty.kind, LayoutKind::Array { .. }) {
-                literal(constant.constant().data())
+                literal(compiler_inputs, constant.constant().data())
             } else {
                 None
             };

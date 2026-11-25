@@ -1,5 +1,6 @@
 //! Canonical scalar CFG definition shared by JIT and Object emission.
 use crate::native_artifact::codegen::backend as codegen_backend;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use crate::native_artifact::compiler::{backend, host_supported};
 use crate::native_artifact::iteration_abi::{ENTRY, Entry, NativeIterationDescriptor, VERSION};
 use crate::native_artifact::iteration_runtime::{
@@ -27,8 +28,9 @@ impl JitIterationArtifact {
         limits: NativeCompileLimits,
     ) -> Result<Self, NativeCompileError> {
         host_supported()?;
-        let mut module = codegen_backend::jit(codegen_backend::CONTROL_FLAGS)?;
-        let (function, descriptor) = define(plan, &mut module, limits)?;
+        let inputs = CompilationInputs::legacy();
+        let mut module = codegen_backend::jit_with_inputs(codegen_backend::CONTROL_FLAGS, &inputs)?;
+        let (function, descriptor) = define(plan, &mut module, limits, &inputs)?;
         module.finalize_definitions().map_err(backend)?;
         // SAFETY: the one checked definition emits the private repr(C) ABI;
         // this owner retains its module for every synchronous invocation.
@@ -110,11 +112,13 @@ pub fn emit_iteration_object_with_limits(
     limits: NativeCompileLimits,
 ) -> Result<NativeIterationObject, NativeCompileError> {
     host_supported()?;
-    let mut module = codegen_backend::object(
+    let inputs = CompilationInputs::legacy();
+    let (mut module, _) = codegen_backend::object_with_isa(
         "mech_canonical_scalar_iteration",
         codegen_backend::CONTROL_FLAGS,
+        &inputs,
     )?;
-    let (_, descriptor) = define(plan, &mut module, limits)?;
+    let (_, descriptor) = define(plan, &mut module, limits, &inputs)?;
     let identity =
         crate::native_artifact::iteration_identity::NativeIterationObjectIdentity::from_descriptor(
             &descriptor,
@@ -187,6 +191,7 @@ fn define<M: Module>(
     plan: &NativeIterationArtifactPlan,
     module: &mut M,
     limits: NativeCompileLimits,
+    inputs: &CompilationInputs,
 ) -> Result<(FuncId, NativeIterationDescriptor), NativeCompileError> {
     let (function, stack, code, _) = crate::native_artifact::codegen::control::define_cfg(
         crate::native_artifact::codegen::control::plan::CodePlan::Scalar(plan),
@@ -195,6 +200,7 @@ fn define<M: Module>(
         module,
         limits,
         &crate::native_artifact::codegen::options::OptimizationOptions::default(),
+        inputs,
     )?;
     Ok((
         function,
