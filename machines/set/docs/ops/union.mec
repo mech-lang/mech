@@ -48,11 +48,11 @@ B := {"b", "c", "d"}
 C := A ∪ B
 ```
 
-(5.2) Duplicates in inputs are ignored
+(5.2) Values shared by both sets appear once
 
 ```mech:ex2
-A := {1, 2, 2, 3}
-B := {2, 4, 4}
+A := {1, 2, 3}
+B := {2, 4}
 C := A ∪ B
 ```
 

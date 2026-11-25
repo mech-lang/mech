@@ -1563,6 +1563,45 @@ class FullWorkflowContractTests(unittest.TestCase):
         self.assertIn('generate(projects_root, "first")', NATIVE_DETERMINISM)
         self.assertIn('generate(projects_root, "second")', NATIVE_DETERMINISM)
 
+    def test_macos_cache_tests_cannot_compile_inside_execution_deadline(self):
+        steps = job_steps(FULL, "native-macos")
+        compile_step = next(step for step in steps if "- name: Compile macOS native cache" in step)
+        execution = next(step for step in steps if "- name: Check native cache" in step)
+        prepare = next(step for step in steps if "- name: Prepare macOS native owner runners" in step)
+        self.assertLess(steps.index(compile_step), steps.index(execution))
+        self.assertLess(steps.index(execution), steps.index(prepare))
+        self.assertIn("--record-test-executable mech_gpu", compile_step)
+        self.assertIn("--features aot --lib --no-run --message-format=json-render-diagnostics", compile_step)
+        executable = "--test-executable-file target/native-plan-logs/macos-cache-executable"
+        self.assertIn(executable, compile_step)
+        self.assertEqual(execution.count(executable), 2)
+        self.assertNotIn("cargo +", execution)
+        for family in ("aot", "jit"):
+            self.assertIn(f"batched::{family}::tests --test-threads=1 --nocapture", execution)
+        for step in (compile_step, execution):
+            timeouts = [int(value) for value in re.findall(r"--timeout-secs (\d+)", step)]
+            limit = int(re.search(r"timeout-minutes: (\d+)", step).group(1)) * 60
+            self.assertTrue(timeouts)
+            self.assertGreater(limit, sum(value + 30 + 5 + 15 for value in timeouts))
+        retained = next(step for step in steps if "uses: actions/upload-artifact@" in step)
+        self.assertGreater(steps.index(retained), steps.index(execution))
+        self.assertIn("if: always()", retained)
+        self.assertIn("target/native-plan-logs", retained)
+
+    def test_linkage_surfaces_retain_bounded_runner_diagnostics_on_failure(self):
+        steps = job_steps(FULL, "native-linkage-surfaces")
+        generate = next(step for step in steps if "- name: Generate and validate exact linkage surface" in step)
+        self.assertIn("scripts/run-native-plan-stage.py --stage linkage-surface", generate)
+        self.assertIn('scripts/check-native-linkage-coverage.py surface "${{ matrix.surface }}"', generate)
+        timeout = int(re.search(r"--timeout-secs (\d+)", generate).group(1))
+        limit = int(re.search(r"timeout-minutes: (\d+)", generate).group(1)) * 60
+        self.assertGreater(limit, timeout + 30 + 5 + 15)
+        retained = next(step for step in steps if "- name: Retain linkage runner diagnostics" in step)
+        self.assertGreater(steps.index(retained), steps.index(generate))
+        self.assertIn("if: always()", retained)
+        self.assertIn("target/native-plan-logs", retained)
+        self.assertIn("${{ matrix.surface }}-${{ github.run_id }}-${{ github.run_attempt }}", retained)
+
     def test_generated_program_selectors_are_live_and_fail_closed(self):
         generated_commands = re.findall(
             r"cargo \+nightly-2026-03-03 test --locked --offline "

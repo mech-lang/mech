@@ -137,8 +137,8 @@ status
 }
 
 #[test]
-fn set_literal_removes_duplicate_elements() {
-    check("known := {1, 2, 2, 3}\nknown\n", |value| {
+fn set_literals_preserve_unique_canonical_keys_and_reject_duplicates() {
+    check("known := {3, 1, 2}\nknown\n", |value| {
         assert_set(value, &[1.0, 2.0, 3.0]);
         let schemas = value.schemas().unwrap();
         assert!(matches!(
@@ -151,12 +151,10 @@ fn set_literal_removes_duplicate_elements() {
             }
         ));
     });
-    check("{3, 1, 3, 1, 1}\n", |value| assert_set(value, &[1.0, 3.0]));
-    check("{0, -0, 0}\n", |value| assert_set(value, &[0.0]));
-    check("known<{f64}:3> := {1, 2, 2, 3}\nknown\n", |value| {
+    check("known<{f64}:3> := {1, 2, 3}\nknown\n", |value| {
         assert_set(value, &[1.0, 2.0, 3.0])
     });
-    check("{\"robot\", \"camera\", \"robot\"}\n", |value| {
+    check("{\"robot\", \"camera\"}\n", |value| {
         let ValueData::Set(set) = value.data() else {
             panic!("{value:?}")
         };
@@ -168,6 +166,27 @@ fn set_literal_removes_duplicate_elements() {
             matches!(set.elements()[1].data(), ValueData::String(text) if text.as_ref() == "robot")
         );
     });
+    for source in [
+        "known := {1, 2, 2, 3}\nknown\n",
+        "{3, 1, 3, 1, 1}\n",
+        "{0, -0, 0}\n",
+        "{\"robot\", \"camera\", \"robot\"}\n",
+        "reading<f64?> := _\n{reading, _}\n",
+    ] {
+        let (artifacts, _) = artifacts(source);
+        for artifact in artifacts {
+            assert!(
+                activate(
+                    ReactiveInstanceId::new(0x4f535454, 0),
+                    &artifact,
+                    &mech_stdlib::source_catalog(),
+                    &ActivationFacts::default(),
+                )
+                .is_err(),
+                "{source}"
+            );
+        }
+    }
 }
 
 #[test]
@@ -276,18 +295,28 @@ fn optional_payload_binding_is_refutable_and_mixed_result_kinds_are_rejected() {
 }
 
 #[test]
-fn live_set_literal_can_shrink_and_grow_as_elements_become_equal() {
-    let (artifacts, output) = artifacts("reading := input<f64>\n{1, reading, 2, reading}\n");
+fn live_set_literal_rejects_duplicate_keys_atomically_and_recovers() {
+    let (artifacts, output) = artifacts("reading := input<f64>\n{1, reading, 2}\n");
     for artifact in artifacts {
         let mut instance = instance(&artifact);
-        for (reading, expected) in [
-            (3.0, &[1.0, 2.0, 3.0][..]),
-            (1.0, &[1.0, 2.0][..]),
-            (2.0, &[1.0, 2.0][..]),
-            (4.0, &[1.0, 2.0, 4.0][..]),
-        ] {
+        for reading in [3.0, 4.0, 3.0] {
             turn(&mut instance, &input(&artifact, number(reading))).unwrap();
-            assert_set(&instance.copied_output(output).unwrap(), expected);
+            let accepted = instance.copied_output(output).unwrap();
+            assert_set(&accepted, &[1.0, 2.0, reading]);
+            let epoch = instance.published_epoch();
+            for duplicate in [1.0, 2.0] {
+                assert!(turn(&mut instance, &input(&artifact, number(duplicate))).is_err());
+                assert_eq!(instance.published_epoch(), epoch);
+                assert!(
+                    accepted
+                        .snapshot_eq(
+                            artifact.schemas(),
+                            &instance.copied_output(output).unwrap(),
+                            artifact.schemas()
+                        )
+                        .unwrap()
+                );
+            }
         }
     }
 }
