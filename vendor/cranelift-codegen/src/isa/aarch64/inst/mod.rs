@@ -949,9 +949,11 @@ mod loop_live_ranges;
 
 impl MachInst for Inst {
     #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
-    fn preallocation_rewrite_enabled(flags: &settings::Flags) -> bool {
-        flags.opt_level() != settings::OptLevel::None
-            && std::env::var_os("MECH_ARM64_LOOP_LIVE_RANGES").is_some()
+    fn preallocation_rewrite_enabled(isa: &dyn crate::isa::TargetIsa) -> bool {
+        isa.flags().opt_level() != settings::OptLevel::None
+            && isa
+                .aarch64_compilation_options()
+                .is_some_and(|options| options.loop_live_ranges)
     }
 
     #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
@@ -960,25 +962,28 @@ impl MachInst for Inst {
     }
 
     #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
-    fn preallocation_branch_rewrite_enabled(flags: &settings::Flags) -> bool {
-        flags.opt_level() != settings::OptLevel::None
-            && (std::env::var_os("MECH_ARM64_SUBTRACT_BRANCH").is_some()
-                || std::env::var_os("MECH_ARM64_SUBTRACT_IMMEDIATE_BRANCH").is_some())
+    fn preallocation_branch_rewrite_enabled(isa: &dyn crate::isa::TargetIsa) -> bool {
+        isa.flags().opt_level() != settings::OptLevel::None
+            && isa
+                .aarch64_compilation_options()
+                .is_some_and(|options| options.subtract_branch || options.subtract_immediate_branch)
     }
 
     #[cfg(all(feature = "experimental-cmp-reuse", feature = "std"))]
     fn preallocation_rewrite_branch(
+        isa: &dyn crate::isa::TargetIsa,
         tail: &[Self],
         head: &[Self],
         canonical: impl Fn(Reg) -> Reg,
     ) -> Option<([Self; 2], usize, Self)> {
-        if std::env::var_os("MECH_ARM64_SUBTRACT_BRANCH").is_some()
+        let options = isa.aarch64_compilation_options()?;
+        if options.subtract_branch
             && let Some((rewritten, successor)) =
                 loop_live_ranges::reuse_successor_subtract(tail, head.first()?, &canonical)
         {
             return Some((rewritten, 0, successor));
         }
-        if std::env::var_os("MECH_ARM64_SUBTRACT_IMMEDIATE_BRANCH").is_some() {
+        if options.subtract_immediate_branch {
             return loop_live_ranges::reuse_successor_decrement(tail, head, &canonical);
         }
         None

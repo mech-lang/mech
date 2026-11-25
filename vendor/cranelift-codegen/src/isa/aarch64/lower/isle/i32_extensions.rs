@@ -1,7 +1,11 @@
 //! Reuse the zero upper word produced by scalar W-register arithmetic.
 use super::{I32, I64, Inst, InstOutput, InstructionData, Lower, MInst, Opcode, ValueRegs};
 
-pub(super) fn lower(lower: &mut Lower<MInst>, inst: Inst) -> Option<InstOutput> {
+pub(super) fn lower(
+    lower: &mut Lower<MInst>,
+    inst: Inst,
+    options: &crate::isa::Aarch64CompilationOptions,
+) -> Option<InstOutput> {
     let dfg = lower.dfg();
     let InstructionData::Unary {
         opcode: Opcode::Uextend,
@@ -19,17 +23,13 @@ pub(super) fn lower(lower: &mut Lower<MInst>, inst: Inst) -> Option<InstOutput> 
     let selected = if matches!(opcode, Opcode::Iadd | Opcode::Isub | Opcode::Imul) {
         // These scalar forms, including shifted/immediate/fused arithmetic,
         // write a W register. Preserve the existing arithmetic selection.
-        let selection = std::env::var("MECH_ARM64_REUSE_I32_ARITHMETIC").ok()?;
-        match selection.as_str() {
-            "add" => opcode == Opcode::Iadd,
-            "sub" => opcode == Opcode::Isub,
-            "mul" => opcode == Opcode::Imul,
-            "all" | "1" => true,
+        match opcode {
+            Opcode::Iadd => options.reuse_i32_add,
+            Opcode::Isub => options.reuse_i32_sub,
+            Opcode::Imul => options.reuse_i32_mul,
             _ => false,
         }
-    } else if matches!(opcode, Opcode::Ushr | Opcode::UshrImm)
-        && std::env::var_os("MECH_ARM64_REUSE_I32_SHIFTS").is_some_and(|mode| mode == "1")
-    {
+    } else if matches!(opcode, Opcode::Ushr | Opcode::UshrImm) && options.reuse_i32_shifts {
         let count = match dfg.insts[producer] {
             InstructionData::BinaryImm64 { imm, .. } => imm.bits() as u64,
             InstructionData::Binary {

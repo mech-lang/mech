@@ -43,7 +43,11 @@ fn clean_boolean(dfg: &DataFlowGraph, value: Value, depth: usize, nodes: &mut us
     }
 }
 
-pub(super) fn lower(lower: &mut Lower<MInst>, inst: Inst) -> Option<InstOutput> {
+pub(super) fn lower(
+    lower: &mut Lower<MInst>,
+    inst: Inst,
+    options: &crate::isa::Aarch64CompilationOptions,
+) -> Option<InstOutput> {
     let dfg = lower.dfg();
     let InstructionData::Unary {
         opcode: Opcode::Uextend,
@@ -57,7 +61,7 @@ pub(super) fn lower(lower: &mut Lower<MInst>, inst: Inst) -> Option<InstOutput> 
     }
     let arg = dfg.resolve_aliases(arg);
     let producer = dfg.value_def(arg).inst()?;
-    let class = match dfg.insts[producer] {
+    let selected = match dfg.insts[producer] {
         // The existing scalar I8 load rule emits ULoad8 (LDRB), clearing
         // the rest of the register. Reuse the definition, even when shared;
         // do not sink or duplicate the load or change its flags or address.
@@ -65,7 +69,7 @@ pub(super) fn lower(lower: &mut Lower<MInst>, inst: Inst) -> Option<InstOutput> 
             opcode: Opcode::Load,
             flags,
             ..
-        } if flags.endianness(Endianness::Little) == Endianness::Little => "load",
+        } if flags.endianness(Endianness::Little) == Endianness::Little => options.reuse_i8_loads,
         // Scalar comparisons lower through flags_and_cc_to_bool, whose CSet
         // writes exactly 0 or 1 to the entire register. Vector comparisons,
         // arbitrary I8 inputs, signed loads and reductions are excluded.
@@ -73,25 +77,15 @@ pub(super) fn lower(lower: &mut Lower<MInst>, inst: Inst) -> Option<InstOutput> 
             opcode: Opcode::Icmp,
             args: [lhs, _],
             ..
-        } if matches!(dfg.value_type(lhs), I8 | I16 | I32 | I64) => "compare",
+        } if matches!(dfg.value_type(lhs), I8 | I16 | I32 | I64) => options.reuse_i8_compares,
         InstructionData::Binary {
             opcode: Opcode::Band | Opcode::Bor | Opcode::Bxor,
             ..
-        } if std::env::var("MECH_ARM64_REUSE_I8_BOOLEAN_DEFINITIONS")
-            .ok()
-            .as_deref()
-            == Some("1")
-            && clean_boolean(dfg, arg, 16, &mut 64) =>
-        {
-            "boolean"
-        }
-        _ => return None,
+        } => options.reuse_i8_booleans && clean_boolean(dfg, arg, 16, &mut 64),
+        _ => false,
     };
-    if class != "boolean" {
-        let selection = std::env::var("MECH_ARM64_REUSE_I8_DEFINITIONS").ok()?;
-        if selection != class && !matches!(selection.as_str(), "all" | "1") {
-            return None;
-        }
+    if !selected {
+        return None;
     }
     let reg = lower.put_value_in_regs(arg).only_reg()?;
     Some(smallvec::smallvec![ValueRegs::one(reg)])

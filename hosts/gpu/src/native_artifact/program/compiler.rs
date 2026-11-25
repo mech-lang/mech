@@ -678,7 +678,8 @@ fn emit_prepared_compact_object(
     direct_literals: bool,
     compiler_inputs: &CompilationInputs,
 ) -> Result<(Vec<u8>, serde_json::Value), NativeCompileError> {
-    let (object, isa) = codegen_backend::object_with_isa("mech_compact_closed_diagnostic", flags)?;
+    let (object, isa) =
+        codegen_backend::object_with_isa("mech_compact_closed_diagnostic", flags, compiler_inputs)?;
     let mut module = super::compact::PreparedObject::new(object, compiler_inputs);
     if !observe && let Ok(mode) = compiler_inputs.var("MECH_COMPACT_DIRECT_RUNTIME_CALLS") {
         module.use_direct_runtime_calls(&mode);

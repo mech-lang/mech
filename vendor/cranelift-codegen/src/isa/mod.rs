@@ -85,8 +85,10 @@ mod pulley_shared;
 
 pub mod unwind;
 
+mod aarch64_compilation_options;
 mod call_conv;
 mod winch;
+pub use aarch64_compilation_options::{Aarch64CompilationOptions, Aarch64MaskedFields};
 
 /// Returns a builder that can create a corresponding `TargetIsa`
 /// or `Err(LookupError::SupportDisabled)` if not enabled.
@@ -227,6 +229,27 @@ impl<T> IsaBuilder<T> {
     }
 }
 
+impl Builder {
+    /// Finish a native ISA with immutable Mech AArch64 choices when applicable.
+    pub fn finish_with_aarch64_compilation_options(
+        &self,
+        shared_flags: settings::Flags,
+        options: Aarch64CompilationOptions,
+    ) -> CodegenResult<OwnedTargetIsa> {
+        #[cfg(feature = "arm64")]
+        if matches!(self.triple.architecture, Architecture::Aarch64(_)) {
+            return Ok(aarch64::finish_with_options(
+                self.triple.clone(),
+                shared_flags,
+                &self.setup,
+                options,
+            ));
+        }
+        let _ = options;
+        self.finish(shared_flags)
+    }
+}
+
 impl<T> settings::Configurable for IsaBuilder<T> {
     fn set(&mut self, name: &str, value: &str) -> SetResult<()> {
         self.setup.set(name, value)
@@ -296,6 +319,11 @@ pub trait TargetIsa: fmt::Display + Send + Sync {
 
     /// Get the ISA-dependent flag values as raw bytes for hashing.
     fn isa_flags_hash_key(&self) -> IsaFlagsHashKey<'_>;
+
+    /// Immutable experimental choices for AArch64 machine generation.
+    fn aarch64_compilation_options(&self) -> Option<&Aarch64CompilationOptions> {
+        None
+    }
 
     /// Get a flag indicating whether branch protection is enabled.
     fn is_branch_protection_enabled(&self) -> bool {

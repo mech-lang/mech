@@ -65,19 +65,21 @@ pub(crate) fn lower(
         return Some(output);
     }
     #[cfg(feature = "std")]
-    if let Some(output) = i32_extensions::lower(lower_ctx, inst) {
+    if let Some(output) = i32_extensions::lower(lower_ctx, inst, &backend.compilation_options) {
         return Some(output);
     }
     #[cfg(feature = "std")]
-    if let Some(output) = byte_extensions::lower(lower_ctx, inst) {
+    if let Some(output) = byte_extensions::lower(lower_ctx, inst, &backend.compilation_options) {
         return Some(output);
     }
     #[cfg(feature = "std")]
-    if let Some(output) = bit_fields::lower(lower_ctx, inst) {
+    if let Some(output) =
+        bit_fields::lower(lower_ctx, inst, backend.compilation_options.masked_fields)
+    {
         return Some(output);
     }
     #[cfg(feature = "std")]
-    if let Some(output) = narrow_packs::lower(lower_ctx, inst) {
+    if let Some(output) = narrow_packs::lower(lower_ctx, inst, &backend.compilation_options) {
         return Some(output);
     }
     let mut isle_ctx = IsleContext { lower_ctx, backend };
@@ -184,7 +186,7 @@ impl IsleContext<'_, '_, MInst, AArch64Backend> {
         let dfg = lower.dfg();
         if dfg.insts[inst].opcode() != Opcode::Bor
             || !matches!(lower.output_ty(inst, 0), I8 | I16 | I32 | I64)
-            || std::env::var_os("MECH_ARM64_CCMP_SHARED_BOOLEAN").is_none()
+            || !self.backend.compilation_options.ccmp_shared_boolean
         {
             return None;
         }
@@ -251,9 +253,7 @@ impl IsleContext<'_, '_, MInst, AArch64Backend> {
         else {
             return None;
         };
-        if lower.output_ty(inst, 0) != I64
-            || std::env::var_os("MECH_ARM64_CCMP_BRANCH_SELECT").is_none()
-        {
+        if lower.output_ty(inst, 0) != I64 || !self.backend.compilation_options.ccmp_branch_select {
             return None;
         }
         // A value that immediately controls a branch has a known next use.

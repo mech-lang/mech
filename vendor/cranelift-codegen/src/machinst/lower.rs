@@ -1125,7 +1125,7 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
     }
 
     /// Lower the function.
-    pub fn lower<B: LowerBackend<MInst = I>>(
+    pub fn lower<B: LowerBackend<MInst = I> + crate::isa::TargetIsa>(
         mut self,
         backend: &B,
         ctrl_plane: &mut ControlPlane,
@@ -1224,7 +1224,7 @@ impl<'func, I: VCodeInst> Lower<'func, I> {
             "built vcode:\n{:?}Backwards {:?}",
             &self.vregs, &self.vcode.vcode
         );
-        let vcode = self.vcode.build(self.vregs, &self.flags);
+        let vcode = self.vcode.build(self.vregs, backend);
 
         Ok(vcode)
     }
