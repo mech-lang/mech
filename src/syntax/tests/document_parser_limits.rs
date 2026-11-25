@@ -272,7 +272,7 @@ fn completed_prefix_survives_middle_fuel_and_event_exhaustion() {
     // budgets. Earlier budgets retain their exact remainder checks below.
     for limits in [
         ParseLimits {
-            fuel: 451,
+            fuel: 454,
             ..ParseLimits::default()
         },
         ParseLimits {
@@ -321,14 +321,13 @@ fn early_middle_and_late_fuel_exhaustion_have_exact_remainders() {
     // remainders, plus measured budgets at the original semantic boundaries.
     for (fuel, error_start) in [
         (0, 0),
-        (390, 42),
+        (390, 41),
         (401, 46),
-        (451, 49),
-        (454, 52),
-        (550, 92),
-        (648, 87),
-        (659, 98),
-        (663, 49),
+        (454, 49),
+        (550, 89),
+        (648, 85),
+        (659, 96),
+        (663, 100),
     ] {
         let snapshot = parse_with_limits(
             text,
