@@ -3,6 +3,7 @@
 //! complement normalization also reuses strict-order and equality decisions.
 use super::super::window_bounds::comparison;
 use super::incoming;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::dominator_tree::DominatorTree;
 use cranelift_codegen::flowgraph::ControlFlowGraph;
 use cranelift_codegen::ir::condcodes::IntCC;
@@ -100,6 +101,7 @@ impl Relation {
 }
 
 pub(in super::super) fn fold(
+    compiler_inputs: &CompilationInputs,
     f: &mut Function,
     cfg: &ControlFlowGraph,
     dom: &DominatorTree,
@@ -108,7 +110,9 @@ pub(in super::super) fn fold(
         f,
         cfg,
         dom,
-        std::env::var_os("MECH_REUSE_COMPLEMENTARY_PREDICATES").is_some(),
+        compiler_inputs
+            .var_os("MECH_REUSE_COMPLEMENTARY_PREDICATES")
+            .is_some(),
     )
 }
 

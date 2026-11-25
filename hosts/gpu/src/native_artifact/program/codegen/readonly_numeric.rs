@@ -1550,6 +1550,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     .map(|check| (site, check)),
             );
             window.gate(
+                controls.inputs(),
                 b,
                 &words,
                 shadow,

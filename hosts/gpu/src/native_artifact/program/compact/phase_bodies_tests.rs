@@ -52,7 +52,15 @@ fn define_phase(
     builder.seal_all_blocks();
     builder.finalize();
 
-    let (selected, _) = define_body(module, id, name, &mut context, Some(bodies)).unwrap();
+    let (selected, _) = define_body(
+        &crate::native_artifact::codegen::compilation_inputs::CompilationInputs::capture([]),
+        module,
+        id,
+        name,
+        &mut context,
+        Some(bodies),
+    )
+    .unwrap();
     let buffer = &context.compiled_code().unwrap().buffer;
     assert!(!buffer.relocs().is_empty());
     (selected, buffer.data().to_vec())

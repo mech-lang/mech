@@ -368,6 +368,7 @@ fn equality_scan_strategies_preserve_word_mismatches_and_admitted_tails() {
         let (mut context, certificate) = fixture(&module, "normal");
         let original = context.func.display().to_string();
         let outcome = optimize_with_strategy(
+            &CompilationInputs::capture([]),
             &mut context,
             &[certificate],
             false,

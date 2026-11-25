@@ -104,7 +104,16 @@ pub(in crate::native_artifact::program) fn define_with_isa<M: Module>(
     compiler_inputs: &CompilationInputs,
 ) -> Result<serde_json::Value, NativeCompileError> {
     let pool = (threads != 0)
-        .then(|| super::compile_jobs::Pool::new(isa, threads, direct_runtime_calls))
+        .then(|| {
+            super::compile_jobs::Pool::new(
+                isa,
+                threads,
+                direct_runtime_calls,
+                compiler_inputs
+                    .var_os("MECH_PROFILE_COMPILE_JOBS")
+                    .is_some(),
+            )
+        })
         .transpose()?;
     define_with_pool(
         module,
@@ -148,7 +157,13 @@ fn define_with_pool<M: Module>(
         .is_some()
     {
         let root_flow = Flow::derive(plan)?;
-        super::immutable_arrays::LiteralViews::derive(plan, &layout, &root_flow, &actions)
+        super::immutable_arrays::LiteralViews::derive(
+            compiler_inputs,
+            plan,
+            &layout,
+            &root_flow,
+            &actions,
+        )
     } else {
         super::immutable_arrays::LiteralViews::default()
     };
@@ -407,7 +422,13 @@ fn define_entry<M: Module>(
         && compiler_inputs
             .var_os("MECH_COMPACT_REUSE_POINTWISE_SOURCE")
             .is_some();
-    let guards = Guards::derive(plan, &flow);
+    let guards = Guards::derive(
+        plan,
+        &flow,
+        compiler_inputs
+            .var("MECH_GUARD_SPARSE_ROUNDS")
+            .is_ok_and(|value| value == "1"),
+    );
     let transfers = owner_flow.transfers(&flow, &guards);
     let initial = &shared.initial;
     let reductions = if memory {
@@ -519,6 +540,7 @@ fn define_entry<M: Module>(
             .chain(packs.iter().map(|pack| pack.first))
             .collect::<BTreeSet<_>>();
         super::private_chains::derive(
+            compiler_inputs,
             plan,
             &layout,
             &flow,
@@ -538,6 +560,7 @@ fn define_entry<M: Module>(
             .is_some()
     {
         super::overwrite_reuse::derive(
+            compiler_inputs,
             plan,
             layout,
             &flow,
@@ -565,6 +588,7 @@ fn define_entry<M: Module>(
             ));
         }
         let split = super::early_units::Split::derive(
+            compiler_inputs,
             module,
             plan,
             layout,
@@ -852,7 +876,7 @@ fn define_entry<M: Module>(
             let zero = b.ins().iconst(types::I64, 0);
             let arrays = if memory {
                 let heap = b.block_params(entry)[0];
-                let mut arrays = Arrays::new(module, &mut b, heap, observe)?;
+                let mut arrays = Arrays::new(compiler_inputs, module, &mut b, heap, observe)?;
                 if outline_allowed
                     && let Some(strategy) =
                         compiler_inputs.var_os("MECH_COMPACT_PACK_LE_SCALAR_STORES")
@@ -2104,7 +2128,13 @@ fn define_entry<M: Module>(
         }
         let checked_traversals = if outline_traversals {
             let all = traversal_stage.as_deref() == Some(std::ffi::OsStr::new("all"));
-            let shared = checked_traversals::share(module, &mut context.func, traversals, all)?;
+            let shared = checked_traversals::share(
+                compiler_inputs,
+                module,
+                &mut context.func,
+                traversals,
+                all,
+            )?;
             if shared.is_some() {
                 context.flowgraph();
                 context.verify(module.isa()).map_err(backend)?;
@@ -2114,6 +2144,7 @@ fn define_entry<M: Module>(
             None
         };
         let checked_controllers = checked_traversals::share_controllers(
+            compiler_inputs,
             module,
             &mut context.func,
             vec![controllers],
@@ -2142,10 +2173,11 @@ fn define_entry<M: Module>(
         };
         let discovered_controllers = if let Some(families) = controller_families {
             let shared = checked_traversals::share_controllers(
+                compiler_inputs,
                 module,
                 &mut context.func,
                 families,
-                checked_traversals::CaptureBindings::from_environment(),
+                checked_traversals::CaptureBindings::capture(compiler_inputs),
             )?;
             if shared.is_some() {
                 context.flowgraph();
@@ -2193,8 +2225,12 @@ fn define_entry<M: Module>(
             continuation_families
         };
         let checked_continuations = if let Some(families) = continuation_families {
-            let shared =
-                checked_traversals::share_continuations(module, &mut context.func, families)?;
+            let shared = checked_traversals::share_continuations(
+                compiler_inputs,
+                module,
+                &mut context.func,
+                families,
+            )?;
             if shared.is_some() {
                 context.flowgraph();
                 context.verify(module.isa()).map_err(backend)?;
@@ -2465,10 +2501,11 @@ fn define_entry<M: Module>(
                 plan.blocks().len(),
             )?;
             let outlined = checked_traversals::share_phase_regions(
+                compiler_inputs,
                 module,
                 &mut context.func,
                 families,
-                checked_traversals::CaptureBindings::from_environment(),
+                checked_traversals::CaptureBindings::capture(compiler_inputs),
             )?;
             if outlined.is_some() {
                 context.flowgraph();
@@ -2550,7 +2587,11 @@ fn define_entry<M: Module>(
                 .var_os("MECH_COMPACT_SHARE_RELEASE_SETUP")
                 .is_some()
         {
-            let stubs = super::release_stubs::ReleaseStubs::prepare(module, &mut context.func)?;
+            let stubs = super::release_stubs::ReleaseStubs::prepare(
+                compiler_inputs,
+                module,
+                &mut context.func,
+            )?;
             if stubs.is_some() {
                 context.verify(module.isa()).map_err(backend)?;
             }

@@ -173,7 +173,7 @@ impl General {
                         None,
                         true,
                     )?;
-                    prepare_body(isa, &mut context)?;
+                    prepare_body(controls.inputs(), isa, &mut context)?;
                     // Send the input before lowering so different vector bodies can still
                     // start machine compilation while the general job is running.
                     if let Some(sender) = sender {
@@ -207,7 +207,7 @@ impl DeferredGeneral {
             None,
             true,
         )?;
-        prepare_body(isa, &mut self.context)?;
+        prepare_body(self.controls.inputs(), isa, &mut self.context)?;
         Ok(finish_preparation(
             self.context,
             &self.report,
@@ -550,6 +550,7 @@ enum ComparedReads<'a> {
 }
 
 fn reuse_phase_compared_reads(
+    compiler_inputs: &CompilationInputs,
     context: &mut Context,
     proof: &Proof,
     region: &Region,
@@ -602,10 +603,17 @@ fn reuse_phase_compared_reads(
         .collect();
     Ok(match source {
         ComparedReads::Bytes(bounded_reads) => (
-            cfg_cleanup::compared_bytes::fold(context, &pointers, bounded_reads, &current_views),
+            cfg_cleanup::compared_bytes::fold(
+                compiler_inputs,
+                context,
+                &pointers,
+                bounded_reads,
+                &current_views,
+            ),
             0,
         ),
         ComparedReads::Words(witnesses, reverse) => cfg_cleanup::compared_bytes::fold_word_order(
+            compiler_inputs,
             context,
             witnesses,
             &current_views,
@@ -655,13 +663,14 @@ fn declare_phase<M: Module>(
 }
 
 pub(super) fn declare_refused_general<M: Module>(
+    compiler_inputs: &CompilationInputs,
     module: &mut M,
     header: usize,
 ) -> Result<FuncId, NativeCompileError> {
     let signature = phase_signature(module);
     // The retained vector and the root still use the original module IDs.
     // Reserve the same imports and local declaration as phase_ir.
-    ArrayImports::declare(module, false)?;
+    ArrayImports::declare(compiler_inputs, module, false)?;
     let symbol = format!("mech_compact_numeric_{header}");
     let function = declare_phase(module, &symbol, &signature)?;
     eprintln!("compact-stage: skipped general numeric SSA {symbol}");
@@ -1224,6 +1233,7 @@ fn prepare_impl<M: Module>(
         && module.isa().endianness() == cranelift_codegen::ir::Endianness::Little
     {
         bounded_histogram::prepare(
+            compiler_inputs,
             module,
             &mut context,
             proof,
@@ -1298,6 +1308,7 @@ fn prepare_impl<M: Module>(
             let mut grouped = module.make_context();
             grouped.func = context.func.clone();
             if let Some(admission) = cfg_cleanup::grouped_histogram::optimize(
+                compiler_inputs,
                 &mut grouped,
                 word_loops.machine_header,
                 &loads,
@@ -1363,6 +1374,7 @@ fn prepare_impl<M: Module>(
                     grouped.set_disasm(true);
                 }
                 let (grouped_id, target) = define_body(
+                    compiler_inputs,
                     module,
                     grouped_id,
                     &name,
@@ -1397,6 +1409,7 @@ fn prepare_impl<M: Module>(
                     let mut scalar = module.make_context();
                     scalar.func = context.func.clone();
                     if let Some(sample) = cfg_cleanup::grouped_histogram::specialize_single_literals(
+                        compiler_inputs,
                         &mut scalar,
                         word_loops.machine_header,
                         &loads,
@@ -1417,8 +1430,14 @@ fn prepare_impl<M: Module>(
                         let id = module
                             .declare_function(&name, Linkage::Local, &signature)
                             .map_err(backend)?;
-                        let (id, _) =
-                            define_body(module, id, &name, &mut scalar, bodies.as_deref_mut())?;
+                        let (id, _) = define_body(
+                            compiler_inputs,
+                            module,
+                            id,
+                            &name,
+                            &mut scalar,
+                            bodies.as_deref_mut(),
+                        )?;
                         let single = module.declare_func_in_func(id, &mut context.func);
                         eprintln!("{symbol} admitted separate literal tally");
                         Some((single, sample))
@@ -1428,7 +1447,13 @@ fn prepare_impl<M: Module>(
                 } else {
                     None
                 };
-                cfg_cleanup::grouped_histogram::guard_entry(&mut context, admission, fast, single);
+                cfg_cleanup::grouped_histogram::guard_entry(
+                    compiler_inputs,
+                    &mut context,
+                    admission,
+                    fast,
+                    single,
+                );
                 context.verify(module.isa()).map_err(backend)?;
             }
         }
@@ -1606,6 +1631,7 @@ fn prepare_impl<M: Module>(
                 {
                     candidate.flowgraph();
                     if cfg_cleanup::reduction_rotation::rotate(
+                        compiler_inputs,
                         &mut candidate.func,
                         &candidate.cfg,
                         &candidate.domtree,
@@ -1651,8 +1677,13 @@ fn prepare_impl<M: Module>(
                         phase_storage::input_word_loads(&candidate.func, input_words)
                 {
                     candidate.flowgraph();
-                    let forwarded =
-                        previous.apply(&mut candidate, &loads, output_word, length_word);
+                    let forwarded = previous.apply(
+                        compiler_inputs,
+                        &mut candidate,
+                        &loads,
+                        output_word,
+                        length_word,
+                    );
                     if forwarded.is_ok()
                         && compiler_inputs
                             .var_os("MECH_FORWARD_PREVIOUS_CLEANUP")
@@ -1790,8 +1821,14 @@ fn prepare_impl<M: Module>(
                     std::fs::write(clif, candidate.func.display().to_string()).map_err(backend)?;
                     candidate.set_disasm(true);
                 }
-                let (id, target) =
-                    define_body(module, id, &name, &mut candidate, bodies.as_deref_mut())?;
+                let (id, target) = define_body(
+                    compiler_inputs,
+                    module,
+                    id,
+                    &name,
+                    &mut candidate,
+                    bodies.as_deref_mut(),
+                )?;
                 let machine = candidate
                     .compiled_code()
                     .ok_or_else(|| backend("composed phase lacks code"))?;
@@ -1864,6 +1901,7 @@ fn prepare_impl<M: Module>(
         && let Some(private) = private.filter(|contract| contract.permits(proof))
     {
         let (reused, _) = reuse_phase_compared_reads(
+            compiler_inputs,
             &mut context,
             proof,
             region,
@@ -2280,6 +2318,7 @@ fn prepare_impl<M: Module>(
         && let Some(private) = private.filter(|contract| contract.permits(proof))
     {
         let (forwarded, reversed) = reuse_phase_compared_reads(
+            compiler_inputs,
             &mut context,
             proof,
             region,
@@ -2448,10 +2487,11 @@ fn prepare_impl<M: Module>(
             base.parse().map_err(backend)?,
         )?;
         let checked = checked_traversals::share_phase_regions(
+            compiler_inputs,
             module,
             &mut context.func,
             families,
-            checked_traversals::CaptureBindings::from_environment(),
+            checked_traversals::CaptureBindings::capture(compiler_inputs),
         )?;
         if checked.is_some() {
             context.flowgraph();
@@ -2610,7 +2650,7 @@ fn prepare_impl<M: Module>(
             );
         }
     }
-    prepare_body(module.isa(), &mut context)?;
+    prepare_body(compiler_inputs, module.isa(), &mut context)?;
     if !observe && vectors.is_some() {
         phase_layout::apply_register_weights(compiler_inputs, &mut context, &symbol)
             .map_err(backend)?;
@@ -2872,7 +2912,7 @@ fn phase_ir<M: Module>(
         b.append_block_param(error, types::I64);
         b.set_cold_block(error);
         let done = b.create_block();
-        let storage = Arrays::new(module, &mut b, args[0], observe)?;
+        let storage = Arrays::new(controls.inputs(), module, &mut b, args[0], observe)?;
         let native = numeric_minimal::Boundary::new(
             &mut b,
             args[1],
@@ -2963,6 +3003,7 @@ fn optimize_phase(
             .var_os("MECH_COMPACT_SHORT_EQUALITY_PHASE")
             .is_some_and(|target| target == symbol);
     let equality = wide_equal::optimize(
+        compiler_inputs,
         context,
         &word_loops.compact_word_loops,
         private
@@ -3000,6 +3041,7 @@ fn optimize_phase(
             && let Some(contract) = no_growth
         {
             crate::native_artifact::program::codegen::append_run::optimize_with_previous(
+                compiler_inputs,
                 context,
                 word_loops.machine_header,
                 packet,
@@ -3012,6 +3054,7 @@ fn optimize_phase(
             )
         } else {
             crate::native_artifact::program::codegen::append_run::optimize(
+                compiler_inputs,
                 context,
                 word_loops.machine_header,
                 packet,

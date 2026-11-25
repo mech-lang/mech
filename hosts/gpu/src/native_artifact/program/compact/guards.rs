@@ -20,7 +20,7 @@ pub(super) struct Guards {
     expressions: Vec<Option<(u32, Expression)>>,
 }
 impl Guards {
-    pub fn derive(plan: &Plan, flow: &Flow) -> Self {
+    pub fn derive(plan: &Plan, flow: &Flow, sparse_rounds: bool) -> Self {
         let facts = plan.facts();
         let branches = plan
             .blocks()
@@ -88,11 +88,11 @@ impl Guards {
             })
             .collect();
         let mut result = Self {
-            known: vec![State::default(); plan.blocks().len()],
+            known: vec![State::new(sparse_rounds); plan.blocks().len()],
             branches,
             expressions,
         };
-        let mut initial = State::default();
+        let mut initial = State::new(sparse_rounds);
         for constant in plan.constants() {
             if let mech_core::ValueData::Bool(t) = constant.constant().data() {
                 initial.assume(constant.value().get(), *t);
@@ -121,7 +121,10 @@ impl Guards {
                 }
             }
         }
-        result.known = states.into_iter().map(Option::unwrap_or_default).collect();
+        result.known = states
+            .into_iter()
+            .map(|state| state.unwrap_or_else(|| State::new(sparse_rounds)))
+            .collect();
         result
     }
     pub fn contradictory_at(

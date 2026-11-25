@@ -1,6 +1,7 @@
 //! Retry near-identical packed refusals with their repeated bound in one lane.
 use super::{Prepared, RegionKind, matching_relocations, prepare_bodies, region_literals};
 use crate::native_artifact::NativeCompileError;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::{dominator_tree::DominatorTree, ir::Function};
 use cranelift_module::Module;
 
@@ -32,6 +33,7 @@ fn worth_retrying(first: &Prepared, other: &Prepared) -> bool {
 }
 
 pub(super) fn retry<M: Module>(
+    compiler_inputs: &CompilationInputs,
     module: &mut M,
     function: &Function,
     groups: &mut Vec<Prepared>,
@@ -80,6 +82,7 @@ pub(super) fn retry<M: Module>(
         }
         let size = trials.len();
         let mut replacement = prepare_bodies(
+            compiler_inputs,
             module,
             function,
             trials,

@@ -4,6 +4,7 @@
 use super::composed_reads::{View, between, defaulted_read, scalar};
 use super::window_bounds::{comparison, sole_predecessor};
 use super::{MAX_CONSTANT_DEPTH, MAX_CONSTANT_STEPS, constant_integer};
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::Context;
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
 use cranelift_codegen::ir::{
@@ -391,6 +392,7 @@ fn emit(f: &mut Function, group: Group, visits: usize, wide_keys: bool) {
 }
 
 pub(in crate::native_artifact) fn optimize(
+    compiler_inputs: &CompilationInputs,
     ctx: &mut Context,
     header: Block,
     loads: &BTreeMap<Value, (Inst, usize)>,
@@ -408,7 +410,7 @@ pub(in crate::native_artifact) fn optimize(
     let group = recognize(ctx, header, loads, nodes, bins)?;
     let admission = group.admission;
     if options.progressive && options.visits > 4 {
-        chunks::emit(&mut ctx.func, group, options);
+        chunks::emit(compiler_inputs, &mut ctx.func, group, options);
     } else {
         emit(&mut ctx.func, group, options.visits, options.wide_keys);
     }
@@ -418,6 +420,7 @@ pub(in crate::native_artifact) fn optimize(
 }
 
 pub(in crate::native_artifact) fn specialize_single_literals(
+    compiler_inputs: &CompilationInputs,
     context: &mut Context,
     header: Block,
     loads: &BTreeMap<Value, (Inst, usize)>,
@@ -437,7 +440,10 @@ pub(in crate::native_artifact) fn specialize_single_literals(
         end_word: group.admission.end_word?,
         length_mask: group.length_mask,
     };
-    if std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_ADMITTED_PREFIX_READS").is_some() {
+    if compiler_inputs
+        .var_os("MECH_GROUP_PACKED_HISTOGRAM_ADMITTED_PREFIX_READS")
+        .is_some()
+    {
         admit_prefix_read(context, group, loads, nodes);
     }
     chunks::emit_single(&mut context.func, group);
@@ -520,6 +526,7 @@ fn call_phase(cursor: &mut FuncCursor<'_>, phase: FuncRef, inputs: &[Value; 3]) 
 // Check the current packet once on entry. The phase caller has already
 // admitted exclusive writable owners and their initialized lengths.
 pub(in crate::native_artifact) fn guard_entry(
+    compiler_inputs: &CompilationInputs,
     context: &mut Context,
     admission: Admission,
     fast: FuncRef,
@@ -607,12 +614,14 @@ pub(in crate::native_artifact) fn guard_entry(
             let words = chunks::vector_words(&mut cursor, address, -24);
             chunks::vector_mixed(&mut cursor, sample.length_mask, words, None)
         });
-        let prefer_scalar =
-            if std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_MIXED_IF_EITHER").is_some() {
-                cursor.ins().bor(mixed[0], mixed[1])
-            } else {
-                cursor.ins().band(mixed[0], mixed[1])
-            };
+        let prefer_scalar = if compiler_inputs
+            .var_os("MECH_GROUP_PACKED_HISTOGRAM_MIXED_IF_EITHER")
+            .is_some()
+        {
+            cursor.ins().bor(mixed[0], mixed[1])
+        } else {
+            cursor.ins().band(mixed[0], mixed[1])
+        };
         cursor.ins().brif(prefer_scalar, scalar, &[], grouped, &[]);
         cursor.goto_bottom(scalar);
         call_phase(&mut cursor, single, &inputs);

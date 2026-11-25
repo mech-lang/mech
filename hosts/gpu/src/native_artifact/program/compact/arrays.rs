@@ -8,6 +8,7 @@ use super::{
     recipes::Recipe,
 };
 use crate::native_artifact::codegen::common::ssa_words::Words;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use crate::native_artifact::{
     NativeCompileError,
     compiler::{backend, guard, offset},
@@ -131,15 +132,19 @@ pub(super) struct ArrayImports {
 
 impl ArrayImports {
     pub(super) fn declare<M: Module>(
+        compiler_inputs: &CompilationInputs,
         module: &mut M,
         observe: bool,
     ) -> Result<Self, NativeCompileError> {
-        let forward_view_geometry =
-            std::env::var_os("MECH_COMPACT_FORWARD_VIEW_GEOMETRY").is_some();
+        let forward_view_geometry = compiler_inputs
+            .var_os("MECH_COMPACT_FORWARD_VIEW_GEOMETRY")
+            .is_some();
         let register_backing = forward_view_geometry
             && module.isa().default_call_conv() == cranelift_codegen::isa::CallConv::AppleAarch64
             && cfg!(all(target_arch = "aarch64", target_os = "macos"))
-            && std::env::var_os("MECH_COMPACT_REGISTER_BACKING").is_some();
+            && compiler_inputs
+                .var_os("MECH_COMPACT_REGISTER_BACKING")
+                .is_some();
         let allocate = if register_backing {
             declare_import(module, "mech_compact_allocate_backing", 5, 2)?
         } else {
@@ -153,7 +158,9 @@ impl ArrayImports {
                 2,
             )?)
         } else if forward_view_geometry
-            && std::env::var_os("MECH_COMPACT_PACK_WRITABLE_STORAGE").is_some()
+            && compiler_inputs
+                .var_os("MECH_COMPACT_PACK_WRITABLE_STORAGE")
+                .is_some()
         {
             Some(declare_import(
                 module,
@@ -164,15 +171,18 @@ impl ArrayImports {
         } else {
             None
         };
-        let release_groups =
-            if !observe && std::env::var_os("MECH_COMPACT_GROUP_RETIREMENTS").is_some() {
-                Some([
-                    declare_import(module, "mech_compact_release_two", 3, 1)?,
-                    declare_import(module, "mech_compact_release_four", 5, 1)?,
-                ])
-            } else {
-                None
-            };
+        let release_groups = if !observe
+            && compiler_inputs
+                .var_os("MECH_COMPACT_GROUP_RETIREMENTS")
+                .is_some()
+        {
+            Some([
+                declare_import(module, "mech_compact_release_two", 3, 1)?,
+                declare_import(module, "mech_compact_release_four", 5, 1)?,
+            ])
+        } else {
+            None
+        };
         Ok(Self {
             allocate,
             writable: declare_import(module, "mech_compact_writable", 7, 1)?,
@@ -193,12 +203,13 @@ impl ArrayImports {
 
 impl Arrays {
     pub fn new<M: Module>(
+        compiler_inputs: &CompilationInputs,
         module: &mut M,
         b: &mut FunctionBuilder<'_>,
         heap: Value,
         observe: bool,
     ) -> Result<Self, NativeCompileError> {
-        let imports = ArrayImports::declare(module, observe)?;
+        let imports = ArrayImports::declare(compiler_inputs, module, observe)?;
         let allocate = module.declare_func_in_func(imports.allocate, b.func);
         let writable_scalar = imports
             .writable_scalar

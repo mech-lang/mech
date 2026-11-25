@@ -1,5 +1,6 @@
 //! Specialize a checked, capacity-proved append recurrence. Every side exit
 //! restarts the same source visit before a write, with its current loop state.
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::Context;
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
 use cranelift_codegen::ir::condcodes::{CondCode, IntCC};
@@ -296,15 +297,17 @@ fn emit(
 }
 
 pub(in crate::native_artifact) fn optimize(
+    compiler_inputs: &CompilationInputs,
     context: &mut Context,
     header: Block,
     packet: Option<(usize, bool)>,
     pair_appends: bool,
 ) -> Result<(usize, usize, usize, bool), &'static str> {
-    optimize_inner(context, header, packet, pair_appends, None)
+    optimize_inner(compiler_inputs, context, header, packet, pair_appends, None)
 }
 
 pub(in crate::native_artifact) fn optimize_with_previous(
+    compiler_inputs: &CompilationInputs,
     context: &mut Context,
     header: Block,
     packet: Option<(usize, bool)>,
@@ -313,6 +316,7 @@ pub(in crate::native_artifact) fn optimize_with_previous(
     hint: &mut Option<Previous>,
 ) -> Result<(usize, usize, usize, bool), &'static str> {
     optimize_inner(
+        compiler_inputs,
         context,
         header,
         packet,
@@ -322,6 +326,7 @@ pub(in crate::native_artifact) fn optimize_with_previous(
 }
 
 fn optimize_inner(
+    compiler_inputs: &CompilationInputs,
     context: &mut Context,
     header: Block,
     packet: Option<(usize, bool)>,
@@ -350,16 +355,24 @@ fn optimize_inner(
             &trace,
             &old_params,
             pairs::Options {
-                allow_biased_costs: std::env::var_os("MECH_PAIR_BIASED_APPENDS").is_some(),
-                rebase_costs: std::env::var_os("MECH_PAIR_REBASE_LITERAL_COSTS").is_some(),
-                check_literal_bytes: std::env::var_os("MECH_CHECK_GROUPED_LITERAL_BYTES").is_some(),
-                limit_literal_span: std::env::var_os("MECH_GROUPED_LITERAL_PREFIX_SPAN").is_some(),
-                group_four: std::env::var_os("MECH_COMPACT_GROUP_FOUR_LITERAL_APPENDS").is_some(),
+                allow_biased_costs: compiler_inputs.var_os("MECH_PAIR_BIASED_APPENDS").is_some(),
+                rebase_costs: compiler_inputs
+                    .var_os("MECH_PAIR_REBASE_LITERAL_COSTS")
+                    .is_some(),
+                check_literal_bytes: compiler_inputs
+                    .var_os("MECH_CHECK_GROUPED_LITERAL_BYTES")
+                    .is_some(),
+                limit_literal_span: compiler_inputs
+                    .var_os("MECH_GROUPED_LITERAL_PREFIX_SPAN")
+                    .is_some(),
+                group_four: compiler_inputs
+                    .var_os("MECH_COMPACT_GROUP_FOUR_LITERAL_APPENDS")
+                    .is_some(),
             },
         ) {
             Ok(pair) => Some(pair),
             Err(reason) => {
-                if std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+                if compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
                     eprintln!("checked pair append declined: {reason}");
                 }
                 None

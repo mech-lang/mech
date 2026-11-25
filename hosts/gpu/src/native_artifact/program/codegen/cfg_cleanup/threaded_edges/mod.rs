@@ -3,6 +3,7 @@
 mod route;
 mod values;
 mod visits;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
 use cranelift_codegen::dominator_tree::DominatorTree;
 use cranelift_codegen::flowgraph::ControlFlowGraph;
@@ -84,12 +85,19 @@ fn rewrite(
     }
 }
 
-pub(super) fn optimize(f: &mut Function, cfg: &ControlFlowGraph, dom: &DominatorTree) -> Report {
+pub(super) fn optimize(
+    compiler_inputs: &CompilationInputs,
+    f: &mut Function,
+    cfg: &ControlFlowGraph,
+    dom: &DominatorTree,
+) -> Report {
     optimize_with_index(
         f,
         cfg,
         dom,
-        std::env::var_os("MECH_COMPACT_INDEX_LOOP_LIVE_OUTS").is_some(),
+        compiler_inputs
+            .var_os("MECH_COMPACT_INDEX_LOOP_LIVE_OUTS")
+            .is_some(),
     )
 }
 

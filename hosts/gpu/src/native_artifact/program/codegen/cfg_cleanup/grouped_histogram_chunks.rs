@@ -1,6 +1,7 @@
 //! Commit literal chunks in source order, stopping before the first mixed chunk.
 //! The existing entry proves the complete node and counter views are disjoint.
 use super::*;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::ir::{BlockArg, ConstantData};
 
 enum Chunk {
@@ -317,7 +318,12 @@ fn stream(
     }
 }
 
-pub(super) fn emit(f: &mut Function, group: Group, options: Options) {
+pub(super) fn emit(
+    compiler_inputs: &CompilationInputs,
+    f: &mut Function,
+    group: Group,
+    options: Options,
+) {
     let Options {
         visits,
         wide_keys,
@@ -333,7 +339,8 @@ pub(super) fn emit(f: &mut Function, group: Group, options: Options) {
         unreachable!("group was derived from an integer branch")
     };
     let fallback = blocks[group.selected];
-    let history = std::env::var_os("MECH_GROUP_PACKED_HISTOGRAM_WAIT_FOR_RUN")
+    let history = compiler_inputs
+        .var_os("MECH_GROUP_PACKED_HISTOGRAM_WAIT_FOR_RUN")
         .is_some()
         .then(|| literal_history(f, group.header));
     let last_literal = history.map(|(_, literal)| literal);

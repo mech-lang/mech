@@ -1,9 +1,11 @@
 //! Specialize a byte histogram only under the existing numeric caller's
 //! ownership/current-view gates and a new whole-span guard before source work.
 use super::*;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cfg_cleanup::bounded_byte_histogram::{self, Admission, ByteGrouping};
 
 pub(super) fn prepare<M: Module>(
+    compiler_inputs: &CompilationInputs,
     module: &mut M,
     context: &mut Context,
     proof: &Proof,
@@ -44,18 +46,23 @@ pub(super) fn prepare<M: Module>(
     }
     let mut specialized = module.make_context();
     specialized.func = context.func.clone();
-    let grouping = std::env::var_os("MECH_HISTOGRAM_GROUP_BYTE_VISITS").map(|mode| {
-        if mode == "addressed-eight" {
-            ByteGrouping::AddressedEight
-        } else if mode == "packed-eight" {
-            ByteGrouping::PackedEight
-        } else {
-            ByteGrouping::Four
-        }
-    });
-    let vector_scan = std::env::var_os("MECH_HISTOGRAM_VECTOR_COUNTER_SCAN").is_some();
-    let counter_capacity =
-        std::env::var_os("MECH_HISTOGRAM_ENTRY_COUNTER_CAPACITY").and_then(|_| {
+    let grouping = compiler_inputs
+        .var_os("MECH_HISTOGRAM_GROUP_BYTE_VISITS")
+        .map(|mode| {
+            if mode == "addressed-eight" {
+                ByteGrouping::AddressedEight
+            } else if mode == "packed-eight" {
+                ByteGrouping::PackedEight
+            } else {
+                ByteGrouping::Four
+            }
+        });
+    let vector_scan = compiler_inputs
+        .var_os("MECH_HISTOGRAM_VECTOR_COUNTER_SCAN")
+        .is_some();
+    let counter_capacity = compiler_inputs
+        .var_os("MECH_HISTOGRAM_ENTRY_COUNTER_CAPACITY")
+        .and_then(|_| {
             if let Some(grouping) = grouping {
                 bounded_byte_histogram::optimize_grouped_counter_capacity(
                     &mut specialized,
@@ -86,14 +93,15 @@ pub(super) fn prepare<M: Module>(
     let id = module
         .declare_function(&name, Linkage::Local, signature)
         .map_err(backend)?;
-    let inspection = std::env::var_os("MECH_INSPECT_PHASE_CLIF")
+    let inspection = compiler_inputs
+        .var_os("MECH_INSPECT_PHASE_CLIF")
         .map(std::path::PathBuf::from)
         .filter(|path| path.file_stem().is_some_and(|stem| stem == name.as_str()));
     if let Some(path) = &inspection {
         std::fs::write(path, specialized.func.display().to_string()).map_err(backend)?;
         specialized.set_disasm(true);
     }
-    let (id, target) = define_body(module, id, &name, &mut specialized, bodies)?;
+    let (id, target) = define_body(compiler_inputs, module, id, &name, &mut specialized, bodies)?;
     let machine = specialized
         .compiled_code()
         .ok_or_else(|| backend("bounded histogram lacks code"))?;

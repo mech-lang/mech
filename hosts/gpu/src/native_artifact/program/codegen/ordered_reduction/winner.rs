@@ -1,9 +1,11 @@
 //! Reconstruct the earliest winning index only after a strict cost improvement.
 use super::emit::minimum_splat;
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use cranelift_codegen::ir::{InstBuilder, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 
 fn indices(
+    compiler_inputs: &CompilationInputs,
     b: &mut FunctionBuilder<'_>,
     costs: Value,
     minima: Value,
@@ -13,10 +15,11 @@ fn indices(
     let equal = b.ins().icmp(IntCC::Equal, costs, minima);
     let missing = b.ins().splat(types::I32X4, missing);
     let selected = b.ins().bitselect(equal, indices, missing);
-    minimum_splat(b, selected)
+    minimum_splat(compiler_inputs, b, selected)
 }
 
 pub(super) fn emit(
+    compiler_inputs: &CompilationInputs,
     b: &mut FunctionBuilder<'_>,
     costs: Value,
     positions: Value,
@@ -25,6 +28,7 @@ pub(super) fn emit(
     defer: bool,
 ) -> (Value, Value) {
     emit_mapped(
+        compiler_inputs,
         b,
         costs,
         positions,
@@ -37,6 +41,7 @@ pub(super) fn emit(
 }
 
 pub(super) fn emit_mapped<F>(
+    compiler_inputs: &CompilationInputs,
     b: &mut FunctionBuilder<'_>,
     costs: Value,
     positions: Value,
@@ -52,10 +57,10 @@ where
     // Every lane was seeded with the incoming best. Only a strict improvement
     // records an index. Equal costs therefore retain the missing sentinel;
     // among improved lanes the earliest index can occur in any vector lane.
-    let minima = minimum_splat(b, costs);
+    let minima = minimum_splat(compiler_inputs, b, costs);
     if !defer {
         // Preserve the existing IR construction order when the option is off.
-        let winners = indices(b, costs, minima, positions, missing);
+        let winners = indices(compiler_inputs, b, costs, minima, positions, missing);
         let minimum = b.ins().extractlane(minima, 0);
         let winner = b.ins().extractlane(winners, 0);
         return (minimum, map(b, winner, false));
@@ -68,7 +73,7 @@ where
     b.ins()
         .brif(improved, select, &[], done, &[unchanged.into()]);
     b.switch_to_block(select);
-    let winners = indices(b, costs, minima, positions, missing);
+    let winners = indices(compiler_inputs, b, costs, minima, positions, missing);
     let winner = b.ins().extractlane(winners, 0);
     let selected = map(b, winner, true);
     b.ins().jump(done, &[selected.into()]);

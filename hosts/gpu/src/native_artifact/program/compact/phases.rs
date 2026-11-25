@@ -1368,7 +1368,8 @@ pub(super) fn define<M: Module>(
                 // IDs together. An unadmitted body leaves the compiler state intact.
                 let mut recorded = pool.record(module)?;
                 let mut tables = dense_tables.clone();
-                let general = function::declare_refused_general(&mut recorded, header)?;
+                let general =
+                    function::declare_refused_general(compiler_inputs, &mut recorded, header)?;
                 let fast = function::prepare(
                     &mut recorded,
                     compiler_inputs,
@@ -1447,7 +1448,8 @@ pub(super) fn define<M: Module>(
             if let Some((general, _, fast)) = &chosen {
                 (None, *general, fast.entry_bounds().to_vec(), None)
             } else if let Some((bounds, contract)) = source_admission.or(vector_only) {
-                let declaration = function::declare_refused_general(module, header)?;
+                let declaration =
+                    function::declare_refused_general(compiler_inputs, module, header)?;
                 (None, declaration, bounds, Some(contract))
             } else {
                 let ready = function::prepare_general(

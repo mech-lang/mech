@@ -636,7 +636,7 @@ pub(in crate::native_artifact::program::compact) fn define_seeded_histograms<M: 
         let id = module
             .declare_function(&name, Linkage::Local, &context.func.signature)
             .map_err(backend)?;
-        let (target, _) = define_body(module, id, &name, &mut context, None)?;
+        let (target, _) = define_body(compiler_inputs, module, id, &name, &mut context, None)?;
         let compiled = context
             .compiled_code()
             .ok_or_else(|| backend("seeded tally lacks code"))?;
@@ -657,7 +657,14 @@ pub(in crate::native_artifact::program::compact) fn define_seeded_histograms<M: 
         let entry_id = module
             .declare_function(&entry_name, Linkage::Local, &entry.func.signature)
             .map_err(backend)?;
-        let (target, _) = define_body(module, entry_id, &entry_name, &mut entry, None)?;
+        let (target, _) = define_body(
+            compiler_inputs,
+            module,
+            entry_id,
+            &entry_name,
+            &mut entry,
+            None,
+        )?;
         let adapter = entry
             .compiled_code()
             .ok_or_else(|| backend("seeded tally entry lacks code"))?;

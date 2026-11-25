@@ -88,6 +88,10 @@ pub(in crate::native_artifact) fn private_checked_child_bounds(
     region: &Region,
     private: &PrivatePhase,
 ) -> Option<Vec<(usize, u64)>> {
+    let CodePlan::Program(prepared) = code else {
+        return None;
+    };
+    let compiler_inputs = prepared.compiler_inputs();
     let proof = region.numeric.as_ref()?;
     let shadow = region.shadow?;
     if !private.permits(proof) {
@@ -96,13 +100,22 @@ pub(in crate::native_artifact) fn private_checked_child_bounds(
     super::numeric_phase_bounds::checked_child_bounds(
         code,
         proof,
-        terminal_fallbacks(proof, shadow, Some(private)),
+        terminal_fallbacks(compiler_inputs, proof, shadow, Some(private)),
     )
 }
 
-fn terminal_fallbacks(proof: &Proof, shadow: usize, private: Option<&PrivatePhase>) -> bool {
+fn terminal_fallbacks(
+    compiler_inputs: &crate::native_artifact::codegen::compilation_inputs::CompilationInputs,
+    proof: &Proof,
+    shadow: usize,
+    private: Option<&PrivatePhase>,
+) -> bool {
     private.is_some_and(|contract| {
-        if std::env::var_os("MECH_PHASE_ASSERTION_FLOORS").is_none() || !contract.permits(proof) {
+        if compiler_inputs
+            .var_os("MECH_PHASE_ASSERTION_FLOORS")
+            .is_none()
+            || !contract.permits(proof)
+        {
             return false;
         }
         let handoffs = contract.exports(shadow);
@@ -133,9 +146,12 @@ pub(in crate::native_artifact) fn emit(
     let CodePlan::Program(program) = code else {
         return Err(backend("compact native code requires canonical Program"));
     };
+    let compiler_inputs = controls.inputs();
     let site = region.tail.header() as usize;
-    let carry_item =
-        no_growth.is_some() && std::env::var_os("MECH_DIRECT_ITEM_NO_GROWTH").is_some();
+    let carry_item = no_growth.is_some()
+        && compiler_inputs
+            .var_os("MECH_DIRECT_ITEM_NO_GROWTH")
+            .is_some();
     let setup_start = b.func.dfg.num_insts();
     let shadow = region
         .shadow
@@ -149,7 +165,9 @@ pub(in crate::native_artifact) fn emit(
     let bailout = b.create_block();
     let failed = b.create_block();
     b.append_block_param(failed, types::I64);
-    let failure_scope = std::env::var("MECH_COMPACT_SHARE_NUMERIC_ERROR_TAILS").ok();
+    let failure_scope = compiler_inputs
+        .var("MECH_COMPACT_SHARE_NUMERIC_ERROR_TAILS")
+        .ok();
     let shared_failure = match failure_scope.as_deref() {
         Some("1" | "all") => true,
         Some(scope) => {
@@ -213,12 +231,16 @@ pub(in crate::native_artifact) fn emit(
         proof,
         &versions,
         &initial,
-        terminal_fallbacks(proof, shadow, private),
+        terminal_fallbacks(compiler_inputs, proof, shadow, private),
     );
     let collect_fixed_writes = vectors.is_some()
         && private.is_some_and(|contract| contract.permits(proof))
-        && (std::env::var_os("MECH_PREFETCH_PRIVATE_WRITES").is_some()
-            || std::env::var_os("MECH_SCHEDULE_INDEPENDENT_PRIVATE_READS").is_some());
+        && (compiler_inputs
+            .var_os("MECH_PREFETCH_PRIVATE_WRITES")
+            .is_some()
+            || compiler_inputs
+                .var_os("MECH_SCHEDULE_INDEPENDENT_PRIVATE_READS")
+                .is_some());
     let mut phase_indices = super::numeric_phase_bounds::Indices::new(code);
     let mut traversal = if phase_entry_bounds.is_empty() {
         initial
@@ -268,7 +290,10 @@ pub(in crate::native_artifact) fn emit(
                 .filter_map(|v| {
                     let cert = super::wide_equal::certify(v, proof, &read_packs)?;
                     Some(
-                        if std::env::var_os("MECH_REUSE_SHIFTED_EQUALITY").is_some() {
+                        if compiler_inputs
+                            .var_os("MECH_REUSE_SHIFTED_EQUALITY")
+                            .is_some()
+                        {
                             cert.with_reuse_scope(code, proof, v, &blocks)
                         } else {
                             cert
@@ -310,7 +335,8 @@ pub(in crate::native_artifact) fn emit(
     );
     // Keep inspection separate from source locations and IR construction so
     // the normal admission and optimization route remains measurable.
-    let source_map_path = std::env::var_os("MECH_INSPECT_NUMERIC_SITE_BLOCKS")
+    let source_map_path = compiler_inputs
+        .var_os("MECH_INSPECT_NUMERIC_SITE_BLOCKS")
         .map(std::path::PathBuf::from)
         .filter(|path| {
             let kind = if vectors.is_some() {
@@ -579,7 +605,9 @@ pub(in crate::native_artifact) fn emit(
                 let ordinal = b.ins().iadd_imm(index, -1);
                 if let Operation::Read { array, index, .. } = operation
                     && (traversal.read(site, *array, *index)
-                        || (std::env::var_os("MECH_PHASE_ASSERTION_FLOORS").is_some()
+                        || (compiler_inputs
+                            .var_os("MECH_PHASE_ASSERTION_FLOORS")
+                            .is_some()
                             && report.phase_entry_bounds.iter().any(|&(at, minimum)| {
                                 at == *array && phase_indices.proves(*index, minimum)
                             })))
@@ -588,9 +616,13 @@ pub(in crate::native_artifact) fn emit(
                         .proven_scalar_read_guards
                         .push((site, *array, *index));
                 } else if let Operation::Write { array, index, .. } = operation
-                    && std::env::var_os("MECH_TRAVERSAL_WRITE_BOUNDS").is_some()
+                    && compiler_inputs
+                        .var_os("MECH_TRAVERSAL_WRITE_BOUNDS")
+                        .is_some()
                     && (traversal.write(site, *array, *index)
-                        || (std::env::var_os("MECH_PHASE_ASSERTION_FLOORS").is_some()
+                        || (compiler_inputs
+                            .var_os("MECH_PHASE_ASSERTION_FLOORS")
+                            .is_some()
                             && report.phase_entry_bounds.iter().any(|&(at, minimum)| {
                                 at == *array && phase_indices.proves(*index, minimum)
                             })))
@@ -669,7 +701,8 @@ pub(in crate::native_artifact) fn emit(
                             );
                             if width == 1
                                 && vector_entry
-                                && std::env::var_os("MECH_REUSE_COMPARED_BYTES")
+                                && compiler_inputs
+                                    .var_os("MECH_REUSE_COMPARED_BYTES")
                                     .is_some_and(|mode| mode == "proved")
                                 && let Some(read) =
                                     super::cfg_cleanup::compared_bytes::BoundedRead::new(
@@ -827,6 +860,7 @@ pub(in crate::native_artifact) fn emit(
                     .map(|check| (site, check)),
             );
             if let Some(completed) = window.gate(
+                controls.inputs(),
                 b,
                 &words,
                 shadow,

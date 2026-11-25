@@ -838,7 +838,13 @@ fn captured_heap_setup_uses_each_phase_frame_and_refuses_a_non_entry_load() {
         b.ins().return_(&[sum, carried]);
         b.seal_all_blocks();
         b.finalize();
-        let stubs = ReleaseStubs::prepare_captured(&mut module, &mut context.func, phase).unwrap();
+        let stubs = ReleaseStubs::prepare_captured(
+            &crate::native_artifact::codegen::compilation_inputs::CompilationInputs::capture([]),
+            &mut module,
+            &mut context.func,
+            phase,
+        )
+        .unwrap();
         assert_eq!(stubs.is_some(), !non_entry);
         context.verify(module.isa()).unwrap();
         let id = module

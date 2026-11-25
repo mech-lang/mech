@@ -1,4 +1,5 @@
 //! Share the checked entry's repeated argument setup for checked heap calls.
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use crate::native_artifact::{NativeCompileError, compiler::backend};
 use cranelift_codegen::{
     binemit::Reloc,
@@ -34,6 +35,7 @@ pub(super) struct ReleaseStubs {
 
 impl ReleaseStubs {
     pub(super) fn prepare<M: Module>(
+        compiler_inputs: &CompilationInputs,
         module: &mut M,
         root: &mut Function,
     ) -> Result<Option<Self>, NativeCompileError> {
@@ -46,10 +48,11 @@ impl ReleaseStubs {
         let Some(&heap) = root.dfg.block_params(entry).first() else {
             return Ok(None);
         };
-        Self::prepare_invariant(module, root, heap, None)
+        Self::prepare_invariant(compiler_inputs, module, root, heap, None)
     }
 
     pub(super) fn prepare_captured<M: Module>(
+        compiler_inputs: &CompilationInputs,
         module: &mut M,
         function: &mut Function,
         phase: usize,
@@ -103,10 +106,11 @@ impl ReleaseStubs {
         let Some(heap) = heap else {
             return Ok(None);
         };
-        Self::prepare_invariant(module, function, heap, Some(phase))
+        Self::prepare_invariant(compiler_inputs, module, function, heap, Some(phase))
     }
 
     fn prepare_invariant<M: Module>(
+        compiler_inputs: &CompilationInputs,
         module: &mut M,
         root: &mut Function,
         heap: Value,
@@ -117,11 +121,12 @@ impl ReleaseStubs {
         }
         let entry = root.layout.entry_block().expect("proved entry");
         let word = AbiParam::new(types::I64);
-        let scope = std::env::var("MECH_COMPACT_SHARE_BACKING_SETUP").ok();
+        let scope = compiler_inputs.var("MECH_COMPACT_SHARE_BACKING_SETUP").ok();
         let backing = matches!(scope.as_deref(), Some("all" | "backing"));
         let append = matches!(scope.as_deref(), Some("all" | "append"));
-        let literal_allocation =
-            std::env::var_os("MECH_COMPACT_LITERAL_ALLOCATION_FROM_FRAME").is_some();
+        let literal_allocation = compiler_inputs
+            .var_os("MECH_COMPACT_LITERAL_ALLOCATION_FROM_FRAME")
+            .is_some();
         let calls = root
             .layout
             .blocks()

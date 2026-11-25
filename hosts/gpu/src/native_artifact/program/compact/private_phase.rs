@@ -162,8 +162,11 @@ impl PrivatePhase {
                 exports,
             });
         }
-        let compact_packet =
-            compact_packet && std::env::var_os("MECH_PHASE_INVARIANT_VIEWS").is_some();
+        let compact_packet = compact_packet
+            && prepared
+                .compiler_inputs()
+                .var_os("MECH_PHASE_INVARIANT_VIEWS")
+                .is_some();
         Ok(Some(Self {
             proof,
             compact_packet,

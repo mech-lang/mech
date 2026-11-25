@@ -72,6 +72,7 @@ pub(in crate::native_artifact) fn define_cfg<M: Module>(
     module: &mut M,
     limits: NativeCompileLimits,
     options: &crate::native_artifact::codegen::options::OptimizationOptions,
+    _compiler_inputs: &crate::native_artifact::codegen::compilation_inputs::CompilationInputs,
 ) -> Result<(FuncId, u64, u64, CodegenReport), NativeCompileError> {
     let origin_flags = if plan.is_program() {
         crate::native_artifact::codegen::common::memory_regions::origin(*options)
@@ -170,7 +171,10 @@ pub(in crate::native_artifact) fn define_cfg<M: Module>(
         #[cfg(feature = "canonical-native-program")]
         frozen,
         #[cfg(feature = "canonical-native-program")]
-        controls: crate::native_artifact::codegen::options::CompilationControls::new(*options),
+        controls: crate::native_artifact::codegen::options::CompilationControls::with_inputs(
+            *options,
+            _compiler_inputs,
+        ),
         #[cfg(feature = "canonical-native-program")]
         report: CodegenReport::default(),
     };

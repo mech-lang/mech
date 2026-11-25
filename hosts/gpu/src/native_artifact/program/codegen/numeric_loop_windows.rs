@@ -289,6 +289,7 @@ impl Version {
     /// checked child, including its original zero-trip and overflow behavior.
     pub fn gate(
         &self,
+        compiler_inputs: &crate::native_artifact::codegen::compilation_inputs::CompilationInputs,
         b: &mut FunctionBuilder<'_>,
         words: &Words,
         shadow: usize,
@@ -360,6 +361,7 @@ impl Version {
             if let Some(reduction) = &self.reduction {
                 b.switch_to_block(selected);
                 let completed = reduction.emit(
+                    compiler_inputs,
                     b,
                     words,
                     proof,

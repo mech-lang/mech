@@ -87,15 +87,17 @@ impl JitProgramArtifact {
         options: &crate::native_artifact::codegen::options::OptimizationOptions,
     ) -> Result<Self, NativeCompileError> {
         host_supported()?;
+        let inputs = CompilationInputs::legacy();
         let plan = lower_native_program_artifact_with_definition_table_limit(
             artifact,
             catalog,
             limits.max_definition_table_bytes,
         )
         .map_err(backend)?;
-        let mut module = codegen_backend::jit(PROGRAM_CODEGEN_FLAGS)?;
+        let mut module = codegen_backend::jit_with_inputs(PROGRAM_CODEGEN_FLAGS, &inputs)?;
         preflight(&plan, &module, limits)?;
-        let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
+        let prepared = PreparedNativeProgram::prepare_with_inputs(artifact, catalog, plan, &inputs)
+            .map_err(backend)?;
         let (function, stack, code, _codegen) =
             crate::native_artifact::codegen::control::define_cfg(
                 CodePlan::Program(&prepared),
@@ -104,6 +106,7 @@ impl JitProgramArtifact {
                 &mut module,
                 limits,
                 options,
+                &inputs,
             )?;
         let descriptor = NativeProgramDescriptor::from_prepared(
             prepared,
@@ -374,15 +377,18 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
     options: &crate::native_artifact::codegen::options::OptimizationOptions,
 ) -> Result<NativeProgramObject, NativeCompileError> {
     host_supported()?;
+    let inputs = CompilationInputs::legacy();
     let plan = lower_native_program_artifact_with_definition_table_limit(
         artifact,
         catalog,
         limits.max_definition_table_bytes,
     )
     .map_err(backend)?;
-    let mut module = codegen_backend::object("mech_canonical_program", PROGRAM_CODEGEN_FLAGS)?;
+    let (mut module, _) =
+        codegen_backend::object_with_isa("mech_canonical_program", PROGRAM_CODEGEN_FLAGS, &inputs)?;
     preflight(&plan, &module, limits)?;
-    let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
+    let prepared = PreparedNativeProgram::prepare_with_inputs(artifact, catalog, plan, &inputs)
+        .map_err(backend)?;
     let (entry, stack, code, codegen) = crate::native_artifact::codegen::control::define_cfg(
         CodePlan::Program(&prepared),
         ENTRY,
@@ -390,6 +396,7 @@ pub(in crate::native_artifact) fn emit_program_object_with_options(
         &mut module,
         limits,
         options,
+        &inputs,
     )?;
     finish_program_object(
         module,
@@ -542,7 +549,9 @@ pub fn compact_native_layout_for_diagnostic(
         .var_os("MECH_COMPACT_PROOF_INVENTORY")
         .is_some()
     {
-        let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
+        let prepared =
+            PreparedNativeProgram::prepare_with_inputs(artifact, catalog, plan, &compiler_inputs)
+                .map_err(backend)?;
         let meta = prepared.metadata();
         let complete_headers = compiler_inputs
             .var("MECH_COMPACT_COMPLETE_PROOF_HEADERS")
@@ -610,7 +619,9 @@ fn emit_compact_with_inputs(
         plan.blocks().len(),
         plan.values().len()
     );
-    let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
+    let prepared =
+        PreparedNativeProgram::prepare_with_inputs(artifact, catalog, plan, compiler_inputs)
+            .map_err(backend)?;
     eprintln!("compact-stage: native module");
     let mut flags = PROGRAM_CODEGEN_FLAGS.to_vec();
     if cfg!(target_arch = "aarch64")
@@ -746,6 +757,7 @@ pub fn emit_minimal_numeric_object_for_diagnostic(
     use cranelift_codegen::ir::{AbiParam, InstBuilder, MemFlags, types};
     use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
     host_supported()?;
+    let inputs = CompilationInputs::legacy();
     let limits = crate::native_artifact::NativeProgramLimitMode::NoLimits.compilation();
     let plan = lower_native_program_artifact_with_definition_table_limit(
         artifact,
@@ -753,12 +765,16 @@ pub fn emit_minimal_numeric_object_for_diagnostic(
         limits.max_definition_table_bytes,
     )
     .map_err(backend)?;
-    let prepared = PreparedNativeProgram::prepare(artifact, catalog, plan).map_err(backend)?;
-    let mut module =
-        codegen_backend::object("mech_minimal_numeric_diagnostic", PROGRAM_CODEGEN_FLAGS)?;
+    let prepared = PreparedNativeProgram::prepare_with_inputs(artifact, catalog, plan, &inputs)
+        .map_err(backend)?;
+    let (mut module, _) = codegen_backend::object_with_isa(
+        "mech_minimal_numeric_diagnostic",
+        PROGRAM_CODEGEN_FLAGS,
+        &inputs,
+    )?;
     let code = CodePlan::Program(&prepared);
     let closed = &prepared.metadata().closed_tails;
-    let controls = CompilationControls::new(OptimizationOptions::default());
+    let controls = CompilationControls::with_inputs(OptimizationOptions::default(), &inputs);
     let mut reports = Vec::new();
     let mut functions = Vec::new();
     for (id, region) in closed.regions.iter().enumerate() {

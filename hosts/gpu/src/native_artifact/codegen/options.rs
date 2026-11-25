@@ -169,6 +169,7 @@ pub(in crate::native_artifact) struct CompilationControls {
 }
 #[cfg(feature = "canonical-native-program")]
 impl CompilationControls {
+    #[cfg(test)]
     pub fn new(options: OptimizationOptions) -> Self {
         Self::with_inputs(options, &CompilationInputs::legacy())
     }

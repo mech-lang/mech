@@ -279,8 +279,7 @@ pub(crate) struct State {
     expressions: Arc<BTreeMap<u32, Expression>>,
     index: Arc<OnceLock<RelationIndex>>,
     closed: bool,
-    #[cfg(test)]
-    sparse_rounds: Option<bool>,
+    sparse_rounds: bool,
 }
 impl PartialEq for State {
     fn eq(&self, other: &Self) -> bool {
@@ -348,21 +347,17 @@ impl State {
         }
         changed
     }
-    fn use_sparse_rounds(&self) -> bool {
-        #[cfg(test)]
-        if let Some(enabled) = self.sparse_rounds {
-            return enabled;
+    pub(super) fn new(sparse_rounds: bool) -> Self {
+        Self {
+            sparse_rounds,
+            ..Self::default()
         }
-        static ENABLED: OnceLock<bool> = OnceLock::new();
-        *ENABLED.get_or_init(|| {
-            std::env::var("MECH_GUARD_SPARSE_ROUNDS").is_ok_and(|value| value == "1")
-        })
     }
     pub(super) fn close(&mut self) {
         if self.closed {
             return;
         }
-        let sparse = self.use_sparse_rounds();
+        let sparse = self.sparse_rounds;
         // Rows and projection peers retain the original ascending-output order,
         // including first-inference priority on contradictory syntactic paths.
         let index = self
@@ -672,7 +667,7 @@ mod tests {
                 let mut random = seed + 1;
                 let mut actual = vec![
                     State {
-                        sparse_rounds: Some(sparse_rounds),
+                        sparse_rounds,
                         ..State::default()
                     };
                     4
@@ -774,7 +769,7 @@ mod tests {
                 .collect::<BTreeMap<_, _>>();
             let mut state = State {
                 expressions: Arc::new(expressions.clone()),
-                sparse_rounds: Some(sparse_rounds),
+                sparse_rounds,
                 ..State::default()
             };
             let mut reference = ReferenceState {
@@ -960,7 +955,7 @@ mod tests {
                 for pattern in 0..729usize {
                     let mut state = State {
                         expressions: expressions.clone(),
-                        sparse_rounds: Some(sparse_rounds),
+                        sparse_rounds,
                         ..State::default()
                     };
                     let mut reference = ReferenceState {

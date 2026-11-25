@@ -286,13 +286,18 @@ fn forward_order_result(context: &mut Context, join: Block, comparison: Inst) ->
 }
 
 pub(in crate::native_artifact) fn fold_word_order(
+    compiler_inputs: &CompilationInputs,
     context: &mut Context,
     witnesses: &[AdmittedWordMismatch],
     views: &BTreeMap<usize, (Value, Value)>,
     reverse_words: bool,
 ) -> (usize, usize) {
-    let trace = std::env::var_os("MECH_INSPECT_WORD_MISMATCH_ORDER").is_some();
-    let forward_order = std::env::var_os("MECH_COMPACT_FORWARD_WORD_ORDER_RESULT").is_some();
+    let trace = compiler_inputs
+        .var_os("MECH_INSPECT_WORD_MISMATCH_ORDER")
+        .is_some();
+    let forward_order = compiler_inputs
+        .var_os("MECH_COMPACT_FORWARD_WORD_ORDER_RESULT")
+        .is_some();
     let (mut forwarded, mut reversed) = (0, 0);
     for witness in witnesses {
         context.flowgraph();
@@ -305,7 +310,7 @@ pub(in crate::native_artifact) fn fold_word_order(
             }
             continue;
         };
-        let Some(mut plan) = walk.trace(0, destination) else {
+        let Some(mut plan) = walk.trace(compiler_inputs, 0, destination) else {
             if trace {
                 eprintln!(
                     "word mismatch {} could not replay the byte path",

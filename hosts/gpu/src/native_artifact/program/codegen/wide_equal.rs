@@ -5,6 +5,7 @@
 use super::{
     cfg_cleanup::masked_integer_comparison, numeric_loop_windows::Version, numeric_read_packs::Pack,
 };
+use crate::native_artifact::codegen::compilation_inputs::CompilationInputs;
 use crate::native_artifact::program::prepare::readonly_numeric::Proof;
 use cranelift_codegen::Context;
 use cranelift_codegen::cursor::{Cursor, FuncCursor};
@@ -462,8 +463,12 @@ fn candidate(context: &Context, cert: &Certificate) -> Option<Change> {
 // Keep the equality result in vector form until its one Boolean observation.
 // This reads exactly the same admitted words and retains the scalar mismatch
 // continuation; only the pure reduction of already-loaded bits changes.
-fn any_bits(c: &mut FuncCursor<'_>, difference: Value) -> Value {
-    if std::env::var_os("MECH_WIDE_ANY_BITS").is_some() {
+fn any_bits(
+    compiler_inputs: &CompilationInputs,
+    c: &mut FuncCursor<'_>,
+    difference: Value,
+) -> Value {
+    if compiler_inputs.var_os("MECH_WIDE_ANY_BITS").is_some() {
         c.ins().vany_true(difference)
     } else {
         let low = c.ins().extractlane(difference, 0);
@@ -514,6 +519,7 @@ fn advance(
 }
 
 fn apply(
+    compiler_inputs: &CompilationInputs,
     f: &mut Function,
     cert: &Certificate,
     change: Change,
@@ -583,7 +589,7 @@ fn apply(
                 None => difference,
             });
         }
-        let differs = any_bits(&mut c, combined.unwrap());
+        let differs = any_bits(compiler_inputs, &mut c, combined.unwrap());
         c.ins().brif(
             differs,
             cert.header,
@@ -628,7 +634,7 @@ fn apply(
     let a = c.ins().load(types::I64X2, flags, left, 0);
     let b = c.ins().load(types::I64X2, flags, right, 0);
     let difference = c.ins().bxor(a, b);
-    let differs = any_bits(&mut c, difference);
+    let differs = any_bits(compiler_inputs, &mut c, difference);
     if let Some(direct) = direct {
         let reuse = c.func.dfg.make_block();
         c.func.layout.append_block(reuse);
@@ -682,13 +688,15 @@ pub(in crate::native_artifact) struct Outcome {
 }
 
 pub(in crate::native_artifact) fn optimize(
+    compiler_inputs: &CompilationInputs,
     context: &mut Context,
     certificates: &[Certificate],
     reuse_prefix: bool,
     wide_tier: bool,
 ) -> Outcome {
-    let strategy = std::env::var("MECH_EQUAL_COMPARE_STRATEGY").ok();
+    let strategy = compiler_inputs.var("MECH_EQUAL_COMPARE_STRATEGY").ok();
     optimize_with_strategy(
+        compiler_inputs,
         context,
         certificates,
         reuse_prefix,
@@ -698,6 +706,7 @@ pub(in crate::native_artifact) fn optimize(
 }
 
 fn optimize_with_strategy(
+    compiler_inputs: &CompilationInputs,
     context: &mut Context,
     certificates: &[Certificate],
     reuse_prefix: bool,
@@ -719,16 +728,20 @@ fn optimize_with_strategy(
             continue;
         };
         let direct = if strategy != Some("word-reuse")
-            && std::env::var_os("MECH_REUSE_VECTOR_MISMATCH").is_some()
+            && compiler_inputs
+                .var_os("MECH_REUSE_VECTOR_MISMATCH")
+                .is_some()
         {
             mismatch::plan(context, cert, change)
         } else {
             None
         };
         let mut saved = None;
-        let probe_word =
-            direct.is_some() && std::env::var_os("MECH_PROBE_WORD_BEFORE_VECTOR").is_some();
-        if reuse_prefix && std::env::var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
+        let probe_word = direct.is_some()
+            && compiler_inputs
+                .var_os("MECH_PROBE_WORD_BEFORE_VECTOR")
+                .is_some();
+        if reuse_prefix && compiler_inputs.var_os("MECH_INSPECT_PHASE_CLIF").is_some() {
             let extent = reuse::extent(context, cert, &change);
             eprintln!(
                 "equality entry {} {:?}: {extent:?}, limit exit {}",
@@ -786,6 +799,7 @@ fn optimize_with_strategy(
                 plan.install(&mut context.func)
             });
             apply(
+                compiler_inputs,
                 &mut context.func,
                 cert,
                 change,
