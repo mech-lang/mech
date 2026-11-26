@@ -4,6 +4,9 @@ mod compact_string_access;
 pub mod linkage_factories;
 mod nested_assignment;
 mod packed_indexed_assign;
+mod packed_snapshot_output;
+#[cfg(test)]
+mod packed_snapshot_output_tests;
 #[cfg(all(feature = "native-artifact", feature = "sequence_buffers"))]
 pub(in crate::resident) use packed_indexed_assign::canonical_index as canonical_matrix_index;
 mod promoted_assignment;
@@ -11658,6 +11661,25 @@ fn unary_float_snapshot(
         output_len,
         0,
     )?;
+    let operand = BorrowedNumericOperand::Snapshot {
+        value: input,
+        element: comparison_element_body(input_schema.body()),
+    };
+    if let Some(next) =
+        packed_snapshot_output::try_construct(kernel, &output_shape, output_len, |index| {
+            match operand.at(index)? {
+                ValueDataDraft::F32(value) => Ok(ValueDataDraft::F32(F32Bits::from_f32(
+                    operation_f32(value.to_f32()),
+                ))),
+                ValueDataDraft::F64(value) => Ok(ValueDataDraft::F64(F64Bits::from_f64(
+                    operation_f64(value.to_f64()),
+                ))),
+                _ => Err(ResidentKernelError::InvalidInput),
+            }
+        })
+    {
+        return write_snapshot_value(kernel, output, next?);
+    }
     let values = snapshot_numeric_elements(input)?
         .into_iter()
         .map(|value| match value {
@@ -13467,6 +13489,23 @@ fn transpose_snapshot(
     )
     .admit()?
     .into_plan();
+    let operand = BorrowedNumericOperand::Snapshot {
+        value: input,
+        element: comparison_element_body(input_schema.body()),
+    };
+    if let Some(next) =
+        packed_snapshot_output::try_construct(kernel, &output_shape, count, |index| {
+            let output_row = index / rows;
+            let output_column = index % rows;
+            operand.at(output_column * columns + output_row)
+        })
+    {
+        return write_snapshot_value(
+            kernel,
+            ResidentValueMut::Snapshot(core::slice::from_mut(target)),
+            next?,
+        );
+    }
     let ValueDataDraft::Matrix(elements) = input
         .canonical_data_draft()
         .map_err(|_| ResidentKernelError::InvalidInput)?
@@ -13649,6 +13688,26 @@ fn sum_snapshot(
         )
         .admit()?
         .into_plan();
+    }
+    if let Some(shape) = &output_shape {
+        let operand = BorrowedNumericOperand::Snapshot {
+            value: input,
+            element,
+        };
+        if let Some(next) =
+            packed_snapshot_output::try_construct(kernel, shape, output_count, |at| {
+                if column {
+                    numeric_sum(
+                        element,
+                        (0..columns).map(|column| operand.at(at * columns + column)),
+                    )
+                } else {
+                    numeric_sum(element, (0..rows).map(|row| operand.at(row * columns + at)))
+                }
+            })
+        {
+            return write_snapshot_value(kernel, output, next?);
+        }
     }
     let values = snapshot_numeric_elements(input)?;
     let mut sums = Vec::with_capacity(output_count);
@@ -18597,6 +18656,21 @@ fn matrix_multiply_snapshot(
     if let (SequenceView::F64(left), SequenceView::F64(right)) =
         (lhs_matrix.elements(), rhs_matrix.elements())
     {
+        if let Some(next) =
+            packed_snapshot_output::try_construct(kernel, &output_shape, output_len, |index| {
+                let row = index / columns;
+                let column = index % columns;
+                let sum = f64_product_terms(
+                    inner,
+                    |offset| left[row * inner + offset].to_f64(),
+                    |offset| right[offset * columns + column].to_f64(),
+                )
+                .fold(0.0, |sum, term| sum + term);
+                Ok(ValueDataDraft::F64(F64Bits::from_f64(sum)))
+            })
+        {
+            return write_snapshot_value(kernel, output, next?);
+        }
         // Reuse the dense F64 product stream while borrowing the canonical
         // row-major banks. Keep the complete existing conservative admission
         // and atomic publisher; only per-term draft cloning/dispatch vanishes.
@@ -19220,6 +19294,15 @@ fn snapshot_numeric_binary(
                 data,
                 Some(0),
             );
+        }
+    }
+    if let Some(shape) = &output_shape {
+        if let Some(next) =
+            packed_snapshot_output::try_construct(kernel, shape, output_len, |index| {
+                apply(index / columns, index % columns)
+            })
+        {
+            return write_snapshot_value(kernel, output, next?);
         }
     }
     let mut result = Vec::with_capacity(output_len);
