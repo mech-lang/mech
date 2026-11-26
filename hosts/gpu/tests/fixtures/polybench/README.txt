@@ -877,3 +877,112 @@ Typed matrix scalar reads: 3.737% of weighted profiled time.
 Other selected library dispatch: 2.869% of weighted profiled time.
 Loop-local retirement: 1.869% of weighted profiled time.
 Other execution and generated code: 1.051% of weighted profiled time.
+
+Seventh frozen compiler round (IR365): immutable numeric phase captures
+
+Flat numeric phases can now borrow direct immutable numeric matrices defined
+in a strict lexical ancestor, including inputs to guarded FSM variants. The
+proof uses the same Array descriptor and invocation-current view machinery as
+native leaves. Captures have distinct immutable functional roots; writing or
+appending to them declines the phase. Aliased carrier writes still use the
+maintained first-change copy-on-write path. Current source facts, exact kinds,
+same-account owners, finite setup and visit funding, selector checks, cold
+exports and atomic publication remain required. No pointer or permit is cached.
+
+Newly eligible capture phases attempt the existing complete-tree proof first.
+A proved complete tree keeps its append bounds, owner handoff and projected
+fuel optimizations. Guarded states or incomplete trees use the new phase when
+the stronger complete proof cannot be established. Nine initial selection
+assertions exposed this priority regression; production selection was fixed,
+and the established tree tests were preserved.
+
+The first optimization-only replay improved Deriche 9.888x but slowed
+Nussinov 8.874x: source visits rose from 123,753 to 1,157,019. Newly eligible
+cold-prefix reads made the Cell variant displace the recurrent Split variant.
+The final static selector counts only numeric operations that can reach the
+native latch without crossing a cold transition. Reverse CFG reachability
+changes profitability only, never runtime guards or ownership. A separate
+three-variant FSM test prevents a larger cold prefix from displacing repeated
+native numeric work. The initial probe and its source identity are retained
+in round-07-initial-training-probe.json; no holdout was timed for that trial.
+
+Three new tests exercise original/decoded artifacts, all seven exact scalar
+kinds, linear and row/column reads, actual native entry without per-iteration
+library callbacks, mutation followed by reads from aliased immutable inputs,
+fresh invocation contents, zero trips, exact source errors, finite limits,
+atomic failure, old outputs, cleanup and retry. All 309 numeric/phase,
+24 matrix, 30 PolyBench and 102 selected Program checks pass (465 total).
+
+Compiler source 0c37ee2e170769c3c187bda09deab98326722e8b, work policy134.
+The source and driver were frozen before holdout timing. The ports, inputs,
+C executables, comparison tolerances and timing boundary did not change.
+The strict below-1.0x C holdout target remains the objective. Both fixed sets
+use equal-weight geometric means of median Mech/C kernel times, lower better.
+
+frozen compiler                         optimization x      holdout x
+baseline                                      783.258       2020.085
+round-01-native-matrix-frames                 441.860       1610.274
+round-02-native-scalar-matrix-updates         346.025       1529.299
+round-03-native-maps                          318.844       1468.557
+round-04-conditional-maps                     301.197        724.274
+round-05-guarded-tagged-numeric               159.693        814.668
+round-06-numeric-call-cache                   142.999        440.804
+round-07-captured-numeric-phases              123.865        456.181
+
+Round 07 aggregate results:
+optimization: kernel 123.864753583x C; fresh 75.091706562x C; paired-original speedup 6.314985x; sum medians 0.052412834s.
+holdout: kernel 456.181240661x C; fresh 265.263690608x C; paired-original speedup 4.480578x; sum medians 0.345367749s.
+all: kernel 237.707334686x C; fresh 141.135053111x C; paired-original speedup 5.319284x; sum medians 0.397780583s.
+
+Optimization probe work and visit reports:
+deriche captured-phase: work 21266550755, visits 9760, comparison work 411144.
+deriche round-06: work 771162365599, visits 317984, comparison work 410632.
+nussinov captured-phase: work 109827897956, visits 123753, comparison work 37614.
+nussinov round-06: work 109827897956, visits 123753, comparison work 37614.
+
+Inter-round runtime comparisons against frozen round06:
+optimization: Mech 0.859107971x; original compiler 0.974687489x; C 0.991823106x; normalized Mech/C score 0.866190721x.
+holdout: Mech 1.007603722x; original compiler 0.999391183x; C 0.973638105x; normalized Mech/C score 1.034885258x.
+
+This round does not demonstrate a holdout compiler gain. Mech holdout
+runtime is 1.007604x its round06 value, C is 0.973638x and the preserved
+original compiler is 0.999391x. Paired-original holdout speedup falls from
+4.517397x to 4.480578x, and the normalized Mech/C score worsens 1.034885x.
+These observations do not establish a cause for individual timing shifts.
+The below-1.0x C holdout target remains unmet.
+
+Cases more than 5% slower than frozen round06:
+optimization correlation: 1.052971255x previous Mech runtime.
+optimization gemm: 1.066473400x previous Mech runtime.
+optimization mvt: 1.093214258x previous Mech runtime.
+
+The optimization-only seven-sample replay against round06 improves 1.162422x geometrically; this probe is neither a C nor a holdout comparison.
+3mm: 0.919452x training-probe speedup.
+deriche: 10.073435x training-probe speedup.
+doitgen: 0.950091x training-probe speedup.
+
+All 900 sequential observations compare complete finite warm-up outputs;
+timed checked calls must succeed. Timed outputs are not independently
+flattened. All cases, regressions, paired originals and raw observations are
+retained. The split and earlier holdout results were exposed. No holdout was
+profiled, and no compiler change followed this round's freeze.
+
+The five largest optimization medians cover 96.234% of
+summed optimization runtime, with 14,374 canonical-execution stack samples.
+Parsing, JIT, input import, cache flush and serialization are excluded by
+stack. Profiled runtimes do not enter scores.
+Canonical library calls: 44.667% of weighted profiled time.
+Other helper dispatch: 14.255% of weighted profiled time.
+Source visits and admission: 12.261% of weighted profiled time.
+Comprehension collection bookkeeping: 10.810% of weighted profiled time.
+Private frame transport: 10.294% of weighted profiled time.
+Typed matrix scalar reads: 2.360% of weighted profiled time.
+Other execution and generated code: 1.642% of weighted profiled time.
+Loop-local retirement: 1.505% of weighted profiled time.
+Other selected library dispatch: 1.421% of weighted profiled time.
+Selected matrix updates: 0.786% of weighted profiled time.
+
+Core, Engine and runtime numeric kernels are unchanged in this round.
+Phase captures of managed ancestor frames, nested tagged payloads and multiple
+variants remain compiler gaps. Larger datasets, GPU/SIMD selection, full
+compression application/AOT and an external application remain unqualified.
