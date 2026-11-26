@@ -408,6 +408,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     let metadata_input = proof.arrays.iter().enumerate().any(|(array, _)| {
                         (proof.view(array)..proof.view(array) + 4).contains(&relative)
                             || proof.capacity(array) == Some(relative)
+                            || proof.map_bank(array) == Some(relative)
                     });
                     if metadata_input {
                         Ok(Some(b.ins().load(

@@ -20,7 +20,10 @@ pub(in crate::native_artifact) struct MatrixMap {
     pub first: u32,
     pub last: u32,
     pub inclusive: bool,
+    /// Cardinality of the exact outer source range.
     pub count: u64,
+    /// Complete initialized output cardinality, including rectangular rows.
+    pub elements: u64,
     pub output: u32,
     pub extents: [u64; 2],
 }
@@ -39,11 +42,7 @@ impl MatrixMap {
     }
 }
 fn candidate(plan: &Plan, region: Region) -> Option<MatrixMap> {
-    if !region.range
-        || region.rectangle.is_some()
-        || region.reduction.is_some()
-        || !region.nested.is_empty()
-    {
+    if !region.range || region.reduction.is_some() {
         return None;
     }
     let NativeControlLoop::Collection(child) = &plan.iterations()[region.iteration as usize] else {
@@ -53,7 +52,14 @@ fn candidate(plan: &Plan, region: Region) -> Option<MatrixMap> {
         return None;
     };
     let definition = &plan.collections()[region.collection as usize];
-    if definition.kind() != mech_engine::ComprehensionKind::Matrix {
+    if !matches!(
+        (definition.kind(), region.rectangle.as_ref()),
+        (mech_engine::ComprehensionKind::Matrix, None)
+            | (
+                mech_engine::ComprehensionKind::MatrixHorizontalBlocks { .. },
+                Some(_)
+            )
+    ) {
         return None;
     }
     let [first, last] = cursor.operands();
@@ -67,17 +73,24 @@ fn candidate(plan: &Plan, region: Region) -> Option<MatrixMap> {
         .checked_add(u64::from(inclusive))?;
     // This is a finite scratch-bank eligibility envelope, never a source bound.
     // Larger, dynamic, empty, and overflowed sources retain their original CFG.
-    if count == 0 || count.checked_mul(u64::from(region.output_width))? > 65536 {
+    let rows = region.rectangle.as_ref().map_or(1, |r| r.rows);
+    let elements = count.checked_mul(rows)?;
+    if count == 0 || rows == 0 || elements.checked_mul(u64::from(region.output_width))? > 65536 {
         return None;
     }
-    for schema in [
-        cursor.template().output(),
+    mech_core::shape_for_resolved_extents(cursor.template().output(), &[1, count]).ok()?;
+    mech_core::shape_for_resolved_extents(
         plan.values()[region.output as usize].definition(),
-    ] {
-        mech_core::shape_for_resolved_extents(schema, &[1, count]).ok()?;
-    }
+        &[rows, count],
+    )
+    .ok()?;
     let mut completion = vec![definition.finish()];
     let (terminal, output, extents) = if let Some(t) = &region.transpose {
+        // Rectangular DAGs already emit their final row-major layout. The
+        // existing transpose proof only admits scalar rows.
+        if region.rectangle.is_some() {
+            return None;
+        }
         let Action::LibraryCall { template, .. } = plan.blocks()[t.transpose as usize].action()
         else {
             return None;
@@ -87,7 +100,7 @@ fn candidate(plan: &Plan, region: Region) -> Option<MatrixMap> {
         completion.extend(&t.continuation);
         (t.transpose, t.output, [count, 1])
     } else {
-        (definition.finish(), region.output, [1, count])
+        (definition.finish(), region.output, [rows, count])
     };
     mech_core::shape_for_resolved_extents(plan.values()[output as usize].definition(), &extents)
         .ok()?;
@@ -148,6 +161,7 @@ fn candidate(plan: &Plan, region: Region) -> Option<MatrixMap> {
         last: last.get(),
         inclusive,
         count,
+        elements,
         output,
         extents,
     })

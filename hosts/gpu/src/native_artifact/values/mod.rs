@@ -301,6 +301,56 @@ impl<'a> NativeValueArena<'a> {
         })
     }
 
+    /// Prepay a source-proved private producer without exposing an immutable
+    /// alias before its loan ends. An optional entry owner covers the zero-trip
+    /// or uncommitted path; both exact same-account envelopes are checked.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn prepare_private_put(
+        &self,
+        slot: u32,
+        private: &mech_core::snapshot::PrivateNumericMatrix,
+        fallback: Option<&Value>,
+        work: &mut NativeWorkMeter,
+    ) -> Result<PreparedValuePut, NativeValueError> {
+        self.check_work(work)?;
+        let ty = self.logical_type(slot)?;
+        if private.schema() != ty.schema || private.schema_key() != ty.key {
+            return Err(NativeValueError::TypeMismatch);
+        }
+        let mut retained = private
+            .memory_budget_retained_bytes(&self.budget)
+            .ok_or(NativeValueError::UnadmittedPayload)?;
+        if let Some(value) = fallback {
+            if value.schema() != ty.schema || value.schema_key() != ty.key {
+                return Err(NativeValueError::TypeMismatch);
+            }
+            retained = retained.max(
+                value
+                    .memory_budget_retained_bytes(&self.budget)
+                    .ok_or(NativeValueError::UnadmittedPayload)?,
+            );
+        }
+        let generation = self
+            .generation(slot)?
+            .checked_add(1)
+            .ok_or(NativeValueError::GenerationExhausted)?;
+        let retirement = retained
+            .checked_mul(4)
+            .and_then(|n| n.checked_add(64))
+            .ok_or(NativeExecutionError::Descriptor {
+                reason: "private publication work overflows",
+            })?;
+        work.charge(NativeExecutionPhase::Setup, retirement)?;
+        Ok(PreparedValuePut {
+            handle: NativeValueHandle {
+                domain: self.values.domain_id(),
+                slot,
+                generation,
+            },
+            retained,
+        })
+    }
+
     #[cfg(feature = "canonical-native-program-runtime")]
     pub(in crate::native_artifact) fn put_prepared(
         &mut self,

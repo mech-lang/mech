@@ -35,16 +35,24 @@ pub(super) fn emit(
         return Err(backend("phase map lost exact views or output width"));
     }
     let view = shadow + proof.view(target);
-    let private = words.read(b, shadow + proof.private_flag(target));
-    let good = b.ins().icmp_imm(IntCC::NotEqual, private, 0);
-    require(b, good, miss);
+    let owned = proof.map_bank(target);
+    if owned.is_none() {
+        let private = words.read(b, shadow + proof.private_flag(target));
+        let good = b.ins().icmp_imm(IntCC::NotEqual, private, 0);
+        require(b, good, miss);
+    }
     for (lane, expected) in [
-        (1, source.count),
+        (1, source.elements),
         (2, source.extents[0]),
         (3, source.extents[1]),
     ] {
         let actual = words.read(b, view + lane);
         let good = b.ins().icmp_imm(IntCC::Equal, actual, expected as i64);
+        require(b, good, miss);
+    }
+    if let Some(bank) = owned {
+        let pointer = words.read(b, shadow + bank);
+        let good = b.ins().icmp_imm(IntCC::NotEqual, pointer, 0);
         require(b, good, miss);
     }
     let first = words.read(b, source.first as usize);
@@ -62,7 +70,7 @@ pub(super) fn emit(
     let good = b.ins().icmp_imm(IntCC::Equal, count, source.count as i64);
     require(b, good, miss);
     let bytes = source
-        .count
+        .elements
         .checked_mul(u64::from(width))
         .and_then(|n| u32::try_from(n).ok())
         .filter(|&n| n > 0 && n <= 65536)
@@ -95,7 +103,7 @@ pub(super) fn emit(
     // The complete checked map succeeded. No fallible source operation or
     // helper occurs after the first destination store, so reverse/overlapping
     // source reads observe the entire old vector and failures publish nothing.
-    let base = words.read(b, view);
+    let base = words.read(b, owned.map_or(view, |bank| shadow + bank));
     let copy = b.create_block();
     let done = b.create_block();
     b.append_block_param(copy, types::I64);
@@ -120,5 +128,10 @@ pub(super) fn emit(
         .icmp_imm(IntCC::UnsignedLessThan, next, i64::from(bytes));
     b.ins().brif(more, copy, &[next.into()], done, &[]);
     b.switch_to_block(done);
+    if owned.is_some() {
+        words.write(b, view, base);
+        let one = b.ins().iconst(types::I64, 1);
+        words.write(b, shadow + proof.private_flag(target), one);
+    }
     Ok(())
 }

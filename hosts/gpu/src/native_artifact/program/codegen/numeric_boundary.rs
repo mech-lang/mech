@@ -155,6 +155,15 @@ pub(super) fn materialize(
             );
         }
     }
+    // Another root's scalar first-change boundary may follow completed maps.
+    // Settle their current views/commit flags before any fallible factory call.
+    for bank in &proof.map_banks {
+        for slot in [proof.view(bank.array), proof.private_flag(bank.array)] {
+            let value = words.read(b, shadow + slot);
+            b.ins()
+                .store(MemFlags::new(), value, hooks.arguments, offset(2 + slot)?);
+        }
+    }
     b.ins().store(
         MemFlags::new(),
         index,

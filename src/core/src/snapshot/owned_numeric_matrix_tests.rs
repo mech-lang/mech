@@ -296,3 +296,71 @@ fn numeric_private_phase_rejects_aliases_identities_imports_and_short_admission(
         );
     }
 }
+
+#[test]
+fn numeric_private_publication_metadata_binds_exact_type_account_and_final_envelope() {
+    let mut values = cases()
+        .into_iter()
+        .map(|(kind, cell, _)| (kind, cell))
+        .collect::<Vec<_>>();
+    values.extend([
+        (
+            SchemaBody::UnsignedInteger(IntegerWidth::W8),
+            ValueDataDraft::U8(1),
+        ),
+        (
+            SchemaBody::UnsignedInteger(IntegerWidth::W16),
+            ValueDataDraft::U16(1),
+        ),
+        (
+            SchemaBody::UnsignedInteger(IntegerWidth::W32),
+            ValueDataDraft::U32(1),
+        ),
+        (
+            SchemaBody::UnsignedInteger(IntegerWidth::W64),
+            ValueDataDraft::U64(1),
+        ),
+    ]);
+    for (kind, cell) in values {
+        let memory = ManagedMemoryBudget::new(1 << 20);
+        let foreign = ManagedMemoryBudget::new(1 << 20);
+        let value = matrix(kind, cell);
+        let schema = value.schema();
+        let key = value.schema_key();
+        let mut reservation = memory
+            .reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap())
+            .unwrap();
+        let mut private = value.into_private_numeric_matrix(&mut reservation).unwrap();
+        drop(reservation);
+        assert_eq!((private.schema(), private.schema_key()), (schema, key));
+        assert_eq!(private.memory_budget_retained_bytes(&foreign), None);
+        assert_eq!(private.memory_budget_retained_nodes(&foreign), None);
+        let bytes = private.memory_budget_retained_bytes(&memory).unwrap();
+        let nodes = private.memory_budget_retained_nodes(&memory).unwrap();
+        assert!(bytes > 0 && nodes > 0);
+        let used = (memory.used_bytes(), memory.retained_snapshot_nodes());
+        match private.elements_mut() {
+            NumericMatrixViewMut::Bool(v) => v[0] = true,
+            NumericMatrixViewMut::U8(v) => v[0] = u8::MAX,
+            NumericMatrixViewMut::U16(v) => v[0] = u16::MAX,
+            NumericMatrixViewMut::U32(v) => v[0] = u32::MAX,
+            NumericMatrixViewMut::U64(v) => v[0] = u64::MAX,
+            NumericMatrixViewMut::I64(v) => v[0] = i64::MIN,
+            NumericMatrixViewMut::F64(v) => v[0] = F64Bits::from_bits(0x7ff8_0000_0000_0053),
+        }
+        assert_eq!(private.memory_budget_retained_bytes(&memory), Some(bytes));
+        let value = private.finish();
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            used
+        );
+        assert_eq!((value.schema(), value.schema_key()), (schema, key));
+        assert_eq!(value.memory_budget_retained_bytes(&memory), Some(bytes));
+        assert_eq!(value.memory_budget_retained_nodes(&memory), Some(nodes));
+        drop(value);
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
+}

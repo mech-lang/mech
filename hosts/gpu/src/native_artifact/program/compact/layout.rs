@@ -352,6 +352,7 @@ impl Layout {
         let (value, field) = match array.storage {
             crate::native_artifact::program::prepare::readonly_numeric::ArrayStorage::Carrier { field, .. } => (carrier, Some(field)),
             crate::native_artifact::program::prepare::readonly_numeric::ArrayStorage::TaggedCarrier { .. } => return Err(backend("tagged root requires its current native enum bank")),
+            crate::native_artifact::program::prepare::readonly_numeric::ArrayStorage::PhaseLocal { .. } => return Err(backend("local map result requires its admitted phase bank")),
             crate::native_artifact::program::prepare::readonly_numeric::ArrayStorage::Capture { value } => (value, None),
             crate::native_artifact::program::prepare::readonly_numeric::ArrayStorage::FrameCapture { value, field, .. } => (value, Some(field)),
         };

@@ -9,7 +9,7 @@ impl Invocation<'_, '_, '_> {
         match array.storage {
             ArrayStorage::Carrier { physical, .. }
             | ArrayStorage::FrameCapture { physical, .. } => Ok(Some(physical)),
-            ArrayStorage::Capture { .. } => Ok(None),
+            ArrayStorage::Capture { .. } | ArrayStorage::PhaseLocal { .. } => Ok(None),
             ArrayStorage::TaggedCarrier { value, field } => {
                 let layout = &self.descriptor.metadata().buffer_frames;
                 let [root] = layout

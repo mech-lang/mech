@@ -1,5 +1,7 @@
 //! Checked whole-matrix maps inside existing native numeric FSM phases.
 use super::*;
+#[path = "numeric_phase_owned_maps.rs"]
+mod owned;
 
 #[test]
 fn numeric_phase_map_source_proof_keeps_exact_shapes_and_cold_range_boundaries() {
@@ -391,73 +393,86 @@ answer := #Flip(data,marker<K>,rounds<u64>)
                 .replace("SHAPE", shape)
                 .replace("TRANSPOSE", transpose)
                 .replace('K', kind);
-            for artifact in artifacts(&source) {
-                let catalog = mech_stdlib::source_catalog();
-                let mode = NativeProgramLimitMode::NoLimits;
-                let jit = JitProgramArtifact::compile_with_limits(
-                    &artifact,
-                    &catalog,
-                    mode.compilation(),
-                )
-                .unwrap();
-                assert_eq!(replacements(&jit).len(), 1, "{kind} {shape}");
-                let ordinary = JitProgramArtifact::compile_for_test(
-                    &artifact,
-                    &catalog,
-                    OptimizationPass::ScalarLoops,
-                )
-                .unwrap();
-                crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
-                let memory = mode.memory_budget();
-                let mut fast = vec![None; artifact.outputs().len()];
-                let mut cold = fast.clone();
-                for restored in [false, true] {
-                    for rounds in [0, 1, 2, 3] {
-                        let args = super::numeric_maps::typed_arguments(
-                            &artifact,
-                            &memory,
-                            &[
-                                ("input", Data::Matrix(cells.clone().into()), &extents),
-                                ("marker", marker.clone(), &[]),
-                                ("rounds", Data::U64(rounds), &[]),
-                            ],
-                        );
-                        let aliases = args.clone();
-                        let before = contents(&args);
-                        let (result, counts) = if restored {
-                            observe::run_restored(&jit, &args, &mut fast, mode.execution(), &memory)
-                        } else {
-                            observe::run(&jit, &args, &mut fast, mode.execution(), &memory)
-                        };
-                        result.unwrap();
-                        observe::run(&ordinary, &args, &mut cold, mode.execution(), &memory)
-                            .0
-                            .unwrap();
-                        assert_eq!(
-                            contents(&fast.iter().flatten().cloned().collect::<Vec<_>>()),
-                            contents(&cold.iter().flatten().cloned().collect::<Vec<_>>()),
-                            "{kind} {shape} rounds {rounds}"
-                        );
-                        assert_eq!(contents(&args), before);
-                        assert_eq!(contents(&aliases), before);
-                        if rounds > 0 {
-                            for map in replacements(&jit) {
-                                assert_eq!(
-                                    counts
-                                        .admits
-                                        .get(&(map.source.entry as u64))
-                                        .copied()
-                                        .unwrap_or(0),
-                                    0,
-                                    "{kind} {shape}"
-                                );
+            for scalar_producer in [true, false] {
+                let source = if scalar_producer {
+                    source.clone()
+                } else {
+                    source.replace("      next[1u64] = marker\n", "")
+                };
+                for artifact in artifacts(&source) {
+                    let catalog = mech_stdlib::source_catalog();
+                    let mode = NativeProgramLimitMode::NoLimits;
+                    let jit = JitProgramArtifact::compile_with_limits(
+                        &artifact,
+                        &catalog,
+                        mode.compilation(),
+                    )
+                    .unwrap();
+                    assert_eq!(replacements(&jit).len(), 1, "{kind} {shape}");
+                    let ordinary = JitProgramArtifact::compile_for_test(
+                        &artifact,
+                        &catalog,
+                        OptimizationPass::ScalarLoops,
+                    )
+                    .unwrap();
+                    crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+                    let memory = mode.memory_budget();
+                    let mut fast = vec![None; artifact.outputs().len()];
+                    let mut cold = fast.clone();
+                    for restored in [false, true] {
+                        for rounds in [0, 1, 2, 3] {
+                            let args = super::numeric_maps::typed_arguments(
+                                &artifact,
+                                &memory,
+                                &[
+                                    ("input", Data::Matrix(cells.clone().into()), &extents),
+                                    ("marker", marker.clone(), &[]),
+                                    ("rounds", Data::U64(rounds), &[]),
+                                ],
+                            );
+                            let aliases = args.clone();
+                            let before = contents(&args);
+                            let (result, counts) = if restored {
+                                observe::run_restored(
+                                    &jit,
+                                    &args,
+                                    &mut fast,
+                                    mode.execution(),
+                                    &memory,
+                                )
+                            } else {
+                                observe::run(&jit, &args, &mut fast, mode.execution(), &memory)
+                            };
+                            result.unwrap();
+                            observe::run(&ordinary, &args, &mut cold, mode.execution(), &memory)
+                                .0
+                                .unwrap();
+                            assert_eq!(
+                                contents(&fast.iter().flatten().cloned().collect::<Vec<_>>()),
+                                contents(&cold.iter().flatten().cloned().collect::<Vec<_>>()),
+                                "{kind} {shape} rounds {rounds}"
+                            );
+                            assert_eq!(contents(&args), before);
+                            assert_eq!(contents(&aliases), before);
+                            if rounds > 0 {
+                                for map in replacements(&jit) {
+                                    assert_eq!(
+                                        counts
+                                            .admits
+                                            .get(&(map.source.entry as u64))
+                                            .copied()
+                                            .unwrap_or(0),
+                                        0,
+                                        "{kind} {shape}"
+                                    );
+                                }
                             }
                         }
                     }
+                    fast.fill(None);
+                    cold.fill(None);
+                    assert_eq!(memory.used_bytes(), 0);
                 }
-                fast.fill(None);
-                cold.fill(None);
-                assert_eq!(memory.used_bytes(), 0);
             }
         }
     }
@@ -504,6 +519,7 @@ fn numeric_phase_maps_images_rederive_destinations_views_source_and_all_funding(
             "source/first",
             "source/last",
             "source/count",
+            "source/elements",
             "source/output",
             "source/extents/0",
             "source/prefix/0",
@@ -720,7 +736,7 @@ fn numeric_phase_maps_preserve_partial_arithmetic_failure_finite_denial_cleanup_
 }
 
 #[test]
-fn numeric_phase_maps_decline_a_fast_branch_without_any_private_bank_producer() {
+fn numeric_phase_maps_create_exact_private_banks_without_a_scalar_producer() {
     use crate::native_artifact::codegen::options::OptimizationPass;
     use mech_core::snapshot::F64Bits;
     let source = REPLACEMENT_SOURCE.replace("      next[1u64] = seed\n", "");
@@ -730,9 +746,10 @@ fn numeric_phase_maps_decline_a_fast_branch_without_any_private_bank_producer() 
         let catalog = mech_stdlib::source_catalog();
         let jit = JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
             .unwrap();
-        assert!(
-            replacements(&jit).is_empty(),
-            "unavailable bank must retain ordinary collection execution"
+        assert_eq!(
+            replacements(&jit).len(),
+            1,
+            "complete maps own an admitted bank without fabricating a scalar write"
         );
         let ordinary = JitProgramArtifact::compile_for_test(
             &artifact,
@@ -764,14 +781,33 @@ fn numeric_phase_maps_decline_a_fast_branch_without_any_private_bank_producer() 
             ],
         );
         for restored in [false, true] {
-            if restored {
+            let (result, counts) = if restored {
                 observe::run_restored(&jit, &args, &mut fast, mode.execution(), &memory)
-                    .0
-                    .unwrap();
             } else {
                 observe::run(&jit, &args, &mut fast, mode.execution(), &memory)
-                    .0
-                    .unwrap();
+            };
+            result.unwrap();
+            for map in replacements(&jit) {
+                assert_eq!(
+                    counts
+                        .admits
+                        .get(&(map.source.entry as u64))
+                        .copied()
+                        .unwrap_or(0),
+                    0,
+                    "owned map must execute in the native phase: {counts:?}"
+                );
+                assert_eq!(
+                    counts
+                        .helpers
+                        .get(&(
+                            map.source.region.header as u64,
+                            GlobalHelper::NumericMapPrepare.raw()
+                        ))
+                        .copied()
+                        .unwrap_or(0),
+                    0
+                );
             }
             observe::run(&ordinary, &args, &mut cold, mode.execution(), &memory)
                 .0
@@ -884,5 +920,74 @@ fn numeric_phase_maps_reify_current_results_for_errors_after_a_completed_map() {
         fast.fill(None);
         cold.fill(None);
         assert_eq!(memory.used_bytes(), 0);
+    }
+}
+
+#[test]
+fn numeric_phase_map_source_proof_keeps_rectangles_nested_folds_and_complete_output_funding() {
+    use crate::native_artifact::program::prepare::numeric_phase::matrix_maps;
+    for artifact in artifacts(include_str!(
+        "../../../../../tests/fixtures/polybench/gramschmidt.mec"
+    )) {
+        let catalog = mech_stdlib::source_catalog();
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &catalog,
+            NativeProgramLimitMode::NoLimits.compilation(),
+        )
+        .unwrap();
+        let m = jit.descriptor().metadata();
+        let maps = matrix_maps::inventory(&m.plan).unwrap();
+        let maps = maps
+            .iter()
+            .filter(|r| {
+                m.plan.iterations()[r.region.iteration as usize]
+                    .as_ref()
+                    .parent()
+                    == Some(0)
+            })
+            .collect::<Vec<_>>();
+        assert_eq!(maps.len(), 5);
+        assert_eq!(
+            maps.iter().filter(|r| r.region.rectangle.is_some()).count(),
+            3
+        );
+        assert_eq!(
+            maps.iter().filter(|r| !r.region.nested.is_empty()).count(),
+            1
+        );
+        for map in maps {
+            assert_eq!(map.extents[0] * map.extents[1], map.elements);
+            assert_eq!(
+                map.count * map.region.rectangle.as_ref().map_or(1, |r| r.rows),
+                map.elements
+            );
+            let bound = map.budget(&m.plan, &m.calls, &m.visits).unwrap();
+            assert!(bound.elements >= map.elements);
+            assert!(bound.temporary > map.elements * u64::from(map.region.output_width));
+            let mut forged = map.clone();
+            forged.elements += 1;
+            assert!(forged.budget(&m.plan, &m.calls, &m.visits).is_none());
+            if let Some(rectangle) = &map.region.rectangle {
+                for site in [rectangle.range_prepare, rectangle.transpose] {
+                    assert!(
+                        map.budget(&m.plan, &m.calls[..site as usize], &m.visits)
+                            .is_none()
+                    );
+                }
+                let mut forged = map.clone();
+                forged.region.rectangle.as_mut().unwrap().rows += 1;
+                assert!(forged.budget(&m.plan, &m.calls, &m.visits).is_none());
+            }
+            for child in &map.region.nested {
+                let reduction = child.source.region.reduction.as_ref().unwrap();
+                for site in [reduction.sum, reduction.select] {
+                    assert!(
+                        map.budget(&m.plan, &m.calls[..site as usize], &m.visits)
+                            .is_none()
+                    );
+                }
+            }
+        }
     }
 }

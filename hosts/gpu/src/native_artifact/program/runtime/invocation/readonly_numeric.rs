@@ -19,6 +19,10 @@ impl Invocation<'_, '_, '_> {
         array: &Array,
     ) -> Result<Option<&mech_core::Value>, Error> {
         match array.storage {
+            ArrayStorage::PhaseLocal { value, .. } => Ok(self
+                .state
+                .buffer_frames
+                .map_local_owner(value, array.schema)),
             ArrayStorage::TaggedCarrier { .. } => Ok(self.state.buffer_frames.numeric_owner(
                 self.numeric_array_physical(array)?
                     .ok_or_else(|| invalid("tagged root lost its current home"))?,
@@ -44,6 +48,12 @@ impl Invocation<'_, '_, '_> {
         array: &Array,
     ) -> Result<mech_core::Value, Error> {
         match array.storage {
+            ArrayStorage::PhaseLocal { value, .. } => self
+                .state
+                .buffer_frames
+                .map_local_owner(value, array.schema)
+                .cloned()
+                .ok_or_else(|| invalid("local map has no current frozen result")),
             ArrayStorage::TaggedCarrier { .. } => {
                 let physical = self
                     .numeric_array_physical(array)?
@@ -118,11 +128,8 @@ impl Invocation<'_, '_, '_> {
             .observation_schema_bytes
             .checked_mul(proof.arrays.len() as u64 * 8)
             .and_then(|n| n.checked_add(proof.words as u64 * 128 + 2048));
-        for array in &proof.arrays {
-            let Some(owner) = self.numeric_array_owner(array)? else {
-                return Ok(false);
-            };
-            let Some(retained) = owner.memory_budget_retained_bytes(&memory) else {
+        for at in 0..proof.arrays.len() {
+            let Some((retained, _)) = self.numeric_entry_envelope(proof, at)? else {
                 return Ok(false);
             };
             entry_work = entry_work.and_then(|n| n.checked_add(retained.checked_mul(8)?));
@@ -180,8 +187,7 @@ impl Invocation<'_, '_, '_> {
             return Ok(false);
         };
         let mut publication_work = if let Some(array) = proof.result.direct_array() {
-            self.numeric_array_owner(&proof.arrays[array])?
-                .and_then(|v| v.memory_budget_retained_bytes(&memory))
+            self.numeric_publication_bound(proof, array)?
                 .and_then(|n| n.checked_mul(4))
                 .and_then(|n| n.checked_add(64))
         } else {
@@ -195,15 +201,29 @@ impl Invocation<'_, '_, '_> {
                 let Some(array) = proof.arrays.get(alias.array) else {
                     return Err(invalid("numeric cold alias has a foreign array"));
                 };
-                let Some(owner) = self.numeric_array_owner(array)? else {
-                    return Err(invalid("numeric cold alias lost its current owner"));
+                let work = if proof.map_bank(alias.array).is_some() {
+                    if self
+                        .state
+                        .arena
+                        .native_entry_preview(alias.value, &self.state.control.work)?
+                        .is_some()
+                    {
+                        return Ok(false);
+                    }
+                    self.numeric_publication_bound(proof, alias.array)?
+                        .and_then(|n| n.checked_mul(4))
+                        .and_then(|n| n.checked_add(64))
+                } else {
+                    let Some(owner) = self.numeric_array_owner(array)? else {
+                        return Err(invalid("numeric cold alias lost its current owner"));
+                    };
+                    self.state.arena.native_alias_put_work(
+                        alias.value,
+                        owner,
+                        &self.state.control.work,
+                    )?
                 };
-                let Some(work) = self.state.arena.native_alias_put_work(
-                    alias.value,
-                    owner,
-                    &self.state.control.work,
-                )?
-                else {
+                let Some(work) = work else {
                     return Ok(false);
                 };
                 publication_work = publication_work.and_then(|n| n.checked_add(work));
@@ -237,13 +257,21 @@ impl Invocation<'_, '_, '_> {
             return Ok(false);
         };
         for (at, array) in proof.arrays.iter().enumerate() {
-            let owner = self
-                .numeric_array_owner(array)?
-                .ok_or_else(|| invalid("numeric entry lost current owner"))?;
-            let Ok(footprint) = owner.retained_footprint(&metadata.schemas) else {
-                return Ok(false);
+            let bytes = if matches!(array.storage, ArrayStorage::PhaseLocal { .. }) {
+                let Some((bytes, _)) = self.numeric_entry_envelope(proof, at)? else {
+                    return Ok(false);
+                };
+                bytes
+            } else {
+                let owner = self
+                    .numeric_array_owner(array)?
+                    .ok_or_else(|| invalid("numeric entry lost current owner"))?;
+                let Ok(footprint) = owner.retained_footprint(&metadata.schemas) else {
+                    return Ok(false);
+                };
+                footprint.retained_bytes
             };
-            self.write_borrowed_word(2 + proof.view(at), footprint.retained_bytes)?;
+            self.write_borrowed_word(2 + proof.view(at), bytes)?;
         }
         // All private packs, including duplicate managed fields in a helper,
         // retain their logical output bounds. A miss declines, never traps.
@@ -276,6 +304,15 @@ impl Invocation<'_, '_, '_> {
         // Fill only fixed, already admitted transport. The carrier retains each
         // owner throughout native execution; this temporary clone is setup only.
         for (at, array) in proof.arrays.iter().enumerate() {
+            if let ArrayStorage::PhaseLocal { extents, .. } = array.storage {
+                let Some(count) = extents[0].checked_mul(extents[1]) else {
+                    return Ok(false);
+                };
+                for (index, word) in [0, count, extents[0], extents[1]].into_iter().enumerate() {
+                    self.write_borrowed_word(2 + proof.view(at) + index, word)?;
+                }
+                continue;
+            }
             if array.witness == usize::MAX {
                 if array.width != 0 || array.writable || array.appends {
                     return Err(invalid("opaque numeric leaf has content effects"));
@@ -348,7 +385,11 @@ impl Invocation<'_, '_, '_> {
             }
         }
         if proof.writes() || proof.result.direct_array().is_some() || cold_alias_count != 0 {
-            let publication = if let Some(array) = proof.result.direct_array() {
+            let publication = if let Some(array) = proof
+                .result
+                .direct_array()
+                .filter(|&array| proof.map_bank(array).is_none())
+            {
                 let owner = self
                     .numeric_array_owner(&proof.arrays[array])?
                     .ok_or_else(|| invalid("numeric result lost owner"))?
@@ -387,6 +428,9 @@ impl Invocation<'_, '_, '_> {
                 .flat_map(|(_, aliases)| aliases)
                 .enumerate()
             {
+                if proof.map_bank(alias.array).is_some() {
+                    continue;
+                }
                 let owner = self
                     .numeric_array_owner(&proof.arrays[alias.array])?
                     .ok_or_else(|| invalid("numeric cold alias lost its admitted owner"))?
@@ -400,6 +444,9 @@ impl Invocation<'_, '_, '_> {
                     .buffer_frames
                     .set_private_alias(id, index, alias.value, ticket)?;
             }
+        }
+        if !self.initialize_numeric_map_banks(id)? {
+            return Ok(false);
         }
         if let Some(phase) = &proof.phase {
             for debit in &phase.loops {
@@ -473,19 +520,29 @@ impl Invocation<'_, '_, '_> {
         {
             for (at, array) in proof.arrays.iter().enumerate() {
                 if let Some(private) = self.state.buffer_frames.private_array_mut(id, at)?.take() {
+                    if proof.map_bank(at).is_some()
+                        && self.read_borrowed_word(2 + proof.private_flag(at))? == 0
+                    {
+                        drop(private); // An uncommitted map never replaces the entry owner.
+                        continue;
+                    }
                     let length = if array.appends {
                         Some(self.read_borrowed_word(2 + proof.view(at) + 1)?)
                     } else {
                         None
                     };
                     let owner = Self::finish_numeric_array(private, length)?;
-                    self.state.buffer_frames.synchronize_numeric_owner(
-                        self.numeric_array_mutable_home(array)?.ok_or_else(|| {
-                            invalid("captured array cannot receive a mutable owner")
-                        })?,
-                        array.schema,
-                        owner,
-                    )?;
+                    if let ArrayStorage::PhaseLocal { value, .. } = array.storage {
+                        self.state.buffer_frames.set_map_local(id, value, owner)?;
+                    } else {
+                        self.state.buffer_frames.synchronize_numeric_owner(
+                            self.numeric_array_mutable_home(array)?.ok_or_else(|| {
+                                invalid("captured array cannot receive a mutable owner")
+                            })?,
+                            array.schema,
+                            owner,
+                        )?;
+                    }
                 }
             }
             let publication = self.state.buffer_frames.finish_private(id)?;
@@ -559,6 +616,13 @@ impl Invocation<'_, '_, '_> {
             self.state
                 .arena
                 .put(operands[0].get(), &owner, &mut self.state.control.work)?;
+        }
+        if proof
+            .arrays
+            .iter()
+            .any(|array| matches!(array.storage, ArrayStorage::PhaseLocal { .. }))
+        {
+            self.state.buffer_frames.clear_map_locals(id)?;
         }
         Ok(())
     }

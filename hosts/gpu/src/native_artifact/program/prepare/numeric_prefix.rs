@@ -188,6 +188,74 @@ fn tag_flow(
     Ok(())
 }
 
+/// Exact ordinary composite publications on terminal source paths. A stop
+/// cannot reach the root header/latch again; recurring constructors retain
+/// their existing source lowering. Only the original selected factory runs.
+fn terminal_constructors(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    calls: &[Option<NativePreparedLibraryCall>],
+) -> BTreeSet<usize> {
+    let owner = plan.blocks()[tail.header() as usize].iteration();
+    let mut out = BTreeSet::new();
+    for (site, block) in plan.blocks().iter().enumerate() {
+        if block.iteration() != owner || frames.action(site).is_some() {
+            continue;
+        }
+        let mech_engine::native_artifact::NativeIterationAction::LibraryCall {
+            template,
+            output,
+            ..
+        } = block.action()
+        else {
+            continue;
+        };
+        if plan.values()[output.get() as usize].schema()
+            != plan.values()[tail.returned().get() as usize].schema()
+            || !matches!(
+                template.output().body(),
+                mech_core::SchemaBody::Tuple(_) | mech_core::SchemaBody::Record(_)
+            )
+            || !calls
+                .get(site)
+                .and_then(Option::as_ref)
+                .is_some_and(|c| c.template() == template && c.supports_invariant_buffer_frame())
+        {
+            continue;
+        }
+        let mut pending = Facts::control_successors(block.terminator())
+            .into_iter()
+            .flatten()
+            .collect::<Vec<_>>();
+        let mut seen = BTreeSet::new();
+        let mut terminal = true;
+        while let Some(at) = pending.pop() {
+            if at == tail.exit() || !seen.insert(at) {
+                continue;
+            }
+            if [tail.header(), tail.latch(), tail.initialize()].contains(&at)
+                || plan
+                    .blocks()
+                    .get(at as usize)
+                    .is_none_or(|b| b.iteration() != owner)
+            {
+                terminal = false;
+                break;
+            }
+            pending.extend(
+                Facts::control_successors(plan.blocks()[at as usize].terminator())
+                    .into_iter()
+                    .flatten(),
+            );
+        }
+        if terminal {
+            out.insert(site);
+        }
+    }
+    out
+}
+
 pub(in crate::native_artifact) fn derive(
     facts: &Facts<'_>,
     tail: &NativeTailLoop,
@@ -225,6 +293,7 @@ pub(in crate::native_artifact) fn derive(
             }
         }
     }
+    let terminal = terminal_constructors(plan, tail, &projected, calls);
     let phase = super::phase_numeric::derive_guarded(
         facts,
         tail,
@@ -233,18 +302,36 @@ pub(in crate::native_artifact) fn derive(
         calls,
         visits,
         BTreeSet::new(),
-    )?;
+    )
+    .or_else(|reason| {
+        if terminal.is_empty() {
+            Err(reason)
+        } else {
+            super::phase_numeric::derive_terminal_constructors(
+                facts,
+                tail,
+                &projected,
+                aggregates,
+                calls,
+                visits,
+                terminal.clone(),
+            )
+        }
+    })?;
     if phase.exits.iter().any(|exit| {
-        !phase
-            .actions
-            .iter()
-            .any(|(site, action)| *site == exit.to && action.summary_after().is_some())
+        !terminal.contains(&exit.to)
+            && !phase
+                .actions
+                .iter()
+                .any(|(site, action)| *site == exit.to && action.summary_after().is_some())
     }) {
-        return Err("prefix phase has an ordinary cold action");
+        return Err("prefix phase has an ordinary nonterminal cold action");
     }
     let mut proof = super::readonly_numeric::from_phase(plan, tail, &projected, aggregates, phase)?;
-    if proof.result.direct_array().is_none() {
-        return Err("prefix phase needs a direct managed result");
+    if proof.result.direct_array().is_none()
+        && !(matches!(proof.result, ResultRecipe::Unreachable) && !terminal.is_empty())
+    {
+        return Err("prefix phase needs a direct managed result or exact terminal publication");
     }
     for array in &mut proof.arrays {
         if let ArrayStorage::Carrier { field, .. } = array.storage {

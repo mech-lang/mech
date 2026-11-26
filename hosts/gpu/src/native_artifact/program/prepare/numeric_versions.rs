@@ -1004,6 +1004,9 @@ fn pass(
                     | super::ArrayStorage::TaggedCarrier { field, .. } => {
                         (tail.next().get(), Some(field))
                     }
+                    super::ArrayStorage::PhaseLocal { .. } => {
+                        return Err("local maps require the complete phase current-version proof");
+                    }
                     super::ArrayStorage::Capture { value } => (value, None),
                     super::ArrayStorage::FrameCapture { value, field, .. } => (value, Some(field)),
                 };

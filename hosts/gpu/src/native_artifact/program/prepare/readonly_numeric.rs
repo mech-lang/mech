@@ -32,6 +32,12 @@ pub(super) use results::scalar_aggregate;
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) enum ArrayStorage {
+    /// A complete-map result created inside this phase. It has no entry Value
+    /// or view; must-current analysis requires its source producer first.
+    PhaseLocal {
+        value: u32,
+        extents: [u64; 2],
+    },
     Carrier {
         field: usize,
         physical: usize,
@@ -82,6 +88,7 @@ impl Array {
     pub fn physical(&self) -> Option<usize> {
         match self.storage {
             ArrayStorage::Carrier { physical, .. } => Some(physical),
+            ArrayStorage::PhaseLocal { .. } => None,
             ArrayStorage::TaggedCarrier { .. }
             | ArrayStorage::Capture { .. }
             | ArrayStorage::FrameCapture { .. } => None,
@@ -91,7 +98,9 @@ impl Array {
         match self.storage {
             ArrayStorage::Carrier { field, .. } => (tail.carrier().get(), Some(field)),
             ArrayStorage::TaggedCarrier { value, field } => (value, Some(field)),
-            ArrayStorage::Capture { value } => (value, None),
+            ArrayStorage::Capture { value } | ArrayStorage::PhaseLocal { value, .. } => {
+                (value, None)
+            }
             ArrayStorage::FrameCapture { value, field, .. } => (value, Some(field)),
         }
     }
@@ -239,6 +248,7 @@ pub(in crate::native_artifact) struct Proof<Frame = FrameWords> {
     pub nested_managed: bool,
     pub tagged: Option<Box<tagged::Variant>>,
     pub arrays: Vec<Array>,
+    pub map_banks: Vec<super::numeric_phase::map_banks::Bank>,
     pub frames: Vec<Frame>,
     pub actions: Vec<(usize, Operation)>,
     pub sites: Vec<usize>,
@@ -276,6 +286,7 @@ impl<Frame: Into<FrameWords>> Proof<Frame> {
             nested_managed: self.nested_managed,
             tagged: self.tagged,
             arrays: self.arrays,
+            map_banks: self.map_banks,
             frames: self.frames.into_iter().map(Into::into).collect(),
             actions: self.actions,
             sites: self.sites,
@@ -317,6 +328,7 @@ impl Proof {
                 words.push(self.private_flag(array));
             }
             words.extend(self.capacity(array));
+            words.extend(self.map_bank(array));
         }
         if let Some(phase) = &self.phase {
             for debit in &phase.loops {
@@ -367,6 +379,17 @@ impl Proof {
     }
     pub fn private_flag(&self, array: usize) -> usize {
         self.scalar_words + self.arrays.len() * 4 + array
+    }
+    pub fn map_bank(&self, array: usize) -> Option<usize> {
+        self.map_banks
+            .iter()
+            .position(|bank| bank.array == array)
+            .map(|at| {
+                self.scalar_words
+                    + self.arrays.len() * 5
+                    + self.arrays.iter().filter(|a| a.appends).count()
+                    + at
+            })
     }
     pub fn capacity(&self, array: usize) -> Option<usize> {
         self.arrays[array].appends.then(|| {
@@ -837,6 +860,7 @@ pub(super) fn from_phase(
         nested_managed: false,
         tagged: None,
         arrays,
+        map_banks: phase.map_banks,
         frames: frame_words,
         actions: phase.actions,
         sites: phase.sites,
@@ -1483,6 +1507,7 @@ fn derive_inner(
         nested_managed,
         tagged: None,
         arrays,
+        map_banks: Vec::new(),
         frames: frame_words,
         actions,
         sites: sites.into_iter().collect(),

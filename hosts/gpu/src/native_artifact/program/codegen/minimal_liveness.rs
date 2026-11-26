@@ -100,6 +100,12 @@ pub(super) fn required(
                     }
                 }
                 e.used(shadow + proof.private_flag(replacement.target));
+                if let Some(bank) = proof.map_bank(replacement.target) {
+                    e.used(shadow + bank);
+                    e.writes.insert(shadow + proof.view(replacement.target));
+                    e.writes
+                        .insert(shadow + proof.private_flag(replacement.target));
+                }
             }
             Some(Operation::Frame) => {
                 let moves = super::super::numeric_words::frame_word_moves_for(

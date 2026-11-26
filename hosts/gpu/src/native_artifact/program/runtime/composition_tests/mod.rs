@@ -118,6 +118,19 @@ fn owner_layout_work(pthread: u64, futex: u64) -> u64 {
     }
 }
 
+// Policy149 adds one optional local-map owner pointer to PrivateNumeric,
+// embedded in the invocation's FrameLanes. The setup meter prices each admitted
+// metadata byte at eight units. Retain the historical source equations and
+// account for this actual allocation separately, even when the option is None.
+fn phase_map_local_metadata_work() -> u64 {
+    let bytes = core::mem::size_of::<Option<Box<()>>>() as u64;
+    assert_eq!(
+        bytes, 8,
+        "qualify a changed native pointer layout explicitly"
+    );
+    bytes * 8
+}
+
 #[test]
 fn huffman_parent_cleanup_selects_funded_retirement_batches() {
     let source = include_str!("../../../../../tests/fixtures/native/numeric-parent-child.mec");
@@ -152,10 +165,11 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                148
+                149
             );
-            // Policy148 retains this unsigned fixture’s existing funding, the
-            // policy127 tree handoff and its exact source work bill.
+            // Policy149 retains this unsigned fixture’s existing funding, the
+            // policy127 tree handoff and its exact source work bill, with the
+            // separately accounted local-owner metadata setup below.
             // Policy125 adds tree first-write alias checks.
             // Policies107/108/110/111 add fills, recursive frames, worker
             // transport and selected String-matrix scalar projections.
@@ -228,7 +242,12 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             );
             assert_eq!(
                 report.work,
-                owner_layout_work(88_531_834, 88_525_050) + setup + entries + ordinary + pieces
+                owner_layout_work(88_531_834, 88_525_050)
+                    + setup
+                    + entries
+                    + ordinary
+                    + pieces
+                    + phase_map_local_metadata_work()
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(
@@ -664,12 +683,12 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                148
+                149
             );
             assert_eq!(
                 report.work,
-                owner_layout_work(41_515_826, 41_513_202),
-                "policy148 keeps this unsigned fixture's established source prices and child fallback banks"
+                owner_layout_work(41_515_826, 41_513_202) + phase_map_local_metadata_work(),
+                "policy149 keeps the source prices and adds exact local-owner metadata setup"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(

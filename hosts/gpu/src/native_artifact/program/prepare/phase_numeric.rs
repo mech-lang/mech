@@ -323,6 +323,27 @@ pub(in crate::native_artifact) fn derive_complete(
     )
 }
 
+pub(super) fn derive_terminal_constructors(
+    facts: &NativeProgramFacts<'_>,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
+    stops: BTreeSet<usize>,
+) -> Result<Proof, &'static str> {
+    derive_inventory(
+        facts,
+        tail,
+        frames,
+        aggregates,
+        calls,
+        visits,
+        Coverage::Complete,
+        Some(stops),
+    )
+}
+
 pub(super) fn derive_guarded(
     facts: &NativeProgramFacts<'_>,
     tail: &NativeTailLoop,
@@ -378,7 +399,11 @@ fn derive_inventory(
         return Err("numeric carrier requires flat fields");
     }
     let forest = if let Some(stops) = stops {
-        super::numeric_phase::Forest::guarded_intervals(plan, tail, stops)?
+        if mode == Coverage::Complete {
+            super::numeric_phase::Forest::terminal_constructors(plan, tail, stops)?
+        } else {
+            super::numeric_phase::Forest::guarded_intervals(plan, tail, stops)?
+        }
     } else {
         match mode {
             Coverage::Complete => super::numeric_phase::Forest::derive(plan, tail)?,
@@ -460,11 +485,64 @@ fn derive_inventory(
             appends: false,
         });
     }
-    let mapped = if forest.maps.is_empty() {
+    let mut mapped = if forest.maps.is_empty() {
         BTreeMap::new()
     } else {
         super::numeric_phase::matrix_maps::destinations(facts, tail, frames, calls, &forest.maps)?
     };
+    // A map that does not flow into a next-state field is a distinct local
+    // result, never an alias inferred from its read operands. Its producer and
+    // every read must belong to this exact composed source traversal.
+    let mut covered = sites.iter().map(|&s| s as u32).collect::<BTreeSet<_>>();
+    covered.extend(forest.maps.iter().flat_map(|map| map.source_sites()));
+    covered.extend(
+        forest
+            .reductions
+            .iter()
+            .flat_map(|fold| fold.source_sites()),
+    );
+    let mut local_arrays = Vec::new();
+    for map in &forest.maps {
+        if mapped.contains_key(&map.output) {
+            continue;
+        }
+        use mech_engine::native_artifact::{
+            NativeIterationValueScope as Scope, NativeProgramReadRole as Read,
+        };
+        let sealed = if let Some(transpose) = &map.region.transpose {
+            let Action::LibraryCall { output, .. } =
+                plan.blocks()[transpose.transpose as usize].action()
+            else {
+                return Err("local map lost its selected source output");
+            };
+            *output
+        } else {
+            plan.collections()[map.region.collection as usize].output()
+        };
+        if sealed.get() != map.output {
+            return Err("local map output differs from canonical source");
+        }
+        if !matches!(plan.value_scopes()[map.output as usize], Scope::Immutable { iteration: Some(owner) }
+            if forest.loops.iter().any(|loop_| loop_.iteration == owner))
+            || facts.read_roles(sealed).map_err(|_| "local map lacks exact reads")?
+                .iter().any(|read| !matches!(read, Read::Action(at) | Read::Terminator(at) if covered.contains(at))) {
+            return Err("local map output escapes its exact phase source");
+        }
+        let root = fields.len() + captured.len() + local_arrays.len();
+        mapped.insert(map.output, root);
+        local_arrays.push(Array {
+            root,
+            storage: super::readonly_numeric::ArrayStorage::PhaseLocal {
+                value: map.output,
+                extents: map.extents,
+            },
+            schema: plan.values()[map.output as usize].schema(),
+            width: map.region.output_width,
+            witness: usize::MAX,
+            writable: true,
+            appends: false,
+        });
+    }
     let mut provenance = Provenance {
         facts,
         frames,
@@ -475,7 +553,9 @@ fn derive_inventory(
         children: BTreeMap::new(),
         captures,
         mapped,
-        native_sites: matches!(mode, Coverage::Intervals | Coverage::Hybrid).then_some(&sites),
+        native_sites: (matches!(mode, Coverage::Intervals | Coverage::Hybrid)
+            || (guarded && !forest.stops.is_empty()))
+        .then_some(&sites),
     };
     for child in forest.loops.iter().skip(1) {
         let NativeControlLoop::Tail(child_tail) = &plan.iterations()[child.iteration as usize]
@@ -547,10 +627,13 @@ fn derive_inventory(
         }
     }
     arrays.extend(captured);
+    arrays.extend(local_arrays);
     if arrays.is_empty() {
         return Err("no invariant numeric arrays");
     }
-    let result = if sites.contains(&(tail.finish() as usize)) {
+    let result = if sites.contains(&(tail.finish() as usize))
+        && !forest.stops.contains(&(tail.finish() as usize))
+    {
         results::derive(plan, tail, frames, aggregates, &arrays, &mut provenance)?
     } else {
         ResultRecipe::Unreachable
@@ -612,7 +695,9 @@ fn derive_inventory(
                 .iter()
                 .position(|a| a.root == root)
                 .ok_or("matrix map destination is outside the phase")?;
-            if root >= fields.len()
+            if (root >= fields.len()
+                && !matches!(arrays[target].storage,
+                super::readonly_numeric::ArrayStorage::PhaseLocal { value, .. } if value == map.output))
                 || arrays[target].schema != plan.values()[map.output as usize].schema()
                 || (arrays[target].width != 0 && arrays[target].width != map.region.output_width)
                 || arrays[target].appends
@@ -866,28 +951,31 @@ fn derive_inventory(
         if arrays[replacement.target].appends || replacement.arrays.iter().any(|&a| arrays[a].appends))) {
         return Err("matrix map shares a growing phase root");
     }
-    // Complete maps consume an existing exclusive bank; they do not create
-    // one. Without any first-change producer for this root, the fast branch
-    // cannot become available in this phase and would add only cold entries.
-    if actions.iter().any(|(_, action)| {
-        matches!(action, Operation::Map { replacement }
-        if !actions.iter().any(|(_, producer)| matches!(producer,
-            Operation::Write { array, .. } | Operation::CellWrite { array, .. }
-                if *array == replacement.target)))
-    }) {
-        return Err("matrix map has no phase producer for exclusive storage");
-    }
-    if arrays.iter().any(|array| array.witness == usize::MAX)
-        && !actions.iter().any(|(_, action)| {
-            matches!(action, Operation::Reduce { fold } if !fold.arrays.is_empty())
-                || matches!(action, Operation::Map { replacement } if !replacement.arrays.is_empty()) || matches!(action, Operation::Read { array, .. } | Operation::CellRead { array, .. }
+    let map_banks = super::numeric_phase::map_banks::derive(&actions, &arrays)?;
+    // A local result obtains its type, geometry and owner from its complete
+    // map producer. It has no entry owner and needs no scalar-read witness.
+    // Opaque retained roots continue to require their existing read proof.
+    if arrays.iter().any(|array| {
+        array.witness == usize::MAX
+            && !matches!(
+                array.storage,
+                super::readonly_numeric::ArrayStorage::PhaseLocal { .. }
+            )
+    }) && !actions.iter().any(|(_, action)| {
+        matches!(action, Operation::Reduce { fold } if !fold.arrays.is_empty())
+            || matches!(action, Operation::Map { replacement } if !replacement.arrays.is_empty())
+            || matches!(action, Operation::Read { array, .. } | Operation::CellRead { array, .. }
                 if !arrays[*array].writable && !arrays[*array].appends)
-        })
-    {
+    }) {
         return Err("unwitnessed retained array");
     }
     if arrays.iter().any(|array| {
-        array.witness == usize::MAX && (array.width != 0 || array.writable || array.appends)
+        array.witness == usize::MAX
+            && !matches!(
+                array.storage,
+                super::readonly_numeric::ArrayStorage::PhaseLocal { .. }
+            )
+            && (array.width != 0 || array.writable || array.appends)
     }) {
         return Err("unwitnessed retained array has content effects");
     }
@@ -976,6 +1064,7 @@ fn derive_inventory(
             })
         })
         .and_then(|n| n.checked_add(arrays.iter().filter(|a| a.appends).count()))
+        .and_then(|n| n.checked_add(map_banks.len()))
         .ok_or("numeric word count overflows")?;
     let phase = if nested {
         let fields = result
@@ -1031,6 +1120,7 @@ fn derive_inventory(
     )?;
     Ok(Proof {
         arrays,
+        map_banks,
         frames: frame_words,
         actions,
         sites: sites.into_iter().collect(),

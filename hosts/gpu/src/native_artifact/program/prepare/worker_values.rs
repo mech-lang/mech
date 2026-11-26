@@ -228,7 +228,8 @@ pub(in crate::native_artifact) fn derive(
                 for array in &proof.arrays {
                     match array.storage {
                         ArrayStorage::Capture { value }
-                        | ArrayStorage::FrameCapture { value, .. } => inventory.value(value)?,
+                        | ArrayStorage::FrameCapture { value, .. }
+                        | ArrayStorage::PhaseLocal { value, .. } => inventory.value(value)?,
                         ArrayStorage::Carrier { .. } | ArrayStorage::TaggedCarrier { .. } => {}
                     }
                 }

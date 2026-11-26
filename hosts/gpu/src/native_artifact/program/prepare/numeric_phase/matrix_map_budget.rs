@@ -19,6 +19,19 @@ impl MatrixMap {
         else {
             return None;
         };
+        if cursor.operands().map(|v| v.get()) != [self.first, self.last]
+            || self.count
+                != super::super::reductions::constant(plan, self.last)?
+                    .checked_sub(super::super::reductions::constant(plan, self.first)?)?
+                    .checked_add(u64::from(self.inclusive))?
+            || self.elements
+                != self
+                    .count
+                    .checked_mul(self.region.rectangle.as_ref().map_or(1, |r| r.rows))?
+            || self.extents[0].checked_mul(self.extents[1])? != self.elements
+        {
+            return None;
+        }
         let range = calls.get(cursor.prepare() as usize)?.as_ref()?;
         if range.template() != cursor.template() {
             return None;
@@ -38,12 +51,74 @@ impl MatrixMap {
         } else {
             None
         };
-        let binding_bytes = range
+        let mut binding_bytes = range
             .binding_metadata_bytes()
             .checked_add(transpose.map_or(0, |call| call.binding_metadata_bytes()))?;
-        let binding_work = range
+        let mut binding_work = range
             .binding_work()
             .checked_add(transpose.map_or(0, |call| call.binding_work()))?;
+        if let Some(rectangle) = &self.region.rectangle {
+            let NativeControlLoop::Collection(inner) =
+                &plan.iterations()[rectangle.inner_iteration as usize]
+            else {
+                return None;
+            };
+            let mech_engine::native_artifact::NativeCollectionSource::U64Range(cursor) =
+                inner.source()
+            else {
+                return None;
+            };
+            if super::super::reductions::constant(plan, cursor.operands()[0].get())?
+                != rectangle.start
+                || super::super::reductions::constant(plan, cursor.operands()[1].get())?
+                    != rectangle.end
+                || cursor.prepare() != rectangle.range_prepare
+            {
+                return None;
+            }
+            let range = calls.get(rectangle.range_prepare as usize)?.as_ref()?;
+            let transpose = calls.get(rectangle.transpose as usize)?.as_ref()?;
+            if range.template() != cursor.template()
+                || range
+                    .selected_u64_range_cardinality(rectangle.start, rectangle.end)
+                    .ok()?
+                    != rectangle.rows
+                || !transpose.supports_numeric_matrix_transpose()
+            {
+                return None;
+            }
+            let input = plan.values()[plan.collections()[rectangle.inner_collection as usize]
+                .output()
+                .get() as usize]
+                .definition();
+            mech_core::shape_for_resolved_extents(range.template().output(), &[1, rectangle.rows])
+                .ok()?;
+            mech_core::shape_for_resolved_extents(input, &[1, rectangle.rows]).ok()?;
+            mech_core::shape_for_resolved_extents(
+                transpose.template().inputs().first()?,
+                &[1, rectangle.rows],
+            )
+            .ok()?;
+            mech_core::shape_for_resolved_extents(
+                transpose.template().output(),
+                &[rectangle.rows, 1],
+            )
+            .ok()?;
+            binding_bytes = binding_bytes
+                .checked_add(range.binding_metadata_bytes())?
+                .checked_add(transpose.binding_metadata_bytes())?;
+            binding_work = binding_work
+                .checked_add(range.binding_work())?
+                .checked_add(transpose.binding_work())?;
+        }
+        let layout = super::super::super::numeric_maps::Layout {
+            regions: vec![self.region.clone()],
+            headers: Vec::new(),
+        };
+        let nested = super::super::super::numeric_maps::nested::Funding::derive(
+            plan, &layout, calls, visits,
+        )
+        .at(&self.region)?;
         let mut source_work = 0u64;
         for site in self.source_sites() {
             source_work = source_work
@@ -74,27 +149,31 @@ impl MatrixMap {
                 .checked_add(schema_bytes.checked_mul(128)?)?
                 .checked_add(65536)?;
         }
-        let native_step = (self.region.steps.len() as u64)
-            .checked_mul(1024)?
-            .checked_add((self.region.body.len() as u64).checked_mul(128)?)?
-            .checked_add(8192)?;
+        let native_step = nested.native_step.checked_add(
+            (self.region.steps.len() as u64)
+                .checked_mul(1024)?
+                .checked_add((self.region.body.len() as u64).checked_mul(128)?)?
+                .checked_add(8192)?,
+        )?;
         let bank = self
-            .count
+            .elements
             .checked_mul(u64::from(self.region.output_width))?;
         // Fund all original draft banks, both materialized roots, selected
         // schema planning, and the simultaneous-update scratch bank. No row
         // constructor is treated as free merely because emission elides it.
-        let cells = self.count.checked_add(4)?.checked_mul(
+        let cells = self.elements.checked_add(4)?.checked_mul(
             (core::mem::size_of::<mech_core::ValueDataDraft>() as u64)
                 .checked_mul(16)?
                 .checked_add(512)?,
         )?;
         let temporary = cells
+            .checked_add(nested.temporary)?
             .checked_add(bank.checked_mul(16)?)?
             .checked_add(binding_bytes.checked_mul(128)?)?
             .checked_add(schema_bytes.checked_mul(32)?)?
             .checked_add(65536)?;
         let output = temporary
+            .checked_add(nested.output)?
             .checked_add(bank.checked_mul(4)?)?
             .checked_add(4096)?;
         let setup = binding_work
@@ -104,9 +183,10 @@ impl MatrixMap {
         let per_element = source_work
             .checked_add(reads)?
             .checked_add(native_step)?
+            .checked_add(nested.compute)?
             .checked_add(8192)?;
         let compute = self
-            .count
+            .elements
             .checked_add(1)?
             .checked_mul(per_element)?
             .checked_add(setup)?
@@ -118,9 +198,14 @@ impl MatrixMap {
             .checked_add(temporary.checked_mul(128)?)?
             .checked_add(65536)?;
         let replay = self
-            .count
+            .elements
             .checked_add(1)?
-            .checked_mul(source_work.checked_add(read_replay)?.checked_add(8192)?)?
+            .checked_mul(
+                source_work
+                    .checked_add(read_replay)?
+                    .checked_add(nested.replay)?
+                    .checked_add(8192)?,
+            )?
             .checked_add(probe)?;
         Some(FoldBudget {
             schema_bytes,
@@ -129,15 +214,19 @@ impl MatrixMap {
             temporary,
             output,
             nodes: self
-                .count
+                .elements
                 .checked_mul(8)?
+                .checked_add(nested.nodes)?
                 .checked_add(binding_bytes)?
                 .checked_add(256)?,
-            elements: self.count,
+            elements: self.elements.max(nested.elements),
             cloned: cells
+                .checked_add(self.elements.checked_mul(nested.cloned)?)?
                 .checked_add(bank.checked_mul(16)?)?
                 .checked_add(binding_bytes)?,
-            comparison: output.checked_add(temporary)?,
+            comparison: output
+                .checked_add(temporary)?
+                .checked_add(self.elements.checked_mul(nested.comparison)?)?,
             setup,
             native_step,
         })

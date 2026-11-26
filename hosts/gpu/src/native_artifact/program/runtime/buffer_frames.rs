@@ -68,6 +68,7 @@ struct PrivateNumeric {
     region: usize,
     arrays: Vec<Option<PrivateNumericArray>>,
     append: Option<Vec<Option<mech_core::snapshot::PrivateUnsignedAppendPreparation>>>,
+    locals: Option<Box<map_banks::Locals>>,
     publication: Option<PrivatePublication>,
     _nodes: mech_core::ManagedNodeReservation,
     _reservation: mech_core::ManagedMemoryReservation,
@@ -114,6 +115,8 @@ pub(super) enum Field {
 }
 #[path = "buffer_frames_capture.rs"]
 mod capture;
+#[path = "buffer_frames_map_banks.rs"]
+mod map_banks;
 pub(super) use capture::CapturedFrame;
 impl BufferFrames {
     fn word_count(layout: &Layout) -> Result<usize, NativeProgramExecutionError> {
@@ -192,6 +195,9 @@ impl BufferFrames {
             inner.nodes.nodes()
                 + inner.private.as_ref().map_or(0, |p| {
                     p._nodes.nodes()
+                        + p.locals
+                            .as_ref()
+                            .map_or(0, |locals| locals.metadata_nodes())
                         + match &p.publication {
                             Some(PrivatePublication::Cold(cold)) => cold._nodes.nodes(),
                             _ => 0,
@@ -811,6 +817,7 @@ impl BufferFrames {
             region,
             arrays,
             append,
+            locals: None,
             publication,
             _nodes: nodes,
             _reservation: reservation,
@@ -915,18 +922,25 @@ impl BufferFrames {
             .inner
             .as_mut()
             .ok_or_else(|| invalid("private numeric lanes missing"))?;
-        let state = inner
+        let mut state = inner
             .private
             .take()
             .ok_or_else(|| invalid("private numeric owners missing"))?;
         if state.region != region || state.arrays.iter().any(Option::is_some) {
             return Err(invalid("private numeric owners not synchronized"));
         }
-        Ok(match state.publication {
+        let publication = match state.publication.take() {
             Some(PrivatePublication::Direct(ticket)) => Some(ticket),
             Some(PrivatePublication::Cold(cold)) => cold.direct,
             None => None,
-        })
+        };
+        // Frozen local results remain available only through this synchronous
+        // reconciliation. Exact cold aliases/frames acquire their own owners
+        // before clear_map_locals ends that short lifetime.
+        if state.locals.is_some() {
+            inner.private = Some(state);
+        }
+        Ok(publication)
     }
     pub(super) fn synchronize_managed(
         &mut self,

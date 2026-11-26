@@ -70,6 +70,10 @@ pub(super) fn derive(
     if let Some(prefix) = prefix
         && (selected.is_none()
             || numeric_score(facts.plan(), tail, &prefix) > score
+            || (numeric_score(facts.plan(), tail, &prefix) == score
+                && selected.as_ref().is_some_and(|selected| {
+                    numeric_total_score(&prefix) > numeric_total_score(selected)
+                }))
             || selected
                 .as_ref()
                 .and_then(|proof| proof.tagged.as_ref())
@@ -104,16 +108,30 @@ fn numeric_score(plan: &Plan, tail: &NativeTailLoop, proof: &Proof) -> usize {
         .actions
         .iter()
         .filter(|(site, _)| recurrent.contains(site))
-        .map(|(_, op)| match op {
-            Operation::Read { .. }
-            | Operation::CellRead { .. }
-            | Operation::Write { .. }
-            | Operation::CellWrite { .. } => 1,
-            Operation::Reduce { fold } => fold.source.region.reads.len() + 1,
-            Operation::Map { replacement } => replacement.source.region.reads.len() + 1,
-            _ => 0,
-        })
+        .map(|(_, op)| numeric_operation_score(op))
         .sum()
+}
+
+// Equal recurring coverage may still add a complete numeric map/fold on the
+// terminal path. Count that actual source work only as a tie-breaker; it must
+// never displace a candidate with more recurring numeric work.
+fn numeric_total_score(proof: &Proof) -> usize {
+    proof
+        .actions
+        .iter()
+        .map(|(_, op)| numeric_operation_score(op))
+        .sum()
+}
+fn numeric_operation_score(op: &Operation) -> usize {
+    match op {
+        Operation::Read { .. }
+        | Operation::CellRead { .. }
+        | Operation::Write { .. }
+        | Operation::CellWrite { .. } => 1,
+        Operation::Reduce { fold } => fold.source.region.reads.len() + 1,
+        Operation::Map { replacement } => replacement.source.region.reads.len() + 1,
+        _ => 0,
+    }
 }
 
 fn recurrent_sites(plan: &Plan, tail: &NativeTailLoop, proof: &Proof) -> BTreeSet<usize> {

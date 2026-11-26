@@ -1413,6 +1413,15 @@ fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveou
                     assert!(
                         conditional.iter().all(|region| {
                             counts.elements.contains_key(&u64::from(region.header))
+                                || phase_maps.iter().any(|map| {
+                                    let parent = &map.source.region;
+                                    parent == *region
+                                        || (parent.rectangle.as_ref().is_some_and(|rectangle| {
+                                            rectangle.inner_iteration == region.iteration
+                                        }) && parent.body == region.body
+                                            && parent.steps == region.steps
+                                            && parent.reads == region.reads)
+                                })
                                 || jit.descriptor().metadata().numeric_maps.regions.iter().any(
                                     |parent| {
                                         parent.rectangle.as_ref().is_some_and(|rectangle| {
@@ -1426,7 +1435,7 @@ fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveou
                                     },
                                 )
                         }),
-                        "every conditional body must execute directly or inside its exact completed native rectangle"
+                        "every conditional body must execute directly or inside its exact completed native rectangle or phase map"
                     );
                 }
 

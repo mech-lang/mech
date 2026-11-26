@@ -19,6 +19,7 @@ mod cold;
 mod flow;
 mod homes;
 mod intervals;
+pub(in crate::native_artifact) mod map_banks;
 pub(in crate::native_artifact) mod matrix_maps;
 mod reductions;
 mod schedule;
@@ -337,12 +338,26 @@ impl Forest {
         }
     }
 
+    /// Complete summary inventory, ending before exact ordinary terminal
+    /// constructors. No descendant map/fold becomes an unproved cold child.
+    pub(super) fn terminal_constructors(
+        plan: &Plan,
+        root: &NativeTailLoop,
+        stops: BTreeSet<usize>,
+    ) -> Result<Self, &'static str> {
+        if stops.is_empty() {
+            return Err("terminal phase lacks an exact constructor stop");
+        }
+        Self::derive_inventory(plan, root, Some(stops), Coverage::Complete)
+    }
+
     fn derive_inventory(
         plan: &Plan,
         root: &NativeTailLoop,
         guarded_stops: Option<BTreeSet<usize>>,
         mode: Coverage,
     ) -> Result<Self, &'static str> {
+        let terminal = mode == Coverage::Complete && guarded_stops.is_some();
         let root_id = plan
             .iterations()
             .iter()
@@ -373,12 +388,17 @@ impl Forest {
             Vec::new()
         };
         let (mut stops, prepaid_sites) = if let Some(stops) = guarded_stops {
-            let prepaid = plan
-                .blocks()
-                .iter()
-                .enumerate()
-                .filter_map(|(site, block)| (block.iteration() == Some(root_id)).then_some(site))
-                .collect();
+            let prepaid = if terminal {
+                BTreeSet::new()
+            } else {
+                plan.blocks()
+                    .iter()
+                    .enumerate()
+                    .filter_map(|(site, block)| {
+                        (block.iteration() == Some(root_id)).then_some(site)
+                    })
+                    .collect()
+            };
             (stops, prepaid)
         } else if mode == Coverage::Intervals {
             intervals::boundaries(plan, root_id)?
@@ -515,7 +535,7 @@ impl Forest {
                 .iter()
                 .any(|s| {
                     !sites.contains(&(*s as usize))
-                        && (mode != Coverage::Intervals || *s == tail.header())
+                        && ((mode != Coverage::Intervals && !terminal) || *s == tail.header())
                 })
                 || (iteration != root_id
                     && [tail.initialize(), tail.exit()]

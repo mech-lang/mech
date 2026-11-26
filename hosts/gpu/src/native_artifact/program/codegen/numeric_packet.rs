@@ -93,6 +93,7 @@ impl Recipe {
                 let metadata = proof.arrays.iter().enumerate().any(|(array, _)| {
                     (proof.view(array)..proof.view(array) + 4).contains(&relative)
                         || proof.capacity(array) == Some(relative)
+                        || proof.map_bank(array) == Some(relative)
                 });
                 Ok(if metadata {
                     InputSource::Argument(2 + relative)

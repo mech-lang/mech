@@ -337,8 +337,21 @@ impl Layout {
             let partial = numeric
                 .as_ref()
                 .is_some_and(|proof| !proof.prepaid_sites.is_empty());
+            // A proved terminal publication ends the native traversal before
+            // the ordinary constructor. It still retains the declared native
+            // backedge; its finish can only execute after the loan has closed.
+            let terminal = numeric.as_ref().is_some_and(|proof| {
+                proof.phase.is_some()
+                    && matches!(
+                        proof.result,
+                        super::readonly_numeric::ResultRecipe::Unreachable
+                    )
+                    && !proof.exits.is_empty()
+            });
             if !closed
-                || (!partial && (!seen[tail.finish() as usize] || !seen[tail.latch() as usize]))
+                || (!partial
+                    && (!seen[tail.latch() as usize]
+                        || (!terminal && !seen[tail.finish() as usize])))
             {
                 continue;
             }

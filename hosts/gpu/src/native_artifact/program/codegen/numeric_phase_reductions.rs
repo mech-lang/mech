@@ -129,6 +129,15 @@ pub(super) fn emit_region(
     let frame = b.ins().stack_addr(types::I64, slot, 0);
     let zero = b.ins().iconst(types::I64, 0);
     let one = b.ins().iconst(types::I64, 1);
+    let elements = if let Some(rectangle) = &region.rectangle {
+        let rows = b.ins().iconst(types::I64, rectangle.rows as i64);
+        let (elements, overflow) = b.ins().umul_overflow(count, rows);
+        let good = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
+        require(b, good, miss);
+        elements
+    } else {
+        count
+    };
     for at in [
         offset_of!(Frame, input),
         offset_of!(Frame, input_bytes),
@@ -143,7 +152,7 @@ pub(super) fn emit_region(
     if let Some((output, capacity)) = output {
         b.ins().store(
             MemFlags::new(),
-            count,
+            elements,
             frame,
             offset_of!(Frame, output_count) as i32,
         );
@@ -160,9 +169,18 @@ pub(super) fn emit_region(
             offset_of!(Frame, capacity_bytes) as i32,
         );
     }
-    for at in [offset_of!(Frame, count), offset_of!(Frame, source_count)] {
-        b.ins().store(MemFlags::new(), count, frame, at as i32);
-    }
+    b.ins().store(
+        MemFlags::new(),
+        elements,
+        frame,
+        offset_of!(Frame, count) as i32,
+    );
+    b.ins().store(
+        MemFlags::new(),
+        count,
+        frame,
+        offset_of!(Frame, source_count) as i32,
+    );
     for at in [offset_of!(Frame, epoch), offset_of!(Frame, issued)] {
         b.ins().store(MemFlags::new(), one, frame, at as i32);
     }

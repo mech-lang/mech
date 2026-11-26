@@ -346,12 +346,12 @@ impl Invocation<'_, '_, '_> {
                 | crate::native_artifact::program::prepare::readonly_numeric::Operation::Append { .. }
                 | crate::native_artifact::program::prepare::readonly_numeric::Operation::AppendLeBytes { .. })) => site as u32,
             6 if (traversals > 0 || state.partial) && self.numeric_prepaid.is_none() => proof.numeric.as_ref()
-                .and_then(|proof| proof.exits.iter().find(|exit| exit.to == site && matches!(exit.kind, ExitKind::Unsupported)))
-                .map(|exit| exit.from as u32)
+                .and_then(|proof| proof.exits.iter().find(|exit| exit.to == site && matches!(exit.kind, ExitKind::Unsupported))
+                    .map(|exit| exit.source_predecessor(&proof.actions) as u32))
                 .ok_or_else(|| invalid("numeric cold exit is outside its exact source edge"))?,
             7 if (traversals > 0 || state.partial) && self.numeric_prepaid.is_none() => proof.numeric.as_ref()
-                .and_then(|proof| proof.exits.iter().find(|exit| exit.to == site && !matches!(exit.kind, ExitKind::Unsupported)))
-                .map(|exit| exit.from as u32)
+                .and_then(|proof| proof.exits.iter().find(|exit| exit.to == site && !matches!(exit.kind, ExitKind::Unsupported))
+                    .map(|exit| exit.source_predecessor(&proof.actions) as u32))
                 .ok_or_else(|| invalid("numeric fuel exit is outside its exact source edge"))?,
             _ => return Err(invalid("closed Tail exit outside its proved boundary")),
         };

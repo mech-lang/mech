@@ -103,6 +103,12 @@ pub(in crate::native_artifact) fn numeric_exit_words(
     for (array, _) in proof.arrays.iter().enumerate().filter(|(_, a)| a.appends) {
         words.push(proof.view(array) + 1);
     }
+    // First-map ownership changes these words in generated code. The runtime
+    // entry still holds an uncommitted prototype until this exact transport.
+    for bank in &proof.map_banks {
+        words.push(proof.view(bank.array));
+        words.push(proof.private_flag(bank.array));
+    }
     Ok(words)
 }
 

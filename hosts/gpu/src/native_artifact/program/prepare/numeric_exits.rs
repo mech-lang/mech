@@ -266,7 +266,33 @@ pub(super) fn derive(
             let [from] = provenance.facts.predecessors(to as u32)? else {
                 return Err("cold initializer lacks a unique exact predecessor");
             };
-            *from as usize
+            let canonical = *from as usize;
+            if forest.sites.contains(&canonical) {
+                canonical
+            } else if let Some(entry) = forest
+                .maps
+                .iter()
+                .find_map(|map| {
+                    (map.after as usize == to
+                        && map.completion.last().copied() == Some(canonical as u32))
+                    .then_some(map.entry as usize)
+                })
+                .or_else(|| {
+                    forest.reductions.iter().find_map(|fold| {
+                        (fold.after as usize == to
+                            && fold
+                                .region
+                                .reduction
+                                .as_ref()
+                                .is_some_and(|r| r.select as usize == canonical))
+                        .then_some(fold.entry as usize)
+                    })
+                })
+            {
+                entry
+            } else {
+                return Err("cold predecessor is outside the native traversal");
+            }
         };
         if !forest.sites.contains(&from) {
             return Err("cold predecessor is outside the native traversal");
@@ -293,10 +319,10 @@ pub(super) fn derive(
                 // tag/payload snapshot lanes, with no managed buffer binding.
                 || (aggregates.slot_at(value as usize).is_some()
                     && matches!(plan.values()[value as usize].definition().body(), SchemaBody::Enum { .. }))
-                || !provenance.facts.definition_sites(value)?.iter().any(|d| {
-                    d.site()
-                        .is_some_and(|s| forest.sites.contains(&(s as usize)))
-                })
+                || (!forest.maps.iter().any(|map| map.output == value)
+                    && !provenance.facts.definition_sites(value)?.iter().any(|d| {
+                        d.site().is_some_and(|s| forest.sites.contains(&(s as usize)))
+                    }))
             {
                 continue;
             }

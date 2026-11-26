@@ -77,6 +77,15 @@ impl Operation {
             _ => None,
         }
     }
+    /// The exact final canonical visit completed by this summary. Native CFG
+    /// predecessors use its entry; ordinary replay resumes after this exit.
+    pub fn summary_source_exit(&self) -> Option<u32> {
+        match self {
+            Self::Reduce { fold } => fold.source.region.reduction.as_ref().map(|r| r.select),
+            Self::Map { replacement } => replacement.source.completion.last().copied(),
+            _ => None,
+        }
+    }
     pub fn summary_budget(&self) -> Option<&super::numeric_phase::FoldBudget> {
         match self {
             Self::Reduce { fold } => Some(&fold.budget),
@@ -130,6 +139,17 @@ pub(in crate::native_artifact) struct Exit {
     pub retire_carrier: bool,
     pub kind: ExitKind,
 }
+impl Exit {
+    pub fn source_predecessor(&self, actions: &[(usize, Operation)]) -> usize {
+        actions
+            .iter()
+            .find(|(site, action)| {
+                *site == self.from && action.summary_after() == Some(self.to as u32)
+            })
+            .and_then(|(_, action)| action.summary_source_exit())
+            .map_or(self.from, |site| site as usize)
+    }
+}
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields, rename = "mech.native.image.BoundaryValues")]
 pub(in crate::native_artifact) struct BoundaryValues {
@@ -142,6 +162,7 @@ pub(in crate::native_artifact) struct BoundaryValues {
 #[serde(deny_unknown_fields, rename = "mech.native.image.Plan")]
 pub(in crate::native_artifact) struct Plan {
     pub arrays: Vec<Array>,
+    pub map_banks: Vec<super::numeric_phase::map_banks::Bank>,
     pub frames: Vec<FrameWords>,
     pub actions: Vec<(usize, Operation)>,
     pub sites: Vec<usize>,

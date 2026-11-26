@@ -129,6 +129,31 @@ impl PrivateNumericMatrix {
         self.ownership.reservation.capacity_bytes()
     }
 
+    /// Exact publication type metadata. This exposes no immutable payload,
+    /// weak identity, alias or permission to publish while cells are private.
+    pub const fn schema(&self) -> SchemaId {
+        self.value.schema
+    }
+
+    pub const fn schema_key(&self) -> SchemaKey {
+        self.value.schema_key
+    }
+
+    /// This exact private owner's already transferred publication envelope.
+    /// Foreign accounts cannot use it to prepay a later immutable slot put.
+    pub fn memory_budget_retained_bytes(&self, budget: &crate::ManagedMemoryBudget) -> Option<u64> {
+        let schemas = self.value.schemas.as_ref()?;
+        (self.ownership.reservation.budget() == *budget
+            && Arc::ptr_eq(schemas, &self.ownership.schemas)
+            && Arc::ptr_eq(&self.value.shape, &self.ownership.registration.shape))
+        .then_some(self.ownership.required_bytes)
+    }
+
+    pub fn memory_budget_retained_nodes(&self, budget: &crate::ManagedMemoryBudget) -> Option<u64> {
+        self.memory_budget_retained_bytes(budget)?;
+        Some(self.ownership.node_charge.nodes())
+    }
+
     /// Publish exactly once after all private borrows end. All storage, node
     /// and byte claims already exist. Fresh identities/import links are exposed
     /// only after the initialized cells have become immutable.

@@ -22,25 +22,18 @@ impl Invocation<'_, '_, '_> {
         let memory = self.state.library.memory_budget();
         let mut owner_bytes = 0u64;
         let mut owner_nodes = 0u64;
-        for array in &proof.arrays {
-            let Some(owner) = self.numeric_array_owner(array)? else {
+        for at in 0..proof.arrays.len() {
+            let Some((bytes, nodes)) = self.numeric_entry_envelope(proof, at)? else {
                 return Ok(false);
             };
-            let Some(bytes) = owner.memory_budget_retained_bytes(&memory) else {
-                return Ok(false);
-            };
-            let Some(nodes) = owner.memory_budget_retained_nodes(&memory) else {
-                return Ok(false);
-            };
-            let Some(bytes) = owner_bytes.checked_add(bytes) else {
-                return Ok(false);
-            };
-            let Some(nodes) = owner_nodes.checked_add(nodes) else {
-                return Ok(false);
-            };
-            owner_bytes = bytes;
-            owner_nodes = nodes;
+            owner_bytes = owner_bytes
+                .checked_add(bytes)
+                .ok_or_else(|| invalid("phase owner byte sum overflows"))?;
+            owner_nodes = owner_nodes
+                .checked_add(nodes)
+                .ok_or_else(|| invalid("phase owner node sum overflows"))?;
         }
+        let (bank_bytes, bank_nodes) = self.numeric_map_banks_envelope(proof)?;
         let fits = |need: u64, cap: Option<u64>| cap.is_some_and(|cap| need <= cap);
         for (_, action) in &proof.actions {
             let Some(b) = action.summary_budget() else {
@@ -54,12 +47,20 @@ impl Invocation<'_, '_, '_> {
             // All source banks, shape metadata and one first-change copy of
             // each root may coexist. No elided row is priced as zero storage.
             let bounds = (|| {
-                let extra_bytes = b.temporary.checked_add(owner_bytes.checked_mul(4)?)?;
-                let extra_nodes = b.nodes.checked_add(owner_nodes.checked_mul(4)?)?;
+                let extra_bytes = b
+                    .temporary
+                    .checked_add(owner_bytes.checked_mul(4)?)?
+                    .checked_add(bank_bytes.checked_mul(2)?)?;
+                let extra_nodes = b
+                    .nodes
+                    .checked_add(owner_nodes.checked_mul(4)?)?
+                    .checked_add(bank_nodes.checked_mul(2)?)?;
                 Some((
                     prior.live_bytes.checked_add(extra_bytes)?,
                     prior.live_nodes.checked_add(extra_nodes)?,
-                    b.cloned.checked_add(owner_bytes.checked_mul(8)?)?,
+                    b.cloned
+                        .checked_add(owner_bytes.checked_mul(8)?)?
+                        .checked_add(bank_bytes.checked_mul(8)?)?,
                     extra_bytes,
                     extra_nodes,
                 ))
