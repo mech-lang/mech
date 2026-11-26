@@ -268,11 +268,16 @@ fn recovery_byte_limit_abandons_to_resource_error_without_losing_bytes() {
 fn completed_prefix_survives_middle_fuel_and_event_exhaustion() {
     let text = "1. Stable\n--------\n\nA stable paragraph.\n\nx := 1\n\nfinal-item-with-enough-content-to-exhaust-the-limit\n";
     let prefix_end = text.find("final-item").unwrap();
-    // Prefix rejection avoids the full-line subtitle probe. Pin its completed
-    // prefix boundary, while retaining the earlier budgets below.
+    // Enabled invariants add a rejected alternative before the variable
+    // definition. Pin the completed prefix boundary for both feature profiles;
+    // retain the same finite budgets in the exact-remainder checks below.
     for limits in [
         ParseLimits {
-            fuel: 398,
+            fuel: if cfg!(feature = "invariant_define") {
+                401
+            } else {
+                398
+            },
             ..ParseLimits::default()
         },
         ParseLimits {
@@ -317,21 +322,27 @@ fn completed_prefix_survives_middle_fuel_and_event_exhaustion() {
 fn early_middle_and_late_fuel_exhaustion_have_exact_remainders() {
     let text = "1. Stable\n--------\n\nA stable paragraph.\n\nx := 1\n\nfinal-item-with-enough-content-to-exhaust-the-limit\n";
     // Canonical work includes rule selection and retained lookahead; byte offsets
-    // are not fuel units. Retain the old budgets and their now-earlier exact
-    // remainders, plus measured budgets at the original semantic boundaries.
-    for (fuel, error_start) in [
-        (0, 0),
-        (390, 47),
-        (398, 49),
-        (401, 52),
-        (449, 49),
-        (451, 51),
-        (454, 54),
-        (550, 98),
-        (648, 90),
-        (659, 100),
-        (663, 100),
+    // are not fuel units. Invariant definitions add a rejected alternative before
+    // ordinary definitions. Pin exact remainders with that feature disabled and
+    // enabled, preserving every budget and its backtracking boundary.
+    for (fuel, without_invariants, with_invariants) in [
+        (0, 0, 0),
+        (390, 47, 46),
+        (398, 49, 47),
+        (401, 52, 49),
+        (449, 49, 97),
+        (451, 51, 99),
+        (454, 54, 51),
+        (550, 98, 96),
+        (648, 90, 89),
+        (659, 100, 100),
+        (663, 100, 51),
     ] {
+        let error_start = if cfg!(feature = "invariant_define") {
+            with_invariants
+        } else {
+            without_invariants
+        };
         let snapshot = parse_with_limits(
             text,
             ParseLimits {

@@ -666,6 +666,16 @@ jobs:
           rustup toolchain install nightly-2026-03-03 --profile minimal
           sudo apt-get update -o Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources -o Dir::Etc::sourceparts=-
           sudo apt-get install --yes ripgrep build-essential m4
+      - name: Provision source build swap
+        if: ${{ matrix.suite == 'source' }}
+        # The combined fixed-shape compiler build needs extra memory headroom.
+        run: |
+          source_swap_file="${RUNNER_TEMP}/canonical-source-build.swap"
+          sudo fallocate -l 8G "$source_swap_file"
+          sudo chmod 600 "$source_swap_file"
+          sudo mkswap "$source_swap_file"
+          sudo swapon "$source_swap_file"
+          free -h
       - name: Fetch locked application dependencies
         run: cargo +nightly-2026-03-03 fetch --locked
       - name: Execute canonical resident applications and retained tail controls
