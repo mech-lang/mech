@@ -1623,3 +1623,17 @@ profiles retain 3710 canonical execution samples and cover
 No compiler source changed after freeze and no benchmark port was rewritten.
 The split and prior holdout results were exposed; no holdout was profiled.
 The strict holdout goal remains open unless its score is below 1.0x C.
+
+Round 18: direct typed F64 broadcast arithmetic
+Source ec96f1d0ec97a8554c07b30c7b7bda94d98c3a16; IR377/work146; executable 33f88161e373bbb6fbfef8be97abee305fd7ce4297c80c42b1d88eea09d12b6a.
+Current exact Core F64 banks feed maintained elementwise add/subtract/multiply/divide directly, with one operation selection and no per-cell generic drafts. Scalar, row, column and exact broadcasting retain original geometry, complete finite admission and strict atomic publication. Other schemas and dense transport retain their paths. No port or arithmetic order changed.
+
+Equal-weight geometric means of median kernel runtimes (lower Mech/C is better):
+optimization: 39.771610x C; 19.907344x faster than recorded start; 19.569783x faster than paired original; summed medians 0.005521582s; raw runtime multiplier vs round17 0.969940x.
+holdout: 89.689184x C; 23.293593x faster than recorded start; 23.170984x faster than paired original; summed medians 0.023861167s; raw runtime multiplier vs round17 0.961660x.
+
+Optimization-only seven-sample round17 replay: 1.061343x speedup; 0 >5% regressions retained.
+Final selected checks: 725; both exact Huffman bills remain.
+All 900 balanced finite observations, 29482 live-outs per artifact, both sets, all regressions and nineteen-entry history remain. Five optimization-only raw profiles retain 3606 canonical execution samples and cover 79.651828% of training summed medians.
+No compiler source changed after freeze. The strict holdout goal remains open unless its score is below 1.0x C.
+Final >5% raw runtime regressions vs round17: optimization durbin (+6.77%), optimization gramschmidt (+7.42%), holdout trisolv (+5.35%).
