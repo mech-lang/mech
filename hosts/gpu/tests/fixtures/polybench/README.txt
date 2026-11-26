@@ -1667,3 +1667,53 @@ Correctness: 530 unique selected checks; runtime-only and codegen feature builds
 All 900 balanced finite observations, 29482 warm-up live-outs per artifact and twenty-one history entries remain. Five optimization-only profiles retain 3548 canonical execution samples and cover 81.544208% of training summed medians.
 Final >5% raw runtime regressions vs round19: none.
 Full vector maps require an already private destination with an existing scalar write producer. Rectangles/nested maps, dynamic counts and first-map bank construction remain compiler gaps. No ports or compiler source changed after freeze. The strict holdout goal remains open unless below 1.0x C.
+
+Round 21: phase-owned rectangular and nested map outputs
+Source 3789f44d051a5749daf5c5cfb2e8cd3b81bdbf88; IR380/work149/ABI42; executable 7908d2e7daf98566039cf417674f021c2c88658f72366943741e917209f5d10b.
+Complete fixed rectangular/nested comprehensions now compose into native phases with disjoint admitted Core private banks, current-version proofs, scratch-before-commit and exact original cold/terminal publication. Existing scalar first-change roots and ordered folds remain.
+
+Equal-weight geometric means of median kernel runtimes (lower Mech/C is better):
+optimization: 35.081028x C; 21.160349x faster than recorded start; 23.140359x faster than paired original; summed medians 0.005224209s; raw Mech speedup vs round20 0.898101x; C runtime multiplier 1.054124x; reference-adjusted Mech speedup 1.001606x.
+holdout: 116.813414x C; 16.941709x faster than recorded start; 17.020435x faster than paired original; summed medians 0.094824043s; raw Mech speedup vs round20 0.709630x; C runtime multiplier 1.044959x; reference-adjusted Mech speedup 0.724102x.
+
+Training-only seven-sample replay vs frozen20: 1.083661x speedup; 1 regression over 5%. Source and binary then frozen before both final sets.
+Correctness: 542 selected checks; runtime-only and codegen builds pass. Exact historical Huffman equations add only the new admitted 8-byte optional field at 8 work units/byte (64 units). Development failures and their corrections remain documented in qualification evidence.
+All 900 balanced observations, 29482 finite warm-up live-outs per artifact and 22 history entries remain. Five training-only profiles retain 2774 canonical samples and cover 77.286820% of training summed medians.
+Final raw runtime regressions over 5% vs round20: optimization 2mm (+31.20%), optimization 3mm (+43.15%), optimization atax (+46.73%), optimization bicg (+42.34%), optimization cholesky (+36.15%), optimization correlation (+21.00%), optimization covariance (+36.81%), optimization doitgen (+5.94%), optimization durbin (+5.93%), optimization gemm (+14.87%), holdout floyd-warshall (+34.00%), holdout gesummv (+7.33%), holdout lu (+896.24%), holdout ludcmp (+873.81%), holdout syrk (+5.78%), holdout trisolv (+43.72%), holdout trmm (+42.38%).
+No ports or compiler source changed after freeze. The strict holdout goal remains open unless below 1.0x C.
+
+All thirty kernels, descending current Mech/C kernel ratio (largest first).
+Each C ratio uses its round's C measurement; raw Mech speedups are separate.
+kernel             set            start xC          now xC
+lu                 holdout            20,830.73        3,257.48
+ludcmp             holdout            20,723.72        3,201.45
+jacobi-2d          holdout             9,612.12          457.60
+jacobi-1d          holdout             7,168.14          400.79
+adi                holdout            21,631.38          194.12
+gemver             holdout               260.73          163.16
+gesummv            holdout               112.38          113.39
+mvt                optimization          138.96          107.16
+bicg               optimization           87.94           97.73
+deriche            optimization       43,560.74           95.94
+atax               optimization           79.13           93.25
+2mm                optimization           77.03           82.96
+correlation        optimization          327.94           80.52
+gramschmidt        optimization       27,896.34           69.70
+trmm               holdout               219.61           50.92
+symm               holdout               218.10           45.36
+covariance         optimization           50.46           42.01
+syr2k              holdout               224.54           38.29
+syrk               holdout               245.10           37.61
+3mm                optimization           38.12           36.49
+trisolv            holdout             3,606.16           32.77
+fdtd-2d            holdout            10,500.55           31.87
+heat-3d            holdout             4,178.38           27.43
+gemm               optimization           36.05           26.62
+durbin             optimization        3,899.39           22.88
+doitgen            optimization           22.47           19.84
+floyd-warshall     holdout             4,841.31           15.72
+cholesky           optimization       23,662.23           10.80
+nussinov           optimization      119,638.18            5.82
+seidel-2d          optimization       50,168.86            2.95
+
+The formal round fails the holdout generalization check. LU/LUDCMP regress about 10x in raw runtime; no compiler change was made after freeze. The seven-sample training probe and final measurements are separate receipts.
