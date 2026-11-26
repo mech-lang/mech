@@ -229,7 +229,7 @@ pub(in crate::native_artifact) fn derive(
                     match array.storage {
                         ArrayStorage::Capture { value }
                         | ArrayStorage::FrameCapture { value, .. } => inventory.value(value)?,
-                        ArrayStorage::Carrier { .. } => {}
+                        ArrayStorage::Carrier { .. } | ArrayStorage::TaggedCarrier { .. } => {}
                     }
                 }
                 inventory.values(proof.frames.iter().map(|frame| frame.value))?;

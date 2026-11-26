@@ -64,10 +64,10 @@ impl Invocation<'_, '_, '_> {
                 layout.sites.get(site).copied().flatten().filter(|&id| {
                     let region = &layout.regions[id];
                     region.tail.header() as usize == site
-                        && region
-                            .numeric
-                            .as_ref()
-                            .is_some_and(|proof| !proof.exits.is_empty())
+                        && region.numeric.as_ref().is_some_and(|proof| {
+                            !proof.exits.is_empty()
+                                || proof.tagged.as_ref().is_some_and(|v| v.prefix.is_some())
+                        })
                         && self.state.control.previous == Some(region.tail.latch())
                         && self.numeric_prepaid.is_none()
                 })

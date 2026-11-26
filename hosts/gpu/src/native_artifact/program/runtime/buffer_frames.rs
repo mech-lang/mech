@@ -365,14 +365,21 @@ impl BufferFrames {
         physical: usize,
         kind: mech_engine::native_artifact::NativeScalarKind,
     ) -> bool {
-        self.inner
-            .as_ref()
-            .and_then(|inner| {
-                let at = physical.checked_mul(2)?;
-                let words = inner.words.values().get(at..at.checked_add(2)?)?;
-                Some(words[1] == 1 && kind.accepts_bits(words[0]))
-            })
-            .unwrap_or(false)
+        self.current_scalar_bits(physical, kind).is_some()
+    }
+    pub(super) fn current_scalar_bits(
+        &self,
+        physical: usize,
+        kind: mech_engine::native_artifact::NativeScalarKind,
+    ) -> Option<u64> {
+        let at = physical.checked_mul(2)?;
+        let words = self
+            .inner
+            .as_ref()?
+            .words
+            .values()
+            .get(at..at.checked_add(2)?)?;
+        (words[1] == 1 && kind.accepts_bits(words[0])).then_some(words[0])
     }
     /// A virtual producer may acquire a physical home only if no earlier
     /// current definition occupies either its payload or validity word.

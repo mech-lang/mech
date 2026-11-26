@@ -223,7 +223,18 @@ pub(in crate::native_artifact) fn leave_at(
                     .shadow
                     .ok_or_else(|| backend("numeric export lacks scratch"))?;
                 let ready = b.ins().iconst(types::I64, 1);
-                for binding in proof.scalar_inputs.iter().chain(&proof.scalar_outputs) {
+                for binding in proof
+                    .scalar_inputs
+                    .iter()
+                    .chain(&proof.scalar_outputs)
+                    .filter(|binding| {
+                        !proof
+                            .tagged
+                            .as_ref()
+                            .and_then(|v| v.prefix.as_ref())
+                            .is_some_and(|p| p.tag(binding.value).is_some())
+                    })
+                {
                     let value = load(options, b, locals, region, shadow + binding.word)?;
                     let at = binding
                         .physical
@@ -448,11 +459,15 @@ fn prepare_region(
         store(options, b, locals, region, destination, word)?;
     }
     if let Some(word) = region.cold_resume() {
-        let status = if site == region.tail.header() as usize
-            && region.numeric.as_ref().is_some_and(|p| p.tagged.is_some())
+        let status = if region
+            .numeric
+            .as_ref()
+            .and_then(|p| p.tagged.as_ref())
+            .is_some_and(|v| site == region.tail.header() as usize || v.prefix.is_some())
         {
-            // Remember a refused hot run until an ordinary different tag is
-            // constructed. This prevents a tight budget from retrying forever.
+            // A fixed variant may rearm after a different tag. A complete
+            // prefix remains refused across every tag until fresh Tail entry.
+            // Neither route repeatedly previews the same tight account.
             b.ins().iconst(types::I64, 2)
         } else {
             zero
@@ -500,7 +515,7 @@ pub(in crate::native_artifact) fn tagged_transition(
         let word = region
             .cold_resume()
             .ok_or_else(|| backend("tagged phase lacks reentry word"))?;
-        let pending = if *ordinal == variant.ordinal {
+        let pending = if variant.prefix.is_some() || *ordinal == variant.ordinal {
             let previous = load(options, b, locals, region, word)?;
             let refused = b.ins().icmp_imm(IntCC::Equal, previous, 2);
             let one = b.ins().iconst(types::I64, 1);

@@ -124,7 +124,19 @@ impl Provenance<'_, '_> {
                         self.array(operands.get(ordinal)?.get(), None)?
                     }
                     (Frame::Copy { source, output }, Some(ordinal)) if output.get() == value => {
-                        self.array(source.get(), Some(ordinal))?
+                        if super::readonly_numeric::numeric_fields::direct_pack(
+                            self.facts.plan(),
+                            self.frames,
+                            *source,
+                            *output,
+                        ) {
+                            if ordinal != 0 {
+                                return None;
+                            }
+                            self.array(source.get(), None)?
+                        } else {
+                            self.array(source.get(), Some(ordinal))?
+                        }
                     }
                     (
                         Frame::Project {
@@ -375,7 +387,11 @@ fn derive_inventory(
     if mode == Coverage::Hybrid && (forest.loops.len() < 2 || forest.stops.is_empty()) {
         return Err("nested cold selection requires both Tail children and a cold boundary");
     }
-    let nested = forest.loops.len() > 1 || !forest.cold.is_empty() || !forest.stops.is_empty();
+    // A guarded complete FSM still owns one synchronous phase account even
+    // when it has no ordinary cold transition. Its tag transport is funded by
+    // the same per-traversal and boundary schedule as a partial tagged phase.
+    let nested =
+        guarded || forest.loops.len() > 1 || !forest.cold.is_empty() || !forest.stops.is_empty();
     #[cfg(all(test, feature = "canonical-native-program-runtime"))]
     if nested && test_decline_nested_phase() {
         return Err("test declines nested phases to exercise ordinary parent segments");
@@ -584,7 +600,13 @@ fn derive_inventory(
                     remember(output.get())?;
                 }
                 Frame::Copy { source, output } => {
-                    remember(source.get())?;
+                    if frames.fields(*source).is_some() {
+                        remember(source.get())?;
+                    } else if !super::readonly_numeric::numeric_fields::direct_pack(
+                        plan, frames, *source, *output,
+                    ) {
+                        return Err("projected direct payload lacks its exact matrix field");
+                    }
                     remember(output.get())?;
                 }
                 Frame::Project { source, .. } => remember(source.get())?,

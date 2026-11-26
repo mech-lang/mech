@@ -45,6 +45,27 @@ pub(super) fn operand(frames: &NativeBufferFrames, value: Value, relative: usize
     }
 }
 
+/// Projected enum constructors with a direct matrix payload are a one-field
+/// managed pack. No ordinary private-frame operation gains this interpretation.
+pub(in crate::native_artifact::program::prepare) fn direct_pack(
+    plan: &Plan,
+    frames: &NativeBufferFrames,
+    source: Value,
+    output: Value,
+) -> bool {
+    frames.fields(source).is_none()
+        && matches!(
+            plan.values()[source.get() as usize].definition().body(),
+            SchemaBody::Matrix { .. }
+        )
+        && frames.fields(output).is_some_and(|fields| {
+            matches!(fields.split_first(), Some((first, rest))
+            if first.schema() == plan.values()[source.get() as usize].schema()
+                && matches!(first.lane(), Lane::Managed { .. })
+                && rest.iter().all(|field| matches!(field.lane(), Lane::Scalar { .. })))
+        })
+}
+
 /// Exact managed-leaf copies for one original structural action. Reused by
 /// provenance's current-version and bottom-up child-contract proofs.
 pub(super) fn transfers(
@@ -75,6 +96,9 @@ pub(super) fn transfers(
                     }
                 }
             }
+        }
+        Frame::Copy { source, output } if direct_pack(plan, frames, *source, *output) => {
+            copies.push(((output.get(), Some(0)), (source.get(), None)));
         }
         Frame::Copy { source, output } => {
             for (index, field) in at(frames, source.get())

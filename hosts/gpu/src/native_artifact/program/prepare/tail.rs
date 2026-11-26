@@ -49,7 +49,9 @@ impl Region {
     pub fn cold_resume(&self) -> Option<usize> {
         self.numeric
             .as_ref()
-            .is_some_and(|proof| !proof.exits.is_empty())
+            .is_some_and(|proof| {
+                !proof.exits.is_empty() || proof.tagged.as_ref().is_some_and(|v| v.prefix.is_some())
+            })
             .then(|| self.words + 3)
     }
     fn state_words(&self) -> usize {

@@ -83,6 +83,10 @@ pub(super) fn required(
                 for (to, _) in moves.constants {
                     e.writes.insert(to);
                 }
+                for (to, from, _) in moves.comparisons {
+                    e.used(from);
+                    e.writes.insert(to);
+                }
             }
             Some(Operation::Aggregate) => {
                 let layout = &program.metadata().scalar_aggregates;

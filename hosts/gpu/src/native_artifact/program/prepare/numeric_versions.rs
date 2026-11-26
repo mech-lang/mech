@@ -1000,7 +1000,10 @@ fn pass(
         if site == tail.latch() as usize {
             for array in arrays {
                 let key = match array.storage {
-                    super::ArrayStorage::Carrier { field, .. } => (tail.next().get(), Some(field)),
+                    super::ArrayStorage::Carrier { field, .. }
+                    | super::ArrayStorage::TaggedCarrier { field, .. } => {
+                        (tail.next().get(), Some(field))
+                    }
                     super::ArrayStorage::Capture { value } => (value, None),
                     super::ArrayStorage::FrameCapture { value, field, .. } => (value, Some(field)),
                 };

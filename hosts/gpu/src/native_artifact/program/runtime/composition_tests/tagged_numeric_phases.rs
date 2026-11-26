@@ -286,9 +286,9 @@ fn tagged_numeric_phases_decline_observable_older_versions() {
 fn tagged_numeric_phases_enter_after_an_ordinary_different_variant() {
     let source = source("u64")
         .replace("| :Walk(data<[u64]:2,3>, at<u64>, carried<u64>)",
-            "| :Start(data<[u64]:2,3>, at<u64>, carried<u64>)\n  | :Walk(data<[u64]:2,3>, at<u64>, carried<u64>)")
+            "| :Start(at<u64>, data<[u64]:2,3>, carried<u64>)\n  | :Walk(data<[u64]:2,3>, at<u64>, carried<u64>)")
         .replace("-> :Walk(initial, start, marker)",
-            "-> :Start(initial, start, marker)\n  :Start(data, at, carried) -> :Walk(data, at, carried)");
+            "-> :Start(start, initial, marker)\n  :Start(at, data, carried) -> :Walk(data, at, carried)");
     for artifact in artifacts(&source) {
         let mode = NativeProgramLimitMode::NoLimits;
         let memory = mode.memory_budget();
@@ -347,10 +347,19 @@ fn tagged_numeric_phases_enter_after_an_ordinary_different_variant() {
 
 #[test]
 fn tagged_numeric_phases_refused_hot_run_does_not_retry_every_iteration() {
-    let source = source("u64").replace(
-        "~next := data\n        next[row,at] = carried",
-        "next := data",
-    );
+    let source = source("u64")
+        .replace(
+            "~next := data\n        next[row,at] = carried",
+            "next := data",
+        )
+        // Keep this test on the fixed-variant path. A compatible complete prefix
+        // has one initial preview, covered by the alternating-state refusal test.
+        .replace(
+            "| :Done(data<[u64]:2,3>).",
+            "| :Done(at<u64>, data<[u64]:2,3>).",
+        )
+        .replace("| * -> :Done(data)", "| * -> :Done(0u64, data)")
+        .replace(":Done(data) => data.", ":Done(at, data) => data.");
     for artifact in artifacts(&source) {
         let mode = NativeProgramLimitMode::NoLimits;
         let memory = mode.memory_budget();

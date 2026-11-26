@@ -9,6 +9,7 @@ use mech_engine::native_artifact::{
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 pub(in crate::native_artifact) struct Variant {
+    pub prefix: Option<Box<super::super::numeric_prefix::Prefix>>,
     pub carrier: u32,
     pub ordinal: u32,
     /// Only these exact source values have the guarded enum schema.
@@ -30,6 +31,11 @@ pub(super) fn derive(
     calls: &[Option<NativePreparedLibraryCall>],
     visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
 ) -> Result<Proof, &'static str> {
+    if let Ok(proof) =
+        super::super::numeric_prefix::derive(facts, tail, frames, aggregates, calls, visits)
+    {
+        return Ok(proof);
+    }
     let [root] = frames
         .fields(tail.carrier())
         .ok_or("tagged carrier lacks frame")?
@@ -306,6 +312,7 @@ pub(in crate::native_artifact) fn candidate(
         }
     }
     proof.tagged = Some(Box::new(Variant {
+        prefix: None,
         carrier: tail.carrier().get(),
         ordinal,
         values,

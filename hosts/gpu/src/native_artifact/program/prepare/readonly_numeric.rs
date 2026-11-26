@@ -36,6 +36,12 @@ pub(in crate::native_artifact) enum ArrayStorage {
         field: usize,
         physical: usize,
     },
+    /// A common-prefix FSM root. Its current tag selects the exact managed
+    /// home in the original enum bank; the normalized view owns no Value.
+    TaggedCarrier {
+        value: u32,
+        field: usize,
+    },
     /// Exact immutable ancestor value; never a mutable carrier or body result.
     Capture {
         value: u32,
@@ -76,12 +82,15 @@ impl Array {
     pub fn physical(&self) -> Option<usize> {
         match self.storage {
             ArrayStorage::Carrier { physical, .. } => Some(physical),
-            ArrayStorage::Capture { .. } | ArrayStorage::FrameCapture { .. } => None,
+            ArrayStorage::TaggedCarrier { .. }
+            | ArrayStorage::Capture { .. }
+            | ArrayStorage::FrameCapture { .. } => None,
         }
     }
     pub fn entry_key(&self, tail: &NativeTailLoop) -> (u32, Option<usize>) {
         match self.storage {
             ArrayStorage::Carrier { field, .. } => (tail.carrier().get(), Some(field)),
+            ArrayStorage::TaggedCarrier { value, field } => (value, Some(field)),
             ArrayStorage::Capture { value } => (value, None),
             ArrayStorage::FrameCapture { value, field, .. } => (value, Some(field)),
         }

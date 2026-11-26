@@ -337,6 +337,7 @@ pub(in crate::native_artifact) fn emit_entry(
         b.ins()
             .load(types::I64, MemFlags::new(), hooks.arguments, 16)
     };
+    let prefix_inputs = super::numeric_words::prefix_inputs(b, bank, proof, error)?;
     let packet = if matches!(outline, super::numeric_outlined::Entry::PacketBody { .. }) {
         Some(
             super::numeric_packet::Recipe::derive(code, region)?
@@ -381,6 +382,9 @@ pub(in crate::native_artifact) fn emit_entry(
                         if relative == tree.active(0) {
                             return Ok(Some(b.ins().iconst(types::I64, 1)));
                         }
+                    }
+                    if let Some(&value) = prefix_inputs.get(&relative) {
+                        return Ok(Some(value));
                     }
                     if let Some(binding) = proof
                         .scalar_inputs

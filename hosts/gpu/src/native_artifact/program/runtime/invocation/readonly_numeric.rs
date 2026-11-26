@@ -19,6 +19,11 @@ impl Invocation<'_, '_, '_> {
         array: &Array,
     ) -> Result<Option<&mech_core::Value>, Error> {
         match array.storage {
+            ArrayStorage::TaggedCarrier { .. } => Ok(self.state.buffer_frames.numeric_owner(
+                self.numeric_array_physical(array)?
+                    .ok_or_else(|| invalid("tagged root lost its current home"))?,
+                array.schema,
+            )),
             ArrayStorage::Carrier { physical, .. } => Ok(self
                 .state
                 .buffer_frames
@@ -39,6 +44,20 @@ impl Invocation<'_, '_, '_> {
         array: &Array,
     ) -> Result<mech_core::Value, Error> {
         match array.storage {
+            ArrayStorage::TaggedCarrier { .. } => {
+                let physical = self
+                    .numeric_array_physical(array)?
+                    .ok_or_else(|| invalid("tagged projection lost current home"))?;
+                let Field::Managed(owner) = self.state.buffer_frames.project_numeric_owner(
+                    physical,
+                    array.schema,
+                    &mut self.state.control.work,
+                )?
+                else {
+                    return Err(invalid("numeric tagged view has scalar owner"));
+                };
+                Ok(owner)
+            }
             ArrayStorage::Carrier { physical, .. }
             | ArrayStorage::FrameCapture { physical, .. } => {
                 let Field::Managed(owner) = self.state.buffer_frames.project_numeric_owner(
@@ -70,7 +89,9 @@ impl Invocation<'_, '_, '_> {
             .numeric
             .as_ref()
             .ok_or_else(|| invalid("missing numeric leaf proof"))?;
-        if let Some(variant) = &proof.tagged {
+        if let Some(variant) = &proof.tagged
+            && variant.prefix.is_none()
+        {
             let [root] = metadata
                 .buffer_frames
                 .fields_at(variant.carrier as usize)
@@ -297,15 +318,21 @@ impl Invocation<'_, '_, '_> {
                 self.write_borrowed_word(2 + proof.view(at) + index, word)?;
             }
         }
+        self.validate_numeric_prefix(id)?;
         for binding in proof.scalar_inputs.iter().chain(&proof.scalar_captures) {
             self.state.control.work.charge(
                 crate::native_artifact::NativeExecutionPhase::Setup,
                 amount(binding.steps, 64, 0)?,
             )?;
-            if !self
-                .state
-                .buffer_frames
-                .current_scalar_binding(binding.physical, binding.kind)
+            if !proof
+                .tagged
+                .as_ref()
+                .and_then(|v| v.prefix.as_ref())
+                .is_some_and(|p| p.tag(binding.value).is_some())
+                && !self
+                    .state
+                    .buffer_frames
+                    .current_scalar_binding(binding.physical, binding.kind)
             {
                 return Err(invalid("numeric scalar has no current word"));
             }
@@ -407,7 +434,11 @@ impl Invocation<'_, '_, '_> {
         if mode == 0 && matches!(proof.result, crate::native_artifact::program::prepare::readonly_numeric::ResultRecipe::Unreachable) {
             return Err(invalid("native interval reached an ordinary-only finish"));
         }
-        if (mode != 0 && mode != 3) || (region.numeric_tree.is_none() && proof.phase.is_some()) {
+        let prefix = proof.tagged.as_ref().and_then(|v| v.prefix.as_ref());
+        if prefix.is_none()
+            && ((mode != 0 && mode != 3)
+                || (region.numeric_tree.is_none() && proof.phase.is_some()))
+        {
             // Resumable fuel/bounds/first-write boundaries restore current
             // scalar fields. Terminal mode3 cannot publish or resume a scalar
             // consumer; owner/shape/fuel reconciliation below remains intact.
@@ -439,7 +470,7 @@ impl Invocation<'_, '_, '_> {
                     };
                     let owner = Self::finish_numeric_array(private, length)?;
                     self.state.buffer_frames.synchronize_numeric_owner(
-                        array.physical().ok_or_else(|| {
+                        self.numeric_array_mutable_home(array)?.ok_or_else(|| {
                             invalid("captured array cannot receive a mutable owner")
                         })?,
                         array.schema,
@@ -461,6 +492,11 @@ impl Invocation<'_, '_, '_> {
                     )?;
                 }
             }
+        }
+        // Dirty owners have returned to their entry homes. Only now may the
+        // active tag change and clear its old physical variant bank.
+        if prefix.is_some() && mode != 3 {
+            self.export_numeric_prefix(id, region.tail.carrier().get())?;
         }
         if mode == 0 {
             if let Some(value) = proof.result.frame() {

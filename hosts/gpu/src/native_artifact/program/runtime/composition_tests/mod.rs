@@ -67,6 +67,7 @@ mod ordered_reduction_terminal;
 mod pack;
 mod phase_descendants;
 mod physical_exits;
+mod prefix_numeric_phases;
 mod producer_element_ranges;
 mod projection_elements;
 mod read_packs;
@@ -151,9 +152,9 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                137
+                138
             );
-            // Policy137 adds rectangular numeric maps; this unsigned fixture retains
+            // Policy138 adds common-prefix numeric FSMs; this unsigned fixture retains
             // the policy127 tree handoff and its exact source work bill.
             // Policy125 adds tree first-write alias checks.
             // Policies107/108/110/111 add fills, recursive frames, worker
@@ -658,12 +659,12 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                137
+                138
             );
             assert_eq!(
                 report.work,
                 owner_layout_work(41_515_826, 41_513_202),
-                "policy137 keeps this unsigned fixture's established source prices and child fallback banks"
+                "policy138 keeps this unsigned fixture's established source prices and child fallback banks"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(

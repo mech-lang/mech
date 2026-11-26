@@ -176,10 +176,14 @@ pub(super) fn source_slots(
     Ok(slots)
 }
 /// Original read/write ordering, shared with the current-traversal analysis.
+#[path = "numeric_prefix_words.rs"]
+mod prefix;
+pub(super) use prefix::entry as prefix_inputs;
 pub(super) struct FrameWordMoves {
     pub assignments: Vec<(usize, usize)>,
     pub parallel: bool,
     pub constants: Vec<(usize, u64)>,
+    pub comparisons: Vec<(usize, usize, u64)>,
 }
 
 /// Exact scalar lane assignments; managed fields retain their checked recipes.
@@ -214,6 +218,11 @@ pub(super) fn frame_word_moves_for(
         .action(site)
         .ok_or_else(|| backend("numeric frame lost fields"))?
         .operation();
+    if let Some(prefix) = variant.and_then(|variant| variant.prefix.as_deref()) {
+        if let Some(moves) = prefix::moves(shadow, code, operation, recipes, prefix)? {
+            return Ok(moves);
+        }
+    }
     if let (
         Some(variant),
         Frame::Observe {
@@ -230,6 +239,7 @@ pub(super) fn frame_word_moves_for(
     {
         return Ok(FrameWordMoves {
             assignments: Vec::new(),
+            comparisons: Vec::new(),
             parallel: true,
             constants: vec![(
                 output.get() as usize,
@@ -298,6 +308,7 @@ pub(super) fn frame_word_moves_for(
                 if source.is_empty() {
                     return Ok(FrameWordMoves {
                         assignments: Vec::new(),
+                        comparisons: Vec::new(),
                         parallel: true,
                         constants: Vec::new(),
                     });
@@ -318,6 +329,7 @@ pub(super) fn frame_word_moves_for(
     // emission, and expose that ordering to current-traversal proofs.
     Ok(FrameWordMoves {
         assignments,
+        comparisons: Vec::new(),
         parallel: true,
         constants: Vec::new(),
     })
@@ -333,6 +345,16 @@ pub(super) fn frame_words(
     variant: Option<&crate::native_artifact::program::prepare::readonly_numeric::tagged::Variant>,
 ) -> Result<(), NativeCompileError> {
     let moves = frame_word_moves_for(shadow, code, site, recipes, variant)?;
+    for (to, from, ordinal) in moves.comparisons {
+        let tag = words.read(b, from);
+        let equal = b.ins().icmp_imm(
+            cranelift_codegen::ir::condcodes::IntCC::Equal,
+            tag,
+            ordinal as i64,
+        );
+        let bits = b.ins().uextend(types::I64, equal);
+        words.write(b, to, bits);
+    }
     for (to, bits) in moves.constants {
         let value = b.ins().iconst(types::I64, bits as i64);
         words.write(b, to, value);

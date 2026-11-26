@@ -43,10 +43,11 @@ impl PrivatePhase {
         // First scope: fixed storage, exact Tail descendants and complete
         // source exports. Growing buffers, prepaid fragments and summarized
         // children keep their original implementation.
-        if !proof
-            .phase
-            .as_ref()
-            .is_some_and(|phase| phase.checked_children && phase.cold.is_empty())
+        if proof.tagged.is_some()
+            || !proof
+                .phase
+                .as_ref()
+                .is_some_and(|phase| phase.checked_children && phase.cold.is_empty())
             || !proof.prepaid_sites.is_empty()
             || proof.arrays.iter().any(|array| array.appends)
             || proof.actions.iter().any(|(_, action)| action.grows())

@@ -539,7 +539,8 @@ fn selected_template(
 // IR366 reuses exact typed snapshot publication in maintained numeric leaves.
 // IR367 retains bounded exact numeric geometry binding histories.
 // IR368 emits rectangular numeric comprehensions into one private bank.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 368;
+// IR369 carries exact tags through complete common-prefix numeric FSMs.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 369;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -796,7 +797,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 368;
 // Policy135 retains numeric admission bounds while eliding draft staging.
 // Policy136 prepays geometry-history lookup, ownership and retirement.
 // Policy137 funds the complete rectangle and selected intermediate proofs.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 137;
+// Policy138 funds current-variant imports, discriminator homes and boundaries.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 138;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

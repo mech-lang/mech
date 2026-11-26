@@ -462,6 +462,14 @@ fn pass(
                         }
                     }
                 }
+                Frame::Copy { source, output }
+                    if super::super::readonly_numeric::numeric_fields::direct_pack(
+                        plan, frames, *source, *output,
+                    ) =>
+                {
+                    let current = fresh(&state, (source.get(), None));
+                    state.insert((output.get(), Some(0)), current);
+                }
                 Frame::Copy { source, output } => {
                     let copied = frames
                         .fields(*source)

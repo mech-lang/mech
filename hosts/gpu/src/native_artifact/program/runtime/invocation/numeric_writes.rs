@@ -99,8 +99,7 @@ impl Invocation<'_, '_, '_> {
                 .ok_or_else(|| invalid("numeric ownership work overflows"))?,
         )?;
         let source = self.state.buffer_frames.take_numeric_owner(
-            proof.arrays[*array]
-                .physical()
+            self.numeric_array_mutable_home(&proof.arrays[*array])?
                 .ok_or_else(|| invalid("captured array cannot receive a mutable owner"))?,
             proof.arrays[*array].schema,
         )?;

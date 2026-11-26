@@ -245,3 +245,162 @@ impl NativeBufferFrames {
         Some(projected)
     }
 }
+
+/// Compiler-only common-prefix view of a closed numeric FSM. Payloads are
+/// flat tuples or direct matrices and are exact prefixes of the longest tuple.
+/// Every managed lane occurs in every variant; scalar suffixes may be absent.
+/// This describes
+/// source layout only. A consumer must independently prove tag flow, current
+/// array identities/versions, entry views and every ordinary continuation.
+impl NativeBufferFrames {
+    pub fn numeric_prefix_projection(&self, plan: &Plan, carrier: Value) -> Option<(Self, u32)> {
+        let schema = plan.values().get(carrier.get() as usize)?.schema();
+        let SchemaBody::Enum { variants, .. } =
+            plan.values()[carrier.get() as usize].definition().body()
+        else {
+            return None;
+        };
+        let [root] = self.fields(carrier)? else {
+            return None;
+        };
+        let NativeBufferFrameLane::Tagged { count, .. } = root.lane() else {
+            return None;
+        };
+        if count < 2 || count != variants.len() {
+            return None;
+        }
+        let mut payloads = Vec::new();
+        for (ordinal, variant) in variants.iter().enumerate() {
+            let field = self.tagged_variant(*root, ordinal as u32)?;
+            let fields = match variant.payload.as_ref()? {
+                SchemaBody::Tuple(_) => self.children(field)?.to_vec(),
+                SchemaBody::Matrix { .. }
+                    if matches!(field.lane(), NativeBufferFrameLane::Managed { .. }) =>
+                {
+                    vec![field]
+                }
+                _ => return None,
+            };
+            if fields.is_empty()
+                || fields.iter().any(|f| {
+                    matches!(
+                        f.lane(),
+                        NativeBufferFrameLane::Composite { .. }
+                            | NativeBufferFrameLane::Tagged { .. }
+                    )
+                })
+            {
+                return None;
+            }
+            payloads.push(fields);
+        }
+        let longest = payloads
+            .iter()
+            .enumerate()
+            .max_by_key(|(ordinal, fields)| (fields.len(), std::cmp::Reverse(*ordinal)))?
+            .0;
+        let fields = &payloads[longest];
+        let shortest = payloads.iter().map(|p| p.len()).min()?;
+        if !fields
+            .iter()
+            .any(|f| matches!(f.lane(), NativeBufferFrameLane::Managed { .. }))
+            || fields[shortest..]
+                .iter()
+                .any(|f| matches!(f.lane(), NativeBufferFrameLane::Managed { .. }))
+        {
+            return None;
+        }
+        for payload in &payloads {
+            if payload.iter().zip(fields).any(|(a, b)| {
+                a.schema() != b.schema()
+                    || match (a.lane(), b.lane()) {
+                        (
+                            NativeBufferFrameLane::Scalar { kind: a, .. },
+                            NativeBufferFrameLane::Scalar { kind: b, .. },
+                        ) => a != b,
+                        (
+                            NativeBufferFrameLane::Managed { .. },
+                            NativeBufferFrameLane::Managed { .. },
+                        ) => false,
+                        _ => true,
+                    }
+            }) {
+                return None;
+            }
+        }
+        let mut projected = self.clone();
+        for (value, ty) in plan.values().iter().enumerate() {
+            if ty.schema() != schema {
+                continue;
+            }
+            let [root] = self.fields_at(value)? else {
+                return None;
+            };
+            let field = self.tagged_variant(*root, longest as u32)?;
+            let NativeBufferFrameLane::Composite { at, count } = field.lane() else {
+                return None;
+            };
+            projected.slots[value] = Some((at, count));
+        }
+        for action in projected.actions.iter_mut().flatten() {
+            let replacement = match &action.operation {
+                NativeBufferFrameOperation::EnumPack {
+                    output, payload, ..
+                } if plan.values()[output.get() as usize].schema() == schema
+                    && (self.fields(*payload).is_some()
+                        || matches!(
+                            plan.values()[payload.get() as usize].definition().body(),
+                            SchemaBody::Matrix { .. }
+                        )) =>
+                {
+                    Some(NativeBufferFrameOperation::Copy {
+                        source: *payload,
+                        output: *output,
+                    })
+                }
+                NativeBufferFrameOperation::Observe {
+                    source,
+                    path,
+                    observation,
+                    output,
+                } if plan.values()[source.get() as usize].schema() == schema
+                    && matches!(observation, Observation::U64 | Observation::CanonicalValue) =>
+                {
+                    match path.as_ref() {
+                        [Step::EnumPayload { .. }] if self.fields(*output).is_some() => {
+                            Some(NativeBufferFrameOperation::Copy {
+                                source: *source,
+                                output: *output,
+                            })
+                        }
+                        [Step::EnumPayload { .. }]
+                            if matches!(
+                                plan.values()[output.get() as usize].definition().body(),
+                                SchemaBody::Matrix { .. }
+                            ) =>
+                        {
+                            Some(NativeBufferFrameOperation::Project {
+                                source: *source,
+                                ordinal: 0,
+                                output: *output,
+                            })
+                        }
+                        [Step::EnumPayload { .. }, Step::TupleItem { ordinal }] => {
+                            Some(NativeBufferFrameOperation::Project {
+                                source: *source,
+                                ordinal: *ordinal as usize,
+                                output: *output,
+                            })
+                        }
+                        _ => None,
+                    }
+                }
+                _ => None,
+            };
+            if let Some(replacement) = replacement {
+                action.operation = replacement;
+            }
+        }
+        Some((projected, longest as u32))
+    }
+}

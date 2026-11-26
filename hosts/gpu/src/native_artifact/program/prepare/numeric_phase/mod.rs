@@ -310,7 +310,13 @@ impl Forest {
         root: &NativeTailLoop,
         stops: BTreeSet<usize>,
     ) -> Result<Self, &'static str> {
-        Self::derive_inventory(plan, root, Some(stops), Coverage::Intervals)
+        if stops.is_empty() {
+            // A closed FSM may cover every state. Keep complete reachability,
+            // finish/backedge validation and ordinary child inventory intact.
+            Self::derive(plan, root)
+        } else {
+            Self::derive_inventory(plan, root, Some(stops), Coverage::Intervals)
+        }
     }
 
     fn derive_inventory(
