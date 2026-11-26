@@ -552,7 +552,9 @@ fn selected_template(
 // IR378 inlines exact current leaf shape resolution for selected kernels.
 // IR380 binds finite rectangular/nested maps and phase-local banks to exact
 // source destinations, current versions and independently rederived owners.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 380;
+// IR381 shares guarded fixed geometry and linear addressing with map DAGs.
+// IR382 reconciles exact source-site summary attempts at every phase boundary.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 382;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -822,7 +824,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 380;
 // Work147 retains complete shape/source/construction work prices.
 // Work149 funds complete map sources and same-account private output banks,
 // publication, physical coexistence, initialized scratch and cold replay.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 149;
+// Work150 charges complete map/fold bounds only on reached source branches,
+// preserving all original visits, physical admission and full replay bounds.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 150;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

@@ -1084,6 +1084,14 @@ fn derive_inventory(
                         0
                     })
                 })
+                .and_then(|n| {
+                    n.checked_add(
+                        actions
+                            .iter()
+                            .filter(|(_, action)| action.summary_budget().is_some())
+                            .count(),
+                    )
+                })
                 .and_then(|n| n.checked_add(usize::from(!exits.is_empty())))
                 .ok_or("phase counter size overflows")?,
         )?;

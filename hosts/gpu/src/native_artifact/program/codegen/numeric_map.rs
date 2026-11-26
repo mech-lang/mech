@@ -229,6 +229,17 @@ pub(super) fn emit(
         let (_, overflow) = b.ins().uadd_overflow(pointer, bytes);
         let good = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
         require(b, good, malformed);
+        // Keep literal source geometry visible to the native optimizer after
+        // checking the actual current view. These are scalar facts, never a
+        // cached owner or pointer. Unsupported shapes retain dynamic geometry.
+        let (cells, rows, columns) = guard_fixed_geometry(
+            b,
+            plan.values()[matrix.value as usize].definition().body(),
+            cells,
+            rows,
+            columns,
+            malformed,
+        );
         matrices.push((pointer, cells, rows, columns));
     }
     let start = get(b, frame, offset_of!(Frame, range_start));
@@ -294,14 +305,18 @@ pub(super) fn emit(
     b.ins().brif(more, body, &[], done, &[]);
     b.switch_to_block(body);
     let at = b.use_var(cursor);
-    let source_at = if let Some(rectangle) = &region.rectangle {
+    let (source_at, rectangle_row) = if let Some(rectangle) = &region.rectangle {
         let rows = b.ins().iconst(types::I64, rectangle.rows as i64);
-        let offset = b.ins().urem(at, rows);
-        let inner = b.ins().iadd_imm(offset, rectangle.start as i64);
+        let column = b.ins().udiv(at, rows);
+        // One quotient serves the source cursor and final row-major store.
+        // 0 <= at < rows * source_count, so column * rows <= at.
+        let consumed = b.ins().imul(column, rows);
+        let row = b.ins().isub(at, consumed);
+        let inner = b.ins().iadd_imm(row, rectangle.start as i64);
         b.def_var(words[&rectangle.inner_element], inner);
-        b.ins().udiv(at, rows)
+        (column, Some(row))
     } else {
-        at
+        (at, None)
     };
     let word = if region.range {
         b.ins().iadd(start, source_at)
@@ -367,7 +382,7 @@ pub(super) fn emit(
             continue;
         }
         if let Some(read) = region.reads.iter().find(|r| r.site == site) {
-            let value = emit_read(b, read, region, &matrices, &words, index_miss)?;
+            let value = emit_read(b, read, region, plan, &matrices, &words, index_miss)?;
             b.def_var(words[&read.output], value);
         } else {
             match plan.blocks()[site as usize].action() {
@@ -415,12 +430,9 @@ pub(super) fn emit(
                         // count = rows * source_count and 0 <= at < count were
                         // checked above, so this permutation is in-bounds and
                         // initializes every output cell exactly once.
-                        let output_at = if let Some(rectangle) = &region.rectangle {
-                            let rows = b.ins().iconst(types::I64, rectangle.rows as i64);
-                            let row = b.ins().urem(at, rows);
-                            let column = b.ins().udiv(at, rows);
+                        let output_at = if let Some(row) = rectangle_row {
                             let base = b.ins().imul(row, source_count);
-                            b.ins().iadd(base, column)
+                            b.ins().iadd(base, source_at)
                         } else {
                             at
                         };
@@ -501,6 +513,47 @@ pub(super) fn emit(
     Ok(())
 }
 
+/// Literal source extents only. Current entry guards retain their authority;
+/// no runtime parameter or compound dimension is speculatively evaluated here.
+fn fixed_geometry(schema: &mech_core::SchemaBody) -> Option<[u64; 3]> {
+    let mech_core::SchemaBody::Matrix { dimensions, .. } = schema else {
+        return None;
+    };
+    let [
+        mech_core::DimensionExpr::Constant(rows),
+        mech_core::DimensionExpr::Constant(columns),
+    ] = &dimensions[..]
+    else {
+        return None;
+    };
+    if *rows == 0 || *columns == 0 {
+        return None;
+    }
+    Some([rows.checked_mul(*columns)?, *rows, *columns])
+}
+
+fn guard_fixed_geometry(
+    b: &mut FunctionBuilder<'_>,
+    schema: &mech_core::SchemaBody,
+    cells: Value,
+    rows: Value,
+    columns: Value,
+    malformed: Block,
+) -> (Value, Value, Value) {
+    let Some([cells, fixed_rows, fixed_columns]) = fixed_geometry(schema) else {
+        return (cells, rows, columns);
+    };
+    for (actual, expected) in [(rows, fixed_rows), (columns, fixed_columns)] {
+        let good = b.ins().icmp_imm(IntCC::Equal, actual, expected as i64);
+        require(b, good, malformed);
+    }
+    (
+        b.ins().iconst(types::I64, cells as i64),
+        b.ins().iconst(types::I64, fixed_rows as i64),
+        b.ins().iconst(types::I64, fixed_columns as i64),
+    )
+}
+
 fn word_at(
     b: &mut FunctionBuilder<'_>,
     words: &BTreeMap<u32, Variable>,
@@ -516,6 +569,7 @@ fn emit_read(
     b: &mut FunctionBuilder<'_>,
     read: &crate::native_artifact::program::prepare::numeric_maps::MatrixRead,
     region: &Region,
+    plan: &Plan,
     matrices: &[(Value, Value, Value, Value)],
     words: &BTreeMap<u32, Variable>,
     miss: Block,
@@ -536,10 +590,15 @@ fn emit_read(
     let ordinal = match &indices[..] {
         [linear] => {
             let linear = index(*linear, cells);
-            let row = b.ins().urem(linear, rows);
-            let column = b.ins().udiv(linear, rows);
-            let offset = b.ins().imul(row, columns);
-            b.ins().iadd(offset, column)
+            super::numeric_words::linear_ordinal(
+                b,
+                linear,
+                rows,
+                columns,
+                plan.values()[region.matrices[read.matrix].value as usize]
+                    .definition()
+                    .body(),
+            )
         }
         [row, column] => {
             let row = index(*row, rows);
@@ -611,3 +670,7 @@ pub(in crate::native_artifact) fn emit_projection_finish(
     b.switch_to_block(ordinary);
     Ok(())
 }
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "numeric_map_geometry_tests.rs"]
+mod geometry_tests;

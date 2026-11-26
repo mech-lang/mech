@@ -145,13 +145,13 @@ pub(super) fn materialize(
         }
     }
     if let Some(phase) = &proof.phase {
-        for debit in &phase.loops {
-            let value = words.read(b, shadow + debit.counter);
+        for counter in phase.counters() {
+            let value = words.read(b, shadow + counter);
             b.ins().store(
                 MemFlags::new(),
                 value,
                 hooks.arguments,
-                offset(2 + debit.counter)?,
+                offset(2 + counter)?,
             );
         }
     }
@@ -217,7 +217,7 @@ pub(super) fn materialize(
         ]);
     }
     if let Some(phase) = &proof.phase {
-        reload.extend(phase.loops.iter().map(|debit| shadow + debit.counter));
+        reload.extend(phase.counters().map(|counter| shadow + counter));
     }
     for slot in reload {
         let argument = if slot == region.words + 1 {

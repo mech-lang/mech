@@ -43,6 +43,7 @@ pub(in crate::native_artifact::program::runtime) struct Counts {
     pub completed_parent_children: Vec<(u32, u32)>,
     prepaid_segment_entry_work: Option<u64>,
     pub phase_settlements: Vec<(u64, u64, u64, u64)>,
+    pub phase_summary_attempts: BTreeMap<usize, u64>,
     pub cold_private_arrays: Vec<usize>,
     pub poisoned_exit_words: usize,
     pub poisoned_private_homes: usize,
@@ -326,6 +327,15 @@ unsafe extern "C" fn helper(
                 .as_ref()
                 .and_then(|p| p.phase.as_ref())
         {
+            for debit in &phase.summaries {
+                let count = ctx.read_borrowed_word(2 + debit.counter).unwrap();
+                COUNTS.with(|v| {
+                    *v.borrow_mut()
+                        .phase_summary_attempts
+                        .entry(debit.site)
+                        .or_default() += count
+                });
+            }
             let root = ctx.read_borrowed_word(2 + phase.loops[0].counter).unwrap();
             let children = phase
                 .loops

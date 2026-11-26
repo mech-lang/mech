@@ -19,10 +19,21 @@ pub(in crate::native_artifact) struct Debit {
     pub comparison: u64,
     pub trips: Option<bounds::Trips>,
 }
+/// A fused source operation pays its complete existing bound only when reached.
+/// Private attempt counts settle on the same account as traversal counts.
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields, rename = "mech.native.image.SummaryDebit")]
+pub(in crate::native_artifact) struct SummaryDebit {
+    pub site: usize,
+    pub counter: usize,
+    pub compute: u64,
+    pub comparison: u64,
+}
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields, rename = "mech.native.image.Schedule")]
 pub(in crate::native_artifact) struct Schedule {
     pub loops: Vec<Debit>,
+    pub summaries: Vec<SummaryDebit>,
     pub cold: Vec<ColdChild>,
     pub boundary_work: u64,
     pub compute_bound: Bound,
@@ -57,6 +68,38 @@ impl Schedule {
                 )
             })
             .ok_or("phase reduction replay comparison overflows")?;
+        let counters = forest
+            .loops
+            .len()
+            .checked_add(if forest.checked_children {
+                forest.loops.len() - 1
+            } else {
+                0
+            })
+            .ok_or("phase counter home overflows")?;
+        let mut summaries = Vec::new();
+        for (site, action) in actions {
+            if let Some(budget) = action.summary_budget() {
+                if forest
+                    .loops
+                    .iter()
+                    .filter(|loop_| loop_.sites.contains(site))
+                    .count()
+                    != 1
+                {
+                    return Err("phase summary lacks one exact enclosing traversal");
+                }
+                summaries.push(SummaryDebit {
+                    site: *site,
+                    counter: counter
+                        .checked_add(counters)
+                        .and_then(|n| n.checked_add(summaries.len()))
+                        .ok_or("phase summary counter home overflows")?,
+                    compute: budget.compute,
+                    comparison: budget.comparison,
+                });
+            }
+        }
         let mut loops = Vec::new();
         for (index, loop_) in forest.loops.iter().enumerate() {
             let mut compute = if index == 0 {
@@ -70,18 +113,8 @@ impl Schedule {
                     .checked_add(visits[site].work)
                     .and_then(|n| n.checked_add(OVERHEAD))
                     .ok_or("phase traversal price overflows")?;
-                if let Some(budget) = actions
-                    .iter()
-                    .find(|(s, _)| *s == site)
-                    .and_then(|(_, action)| action.summary_budget())
-                {
-                    compute = compute
-                        .checked_add(budget.compute)
-                        .ok_or("phase reduction price overflows")?;
-                    comparison = comparison
-                        .checked_add(budget.comparison)
-                        .ok_or("phase reduction comparison overflows")?;
-                }
+                // Complete map/fold attempts debit at their exact source sites.
+                // The traversal still pays every original source visit below.
                 if actions.iter().any(|(s, a)| *s == site && a.replaces()) {
                     comparison = comparison
                         .checked_add(1)
@@ -141,6 +174,7 @@ impl Schedule {
                         .ok_or("phase reduction comparison credit overflows")?,
                 ),
                 loops,
+                summaries,
                 cold: forest.cold.clone(),
                 boundary_work,
                 checked_children: true,
@@ -168,6 +202,7 @@ impl Schedule {
         let (compute_bound, comparison_bound) = envelopes.remove(&loops[0].iteration).unwrap();
         Ok(Self {
             loops,
+            summaries,
             cold: forest.cold.clone(),
             boundary_work,
             compute_bound: Bound::add(compute_bound, Bound::Constant(replay_credit)),
@@ -178,8 +213,16 @@ impl Schedule {
         })
     }
 
+    pub fn counters(&self) -> impl Iterator<Item = usize> + '_ {
+        self.loops
+            .iter()
+            .map(|debit| debit.counter)
+            .chain(self.summaries.iter().map(|debit| debit.counter))
+    }
+
     pub fn words(&self) -> usize {
-        self.loops.len()
+        self.summaries.len()
+            + self.loops.len()
             + self
                 .loops
                 .iter()

@@ -96,6 +96,12 @@ pub(super) fn emit_from_views(
         let good = b.ins().icmp_imm(IntCC::Equal, count, source.maximum as i64);
         require(b, good, miss);
     }
+    let count = if source.constant_count {
+        // Retain the exact guarded source trip count as a native constant.
+        b.ins().iconst(types::I64, source.maximum as i64)
+    } else {
+        count
+    };
     let frame = emit_region(
         b, region, plan, first, count, matrices, captures, None, miss,
     )?;

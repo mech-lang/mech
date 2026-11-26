@@ -449,11 +449,11 @@ impl Invocation<'_, '_, '_> {
             return Ok(false);
         }
         if let Some(phase) = &proof.phase {
-            for debit in &phase.loops {
-                self.write_borrowed_word(2 + debit.counter, 0)?;
-                if let Some(word) = debit.first_visit {
-                    self.write_borrowed_word(2 + word, 0)?;
-                }
+            for counter in phase.counters() {
+                self.write_borrowed_word(2 + counter, 0)?;
+            }
+            for word in phase.loops.iter().filter_map(|debit| debit.first_visit) {
+                self.write_borrowed_word(2 + word, 0)?;
             }
         }
         if proof.writes() {

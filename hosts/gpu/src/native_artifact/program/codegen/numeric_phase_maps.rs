@@ -69,6 +69,8 @@ pub(super) fn emit(
     }
     let good = b.ins().icmp_imm(IntCC::Equal, count, source.count as i64);
     require(b, good, miss);
+    // The equality guard above proves this exact fixed source cardinality.
+    let count = b.ins().iconst(types::I64, source.count as i64);
     let bytes = source
         .elements
         .checked_mul(u64::from(width))

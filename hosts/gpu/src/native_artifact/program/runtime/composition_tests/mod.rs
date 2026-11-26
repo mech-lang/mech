@@ -51,6 +51,7 @@ mod nested_phase_handoff;
 mod nested_scalar_array;
 mod nullary_phases;
 mod numeric_bindings;
+mod numeric_summary_branches;
 mod numeric_boolean_relations;
 mod numeric_call_cache;
 mod numeric_cell_phases;
@@ -165,8 +166,10 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                149
+                150
             );
+            // Policy150 moves map/fold attempt charges to reached source sites.
+            // This unsigned fixture has no such summaries; retain its exact bill.
             // Policy149 retains this unsigned fixture’s existing funding, the
             // policy127 tree handoff and its exact source work bill, with the
             // separately accounted local-owner metadata setup below.
@@ -683,12 +686,12 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                149
+                150
             );
             assert_eq!(
                 report.work,
                 owner_layout_work(41_515_826, 41_513_202) + phase_map_local_metadata_work(),
-                "policy149 keeps the source prices and adds exact local-owner metadata setup"
+                "policy150 retains this fixture’s exact source and local-owner metadata prices"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(

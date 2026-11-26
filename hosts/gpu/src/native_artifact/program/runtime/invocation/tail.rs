@@ -283,39 +283,51 @@ impl Invocation<'_, '_, '_> {
                 .1
                 .checked_sub(args[1])
                 .ok_or_else(|| invalid("closed Tail comparison fuel was renewed"))?;
-            let traversals =
-                if let Some(phase) = proof.numeric.as_ref().and_then(|p| p.phase.as_ref()) {
-                    let mut expected = (0u64, 0u64);
-                    let mut root = 0;
-                    for (index, debit) in phase.loops.iter().enumerate() {
-                        let count = self.read_borrowed_word(2 + debit.counter)?;
-                        if index == 0 {
-                            root = count;
-                        }
-                        expected.0 = count
-                            .checked_mul(debit.compute)
-                            .and_then(|n| expected.0.checked_add(n))
-                            .ok_or_else(|| invalid("phase compute settlement overflows"))?;
-                        expected.1 = count
-                            .checked_mul(debit.comparison)
-                            .and_then(|n| expected.1.checked_add(n))
-                            .ok_or_else(|| invalid("phase comparison settlement overflows"))?;
+            let traversals = if let Some(phase) =
+                proof.numeric.as_ref().and_then(|p| p.phase.as_ref())
+            {
+                let mut expected = (0u64, 0u64);
+                let mut root = 0;
+                for (index, debit) in phase.loops.iter().enumerate() {
+                    let count = self.read_borrowed_word(2 + debit.counter)?;
+                    if index == 0 {
+                        root = count;
                     }
-                    if expected != (compute, comparison) {
-                        return Err(invalid("phase fuel differs from actual traversal debits"));
-                    }
-                    root
-                } else {
-                    let traversals = compute / proof.compute;
-                    if compute % proof.compute != 0
-                        || traversals.checked_mul(proof.comparison) != Some(comparison)
-                    {
-                        return Err(invalid(
-                            "closed Tail fuel differs from proved body envelope",
-                        ));
-                    }
-                    traversals
-                };
+                    expected.0 = count
+                        .checked_mul(debit.compute)
+                        .and_then(|n| expected.0.checked_add(n))
+                        .ok_or_else(|| invalid("phase compute settlement overflows"))?;
+                    expected.1 = count
+                        .checked_mul(debit.comparison)
+                        .and_then(|n| expected.1.checked_add(n))
+                        .ok_or_else(|| invalid("phase comparison settlement overflows"))?;
+                }
+                for debit in &phase.summaries {
+                    let count = self.read_borrowed_word(2 + debit.counter)?;
+                    expected.0 = count
+                        .checked_mul(debit.compute)
+                        .and_then(|n| expected.0.checked_add(n))
+                        .ok_or_else(|| invalid("phase summary compute settlement overflows"))?;
+                    expected.1 = count
+                        .checked_mul(debit.comparison)
+                        .and_then(|n| expected.1.checked_add(n))
+                        .ok_or_else(|| invalid("phase summary comparison settlement overflows"))?;
+                }
+                if expected != (compute, comparison) {
+                    return Err(invalid("phase fuel differs from actual traversal debits"));
+                }
+                root
+            } else {
+                let traversals = compute / proof.compute;
+                if compute % proof.compute != 0
+                    || traversals.checked_mul(proof.comparison) != Some(comparison)
+                {
+                    return Err(invalid(
+                        "closed Tail fuel differs from proved body envelope",
+                    ));
+                }
+                traversals
+            };
             (compute, comparison, traversals)
         };
         let previous = match args[2] {
@@ -529,8 +541,8 @@ impl Invocation<'_, '_, '_> {
             .as_ref()
             .and_then(|p| p.phase.as_ref())
         {
-            for debit in &phase.loops {
-                self.write_borrowed_word(2 + debit.counter, 0)?;
+            for counter in phase.counters() {
+                self.write_borrowed_word(2 + counter, 0)?;
             }
         }
         self.closed_tail = Some(State {

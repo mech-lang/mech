@@ -1058,6 +1058,22 @@ pub(in crate::native_artifact) fn emit_entry(
                 continue;
             }
         }
+        if proof
+            .action(site)
+            .is_some_and(|action| action.summary_budget().is_some())
+        {
+            super::numeric_phase_summary::debit(
+                b,
+                &words,
+                region.words,
+                shadow,
+                proof,
+                code,
+                region.tail.carrier().get(),
+                site,
+                reduction_miss.ok_or_else(|| backend("phase summary lacks its exact cold edge"))?,
+            )?;
+        }
         match proof.action(site) {
             Some(Operation::Fallback) => unreachable!("cold edge emitted above"),
             Some(Operation::Reduce { fold }) => {

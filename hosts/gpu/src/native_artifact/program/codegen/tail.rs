@@ -98,7 +98,7 @@ pub(in crate::native_artifact) fn numeric_exit_words(
         }
     }
     if let Some(phase) = &proof.phase {
-        words.extend(phase.loops.iter().map(|debit| debit.counter));
+        words.extend(phase.counters());
     }
     for (array, _) in proof.arrays.iter().enumerate().filter(|(_, a)| a.appends) {
         words.push(proof.view(array) + 1);

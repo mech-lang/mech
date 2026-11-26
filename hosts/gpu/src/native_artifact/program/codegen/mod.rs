@@ -89,6 +89,7 @@ pub(in crate::native_artifact) mod numeric_map;
 mod numeric_phase_maps;
 #[cfg(feature = "canonical-native-program")]
 mod numeric_phase_reductions;
+mod numeric_phase_summary;
 
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod utf8_histogram;

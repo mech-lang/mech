@@ -331,10 +331,8 @@ impl Proof {
             words.extend(self.map_bank(array));
         }
         if let Some(phase) = &self.phase {
-            for debit in &phase.loops {
-                words.push(debit.counter);
-                words.extend(debit.first_visit);
-            }
+            words.extend(phase.counters());
+            words.extend(phase.loops.iter().filter_map(|debit| debit.first_visit));
         }
         words.sort_unstable();
         words.dedup();
