@@ -41,9 +41,36 @@ impl NativePreparedLibraryCall {
         .then_some(kind)
     }
 
-    /// A selected ordered row reduction. The caller must separately prove
-    /// one-row current geometry, exact output shape, complete source order,
-    /// finite construction/call admission and publication ownership.
+    /// Selected rank-two transpose for exact plain native scalar storage.
+    /// Geometry, finite coexistence, source construction and publication are
+    /// separate caller proofs; this method grants no owner or permit.
+    pub fn supports_numeric_matrix_transpose(&self) -> bool {
+        let [input] = self.template.inputs() else {
+            return false;
+        };
+        let SchemaBody::Matrix {
+            element,
+            dimensions,
+        } = input.body()
+        else {
+            return false;
+        };
+        let SchemaBody::Matrix {
+            element: output,
+            dimensions: output_dimensions,
+        } = self.template.output().body()
+        else {
+            return false;
+        };
+        self.template.primitive() == Primitive::MatrixTranspose
+            && dimensions.len() == 2
+            && output_dimensions.len() == 2
+            && element == output
+            && Kind::from_schema_body(element).is_some()
+    }
+
+    /// A selected ordered row reduction. The caller separately proves current
+    /// one-row geometry, exact output shape/order and complete finite admission.
     pub fn supports_f64_row_sum(&self) -> bool {
         let f64_matrix = |schema: &mech_core::Schema| {
             matches!(schema.body(),

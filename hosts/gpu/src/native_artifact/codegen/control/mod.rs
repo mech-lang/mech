@@ -909,18 +909,23 @@ impl<'plan> CfgDefinition<'plan> {
             .map(|&used| used.then(|| b.create_block()))
             .collect::<Vec<_>>();
         #[cfg(feature = "canonical-native-program")]
-        let mut reduction_continuations = std::collections::BTreeMap::new();
+        let mut projection_continuations = std::collections::BTreeMap::new();
         #[cfg(feature = "canonical-native-program")]
         if controls
             .enabled(crate::native_artifact::codegen::options::OptimizationPass::NumericCollections)
             && let plan::CodePlan::Program(program) = plan
         {
             for region in &program.metadata().numeric_maps.regions {
-                if let Some(reduction) = &region.reduction {
+                let site = region
+                    .reduction
+                    .as_ref()
+                    .map(|p| p.select)
+                    .or_else(|| region.transpose.as_ref().map(|p| p.transpose));
+                if let Some(site) = site {
                     let block = b.create_block();
                     b.append_block_param(block, types::I64);
-                    if reduction_continuations
-                        .insert(reduction.select as usize, block)
+                    if projection_continuations
+                        .insert(site as usize, block)
                         .is_some()
                     {
                         return Err(backend("numeric reductions share an extraction site"));
@@ -1816,9 +1821,19 @@ impl<'plan> CfgDefinition<'plan> {
                             program.metadata().numeric_maps.at_reduction_finish(index)
                         && let Some(reduction) = &region.reduction
                         && let Some(&continuation) =
-                            reduction_continuations.get(&(reduction.select as usize))
+                            projection_continuations.get(&(reduction.select as usize))
                     {
                         crate::native_artifact::program::codegen::numeric_map::emit_reduction_finish(b,locals,index,hooks,reduction,continuation,error)?;
+                    }
+                    #[cfg(feature = "canonical-native-program")]
+                    if let plan::CodePlan::Program(program) = plan
+                        && let Some(region) =
+                            program.metadata().numeric_maps.at_transpose_finish(index)
+                        && let Some(projection) = &region.transpose
+                        && let Some(&continuation) =
+                            projection_continuations.get(&(projection.transpose as usize))
+                    {
+                        crate::native_artifact::program::codegen::numeric_map::emit_projection_finish(b,locals,index,hooks,GlobalHelper::NumericTransposeFinish,projection.output,continuation,error)?;
                     }
                     hooks.collection(b, index, [value, zero], error)?;
                     #[cfg(feature = "canonical-native-program")]
@@ -1886,7 +1901,7 @@ impl<'plan> CfgDefinition<'plan> {
                 b.switch_to_block(joined);
             }
             #[cfg(feature = "canonical-native-program")]
-            let locals = if let Some(&joined) = reduction_continuations.get(&index) {
+            let locals = if let Some(&joined) = projection_continuations.get(&index) {
                 b.ins().jump(joined, &[locals.into()]);
                 b.switch_to_block(joined);
                 b.block_params(joined)[0]

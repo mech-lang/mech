@@ -541,7 +541,8 @@ fn selected_template(
 // IR368 emits rectangular numeric comprehensions into one private bank.
 // IR369 carries exact tags through complete common-prefix numeric FSMs.
 // IR370 composes sole-consumer F64 map/sum/extraction with checked completion.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 370;
+// IR371 publishes a sole-consumer scalar map directly in transposed shape.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 371;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -800,7 +801,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 370;
 // Policy137 funds the complete rectangle and selected intermediate proofs.
 // Policy138 funds current-variant imports, discriminator homes and boundaries.
 // Policy139 funds ordered fold work and all elided logical constructors.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 139;
+// Policy140 funds exact transpose projection finish and constructor bounds.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 140;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

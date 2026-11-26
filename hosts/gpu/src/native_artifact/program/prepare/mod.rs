@@ -245,6 +245,8 @@ impl PreparedNativeProgram {
                     utf8_reads::HEADER_WORK
                 } else if numeric_maps.at_header(site).is_some() {
                     numeric_maps::HEADER_WORK
+                } else if numeric_maps.at_transpose_finish(site).is_some() {
+                    numeric_maps::TRANSPOSE_FINISH_WORK
                 } else {
                     0
                 })

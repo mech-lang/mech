@@ -621,6 +621,9 @@ impl Invocation<'_, '_, '_> {
                 "helper while a numeric reduction completion is pending",
             ));
         }
+        if tag == GlobalHelper::NumericTransposeFinish {
+            return self.finish_numeric_transpose(site, args);
+        }
         if tag == GlobalHelper::NumericReductionFinish {
             return self.finish_numeric_reduction(site, args);
         }

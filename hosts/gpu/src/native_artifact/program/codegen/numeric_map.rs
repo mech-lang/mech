@@ -512,15 +512,31 @@ pub(in crate::native_artifact) fn emit_reduction_finish(
     continuation: Block,
     error: Block,
 ) -> Result<(), NativeCompileError> {
+    emit_projection_finish(
+        b,
+        locals,
+        site,
+        hooks,
+        GlobalHelper::NumericReductionFinish,
+        reduction.scalar,
+        continuation,
+        error,
+    )
+}
+
+pub(in crate::native_artifact) fn emit_projection_finish(
+    b: &mut FunctionBuilder<'_>,
+    locals: Value,
+    site: usize,
+    hooks: &Hooks,
+    helper: GlobalHelper,
+    output: u32,
+    continuation: Block,
+    error: Block,
+) -> Result<(), NativeCompileError> {
     hooks.require_argument_words(b, 1, error);
     let zero = b.ins().iconst(types::I64, 0);
-    hooks.call(
-        b,
-        site,
-        GlobalHelper::NumericReductionFinish,
-        [zero; 3],
-        error,
-    );
+    hooks.call(b, site, helper, [zero; 3], error);
     let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
     let done = b.create_block();
     let ordinary = b.create_block();
@@ -529,12 +545,8 @@ pub(in crate::native_artifact) fn emit_reduction_finish(
     let word = b
         .ins()
         .load(types::I64, MemFlags::new(), hooks.arguments, 0);
-    b.ins().store(
-        MemFlags::new(),
-        word,
-        locals,
-        offset(reduction.scalar as usize)?,
-    );
+    b.ins()
+        .store(MemFlags::new(), word, locals, offset(output as usize)?);
     b.ins().jump(continuation, &[locals.into()]);
     b.switch_to_block(ordinary);
     Ok(())

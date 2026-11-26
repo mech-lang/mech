@@ -21,6 +21,7 @@ pub(super) struct Counts {
     pub(super) complete: u64,
     pub(super) word_selected: u64,
     pub(super) word_complete: u64,
+    pub(super) transpose_complete: u64,
     pub(super) interleaved_refused: u64,
     pub(super) elements: BTreeMap<u64, u64>,
     pub(super) helpers: BTreeMap<(u64, u64), u64>,
@@ -34,7 +35,7 @@ unsafe extern "C" fn helper(
     context: *mut c_void,
     site: u64,
     op: u64,
-    a: u64,
+    mut a: u64,
     mut b: u64,
     c: u64,
     out: *mut u64,
@@ -48,6 +49,33 @@ unsafe extern "C" fn helper(
     {
         unsafe { *out = 0 };
         return 0;
+    }
+    if op == GlobalHelper::NumericTransposeFinish.raw() && flags.ordinary {
+        unsafe { *out = 0 };
+        return 0;
+    }
+    if op == GlobalHelper::NumericTransposeFinish.raw() {
+        let invocation = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
+        if flags.interleave {
+            let before = invocation.state.control.visits;
+            assert!(invocation.visit(site).is_err());
+            assert!(
+                invocation
+                    .helper(site, GlobalHelper::Move.raw(), [0; 3])
+                    .is_err()
+            );
+            assert_eq!(invocation.state.control.visits, before);
+            COUNTS.with(|v| v.borrow_mut().interleaved_refused += 2);
+        }
+        if flags.corrupt == 22 {
+            a = 1;
+        }
+        if flags.corrupt == 23 {
+            invocation.state.consumed = true;
+        }
+        if flags.corrupt == 24 {
+            invocation.state.control.previous = None;
+        }
     }
     if op == GlobalHelper::NumericMapPrepare.raw() && flags.ordinary {
         unsafe { *out = 0 };
@@ -216,6 +244,9 @@ unsafe extern "C" fn helper(
                     (*(value as *const NativeNumericMapFrame)).count
                 });
             });
+        }
+        if op == GlobalHelper::NumericTransposeFinish.raw() && value == 1 {
+            COUNTS.with(|v| v.borrow_mut().transpose_complete += 1);
         }
         if op == GlobalHelper::NumericMapFinish.raw() && value == 1 {
             COUNTS.with(|v| v.borrow_mut().complete += 1);
@@ -1157,7 +1188,7 @@ fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveou
             _ => panic!("unexpected numerical output"),
         }
     }
-    for name in ["gramschmidt", "cholesky"] {
+    for name in ["gramschmidt", "cholesky", "deriche", "durbin"] {
         let case = cases["cases"]
             .as_array()
             .unwrap()
@@ -1242,10 +1273,18 @@ fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveou
                             && counts.elements.contains_key(&u64::from(region.header))
                     })
                     .collect();
-                assert!(
-                    !folded.is_empty(),
-                    "actual numerical source selects scalar folds: {name}"
-                );
+                if name != "deriche" {
+                    assert!(
+                        !folded.is_empty(),
+                        "actual numerical source selects scalar folds: {name}"
+                    );
+                }
+                if name != "cholesky" {
+                    assert!(
+                        counts.transpose_complete > 0,
+                        "actual numerical source directly publishes transposed maps: {name} {counts:?}"
+                    );
+                }
                 for region in folded {
                     let reduction = region.reduction.as_ref().unwrap();
                     assert!(

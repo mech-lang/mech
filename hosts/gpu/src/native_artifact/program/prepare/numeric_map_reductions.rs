@@ -19,7 +19,7 @@ fn f64_matrix(body: &SchemaBody) -> bool {
     matches!(body,SchemaBody::Matrix{element,dimensions} if dimensions.len()==2
         && element.as_ref()==&SchemaBody::FloatingPoint(mech_core::FloatWidth::W64))
 }
-fn sole_user(
+pub(super) fn sole_user(
     plan: &Plan,
     facts: &Facts<'_>,
     mut value: Value,
@@ -46,7 +46,7 @@ fn sole_user(
     }
     None
 }
-fn path(
+pub(super) fn path(
     plan: &Plan,
     mut at: u32,
     until: u32,

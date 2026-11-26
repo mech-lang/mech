@@ -672,6 +672,21 @@ fn decode_inner<
             return Err("numeric map header template is not funded".into());
         }
     }
+    for region in &numeric_maps.regions {
+        if let Some(projection) = &region.transpose {
+            let site = projection.finish as usize;
+            let required = base_visits
+                .get(site)
+                .and_then(|v| {
+                    v.work
+                        .checked_add(native::program::prepare::numeric_maps::TRANSPOSE_FINISH_WORK)
+                })
+                .ok_or("numeric transpose finish price overflows")?;
+            if visits.get(site).is_none_or(|v| v.work < required) {
+                return Err("numeric transpose finish template is not funded".into());
+            }
+        }
+    }
     let word_collections =
         native::program::prepare::word_collections::derive(&plan, &visits, &w.map_admission)
             .into_boxed_slice();

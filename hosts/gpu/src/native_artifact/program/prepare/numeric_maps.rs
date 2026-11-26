@@ -17,6 +17,9 @@ mod rectangles;
 mod reductions;
 pub(in crate::native_artifact) use rectangles::Rectangle;
 pub(in crate::native_artifact) use reductions::Reduction;
+#[path = "numeric_map_transposes.rs"]
+mod transposes;
+pub(in crate::native_artifact) use transposes::{FINISH_WORK as TRANSPOSE_FINISH_WORK, Transpose};
 
 pub(in crate::native_artifact) const HEADER_WORK: u64 = 32768;
 const MAX_SITES: usize = 16384;
@@ -47,6 +50,7 @@ pub(in crate::native_artifact) struct MatrixRead {
 pub(in crate::native_artifact) struct Region {
     pub rectangle: Option<Rectangle>,
     pub reduction: Option<Reduction>,
+    pub transpose: Option<Transpose>,
     pub collection: u32,
     pub iteration: u32,
     pub header: u32,
@@ -236,6 +240,14 @@ fn ordered_body(plan: &Plan, iteration: u32, first: u32, latch: u32) -> Option<V
 impl Layout {
     pub fn at_header(&self, site: usize) -> Option<&Region> {
         self.regions.get(self.headers.get(site).copied().flatten()?)
+    }
+    pub fn at_transpose_finish(&self, site: usize) -> Option<&Region> {
+        self.regions.iter().find(|region| {
+            region
+                .transpose
+                .as_ref()
+                .is_some_and(|p| p.finish as usize == site)
+        })
     }
     pub fn at_reduction_finish(&self, site: usize) -> Option<&Region> {
         self.regions.iter().find(|region| {
@@ -545,6 +557,7 @@ impl Layout {
             result.regions.push(Region {
                 rectangle: None,
                 reduction: None,
+                transpose: None,
                 collection: id as u32,
                 iteration,
                 header: generator.header(),
@@ -566,6 +579,7 @@ impl Layout {
         }
         rectangles::extend(plan, &mut result)?;
         reductions::extend(plan, &mut result);
+        transposes::extend(plan, &mut result);
         Ok(result)
     }
 }
