@@ -1,6 +1,5 @@
-//! Original fold constructor bounds under the phase's existing owner account.
+//! Original collection constructor bounds under the existing phase owner account.
 use super::{Error, Invocation, invalid};
-use crate::native_artifact::program::prepare::readonly_numeric::Operation;
 
 impl Invocation<'_, '_, '_> {
     pub(super) fn admit_numeric_reductions(&mut self, id: usize) -> Result<bool, Error> {
@@ -13,7 +12,7 @@ impl Invocation<'_, '_, '_> {
         if !proof
             .actions
             .iter()
-            .any(|(_, a)| matches!(a, Operation::Reduce { .. }))
+            .any(|(_, a)| a.summary_budget().is_some())
         {
             return Ok(true);
         }
@@ -44,10 +43,9 @@ impl Invocation<'_, '_, '_> {
         }
         let fits = |need: u64, cap: Option<u64>| cap.is_some_and(|cap| need <= cap);
         for (_, action) in &proof.actions {
-            let Operation::Reduce { fold } = action else {
+            let Some(b) = action.summary_budget() else {
                 continue;
             };
-            let b = &fold.budget;
             if b.schema_bytes != metadata.observation_schema_bytes {
                 return Err(invalid(
                     "fold schema accounting differs from its selected factories",
@@ -70,6 +68,7 @@ impl Invocation<'_, '_, '_> {
                 return Ok(false);
             };
             if !fits(b.elements, self.limits.max_output_elements)
+                || !fits(b.elements, self.limits.max_scalar_instructions)
                 || !fits(b.output, self.limits.max_output_bytes)
                 || !fits(temporary, self.limits.max_temporary_bytes)
                 || !fits(nodes, self.limits.max_retained_nodes)

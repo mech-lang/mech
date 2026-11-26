@@ -244,10 +244,12 @@ impl Layout {
                 }
             }
             let successors = |site: usize| {
-                if let Some(super::numeric_plan::Operation::Reduce { fold }) =
-                    numeric.as_ref().and_then(|p| p.action(site))
+                if let Some(after) = numeric
+                    .as_ref()
+                    .and_then(|p| p.action(site))
+                    .and_then(super::numeric_plan::Operation::summary_after)
                 {
-                    return vec![fold.source.after];
+                    return vec![after];
                 }
                 if numeric.as_ref().is_some_and(|proof| {
                     proof.exits.iter().any(|exit| {

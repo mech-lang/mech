@@ -1,7 +1,8 @@
 //! Whole nested Tail inventory for one native numeric phase.
 //! This uses canonical loop ancestry and the actual CFG, without source names.
 //! Every declared backedge is cut for per-traversal validation; any remaining
-//! cycle, collection, activation, or external edge declines the phase.
+//! cycle, unsupported child, activation, or external edge declines the phase.
+//! Proved synchronous collection summaries retain their exact cold entry.
 use mech_engine::native_artifact::NativeScalarOp;
 use mech_engine::native_artifact::{
     NativeBufferFrames, NativeControlLoop, NativeIterationAction as Action,
@@ -18,9 +19,10 @@ mod cold;
 mod flow;
 mod homes;
 mod intervals;
+pub(in crate::native_artifact) mod matrix_maps;
 mod reductions;
 mod schedule;
-pub(in crate::native_artifact) use reductions::{Fold, Reduction};
+pub(in crate::native_artifact) use reductions::{Fold, FoldBudget, Reduction};
 mod words;
 pub(in crate::native_artifact) use bounds::Bound;
 #[cfg(feature = "canonical-native-program")]
@@ -74,6 +76,7 @@ pub(in crate::native_artifact) struct Loop {
 pub(in crate::native_artifact) struct Forest {
     pub loops: Vec<Loop>,
     pub reductions: Vec<Reduction>,
+    pub maps: Vec<matrix_maps::MatrixMap>,
     pub cold: Vec<ColdChild>,
     pub sites: BTreeSet<usize>,
     /// A current traversal order, cutting each declared latch backedge.
@@ -238,6 +241,10 @@ impl Forest {
                     reads += reduction.region.reads.len();
                     continue;
                 }
+                if let Some(map) = self.maps.iter().find(|r| r.entry as usize == site) {
+                    reads += map.region.reads.len();
+                    continue;
+                }
                 if frames.action(site).is_some() || aggregates.action(site).is_some() {
                     continue;
                 }
@@ -308,6 +315,8 @@ impl Forest {
             Vec::new()
         } else if let Some(reduction) = self.reductions.iter().find(|r| r.entry as usize == site) {
             vec![reduction.after as usize]
+        } else if let Some(map) = self.maps.iter().find(|r| r.entry as usize == site) {
+            vec![map.after as usize]
         } else {
             cold::successors(&self.cold, plan, site)
         }
@@ -350,6 +359,14 @@ impl Forest {
         } else {
             Vec::new()
         };
+        let map_candidates = if matches!(
+            mode,
+            Coverage::Complete | Coverage::Fueled | Coverage::Hybrid
+        ) {
+            matrix_maps::inventory(plan)?
+        } else {
+            Vec::new()
+        };
         let cold = if mode == Coverage::ScalarCold {
             cold::children(plan, root_id)?
         } else {
@@ -380,7 +397,11 @@ impl Forest {
                     .is_some_and(|p| members.contains(&p))
                 {
                     if !matches!(loop_, NativeControlLoop::Tail(_)) {
-                        if candidates.iter().any(|r| r.region.iteration == id as u32) {
+                        if candidates.iter().any(|r| r.region.iteration == id as u32)
+                            || map_candidates
+                                .iter()
+                                .any(|r| r.region.iteration == id as u32)
+                        {
                             continue;
                         }
                         if mode == Coverage::Hybrid {
@@ -396,6 +417,15 @@ impl Forest {
             }
         }
         let mut reductions = candidates
+            .into_iter()
+            .filter(|r| {
+                plan.iterations()[r.region.iteration as usize]
+                    .as_ref()
+                    .parent()
+                    .is_some_and(|p| members.contains(&p))
+            })
+            .collect::<Vec<_>>();
+        let mut maps = map_candidates
             .into_iter()
             .filter(|r| {
                 plan.iterations()[r.region.iteration as usize]
@@ -432,6 +462,7 @@ impl Forest {
                 if child.is_some_and(|child| {
                     !members.contains(&child)
                         && !reductions.iter().any(|r| r.region.iteration == child)
+                        && !maps.iter().any(|r| r.region.iteration == child)
                 }) {
                     stops.insert(site);
                 }
@@ -442,6 +473,8 @@ impl Forest {
                 Vec::new()
             } else if let Some(reduction) = reductions.iter().find(|r| r.entry as usize == site) {
                 vec![reduction.after as usize]
+            } else if let Some(map) = maps.iter().find(|r| r.entry as usize == site) {
+                vec![map.after as usize]
             } else {
                 cold::successors(&cold, plan, site)
             }
@@ -550,12 +583,14 @@ impl Forest {
         }
         stops.retain(|site| sites.contains(site));
         reductions.retain(|r| sites.contains(&(r.entry as usize)));
+        maps.retain(|r| sites.contains(&(r.entry as usize)));
         if mode == Coverage::Intervals && stops.is_empty() {
             return Err("numeric interval has no reachable cold boundary");
         }
         Ok(Self {
             loops,
             reductions,
+            maps,
             cold,
             sites,
             order,

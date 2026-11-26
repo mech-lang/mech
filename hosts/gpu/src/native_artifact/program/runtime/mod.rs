@@ -32,10 +32,10 @@ use std::ffi::c_void;
 
 mod call_inputs;
 mod collections;
+// Preparation prices this frame even when loading without code generation.
+pub(in crate::native_artifact) use collections::numeric_map::Frame as NativeNumericMapFrame;
 #[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) use collections::numeric_map::{
-    Frame as NativeNumericMapFrame, MatrixView as NativeNumericMapMatrixView,
-};
+pub(in crate::native_artifact) use collections::numeric_map::MatrixView as NativeNumericMapMatrixView;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) use collections::uniform_words::Frame as NativeUniformFillFrame;
 

@@ -237,6 +237,7 @@ pub(super) fn derive(
         .map(|child| child.initialize)
         .chain(forest.stops.iter().copied())
         .chain(forest.reductions.iter().map(|r| r.entry as usize))
+        .chain(forest.maps.iter().map(|r| r.entry as usize))
         .map(|to| (to, None, ExitKind::Unsupported))
         .collect::<Vec<_>>();
     if forest.checked_children {
@@ -378,6 +379,7 @@ pub(super) fn boundary_values(
         }
     }
     candidates.extend(forest.reductions.iter().flat_map(|r| r.scalar_values()));
+    candidates.extend(forest.maps.iter().flat_map(|r| r.scalar_values()));
     let known = BTreeMap::new();
     Ok(super::super::numeric_plan::BoundaryValues {
         candidates: candidates.iter().copied().collect(),

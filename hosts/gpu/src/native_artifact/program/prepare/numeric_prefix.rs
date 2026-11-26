@@ -235,9 +235,10 @@ pub(in crate::native_artifact) fn derive(
         BTreeSet::new(),
     )?;
     if phase.exits.iter().any(|exit| {
-        !phase.actions.iter().any(|(site, action)| {
-            *site == exit.to && matches!(action, super::numeric_plan::Operation::Reduce { .. })
-        })
+        !phase
+            .actions
+            .iter()
+            .any(|(site, action)| *site == exit.to && action.summary_after().is_some())
     }) {
         return Err("prefix phase has an ordinary cold action");
     }

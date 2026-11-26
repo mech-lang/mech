@@ -44,15 +44,11 @@ fn summaries<'a>(
             let changed = actions
                 .iter()
                 .filter_map(|(site, operation)| {
-                    let (Operation::Write { array, .. } | Operation::CellWrite { array, .. }) =
-                        operation
-                    else {
-                        return None;
-                    };
+                    let array = operation.replacement_array()?;
                     plan.blocks()[*site]
                         .iteration()
                         .is_some_and(|iteration| descendants.contains(&iteration))
-                        .then_some(arrays[*array].root)
+                        .then_some(arrays[array].root)
                 })
                 .collect();
             // A cold continuation inside a child can also need a caller's still-
@@ -507,6 +503,24 @@ fn pass(
                 {
                     return Err("reduction reads an older array version");
                 }
+            }
+            Some(Operation::Map { replacement }) => {
+                if replacement
+                    .source
+                    .region
+                    .matrices
+                    .iter()
+                    .any(|m| !fresh(&state, (m.value, None)))
+                {
+                    return Err("matrix map reads an older array version");
+                }
+                let root = arrays[replacement.target].root;
+                for (&(value, field), current) in &mut state {
+                    if provenance.array(value, field) == Some(root) {
+                        *current = false;
+                    }
+                }
+                state.insert((replacement.source.output, None), true);
             }
             Some(Operation::ArrayCopy) => {
                 let Action::Scalar(Scalar::Copy { source, output }) = plan.blocks()[site].action()

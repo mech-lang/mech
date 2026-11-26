@@ -819,10 +819,7 @@ pub(super) fn from_phase(
         .actions
         .iter()
         .try_fold(0usize, |n, (_, action)| {
-            n.checked_add(match action {
-                Operation::Reduce { fold } => fold.source.scalar_values().count(),
-                _ => 0,
-            })
+            n.checked_add(action.summary_values().len())
         })
         .ok_or("phase reduction word inventory overflows")?;
     let boundary_words = register_bound(plan, aggregates, &sites)?

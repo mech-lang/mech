@@ -96,6 +96,31 @@ pub(super) fn emit_from_views(
         let good = b.ins().icmp_imm(IntCC::Equal, count, source.maximum as i64);
         require(b, good, miss);
     }
+    let frame = emit_region(
+        b, region, plan, first, count, matrices, captures, None, miss,
+    )?;
+    let value = b.ins().load(
+        types::I64,
+        MemFlags::new(),
+        frame,
+        offset_of!(Frame, fold) as i32,
+    );
+    Ok(value)
+}
+
+/// Shared checked map DAG emission from current admitted views. The optional
+/// destination is caller-owned scratch, never an additional mutable root loan.
+pub(super) fn emit_region(
+    b: &mut FunctionBuilder<'_>,
+    region: &crate::native_artifact::program::prepare::numeric_maps::Region,
+    plan: &Plan,
+    first: Value,
+    count: Value,
+    matrices: &[[Value; 4]],
+    captures: &BTreeMap<u32, Value>,
+    output: Option<(Value, Value)>,
+    miss: Block,
+) -> Result<Value, NativeCompileError> {
     let slot = b.create_sized_stack_slot(StackSlotData::new(
         StackSlotKind::ExplicitSlot,
         size_of::<Frame>() as u32,
@@ -114,6 +139,26 @@ pub(super) fn emit_from_views(
         offset_of!(Frame, next),
     ] {
         b.ins().store(MemFlags::new(), zero, frame, at as i32);
+    }
+    if let Some((output, capacity)) = output {
+        b.ins().store(
+            MemFlags::new(),
+            count,
+            frame,
+            offset_of!(Frame, output_count) as i32,
+        );
+        b.ins().store(
+            MemFlags::new(),
+            output,
+            frame,
+            offset_of!(Frame, output) as i32,
+        );
+        b.ins().store(
+            MemFlags::new(),
+            capacity,
+            frame,
+            offset_of!(Frame, capacity_bytes) as i32,
+        );
     }
     for at in [offset_of!(Frame, count), offset_of!(Frame, source_count)] {
         b.ins().store(MemFlags::new(), count, frame, at as i32);
@@ -158,11 +203,5 @@ pub(super) fn emit_from_views(
     b.switch_to_block(arithmetic);
     b.ins().jump(miss, &[]);
     b.switch_to_block(complete);
-    let value = b.ins().load(
-        types::I64,
-        MemFlags::new(),
-        frame,
-        offset_of!(Frame, fold) as i32,
-    );
-    Ok(value)
+    Ok(frame)
 }

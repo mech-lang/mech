@@ -1261,6 +1261,12 @@ fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveou
                         Some(fold.as_ref())
                     } else { None }
                 }))).collect::<Vec<_>>();
+            let phase_maps = jit.descriptor().metadata().closed_tails.regions.iter()
+                .flat_map(|r| r.numeric.iter().flat_map(|p| p.actions.iter().filter_map(|(_, action)| {
+                    if let crate::native_artifact::program::prepare::readonly_numeric::Operation::Map { replacement } = action {
+                        Some(replacement.as_ref())
+                    } else { None }
+                }))).collect::<Vec<_>>();
             for restored in [false, true] {
                 let mut fast = vec![None; artifact.outputs().len()];
                 let (result, counts) = run(
@@ -1275,7 +1281,9 @@ fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveou
                 result.unwrap();
                 assert!(
                     counts.selected == counts.complete
-                        && (counts.selected > 0 || !phase_folds.is_empty()),
+                        && (counts.selected > 0
+                            || !phase_folds.is_empty()
+                            || !phase_maps.is_empty()),
                     "{name}: {counts:?}"
                 );
                 let folded: Vec<_> = jit
@@ -1297,9 +1305,44 @@ fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveou
                 }
                 if name != "cholesky" {
                     assert!(
-                        counts.transpose_complete > 0,
-                        "actual numerical source directly publishes transposed maps: {name} {counts:?}"
+                        counts.transpose_complete > 0
+                            || phase_maps
+                                .iter()
+                                .any(|m| m.source.region.transpose.is_some()),
+                        "actual numerical source executes a transposed map: {name} {counts:?}"
                     );
+                }
+                for map in &phase_maps {
+                    assert_eq!(
+                        counts
+                            .helpers
+                            .get(&(
+                                u64::from(map.source.region.header),
+                                GlobalHelper::NumericMapPrepare.raw()
+                            ))
+                            .copied()
+                            .unwrap_or(0),
+                        0,
+                        "composed source map needs no per-map loan {name}"
+                    );
+                    for site in map
+                        .source
+                        .region
+                        .reads
+                        .iter()
+                        .map(|r| r.site)
+                        .chain(map.source.region.transpose.iter().map(|t| t.transpose))
+                    {
+                        assert_eq!(
+                            counts
+                                .helpers
+                                .get(&(u64::from(site), GlobalHelper::Library.raw()))
+                                .copied()
+                                .unwrap_or(0),
+                            0,
+                            "composed source map needs no per-element/transpose library call {name}"
+                        );
+                    }
                 }
                 for fold in &phase_folds {
                     assert_eq!(

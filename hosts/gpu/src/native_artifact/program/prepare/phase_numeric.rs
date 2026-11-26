@@ -62,6 +62,8 @@ struct Provenance<'a, 'p> {
     children: BTreeMap<(u32, usize), usize>,
     /// Disjoint read-only roots whose exact owners remain in ancestor slots.
     captures: BTreeMap<u32, usize>,
+    /// Complete-map results constrained by their exact next-state destination.
+    mapped: BTreeMap<u32, usize>,
     native_sites: Option<&'a BTreeSet<usize>>,
 }
 impl Provenance<'_, '_> {
@@ -69,6 +71,11 @@ impl Provenance<'_, '_> {
         let key = (value, field);
         if field.is_none()
             && let Some(root) = self.captures.get(&value)
+        {
+            return Some(*root);
+        }
+        if field.is_none()
+            && let Some(root) = self.mapped.get(&value)
         {
             return Some(*root);
         }
@@ -393,6 +400,7 @@ fn derive_inventory(
     let nested = guarded
         || forest.loops.len() > 1
         || !forest.reductions.is_empty()
+        || !forest.maps.is_empty()
         || !forest.cold.is_empty()
         || !forest.stops.is_empty();
     #[cfg(all(test, feature = "canonical-native-program-runtime"))]
@@ -427,6 +435,12 @@ fn derive_inventory(
             .iter()
             .flat_map(|r| r.region.matrices.iter().map(|m| m.value)),
     );
+    capture_sources.extend(
+        forest
+            .maps
+            .iter()
+            .flat_map(|r| r.region.matrices.iter().map(|m| m.value)),
+    );
     for source in capture_sources {
         if captures.contains_key(&source)
             || width(plan.values()[source as usize].definition().body()).is_none()
@@ -446,6 +460,11 @@ fn derive_inventory(
             appends: false,
         });
     }
+    let mapped = if forest.maps.is_empty() {
+        BTreeMap::new()
+    } else {
+        super::numeric_phase::matrix_maps::destinations(facts, tail, frames, calls, &forest.maps)?
+    };
     let mut provenance = Provenance {
         facts,
         frames,
@@ -455,6 +474,7 @@ fn derive_inventory(
         active: BTreeSet::new(),
         children: BTreeMap::new(),
         captures,
+        mapped,
         native_sites: matches!(mode, Coverage::Intervals | Coverage::Hybrid).then_some(&sites),
     };
     for child in forest.loops.iter().skip(1) {
@@ -575,6 +595,58 @@ fn derive_inventory(
                     fold: Box::new(super::numeric_phase::Fold {
                         source: reduction.clone(),
                         arrays: roots,
+                        budget,
+                    }),
+                },
+            ));
+            continue;
+        }
+        if let Some(map) = forest.maps.iter().find(|r| r.entry as usize == site) {
+            let budget = map
+                .budget(plan, calls, visits)
+                .ok_or("matrix map lost its exact factories or finite source budget")?;
+            let root = provenance
+                .array(map.output, None)
+                .ok_or("matrix map lacks an exact state destination")?;
+            let target = arrays
+                .iter()
+                .position(|a| a.root == root)
+                .ok_or("matrix map destination is outside the phase")?;
+            if root >= fields.len()
+                || arrays[target].schema != plan.values()[map.output as usize].schema()
+                || (arrays[target].width != 0 && arrays[target].width != map.region.output_width)
+                || arrays[target].appends
+            {
+                return Err("matrix map changes its destination schema, width or extent");
+            }
+            arrays[target].width = map.region.output_width;
+            arrays[target].writable = true;
+            let mut roots = Vec::new();
+            for matrix in &map.region.matrices {
+                let root = provenance
+                    .array(matrix.value, None)
+                    .ok_or("matrix map input has no invariant phase root")?;
+                let at = arrays
+                    .iter()
+                    .position(|a| a.root == root)
+                    .ok_or("matrix map input is outside the phase")?;
+                if plan.values()[matrix.value as usize].schema() != arrays[at].schema
+                    || (arrays[at].width != 0 && arrays[at].width != matrix.width)
+                    || arrays[at].appends
+                {
+                    return Err("matrix map input schema, width or extent changes");
+                }
+                arrays[at].width = matrix.width;
+                arrays[at].witness = arrays[at].witness.min(matrix.witness as usize);
+                roots.push(at);
+            }
+            actions.push((
+                site,
+                Operation::Map {
+                    replacement: Box::new(super::numeric_phase::matrix_maps::Replacement {
+                        source: map.clone(),
+                        arrays: roots,
+                        target,
                         budget,
                     }),
                 },
@@ -790,9 +862,25 @@ fn derive_inventory(
         };
         actions.push((site, operation));
     }
+    if actions.iter().any(|(_, action)| matches!(action, Operation::Map { replacement }
+        if arrays[replacement.target].appends || replacement.arrays.iter().any(|&a| arrays[a].appends))) {
+        return Err("matrix map shares a growing phase root");
+    }
+    // Complete maps consume an existing exclusive bank; they do not create
+    // one. Without any first-change producer for this root, the fast branch
+    // cannot become available in this phase and would add only cold entries.
+    if actions.iter().any(|(_, action)| {
+        matches!(action, Operation::Map { replacement }
+        if !actions.iter().any(|(_, producer)| matches!(producer,
+            Operation::Write { array, .. } | Operation::CellWrite { array, .. }
+                if *array == replacement.target)))
+    }) {
+        return Err("matrix map has no phase producer for exclusive storage");
+    }
     if arrays.iter().any(|array| array.witness == usize::MAX)
         && !actions.iter().any(|(_, action)| {
-            matches!(action, Operation::Reduce { fold } if !fold.arrays.is_empty()) || matches!(action, Operation::Read { array, .. } | Operation::CellRead { array, .. }
+            matches!(action, Operation::Reduce { fold } if !fold.arrays.is_empty())
+                || matches!(action, Operation::Map { replacement } if !replacement.arrays.is_empty()) || matches!(action, Operation::Read { array, .. } | Operation::CellRead { array, .. }
                 if !arrays[*array].writable && !arrays[*array].appends)
         })
     {

@@ -128,8 +128,8 @@ impl Invocation<'_, '_, '_> {
             entry_work = entry_work.and_then(|n| n.checked_add(retained.checked_mul(8)?));
         }
         for (_, action) in &proof.actions {
-            if let Operation::Reduce { fold } = action {
-                entry_work = entry_work.and_then(|n| n.checked_add(fold.budget.setup));
+            if let Some(budget) = action.summary_budget() {
+                entry_work = entry_work.and_then(|n| n.checked_add(budget.setup));
             }
         }
         let Some(entry_work) = entry_work else {

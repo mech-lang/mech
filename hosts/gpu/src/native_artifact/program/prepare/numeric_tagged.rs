@@ -110,6 +110,7 @@ fn numeric_score(plan: &Plan, tail: &NativeTailLoop, proof: &Proof) -> usize {
             | Operation::Write { .. }
             | Operation::CellWrite { .. } => 1,
             Operation::Reduce { fold } => fold.source.region.reads.len() + 1,
+            Operation::Map { replacement } => replacement.source.region.reads.len() + 1,
             _ => 0,
         })
         .sum()
@@ -132,8 +133,9 @@ fn recurrent_sites(plan: &Plan, tail: &NativeTailLoop, proof: &Proof) -> BTreeSe
         if site == tail.latch() as usize {
             continue;
         }
-        let successors = if let Some(Operation::Reduce { fold }) = proof.action(site) {
-            vec![fold.source.after as usize]
+        let successors = if let Some(after) = proof.action(site).and_then(Operation::summary_after)
+        {
+            vec![after as usize]
         } else {
             NativeProgramFacts::control_successors(plan.blocks()[site].terminator())
                 .into_iter()
@@ -358,6 +360,7 @@ pub(in crate::native_artifact) fn candidate(
 
 /// Project the original enum action into the independently proved hot payload.
 /// The physical original layout remains the runtime owner and validity bank.
+#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) fn operation(operation: &Frame, variant: &Variant) -> Option<Frame> {
     match operation {
         Frame::EnumPack {

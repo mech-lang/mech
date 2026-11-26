@@ -21,6 +21,9 @@ pub(in crate::native_artifact) enum Operation {
     Reduce {
         fold: Box<super::numeric_phase::Fold>,
     },
+    Map {
+        replacement: Box<super::numeric_phase::matrix_maps::Replacement>,
+    },
     Frame,
     Aggregate,
     ArrayCopy,
@@ -62,7 +65,38 @@ pub(in crate::native_artifact) enum Operation {
 }
 impl Operation {
     pub fn replaces(&self) -> bool {
-        matches!(self, Self::Write { .. } | Self::CellWrite { .. })
+        matches!(
+            self,
+            Self::Write { .. } | Self::CellWrite { .. } | Self::Map { .. }
+        )
+    }
+    pub fn summary_after(&self) -> Option<u32> {
+        match self {
+            Self::Reduce { fold } => Some(fold.source.after),
+            Self::Map { replacement } => Some(replacement.source.after),
+            _ => None,
+        }
+    }
+    pub fn summary_budget(&self) -> Option<&super::numeric_phase::FoldBudget> {
+        match self {
+            Self::Reduce { fold } => Some(&fold.budget),
+            Self::Map { replacement } => Some(&replacement.budget),
+            _ => None,
+        }
+    }
+    pub fn summary_values(&self) -> Vec<u32> {
+        match self {
+            Self::Reduce { fold } => fold.source.scalar_values().collect(),
+            Self::Map { replacement } => replacement.source.scalar_values().collect(),
+            _ => Vec::new(),
+        }
+    }
+    pub fn replacement_array(&self) -> Option<usize> {
+        match self {
+            Self::Write { array, .. } | Self::CellWrite { array, .. } => Some(*array),
+            Self::Map { replacement } => Some(replacement.target),
+            _ => None,
+        }
     }
     pub fn grows(&self) -> bool {
         matches!(self, Self::Append { .. } | Self::AppendLeBytes { .. })

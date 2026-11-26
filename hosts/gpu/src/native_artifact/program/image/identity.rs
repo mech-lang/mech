@@ -550,7 +550,8 @@ fn selected_template(
 // IR376 composes exact ordered scalar folds inside native scalar maps.
 // IR377 executes exact F64 broadcast arithmetic without per-cell generic drafts.
 // IR378 inlines exact current leaf shape resolution for selected kernels.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 378;
+// IR379 composes complete matrix maps with checked phase roots and versions.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 379;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -818,7 +819,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 378;
 // Work145 prepays nested source work, physical attempts and complete replay.
 // Work146 retains the complete existing numeric source and constructor prices.
 // Work147 retains complete shape/source/construction work prices.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 147;
+// Work148 funds original map constructors, transpose, replay and scratch copy.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 148;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

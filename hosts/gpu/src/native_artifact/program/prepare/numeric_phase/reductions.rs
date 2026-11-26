@@ -21,7 +21,7 @@ pub(in crate::native_artifact) struct Reduction {
     pub maximum: u64,
     pub constant_count: bool,
 }
-fn constant(plan: &Plan, value: u32) -> Option<u64> {
+pub(super) fn constant(plan: &Plan, value: u32) -> Option<u64> {
     plan.constants()
         .iter()
         .find(|c| c.value().get() == value)

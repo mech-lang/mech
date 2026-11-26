@@ -44,21 +44,17 @@ impl Schedule {
         let replay_credit = actions
             .iter()
             .try_fold(0u64, |total, (_, action)| {
-                total.checked_add(match action {
-                    super::super::numeric_plan::Operation::Reduce { fold } => fold.budget.replay,
-                    _ => 0,
-                })
+                total.checked_add(action.summary_budget().map_or(0, |budget| budget.replay))
             })
             .ok_or("phase reduction replay credit overflows")?;
         let replay_comparison = actions
             .iter()
             .try_fold(0u64, |total, (_, action)| {
-                total.checked_add(match action {
-                    super::super::numeric_plan::Operation::Reduce { fold } => {
-                        fold.budget.comparison
-                    }
-                    _ => 0,
-                })
+                total.checked_add(
+                    action
+                        .summary_budget()
+                        .map_or(0, |budget| budget.comparison),
+                )
             })
             .ok_or("phase reduction replay comparison overflows")?;
         let mut loops = Vec::new();
@@ -74,14 +70,16 @@ impl Schedule {
                     .checked_add(visits[site].work)
                     .and_then(|n| n.checked_add(OVERHEAD))
                     .ok_or("phase traversal price overflows")?;
-                if let Some((_, super::super::numeric_plan::Operation::Reduce { fold })) =
-                    actions.iter().find(|(s, _)| *s == site)
+                if let Some(budget) = actions
+                    .iter()
+                    .find(|(s, _)| *s == site)
+                    .and_then(|(_, action)| action.summary_budget())
                 {
                     compute = compute
-                        .checked_add(fold.budget.compute)
+                        .checked_add(budget.compute)
                         .ok_or("phase reduction price overflows")?;
                     comparison = comparison
-                        .checked_add(fold.budget.comparison)
+                        .checked_add(budget.comparison)
                         .ok_or("phase reduction comparison overflows")?;
                 }
                 if actions.iter().any(|(s, a)| *s == site && a.replaces()) {

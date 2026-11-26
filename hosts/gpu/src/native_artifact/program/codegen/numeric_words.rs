@@ -106,8 +106,8 @@ pub(super) fn source_slots(
             .find(|(s, _)| *s == site)
             .map(|(_, action)| action)
         {
-            Some(Operation::Reduce { fold }) => {
-                slots.extend(fold.source.scalar_values().map(|v| v as usize));
+            Some(action @ (Operation::Reduce { .. } | Operation::Map { .. })) => {
+                slots.extend(action.summary_values().into_iter().map(|v| v as usize));
             }
             Some(Operation::Read { index, .. }) => {
                 slots.insert(*index as usize);

@@ -86,6 +86,21 @@ pub(super) fn required(
                         .scalar as usize,
                 );
             }
+            Some(Operation::Map { replacement }) => {
+                for value in replacement.source.scalar_values() {
+                    e.used(value as usize);
+                }
+                for &array in replacement
+                    .arrays
+                    .iter()
+                    .chain(std::iter::once(&replacement.target))
+                {
+                    for at in 0..4 {
+                        e.used(shadow + proof.view(array) + at);
+                    }
+                }
+                e.used(shadow + proof.private_flag(replacement.target));
+            }
             Some(Operation::Frame) => {
                 let moves = super::super::numeric_words::frame_word_moves_for(
                     shadow,
@@ -229,8 +244,9 @@ pub(super) fn required(
             }
             _ => {}
         }
-        let successors = if let Some(Operation::Reduce { fold }) = proof.action(site) {
-            vec![fold.source.after]
+        let successors = if let Some(after) = proof.action(site).and_then(Operation::summary_after)
+        {
+            vec![after]
         } else {
             NativeProgramFacts::control_successors(code.blocks()[site].terminator())
                 .into_iter()
