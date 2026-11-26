@@ -1579,3 +1579,24 @@ profiles retain 4718 canonical execution samples and cover
 No compiler source changed after freeze and no benchmark port was rewritten.
 The split and prior holdout results were exposed; no holdout was profiled.
 The strict holdout goal remains open unless its score is below 1.0x C.
+
+Round 16: call-scoped typed numeric operand views
+Source 52a80673f627d6bfff778382203dc8db2b98bd59; IR375/work144; executable de22a56242d8b162a907314f1a4a93a6450997f3a3cf2ac0d2502908f55dcf20.
+The shared resident/JIT numeric operand loans exact immutable Core primitive
+slices once per admitted call. Broadcasting, transpose, unary operations and
+ordered sums keep original arithmetic, shape checks, complete resource prices,
+publication and canonical fallback. No port or arithmetic order changed.
+
+Equal-weight geometric means of median kernel runtimes (lower Mech/C is better):
+optimization: 44.385131x C; 17.465133x faster than recorded start; 17.425091x faster than paired original; summed medians 0.006872043s; raw runtime multiplier vs round15 0.960684x.
+holdout: 129.648057x C; 15.724632x faster than recorded start; 15.691207x faster than paired original; summed medians 0.117851793s; raw runtime multiplier vs round15 0.959703x.
+
+Optimization-only seven-sample round15 replay: 1.063600x speedup; 0 >5% regressions retained.
+Final selected checks: 715; both exact Huffman bills remain.
+All 900 balanced finite observations, 29482 live-outs per artifact, both sets,
+all regressions and seventeen-entry history remain. Five optimization-only raw
+profiles retain 4636 canonical execution samples and cover
+82.327541% of training summed medians.
+No compiler source changed after freeze and no benchmark port was rewritten.
+The split and prior holdout results were exposed; no holdout was profiled.
+The strict holdout goal remains open unless its score is below 1.0x C.

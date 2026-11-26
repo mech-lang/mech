@@ -1,0 +1,588 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v1",
+  "label": "round-16-typed-numeric-operands",
+  "compiler_commit": "52a80673f627d6bfff778382203dc8db2b98bd59",
+  "compiler_fingerprint": "542d11c0e96a42353adc1987078fbdae7329fcaa52c434a1aff6d9ce9b88eb3e",
+  "driver_sha256": "de22a56242d8b162a907314f1a4a93a6450997f3a3cf2ac0d2502908f55dcf20",
+  "frozen_candidate_sha256": "311dabfbae180519f5814ff3acb0dd569d554e705b300fc76a9a859f214477b0",
+  "native_typed_ir_version": 375,
+  "native_work_policy_version": 144,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "live_outs_per_artifact": 29482
+  },
+  "checks": [
+    {
+      "suite": "native numeric/phase, ordinary row blocks and unchanged exact Huffman work equations",
+      "log": "numeric-regressions.log",
+      "passed_by_target": [
+        343
+      ],
+      "log_sha256": "5d4110c823e352cd6000128dd4a786a85b8dd2ec30cd20be9316158aa0d9f731"
+    },
+    {
+      "suite": "matrix and all thirty original/decoded/Object PolyBench qualifications",
+      "log": "matrix-polybench.log",
+      "passed_by_target": [
+        24,
+        30
+      ],
+      "log_sha256": "25c3b9b15ba80d64faf6319dee86a083fa7f7bbc6fa5cfa75a143a4473754049"
+    },
+    {
+      "suite": "selected scalar/frame/compression, collection and all range/cursor regressions",
+      "log": "program-regressions.log",
+      "passed_by_target": [
+        114
+      ],
+      "log_sha256": "ed009da7939d14744d5275ab3438acf2123dd6b305bc9bb32289a3ef69267e5d"
+    },
+    {
+      "suite": "resident numeric, geometry, capacity, prefix projections and range cursor proofs",
+      "log": "engine-numeric.log",
+      "passed_by_target": [
+        203
+      ],
+      "log_sha256": "775174a4554055697a1ab0f57504db040008db300639ec3e655d1a7a0e2bda04"
+    },
+    {
+      "suite": "collection helper tag round-trip and output reservation",
+      "log": "protocol.log",
+      "passed_by_target": [
+        1
+      ],
+      "log_sha256": "71d7b6e92566f0f6145e8a60141dc64af1e4d22bbd970954bb58e571ccf96572"
+    }
+  ],
+  "total_selected_checks": 715,
+  "goal": {
+    "partition": "holdout",
+    "metric": "geomean_mech_over_c_kernel",
+    "value": 129.6480569298469,
+    "target_strictly_below": 1.0,
+    "achieved": false,
+    "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+    "objective_frozen_with_candidate": true,
+    "sum_mech_median_seconds": 0.117851793
+  },
+  "aggregates": {
+    "optimization": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 17.465132841994834,
+      "median_speedup": 1.2445920208220462,
+      "minimum_speedup": 1.0597044313420918,
+      "maximum_speedup": 19537.272033487745,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 44.38513146877133,
+      "geomean_mech_over_c_fresh": 28.14996794176092,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 455.6494743124513,
+      "sum_mech_median_seconds": 0.006872043,
+      "geomean_speedup_from_contemporaneous_baseline": 17.425090916655332,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.0573462976813761
+    },
+    "holdout": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 15.72463162144767,
+      "median_speedup": 4.943169984012204,
+      "minimum_speedup": 1.0537593431434535,
+      "maximum_speedup": 394.80764555330353,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 129.6480569298469,
+      "geomean_mech_over_c_fresh": 76.5574438727633,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 4284.864885911236,
+      "sum_mech_median_seconds": 0.117851793,
+      "geomean_speedup_from_contemporaneous_baseline": 15.691207008061498,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.0728916758329796
+    },
+    "all": {
+      "count": 30,
+      "geomean_speedup_from_recorded_baseline": 16.572048158269887,
+      "median_speedup": 4.873053931420414,
+      "minimum_speedup": 1.0537593431434535,
+      "maximum_speedup": 19537.272033487745,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 75.85806517109437,
+      "geomean_mech_over_c_fresh": 46.42294250391122,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 4284.864885911236,
+      "sum_mech_median_seconds": 0.12472383599999999,
+      "geomean_speedup_from_contemporaneous_baseline": 16.535437965398163,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.0573462976813761
+    }
+  },
+  "cases": {
+    "2mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000131667,
+      "c_median_seconds": 2.00001522898674e-06,
+      "mech_over_c_kernel": 65.83299871506775,
+      "speedup_from_recorded_baseline": 1.1946197604563027,
+      "speedup_from_paired_original": 1.1689869139571798,
+      "runtime_multiplier_from_round15": 0.8836711409395973,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "3mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 9.1417e-05,
+      "c_median_seconds": 2.500135451555252e-06,
+      "mech_over_c_kernel": 36.56481889536524,
+      "speedup_from_recorded_baseline": 1.0597044313420918,
+      "speedup_from_paired_original": 1.0647144404213658,
+      "runtime_multiplier_from_round15": 1.0180973806129723,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "atax": {
+      "partition": "optimization",
+      "mech_median_seconds": 9.0084e-05,
+      "c_median_seconds": 1.4593824744224548e-06,
+      "mech_over_c_kernel": 61.7274782853963,
+      "speedup_from_recorded_baseline": 1.0615092580258425,
+      "speedup_from_paired_original": 1.1406021047022779,
+      "runtime_multiplier_from_round15": 0.91727761485826,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "bicg": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000118958,
+      "c_median_seconds": 1.4170072972774506e-06,
+      "mech_over_c_kernel": 83.95016753164114,
+      "speedup_from_recorded_baseline": 1.0784646682022228,
+      "speedup_from_paired_original": 1.1429159871551304,
+      "runtime_multiplier_from_round15": 0.9342275765119803,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "cholesky": {
+      "partition": "optimization",
+      "mech_median_seconds": 6.1333e-05,
+      "c_median_seconds": 7.292255759239197e-06,
+      "mech_over_c_kernel": 8.410703357776757,
+      "speedup_from_recorded_baseline": 2588.064337306181,
+      "speedup_from_paired_original": 2587.1132506154927,
+      "runtime_multiplier_from_round15": 1.027198579778593,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "correlation": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000396875,
+      "c_median_seconds": 4.4996850192546844e-06,
+      "mech_over_c_kernel": 88.2006181103177,
+      "speedup_from_recorded_baseline": 3.546456692913386,
+      "speedup_from_paired_original": 3.524094488188976,
+      "runtime_multiplier_from_round15": 0.9381456214749363,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "covariance": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000179041,
+      "c_median_seconds": 4.541128873825073e-06,
+      "mech_over_c_kernel": 39.426540178585725,
+      "speedup_from_recorded_baseline": 1.2445920208220462,
+      "speedup_from_paired_original": 1.233655978239621,
+      "runtime_multiplier_from_round15": 0.8292159914040645,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "deriche": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.003040084,
+      "c_median_seconds": 2.8999987989664078e-05,
+      "mech_over_c_kernel": 104.83052617413222,
+      "speedup_from_recorded_baseline": 414.3471996168526,
+      "speedup_from_paired_original": 412.7920343648399,
+      "runtime_multiplier_from_round15": 0.9295471640421954,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "doitgen": {
+      "partition": "optimization",
+      "mech_median_seconds": 5.9583e-05,
+      "c_median_seconds": 3.041699528694153e-06,
+      "mech_over_c_kernel": 19.588719871216167,
+      "speedup_from_recorded_baseline": 1.1944178708692077,
+      "speedup_from_paired_original": 1.057348572579427,
+      "runtime_multiplier_from_round15": 0.9636116636747368,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "durbin": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000261708,
+      "c_median_seconds": 1.334119588136673e-06,
+      "mech_over_c_kernel": 196.16532305437485,
+      "speedup_from_recorded_baseline": 19.864218900453942,
+      "speedup_from_paired_original": 19.839699206749508,
+      "runtime_multiplier_from_round15": 1.0733083708931932,
+      "runtime_regression_over_five_percent_from_round15": true,
+      "observations": 30
+    },
+    "gemm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000131542,
+      "c_median_seconds": 4.37488779425621e-06,
+      "mech_over_c_kernel": 30.067513999490796,
+      "speedup_from_recorded_baseline": 1.210320658040778,
+      "speedup_from_paired_original": 1.2198233263900502,
+      "runtime_multiplier_from_round15": 0.9429534050179212,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "gramschmidt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.0016325,
+      "c_median_seconds": 3.582797944545746e-06,
+      "mech_over_c_kernel": 455.6494743124513,
+      "speedup_from_recorded_baseline": 61.239152833078094,
+      "speedup_from_paired_original": 61.115263093415,
+      "runtime_multiplier_from_round15": 1.0053367524020314,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "mvt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000167125,
+      "c_median_seconds": 1.2498348951339722e-06,
+      "mech_over_c_kernel": 133.71766194932937,
+      "speedup_from_recorded_baseline": 1.0732984293193717,
+      "speedup_from_paired_original": 1.0573462976813761,
+      "runtime_multiplier_from_round15": 0.9867158671586715,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "nussinov": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000183709,
+      "c_median_seconds": 2.858322113752365e-05,
+      "mech_over_c_kernel": 6.427162254250953,
+      "speedup_from_recorded_baseline": 19537.272033487745,
+      "speedup_from_paired_original": 19596.622919944042,
+      "runtime_multiplier_from_round15": 0.9901261715739378,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "seidel-2d": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000326417,
+      "c_median_seconds": 0.0001105000264942646,
+      "mech_over_c_kernel": 2.953999291728155,
+      "speedup_from_recorded_baseline": 16964.117601105332,
+      "speedup_from_paired_original": 16984.30535174332,
+      "runtime_multiplier_from_round15": 0.9988524810888884,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "adi": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.009071792,
+      "c_median_seconds": 4.591699689626694e-05,
+      "mech_over_c_kernel": 197.56936675311053,
+      "speedup_from_recorded_baseline": 106.50622192395944,
+      "speedup_from_paired_original": 105.99202263455776,
+      "runtime_multiplier_from_round15": 0.9875985607206325,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "fdtd-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000417583,
+      "c_median_seconds": 6.875023245811462e-06,
+      "mech_over_c_kernel": 60.739140082822004,
+      "speedup_from_recorded_baseline": 173.90993646772017,
+      "speedup_from_paired_original": 172.42999355816687,
+      "runtime_multiplier_from_round15": 1.008045866022933,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "floyd-warshall": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000803709,
+      "c_median_seconds": 6.445776671171188e-05,
+      "mech_over_c_kernel": 12.468768947497017,
+      "speedup_from_recorded_baseline": 394.80764555330353,
+      "speedup_from_paired_original": 394.7359989747533,
+      "runtime_multiplier_from_round15": 1.0105301672001952,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "gemver": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000360333,
+      "c_median_seconds": 1.916196197271347e-06,
+      "mech_over_c_kernel": 188.04598428548823,
+      "speedup_from_recorded_baseline": 1.2959068417269581,
+      "speedup_from_paired_original": 1.2666533456552689,
+      "runtime_multiplier_from_round15": 0.8511789745213,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "gesummv": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000115459,
+      "c_median_seconds": 1.0416842997074127e-06,
+      "mech_over_c_kernel": 110.83876375254,
+      "speedup_from_recorded_baseline": 1.0537593431434535,
+      "speedup_from_paired_original": 1.0728916758329796,
+      "runtime_multiplier_from_round15": 1.0021699693600326,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "heat-3d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000492791,
+      "c_median_seconds": 1.7916318029165268e-05,
+      "mech_over_c_kernel": 27.50514917171067,
+      "speedup_from_recorded_baseline": 150.50303678435685,
+      "speedup_from_paired_original": 149.33739658394734,
+      "runtime_multiplier_from_round15": 0.9956198392190061,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "jacobi-1d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.00018775,
+      "c_median_seconds": 4.1676685214042664e-07,
+      "mech_over_c_kernel": 450.49168146592183,
+      "speedup_from_recorded_baseline": 22.25876431424767,
+      "speedup_from_paired_original": 22.44717976031957,
+      "runtime_multiplier_from_round15": 0.9912045444946573,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "jacobi-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.003698208,
+      "c_median_seconds": 7.750000804662704e-06,
+      "mech_over_c_kernel": 477.18807948703864,
+      "speedup_from_recorded_baseline": 19.926599044726526,
+      "speedup_from_paired_original": 19.941313468577214,
+      "runtime_multiplier_from_round15": 0.9849960354674513,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "lu": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.050702459,
+      "c_median_seconds": 1.1832918971776962e-05,
+      "mech_over_c_kernel": 4284.864885911236,
+      "speedup_from_recorded_baseline": 4.75873205676277,
+      "speedup_from_paired_original": 4.7646702894626864,
+      "runtime_multiplier_from_round15": 0.9833506255009123,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "ludcmp": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.050968834,
+      "c_median_seconds": 1.3167038559913635e-05,
+      "mech_over_c_kernel": 3870.9413485863074,
+      "speedup_from_recorded_baseline": 4.895849687281448,
+      "speedup_from_paired_original": 4.889985005346601,
+      "runtime_multiplier_from_round15": 0.9938835665187928,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "symm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000199125,
+      "c_median_seconds": 3.875233232975006e-06,
+      "mech_over_c_kernel": 51.38400401441961,
+      "speedup_from_recorded_baseline": 4.107344632768362,
+      "speedup_from_paired_original": 4.070307595731324,
+      "runtime_multiplier_from_round15": 0.8959505061867267,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "syr2k": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000389792,
+      "c_median_seconds": 6.875023245811462e-06,
+      "mech_over_c_kernel": 56.69682647800163,
+      "speedup_from_recorded_baseline": 3.8641326656267956,
+      "speedup_from_paired_original": 3.8540862819144563,
+      "runtime_multiplier_from_round15": 0.8607054926856197,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "syrk": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000272708,
+      "c_median_seconds": 5.499925464391708e-06,
+      "mech_over_c_kernel": 49.58394468535975,
+      "speedup_from_recorded_baseline": 4.943169984012204,
+      "speedup_from_paired_original": 4.9239186235827335,
+      "runtime_multiplier_from_round15": 0.8980495081783664,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "trisolv": {
+      "partition": "holdout",
+      "mech_median_seconds": 2.6e-05,
+      "c_median_seconds": 9.587965905666351e-07,
+      "mech_over_c_kernel": 27.11732629820301,
+      "speedup_from_recorded_baseline": 150.35734615384615,
+      "speedup_from_paired_original": 151.06573076923075,
+      "runtime_multiplier_from_round15": 0.9469007211013183,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    },
+    "trmm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.00014525,
+      "c_median_seconds": 3.5408884286880493e-06,
+      "mech_over_c_kernel": 41.02077852077854,
+      "speedup_from_recorded_baseline": 4.8502581755593805,
+      "speedup_from_paired_original": 4.830464716006884,
+      "runtime_multiplier_from_round15": 1.0092622831215214,
+      "runtime_regression_over_five_percent_from_round15": false,
+      "observations": 30
+    }
+  },
+  "implementation": [
+    "The resident/JIT shared BorrowedNumericOperand selects a synchronous immutable Core typed slice once for exact Bool/Index/U8/U16/U32/U64/U128/I8/I16/I32/I64/I128/F32/F64 schema/backing pairs. Scalars borrow one element; canonical matrices remain row-major and mixed dense F64 transport keeps its original column-major mapping.",
+    "Broadcast arithmetic, numeric unary operations, transpose and ordered sums reuse the operand views. Per-cell generic ValueData construction and repeated schema-directed draft conversion disappear for the exact selected kinds. Existing arithmetic, reduction order, typed constructors, publication and error paths are reused unchanged.",
+    "Every current input/schema/shape check and complete original staging, output, clone, temporary, node, comparison and compute admission remains before the source loan. No owner, value, pointer, permit or partially produced output is cached across calls, no unchecked read is introduced, and bounds errors remain checked.",
+    "Constrained integer, composite, String and mismatched schema/backing pairs retain the exact Core conversion. A maintained test-only ablation disables both typed input and output routes and compares actual old/new values, errors, finite denials and recovery.",
+    "IR375 and Work144 identify the typed operand runtime while retaining the original full prices. Both established exact Huffman work equations remain unchanged. No benchmark port, source arithmetic, reassociation or FMA changes."
+  ],
+  "development_checks": {
+    "focused_tests": {
+      "passed": 7,
+      "log_sha256": "9c6b50805d53d7a2116fd782f6694de242f19a77f7a70129236040cc8d5220bb",
+      "scope": "All14 exact scalar/matrix kinds, empty axes, signed-zero/NaN/infinity bits, both scalar broadcast sides and all six arithmetic operations, ordered sums and failures, finite denials, prior output preservation, recovery, constrained/composite fallback and mismatched schema rejection."
+    },
+    "selection": "All15 optimization programs receive one seven-sample replay against the frozen round15 compiler. Any largest >5% training regression may receive one fixed follow-up of six alternating pairs with31 samples each, retaining all flags and without source or binary changes. No current holdout timing/profile occurs before freeze."
+  },
+  "inter_round_aggregates": {
+    "optimization": {
+      "mech_new_over_round15": 0.9606841817097078,
+      "reference_new_over_round15": 1.0178599674434228,
+      "c_new_over_round15": 1.0216363658250458,
+      "mech_over_c_score_new_over_round15": 0.9403386702409378,
+      "mech_new_over_round15_regressions_over_five_percent": 1
+    },
+    "holdout": {
+      "mech_new_over_round15": 0.9597033081066826,
+      "reference_new_over_round15": 1.012518005113036,
+      "c_new_over_round15": 0.9890410252615011,
+      "mech_over_c_score_new_over_round15": 0.9703372090686919,
+      "mech_new_over_round15_regressions_over_five_percent": 0
+    }
+  },
+  "inter_round_regressions_over_five_percent": [
+    {
+      "partition": "optimization",
+      "case": "durbin",
+      "reference": "frozen round15 Mech",
+      "runtime_multiplier": 1.0733083708931932
+    }
+  ],
+  "training_probe": {
+    "receipt_sha256": "0bc48daa991ccae2193f4663dcdd9794e5ae114554d3ed74d9cc4bd8afaa6dff",
+    "reference": "frozen round15 compiler replay",
+    "cases": 15,
+    "samples_per_actor": 7,
+    "summary": {
+      "count": 15,
+      "geomean_speedup_from_round_15_replay": 1.063599685379613,
+      "regressions_over_five_percent": 0,
+      "sum_candidate_median_seconds": 0.006556831,
+      "sum_reference_median_seconds": 0.006914457
+    },
+    "frozen_aggregate_qualification": false,
+    "regressions_over_five_percent": []
+  },
+  "profiling": {
+    "receipt_sha256": "4ee8a82e05ae63907e4f11147243917a5b457a41c3cb06ab56da123f958c0324",
+    "partition": "optimization",
+    "cases": [
+      "deriche",
+      "gramschmidt",
+      "correlation",
+      "seidel-2d",
+      "durbin"
+    ],
+    "canonical_execution_samples": 4636,
+    "coverage_of_training_sum": 0.8232754073279227,
+    "weighted_categories": [
+      {
+        "name": "Other helper dispatch",
+        "fraction_of_profiled_time": 0.3075218057886562,
+        "estimated_seconds_in_training_sum": 0.0017398304480810086
+      },
+      {
+        "name": "Canonical library calls",
+        "fraction_of_profiled_time": 0.18332761942212125,
+        "estimated_seconds_in_training_sum": 0.0010371914064006824
+      },
+      {
+        "name": "Source visits and admission",
+        "fraction_of_profiled_time": 0.15166374527951892,
+        "estimated_seconds_in_training_sum": 0.0008580503786734819
+      },
+      {
+        "name": "Comprehension collection bookkeeping",
+        "fraction_of_profiled_time": 0.1308975447344143,
+        "estimated_seconds_in_training_sum": 0.0007405638547287067
+      },
+      {
+        "name": "Other execution and generated code",
+        "fraction_of_profiled_time": 0.12417490283733458,
+        "estimated_seconds_in_training_sum": 0.0007025299434940587
+      },
+      {
+        "name": "Private frame transport",
+        "fraction_of_profiled_time": 0.08975308113964596,
+        "estimated_seconds_in_training_sum": 0.0005077855958063628
+      },
+      {
+        "name": "Loop-local retirement",
+        "fraction_of_profiled_time": 0.010069533873364477,
+        "estimated_seconds_in_training_sum": 5.696923372940489e-05
+      },
+      {
+        "name": "Other selected library dispatch",
+        "fraction_of_profiled_time": 0.001909496895900161,
+        "estimated_seconds_in_training_sum": 1.0803139086294417e-05
+      },
+      {
+        "name": "Selected matrix updates",
+        "fraction_of_profiled_time": 0.00040936201742651984,
+        "estimated_seconds_in_training_sum": 2.316e-06
+      },
+      {
+        "name": "Typed matrix scalar reads",
+        "fraction_of_profiled_time": 0.0002729080116176799,
+        "estimated_seconds_in_training_sum": 1.544e-06
+      }
+    ]
+  },
+  "scope": [
+    "CPU MINI F64 and selected regressions; larger datasets, GPU/SIMD selection, full compression/AOT and an external application remain unqualified.",
+    "Only exact existing primitive operand representations are borrowed. Constrained and composite values retain the Core conversion; unsupported arithmetic retains the existing selected error behavior.",
+    "The fixed split and prior holdout results were exposed. No holdout profile or timing selected/refined the candidate. Ports, inputs, pinned C binaries, tolerances and timing boundaries are unchanged.",
+    "Source work units are conservative finite prices, not elapsed CPU time. Each process validates complete finite untimed warm-up live-outs; timed checked calls must succeed but their outputs are not separately flattened.",
+    "No compiler source changed after freeze. Only the PR1001 branch is updated; PR1000 remains unchanged."
+  ],
+  "receipts": {
+    "round-16-frozen.json": "311dabfbae180519f5814ff3acb0dd569d554e705b300fc76a9a859f214477b0",
+    "round-16-optimization.json": "1b98b7539ad2543203709ced29c25f2ef2d6786ce30ecef44ae8d58a6fdad7c2",
+    "round-16-holdout.json": "f009212ada312423cd5c44397d53222dfc79190d5e57fb2c0fda836a0f92700b",
+    "round-16-progress.json": "201f224d04be39fcc25387f79e4e0e14765bc28297b8f22f8e4a53446d4ea8ec",
+    "round-16-training-probe.json": "0bc48daa991ccae2193f4663dcdd9794e5ae114554d3ed74d9cc4bd8afaa6dff",
+    "round-16-training-profile.json": "4ee8a82e05ae63907e4f11147243917a5b457a41c3cb06ab56da123f958c0324"
+  }
+}
