@@ -667,3 +667,47 @@ No timing samples or history entry were added for this prerequisite. The
 fixed source ports, C binaries, data, split, tolerances and timing boundaries
 remain unchanged. Full numeric tagged carriers and independent two-axis loop
 selectors remain compiler gaps. The strict below 1.0x holdout goal remains open.
+
+Independent numeric cell phase prerequisite (IR362)
+
+Shared native numeric leaf/tree/phase proofs now retain two independent
+selectors in explicit CellRead/CellWrite operations. Entry validates the actual
+current scalar matrix view; generated code checks row bounds, then column
+bounds, before computing a physical row-major address. Linear-index CSE and
+window proofs remain confined to their original coordinate system. Scalar
+liveness, current-version invalidation, mutation summaries, speculative capture
+barriers and cold-owner reconciliation all include cell effects.
+
+First-change transport adds a separately admitted column word only for a
+proof containing a cell store. The selected original replacement receives
+both axes and retains its bounds/resource/COW checks. The unsigned cell-private
+bridge shares that implementation and preserves its narrower owner, so a
+cell write can precede unsigned appends without granting Bool/I64/F64 spare-
+cell authority. The existing linear transport and Huffman work bills stay
+unchanged. Typed IR is 362 and native work policy is 131.
+
+All seven scalar kinds execute actual native cell loops with original/decoded
+artifacts, restored descriptors and Object emission. Tests cover distinct
+columns, nested loops, zero and oversized axes, empty dimensions, inactive
+reads, partial writes followed by failed reads, older immutable versions,
+exact bits, aliases, no-op/COW behavior and finite recovery. Selected cell
+sites have no per-iteration library dispatch. A mixed unsigned cell-write/
+append test retains initialized prefixes, capacity changes and final shapes.
+focused-second.log: passes [4], filtered [1439].
+numeric-regressions.log: passes [297], filtered [1146].
+matrix-polybench.log: passes [24, 30], filtered [0, 0].
+program-regressions.log: passes [102], filtered [415].
+
+numeric-cell-phases-qualification.json records the exact source/driver and
+log hashes. Core source files did not change; the prior 23 Core ownership
+checks remain recorded in typed-numeric-phases-qualification.json. No port,
+input, C executable, tolerance, split or timing boundary changed.
+
+This is a compiler prerequisite, not a new frozen timing round. The latest
+measured geometric-mean Mech/C kernel multipliers remain:
+optimization: 301.197x C.
+holdout: 724.274x C.
+
+No new timing samples or history entry were added. Full managed-array tagged
+state remains the principal compiler gap before these regions can consume
+the benchmark state machines. The strict below 1.0x holdout goal remains open.

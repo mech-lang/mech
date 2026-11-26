@@ -1,0 +1,123 @@
+{
+  "schema": "mech.polybench.compiler-prerequisite-qualification.v1",
+  "created_at": "2026-11-26T04:41:24.478300+00:00",
+  "source_commit": "4b134a5e64b851b235e46319460b5bf06f0ebde7",
+  "compiler_fingerprint": "f121eee1dccf03a7932c0264f86f9257f1a9e2165d61c4779e0cde0a73475fc1",
+  "driver_sha256": "6d0a476570c3a79f6f36a5024184f27749e09ca907ec3bf3ae9dc7ec07fbd99c",
+  "native_typed_ir_version": 362,
+  "native_work_policy_version": 131,
+  "status": "Correctness qualification of independent two-axis numeric phases; no new frozen timing round.",
+  "checks": [
+    {
+      "log": "focused-second.log",
+      "sha256": "77ad98dca611258c71f5486120d73c71c124a6978858c8ee9799ebe22af6378b",
+      "passed_by_target": [
+        4
+      ],
+      "filtered_by_target": [
+        1439
+      ]
+    },
+    {
+      "log": "numeric-regressions.log",
+      "sha256": "46f6656b7c1bf444119e2e0cd9ad7f60eaa7de8cca9c8372e4777555c244e036",
+      "passed_by_target": [
+        297
+      ],
+      "filtered_by_target": [
+        1146
+      ]
+    },
+    {
+      "log": "matrix-polybench.log",
+      "sha256": "06a9b263a0a1b01545f3157f5c50c3049365136dffc0615914afba517ba96104",
+      "passed_by_target": [
+        24,
+        30
+      ],
+      "filtered_by_target": [
+        0,
+        0
+      ]
+    },
+    {
+      "log": "program-regressions.log",
+      "sha256": "99dfa37946bc040a2f3569ccb123361461c4cb476da9d504806131f139ac228e",
+      "passed_by_target": [
+        102
+      ],
+      "filtered_by_target": [
+        415
+      ]
+    }
+  ],
+  "type_check": {
+    "command": "cargo check --release -p mech-gpu --no-default-features --features canonical-native-program --tests",
+    "log_sha256": "1412947bbc6d2b636ab357f3278e3d151777c4522648f6977459d2a46bb79c8b"
+  },
+  "scope": [
+    "Explicit CellRead/CellWrite proof operations preserve row and column independently in native leaf/tree/phase loops; no row-only linear CSE or window certificate is reused.",
+    "Exact selected scalar read/replace factories, same-schema managed root provenance and current-version invalidation include both cell effects; older immutable matrices remain distinct from private current storage.",
+    "Current admitted row-major views check one-based row bounds first and column bounds next before physical addressing. Empty axes and inactive branches never load invalid storage.",
+    "Direct Cranelift loads/stores for all seven exact native scalar kinds; Bool raw stores retain the canonical 0/1 guard, and signed-zero/infinity/NaN payload bits remain exact.",
+    "The original selected first-change factory receives both coordinates in a separately funded extra argument word, retaining resource/error/COW ordering and immutable aliases.",
+    "The new unsigned cell-private bridge uses the same maintained scalar replacement and narrower unsigned owner; mixed two-axis writes and unsigned appends keep their original growth authority, capacity, initialization and shape preparation.",
+    "Cold errors, fuel exits and private-owner settlement recognize cell reads/writes. Scalar liveness includes both axes. Speculative capture and wide-read reuse analyses recognize cell writes as effects; the linear histogram rewrite declines cell effects.",
+    "Actual native cell execution is observed in original/decoded artifacts, restored descriptors and Object emission for all kinds and nested source loops, without per-iteration library callbacks at selected cell sites.",
+    "Distinct columns within a row, different rows, zero/out-of-range axes, partial writes before a rejected peer read, empty dimensions, no-op/first-change behavior, prior-output atomicity, immutable aliases and retry.",
+    "Finite output elements/bytes, temporary bytes, cloned bytes, nodes, compute, comparison and native-work admission match the checked ordinary control.",
+    "All 24 matrix and all 30 PolyBench original/decoded regressions and Object emission preserve unchanged source hashes and all 29,482 finite C live-outs per artifact; selected 102 Program scalar/buffer/compression regressions pass."
+  ],
+  "prior_core_qualification": {
+    "receipt": "typed-numeric-phases-qualification.json",
+    "receipt_sha256": "2632ac3f98787abf53b9db0aad7a265c98d25afabb6d74a2cc6b484785312189",
+    "source_commit": "76ae78bb45cfcfa8a34c0e1dc93d1ad7fb9b1ebf",
+    "core_tests": 23,
+    "core_sources_changed": false
+  },
+  "last_frozen_compiler": {
+    "schema": "mech.polybench.frozen-candidate.v1",
+    "created_at": "2026-11-26T03:21:41.827499+00:00",
+    "label": "round-04-conditional-maps",
+    "source_commit": "19cd8a6bcb5ba504b6ac22c059c3e33a66d6ee5c",
+    "compiler_fingerprint": "cfe15c471e802e98272aa3b2ac7ca542623c475d0f3cbaa8eda249de78f353fc",
+    "driver_sha256": "d000b7b77f102db3d0a68e9d2d738e8767e9cbde364bcd0585ad2da3725b765d",
+    "reference_driver_sha256": "52298504b6a7b7abf44b399ed42f56bb2ee9f335f2601c683a7928041a0b883a",
+    "protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+    "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+    "fixture_sha256": "acc2a0b76f458eafca9beffb1eb2830f7fe87e6c5bc0dd46af817285202cf488",
+    "baseline_sha256": "96e5867a9bd7a1cde6c6dea266766ae3f4b23d51092e9f07911ca9266ec1f976",
+    "runner_sha256": "71c7f2e0dc32b5bf0a2b61fff11ec253828634b1933dd4bb308a14ab537963dc",
+    "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+    "machine": {
+      "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+      "processor": "arm64"
+    }
+  },
+  "last_frozen_scores": {
+    "optimization": 301.1974962493746,
+    "holdout": 724.2742286534767,
+    "all": 467.0648608794867
+  },
+  "goal": {
+    "partition": "holdout",
+    "metric": "geomean_mech_over_c_kernel",
+    "value": 724.2742286534767,
+    "target_strictly_below": 1.0,
+    "achieved": false,
+    "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+    "objective_frozen_with_candidate": true,
+    "sum_mech_median_seconds": 0.804652835
+  },
+  "timing": {
+    "new_samples": 0,
+    "frozen_round": "round-04",
+    "history_entries": 5,
+    "comparison": "Kernel Mech/C equal-weight geometric mean; lower is better."
+  },
+  "remaining": [
+    "Full managed-array tagged carriers still fail the numeric-frame leaf proof and need guarded tag/scalar/owner transport.",
+    "Around-child pieces retain their existing conservative selection; the new operations target the shared complete leaf/tree/phase machinery.",
+    "The strict below-1.0x C holdout goal is unachieved. Larger datasets, GPU/SIMD selection and full compression application/AOT remain unqualified."
+  ]
+}
