@@ -75,7 +75,7 @@ fn row_shapes(schema: &Schema, maximum: u64, constant_count: bool) -> bool {
 }
 fn candidate(plan: &Plan, region: Region) -> Option<Reduction> {
     let sum = region.reduction.as_ref()?;
-    if region.rectangle.is_some() || !region.range {
+    if region.rectangle.is_some() || !region.range || !region.nested.is_empty() {
         return None;
     }
     let NativeControlLoop::Collection(child) = &plan.iterations()[region.iteration as usize] else {
@@ -210,6 +210,9 @@ pub(super) fn inventory(plan: &Plan) -> Result<Vec<Reduction>, &'static str> {
         .collect())
 }
 impl Reduction {
+    pub(in crate::native_artifact) fn from_region(plan: &Plan, region: Region) -> Option<Self> {
+        candidate(plan, region)
+    }
     pub fn source_sites(&self) -> impl Iterator<Item = u32> + '_ {
         self.prefix
             .iter()

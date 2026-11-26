@@ -243,7 +243,7 @@ fn candidate(plan: &Plan, facts: &Facts<'_>, layout: &Layout, id: usize) -> Opti
         .read_roles(element)
         .ok()?
         .iter()
-        .any(|r| !matches!(r,Read::Action(at)|Read::Terminator(at) if inner.body.contains(at)))
+        .any(|r| !matches!(r,Read::Action(at)|Read::Terminator(at) if inner.sites.contains(at)))
     {
         return None;
     }
@@ -254,7 +254,7 @@ fn candidate(plan: &Plan, facts: &Facts<'_>, layout: &Layout, id: usize) -> Opti
                 inner
                     .body
                     .iter()
-                    .flat_map(|&site| scalar_reads(plan, site))
+                    .flat_map(|&site| nested::reads(plan, site, &inner.nested))
                     .find(|v| v.get() == value)?,
                 generator.initialize(),
                 generator.parent(),

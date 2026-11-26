@@ -846,6 +846,14 @@ fn decode_inner<
             return Err("worker import recipe differs from source capture proof".into());
         }
     }
+    // These funds are not a serialized grant, including on the verified Object
+    // path. Rebuild them from this exact source, calls and final visit prices.
+    let nested_numeric = native::program::prepare::numeric_maps::nested::Funding::derive(
+        &plan,
+        &numeric_maps,
+        &calls,
+        &visits,
+    );
     let mut descriptor = NativeProgramDescriptor {
         metadata: native::program::prepare::ProgramMetadata {
             plan,
@@ -885,6 +893,7 @@ fn decode_inner<
             fixed_key_loops,
             utf8_reads,
             numeric_maps,
+            nested_numeric,
             frozen_maps,
             map_admission: w.map_admission,
             parallel: w.parallel,

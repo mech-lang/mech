@@ -547,7 +547,8 @@ fn selected_template(
 // IR373 composes checked ordered range folds inside a numeric phase loan.
 // IR374 selects existing U64 cursors for matrix block comprehensions.
 // IR375 borrows exact Core typed numeric operands for complete admitted calls.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 375;
+// IR376 composes exact ordered scalar folds inside native scalar maps.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 376;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -812,7 +813,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 375;
 // Work142 prepays composed folds, elided constructors and unspent source replay.
 // Work143 applies the existing selected-range source prices to block builders.
 // Work144 retains the original full staging, clone and publication envelope.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 144;
+// Work145 prepays nested source work, physical attempts and complete replay.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 145;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

@@ -11,6 +11,8 @@ use mech_engine::native_artifact::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 
+#[path = "numeric_map_nested.rs"]
+pub(in crate::native_artifact) mod nested;
 #[path = "numeric_rectangles.rs"]
 mod rectangles;
 #[path = "numeric_map_reductions.rs"]
@@ -48,6 +50,7 @@ pub(in crate::native_artifact) struct MatrixRead {
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields, rename = "mech.native.image.Region")]
 pub(in crate::native_artifact) struct Region {
+    pub nested: Vec<nested::Reduction>,
     pub rectangle: Option<Rectangle>,
     pub reduction: Option<Reduction>,
     pub transpose: Option<Transpose>,
@@ -191,7 +194,13 @@ fn successors(term: Terminator) -> Option<Vec<u32>> {
         _ => return None,
     })
 }
-fn ordered_body(plan: &Plan, iteration: u32, first: u32, latch: u32) -> Option<Vec<u32>> {
+fn ordered_body(
+    plan: &Plan,
+    iteration: u32,
+    first: u32,
+    latch: u32,
+    summaries: &[super::numeric_phase::Reduction],
+) -> Option<Vec<u32>> {
     let mut edges = BTreeMap::new();
     let mut pending = vec![first];
     while let Some(site) = pending.pop() {
@@ -205,7 +214,17 @@ fn ordered_body(plan: &Plan, iteration: u32, first: u32, latch: u32) -> Option<V
         if block.iteration() != Some(iteration) {
             return None;
         }
-        let next = successors(block.terminator())?;
+        let next = if let Some(summary) = summaries.iter().find(|r| {
+            r.entry == site
+                && plan.iterations()[r.region.iteration as usize]
+                    .as_ref()
+                    .parent()
+                    == Some(iteration)
+        }) {
+            vec![summary.after]
+        } else {
+            successors(block.terminator())?
+        };
         pending.extend(next.iter().copied());
         edges.insert(site, next);
     }
@@ -258,6 +277,22 @@ impl Layout {
         })
     }
     pub fn derive(plan: &Plan) -> Result<Self, &'static str> {
+        let flat = Self::derive_with(plan, &[])?;
+        let summaries = flat
+            .regions
+            .iter()
+            .cloned()
+            .filter_map(|r| super::numeric_phase::Reduction::from_region(plan, r))
+            .collect::<Vec<_>>();
+        if summaries.is_empty() {
+            return Ok(flat);
+        }
+        Self::derive_with(plan, &summaries)
+    }
+    fn derive_with(
+        plan: &Plan,
+        summaries: &[super::numeric_phase::Reduction],
+    ) -> Result<Self, &'static str> {
         plan.validate_current_visits()?;
         if plan.blocks().len() > MAX_SITES || plan.values().len() > MAX_VALUES {
             return Ok(Self::default());
@@ -346,8 +381,13 @@ impl Layout {
             {
                 continue;
             }
-            let Some(body) = ordered_body(plan, iteration, generator.body(), generator.latch())
-            else {
+            let Some(body) = ordered_body(
+                plan,
+                iteration,
+                generator.body(),
+                generator.latch(),
+                summaries,
+            ) else {
                 continue;
             };
             let mut sites: BTreeSet<_> = body.iter().copied().collect();
@@ -356,130 +396,166 @@ impl Layout {
             let mut steps = Vec::new();
             let mut matrices = Vec::<Matrix>::new();
             let mut reads = Vec::new();
+            let mut nested = Vec::new();
             let mut element_seen = false;
             let mut pushed = None;
             let mut complete = true;
             for &site in &body {
                 let block = &plan.blocks()[site as usize];
-                let output = match block.action() {
-                    Action::Scalar(Scalar::None) => None,
-                    Action::CollectionElement { iteration: owner }
-                        if *owner == iteration && site == generator.body() && !element_seen =>
-                    {
-                        element_seen = true;
-                        Some(element)
-                    }
-                    Action::Scalar(action) if steps.len() < MAX_STEPS => {
-                        let output = match action {
-                            Scalar::Copy { source, output } => {
-                                if plan.values()[source.get() as usize].scalar_kind()
-                                    != plan.values()[output.get() as usize].scalar_kind()
-                                {
-                                    complete = false;
-                                    break;
-                                }
-                                *output
-                            }
-                            Scalar::Primitive {
-                                operands,
-                                output,
-                                op,
-                            } => {
-                                let (expected, result) = op.signature();
-                                if expected.len() != operands.len()
-                                    || plan.values()[output.get() as usize].scalar_kind()
-                                        != Some(result)
-                                    || operands.iter().zip(expected).any(|(v, kind)| {
-                                        plan.values()[v.get() as usize].scalar_kind() != Some(*kind)
-                                    })
-                                {
-                                    complete = false;
-                                    break;
-                                }
-                                *output
-                            }
-                            _ => {
-                                complete = false;
-                                break;
-                            }
-                        };
-                        steps.push(site);
-                        Some(output)
-                    }
-                    Action::LibraryCall {
-                        template,
-                        operands,
-                        output,
-                    } if steps.len() < MAX_STEPS => {
-                        if !matches!(
-                            (template.primitive(), operands.len()),
-                            (Primitive::MatrixScalarAccess, 2) | (Primitive::MatrixCellAccess, 3)
-                        ) {
-                            complete = false;
-                            break;
-                        }
-                        let matrix = operands[0];
-                        let definition = plan.values()[matrix.get() as usize].definition();
-                        let Some(width) = matrix_width(definition.body()) else {
-                            complete = false;
-                            break;
-                        };
-                        let SchemaBody::Matrix { element: kind, .. } = definition.body() else {
-                            unreachable!()
-                        };
-                        if template.inputs().len() != operands.len()
-                            || template.inputs()[0] != *definition
-                            || template.output().body() != kind.as_ref()
-                            || !template.output().dimension_parameters().is_empty()
-                            || operands[1..].iter().any(|v| {
-                                plan.values()[v.get() as usize].scalar_kind()
-                                    != Some(NativeScalarKind::U64)
-                            })
-                            || !immutable_before(
-                                &facts,
-                                matrix,
-                                generator.initialize(),
-                                generator.parent(),
-                            )?
-                        {
-                            complete = false;
-                            break;
-                        }
-                        let at = if let Some(at) =
-                            matrices.iter().position(|m| m.value == matrix.get())
-                        {
-                            at
-                        } else {
-                            if matrices.len() == MAX_MATRICES {
-                                complete = false;
-                                break;
-                            }
-                            matrices.push(Matrix {
-                                value: matrix.get(),
-                                witness: site,
-                                width,
-                            });
-                            matrices.len() - 1
-                        };
-                        reads.push(MatrixRead {
-                            site,
-                            matrix: at,
-                            indices: operands[1..].iter().map(|v| v.get()).collect(),
-                            output: output.get(),
-                        });
-                        steps.push(site);
-                        Some(*output)
-                    }
-                    Action::CollectionPush {
-                        collection: owner,
-                        value,
-                    } if *owner == id as u32 && site == collection.push() && pushed.is_none() => {
-                        pushed = Some(*value);
-                        None
-                    }
-                    _ => {
+                let output = if let Some(summary) = summaries.iter().find(|r| {
+                    r.entry == site
+                        && plan.iterations()[r.region.iteration as usize]
+                            .as_ref()
+                            .parent()
+                            == Some(iteration)
+                }) {
+                    if steps.len() >= MAX_STEPS || nested.len() >= nested::MAX_CHILDREN {
                         complete = false;
                         break;
+                    }
+                    let Some(child) = nested::Reduction::admit(
+                        plan,
+                        &facts,
+                        generator.initialize(),
+                        generator.parent(),
+                        summary.clone(),
+                        &mut matrices,
+                    )?
+                    else {
+                        complete = false;
+                        break;
+                    };
+                    sites.extend(child.source.source_sites());
+                    let output = child.output(plan);
+                    steps.push(site);
+                    nested.push(child);
+                    Some(output)
+                } else {
+                    match block.action() {
+                        Action::Scalar(Scalar::None) => None,
+                        Action::CollectionElement { iteration: owner }
+                            if *owner == iteration && site == generator.body() && !element_seen =>
+                        {
+                            element_seen = true;
+                            Some(element)
+                        }
+                        Action::Scalar(action) if steps.len() < MAX_STEPS => {
+                            let output = match action {
+                                Scalar::Copy { source, output } => {
+                                    if plan.values()[source.get() as usize].scalar_kind()
+                                        != plan.values()[output.get() as usize].scalar_kind()
+                                    {
+                                        complete = false;
+                                        break;
+                                    }
+                                    *output
+                                }
+                                Scalar::Primitive {
+                                    operands,
+                                    output,
+                                    op,
+                                } => {
+                                    let (expected, result) = op.signature();
+                                    if expected.len() != operands.len()
+                                        || plan.values()[output.get() as usize].scalar_kind()
+                                            != Some(result)
+                                        || operands.iter().zip(expected).any(|(v, kind)| {
+                                            plan.values()[v.get() as usize].scalar_kind()
+                                                != Some(*kind)
+                                        })
+                                    {
+                                        complete = false;
+                                        break;
+                                    }
+                                    *output
+                                }
+                                _ => {
+                                    complete = false;
+                                    break;
+                                }
+                            };
+                            steps.push(site);
+                            Some(output)
+                        }
+                        Action::LibraryCall {
+                            template,
+                            operands,
+                            output,
+                        } if steps.len() < MAX_STEPS => {
+                            if !matches!(
+                                (template.primitive(), operands.len()),
+                                (Primitive::MatrixScalarAccess, 2)
+                                    | (Primitive::MatrixCellAccess, 3)
+                            ) {
+                                complete = false;
+                                break;
+                            }
+                            let matrix = operands[0];
+                            let definition = plan.values()[matrix.get() as usize].definition();
+                            let Some(width) = matrix_width(definition.body()) else {
+                                complete = false;
+                                break;
+                            };
+                            let SchemaBody::Matrix { element: kind, .. } = definition.body() else {
+                                unreachable!()
+                            };
+                            if template.inputs().len() != operands.len()
+                                || template.inputs()[0] != *definition
+                                || template.output().body() != kind.as_ref()
+                                || !template.output().dimension_parameters().is_empty()
+                                || operands[1..].iter().any(|v| {
+                                    plan.values()[v.get() as usize].scalar_kind()
+                                        != Some(NativeScalarKind::U64)
+                                })
+                                || !immutable_before(
+                                    &facts,
+                                    matrix,
+                                    generator.initialize(),
+                                    generator.parent(),
+                                )?
+                            {
+                                complete = false;
+                                break;
+                            }
+                            let at = if let Some(at) =
+                                matrices.iter().position(|m| m.value == matrix.get())
+                            {
+                                at
+                            } else {
+                                if matrices.len() == MAX_MATRICES {
+                                    complete = false;
+                                    break;
+                                }
+                                matrices.push(Matrix {
+                                    value: matrix.get(),
+                                    witness: site,
+                                    width,
+                                });
+                                matrices.len() - 1
+                            };
+                            reads.push(MatrixRead {
+                                site,
+                                matrix: at,
+                                indices: operands[1..].iter().map(|v| v.get()).collect(),
+                                output: output.get(),
+                            });
+                            steps.push(site);
+                            Some(*output)
+                        }
+                        Action::CollectionPush {
+                            collection: owner,
+                            value,
+                        } if *owner == id as u32
+                            && site == collection.push()
+                            && pushed.is_none() =>
+                        {
+                            pushed = Some(*value);
+                            None
+                        }
+                        _ => {
+                            complete = false;
+                            break;
+                        }
                     }
                 };
                 if let Some(value) = output {
@@ -514,14 +590,14 @@ impl Layout {
             for (&id, &value) in &produced {
                 let definitions = facts.definition_sites(id)?;
                 if definitions.is_empty()
-                    || definitions.iter().any(|d| d.site().is_none_or(|at| !body.contains(&at)))
+                    || definitions.iter().any(|d| d.site().is_none_or(|at| !sites.contains(&at)))
                     || facts.read_roles(value)?.iter().any(|role|
                         !matches!(role, Read::Action(at) | Read::Terminator(at) if sites.contains(at))) {
                     complete = false; break;
                 }
             }
             for &site in &body {
-                for input in scalar_reads(plan, site) {
+                for input in nested::reads(plan, site, &nested) {
                     if plan.values()[input.get() as usize].scalar_kind().is_none() {
                         complete = false;
                         break;
@@ -555,6 +631,7 @@ impl Layout {
             }
             result.headers[generator.header() as usize] = Some(result.regions.len());
             result.regions.push(Region {
+                nested,
                 rectangle: None,
                 reduction: None,
                 transpose: None,

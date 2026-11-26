@@ -108,6 +108,8 @@ pub(in crate::native_artifact) struct ProgramMetadata {
         Box<[mech_engine::native_artifact::NativeUniformWordCollection]>,
     pub(in crate::native_artifact) utf8_reads: utf8_reads::Layout,
     pub(in crate::native_artifact) numeric_maps: numeric_maps::Layout,
+    // Pure nonserialized source funds; rebuilt with exact selected calls.
+    pub(in crate::native_artifact) nested_numeric: numeric_maps::nested::Funding,
     pub(in crate::native_artifact) word_collections: Box<[word_collections::Region]>,
     pub(in crate::native_artifact) window_regions:
         Box<[mech_engine::native_artifact::NativeWindowRegion]>,
@@ -360,6 +362,8 @@ impl PreparedNativeProgram {
             &closed_tails,
         )?;
         let visits: Box<[NativeIterationVisit]> = visits.into();
+        let nested_numeric =
+            numeric_maps::nested::Funding::derive(&plan, &numeric_maps, &calls, &visits);
         let frame_retirements =
             frame_retirement::FrameRetirements::derive(&buffer_frames, plan.values().len())?;
         let cleanup_effects = cleanup_effects::Layout::derive(
@@ -530,6 +534,7 @@ impl PreparedNativeProgram {
             uniform_word_collections,
             utf8_reads,
             numeric_maps,
+            nested_numeric,
             word_collections,
             unsigned_buffer_calls,
             buffer_frames,

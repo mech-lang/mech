@@ -36,9 +36,11 @@ pub(in crate::native_artifact) fn emit_entry(
     // header. Snapshot each native word once, never inside the element loop.
     let mut captures = BTreeMap::new();
     for &site in &region.body {
-        for value in
-            crate::native_artifact::program::prepare::numeric_maps::scalar_reads(plan, site)
-        {
+        for value in crate::native_artifact::program::prepare::numeric_maps::nested::reads(
+            plan,
+            site,
+            &region.nested,
+        ) {
             if region.captures.contains(&value.get()) && !captures.contains_key(&value.get()) {
                 captures.insert(
                     value.get(),
@@ -253,10 +255,14 @@ pub(super) fn emit(
         words.insert(rectangle.inner_element, b.declare_var(types::I64));
     }
     for &site in &region.steps {
-        let output = match plan.blocks()[site as usize].action() {
-            Action::Scalar(Scalar::Copy { output, .. } | Scalar::Primitive { output, .. })
-            | Action::LibraryCall { output, .. } => output.get(),
-            _ => return Err(backend("numeric map source step changed")),
+        let output = if let Some(child) = region.nested.iter().find(|r| r.source.entry == site) {
+            child.output(plan).get()
+        } else {
+            match plan.blocks()[site as usize].action() {
+                Action::Scalar(Scalar::Copy { output, .. } | Scalar::Primitive { output, .. })
+                | Action::LibraryCall { output, .. } => output.get(),
+                _ => return Err(backend("numeric map source step changed")),
+            }
         };
         words
             .entry(output)
@@ -321,6 +327,45 @@ pub(super) fn emit(
         .latch();
     for &site in &region.body {
         b.switch_to_block(source_blocks[&site]);
+        if let Some(child) = region.nested.iter().find(|r| r.source.entry == site) {
+            let first = word_at(b, &words, child.source.first)?;
+            let last = word_at(b, &words, child.source.last)?;
+            let captures = child
+                .source
+                .region
+                .captures
+                .iter()
+                .map(|&v| Ok((v, word_at(b, &words, v)?)))
+                .collect::<Result<BTreeMap<_, _>, NativeCompileError>>()?;
+            let views = child
+                .matrices
+                .iter()
+                .map(|&at| {
+                    let (input, count, rows, columns) = matrices[at];
+                    [input, count, rows, columns]
+                })
+                .collect::<Vec<_>>();
+            let value = super::numeric_phase_reductions::emit_from_views(
+                b,
+                &child.source,
+                plan,
+                first,
+                last,
+                &views,
+                &captures,
+                index_miss,
+            )?;
+            b.def_var(words[&child.output(plan).get()], value);
+            let target = if child.source.after == source_latch {
+                latch
+            } else {
+                *source_blocks
+                    .get(&child.source.after)
+                    .ok_or_else(|| backend("nested fold leaves map"))?
+            };
+            b.ins().jump(target, &[]);
+            continue;
+        }
         if let Some(read) = region.reads.iter().find(|r| r.site == site) {
             let value = emit_read(b, read, region, &matrices, &words, index_miss)?;
             b.def_var(words[&read.output], value);

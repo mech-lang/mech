@@ -32,9 +32,49 @@ pub(super) fn emit(
     miss: Block,
 ) -> Result<(), NativeCompileError> {
     let source = &fold.source;
-    let region = &source.region;
     let first = words.read(b, source.first as usize);
     let last = words.read(b, source.last as usize);
+    if fold.arrays.len() != source.region.matrices.len() {
+        return Err(backend("phase fold lost its exact matrix inventory"));
+    }
+    let matrices = fold
+        .arrays
+        .iter()
+        .map(|&array| std::array::from_fn(|lane| words.read(b, shadow + proof.view(array) + lane)))
+        .collect::<Vec<[Value; 4]>>();
+    let captures = source
+        .region
+        .captures
+        .iter()
+        .map(|&v| (v, words.read(b, v as usize)))
+        .collect::<BTreeMap<_, _>>();
+    let value = emit_from_views(b, source, plan, first, last, &matrices, &captures, miss)?;
+    words.write(
+        b,
+        source
+            .region
+            .reduction
+            .as_ref()
+            .ok_or_else(|| backend("phase fold lost extraction"))?
+            .scalar as usize,
+        value,
+    );
+    Ok(())
+}
+/// Shared by a numeric phase and an enclosing native scalar map. Current
+/// admitted views and SSA captures are supplied by the exact parent loan.
+/// This emits only the existing checked map DAG and ordered F64 fold.
+pub(super) fn emit_from_views(
+    b: &mut FunctionBuilder<'_>,
+    source: &crate::native_artifact::program::prepare::numeric_phase::Reduction,
+    plan: &Plan,
+    first: Value,
+    last: Value,
+    matrices: &[[Value; 4]],
+    captures: &BTreeMap<u32, Value>,
+    miss: Block,
+) -> Result<Value, NativeCompileError> {
+    let region = &source.region;
     let (mut count, overflow) = b.ins().usub_overflow(last, first);
     let good = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
     require(b, good, miss);
@@ -94,10 +134,10 @@ pub(super) fn emit(
         let value = b.ins().iconst(types::I64, i64::from(width));
         b.ins().store(MemFlags::new(), value, frame, at as i32);
     }
-    if fold.arrays.len() != region.matrices.len() {
-        return Err(backend("phase fold lost its exact matrix inventory"));
+    if matrices.len() != region.matrices.len() {
+        return Err(backend("fold lost its exact matrix inventory"));
     }
-    for (index, &array) in fold.arrays.iter().enumerate() {
+    for (index, view) in matrices.iter().enumerate() {
         for (lane, field) in [
             offset_of!(Matrix, input),
             offset_of!(Matrix, count),
@@ -107,22 +147,14 @@ pub(super) fn emit(
         .into_iter()
         .enumerate()
         {
-            let value = words.read(b, shadow + proof.view(array) + lane);
             let at = offset_of!(Frame, matrices) + index * size_of::<Matrix>() + field;
-            b.ins().store(MemFlags::new(), value, frame, at as i32);
+            b.ins().store(MemFlags::new(), view[lane], frame, at as i32);
         }
     }
-    let captures = region
-        .captures
-        .iter()
-        .map(|&v| (v, words.read(b, v as usize)))
-        .collect::<BTreeMap<_, _>>();
     let complete = b.create_block();
     let arithmetic = b.create_block();
     b.append_block_param(arithmetic, types::I64);
-    super::numeric_map::emit(
-        b, frame, region, plan, &captures, complete, arithmetic, miss,
-    )?;
+    super::numeric_map::emit(b, frame, region, plan, captures, complete, arithmetic, miss)?;
     b.switch_to_block(arithmetic);
     b.ins().jump(miss, &[]);
     b.switch_to_block(complete);
@@ -132,14 +164,5 @@ pub(super) fn emit(
         frame,
         offset_of!(Frame, fold) as i32,
     );
-    words.write(
-        b,
-        region
-            .reduction
-            .as_ref()
-            .ok_or_else(|| backend("phase fold lost scalar extraction"))?
-            .scalar as usize,
-        value,
-    );
-    Ok(())
+    Ok(value)
 }

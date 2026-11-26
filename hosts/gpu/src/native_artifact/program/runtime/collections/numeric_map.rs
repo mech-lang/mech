@@ -99,6 +99,9 @@ impl State {
     ) -> Result<Option<u64>, Error> {
         use crate::native_artifact::program::prepare::retirement::RetirementKind;
         let metadata = descriptor.metadata();
+        let Some(nested) = metadata.nested_numeric.at(region) else {
+            return Ok(None);
+        };
         let slots = metadata
             .retirements
             .slots(retirements, region.iteration, RetirementKind::Collection)
@@ -106,10 +109,14 @@ impl State {
         // The body produces only unboxed scalars. A managed retirement recipe
         // needs a separate payload bound and keeps the ordinary route.
         if slots.iter().any(|slot| {
-            region
+            !region
                 .rectangle
                 .as_ref()
-                .is_none_or(|r| !r.elided_values.contains(&(*slot as u32)))
+                .is_some_and(|r| r.elided_values.contains(&(*slot as u32)))
+                && !region
+                    .nested
+                    .iter()
+                    .any(|r| r.elides(*slot as u32, &metadata.plan))
         }) {
             return Ok(None);
         }
@@ -178,7 +185,8 @@ impl State {
             replay
                 .checked_add(probe)?
                 .checked_add(source.count.checked_mul(rectangle.replay)?)?
-                .checked_add(reduction.replay)
+                .checked_add(reduction.replay)?
+                .checked_add(traversals.checked_mul(nested.replay)?)
         })();
         Ok(credit)
     }
@@ -302,6 +310,12 @@ impl State {
         else {
             return Ok(None);
         };
+        let Some(nested) = metadata.nested_numeric.at(region) else {
+            return Ok(None);
+        };
+        let Some(nested_comparison) = count.checked_mul(nested.comparison) else {
+            return Ok(None);
+        };
         let bank_count = if region.reduction.is_some() { 0 } else { count };
         let bank_bytes = mul(bank_count, u64::from(region.output_width))?;
         let mut matrix_owners: [Option<MatrixOwner>; MAX_MATRICES] = std::array::from_fn(|_| None);
@@ -388,11 +402,16 @@ impl State {
                         (u64::from(region.input_width) + u64::from(region.output_width))
                             .checked_mul(16)?,
                     )?
-                    .checked_add(read_work)?,
+                    .checked_add(read_work)?
+                    .checked_add(nested.compute)?,
             )?;
-            let commit_cloned = input_bytes.checked_add(
-                output_bytes.checked_mul(if region.rectangle.is_some() { 8 } else { 1 })?,
-            )?;
+            let commit_cloned = input_bytes
+                .checked_add(output_bytes.checked_mul(if region.rectangle.is_some() {
+                    8
+                } else {
+                    1
+                })?)?
+                .checked_add(count.checked_mul(nested.cloned)?)?;
             let finish = envelope.checked_mul(16)?.checked_add(256)?;
             let allocation = output_bytes
                 .checked_mul(16)?
@@ -404,7 +423,8 @@ impl State {
                 .checked_mul(1024)?
                 .checked_add((region.body.len() as u64).checked_mul(128)?)?
                 .checked_add(4096)?
-                .checked_add(if region.reduction.is_some() { 1024 } else { 0 })?;
+                .checked_add(if region.reduction.is_some() { 1024 } else { 0 })?
+                .checked_add(nested.native_step)?;
             let preflight = count.checked_mul(per_element)?.checked_add(8192)?;
             let setup = source_bytes
                 .checked_mul(64)?
@@ -435,14 +455,16 @@ impl State {
                 .checked_add(output_bytes)?
                 .checked_add(envelope)?
                 .checked_add(rectangle.temporary)?
-                .checked_add(reduction.temporary)?;
+                .checked_add(reduction.temporary)?
+                .checked_add(nested.temporary)?;
             let nodes = prior
                 .retained_nodes
                 .checked_add(source_nodes)?
                 .checked_add(retained)?
                 .checked_add(8)?
                 .checked_add(rectangle.nodes)?
-                .checked_add(reduction.nodes)?;
+                .checked_add(reduction.nodes)?
+                .checked_add(nested.nodes)?;
             let output_bound = builder
                 .values
                 .output_bytes(
@@ -508,17 +530,24 @@ impl State {
         if !fits(read_output_bytes, limits.max_output_bytes)
             || scalar_read_temporary.is_none_or(|v| !fits(v, limits.max_temporary_bytes))
             || scalar_read_nodes.is_none_or(|v| !fits(v, limits.max_retained_nodes))
-            || !fits(count.max(reduction.elements), limits.max_output_elements)
+            || !fits(
+                count.max(reduction.elements).max(nested.elements),
+                limits.max_output_elements,
+            )
             || !fits(compute, limits.max_compute_work)
             || !fits(cloned, limits.max_cloned_bytes)
             || rectangle
                 .comparison
                 .checked_add(reduction.comparison)
+                .and_then(|n| n.checked_add(nested_comparison))
                 .is_none_or(|n| !fits(n, limits.max_comparison_work))
             || !fits(temporary, limits.max_temporary_bytes)
             || !fits(nodes, limits.max_retained_nodes)
             || !fits(
-                output_bound.max(rectangle.output).max(reduction.output),
+                output_bound
+                    .max(rectangle.output)
+                    .max(reduction.output)
+                    .max(nested.output),
                 limits.max_output_bytes,
             )
         {
@@ -531,7 +560,11 @@ impl State {
             .library()
             .unscoped_remaining()
             .is_none_or(|(remaining, comparison)| {
-                remaining < admission || comparison < reduction.comparison
+                remaining < admission
+                    || nested_comparison
+                        .checked_mul(2)
+                        .and_then(|n| n.checked_add(reduction.comparison))
+                        .is_none_or(|need| comparison < need)
             })
         {
             return Ok(None);
@@ -545,7 +578,10 @@ impl State {
         }
         let physical = add(
             add(add(output_bytes, metadata_bytes)?, envelope)?,
-            add(rectangle.temporary, reduction.temporary)?,
+            add(
+                add(rectangle.temporary, reduction.temporary)?,
+                nested.temporary,
+            )?,
         )?;
         match memory.reserve_capacity(physical) {
             Ok(probe) => drop(probe),
@@ -743,6 +779,24 @@ impl State {
             loan.commit_cloned,
             loan.commit_compute,
         )?;
+        let metadata = ctx.descriptor().metadata();
+        let region = metadata
+            .numeric_maps
+            .at_header(site)
+            .ok_or_else(|| invalid("nested map lost source"))?;
+        let nested = metadata
+            .nested_numeric
+            .at(region)
+            .ok_or_else(|| invalid("nested map lost source funds"))?;
+        let comparison = mul(loan.expected.count, nested.comparison)?;
+        if comparison != 0 {
+            ctx.library().charge(0, comparison).map_err(|error| {
+                crate::native_artifact::NativeExecutionError::LibraryWork {
+                    phase: Phase::Completion,
+                    error,
+                }
+            })?;
+        }
         if loan.reduction {
             if self.native_reduction.is_some() || loan.expected.output_count != 0 {
                 return Err(invalid("duplicate or materialized numeric reduction"));
