@@ -1653,3 +1653,17 @@ The earlier callback-composition probe was effectively flat and its code was ful
 No compiler source changed after freeze. The strict holdout goal remains open unless its score is below 1.0x C.
 Final >5% raw runtime regressions vs round18: optimization atax (+8.62%), optimization bicg (+5.12%), optimization covariance (+8.94%).
 Fixed all15 follow-up: 1.010864x; 0 >5% regressions. All initial flags remain.
+
+Round 20: complete vector maps inside checked native phases
+Source 9f6ed6c5e789f363a5194b604f95db4ad4fe6ad8; IR379/work148/ABI42; executable a108da7bcf12caf550cc0ff5bcd402e5fba7c2bbae00020141b834d530c0586c.
+A separate checked MatrixMap summary composes full fixed scalar vector comprehensions and optional transpose with existing numeric phases. Destination identity/current versions and exclusive private ownership are proved. Reused map DAG emission writes admitted stack scratch before a typed commit. Existing reductions, cold source paths and complete finite construction prices remain.
+
+Equal-weight geometric means of median kernel runtimes (lower Mech/C is better):
+optimization: 33.211571x C; 23.561205x faster than recorded start; 23.103262x faster than paired original; summed medians 0.005186502s; raw Mech speedup vs round19 1.211509x; C runtime multiplier 0.970542x.
+holdout: 86.621162x C; 23.874005x faster than recorded start; 23.505592x faster than paired original; summed medians 0.023762666s; raw Mech speedup vs round19 1.014212x; C runtime multiplier 0.959359x.
+
+Optimization-only seven-sample round19 replay: 1.209682x speedup; no >5% regressions. Source and binary then frozen before both final sets.
+Correctness: 530 unique selected checks; runtime-only and codegen feature builds. The broad numeric run had one obsolete host-transpose route assertion; its corrected test and all eleven map checks passed with complete C comparisons. Original failure retained in qualification evidence.
+All 900 balanced finite observations, 29482 warm-up live-outs per artifact and twenty-one history entries remain. Five optimization-only profiles retain 3548 canonical execution samples and cover 81.544208% of training summed medians.
+Final >5% raw runtime regressions vs round19: none.
+Full vector maps require an already private destination with an existing scalar write producer. Rectangles/nested maps, dynamic counts and first-map bank construction remain compiler gaps. No ports or compiler source changed after freeze. The strict holdout goal remains open unless below 1.0x C.
