@@ -1,4 +1,4 @@
-//! Optional cache headroom for two maintained shallow publication families.
+//! Optional cache headroom for maintained shallow publication families.
 //!
 //! These are upper bounds for deciding whether optional metadata may coexist
 //! with the current call. They are never measured facts, kernel permits, or
@@ -11,6 +11,9 @@ use mech_core::{
     CurrentMemoryFootprint, IntegerWidth, ManagedMemoryBudget, Schema, SchemaBody, SchemaTable,
     Value, ValueData, ValueDataDraft, snapshot::SequenceView,
 };
+
+#[path = "native_collection_numeric_headroom.rs"]
+mod numeric;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct CurrentCallBound {
@@ -34,6 +37,9 @@ fn scalar_u64(schema: &Schema) -> bool {
 /// A supported family whose current proof fails must instead decline/evict
 /// optional metadata, retaining the ordinary call's own rejection order.
 pub(super) fn supports_template(template: &NativeProgramLibraryTemplate) -> bool {
+    if numeric::supports(template) {
+        return true;
+    }
     match (template.primitive(), template.inputs()) {
         (Primitive::SequenceLength, [source]) => {
             string_matrix(source) && scalar_u64(template.output())
@@ -67,6 +73,9 @@ pub(super) fn current_call_bound(
     output: &Option<Value>,
     memory: &ManagedMemoryBudget,
 ) -> Option<CurrentCallBound> {
+    if numeric::supports(template) {
+        return numeric::current(template, schemas, inputs, output, memory);
+    }
     if !supports_template(template) || inputs.len() != template.inputs().len() {
         return None;
     }
