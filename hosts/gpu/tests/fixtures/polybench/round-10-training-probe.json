@@ -1,0 +1,678 @@
+{
+  "schema": "mech.polybench.training-probe.v1",
+  "scope": "All fifteen optimization programs only; no holdout timing. This is not a frozen aggregate qualification.",
+  "compiler_commit": "b08f2ff9cf543fd63e10e0b2c6c05970b13dd9b9",
+  "compiler_fingerprint": "5ea18a31b17e87fc5e24625d7a0bc30352525a5da9861f26837b5a0b173bb75d",
+  "sequential": true,
+  "samples_per_actor": 7,
+  "reference_compiler_commit": "24135d2a5aef38c56ebc651d91d8a851b0442fde",
+  "cases": {
+    "2mm": {
+      "source_sha256": "7ba60323744d94a886cbf88a6925c4a7d298a451bf62c405eede86fcecd7b5b6",
+      "actors": {
+        "round-09": {
+          "driver_sha256": "a3140a67f1ae579a5886a3b95727a09d2c328c442289e8cc76e035ca870eb0f0",
+          "samples_seconds": [
+            0.000141333,
+            0.000132083,
+            0.000126584,
+            0.000126083,
+            0.000165,
+            0.000144625,
+            0.00014225
+          ],
+          "median_seconds": 0.000141333,
+          "warmup_validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 52915806, comparison_work: 0, visits: 8, transport_bytes: 1528, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        },
+        "prefix-phase": {
+          "driver_sha256": "60810bf8be6643d9a50d92e5606c194f4e834a5e661f29ab14c7019670539ea2",
+          "samples_seconds": [
+            0.000152334,
+            0.00013625,
+            0.0001305,
+            0.0001295,
+            0.000128459,
+            0.000128041,
+            0.000128125
+          ],
+          "median_seconds": 0.0001295,
+          "warmup_validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 52915806, comparison_work: 0, visits: 8, transport_bytes: 1528, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        }
+      },
+      "speedup": 1.0913745173745173
+    },
+    "3mm": {
+      "source_sha256": "8b044fe251822fd8b585b1accfe084d4c322af5abd48601aa04b578994418646",
+      "actors": {
+        "prefix-phase": {
+          "driver_sha256": "60810bf8be6643d9a50d92e5606c194f4e834a5e661f29ab14c7019670539ea2",
+          "samples_seconds": [
+            8.7542e-05,
+            7.5e-05,
+            7.0042e-05,
+            6.925e-05,
+            6.9833e-05,
+            6.85e-05,
+            6.8208e-05
+          ],
+          "median_seconds": 6.9833e-05,
+          "warmup_validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 32436726, comparison_work: 0, visits: 6, transport_bytes: 1096, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        },
+        "round-09": {
+          "driver_sha256": "a3140a67f1ae579a5886a3b95727a09d2c328c442289e8cc76e035ca870eb0f0",
+          "samples_seconds": [
+            9.2875e-05,
+            7.7208e-05,
+            7.05e-05,
+            7e-05,
+            7.3708e-05,
+            7.0792e-05,
+            6.9375e-05
+          ],
+          "median_seconds": 7.0792e-05,
+          "warmup_validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 32436726, comparison_work: 0, visits: 6, transport_bytes: 1096, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        }
+      },
+      "speedup": 1.0137327624475534
+    },
+    "atax": {
+      "source_sha256": "509a9938a750b830994e8d5f4846c247e6eead3471a395038fa435b012c7cfb9",
+      "actors": {
+        "round-09": {
+          "driver_sha256": "a3140a67f1ae579a5886a3b95727a09d2c328c442289e8cc76e035ca870eb0f0",
+          "samples_seconds": [
+            9.7042e-05,
+            7.7208e-05,
+            7.4792e-05,
+            7.3666e-05,
+            7.3042e-05,
+            7.3708e-05,
+            7.3209e-05
+          ],
+          "median_seconds": 7.3708e-05,
+          "warmup_validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 30518694, comparison_work: 12785, visits: 6, transport_bytes: 920, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        },
+        "prefix-phase": {
+          "driver_sha256": "60810bf8be6643d9a50d92e5606c194f4e834a5e661f29ab14c7019670539ea2",
+          "samples_seconds": [
+            0.00010925,
+            8.6333e-05,
+            7.6833e-05,
+            7.5417e-05,
+            7.5292e-05,
+            7.4542e-05,
+            7.4291e-05
+          ],
+          "median_seconds": 7.5417e-05,
+          "warmup_validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 30518694, comparison_work: 12785, visits: 6, transport_bytes: 920, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        }
+      },
+      "speedup": 0.9773393266770093
+    },
+    "bicg": {
+      "source_sha256": "ad80eb32865012a68fd64dc0a32cf16139b20c882b4d9a165aacda59666f2084",
+      "actors": {
+        "prefix-phase": {
+          "driver_sha256": "60810bf8be6643d9a50d92e5606c194f4e834a5e661f29ab14c7019670539ea2",
+          "samples_seconds": [
+            0.000127334,
+            0.000107708,
+            0.0001055,
+            0.000106458,
+            0.000106542,
+            0.000100958,
+            0.000101375
+          ],
+          "median_seconds": 0.000106458,
+          "warmup_validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 42120840, comparison_work: 12785, visits: 7, transport_bytes: 1136, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        },
+        "round-09": {
+          "driver_sha256": "a3140a67f1ae579a5886a3b95727a09d2c328c442289e8cc76e035ca870eb0f0",
+          "samples_seconds": [
+            0.000135583,
+            0.000107041,
+            0.00010225,
+            0.000100792,
+            9.9833e-05,
+            0.000105125,
+            0.000101209
+          ],
+          "median_seconds": 0.00010225,
+          "warmup_validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 42120840, comparison_work: 12785, visits: 7, transport_bytes: 1136, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        }
+      },
+      "speedup": 0.9604726746698229
+    },
+    "cholesky": {
+      "source_sha256": "5c11d488f791bfd3da69a37b9dfc3ff4eec4d7fd64b54d5f823adf9b9ac452fa",
+      "actors": {
+        "round-09": {
+          "driver_sha256": "a3140a67f1ae579a5886a3b95727a09d2c328c442289e8cc76e035ca870eb0f0",
+          "samples_seconds": [
+            0.007777541,
+            0.007699,
+            0.007738334,
+            0.00769325,
+            0.007648209,
+            0.007650709,
+            0.007597458
+          ],
+          "median_seconds": 0.00769325,
+          "warmup_validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 43979337780, comparison_work: 2422, visits: 16365, transport_bytes: 13520, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        },
+        "prefix-phase": {
+          "driver_sha256": "60810bf8be6643d9a50d92e5606c194f4e834a5e661f29ab14c7019670539ea2",
+          "samples_seconds": [
+            0.007891083,
+            0.00788,
+            0.007856291,
+            0.007814667,
+            0.00780325,
+            0.007770416,
+            0.007761417
+          ],
+          "median_seconds": 0.007814667,
+          "warmup_validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 43979337780, comparison_work: 2422, visits: 16365, transport_bytes: 13520, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        }
+      },
+      "speedup": 0.984462933609327
+    },
+    "correlation": {
+      "source_sha256": "17eab510250df6dc8ba959f8c83bb2bdd96d11dd1042aeb1100a960b85026515",
+      "actors": {
+        "prefix-phase": {
+          "driver_sha256": "60810bf8be6643d9a50d92e5606c194f4e834a5e661f29ab14c7019670539ea2",
+          "samples_seconds": [
+            0.000520833,
+            0.000494625,
+            0.000488375,
+            0.0004845,
+            0.000484875,
+            0.000483666,
+            0.000483625
+          ],
+          "median_seconds": 0.000484875,
+          "warmup_validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 419207843, comparison_work: 13709, visits: 392, transport_bytes: 8256, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        },
+        "round-09": {
+          "driver_sha256": "a3140a67f1ae579a5886a3b95727a09d2c328c442289e8cc76e035ca870eb0f0",
+          "samples_seconds": [
+            0.00050725,
+            0.000491458,
+            0.000489625,
+            0.000483708,
+            0.000482041,
+            0.000482083,
+            0.000481334
+          ],
+          "median_seconds": 0.000483708,
+          "warmup_validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 419207843, comparison_work: 13709, visits: 392, transport_bytes: 8256, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        }
+      },
+      "speedup": 0.9975931941221965
+    },
+    "covariance": {
+      "source_sha256": "354aeb3e176cd327c8660206ca163bbc6e87fcbfaae4ddbd195c5aa4455c3f87",
+      "actors": {
+        "round-09": {
+          "driver_sha256": "a3140a67f1ae579a5886a3b95727a09d2c328c442289e8cc76e035ca870eb0f0",
+          "samples_seconds": [
+            0.000208958,
+            0.000192292,
+            0.000188125,
+            0.000187417,
+            0.000186541,
+            0.000185792,
+            0.000185917
+          ],
+          "median_seconds": 0.000187417,
+          "warmup_validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 59516943, comparison_work: 7185, visits: 10, transport_bytes: 1464, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        },
+        "prefix-phase": {
+          "driver_sha256": "60810bf8be6643d9a50d92e5606c194f4e834a5e661f29ab14c7019670539ea2",
+          "samples_seconds": [
+            0.000208,
+            0.000198458,
+            0.000188333,
+            0.000187375,
+            0.000186833,
+            0.000186208,
+            0.000185959
+          ],
+          "median_seconds": 0.000187375,
+          "warmup_validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 59516943, comparison_work: 7185, visits: 10, transport_bytes: 1464, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        }
+      },
+      "speedup": 1.0002241494329553
+    },
+    "deriche": {
+      "source_sha256": "73dd0bbdc2048cb3dea73a499f9e6557b4ab2b0eff988da2ad6cea344e7daf6c",
+      "actors": {
+        "prefix-phase": {
+          "driver_sha256": "60810bf8be6643d9a50d92e5606c194f4e834a5e661f29ab14c7019670539ea2",
+          "samples_seconds": [
+            0.004844375,
+            0.004797958,
+            0.004813083,
+            0.004797958,
+            0.004785958,
+            0.004781666,
+            0.004756792
+          ],
+          "median_seconds": 0.004797958,
+          "warmup_validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 21266683107, comparison_work: 411144, visits: 9760, transport_bytes: 47216, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        },
+        "round-09": {
+          "driver_sha256": "a3140a67f1ae579a5886a3b95727a09d2c328c442289e8cc76e035ca870eb0f0",
+          "samples_seconds": [
+            0.004767625,
+            0.0047485,
+            0.00473225,
+            0.004703792,
+            0.004697667,
+            0.004696291,
+            0.004695292
+          ],
+          "median_seconds": 0.004703792,
+          "warmup_validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 21266683107, comparison_work: 411144, visits: 9760, transport_bytes: 47216, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        }
+      },
+      "speedup": 0.9803737339926695
+    },
+    "doitgen": {
+      "source_sha256": "fdcdb96925e013d913ed4ed88043636116c13e225d4124d0a0495dec97e81f37",
+      "actors": {
+        "round-09": {
+          "driver_sha256": "a3140a67f1ae579a5886a3b95727a09d2c328c442289e8cc76e035ca870eb0f0",
+          "samples_seconds": [
+            5.1625e-05,
+            3.5e-05,
+            3.3792e-05,
+            3.1875e-05,
+            2.9125e-05,
+            3.2042e-05,
+            2.8083e-05
+          ],
+          "median_seconds": 3.2042e-05,
+          "warmup_validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 10960690, comparison_work: 0, visits: 4, transport_bytes: 664, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        },
+        "prefix-phase": {
+          "driver_sha256": "60810bf8be6643d9a50d92e5606c194f4e834a5e661f29ab14c7019670539ea2",
+          "samples_seconds": [
+            4.9208e-05,
+            3.5125e-05,
+            3.3875e-05,
+            3.0958e-05,
+            2.7667e-05,
+            2.7916e-05,
+            2.775e-05
+          ],
+          "median_seconds": 3.0958e-05,
+          "warmup_validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 10960690, comparison_work: 0, visits: 4, transport_bytes: 664, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        }
+      },
+      "speedup": 1.0350151818592934
+    },
+    "durbin": {
+      "source_sha256": "62da21e96d894e89a7f94f39d14795e70413a86053487aa7cb2e2c35fa4edf77",
+      "actors": {
+        "prefix-phase": {
+          "driver_sha256": "60810bf8be6643d9a50d92e5606c194f4e834a5e661f29ab14c7019670539ea2",
+          "samples_seconds": [
+            0.001093833,
+            0.001065375,
+            0.001045458,
+            0.001065958,
+            0.001077542,
+            0.001063917,
+            0.001061333
+          ],
+          "median_seconds": 0.001065375,
+          "warmup_validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 2202020662, comparison_work: 12559, visits: 1422, transport_bytes: 12928, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        },
+        "round-09": {
+          "driver_sha256": "a3140a67f1ae579a5886a3b95727a09d2c328c442289e8cc76e035ca870eb0f0",
+          "samples_seconds": [
+            0.001119542,
+            0.001085917,
+            0.001065708,
+            0.00105325,
+            0.00107,
+            0.001064458,
+            0.001060291
+          ],
+          "median_seconds": 0.001065708,
+          "warmup_validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 2202020662, comparison_work: 12559, visits: 1422, transport_bytes: 12928, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        }
+      },
+      "speedup": 1.0003125659978882
+    },
+    "gemm": {
+      "source_sha256": "3f738611433fdade00258c76485f6c63634268fc95bf4f9e74b9a685ad178111",
+      "actors": {
+        "round-09": {
+          "driver_sha256": "a3140a67f1ae579a5886a3b95727a09d2c328c442289e8cc76e035ca870eb0f0",
+          "samples_seconds": [
+            0.000136875,
+            0.000131667,
+            0.00012325,
+            0.00012175,
+            0.000124125,
+            0.000122666,
+            0.000121583
+          ],
+          "median_seconds": 0.00012325,
+          "warmup_validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 42275816, comparison_work: 0, visits: 7, transport_bytes: 1312, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        },
+        "prefix-phase": {
+          "driver_sha256": "60810bf8be6643d9a50d92e5606c194f4e834a5e661f29ab14c7019670539ea2",
+          "samples_seconds": [
+            0.0001395,
+            0.000125166,
+            0.000123,
+            0.000122667,
+            0.000124583,
+            0.000122583,
+            0.000121333
+          ],
+          "median_seconds": 0.000123,
+          "warmup_validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 42275816, comparison_work: 0, visits: 7, transport_bytes: 1312, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        }
+      },
+      "speedup": 1.0020325203252032
+    },
+    "gramschmidt": {
+      "source_sha256": "9d49c8c808089de3b4dc0c47f66619952fffe8691afd865cda8871fb21e16bfd",
+      "actors": {
+        "prefix-phase": {
+          "driver_sha256": "60810bf8be6643d9a50d92e5606c194f4e834a5e661f29ab14c7019670539ea2",
+          "samples_seconds": [
+            0.004466667,
+            0.004423667,
+            0.004420208,
+            0.004385208,
+            0.004386833,
+            0.004382542,
+            0.004391542
+          ],
+          "median_seconds": 0.004391542,
+          "warmup_validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 58128242741, comparison_work: 4860, visits: 11593, transport_bytes: 29320, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        },
+        "round-09": {
+          "driver_sha256": "a3140a67f1ae579a5886a3b95727a09d2c328c442289e8cc76e035ca870eb0f0",
+          "samples_seconds": [
+            0.004396667,
+            0.00435375,
+            0.004347083,
+            0.004345625,
+            0.004334333,
+            0.004317292,
+            0.004320875
+          ],
+          "median_seconds": 0.004345625,
+          "warmup_validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 58128242741, comparison_work: 4860, visits: 11593, transport_bytes: 29320, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        }
+      },
+      "speedup": 0.9895442193197742
+    },
+    "mvt": {
+      "source_sha256": "dcdbc81b044cf721648a6527ed9f6c6c5d99304f9d65fca4b7590e615a2f1f83",
+      "actors": {
+        "round-09": {
+          "driver_sha256": "a3140a67f1ae579a5886a3b95727a09d2c328c442289e8cc76e035ca870eb0f0",
+          "samples_seconds": [
+            0.000165458,
+            0.000149417,
+            0.000143542,
+            0.000141583,
+            0.000141,
+            0.000143667,
+            0.000140417
+          ],
+          "median_seconds": 0.000143542,
+          "warmup_validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 63510256, comparison_work: 12817, visits: 9, transport_bytes: 1568, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        },
+        "prefix-phase": {
+          "driver_sha256": "60810bf8be6643d9a50d92e5606c194f4e834a5e661f29ab14c7019670539ea2",
+          "samples_seconds": [
+            0.000162083,
+            0.000145625,
+            0.000141417,
+            0.000144166,
+            0.000141583,
+            0.000140125,
+            0.000139208
+          ],
+          "median_seconds": 0.000141583,
+          "warmup_validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 63510256, comparison_work: 12817, visits: 9, transport_bytes: 1568, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        }
+      },
+      "speedup": 1.0138364069132593
+    },
+    "nussinov": {
+      "source_sha256": "13e227bd65e4a450fe3a1ac48995911d214c9e070c6eccf3ffde41ac6cb0f6fd",
+      "actors": {
+        "prefix-phase": {
+          "driver_sha256": "60810bf8be6643d9a50d92e5606c194f4e834a5e661f29ab14c7019670539ea2",
+          "samples_seconds": [
+            0.00018475,
+            0.000159542,
+            0.000158875,
+            0.000155709,
+            0.00015575,
+            0.000157541,
+            0.000155792
+          ],
+          "median_seconds": 0.000157541,
+          "warmup_validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 4301681268, comparison_work: 37823, visits: 8, transport_bytes: 17216, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        },
+        "round-09": {
+          "driver_sha256": "a3140a67f1ae579a5886a3b95727a09d2c328c442289e8cc76e035ca870eb0f0",
+          "samples_seconds": [
+            0.011636667,
+            0.011616959,
+            0.011621875,
+            0.011601042,
+            0.0116315,
+            0.011597,
+            0.011616458
+          ],
+          "median_seconds": 0.011616959,
+          "warmup_validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 109827897956, comparison_work: 37614, visits: 123753, transport_bytes: 14496, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        }
+      },
+      "speedup": 73.73927422067906
+    },
+    "seidel-2d": {
+      "source_sha256": "16e7ea753a2825eec81f7068cc49d689ba2aa8db38189927286507fec8d2f93e",
+      "actors": {
+        "round-09": {
+          "driver_sha256": "a3140a67f1ae579a5886a3b95727a09d2c328c442289e8cc76e035ca870eb0f0",
+          "samples_seconds": [
+            0.000327417,
+            0.000294167,
+            0.000288334,
+            0.000286958,
+            0.000286291,
+            0.000285833,
+            0.000284333
+          ],
+          "median_seconds": 0.000286958,
+          "warmup_validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 2364180484, comparison_work: 29662, visits: 26, transport_bytes: 12816, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        },
+        "prefix-phase": {
+          "driver_sha256": "60810bf8be6643d9a50d92e5606c194f4e834a5e661f29ab14c7019670539ea2",
+          "samples_seconds": [
+            0.000327333,
+            0.000291958,
+            0.000286125,
+            0.000285333,
+            0.000285167,
+            0.000283958,
+            0.0002895
+          ],
+          "median_seconds": 0.000286125,
+          "warmup_validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          },
+          "execution_report": "NativeProgramExecutionReport { work: 2364180484, comparison_work: 29662, visits: 26, transport_bytes: 12816, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+        }
+      },
+      "speedup": 1.0029113149847098
+    }
+  },
+  "summary": {
+    "count": 15,
+    "geomean_speedup_from_round_09_replay": 1.335856735759095,
+    "regressions_over_five_percent": 0,
+    "sum_candidate_median_seconds": 0.019862207,
+    "sum_reference_median_seconds": 0.031070333999999998
+  }
+}

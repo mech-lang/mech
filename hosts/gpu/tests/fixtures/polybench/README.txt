@@ -1200,3 +1200,105 @@ external application remain unqualified. General comprehension/reduction
 fusion, managed frame captures and multi-variant phase loans remain compiler
 gaps. This rectangle proof currently requires constant inner U64 endpoints,
 one native scalar body and its sole consuming singleton transpose.
+
+Tenth frozen compiler round (IR369): complete numeric FSM phases
+
+Closed FSMs with exact compatible flat prefixes can retain one numeric loan
+across multiple tags, including direct matrix payload states such as Done(table).
+Every managed field appears in every tag. Exact tag flow guards each payload
+read; existing source provenance and functional-version proofs establish every
+array identity. All selected factories and current views remain checked. The
+same Cranelift word/scalar emitter, finite phase schedule, original disjoint
+owner bank and first-change bridge are reused. Current-tag entry imports only
+active physical scalar homes; private scalar suffixes are zeroed when absent.
+Dirty owners freeze back into entry homes before active payload synchronization,
+inactive cleanup and checked tag publication. No benchmark port was rewritten.
+
+A general source-dataflow profitability rule retains a constant-tag proof when
+it already covers every recurring state. Broader phases may cover additional
+numeric work or recurring scalar transition states. This follows an initial
+optimization-only replay that slowed Seidel despite reducing callbacks; that
+replay and all regressions remain in round-10-initial-training-probe.json.
+No holdout evidence selected this refinement. An all-kind parity test also
+caught an entry-bank pointer/scalar collision during development; the importer
+now reads current physical homes directly, and that test remains.
+
+Eight new native tests plus one Engine projection test cover all seven kinds
+and F64 bits, original/decoded artifacts, Objects and restored images, actual
+whole-phase execution, errors after private changes, nine finite dimensions,
+aliases, distinct atomic old outputs, exact metadata forgery rejection, older
+versions/foreign roots, sticky refusal, cleanup/retry and profitability. The
+existing fixed-variant fallback fixtures keep incompatible prefix orders to
+retain their original coverage. Both exact Huffman equations remain unchanged.
+All195 Engine,322 native numeric/phase,24 matrix,30 PolyBench and102 selected
+Program checks pass (673 total). This is selected coverage, not the full suite.
+The Engine log predates GPU-only profitability refinement; Engine was unchanged.
+
+Source b08f2ff9cf543fd63e10e0b2c6c05970b13dd9b9; work policy138; executable 60810bf8be6643d9a50d92e5606c194f4e834a5e661f29ab14c7019670539ea2.
+Both fixed sets use equal-weight geometric means of median Mech/C kernel
+runtime; lower is better. The primary target remains strict holdout <1.0x C.
+
+frozen compiler                         optimization x      holdout x
+baseline                                      783.258       2020.085
+round-01-native-matrix-frames                 441.860       1610.274
+round-02-native-scalar-matrix-updates         346.025       1529.299
+round-03-native-maps                          318.844       1468.557
+round-04-conditional-maps                     301.197        724.274
+round-05-guarded-tagged-numeric               159.693        814.668
+round-06-numeric-call-cache                   142.999        440.804
+round-07-captured-numeric-phases              123.865        456.181
+round-08-packed-numeric-output                111.804        435.641
+round-09-rectangular-maps                     104.876        278.733
+round10-prefix-fsms                            76.829        269.227
+
+optimization: kernel 76.828717920x C; fresh 46.734406865x C; paired-original speedup 9.723806x; sum medians 0.020363041s.
+
+holdout: kernel 269.226652328x C; fresh 165.669210437x C; paired-original speedup 7.376814x; sum medians 0.163487544s.
+
+all: kernel 143.820508024x C; fresh 87.991205729x C; paired-original speedup 8.469399x; sum medians 0.183850585s.
+
+Inter-round comparisons against frozen round09:
+optimization: Mech 0.769752494x; original 1.007930005x; C 1.050759449x; Mech/C score 0.732567758x.
+holdout: Mech 1.012086162x; original 0.998786045x; C 1.047823736x; Mech/C score 0.965893525x.
+
+Cases more than 5% slower than frozen round09:
+optimization doitgen: 1.062588235x frozen round09 Mech runtime.
+optimization durbin: 1.051079321x frozen round09 Mech runtime.
+
+Cases more than 5% slower than original compiler:
+None.
+
+Final optimization-only seven-sample replay: 1.335857x geometric speedup versus round09. This is neither a C nor a holdout score.
+nussinov: 73.739274x training replay speedup.
+
+Key replay counters (conservative budget charges, not CPU time):
+nussinov prefix-phase: work 4301681268; comparison work 37823; visits 8.
+nussinov round-09: work 109827897956; comparison work 37614; visits 123753.
+seidel-2d round-09: work 2364180484; comparison work 29662; visits 26.
+seidel-2d prefix-phase: work 2364180484; comparison work 29662; visits 26.
+doitgen round-09: work 10960690; comparison work 0; visits 4.
+doitgen prefix-phase: work 10960690; comparison work 0; visits 4.
+
+All900 balanced observations validate complete finite untimed warm-ups; timed checked calls must succeed. Timed outputs are not independently flattened. All cases, raw samples and regressions remain. Five largest optimization cases cover 92.361% of summed medians and provide 9,702 canonical-execution samples; sampling follows aggregate timing and excludes parsing/JIT/import/serialization stacks.
+Canonical library calls: 49.567% of weighted profiled execution.
+Other helper dispatch: 12.916% of weighted profiled execution.
+Comprehension collection bookkeeping: 10.795% of weighted profiled execution.
+Source visits and admission: 8.641% of weighted profiled execution.
+Private frame transport: 7.331% of weighted profiled execution.
+Other execution and generated code: 3.559% of weighted profiled execution.
+Selected matrix updates: 2.050% of weighted profiled execution.
+Typed matrix scalar reads: 1.965% of weighted profiled execution.
+Loop-local retirement: 1.758% of weighted profiled execution.
+Other selected library dispatch: 1.417% of weighted profiled execution.
+
+No compiler source changed after freeze. Earlier holdout exposure remains
+recorded; this is not a blind experiment, and no holdout was profiled. Scope is
+CPU MINI F64 plus selected tests. Nested tagged payloads, absent managed fields,
+partial union phases, other result recipes, reduction/comprehension fusion,
+managed captures, larger datasets and GPU/SIMD selection remain future work.
+
+Round10 interpretation: optimization Mech runtime improves1.299x geometrically.
+Holdout Mech runtime is1.012086x its prior value (about1.2% slower); the preserved
+original is0.998786x. C measured1.047824x slower, lowering the normalized holdout
+score. This round has not demonstrated a holdout runtime improvement. The
+strict below1.0x C goal remains open.
