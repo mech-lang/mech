@@ -1404,3 +1404,104 @@ No compiler source changed after freeze. All previous receipts remain. The
 exposed fixed split is not a blind experiment; no holdout was profiled. Scope
 remains CPU MINI F64 plus selected tests. Larger datasets, GPU/SIMD selection,
 full compression application/AOT and a fresh external application are unqualified.
+
+Twelfth frozen compiler round (IR371): direct transposed scalar maps
+
+A scalar row comprehension with one transpose consumer can publish its existing
+typed bank directly in the selected column shape. All seven native scalar kinds
+keep their exact bits, including F64 NaN payloads, infinities and signed zero.
+Empty source geometry remains 0x1 after transpose. The same Cranelift map DAG,
+word producer or ordinary checked producer supplies cells. No benchmark port
+changed. Exact selected factories, producer/target shapes and both original
+logical constructor/call limits remain authoritative.
+
+A separately funded finish helper admits complete original work, comparison,
+cloned, output, temporary/node and physical coexistence bounds plus original
+finish/call replay credit. It then uses the normal Core typed constructor once.
+The tracked result stays private across exact continuation admission/retirement
+and publishes after the original transpose visit, so repeated loop generations
+cannot retire a prematurely installed owner. The shared post-action join keeps
+normal downstream managed transport and source control. Unsupported escaping
+rows, shaped blocks, other scalar families or scalar groups retain their route.
+
+All 195 Engine, 334 native numeric/phase, 24 matrix, 30 PolyBench, 102 selected
+Program and one explicit helper-protocol checks pass (686 selected checks).
+Six new tests cover original/decoded/Object/restored images, all kinds/bits,
+empty/2D inputs, real activation checkpoints, word/native producers, nine finite dimensions, distinct atomic
+prior outputs, aliases, nested iterations, inactive/partial bad reads, malformed
+helpers/loans, table-proof forgery, ordinary routes, cleanup and retry. Actual
+Deriche, Gram-Schmidt and Durbin source checks require the new publication path.
+Both exact Huffman work equations remain unchanged under policy140.
+
+Source b7a3610472f83f4ccda82d193235f71bf167bb97; policy140; executable 2d51ba37ab564b1863e60f808692ffd9257bcdf80bc0bd49da3481fecbf60846.
+Both fixed 15-program sets use equal-weight geometric means of median Mech/C
+kernel runtime; lower is better. The holdout target is strict <1.0x C.
+
+frozen compiler                         optimization x      holdout x
+baseline                                      783.258       2020.085
+round-01-native-matrix-frames                 441.860       1610.274
+round-02-native-scalar-matrix-updates         346.025       1529.299
+round-03-native-maps                          318.844       1468.557
+round-04-conditional-maps                     301.197        724.274
+round-05-guarded-tagged-numeric               159.693        814.668
+round-06-numeric-call-cache                   142.999        440.804
+round-07-captured-numeric-phases              123.865        456.181
+round-08-packed-numeric-output                111.804        435.641
+round-09-rectangular-maps                     104.876        278.733
+round10-prefix-fsms                            76.829        269.227
+round11-map-reductions                         69.994        241.699
+round12-map-transposes                         64.359        214.241
+
+optimization: kernel 64.359122131x C; fresh 38.917585879x C; paired-original speedup 12.089934x; sum medians 0.011976041s.
+
+holdout: kernel 214.241267758x C; fresh 123.277372626x C; paired-original speedup 9.655118x; sum medians 0.144621125s.
+
+all: kernel 117.423932472x C; fresh 69.265126406x C; paired-original speedup 10.804154x; sum medians 0.156597166s.
+
+Inter-round comparisons against frozen round11:
+optimization: Mech 0.921729047x; original 0.984629664x; C 1.002427640x; Mech/C score 0.919496840x.
+holdout: Mech 0.866572563x; original 0.998896867x; C 0.977635080x; Mech/C score 0.886396756x.
+These are separate frozen measurements; reference movements remain visible.
+The cause of individual timing shifts is not established. Every observation,
+case, prior receipt and measured regression remains.
+
+Cases more than 5% slower than frozen round11:
+None.
+
+Cases more than 5% slower than original compiler:
+None.
+
+Optimization-only seven-sample replay: 1.071889x geometric speedup versus round11. This is neither a C nor a holdout score.
+correlation: 1.201191x training replay speedup.
+deriche: 1.470511x training replay speedup.
+durbin: 1.565900x training replay speedup.
+The candidate was selected and frozen before any holdout timing. Complete
+conservative bounds can increase work units while elapsed time falls; finite
+caps that cannot admit them retain ordinary execution.
+
+Key counters (budget charges, not CPU time):
+deriche map-transpose: work 1167942385891; comparison work 64233632264; visits 9760.
+deriche round-11: work 21266945251; comparison work 411144; visits 9760.
+gramschmidt map-transpose: work 2333576279265; comparison work 4723210230; visits 11593.
+gramschmidt round-11: work 2266403799207; comparison work 960181500; visits 11593.
+durbin map-transpose: work 275253174808; comparison work 4970900767; visits 1422.
+durbin round-11: work 187956553291; comparison work 80962831; visits 1422.
+cholesky round-11: work 3765218215204; comparison work 1618691702; visits 16365.
+cholesky map-transpose: work 3765218215204; comparison work 1618691702; visits 16365.
+
+All 900 balanced observations validate complete finite untimed warm-ups; timed checked calls must succeed. Timed outputs are not independently flattened. The five largest optimization cases cover 87.721% of summed medians and provide 7,380 canonical-execution samples. Sampling follows aggregate timing; parsing/JIT/import/serialization stacks are excluded.
+Other helper dispatch: 27.158% of weighted profiled execution.
+Canonical library calls: 23.314% of weighted profiled execution.
+Source visits and admission: 13.553% of weighted profiled execution.
+Comprehension collection bookkeeping: 11.266% of weighted profiled execution.
+Private frame transport: 10.057% of weighted profiled execution.
+Other execution and generated code: 7.440% of weighted profiled execution.
+Selected matrix updates: 3.093% of weighted profiled execution.
+Other selected library dispatch: 1.611% of weighted profiled execution.
+Typed matrix scalar reads: 1.375% of weighted profiled execution.
+Loop-local retirement: 1.134% of weighted profiled execution.
+
+No compiler source changed after freeze. The exposed fixed split is not a
+blind experiment, and no holdout was profiled. Scope remains CPU MINI F64 plus
+selected tests; broader datasets, GPU/SIMD selection, full compression/AOT and
+a fresh external application remain unqualified.
