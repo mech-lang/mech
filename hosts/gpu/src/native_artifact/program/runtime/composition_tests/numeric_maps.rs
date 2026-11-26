@@ -9,21 +9,21 @@ use std::{
     ffi::c_void,
 };
 #[derive(Clone, Copy, Default)]
-struct Flags {
-    ordinary: bool,
-    numeric_only: bool,
-    corrupt: u8,
-    interleave: bool,
+pub(super) struct Flags {
+    pub(super) ordinary: bool,
+    pub(super) numeric_only: bool,
+    pub(super) corrupt: u8,
+    pub(super) interleave: bool,
 }
 #[derive(Default, Debug)]
-struct Counts {
-    selected: u64,
-    complete: u64,
-    word_selected: u64,
-    word_complete: u64,
-    interleaved_refused: u64,
-    elements: BTreeMap<u64, u64>,
-    helpers: BTreeMap<(u64, u64), u64>,
+pub(super) struct Counts {
+    pub(super) selected: u64,
+    pub(super) complete: u64,
+    pub(super) word_selected: u64,
+    pub(super) word_complete: u64,
+    pub(super) interleaved_refused: u64,
+    pub(super) elements: BTreeMap<u64, u64>,
+    pub(super) helpers: BTreeMap<(u64, u64), u64>,
 }
 thread_local! {
     static ORIGINAL:Cell<Option<Helper>>=const{Cell::new(None)};
@@ -91,6 +91,10 @@ unsafe extern "C" fn helper(
                 15 => frame.matrices[0].columns += 1,
                 _ => unreachable!(),
             }
+        }
+        if flags.corrupt == 17 {
+            let frame = unsafe { &mut *(a as *mut NativeNumericMapFrame) };
+            frame.source_count += 1;
         }
         if flags.corrupt == 16 {
             let invocation = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
@@ -185,7 +189,7 @@ unsafe extern "C" fn helper(
     }
     status
 }
-fn run(
+pub(super) fn run(
     jit: &JitProgramArtifact,
     args: &[Value],
     output: &mut [Option<Value>],
@@ -1204,10 +1208,22 @@ fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveou
                         "qualify actual conditional matrix updates"
                     );
                     assert!(
-                        conditional
-                            .iter()
-                            .all(|region| counts.elements.contains_key(&u64::from(region.header))),
-                        "every eligible conditional training body must actually select"
+                        conditional.iter().all(|region| {
+                            counts.elements.contains_key(&u64::from(region.header))
+                                || jit.descriptor().metadata().numeric_maps.regions.iter().any(
+                                    |parent| {
+                                        parent.rectangle.as_ref().is_some_and(|rectangle| {
+                                            rectangle.inner_iteration == region.iteration
+                                        }) && parent.body == region.body
+                                            && parent.steps == region.steps
+                                            && parent.reads == region.reads
+                                            && counts
+                                                .elements
+                                                .contains_key(&u64::from(parent.header))
+                                    },
+                                )
+                        }),
+                        "every conditional body must execute directly or inside its exact completed native rectangle"
                     );
                 }
 

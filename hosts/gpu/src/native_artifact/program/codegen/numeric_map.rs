@@ -118,6 +118,16 @@ fn emit(
     // bounds miss needs no synthetic source error: ordinary replay owns it.
     let index_miss = b.create_block();
     let count = get(b, frame, offset_of!(Frame, count));
+    let source_count = get(b, frame, offset_of!(Frame, source_count));
+    let inner_count = b.ins().iconst(
+        types::I64,
+        region.rectangle.as_ref().map_or(1, |r| r.rows) as i64,
+    );
+    let (expected, overflow) = b.ins().umul_overflow(source_count, inner_count);
+    let good = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
+    require(b, good, malformed);
+    let good = b.ins().icmp(IntCC::Equal, expected, count);
+    require(b, good, malformed);
     let input = get(b, frame, offset_of!(Frame, input));
     let output = get(b, frame, offset_of!(Frame, output));
     for (field, expected) in [
@@ -139,11 +149,17 @@ fn emit(
     require(b, good, malformed);
     let mut banks = vec![(
         region.output_width,
+        count,
         output,
         offset_of!(Frame, capacity_bytes),
     )];
     if !region.range {
-        banks.push((region.input_width, input, offset_of!(Frame, input_bytes)));
+        banks.push((
+            region.input_width,
+            source_count,
+            input,
+            offset_of!(Frame, input_bytes),
+        ));
     } else {
         let bytes = get(b, frame, offset_of!(Frame, input_bytes));
         let good = b.ins().icmp_imm(IntCC::Equal, bytes, 0);
@@ -151,7 +167,7 @@ fn emit(
         let good = b.ins().icmp_imm(IntCC::Equal, input, 0);
         require(b, good, malformed);
     }
-    for (width, pointer, field) in banks {
+    for (width, count, pointer, field) in banks {
         let good = b.ins().icmp_imm(
             IntCC::UnsignedLessThanOrEqual,
             count,
@@ -203,9 +219,9 @@ fn emit(
     let start = get(b, frame, offset_of!(Frame, range_start));
     if region.range {
         // count==0 has no generated element; otherwise the last value must fit.
-        let last = b.ins().iadd_imm(count, -1);
+        let last = b.ins().iadd_imm(source_count, -1);
         let (_, overflow) = b.ins().uadd_overflow(start, last);
-        let empty = b.ins().icmp_imm(IntCC::Equal, count, 0);
+        let empty = b.ins().icmp_imm(IntCC::Equal, source_count, 0);
         let no_overflow = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
         let good = b.ins().bor(empty, no_overflow);
         require(b, good, malformed);
@@ -220,6 +236,9 @@ fn emit(
         words.insert(id, var);
     }
     words.insert(region.element, b.declare_var(types::I64));
+    if let Some(rectangle) = &region.rectangle {
+        words.insert(rectangle.inner_element, b.declare_var(types::I64));
+    }
     for &site in &region.steps {
         let output = match plan.blocks()[site as usize].action() {
             Action::Scalar(Scalar::Copy { output, .. } | Scalar::Primitive { output, .. })
@@ -249,10 +268,19 @@ fn emit(
     b.ins().brif(more, body, &[], done, &[]);
     b.switch_to_block(body);
     let at = b.use_var(cursor);
-    let word = if region.range {
-        b.ins().iadd(start, at)
+    let source_at = if let Some(rectangle) = &region.rectangle {
+        let rows = b.ins().iconst(types::I64, rectangle.rows as i64);
+        let offset = b.ins().urem(at, rows);
+        let inner = b.ins().iadd_imm(offset, rectangle.start as i64);
+        b.def_var(words[&rectangle.inner_element], inner);
+        b.ins().udiv(at, rows)
     } else {
-        let displacement = b.ins().imul_imm(at, i64::from(region.input_width));
+        at
+    };
+    let word = if region.range {
+        b.ins().iadd(start, source_at)
+    } else {
+        let displacement = b.ins().imul_imm(source_at, i64::from(region.input_width));
         let address = b.ins().iadd(input, displacement);
         super::numeric_words::load_unsigned_word(
             b,
@@ -264,7 +292,11 @@ fn emit(
     };
     b.def_var(words[&region.element], word);
     b.ins().jump(source_blocks[&region.body[0]], &[]);
-    let source_latch = plan.iterations()[region.iteration as usize]
+    let source_latch = plan.iterations()[region
+        .rectangle
+        .as_ref()
+        .map_or(region.iteration, |r| r.inner_iteration)
+        as usize]
         .as_ref()
         .latch();
     for &site in &region.body {

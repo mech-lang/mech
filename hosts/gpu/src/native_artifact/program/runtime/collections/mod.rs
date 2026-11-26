@@ -31,6 +31,7 @@ pub(in crate::native_artifact::program::runtime) fn admitted_capacity<T>(
 }
 mod data;
 pub(in crate::native_artifact) mod numeric_map;
+mod numeric_rectangles;
 mod row_blocks;
 pub(in crate::native_artifact) mod uniform_words;
 pub(in crate::native_artifact::program::runtime) mod utf8_read;

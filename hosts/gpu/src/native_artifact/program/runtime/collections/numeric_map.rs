@@ -25,6 +25,7 @@ pub(in crate::native_artifact) struct Frame {
     pub output: u64,
     pub capacity_bytes: u64,
     pub count: u64,
+    pub source_count: u64,
     pub input_width: u64,
     pub output_width: u64,
     pub epoch: u64,
@@ -101,7 +102,12 @@ impl State {
             .map_err(invalid)?;
         // The body produces only unboxed scalars. A managed retirement recipe
         // needs a separate payload bound and keeps the ordinary route.
-        if !slots.is_empty() {
+        if slots.iter().any(|slot| {
+            region
+                .rectangle
+                .as_ref()
+                .is_none_or(|r| !r.elided_values.contains(&(*slot as u32)))
+        }) {
             return Ok(None);
         }
         let Some(source) = self
@@ -149,8 +155,11 @@ impl State {
                 .checked_add(frozen)?
                 .checked_add(growth)?
                 .checked_add(4096)?;
-            let replay = source
+            let rectangle = super::numeric_rectangles::bound(descriptor, region)?;
+            let traversals = source
                 .count
+                .checked_mul(region.rectangle.as_ref().map_or(1, |r| r.rows))?;
+            let replay = traversals
                 .checked_add(1)?
                 .checked_mul(traversal)?
                 .checked_add(4096)?;
@@ -162,7 +171,9 @@ impl State {
                 .checked_mul(128)?
                 .checked_add(inventory.checked_mul(8192)?)?
                 .checked_add(65536)?;
-            replay.checked_add(probe)
+            replay
+                .checked_add(probe)?
+                .checked_add(source.count.checked_mul(rectangle.replay)?)
         })();
         Ok(credit)
     }
@@ -208,13 +219,17 @@ impl State {
         let metadata = ctx.descriptor().metadata();
         let plan = &metadata.plan;
         let source = self.sources[region.iteration as usize].as_ref().unwrap();
-        let count = source.count;
+        let source_count = source.count;
+        // Empty outer sources execute no inner setup or selected operation.
+        if source_count == 0 && region.rectangle.is_some() {
+            return Ok(None);
+        }
         let memory = ctx.library().memory_budget();
         let (
             owner,
             source_handle,
             input,
-            host_count,
+            _source_host_count,
             range_start,
             mut source_bytes,
             mut source_nodes,
@@ -226,7 +241,9 @@ impl State {
                 let Some((input, host_count)) = source_pointer(owner, kind) else {
                     return Ok(None);
                 };
-                if host_count as u64 != count || !ctx.arena_entry_is_current(region.source)? {
+                if host_count as u64 != source_count
+                    || !ctx.arena_entry_is_current(region.source)?
+                {
                     return Ok(None);
                 }
                 let handle = ctx.arena_current_handle(region.source)?;
@@ -255,15 +272,25 @@ impl State {
                 )
             }
             SourceBacking::U64Range { start } if region.range => {
-                let Ok(host_count) = usize::try_from(count) else {
+                let Ok(host_count) = usize::try_from(source_count) else {
                     return Ok(None);
                 };
-                if count != 0 && start.checked_add(count - 1).is_none() {
+                if source_count != 0 && start.checked_add(source_count - 1).is_none() {
                     return Ok(None);
                 }
                 (None, None, 0, host_count, *start, 0, 0)
             }
             _ => return Ok(None),
+        };
+        let Some(count) = source_count.checked_mul(region.rectangle.as_ref().map_or(1, |r| r.rows))
+        else {
+            return Ok(None);
+        };
+        let Ok(host_count) = usize::try_from(count) else {
+            return Ok(None);
+        };
+        let Some(rectangle) = super::numeric_rectangles::bound(ctx.descriptor(), region) else {
+            return Ok(None);
         };
         let mut matrix_owners: [Option<MatrixOwner>; MAX_MATRICES] = std::array::from_fn(|_| None);
         // A bounded stack inventory retains genuine current immutable owners.
@@ -301,6 +328,15 @@ impl State {
         {
             return Ok(None);
         }
+        if let Some(rectangle) = &region.rectangle {
+            if builder.block_columns != 0
+                || builder
+                    .block_rows
+                    .is_some_and(|rows| rows != rectangle.rows)
+            {
+                return Ok(None);
+            }
+        }
         let output_definition = plan.values()[region.output as usize].definition();
         let output_kind = matrix_kind(output_definition.body())
             .ok_or_else(|| invalid("numeric map output kind disappeared"))?;
@@ -315,7 +351,7 @@ impl State {
             let input_bytes = if region.range {
                 0
             } else {
-                count.checked_mul(u64::from(region.input_width))?
+                source_count.checked_mul(u64::from(region.input_width))?
             };
             let output_bytes = count.checked_mul(u64::from(region.output_width))?;
             if input_bytes > isize::MAX as u64 || output_bytes > isize::MAX as u64 {
@@ -335,7 +371,9 @@ impl State {
                     )?
                     .checked_add(read_work)?,
             )?;
-            let commit_cloned = input_bytes.checked_add(output_bytes)?;
+            let commit_cloned = input_bytes.checked_add(
+                output_bytes.checked_mul(if region.rectangle.is_some() { 8 } else { 1 })?,
+            )?;
             let finish = envelope.checked_mul(16)?.checked_add(256)?;
             let allocation = output_bytes
                 .checked_mul(16)?
@@ -352,7 +390,8 @@ impl State {
                 .checked_mul(64)?
                 .checked_add(metadata.observation_schema_bytes.checked_mul(16)?)?
                 .checked_add(allocation)?
-                .checked_add(2048)?;
+                .checked_add(2048)?
+                .checked_add(rectangle.setup)?;
             let total = setup
                 .checked_add(preflight)?
                 .checked_add(commit_compute)?
@@ -368,12 +407,14 @@ impl State {
                 .checked_add(source_bytes)?
                 .checked_add(metadata_bytes)?
                 .checked_add(output_bytes)?
-                .checked_add(envelope)?;
+                .checked_add(envelope)?
+                .checked_add(rectangle.temporary)?;
             let nodes = prior
                 .retained_nodes
                 .checked_add(source_nodes)?
                 .checked_add(retained)?
-                .checked_add(8)?;
+                .checked_add(8)?
+                .checked_add(rectangle.nodes)?;
             let output_bound = builder
                 .values
                 .output_bytes(
@@ -442,9 +483,10 @@ impl State {
             || !fits(count, limits.max_output_elements)
             || !fits(compute, limits.max_compute_work)
             || !fits(cloned, limits.max_cloned_bytes)
+            || !fits(rectangle.comparison, limits.max_comparison_work)
             || !fits(temporary, limits.max_temporary_bytes)
             || !fits(nodes, limits.max_retained_nodes)
-            || !fits(output_bound, limits.max_output_bytes)
+            || !fits(output_bound.max(rectangle.output), limits.max_output_bytes)
         {
             return Ok(None);
         }
@@ -465,7 +507,10 @@ impl State {
         if admission > remaining {
             return Ok(None);
         }
-        let physical = add(add(output_bytes, metadata_bytes)?, envelope)?;
+        let physical = add(
+            add(add(output_bytes, metadata_bytes)?, envelope)?,
+            rectangle.temporary,
+        )?;
         match memory.reserve_capacity(physical) {
             Ok(probe) => drop(probe),
             Err(mech_core::MemoryRuntimeError::BudgetExceeded { .. }) => return Ok(None),
@@ -479,6 +524,9 @@ impl State {
         // Every metadata/schema walk and full native attempt is paid even if
         // a checked scalar later fails. No failed allocator is cold-retried.
         charge(&mut ctx.work(), setup)?;
+        if !super::numeric_rectangles::validate(ctx, region, &rectangle)? {
+            return Ok(None);
+        }
         if let Some(owner) = &owner {
             owner
                 .validate_against(&metadata.schemas)
@@ -535,6 +583,7 @@ impl State {
             output,
             capacity_bytes: output_bytes,
             count,
+            source_count,
             input_width: u64::from(region.input_width),
             output_width: u64::from(region.output_width),
             epoch,
@@ -610,13 +659,13 @@ impl State {
                 value.shares_frozen_storage(owner)
                     && ctx.arena_get(handle)?.shares_frozen_storage(owner)
                     && source_pointer(owner, kind)
-                        == Some((loan.expected.input, loan.expected.count as usize))
+                        == Some((loan.expected.input, loan.expected.source_count as usize))
             }
             (SourceBacking::U64Range { start }, None, None) => *start == loan.expected.range_start,
             _ => false,
         };
         if !source_current
-            || ctx.progress().get(loan.iteration as usize * 2) != Some(&loan.expected.count)
+            || ctx.progress().get(loan.iteration as usize * 2) != Some(&loan.expected.source_count)
             || ctx.progress().get(loan.iteration as usize * 2 + 1) != Some(&1)
             || source.index_offset != 0
             || source.element.is_some()
@@ -655,6 +704,14 @@ impl State {
         {
             return Err(invalid("numeric map builder changed during loan"));
         }
+        let completed_source_count = loan.expected.source_count;
+        let rectangle_rows = ctx
+            .descriptor()
+            .metadata()
+            .numeric_maps
+            .at_header(site)
+            .and_then(|r| r.rectangle.as_ref())
+            .map(|r| r.rows);
         let Loan {
             values,
             output_reservation,
@@ -664,6 +721,10 @@ impl State {
         builder.values = values;
         builder.reservation = output_reservation;
         builder.payload_bytes = bytes;
+        if let Some(rows) = rectangle_rows {
+            builder.block_rows = Some(rows);
+            builder.block_columns = completed_source_count;
+        }
         self.live_bytes = add(old_live, bytes)?;
         Ok(true)
     }

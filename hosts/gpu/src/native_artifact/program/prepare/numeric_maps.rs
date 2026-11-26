@@ -11,6 +11,10 @@ use mech_engine::native_artifact::{
 };
 use std::collections::{BTreeMap, BTreeSet};
 
+#[path = "numeric_rectangles.rs"]
+mod rectangles;
+pub(in crate::native_artifact) use rectangles::Rectangle;
+
 pub(in crate::native_artifact) const HEADER_WORK: u64 = 32768;
 const MAX_SITES: usize = 16384;
 const MAX_VALUES: usize = 65536;
@@ -38,6 +42,7 @@ pub(in crate::native_artifact) struct MatrixRead {
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields, rename = "mech.native.image.Region")]
 pub(in crate::native_artifact) struct Region {
+    pub rectangle: Option<Rectangle>,
     pub collection: u32,
     pub iteration: u32,
     pub header: u32,
@@ -526,6 +531,7 @@ impl Layout {
             }
             result.headers[generator.header() as usize] = Some(result.regions.len());
             result.regions.push(Region {
+                rectangle: None,
                 collection: id as u32,
                 iteration,
                 header: generator.header(),
@@ -545,6 +551,7 @@ impl Layout {
                 reads,
             });
         }
+        rectangles::extend(plan, &mut result)?;
         Ok(result)
     }
 }

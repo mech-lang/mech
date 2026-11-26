@@ -489,7 +489,10 @@ fn validate_schemas(
         return false;
     };
     match primitive {
-        NativeCollectionPrimitive::MatrixTranspose => is_f64_matrix(first) && is_f64_matrix(output),
+        NativeCollectionPrimitive::MatrixTranspose => matches!((first, output),
+            (SchemaBody::Matrix { element: left, dimensions: a }, SchemaBody::Matrix { element: right, dimensions: b })
+                if a.len() == 2 && b.len() == 2 && left == right
+                    && crate::native_artifact::NativeScalarKind::from_schema_body(left).is_some()),
         NativeCollectionPrimitive::MatrixSqrt => is_f64_matrix(first) && is_f64_matrix(output),
         NativeCollectionPrimitive::F64Power => {
             let scalar = &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64);
