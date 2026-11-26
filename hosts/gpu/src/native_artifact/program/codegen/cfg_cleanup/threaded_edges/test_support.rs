@@ -2,11 +2,15 @@ use super::Report;
 use crate::native_artifact::codegen::options::{CompilationControls, OptimizationOptions};
 use crate::native_artifact::program::codegen::cfg_cleanup::thread_loop_edges;
 use cranelift_codegen::Context;
+use cranelift_codegen::dominator_tree::DominatorTree;
 use cranelift_codegen::ir::condcodes::IntCC;
-use cranelift_codegen::ir::{AbiParam, BlockCall, Function, Inst, InstBuilder, MemFlags, types};
+use cranelift_codegen::ir::{
+    AbiParam, Block, BlockArg, BlockCall, Function, Inst, InstBuilder, MemFlags, Value, types,
+};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
-use cranelift_jit::JITModule;
-use cranelift_module::{Linkage, Module};
+use cranelift_jit::{JITBuilder, JITModule};
+use cranelift_module::{Linkage, Module, default_libcall_names};
+use std::collections::BTreeMap;
 
 const ASSERT: u64 = u64::MAX - 17;
 const OVERFLOW: u64 = u64::MAX - 18;
@@ -27,6 +31,88 @@ pub(in super::super) fn branch_calls(func: &Function) -> Vec<(Inst, usize, Block
                 .map(move |(ordinal, call)| (inst, ordinal, call))
         })
         .collect()
+}
+
+pub(in super::super) fn check_repair_call_lists(
+    rewrite: impl FnOnce(&mut Function, &DominatorTree, &BTreeMap<Block, BTreeMap<Value, Value>>),
+) {
+    let module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+    let mut c = module.make_context();
+    c.func.signature.params = vec![AbiParam::new(types::I64); 3];
+    c.func.signature.returns = vec![AbiParam::new(types::I64)];
+    let mut fc = FunctionBuilderContext::new();
+    let (entry_branch, repair, changed_branch, outside_branch, old, other, replacement) = {
+        let mut b = FunctionBuilder::new(&mut c.func, &mut fc);
+        let entry = b.create_block();
+        let bridge = b.create_block();
+        let repair = b.create_block();
+        let outside = b.create_block();
+        let finish = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        let replacement = b.append_block_param(repair, types::I64);
+        let result = b.append_block_param(finish, types::I64);
+
+        b.switch_to_block(entry);
+        let [flag, old, other] = <[Value; 3]>::try_from(b.block_params(entry)).unwrap();
+        let entry_branch = b.ins().brif(flag, bridge, &[], outside, &[]);
+        b.switch_to_block(bridge);
+        b.ins().jump(repair, &[other.into()]);
+        b.switch_to_block(repair);
+        let changed_branch = b
+            .ins()
+            .brif(flag, finish, &[old.into()], finish, &[other.into()]);
+        b.switch_to_block(outside);
+        let outside_branch = b.ins().brif(flag, finish, &[old.into()], bridge, &[]);
+        b.switch_to_block(finish);
+        b.ins().return_(&[result]);
+        b.seal_all_blocks();
+        b.finalize();
+        (
+            entry_branch,
+            repair,
+            changed_branch,
+            outside_branch,
+            old,
+            other,
+            replacement,
+        )
+    };
+
+    fn call(f: &Function, inst: Inst, ordinal: usize) -> BlockCall {
+        f.dfg.insts[inst].branch_destination(&f.dfg.jump_tables, &f.dfg.exception_tables)[ordinal]
+    }
+
+    let shared = call(&c.func, changed_branch, 0);
+    let unchanged = call(&c.func, changed_branch, 1);
+    let dfg = &mut c.func.dfg;
+    dfg.insts[outside_branch]
+        .branch_destination_mut(&mut dfg.jump_tables, &mut dfg.exception_tables)[0] = shared;
+    c.compute_cfg();
+    c.compute_domtree();
+
+    // Model the repair boundary after an edge bypasses the bridge.
+    let dfg = &mut c.func.dfg;
+    let redirected = BlockCall::new(repair, [other.into()], &mut dfg.value_lists);
+    dfg.insts[entry_branch]
+        .branch_destination_mut(&mut dfg.jump_tables, &mut dfg.exception_tables)[0] = redirected;
+    rewrite(
+        &mut c.func,
+        &c.domtree,
+        &BTreeMap::from([(repair, BTreeMap::from([(old, replacement)]))]),
+    );
+
+    let detached = call(&c.func, changed_branch, 0);
+    assert_ne!(detached, shared);
+    assert_eq!(call(&c.func, outside_branch, 0), shared);
+    assert_eq!(call(&c.func, changed_branch, 1), unchanged);
+    assert_eq!(call(&c.func, entry_branch, 0), redirected);
+    let pool = &c.func.dfg.value_lists;
+    assert!(detached.args(pool).eq([BlockArg::Value(replacement)]));
+    assert!(shared.args(pool).eq([BlockArg::Value(old)]));
+    assert!(unchanged.args(pool).eq([BlockArg::Value(other)]));
+    c.compute_cfg();
+    c.compute_domtree();
+    c.verify(module.isa()).unwrap();
 }
 
 pub(in super::super) fn fixture(module: &JITModule, variant: &str) -> Context {

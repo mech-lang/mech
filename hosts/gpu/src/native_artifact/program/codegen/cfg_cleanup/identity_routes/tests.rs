@@ -1,4 +1,5 @@
-use super::super::threaded_edges::test_support::branch_calls;
+use super::super::threaded_edges::test_support::{branch_calls, check_repair_call_lists};
+use super::rewrite;
 use crate::native_artifact::codegen::options::{
     CompilationControls, OptimizationOptions, OptimizationPass,
 };
@@ -180,6 +181,11 @@ fn expected(flag: u64, mut payload: u64, n: u64, mut bits: u64, variant: &str) -
     }
     (payload ^ bits, memory)
 }
+#[test]
+fn identity_routes_repair_detaches_shared_calls_only_when_arguments_change() {
+    check_repair_call_lists(rewrite);
+}
+
 #[test]
 fn identity_routes_transport_current_words_float_payloads_and_failure_prefix() {
     let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());

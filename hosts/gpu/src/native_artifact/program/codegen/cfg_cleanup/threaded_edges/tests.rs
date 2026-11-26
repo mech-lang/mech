@@ -11,6 +11,11 @@ use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{Module, default_libcall_names};
 
 #[test]
+fn threaded_edges_repair_detaches_shared_calls_only_when_arguments_change() {
+    check_repair_call_lists(rewrite);
+}
+
+#[test]
 fn threaded_edges_transport_current_integer_and_float_bits_without_cloning() {
     let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
     for (i, variant) in ["normal", "duplicate"].into_iter().enumerate() {

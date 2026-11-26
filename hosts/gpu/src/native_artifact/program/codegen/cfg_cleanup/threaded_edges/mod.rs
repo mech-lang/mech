@@ -64,6 +64,13 @@ fn rewrite(
                     for call in dfg.insts[inst]
                         .branch_destination_mut(&mut dfg.jump_tables, &mut dfg.exception_tables)
                     {
+                        let changed = call
+                            .args(&dfg.value_lists)
+                            .filter_map(|arg| arg.as_value())
+                            .any(|old| active.get(&old).is_some_and(|&new| new != old));
+                        if !changed {
+                            continue;
+                        }
                         let args = call
                             .args(&dfg.value_lists)
                             .map(|arg| {
