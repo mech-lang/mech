@@ -1557,3 +1557,25 @@ profiles retain 5296 canonical execution samples and cover
 No compiler source changed after freeze and no benchmark port was rewritten.
 The split and past holdout results were exposed; no holdout was profiled.
 The strict holdout goal remains open unless its score is below1.0x C.
+
+Round 15: selected range cursors for matrix block comprehensions
+Source 6b84591c2f3e435552af969fe435f3c1937a3d35; IR374/work143; executable 2e71eb27bb4c808a4a20c09ef759fc37573434ee407f0be5ddef504eac1380fa.
+The existing exact unit-U64 selected range source now feeds matrix block
+comprehensions. Sole use, setup order, current endpoints, range and physical
+representation errors, finite admission and block row/shape checks remain.
+Existing direct native rectangle execution accepts the new cursor sources.
+No benchmark port or scalar arithmetic order changed.
+
+Equal-weight geometric means of median kernel runtimes (lower Mech/C is better):
+optimization: 47.201219x C; 16.778477x faster than recorded start; 16.446279x faster than paired original; summed medians 0.007184208s; raw runtime multiplier vs round14 0.967470x.
+holdout: 133.611342x C; 15.090981x faster than recorded start; 14.872726x faster than paired original; summed medians 0.119366334s; raw runtime multiplier vs round14 0.752012x.
+
+Optimization-only seven-sample round14 replay: 1.043806x speedup; 1 >5% regressions retained.
+Final selected checks: 712; both exact Huffman bills remain.
+All 900 balanced finite observations, 29482 live-outs per artifact, both sets,
+all regressions and sixteen-entry history remain. Five optimization-only raw
+profiles retain 4718 canonical execution samples and cover
+81.957552% of training summed medians.
+No compiler source changed after freeze and no benchmark port was rewritten.
+The split and prior holdout results were exposed; no holdout was profiled.
+The strict holdout goal remains open unless its score is below 1.0x C.
