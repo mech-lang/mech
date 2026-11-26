@@ -11,6 +11,7 @@ use std::{
 #[derive(Clone, Copy, Default)]
 struct Flags {
     ordinary: bool,
+    numeric_only: bool,
     corrupt: u8,
     interleave: bool,
 }
@@ -43,7 +44,7 @@ unsafe extern "C" fn helper(
     // Corruption controls target the numeric-map frame specifically. Decline
     // the independently proved total-word alternative before it borrows a loan.
     if op == GlobalHelper::WordCollectionPrepare.raw()
-        && (flags.ordinary || flags.corrupt != 0 || flags.interleave)
+        && (flags.ordinary || flags.numeric_only || flags.corrupt != 0 || flags.interleave)
     {
         unsafe { *out = 0 };
         return 0;
@@ -1192,6 +1193,24 @@ fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveou
                     counts.selected > 0 && counts.selected == counts.complete,
                     "{name}: {counts:?}"
                 );
+                if name == "gramschmidt" {
+                    let conditional = jit.descriptor().metadata().numeric_maps.regions.iter().filter(|region|
+                        region.body.iter().any(|&site| matches!(jit.descriptor().plan().blocks()[site as usize].terminator(),
+                            mech_engine::native_artifact::NativeIterationTerminator::Scalar(
+                                mech_engine::native_artifact::NativeMatchTerminator::Branch { .. }
+                                | mech_engine::native_artifact::NativeMatchTerminator::LiteralBranch { .. })))).collect::<Vec<_>>();
+                    assert!(
+                        !conditional.is_empty(),
+                        "qualify actual conditional matrix updates"
+                    );
+                    assert!(
+                        conditional
+                            .iter()
+                            .all(|region| counts.elements.contains_key(&u64::from(region.header))),
+                        "every eligible conditional training body must actually select"
+                    );
+                }
+
                 let mut values = Vec::new();
                 flatten(last(&fast), &mut values);
                 let expected = case["expected"].as_array().unwrap();
@@ -1211,6 +1230,462 @@ fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveou
                 (memory.used_bytes(), memory.retained_snapshot_nodes()),
                 (0, 0)
             );
+        }
+    }
+}
+
+fn assert_private_body(
+    proof: &crate::native_artifact::program::prepare::numeric_maps::Region,
+    counts: &Counts,
+) {
+    assert_eq!((counts.selected, counts.complete), (1, 1));
+    for &site in &proof.body {
+        assert!(
+            !counts.helpers.keys().any(|(at, _)| *at == u64::from(site)),
+            "per-element helper at {site}"
+        );
+    }
+}
+
+#[test]
+fn conditional_numeric_maps_keep_phi_words_literal_float_equality_and_all_exact_kinds() {
+    use mech_core::snapshot::F64Bits;
+    let cases = [
+        ("u8", vec![Data::U8(0), Data::U8(1), Data::U8(u8::MAX)]),
+        ("u16", vec![Data::U16(0), Data::U16(1), Data::U16(u16::MAX)]),
+        ("u32", vec![Data::U32(0), Data::U32(1), Data::U32(u32::MAX)]),
+        ("u64", vec![Data::U64(0), Data::U64(1), Data::U64(u64::MAX)]),
+        (
+            "i64",
+            vec![Data::I64(i64::MIN), Data::I64(-1), Data::I64(i64::MAX)],
+        ),
+        (
+            "bool",
+            vec![Data::Bool(true), Data::Bool(false), Data::Bool(true)],
+        ),
+        (
+            "f64",
+            [
+                0x8000_0000_0000_0000,
+                0x7ff8_0000_0000_0037,
+                0x3ff8_0000_0000_0000,
+            ]
+            .map(|bits| Data::F64(F64Bits::from_bits(bits)))
+            .to_vec(),
+        ),
+    ];
+    for (kind, cells) in cases {
+        let source = format!(
+            "enabled := gate<bool>\nother := alternative<{kind}>\n[(enabled? | true => value | false => other) | value <- words<[{kind}]>]\n"
+        );
+        for artifact in artifacts(&source) {
+            let mode = NativeProgramLimitMode::NoLimits;
+            let jit = JitProgramArtifact::compile_with_limits(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+                mode.compilation(),
+            )
+            .unwrap();
+            assert_eq!(
+                jit.descriptor().metadata().numeric_maps.regions.len(),
+                1,
+                "{source}"
+            );
+            let proof = &jit.descriptor().metadata().numeric_maps.regions[0];
+            assert!(proof.body.iter().any(|&site| matches!(
+                jit.descriptor().plan().blocks()[site as usize].terminator(),
+                mech_engine::native_artifact::NativeIterationTerminator::Scalar(
+                    mech_engine::native_artifact::NativeMatchTerminator::LiteralBranch { .. }
+                        | mech_engine::native_artifact::NativeMatchTerminator::Branch { .. }
+                )
+            )));
+            crate::native_artifact::emit_program_object(&artifact, &mech_stdlib::source_catalog())
+                .unwrap();
+            for restored in [false, true] {
+                for gate in [true, false] {
+                    let memory = mode.memory_budget();
+                    let args = typed_arguments(
+                        &artifact,
+                        &memory,
+                        &[
+                            ("gate", Data::Bool(gate), &[]),
+                            ("alternative", cells[1].clone(), &[]),
+                            ("words", Data::Matrix(cells.clone().into()), &[1, 3]),
+                        ],
+                    );
+                    let retained = memory.used_bytes();
+                    let mut output = vec![None; artifact.outputs().len()];
+                    let (result, counts) = run(
+                        &jit,
+                        &args,
+                        &mut output,
+                        &memory,
+                        mode.execution(),
+                        restored,
+                        Flags {
+                            numeric_only: true,
+                            ..Default::default()
+                        },
+                    );
+                    result.unwrap();
+                    assert_private_body(proof, &counts);
+                    let expected = if gate {
+                        cells.clone()
+                    } else {
+                        vec![cells[1].clone(); 3]
+                    };
+                    assert_eq!(last(&output), Data::Matrix(expected.into()));
+                    drop(output);
+                    assert_eq!(memory.used_bytes(), retained);
+                    drop(args);
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        (0, 0)
+                    );
+                }
+            }
+        }
+    }
+    let source = "[(value? | 0.0 => 7.0 | found => found) | value <- words<[f64]>]\n";
+    for artifact in artifacts(source) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        assert_eq!(jit.descriptor().metadata().numeric_maps.regions.len(), 1);
+        let cells = [
+            0x8000_0000_0000_0000,
+            0,
+            0x7ff8_0000_0000_0037,
+            0x7ff0_0000_0000_0000,
+            0x3ff0_0000_0000_0000,
+        ]
+        .map(|bits| Data::F64(F64Bits::from_bits(bits)));
+        for restored in [false, true] {
+            let memory = mode.memory_budget();
+            let args = typed_arguments(
+                &artifact,
+                &memory,
+                &[("words", Data::Matrix(cells.to_vec().into()), &[1, 5])],
+            );
+            let mut output = vec![None; artifact.outputs().len()];
+            let (result, counts) = run(
+                &jit,
+                &args,
+                &mut output,
+                &memory,
+                mode.execution(),
+                restored,
+                Flags::default(),
+            );
+            result.unwrap();
+            assert_private_body(
+                &jit.descriptor().metadata().numeric_maps.regions[0],
+                &counts,
+            );
+            let mut expected = cells.to_vec();
+            expected[..2].fill(Data::F64(F64Bits::from_f64(7.0)));
+            assert_eq!(last(&output), Data::Matrix(expected.into()));
+            drop((args, output));
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
+    }
+}
+
+#[test]
+fn conditional_numeric_maps_do_not_speculate_inactive_reads_and_keep_finite_error_order() {
+    use mech_core::snapshot::F64Bits;
+    let source = "data := words<[f64]:2,3>\nenabled := gate<bool>\nbad := row<u64>\n[((enabled? | true => data[bad,i] | false => data[1u64,i])) | i <- 1u64..=3u64]\n";
+    for artifact in artifacts(source) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        assert_eq!(jit.descriptor().metadata().numeric_maps.regions.len(), 1);
+        let proof = &jit.descriptor().metadata().numeric_maps.regions[0];
+        for restored in [false, true] {
+            for (gate, row) in [(false, 0), (false, 3), (true, 0), (true, 2), (true, 3)] {
+                let memory = mode.memory_budget();
+                let args = typed_arguments(
+                    &artifact,
+                    &memory,
+                    &[
+                        (
+                            "words",
+                            Data::Matrix(
+                                [1., 2., 3., 4., 5., 6.]
+                                    .into_iter()
+                                    .map(|v| Data::F64(F64Bits::from_f64(v)))
+                                    .collect(),
+                            ),
+                            &[2, 3],
+                        ),
+                        ("gate", Data::Bool(gate), &[]),
+                        ("row", Data::U64(row), &[]),
+                    ],
+                );
+                let retained = memory.used_bytes();
+                let mut cold = vec![None; artifact.outputs().len()];
+                let mut fast = cold.clone();
+                let (a, _) = run(
+                    &jit,
+                    &args,
+                    &mut cold,
+                    &memory,
+                    mode.execution(),
+                    restored,
+                    Flags {
+                        ordinary: true,
+                        ..Default::default()
+                    },
+                );
+                let (b, counts) = run(
+                    &jit,
+                    &args,
+                    &mut fast,
+                    &memory,
+                    mode.execution(),
+                    restored,
+                    Flags::default(),
+                );
+                match (a, b) {
+                    (Ok(_), Ok(_)) => {
+                        assert_private_body(proof, &counts);
+                        assert_eq!(last(&cold), last(&fast));
+                    }
+                    (Err(a), Err(b)) => {
+                        assert_eq!(counts.selected, 1);
+                        assert_eq!(format!("{a:?}"), format!("{b:?}"));
+                        assert!(fast.iter().all(Option::is_none));
+                    }
+                    pair => panic!("different conditional read outcomes: {pair:?}"),
+                }
+                drop((cold, fast));
+                assert_eq!(memory.used_bytes(), retained);
+                if !gate && row == 0 {
+                    for dim in 0..8 {
+                        for cap in [0, 1, 16, 255, 4095, 65535] {
+                            let mut policy = mode.execution();
+                            match dim {
+                                0 => policy.library.max_output_elements = Some(cap),
+                                1 => policy.library.max_output_bytes = Some(cap),
+                                2 => policy.library.max_temporary_bytes = Some(cap),
+                                3 => policy.library.max_cloned_bytes = Some(cap),
+                                4 => policy.library.max_retained_nodes = Some(cap),
+                                5 => policy.library.max_compute_work = Some(cap),
+                                6 => policy.library.max_comparison_work = Some(cap),
+                                _ => policy.execution.max_work = cap,
+                            }
+                            let mut cold = vec![None; artifact.outputs().len()];
+                            let mut fast = cold.clone();
+                            let (a, _) = run(
+                                &jit,
+                                &args,
+                                &mut cold,
+                                &memory,
+                                policy,
+                                restored,
+                                Flags {
+                                    ordinary: true,
+                                    ..Default::default()
+                                },
+                            );
+                            let (b, _) = run(
+                                &jit,
+                                &args,
+                                &mut fast,
+                                &memory,
+                                policy,
+                                restored,
+                                Flags::default(),
+                            );
+                            match (a, b) {
+                                (Ok(_), Ok(_)) => assert_eq!(last(&cold), last(&fast)),
+                                (Err(a), Err(b)) => {
+                                    assert_eq!(
+                                        format!("{a:?}"),
+                                        format!("{b:?}"),
+                                        "dimension {dim} cap {cap}"
+                                    );
+                                    assert!(fast.iter().all(Option::is_none));
+                                }
+                                pair => {
+                                    panic!("different finite branch outcomes {dim} {cap}: {pair:?}")
+                                }
+                            }
+                            drop((cold, fast));
+                            assert_eq!(memory.used_bytes(), retained);
+                        }
+                    }
+                }
+                drop(args);
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    (0, 0)
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn conditional_numeric_maps_discard_partial_outputs_and_replay_original_arithmetic_errors() {
+    let source = "denom := divisor<u64>\n[((value == 0u64)? | true => 9u64 | false => ((value == 1u64)? | true => 100u64 / denom | false => value + 1u64)) | value <- words<[u64]>]\n";
+    for artifact in artifacts(source) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        assert_eq!(jit.descriptor().metadata().numeric_maps.regions.len(), 1);
+        for restored in [false, true] {
+            for (words, divisor) in [
+                (vec![0, 2, 1, 4], 0),
+                (vec![0, 2, 1, 4], 2),
+                (vec![u64::MAX, 1], 0),
+                (vec![2, 0, 4, 0, 2], 0),
+            ] {
+                let memory = mode.memory_budget();
+                let args = typed_arguments(
+                    &artifact,
+                    &memory,
+                    &[
+                        (
+                            "words",
+                            Data::Matrix(words.iter().copied().map(Data::U64).collect()),
+                            &[1, words.len() as u64],
+                        ),
+                        ("divisor", Data::U64(divisor), &[]),
+                    ],
+                );
+                let mut cold = vec![None; artifact.outputs().len()];
+                let mut fast = cold.clone();
+                let (a, _) = run(
+                    &jit,
+                    &args,
+                    &mut cold,
+                    &memory,
+                    mode.execution(),
+                    restored,
+                    Flags {
+                        ordinary: true,
+                        ..Default::default()
+                    },
+                );
+                let (b, counts) = run(
+                    &jit,
+                    &args,
+                    &mut fast,
+                    &memory,
+                    mode.execution(),
+                    restored,
+                    Flags {
+                        numeric_only: true,
+                        ..Default::default()
+                    },
+                );
+                assert_eq!(counts.selected, 1);
+                match (a, b) {
+                    (Ok(_), Ok(_)) => {
+                        assert_private_body(
+                            &jit.descriptor().metadata().numeric_maps.regions[0],
+                            &counts,
+                        );
+                        assert_eq!(last(&cold), last(&fast));
+                    }
+                    (Err(a), Err(b)) => {
+                        assert_eq!(format!("{a:?}"), format!("{b:?}"));
+                        assert!(fast.iter().all(Option::is_none));
+                    }
+                    pair => panic!("different branch arithmetic outcomes: {pair:?}"),
+                }
+                drop((args, cold, fast));
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    (0, 0)
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn conditional_numeric_maps_snapshot_current_scalar_and_matrix_phi_captures_once() {
+    use mech_core::snapshot::F64Bits;
+    let source = "first := left<[f64]:2,3>\nsecond := right<[f64]:2,3>\npicked := (which<bool>? | true => first | false => second)\nextra := (gate<bool>? | true => 1.0 | false => 2.0)\n[picked[1u64,i] + extra | i <- 1u64..=3u64]\n";
+    for artifact in artifacts(source) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        assert_eq!(jit.descriptor().metadata().numeric_maps.regions.len(), 1);
+        for restored in [false, true] {
+            for which in [false, true] {
+                for gate in [false, true] {
+                    let memory = mode.memory_budget();
+                    let cells = |base| {
+                        Data::Matrix(
+                            (1..=6)
+                                .map(|v| Data::F64(F64Bits::from_f64(f64::from(v) + base)))
+                                .collect(),
+                        )
+                    };
+                    let args = typed_arguments(
+                        &artifact,
+                        &memory,
+                        &[
+                            ("left", cells(0.), &[2, 3]),
+                            ("right", cells(10.), &[2, 3]),
+                            ("which", Data::Bool(which), &[]),
+                            ("gate", Data::Bool(gate), &[]),
+                        ],
+                    );
+                    let mut output = vec![None; artifact.outputs().len()];
+                    let (result, counts) = run(
+                        &jit,
+                        &args,
+                        &mut output,
+                        &memory,
+                        mode.execution(),
+                        restored,
+                        Flags::default(),
+                    );
+                    result.unwrap();
+                    assert_private_body(
+                        &jit.descriptor().metadata().numeric_maps.regions[0],
+                        &counts,
+                    );
+                    let base = if which { 0. } else { 10. };
+                    let extra = if gate { 1. } else { 2. };
+                    assert_eq!(
+                        last(&output),
+                        Data::Matrix(
+                            (1..=3)
+                                .map(|n| Data::F64(F64Bits::from_f64(f64::from(n) + base + extra)))
+                                .collect()
+                        )
+                    );
+                    drop((args, output));
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        (0, 0)
+                    );
+                }
+            }
         }
     }
 }

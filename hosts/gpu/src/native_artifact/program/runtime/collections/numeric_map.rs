@@ -345,6 +345,7 @@ impl State {
             // reads, guards and the loop/store have their own4096-unit floor.
             let per_element = (region.steps.len() as u64)
                 .checked_mul(1024)?
+                .checked_add((region.body.len() as u64).checked_mul(128)?)?
                 .checked_add(4096)?;
             let preflight = count.checked_mul(per_element)?.checked_add(8192)?;
             let setup = source_bytes

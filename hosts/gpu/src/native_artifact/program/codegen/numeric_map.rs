@@ -7,9 +7,10 @@ use crate::native_artifact::program::protocol::GlobalHelper;
 use crate::native_artifact::program::runtime::NativeNumericMapFrame as Frame;
 use crate::native_artifact::program::runtime::NativeNumericMapMatrixView as MatrixView;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
-use cranelift_frontend::FunctionBuilder;
+use cranelift_frontend::{FunctionBuilder, Variable};
 use mech_engine::native_artifact::{
-    NativeIterationAction as Action, NativeMatchAction as Scalar, NativeProgramArtifactPlan as Plan,
+    NativeIterationAction as Action, NativeIterationTerminator as Terminator,
+    NativeMatchAction as Scalar, NativeMatchTerminator as Term, NativeProgramArtifactPlan as Plan,
 };
 use std::{collections::BTreeMap, mem::offset_of};
 
@@ -34,14 +35,10 @@ pub(in crate::native_artifact) fn emit_entry(
     // External scalar captures are immutable and already current at this
     // header. Snapshot each native word once, never inside the element loop.
     let mut captures = BTreeMap::new();
-    for &site in &region.steps {
-        let operands = match plan.blocks()[site as usize].action() {
-            Action::Scalar(Scalar::Copy { source, .. }) => std::slice::from_ref(source),
-            Action::Scalar(Scalar::Primitive { operands, .. }) => &operands[..],
-            Action::LibraryCall { operands, .. } => &operands[1..],
-            _ => return Err(backend("numeric map step kind")),
-        };
-        for &value in operands {
+    for &site in &region.body {
+        for value in
+            crate::native_artifact::program::prepare::numeric_maps::scalar_reads(plan, site)
+        {
             if region.captures.contains(&value.get()) && !captures.contains_key(&value.get()) {
                 captures.insert(
                     value.get(),
@@ -213,6 +210,32 @@ fn emit(
         let good = b.ins().bor(empty, no_overflow);
         require(b, good, malformed);
     }
+    // Source phi copies share a native SSA variable. Complete current-visits
+    // and body inventories establish definite assignment before any use;
+    // private body words need neither canonical slots nor runtime dispatch.
+    let mut words = BTreeMap::<u32, Variable>::new();
+    for (&id, &value) in captures {
+        let var = b.declare_var(types::I64);
+        b.def_var(var, value);
+        words.insert(id, var);
+    }
+    words.insert(region.element, b.declare_var(types::I64));
+    for &site in &region.steps {
+        let output = match plan.blocks()[site as usize].action() {
+            Action::Scalar(Scalar::Copy { output, .. } | Scalar::Primitive { output, .. })
+            | Action::LibraryCall { output, .. } => output.get(),
+            _ => return Err(backend("numeric map source step changed")),
+        };
+        words
+            .entry(output)
+            .or_insert_with(|| b.declare_var(types::I64));
+    }
+    let source_blocks: BTreeMap<_, _> = region
+        .body
+        .iter()
+        .map(|&at| (at, b.create_block()))
+        .collect();
+    let latch = b.create_block();
     let cursor = b.declare_var(types::I64);
     let zero = b.ins().iconst(types::I64, 0);
     b.def_var(cursor, zero);
@@ -239,106 +262,96 @@ fn emit(
             0,
         )
     };
-    let mut words = captures.clone();
-    words.insert(region.element, word);
-    for &site in &region.steps {
-        if let Some(read) = region.reads.iter().find(|read| read.site == site) {
-            let (pointer, cells, rows, columns) = matrices[read.matrix];
-            let indices = read
-                .indices
-                .iter()
-                .map(|v| {
-                    words
-                        .get(v)
-                        .copied()
-                        .ok_or_else(|| backend("numeric map missing matrix selector"))
-                })
-                .collect::<Result<Vec<_>, _>>()?;
-            let mut index = |value, bound| {
-                let zero = b.ins().icmp_imm(IntCC::NotEqual, value, 0);
-                require(b, zero, index_miss);
-                let good = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, value, bound);
-                require(b, good, index_miss);
-                b.ins().iadd_imm(value, -1)
-            };
-            let ordinal = match &indices[..] {
-                [linear] => {
-                    let linear = index(*linear, cells);
-                    // A successful ordinal implies cells>0, hence rows>0.
-                    let row = b.ins().urem(linear, rows);
-                    let column = b.ins().udiv(linear, rows);
-                    let offset = b.ins().imul(row, columns);
-                    b.ins().iadd(offset, column)
+    b.def_var(words[&region.element], word);
+    b.ins().jump(source_blocks[&region.body[0]], &[]);
+    let source_latch = plan.iterations()[region.iteration as usize]
+        .as_ref()
+        .latch();
+    for &site in &region.body {
+        b.switch_to_block(source_blocks[&site]);
+        if let Some(read) = region.reads.iter().find(|r| r.site == site) {
+            let value = emit_read(b, read, region, &matrices, &words, index_miss)?;
+            b.def_var(words[&read.output], value);
+        } else {
+            match plan.blocks()[site as usize].action() {
+                Action::Scalar(Scalar::Copy { source, output }) => {
+                    let value = word_at(b, &words, source.get())?;
+                    b.def_var(words[&output.get()], value);
                 }
-                [row, column] => {
-                    let row = index(*row, rows);
-                    let column = index(*column, columns);
-                    let offset = b.ins().imul(row, columns);
-                    b.ins().iadd(offset, column)
+                Action::Scalar(Scalar::Primitive {
+                    op,
+                    operands,
+                    output,
+                }) => {
+                    let values = operands
+                        .iter()
+                        .map(|v| word_at(b, &words, v.get()))
+                        .collect::<Result<Vec<_>, _>>()?;
+                    let value = primitive(b, *op, &values, miss);
+                    b.def_var(words[&output.get()], value);
                 }
-                _ => return Err(backend("numeric map read selector count")),
-            };
-            let width = region.matrices[read.matrix].width;
-            let bytes = b.ins().imul_imm(ordinal, i64::from(width));
-            let address = b.ins().iadd(pointer, bytes);
-            let word = super::numeric_words::load_unsigned_word(
-                b,
-                integer(width),
-                MemFlags::new(),
-                address,
-                0,
-            );
-            words.insert(read.output, word);
-            continue;
-        }
-        let Action::Scalar(action) = plan.blocks()[site as usize].action() else {
-            return Err(backend("numeric map lost scalar step"));
-        };
-        let (output, value) = match action {
-            Scalar::Copy { source, output } => (
-                *output,
-                *words
-                    .get(&source.get())
-                    .ok_or_else(|| backend("numeric map missing copy word"))?,
-            ),
-            Scalar::Primitive {
-                op,
-                operands,
-                output,
-            } => {
-                let values = operands
-                    .iter()
-                    .map(|v| {
-                        words
-                            .get(&v.get())
-                            .copied()
-                            .ok_or_else(|| backend("numeric map missing operand"))
-                    })
-                    .collect::<Result<Vec<_>, _>>()?;
-                (*output, primitive(b, *op, &values, miss))
+                Action::CollectionPush { value, .. } => {
+                    let result = word_at(b, &words, value.get())?;
+                    if plan.values()[value.get() as usize].scalar_kind()
+                        == Some(mech_engine::native_artifact::NativeScalarKind::Bool)
+                    {
+                        let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, result, 1);
+                        require(b, valid, malformed);
+                    }
+                    let value = if region.output_width == 8 {
+                        result
+                    } else {
+                        b.ins().ireduce(integer(region.output_width), result)
+                    };
+                    let displacement = b.ins().imul_imm(at, i64::from(region.output_width));
+                    let address = b.ins().iadd(output, displacement);
+                    b.ins().store(MemFlags::new(), value, address, 0);
+                }
+                Action::Scalar(Scalar::None) | Action::CollectionElement { .. } => {}
+                _ => return Err(backend("numeric map source action changed")),
             }
-            _ => return Err(backend("numeric map step changed")),
+        }
+        let target = |to| {
+            if to == source_latch {
+                Ok(latch)
+            } else {
+                source_blocks
+                    .get(&to)
+                    .copied()
+                    .ok_or_else(|| backend("numeric map branch leaves its exact body"))
+            }
         };
-        words.insert(output.get(), value);
+        match plan.blocks()[site as usize].terminator() {
+            Terminator::Scalar(Term::Jump(to)) => {
+                b.ins().jump(target(to)?, &[]);
+            }
+            Terminator::Scalar(Term::Branch { condition, yes, no }) => {
+                let value = word_at(b, &words, condition.get())?;
+                let condition = b.ins().icmp_imm(IntCC::NotEqual, value, 0);
+                b.ins().brif(condition, target(yes)?, &[], target(no)?, &[]);
+            }
+            Terminator::Scalar(Term::LiteralBranch {
+                left,
+                right,
+                yes,
+                no,
+            }) => {
+                let kind = plan.values()[left.get() as usize]
+                    .scalar_kind()
+                    .ok_or_else(|| backend("numeric map literal branch kind"))?;
+                let left = word_at(b, &words, left.get())?;
+                let right = word_at(b, &words, right.get())?;
+                let condition =
+                    crate::native_artifact::control_compiler::literal_equal(b, kind, left, right);
+                b.ins().brif(condition, target(yes)?, &[], target(no)?, &[]);
+            }
+            Terminator::Scalar(Term::Reject | Term::IntegrityFailure) => {
+                b.ins().jump(index_miss, &[]);
+            }
+            _ => return Err(backend("numeric map source terminator changed")),
+        }
     }
-    let result = *words
-        .get(&region.result)
-        .ok_or_else(|| backend("numeric map missing result"))?;
-    if matches!(
-        plan.values()[region.result as usize].scalar_kind(),
-        Some(mech_engine::native_artifact::NativeScalarKind::Bool)
-    ) {
-        let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, result, 1);
-        require(b, valid, malformed);
-    }
-    let value = if region.output_width == 8 {
-        result
-    } else {
-        b.ins().ireduce(integer(region.output_width), result)
-    };
-    let displacement = b.ins().imul_imm(at, i64::from(region.output_width));
-    let address = b.ins().iadd(output, displacement);
-    b.ins().store(MemFlags::new(), value, address, 0);
+    b.switch_to_block(latch);
     let next = b.ins().iadd_imm(at, 1);
     b.def_var(cursor, next);
     b.ins().jump(head, &[]);
@@ -354,4 +367,64 @@ fn emit(
     let no_diagnostic = b.ins().iconst(types::I64, 0);
     b.ins().jump(miss, &[no_diagnostic.into()]);
     Ok(())
+}
+
+fn word_at(
+    b: &mut FunctionBuilder<'_>,
+    words: &BTreeMap<u32, Variable>,
+    at: u32,
+) -> Result<Value, NativeCompileError> {
+    Ok(b.use_var(
+        *words
+            .get(&at)
+            .ok_or_else(|| backend("numeric map missing source word"))?,
+    ))
+}
+fn emit_read(
+    b: &mut FunctionBuilder<'_>,
+    read: &crate::native_artifact::program::prepare::numeric_maps::MatrixRead,
+    region: &Region,
+    matrices: &[(Value, Value, Value, Value)],
+    words: &BTreeMap<u32, Variable>,
+    miss: Block,
+) -> Result<Value, NativeCompileError> {
+    let (pointer, cells, rows, columns) = matrices[read.matrix];
+    let indices = read
+        .indices
+        .iter()
+        .map(|&v| word_at(b, words, v))
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut index = |value, bound| {
+        let nonzero = b.ins().icmp_imm(IntCC::NotEqual, value, 0);
+        require(b, nonzero, miss);
+        let in_bounds = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, value, bound);
+        require(b, in_bounds, miss);
+        b.ins().iadd_imm(value, -1)
+    };
+    let ordinal = match &indices[..] {
+        [linear] => {
+            let linear = index(*linear, cells);
+            let row = b.ins().urem(linear, rows);
+            let column = b.ins().udiv(linear, rows);
+            let offset = b.ins().imul(row, columns);
+            b.ins().iadd(offset, column)
+        }
+        [row, column] => {
+            let row = index(*row, rows);
+            let column = index(*column, columns);
+            let offset = b.ins().imul(row, columns);
+            b.ins().iadd(offset, column)
+        }
+        _ => return Err(backend("numeric map read selector count")),
+    };
+    let width = region.matrices[read.matrix].width;
+    let bytes = b.ins().imul_imm(ordinal, i64::from(width));
+    let address = b.ins().iadd(pointer, bytes);
+    Ok(super::numeric_words::load_unsigned_word(
+        b,
+        integer(width),
+        MemFlags::new(),
+        address,
+        0,
+    ))
 }

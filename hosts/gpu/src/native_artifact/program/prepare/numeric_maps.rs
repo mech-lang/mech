@@ -51,6 +51,9 @@ pub(in crate::native_artifact) struct Region {
     pub output_width: u8,
     /// Exact scalar source blocks; operations still come from the sealed plan.
     pub steps: Vec<u32>,
+    /// Complete acyclic element body in deterministic topological order.
+    /// Branches and phi copies retain their original source CFG edges.
+    pub body: Vec<u32>,
     /// Complete body/header/latch inventory, including empty source visits.
     pub sites: Vec<u32>,
     pub captures: Vec<u32>,
@@ -93,6 +96,19 @@ fn immutable_before(
         return Ok(false);
     }
     let definitions = facts.definition_sites(value.get())?;
+    // A current immutable ancestor phi may have several source Copy sites.
+    // Each selecting use is an actual source/operand/terminator read, whose
+    // definite assignment was checked by validate_current_visits. Initialize
+    // jumps directly to the empty header, and no ancestor action occurs in
+    // this exact same-iteration body, so that current word/owner is available
+    // before entry and cannot change during the synchronous native loan.
+    if definitions.len() > 1
+        && definitions.iter().all(|d| {
+            d.role() == Producer::Scalar && d.iteration() == iteration && d.site().is_some()
+        })
+    {
+        return Ok(true);
+    }
     let definition = match definitions {
         [definition] if definition.role() != Producer::CollectionBuilder => definition,
         [_, _] => {
@@ -130,10 +146,83 @@ fn immutable_before(
         None => true,
     })
 }
-fn defined_here(facts: &Facts<'_>, value: Value, site: u32) -> Result<bool, &'static str> {
-    Ok(
-        matches!(facts.definition_sites(value.get())?, [definition] if definition.site() == Some(site)),
-    )
+/// Scalar reads of an admitted source site. Captured matrix owners use their
+/// separate exact read-factory proof; they are never scalar transport words.
+pub(in crate::native_artifact) fn scalar_reads(plan: &Plan, site: u32) -> Vec<Value> {
+    let block = &plan.blocks()[site as usize];
+    let mut reads = match block.action() {
+        Action::Scalar(Scalar::Copy { source, .. }) => vec![*source],
+        Action::Scalar(Scalar::Primitive { operands, .. }) => operands.to_vec(),
+        Action::LibraryCall { operands, .. } => operands[1..].to_vec(),
+        Action::CollectionPush { value, .. } => vec![*value],
+        _ => Vec::new(),
+    };
+    match block.terminator() {
+        Terminator::Scalar(Term::Branch { condition, .. }) => reads.push(condition),
+        Terminator::Scalar(Term::LiteralBranch { left, right, .. }) => reads.extend([left, right]),
+        _ => {}
+    }
+    reads
+}
+fn successors(term: Terminator) -> Option<Vec<u32>> {
+    Some(match term {
+        Terminator::Scalar(Term::Jump(to)) => vec![to],
+        Terminator::Scalar(Term::Branch { yes, no, .. } | Term::LiteralBranch { yes, no, .. }) => {
+            if yes == no {
+                vec![yes]
+            } else {
+                vec![yes, no]
+            }
+        }
+        Terminator::Scalar(Term::Reject | Term::IntegrityFailure) => vec![],
+        _ => return None,
+    })
+}
+fn ordered_body(plan: &Plan, iteration: u32, first: u32, latch: u32) -> Option<Vec<u32>> {
+    let mut edges = BTreeMap::new();
+    let mut pending = vec![first];
+    while let Some(site) = pending.pop() {
+        if site == latch || edges.contains_key(&site) {
+            continue;
+        }
+        if edges.len() == MAX_BODY || plan.activation_boundary() == Some(site) {
+            return None;
+        }
+        let block = plan.blocks().get(site as usize)?;
+        if block.iteration() != Some(iteration) {
+            return None;
+        }
+        let next = successors(block.terminator())?;
+        pending.extend(next.iter().copied());
+        edges.insert(site, next);
+    }
+    let mut degrees: BTreeMap<_, usize> = edges.keys().map(|&at| (at, 0)).collect();
+    for next in edges.values() {
+        for &to in next {
+            if to != latch {
+                *degrees.get_mut(&to)? += 1;
+            }
+        }
+    }
+    let mut ready: BTreeSet<_> = degrees
+        .iter()
+        .filter_map(|(&at, &n)| (n == 0).then_some(at))
+        .collect();
+    let mut order = Vec::new();
+    while let Some(site) = ready.pop_first() {
+        order.push(site);
+        for &to in &edges[&site] {
+            if to == latch {
+                continue;
+            }
+            let degree = degrees.get_mut(&to)?;
+            *degree -= 1;
+            if *degree == 0 {
+                ready.insert(to);
+            }
+        }
+    }
+    (order.len() == edges.len() && order.first() == Some(&first)).then_some(order)
 }
 impl Layout {
     pub fn at_header(&self, site: usize) -> Option<&Region> {
@@ -228,49 +317,31 @@ impl Layout {
             {
                 continue;
             }
-            let mut sites = BTreeSet::new();
-            let mut produced = BTreeMap::new();
+            let Some(body) = ordered_body(plan, iteration, generator.body(), generator.latch())
+            else {
+                continue;
+            };
+            let mut sites: BTreeSet<_> = body.iter().copied().collect();
+            let mut produced = BTreeMap::<u32, Value>::new();
             let mut captures = BTreeSet::new();
             let mut steps = Vec::new();
             let mut matrices = Vec::<Matrix>::new();
             let mut reads = Vec::new();
             let mut element_seen = false;
             let mut pushed = None;
-            let mut site = generator.body();
             let mut complete = true;
-            while site != generator.latch() {
-                if sites.len() == MAX_BODY
-                    || !sites.insert(site)
-                    || plan.activation_boundary() == Some(site)
-                {
-                    complete = false;
-                    break;
-                }
+            for &site in &body {
                 let block = &plan.blocks()[site as usize];
-                let Terminator::Scalar(Term::Jump(next)) = block.terminator() else {
-                    complete = false;
-                    break;
-                };
-                if block.iteration() != Some(iteration) {
-                    complete = false;
-                    break;
-                }
-                match block.action() {
-                    Action::Scalar(Scalar::None) => {}
+                let output = match block.action() {
+                    Action::Scalar(Scalar::None) => None,
                     Action::CollectionElement { iteration: owner }
-                        if *owner == iteration && !element_seen && pushed.is_none() =>
+                        if *owner == iteration && site == generator.body() && !element_seen =>
                     {
-                        if !defined_here(&facts, element, site)? {
-                            complete = false;
-                            break;
-                        }
-                        produced.insert(element.get(), site);
                         element_seen = true;
+                        Some(element)
                     }
-                    Action::Scalar(action)
-                        if element_seen && pushed.is_none() && steps.len() < MAX_STEPS =>
-                    {
-                        let (inputs, output) = match action {
+                    Action::Scalar(action) if steps.len() < MAX_STEPS => {
+                        let output = match action {
                             Scalar::Copy { source, output } => {
                                 if plan.values()[source.get() as usize].scalar_kind()
                                     != plan.values()[output.get() as usize].scalar_kind()
@@ -278,7 +349,7 @@ impl Layout {
                                     complete = false;
                                     break;
                                 }
-                                (std::slice::from_ref(source), *output)
+                                *output
                             }
                             Scalar::Primitive {
                                 operands,
@@ -296,72 +367,45 @@ impl Layout {
                                     complete = false;
                                     break;
                                 }
-                                (&operands[..], *output)
+                                *output
                             }
                             _ => {
                                 complete = false;
                                 break;
                             }
                         };
-                        if plan.values()[output.get() as usize].scalar_kind().is_none()
-                            || produced.contains_key(&output.get())
-                            || !defined_here(&facts, output, site)?
-                        {
-                            complete = false;
-                            break;
-                        }
-                        for &input in inputs {
-                            if plan.values()[input.get() as usize].scalar_kind().is_none() {
-                                complete = false;
-                                break;
-                            }
-                            if !produced.contains_key(&input.get()) {
-                                if !immutable_before(
-                                    &facts,
-                                    input,
-                                    generator.initialize(),
-                                    generator.parent(),
-                                )? {
-                                    complete = false;
-                                    break;
-                                }
-                                captures.insert(input.get());
-                            }
-                        }
-                        if !complete {
-                            break;
-                        }
-                        produced.insert(output.get(), site);
                         steps.push(site);
+                        Some(output)
                     }
                     Action::LibraryCall {
                         template,
                         operands,
                         output,
-                    } if element_seen && pushed.is_none() && steps.len() < MAX_STEPS => {
+                    } if steps.len() < MAX_STEPS => {
                         if !matches!(
                             (template.primitive(), operands.len()),
                             (Primitive::MatrixScalarAccess, 2) | (Primitive::MatrixCellAccess, 3)
-                        ) || template.inputs().len() != operands.len()
-                            || template.output().dimension_parameters().len() != 0
-                            || plan.values()[output.get() as usize].scalar_kind().is_none()
-                            || produced.contains_key(&output.get())
-                            || !defined_here(&facts, *output, site)?
-                        {
+                        ) {
                             complete = false;
                             break;
                         }
                         let matrix = operands[0];
-                        let body = plan.values()[matrix.get() as usize].definition().body();
-                        let Some(width) = matrix_width(body) else {
+                        let definition = plan.values()[matrix.get() as usize].definition();
+                        let Some(width) = matrix_width(definition.body()) else {
                             complete = false;
                             break;
                         };
-                        let SchemaBody::Matrix { element: kind, .. } = body else {
+                        let SchemaBody::Matrix { element: kind, .. } = definition.body() else {
                             unreachable!()
                         };
-                        if template.inputs()[0].body() != body
+                        if template.inputs().len() != operands.len()
+                            || template.inputs()[0] != *definition
                             || template.output().body() != kind.as_ref()
+                            || !template.output().dimension_parameters().is_empty()
+                            || operands[1..].iter().any(|v| {
+                                plan.values()[v.get() as usize].scalar_kind()
+                                    != Some(NativeScalarKind::U64)
+                            })
                             || !immutable_before(
                                 &facts,
                                 matrix,
@@ -372,31 +416,8 @@ impl Layout {
                             complete = false;
                             break;
                         }
-                        for &input in &operands[1..] {
-                            if plan.values()[input.get() as usize].scalar_kind()
-                                != Some(NativeScalarKind::U64)
-                            {
-                                complete = false;
-                                break;
-                            }
-                            if !produced.contains_key(&input.get()) {
-                                if !immutable_before(
-                                    &facts,
-                                    input,
-                                    generator.initialize(),
-                                    generator.parent(),
-                                )? {
-                                    complete = false;
-                                    break;
-                                }
-                                captures.insert(input.get());
-                            }
-                        }
-                        if !complete {
-                            break;
-                        }
                         let at = if let Some(at) =
-                            matrices.iter().position(|v| v.value == matrix.get())
+                            matrices.iter().position(|m| m.value == matrix.get())
                         {
                             at
                         } else {
@@ -417,66 +438,81 @@ impl Layout {
                             indices: operands[1..].iter().map(|v| v.get()).collect(),
                             output: output.get(),
                         });
-                        produced.insert(output.get(), site);
                         steps.push(site);
+                        Some(*output)
                     }
                     Action::CollectionPush {
                         collection: owner,
                         value,
-                    } if *owner == id as u32
-                        && site == collection.push()
-                        && pushed.is_none()
-                        && produced.contains_key(&value.get()) =>
-                    {
-                        pushed = Some(*value)
+                    } if *owner == id as u32 && site == collection.push() && pushed.is_none() => {
+                        pushed = Some(*value);
+                        None
                     }
                     _ => {
                         complete = false;
                         break;
                     }
+                };
+                if let Some(value) = output {
+                    if plan.values()[value.get() as usize].scalar_kind().is_none() {
+                        complete = false;
+                        break;
+                    }
+                    produced.insert(value.get(), value);
                 }
-                site = next;
             }
             let Some(pushed) = pushed else { continue };
             let latch = &plan.blocks()[generator.latch() as usize];
-            if !complete
-                || !element_seen
-                || captures.len() > 128
-                || scalar_width(plan.values()[pushed.get() as usize].definition().body())
-                    != Some(output_width)
+            if !complete || !element_seen
+                || scalar_width(plan.values()[pushed.get() as usize].definition().body()) != Some(output_width)
                 || !matches!(plan.values()[collection.output().get() as usize].definition().body(),
                     SchemaBody::Matrix { element, .. } if NativeScalarKind::from_schema_body(element) == plan.values()[pushed.get() as usize].scalar_kind())
                 || !matches!(latch.action(), Action::Latch { iteration: owner } if *owner == iteration)
                 || latch.terminator() != Terminator::Scalar(Term::Jump(generator.header()))
                 || plan.activation_boundary() == Some(generator.latch())
+                // Exactly one Push dominates every successful element. Filters
+                // and variable output counts retain their ordinary route.
+                || !facts.strictly_dominates(collection.push(), generator.latch())?
             {
                 continue;
             }
             sites.insert(generator.header());
             sites.insert(generator.latch());
-            // No hidden external read may observe omitted element/scalar homes.
-            for value in produced.keys() {
-                let value = if *value == element.get() {
-                    element
-                } else {
-                    match plan.blocks()[produced[value] as usize].action() {
-                        Action::Scalar(
-                            Scalar::Copy { output, .. } | Scalar::Primitive { output, .. },
-                        )
-                        | Action::LibraryCall { output, .. } => *output,
-                        _ => unreachable!(),
+            // Current-visits validation establishes definite assignment on
+            // every incoming path and iteration. Permit source phi copies,
+            // but require their complete definitions and reads inside this
+            // exact acyclic body; no omitted word may escape the region.
+            for (&id, &value) in &produced {
+                let definitions = facts.definition_sites(id)?;
+                if definitions.is_empty()
+                    || definitions.iter().any(|d| d.site().is_none_or(|at| !body.contains(&at)))
+                    || facts.read_roles(value)?.iter().any(|role|
+                        !matches!(role, Read::Action(at) | Read::Terminator(at) if sites.contains(at))) {
+                    complete = false; break;
+                }
+            }
+            for &site in &body {
+                for input in scalar_reads(plan, site) {
+                    if plan.values()[input.get() as usize].scalar_kind().is_none() {
+                        complete = false;
+                        break;
                     }
-                };
-                if facts
-                    .read_roles(value)?
-                    .iter()
-                    .any(|role| !matches!(role, Read::Action(at) if sites.contains(at)))
-                {
-                    complete = false;
-                    break;
+                    if !produced.contains_key(&input.get()) {
+                        if !immutable_before(
+                            &facts,
+                            input,
+                            generator.initialize(),
+                            generator.parent(),
+                        )? {
+                            complete = false;
+                            break;
+                        }
+                        captures.insert(input.get());
+                    }
                 }
             }
             if !complete
+                || captures.len() > 128
                 || plan.blocks().iter().enumerate().any(|(at, block)| {
                     block.iteration() == Some(iteration)
                         && !sites.contains(&(at as u32))
@@ -502,6 +538,7 @@ impl Layout {
                 input_width,
                 output_width,
                 steps,
+                body,
                 sites: sites.into_iter().collect(),
                 captures: captures.into_iter().collect(),
                 matrices,
