@@ -1,0 +1,642 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v1",
+  "label": "round14-phase-reductions",
+  "compiler_commit": "e065bf86a67ad7c74c40d3264ef5940de74fb9db",
+  "compiler_fingerprint": "e6827b9d369ebd86738499a4e028a6648bdc1da40e38b6bea0cf93218f01548d",
+  "driver_sha256": "4b754b8924ed3eb2ec97e7f79edf71a46423c88861b417f58897de5de897cffa",
+  "frozen_candidate_sha256": "5cdf399df85dd1d14a9c6b329ccd5f59c9ac245099812160cb1057a1a0560949",
+  "native_typed_ir_version": 373,
+  "native_work_policy_version": 142,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "live_outs_per_artifact": 29482
+  },
+  "checks": [
+    {
+      "suite": "native numeric/phase, ordinary row blocks, source C liveouts and unchanged exact Huffman equations",
+      "passed_by_target": [
+        342
+      ],
+      "log_sha256": "192d0bcd06e6aeded25cad187a27610afb762cab8439505df3bf91184a30c932"
+    },
+    {
+      "suite": "matrix and all thirty original/decoded/Object PolyBench qualifications",
+      "passed_by_target": [
+        24,
+        30
+      ],
+      "log_sha256": "1628d593932a6ab37a76fc9eb867966bca65fc8de9c5e8820249f7cfca465e64"
+    },
+    {
+      "suite": "selected direct scalar, private frame, numeric and compression Program regressions",
+      "passed_by_target": [
+        102
+      ],
+      "log_sha256": "cf59910b0786b044202076606d2c25e07d202246941d03d468d2fe4d84e92d25"
+    },
+    {
+      "suite": "resident numeric, geometry, finite capacity and prefix projection; freshly rerun",
+      "passed_by_target": [
+        195
+      ],
+      "log_sha256": "91f497bc9c99aeb55229016dae9cbaabb44936f8c11961c32bd592fa98ff2e39"
+    },
+    {
+      "suite": "collection helper tags round-trip with reserved output space",
+      "passed_by_target": [
+        1
+      ],
+      "log_sha256": "aa3b6b357ff738f6451cfa1bebbdf20eff2589b37494409e00fc776c7453b6ef"
+    },
+    {
+      "suite": "additional original/decoded/restored inclusive-range overflow, inactive-read and native-path edges",
+      "passed_by_target": [
+        1
+      ],
+      "log_sha256": "8b667f4616763c3eca1ac16b32da503e61c30e211d2459b95f1ab0b382c289ef"
+    }
+  ],
+  "goal": {
+    "partition": "holdout",
+    "metric": "geomean_mech_over_c_kernel",
+    "value": 181.02105364633815,
+    "target_strictly_below": 1.0,
+    "achieved": false,
+    "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+    "objective_frozen_with_candidate": true,
+    "sum_mech_median_seconds": 0.143865794
+  },
+  "aggregates": {
+    "optimization": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 16.23267310997343,
+      "median_speedup": 1.272725646941002,
+      "minimum_speedup": 0.9824519946986119,
+      "maximum_speedup": 19506.37341304348,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 48.3629118002557,
+      "geomean_mech_over_c_fresh": 30.734536369640992,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 836.1403016558764,
+      "sum_mech_median_seconds": 0.008501627,
+      "geomean_speedup_from_contemporaneous_baseline": 15.745910913388181,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 0.9794519844246042
+    },
+    "holdout": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 11.34859865888497,
+      "median_speedup": 4.7966504838627175,
+      "minimum_speedup": 1.07155061563122,
+      "maximum_speedup": 186.28786720631422,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 181.02105364633815,
+      "geomean_mech_over_c_fresh": 106.78960228152255,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 4434.304333595195,
+      "sum_mech_median_seconds": 0.143865794,
+      "geomean_speedup_from_contemporaneous_baseline": 11.259766724272794,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.0355991615437459
+    },
+    "all": {
+      "count": 30,
+      "geomean_speedup_from_recorded_baseline": 13.572696573856007,
+      "median_speedup": 4.488594501242639,
+      "minimum_speedup": 0.9824519946986119,
+      "maximum_speedup": 19506.37341304348,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 93.56658191623337,
+      "geomean_mech_over_c_fresh": 57.28986747428335,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 4434.304333595195,
+      "sum_mech_median_seconds": 0.152367421,
+      "geomean_speedup_from_contemporaneous_baseline": 13.315227513862919,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 0.9794519844246042
+    }
+  },
+  "cases": {
+    "2mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000148084,
+      "c_median_seconds": 1.7080456018447876e-06,
+      "mech_over_c_kernel": 86.69791944668265,
+      "speedup_from_recorded_baseline": 1.0621809243402396,
+      "speedup_from_paired_original": 1.0554212474001243,
+      "runtime_multiplier_from_round13": 1.0008448286349596,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "3mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 8.8167e-05,
+      "c_median_seconds": 2.500135451555252e-06,
+      "mech_over_c_kernel": 35.26488932635798,
+      "speedup_from_recorded_baseline": 1.0987671124116734,
+      "speedup_from_paired_original": 1.091678292331598,
+      "runtime_multiplier_from_round13": 0.9746733290587898,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "atax": {
+      "partition": "optimization",
+      "mech_median_seconds": 9.7333e-05,
+      "c_median_seconds": 1.2079253792762756e-06,
+      "mech_over_c_kernel": 80.57865301109638,
+      "speedup_from_recorded_baseline": 0.9824519946986119,
+      "speedup_from_paired_original": 0.9794519844246042,
+      "runtime_multiplier_from_round13": 0.9940459169083704,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "bicg": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000128958,
+      "c_median_seconds": 1.666136085987091e-06,
+      "mech_over_c_kernel": 77.39943998848072,
+      "speedup_from_recorded_baseline": 0.9948355278462756,
+      "speedup_from_paired_original": 0.9945098404131577,
+      "runtime_multiplier_from_round13": 1.020439169139466,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "cholesky": {
+      "partition": "optimization",
+      "mech_median_seconds": 5.9459e-05,
+      "c_median_seconds": 7.124617695808411e-06,
+      "mech_over_c_kernel": 8.345570603034771,
+      "speedup_from_recorded_baseline": 2669.633697169478,
+      "speedup_from_paired_original": 2663.7318656553257,
+      "runtime_multiplier_from_round13": 0.017686698046756016,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "correlation": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000448917,
+      "c_median_seconds": 4.292000085115433e-06,
+      "mech_over_c_kernel": 104.59389354553716,
+      "speedup_from_recorded_baseline": 3.135323456229102,
+      "speedup_from_paired_original": 2.899014739918515,
+      "runtime_multiplier_from_round13": 1.0199761431411531,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "covariance": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000212042,
+      "c_median_seconds": 4.416797310113907e-06,
+      "mech_over_c_kernel": 48.00808937155677,
+      "speedup_from_recorded_baseline": 1.0508908612444705,
+      "speedup_from_paired_original": 1.048532837834014,
+      "runtime_multiplier_from_round13": 1.005333851704699,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "deriche": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.003272667,
+      "c_median_seconds": 2.8584152460098267e-05,
+      "mech_over_c_kernel": 114.49235741967314,
+      "speedup_from_recorded_baseline": 384.9002333570754,
+      "speedup_from_paired_original": 382.02524607605966,
+      "runtime_multiplier_from_round13": 0.9927072726164183,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "doitgen": {
+      "partition": "optimization",
+      "mech_median_seconds": 5.5917e-05,
+      "c_median_seconds": 3.0831433832645416e-06,
+      "mech_over_c_kernel": 18.13636054149162,
+      "speedup_from_recorded_baseline": 1.272725646941002,
+      "speedup_from_paired_original": 1.0826939928823078,
+      "runtime_multiplier_from_round13": 0.9410942996112224,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "durbin": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.00024325,
+      "c_median_seconds": 1.25030055642128e-06,
+      "mech_over_c_kernel": 194.55322062420856,
+      "speedup_from_recorded_baseline": 21.37153134635149,
+      "speedup_from_paired_original": 21.04539362795478,
+      "runtime_multiplier_from_round13": 1.0017172295363481,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "gemm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.00014225,
+      "c_median_seconds": 4.250090569257736e-06,
+      "mech_over_c_kernel": 33.46987497841569,
+      "speedup_from_recorded_baseline": 1.119212653778559,
+      "speedup_from_paired_original": 1.029286467486819,
+      "runtime_multiplier_from_round13": 1.0139566047957116,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "gramschmidt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.002926416,
+      "c_median_seconds": 3.4999102354049683e-06,
+      "mech_over_c_kernel": 836.1403016558764,
+      "speedup_from_recorded_baseline": 34.162237016200024,
+      "speedup_from_paired_original": 34.06379441610489,
+      "runtime_multiplier_from_round13": 1.0043469755469754,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "mvt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.00016525,
+      "c_median_seconds": 1.2498348951339722e-06,
+      "mech_over_c_kernel": 132.21746379731744,
+      "speedup_from_recorded_baseline": 1.0854765506807866,
+      "speedup_from_paired_original": 0.9992435703479575,
+      "runtime_multiplier_from_round13": 0.9737313503193722,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "nussinov": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000184,
+      "c_median_seconds": 3.583403304219246e-05,
+      "mech_over_c_kernel": 5.134783455251907,
+      "speedup_from_recorded_baseline": 19506.37341304348,
+      "speedup_from_paired_original": 19517.18070652174,
+      "runtime_multiplier_from_round13": 1.0084512600160036,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "seidel-2d": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000328917,
+      "c_median_seconds": 0.00010891677811741829,
+      "mech_over_c_kernel": 3.019892854757505,
+      "speedup_from_recorded_baseline": 16835.178403670227,
+      "speedup_from_paired_original": 16765.19329496499,
+      "runtime_multiplier_from_round13": 1.0123108363058875,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "adi": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.029532375,
+      "c_median_seconds": 4.499964416027069e-05,
+      "mech_over_c_kernel": 656.2801895681113,
+      "speedup_from_recorded_baseline": 32.71671485953974,
+      "speedup_from_paired_original": 32.50553137023351,
+      "runtime_multiplier_from_round13": 1.0011172763555725,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "fdtd-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.00127425,
+      "c_median_seconds": 6.9998204708099365e-06,
+      "mech_over_c_kernel": 182.0403830803619,
+      "speedup_from_recorded_baseline": 56.99182499509515,
+      "speedup_from_paired_original": 56.69220482636845,
+      "runtime_multiplier_from_round13": 1.0022613312358668,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "floyd-warshall": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.001703334,
+      "c_median_seconds": 6.554089486598969e-05,
+      "mech_over_c_kernel": 25.9888731071307,
+      "speedup_from_recorded_baseline": 186.28786720631422,
+      "speedup_from_paired_original": 185.17152713443167,
+      "runtime_multiplier_from_round13": 1.0068717492192805,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "gemver": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000417,
+      "c_median_seconds": 1.9581057131290436e-06,
+      "mech_over_c_kernel": 212.9609230002378,
+      "speedup_from_recorded_baseline": 1.1198033573141488,
+      "speedup_from_paired_original": 1.101220623501199,
+      "runtime_multiplier_from_round13": 0.9892276196146994,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "gesummv": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000113542,
+      "c_median_seconds": 9.997747838497162e-07,
+      "mech_over_c_kernel": 113.56757725254589,
+      "speedup_from_recorded_baseline": 1.07155061563122,
+      "speedup_from_paired_original": 1.0355991615437459,
+      "runtime_multiplier_from_round13": 1.0070243902439024,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "heat-3d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.001074959,
+      "c_median_seconds": 1.7750076949596405e-05,
+      "mech_over_c_kernel": 60.560807880015524,
+      "speedup_from_recorded_baseline": 68.99476352121337,
+      "speedup_from_paired_original": 68.4718747412692,
+      "runtime_multiplier_from_round13": 1.000272642849034,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "jacobi-1d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000187125,
+      "c_median_seconds": 4.172325134277344e-07,
+      "mech_over_c_kernel": 448.49093485714286,
+      "speedup_from_recorded_baseline": 22.333108884435536,
+      "speedup_from_paired_original": 22.275217100868403,
+      "runtime_multiplier_from_round13": 1.000668449197861,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "jacobi-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.004393875,
+      "c_median_seconds": 7.832888513803482e-06,
+      "mech_over_c_kernel": 560.9520666937757,
+      "speedup_from_recorded_baseline": 16.771689681659126,
+      "speedup_from_paired_original": 16.779446843617535,
+      "runtime_multiplier_from_round13": 1.0147517321016168,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "lu": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.051917375,
+      "c_median_seconds": 1.1708121746778488e-05,
+      "mech_over_c_kernel": 4434.304333595195,
+      "speedup_from_recorded_baseline": 4.647373196352858,
+      "speedup_from_paired_original": 4.6435474058540125,
+      "runtime_multiplier_from_round13": 0.999657419027843,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "ludcmp": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.052022917,
+      "c_median_seconds": 1.2416858226060867e-05,
+      "mech_over_c_kernel": 4189.700490484201,
+      "speedup_from_recorded_baseline": 4.7966504838627175,
+      "speedup_from_paired_original": 4.777599591349327,
+      "runtime_multiplier_from_round13": 0.9959461978755642,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "symm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.0002365,
+      "c_median_seconds": 3.666151314973831e-06,
+      "mech_over_c_kernel": 64.50906677911851,
+      "speedup_from_recorded_baseline": 3.4582452431289643,
+      "speedup_from_paired_original": 3.428646934460888,
+      "runtime_multiplier_from_round13": 0.996313849394418,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "syr2k": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000472834,
+      "c_median_seconds": 6.875023245811462e-06,
+      "mech_over_c_kernel": 68.77562200070658,
+      "speedup_from_recorded_baseline": 3.185490045132118,
+      "speedup_from_paired_original": 3.1794096871206383,
+      "runtime_multiplier_from_round13": 1.0831376663360373,
+      "runtime_regression_over_five_percent_from_round13": true,
+      "observations": 30
+    },
+    "syrk": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000329541,
+      "c_median_seconds": 5.5837444961071014e-06,
+      "mech_over_c_kernel": 59.01792251234826,
+      "speedup_from_recorded_baseline": 4.0906655014095366,
+      "speedup_from_paired_original": 4.0620893910014235,
+      "runtime_multiplier_from_round13": 1.0853552902428982,
+      "runtime_regression_over_five_percent_from_round13": true,
+      "observations": 30
+    },
+    "trisolv": {
+      "partition": "holdout",
+      "mech_median_seconds": 2.7458e-05,
+      "c_median_seconds": 1.0416842997074127e-06,
+      "mech_over_c_kernel": 26.359233798294145,
+      "speedup_from_recorded_baseline": 142.37347949595744,
+      "speedup_from_paired_original": 142.35377667710685,
+      "runtime_multiplier_from_round13": 0.1442940323292624,
+      "runtime_regression_over_five_percent_from_round13": false,
+      "observations": 30
+    },
+    "trmm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000162709,
+      "c_median_seconds": 3.25031578540802e-06,
+      "mech_over_c_kernel": 50.05944367943152,
+      "speedup_from_recorded_baseline": 4.32981580613242,
+      "speedup_from_paired_original": 4.2565807668905835,
+      "runtime_multiplier_from_round13": 1.0602835955114753,
+      "runtime_regression_over_five_percent_from_round13": true,
+      "observations": 30
+    }
+  },
+  "implementation": [
+    "An exact sole-consumer positive U64 range comprehension -> ordered F64 row sum -> scalar extraction is composed inside the parent native numeric phase. Both legal original builder/range setup orders have an exact summary entry and a cold boundary before either executes.",
+    "The native emitter reuses the maintained checked scalar-map DAG and its original branch/read/arithmetic vocabulary through a fixed stack frame. Matrix pointers and current dimensions come only from the existing admitted phase views; scalar captures come from current SSA homes. No per-element or per-fold general helper, managed row/sum value, reassociation, FMA or benchmark source rewrite is introduced.",
+    "Source matrix dimensions or an exact constant cardinality provide a finite attempt envelope. Independent plain row shape parameters establish all positive admitted cardinalities. Overflow, zero, descending or out-of-envelope counts resume the original source; the native bound never truncates a range.",
+    "Exact selected range, matrix read, sum and extraction factories, source schemas and current array versions are independently rederived. Complete source setup/body/header/finish/group work, logical elided constructor/output/clone/temporary/node bounds, physical coexistence probes and unspent replay compute/comparison credit remain in the phase schedule and entry admission.",
+    "Common-prefix FSMs export the exact native current tag and payload at a proved reduction replay edge. Successful summary edges also feed source membership, recurrence profitability, mutation funding, scalar liveness and image fee reconstruction. Only the existing canonical runtime selects this new source-admitted fold contract; diagnostic compact calls retain their distinct supported scope.",
+    "The standalone fold uses the same original shared bound and retains its original grouping frontier. IR373 separates the composed graph/metadata; Work142 funds the new native attempt and ordinary replay. Both exact Huffman work equations are unchanged."
+  ],
+  "development_checks": {
+    "logs_sha256": {
+      "core-check.log": "03e6c4cc30aecd8f5f1b3f4801e623521cd28a052fa194c3a16c1f4481147efd",
+      "wired-check.log": "42f1117d18d395548babf62ba63d295142e9f8a7058c4d08ee147eb4c2270daa",
+      "focused-tests.log": "7c1f4f8dff58823fd94505fb4075345abb80d91b4fdd4892b45e729fe73a6d8c",
+      "focused-tests-2.log": "64de4d7d15acc463e9202ec526c0ff9857ff4861d06405f2f46f17b912f44274",
+      "proof-diagnostics.log": "be7226cb3d88ba565e08e2b820a2b5fb3b89a132d6217e5ae127f5ff99c76229",
+      "focused-tests-3.log": "fa8ef8c4b9006f4d4447e19bead5bac1ee2afe2d4c753dd9a6917be456f9878f",
+      "focused-tests-4.log": "e5c53858d90badcc55662aaf11954a217fd3a5b5c543497d1f364d02e4c448d1",
+      "source-liveouts-initial.log": "2c52bba687eb4092efa457691a30ecab9a0615fac453cd60720b23f897e1c55e",
+      "initial-numeric-regressions.log": "c5593e44494a9d8f14f63f67d22378547755d3a9efd52db4faeb510cfe9aebc4"
+    },
+    "focused": "Four original/decoded/restored tests qualify repeated current-version folds, exact F64 bits and immutable aliases, cold bounds/range/error replay, finite partial arithmetic failure, image-forged source/views/prices, and both unchanged Cholesky source reductions. The additional inclusive endpoint test verifies admitted native execution, inactive invalid reads, U64 maximum endpoints and overflow.",
+    "initial_broad_run": "340 passed; two negative fixtures lacked newly required replay-credit fields. Both fixtures now supply explicit zero credit; no serde default or weakened missing-field validation was added. All342 pass in the final broad run.",
+    "inclusive_check_scope": "The inclusive test was added after the final342-check broad binary was built. It is test-only code; no compiler implementation changed. It passes separately in the final test binary, alongside the passing protocol check.",
+    "selection": "One compiler source/executable candidate and one seven-sample optimization-only replay. The single flagged Doitgen regression receives one predeclared follow-up of six alternating actor pairs with31 samples each, preserving every original sample. No source or executable changed; no holdout profile or timing selected or refined the candidate."
+  },
+  "inter_round_aggregates": {
+    "optimization": {
+      "mech_new_over_round13": 0.7621348208880308,
+      "reference_new_over_round13": 0.9911937139018063,
+      "c_new_over_round13": 0.9534079199552956,
+      "mech_over_c_score_new_over_round13": 0.7993795781807294,
+      "mech_new_over_round13_regressions_over_five_percent": 0
+    },
+    "holdout": {
+      "mech_new_over_round13": 0.8927508308848112,
+      "reference_new_over_round13": 1.0110471137527395,
+      "c_new_over_round13": 0.9678751892652091,
+      "mech_over_c_score_new_over_round13": 0.9223821839699903,
+      "mech_new_over_round13_regressions_over_five_percent": 3
+    }
+  },
+  "inter_round_regressions_over_five_percent": [
+    {
+      "partition": "holdout",
+      "case": "syr2k",
+      "reference": "frozen round13 Mech",
+      "runtime_multiplier": 1.0831376663360373
+    },
+    {
+      "partition": "holdout",
+      "case": "syrk",
+      "reference": "frozen round13 Mech",
+      "runtime_multiplier": 1.0853552902428982
+    },
+    {
+      "partition": "holdout",
+      "case": "trmm",
+      "reference": "frozen round13 Mech",
+      "runtime_multiplier": 1.0602835955114753
+    }
+  ],
+  "training_probe": {
+    "receipt_sha256": "f9557493bb73cfb23b7d1a4f0f5c08c31bab6b0ec8f0192ad84f619d8d0e7f24",
+    "reference": "round13 frozen compiler replay",
+    "cases": 15,
+    "samples_per_actor": 7,
+    "summary": {
+      "count": 15,
+      "geomean_speedup_from_round_13_replay": 1.3268029356035278,
+      "regressions_over_five_percent": 1,
+      "sum_candidate_median_seconds": 0.008038751,
+      "sum_reference_median_seconds": 0.011402707
+    },
+    "frozen_aggregate_qualification": false,
+    "regressions_over_five_percent": [
+      {
+        "case": "doitgen",
+        "runtime_multiplier": 1.1066154857004529
+      }
+    ]
+  },
+  "training_regression_diagnostic": {
+    "receipt_sha256": "15727c5eb968bd6df51951eab64a23d4f0ffc04372160de42d26e33c5453a821",
+    "partition": "optimization",
+    "case": "doitgen",
+    "pairs": 6,
+    "samples_per_actor_per_pair": 31,
+    "source_or_binary_changes": false,
+    "original_flag_is_retained": true,
+    "summary": {
+      "geomean_speedup": 0.9956994959665423,
+      "candidate_medians_seconds": [
+        2.7333e-05,
+        2.825e-05,
+        2.7292e-05,
+        2.7458e-05,
+        2.7708e-05,
+        2.7583e-05
+      ],
+      "reference_medians_seconds": [
+        2.8083e-05,
+        2.6958e-05,
+        2.7166e-05,
+        2.7708e-05,
+        2.7458e-05,
+        2.7542e-05
+      ],
+      "all_work_reports_equal": true
+    }
+  },
+  "profiling": {
+    "receipt_sha256": "c6892e39a31e680b57ca2ef496c5afadb192b385c1a665a99b847da65d3144bc",
+    "partition": "optimization",
+    "cases": [
+      "deriche",
+      "gramschmidt",
+      "correlation",
+      "seidel-2d",
+      "durbin"
+    ],
+    "canonical_execution_samples": 5296,
+    "coverage_of_training_sum": 0.8492688517150894,
+    "weighted_categories": [
+      {
+        "name": "Canonical library calls",
+        "fraction_of_profiled_time": 0.35234884149631046,
+        "estimated_seconds_in_training_sum": 0.0025440174778598914
+      },
+      {
+        "name": "Other helper dispatch",
+        "fraction_of_profiled_time": 0.24547529116222874,
+        "estimated_seconds_in_training_sum": 0.0017723725965649154
+      },
+      {
+        "name": "Source visits and admission",
+        "fraction_of_profiled_time": 0.1277889104570231,
+        "estimated_seconds_in_training_sum": 0.000922657274247753
+      },
+      {
+        "name": "Other execution and generated code",
+        "fraction_of_profiled_time": 0.10003031864259762,
+        "estimated_seconds_in_training_sum": 0.0007222356056627681
+      },
+      {
+        "name": "Comprehension collection bookkeeping",
+        "fraction_of_profiled_time": 0.09752742557476239,
+        "estimated_seconds_in_training_sum": 0.0007041642997298554
+      },
+      {
+        "name": "Private frame transport",
+        "fraction_of_profiled_time": 0.06894817463618678,
+        "estimated_seconds_in_training_sum": 0.0004978173352184328
+      },
+      {
+        "name": "Loop-local retirement",
+        "fraction_of_profiled_time": 0.0068911802111896086,
+        "estimated_seconds_in_training_sum": 4.975547195188424e-05
+      },
+      {
+        "name": "Typed matrix scalar reads",
+        "fraction_of_profiled_time": 0.0006563056455115739,
+        "estimated_seconds_in_training_sum": 4.738636363636364e-06
+      },
+      {
+        "name": "Other selected library dispatch",
+        "fraction_of_profiled_time": 0.00033355217418977044,
+        "estimated_seconds_in_training_sum": 2.408302400863232e-06
+      }
+    ],
+    "completion_notes": "Durbin outlasted the collector child.wait(120) deadline. The same sampled PID61632 was confirmed absent after its complete status:ok report (41110 positive finite samples, valid full warm-up outputs, empty stderr). No process/profile/timing was restarted. The collector did not observe its OS exit status; that limitation does not alter the earlier completed frozen measurements."
+  },
+  "scope": [
+    "CPU MINI F64 timing and selected regressions; larger datasets, GPU/SIMD selection, full compression/AOT and an external application remain unqualified.",
+    "Composition currently requires an exact scalar F64 sole-consumer range/map/sum/extraction, an available finite source envelope and independently proven row schemas. Escaping/materialized map outputs and general array-expression composition remain compiler gaps; unsupported/tight contexts keep their source route.",
+    "The fixed split and every previous holdout result were exposed. No holdout was profiled or timed before candidate selection/freeze. Ports, inputs, pinned C binaries, tolerances and timing boundaries are unchanged.",
+    "Source work units are conservative finite prices, not elapsed CPU time. Every process validates complete finite untimed warm-up live-outs; timed checked calls must succeed but their outputs are not separately flattened.",
+    "No compiler source changed after freeze. Only the PR1001 branch is updated; PR1000 remains unchanged."
+  ],
+  "receipts": {
+    "round-14-frozen.json": "5cdf399df85dd1d14a9c6b329ccd5f59c9ac245099812160cb1057a1a0560949",
+    "round-14-optimization.json": "ded42b7a40fea9fa9d9e8cb7352e88e976d615b4d948ee7cb88af999ae87afe5",
+    "round-14-holdout.json": "b448d003f3330c283090174c8c7e71849704cb9c857e5de9a52a82c5f6f1b37e",
+    "round-14-progress.json": "f9c4d23961b670505c753291d69d743cf427f3916637ba365183e20845bb92c0",
+    "round-14-training-probe.json": "f9557493bb73cfb23b7d1a4f0f5c08c31bab6b0ec8f0192ad84f619d8d0e7f24",
+    "round-14-training-regression.json": "15727c5eb968bd6df51951eab64a23d4f0ffc04372160de42d26e33c5453a821",
+    "round-14-training-profile.json": "c6892e39a31e680b57ca2ef496c5afadb192b385c1a665a99b847da65d3144bc"
+  }
+}

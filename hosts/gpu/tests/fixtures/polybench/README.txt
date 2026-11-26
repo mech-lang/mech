@@ -1531,3 +1531,29 @@ training summed medians 87.562430%.
 No source changed after freeze and no benchmark port was rewritten. The split
 and past holdout results were exposed; no holdout was profiled. The strict
 holdout goal remains open unless the recorded score is below1.0x C.
+
+Round 14: ordered source reductions inside native phases
+Source e065bf86a67ad7c74c40d3264ef5940de74fb9db; IR373/work142; executable 4b754b8924ed3eb2ec97e7f79edf71a46423c88861b417f58897de5de897cffa.
+The original range comprehension, ordered F64 sum and scalar extraction now
+share the parent numeric phase loan and checked scalar DAG. Both builder/range
+setup orders retain exact cold replay before either source operation. Current
+array versions, source shapes, elided constructor/clone/output/temporary/node
+bounds, physical coexistence probes and unspent replay credit remain checked.
+No port changed and no arithmetic was reassociated. Both Cholesky source folds
+select the composed path without per-fold loans or per-cell helpers.
+
+Equal-weight geometric means of median kernel runtimes (lower Mech/C is better):
+optimization: 48.362912x C; 16.232673x faster than recorded start; 15.745911x faster than paired original; summed medians 0.008501627s; raw runtime multiplier vs round13 0.762135x.
+holdout: 181.021054x C; 11.348599x faster than recorded start; 11.259767x faster than paired original; summed medians 0.143865794s; raw runtime multiplier vs round13 0.892751x.
+
+Optimization-only seven-sample round13 replay: 1.326803x speedup; 1 >5% regressions. The original Doitgen flag remains; its fixed six-pair/31-sample follow-up is 0.995699x speedup with unchanged work reports.
+Final selected checks:342 native/phase/ordinary block,24 matrix,30 PolyBench,
+102 Program,195 freshly rerun resident Engine, one protocol, one additional
+inclusive-range endpoint test (695 total). Both exact Huffman bills remain.
+All900 balanced finite observations,29482 live-outs per artifact, both sets,
+all regressions and fifteen-entry history remain. Five optimization-only raw
+profiles retain 5296 canonical execution samples and cover
+84.926885% of training summed medians.
+No compiler source changed after freeze and no benchmark port was rewritten.
+The split and past holdout results were exposed; no holdout was profiled.
+The strict holdout goal remains open unless its score is below1.0x C.
