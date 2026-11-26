@@ -48,6 +48,24 @@ class BenchmarkPolybenchTests(unittest.TestCase):
                     BENCHMARK.validate(actual, expected)
         self.assertEqual(BENCHMARK.validate([-0.0, 1 + 1e-11], [0.0, 1])["count"], 2)
 
+    def test_goal_requires_complete_holdout_and_strictly_beating_c(self):
+        def score(value, count=15, objective=None):
+            return BENCHMARK.goal_score({"holdout": {
+                "count": count, "geomean_mech_over_c_kernel": value,
+                "sum_mech_median_seconds": 1.634172837}}, objective)
+        self.assertFalse(score(1610.2738988969445)["achieved"])
+        self.assertFalse(score(1.0)["achieved"])
+        self.assertTrue(score(0.999)["achieved"])
+        self.assertEqual(score(2.0)["value"], 2.0)
+        self.assertFalse(score(2.0)["objective_frozen_with_candidate"])
+        objective = BENCHMARK.digest(BENCHMARK.FIXTURE / "optimization-objective.json")
+        self.assertTrue(score(2.0, objective=objective)["objective_frozen_with_candidate"])
+        with self.assertRaises(ValueError):
+            score(2.0, objective="changed objective")
+        for value, count in [(1, 14), (0, 15), (float("nan"), 15)]:
+            with self.assertRaises(ValueError):
+                score(value, count)
+
     def test_frozen_split_covers_all_sources_once_with_verified_hashes(self):
         spec, cases = BENCHMARK.protocol()
         self.assertEqual(set(spec["optimization"]) | set(spec["holdout"]), set(cases))

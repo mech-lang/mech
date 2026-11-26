@@ -1,0 +1,49 @@
+{
+  "schema": "mech.polybench.collector-qualification.v1",
+  "compiler_commit": "29ec7445554053a55bb6d4c941b243cc65cef922",
+  "compiler_fingerprint": "7b20ea480f9c6cffd80658bfac43f1571388113d672081fcf44bad63900dfd63",
+  "driver_sha256": "4ad4dc72fb5302ae35c458ade30c20e13432c1ddd3882309acd4bfe265c5e2d3",
+  "native_typed_ir_version": 357,
+  "checks": [
+    {
+      "suite": "typed collector units",
+      "passed_by_target": [
+        2
+      ],
+      "log_sha256": "77041a51a1c4e73ac9f28f6bd7984214ddc5ab698325ad35d6c09bab7a74f319"
+    },
+    {
+      "suite": "unsigned transfer and row-block units",
+      "passed_by_target": [
+        5
+      ],
+      "log_sha256": "1c5af49fbedcad0393579c14dabacba48bf4bba0b3727820ae506e1d536c141c"
+    },
+    {
+      "suite": "matrix and complete PolyBench integration",
+      "passed_by_target": [
+        23,
+        30
+      ],
+      "log_sha256": "af99e228d1be8979e3baa276dbe10bd37136c905f002a8e350a9f242a070778d"
+    },
+    {
+      "suite": "selected scalar buffer compression and comprehension regressions",
+      "passed_by_target": [
+        95
+      ],
+      "log_sha256": "25d76496086bbb228ea0e3d9b82554e706d9191173383d8b3b99765acc7c859c"
+    },
+    {
+      "suite": "benchmark objective and profile analyzer Python units",
+      "passed_by_target": [
+        7
+      ],
+      "log_sha256": "2c8d0e6ba3ae96b7599bd3197862006f5546a814d8358cc8413b2f9e6ccaa676"
+    }
+  ],
+  "scope": "CPU canonical native compiler, original and decoded artifacts, all 30 MINI F64 PolyBench cases and 23 matrix cases, Object emission, packed scalar bit preservation, finite denial/recovery and aliases. Seven collector/row-block units also execute original/decoded/restored paths.",
+  "limits": "95 selected Program tests passed; 422 remained filtered. Full compression application/AOT qualification and new holdout timings have not been run.",
+  "profile_receipt": "round-02-training-profile.json",
+  "profile_receipt_sha256": "1bbfd39cf9547862dec5873b32f3b11b465f954d090e41bce153877164ec3105"
+}

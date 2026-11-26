@@ -156,6 +156,18 @@ partition receipts alongside each aggregate entry.
 
 First compiler optimization round (Apple M3, MINI, F64)
 
+The primary optimization score is now pinned in optimization-objective.json:
+the equal-weight geometric mean of median Mech / C kernel runtime ratios on
+all fifteen fixed holdout programs. Lower is better; the goal is strictly below
+1.0x. Total median runtime and baseline speedup remain secondary measures.
+Before the first optimization the recorded holdout score was 2020.085x C.
+Round 01 scored 1610.274x C, with 1.634173s summed Mech median runtime.
+The preserved original compiler replayed alongside round 01 scored 1981.563x C
+and 2.004918s; the paired compiler speedup is 1.231x. Historical timing and
+paired replay are different observations of the same original compiler.
+New freezes pin the objective hash and new progress receipts include its score;
+historical raw receipts and compiler fingerprints are preserved unchanged.
+
 round-01-frozen.json pins compiler commit b791cd541ce2a39d46e3ea1236523fc111019b78.
 The compiler transports packed scalar matrices through existing private tuple
 and closed-enum frames, returns typed scalar words through the maintained read
@@ -195,6 +207,62 @@ All thirty kernels remain slower than C in this checked MINI comparison.
 The worst ratio is Gramschmidt at 26,878.28x C, with only a 1.03x speedup; it
 is the next profiling target in the optimization set. Matrix copying and checked
 access overhead remain targets from the existing recurrence profiles.
+
+Training profiles after typed collector storage (IR357)
+
+round-02-training-profile.json records compiler commit
+29ec7445554053a55bb6d4c941b243cc65cef922, the exact executable/source hashes,
+25,222 execution samples, symbolized stacks, disjoint classifications and raw
+profile hashes. Five compressed macOS sample call trees are retained under
+profiles/round-02. Each process ran alone; sample collected seven seconds at a
+nominal 1ms interval after a 2s startup delay. Only stacks below the canonical
+runtime execute boundary enter the percentages. Parsing, JIT compilation,
+input import, cache flush and output serialization are excluded by stack.
+
+The five cases account for 99.58% of the optimization partition's summed
+round-01 median runtime. This prioritizes total CPU work; it does not change
+the equal weighting of all fifteen programs in the primary holdout score.
+
+case             library calls   visit admission   frame transport   collection
+seidel-2d               76.5%              7.9%              6.7%         0.0%
+deriche                 82.5%              5.4%              6.2%         1.3%
+nussinov                26.8%             20.3%             32.4%         0.0%
+gramschmidt             43.1%             23.1%              0.0%        14.0%
+cholesky                70.1%              9.7%              2.7%         5.0%
+
+These columns are selected disjoint categories, not a complete 100% table;
+the receipt also includes typed reads, helper dispatch and loop cleanup.
+Weighted by those five round-01 medians, ordinary library calls account for
+70.3% of execution samples. A separate leaf-symbol view attributes 27.9% to
+memory planning/schema/snapshot validation, 18.4% to allocation/deallocation,
+10.4% to resource bookkeeping/locks and 7.3% to byte copying/zeroing. The two
+views overlap and must not be added together. Inclusive function costs also
+overlap: indexed assignment occurs under many of those same planning calls.
+
+Seidel's indexed_assign_matrix_selection is on 32.2% of execution stacks;
+Deriche's indexed_assign_snapshot is on 28.5%. plan_call_memory appears on
+23.1% and 28.0%, respectively. In Gramschmidt, transpose_snapshot appears on
+13.4% of stacks, including its admission/planning; sum_snapshot appears on
+2.2%. Nussinov additionally spends substantial time moving and validating
+private frames. These observations prioritize extending the shared admitted
+typed matrix update path and avoiding repeated generic call planning. Raw
+arithmetic and fused comprehension changes have not yet been established as
+the largest remaining costs. Inlining, unresolved JIT symbols and sampling
+uncertainty limit precision; unresolved JIT self samples are not a measurement
+of all numerical arithmetic.
+
+The collector storage change passes 23 matrix, all 30 PolyBench and 95 selected
+Program integration tests, plus seven focused collector/row-block units. A
+seven-sample Gramschmidt probe improved only 1.018x against the round-01 binary;
+that is a training probe, not a frozen aggregate result. No new holdout timing
+was performed. The latest qualified holdout score remains 1610.274x C and the
+goal below 1.0x C remains open.
+
+Recompute classifications using a Rust symbol filter (one name per line):
+python3 scripts/analyze-polybench-samples.py --demangler /path/to/rustfilt --output /tmp/profile-analysis.json hosts/gpu/tests/fixtures/polybench/profiles/round-02/*.sample.txt.gz
+The recorded filter used rustc-demangle 0.1.28 with alternate Display formatting
+to omit symbol hashes. The analyzer tests verify execution-only denominators,
+disjoint categories, inclusive/self separation and malformed count rejection.
 
 kernel             split   recorded x    replay x       Mech/C x      C fresh x
 2mm                opt          0.940       0.987          85.46          62.65

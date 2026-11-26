@@ -75,6 +75,7 @@ def freeze(args):
         "driver_sha256": digest(args.driver),
         "reference_driver_sha256": digest(args.reference_driver) if args.reference_driver else None,
         "protocol_sha256": digest(FIXTURE / "optimization-protocol.json"),
+        "objective_sha256": digest(FIXTURE / "optimization-objective.json"),
         "fixture_sha256": digest(FIXTURE / "cases.json"),
         "baseline_sha256": digest(FIXTURE / "baseline-m3-mini.json"),
         "runner_sha256": digest(__file__),
@@ -124,6 +125,7 @@ def run(args):
         "driver_sha256": digest(args.driver),
         "reference_driver_sha256": digest(args.reference_driver) if args.reference_driver else None,
         "protocol_sha256": digest(FIXTURE / "optimization-protocol.json"),
+        "objective_sha256": digest(FIXTURE / "optimization-objective.json"),
         "fixture_sha256": digest(FIXTURE / "cases.json"),
         "baseline_sha256": digest(FIXTURE / "baseline-m3-mini.json"),
         "runner_sha256": digest(__file__),
@@ -225,6 +227,26 @@ def aggregate(names, runs, baseline):
     return result
 
 
+def goal_score(aggregates, frozen_objective_sha256=None):
+    objective_sha256 = digest(FIXTURE / "optimization-objective.json")
+    if frozen_objective_sha256 not in (None, objective_sha256):
+        raise ValueError("the frozen objective differs from the current optimization goal")
+    objective = read(FIXTURE / "optimization-objective.json")["primary"]
+    group = aggregates[objective["partition"]]
+    if group["count"] != 15:
+        raise ValueError("the primary score requires all fifteen holdout programs")
+    score = group[objective["aggregate"]]
+    if not math.isfinite(score) or score <= 0:
+        raise ValueError("the primary score must be finite and positive")
+    target = objective["target_strictly_below"]
+    return {"partition": objective["partition"], "metric": objective["aggregate"],
+            "value": score, "target_strictly_below": target,
+            "achieved": score < target,
+            "objective_sha256": objective_sha256,
+            "objective_frozen_with_candidate": frozen_objective_sha256 is not None,
+            "sum_mech_median_seconds": group["sum_mech_median_seconds"]}
+
+
 def summarize(args):
     spec, _ = protocol()
     baseline = read(FIXTURE / "baseline-m3-mini.json")
@@ -232,6 +254,7 @@ def summarize(args):
     assert left["complete"] and right["complete"]
     assert left["partition"] == "optimization" and right["partition"] == "holdout"
     assert left["freeze_sha256"] == right["freeze_sha256"]
+    assert left["candidate"] == right["candidate"]
     for receipt in (left, right):
         assert receipt["candidate"]["protocol_sha256"] == digest(FIXTURE / "optimization-protocol.json")
         assert receipt["candidate"]["baseline_sha256"] == digest(FIXTURE / "baseline-m3-mini.json")
@@ -245,6 +268,7 @@ def summarize(args):
               "optimization_receipt_sha256": digest(args.optimization),
               "holdout_receipt_sha256": digest(args.holdout),
               "aggregates": {key: aggregate(names, runs, baseline) for key, names in groups.items()}}
+    result["goal"] = goal_score(result["aggregates"], result["candidate"].get("objective_sha256"))
     write(args.output, result)
     if args.history:
         history = read(args.history) if args.history.exists() else {
@@ -254,7 +278,7 @@ def summarize(args):
             raise ValueError(f"history already contains {label}")
         history["entries"].append(result)
         write(args.history, history)
-    print(json.dumps(result["aggregates"], indent=2))
+    print(json.dumps({"goal": result["goal"], "aggregates": result["aggregates"]}, indent=2))
 
 
 def main():
