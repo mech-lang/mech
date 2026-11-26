@@ -22,7 +22,9 @@ use core::ffi::c_void;
 // ABI38 composes an ordinary admission and zero-word helper in one callback.
 // The frozen scalar prefix and frame layout remain unchanged.
 // ABI41 combines ABI40 related-post helpers with paired word-collection loans.
-pub(in crate::native_artifact) const VERSION: u64 = 42;
+// ABI43 composes ordinary collection and managed loop-transition admissions.
+// Frame layout and all source operation/funding checks remain unchanged.
+pub(in crate::native_artifact) const VERSION: u64 = 43;
 pub(in crate::native_artifact) const JOIN_MAP_MISSING_BYTE: u8 = 0x80;
 pub(in crate::native_artifact) const PHASE_ACTIVATION: u64 = 0;
 pub(in crate::native_artifact) const PHASE_TURN: u64 = 1;

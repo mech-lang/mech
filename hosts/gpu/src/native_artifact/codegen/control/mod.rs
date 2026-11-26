@@ -1451,7 +1451,13 @@ impl<'plan> CfgDefinition<'plan> {
                             .ok_or_else(|| backend("String span lacks managed hooks"))?;
                         let first = load(b, locals, projection.operands()[0])?;
                         let second = load(b, locals, projection.operands()[1])?;
-                        hooks.collection(b, index, [first, second], error)?;
+                        hooks.collection_operation(
+                            b,
+                            index,
+                            admitted_helper.unwrap_or(GlobalHelper::Collection),
+                            [first, second],
+                            error,
+                        )?;
                     }
                     #[cfg(not(feature = "canonical-native-program"))]
                     {
@@ -1475,7 +1481,13 @@ impl<'plan> CfgDefinition<'plan> {
                         .ok_or_else(|| backend("missing range preparation hooks"))?;
                     let first = load(b, locals, cursor.operands()[0])?;
                     let second = load(b, locals, cursor.operands()[1])?;
-                    hooks.collection(b, index, [first, second], error)?;
+                    hooks.collection_operation(
+                        b,
+                        index,
+                        admitted_helper.unwrap_or(GlobalHelper::Collection),
+                        [first, second],
+                        error,
+                    )?;
                     // No Matrix result word/handle is written or fabricated.
                 }
                 NativeIterationAction::Structural { output, .. } => {
@@ -1679,7 +1691,13 @@ impl<'plan> CfgDefinition<'plan> {
                                     .as_ref()
                                     .ok_or_else(|| backend("missing managed carrier hook"))?;
                                 let zero = b.ins().iconst(types::I64, 0);
-                                hooks.call(b, index, GlobalHelper::Move, [zero; 3], error);
+                                hooks.call(
+                                    b,
+                                    index,
+                                    admitted_helper.unwrap_or(GlobalHelper::Move),
+                                    [zero; 3],
+                                    error,
+                                );
                             }
                             b.ins().iconst(types::I64, iteration.count() as i64)
                         }
@@ -1688,7 +1706,13 @@ impl<'plan> CfgDefinition<'plan> {
                                 .as_ref()
                                 .ok_or_else(|| backend("missing collection initializer hook"))?;
                             let zero = b.ins().iconst(types::I64, 0);
-                            hooks.collection(b, index, [zero; 2], error)?;
+                            hooks.collection_operation(
+                                b,
+                                index,
+                                admitted_helper.unwrap_or(GlobalHelper::Collection),
+                                [zero; 2],
+                                error,
+                            )?;
                             b.ins().load(types::I64, MemFlags::new(), hooks.result, 0)
                         }
                         mech_engine::native_artifact::NativeControlLoopRef::Tail(tail) => {
@@ -1705,7 +1729,13 @@ impl<'plan> CfgDefinition<'plan> {
                                 hooks
                                     .as_ref()
                                     .ok_or_else(|| backend("missing tail initializer hook"))?
-                                    .call(b, index, GlobalHelper::Move, [zero; 3], error);
+                                    .call(
+                                        b,
+                                        index,
+                                        admitted_helper.unwrap_or(GlobalHelper::Move),
+                                        [zero; 3],
+                                        error,
+                                    );
                             }
                             zero
                         }
@@ -1730,7 +1760,13 @@ impl<'plan> CfgDefinition<'plan> {
                                 .as_ref()
                                 .ok_or_else(|| backend("missing tail latch hook"))?;
                             let zero = b.ins().iconst(types::I64, 0);
-                            hooks.call(b, index, GlobalHelper::Move, [zero; 3], error);
+                            hooks.call(
+                                b,
+                                index,
+                                admitted_helper.unwrap_or(GlobalHelper::Move),
+                                [zero; 3],
+                                error,
+                            );
                         }
                     } else {
                         let id = *iteration as usize;
@@ -1761,7 +1797,13 @@ impl<'plan> CfgDefinition<'plan> {
                                     .as_ref()
                                     .ok_or_else(|| backend("missing managed latch hook"))?;
                                 let zero = b.ins().iconst(types::I64, 0);
-                                hooks.call(b, index, GlobalHelper::Move, [zero; 3], error);
+                                hooks.call(
+                                    b,
+                                    index,
+                                    admitted_helper.unwrap_or(GlobalHelper::Move),
+                                    [zero; 3],
+                                    error,
+                                );
                             }
                         }
                         let remaining = b.ins().iadd_imm(counter, -1);
@@ -1783,7 +1825,13 @@ impl<'plan> CfgDefinition<'plan> {
                         .as_ref()
                         .ok_or_else(|| backend("missing collection element hook"))?;
                     let zero = b.ins().iconst(types::I64, 0);
-                    hooks.collection(b, index, [zero; 2], error)?;
+                    hooks.collection_operation(
+                        b,
+                        index,
+                        admitted_helper.unwrap_or(GlobalHelper::Collection),
+                        [zero; 2],
+                        error,
+                    )?;
                     if let Some(output) = data.element().filter(|&value| plan.kind(value).is_some())
                     {
                         let value = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
@@ -1835,7 +1883,13 @@ impl<'plan> CfgDefinition<'plan> {
                     {
                         crate::native_artifact::program::codegen::numeric_map::emit_projection_finish(b,locals,index,hooks,GlobalHelper::NumericTransposeFinish,projection.output,continuation,error)?;
                     }
-                    hooks.collection(b, index, [value, zero], error)?;
+                    hooks.collection_operation(
+                        b,
+                        index,
+                        admitted_helper.unwrap_or(GlobalHelper::Collection),
+                        [value, zero],
+                        error,
+                    )?;
                     #[cfg(feature = "canonical-native-program")]
                     if let NativeIterationAction::HistogramQueryStep { collection, step } =
                         block.action()
