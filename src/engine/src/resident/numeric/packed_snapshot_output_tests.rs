@@ -831,3 +831,6 @@ fn direct_float_binary_accepts_empty_broadcasts_without_reading_either_operand()
         }
     }
 }
+
+#[path = "direct_float_sum_tests.rs"]
+mod direct_float_sum_tests;
