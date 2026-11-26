@@ -1279,7 +1279,7 @@ seidel-2d prefix-phase: work 2364180484; comparison work 29662; visits 26.
 doitgen round-09: work 10960690; comparison work 0; visits 4.
 doitgen prefix-phase: work 10960690; comparison work 0; visits 4.
 
-All900 balanced observations validate complete finite untimed warm-ups; timed checked calls must succeed. Timed outputs are not independently flattened. All cases, raw samples and regressions remain. Five largest optimization cases cover 92.361% of summed medians and provide 9,702 canonical-execution samples; sampling follows aggregate timing and excludes parsing/JIT/import/serialization stacks.
+All 900 balanced observations validate complete finite untimed warm-ups; timed checked calls must succeed. Timed outputs are not independently flattened. All cases, raw samples and regressions remain. Five largest optimization cases cover 92.361% of summed medians and provide 9,702 canonical-execution samples; sampling follows aggregate timing and excludes parsing/JIT/import/serialization stacks.
 Canonical library calls: 49.567% of weighted profiled execution.
 Other helper dispatch: 12.916% of weighted profiled execution.
 Comprehension collection bookkeeping: 10.795% of weighted profiled execution.
@@ -1302,3 +1302,105 @@ Holdout Mech runtime is1.012086x its prior value (about1.2% slower); the preserv
 original is0.998786x. C measured1.047824x slower, lowering the normalized holdout
 score. This round has not demonstrated a holdout runtime improvement. The
 strict below1.0x C goal remains open.
+
+Eleventh frozen compiler round (IR370): ordered F64 map reductions
+
+An ordinary F64 scalar comprehension solely consumed by SumColumns and literal
+scalar selector1 now folds in the existing native numeric-map DAG. It preserves
+positive-zero initialization, source iteration order, branches, current scalar
+captures and immutable numeric matrix/range views. No reassociation or FMA is
+introduced. The actual intermediate bank is empty; complete original producer,
+sum and selector shape/type/output/resource bounds remain admitted, including
+the singleton result of an empty producer. Failed checked attempts discard the
+private fold and replay the original CFG. Original ports remain unchanged.
+
+The complete primitive result parks only across the exact original finish path
+and epoch under the same account. Normal continuation visits perform admission
+and retirement before a native post-action join stores the original scalar
+local and continues the original source control. Unsupported escapes, integer
+folds, different axes/selectors, rectangles and conflicting scalar groups keep
+the maintained route. Shared Cranelift words/scalars and resident factory/type
+authority remain in use. Whole-FSM reduction composition is still a gap.
+
+Six new focused tests plus actual Cholesky/Gram-Schmidt selection assertions
+cover original/decoded/Object/restored images, F64 bits/order/empty inputs,
+nested conditional/range maps, partial source failures, nine finite dimensions,
+distinct atomic prior outputs, immutable aliases, current loans/pending epochs,
+interleaving refusal, metadata forgery, cleanup/retry and ordinary unsupported
+cases. Final 195 Engine, 328 native, 24 matrix, 30 PolyBench and 102 selected Program
+checks pass (679 total). Both exact Huffman work bills remain unchanged.
+
+Source c72146bbcb1d86c71dd72e27e6efca759a5c2b6d; policy139; executable 1ff3b8915a991596ee86296390518900aa416b472b5347553b759d4f345dbb0b.
+Both fixed 15-program sets use equal-weight geometric means of median Mech/C kernel
+runtime; lower is better. The strict holdout target remains <1.0x C.
+
+frozen compiler                         optimization x      holdout x
+baseline                                      783.258       2020.085
+round-01-native-matrix-frames                 441.860       1610.274
+round-02-native-scalar-matrix-updates         346.025       1529.299
+round-03-native-maps                          318.844       1468.557
+round-04-conditional-maps                     301.197        724.274
+round-05-guarded-tagged-numeric               159.693        814.668
+round-06-numeric-call-cache                   142.999        440.804
+round-07-captured-numeric-phases              123.865        456.181
+round-08-packed-numeric-output                111.804        435.641
+round-09-rectangular-maps                     104.876        278.733
+round10-prefix-fsms                            76.829        269.227
+round11-map-reductions                         69.994        241.699
+
+optimization: kernel 69.993848087x C; fresh 42.421142936x C; paired-original speedup 11.317598x; sum medians 0.013919080s.
+
+holdout: kernel 241.699065666x C; fresh 146.970640262x C; paired-original speedup 8.376101x; sum medians 0.148482875s.
+
+all: kernel 130.067089170x C; fresh 78.959879293x C; paired-original speedup 9.736393x; sum medians 0.162401955s.
+
+Inter-round comparisons against frozen round10:
+optimization: Mech 0.865174325x; original 1.006981766x; C 0.949658234x; Mech/C score 0.911037565x.
+holdout: Mech 0.887305625x; original 1.007502816x; C 0.988362625x; Mech/C score 0.897753115x.
+Both actual Mech geomean runtimes improved this round. The reference movements
+above remain visible; separate frozen measurements do not establish the cause
+of individual shifts. No case or observation was removed.
+
+Cases more than 5% slower than frozen round10:
+optimization mvt: 1.056524036x frozen round10 Mech runtime.
+
+Cases more than 5% slower than original compiler:
+None.
+
+Optimization-only seven-sample replay: 1.156784x geometric speedup versus round10. This is neither a C nor a holdout score.
+cholesky: 2.285539x training replay speedup.
+doitgen: 0.926929x training replay speedup.
+durbin: 3.115591x training replay speedup.
+gramschmidt: 1.395128x training replay speedup.
+Doitgen replay is more than 5% slower with identical execution reports. Its
+timing cause is not established. This unchanged candidate was then frozen; no
+holdout timing/profile was used for selection. All replay samples remain.
+
+Key counters (conservative budget charges, not CPU time):
+cholesky round-10: work 43979337780; comparison work 2422; visits 16365.
+cholesky map-reduction: work 3765218215204; comparison work 1618691702; visits 16365.
+gramschmidt map-reduction: work 2266403799207; comparison work 960181500; visits 11593.
+gramschmidt round-10: work 58128242741; comparison work 4860; visits 11593.
+durbin map-reduction: work 187956553291; comparison work 80962831; visits 1422.
+durbin round-10: work 2202020662; comparison work 12559; visits 1422.
+doitgen round-10: work 10960690; comparison work 0; visits 4.
+doitgen map-reduction: work 10960690; comparison work 0; visits 4.
+Conservative reduction admission charges can grow while elapsed time falls.
+Finite caps that cannot admit the complete bound retain ordinary execution.
+
+All 900 balanced observations validate complete finite untimed warm-ups; timed checked calls must succeed. Timed outputs are not independently flattened. Five largest optimization cases cover 88.774% of summed medians and provide 7,933 canonical-execution samples. Sampling follows aggregate timing; parsing/JIT/import/serialization stacks are excluded.
+Canonical library calls: 34.318% of weighted profiled execution.
+Other helper dispatch: 22.724% of weighted profiled execution.
+Source visits and admission: 12.742% of weighted profiled execution.
+Comprehension collection bookkeeping: 11.711% of weighted profiled execution.
+Private frame transport: 8.625% of weighted profiled execution.
+Other execution and generated code: 3.630% of weighted profiled execution.
+Selected matrix updates: 2.639% of weighted profiled execution.
+Typed matrix scalar reads: 1.401% of weighted profiled execution.
+Other selected library dispatch: 1.110% of weighted profiled execution.
+Loop-local retirement: 1.101% of weighted profiled execution.
+
+No compiler source changed after freeze. All previous receipts remain. The
+exposed fixed split is not a blind experiment; no holdout was profiled. Scope
+remains CPU MINI F64 plus selected tests. Larger datasets, GPU/SIMD selection,
+full compression application/AOT and a fresh external application are unqualified.

@@ -1,0 +1,6744 @@
+{
+  "schema": "mech.polybench.partition-timings.v1",
+  "created_at": "2026-11-26T11:29:59.773073+00:00",
+  "partition": "optimization",
+  "freeze_sha256": "b419b47f70427c8ee1105cf884dd818a57281052151924b6ffd3907b437d60ed",
+  "candidate": {
+    "schema": "mech.polybench.frozen-candidate.v1",
+    "created_at": "2026-11-26T11:29:58.781422+00:00",
+    "label": "round11-map-reductions",
+    "source_commit": "c72146bbcb1d86c71dd72e27e6efca759a5c2b6d",
+    "compiler_fingerprint": "4602eefe0afab12986693e8a6baca1707898a640b8bd37b422a63ae51a54f28d",
+    "driver_sha256": "1ff3b8915a991596ee86296390518900aa416b472b5347553b759d4f345dbb0b",
+    "reference_driver_sha256": "52298504b6a7b7abf44b399ed42f56bb2ee9f335f2601c683a7928041a0b883a",
+    "protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+    "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+    "fixture_sha256": "acc2a0b76f458eafca9beffb1eb2830f7fe87e6c5bc0dd46af817285202cf488",
+    "baseline_sha256": "96e5867a9bd7a1cde6c6dea266766ae3f4b23d51092e9f07911ca9266ec1f976",
+    "runner_sha256": "71c7f2e0dc32b5bf0a2b61fff11ec253828634b1933dd4bb308a14ab537963dc",
+    "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+    "machine": {
+      "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+      "processor": "arm64"
+    }
+  },
+  "samples_per_comparison": 5,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "timing_boundaries": {
+    "mech": "one fresh canonical JIT evaluation, including finite admission, library calls, output creation and atomic publication; parsing/JIT compilation/input import/cache flush excluded",
+    "c_kernel": "unmodified C kernel over reset buffers; initialization, allocation, copying, cache flush and printing excluded",
+    "c_fresh": "fresh allocation/copy of C buffers plus unmodified C kernel; cache flush and printing excluded"
+  },
+  "validation_boundary": "Each process validates its untimed warm-up result against the full C live-outs; all timed checked calls must succeed. Original/decoded numerical equivalence is also covered by the independent maintained regressions.",
+  "baseline_replay": true,
+  "runs": {
+    "2mm": {
+      "source_sha256": "7ba60323744d94a886cbf88a6925c4a7d298a451bf62c405eede86fcecd7b5b6",
+      "c_binary_sha256": "2b285d8fcd35c9330e9f373a4379a8a988613d8d96d721e8c07ee9d0d16eac8a",
+      "input_sha256": "5d214091e646773faa9e0ddfceb3ccfb55673e953166a92f4adbcb8a2c436579",
+      "observations": [
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.000147208,
+          "process_seconds": 0.05552549986168742,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 1.8337741494178772e-06,
+          "process_seconds": 0.020561375189572573,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.000155375,
+          "process_seconds": 0.07368533313274384,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 1.62515789270401e-06,
+          "process_seconds": 0.01929204212501645,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.000144167,
+          "process_seconds": 0.05520262522622943,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.000156334,
+          "process_seconds": 0.06085745804011822,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.000153416,
+          "process_seconds": 0.05930524971336126,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.000142833,
+          "process_seconds": 0.059244292322546244,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 1.7075799405574799e-06,
+          "process_seconds": 0.015375250019133091,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.000158292,
+          "process_seconds": 0.05754762515425682,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 1.7499551177024841e-06,
+          "process_seconds": 0.02033862518146634,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.0001455,
+          "process_seconds": 0.05745916720479727,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 1.7918646335601807e-06,
+          "process_seconds": 0.020469625014811754,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.000160584,
+          "process_seconds": 0.05944074969738722,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.000147084,
+          "process_seconds": 0.06024820823222399,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.0001475,
+          "process_seconds": 0.061300791800022125,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 3.334134817123413e-06,
+          "process_seconds": 0.018713667057454586,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.0001555,
+          "process_seconds": 0.05511933285742998,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 2.8330832719802856e-06,
+          "process_seconds": 0.018564834259450436,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.000148,
+          "process_seconds": 0.05801070807501674,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.00015725,
+          "process_seconds": 0.06159908324480057,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.000152625,
+          "process_seconds": 0.05989104229956865,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.00014175,
+          "process_seconds": 0.060662582982331514,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 2.8330832719802856e-06,
+          "process_seconds": 0.022020333912223577,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.000160958,
+          "process_seconds": 0.05811975011602044,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 2.9578804969787598e-06,
+          "process_seconds": 0.02201612526550889,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.000147334,
+          "process_seconds": 0.05888266721740365,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 3.0421651899814606e-06,
+          "process_seconds": 0.0210164999589324,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.000160125,
+          "process_seconds": 0.05680954223498702,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.000145708,
+          "process_seconds": 0.060169707983732224,
+          "validation": {
+            "count": 384,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        }
+      ],
+      "comparisons": {
+        "kernel": {
+          "mech": {
+            "samples_seconds": [
+              0.000147208,
+              0.000144167,
+              0.000142833,
+              0.0001455,
+              0.000147084
+            ],
+            "median_seconds": 0.0001455,
+            "minimum_seconds": 0.000142833,
+            "maximum_seconds": 0.000147208
+          },
+          "c": {
+            "samples_seconds": [
+              1.8337741494178772e-06,
+              1.62515789270401e-06,
+              1.7075799405574799e-06,
+              1.7499551177024841e-06,
+              1.7918646335601807e-06
+            ],
+            "median_seconds": 1.7499551177024841e-06,
+            "minimum_seconds": 1.62515789270401e-06,
+            "maximum_seconds": 1.8337741494178772e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              0.000155375,
+              0.000156334,
+              0.000153416,
+              0.000158292,
+              0.000160584
+            ],
+            "median_seconds": 0.000156334,
+            "minimum_seconds": 0.000153416,
+            "maximum_seconds": 0.000160584
+          },
+          "median_mech_over_c": 83.14498956466205
+        },
+        "fresh": {
+          "mech": {
+            "samples_seconds": [
+              0.0001475,
+              0.000148,
+              0.00014175,
+              0.000147334,
+              0.000145708
+            ],
+            "median_seconds": 0.000147334,
+            "minimum_seconds": 0.00014175,
+            "maximum_seconds": 0.000148
+          },
+          "c": {
+            "samples_seconds": [
+              3.334134817123413e-06,
+              2.8330832719802856e-06,
+              2.8330832719802856e-06,
+              2.9578804969787598e-06,
+              3.0421651899814606e-06
+            ],
+            "median_seconds": 2.9578804969787598e-06,
+            "minimum_seconds": 2.8330832719802856e-06,
+            "maximum_seconds": 3.334134817123413e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              0.0001555,
+              0.00015725,
+              0.000152625,
+              0.000160958,
+              0.000160125
+            ],
+            "median_seconds": 0.00015725,
+            "minimum_seconds": 0.000152625,
+            "maximum_seconds": 0.000160958
+          },
+          "median_mech_over_c": 49.81066684421159
+        }
+      }
+    },
+    "3mm": {
+      "source_sha256": "8b044fe251822fd8b585b1accfe084d4c322af5abd48601aa04b578994418646",
+      "c_binary_sha256": "e865519b0804f54ee247884c748bd611c6735b71ca4f727d4c230c5aa94ff59d",
+      "input_sha256": "fa14b5a3947688228fe2fe5a967d8f5be6434f1e055edd6a564d4a840453f32c",
+      "observations": [
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 9.2083e-05,
+          "process_seconds": 0.059778458904474974,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 2.416316419839859e-06,
+          "process_seconds": 0.01685912488028407,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 9.075e-05,
+          "process_seconds": 0.058501583989709616,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 2.459157258272171e-06,
+          "process_seconds": 0.020431708078831434,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 9.925e-05,
+          "process_seconds": 0.061026124749332666,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.000101542,
+          "process_seconds": 0.06410483317449689,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 9.4542e-05,
+          "process_seconds": 0.060081041883677244,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 9.1291e-05,
+          "process_seconds": 0.059999958612024784,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 2.459157258272171e-06,
+          "process_seconds": 0.021622540894895792,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.000102958,
+          "process_seconds": 0.05650487495586276,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 2.457760274410248e-06,
+          "process_seconds": 0.01983670797199011,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 9.3083e-05,
+          "process_seconds": 0.058390541933476925,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 2.5406479835510254e-06,
+          "process_seconds": 0.020652459003031254,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.00010125,
+          "process_seconds": 0.056808417197316885,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 9.1875e-05,
+          "process_seconds": 0.06077308254316449,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 8.8416e-05,
+          "process_seconds": 0.05964374961331487,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 5.875248461961746e-06,
+          "process_seconds": 0.020410791039466858,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.000100334,
+          "process_seconds": 0.05606150021776557,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 4.167202860116959e-06,
+          "process_seconds": 0.019477957859635353,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 9.2792e-05,
+          "process_seconds": 0.05715000024065375,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.000103208,
+          "process_seconds": 0.05933804204687476,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 9.0375e-05,
+          "process_seconds": 0.05770416697487235,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 9.6041e-05,
+          "process_seconds": 0.06012045778334141,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 5.291774868965149e-06,
+          "process_seconds": 0.01818300038576126,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 9.1458e-05,
+          "process_seconds": 0.05439083417877555,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 5.417037755250931e-06,
+          "process_seconds": 0.01855391589924693,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 8.8459e-05,
+          "process_seconds": 0.05589050007984042,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 5.541369318962097e-06,
+          "process_seconds": 0.01652995776385069,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 9.8e-05,
+          "process_seconds": 0.055732208769768476,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 9.3459e-05,
+          "process_seconds": 0.05956737510859966,
+          "validation": {
+            "count": 352,
+            "finite": true,
+            "max_absolute_error": 2.220446049250313e-16
+          }
+        }
+      ],
+      "comparisons": {
+        "kernel": {
+          "mech": {
+            "samples_seconds": [
+              9.2083e-05,
+              9.925e-05,
+              9.1291e-05,
+              9.3083e-05,
+              9.1875e-05
+            ],
+            "median_seconds": 9.2083e-05,
+            "minimum_seconds": 9.1291e-05,
+            "maximum_seconds": 9.925e-05
+          },
+          "c": {
+            "samples_seconds": [
+              2.416316419839859e-06,
+              2.459157258272171e-06,
+              2.459157258272171e-06,
+              2.457760274410248e-06,
+              2.5406479835510254e-06
+            ],
+            "median_seconds": 2.459157258272171e-06,
+            "minimum_seconds": 2.416316419839859e-06,
+            "maximum_seconds": 2.5406479835510254e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              9.075e-05,
+              0.000101542,
+              9.4542e-05,
+              0.000102958,
+              0.00010125
+            ],
+            "median_seconds": 0.00010125,
+            "minimum_seconds": 9.075e-05,
+            "maximum_seconds": 0.000102958
+          },
+          "median_mech_over_c": 37.44494163203636
+        },
+        "fresh": {
+          "mech": {
+            "samples_seconds": [
+              8.8416e-05,
+              9.2792e-05,
+              9.6041e-05,
+              8.8459e-05,
+              9.3459e-05
+            ],
+            "median_seconds": 9.2792e-05,
+            "minimum_seconds": 8.8416e-05,
+            "maximum_seconds": 9.6041e-05
+          },
+          "c": {
+            "samples_seconds": [
+              5.875248461961746e-06,
+              4.167202860116959e-06,
+              5.291774868965149e-06,
+              5.417037755250931e-06,
+              5.541369318962097e-06
+            ],
+            "median_seconds": 5.417037755250931e-06,
+            "minimum_seconds": 4.167202860116959e-06,
+            "maximum_seconds": 5.875248461961746e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              0.000100334,
+              0.000103208,
+              9.0375e-05,
+              9.1458e-05,
+              9.8e-05
+            ],
+            "median_seconds": 9.8e-05,
+            "minimum_seconds": 9.0375e-05,
+            "maximum_seconds": 0.000103208
+          },
+          "median_mech_over_c": 17.129657239337746
+        }
+      }
+    },
+    "atax": {
+      "source_sha256": "509a9938a750b830994e8d5f4846c247e6eead3471a395038fa435b012c7cfb9",
+      "c_binary_sha256": "74b1d44b54b2ec8e31c7289c633d7b2b8db604fd96d9ce451a391a590f705092",
+      "input_sha256": "7fe07963b30e68ffe7ed86dee64ebc9e404ed264703680ba7f341815dd9300cb",
+      "observations": [
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 9.5667e-05,
+          "process_seconds": 0.05767079209908843,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 1.2917444109916687e-06,
+          "process_seconds": 0.02067649969831109,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 9.3834e-05,
+          "process_seconds": 0.05381987523287535,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 1.25030055642128e-06,
+          "process_seconds": 0.01979579171165824,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.000104333,
+          "process_seconds": 0.05981362517923117,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.000106292,
+          "process_seconds": 0.059018708765506744,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 9.5459e-05,
+          "process_seconds": 0.057868541684001684,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 9.4e-05,
+          "process_seconds": 0.05801233323290944,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 1.6670674085617065e-06,
+          "process_seconds": 0.018652416300028563,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 9.575e-05,
+          "process_seconds": 0.054216000251471996,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 1.1669471859931946e-06,
+          "process_seconds": 0.01943016704171896,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 9.4083e-05,
+          "process_seconds": 0.05418508406728506,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 1.166015863418579e-06,
+          "process_seconds": 0.019582875072956085,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.000102458,
+          "process_seconds": 0.054824375081807375,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 9.3958e-05,
+          "process_seconds": 0.05787804117426276,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 9.7834e-05,
+          "process_seconds": 0.05961458291858435,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 2.2496096789836884e-06,
+          "process_seconds": 0.01891183340921998,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 9.9791e-05,
+          "process_seconds": 0.05743624968454242,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 2.750195562839508e-06,
+          "process_seconds": 0.020754625089466572,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.000104375,
+          "process_seconds": 0.056009292136877775,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 9.5583e-05,
+          "process_seconds": 0.058369291946291924,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 9.8667e-05,
+          "process_seconds": 0.059003083035349846,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.0001,
+          "process_seconds": 0.05945904226973653,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 3.7080608308315277e-06,
+          "process_seconds": 0.019400957971811295,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 9.6791e-05,
+          "process_seconds": 0.058109541423618793,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 3.4999102354049683e-06,
+          "process_seconds": 0.017955957911908627,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 9.6e-05,
+          "process_seconds": 0.05693058297038078,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 3.291293978691101e-06,
+          "process_seconds": 0.021322375163435936,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 9.8417e-05,
+          "process_seconds": 0.0565161663107574,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.000100125,
+          "process_seconds": 0.06061558332294226,
+          "validation": {
+            "count": 42,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        }
+      ],
+      "comparisons": {
+        "kernel": {
+          "mech": {
+            "samples_seconds": [
+              9.5667e-05,
+              0.000104333,
+              9.4e-05,
+              9.4083e-05,
+              9.3958e-05
+            ],
+            "median_seconds": 9.4083e-05,
+            "minimum_seconds": 9.3958e-05,
+            "maximum_seconds": 0.000104333
+          },
+          "c": {
+            "samples_seconds": [
+              1.2917444109916687e-06,
+              1.25030055642128e-06,
+              1.6670674085617065e-06,
+              1.1669471859931946e-06,
+              1.166015863418579e-06
+            ],
+            "median_seconds": 1.25030055642128e-06,
+            "minimum_seconds": 1.166015863418579e-06,
+            "maximum_seconds": 1.6670674085617065e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              9.3834e-05,
+              0.000106292,
+              9.5459e-05,
+              9.575e-05,
+              0.000102458
+            ],
+            "median_seconds": 9.575e-05,
+            "minimum_seconds": 9.3834e-05,
+            "maximum_seconds": 0.000106292
+          },
+          "median_mech_over_c": 75.24830691053408
+        },
+        "fresh": {
+          "mech": {
+            "samples_seconds": [
+              9.7834e-05,
+              0.000104375,
+              0.0001,
+              9.6e-05,
+              0.000100125
+            ],
+            "median_seconds": 0.0001,
+            "minimum_seconds": 9.6e-05,
+            "maximum_seconds": 0.000104375
+          },
+          "c": {
+            "samples_seconds": [
+              2.2496096789836884e-06,
+              2.750195562839508e-06,
+              3.7080608308315277e-06,
+              3.4999102354049683e-06,
+              3.291293978691101e-06
+            ],
+            "median_seconds": 3.291293978691101e-06,
+            "minimum_seconds": 2.2496096789836884e-06,
+            "maximum_seconds": 3.7080608308315277e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              9.9791e-05,
+              9.5583e-05,
+              9.8667e-05,
+              9.6791e-05,
+              9.8417e-05
+            ],
+            "median_seconds": 9.8417e-05,
+            "minimum_seconds": 9.5583e-05,
+            "maximum_seconds": 9.9791e-05
+          },
+          "median_mech_over_c": 30.38318687040181
+        }
+      }
+    },
+    "bicg": {
+      "source_sha256": "ad80eb32865012a68fd64dc0a32cf16139b20c882b4d9a165aacda59666f2084",
+      "c_binary_sha256": "bd4b0260113dae3f89ec5f3f9cd184afbb52116df96478f9f67f5feb25dbb8a0",
+      "input_sha256": "347f9b21418af097b688c3c2f2b0b3d1b26a2f22bad25d3ac1ea2417ec595541",
+      "observations": [
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.00013275,
+          "process_seconds": 0.059971584007143974,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 1.5827827155590057e-06,
+          "process_seconds": 0.018345958087593317,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.000131708,
+          "process_seconds": 0.05512962490320206,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 1.4170072972774506e-06,
+          "process_seconds": 0.01971941627562046,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.000128208,
+          "process_seconds": 0.055368416011333466,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.000132833,
+          "process_seconds": 0.05840562470257282,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.000122917,
+          "process_seconds": 0.058294250164180994,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.0001295,
+          "process_seconds": 0.060171708930283785,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 1.5418045222759247e-06,
+          "process_seconds": 0.019274082966148853,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.000140542,
+          "process_seconds": 0.059721500147134066,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 1.2908130884170532e-06,
+          "process_seconds": 0.02037120796740055,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.000131625,
+          "process_seconds": 0.057847249787300825,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 1.4998950064182281e-06,
+          "process_seconds": 0.018020708113908768,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.000131625,
+          "process_seconds": 0.054316707886755466,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.000132166,
+          "process_seconds": 0.05912045808508992,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.000138458,
+          "process_seconds": 0.058949749916791916,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 3.7499703466892242e-06,
+          "process_seconds": 0.01889795809984207,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.000126667,
+          "process_seconds": 0.0541742080822587,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 3.375113010406494e-06,
+          "process_seconds": 0.020278540905565023,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.000131125,
+          "process_seconds": 0.055593458004295826,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.000123042,
+          "process_seconds": 0.059246042277663946,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.000135125,
+          "process_seconds": 0.05882641673088074,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.000125166,
+          "process_seconds": 0.05910491710528731,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 4.209112375974655e-06,
+          "process_seconds": 0.01913887495175004,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.00013875,
+          "process_seconds": 0.055660500191152096,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 3.4999102354049683e-06,
+          "process_seconds": 0.01935741724446416,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.000129458,
+          "process_seconds": 0.05578000005334616,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 3.62517312169075e-06,
+          "process_seconds": 0.01999366655945778,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.000132166,
+          "process_seconds": 0.0560674169100821,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.000125292,
+          "process_seconds": 0.0585228749550879,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 1.7763568394002505e-15
+          }
+        }
+      ],
+      "comparisons": {
+        "kernel": {
+          "mech": {
+            "samples_seconds": [
+              0.00013275,
+              0.000128208,
+              0.0001295,
+              0.000131625,
+              0.000132166
+            ],
+            "median_seconds": 0.000131625,
+            "minimum_seconds": 0.000128208,
+            "maximum_seconds": 0.00013275
+          },
+          "c": {
+            "samples_seconds": [
+              1.5827827155590057e-06,
+              1.4170072972774506e-06,
+              1.5418045222759247e-06,
+              1.2908130884170532e-06,
+              1.4998950064182281e-06
+            ],
+            "median_seconds": 1.4998950064182281e-06,
+            "minimum_seconds": 1.2908130884170532e-06,
+            "maximum_seconds": 1.5827827155590057e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              0.000131708,
+              0.000132833,
+              0.000122917,
+              0.000140542,
+              0.000131625
+            ],
+            "median_seconds": 0.000131708,
+            "minimum_seconds": 0.000122917,
+            "maximum_seconds": 0.000140542
+          },
+          "median_mech_over_c": 87.75614255448617
+        },
+        "fresh": {
+          "mech": {
+            "samples_seconds": [
+              0.000138458,
+              0.000131125,
+              0.000125166,
+              0.000129458,
+              0.000125292
+            ],
+            "median_seconds": 0.000129458,
+            "minimum_seconds": 0.000125166,
+            "maximum_seconds": 0.000138458
+          },
+          "c": {
+            "samples_seconds": [
+              3.7499703466892242e-06,
+              3.375113010406494e-06,
+              4.209112375974655e-06,
+              3.4999102354049683e-06,
+              3.62517312169075e-06
+            ],
+            "median_seconds": 3.62517312169075e-06,
+            "minimum_seconds": 3.375113010406494e-06,
+            "maximum_seconds": 4.209112375974655e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              0.000126667,
+              0.000123042,
+              0.000135125,
+              0.00013875,
+              0.000132166
+            ],
+            "median_seconds": 0.000132166,
+            "minimum_seconds": 0.000123042,
+            "maximum_seconds": 0.00013875
+          },
+          "median_mech_over_c": 35.71084625597739
+        }
+      }
+    },
+    "cholesky": {
+      "source_sha256": "5c11d488f791bfd3da69a37b9dfc3ff4eec4d7fd64b54d5f823adf9b9ac452fa",
+      "c_binary_sha256": "6710d27fc9e410fa389d06eabf53552a816cbd4c8db3e1ec36958c165039d75f",
+      "input_sha256": "36015a532a5ec081582b68ab0a979f68ac933d2c089cf0dada1d0352015406a0",
+      "observations": [
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.003434375,
+          "process_seconds": 0.08733733277767897,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 6.9160014390945435e-06,
+          "process_seconds": 0.01991908298805356,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.157712708,
+          "process_seconds": 0.384719000197947,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 7.2498805820941925e-06,
+          "process_seconds": 0.01977674989029765,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.003428708,
+          "process_seconds": 0.08345833327621222,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.158639375,
+          "process_seconds": 0.3903667498379946,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.15772975,
+          "process_seconds": 0.39236674970015883,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.003404333,
+          "process_seconds": 0.08655070839449763,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 7.166992872953415e-06,
+          "process_seconds": 0.020576458889991045,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.158105334,
+          "process_seconds": 0.38845158414915204,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 8.166767656803131e-06,
+          "process_seconds": 0.020399125292897224,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.00338025,
+          "process_seconds": 0.08277825033292174,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 6.167218089103699e-06,
+          "process_seconds": 0.021640040911734104,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.158501708,
+          "process_seconds": 0.38993345806375146,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.003410875,
+          "process_seconds": 0.08633579220622778,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.003421417,
+          "process_seconds": 0.08614891720935702,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 8.74977558851242e-06,
+          "process_seconds": 0.02132520917803049,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.158472333,
+          "process_seconds": 0.3903278331272304,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 7.417052984237671e-06,
+          "process_seconds": 0.021295083221048117,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.003469,
+          "process_seconds": 0.08305808296427131,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.158413083,
+          "process_seconds": 0.3919544159434736,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.157498209,
+          "process_seconds": 0.38757950020954013,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.003451875,
+          "process_seconds": 0.08729883329942822,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 9.249895811080933e-06,
+          "process_seconds": 0.019152624998241663,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.159016459,
+          "process_seconds": 0.39138741698116064,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 8.708331733942032e-06,
+          "process_seconds": 0.019591209013015032,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.003398333,
+          "process_seconds": 0.08572945883497596,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 8.832663297653198e-06,
+          "process_seconds": 0.02113933302462101,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.158439792,
+          "process_seconds": 0.39136420795693994,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.0034085,
+          "process_seconds": 0.08691162522882223,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 3.2751579226442118e-15
+          }
+        }
+      ],
+      "comparisons": {
+        "kernel": {
+          "mech": {
+            "samples_seconds": [
+              0.003434375,
+              0.003428708,
+              0.003404333,
+              0.00338025,
+              0.003410875
+            ],
+            "median_seconds": 0.003410875,
+            "minimum_seconds": 0.00338025,
+            "maximum_seconds": 0.003434375
+          },
+          "c": {
+            "samples_seconds": [
+              6.9160014390945435e-06,
+              7.2498805820941925e-06,
+              7.166992872953415e-06,
+              8.166767656803131e-06,
+              6.167218089103699e-06
+            ],
+            "median_seconds": 7.166992872953415e-06,
+            "minimum_seconds": 6.167218089103699e-06,
+            "maximum_seconds": 8.166767656803131e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              0.157712708,
+              0.158639375,
+              0.15772975,
+              0.158105334,
+              0.158501708
+            ],
+            "median_seconds": 0.158105334,
+            "minimum_seconds": 0.157712708,
+            "maximum_seconds": 0.158639375
+          },
+          "median_mech_over_c": 475.91438424221946
+        },
+        "fresh": {
+          "mech": {
+            "samples_seconds": [
+              0.003421417,
+              0.003469,
+              0.003451875,
+              0.003398333,
+              0.0034085
+            ],
+            "median_seconds": 0.003421417,
+            "minimum_seconds": 0.003398333,
+            "maximum_seconds": 0.003469
+          },
+          "c": {
+            "samples_seconds": [
+              8.74977558851242e-06,
+              7.417052984237671e-06,
+              9.249895811080933e-06,
+              8.708331733942032e-06,
+              8.832663297653198e-06
+            ],
+            "median_seconds": 8.74977558851242e-06,
+            "minimum_seconds": 7.417052984237671e-06,
+            "maximum_seconds": 9.249895811080933e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              0.158472333,
+              0.158413083,
+              0.157498209,
+              0.159016459,
+              0.158439792
+            ],
+            "median_seconds": 0.158439792,
+            "minimum_seconds": 0.157498209,
+            "maximum_seconds": 0.159016459
+          },
+          "median_mech_over_c": 391.02911444860115
+        }
+      }
+    },
+    "correlation": {
+      "source_sha256": "17eab510250df6dc8ba959f8c83bb2bdd96d11dd1042aeb1100a960b85026515",
+      "c_binary_sha256": "181e29a47cef3212ec2e038cf8a0ad90c65d0d9701aeaecaefc8baad608ca72b",
+      "input_sha256": "63def6b801c89d6ec8f56de58e4fada06c3167679c8912a63a3eb93fe64fa2c9",
+      "observations": [
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.000554125,
+          "process_seconds": 0.06924587534740567,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 4.415865987539291e-06,
+          "process_seconds": 0.020284332800656557,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.00136025,
+          "process_seconds": 0.06654837494716048,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 4.2906031012535095e-06,
+          "process_seconds": 0.02069429075345397,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.000522167,
+          "process_seconds": 0.06683641718700528,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.001392917,
+          "process_seconds": 0.06783437496051192,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.001322667,
+          "process_seconds": 0.06776570808142424,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.000523042,
+          "process_seconds": 0.07170208403840661,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 4.333909600973129e-06,
+          "process_seconds": 0.020845708437263966,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.001342917,
+          "process_seconds": 0.06616333406418562,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 4.332978278398514e-06,
+          "process_seconds": 0.020682958886027336,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.0005445,
+          "process_seconds": 0.07028295891359448,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 4.415865987539291e-06,
+          "process_seconds": 0.020946708042174578,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.001355,
+          "process_seconds": 0.06810758402571082,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.000538917,
+          "process_seconds": 0.06983079109340906,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.000516,
+          "process_seconds": 0.06821104092523456,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 8.00006091594696e-06,
+          "process_seconds": 0.02019304223358631,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.001339625,
+          "process_seconds": 0.06373541709035635,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 7.62520357966423e-06,
+          "process_seconds": 0.02018291736021638,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.000517042,
+          "process_seconds": 0.06476537464186549,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.001357541,
+          "process_seconds": 0.0688823745585978,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.001344792,
+          "process_seconds": 0.06789904134348035,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.000519875,
+          "process_seconds": 0.0679997499100864,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 8.124858140945435e-06,
+          "process_seconds": 0.021320541854947805,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.001343125,
+          "process_seconds": 0.06405145907774568,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 8.292030543088913e-06,
+          "process_seconds": 0.02052116673439741,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.000519333,
+          "process_seconds": 0.06744470819830894,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 7.333233952522278e-06,
+          "process_seconds": 0.019047667272388935,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.001371625,
+          "process_seconds": 0.06712437467649579,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.000515166,
+          "process_seconds": 0.0698584159836173,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        }
+      ],
+      "comparisons": {
+        "kernel": {
+          "mech": {
+            "samples_seconds": [
+              0.000554125,
+              0.000522167,
+              0.000523042,
+              0.0005445,
+              0.000538917
+            ],
+            "median_seconds": 0.000538917,
+            "minimum_seconds": 0.000522167,
+            "maximum_seconds": 0.000554125
+          },
+          "c": {
+            "samples_seconds": [
+              4.415865987539291e-06,
+              4.2906031012535095e-06,
+              4.333909600973129e-06,
+              4.332978278398514e-06,
+              4.415865987539291e-06
+            ],
+            "median_seconds": 4.333909600973129e-06,
+            "minimum_seconds": 4.2906031012535095e-06,
+            "maximum_seconds": 4.415865987539291e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              0.00136025,
+              0.001392917,
+              0.001322667,
+              0.001342917,
+              0.001355
+            ],
+            "median_seconds": 0.001355,
+            "minimum_seconds": 0.001322667,
+            "maximum_seconds": 0.001392917
+          },
+          "median_mech_over_c": 124.3489250165699
+        },
+        "fresh": {
+          "mech": {
+            "samples_seconds": [
+              0.000516,
+              0.000517042,
+              0.000519875,
+              0.000519333,
+              0.000515166
+            ],
+            "median_seconds": 0.000517042,
+            "minimum_seconds": 0.000515166,
+            "maximum_seconds": 0.000519875
+          },
+          "c": {
+            "samples_seconds": [
+              8.00006091594696e-06,
+              7.62520357966423e-06,
+              8.124858140945435e-06,
+              8.292030543088913e-06,
+              7.333233952522278e-06
+            ],
+            "median_seconds": 8.00006091594696e-06,
+            "minimum_seconds": 7.333233952522278e-06,
+            "maximum_seconds": 8.292030543088913e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              0.001339625,
+              0.001357541,
+              0.001344792,
+              0.001343125,
+              0.001371625
+            ],
+            "median_seconds": 0.001344792,
+            "minimum_seconds": 0.001339625,
+            "maximum_seconds": 0.001371625
+          },
+          "median_mech_over_c": 64.62975787713714
+        }
+      }
+    },
+    "covariance": {
+      "source_sha256": "354aeb3e176cd327c8660206ca163bbc6e87fcbfaae4ddbd195c5aa4455c3f87",
+      "c_binary_sha256": "1cd6f6f031e11a5611e35f6e8449c98c33c029514b2c653f9f57eb9e9cd5055a",
+      "input_sha256": "3b0a2f978458496f4ec87ea86df85a41f27e39fa724c38e7248624129adaeff6",
+      "observations": [
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.000212709,
+          "process_seconds": 0.05978533299639821,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 4.417262971401215e-06,
+          "process_seconds": 0.02158458298072219,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.000218042,
+          "process_seconds": 0.05622783303260803,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 4.916917532682419e-06,
+          "process_seconds": 0.021183083299547434,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.000214167,
+          "process_seconds": 0.06903204089030623,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.000230792,
+          "process_seconds": 0.05755149992182851,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.000219625,
+          "process_seconds": 0.05651687504723668,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.000210375,
+          "process_seconds": 0.0614206250756979,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 4.416797310113907e-06,
+          "process_seconds": 0.021600250154733658,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.00022275,
+          "process_seconds": 0.06088945874944329,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 4.666857421398163e-06,
+          "process_seconds": 0.021217915695160627,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.000211916,
+          "process_seconds": 0.05924779083579779,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 4.375353455543518e-06,
+          "process_seconds": 0.021465334109961987,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.000219042,
+          "process_seconds": 0.055404082871973515,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.000209167,
+          "process_seconds": 0.06035745795816183,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.000210084,
+          "process_seconds": 0.057785917073488235,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 5.582813173532486e-06,
+          "process_seconds": 0.02140358416363597,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.000218125,
+          "process_seconds": 0.05949270771816373,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 7.1660615503787994e-06,
+          "process_seconds": 0.01988237490877509,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.000215916,
+          "process_seconds": 0.060252292081713676,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.000218958,
+          "process_seconds": 0.06023658299818635,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.000218416,
+          "process_seconds": 0.059903041925281286,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.000218292,
+          "process_seconds": 0.06164129124954343,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 5.875248461961746e-06,
+          "process_seconds": 0.020340499933809042,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.000221875,
+          "process_seconds": 0.05709679098799825,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 5.416106432676315e-06,
+          "process_seconds": 0.019176875241100788,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.000213417,
+          "process_seconds": 0.0590420002117753,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 7.334165275096893e-06,
+          "process_seconds": 0.02189308311790228,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.000217833,
+          "process_seconds": 0.057573792058974504,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.000217083,
+          "process_seconds": 0.062402999959886074,
+          "validation": {
+            "count": 784,
+            "finite": true,
+            "max_absolute_error": 1.4210854715202004e-14
+          }
+        }
+      ],
+      "comparisons": {
+        "kernel": {
+          "mech": {
+            "samples_seconds": [
+              0.000212709,
+              0.000214167,
+              0.000210375,
+              0.000211916,
+              0.000209167
+            ],
+            "median_seconds": 0.000211916,
+            "minimum_seconds": 0.000209167,
+            "maximum_seconds": 0.000214167
+          },
+          "c": {
+            "samples_seconds": [
+              4.417262971401215e-06,
+              4.916917532682419e-06,
+              4.416797310113907e-06,
+              4.666857421398163e-06,
+              4.375353455543518e-06
+            ],
+            "median_seconds": 4.417262971401215e-06,
+            "minimum_seconds": 4.375353455543518e-06,
+            "maximum_seconds": 4.916917532682419e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              0.000218042,
+              0.000230792,
+              0.000219625,
+              0.00022275,
+              0.000219042
+            ],
+            "median_seconds": 0.000219625,
+            "minimum_seconds": 0.000218042,
+            "maximum_seconds": 0.000230792
+          },
+          "median_mech_over_c": 47.97450397950327
+        },
+        "fresh": {
+          "mech": {
+            "samples_seconds": [
+              0.000210084,
+              0.000215916,
+              0.000218292,
+              0.000213417,
+              0.000217083
+            ],
+            "median_seconds": 0.000215916,
+            "minimum_seconds": 0.000210084,
+            "maximum_seconds": 0.000218292
+          },
+          "c": {
+            "samples_seconds": [
+              5.582813173532486e-06,
+              7.1660615503787994e-06,
+              5.875248461961746e-06,
+              5.416106432676315e-06,
+              7.334165275096893e-06
+            ],
+            "median_seconds": 5.875248461961746e-06,
+            "minimum_seconds": 5.416106432676315e-06,
+            "maximum_seconds": 7.334165275096893e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              0.000218125,
+              0.000218958,
+              0.000218416,
+              0.000221875,
+              0.000217833
+            ],
+            "median_seconds": 0.000218416,
+            "minimum_seconds": 0.000217833,
+            "maximum_seconds": 0.000221875
+          },
+          "median_mech_over_c": 36.750105361145124
+        }
+      }
+    },
+    "deriche": {
+      "source_sha256": "73dd0bbdc2048cb3dea73a499f9e6557b4ab2b0eff988da2ad6cea344e7daf6c",
+      "c_binary_sha256": "a4440580179c951c2385f5e0218b353d725d3063e8559ca6dc75d7e0f020955a",
+      "input_sha256": "19f4630f10d8326720ae223ec26ef8a1a510ba026fdcfd625352a2a6b94d7a16",
+      "observations": [
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.004812541,
+          "process_seconds": 0.12142191594466567,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 2.962537109851837e-05,
+          "process_seconds": 0.023249667137861252,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 1.251555,
+          "process_seconds": 2.6002798341214657,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 2.9209069907665253e-05,
+          "process_seconds": 0.022571499925106764,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.004814833,
+          "process_seconds": 0.1205019997432828,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 1.251750959,
+          "process_seconds": 2.60458054067567,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 1.248716,
+          "process_seconds": 2.5986407920718193,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.00505525,
+          "process_seconds": 0.1256042500026524,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 2.9999762773513794e-05,
+          "process_seconds": 0.02385437535122037,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 1.247291917,
+          "process_seconds": 2.5947196250781417,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 2.89171002805233e-05,
+          "process_seconds": 0.022323583718389273,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.004822625,
+          "process_seconds": 0.12158833397552371,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 2.7665868401527405e-05,
+          "process_seconds": 0.0222468338906765,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 1.250327666,
+          "process_seconds": 2.598625374957919,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.004814375,
+          "process_seconds": 0.1228483752347529,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.004830916,
+          "process_seconds": 0.12421637494117022,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 3.3750198781490326e-05,
+          "process_seconds": 0.022056583780795336,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 1.259830042,
+          "process_seconds": 2.6084470408968627,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 3.60831618309021e-05,
+          "process_seconds": 0.02050450025126338,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.004817333,
+          "process_seconds": 0.12016729218885303,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 1.259078584,
+          "process_seconds": 2.620006375014782,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 1.253286292,
+          "process_seconds": 2.6065327911637723,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.004850792,
+          "process_seconds": 0.12277741683647037,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 3.462517634034157e-05,
+          "process_seconds": 0.02301687514409423,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 1.256323833,
+          "process_seconds": 2.6102581662125885,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 3.6833807826042175e-05,
+          "process_seconds": 0.02307804161682725,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.004803625,
+          "process_seconds": 0.12504587462171912,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 3.841705620288849e-05,
+          "process_seconds": 0.02201566705480218,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 1.274561292,
+          "process_seconds": 2.636579791083932,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.004836083,
+          "process_seconds": 0.12236966658383608,
+          "validation": {
+            "count": 4096,
+            "finite": true,
+            "max_absolute_error": 4.85722573273506e-17
+          }
+        }
+      ],
+      "comparisons": {
+        "kernel": {
+          "mech": {
+            "samples_seconds": [
+              0.004812541,
+              0.004814833,
+              0.00505525,
+              0.004822625,
+              0.004814375
+            ],
+            "median_seconds": 0.004814833,
+            "minimum_seconds": 0.004812541,
+            "maximum_seconds": 0.00505525
+          },
+          "c": {
+            "samples_seconds": [
+              2.962537109851837e-05,
+              2.9209069907665253e-05,
+              2.9999762773513794e-05,
+              2.89171002805233e-05,
+              2.7665868401527405e-05
+            ],
+            "median_seconds": 2.9209069907665253e-05,
+            "minimum_seconds": 2.7665868401527405e-05,
+            "maximum_seconds": 2.9999762773513794e-05
+          },
+          "reference": {
+            "samples_seconds": [
+              1.251555,
+              1.251750959,
+              1.248716,
+              1.247291917,
+              1.250327666
+            ],
+            "median_seconds": 1.250327666,
+            "minimum_seconds": 1.247291917,
+            "maximum_seconds": 1.251750959
+          },
+          "median_mech_over_c": 164.84033949798783
+        },
+        "fresh": {
+          "mech": {
+            "samples_seconds": [
+              0.004830916,
+              0.004817333,
+              0.004850792,
+              0.004803625,
+              0.004836083
+            ],
+            "median_seconds": 0.004830916,
+            "minimum_seconds": 0.004803625,
+            "maximum_seconds": 0.004850792
+          },
+          "c": {
+            "samples_seconds": [
+              3.3750198781490326e-05,
+              3.60831618309021e-05,
+              3.462517634034157e-05,
+              3.6833807826042175e-05,
+              3.841705620288849e-05
+            ],
+            "median_seconds": 3.60831618309021e-05,
+            "minimum_seconds": 3.3750198781490326e-05,
+            "maximum_seconds": 3.841705620288849e-05
+          },
+          "reference": {
+            "samples_seconds": [
+              1.259830042,
+              1.259078584,
+              1.253286292,
+              1.256323833,
+              1.274561292
+            ],
+            "median_seconds": 1.259078584,
+            "minimum_seconds": 1.253286292,
+            "maximum_seconds": 1.274561292
+          },
+          "median_mech_over_c": 133.88283495330333
+        }
+      }
+    },
+    "doitgen": {
+      "source_sha256": "fdcdb96925e013d913ed4ed88043636116c13e225d4124d0a0495dec97e81f37",
+      "c_binary_sha256": "d9dde06c4d544037afe02330ceb98abf9bacaca3c5513150a4e876494572ba2e",
+      "input_sha256": "6f6c233f541bb809c3daaef615884c2b868b5f25d399f8ed113d8fbea7fd993a",
+      "observations": [
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 6.3125e-05,
+          "process_seconds": 0.06080141710117459,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 3.041699528694153e-06,
+          "process_seconds": 0.020748999901115894,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 6.4625e-05,
+          "process_seconds": 0.05468383291736245,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 2.9588118195533752e-06,
+          "process_seconds": 0.019859124906361103,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 5.4166e-05,
+          "process_seconds": 0.05696037504822016,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 7.0375e-05,
+          "process_seconds": 0.06107075000181794,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 7.0834e-05,
+          "process_seconds": 0.059929332695901394,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 6.3583e-05,
+          "process_seconds": 0.06093145767226815,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 2.9997900128364563e-06,
+          "process_seconds": 0.01974191702902317,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 6.5875e-05,
+          "process_seconds": 0.055949249770492315,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 3.1674280762672424e-06,
+          "process_seconds": 0.020115000195801258,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 5.95e-05,
+          "process_seconds": 0.05800674995407462,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 3.084074705839157e-06,
+          "process_seconds": 0.020862792152911425,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 7.4166e-05,
+          "process_seconds": 0.05956262489780784,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 5.725e-05,
+          "process_seconds": 0.06006583431735635,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 5.6166e-05,
+          "process_seconds": 0.05948966694995761,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 5.458947271108627e-06,
+          "process_seconds": 0.02010237518697977,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 5.9625e-05,
+          "process_seconds": 0.059066417161375284,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 5.6247226893901825e-06,
+          "process_seconds": 0.02123658312484622,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 5.6916e-05,
+          "process_seconds": 0.057551917154341936,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 6.9291e-05,
+          "process_seconds": 0.060052874963730574,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 7.2125e-05,
+          "process_seconds": 0.05964962486177683,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 5.5375e-05,
+          "process_seconds": 0.05855487519875169,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 5.125068128108978e-06,
+          "process_seconds": 0.018687207717448473,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 6.7042e-05,
+          "process_seconds": 0.060498000122606754,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 6.1248429119586945e-06,
+          "process_seconds": 0.02073345798999071,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 5.0125e-05,
+          "process_seconds": 0.058724124915897846,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 5.667097866535187e-06,
+          "process_seconds": 0.02033479092642665,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 6.1917e-05,
+          "process_seconds": 0.05601670779287815,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 5.2416e-05,
+          "process_seconds": 0.060345917008817196,
+          "validation": {
+            "count": 960,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        }
+      ],
+      "comparisons": {
+        "kernel": {
+          "mech": {
+            "samples_seconds": [
+              6.3125e-05,
+              5.4166e-05,
+              6.3583e-05,
+              5.95e-05,
+              5.725e-05
+            ],
+            "median_seconds": 5.95e-05,
+            "minimum_seconds": 5.4166e-05,
+            "maximum_seconds": 6.3583e-05
+          },
+          "c": {
+            "samples_seconds": [
+              3.041699528694153e-06,
+              2.9588118195533752e-06,
+              2.9997900128364563e-06,
+              3.1674280762672424e-06,
+              3.084074705839157e-06
+            ],
+            "median_seconds": 3.041699528694153e-06,
+            "minimum_seconds": 2.9588118195533752e-06,
+            "maximum_seconds": 3.1674280762672424e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              6.4625e-05,
+              7.0375e-05,
+              7.0834e-05,
+              6.5875e-05,
+              7.4166e-05
+            ],
+            "median_seconds": 7.0375e-05,
+            "minimum_seconds": 6.4625e-05,
+            "maximum_seconds": 7.4166e-05
+          },
+          "median_mech_over_c": 19.561432494794857
+        },
+        "fresh": {
+          "mech": {
+            "samples_seconds": [
+              5.6166e-05,
+              5.6916e-05,
+              5.5375e-05,
+              5.0125e-05,
+              5.2416e-05
+            ],
+            "median_seconds": 5.5375e-05,
+            "minimum_seconds": 5.0125e-05,
+            "maximum_seconds": 5.6916e-05
+          },
+          "c": {
+            "samples_seconds": [
+              5.458947271108627e-06,
+              5.6247226893901825e-06,
+              5.125068128108978e-06,
+              6.1248429119586945e-06,
+              5.667097866535187e-06
+            ],
+            "median_seconds": 5.6247226893901825e-06,
+            "minimum_seconds": 5.125068128108978e-06,
+            "maximum_seconds": 6.1248429119586945e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              5.9625e-05,
+              6.9291e-05,
+              7.2125e-05,
+              6.7042e-05,
+              6.1917e-05
+            ],
+            "median_seconds": 6.7042e-05,
+            "minimum_seconds": 5.9625e-05,
+            "maximum_seconds": 7.2125e-05
+          },
+          "median_mech_over_c": 9.84492979617518
+        }
+      }
+    },
+    "durbin": {
+      "source_sha256": "62da21e96d894e89a7f94f39d14795e70413a86053487aa7cb2e2c35fa4edf77",
+      "c_binary_sha256": "185aa486affc8db90972752286d6cd693417b3a83cbde0332fae1b4e0155e748",
+      "input_sha256": "9417fe0f792480da60eb0e9741a032bdf4aea4667f370a3b6f6b8229d33da4c7",
+      "observations": [
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.000391917,
+          "process_seconds": 0.07600812520831823,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 1.3331882655620575e-06,
+          "process_seconds": 0.019499917048960924,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.005163334,
+          "process_seconds": 0.07957954192534089,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 1.334119588136673e-06,
+          "process_seconds": 0.0203553750179708,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.000390542,
+          "process_seconds": 0.07222462492063642,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.005165583,
+          "process_seconds": 0.0832824157550931,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.005182708,
+          "process_seconds": 0.0822439999319613,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.0003895,
+          "process_seconds": 0.07694799965247512,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 1.2498348951339722e-06,
+          "process_seconds": 0.019854959100484848,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.005148208,
+          "process_seconds": 0.08152700029313564,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 1.2498348951339722e-06,
+          "process_seconds": 0.01905383402481675,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.000382334,
+          "process_seconds": 0.07260370766744018,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 1.2922100722789764e-06,
+          "process_seconds": 0.01955920783802867,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.005173541,
+          "process_seconds": 0.08093049982562661,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.000393625,
+          "process_seconds": 0.07577166706323624,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.000390042,
+          "process_seconds": 0.07547704176977277,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 2.582557499408722e-06,
+          "process_seconds": 0.019495374988764524,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.005146875,
+          "process_seconds": 0.07888733316212893,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 2.9159709811210632e-06,
+          "process_seconds": 0.01795937493443489,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.000412542,
+          "process_seconds": 0.07522904220968485,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.005202875,
+          "process_seconds": 0.08312079217284918,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.005174292,
+          "process_seconds": 0.08254262479022145,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.000389459,
+          "process_seconds": 0.07580158393830061,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 5.458015948534012e-06,
+          "process_seconds": 0.018950417172163725,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.005164917,
+          "process_seconds": 0.07956699980422854,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 1.6670674085617065e-06,
+          "process_seconds": 0.02008958300575614,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.000394458,
+          "process_seconds": 0.07666591694578528,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 2.3748725652694702e-06,
+          "process_seconds": 0.019468999933451414,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.005183083,
+          "process_seconds": 0.08090275013819337,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.000390625,
+          "process_seconds": 0.07632558280602098,
+          "validation": {
+            "count": 40,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        }
+      ],
+      "comparisons": {
+        "kernel": {
+          "mech": {
+            "samples_seconds": [
+              0.000391917,
+              0.000390542,
+              0.0003895,
+              0.000382334,
+              0.000393625
+            ],
+            "median_seconds": 0.000390542,
+            "minimum_seconds": 0.000382334,
+            "maximum_seconds": 0.000393625
+          },
+          "c": {
+            "samples_seconds": [
+              1.3331882655620575e-06,
+              1.334119588136673e-06,
+              1.2498348951339722e-06,
+              1.2498348951339722e-06,
+              1.2922100722789764e-06
+            ],
+            "median_seconds": 1.2922100722789764e-06,
+            "minimum_seconds": 1.2498348951339722e-06,
+            "maximum_seconds": 1.334119588136673e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              0.005163334,
+              0.005165583,
+              0.005182708,
+              0.005148208,
+              0.005173541
+            ],
+            "median_seconds": 0.005165583,
+            "minimum_seconds": 0.005148208,
+            "maximum_seconds": 0.005182708
+          },
+          "median_mech_over_c": 302.2279491377355
+        },
+        "fresh": {
+          "mech": {
+            "samples_seconds": [
+              0.000390042,
+              0.000412542,
+              0.000389459,
+              0.000394458,
+              0.000390625
+            ],
+            "median_seconds": 0.000390625,
+            "minimum_seconds": 0.000389459,
+            "maximum_seconds": 0.000412542
+          },
+          "c": {
+            "samples_seconds": [
+              2.582557499408722e-06,
+              2.9159709811210632e-06,
+              5.458015948534012e-06,
+              1.6670674085617065e-06,
+              2.3748725652694702e-06
+            ],
+            "median_seconds": 2.582557499408722e-06,
+            "minimum_seconds": 1.6670674085617065e-06,
+            "maximum_seconds": 5.458015948534012e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              0.005146875,
+              0.005202875,
+              0.005174292,
+              0.005164917,
+              0.005183083
+            ],
+            "median_seconds": 0.005174292,
+            "minimum_seconds": 0.005146875,
+            "maximum_seconds": 0.005202875
+          },
+          "median_mech_over_c": 151.25510277677606
+        }
+      }
+    },
+    "gemm": {
+      "source_sha256": "3f738611433fdade00258c76485f6c63634268fc95bf4f9e74b9a685ad178111",
+      "c_binary_sha256": "bf857a20260a91b2be987f0966fa9c5709c11db21a281ea9ad536eb0aadb7019",
+      "input_sha256": "efbbdcaccd1d9e18b09ea4769add03f659bd68323ac133ed1588851643fac6e0",
+      "observations": [
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.000152459,
+          "process_seconds": 0.06008000019937754,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 4.209112375974655e-06,
+          "process_seconds": 0.019483083859086037,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.000146958,
+          "process_seconds": 0.05686675012111664,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 3.958120942115784e-06,
+          "process_seconds": 0.016078708227723837,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.000143125,
+          "process_seconds": 0.06113083381205797,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.000151666,
+          "process_seconds": 0.06142474990338087,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.000151625,
+          "process_seconds": 0.06102262530475855,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.000139792,
+          "process_seconds": 0.059494417160749435,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 4.292000085115433e-06,
+          "process_seconds": 0.02085100021213293,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.000150417,
+          "process_seconds": 0.05727391690015793,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 4.250090569257736e-06,
+          "process_seconds": 0.021505041979253292,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.000140291,
+          "process_seconds": 0.05930795893073082,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 4.167202860116959e-06,
+          "process_seconds": 0.019260582979768515,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.000149542,
+          "process_seconds": 0.058976542204618454,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.000139708,
+          "process_seconds": 0.05964162526652217,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.000143125,
+          "process_seconds": 0.060914792120456696,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 6.709247827529907e-06,
+          "process_seconds": 0.019051000010222197,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.000150625,
+          "process_seconds": 0.05773075018078089,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 6.4997002482414246e-06,
+          "process_seconds": 0.02085287496447563,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.000142833,
+          "process_seconds": 0.058065667282789946,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.000151625,
+          "process_seconds": 0.06188287492841482,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.0001465,
+          "process_seconds": 0.061236666049808264,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.000141792,
+          "process_seconds": 0.06012400006875396,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 7.000286132097244e-06,
+          "process_seconds": 0.02030104212462902,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.00015675,
+          "process_seconds": 0.05938812531530857,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 8.207745850086212e-06,
+          "process_seconds": 0.02230445807799697,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.000143833,
+          "process_seconds": 0.06362229166552424,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 6.500165909528732e-06,
+          "process_seconds": 0.018991165794432163,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.000154958,
+          "process_seconds": 0.061891417019069195,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.000138416,
+          "process_seconds": 0.0619402090087533,
+          "validation": {
+            "count": 500,
+            "finite": true,
+            "max_absolute_error": 7.105427357601002e-15
+          }
+        }
+      ],
+      "comparisons": {
+        "kernel": {
+          "mech": {
+            "samples_seconds": [
+              0.000152459,
+              0.000143125,
+              0.000139792,
+              0.000140291,
+              0.000139708
+            ],
+            "median_seconds": 0.000140291,
+            "minimum_seconds": 0.000139708,
+            "maximum_seconds": 0.000152459
+          },
+          "c": {
+            "samples_seconds": [
+              4.209112375974655e-06,
+              3.958120942115784e-06,
+              4.292000085115433e-06,
+              4.250090569257736e-06,
+              4.167202860116959e-06
+            ],
+            "median_seconds": 4.209112375974655e-06,
+            "minimum_seconds": 3.958120942115784e-06,
+            "maximum_seconds": 4.292000085115433e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              0.000146958,
+              0.000151666,
+              0.000151625,
+              0.000150417,
+              0.000149542
+            ],
+            "median_seconds": 0.000150417,
+            "minimum_seconds": 0.000146958,
+            "maximum_seconds": 0.000151666
+          },
+          "median_mech_over_c": 33.33030517331209
+        },
+        "fresh": {
+          "mech": {
+            "samples_seconds": [
+              0.000143125,
+              0.000142833,
+              0.000141792,
+              0.000143833,
+              0.000138416
+            ],
+            "median_seconds": 0.000142833,
+            "minimum_seconds": 0.000138416,
+            "maximum_seconds": 0.000143833
+          },
+          "c": {
+            "samples_seconds": [
+              6.709247827529907e-06,
+              6.4997002482414246e-06,
+              7.000286132097244e-06,
+              8.207745850086212e-06,
+              6.500165909528732e-06
+            ],
+            "median_seconds": 6.709247827529907e-06,
+            "minimum_seconds": 6.4997002482414246e-06,
+            "maximum_seconds": 8.207745850086212e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              0.000150625,
+              0.000151625,
+              0.0001465,
+              0.00015675,
+              0.000154958
+            ],
+            "median_seconds": 0.000151625,
+            "minimum_seconds": 0.0001465,
+            "maximum_seconds": 0.00015675
+          },
+          "median_mech_over_c": 21.288973618460854
+        }
+      }
+    },
+    "gramschmidt": {
+      "source_sha256": "9d49c8c808089de3b4dc0c47f66619952fffe8691afd865cda8871fb21e16bfd",
+      "c_binary_sha256": "4491d8eb03edf17e230223f76630af4f9dbdf641dfd1524e0559d6ef589d3b53",
+      "input_sha256": "83895c3341e6ac8f3763e6c2572fabb644c15950aa43618730181d888aa5bf51",
+      "observations": [
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.0031935,
+          "process_seconds": 0.09818374970927835,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 3.541819751262665e-06,
+          "process_seconds": 0.022429207805544138,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.099649792,
+          "process_seconds": 0.2792944172397256,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 3.291293978691101e-06,
+          "process_seconds": 0.02133574988692999,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.003220417,
+          "process_seconds": 0.09281408321112394,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.099536083,
+          "process_seconds": 0.282069250009954,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.099405625,
+          "process_seconds": 0.28326154220849276,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.00321175,
+          "process_seconds": 0.09701429167762399,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 3.500375896692276e-06,
+          "process_seconds": 0.02020200015977025,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.099676958,
+          "process_seconds": 0.28059337520971894,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 3.5832636058330536e-06,
+          "process_seconds": 0.019458957947790623,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.003191958,
+          "process_seconds": 0.09403024986386299,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 3.4999102354049683e-06,
+          "process_seconds": 0.020773124881088734,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.099472916,
+          "process_seconds": 0.28190500009804964,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.003201333,
+          "process_seconds": 0.09695104183629155,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.00319875,
+          "process_seconds": 0.09545579086989164,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 4.5406632125377655e-06,
+          "process_seconds": 0.021391041111201048,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.100453042,
+          "process_seconds": 0.28287529200315475,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 4.58303838968277e-06,
+          "process_seconds": 0.02190324990078807,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.003219125,
+          "process_seconds": 0.09482170781120658,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.099608125,
+          "process_seconds": 0.2841201671399176,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.099577875,
+          "process_seconds": 0.28358545806258917,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.00320725,
+          "process_seconds": 0.09733700007200241,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 5.790963768959045e-06,
+          "process_seconds": 0.020813792012631893,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.099855541,
+          "process_seconds": 0.28319979226216674,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 5.62518835067749e-06,
+          "process_seconds": 0.02033229125663638,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.003186542,
+          "process_seconds": 0.09544762503355742,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 5.875248461961746e-06,
+          "process_seconds": 0.02092104172334075,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.100125,
+          "process_seconds": 0.2806418752297759,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.003207708,
+          "process_seconds": 0.09724829206243157,
+          "validation": {
+            "count": 2100,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        }
+      ],
+      "comparisons": {
+        "kernel": {
+          "mech": {
+            "samples_seconds": [
+              0.0031935,
+              0.003220417,
+              0.00321175,
+              0.003191958,
+              0.003201333
+            ],
+            "median_seconds": 0.003201333,
+            "minimum_seconds": 0.003191958,
+            "maximum_seconds": 0.003220417
+          },
+          "c": {
+            "samples_seconds": [
+              3.541819751262665e-06,
+              3.291293978691101e-06,
+              3.500375896692276e-06,
+              3.5832636058330536e-06,
+              3.4999102354049683e-06
+            ],
+            "median_seconds": 3.500375896692276e-06,
+            "minimum_seconds": 3.291293978691101e-06,
+            "maximum_seconds": 3.5832636058330536e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              0.099649792,
+              0.099536083,
+              0.099405625,
+              0.099676958,
+              0.099472916
+            ],
+            "median_seconds": 0.099536083,
+            "minimum_seconds": 0.099405625,
+            "maximum_seconds": 0.099676958
+          },
+          "median_mech_over_c": 914.5683476523592
+        },
+        "fresh": {
+          "mech": {
+            "samples_seconds": [
+              0.00319875,
+              0.003219125,
+              0.00320725,
+              0.003186542,
+              0.003207708
+            ],
+            "median_seconds": 0.00320725,
+            "minimum_seconds": 0.003186542,
+            "maximum_seconds": 0.003219125
+          },
+          "c": {
+            "samples_seconds": [
+              4.5406632125377655e-06,
+              4.58303838968277e-06,
+              5.790963768959045e-06,
+              5.62518835067749e-06,
+              5.875248461961746e-06
+            ],
+            "median_seconds": 5.62518835067749e-06,
+            "minimum_seconds": 4.5406632125377655e-06,
+            "maximum_seconds": 5.875248461961746e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              0.100453042,
+              0.099608125,
+              0.099577875,
+              0.099855541,
+              0.100125
+            ],
+            "median_seconds": 0.099855541,
+            "minimum_seconds": 0.099577875,
+            "maximum_seconds": 0.100453042
+          },
+          "median_mech_over_c": 570.1586862622516
+        }
+      }
+    },
+    "mvt": {
+      "source_sha256": "dcdbc81b044cf721648a6527ed9f6c6c5d99304f9d65fca4b7590e615a2f1f83",
+      "c_binary_sha256": "bf57d186146c4930f000c722d693f1d516855510e68a67dceee57e170b4656f8",
+      "input_sha256": "fbade0c9877a296d71ab1f406c9e272cc1d24e07cfa9916c41d47b90be287822",
+      "observations": [
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.000178958,
+          "process_seconds": 0.06066570803523064,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 1.375097781419754e-06,
+          "process_seconds": 0.019697667099535465,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.000183458,
+          "process_seconds": 0.055405333172529936,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 1.2498348951339722e-06,
+          "process_seconds": 0.018968500196933746,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.000179625,
+          "process_seconds": 0.057563666719943285,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.00018175,
+          "process_seconds": 0.060536709148436785,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.000174167,
+          "process_seconds": 0.06061120796948671,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.000171834,
+          "process_seconds": 0.06085529178380966,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 1.2922100722789764e-06,
+          "process_seconds": 0.019062750041484833,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.0001635,
+          "process_seconds": 0.05715583311393857,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 1.2917444109916687e-06,
+          "process_seconds": 0.019453542307019234,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.000176,
+          "process_seconds": 0.06134979194030166,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 1.2917444109916687e-06,
+          "process_seconds": 0.020132292062044144,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.000161875,
+          "process_seconds": 0.05814850004389882,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.000162209,
+          "process_seconds": 0.060713667422533035,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.000165583,
+          "process_seconds": 0.060385333839803934,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 3.917142748832703e-06,
+          "process_seconds": 0.01933770766481757,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.000167084,
+          "process_seconds": 0.05744445789605379,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 2.959277480840683e-06,
+          "process_seconds": 0.02017574990168214,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.000171042,
+          "process_seconds": 0.06191841699182987,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.000170125,
+          "process_seconds": 0.062185042072087526,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.000169833,
+          "process_seconds": 0.06218558410182595,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.000162667,
+          "process_seconds": 0.060059374663978815,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 2.3329630494117737e-06,
+          "process_seconds": 0.01974516734480858,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.000175792,
+          "process_seconds": 0.058743624947965145,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 2.125278115272522e-06,
+          "process_seconds": 0.018663582857698202,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.000163209,
+          "process_seconds": 0.05694187479093671,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 2.3334287106990814e-06,
+          "process_seconds": 0.021481874864548445,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.000169083,
+          "process_seconds": 0.057458792347460985,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.000166875,
+          "process_seconds": 0.05957729136571288,
+          "validation": {
+            "count": 80,
+            "finite": true,
+            "max_absolute_error": 3.552713678800501e-15
+          }
+        }
+      ],
+      "comparisons": {
+        "kernel": {
+          "mech": {
+            "samples_seconds": [
+              0.000178958,
+              0.000179625,
+              0.000171834,
+              0.000176,
+              0.000162209
+            ],
+            "median_seconds": 0.000176,
+            "minimum_seconds": 0.000162209,
+            "maximum_seconds": 0.000179625
+          },
+          "c": {
+            "samples_seconds": [
+              1.375097781419754e-06,
+              1.2498348951339722e-06,
+              1.2922100722789764e-06,
+              1.2917444109916687e-06,
+              1.2917444109916687e-06
+            ],
+            "median_seconds": 1.2917444109916687e-06,
+            "minimum_seconds": 1.2498348951339722e-06,
+            "maximum_seconds": 1.375097781419754e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              0.000183458,
+              0.00018175,
+              0.000174167,
+              0.0001635,
+              0.000161875
+            ],
+            "median_seconds": 0.000174167,
+            "minimum_seconds": 0.000161875,
+            "maximum_seconds": 0.000183458
+          },
+          "median_mech_over_c": 136.2498637519827
+        },
+        "fresh": {
+          "mech": {
+            "samples_seconds": [
+              0.000165583,
+              0.000171042,
+              0.000162667,
+              0.000163209,
+              0.000166875
+            ],
+            "median_seconds": 0.000165583,
+            "minimum_seconds": 0.000162667,
+            "maximum_seconds": 0.000171042
+          },
+          "c": {
+            "samples_seconds": [
+              3.917142748832703e-06,
+              2.959277480840683e-06,
+              2.3329630494117737e-06,
+              2.125278115272522e-06,
+              2.3334287106990814e-06
+            ],
+            "median_seconds": 2.3334287106990814e-06,
+            "minimum_seconds": 2.125278115272522e-06,
+            "maximum_seconds": 3.917142748832703e-06
+          },
+          "reference": {
+            "samples_seconds": [
+              0.000167084,
+              0.000170125,
+              0.000169833,
+              0.000175792,
+              0.000169083
+            ],
+            "median_seconds": 0.000169833,
+            "minimum_seconds": 0.000167084,
+            "maximum_seconds": 0.000175792
+          },
+          "median_mech_over_c": 70.96124224441907
+        }
+      }
+    },
+    "nussinov": {
+      "source_sha256": "13e227bd65e4a450fe3a1ac48995911d214c9e070c6eccf3ffde41ac6cb0f6fd",
+      "c_binary_sha256": "e19004cdcabef6646bf08f7ef74e67132b36824b393c673224cbe77c445a0dd6",
+      "input_sha256": "a3b59f91ae1d7d0220770602ebc1e84861fdac162a1867926f1f3e06b7f681ab",
+      "observations": [
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.000183625,
+          "process_seconds": 0.08502491703256965,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 2.9832590371370316e-05,
+          "process_seconds": 0.020759250037372112,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 3.6108545420000002,
+          "process_seconds": 7.328850582707673,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 2.7249567210674286e-05,
+          "process_seconds": 0.02130383439362049,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.000185,
+          "process_seconds": 0.08577445801347494,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 3.60814325,
+          "process_seconds": 7.310456833336502,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 3.577892416,
+          "process_seconds": 7.268944500014186,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.00018375,
+          "process_seconds": 0.0882841250859201,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 2.6416964828968048e-05,
+          "process_seconds": 0.021133333910256624,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 3.591932875,
+          "process_seconds": 7.283377832733095,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 3.054179251194e-05,
+          "process_seconds": 0.021401667036116123,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.000185083,
+          "process_seconds": 0.08622445911169052,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 2.787495031952858e-05,
+          "process_seconds": 0.017365667037665844,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 3.59452775,
+          "process_seconds": 7.293717000167817,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.000184666,
+          "process_seconds": 0.09023504238575697,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.000183208,
+          "process_seconds": 0.08833645842969418,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 3.083283081650734e-05,
+          "process_seconds": 0.020771458745002747,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 3.581196875,
+          "process_seconds": 7.2722717500291765,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 3.10409814119339e-05,
+          "process_seconds": 0.02099704183638096,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.000184666,
+          "process_seconds": 0.08879233291372657,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 3.617669958,
+          "process_seconds": 7.329789792187512,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 3.587875,
+          "process_seconds": 7.285538707859814,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.000184041,
+          "process_seconds": 0.08772812504321337,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 2.9167160391807556e-05,
+          "process_seconds": 0.022226957604289055,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 3.593992833,
+          "process_seconds": 7.288050750270486,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 3.137486055493355e-05,
+          "process_seconds": 0.02023629192262888,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.000185167,
+          "process_seconds": 0.0863314582966268,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 4.429183900356293e-05,
+          "process_seconds": 0.020877250004559755,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 3.60759025,
+          "process_seconds": 7.325676833279431,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.000184792,
+          "process_seconds": 0.08968066703528166,
+          "validation": {
+            "count": 3600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        }
+      ],
+      "comparisons": {
+        "kernel": {
+          "mech": {
+            "samples_seconds": [
+              0.000183625,
+              0.000185,
+              0.00018375,
+              0.000185083,
+              0.000184666
+            ],
+            "median_seconds": 0.000184666,
+            "minimum_seconds": 0.000183625,
+            "maximum_seconds": 0.000185083
+          },
+          "c": {
+            "samples_seconds": [
+              2.9832590371370316e-05,
+              2.7249567210674286e-05,
+              2.6416964828968048e-05,
+              3.054179251194e-05,
+              2.787495031952858e-05
+            ],
+            "median_seconds": 2.787495031952858e-05,
+            "minimum_seconds": 2.6416964828968048e-05,
+            "maximum_seconds": 3.054179251194e-05
+          },
+          "reference": {
+            "samples_seconds": [
+              3.6108545420000002,
+              3.60814325,
+              3.577892416,
+              3.591932875,
+              3.59452775
+            ],
+            "median_seconds": 3.59452775,
+            "minimum_seconds": 3.577892416,
+            "maximum_seconds": 3.6108545420000002
+          },
+          "median_mech_over_c": 6.624801044779873
+        },
+        "fresh": {
+          "mech": {
+            "samples_seconds": [
+              0.000183208,
+              0.000184666,
+              0.000184041,
+              0.000185167,
+              0.000184792
+            ],
+            "median_seconds": 0.000184666,
+            "minimum_seconds": 0.000183208,
+            "maximum_seconds": 0.000185167
+          },
+          "c": {
+            "samples_seconds": [
+              3.083283081650734e-05,
+              3.10409814119339e-05,
+              2.9167160391807556e-05,
+              3.137486055493355e-05,
+              4.429183900356293e-05
+            ],
+            "median_seconds": 3.10409814119339e-05,
+            "minimum_seconds": 2.9167160391807556e-05,
+            "maximum_seconds": 4.429183900356293e-05
+          },
+          "reference": {
+            "samples_seconds": [
+              3.581196875,
+              3.617669958,
+              3.587875,
+              3.593992833,
+              3.60759025
+            ],
+            "median_seconds": 3.593992833,
+            "minimum_seconds": 3.581196875,
+            "maximum_seconds": 3.617669958
+          },
+          "median_mech_over_c": 5.949103140437564
+        }
+      }
+    },
+    "seidel-2d": {
+      "source_sha256": "16e7ea753a2825eec81f7068cc49d689ba2aa8db38189927286507fec8d2f93e",
+      "c_binary_sha256": "b3a0bc6646ebb2a6d75b45334f4349bee5cb385fccaaed979336eebc381419b4",
+      "input_sha256": "c5c70866b04dbaa635db7493f8097fcd4769c70a1782dac78e7543a78a047577",
+      "observations": [
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.000327708,
+          "process_seconds": 0.08227633405476809,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 0.00010787509381771088,
+          "process_seconds": 0.021560959052294493,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 0,
+          "seconds": 5.523290959,
+          "process_seconds": 11.163912875112146,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.00011033331975340843,
+          "process_seconds": 0.022247917018830776,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 0.000326916,
+          "process_seconds": 0.08022366696968675,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 1,
+          "seconds": 5.5000325,
+          "process_seconds": 11.121021999977529,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 5.5453681249999995,
+          "process_seconds": 11.20004962477833,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.00032625,
+          "process_seconds": 0.08428412536159158,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 2,
+          "seconds": 0.00010791607201099396,
+          "process_seconds": 0.02216166676953435,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 5.51438125,
+          "process_seconds": 11.136188624892384,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.00011033378541469574,
+          "process_seconds": 0.022125625051558018,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 3,
+          "seconds": 0.000326459,
+          "process_seconds": 0.07840400002896786,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.00010787509381771088,
+          "process_seconds": 0.021104666870087385,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 5.520853667,
+          "process_seconds": 11.151578082703054,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "kernel",
+          "pair": 4,
+          "seconds": 0.000328,
+          "process_seconds": 0.08121758280321956,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.000327,
+          "process_seconds": 0.08220329228788614,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 0.00010958407074213028,
+          "process_seconds": 0.02109083393588662,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 0,
+          "seconds": 5.567460167,
+          "process_seconds": 11.21292958362028,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.00011204183101654053,
+          "process_seconds": 0.01951775001361966,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 0.000325292,
+          "process_seconds": 0.08298687543720007,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 1,
+          "seconds": 5.503242791,
+          "process_seconds": 11.117291333153844,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 5.497582875,
+          "process_seconds": 11.114059041719884,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.00032525,
+          "process_seconds": 0.08234891714528203,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 2,
+          "seconds": 0.00010991701856255531,
+          "process_seconds": 0.02016533399000764,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 5.487986458,
+          "process_seconds": 11.103099041152745,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.00011229095980525017,
+          "process_seconds": 0.021728083956986666,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 3,
+          "seconds": 0.000326125,
+          "process_seconds": 0.07859141705557704,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "c",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.00011020805686712265,
+          "process_seconds": 0.020977208390831947,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "reference",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 5.495565458,
+          "process_seconds": 11.097173958085477,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        },
+        {
+          "actor": "mech",
+          "mode": "fresh",
+          "pair": 4,
+          "seconds": 0.000324208,
+          "process_seconds": 0.08071183413267136,
+          "validation": {
+            "count": 1600,
+            "finite": true,
+            "max_absolute_error": 0.0
+          }
+        }
+      ],
+      "comparisons": {
+        "kernel": {
+          "mech": {
+            "samples_seconds": [
+              0.000327708,
+              0.000326916,
+              0.00032625,
+              0.000326459,
+              0.000328
+            ],
+            "median_seconds": 0.000326916,
+            "minimum_seconds": 0.00032625,
+            "maximum_seconds": 0.000328
+          },
+          "c": {
+            "samples_seconds": [
+              0.00010787509381771088,
+              0.00011033331975340843,
+              0.00010791607201099396,
+              0.00011033378541469574,
+              0.00010787509381771088
+            ],
+            "median_seconds": 0.00010791607201099396,
+            "minimum_seconds": 0.00010787509381771088,
+            "maximum_seconds": 0.00011033378541469574
+          },
+          "reference": {
+            "samples_seconds": [
+              5.523290959,
+              5.5000325,
+              5.5453681249999995,
+              5.51438125,
+              5.520853667
+            ],
+            "median_seconds": 5.520853667,
+            "minimum_seconds": 5.5000325,
+            "maximum_seconds": 5.5453681249999995
+          },
+          "median_mech_over_c": 3.029354144456772
+        },
+        "fresh": {
+          "mech": {
+            "samples_seconds": [
+              0.000327,
+              0.000325292,
+              0.00032525,
+              0.000326125,
+              0.000324208
+            ],
+            "median_seconds": 0.000325292,
+            "minimum_seconds": 0.000324208,
+            "maximum_seconds": 0.000327
+          },
+          "c": {
+            "samples_seconds": [
+              0.00010958407074213028,
+              0.00011204183101654053,
+              0.00010991701856255531,
+              0.00011229095980525017,
+              0.00011020805686712265
+            ],
+            "median_seconds": 0.00011020805686712265,
+            "minimum_seconds": 0.00010958407074213028,
+            "maximum_seconds": 0.00011229095980525017
+          },
+          "reference": {
+            "samples_seconds": [
+              5.567460167,
+              5.503242791,
+              5.497582875,
+              5.487986458,
+              5.495565458
+            ],
+            "median_seconds": 5.497582875,
+            "minimum_seconds": 5.487986458,
+            "maximum_seconds": 5.567460167
+          },
+          "median_mech_over_c": 2.951617234230008
+        }
+      }
+    }
+  },
+  "complete": true,
+  "completed_at": "2026-11-26T11:33:57.261100+00:00"
+}
