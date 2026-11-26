@@ -70,6 +70,18 @@ impl Invocation<'_, '_, '_> {
             .numeric
             .as_ref()
             .ok_or_else(|| invalid("missing numeric leaf proof"))?;
+        if let Some(variant) = &proof.tagged {
+            let [root] = metadata
+                .buffer_frames
+                .fields_at(variant.carrier as usize)
+                .ok_or_else(|| invalid("guarded numeric carrier lost frame"))?
+            else {
+                return Err(invalid("guarded numeric carrier is not an enum"));
+            };
+            if self.state.buffer_frames.current_tag(*root)? != variant.ordinal as usize {
+                return Ok(false);
+            }
+        }
         // A worker's observed shared remainder is not an exclusive reservation.
         // Whole phases initially borrow only the synchronous invocation account.
         if proof.phase.is_some() && self.worker.is_some() {

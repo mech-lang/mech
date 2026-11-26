@@ -159,3 +159,89 @@ pub(super) fn observation(plan: &Plan, action: &Action) -> Option<(Value, Value)
     };
     valid.then_some((*source, *output))
 }
+
+/// A compiler-only view of one guarded enum variant. The original layout and
+/// runtime tag bank are unchanged. Only the caller's independently proved hot
+/// source sites may use this view; entry must check the current carrier tag and
+/// every retained backedge must reestablish the same variant.
+impl NativeBufferFrames {
+    pub fn numeric_variant_projection(
+        &self,
+        plan: &Plan,
+        carrier: Value,
+        ordinal: u32,
+    ) -> Option<Self> {
+        let schema = plan.values().get(carrier.get() as usize)?.schema();
+        let [root] = self.fields(carrier)? else {
+            return None;
+        };
+        let target = self.tagged_variant(*root, ordinal)?;
+        if !matches!(target.lane(), NativeBufferFrameLane::Composite { .. }) {
+            return None;
+        }
+        let mut projected = self.clone();
+        for (value, ty) in plan.values().iter().enumerate() {
+            if ty.schema() != schema {
+                continue;
+            }
+            let [root] = self.fields_at(value)? else {
+                return None;
+            };
+            let target = self.tagged_variant(*root, ordinal)?;
+            let NativeBufferFrameLane::Composite { at, count } = target.lane() else {
+                return None;
+            };
+            projected.slots[value] = Some((at, count));
+        }
+        for action in projected.actions.iter_mut().flatten() {
+            let replacement = match &action.operation {
+                NativeBufferFrameOperation::EnumPack {
+                    output,
+                    payload,
+                    ordinal: active,
+                } if plan.values()[output.get() as usize].schema() == schema
+                    && *active == ordinal
+                    && self.fields(*payload).is_some() =>
+                {
+                    Some(NativeBufferFrameOperation::Copy {
+                        source: *payload,
+                        output: *output,
+                    })
+                }
+                NativeBufferFrameOperation::Observe {
+                    source,
+                    path,
+                    observation,
+                    output,
+                } if plan.values()[source.get() as usize].schema() == schema
+                    && matches!(observation, Observation::U64 | Observation::CanonicalValue) =>
+                {
+                    match path.as_ref() {
+                        [Step::EnumPayload { ordinal: active }]
+                            if *active == ordinal && self.fields(*output).is_some() =>
+                        {
+                            Some(NativeBufferFrameOperation::Copy {
+                                source: *source,
+                                output: *output,
+                            })
+                        }
+                        [
+                            Step::EnumPayload { ordinal: active },
+                            Step::TupleItem { ordinal: field },
+                        ] if *active == ordinal => Some(NativeBufferFrameOperation::Project {
+                            source: *source,
+                            ordinal: *field as usize,
+                            output: *output,
+                        }),
+                        _ => None,
+                    }
+                }
+                _ => None,
+            };
+            if let Some(replacement) = replacement {
+                action.operation = replacement;
+            }
+        }
+        Some(projected)
+    }
+}

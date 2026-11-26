@@ -533,7 +533,8 @@ fn selected_template(
 // IR360 shares checked source branches and phi words inside native scalar maps.
 // IR361 reuses typed scalar storage in closed numeric array phases.
 // IR362 preserves independent row/column selectors in native numeric phases.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 362;
+// IR363 adds checked monomorphic tagged numeric state phases.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 363;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -784,7 +785,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 362;
 // Policy129 prepays the complete acyclic conditional map body.
 // Policy130 funds the typed private owner bank and scalar store guards.
 // Policy131 funds two-axis guards and first-change coordinate transport.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 131;
+// Policy132 funds guarded-tag entry and exact cold payload exports.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 132;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

@@ -1856,6 +1856,17 @@ impl<'plan> CfgDefinition<'plan> {
                 b.switch_to_block(joined);
             }
             #[cfg(feature = "canonical-native-program")]
+            if controls
+                .enabled(crate::native_artifact::codegen::options::OptimizationPass::ScalarLoops)
+                && controls.enabled(
+                    crate::native_artifact::codegen::options::OptimizationPass::NumericTrees,
+                )
+            {
+                crate::native_artifact::program::codegen::tail::tagged_transition(
+                    *options, b, locals, &closed, plan, index,
+                )?;
+            }
+            #[cfg(feature = "canonical-native-program")]
             if let Some(hooks) = &hooks {
                 crate::native_artifact::program::codegen::tail::prepare(
                     controls,

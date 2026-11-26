@@ -179,6 +179,7 @@ pub(super) fn source_slots(
 pub(super) struct FrameWordMoves {
     pub assignments: Vec<(usize, usize)>,
     pub parallel: bool,
+    pub constants: Vec<(usize, u64)>,
 }
 
 /// Exact scalar lane assignments; managed fields retain their checked recipes.
@@ -187,6 +188,16 @@ pub(super) fn frame_word_moves(
     code: CodePlan<'_>,
     site: usize,
     recipes: &[FrameWords],
+) -> Result<FrameWordMoves, NativeCompileError> {
+    frame_word_moves_for(shadow, code, site, recipes, None)
+}
+
+pub(super) fn frame_word_moves_for(
+    shadow: usize,
+    code: CodePlan<'_>,
+    site: usize,
+    recipes: &[FrameWords],
+    variant: Option<&crate::native_artifact::program::prepare::readonly_numeric::tagged::Variant>,
 ) -> Result<FrameWordMoves, NativeCompileError> {
     let CodePlan::Program(program) = code else {
         return Err(backend("numeric frame lacks managed plan"));
@@ -203,6 +214,35 @@ pub(super) fn frame_word_moves(
         .action(site)
         .ok_or_else(|| backend("numeric frame lost fields"))?
         .operation();
+    if let (
+        Some(variant),
+        Frame::Observe {
+            source,
+            path,
+            observation,
+            output,
+        },
+    ) = (variant, operation)
+        && variant.contains(source.get())
+        && path.is_empty()
+        && let mech_engine::native_artifact::NativeStructuralObservation::EnumOrdinal { ordinal } =
+            observation
+    {
+        return Ok(FrameWordMoves {
+            assignments: Vec::new(),
+            parallel: true,
+            constants: vec![(
+                output.get() as usize,
+                u64::from(*ordinal == variant.ordinal),
+            )],
+        });
+    }
+    let projected = variant.and_then(|variant| {
+        crate::native_artifact::program::prepare::readonly_numeric::tagged::operation(
+            operation, variant,
+        )
+    });
+    let operation = projected.as_ref().unwrap_or(operation);
     let assignments = match operation {
         Frame::EnumPack { .. } | Frame::Observe { .. } => {
             return Err(backend("tagged frame outside numeric word emitter"));
@@ -259,6 +299,7 @@ pub(super) fn frame_word_moves(
                     return Ok(FrameWordMoves {
                         assignments: Vec::new(),
                         parallel: true,
+                        constants: Vec::new(),
                     });
                 }
                 let target = recipe(output.get())?.scalar_slots().collect::<Vec<_>>();
@@ -278,6 +319,7 @@ pub(super) fn frame_word_moves(
     Ok(FrameWordMoves {
         assignments,
         parallel: true,
+        constants: Vec::new(),
     })
 }
 
@@ -288,8 +330,13 @@ pub(super) fn frame_words(
     code: CodePlan<'_>,
     site: usize,
     recipes: &[FrameWords],
+    variant: Option<&crate::native_artifact::program::prepare::readonly_numeric::tagged::Variant>,
 ) -> Result<(), NativeCompileError> {
-    let moves = frame_word_moves(shadow, code, site, recipes)?;
+    let moves = frame_word_moves_for(shadow, code, site, recipes, variant)?;
+    for (to, bits) in moves.constants {
+        let value = b.ins().iconst(types::I64, bits as i64);
+        words.write(b, to, value);
+    }
     let copied = moves
         .assignments
         .into_iter()

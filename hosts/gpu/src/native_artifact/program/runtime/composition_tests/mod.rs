@@ -78,6 +78,7 @@ mod schema_key;
 mod state_read_packs;
 mod static_extents;
 mod tagged_map_carrier;
+mod tagged_numeric_phases;
 mod tuple_capture;
 mod typed_numeric_phases;
 mod utf8_reads;
@@ -148,9 +149,9 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                131
+                132
             );
-            // Policy131 adds independently checked cell coordinates; this unsigned fixture retains
+            // Policy132 adds guarded numeric tags; this unsigned fixture retains
             // the policy127 tree handoff and its exact source work bill.
             // Policy125 adds tree first-write alias checks.
             // Policies107/108/110/111 add fills, recursive frames, worker
@@ -654,12 +655,12 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                131
+                132
             );
             assert_eq!(
                 report.work,
                 owner_layout_work(41_515_826, 41_513_202),
-                "policy131 keeps this unsigned fixture's established source prices and child fallback banks"
+                "policy132 keeps this unsigned fixture's established source prices and child fallback banks"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(

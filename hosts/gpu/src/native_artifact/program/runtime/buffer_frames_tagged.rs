@@ -29,6 +29,52 @@ impl BufferFrames {
         Ok(ordinal)
     }
 
+    /// The active payload has already been synchronized into its exact homes.
+    /// Finish by clearing inactive variants and publishing the checked tag last.
+    pub(in crate::native_artifact::program::runtime) fn synchronize_numeric_tag(
+        &mut self,
+        layout: &Layout,
+        value: u32,
+        ordinal: u32,
+        work: &mut NativeWorkMeter,
+    ) -> Result<(), NativeProgramExecutionError> {
+        let [root] = layout
+            .fields_at(value as usize)
+            .ok_or_else(|| invalid("numeric enum frame missing"))?
+        else {
+            return Err(invalid("numeric enum root missing"));
+        };
+        let Lane::Tagged { tag, count, .. } = root.lane() else {
+            return Err(invalid("numeric enum frame is not tagged"));
+        };
+        if ordinal as usize >= count {
+            return Err(invalid("numeric enum ordinal exceeds variants"));
+        }
+        work.charge(
+            NativeExecutionPhase::Setup,
+            amount(
+                Self::field_count(layout, core::slice::from_ref(root)),
+                64,
+                128,
+            )?,
+        )?;
+        for inactive in 0..count {
+            if inactive != ordinal as usize {
+                let field = layout
+                    .tagged_variant(*root, inactive as u32)
+                    .ok_or_else(|| invalid("numeric enum inactive variant missing"))?;
+                self.clear_fields(layout, core::slice::from_ref(&field))?;
+            }
+        }
+        let inner = self
+            .inner
+            .as_mut()
+            .ok_or_else(|| invalid("numeric enum bank missing"))?;
+        inner.words.values_mut()[tag * 2] = u64::from(ordinal);
+        inner.words.values_mut()[tag * 2 + 1] = 1;
+        Ok(())
+    }
+
     pub(super) fn composite_target<'a>(
         layout: &'a Layout,
         field: &'a FrameField,

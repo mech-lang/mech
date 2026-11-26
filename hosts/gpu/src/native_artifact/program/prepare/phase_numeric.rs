@@ -297,6 +297,27 @@ pub(in crate::native_artifact) fn derive_complete(
     )
 }
 
+pub(super) fn derive_guarded(
+    facts: &NativeProgramFacts<'_>,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
+    stops: BTreeSet<usize>,
+) -> Result<Proof, &'static str> {
+    derive_inventory(
+        facts,
+        tail,
+        frames,
+        aggregates,
+        calls,
+        visits,
+        Coverage::Intervals,
+        Some(stops),
+    )
+}
+
 fn derive_with_children(
     facts: &NativeProgramFacts<'_>,
     tail: &NativeTailLoop,
@@ -306,7 +327,21 @@ fn derive_with_children(
     visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
     mode: Coverage,
 ) -> Result<Proof, &'static str> {
+    derive_inventory(facts, tail, frames, aggregates, calls, visits, mode, None)
+}
+
+fn derive_inventory(
+    facts: &NativeProgramFacts<'_>,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    aggregates: &NativeScalarAggregates,
+    calls: &[Option<NativePreparedLibraryCall>],
+    visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
+    mode: Coverage,
+    stops: Option<BTreeSet<usize>>,
+) -> Result<Proof, &'static str> {
     let plan = facts.plan();
+    let guarded = stops.is_some();
     let fields = frames
         .fields(tail.carrier())
         .ok_or("carrier escapes or lacks an exact private frame")?;
@@ -316,12 +351,16 @@ fn derive_with_children(
     {
         return Err("numeric carrier requires flat fields");
     }
-    let forest = match mode {
-        Coverage::Complete => super::numeric_phase::Forest::derive(plan, tail)?,
-        Coverage::ScalarCold => super::numeric_phase::Forest::with_cold_children(plan, tail)?,
-        Coverage::Intervals => super::numeric_phase::Forest::intervals(plan, tail)?,
-        Coverage::Fueled => super::numeric_phase::Forest::fueled(plan, tail)?,
-        Coverage::Hybrid => super::numeric_phase::Forest::hybrid(plan, tail)?,
+    let forest = if let Some(stops) = stops {
+        super::numeric_phase::Forest::guarded_intervals(plan, tail, stops)?
+    } else {
+        match mode {
+            Coverage::Complete => super::numeric_phase::Forest::derive(plan, tail)?,
+            Coverage::ScalarCold => super::numeric_phase::Forest::with_cold_children(plan, tail)?,
+            Coverage::Intervals => super::numeric_phase::Forest::intervals(plan, tail)?,
+            Coverage::Fueled => super::numeric_phase::Forest::fueled(plan, tail)?,
+            Coverage::Hybrid => super::numeric_phase::Forest::hybrid(plan, tail)?,
+        }
     };
     if mode == Coverage::Fueled && forest.loops.len() < 2 {
         return Err("checked child funding requires a nested Tail");
@@ -477,6 +516,20 @@ fn derive_with_children(
                 Ok(())
             };
             match frame.operation() {
+                Frame::Observe {
+                    source,
+                    path,
+                    observation,
+                    ..
+                } if guarded
+                    && path.is_empty()
+                    && matches!(
+                        observation,
+                        mech_engine::native_artifact::NativeStructuralObservation::EnumOrdinal { .. }
+                    ) =>
+                {
+                    remember(source.get())?;
+                }
                 Frame::EnumPack { .. } | Frame::Observe { .. } => {
                     return Err("tagged frame outside flat numeric phase");
                 }

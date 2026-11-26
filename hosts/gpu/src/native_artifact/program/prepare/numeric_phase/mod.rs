@@ -265,35 +265,35 @@ impl Forest {
         plan: &Plan,
         root: &NativeTailLoop,
     ) -> Result<Self, &'static str> {
-        Self::derive_inventory(plan, root, Coverage::Complete)
+        Self::derive_inventory(plan, root, None, Coverage::Complete)
     }
 
     pub(in crate::native_artifact) fn with_cold_children(
         plan: &Plan,
         root: &NativeTailLoop,
     ) -> Result<Self, &'static str> {
-        Self::derive_inventory(plan, root, Coverage::ScalarCold)
+        Self::derive_inventory(plan, root, None, Coverage::ScalarCold)
     }
 
     pub(in crate::native_artifact) fn intervals(
         plan: &Plan,
         root: &NativeTailLoop,
     ) -> Result<Self, &'static str> {
-        Self::derive_inventory(plan, root, Coverage::Intervals)
+        Self::derive_inventory(plan, root, None, Coverage::Intervals)
     }
 
     pub(in crate::native_artifact) fn fueled(
         plan: &Plan,
         root: &NativeTailLoop,
     ) -> Result<Self, &'static str> {
-        Self::derive_inventory(plan, root, Coverage::Fueled)
+        Self::derive_inventory(plan, root, None, Coverage::Fueled)
     }
 
     pub(in crate::native_artifact) fn hybrid(
         plan: &Plan,
         root: &NativeTailLoop,
     ) -> Result<Self, &'static str> {
-        Self::derive_inventory(plan, root, Coverage::Hybrid)
+        Self::derive_inventory(plan, root, None, Coverage::Hybrid)
     }
 
     pub fn successors(&self, plan: &Plan, site: usize) -> Vec<usize> {
@@ -304,9 +304,19 @@ impl Forest {
         }
     }
 
+    /// Exact synchronous source stops supplied by another same-plan proof.
+    pub(super) fn guarded_intervals(
+        plan: &Plan,
+        root: &NativeTailLoop,
+        stops: BTreeSet<usize>,
+    ) -> Result<Self, &'static str> {
+        Self::derive_inventory(plan, root, Some(stops), Coverage::Intervals)
+    }
+
     fn derive_inventory(
         plan: &Plan,
         root: &NativeTailLoop,
+        guarded_stops: Option<BTreeSet<usize>>,
         mode: Coverage,
     ) -> Result<Self, &'static str> {
         let root_id = plan
@@ -322,7 +332,15 @@ impl Forest {
         } else {
             Vec::new()
         };
-        let (mut stops, prepaid_sites) = if mode == Coverage::Intervals {
+        let (mut stops, prepaid_sites) = if let Some(stops) = guarded_stops {
+            let prepaid = plan
+                .blocks()
+                .iter()
+                .enumerate()
+                .filter_map(|(site, block)| (block.iteration() == Some(root_id)).then_some(site))
+                .collect();
+            (stops, prepaid)
+        } else if mode == Coverage::Intervals {
             intervals::boundaries(plan, root_id)?
         } else {
             (BTreeSet::new(), BTreeSet::new())

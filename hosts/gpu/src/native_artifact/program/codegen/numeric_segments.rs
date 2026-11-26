@@ -283,7 +283,7 @@ pub(in crate::native_artifact) fn emit_entry(
                 )?;
             }
             Some(Operation::Frame) => {
-                numeric_words::frame_words(b, &words, shadow, code, source, &frames.frames)?
+                numeric_words::frame_words(b, &words, shadow, code, source, &frames.frames, None)?
             }
             Some(Operation::Length { array, output }) => {
                 let value = words.read(b, shadow + frames.scalar_words + array * 4 + 1);

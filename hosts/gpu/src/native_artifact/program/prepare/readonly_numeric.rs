@@ -22,6 +22,8 @@ mod append;
 pub(super) mod numeric_fields;
 #[path = "numeric_results.rs"]
 mod results;
+#[path = "numeric_tagged.rs"]
+pub(in crate::native_artifact) mod tagged;
 #[path = "numeric_versions.rs"]
 mod versions;
 pub(in crate::native_artifact) use results::ResultRecipe;
@@ -226,6 +228,7 @@ pub(in crate::native_artifact) struct ColdAlias {
 #[serde(deny_unknown_fields, rename = "mech.native.image.Proof")]
 pub(in crate::native_artifact) struct Proof<Frame = FrameWords> {
     pub nested_managed: bool,
+    pub tagged: Option<Box<tagged::Variant>>,
     pub arrays: Vec<Array>,
     pub frames: Vec<Frame>,
     pub actions: Vec<(usize, Operation)>,
@@ -262,6 +265,7 @@ impl<Frame: Into<FrameWords>> Proof<Frame> {
     pub(in crate::native_artifact) fn into_runtime(self) -> Proof {
         Proof {
             nested_managed: self.nested_managed,
+            tagged: self.tagged,
             arrays: self.arrays,
             frames: self.frames.into_iter().map(Into::into).collect(),
             actions: self.actions,
@@ -686,6 +690,7 @@ pub(in crate::native_artifact) fn derive_with_facts(
     super::phase_numeric::derive(facts, tail, frames, aggregates, calls, visits)
         .and_then(|phase| from_phase(plan, tail, frames, aggregates, phase))
         .or_else(|_| derive_leaf(facts, tail, frames, aggregates, calls))
+        .or_else(|_| tagged::derive(facts, tail, frames, aggregates, calls, visits))
 }
 
 #[cfg(test)]
@@ -743,7 +748,7 @@ pub(in crate::native_artifact) fn derive_interval(
     )
 }
 
-fn from_phase(
+pub(super) fn from_phase(
     plan: &Plan,
     tail: &NativeTailLoop,
     frames: &NativeBufferFrames,
@@ -839,6 +844,7 @@ fn from_phase(
         });
     Ok(Proof {
         nested_managed: false,
+        tagged: None,
         arrays,
         frames: frame_words,
         actions: phase.actions,
@@ -1484,6 +1490,7 @@ fn derive_inner(
     });
     Ok(Proof {
         nested_managed,
+        tagged: None,
         arrays,
         frames: frame_words,
         actions,

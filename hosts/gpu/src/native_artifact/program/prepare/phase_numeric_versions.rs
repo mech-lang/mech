@@ -437,6 +437,13 @@ fn pass(
         }
         match actions.iter().find(|(s, _)| *s == site).map(|(_, op)| op) {
             Some(Operation::Frame) => match frames.action(site).unwrap().operation() {
+                Frame::Observe {
+                    path, observation, ..
+                } if path.is_empty()
+                    && matches!(
+                        observation,
+                        mech_engine::native_artifact::NativeStructuralObservation::EnumOrdinal { .. }
+                    ) => {}
                 Frame::EnumPack { .. } | Frame::Observe { .. } => {
                     return Err("tagged frame outside flat phase version proof");
                 }

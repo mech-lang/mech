@@ -495,3 +495,16 @@ impl NativePreparedLibraryCall {
         self.check_buffer_record_ordinal(selector, ordinal, &context)
     }
 }
+
+impl NativePreparedLibraryCall {
+    /// Exact selected EnumPack with a compiler-constant selector and identity
+    /// payload axes. Numeric regions must separately prove tag induction,
+    /// current array roots and the invocation's full logical output envelope.
+    /// This does not broaden the untagged frame certificate.
+    pub fn supports_invariant_tagged_frame(&self, ordinal: u32) -> bool {
+        self.template.primitive() == Primitive::EnumPack
+            && self.frame_composition.as_ref().is_some_and(|recipe| {
+                recipe.enum_ordinal == Some(ordinal) && recipe.shape.is_identity_forwarding()
+            })
+    }
+}

@@ -448,7 +448,67 @@ fn prepare_region(
         store(options, b, locals, region, destination, word)?;
     }
     if let Some(word) = region.cold_resume() {
-        store(options, b, locals, region, word, zero)?;
+        let status = if site == region.tail.header() as usize
+            && region.numeric.as_ref().is_some_and(|p| p.tagged.is_some())
+        {
+            // Remember a refused hot run until an ordinary different tag is
+            // constructed. This prevents a tight budget from retrying forever.
+            b.ins().iconst(types::I64, 2)
+        } else {
+            zero
+        };
+        store(options, b, locals, region, word, status)?;
+    }
+    Ok(())
+}
+
+/// An ordinary source constructor can enter or leave the guarded hot run.
+/// This only arms a fresh header preview; it grants neither views nor fuel.
+pub(in crate::native_artifact) fn tagged_transition(
+    options: OptimizationOptions,
+    b: &mut FunctionBuilder<'_>,
+    locals: Value,
+    layout: &Layout,
+    code: crate::native_artifact::codegen::control::plan::CodePlan<'_>,
+    site: usize,
+) -> Result<(), NativeCompileError> {
+    let crate::native_artifact::codegen::control::plan::CodePlan::Program(program) = code else {
+        return Ok(());
+    };
+    let Some(mech_engine::native_artifact::NativeBufferFrameOperation::EnumPack {
+        output,
+        ordinal,
+        ..
+    }) = program
+        .metadata()
+        .buffer_frames
+        .action(site)
+        .map(|a| a.operation())
+    else {
+        return Ok(());
+    };
+    for region in &layout.regions {
+        let Some(variant) = region.numeric.as_ref().and_then(|p| p.tagged.as_ref()) else {
+            continue;
+        };
+        if code.blocks()[site].iteration() != Some(region.iteration)
+            || program.plan().values()[output.get() as usize].schema()
+                != program.plan().values()[variant.carrier as usize].schema()
+        {
+            continue;
+        }
+        let word = region
+            .cold_resume()
+            .ok_or_else(|| backend("tagged phase lacks reentry word"))?;
+        let pending = if *ordinal == variant.ordinal {
+            let previous = load(options, b, locals, region, word)?;
+            let refused = b.ins().icmp_imm(IntCC::Equal, previous, 2);
+            let one = b.ins().iconst(types::I64, 1);
+            b.ins().select(refused, previous, one)
+        } else {
+            b.ins().iconst(types::I64, 0)
+        };
+        store(options, b, locals, region, word, pending)?;
     }
     Ok(())
 }
@@ -469,6 +529,11 @@ pub(in crate::native_artifact) fn resume_cold(
         return Ok(());
     };
     let pending = load(options, b, locals, region, word)?;
+    let pending = if region.numeric.as_ref().is_some_and(|p| p.tagged.is_some()) {
+        b.ins().icmp_imm(IntCC::Equal, pending, 1)
+    } else {
+        pending
+    };
     let resume = b.create_block();
     let ready = b.create_block();
     b.set_cold_block(resume);

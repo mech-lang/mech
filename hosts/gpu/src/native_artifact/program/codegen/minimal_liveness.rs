@@ -67,16 +67,20 @@ pub(super) fn required(
         let mut e = Effects::default();
         match proof.action(site) {
             Some(Operation::Frame) => {
-                let moves = super::super::numeric_words::frame_word_moves(
+                let moves = super::super::numeric_words::frame_word_moves_for(
                     shadow,
                     code,
                     site,
                     &proof.frames,
+                    proof.tagged.as_deref(),
                 )?;
                 for &(_, from) in &moves.assignments {
                     e.used(from)
                 }
                 for (to, _) in moves.assignments {
+                    e.writes.insert(to);
+                }
+                for (to, _) in moves.constants {
                     e.writes.insert(to);
                 }
             }

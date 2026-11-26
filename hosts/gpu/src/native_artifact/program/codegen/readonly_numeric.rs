@@ -1056,7 +1056,15 @@ pub(in crate::native_artifact) fn emit_entry(
                 )?;
             }
             Some(Operation::Frame) => {
-                super::numeric_words::frame_words(b, &words, shadow, code, site, &proof.frames)?;
+                super::numeric_words::frame_words(
+                    b,
+                    &words,
+                    shadow,
+                    code,
+                    site,
+                    &proof.frames,
+                    proof.tagged.as_deref(),
+                )?;
             }
             Some(Operation::ArrayCopy) => {}
             Some(Operation::Length { array, output }) => {
