@@ -183,6 +183,112 @@ fn check_output(
 }
 
 #[test]
+fn typed_comprehension_banks_admit_finish_copies_and_recover_without_publication() {
+    for (kind, width) in [("bool", 1usize), ("i64", 8), ("f64", 8)] {
+        let source = format!("[value | value <- input<[{kind}]>]\n");
+        for artifact in artifacts(&source) {
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            check_restored_image(&jit);
+            assert!(
+                !emit_program_object(&artifact, &mech_stdlib::source_catalog())
+                    .unwrap()
+                    .bytes()
+                    .is_empty()
+            );
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let mut output = vec![None; artifact.outputs().len()];
+            for count in [3usize, 4, 5] {
+                let cells = (0..count)
+                    .map(|i| match kind {
+                        "bool" => Data::Bool(i % 2 != 0),
+                        "i64" => Data::I64(if i % 2 == 0 {
+                            i64::MIN + i as i64
+                        } else {
+                            i64::MAX - i as i64
+                        }),
+                        "f64" => Data::F64(F64Bits::from_bits(
+                            [
+                                0x8000_0000_0000_0000,
+                                0x7ff8_0000_0000_0001,
+                                0x7ff0_0000_0000_0000,
+                                0xfff0_0000_0000_0000,
+                                0,
+                            ][i],
+                        )),
+                        _ => unreachable!(),
+                    })
+                    .collect::<Box<[_]>>();
+                let data = Data::Matrix(cells);
+                let args = typed_inputs(
+                    &artifact,
+                    &[("input", [1, count as u64], data.clone())],
+                    &memory,
+                );
+                let aliases = args.clone();
+                let payload = (count * width) as u64;
+                // Source reads and output writes retain their logical copies.
+                // A growing Vec may also move when finalized as a boxed slice.
+                let cloned = payload * if count.is_power_of_two() { 2 } else { 3 };
+                let mut policy = limits();
+                policy.library.max_cloned_bytes = Some(cloned);
+                jit.evaluate_into(&args, &mut output, policy, &memory)
+                    .unwrap();
+                assert_eq!(
+                    output
+                        .last()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    data
+                );
+                let prior = output.clone();
+                let retained = memory.used_bytes();
+                policy.library.max_cloned_bytes = Some(cloned - 1);
+                let error = jit
+                    .evaluate_into(&args, &mut output, policy, &memory)
+                    .unwrap_err();
+                assert!(
+                    matches!(error,
+                        mech_gpu::native_artifact::NativeProgramExecutionError::Collection {
+                            error: mech_core::ResidentKernelError::ResourceLimit {
+                                dimension: mech_core::MemoryBudgetDimension::ClonedBytes,
+                                required,
+                                limit,
+                                ..
+                            }, ..
+                        } if required == cloned && limit == cloned - 1
+                    ),
+                    "{kind}/{count}: {error:?}"
+                );
+                assert_eq!(memory.used_bytes(), retained);
+                assert!(output.iter().zip(&prior).all(|(actual, old)| {
+                    actual
+                        .as_ref()
+                        .unwrap()
+                        .shares_frozen_storage(old.as_ref().unwrap())
+                }));
+                assert!(
+                    args.iter()
+                        .zip(&aliases)
+                        .all(|(actual, old)| actual.shares_frozen_storage(old))
+                );
+                policy.library.max_cloned_bytes = Some(cloned);
+                jit.evaluate_into(&args, &mut output, policy, &memory)
+                    .unwrap();
+            }
+            drop(output);
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
+    }
+}
+
+#[test]
 fn rectangular_products_and_transposes_preserve_original_and_decoded_geometry() {
     for (source, shape, expected) in [
         (

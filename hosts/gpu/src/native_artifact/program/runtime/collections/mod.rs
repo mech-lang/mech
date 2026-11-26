@@ -1065,11 +1065,7 @@ impl State {
         let builder = self.builder(id)?;
         let count = builder.values.len() as u64;
         let payload = builder.payload_bytes;
-        let cloned = if builder.values.packed_width().is_some() {
-            0
-        } else {
-            payload
-        };
+        let cloned = builder.values.finalization_cloned_bytes(payload);
         let output_bytes = builder.values.output_bytes(
             payload,
             count,
@@ -1080,8 +1076,9 @@ impl State {
             descriptor.metadata().scalar_bytes,
             add(mul(builder.reservation.capacity_bytes(), 4)?, 4096)?,
         )?;
-        // Packed finalization takes the existing allocation; the draft path
-        // still constructs a second payload and keeps its original copy debit.
+        // Unsigned finalization retains its allocation. Boxed scalar banks
+        // fund a possible shrink-copy; drafts still fund the second payload.
+        // The envelope covers both banks while the builder claim stays live.
         self.account(ctx, id, cloned, add(mul(envelope, 16)?, 256)?)?;
         check(
             definition.origin(),

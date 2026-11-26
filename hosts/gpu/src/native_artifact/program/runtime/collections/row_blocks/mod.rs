@@ -293,12 +293,15 @@ impl data::CollectedValues {
             return Err(invalid("row-block copy exceeds admitted capacity"));
         }
         // Exact-width numeric banks copy directly, without drafts or callbacks
-        // per element. Other maintained scalar banks use admitted draft slots.
+        // per element. Non-numeric banks use admitted draft slots.
         match (&mut *self, matrix.elements()) {
             (Self::U8(to), SequenceView::U8(from)) if rows <= 1 => to.extend_from_slice(from),
             (Self::U16(to), SequenceView::U16(from)) if rows <= 1 => to.extend_from_slice(from),
             (Self::U32(to), SequenceView::U32(from)) if rows <= 1 => to.extend_from_slice(from),
             (Self::U64(to), SequenceView::U64(from)) if rows <= 1 => to.extend_from_slice(from),
+            (Self::Bool(to), SequenceView::Bool(from)) if rows <= 1 => to.extend_from_slice(from),
+            (Self::I64(to), SequenceView::I64(from)) if rows <= 1 => to.extend_from_slice(from),
+            (Self::F64(to), SequenceView::F64(from)) if rows <= 1 => to.extend_from_slice(from),
             _ => {
                 for ordinal in 0..matrix.elements().len() as u64 {
                     let ordinal = if rows > 1 {
@@ -348,6 +351,9 @@ impl data::CollectedValues {
                     Self::U16(values) => values.swap(start, next),
                     Self::U32(values) => values.swap(start, next),
                     Self::U64(values) => values.swap(start, next),
+                    Self::Bool(values) => values.swap(start, next),
+                    Self::I64(values) => values.swap(start, next),
+                    Self::F64(values) => values.swap(start, next),
                     Self::Draft(values) => values.swap(start, next),
                 }
                 cursor = next;

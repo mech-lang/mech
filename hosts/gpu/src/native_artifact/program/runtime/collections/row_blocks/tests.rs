@@ -98,7 +98,7 @@ fn same_report(
 #[test]
 fn rectangular_blocks_keep_canonical_order_in_original_decoded_and_restored_execution() {
     let mode = NativeProgramLimitMode::NoLimits;
-    for kind in ["u64", "f64", "string"] {
+    for kind in ["bool", "u64", "i64", "f64", "string"] {
         let source = format!("[row<[{kind}]> | * <- items<[u64]>]\n");
         for artifact in artifacts(&source) {
             let jit =
@@ -111,6 +111,12 @@ fn rectangular_blocks_keep_canonical_order_in_original_decoded_and_restored_exec
                         let values = (0..rows * columns)
                             .map(|index| match kind {
                                 "u64" => ValueDataDraft::U64(index + 1),
+                                "bool" => ValueDataDraft::Bool(index % 2 != 0),
+                                "i64" => ValueDataDraft::I64(if index % 2 == 0 {
+                                    i64::MIN + index as i64
+                                } else {
+                                    i64::MAX - index as i64
+                                }),
                                 "f64" => ValueDataDraft::F64(
                                     mech_core::snapshot::F64Bits::from_f64(index as f64 + 0.5),
                                 ),

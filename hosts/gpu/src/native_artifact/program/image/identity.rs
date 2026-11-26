@@ -524,7 +524,9 @@ fn selected_template(
 // IR356 transports numeric matrix payloads through existing private frame
 // lanes, admits Bool/I64 matrix composition, and returns exact typed scalar
 // reads through the maintained word boundary with canonical leaf admission.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 356;
+// IR357 collects Bool/I64/F64 directly in typed banks, admitting any boxed
+// finalization copy while preserving unsigned-only raw sink authority.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 357;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
