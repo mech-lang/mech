@@ -554,8 +554,8 @@ fn selected_template(
 // source destinations, current versions and independently rederived owners.
 // IR381 shares guarded fixed geometry and linear addressing with map DAGs.
 // IR382 reconciles exact source-site summary attempts at every phase boundary.
-// IR383 shares combined map/cell-axis guards and extends maintained private-first
-// stores to two-axis cells, retaining exact source errors and first changes.
+// IR383 shares combined map/cell-axis guards at the original source positions,
+// retaining checked addresses, scalar bits, source errors and first changes.
 pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 383;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
