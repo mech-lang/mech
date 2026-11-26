@@ -118,10 +118,12 @@ regressions; do not retune that candidate against holdout per-case results.
 Correctness tests may run on both partitions throughout development.
 
 performance-history.json starts with the original baseline and appends one
-entry per frozen candidate. The primary aggregate is the equal-weight geometric
-mean of baseline Mech time / candidate Mech time, separately for optimization,
-holdout and all kernels. Larger speedup is better. Mech/C runtime ratios use
-separate kernel-only and fresh-allocation comparisons; smaller is better.
+entry per frozen candidate. The primary score is the equal-weight geometric mean of median Mech / C
+kernel runtime on all fifteen holdout programs; the goal is strictly below
+1.0x. Baseline Mech / candidate Mech speedup is a secondary aggregate, reported
+separately for optimization, holdout and all kernels; larger is better. Mech/C
+runtime ratios use separate kernel-only and fresh-allocation comparisons;
+smaller is better.
 Median/minimum/maximum speedups, regressions over 5%, C wins, worst C ratio and
 summed medians accompany the geometric means. Summed medians are secondary
 because they heavily weight the slowest programs. A missing case makes an
@@ -180,7 +182,8 @@ The candidate was frozen before holdout timing. The two raw partition receipts
 contain 900 sequential observations: five per actor (candidate, preserved
 baseline and C) per kernel/fresh comparison. Warm-up live-outs are validated;
 timed Mech calls must succeed, as in the original baseline boundary. Every
-observation passed the finite full-output comparison.
+observation passed the finite full-output warm-up comparison; timed outputs
+are not independently flattened for validation.
 
 Speedup is baseline Mech time / candidate Mech time; larger is better.
 The replay column uses the preserved baseline executable measured alongside
@@ -255,8 +258,9 @@ The collector storage change passes 23 matrix, all 30 PolyBench and 95 selected
 Program integration tests, plus seven focused collector/row-block units. A
 seven-sample Gramschmidt probe improved only 1.018x against the round-01 binary;
 that is a training probe, not a frozen aggregate result. No new holdout timing
-was performed. The latest qualified holdout score remains 1610.274x C and the
-goal below 1.0x C remains open.
+was performed for this collector-only candidate. At that point the latest
+qualified holdout score was 1610.274x C. The frozen round below includes both
+collector storage and the subsequent scalar matrix update change.
 
 Recompute classifications using a Rust symbol filter (one name per line):
 python3 scripts/analyze-polybench-samples.py --demangler /path/to/rustfilt --output /tmp/profile-analysis.json hosts/gpu/tests/fixtures/polybench/profiles/round-02/*.sample.txt.gz
@@ -304,3 +308,100 @@ work-prefix denials, alias safety, restored metadata and fresh recovery.
 The remaining 439 Program tests were filtered out. The three timing-runner
 unit tests also pass. This receipt covers MINI CPU execution; larger datasets
 and GPU/SIMD selection still need qualification.
+
+Second frozen compiler round (IR358): scalar matrix updates
+
+round-02-frozen.json pins compiler ea3977e8f1cf3aa085424b854816bbb6e81d85db.
+The shared admitted matrix replacement path now handles all seven native
+scalar kinds and independent row/column addressing. It reuses canonical
+backing storage only with exclusive same-account ownership and retains the
+copy path for aliases. Exact bits, error ordering, finite accounting and
+original unsigned native-buffer guarantees are preserved. No benchmark source,
+input, C binary or numerical tolerance changed.
+
+The holdout primary score is 1529.299x C, compared with round 01's 1610.274x C:
+a 1.053x improvement in the score. The goal strictly below 1.0x C remains open;
+all thirty kernel medians are slower than C. Summed holdout Mech medians are
+1.562742s, versus 1.634173s in round 01. Optimization summed medians fell from
+1.339377s to 0.456340s (2.935x); that large training gain generalizes only
+modestly to the primary holdout score.
+
+The candidate was frozen before holdout timing. Both partition receipts retain
+900 sequential observations, five per actor (candidate, original compiler, C)
+per kernel/fresh comparison. Full finite warm-up live-outs pass for each
+observation; timed checked calls succeed. These timing runs were separate from
+profiling. The fixed split and earlier holdout results were already visible;
+this is not a blind external validation.
+
+partition       recorded x    replay x    Mech/C x    C fresh x
+optimization         2.037       2.317      346.02       198.18
+holdout              1.310       1.306     1529.30       920.89
+all                  1.633       1.740      727.44       427.21
+
+Seven training cases regress over 5% against recorded historical timings.
+Against the contemporaneous original compiler replay, 3mm is 1.067x slower
+and covariance 1.074x slower; the cause is not established. Neither comparison
+has a holdout regression above 5%. Both reference comparisons are retained.
+
+Post-update profiles in round-02-post-update-profile.json retain 15,040
+execution samples across three optimization programs. Compressed raw stacks
+are under profiles/round-02-after-updates. The sampling procedure and execution
+boundary match the earlier profiles. The new analyzer also recognizes generic
+native update bodies; its exact hash is recorded. Recompute with the preceding
+analyzer command, changing the input glob to that directory.
+
+case             library calls   visit admission   frame transport   collection
+seidel-2d                0.0%             31.4%             27.7%         0.0%
+nussinov                 0.0%             27.0%             44.3%         0.0%
+gramschmidt             42.8%             22.6%              0.0%        14.4%
+
+Ordinary canonical library-call overhead has disappeared from the sampled
+Seidel/Nussinov update paths. Admission plus frame transport now accounts for
+59.1% and 71.2%, respectively; typed matrix scalar reads add 16.1% and 7.2%.
+Gramschmidt still spends 42.8% in ordinary library calls and 14.4% in collection
+bookkeeping. These observations prioritize using existing native loop-region
+machinery to batch visits/frame transport, and extending native numerical
+comprehension fusion. These are next targets, not claimed implementations.
+Categories are disjoint; leaf and inclusive function views overlap them.
+Inlining, unresolved JIT symbols and sampling uncertainty limit precision.
+
+round-02-qualification.json records 25 core checks, 24 matrix integration
+checks, all 30 original/decoded PolyBench programs (29,482 finite C live-outs
+per artifact), 102 selected Program regressions, nine route/lifetime/collector
+checks and eight Python checks. Coverage includes all seven scalar kinds,
+both addressing modes, exclusive pointer reuse, immutable aliases, exact F64
+bits, restored metadata, Object emission and one-unit-short finite denials.
+The remaining 415 Program tests were filtered out. Full compression application
+and AOT qualification, larger datasets and GPU/SIMD execution are not covered.
+
+kernel             split   recorded x    replay x       Mech/C x      C fresh x
+2mm                opt          0.759       0.962          76.54          59.04
+3mm                opt          0.688       0.937          44.47          27.07
+adi                holdout      1.157       1.152       18501.20       17626.25
+atax               opt          0.714       1.087         107.07          31.16
+bicg               opt          0.915       1.026          82.06          32.22
+cholesky           opt          6.799       6.965        3183.12        2231.34
+correlation        opt          0.968       1.003         293.21         142.19
+covariance         opt          0.764       0.931          60.85          33.14
+deriche            opt         18.164      18.478        2273.74        1742.83
+doitgen            opt          0.770       1.045          27.73          13.69
+durbin             opt          1.674       1.721        2070.48         977.56
+fdtd-2d            holdout      1.077       1.075        9521.00        6714.60
+floyd-warshall     holdout      1.045       1.049        4535.99        4406.31
+gemm               opt          1.023       1.022          34.27          22.69
+gemver             holdout      1.025       0.998         227.83         100.24
+gesummv            holdout      1.008       1.020         120.78          31.22
+gramschmidt        opt          1.030       1.056       25054.64       15228.98
+heat-3d            holdout      1.085       1.069        3745.56        3416.66
+jacobi-1d          holdout      2.236       2.244        3737.10         767.91
+jacobi-2d          holdout      1.061       1.065        8915.81        7264.04
+lu                 holdout      2.317       2.315        8924.88        7580.93
+ludcmp             holdout      2.335       2.331        8435.50        6598.90
+mvt                opt          0.828       1.005         136.86          62.82
+nussinov           opt         35.314      35.627        3309.76        2407.83
+seidel-2d          opt         34.831      35.570        1415.24        1389.97
+symm               holdout      1.016       1.009         209.85         134.82
+syr2k              holdout      1.017       1.011         207.86         167.55
+syrk               holdout      1.013       1.019         245.54         175.72
+trisolv            holdout      2.878       2.870        1254.12         351.70
+trmm               holdout      1.014       1.006         210.94         133.71

@@ -51,7 +51,8 @@ def action(stack):
         return 'Private frame transport'
     if any((n.endswith('::retire_tail_locals') for n in stack)):
         return 'Loop-local retirement'
-    if any((n.endswith(('::unsigned_buffer_call', '::unsigned_matrix_replace_call')) for n in stack)):
+    if any((n.endswith(('::unsigned_buffer_call', '::unsigned_matrix_replace_call', '::scalar_matrix_replace_call', '::scalar_matrix_replace'))
+            or '::matrix_replace_call::<' in n or '::matrix_replace_with::<' in n for n in stack)):
         return 'Selected matrix updates'
     if any((n.endswith('::prepared_library_call') for n in stack)):
         return 'Other selected library dispatch'

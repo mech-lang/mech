@@ -51,6 +51,14 @@ class PolybenchSampleTests(unittest.TestCase):
         self.assertEqual(inclusive[name], 5)
         self.assertEqual(own[name], 3)
 
+    def test_native_update_wrappers_and_generic_bodies_have_the_same_category(self):
+        for symbol in [
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::scalar_matrix_replace_call",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::matrix_replace_call::<false>",
+            "<mech_engine::resident::general::NativePreparedLibraryCall>::matrix_replace_with::<Value, false>",
+        ]:
+            self.assertEqual(SAMPLES.action([symbol]), "Selected matrix updates")
+
 
 if __name__ == "__main__":
     unittest.main()
