@@ -1,4 +1,6 @@
 //! Actual generated range cursors: canonical semantics and no Matrix fiction.
+#[path = "canonical_program_block_range_cursor.rs"]
+mod block;
 #[path = "canonical_program_range_representation.rs"]
 mod representation;
 use super::{artifacts, equal, inputs, limits, reference, reference_result};

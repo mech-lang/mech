@@ -30,6 +30,18 @@ fn rectangular_numeric_maps_execute_one_native_rectangle_and_match_ordinary_bits
             .collect::<Vec<_>>();
         assert_eq!(rectangles.len(), 1);
         let rectangle = rectangles[0];
+        let mech_engine::native_artifact::NativeControlLoop::Collection(outer) =
+            &jit.descriptor().plan().iterations()[rectangle.iteration as usize]
+        else {
+            panic!("rectangle outer source")
+        };
+        assert!(
+            matches!(
+                outer.source(),
+                mech_engine::native_artifact::NativeCollectionSource::U64Range(_)
+            ),
+            "block source must use a cursor while the rectangle executes natively"
+        );
         crate::native_artifact::emit_program_object(&artifact, &mech_stdlib::source_catalog())
             .unwrap();
         for restored in [false, true] {
