@@ -78,6 +78,7 @@ mod state_read_packs;
 mod static_extents;
 mod tagged_map_carrier;
 mod tuple_capture;
+mod typed_numeric_phases;
 mod utf8_reads;
 mod virtual_retirement;
 mod wide_scalar_array;
@@ -146,9 +147,11 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                127
+                130
             );
-            // Policy125 adds tree first-write alias checks; this fixture keeps exact work.
+            // Policy130 adds typed scalar cells; this unsigned fixture retains
+            // the policy127 tree handoff and its exact source work bill.
+            // Policy125 adds tree first-write alias checks.
             // Policies107/108/110/111 add fills, recursive frames, worker
             // transport and selected String-matrix scalar projections.
             // This fixture has none, so the policy105 decomposition below
@@ -650,12 +653,12 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                127
+                130
             );
             assert_eq!(
                 report.work,
                 owner_layout_work(41_515_826, 41_513_202),
-                "policy124 retains policy115 child fallback banks (+296 setup work) and exact source prices"
+                "policy130 keeps this unsigned fixture's established source prices and child fallback banks"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(

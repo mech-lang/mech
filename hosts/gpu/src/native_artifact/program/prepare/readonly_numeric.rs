@@ -5,7 +5,7 @@
 pub(in crate::native_artifact) use super::phase_numeric::{
     test_decline_nested_phase, test_without_nested_phase,
 };
-use mech_core::{IntegerWidth, SchemaBody};
+use mech_core::SchemaBody;
 use mech_engine::native_artifact::{
     NativeAggregateWord, NativeBufferFrameLane as Lane, NativeBufferFrameOperation as Frame,
     NativeBufferFrames, NativeControlLoop, NativeIterationAction as Action,
@@ -373,13 +373,21 @@ pub(super) fn width(body: &SchemaBody) -> Option<u8> {
     if dimensions.len() != 2 {
         return None;
     }
-    Some(match element.as_ref() {
-        SchemaBody::UnsignedInteger(IntegerWidth::W8) => 1,
-        SchemaBody::UnsignedInteger(IntegerWidth::W16) => 2,
-        SchemaBody::UnsignedInteger(IntegerWidth::W32) => 4,
-        SchemaBody::UnsignedInteger(IntegerWidth::W64) => 8,
-        _ => return None,
+    Some(match NativeScalarKind::from_schema_body(element)? {
+        NativeScalarKind::Bool | NativeScalarKind::U8 => 1,
+        NativeScalarKind::U16 => 2,
+        NativeScalarKind::U32 => 4,
+        NativeScalarKind::U64 | NativeScalarKind::I64 | NativeScalarKind::F64 => 8,
     })
+}
+
+/// Exact linear access factories; two-axis operations retain their independent
+/// selector proof and cannot enter a one-coordinate traversal optimization.
+pub(super) fn linear_read(call: &NativePreparedLibraryCall) -> bool {
+    call.template().inputs().len() == 2 && call.scalar_matrix_element_kind().is_some()
+}
+pub(super) fn linear_write(call: &NativePreparedLibraryCall) -> bool {
+    call.template().inputs().len() == 3 && call.scalar_matrix_replace_kind().is_some()
 }
 
 pub(in crate::native_artifact::program::prepare) fn scalar_children(
@@ -549,8 +557,7 @@ impl Provenance<'_, '_> {
             {
                 let call = self.calls.get(site)?.as_ref()?;
                 if output.get() != value
-                    || !(call.supports_unsigned_matrix_replace()
-                        || call.supports_unsigned_matrix_append())
+                    || !(linear_write(call) || call.supports_unsigned_matrix_append())
                 {
                     return None;
                 }
@@ -1108,8 +1115,8 @@ fn derive_inner(
                 .and_then(Option::as_ref)
                 .ok_or("missing selected factory")?;
             let is_length = call.supports_unsigned_matrix_length();
-            let is_read = call.supports_unsigned_matrix_element();
-            let is_write = call.supports_unsigned_matrix_replace();
+            let is_read = linear_read(call);
+            let is_write = linear_write(call);
             let is_append = call.supports_unsigned_matrix_append();
             if !(is_length || is_read || is_write || is_append) {
                 return Err("unsupported selected library effect or operation");
@@ -1167,10 +1174,8 @@ fn derive_inner(
                 if operands.len() != 3
                     || plan.values()[operands[2].get() as usize].scalar_kind()
                         != Some(NativeScalarKind::U64)
-                    || plan.values()[operands[1].get() as usize]
-                        .scalar_kind()
-                        .and_then(|k| k.unsigned_maximum())
-                        .is_none()
+                    || plan.values()[operands[1].get() as usize].scalar_kind()
+                        != call.scalar_matrix_replace_kind()
                 {
                     return Err("unsupported write operands");
                 }

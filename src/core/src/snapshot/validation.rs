@@ -33,7 +33,8 @@ pub use owned_unsigned_matrix::{OwnedSnapshotUnsignedMatrix, UnsignedMatrixOwner
 #[path = "private_unsigned_matrix.rs"]
 mod private_unsigned_matrix;
 pub use private_unsigned_matrix::{
-    PrivateUnsignedAppendPreparation, PrivateUnsignedMatrix, UnsignedMatrixViewMut,
+    NumericMatrixViewMut, PrivateNumericMatrix, PrivateUnsignedAppendPreparation,
+    PrivateUnsignedMatrix, UnsignedMatrixViewMut,
 };
 
 #[cfg(test)]

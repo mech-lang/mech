@@ -146,6 +146,35 @@ impl NativePreparedLibraryCall {
         .map(|(private, _)| private)
     }
 
+    /// Confine this exact selected scalar replacement to the shared private
+    /// publication owner. The first-change caller retains source-order checks;
+    /// only a changed, freshly constructed result can enter this phase.
+    pub fn scalar_matrix_replace_private(
+        &self,
+        source: Value,
+        indices: &[u64],
+        incoming: u64,
+        may_consume: bool,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+    ) -> Result<mech_core::snapshot::PrivateNumericMatrix, InvokeError> {
+        self.matrix_replace_with::<_, false>(
+            source,
+            indices,
+            incoming,
+            may_consume,
+            limits,
+            work,
+            coexistence,
+            |value, admission| {
+                let admission = admission.ok_or(InvokeError::InvalidInput)?;
+                Ok(value.into_private_numeric_matrix(admission)?)
+            },
+        )
+        .map(|(private, _)| private)
+    }
+
     fn matrix_replace_with<T, const UNSIGNED: bool>(
         &self,
         source: Value,

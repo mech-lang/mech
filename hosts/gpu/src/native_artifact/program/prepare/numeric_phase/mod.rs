@@ -246,10 +246,10 @@ impl Forest {
                             .and_then(Option::as_ref)
                             .filter(|call| call.template() == template)
                             .ok_or("numeric child lacks its exact selected factory")?;
-                        if call.supports_unsigned_matrix_element() {
+                        if super::readonly_numeric::linear_read(call) {
                             reads += 1;
                         } else if !call.supports_unsigned_matrix_length()
-                            && !call.supports_unsigned_matrix_replace()
+                            && !super::readonly_numeric::linear_write(call)
                         {
                             return Err("numeric child has a mutation or unsupported effect");
                         }

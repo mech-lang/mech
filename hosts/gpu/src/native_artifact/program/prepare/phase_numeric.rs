@@ -2,7 +2,7 @@
 //! Recursive/captured-owner trees retain their independent must-current proof;
 //! both proofs convert to the same native representation before code emission.
 use super::numeric_phase::Coverage;
-use mech_core::{IntegerWidth, SchemaBody};
+use mech_core::SchemaBody;
 use mech_engine::native_artifact::{
     NativeAggregateWord, NativeBufferFrameLane as Lane, NativeBufferFrameOperation as Frame,
     NativeBufferFrames, NativeControlLoop, NativeIterationAction as Action,
@@ -46,23 +46,7 @@ pub(in crate::native_artifact) use super::numeric_plan::{
 };
 
 pub(super) fn width(body: &SchemaBody) -> Option<u8> {
-    let SchemaBody::Matrix {
-        element,
-        dimensions,
-    } = body
-    else {
-        return None;
-    };
-    if dimensions.len() != 2 {
-        return None;
-    }
-    Some(match element.as_ref() {
-        SchemaBody::UnsignedInteger(IntegerWidth::W8) => 1,
-        SchemaBody::UnsignedInteger(IntegerWidth::W16) => 2,
-        SchemaBody::UnsignedInteger(IntegerWidth::W32) => 4,
-        SchemaBody::UnsignedInteger(IntegerWidth::W64) => 8,
-        _ => return None,
-    })
+    super::readonly_numeric::width(body)
 }
 
 // A key denotes either an array Value or one managed field in a private frame.
@@ -160,7 +144,7 @@ impl Provenance<'_, '_> {
             {
                 let call = self.calls.get(site)?.as_ref()?;
                 if output.get() != value
-                    || !(call.supports_unsigned_matrix_replace()
+                    || !(super::readonly_numeric::linear_write(call)
                         || call.supports_unsigned_matrix_append()
                         || call.supports_unsigned_matrix_append_le_bytes())
                 {
@@ -549,8 +533,8 @@ fn derive_with_children(
                 .and_then(Option::as_ref)
                 .ok_or("missing selected factory")?;
             let is_length = call.supports_unsigned_matrix_length();
-            let is_read = call.supports_unsigned_matrix_element();
-            let is_write = call.supports_unsigned_matrix_replace();
+            let is_read = super::readonly_numeric::linear_read(call);
+            let is_write = super::readonly_numeric::linear_write(call);
             let is_append = call.supports_unsigned_matrix_append();
             let is_bulk = call.supports_unsigned_matrix_append_le_bytes();
             if !(is_length || is_read || is_write || is_append || is_bulk) {
@@ -621,10 +605,8 @@ fn derive_with_children(
                 if operands.len() != 3
                     || plan.values()[operands[2].get() as usize].scalar_kind()
                         != Some(NativeScalarKind::U64)
-                    || plan.values()[operands[1].get() as usize]
-                        .scalar_kind()
-                        .and_then(|k| k.unsigned_maximum())
-                        .is_none()
+                    || plan.values()[operands[1].get() as usize].scalar_kind()
+                        != call.scalar_matrix_replace_kind()
                 {
                     return Err("unsupported write operands");
                 }

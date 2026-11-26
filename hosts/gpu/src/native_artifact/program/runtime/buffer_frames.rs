@@ -18,9 +18,55 @@ struct FrameLanes {
     nodes: mech_core::ManagedNodeReservation,
     _reservation: mech_core::ManagedMemoryReservation,
 }
+/// Preserve unsigned append authority while sharing fixed scalar publication.
+pub(super) enum PrivateNumericArray {
+    Unsigned(mech_core::snapshot::PrivateUnsignedMatrix),
+    Scalar(mech_core::snapshot::PrivateNumericMatrix),
+}
+impl PrivateNumericArray {
+    #[cfg(test)]
+    pub(super) fn elements(&self) -> mech_core::snapshot::SequenceView<'_> {
+        match self {
+            Self::Unsigned(v) => v.elements(),
+            Self::Scalar(v) => v.elements(),
+        }
+    }
+
+    pub(super) fn private_metadata_nodes(&self) -> u64 {
+        match self {
+            Self::Unsigned(v) => v.private_metadata_nodes(),
+            Self::Scalar(_) => 0,
+        }
+    }
+    pub(super) fn reserved_native_view(&mut self) -> Option<[u64; 3]> {
+        match self {
+            Self::Unsigned(v) => v.reserved_native_view(),
+            Self::Scalar(_) => None,
+        }
+    }
+    pub(super) fn elements_mut(&mut self) -> mech_core::snapshot::NumericMatrixViewMut<'_> {
+        use mech_core::snapshot::{NumericMatrixViewMut as N, UnsignedMatrixViewMut as U};
+        match self {
+            Self::Scalar(v) => v.elements_mut(),
+            Self::Unsigned(v) => match v.elements_mut() {
+                U::U8(v) => N::U8(v),
+                U::U16(v) => N::U16(v),
+                U::U32(v) => N::U32(v),
+                U::U64(v) => N::U64(v),
+            },
+        }
+    }
+    pub(super) fn finish(self) -> Value {
+        match self {
+            Self::Unsigned(v) => v.finish(),
+            Self::Scalar(v) => v.finish(),
+        }
+    }
+}
+
 struct PrivateNumeric {
     region: usize,
-    arrays: Vec<Option<mech_core::snapshot::PrivateUnsignedMatrix>>,
+    arrays: Vec<Option<PrivateNumericArray>>,
     append: Option<Vec<Option<mech_core::snapshot::PrivateUnsignedAppendPreparation>>>,
     publication: Option<PrivatePublication>,
     _nodes: mech_core::ManagedNodeReservation,
@@ -723,7 +769,7 @@ impl BufferFrames {
         };
         let bytes = amount(
             count,
-            (core::mem::size_of::<Option<mech_core::snapshot::PrivateUnsignedMatrix>>()
+            (core::mem::size_of::<Option<PrivateNumericArray>>()
                 + if append {
                     core::mem::size_of::<
                         Option<mech_core::snapshot::PrivateUnsignedAppendPreparation>,
@@ -829,8 +875,7 @@ impl BufferFrames {
         &mut self,
         region: usize,
         array: usize,
-    ) -> Result<&mut Option<mech_core::snapshot::PrivateUnsignedMatrix>, NativeProgramExecutionError>
-    {
+    ) -> Result<&mut Option<PrivateNumericArray>, NativeProgramExecutionError> {
         self.inner
             .as_mut()
             .and_then(|i| i.private.as_mut())

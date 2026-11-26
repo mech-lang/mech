@@ -6,7 +6,7 @@ use crate::native_artifact::codegen::options::{OptimizationOptions, Optimization
 use crate::native_artifact::compiler::backend;
 use crate::native_artifact::program::prepare::readonly_numeric::{FrameWords, Operation, Proof};
 use cranelift_codegen::ir::condcodes::IntCC;
-use cranelift_codegen::ir::{InstBuilder, MemFlags, Value, types};
+use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, types};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{
     NativeBufferFrameOperation as Frame, NativeIterationAction as Action,
@@ -380,3 +380,33 @@ mod tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "numeric_unsigned_load_tests.rs"]
 mod unsigned_load_tests;
+
+/// A raw native Bool store must never create an invalid Rust bool in the
+/// privately owned initialized bank. Other exact scalar kinds accept all bits.
+pub(super) fn guard_scalar_store(
+    b: &mut FunctionBuilder<'_>,
+    code: CodePlan<'_>,
+    site: usize,
+    incoming: Value,
+    fail: Block,
+) -> Result<(), NativeCompileError> {
+    let Action::LibraryCall { operands, .. } = code.blocks()[site].action() else {
+        return Err(backend("numeric store lost its selected scalar operation"));
+    };
+    if code.kind(operands[1]) == Some(mech_engine::native_artifact::NativeScalarKind::Bool) {
+        let valid = b
+            .ins()
+            .icmp_imm(IntCC::UnsignedLessThanOrEqual, incoming, 1);
+        let good = b.create_block();
+        let bad = b.create_block();
+        b.set_cold_block(bad);
+        b.ins().brif(valid, good, &[], bad, &[]);
+        b.switch_to_block(bad);
+        let status = b
+            .ins()
+            .iconst(types::I64, crate::native_artifact::abi::STATUS_ABI as i64);
+        b.ins().jump(fail, &[status.into()]);
+        b.switch_to_block(good);
+    }
+    Ok(())
+}

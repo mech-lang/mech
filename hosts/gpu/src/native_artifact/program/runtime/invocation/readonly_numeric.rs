@@ -247,7 +247,7 @@ impl Invocation<'_, '_, '_> {
                 .as_ref()
                 .ok_or_else(|| invalid("numeric view lost factory"))?;
             let Some(mut view) =
-                call.unsigned_matrix_native_view(&owner, &self.state.library.memory_budget())
+                call.scalar_matrix_native_view(&owner, &self.state.library.memory_budget())
             else {
                 return Ok(false);
             };

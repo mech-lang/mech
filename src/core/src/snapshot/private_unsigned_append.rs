@@ -110,7 +110,7 @@ impl PrivateUnsignedMatrix {
     /// the owner cannot grow or move its backing until the loan ends.
     pub fn reserved_native_view(&mut self) -> Option<[u64; 3]> {
         self.append.as_ref()?;
-        let root = Arc::get_mut(&mut self.value.root).expect("private root");
+        let root = Arc::get_mut(&mut self.numeric.value.root).expect("private root");
         let data = Arc::get_mut(&mut root.data).expect("private data");
         let ValueData::Matrix(matrix) = &mut data.data else {
             unreachable!("private matrix")
@@ -162,13 +162,13 @@ impl PrivateUnsignedMatrix {
         preparation: PrivateUnsignedAppendPreparation,
     ) -> Result<Self, SnapshotValueError> {
         if self.append.is_some()
-            || self.value.schema != preparation.schema
-            || self.value.schema_key != preparation.key
+            || self.numeric.value.schema != preparation.schema
+            || self.numeric.value.schema_key != preparation.key
             || self.memory_budget() != preparation.reservation.budget()
-            || row_parameter(&self.value) != Some(preparation.column)
+            || row_parameter(&self.numeric.value) != Some(preparation.column)
         {
             return Err(SnapshotValueError::SnapshotSchemaDefinitionMismatch {
-                key: self.value.schema_key,
+                key: self.numeric.value.schema_key,
             });
         }
         self.append = Some(preparation);
@@ -176,7 +176,7 @@ impl PrivateUnsignedMatrix {
     }
 
     pub fn capacity_elements(&self) -> usize {
-        let ValueData::Matrix(matrix) = self.value.data() else {
+        let ValueData::Matrix(matrix) = self.numeric.value.data() else {
             unreachable!("private matrix")
         };
         matrix
@@ -190,7 +190,7 @@ impl PrivateUnsignedMatrix {
         if self.append.is_none() || self.elements().len() == self.capacity_elements() {
             return false;
         }
-        let root = Arc::get_mut(&mut self.value.root).expect("private root");
+        let root = Arc::get_mut(&mut self.numeric.value.root).expect("private root");
         let data = Arc::get_mut(&mut root.data).expect("private data");
         let ValueData::Matrix(matrix) = &mut data.data else {
             unreachable!("private matrix")
@@ -232,10 +232,10 @@ impl PrivateUnsignedMatrix {
             || length > self.capacity_elements()
         {
             return Err(SnapshotValueError::SnapshotSchemaDefinitionMismatch {
-                key: self.value.schema_key,
+                key: self.numeric.value.schema_key,
             });
         }
-        let root = Arc::get_mut(&mut self.value.root).expect("private root");
+        let root = Arc::get_mut(&mut self.numeric.value.root).expect("private root");
         let data = Arc::get_mut(&mut root.data).expect("private data");
         let ValueData::Matrix(matrix) = &mut data.data else {
             unreachable!("private matrix")
@@ -257,28 +257,28 @@ impl PrivateUnsignedMatrix {
             return;
         };
         let length = self.elements().len() as u64;
-        let schema = self
+        let schema = self.numeric
             .ownership
             .schemas
-            .get(self.value.schema)
+            .get(self.numeric.value.schema)
             .expect("private schema");
         // A shape-preserving replacement may share its immutable shape with
         // a live old value. The already admitted scratch is private, including
         // when no append was selected. Keep all current non-column parameters.
         let shape = Arc::get_mut(&mut preparation.scratch).expect("private append shape scratch");
         shape
-            .copy_parameters_from(&self.value.shape)
+            .copy_parameters_from(&self.numeric.value.shape)
             .expect("prepared shape parameter count");
         shape
             .update_parameter_checked(schema, preparation.column, length)
             .expect("prepared unbounded row shape");
-        let registration =
-            Arc::get_mut(&mut self.ownership.registration).expect("unpublished registration");
-        let root = Arc::get_mut(&mut self.value.root).expect("private root");
+        let registration = Arc::get_mut(&mut self.numeric.ownership.registration)
+            .expect("unpublished registration");
+        let root = Arc::get_mut(&mut self.numeric.value.root).expect("private root");
         let data = Arc::get_mut(&mut root.data).expect("private data");
-        self.value.shape = preparation.scratch.clone();
-        data.shape = self.value.shape.clone();
-        registration.shape = self.value.shape.clone();
+        self.numeric.value.shape = preparation.scratch.clone();
+        data.shape = self.numeric.value.shape.clone();
+        registration.shape = self.numeric.value.shape.clone();
         // All scratch metadata retires before its capacity charge is released.
         drop(preparation);
     }

@@ -731,11 +731,14 @@ unsafe extern "C" fn helper(
 fn address(view: mech_core::snapshot::SequenceView<'_>) -> usize {
     use mech_core::snapshot::SequenceView as S;
     match view {
+        S::Bool(v) => v.as_ptr() as usize,
+        S::I64(v) => v.as_ptr() as usize,
+        S::F64(v) => v.as_ptr() as usize,
         S::U8(v) => v.as_ptr() as usize,
         S::U16(v) => v.as_ptr() as usize,
         S::U32(v) => v.as_ptr() as usize,
         S::U64(v) => v.as_ptr() as usize,
-        _ => panic!("first-change observation requires unsigned packed words"),
+        _ => panic!("first-change observation requires exact packed scalar words"),
     }
 }
 pub(super) fn run(

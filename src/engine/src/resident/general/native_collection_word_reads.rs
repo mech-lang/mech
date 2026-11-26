@@ -349,7 +349,32 @@ impl NativePreparedLibraryCall {
         source: &Value,
         memory: &mech_core::ManagedMemoryBudget,
     ) -> Option<[u64; 4]> {
-        let kind = self.scalar_matrix_element_kind()?;
+        self.scalar_matrix_element_kind()?;
+        self.scalar_matrix_native_view(source, memory)
+    }
+
+    /// Current exact scalar storage for a selected read or replacement factory.
+    /// This is an immutable synchronous view; it grants no execution, mutation,
+    /// ownership handoff or publication authority. Unsigned growth/length uses
+    /// the maintained narrower view and its own entry contract.
+    pub fn scalar_matrix_native_view(
+        &self,
+        source: &Value,
+        memory: &mech_core::ManagedMemoryBudget,
+    ) -> Option<[u64; 4]> {
+        let kind = self.scalar_matrix_element_kind().or_else(|| {
+            #[cfg(feature = "sequence_buffers")]
+            {
+                self.scalar_matrix_replace_kind()
+            }
+            #[cfg(not(feature = "sequence_buffers"))]
+            {
+                None
+            }
+        });
+        let Some(kind) = kind else {
+            return self.unsigned_matrix_native_view(source, memory);
+        };
         let mech_core::ResolvedOperationContract::Declared(contract) = self.template.contract()
         else {
             return None;

@@ -195,3 +195,104 @@ fn numeric_reconstruction_checks_kind_cardinality_and_boolean_words() {
     assert_eq!(narrow.replace_word(0, 256), None);
     assert!(matches!(narrow.elements(), SequenceView::U8([0])));
 }
+
+#[test]
+fn numeric_private_phase_keeps_exact_cells_and_publication_admission_without_a_second_copy() {
+    for (element, cell, replacement) in cases() {
+        let memory = ManagedMemoryBudget::new(1 << 20);
+        let value = matrix(element, cell);
+        let schemas = value.schemas().unwrap();
+        let ValueData::Matrix(source) = value.data() else {
+            panic!()
+        };
+        let address = pointer(source.elements());
+        let mut reservation = memory
+            .reserve_capacity(value.memory_budget_admission_bytes(&memory).unwrap())
+            .unwrap();
+        let mut private = value.into_private_numeric_matrix(&mut reservation).unwrap();
+        drop(reservation);
+        assert_eq!(pointer(private.elements()), address);
+        assert_eq!(private.memory_budget(), memory);
+        let used = memory.used_bytes();
+        let nodes = memory.retained_snapshot_nodes();
+        assert!(nodes > 0);
+        match private.elements_mut() {
+            NumericMatrixViewMut::Bool(v) => v[3] = replacement != 0,
+            NumericMatrixViewMut::I64(v) => v[3] = replacement as i64,
+            NumericMatrixViewMut::F64(v) => v[3] = F64Bits::from_bits(replacement),
+            _ => panic!("boxed scalar case"),
+        }
+        let value = private.finish();
+        assert_eq!(memory.used_bytes(), used);
+        assert_eq!(memory.retained_snapshot_nodes(), nodes);
+        value.validate_against(&schemas).unwrap();
+        let ValueData::Matrix(result) = value.data() else {
+            panic!()
+        };
+        assert_eq!(pointer(result.elements()), address);
+        assert_eq!(
+            match result.elements().value_at(3).unwrap() {
+                ValueData::Bool(v) => u64::from(v),
+                ValueData::I64(v) => v as u64,
+                ValueData::F64(v) => v.bits(),
+                _ => panic!(),
+            },
+            replacement
+        );
+        drop(value);
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
+}
+
+#[test]
+fn numeric_private_phase_rejects_aliases_identities_imports_and_short_admission() {
+    for (element, cell, _) in cases() {
+        let memory = ManagedMemoryBudget::new(1 << 20);
+        let fresh = || matrix(element.clone(), cell.clone());
+        let reserve = |v: &Value| {
+            memory
+                .reserve_capacity(v.memory_budget_admission_bytes(&memory).unwrap())
+                .unwrap()
+        };
+        let value = fresh();
+        let alias = value.clone();
+        let mut reservation = reserve(&value);
+        assert!(value.into_private_numeric_matrix(&mut reservation).is_err());
+        alias.validate_against(&alias.schemas().unwrap()).unwrap();
+        drop((alias, reservation));
+        let value = fresh();
+        let identity = value.frozen_storage_identity();
+        let mut reservation = reserve(&value);
+        assert!(value.into_private_numeric_matrix(&mut reservation).is_err());
+        drop((identity, reservation));
+        let value = fresh();
+        let required = value.memory_budget_admission_bytes(&memory).unwrap();
+        let mut reservation = memory.reserve_capacity(required - 1).unwrap();
+        assert!(value.into_private_numeric_matrix(&mut reservation).is_err());
+        drop(reservation);
+        let value = admit(fresh(), &memory);
+        let other = ManagedMemoryBudget::new(1 << 20);
+        let mut reservation = other.reserve_capacity(1 << 16).unwrap();
+        assert!(value.into_private_numeric_matrix(&mut reservation).is_err());
+        drop(reservation);
+        let value = fresh();
+        let mut reservation = reserve(&value);
+        assert!(
+            value
+                .into_private_unsigned_matrix(&mut reservation)
+                .is_err()
+        );
+        drop(reservation);
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+        assert_eq!(
+            (other.used_bytes(), other.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
+}

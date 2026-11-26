@@ -687,7 +687,7 @@ fn numeric_map_fallible_probe_keeps_arithmetic_errors_under_tight_native_work_ca
     }
 }
 
-fn typed_arguments(
+pub(super) fn typed_arguments(
     artifact: &ProgramArtifact,
     memory: &ManagedMemoryBudget,
     named: &[(&str, Data, &[u64])],

@@ -739,6 +739,7 @@ pub(in crate::native_artifact) fn emit(
                                 .push((site, *array, *selector, *incoming, width));
                         }
                         let incoming = words.read(b, *incoming as usize);
+                        super::numeric_words::guard_scalar_store(b, code, site, incoming, fail)?;
                         let done = b.create_block();
                         let store = b.create_block();
 
