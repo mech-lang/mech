@@ -153,3 +153,86 @@ builds or profiles alongside measurements. The candidate receipt pins compiler
 source and executable fingerprints, protocol/fixture/runner hashes and machine
 metadata. Source or driver changes after freezing are rejected. Keep the raw
 partition receipts alongside each aggregate entry.
+
+First compiler optimization round (Apple M3, MINI, F64)
+
+round-01-frozen.json pins compiler commit b791cd541ce2a39d46e3ea1236523fc111019b78.
+The compiler transports packed scalar matrices through existing private tuple
+and closed-enum frames, returns typed scalar words through the maintained read
+boundary, and shares packed selected-assignment construction. Single-cell
+planning prepays the identical scan charge only when finite admission permits
+it. Bool/I64 matrix composition and turn-shaped recursive patterns are admitted
+through the same checked machinery. No benchmark source or C binary changed.
+
+The candidate was frozen before holdout timing. The two raw partition receipts
+contain 900 sequential observations: five per actor (candidate, preserved
+baseline and C) per kernel/fresh comparison. Warm-up live-outs are validated;
+timed Mech calls must succeed, as in the original baseline boundary. Every
+observation passed the finite full-output comparison.
+
+Speedup is baseline Mech time / candidate Mech time; larger is better.
+The replay column uses the preserved baseline executable measured alongside
+the candidate. Mech/C is a runtime multiplier; smaller is better.
+
+partition       recorded x    replay x    Mech/C x    C fresh x
+optimization         1.731       1.761      441.86       266.05
+holdout              1.233       1.231     1610.27       962.11
+all                  1.461       1.472      843.51       505.93
+
+These are equal-weight geometric means. Median per-kernel speedups are only
+1.014x on optimization, 1.048x on holdout and 1.025x overall: the largest gains
+are concentrated in a few recurrence-heavy programs. Nussinov improves 26.50x,
+Seidel 7.58x, Cholesky 4.03x and Deriche 3.80x against recorded Mech timings.
+Holdout gains include Jacobi-1d 2.23x, LU 1.99x and LUDCMP 1.99x.
+
+Five optimization kernels exceed a 5% slowdown against historical timings
+(2mm, 3mm, atax, bicg, covariance); none do on holdout. Against the contemporary
+baseline replay, Doitgen is the one >5% regression (1.080x slower); none of the
+holdout kernels exceed 5%. These measurements do not establish the cause of
+the discrepancy. Both comparisons and every case are retained.
+
+All thirty kernels remain slower than C in this checked MINI comparison.
+The worst ratio is Gramschmidt at 26,878.28x C, with only a 1.03x speedup; it
+is the next profiling target in the optimization set. Matrix copying and checked
+access overhead remain targets from the existing recurrence profiles.
+
+kernel             split   recorded x    replay x       Mech/C x      C fresh x
+2mm                opt          0.940       0.987          85.46          62.65
+3mm                opt          0.910       0.975          37.57          16.94
+adi                holdout      1.124       1.122       18651.47       18147.49
+atax               opt          0.919       1.047          80.60          28.87
+bicg               opt          0.895       0.996          95.56          29.50
+cholesky           opt          4.031       4.017        5369.23        4328.15
+correlation        opt          1.010       1.001         312.73         184.64
+covariance         opt          0.943       0.991          50.66          34.86
+deriche            opt          3.803       3.774       11103.47        8440.70
+doitgen            opt          1.049       0.926          22.30          11.47
+durbin             opt          1.687       1.676        2309.92        1192.70
+fdtd-2d            holdout      1.056       1.048        9431.99        6652.65
+floyd-warshall     holdout      1.022       1.028        4540.17        4468.64
+gemm               opt          1.014       1.016          36.59          23.14
+gemver             holdout      1.023       1.001         260.84         116.47
+gesummv            holdout      0.995       1.024         108.70          33.99
+gramschmidt        opt          1.026       1.023       26878.28       19748.64
+heat-3d            holdout      1.066       1.052        3822.54        3509.24
+jacobi-1d          holdout      2.233       2.226        4088.34         727.59
+jacobi-2d          holdout      1.048       1.049        8975.12        7259.19
+lu                 holdout      1.993       1.987       10156.59        9402.30
+ludcmp             holdout      1.990       1.986        9585.97        7805.44
+mvt                opt          0.992       1.002         140.01          63.42
+nussinov           opt         26.496      26.459        4357.94        4316.46
+seidel-2d          opt          7.583       7.556        6618.34        6506.65
+symm               holdout      1.006       0.996         209.89         128.84
+syr2k              holdout      1.002       0.997         217.41         159.81
+syrk               holdout      1.006       1.008         234.72         167.83
+trisolv            holdout      1.865       1.857        1863.09         473.51
+trmm               holdout      1.003       1.008         205.65         117.86
+
+round-01-qualification.json records 8 core unit checks, 23 engine unit checks,
+one route restoration check, 22 matrix integration tests, all 30 PolyBench
+original/decoded cases (29,482 C live-outs each), and 78 selected scalar, buffer
+and compression regressions. This includes allocation guarantees, original
+work-prefix denials, alias safety, restored metadata and fresh recovery.
+The remaining 439 Program tests were filtered out. The three timing-runner
+unit tests also pass. This receipt covers MINI CPU execution; larger datasets
+and GPU/SIMD selection still need qualification.

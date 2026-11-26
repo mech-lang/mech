@@ -1,0 +1,18 @@
+{
+  "schema": "mech.polybench.frozen-candidate.v1",
+  "created_at": "2026-11-26T00:30:47.328594+00:00",
+  "label": "round-01-native-matrix-frames",
+  "source_commit": "b791cd541ce2a39d46e3ea1236523fc111019b78",
+  "compiler_fingerprint": "4b5a1c4bbbdde2c23e450513f20040b29e62f92b005a6079532daacc284839bd",
+  "driver_sha256": "3b1178315fcb4bc512e41cd30b807875265aa5183684e933a97a86b78f54b262",
+  "reference_driver_sha256": "52298504b6a7b7abf44b399ed42f56bb2ee9f335f2601c683a7928041a0b883a",
+  "protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+  "fixture_sha256": "acc2a0b76f458eafca9beffb1eb2830f7fe87e6c5bc0dd46af817285202cf488",
+  "baseline_sha256": "96e5867a9bd7a1cde6c6dea266766ae3f4b23d51092e9f07911ca9266ec1f976",
+  "runner_sha256": "3bb97bbaa1a98026924f4a72383ef0bce1a21b93faf6b30ca2d3c1b150ac93e5",
+  "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+  "machine": {
+    "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+    "processor": "arm64"
+  }
+}

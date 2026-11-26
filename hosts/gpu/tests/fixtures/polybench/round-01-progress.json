@@ -1,0 +1,75 @@
+{
+  "schema": "mech.polybench.performance-progress.v1",
+  "created_at": "2026-11-26T00:37:09.900479+00:00",
+  "candidate": {
+    "schema": "mech.polybench.frozen-candidate.v1",
+    "created_at": "2026-11-26T00:30:47.328594+00:00",
+    "label": "round-01-native-matrix-frames",
+    "source_commit": "b791cd541ce2a39d46e3ea1236523fc111019b78",
+    "compiler_fingerprint": "4b5a1c4bbbdde2c23e450513f20040b29e62f92b005a6079532daacc284839bd",
+    "driver_sha256": "3b1178315fcb4bc512e41cd30b807875265aa5183684e933a97a86b78f54b262",
+    "reference_driver_sha256": "52298504b6a7b7abf44b399ed42f56bb2ee9f335f2601c683a7928041a0b883a",
+    "protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+    "fixture_sha256": "acc2a0b76f458eafca9beffb1eb2830f7fe87e6c5bc0dd46af817285202cf488",
+    "baseline_sha256": "96e5867a9bd7a1cde6c6dea266766ae3f4b23d51092e9f07911ca9266ec1f976",
+    "runner_sha256": "3bb97bbaa1a98026924f4a72383ef0bce1a21b93faf6b30ca2d3c1b150ac93e5",
+    "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+    "machine": {
+      "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+      "processor": "arm64"
+    }
+  },
+  "freeze_sha256": "f4eade2ab13ba388585781068df3b2e226c50688ee98cb474b9383d42b583385",
+  "optimization_receipt_sha256": "7d0cd9a9c52c2cd97f75e25b94ae3a86b23282a7b554b6d027f8932fa46a8ce1",
+  "holdout_receipt_sha256": "ed616e3de8c8bdb1567f10b6d980665ff70bce610ec8341afcd968e9577610a2",
+  "aggregates": {
+    "optimization": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 1.7314225939440622,
+      "median_speedup": 1.013792488633614,
+      "minimum_speedup": 0.8950625466570854,
+      "maximum_speedup": 26.49592870039899,
+      "regressions_over_five_percent": 5,
+      "geomean_mech_over_c_kernel": 441.859811127942,
+      "geomean_mech_over_c_fresh": 266.0503803308188,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 26878.284127557195,
+      "sum_mech_median_seconds": 1.339376917,
+      "geomean_speedup_from_contemporaneous_baseline": 1.7613959211171892,
+      "contemporaneous_regressions_over_five_percent": 1,
+      "minimum_contemporaneous_speedup": 0.9256851385019091
+    },
+    "holdout": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 1.2330213585081888,
+      "median_speedup": 1.0482442632036797,
+      "minimum_speedup": 0.9948811042423052,
+      "maximum_speedup": 2.2331115940487876,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 1610.2738988969445,
+      "geomean_mech_over_c_fresh": 962.1102606699419,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 18651.46765911409,
+      "sum_mech_median_seconds": 1.634172837,
+      "geomean_speedup_from_contemporaneous_baseline": 1.230574900582097,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 0.9956460848576956
+    },
+    "all": {
+      "count": 30,
+      "geomean_speedup_from_recorded_baseline": 1.4611232114153412,
+      "median_speedup": 1.0245719557571547,
+      "minimum_speedup": 0.8950625466570854,
+      "maximum_speedup": 26.49592870039899,
+      "regressions_over_five_percent": 5,
+      "geomean_mech_over_c_kernel": 843.5136755446581,
+      "geomean_mech_over_c_fresh": 505.93458151367855,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 26878.284127557195,
+      "sum_mech_median_seconds": 2.973549754,
+      "geomean_speedup_from_contemporaneous_baseline": 1.472253242657151,
+      "contemporaneous_regressions_over_five_percent": 1,
+      "minimum_contemporaneous_speedup": 0.9256851385019091
+    }
+  }
+}
