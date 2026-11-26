@@ -711,3 +711,82 @@ holdout: 724.274x C.
 No new timing samples or history entry were added. Full managed-array tagged
 state remains the principal compiler gap before these regions can consume
 the benchmark state machines. The strict below 1.0x holdout goal remains open.
+
+Fifth frozen compiler round (IR363): guarded native numeric FSM phases
+
+The compiler projects one independently guarded enum variant into the existing
+numeric phase proof. Original private tag/payload homes remain disjoint. Entry
+checks the actual current tag; every retained backedge proves the same tag,
+array identity and current functional versions. The original selected EnumPack
+factory separately certifies its constant ordinal and identity payload axes.
+Entry retains the full logical enum/payload and array output envelopes.
+
+Cranelift emits scalar tag tests, parallel payload copies, native arithmetic
+and typed matrix loads/stores. Unsupported transitions finish the loan before
+their original action. Exact current scalar/owner exports clear inactive
+variants and publish the valid tag last. An ordinary different-tag constructor
+can rearm native entry; a refused hot run does not retry every iteration.
+Static native operation count selects a variant, with schema-order ties. No
+benchmark name, measured runtime or holdout observation selects it.
+
+The compiler source is 6887ed78c8741a311c7648d050b773897ec420f0, work policy132.
+No benchmark port, input, C executable, tolerance or timing boundary changed.
+302 numeric/phase, 24 matrix, all 30 PolyBench and 102 selected Program checks
+pass. Five new tagged-state checks cover all seven scalar kinds, actual native
+entry, ordinary cold start/reentry, refusal without repeated attempts, exact
+source errors, older versions, aliases, finite admission and retry.
+
+Both sets retain the same equal-weight geometric mean of median Mech/C kernel
+runtime, lower is better; the strict below-1.0x goal applies to the holdout.
+
+frozen compiler                         optimization x      holdout x
+baseline                                      783.258       2020.085
+round-01-native-matrix-frames                 441.860       1610.274
+round-02-native-scalar-matrix-updates         346.025       1529.299
+round-03-native-maps                          318.844       1468.557
+round-04-conditional-maps                     301.197        724.274
+round-05-guarded-tagged-numeric               159.693        814.668
+
+Round 05 aggregate results:
+optimization: kernel 159.693062454x C; fresh 100.886669584x C; paired-original speedup 4.687483x; sum medians 0.137106001s.
+holdout: kernel 814.668095179x C; fresh 488.787497303x C; paired-original speedup 2.441323x; sum medians 0.796756834s.
+all: kernel 360.689399626x C; fresh 222.063375497x C; paired-original speedup 3.382848x; sum medians 0.933862835s.
+
+The seven-sample-per-actor optimization probe replays round04 across all fifteen
+programs: 1.760489x aggregate speedup. Seidel improves
+559.783827x and Nussinov 8.701504x. Seidel source visits fall from
+1,668,655 to 26; Nussinov from 942,817 to 123,753. The 2mm probe is
+1.052877x slower, with an identical execution report; cause unproven.
+This probe is neither a C nor a holdout comparison.
+
+All 900 sequential process observations validate full finite warm-up outputs;
+timed checked calls must succeed. They do not separately flatten every timed
+output. Raw regressions and both original-compiler references remain in the
+qualification receipt. The split and previous holdout results were exposed.
+No holdout was profiled and no compiler change followed this round's freeze.
+Only one flat tuple-payload state per Tail is selected; immutable managed
+captures, nested payloads and multi-variant native loans remain compiler work.
+CPU MINI F64 is qualified. Larger datasets, GPU/SIMD selection, full compression
+application/AOT qualification and an external application are unqualified.
+The strict goal remains open until the holdout metric is below 1.0x.
+
+Holdout interpretation: geometric-mean Mech runtimes are 1.018895x faster
+than round04, C runtimes are 1.146059x faster, and the unchanged original
+Mech replay is 1.016618x faster. Thus the normalized holdout score worsens
+1.124806x despite nearly unchanged paired-original compiler speedup. This
+round does not demonstrate a holdout compiler improvement.
+
+The five largest optimization medians cover 98.313% of summed
+optimization runtime, with 16,566 canonical-execution stack samples.
+No holdout was profiled. Profiles exclude parsing, JIT, input import, cache
+flushing and serialization by stack; profiled timings never enter scores.
+Canonical library calls: 45.547% of weighted profiled time.
+Private frame transport: 17.345% of weighted profiled time.
+Source visits and admission: 11.991% of weighted profiled time.
+Other helper dispatch: 8.754% of weighted profiled time.
+Selected matrix updates: 5.256% of weighted profiled time.
+Comprehension collection bookkeeping: 4.248% of weighted profiled time.
+Typed matrix scalar reads: 2.447% of weighted profiled time.
+Other selected library dispatch: 2.436% of weighted profiled time.
+Loop-local retirement: 1.330% of weighted profiled time.
+Other execution and generated code: 0.646% of weighted profiled time.

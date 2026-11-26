@@ -1,0 +1,3306 @@
+{
+  "schema": "mech.polybench.training-profile-collection.v1",
+  "created_at": "2026-11-26T05:22:18.604765+00:00",
+  "source_commit": "6887ed78c8741a311c7648d050b773897ec420f0",
+  "compiler_fingerprint": "30ce0ecdd404b50a934af48b66a96444f6f0df86491976f6d1a98aff6d76b0c9",
+  "driver_sha256": "e772f641254b98470ac9845d8cc30cda3ca7689ec88969e36ade3fa6711a4ea9",
+  "partition": "optimization",
+  "selection": "The five largest candidate kernel medians in the frozen optimization receipt; no holdout profile or per-case selection.",
+  "timing_receipt_sha256": "0f9b03b06494b7542acf4046894c77e6e6c2686c6d9fa4405c94955a95aa28ed",
+  "optimization_sum_median_seconds": 0.137106001,
+  "profiled_sum_median_seconds": 0.134793376,
+  "profiled_fraction_of_training_sum": 0.9831325763778931,
+  "method": "One sequential driver per case; macOS sample PID 6 1 after a 1s startup delay. Reported attribution includes only canonical execute stacks; parsing, JIT, input import, cache flush and serialization are excluded by stack. Profiled sample times do not enter benchmark scores.",
+  "cases": {
+    "deriche": {
+      "command": [
+        "/private/tmp/mech-polybench-optimization/round-05/tagged-phases/tagged-phase-driver",
+        "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/deriche.mec",
+        "/private/tmp/mech-polybench-optimization/round-05/tagged-phases/deriche-inputs.json",
+        "181"
+      ],
+      "source_sha256": "73dd0bbdc2048cb3dea73a499f9e6557b4ab2b0eff988da2ad6cea344e7daf6c",
+      "warmup_validation": {
+        "count": 4096,
+        "finite": true,
+        "max_absolute_error": 4.85722573273506e-17
+      },
+      "execution_report": "NativeProgramExecutionReport { work: 776535587103, comparison_work: 410632, visits: 317984, transport_bytes: 44072, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+      "timed_checked_calls": 181,
+      "profile_median_seconds": 0.055745792,
+      "duration_seconds": 6,
+      "nominal_sample_interval_ms": 1,
+      "raw_sample_sha256": "7ed0eecc175cac35d8fe356abb667bbb28c31bba7875ab818c831189e3d7f087"
+    },
+    "gramschmidt": {
+      "command": [
+        "/private/tmp/mech-polybench-optimization/round-05/tagged-phases/tagged-phase-driver",
+        "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/gramschmidt.mec",
+        "/private/tmp/mech-polybench-optimization/round-05/tagged-phases/gramschmidt-inputs.json",
+        "195"
+      ],
+      "source_sha256": "9d49c8c808089de3b4dc0c47f66619952fffe8691afd865cda8871fb21e16bfd",
+      "warmup_validation": {
+        "count": 2100,
+        "finite": true,
+        "max_absolute_error": 0.0
+      },
+      "execution_report": "NativeProgramExecutionReport { work: 65729845001, comparison_work: 514260, visits: 46693, transport_bytes: 29320, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+      "timed_checked_calls": 195,
+      "profile_median_seconds": 0.053018459,
+      "duration_seconds": 6,
+      "nominal_sample_interval_ms": 1,
+      "raw_sample_sha256": "c0fec7ebca4e5f11d67b47033cbcca1608e6fdac709afd095fa9b6ebaa43dd4d"
+    },
+    "cholesky": {
+      "command": [
+        "/private/tmp/mech-polybench-optimization/round-05/tagged-phases/tagged-phase-driver",
+        "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/cholesky.mec",
+        "/private/tmp/mech-polybench-optimization/round-05/tagged-phases/cholesky-inputs.json",
+        "678"
+      ],
+      "source_sha256": "5c11d488f791bfd3da69a37b9dfc3ff4eec4d7fd64b54d5f823adf9b9ac452fa",
+      "warmup_validation": {
+        "count": 1600,
+        "finite": true,
+        "max_absolute_error": 3.2751579226442118e-15
+      },
+      "execution_report": "NativeProgramExecutionReport { work: 49468185460, comparison_work: 2422, visits: 16365, transport_bytes: 13520, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+      "timed_checked_calls": 678,
+      "profile_median_seconds": 0.0144237705,
+      "duration_seconds": 6,
+      "nominal_sample_interval_ms": 1,
+      "raw_sample_sha256": "fd3982bfc1e3d4e122a9dec3bc9b7588859279344850dbaa46558b1624ce53df"
+    },
+    "nussinov": {
+      "command": [
+        "/private/tmp/mech-polybench-optimization/round-05/tagged-phases/tagged-phase-driver",
+        "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/nussinov.mec",
+        "/private/tmp/mech-polybench-optimization/round-05/tagged-phases/nussinov-inputs.json",
+        "858"
+      ],
+      "source_sha256": "13e227bd65e4a450fe3a1ac48995911d214c9e070c6eccf3ffde41ac6cb0f6fd",
+      "warmup_validation": {
+        "count": 3600,
+        "finite": true,
+        "max_absolute_error": 0.0
+      },
+      "execution_report": "NativeProgramExecutionReport { work: 109827897956, comparison_work: 37614, visits: 123753, transport_bytes: 14496, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+      "timed_checked_calls": 858,
+      "profile_median_seconds": 0.011457645499999999,
+      "duration_seconds": 6,
+      "nominal_sample_interval_ms": 1,
+      "raw_sample_sha256": "745988348e3db6e88e83068320394e0abd94e9b5b7cc03ea10f402900d89123d"
+    },
+    "durbin": {
+      "command": [
+        "/private/tmp/mech-polybench-optimization/round-05/tagged-phases/tagged-phase-driver",
+        "/Users/cim310/.codex/worktrees/polybench-pr1000/mech/hosts/gpu/tests/fixtures/polybench/durbin.mec",
+        "/private/tmp/mech-polybench-optimization/round-05/tagged-phases/durbin-inputs.json",
+        "6769"
+      ],
+      "source_sha256": "62da21e96d894e89a7f94f39d14795e70413a86053487aa7cb2e2c35fa4edf77",
+      "warmup_validation": {
+        "count": 40,
+        "finite": true,
+        "max_absolute_error": 0.0
+      },
+      "execution_report": "NativeProgramExecutionReport { work: 2457254646, comparison_work: 12559, visits: 1422, transport_bytes: 12928, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+      "timed_checked_calls": 6769,
+      "profile_median_seconds": 0.001302333,
+      "duration_seconds": 6,
+      "nominal_sample_interval_ms": 1,
+      "raw_sample_sha256": "e4cdac2b31273d462dfe3ff0dbe58abbbc32f625ee31723c3755883b1545fb38"
+    }
+  },
+  "analysis": {
+    "deriche": {
+      "all_thread_samples": 4043,
+      "execution_samples": 3820,
+      "excluded_samples": 223,
+      "action_categories": [
+        {
+          "name": "Private frame transport",
+          "samples": 1273,
+          "percent": 33.324607329842934
+        },
+        {
+          "name": "Source visits and admission",
+          "samples": 663,
+          "percent": 17.356020942408378
+        },
+        {
+          "name": "Canonical library calls",
+          "samples": 600,
+          "percent": 15.706806282722512
+        },
+        {
+          "name": "Selected matrix updates",
+          "samples": 465,
+          "percent": 12.172774869109947
+        },
+        {
+          "name": "Other helper dispatch",
+          "samples": 356,
+          "percent": 9.319371727748692
+        },
+        {
+          "name": "Other selected library dispatch",
+          "samples": 180,
+          "percent": 4.712041884816754
+        },
+        {
+          "name": "Typed matrix scalar reads",
+          "samples": 138,
+          "percent": 3.612565445026178
+        },
+        {
+          "name": "Loop-local retirement",
+          "samples": 75,
+          "percent": 1.963350785340314
+        },
+        {
+          "name": "Comprehension collection bookkeeping",
+          "samples": 51,
+          "percent": 1.3350785340314135
+        },
+        {
+          "name": "Other execution and generated code",
+          "samples": 19,
+          "percent": 0.4973821989528796
+        }
+      ],
+      "self_time_mechanisms": [
+        {
+          "name": "Other runtime self time",
+          "samples": 2338,
+          "percent": 61.204188481675395
+        },
+        {
+          "name": "Resource bookkeeping and locks",
+          "samples": 599,
+          "percent": 15.680628272251308
+        },
+        {
+          "name": "Memory planning, schema and snapshot validation",
+          "samples": 530,
+          "percent": 13.87434554973822
+        },
+        {
+          "name": "Allocation and deallocation",
+          "samples": 222,
+          "percent": 5.81151832460733
+        },
+        {
+          "name": "Byte copy and zeroing",
+          "samples": 113,
+          "percent": 2.9581151832460733
+        },
+        {
+          "name": "Generated code, unresolved symbol",
+          "samples": 18,
+          "percent": 0.4712041884816754
+        }
+      ],
+      "top_self_functions": [
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "samples": 209,
+          "percent": 5.471204188481676
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action",
+          "samples": 181,
+          "percent": 4.738219895287958
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+          "samples": 174,
+          "percent": 4.554973821989528
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "samples": 147,
+          "percent": 3.8481675392670156
+        },
+        {
+          "name": "<deduplicated_symbol>",
+          "samples": 132,
+          "percent": 3.4554973821989527
+        },
+        {
+          "name": "<mech_engine::resident::budget::native_turn_plan_cache::string_projection::NativeProjectionIndexContext>::check",
+          "samples": 91,
+          "percent": 2.3821989528795813
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::copy_fields::<true>",
+          "samples": 89,
+          "percent": 2.329842931937173
+        },
+        {
+          "name": "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry",
+          "samples": 84,
+          "percent": 2.1989528795811517
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::observe",
+          "samples": 77,
+          "percent": 2.0157068062827226
+        },
+        {
+          "name": "_xzm_free",
+          "samples": 77,
+          "percent": 2.0157068062827226
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::check_copy",
+          "samples": 69,
+          "percent": 1.806282722513089
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::current_leaf",
+          "samples": 69,
+          "percent": 1.806282722513089
+        },
+        {
+          "name": "core::ptr::drop_in_place::<mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>",
+          "samples": 57,
+          "percent": 1.4921465968586387
+        },
+        {
+          "name": "<core::option::Option<&[mech_engine::native_artifact::buffer_frames::NativeBufferFrameField]>>::map_or::<usize, <mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::field_count::{closure#0}::{closure#0}>",
+          "samples": 55,
+          "percent": 1.4397905759162304
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge::{closure#0}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "samples": 52,
+          "percent": 1.361256544502618
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::action_required",
+          "samples": 50,
+          "percent": 1.3089005235602094
+        },
+        {
+          "name": "_platform_memset",
+          "samples": 50,
+          "percent": 1.3089005235602094
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepared_library_call",
+          "samples": 47,
+          "percent": 1.2303664921465969
+        },
+        {
+          "name": "_platform_memmove",
+          "samples": 46,
+          "percent": 1.2041884816753927
+        },
+        {
+          "name": "<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit",
+          "samples": 45,
+          "percent": 1.1780104712041886
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::retire_tail_locals",
+          "samples": 45,
+          "percent": 1.1780104712041886
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<u64, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::matrix_element_word::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<u64, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+          "samples": 44,
+          "percent": 1.1518324607329844
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::needs_move",
+          "samples": 43,
+          "percent": 1.12565445026178
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<(), mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::admit_buffer_frame_inputs::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<(), mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+          "samples": 42,
+          "percent": 1.0994764397905759
+        },
+        {
+          "name": "<mech_engine::resident::budget::CONTROL_WORK_CONTEXT::{K#0}::{closure#0} as core::ops::function::FnOnce<(core::option::Option<&mut core::option::Option<mech_engine::resident::budget::ControlWorkContext>>,)>>::call_once",
+          "samples": 39,
+          "percent": 1.0209424083769634
+        }
+      ],
+      "top_inclusive_functions": [
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+          "samples": 3820,
+          "percent": 100.0
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+          "samples": 3820,
+          "percent": 100.0
+        },
+        {
+          "name": "???",
+          "samples": 3806,
+          "percent": 99.63350785340315
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "samples": 3371,
+          "percent": 88.24607329842932
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action",
+          "samples": 1220,
+          "percent": 31.93717277486911
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepared_library_call",
+          "samples": 781,
+          "percent": 20.445026178010473
+        },
+        {
+          "name": "<deduplicated_symbol>",
+          "samples": 652,
+          "percent": 17.06806282722513
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+          "samples": 636,
+          "percent": 16.649214659685864
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::canonical_library_call",
+          "samples": 600,
+          "percent": 15.706806282722512
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>::invoke",
+          "samples": 597,
+          "percent": 15.6282722513089
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+          "samples": 593,
+          "percent": 15.523560209424083
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+          "samples": 590,
+          "percent": 15.44502617801047
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+          "samples": 580,
+          "percent": 15.18324607329843
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+          "samples": 580,
+          "percent": 15.18324607329843
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::scalar_matrix_replace",
+          "samples": 463,
+          "percent": 12.120418848167539
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+          "samples": 442,
+          "percent": 11.570680628272251
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+          "samples": 441,
+          "percent": 11.544502617801047
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::admit",
+          "samples": 407,
+          "percent": 10.654450261780104
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::copy::<true>",
+          "samples": 308,
+          "percent": 8.06282722513089
+        },
+        {
+          "name": "mech_engine::resident::budget::with_payload_admission::<core::result::Result<bool, mech_core::function::resident::ResidentKernelError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped::{closure#8}>",
+          "samples": 251,
+          "percent": 6.570680628272251
+        },
+        {
+          "name": "<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit",
+          "samples": 219,
+          "percent": 5.732984293193717
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::admit_buffer_frame_composition::<<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action::{closure#1}>",
+          "samples": 197,
+          "percent": 5.157068062827225
+        },
+        {
+          "name": "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry",
+          "samples": 184,
+          "percent": 4.816753926701571
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "samples": 184,
+          "percent": 4.816753926701571
+        },
+        {
+          "name": "mech_core::memory_plan::derive::plan_call_memory",
+          "samples": 176,
+          "percent": 4.607329842931938
+        },
+        {
+          "name": "mech_engine::resident::numeric::transpose_snapshot",
+          "samples": 169,
+          "percent": 4.424083769633508
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::admit_buffer_frame_words",
+          "samples": 166,
+          "percent": 4.345549738219895
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::copy_fields::<true>",
+          "samples": 166,
+          "percent": 4.345549738219895
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::admit_buffer_frame_inputs",
+          "samples": 164,
+          "percent": 4.293193717277487
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::plan_current",
+          "samples": 163,
+          "percent": 4.267015706806283
+        }
+      ],
+      "top_leaf_stacks": [
+        {
+          "samples": 195,
+          "percent": 5.104712041884817,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper"
+          ]
+        },
+        {
+          "samples": 171,
+          "percent": 4.476439790575916,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action"
+          ]
+        },
+        {
+          "samples": 100,
+          "percent": 2.6178010471204187,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit"
+          ]
+        },
+        {
+          "samples": 77,
+          "percent": 2.0157068062827226,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepared_library_call",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::scalar_matrix_replace",
+            "<deduplicated_symbol>"
+          ]
+        },
+        {
+          "samples": 71,
+          "percent": 1.8586387434554974,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::observe"
+          ]
+        },
+        {
+          "samples": 60,
+          "percent": 1.5706806282722514,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit"
+          ]
+        },
+        {
+          "samples": 57,
+          "percent": 1.4921465968586387,
+          "stack": [
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::copy::<true>",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::copy_fields::<true>",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::copy_fields::<true>",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::copy_fields::<true>"
+          ]
+        },
+        {
+          "samples": 46,
+          "percent": 1.2041884816753927,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+            "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry"
+          ]
+        },
+        {
+          "samples": 43,
+          "percent": 1.12565445026178,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::retire_tail_locals"
+          ]
+        },
+        {
+          "samples": 42,
+          "percent": 1.0994764397905759,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepared_library_call",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::scalar_matrix_element",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::matrix_element_word",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<u64, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::matrix_element_word::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<u64, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>"
+          ]
+        },
+        {
+          "samples": 41,
+          "percent": 1.0732984293193717,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::admit_buffer_frame_words",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::admit_buffer_frame_inputs",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<(), mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::admit_buffer_frame_inputs::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<(), mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>"
+          ]
+        },
+        {
+          "samples": 41,
+          "percent": 1.0732984293193717,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepared_library_call"
+          ]
+        },
+        {
+          "samples": 33,
+          "percent": 0.8638743455497382,
+          "stack": [
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+            "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry",
+            "<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>"
+          ]
+        },
+        {
+          "samples": 32,
+          "percent": 0.837696335078534,
+          "stack": [
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::copy::<true>",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::check_copy",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::check_copy",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::check_copy"
+          ]
+        },
+        {
+          "samples": 31,
+          "percent": 0.8115183246073299,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::action_required"
+          ]
+        },
+        {
+          "samples": 28,
+          "percent": 0.7329842931937173,
+          "stack": [
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+            "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry",
+            "<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>"
+          ]
+        },
+        {
+          "samples": 28,
+          "percent": 0.7329842931937173,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+            "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry"
+          ]
+        },
+        {
+          "samples": 26,
+          "percent": 0.680628272251309,
+          "stack": [
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::copy::<true>",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::check_copy",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::check_copy",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::check_copy",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::current_leaf"
+          ]
+        },
+        {
+          "samples": 23,
+          "percent": 0.6020942408376964,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::admit_buffer_frame_composition::<<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action::{closure#1}>",
+            "<deduplicated_symbol>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::frame_admission::FrameAdmissionRecipe>::try_admit_current::<<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::admit_buffer_frame_composition<<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action::{closure#8}>::{closure#0}>"
+          ]
+        },
+        {
+          "samples": 22,
+          "percent": 0.5759162303664922,
+          "stack": [
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepared_library_call",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::scalar_matrix_replace",
+            "<deduplicated_symbol>",
+            "<mech_engine::resident::budget::native_turn_plan_cache::string_projection::NativeProjectionIndexContext>::charge",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge::{closure#0}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>"
+          ]
+        }
+      ],
+      "sample_sha256": "7ed0eecc175cac35d8fe356abb667bbb28c31bba7875ab818c831189e3d7f087",
+      "raw_sample": "profiles/round-05-guarded-tagged-numeric/deriche.sample.txt.gz",
+      "compressed_sample_sha256": "3bb437f01eee48374a7b9296e5113b2d4110b909fd2213232bb474f08647587c",
+      "profiled_case_fraction_of_optimization_sum": 0.404669559285009
+    },
+    "gramschmidt": {
+      "all_thread_samples": 4567,
+      "execution_samples": 4255,
+      "excluded_samples": 312,
+      "action_categories": [
+        {
+          "name": "Canonical library calls",
+          "samples": 3405,
+          "percent": 80.0235017626322
+        },
+        {
+          "name": "Comprehension collection bookkeeping",
+          "samples": 360,
+          "percent": 8.46063454759107
+        },
+        {
+          "name": "Other helper dispatch",
+          "samples": 268,
+          "percent": 6.298472385428907
+        },
+        {
+          "name": "Source visits and admission",
+          "samples": 178,
+          "percent": 4.18331374853114
+        },
+        {
+          "name": "Other execution and generated code",
+          "samples": 22,
+          "percent": 0.5170387779083431
+        },
+        {
+          "name": "Other selected library dispatch",
+          "samples": 6,
+          "percent": 0.1410105757931845
+        },
+        {
+          "name": "Typed matrix scalar reads",
+          "samples": 6,
+          "percent": 0.1410105757931845
+        },
+        {
+          "name": "Loop-local retirement",
+          "samples": 5,
+          "percent": 0.11750881316098707
+        },
+        {
+          "name": "Private frame transport",
+          "samples": 5,
+          "percent": 0.11750881316098707
+        }
+      ],
+      "self_time_mechanisms": [
+        {
+          "name": "Memory planning, schema and snapshot validation",
+          "samples": 1306,
+          "percent": 30.693301997649822
+        },
+        {
+          "name": "Other runtime self time",
+          "samples": 1179,
+          "percent": 27.708578143360754
+        },
+        {
+          "name": "Allocation and deallocation",
+          "samples": 1067,
+          "percent": 25.076380728554643
+        },
+        {
+          "name": "Byte copy and zeroing",
+          "samples": 438,
+          "percent": 10.293772032902467
+        },
+        {
+          "name": "Resource bookkeeping and locks",
+          "samples": 245,
+          "percent": 5.7579318448883665
+        },
+        {
+          "name": "Generated code, unresolved symbol",
+          "samples": 20,
+          "percent": 0.4700352526439483
+        }
+      ],
+      "top_self_functions": [
+        {
+          "name": "_xzm_free",
+          "samples": 348,
+          "percent": 8.1786133960047
+        },
+        {
+          "name": "_platform_memmove",
+          "samples": 209,
+          "percent": 4.91186839012926
+        },
+        {
+          "name": "<deduplicated_symbol>",
+          "samples": 182,
+          "percent": 4.27732079905993
+        },
+        {
+          "name": "_platform_memset",
+          "samples": 161,
+          "percent": 3.7837837837837838
+        },
+        {
+          "name": "_xzm_xzone_malloc",
+          "samples": 141,
+          "percent": 3.3137485311398356
+        },
+        {
+          "name": "_malloc_zone_malloc",
+          "samples": 133,
+          "percent": 3.125734430082256
+        },
+        {
+          "name": "_free",
+          "samples": 122,
+          "percent": 2.867215041128085
+        },
+        {
+          "name": "mech_core::schema::shape::evaluate_dimension",
+          "samples": 64,
+          "percent": 1.5041128084606346
+        },
+        {
+          "name": "mech_core::memory_plan::budget::evaluate_memory_budget",
+          "samples": 57,
+          "percent": 1.3396004700352526
+        },
+        {
+          "name": "mech_engine::memory_planner::program::place_allocations",
+          "samples": 57,
+          "percent": 1.3396004700352526
+        },
+        {
+          "name": "_xzm_xzone_malloc_tiny",
+          "samples": 55,
+          "percent": 1.2925969447708578
+        },
+        {
+          "name": "mech_core::schema::shape::evaluate_body_extents",
+          "samples": 55,
+          "percent": 1.2925969447708578
+        },
+        {
+          "name": "DYLD-STUB$$free",
+          "samples": 53,
+          "percent": 1.245593419506463
+        },
+        {
+          "name": "xzm_realloc",
+          "samples": 50,
+          "percent": 1.1750881316098707
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+          "samples": 47,
+          "percent": 1.1045828437132785
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "samples": 47,
+          "percent": 1.1045828437132785
+        },
+        {
+          "name": "mech_core::memory_plan::derive::plan_call_memory",
+          "samples": 45,
+          "percent": 1.0575793184488838
+        },
+        {
+          "name": "<alloc::boxed::Box<[mech_core::dimension::DimensionExpr]> as core::clone::Clone>::clone",
+          "samples": 44,
+          "percent": 1.0340775558166861
+        },
+        {
+          "name": "__rustc::__rust_no_alloc_shim_is_unstable_v2",
+          "samples": 44,
+          "percent": 1.0340775558166861
+        },
+        {
+          "name": "__rustc::__rdl_alloc",
+          "samples": 43,
+          "percent": 1.0105757931844888
+        },
+        {
+          "name": "<alloc::vec::Vec<mech_core::dimension::DimensionParameterDeclaration>>::into_boxed_slice",
+          "samples": 40,
+          "percent": 0.9400705052878966
+        },
+        {
+          "name": "mech_engine::memory_planner::turn::refresh_turn_allocations",
+          "samples": 36,
+          "percent": 0.8460634547591069
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "samples": 35,
+          "percent": 0.8225616921269095
+        },
+        {
+          "name": "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry",
+          "samples": 33,
+          "percent": 0.7755581668625147
+        },
+        {
+          "name": "core::ptr::drop_in_place::<mech_core::snapshot::draft::ValueDataDraft>",
+          "samples": 32,
+          "percent": 0.7520564042303173
+        }
+      ],
+      "top_inclusive_functions": [
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+          "samples": 4255,
+          "percent": 100.0
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+          "samples": 4254,
+          "percent": 99.9764982373678
+        },
+        {
+          "name": "???",
+          "samples": 4251,
+          "percent": 99.90599294947121
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "samples": 4056,
+          "percent": 95.32314923619272
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::canonical_library_call",
+          "samples": 3405,
+          "percent": 80.0235017626322
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>::invoke",
+          "samples": 3379,
+          "percent": 79.41245593419507
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+          "samples": 3372,
+          "percent": 79.24794359576968
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+          "samples": 3370,
+          "percent": 79.20094007050528
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+          "samples": 3354,
+          "percent": 78.82491186839013
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+          "samples": 2485,
+          "percent": 58.40188014101057
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+          "samples": 2484,
+          "percent": 58.37837837837838
+        },
+        {
+          "name": "mech_engine::resident::budget::with_payload_admission::<core::result::Result<bool, mech_core::function::resident::ResidentKernelError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped::{closure#8}>",
+          "samples": 1354,
+          "percent": 31.8213866039953
+        },
+        {
+          "name": "mech_core::memory_plan::derive::plan_call_memory",
+          "samples": 1125,
+          "percent": 26.43948296122209
+        },
+        {
+          "name": "mech_engine::resident::numeric::transpose_snapshot",
+          "samples": 1036,
+          "percent": 24.347826086956523
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::plan_current",
+          "samples": 967,
+          "percent": 22.7262044653349
+        },
+        {
+          "name": "mech_engine::memory_planner::turn::derive_turn_memory",
+          "samples": 962,
+          "percent": 22.608695652173914
+        },
+        {
+          "name": "<mech_engine::resident::budget::PreparedKernel<()>>::admit",
+          "samples": 857,
+          "percent": 20.141010575793185
+        },
+        {
+          "name": "<mech_engine::resident::budget::KernelCostEstimate>::turn_plan",
+          "samples": 852,
+          "percent": 20.023501762632197
+        },
+        {
+          "name": "mech_core::memory_plan::derive::resolve_current_call_memory",
+          "samples": 737,
+          "percent": 17.320799059929495
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::bind_values",
+          "samples": 693,
+          "percent": 16.28672150411281
+        },
+        {
+          "name": "mech_engine::memory_planner::turn::apply_observed_turn_demand",
+          "samples": 681,
+          "percent": 16.004700352526438
+        },
+        {
+          "name": "mech_engine::resident::general::native_collection_calls::bind_current",
+          "samples": 663,
+          "percent": 15.581668625146886
+        },
+        {
+          "name": "_xzm_free",
+          "samples": 569,
+          "percent": 13.372502937720329
+        },
+        {
+          "name": "core::ptr::drop_in_place::<mech_core::memory_plan::model::CallMemoryPlan>",
+          "samples": 480,
+          "percent": 11.280846063454758
+        },
+        {
+          "name": "mech_core::memory_plan::derive::plan_value_layout",
+          "samples": 394,
+          "percent": 9.259694477085782
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper",
+          "samples": 360,
+          "percent": 8.46063454759107
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::collections::State>::helper",
+          "samples": 336,
+          "percent": 7.896592244418331
+        },
+        {
+          "name": "core::ptr::drop_in_place::<mech_core::type_system::resolved_value::ResolvedValueDescriptor>",
+          "samples": 302,
+          "percent": 7.097532314923619
+        },
+        {
+          "name": "<mech_core::schema::Schema>::resolved_type_memory_contract",
+          "samples": 291,
+          "percent": 6.839012925969448
+        },
+        {
+          "name": "core::ptr::drop_in_place::<alloc::boxed::Box<[mech_core::memory_plan::model::PortMemoryPlan]>>",
+          "samples": 280,
+          "percent": 6.580493537015276
+        }
+      ],
+      "top_leaf_stacks": [
+        {
+          "samples": 44,
+          "percent": 1.0340775558166861,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit"
+          ]
+        },
+        {
+          "samples": 32,
+          "percent": 0.7520564042303173,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper"
+          ]
+        },
+        {
+          "samples": 31,
+          "percent": 0.7285546415981199,
+          "stack": [
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::plan_current",
+            "mech_engine::memory_planner::turn::derive_turn_memory",
+            "mech_engine::memory_planner::program::place_allocations"
+          ]
+        },
+        {
+          "samples": 29,
+          "percent": 0.681551116333725,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+            "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry"
+          ]
+        },
+        {
+          "samples": 28,
+          "percent": 0.6580493537015276,
+          "stack": [
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::plan_current",
+            "mech_engine::memory_planner::turn::derive_turn_memory",
+            "_platform_memmove"
+          ]
+        },
+        {
+          "samples": 23,
+          "percent": 0.5405405405405406,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper",
+            "<mech_gpu::native_artifact::program::runtime::collections::State>::helper"
+          ]
+        },
+        {
+          "samples": 23,
+          "percent": 0.5405405405405406,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper::{closure#5}",
+            "<mech_gpu::native_artifact::program::runtime::collections::State>::prepare_numeric_map"
+          ]
+        },
+        {
+          "samples": 22,
+          "percent": 0.5170387779083431,
+          "stack": [
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "mech_engine::resident::budget::with_payload_admission::<core::result::Result<bool, mech_core::function::resident::ResidentKernelError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped::{closure#8}>",
+            "mech_engine::resident::numeric::transpose_snapshot",
+            "<mech_engine::resident::budget::PreparedKernel<()>>::admit",
+            "<mech_engine::resident::budget::KernelCostEstimate>::turn_plan",
+            "mech_engine::memory_planner::turn::apply_observed_turn_demand",
+            "_platform_memmove"
+          ]
+        },
+        {
+          "samples": 22,
+          "percent": 0.5170387779083431,
+          "stack": [
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "mech_engine::resident::budget::with_payload_admission::<core::result::Result<bool, mech_core::function::resident::ResidentKernelError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped::{closure#8}>",
+            "mech_engine::resident::numeric::transpose_snapshot",
+            "<mech_engine::resident::budget::PreparedKernel<()>>::admit",
+            "<mech_engine::resident::budget::KernelCostEstimate>::turn_plan",
+            "mech_engine::memory_planner::turn::apply_observed_turn_demand",
+            "mech_engine::memory_planner::program::place_allocations"
+          ]
+        },
+        {
+          "samples": 22,
+          "percent": 0.5170387779083431,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper::{closure#5}",
+            "<mech_gpu::native_artifact::program::runtime::collections::State>::prepare_numeric_map",
+            "_platform_memmove"
+          ]
+        },
+        {
+          "samples": 20,
+          "percent": 0.4700352526439483,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???"
+          ]
+        },
+        {
+          "samples": 19,
+          "percent": 0.44653349001175086,
+          "stack": [
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::plan_current",
+            "mech_engine::memory_planner::turn::derive_turn_memory",
+            "mech_engine::memory_planner::turn::refresh_turn_allocations"
+          ]
+        },
+        {
+          "samples": 17,
+          "percent": 0.399529964747356,
+          "stack": [
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::plan_current",
+            "mech_engine::memory_planner::turn::derive_turn_memory",
+            "_xzm_free"
+          ]
+        },
+        {
+          "samples": 16,
+          "percent": 0.37602820211515864,
+          "stack": [
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::canonical_library_call",
+            "<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>::invoke",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::bind_values",
+            "mech_engine::resident::general::native_collection_calls::bind_current",
+            "mech_core::memory_plan::derive::plan_call_memory"
+          ]
+        },
+        {
+          "samples": 16,
+          "percent": 0.37602820211515864,
+          "stack": [
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::plan_current",
+            "mech_engine::memory_planner::turn::derive_turn_memory",
+            "mech_core::memory_plan::derive::resolve_current_call_memory",
+            "mech_core::memory_plan::derive::plan_call_memory"
+          ]
+        },
+        {
+          "samples": 15,
+          "percent": 0.3525264394829612,
+          "stack": [
+            "<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>::invoke",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::bind_values",
+            "mech_engine::resident::general::native_collection_calls::bind_current",
+            "mech_core::memory_plan::derive::plan_call_memory",
+            "mech_core::memory_contract::operation_requirement::check_port_storage_compatibility"
+          ]
+        },
+        {
+          "samples": 14,
+          "percent": 0.3290246768507638,
+          "stack": [
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::canonical_library_call",
+            "<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>::invoke",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::bind_values",
+            "mech_engine::resident::general::native_collection_calls::bind_current",
+            "_platform_memmove"
+          ]
+        },
+        {
+          "samples": 14,
+          "percent": 0.3290246768507638,
+          "stack": [
+            "<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>::invoke",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::bind_values",
+            "mech_engine::resident::general::native_collection_calls::bind_current",
+            "mech_core::memory_plan::derive::plan_call_memory",
+            "mech_core::memory_plan::derive::plan_value_layout"
+          ]
+        },
+        {
+          "samples": 14,
+          "percent": 0.3290246768507638,
+          "stack": [
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+            "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry",
+            "<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>"
+          ]
+        },
+        {
+          "samples": 14,
+          "percent": 0.3290246768507638,
+          "stack": [
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "mech_engine::resident::budget::with_payload_admission::<core::result::Result<bool, mech_core::function::resident::ResidentKernelError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped::{closure#8}>",
+            "mech_engine::resident::numeric::transpose_snapshot",
+            "<alloc::sync::Arc<mech_engine::memory_planner::turn::TurnMemoryPlan>>::drop_slow",
+            "core::ptr::drop_in_place::<mech_engine::memory_planner::turn::TurnMemoryPlan>",
+            "core::ptr::drop_in_place::<mech_core::memory_plan::model::CallMemoryPlan>",
+            "_xzm_free"
+          ]
+        }
+      ],
+      "sample_sha256": "c0fec7ebca4e5f11d67b47033cbcca1608e6fdac709afd095fa9b6ebaa43dd4d",
+      "raw_sample": "profiles/round-05-guarded-tagged-numeric/gramschmidt.sample.txt.gz",
+      "compressed_sample_sha256": "18cafc42e5c4e48103226339bff89be98b73f7f326ad1b9fecfa23dd34fb3cdf",
+      "profiled_case_fraction_of_optimization_sum": 0.3749611003532952
+    },
+    "cholesky": {
+      "all_thread_samples": 4574,
+      "execution_samples": 3664,
+      "excluded_samples": 910,
+      "action_categories": [
+        {
+          "name": "Canonical library calls",
+          "samples": 2577,
+          "percent": 70.33296943231441
+        },
+        {
+          "name": "Other helper dispatch",
+          "samples": 266,
+          "percent": 7.259825327510917
+        },
+        {
+          "name": "Private frame transport",
+          "samples": 197,
+          "percent": 5.376637554585153
+        },
+        {
+          "name": "Source visits and admission",
+          "samples": 187,
+          "percent": 5.103711790393013
+        },
+        {
+          "name": "Comprehension collection bookkeeping",
+          "samples": 142,
+          "percent": 3.8755458515283845
+        },
+        {
+          "name": "Selected matrix updates",
+          "samples": 82,
+          "percent": 2.2379912663755457
+        },
+        {
+          "name": "Typed matrix scalar reads",
+          "samples": 67,
+          "percent": 1.8286026200873362
+        },
+        {
+          "name": "Loop-local retirement",
+          "samples": 63,
+          "percent": 1.7194323144104804
+        },
+        {
+          "name": "Other selected library dispatch",
+          "samples": 62,
+          "percent": 1.6921397379912664
+        },
+        {
+          "name": "Other execution and generated code",
+          "samples": 21,
+          "percent": 0.5731441048034934
+        }
+      ],
+      "self_time_mechanisms": [
+        {
+          "name": "Other runtime self time",
+          "samples": 1135,
+          "percent": 30.97707423580786
+        },
+        {
+          "name": "Memory planning, schema and snapshot validation",
+          "samples": 995,
+          "percent": 27.156113537117903
+        },
+        {
+          "name": "Allocation and deallocation",
+          "samples": 928,
+          "percent": 25.32751091703057
+        },
+        {
+          "name": "Byte copy and zeroing",
+          "samples": 303,
+          "percent": 8.269650655021834
+        },
+        {
+          "name": "Resource bookkeeping and locks",
+          "samples": 285,
+          "percent": 7.778384279475983
+        },
+        {
+          "name": "Generated code, unresolved symbol",
+          "samples": 18,
+          "percent": 0.4912663755458515
+        }
+      ],
+      "top_self_functions": [
+        {
+          "name": "_xzm_free",
+          "samples": 305,
+          "percent": 8.324235807860262
+        },
+        {
+          "name": "<deduplicated_symbol>",
+          "samples": 154,
+          "percent": 4.203056768558952
+        },
+        {
+          "name": "_platform_memmove",
+          "samples": 146,
+          "percent": 3.98471615720524
+        },
+        {
+          "name": "_free",
+          "samples": 134,
+          "percent": 3.6572052401746724
+        },
+        {
+          "name": "_xzm_xzone_malloc",
+          "samples": 114,
+          "percent": 3.111353711790393
+        },
+        {
+          "name": "_malloc_zone_malloc",
+          "samples": 113,
+          "percent": 3.084061135371179
+        },
+        {
+          "name": "_platform_memset",
+          "samples": 104,
+          "percent": 2.8384279475982535
+        },
+        {
+          "name": "mech_core::schema::shape::evaluate_dimension",
+          "samples": 69,
+          "percent": 1.8831877729257642
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "samples": 66,
+          "percent": 1.8013100436681222
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+          "samples": 52,
+          "percent": 1.4192139737991267
+        },
+        {
+          "name": "mech_core::memory_plan::derive::plan_call_memory",
+          "samples": 51,
+          "percent": 1.3919213973799127
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "samples": 48,
+          "percent": 1.3100436681222707
+        },
+        {
+          "name": "DYLD-STUB$$free",
+          "samples": 46,
+          "percent": 1.255458515283843
+        },
+        {
+          "name": "_xzm_xzone_malloc_tiny",
+          "samples": 45,
+          "percent": 1.2281659388646289
+        },
+        {
+          "name": "<alloc::boxed::Box<[mech_core::dimension::DimensionExpr]> as core::clone::Clone>::clone",
+          "samples": 43,
+          "percent": 1.1735807860262009
+        },
+        {
+          "name": "mech_core::schema::shape::evaluate_body_extents",
+          "samples": 42,
+          "percent": 1.1462882096069869
+        },
+        {
+          "name": "__rustc::__rdl_alloc",
+          "samples": 35,
+          "percent": 0.9552401746724891
+        },
+        {
+          "name": "mech_core::memory_contract::type_contract::body_evolution",
+          "samples": 33,
+          "percent": 0.9006550218340611
+        },
+        {
+          "name": "mech_core::memory_contract::type_contract::dimension_evolution",
+          "samples": 33,
+          "percent": 0.9006550218340611
+        },
+        {
+          "name": "mech_core::memory_plan::budget::evaluate_memory_budget",
+          "samples": 33,
+          "percent": 0.9006550218340611
+        },
+        {
+          "name": "<mech_core::schema::SchemaBody as core::cmp::PartialEq>::eq",
+          "samples": 32,
+          "percent": 0.8733624454148472
+        },
+        {
+          "name": "xzm_realloc",
+          "samples": 32,
+          "percent": 0.8733624454148472
+        },
+        {
+          "name": "__rustc::__rust_no_alloc_shim_is_unstable_v2",
+          "samples": 31,
+          "percent": 0.8460698689956332
+        },
+        {
+          "name": "<mech_engine::resident::budget::native_turn_plan_cache::string_projection::NativeProjectionIndexContext>::check",
+          "samples": 26,
+          "percent": 0.7096069868995634
+        },
+        {
+          "name": "xzm_malloc_zone_size",
+          "samples": 26,
+          "percent": 0.7096069868995634
+        }
+      ],
+      "top_inclusive_functions": [
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+          "samples": 3664,
+          "percent": 100.0
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+          "samples": 3664,
+          "percent": 100.0
+        },
+        {
+          "name": "???",
+          "samples": 3662,
+          "percent": 99.94541484716157
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "samples": 3456,
+          "percent": 94.32314410480349
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::canonical_library_call",
+          "samples": 2577,
+          "percent": 70.33296943231441
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>::invoke",
+          "samples": 2561,
+          "percent": 69.896288209607
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+          "samples": 2553,
+          "percent": 69.67794759825327
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+          "samples": 2551,
+          "percent": 69.62336244541484
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+          "samples": 2541,
+          "percent": 69.3504366812227
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+          "samples": 1881,
+          "percent": 51.33733624454148
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+          "samples": 1878,
+          "percent": 51.25545851528384
+        },
+        {
+          "name": "mech_engine::resident::budget::with_payload_admission::<core::result::Result<bool, mech_core::function::resident::ResidentKernelError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped::{closure#8}>",
+          "samples": 1017,
+          "percent": 27.75655021834061
+        },
+        {
+          "name": "mech_engine::resident::numeric::sum_snapshot",
+          "samples": 921,
+          "percent": 25.13646288209607
+        },
+        {
+          "name": "mech_core::memory_plan::derive::plan_call_memory",
+          "samples": 907,
+          "percent": 24.754366812227076
+        },
+        {
+          "name": "mech_engine::resident::numeric::preflight_snapshot_arithmetic_with_input_work",
+          "samples": 830,
+          "percent": 22.652838427947597
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::plan_current",
+          "samples": 731,
+          "percent": 19.950873362445414
+        },
+        {
+          "name": "mech_engine::memory_planner::turn::derive_turn_memory",
+          "samples": 723,
+          "percent": 19.732532751091703
+        },
+        {
+          "name": "<mech_engine::resident::budget::PreparedKernel<()>>::admit",
+          "samples": 668,
+          "percent": 18.231441048034934
+        },
+        {
+          "name": "<mech_engine::resident::budget::KernelCostEstimate>::turn_plan",
+          "samples": 664,
+          "percent": 18.12227074235808
+        },
+        {
+          "name": "mech_core::memory_plan::derive::resolve_current_call_memory",
+          "samples": 611,
+          "percent": 16.675764192139738
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::bind_values",
+          "samples": 514,
+          "percent": 14.028384279475983
+        },
+        {
+          "name": "mech_engine::resident::general::native_collection_calls::bind_current",
+          "samples": 506,
+          "percent": 13.81004366812227
+        },
+        {
+          "name": "mech_engine::memory_planner::turn::apply_observed_turn_demand",
+          "samples": 498,
+          "percent": 13.591703056768559
+        },
+        {
+          "name": "_xzm_free",
+          "samples": 448,
+          "percent": 12.22707423580786
+        },
+        {
+          "name": "core::ptr::drop_in_place::<mech_core::memory_plan::model::CallMemoryPlan>",
+          "samples": 416,
+          "percent": 11.353711790393014
+        },
+        {
+          "name": "mech_core::memory_plan::derive::plan_value_layout",
+          "samples": 341,
+          "percent": 9.306768558951966
+        },
+        {
+          "name": "<deduplicated_symbol>",
+          "samples": 312,
+          "percent": 8.51528384279476
+        },
+        {
+          "name": "<mech_core::schema::Schema>::resolved_type_memory_contract",
+          "samples": 267,
+          "percent": 7.287117903930131
+        },
+        {
+          "name": "core::ptr::drop_in_place::<alloc::boxed::Box<[mech_core::memory_plan::model::PortMemoryPlan]>>",
+          "samples": 243,
+          "percent": 6.632096069868996
+        },
+        {
+          "name": "core::ptr::drop_in_place::<mech_core::type_system::resolved_value::ResolvedValueDescriptor>",
+          "samples": 243,
+          "percent": 6.632096069868996
+        }
+      ],
+      "top_leaf_stacks": [
+        {
+          "samples": 64,
+          "percent": 1.7467248908296944,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper"
+          ]
+        },
+        {
+          "samples": 49,
+          "percent": 1.3373362445414847,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit"
+          ]
+        },
+        {
+          "samples": 27,
+          "percent": 0.7368995633187773,
+          "stack": [
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::plan_current",
+            "mech_engine::memory_planner::turn::derive_turn_memory",
+            "_platform_memmove"
+          ]
+        },
+        {
+          "samples": 20,
+          "percent": 0.5458515283842795,
+          "stack": [
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "mech_engine::resident::budget::with_payload_admission::<core::result::Result<bool, mech_core::function::resident::ResidentKernelError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped::{closure#8}>",
+            "mech_engine::resident::numeric::sum_snapshot",
+            "mech_engine::resident::numeric::preflight_snapshot_arithmetic_with_input_work",
+            "<alloc::sync::Arc<mech_engine::memory_planner::turn::TurnMemoryPlan>>::drop_slow",
+            "core::ptr::drop_in_place::<mech_engine::memory_planner::turn::TurnMemoryPlan>",
+            "core::ptr::drop_in_place::<mech_core::memory_plan::model::CallMemoryPlan>",
+            "_xzm_free"
+          ]
+        },
+        {
+          "samples": 18,
+          "percent": 0.4912663755458515,
+          "stack": [
+            "mech_engine::resident::budget::with_payload_admission::<core::result::Result<bool, mech_core::function::resident::ResidentKernelError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped::{closure#8}>",
+            "mech_engine::resident::numeric::sum_snapshot",
+            "mech_engine::resident::numeric::preflight_snapshot_arithmetic_with_input_work",
+            "<mech_engine::resident::budget::PreparedKernel<()>>::admit",
+            "<mech_engine::resident::budget::KernelCostEstimate>::turn_plan",
+            "mech_engine::memory_planner::turn::apply_observed_turn_demand",
+            "mech_core::memory_plan::derive::resolve_current_call_memory",
+            "mech_core::memory_plan::derive::plan_call_memory"
+          ]
+        },
+        {
+          "samples": 18,
+          "percent": 0.4912663755458515,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepared_library_call",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::scalar_matrix_element",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::matrix_element_word",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<u64, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::matrix_element_word::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<u64, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>"
+          ]
+        },
+        {
+          "samples": 17,
+          "percent": 0.46397379912663755,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???"
+          ]
+        },
+        {
+          "samples": 16,
+          "percent": 0.4366812227074236,
+          "stack": [
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "mech_engine::resident::budget::with_payload_admission::<core::result::Result<bool, mech_core::function::resident::ResidentKernelError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped::{closure#8}>",
+            "mech_engine::resident::numeric::sum_snapshot",
+            "mech_engine::resident::numeric::preflight_snapshot_arithmetic_with_input_work",
+            "<mech_engine::resident::budget::PreparedKernel<()>>::admit",
+            "<mech_engine::resident::budget::KernelCostEstimate>::turn_plan",
+            "mech_engine::memory_planner::turn::apply_observed_turn_demand",
+            "mech_engine::memory_planner::turn::refresh_turn_allocations"
+          ]
+        },
+        {
+          "samples": 16,
+          "percent": 0.4366812227074236,
+          "stack": [
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::canonical_library_call",
+            "<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>::invoke",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::bind_values",
+            "mech_engine::resident::general::native_collection_calls::bind_current",
+            "mech_core::memory_plan::derive::plan_call_memory"
+          ]
+        },
+        {
+          "samples": 16,
+          "percent": 0.4366812227074236,
+          "stack": [
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::plan_current",
+            "mech_engine::memory_planner::turn::derive_turn_memory",
+            "mech_core::memory_plan::derive::resolve_current_call_memory",
+            "mech_core::memory_plan::derive::plan_call_memory"
+          ]
+        },
+        {
+          "samples": 16,
+          "percent": 0.4366812227074236,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper::{closure#5}",
+            "<mech_gpu::native_artifact::program::runtime::collections::State>::prepare_numeric_map",
+            "_platform_memmove"
+          ]
+        },
+        {
+          "samples": 15,
+          "percent": 0.4093886462882096,
+          "stack": [
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "mech_engine::resident::budget::with_payload_admission::<core::result::Result<bool, mech_core::function::resident::ResidentKernelError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped::{closure#8}>",
+            "mech_engine::resident::numeric::sum_snapshot",
+            "mech_engine::resident::numeric::preflight_snapshot_arithmetic_with_input_work",
+            "<mech_engine::resident::budget::PreparedKernel<()>>::admit",
+            "<mech_engine::resident::budget::KernelCostEstimate>::turn_plan",
+            "mech_engine::memory_planner::turn::apply_observed_turn_demand",
+            "_platform_memmove"
+          ]
+        },
+        {
+          "samples": 15,
+          "percent": 0.4093886462882096,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+            "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry"
+          ]
+        },
+        {
+          "samples": 14,
+          "percent": 0.38209606986899564,
+          "stack": [
+            "mech_engine::resident::budget::with_payload_admission::<core::result::Result<bool, mech_core::function::resident::ResidentKernelError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped::{closure#8}>",
+            "mech_engine::resident::numeric::sum_snapshot",
+            "mech_engine::resident::numeric::preflight_snapshot_arithmetic_with_input_work",
+            "<mech_engine::resident::budget::PreparedKernel<()>>::admit",
+            "<mech_engine::resident::budget::KernelCostEstimate>::turn_plan",
+            "mech_engine::memory_planner::turn::apply_observed_turn_demand",
+            "core::ptr::drop_in_place::<mech_core::memory_plan::model::CallMemoryPlan>",
+            "_xzm_free"
+          ]
+        },
+        {
+          "samples": 14,
+          "percent": 0.38209606986899564,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper",
+            "<mech_gpu::native_artifact::program::runtime::collections::State>::helper"
+          ]
+        },
+        {
+          "samples": 14,
+          "percent": 0.38209606986899564,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper::{closure#5}",
+            "<mech_gpu::native_artifact::program::runtime::collections::State>::prepare_numeric_map"
+          ]
+        },
+        {
+          "samples": 14,
+          "percent": 0.38209606986899564,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::canonical_library_call",
+            "<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>::invoke",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped"
+          ]
+        },
+        {
+          "samples": 13,
+          "percent": 0.3548034934497817,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepared_library_call"
+          ]
+        },
+        {
+          "samples": 12,
+          "percent": 0.32751091703056767,
+          "stack": [
+            "<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>::invoke",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::bind_values",
+            "mech_engine::resident::general::native_collection_calls::bind_current",
+            "mech_core::memory_plan::derive::plan_call_memory",
+            "mech_core::memory_contract::operation_requirement::check_port_storage_compatibility"
+          ]
+        },
+        {
+          "samples": 12,
+          "percent": 0.32751091703056767,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::action_required"
+          ]
+        }
+      ],
+      "sample_sha256": "fd3982bfc1e3d4e122a9dec3bc9b7588859279344850dbaa46558b1624ce53df",
+      "raw_sample": "profiles/round-05-guarded-tagged-numeric/cholesky.sample.txt.gz",
+      "compressed_sample_sha256": "ee9da24e2204a8c9d1f2667aa3221923cc08ece81499d523bd5a090b88430d8d",
+      "profiled_case_fraction_of_optimization_sum": 0.10766517798152395
+    },
+    "nussinov": {
+      "all_thread_samples": 4604,
+      "execution_samples": 3564,
+      "excluded_samples": 1040,
+      "action_categories": [
+        {
+          "name": "Private frame transport",
+          "samples": 1212,
+          "percent": 34.00673400673401
+        },
+        {
+          "name": "Source visits and admission",
+          "samples": 1090,
+          "percent": 30.58361391694725
+        },
+        {
+          "name": "Other helper dispatch",
+          "samples": 685,
+          "percent": 19.219977553310887
+        },
+        {
+          "name": "Typed matrix scalar reads",
+          "samples": 286,
+          "percent": 8.024691358024691
+        },
+        {
+          "name": "Loop-local retirement",
+          "samples": 115,
+          "percent": 3.2267115600448935
+        },
+        {
+          "name": "Other selected library dispatch",
+          "samples": 103,
+          "percent": 2.8900112233445565
+        },
+        {
+          "name": "Other execution and generated code",
+          "samples": 73,
+          "percent": 2.048260381593715
+        }
+      ],
+      "self_time_mechanisms": [
+        {
+          "name": "Other runtime self time",
+          "samples": 2413,
+          "percent": 67.70482603815937
+        },
+        {
+          "name": "Resource bookkeeping and locks",
+          "samples": 750,
+          "percent": 21.043771043771045
+        },
+        {
+          "name": "Memory planning, schema and snapshot validation",
+          "samples": 205,
+          "percent": 5.751964085297419
+        },
+        {
+          "name": "Byte copy and zeroing",
+          "samples": 91,
+          "percent": 2.55331088664422
+        },
+        {
+          "name": "Generated code, unresolved symbol",
+          "samples": 72,
+          "percent": 2.0202020202020203
+        },
+        {
+          "name": "Allocation and deallocation",
+          "samples": 33,
+          "percent": 0.9259259259259259
+        }
+      ],
+      "top_self_functions": [
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+          "samples": 287,
+          "percent": 8.052749719416386
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "samples": 244,
+          "percent": 6.846240179573513
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "samples": 204,
+          "percent": 5.723905723905724
+        },
+        {
+          "name": "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry",
+          "samples": 170,
+          "percent": 4.7699214365881035
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action",
+          "samples": 104,
+          "percent": 2.9180695847362514
+        },
+        {
+          "name": "<mech_engine::resident::budget::native_turn_plan_cache::string_projection::NativeProjectionIndexContext>::check",
+          "samples": 85,
+          "percent": 2.3849607182940518
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::action_required",
+          "samples": 81,
+          "percent": 2.272727272727273
+        },
+        {
+          "name": "<core::option::Option<&[mech_engine::native_artifact::buffer_frames::NativeBufferFrameField]>>::map_or::<usize, <mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::field_count::{closure#0}::{closure#0}>",
+          "samples": 77,
+          "percent": 2.1604938271604937
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::check_copy",
+          "samples": 77,
+          "percent": 2.1604938271604937
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::retire_tail_locals",
+          "samples": 75,
+          "percent": 2.1043771043771042
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::observe",
+          "samples": 74,
+          "percent": 2.0763187429854097
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<u64, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::matrix_element_word::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<u64, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+          "samples": 73,
+          "percent": 2.048260381593715
+        },
+        {
+          "name": "???",
+          "samples": 72,
+          "percent": 2.0202020202020203
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::apply_retirement",
+          "samples": 70,
+          "percent": 1.9640852974186307
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge::{closure#0}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "samples": 66,
+          "percent": 1.8518518518518519
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::copy_fields::<true>",
+          "samples": 63,
+          "percent": 1.7676767676767677
+        },
+        {
+          "name": "_platform_memset",
+          "samples": 63,
+          "percent": 1.7676767676767677
+        },
+        {
+          "name": "<mech_engine::resident::budget::CONTROL_WORK_CONTEXT::{K#0}::{closure#0} as core::ops::function::FnOnce<(core::option::Option<&mut core::option::Option<mech_engine::resident::budget::ControlWorkContext>>,)>>::call_once",
+          "samples": 55,
+          "percent": 1.5432098765432098
+        },
+        {
+          "name": "<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit",
+          "samples": 55,
+          "percent": 1.5432098765432098
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::needs_move",
+          "samples": 51,
+          "percent": 1.430976430976431
+        },
+        {
+          "name": "core::ptr::drop_in_place::<mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>",
+          "samples": 51,
+          "percent": 1.430976430976431
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::admission_predecessor",
+          "samples": 49,
+          "percent": 1.3748597081930416
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::admit",
+          "samples": 49,
+          "percent": 1.3748597081930416
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::current_leaf",
+          "samples": 42,
+          "percent": 1.1784511784511784
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::retire",
+          "samples": 41,
+          "percent": 1.1503928170594837
+        }
+      ],
+      "top_inclusive_functions": [
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+          "samples": 3564,
+          "percent": 100.0
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+          "samples": 3562,
+          "percent": 99.94388327721661
+        },
+        {
+          "name": "???",
+          "samples": 3554,
+          "percent": 99.71941638608305
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "samples": 2510,
+          "percent": 70.42648709315375
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+          "samples": 1020,
+          "percent": 28.61952861952862
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action",
+          "samples": 1013,
+          "percent": 28.423120089786757
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::admit",
+          "samples": 939,
+          "percent": 26.346801346801346
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+          "samples": 933,
+          "percent": 26.17845117845118
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepared_library_call",
+          "samples": 387,
+          "percent": 10.858585858585858
+        },
+        {
+          "name": "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry",
+          "samples": 360,
+          "percent": 10.1010101010101
+        },
+        {
+          "name": "<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit",
+          "samples": 343,
+          "percent": 9.62401795735129
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "samples": 303,
+          "percent": 8.501683501683502
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::scalar_matrix_element",
+          "samples": 285,
+          "percent": 7.9966329966329965
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepare_numeric_write",
+          "samples": 250,
+          "percent": 7.014590347923681
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::matrix_element_word",
+          "samples": 247,
+          "percent": 6.930415263748597
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<u64, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::matrix_element_word::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<u64, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+          "samples": 243,
+          "percent": 6.818181818181818
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::retire_tail_locals",
+          "samples": 225,
+          "percent": 6.313131313131313
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::copy::<true>",
+          "samples": 221,
+          "percent": 6.200897867564534
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::admit_buffer_frame_composition::<<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action::{closure#1}>",
+          "samples": 197,
+          "percent": 5.52749719416386
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::scalar_matrix_replace_private",
+          "samples": 189,
+          "percent": 5.303030303030303
+        },
+        {
+          "name": "<deduplicated_symbol>",
+          "samples": 182,
+          "percent": 5.10662177328844
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<(mech_core::snapshot::validation::private_unsigned_matrix::PrivateNumericMatrix, bool), mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::matrix_replace_with<mech_core::snapshot::validation::private_unsigned_matrix::PrivateNumericMatrix, false, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::scalar_matrix_replace_private::{closure#0}>::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<(mech_core::snapshot::validation::private_unsigned_matrix::PrivateNumericMatrix, bool), mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+          "samples": 181,
+          "percent": 5.078563411896745
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::observe",
+          "samples": 137,
+          "percent": 3.8439955106621775
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::apply_retirement",
+          "samples": 131,
+          "percent": 3.675645342312009
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::action_required",
+          "samples": 119,
+          "percent": 3.3389450056116723
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::begin_closed_region",
+          "samples": 107,
+          "percent": 3.002244668911336
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::enum_pack",
+          "samples": 104,
+          "percent": 2.9180695847362514
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::check_copy",
+          "samples": 103,
+          "percent": 2.8900112233445565
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::end_closed_tail",
+          "samples": 90,
+          "percent": 2.525252525252525
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::retire",
+          "samples": 89,
+          "percent": 2.4971941638608306
+        }
+      ],
+      "top_leaf_stacks": [
+        {
+          "samples": 231,
+          "percent": 6.481481481481482,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit"
+          ]
+        },
+        {
+          "samples": 190,
+          "percent": 5.331088664421998,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper"
+          ]
+        },
+        {
+          "samples": 134,
+          "percent": 3.759820426487093,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+            "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry"
+          ]
+        },
+        {
+          "samples": 98,
+          "percent": 2.749719416386083,
+          "stack": [
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+            "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry",
+            "<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>"
+          ]
+        },
+        {
+          "samples": 94,
+          "percent": 2.6374859708193044,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action"
+          ]
+        },
+        {
+          "samples": 73,
+          "percent": 2.048260381593715,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::retire_tail_locals"
+          ]
+        },
+        {
+          "samples": 67,
+          "percent": 1.8799102132435466,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepared_library_call",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::scalar_matrix_element",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::matrix_element_word",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<u64, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::matrix_element_word::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<u64, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>"
+          ]
+        },
+        {
+          "samples": 66,
+          "percent": 1.8518518518518519,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::observe"
+          ]
+        },
+        {
+          "samples": 62,
+          "percent": 1.739618406285073,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::action_required"
+          ]
+        },
+        {
+          "samples": 49,
+          "percent": 1.3748597081930416,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit"
+          ]
+        },
+        {
+          "samples": 49,
+          "percent": 1.3748597081930416,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::retire_tail_locals",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::apply_retirement"
+          ]
+        },
+        {
+          "samples": 42,
+          "percent": 1.1784511784511784,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???"
+          ]
+        },
+        {
+          "samples": 41,
+          "percent": 1.1503928170594837,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::retire_tail_locals",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::apply_retirement",
+            "_platform_memset"
+          ]
+        },
+        {
+          "samples": 40,
+          "percent": 1.122334455667789,
+          "stack": [
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::copy::<true>",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::check_copy",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::check_copy",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::check_copy"
+          ]
+        },
+        {
+          "samples": 38,
+          "percent": 1.0662177328843996,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::action_required",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::needs_move"
+          ]
+        },
+        {
+          "samples": 38,
+          "percent": 1.0662177328843996,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepared_library_call"
+          ]
+        },
+        {
+          "samples": 36,
+          "percent": 1.0101010101010102,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepare_numeric_write",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::scalar_matrix_replace_private",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<(mech_core::snapshot::validation::private_unsigned_matrix::PrivateNumericMatrix, bool), mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::matrix_replace_with<mech_core::snapshot::validation::private_unsigned_matrix::PrivateNumericMatrix, false, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::scalar_matrix_replace_private::{closure#0}>::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<(mech_core::snapshot::validation::private_unsigned_matrix::PrivateNumericMatrix, bool), mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>"
+          ]
+        },
+        {
+          "samples": 35,
+          "percent": 0.9820426487093153,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit"
+          ]
+        },
+        {
+          "samples": 32,
+          "percent": 0.8978675645342312,
+          "stack": [
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::copy::<true>",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::copy_fields::<true>",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::copy_fields::<true>",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::copy_fields::<true>"
+          ]
+        },
+        {
+          "samples": 30,
+          "percent": 0.8417508417508418,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "???"
+          ]
+        }
+      ],
+      "sample_sha256": "745988348e3db6e88e83068320394e0abd94e9b5b7cc03ea10f402900d89123d",
+      "raw_sample": "profiles/round-05-guarded-tagged-numeric/nussinov.sample.txt.gz",
+      "compressed_sample_sha256": "d6cacec1238ddf688d85b11f2df3f0164c69c9e60831a7bbca84b0f1608bc3f9",
+      "profiled_case_fraction_of_optimization_sum": 0.0850604051969979
+    },
+    "durbin": {
+      "all_thread_samples": 4603,
+      "execution_samples": 1263,
+      "excluded_samples": 3340,
+      "action_categories": [
+        {
+          "name": "Canonical library calls",
+          "samples": 990,
+          "percent": 78.38479809976248
+        },
+        {
+          "name": "Other helper dispatch",
+          "samples": 67,
+          "percent": 5.304829770387965
+        },
+        {
+          "name": "Private frame transport",
+          "samples": 60,
+          "percent": 4.750593824228028
+        },
+        {
+          "name": "Comprehension collection bookkeeping",
+          "samples": 54,
+          "percent": 4.275534441805226
+        },
+        {
+          "name": "Source visits and admission",
+          "samples": 54,
+          "percent": 4.275534441805226
+        },
+        {
+          "name": "Typed matrix scalar reads",
+          "samples": 13,
+          "percent": 1.0292953285827395
+        },
+        {
+          "name": "Loop-local retirement",
+          "samples": 11,
+          "percent": 0.8709422011084719
+        },
+        {
+          "name": "Other selected library dispatch",
+          "samples": 9,
+          "percent": 0.7125890736342043
+        },
+        {
+          "name": "Other execution and generated code",
+          "samples": 5,
+          "percent": 0.39588281868566905
+        }
+      ],
+      "self_time_mechanisms": [
+        {
+          "name": "Other runtime self time",
+          "samples": 376,
+          "percent": 29.77038796516231
+        },
+        {
+          "name": "Memory planning, schema and snapshot validation",
+          "samples": 367,
+          "percent": 29.05779889152811
+        },
+        {
+          "name": "Allocation and deallocation",
+          "samples": 312,
+          "percent": 24.70308788598575
+        },
+        {
+          "name": "Byte copy and zeroing",
+          "samples": 125,
+          "percent": 9.897070467141726
+        },
+        {
+          "name": "Resource bookkeeping and locks",
+          "samples": 81,
+          "percent": 6.4133016627078385
+        },
+        {
+          "name": "Generated code, unresolved symbol",
+          "samples": 2,
+          "percent": 0.1583531274742676
+        }
+      ],
+      "top_self_functions": [
+        {
+          "name": "_xzm_free",
+          "samples": 103,
+          "percent": 8.155186064924782
+        },
+        {
+          "name": "_platform_memmove",
+          "samples": 61,
+          "percent": 4.829770387965162
+        },
+        {
+          "name": "<deduplicated_symbol>",
+          "samples": 52,
+          "percent": 4.117181314330958
+        },
+        {
+          "name": "_platform_memset",
+          "samples": 51,
+          "percent": 4.038004750593824
+        },
+        {
+          "name": "_xzm_xzone_malloc",
+          "samples": 51,
+          "percent": 4.038004750593824
+        },
+        {
+          "name": "_free",
+          "samples": 44,
+          "percent": 3.4837688044338875
+        },
+        {
+          "name": "_malloc_zone_malloc",
+          "samples": 39,
+          "percent": 3.0878859857482186
+        },
+        {
+          "name": "mech_core::memory_plan::budget::evaluate_memory_budget",
+          "samples": 23,
+          "percent": 1.8210609659540775
+        },
+        {
+          "name": "mech_core::schema::shape::evaluate_dimension",
+          "samples": 21,
+          "percent": 1.66270783847981
+        },
+        {
+          "name": "mech_core::memory_plan::derive::plan_call_memory",
+          "samples": 20,
+          "percent": 1.5835312747426762
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "samples": 19,
+          "percent": 1.5043547110055424
+        },
+        {
+          "name": "mech_core::schema::shape::evaluate_body_extents",
+          "samples": 15,
+          "percent": 1.187648456057007
+        },
+        {
+          "name": "mech_engine::memory_planner::turn::refresh_turn_allocations",
+          "samples": 14,
+          "percent": 1.1084718923198733
+        },
+        {
+          "name": "<alloc::boxed::Box<[mech_core::dimension::DimensionExpr]> as core::clone::Clone>::clone",
+          "samples": 13,
+          "percent": 1.0292953285827395
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+          "samples": 12,
+          "percent": 0.9501187648456056
+        },
+        {
+          "name": "__rustc::__rdl_alloc",
+          "samples": 12,
+          "percent": 0.9501187648456056
+        },
+        {
+          "name": "<alloc::vec::Vec<mech_core::dimension::DimensionExpr>>::into_boxed_slice",
+          "samples": 11,
+          "percent": 0.8709422011084719
+        },
+        {
+          "name": "<mech_core::kind_expr::KindExpr as core::clone::Clone>::clone",
+          "samples": 11,
+          "percent": 0.8709422011084719
+        },
+        {
+          "name": "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry",
+          "samples": 11,
+          "percent": 0.8709422011084719
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::collections::State>::helper",
+          "samples": 11,
+          "percent": 0.8709422011084719
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action",
+          "samples": 11,
+          "percent": 0.8709422011084719
+        },
+        {
+          "name": "DYLD-STUB$$free",
+          "samples": 11,
+          "percent": 0.8709422011084719
+        },
+        {
+          "name": "_xzm_xzone_malloc_tiny",
+          "samples": 11,
+          "percent": 0.8709422011084719
+        },
+        {
+          "name": "mech_engine::memory_planner::program::place_allocations",
+          "samples": 11,
+          "percent": 0.8709422011084719
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::charge_compute_with_limit::{closure#2}, core::result::Result<(), mech_core::function::resident::ResidentKernelError>>",
+          "samples": 10,
+          "percent": 0.7917656373713381
+        }
+      ],
+      "top_inclusive_functions": [
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+          "samples": 1263,
+          "percent": 100.0
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+          "samples": 1261,
+          "percent": 99.84164687252573
+        },
+        {
+          "name": "???",
+          "samples": 1259,
+          "percent": 99.68329374505146
+        },
+        {
+          "name": "mech_gpu::native_artifact::program::runtime::hooks::helper",
+          "samples": 1212,
+          "percent": 95.96199524940617
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::canonical_library_call",
+          "samples": 990,
+          "percent": 78.38479809976248
+        },
+        {
+          "name": "<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>::invoke",
+          "samples": 986,
+          "percent": 78.06809184481394
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+          "samples": 984,
+          "percent": 77.90973871733966
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+          "samples": 983,
+          "percent": 77.83056215360253
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+          "samples": 976,
+          "percent": 77.2763262074426
+        },
+        {
+          "name": "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+          "samples": 727,
+          "percent": 57.56136183689628
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+          "samples": 724,
+          "percent": 57.323832145684875
+        },
+        {
+          "name": "mech_engine::resident::budget::with_payload_admission::<core::result::Result<bool, mech_core::function::resident::ResidentKernelError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped::{closure#8}>",
+          "samples": 429,
+          "percent": 33.966745843230406
+        },
+        {
+          "name": "mech_core::memory_plan::derive::plan_call_memory",
+          "samples": 319,
+          "percent": 25.257323832145683
+        },
+        {
+          "name": "<mech_engine::resident::budget::PreparedKernel<()>>::admit",
+          "samples": 263,
+          "percent": 20.823436262866192
+        },
+        {
+          "name": "<mech_engine::resident::budget::KernelCostEstimate>::turn_plan",
+          "samples": 262,
+          "percent": 20.744259699129056
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::plan_current",
+          "samples": 251,
+          "percent": 19.873317498020587
+        },
+        {
+          "name": "mech_engine::memory_planner::turn::derive_turn_memory",
+          "samples": 249,
+          "percent": 19.71496437054632
+        },
+        {
+          "name": "mech_core::memory_plan::derive::resolve_current_call_memory",
+          "samples": 210,
+          "percent": 16.6270783847981
+        },
+        {
+          "name": "mech_engine::resident::numeric::transpose_snapshot",
+          "samples": 210,
+          "percent": 16.6270783847981
+        },
+        {
+          "name": "mech_engine::memory_planner::turn::apply_observed_turn_demand",
+          "samples": 202,
+          "percent": 15.99366587490103
+        },
+        {
+          "name": "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::bind_values",
+          "samples": 184,
+          "percent": 14.56848772763262
+        },
+        {
+          "name": "mech_engine::resident::general::native_collection_calls::bind_current",
+          "samples": 181,
+          "percent": 14.330958036421219
+        },
+        {
+          "name": "mech_engine::resident::numeric::sum_snapshot",
+          "samples": 175,
+          "percent": 13.855898653998416
+        },
+        {
+          "name": "_xzm_free",
+          "samples": 162,
+          "percent": 12.826603325415677
+        },
+        {
+          "name": "mech_engine::resident::numeric::preflight_snapshot_arithmetic_with_input_work",
+          "samples": 158,
+          "percent": 12.509897070467142
+        },
+        {
+          "name": "core::ptr::drop_in_place::<mech_core::memory_plan::model::CallMemoryPlan>",
+          "samples": 151,
+          "percent": 11.955661124307206
+        },
+        {
+          "name": "mech_core::memory_plan::derive::plan_value_layout",
+          "samples": 100,
+          "percent": 7.917656373713381
+        },
+        {
+          "name": "<mech_core::type_system::resolved_value::ResolvedValueDescriptor as core::clone::Clone>::clone",
+          "samples": 99,
+          "percent": 7.838479809976247
+        },
+        {
+          "name": "<mech_core::schema::Schema>::resolved_type_memory_contract",
+          "samples": 90,
+          "percent": 7.1258907363420425
+        },
+        {
+          "name": "core::ptr::drop_in_place::<mech_core::type_system::resolved_value::ResolvedValueDescriptor>",
+          "samples": 84,
+          "percent": 6.65083135391924
+        }
+      ],
+      "top_leaf_stacks": [
+        {
+          "samples": 18,
+          "percent": 1.4251781472684086,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper"
+          ]
+        },
+        {
+          "samples": 11,
+          "percent": 0.8709422011084719,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit",
+            "<mech_gpu::native_artifact::iteration_runtime::ControlView<mech_gpu::native_artifact::program::image::NativeProgramDescriptor>>::visit_from_entry"
+          ]
+        },
+        {
+          "samples": 11,
+          "percent": 0.8709422011084719,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action"
+          ]
+        },
+        {
+          "samples": 11,
+          "percent": 0.8709422011084719,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::collection_helper",
+            "<mech_gpu::native_artifact::program::runtime::collections::State>::helper"
+          ]
+        },
+        {
+          "samples": 9,
+          "percent": 0.7125890736342043,
+          "stack": [
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::canonical_library_call",
+            "<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>::invoke",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "core::ptr::drop_in_place::<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>",
+            "core::ptr::drop_in_place::<mech_core::memory_plan::model::CallMemoryPlan>",
+            "_xzm_free"
+          ]
+        },
+        {
+          "samples": 9,
+          "percent": 0.7125890736342043,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit",
+            "mech_gpu::native_artifact::program::runtime::hooks::admit_current",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::visit"
+          ]
+        },
+        {
+          "samples": 8,
+          "percent": 0.6334125098970704,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::numeric_map_helper::{closure#5}",
+            "<mech_gpu::native_artifact::program::runtime::collections::State>::prepare_numeric_map"
+          ]
+        },
+        {
+          "samples": 7,
+          "percent": 0.5542359461599367,
+          "stack": [
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::canonical_library_call",
+            "<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>::invoke",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::bind_values",
+            "mech_engine::resident::general::native_collection_calls::bind_current",
+            "mech_core::memory_plan::derive::plan_call_memory"
+          ]
+        },
+        {
+          "samples": 7,
+          "percent": 0.5542359461599367,
+          "stack": [
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "mech_engine::resident::budget::with_payload_admission::<core::result::Result<bool, mech_core::function::resident::ResidentKernelError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped::{closure#8}>",
+            "mech_engine::resident::numeric::transpose_snapshot",
+            "<mech_engine::resident::budget::PreparedKernel<()>>::admit",
+            "<mech_engine::resident::budget::KernelCostEstimate>::turn_plan",
+            "mech_engine::memory_planner::turn::apply_observed_turn_demand",
+            "mech_engine::memory_planner::turn::refresh_turn_allocations"
+          ]
+        },
+        {
+          "samples": 6,
+          "percent": 0.4750593824228028,
+          "stack": [
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::canonical_library_call",
+            "<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>::invoke",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::bind_values",
+            "mech_engine::resident::general::native_collection_calls::bind_current",
+            "_platform_memmove"
+          ]
+        },
+        {
+          "samples": 6,
+          "percent": 0.4750593824228028,
+          "stack": [
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "mech_engine::resident::budget::with_payload_admission::<core::result::Result<bool, mech_core::function::resident::ResidentKernelError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped::{closure#8}>",
+            "mech_engine::resident::numeric::transpose_snapshot",
+            "<mech_engine::resident::budget::PreparedKernel<()>>::admit",
+            "<mech_engine::resident::budget::KernelCostEstimate>::turn_plan",
+            "mech_engine::memory_planner::turn::apply_observed_turn_demand",
+            "_xzm_free"
+          ]
+        },
+        {
+          "samples": 6,
+          "percent": 0.4750593824228028,
+          "stack": [
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "mech_engine::resident::budget::with_payload_admission::<core::result::Result<bool, mech_core::function::resident::ResidentKernelError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped::{closure#8}>",
+            "mech_engine::resident::numeric::transpose_snapshot",
+            "<mech_engine::resident::budget::PreparedKernel<()>>::admit",
+            "<mech_engine::resident::budget::KernelCostEstimate>::turn_plan",
+            "mech_engine::memory_planner::turn::apply_observed_turn_demand",
+            "mech_engine::memory_planner::program::place_allocations"
+          ]
+        },
+        {
+          "samples": 6,
+          "percent": 0.4750593824228028,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::buffer_frame_action",
+            "<mech_gpu::native_artifact::program::runtime::buffer_frames::BufferFrames>::observe"
+          ]
+        },
+        {
+          "samples": 6,
+          "percent": 0.4750593824228028,
+          "stack": [
+            "mech_gpu::native_artifact::program::runtime::execute::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "<mech_gpu::native_artifact::program::runtime::session::Prepared>::run::<<mech_gpu::native_artifact::program::compiler::JitProgramArtifact>::evaluate_into::{closure#0}>",
+            "???",
+            "mech_gpu::native_artifact::program::runtime::hooks::helper",
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::prepared_library_call"
+          ]
+        },
+        {
+          "samples": 5,
+          "percent": 0.39588281868566905,
+          "stack": [
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::plan_current",
+            "mech_engine::memory_planner::turn::derive_turn_memory",
+            "<alloc::vec::Vec<mech_core::memory_plan::model::AllocationPlan> as alloc::vec::spec_from_iter_nested::SpecFromIterNested<mech_core::memory_plan::model::AllocationPlan, core::iter::adapters::map::Map<core::iter::adapters::filter::Filter<core::slice::iter::Iter<mech_core::memory_plan::model::AllocationPlan>, mech_engine::memory_planner::turn::derive_turn_memory::{closure#10}>, mech_engine::memory_planner::turn::derive_turn_memory::{closure#11}>>>::from_iter"
+          ]
+        },
+        {
+          "samples": 5,
+          "percent": 0.39588281868566905,
+          "stack": [
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "mech_engine::resident::budget::with_payload_admission::<core::result::Result<bool, mech_core::function::resident::ResidentKernelError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped::{closure#8}>",
+            "<std::thread::local::LocalKey<std::sync::poison::mutex::Mutex<core::option::Option<alloc::sync::Arc<mech_engine::memory_planner::turn::TurnMemoryPlan>>>>>::with::<mech_engine::resident::budget::with_active_turn_plan<(), <mech_engine::resident::budget::ActiveTurnPlanGuard as core::ops::drop::Drop>::drop::{closure#0}>::{closure#0}, ()>",
+            "<alloc::sync::Arc<mech_engine::memory_planner::turn::TurnMemoryPlan>>::drop_slow",
+            "core::ptr::drop_in_place::<mech_engine::memory_planner::turn::TurnMemoryPlan>",
+            "_xzm_free"
+          ]
+        },
+        {
+          "samples": 5,
+          "percent": 0.39588281868566905,
+          "stack": [
+            "<mech_gpu::native_artifact::program::runtime::invocation::Invocation>::canonical_library_call",
+            "<mech_gpu::native_artifact::program::runtime::session::CallCacheLane>::invoke",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "_platform_memmove"
+          ]
+        },
+        {
+          "samples": 5,
+          "percent": 0.39588281868566905,
+          "stack": [
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_current_cached::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::prepared::NativePreparedLibraryCall>::invoke_validated_current",
+            "<std::thread::local::LocalKey<mech_engine::resident::budget::ControlWorkContext>>::with::<<mech_engine::resident::budget::NativeLibraryWorkBudget>::with_call_limits<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke::{closure#0}>::{closure#0}, core::result::Result<core::result::Result<bool, mech_engine::resident::general::native_collection_calls::invocation::NativeCollectionInvocationError>, mech_core::function::resident::ResidentKernelError>>",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::plan_current",
+            "mech_engine::memory_planner::turn::derive_turn_memory",
+            "mech_core::memory_plan::derive::resolve_current_call_memory",
+            "mech_core::memory_plan::derive::plan_call_memory"
+          ]
+        },
+        {
+          "samples": 4,
+          "percent": 0.3167062549485352,
+          "stack": [
+            "<alloc::sync::Arc<mech_engine::memory_planner::turn::TurnMemoryPlan>>::drop_slow",
+            "core::ptr::drop_in_place::<mech_engine::memory_planner::turn::TurnMemoryPlan>",
+            "core::ptr::drop_in_place::<mech_core::memory_plan::model::CallMemoryPlan>",
+            "core::ptr::drop_in_place::<alloc::boxed::Box<[mech_core::memory_plan::model::PortMemoryPlan]>>",
+            "core::ptr::drop_in_place::<mech_core::type_system::resolved_value::ResolvedValueDescriptor>",
+            "core::ptr::drop_in_place::<mech_core::type_system::resolved::ResolvedType>",
+            "_xzm_free",
+            "_platform_memset"
+          ]
+        },
+        {
+          "samples": 4,
+          "percent": 0.3167062549485352,
+          "stack": [
+            "<mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped",
+            "mech_engine::resident::budget::with_payload_admission::<core::result::Result<bool, mech_core::function::resident::ResidentKernelError>, <mech_engine::resident::general::native_collection_calls::NativeCollectionCall>::invoke_scoped::{closure#8}>",
+            "mech_engine::resident::numeric::sum_snapshot",
+            "mech_engine::resident::numeric::preflight_snapshot_arithmetic_with_input_work",
+            "<alloc::sync::Arc<mech_engine::memory_planner::turn::TurnMemoryPlan>>::drop_slow",
+            "core::ptr::drop_in_place::<mech_engine::memory_planner::turn::TurnMemoryPlan>",
+            "core::ptr::drop_in_place::<mech_core::memory_plan::model::CallMemoryPlan>",
+            "_xzm_free"
+          ]
+        }
+      ],
+      "sample_sha256": "e4cdac2b31273d462dfe3ff0dbe58abbbc32f625ee31723c3755883b1545fb38",
+      "raw_sample": "profiles/round-05-guarded-tagged-numeric/durbin.sample.txt.gz",
+      "compressed_sample_sha256": "fee43fbdbd9a68c0b22f7a9521d191be7b727e14031bb7bec46dd1589ec5cf1c",
+      "profiled_case_fraction_of_optimization_sum": 0.010776333561067105
+    }
+  },
+  "weighted_profiled_action_categories": [
+    {
+      "name": "Canonical library calls",
+      "fraction_of_profiled_time": 0.4554714199234504,
+      "estimated_seconds_in_training_sum": 0.06139453036299554
+    },
+    {
+      "name": "Private frame transport",
+      "fraction_of_profiled_time": 0.17344774247214048,
+      "estimated_seconds_in_training_sum": 0.0233796067673984
+    },
+    {
+      "name": "Source visits and admission",
+      "fraction_of_profiled_time": 0.11991317113254236,
+      "estimated_seconds_in_training_sum": 0.016163501163821127
+    },
+    {
+      "name": "Other helper dispatch",
+      "fraction_of_profiled_time": 0.08754266181910926,
+      "estimated_seconds_in_training_sum": 0.011800170930624038
+    },
+    {
+      "name": "Selected matrix updates",
+      "fraction_of_profiled_time": 0.052555528051058474,
+      "estimated_seconds_in_training_sum": 0.007084137053464871
+    },
+    {
+      "name": "Comprehension collection bookkeeping",
+      "fraction_of_profiled_time": 0.04247657438218325,
+      "estimated_seconds_in_training_sum": 0.005725560861889595
+    },
+    {
+      "name": "Typed matrix scalar reads",
+      "fraction_of_profiled_time": 0.024465887509159075,
+      "estimated_seconds_in_training_sum": 0.0032978395741957824
+    },
+    {
+      "name": "Other selected library dispatch",
+      "fraction_of_profiled_time": 0.024364796776837623,
+      "estimated_seconds_in_training_sum": 0.0032842132131038616
+    },
+    {
+      "name": "Loop-local retirement",
+      "fraction_of_profiled_time": 0.013299767548217266,
+      "estimated_seconds_in_training_sum": 0.0017927205678394478
+    },
+    {
+      "name": "Other execution and generated code",
+      "fraction_of_profiled_time": 0.0064624503853017955,
+      "estimated_seconds_in_training_sum": 0.0008710955046673297
+    }
+  ],
+  "execution_samples": 16566,
+  "analyzer_sha256": "f492939af2901b9597bd7f49141486a39bb0db11bf4ecb36bcca8b48bfe5f80a",
+  "demangler_sha256": "344c2e5e230deefbc86e58eef2114c3e7cd4b2df33a65b2f0494b9f4a4f595bb"
+}
