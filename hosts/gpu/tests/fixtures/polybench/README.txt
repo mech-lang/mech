@@ -986,3 +986,99 @@ Core, Engine and runtime numeric kernels are unchanged in this round.
 Phase captures of managed ancestor frames, nested tagged payloads and multiple
 variants remain compiler gaps. Larger datasets, GPU/SIMD selection, full
 compression application/AOT and an external application remain unqualified.
+
+Eighth frozen compiler round (IR367): packed numeric output and geometry reuse
+
+Maintained numeric leaves now use the existing Core typed matrix constructors
+for plain supported outputs. This avoids a complete intermediate draft output
+bank in transpose, sum, matrix binary operations, F64 matmul and floating unary
+operations. All fourteen existing numeric kinds are covered. Original cell
+order, arithmetic, reduction seeds, checked errors, conservative preflight,
+exact schema checks, equality-sensitive writes and atomic publication remain.
+Unsupported schemas keep their established draft path. Core is unchanged.
+
+Prepared shallow F64 numeric calls retain at most 64 exact geometry bindings
+and their existing turn-plan caches. Current schemas, complete geometry,
+factory identity, policy and same ledger remain checked; current payload facts,
+plans and finite admission still run. Every slot owns prepaid byte/node
+metadata. No values, result, pointer or permit is cached. Nonnumeric families
+retain one-slot behavior. Current pressure retires optional histories.
+
+An established 32MiB MatrixAdd regression caught insufficient coexistence
+headroom: cached execution succeeded while an ordinary call alongside history
+failed. The corrected proof includes all retained metadata, ordinary binder
+and invocation workspace, and a complete future plan-cache envelope. Existing
+test ceilings and exact Huffman work equations were preserved.
+
+Four new resident numeric tests and three original/decoded history tests cover
+exact kind/bit behavior, seeds/overflow, finite caps, schema fallback, malformed
+outputs, fresh payloads, actual binding and plan reuse, the 64-slot cap,
+foreign identity/account/policy rejection, pressure eviction, atomic failure,
+cleanup and retry. All 194 Engine, 309 native numeric/phase, 24 matrix,
+30 PolyBench and 102 selected Program tests pass (659 total).
+
+Compiler source cec3d5d8eb386be4d91d7daf251b0249bf10ec48, work policy136.
+The candidate source and binary were frozen before holdout measurement.
+The fixed ports, inputs, C binaries, tolerances and timing boundary are intact.
+Both scores below are equal-weight geometric means of median Mech/C kernel
+times; lower is better. The primary goal is strict holdout <1.0x C.
+
+frozen compiler                         optimization x      holdout x
+baseline                                      783.258       2020.085
+round-01-native-matrix-frames                 441.860       1610.274
+round-02-native-scalar-matrix-updates         346.025       1529.299
+round-03-native-maps                          318.844       1468.557
+round-04-conditional-maps                     301.197        724.274
+round-05-guarded-tagged-numeric               159.693        814.668
+round-06-numeric-call-cache                   142.999        440.804
+round-07-captured-numeric-phases              123.865        456.181
+round-08-packed-numeric-output                111.804        435.641
+
+Round 08 aggregate results:
+optimization: kernel 111.804266149x C; fresh 71.308884088x C; paired-original speedup 6.765599x; sum medians 0.043942873s.
+holdout: kernel 435.641482835x C; fresh 270.075994332x C; paired-original speedup 4.621156x; sum medians 0.329353334s.
+all: kernel 220.695664417x C; fresh 138.776142671x C; paired-original speedup 5.591502x; sum medians 0.373296207s.
+
+Inter-round runtime comparisons against frozen round07:
+optimization: Mech 0.935879770x; original compiler 1.002660723x; C 1.036834470x; normalized Mech/C score 0.902631805x.
+holdout: Mech 0.966908314x; original compiler 0.997245187x; C 1.012496403x; normalized Mech/C score 0.954974567x.
+
+Cases more than 5% slower than frozen round07:
+optimization bicg: 1.065462986x previous Mech runtime.
+optimization durbin: 1.087921118x previous Mech runtime.
+holdout trisolv: 1.131392053x previous Mech runtime.
+
+Against original compilers, optimization Atax is 1.060582412x the paired
+original runtime and BiCG is 1.051967387x the recorded original runtime.
+No holdout case exceeds 5% slower than either original reference.
+
+Publication-only optimization probe: 1.022957x speedup; no holdout measured. Final optimization-only seven-sample replay: 1.073831x speedup against round07. Probes are not C or holdout aggregate qualifications.
+cholesky: 2.010183x final training-probe speedup.
+durbin: 0.905951x final training-probe speedup.
+
+All 900 sequential observations validate complete finite warm-up live-outs;
+timed checked calls must succeed. Timed outputs are not independently
+flattened. All cases, regressions, paired originals and raw observations are
+retained. The split and earlier holdout results were exposed. No holdout was
+profiled and no compiler change followed this round's freeze.
+
+The five largest optimization medians cover 95.693% of
+summed optimization runtime; 13,968 canonical execution stack samples
+exclude parsing, JIT, input import, cache flush and serialization by stack.
+Profiled times do not enter aggregate scores.
+Canonical library calls: 34.553% of weighted profiled time.
+Other helper dispatch: 16.471% of weighted profiled time.
+Source visits and admission: 14.662% of weighted profiled time.
+Comprehension collection bookkeeping: 12.507% of weighted profiled time.
+Private frame transport: 12.143% of weighted profiled time.
+Typed matrix scalar reads: 3.277% of weighted profiled time.
+Other execution and generated code: 2.476% of weighted profiled time.
+Loop-local retirement: 1.652% of weighted profiled time.
+Other selected library dispatch: 1.513% of weighted profiled time.
+Selected matrix updates: 0.747% of weighted profiled time.
+
+This qualification covers CPU MINI F64 and selected regression suites.
+Larger datasets, GPU/SIMD choice, full compression application/AOT and an
+external application remain unqualified. Numeric geometry history covers
+only already-supported shallow F64 templates. Comprehension/reduction fusion,
+managed-frame captures and multi-variant phase loans remain compiler gaps.
