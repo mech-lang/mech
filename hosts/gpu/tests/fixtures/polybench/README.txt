@@ -621,3 +621,49 @@ syr2k              holdout      1.497       1.522         116.63         104.54
 syrk               holdout      1.585       1.595         134.27         104.50
 trisolv            holdout      4.651       4.645         840.30         203.14
 trmm               holdout      1.368       1.384         137.32          73.20
+
+Typed scalar numeric phase prerequisite (IR361)
+
+After the frozen round04 candidate, the shared numeric Tail proof and runtime
+now admit linear Bool/I64/F64 reads and replacements alongside all four
+unsigned kinds. Leaf, tree and phase derivations use exact selected scalar
+factories and the existing current-root/version proofs. Cranelift emits the
+same scalar-word loads, arithmetic and stores; Bool stores additionally check
+canonical 0/1 before writing Rust bool storage. The maintained scalar-only
+entry and primitive instruction vocabulary remain unchanged.
+
+PrivateNumericMatrix shares the existing pre-admitted publication and same-
+account ownership machinery with PrivateUnsignedMatrix. A selected original
+first-change replacement owns bounds/error/copy ordering. Frozen aliases force
+a backing copy on the first change; later native stores use that private
+allocation. No-op writes retain their identity. All fallible setup and
+publication admission precede mutable access; finish allocates no new owner.
+The old unsigned append, preparation and initialized-prefix APIs keep their
+narrow contract. The private bank accounts for the actual owner variant type;
+tight entry/resource caps keep the checked ordinary route. Work policy is 130.
+
+The new tests observe native read/write execution for all seven scalar kinds
+in single and nested loops, original/decoded artifacts and restored execution.
+Selected cell sites have no per-iteration library callbacks. They cover exact
+signed/float bits, rectangular column-major selection, aliases, no-op stores,
+partial-write bounds failures, finite denials, atomic outputs and recovery.
+core-tests.log: passes [23], filtered [173].
+typed-fourth.log: passes [2], filtered [1437].
+numeric-regressions.log: passes [293], filtered [1146].
+matrix-polybench.log: passes [24, 30], filtered [0, 0].
+program-regressions.log: passes [102], filtered [415].
+
+The broadened numeric/phase run exposed an obsolete policy127 assertion.
+Both version pins now name 130 and retain the established exact work bills.
+The initial failure and the passing final logs are hashed in
+typed-numeric-phases-qualification.json.
+
+This is a compiler prerequisite, not a new frozen timing round. The latest
+measured geometric-mean Mech/C kernel multipliers remain:
+optimization: 301.197x C.
+holdout: 724.274x C.
+
+No timing samples or history entry were added for this prerequisite. The
+fixed source ports, C binaries, data, split, tolerances and timing boundaries
+remain unchanged. Full numeric tagged carriers and independent two-axis loop
+selectors remain compiler gaps. The strict below 1.0x holdout goal remains open.
