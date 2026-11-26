@@ -1637,3 +1637,19 @@ Final selected checks: 725; both exact Huffman bills remain.
 All 900 balanced finite observations, 29482 live-outs per artifact, both sets, all regressions and nineteen-entry history remain. Five optimization-only raw profiles retain 3606 canonical execution samples and cover 79.651828% of training summed medians.
 No compiler source changed after freeze. The strict holdout goal remains open unless its score is below 1.0x C.
 Final >5% raw runtime regressions vs round17: optimization durbin (+6.77%), optimization gramschmidt (+7.42%), holdout trisolv (+5.35%).
+
+Round 19: inline current leaf shape evaluation
+Source 3294d36340510bdbd0c7ec071ef78ce96468389f; IR378/work147; executable ca2afeebc733b113f4a3f1a19e934ce6faaa26aea8139969f8b0a02f2f8fc7ed.
+Constant and Parameter dimensions share a thin inlinable evaluator across current resolution, shape validation and recursive children. The complete original compound evaluator, checked errors and order remain. No evaluated dimension, Value or permission is cached. Source prices, ABI42, arithmetic order and all benchmark ports remain.
+
+Equal-weight geometric means of median kernel runtimes (lower Mech/C is better):
+optimization: 39.050848x C; 19.447819x faster than recorded start; 19.809039x faster than paired original; summed medians 0.005530333s; raw runtime multiplier vs round18 1.023629x.
+holdout: 84.281767x C; 23.539471x faster than recorded start; 23.543110x faster than paired original; summed medians 0.023708749s; raw runtime multiplier vs round18 0.989555x.
+
+Optimization-only seven-sample round18 replay: 1.022580x speedup; 1 >5% flags retained.
+Final selected checks: 750; both exact Huffman bills remain.
+All 900 balanced finite observations, 29482 live-outs per artifact, both sets, all regressions and twenty-entry history remain. Five optimization-only raw profiles retain 3487 canonical execution samples and cover 78.917020% of training summed medians.
+The earlier callback-composition probe was effectively flat and its code was fully reverted; its complete training observations remain in round-19-callback-experiment.json. No holdout was measured for that experiment.
+No compiler source changed after freeze. The strict holdout goal remains open unless its score is below 1.0x C.
+Final >5% raw runtime regressions vs round18: optimization atax (+8.62%), optimization bicg (+5.12%), optimization covariance (+8.94%).
+Fixed all15 follow-up: 1.010864x; 0 >5% regressions. All initial flags remain.
