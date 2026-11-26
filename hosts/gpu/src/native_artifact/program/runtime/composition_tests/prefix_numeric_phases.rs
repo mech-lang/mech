@@ -669,3 +669,207 @@ fn prefix_numeric_phases_restore_owners_after_checked_arithmetic_failure_and_ret
         );
     }
 }
+
+#[test]
+fn prefix_numeric_phases_keep_a_constant_tag_when_it_covers_all_repeated_numeric_work() {
+    let text = r#"#Scan(initial<[u64]:2,3>, end<u64>, marker<u64>) => <[u64]:2,3>
+  | :Walk(data<[u64]:2,3>, at<u64>, carried<u64>)
+  | :Done(data<[u64]:2,3>).
+#Scan(initial,end,marker) -> :Walk(initial,1u64,marker)
+  :Walk(data,at,carried)
+    | at < end -> {
+        old := data[1u64,at]
+        ~next := data
+        next[1u64,at] = carried
+      } -> :Walk(next,at + 1u64,old)
+    | * -> :Done(data)
+  :Done(data) => data.
+#Scan(input<[u64]:2,3>,end<u64>,marker<u64>)
+"#;
+    for artifact in artifacts(text) {
+        let catalog = mech_stdlib::source_catalog();
+        let mode = NativeProgramLimitMode::NoLimits;
+        let memory = mode.memory_budget();
+        let jit = JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
+            .unwrap();
+        let metadata = jit.descriptor().metadata();
+        let region = metadata
+            .closed_tails
+            .regions
+            .iter()
+            .find(|r| r.numeric.as_ref().is_some_and(|p| p.tagged.is_some()))
+            .unwrap();
+        assert!(
+            region
+                .numeric
+                .as_ref()
+                .unwrap()
+                .tagged
+                .as_ref()
+                .unwrap()
+                .prefix
+                .is_none(),
+            "retain the efficient existing constant-tag proof"
+        );
+        crate::native_artifact::program::prepare::numeric_prefix::derive(
+            &metadata.plan.facts(),
+            &region.tail,
+            &metadata.buffer_frames,
+            &metadata.scalar_aggregates,
+            &metadata.calls,
+            &metadata.visits,
+        )
+        .expect(
+            "the full prefix must be eligible; coverage profitability chooses the narrower proof",
+        );
+        let args = super::numeric_maps::typed_arguments(
+            &artifact,
+            &memory,
+            &[
+                (
+                    "input",
+                    Data::Matrix([3, 7, 11, 13, 17, 19].map(Data::U64).into()),
+                    &[2, 3],
+                ),
+                ("end", Data::U64(4), &[]),
+                ("marker", Data::U64(23), &[]),
+            ],
+        );
+        for restored in [false, true] {
+            let mut out = vec![None; artifact.outputs().len()];
+            let (result, counts) = if restored {
+                observe::run_restored(&jit, &args, &mut out, mode.execution(), &memory)
+            } else {
+                observe::run(&jit, &args, &mut out, mode.execution(), &memory)
+            };
+            result.unwrap();
+            assert_eq!(counts.tail_entries.len(), 1);
+            assert_eq!(
+                out.last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                Data::Matrix([23, 3, 7, 13, 17, 19].map(Data::U64).into())
+            );
+        }
+    }
+}
+
+#[test]
+fn prefix_numeric_phases_cover_recurring_scalar_transition_states() {
+    let text = r#"#Scan(initial<[u64]:2,3>, end<u64>, marker<u64>) => <[u64]:2,3>
+  | :Walk(data<[u64]:2,3>, at<u64>, carried<u64>)
+  | :Advance(data<[u64]:2,3>, at<u64>, carried<u64>)
+  | :Done(data<[u64]:2,3>).
+#Scan(initial,end,marker) -> :Walk(initial,1u64,marker)
+  :Walk(data,at,carried)
+    | at >= end -> :Done(data)
+    | at % 2u64 == 0u64 -> :Advance(data,at,carried)
+    | * -> {
+        old := data[1u64,at]
+        ~next := data
+        next[1u64,at] = carried
+      } -> :Walk(next,at + 1u64,old)
+  :Advance(data,at,carried) -> :Walk(data,at + 1u64,carried)
+  :Done(data) => data.
+#Scan(input<[u64]:2,3>,end<u64>,marker<u64>)
+"#;
+    for artifact in artifacts(text) {
+        let catalog = mech_stdlib::source_catalog();
+        let mode = NativeProgramLimitMode::NoLimits;
+        let memory = mode.memory_budget();
+        let jit = JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
+            .unwrap();
+        let ordinary = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::ScalarLoops,
+        )
+        .unwrap();
+        let region = jit
+            .descriptor()
+            .metadata()
+            .closed_tails
+            .regions
+            .iter()
+            .find(|r| {
+                r.numeric
+                    .as_ref()
+                    .and_then(|p| p.tagged.as_ref())
+                    .is_some_and(|v| v.prefix.is_some())
+            })
+            .expect("one complete loan includes recurring scalar-only states");
+        let metadata = jit.descriptor().metadata();
+        let narrow = crate::native_artifact::program::prepare::readonly_numeric::tagged::candidate(
+            &metadata.plan.facts(),
+            &region.tail,
+            &metadata.buffer_frames,
+            &metadata.scalar_aggregates,
+            &metadata.calls,
+            &metadata.visits,
+            0,
+        )
+        .expect("the narrow recurring numeric state is independently eligible");
+        let numeric =
+            |proof: &crate::native_artifact::program::prepare::readonly_numeric::Proof| {
+                proof.actions.iter().filter(|(_,operation)|matches!(operation,crate::native_artifact::program::prepare::readonly_numeric::Operation::CellRead{..}|crate::native_artifact::program::prepare::readonly_numeric::Operation::CellWrite{..})).count()
+            };
+        assert_eq!(
+            numeric(&narrow),
+            numeric(region.numeric.as_ref().unwrap()),
+            "additional recurring scalar state, with identical numeric operation coverage"
+        );
+        assert!(numeric(&narrow) > 0);
+        let args = super::numeric_maps::typed_arguments(
+            &artifact,
+            &memory,
+            &[
+                (
+                    "input",
+                    Data::Matrix([3, 7, 11, 13, 17, 19].map(Data::U64).into()),
+                    &[2, 3],
+                ),
+                ("end", Data::U64(4), &[]),
+                ("marker", Data::U64(23), &[]),
+            ],
+        );
+        let before = contents(&args);
+        for restored in [false, true] {
+            let mut out = vec![None; artifact.outputs().len()];
+            let mut reference = out.clone();
+            let (result, counts) = if restored {
+                observe::run_restored(&jit, &args, &mut out, mode.execution(), &memory)
+            } else {
+                observe::run(&jit, &args, &mut out, mode.execution(), &memory)
+            };
+            result.unwrap();
+            ordinary
+                .evaluate_into(&args, &mut reference, mode.execution(), &memory)
+                .unwrap();
+            assert_eq!(counts.tail_entries.len(), 1);
+            assert_eq!(
+                contents(&out.iter().flatten().cloned().collect::<Vec<_>>()),
+                contents(&reference.iter().flatten().cloned().collect::<Vec<_>>())
+            );
+            for (site, operation) in &region.numeric.as_ref().unwrap().actions {
+                if matches!(
+                    operation,
+                    crate::native_artifact::program::prepare::readonly_numeric::Operation::Frame
+                ) {
+                    assert_eq!(
+                        counts
+                            .helpers
+                            .get(&(*site as u64, GlobalHelper::StructuralObservation.raw()))
+                            .copied()
+                            .unwrap_or(0),
+                        0,
+                        "scalar transition payloads remain native"
+                    );
+                }
+            }
+            assert_eq!(contents(&args), before);
+        }
+    }
+}

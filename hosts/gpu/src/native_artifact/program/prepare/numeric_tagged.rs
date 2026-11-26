@@ -31,11 +31,8 @@ pub(super) fn derive(
     calls: &[Option<NativePreparedLibraryCall>],
     visits: &[crate::native_artifact::iteration_abi::NativeIterationVisit],
 ) -> Result<Proof, &'static str> {
-    if let Ok(proof) =
-        super::super::numeric_prefix::derive(facts, tail, frames, aggregates, calls, visits)
-    {
-        return Ok(proof);
-    }
+    let prefix =
+        super::super::numeric_prefix::derive(facts, tail, frames, aggregates, calls, visits).ok();
     let [root] = frames
         .fields(tail.carrier())
         .ok_or("tagged carrier lacks frame")?
@@ -57,32 +54,66 @@ pub(super) fn derive(
             visits,
             ordinal as u32,
         ) {
-            // Static profitability only: count numeric work that can reach a
-            // native backedge without crossing a cold transition. A large cold
-            // prefix must not displace a smaller repeated numeric recurrence.
-            // Ties retain schema order; runtime measurements never select code.
-            let recurrent = recurrent_sites(facts.plan(), tail, &proof);
-            let current = proof
-                .actions
-                .iter()
-                .filter(|(site, op)| {
-                    recurrent.contains(site)
-                        && matches!(
-                            op,
-                            Operation::Read { .. }
-                                | Operation::CellRead { .. }
-                                | Operation::Write { .. }
-                                | Operation::CellWrite { .. }
-                        )
-                })
-                .count();
+            let current = numeric_score(facts.plan(), tail, &proof);
             if selected.is_none() || current > score {
                 selected = Some(proof);
                 score = current;
             }
         }
     }
+    // A complete union carries a dynamic tag. Retain the existing constant-tag
+    // body when it already covers every recurring state. Select the broader
+    // loan when it adds numeric work or another recurring payload body, which
+    // can include scalar transitions that otherwise repeatedly close the loan.
+    // This is source dataflow profitability, independent of program names,
+    // dimensions, payload contents and benchmark measurements.
+    if let Some(prefix) = prefix
+        && (selected.is_none()
+            || numeric_score(facts.plan(), tail, &prefix) > score
+            || selected
+                .as_ref()
+                .and_then(|proof| proof.tagged.as_ref())
+                .is_some_and(|variant| {
+                    extends_recurrent_states(facts.plan(), tail, frames, &prefix, variant.ordinal)
+                }))
+    {
+        return Ok(prefix);
+    }
     selected.ok_or("no guarded numeric variant retains a native backedge")
+}
+
+fn extends_recurrent_states(
+    plan: &Plan,
+    tail: &NativeTailLoop,
+    frames: &NativeBufferFrames,
+    proof: &Proof,
+    ordinal: u32,
+) -> bool {
+    let Some(variant) = proof.tagged.as_ref() else {
+        return false;
+    };
+    recurrent_sites(plan,tail,proof).into_iter().any(|site| {
+        matches!(frames.action(site).map(|action|action.operation()),Some(Frame::Observe{source,path,..})
+            if variant.contains(source.get()) && matches!(path.first(),Some(Step::EnumPayload{ordinal:other}) if *other != ordinal))
+    })
+}
+
+fn numeric_score(plan: &Plan, tail: &NativeTailLoop, proof: &Proof) -> usize {
+    let recurrent = recurrent_sites(plan, tail, proof);
+    proof
+        .actions
+        .iter()
+        .filter(|(site, op)| {
+            recurrent.contains(site)
+                && matches!(
+                    op,
+                    Operation::Read { .. }
+                        | Operation::CellRead { .. }
+                        | Operation::Write { .. }
+                        | Operation::CellWrite { .. }
+                )
+        })
+        .count()
 }
 
 fn recurrent_sites(plan: &Plan, tail: &NativeTailLoop, proof: &Proof) -> BTreeSet<usize> {
