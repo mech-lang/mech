@@ -2,16 +2,9 @@
 //! Source membership, ownership authority and prices are independently derived;
 //! these records describe operations and word homes, never a second program.
 use super::readonly_numeric::ResultRecipe;
-#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
-#[serde(deny_unknown_fields, rename = "mech.native.image.Array")]
-pub(in crate::native_artifact) struct Array {
-    pub field: usize,
-    pub width: u8,
-    /// Exact selected site whose original factory validates the entry view.
-    pub witness: usize,
-    pub writable: bool,
-    pub appends: bool,
-}
+// Phases and leaves use the same checked carrier/capture storage description.
+// The descriptor still rederives provenance and current-version eligibility.
+pub(in crate::native_artifact) use super::readonly_numeric::Array;
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields, rename = "mech.native.image.FrameWords")]
 pub(in crate::native_artifact) struct FrameWords {

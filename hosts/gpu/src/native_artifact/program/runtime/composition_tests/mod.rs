@@ -13,6 +13,7 @@ mod borrowed_record_map;
 mod bounds_retry;
 mod bulk_bytes;
 mod captured_numeric;
+mod captured_numeric_phases;
 mod captured_read_addresses;
 mod captured_window_handoffs;
 mod captured_windows;
@@ -150,9 +151,9 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                133
+                134
             );
-            // Policy133 adds numeric optional-cache bounds; this unsigned fixture retains
+            // Policy134 adds numeric phase captures; this unsigned fixture retains
             // the policy127 tree handoff and its exact source work bill.
             // Policy125 adds tree first-write alias checks.
             // Policies107/108/110/111 add fills, recursive frames, worker
@@ -656,12 +657,12 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                133
+                134
             );
             assert_eq!(
                 report.work,
                 owner_layout_work(41_515_826, 41_513_202),
-                "policy133 keeps this unsigned fixture's established source prices and child fallback banks"
+                "policy134 keeps this unsigned fixture's established source prices and child fallback banks"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(

@@ -755,33 +755,7 @@ pub(super) fn from_phase(
     aggregates: &NativeScalarAggregates,
     phase: super::numeric_plan::Plan,
 ) -> Result<Proof, &'static str> {
-    let carrier = frames
-        .fields(tail.carrier())
-        .ok_or("phase carrier lacks fields")?;
-    let arrays = phase
-        .arrays
-        .into_iter()
-        .map(|array| {
-            let field = *carrier
-                .get(array.field)
-                .ok_or("phase array leaves carrier")?;
-            let Lane::Managed { at: physical } = field.lane() else {
-                return Err("phase array is not managed");
-            };
-            Ok(Array {
-                root: array.field,
-                storage: ArrayStorage::Carrier {
-                    field: array.field,
-                    physical,
-                },
-                schema: field.schema(),
-                width: array.width,
-                witness: array.witness,
-                writable: array.writable,
-                appends: array.appends,
-            })
-        })
-        .collect::<Result<Vec<_>, &'static str>>()?;
+    let arrays = phase.arrays;
     let frame_words = phase
         .frames
         .into_iter()

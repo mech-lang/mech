@@ -535,7 +535,8 @@ fn selected_template(
 // IR362 preserves independent row/column selectors in native numeric phases.
 // IR363 adds checked monomorphic tagged numeric state phases.
 // IR364 admits numeric prepared-call caches with current shallow bounds.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 364;
+// IR365 shares immutable ancestor numeric captures with guarded phases.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 365;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -788,7 +789,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 364;
 // Policy131 funds two-axis guards and first-change coordinate transport.
 // Policy132 funds guarded-tag entry and exact cold payload exports.
 // Policy133 funds current numeric cache coexistence probes and cache hits.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 133;
+// Policy134 admits captured phase views through existing finite setup/funding.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 134;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

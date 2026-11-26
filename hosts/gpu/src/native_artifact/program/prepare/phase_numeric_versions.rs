@@ -52,7 +52,7 @@ fn summaries<'a>(
                     plan.blocks()[*site]
                         .iteration()
                         .is_some_and(|iteration| descendants.contains(&iteration))
-                        .then_some(arrays[*array].field)
+                        .then_some(arrays[*array].root)
                 })
                 .collect();
             // A cold continuation inside a child can also need a caller's still-
@@ -403,6 +403,10 @@ fn pass(
         managed_keys(frames, provenance, tail.carrier().get())
             .into_iter()
             .chain(outer.outer.iter().copied().filter(|_| traversal.local))
+            // Strict ancestor definitions cannot run during this synchronous
+            // phase. Each capture has a distinct immutable functional root,
+            // even when it aliases a carrier's original backing.
+            .chain(provenance.captures.keys().map(|&value| (value, None)))
             .map(|key| (key, true))
             .collect(),
     );
@@ -520,7 +524,7 @@ fn pass(
                         | Operation::Append { .. }
                         | Operation::AppendLeBytes { .. }
                 ) {
-                    let root = arrays[*array].field;
+                    let root = arrays[*array].root;
                     for (&(value, field), current) in &mut state {
                         if provenance.array(value, field) == Some(root) {
                             *current = false;

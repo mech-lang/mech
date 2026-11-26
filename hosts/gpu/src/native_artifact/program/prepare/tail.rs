@@ -188,7 +188,14 @@ impl Layout {
                         .iter()
                         .any(|exit| matches!(exit.kind, super::numeric_plan::ExitKind::Unsupported))
             });
-            let mut numeric = if phase.is_some() && !partial_phase {
+            // Newly representable ancestor captures must not displace a
+            // complete tree's append, owner-handoff and fuel specializations.
+            // Reuse that stronger existing proof when it succeeds; guarded
+            // states or incomplete trees retain the capture phase otherwise.
+            let capture_phase = phase
+                .as_ref()
+                .is_some_and(|proof| proof.arrays.iter().any(|array| array.immutable_capture()));
+            let mut numeric = if phase.is_some() && !partial_phase && !capture_phase {
                 phase
             } else if map.is_none() {
                 if let Ok(tree) = discovery.discover(tail) {

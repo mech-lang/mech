@@ -1,6 +1,6 @@
 //! Bounded and partial numeric phases over flat private frames.
-//! Recursive/captured-owner trees retain their independent must-current proof;
-//! both proofs convert to the same native representation before code emission.
+//! Immutable numeric ancestor captures share the maintained leaf view runtime.
+//! Recursive owner trees retain their independent must-current proof.
 use super::numeric_phase::Coverage;
 use mech_core::SchemaBody;
 use mech_engine::native_artifact::{
@@ -60,11 +60,18 @@ struct Provenance<'a, 'p> {
     cache: BTreeMap<(u32, Option<usize>), Option<usize>>,
     active: BTreeSet<(u32, Option<usize>)>,
     children: BTreeMap<(u32, usize), usize>,
+    /// Disjoint read-only roots whose exact owners remain in ancestor slots.
+    captures: BTreeMap<u32, usize>,
     native_sites: Option<&'a BTreeSet<usize>>,
 }
 impl Provenance<'_, '_> {
     fn array(&mut self, value: u32, field: Option<usize>) -> Option<usize> {
         let key = (value, field);
+        if field.is_none()
+            && let Some(root) = self.captures.get(&value)
+        {
+            return Some(*root);
+        }
         if value == self.tail.carrier().get() {
             let ordinal = field?;
             return matches!(
@@ -384,6 +391,37 @@ fn derive_inventory(
         Vec::new()
     };
     let sites = forest.sites.clone();
+    let mut captures = BTreeMap::new();
+    let mut captured = Vec::new();
+    for &site in &sites {
+        if forest.stops.contains(&site) || forest.cold.iter().any(|c| c.initialize == site) {
+            continue;
+        }
+        let Action::LibraryCall { operands, .. } = plan.blocks()[site].action() else {
+            continue;
+        };
+        for &source in operands {
+            if captures.contains_key(&source.get())
+                || width(plan.values()[source.get() as usize].definition().body()).is_none()
+                || super::captured_numeric::immutable_source(plan, tail, source).is_err()
+            {
+                continue;
+            }
+            let root = fields.len() + captured.len();
+            captures.insert(source.get(), root);
+            captured.push(Array {
+                root,
+                storage: super::readonly_numeric::ArrayStorage::Capture {
+                    value: source.get(),
+                },
+                schema: plan.values()[source.get() as usize].schema(),
+                width: 0,
+                witness: usize::MAX,
+                writable: false,
+                appends: false,
+            });
+        }
+    }
     let mut provenance = Provenance {
         facts,
         frames,
@@ -392,6 +430,7 @@ fn derive_inventory(
         cache: BTreeMap::new(),
         active: BTreeSet::new(),
         children: BTreeMap::new(),
+        captures,
         native_sites: matches!(mode, Coverage::Intervals | Coverage::Hybrid).then_some(&sites),
     };
     for child in forest.loops.iter().skip(1) {
@@ -447,7 +486,15 @@ fn derive_inventory(
                 return Err("array field changes, swaps, or has unknown recursive forwarding");
             }
             arrays.push(Array {
-                field: ordinal,
+                root: ordinal,
+                storage: super::readonly_numeric::ArrayStorage::Carrier {
+                    field: ordinal,
+                    physical: match field.lane() {
+                        Lane::Managed { at } => at,
+                        _ => unreachable!(),
+                    },
+                },
+                schema: field.schema(),
                 width: 0,
                 witness: usize::MAX,
                 writable: false,
@@ -455,19 +502,12 @@ fn derive_inventory(
             });
         }
     }
+    arrays.extend(captured);
     if arrays.is_empty() {
         return Err("no invariant numeric arrays");
     }
     let result = if sites.contains(&(tail.finish() as usize)) {
-        results::derive(
-            plan,
-            tail,
-            frames,
-            aggregates,
-            fields,
-            &arrays,
-            &mut provenance,
-        )?
+        results::derive(plan, tail, frames, aggregates, &arrays, &mut provenance)?
     } else {
         ResultRecipe::Unreachable
     };
@@ -507,7 +547,7 @@ fn derive_inventory(
                     if matches!(field.lane(), Lane::Managed { .. })
                         && !arrays
                             .iter()
-                            .any(|a| provenance.array(value, Some(ordinal)) == Some(a.field))
+                            .any(|a| provenance.array(value, Some(ordinal)) == Some(a.root))
                     {
                         return Err("frame has an unknown managed field");
                     }
@@ -594,16 +634,24 @@ fn derive_inventory(
                 return Err("unsupported selected library effect or operation");
             }
             let source = operands.first().ok_or("missing selected array")?;
-            let field = provenance
+            let root = provenance
                 .array(source.get(), None)
-                .ok_or("array read is not an invariant carrier field")?;
-            if plan.values()[source.get() as usize].schema() != fields[field].schema() {
-                return Err("array field schema differs from its selected use");
-            }
+                .ok_or("array use lacks an invariant carrier or immutable capture root")?;
             let at = arrays
                 .iter()
-                .position(|a| a.field == field)
-                .ok_or("array outside carrier")?;
+                .position(|a| a.root == root)
+                .ok_or("array outside selected phase")?;
+            if plan.values()[source.get() as usize].schema() != arrays[at].schema {
+                return Err("array root schema differs from its selected use");
+            }
+            if (is_write || is_append || is_bulk)
+                && !matches!(
+                    arrays[at].storage,
+                    super::readonly_numeric::ArrayStorage::Carrier { .. }
+                )
+            {
+                return Err("immutable captured array cannot be written");
+            }
             let w =
                 width(template.inputs()[0].body()).ok_or("unsupported numeric shape or width")?;
             if arrays[at].width != 0 && arrays[at].width != w {
@@ -747,7 +795,7 @@ fn derive_inventory(
                 .map(|(ordinal, field)| {
                     if matches!(field.lane(), Lane::Managed { .. }) {
                         let origin = provenance.array(value, Some(ordinal)).unwrap();
-                        Some(arrays.iter().position(|a| a.field == origin).unwrap())
+                        Some(arrays.iter().position(|a| a.root == origin).unwrap())
                     } else {
                         None
                     }

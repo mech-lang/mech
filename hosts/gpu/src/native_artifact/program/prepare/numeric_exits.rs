@@ -306,7 +306,7 @@ pub(super) fn derive(
                     .ok_or("cold live value has no exact buffer binding")?;
                 let array = arrays
                     .iter()
-                    .position(|a| a.field == field)
+                    .position(|a| a.root == field)
                     .ok_or("cold live buffer is outside the phase")?;
                 export.aliases.push((value, array));
             }
