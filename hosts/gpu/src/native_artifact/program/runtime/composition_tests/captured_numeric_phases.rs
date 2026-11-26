@@ -315,3 +315,123 @@ fn captured_numeric_phases_keep_finite_admission_atomic_publication_and_retry() 
         );
     }
 }
+
+#[test]
+fn captured_numeric_phases_prefer_recurrent_work_over_a_larger_cold_prefix() {
+    let source = r#"#Scan(initial<[u64]:1,4>, source<[u64]:1,4>, limit<u64>) => <[u64]:1,4>
+  | :Prepare(data<[u64]:1,4>, at<u64>)
+  | :Run(data<[u64]:1,4>, at<u64>, marker<u64>)
+  | :Done(data<[u64]:1,4>).
+#Scan(initial, source, limit) -> :Prepare(initial,0u64)
+  :Prepare(data,at)
+    | at == 0u64 -> :Prepare(data,1u64)
+    | at > limit -> :Done(data)
+    | * -> {
+        a := source[1u64]
+        b := source[2u64]
+        c := source[3u64]
+        d := source[4u64]
+      } -> :Run(data,at,a + b + c + d)
+  :Run(data,at,marker)
+    | at <= limit -> {
+        ~next := data
+        next[at] = data[at] + marker
+      } -> :Run(next,at + 1u64,marker)
+    | * -> :Prepare(data,at)
+  :Done(data) => data.
+data := input<[u64]:1,4>
+answer := #Scan(data,data,limit<u64>)
+(answer,data)
+"#;
+    for artifact in artifacts(source) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let catalog = mech_stdlib::source_catalog();
+        let jit = JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
+            .unwrap();
+        let ordinary = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::ScalarLoops,
+        )
+        .unwrap();
+        let selected = jit
+            .descriptor()
+            .metadata()
+            .closed_tails
+            .regions
+            .iter()
+            .enumerate()
+            .filter_map(|(id, r)| {
+                r.numeric
+                    .as_ref()
+                    .and_then(|p| p.tagged.as_ref())
+                    .map(|v| (id, v.ordinal))
+            })
+            .collect::<Vec<_>>();
+        assert!(!selected.is_empty());
+        assert!(
+            selected.iter().all(|(_, ordinal)| *ordinal == 1),
+            "four cold reads must not displace two recurrent numeric accesses: {selected:?}"
+        );
+        crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+        let memory = mode.memory_budget();
+        let mut fast = vec![None; artifact.outputs().len()];
+        let mut cold = fast.clone();
+        for restored in [false, true] {
+            for limit in [0, 4, 5, 4] {
+                let arguments = super::numeric_maps::typed_arguments(
+                    &artifact,
+                    &memory,
+                    &[
+                        (
+                            "input",
+                            Data::Matrix([1, 2, 3, 4].map(Data::U64).into()),
+                            &[1, 4],
+                        ),
+                        ("limit", Data::U64(limit), &[]),
+                    ],
+                );
+                let before = contents(&arguments);
+                let (a, seen) = run(
+                    &jit,
+                    &arguments,
+                    &mut fast,
+                    mode.execution(),
+                    &memory,
+                    restored,
+                );
+                let (b, _) = run(
+                    &ordinary,
+                    &arguments,
+                    &mut cold,
+                    mode.execution(),
+                    &memory,
+                    restored,
+                );
+                assert_eq!(a.is_err(), limit == 5);
+                assert_eq!(
+                    format!("{:?}", a.as_ref().err()),
+                    format!("{:?}", b.as_ref().err())
+                );
+                assert_eq!(
+                    contents(&fast.iter().flatten().cloned().collect::<Vec<_>>()),
+                    contents(&cold.iter().flatten().cloned().collect::<Vec<_>>())
+                );
+                assert_eq!(contents(&arguments), before);
+                if limit == 4 {
+                    assert!(
+                        seen.tail_entries
+                            .iter()
+                            .any(|(_, id, _)| selected.iter().any(|(expected, _)| id == expected)),
+                        "the recurrent variant must enter after an ordinary different-tag constructor"
+                    );
+                }
+            }
+        }
+        drop((fast, cold));
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
+}

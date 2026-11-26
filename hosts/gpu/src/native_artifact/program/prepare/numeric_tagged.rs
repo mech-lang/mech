@@ -51,19 +51,23 @@ pub(super) fn derive(
             visits,
             ordinal as u32,
         ) {
-            // Static profitability only. Prefer represented numeric work; ties
-            // retain schema order. Runtime measurements never select a variant.
+            // Static profitability only: count numeric work that can reach a
+            // native backedge without crossing a cold transition. A large cold
+            // prefix must not displace a smaller repeated numeric recurrence.
+            // Ties retain schema order; runtime measurements never select code.
+            let recurrent = recurrent_sites(facts.plan(), tail, &proof);
             let current = proof
                 .actions
                 .iter()
-                .filter(|(_, op)| {
-                    matches!(
-                        op,
-                        Operation::Read { .. }
-                            | Operation::CellRead { .. }
-                            | Operation::Write { .. }
-                            | Operation::CellWrite { .. }
-                    )
+                .filter(|(site, op)| {
+                    recurrent.contains(site)
+                        && matches!(
+                            op,
+                            Operation::Read { .. }
+                                | Operation::CellRead { .. }
+                                | Operation::Write { .. }
+                                | Operation::CellWrite { .. }
+                        )
                 })
                 .count();
             if selected.is_none() || current > score {
@@ -73,6 +77,43 @@ pub(super) fn derive(
         }
     }
     selected.ok_or("no guarded numeric variant retains a native backedge")
+}
+
+fn recurrent_sites(plan: &Plan, tail: &NativeTailLoop, proof: &Proof) -> BTreeSet<usize> {
+    let hot = proof
+        .sites
+        .iter()
+        .copied()
+        .filter(|site| {
+            !proof
+                .actions
+                .iter()
+                .any(|(s, op)| s == site && matches!(op, Operation::Fallback))
+        })
+        .collect::<BTreeSet<_>>();
+    let mut predecessors = BTreeMap::<usize, Vec<usize>>::new();
+    for &site in &hot {
+        if site == tail.latch() as usize {
+            continue;
+        }
+        for next in NativeProgramFacts::control_successors(plan.blocks()[site].terminator())
+            .into_iter()
+            .flatten()
+            .map(|s| s as usize)
+        {
+            if hot.contains(&next) {
+                predecessors.entry(next).or_default().push(site);
+            }
+        }
+    }
+    let mut recurrent = BTreeSet::new();
+    let mut pending = vec![tail.latch() as usize];
+    while let Some(site) = pending.pop() {
+        if recurrent.insert(site) {
+            pending.extend(predecessors.get(&site).into_iter().flatten().copied());
+        }
+    }
+    recurrent
 }
 
 pub(in crate::native_artifact) fn candidate(
