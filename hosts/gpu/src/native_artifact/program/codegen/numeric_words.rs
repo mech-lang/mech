@@ -495,7 +495,7 @@ pub(super) fn guard_scalar_store(
 }
 
 /// Independent one-based axes over an entry-validated canonical row-major
-/// view. Check the row before the column, then compute only a physical ordinal.
+/// view. Check both pure axes, then compute only a physical ordinal.
 /// The caller's cold block executes the original selected rejecting operation.
 pub(super) fn cell_address(
     b: &mut FunctionBuilder<'_>,
@@ -508,12 +508,13 @@ pub(super) fn cell_address(
     bad: Block,
 ) -> Result<(Value, cranelift_codegen::ir::Type), NativeCompileError> {
     let row = b.ins().iadd_imm(row, -1);
-    let valid = b.ins().icmp(IntCC::UnsignedLessThan, row, rows);
-    let good = b.create_block();
-    b.ins().brif(valid, good, &[], bad, &[]);
-    b.switch_to_block(good);
+    let row_valid = b.ins().icmp(IntCC::UnsignedLessThan, row, rows);
     let column = b.ins().iadd_imm(column, -1);
-    let valid = b.ins().icmp(IntCC::UnsignedLessThan, column, columns);
+    let column_valid = b.ins().icmp(IntCC::UnsignedLessThan, column, columns);
+    // Both tests are pure words already available at this source operation.
+    // One miss edge replays the same original operation, retaining its exact
+    // axis error order. Neither an address nor a load precedes both bounds.
+    let valid = b.ins().band(row_valid, column_valid);
     let good = b.create_block();
     b.ins().brif(valid, good, &[], bad, &[]);
     b.switch_to_block(good);

@@ -13,6 +13,9 @@ const BAD: u64 = 0xbad0_bad0_bad0_bad0;
 type Read = unsafe extern "C" fn(u64, u64, u64, u64) -> u64;
 fn source(kind: &str, dimensions: &str) -> JitProgramArtifact {
     let source = format!("data := input<[{kind}]{dimensions}>\n[data[i] | i <- 1u64..=6u64]\n");
+    compile_source(source)
+}
+fn compile_source(source: String) -> JitProgramArtifact {
     let parsed = parse_canonical_document(
         TextSnapshot::new(DocumentId(0x4d415047), Revision(1), source.as_str()).unwrap(),
         ParseConfig::default(),
@@ -208,6 +211,171 @@ fn numeric_map_read_geometry_keeps_exact_bits_bounds_axes_and_refuses_mismatched
                         "{kind} {dimensions} ({rows},{columns}) index={index}"
                     );
                 }
+            }
+        }
+    }
+}
+
+type CellRead = unsafe extern "C" fn(u64, u64, u64, u64, u64) -> u64;
+fn cell_read_function(jit: &JitProgramArtifact) -> Function {
+    let metadata = jit.descriptor().metadata();
+    let [region] = &metadata.numeric_maps.regions[..] else {
+        panic!("one actual cell map")
+    };
+    let [read] = &region.reads[..] else {
+        panic!("one actual two-axis map read")
+    };
+    assert_eq!(read.indices.len(), 2);
+    let mut function = Function::new();
+    function.signature.params = vec![AbiParam::new(types::I64); 5];
+    function.signature.returns = vec![AbiParam::new(types::I64)];
+    let mut context = FunctionBuilderContext::new();
+    {
+        let mut b = FunctionBuilder::new(&mut function, &mut context);
+        let entry = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let args = b.block_params(entry).to_vec();
+        let bad = b.create_block();
+        // As in the production caller, geometry is checked before a fixed
+        // schema becomes constants. Physical backing is this test's tiny bank.
+        let cells = b.ins().imul(args[2], args[3]);
+        let (cells, rows, columns) = guard_fixed_geometry(
+            &mut b,
+            metadata.plan.values()[region.matrices[0].value as usize]
+                .definition()
+                .body(),
+            cells,
+            args[2],
+            args[3],
+            bad,
+        );
+        let mut words = BTreeMap::new();
+        for (word, value) in read.indices.iter().zip(&args[..2]) {
+            let var = b.declare_var(types::I64);
+            b.def_var(var, *value);
+            words.insert(*word, var);
+        }
+        let value = emit_read(
+            &mut b,
+            read,
+            region,
+            &metadata.plan,
+            &[(args[4], cells, rows, columns)],
+            &words,
+            bad,
+        )
+        .unwrap();
+        b.ins().return_(&[value]);
+        b.switch_to_block(bad);
+        let rejected = b.ins().iconst(types::I64, BAD as i64);
+        b.ins().return_(&[rejected]);
+        b.seal_all_blocks();
+        b.finalize();
+    }
+    function
+}
+
+#[test]
+fn numeric_map_cell_reads_share_one_bounds_branch_and_keep_non_square_bits_and_empty_axes() {
+    for (kind, width) in [
+        ("bool", 1usize),
+        ("u8", 1),
+        ("u16", 2),
+        ("u32", 4),
+        ("u64", 8),
+        ("i64", 8),
+        ("f64", 8),
+    ] {
+        for dimensions in ["", ":2,3"] {
+            let jit = compile_source(format!(
+                "data := input<[{kind}]{dimensions}>\n[data[row<u64>,j] | j <- 1u64..=3u64]\n"
+            ));
+            let function = cell_read_function(&jit);
+            if dimensions.is_empty() {
+                let branches = function
+                    .layout
+                    .blocks()
+                    .flat_map(|block| function.layout.block_insts(block))
+                    .filter(|&i| function.dfg.insts[i].opcode() == Opcode::Brif)
+                    .count();
+                assert_eq!(
+                    branches,
+                    1,
+                    "one actual two-axis map guard: {}",
+                    function.display()
+                );
+            }
+            let mut module = cranelift_jit::JITModule::new(
+                cranelift_jit::JITBuilder::with_flags(
+                    &[("opt_level", "speed")],
+                    default_libcall_names(),
+                )
+                .unwrap(),
+            );
+            let mut context = module.make_context();
+            context.func = function;
+            context.func.signature.call_conv = module.make_signature().call_conv;
+            let id = module
+                .declare_function(
+                    "checked_map_cell_read",
+                    Linkage::Local,
+                    &context.func.signature,
+                )
+                .unwrap();
+            module.define_function(id, &mut context).unwrap();
+            module.finalize_definitions().unwrap();
+            // SAFETY: retained generated function has five word inputs and a
+            // word result. Valid cases below borrow a live exact-width bank.
+            let read = unsafe {
+                core::mem::transmute::<*const u8, CellRead>(module.get_finalized_function(id))
+            };
+            let values: [u64; 6] = if kind == "bool" {
+                [0, 1, 1, 0, 1, 0]
+            } else {
+                [
+                    0,
+                    1 << 63,
+                    0x7ff8_0000_0000_0037,
+                    0x7ff0_0000_0000_0000,
+                    0xfff0_0000_0000_0000,
+                    u64::MAX,
+                ]
+            };
+            let bytes = values
+                .iter()
+                .flat_map(|word| word.to_le_bytes()[..width].to_vec())
+                .collect::<Vec<_>>();
+            let mask = u64::MAX >> (64 - width * 8);
+            for row in 1..=2 {
+                for column in 1..=3 {
+                    // SAFETY: row and column are inside this live2x3 bank.
+                    assert_eq!(
+                        unsafe { read(row, column, 2, 3, bytes.as_ptr() as u64) },
+                        values[((row - 1) * 3 + column - 1) as usize] & mask,
+                        "{kind} ({row},{column})"
+                    );
+                }
+            }
+            for (rows, columns, row, column) in [
+                (2, 3, 0, 1),
+                (2, 3, 1, 0),
+                (2, 3, 3, 1),
+                (2, 3, 1, 4),
+                (2, 3, 0, 0),
+                (2, 3, u64::MAX, u64::MAX),
+                (0, u64::MAX, 1, 1),
+                (u64::MAX, 0, 1, 1),
+            ] {
+                // SAFETY: every case rejects before dereferencing this bank.
+                assert_eq!(
+                    unsafe { read(row, column, rows, columns, bytes.as_ptr() as u64) },
+                    BAD
+                );
+            }
+            if !dimensions.is_empty() {
+                // SAFETY: the fixed-shape guard rejects before any bank read.
+                assert_eq!(unsafe { read(1, 1, 3, 2, bytes.as_ptr() as u64) }, BAD);
             }
         }
     }

@@ -54,6 +54,7 @@ pub(in crate::native_artifact) struct Report {
     pub version_entry_gates: Vec<(usize, usize, Option<usize>)>,
     proven_child_entry_checks: Vec<(usize, super::traversal_facts::Check)>,
     pub typed_stores: Vec<(usize, u8)>,
+    pub ownership_first_cell_writes: Vec<(usize, usize, u8)>,
     pub first_change_boundaries: Vec<usize>,
     pub owned_handoff_boundaries: Vec<usize>,
     pub cold_exits: Vec<(usize, usize)>,
@@ -628,6 +629,7 @@ pub(in crate::native_artifact) fn emit_entry(
         version_entry_gates: Vec::new(),
         proven_child_entry_checks: Vec::new(),
         typed_stores: Vec::new(),
+        ownership_first_cell_writes: Vec::new(),
         first_change_boundaries: Vec::new(),
         owned_handoff_boundaries: Vec::new(),
         cold_exits: proof
@@ -1337,25 +1339,49 @@ pub(in crate::native_artifact) fn emit_entry(
                     Operation::CellWrite { incoming, .. } => {
                         let incoming = words.read(b, *incoming as usize);
                         super::numeric_words::guard_scalar_store(b, code, site, incoming, fail)?;
-                        let old = super::numeric_words::load_unsigned_word(
-                            b,
-                            ty,
-                            super::numeric_words::guarded_load_flags(controls.options()),
-                            address,
-                            0,
-                        );
-                        report.typed_loads.push((site, width));
-                        let changed = b.ins().icmp(IntCC::NotEqual, old, incoming);
-                        let update = b.create_block();
                         let done = b.create_block();
                         let store = b.create_block();
                         let materialize = b.create_block();
                         b.set_cold_block(materialize);
                         boundaries.insert(materialize);
-                        b.ins().brif(changed, update, &[], done, &[]);
-                        b.switch_to_block(update);
-                        let private = words.read(b, shadow + proof.private_flag(*array));
-                        b.ins().brif(private, store, &[], materialize, &[]);
+                        if controls.enabled(OptimizationPass::PrivateWritesFirst) {
+                            // Reuse the maintained one-axis private-write rule:
+                            // a changed exclusive bank may store identical bits
+                            // without reading them. Unchanged shared owners still
+                            // compare before the original first-change boundary.
+                            let private = words.read(b, shadow + proof.private_flag(*array));
+                            let shared = b.create_block();
+                            b.ins().brif(private, store, &[], shared, &[]);
+                            b.switch_to_block(shared);
+                            let old = super::numeric_words::load_unsigned_word(
+                                b,
+                                ty,
+                                super::numeric_words::guarded_load_flags(controls.options()),
+                                address,
+                                0,
+                            );
+                            report.typed_loads.push((site, width));
+                            let changed = b.ins().icmp(IntCC::NotEqual, old, incoming);
+                            b.ins().brif(changed, materialize, &[], done, &[]);
+                            report
+                                .ownership_first_cell_writes
+                                .push((site, *array, width));
+                        } else {
+                            let old = super::numeric_words::load_unsigned_word(
+                                b,
+                                ty,
+                                super::numeric_words::guarded_load_flags(controls.options()),
+                                address,
+                                0,
+                            );
+                            report.typed_loads.push((site, width));
+                            let changed = b.ins().icmp(IntCC::NotEqual, old, incoming);
+                            let update = b.create_block();
+                            b.ins().brif(changed, update, &[], done, &[]);
+                            b.switch_to_block(update);
+                            let private = words.read(b, shadow + proof.private_flag(*array));
+                            b.ins().brif(private, store, &[], materialize, &[]);
+                        }
                         b.switch_to_block(materialize);
                         boundary::materialize(
                             controls,

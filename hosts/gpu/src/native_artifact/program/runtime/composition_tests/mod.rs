@@ -55,6 +55,7 @@ mod numeric_summary_branches;
 mod numeric_boolean_relations;
 mod numeric_call_cache;
 mod numeric_cell_phases;
+mod numeric_cell_write_ownership;
 mod numeric_induction;
 mod numeric_outlining;
 mod numeric_tree;

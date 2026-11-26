@@ -1,5 +1,5 @@
 //! Admission-proven vector geometry must actually remove numeric division.
-use super::linear_address;
+use super::{cell_address, linear_address};
 use cranelift_codegen::ir::{AbiParam, Function, InstBuilder, Opcode, types};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use mech_core::{DimensionExpr as Dim, DimensionParameterId, IntegerWidth, SchemaBody};
@@ -205,6 +205,105 @@ fn unit_dimension_addresses_emit_no_division_and_keep_general_geometry() {
                 .collect::<Vec<_>>();
             assert_eq!(opcodes.contains(&Opcode::Udiv), !vector, "{schema:?}");
             assert!(!opcodes.contains(&Opcode::Urem), "{schema:?}");
+        }
+    }
+}
+
+fn cell_address_function(width: u8) -> Function {
+    let mut function = Function::new();
+    function.signature.params = vec![AbiParam::new(types::I64); 5];
+    function.signature.returns = vec![AbiParam::new(types::I64)];
+    let mut context = FunctionBuilderContext::new();
+    {
+        let mut b = FunctionBuilder::new(&mut function, &mut context);
+        let entry = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let args = b.block_params(entry).to_vec();
+        let bad = b.create_block();
+        let (address, _) = cell_address(
+            &mut b, args[0], args[1], args[2], args[3], width, args[4], bad,
+        )
+        .unwrap();
+        b.ins().return_(&[address]);
+        b.switch_to_block(bad);
+        let rejected = b.ins().iconst(types::I64, -1);
+        b.ins().return_(&[rejected]);
+        b.seal_all_blocks();
+        b.finalize();
+    }
+    function
+}
+
+#[test]
+fn numeric_cell_addresses_combine_both_axes_before_native_addressing() {
+    use cranelift_module::{Linkage, Module, default_libcall_names};
+    type CellAddress = unsafe extern "C" fn(u64, u64, u64, u64, u64) -> u64;
+    for width in [1u8, 2, 4, 8] {
+        let function = cell_address_function(width);
+        let branches = function
+            .layout
+            .blocks()
+            .flat_map(|block| function.layout.block_insts(block))
+            .filter(|&inst| function.dfg.insts[inst].opcode() == Opcode::Brif)
+            .count();
+        assert_eq!(
+            branches,
+            1,
+            "both axes share one rejection edge: {}",
+            function.display()
+        );
+        let mut module = cranelift_jit::JITModule::new(
+            cranelift_jit::JITBuilder::with_flags(
+                &[("opt_level", "speed")],
+                default_libcall_names(),
+            )
+            .unwrap(),
+        );
+        let mut context = module.make_context();
+        context.func = function;
+        context.func.signature.call_conv = module.make_signature().call_conv;
+        let id = module
+            .declare_function(
+                "combined_cell_address",
+                Linkage::Local,
+                &context.func.signature,
+            )
+            .unwrap();
+        module.define_function(id, &mut context).unwrap();
+        module.finalize_definitions().unwrap();
+        // SAFETY: the retained generated function has five word inputs and a
+        // word result. It only computes addresses and never dereferences them.
+        let address = unsafe {
+            core::mem::transmute::<*const u8, CellAddress>(module.get_finalized_function(id))
+        };
+        for (rows, columns) in [
+            (0u64, 0u64),
+            (0, u64::MAX),
+            (u64::MAX, 0),
+            (1, 6),
+            (6, 1),
+            (2, 3),
+            (3, 2),
+            (17, 13),
+        ] {
+            let tests = [0, 1, 2, 3, 6, 13, 17, 18, u64::MAX];
+            for row in tests {
+                for column in tests {
+                    let expected = if row != 0 && row <= rows && column != 0 && column <= columns {
+                        4096 + ((row - 1) * columns + column - 1) * u64::from(width)
+                    } else {
+                        u64::MAX
+                    };
+                    // SAFETY: this same arithmetic-only function is alive; all
+                    // accepted nonempty test geometries have small byte spans.
+                    assert_eq!(
+                        unsafe { address(row, column, rows, columns, 4096) },
+                        expected,
+                        "{width}B ({row},{column}) in ({rows},{columns})"
+                    );
+                }
+            }
         }
     }
 }

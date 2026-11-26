@@ -580,40 +580,34 @@ fn emit_read(
         .iter()
         .map(|&v| word_at(b, words, v))
         .collect::<Result<Vec<_>, _>>()?;
-    let mut index = |value, bound| {
-        let nonzero = b.ins().icmp_imm(IntCC::NotEqual, value, 0);
-        require(b, nonzero, miss);
-        let in_bounds = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, value, bound);
-        require(b, in_bounds, miss);
-        b.ins().iadd_imm(value, -1)
-    };
-    let ordinal = match &indices[..] {
+    let width = region.matrices[read.matrix].width;
+    let (address, ty) = match &indices[..] {
         [linear] => {
-            let linear = index(*linear, cells);
-            super::numeric_words::linear_ordinal(
+            // Unsigned (index - 1) < length checks zero and the upper bound
+            // together, including zero-length and maximum-word selectors.
+            let ordinal = b.ins().iadd_imm(*linear, -1);
+            let valid = b.ins().icmp(IntCC::UnsignedLessThan, ordinal, cells);
+            require(b, valid, miss);
+            super::numeric_words::linear_address(
                 b,
-                linear,
+                ordinal,
                 rows,
                 columns,
+                width,
                 plan.values()[region.matrices[read.matrix].value as usize]
                     .definition()
                     .body(),
-            )
+                |_| pointer,
+            )?
         }
-        [row, column] => {
-            let row = index(*row, rows);
-            let column = index(*column, columns);
-            let offset = b.ins().imul(row, columns);
-            b.ins().iadd(offset, column)
-        }
+        [row, column] => super::numeric_words::cell_address(
+            b, *row, *column, rows, columns, width, pointer, miss,
+        )?,
         _ => return Err(backend("numeric map read selector count")),
     };
-    let width = region.matrices[read.matrix].width;
-    let bytes = b.ins().imul_imm(ordinal, i64::from(width));
-    let address = b.ins().iadd(pointer, bytes);
     Ok(super::numeric_words::load_unsigned_word(
         b,
-        integer(width),
+        ty,
         MemFlags::new(),
         address,
         0,
