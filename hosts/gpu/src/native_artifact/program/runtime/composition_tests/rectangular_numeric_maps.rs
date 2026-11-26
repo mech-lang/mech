@@ -60,6 +60,8 @@ fn rectangular_numeric_maps_execute_one_native_rectangle_and_match_ordinary_bits
             );
             reference.unwrap();
             assert_eq!(ordinary.complete, 0);
+            assert_eq!(ordinary.block_permutations, 1);
+            assert_eq!(ordinary.direct_rectangles, 0);
             let mut output = vec![None; artifact.outputs().len()];
             let (result, counts) = run(
                 &jit,
@@ -73,6 +75,8 @@ fn rectangular_numeric_maps_execute_one_native_rectangle_and_match_ordinary_bits
             result.unwrap();
             assert_eq!(counts.complete, 1, "{counts:?}");
             assert_eq!(counts.selected, 1, "{counts:?}");
+            assert_eq!(counts.block_permutations, 0, "{counts:?}");
+            assert_eq!(counts.direct_rectangles, 1, "{counts:?}");
             for &site in &rectangle.body {
                 assert_eq!(
                     counts
@@ -246,6 +250,12 @@ fn rectangular_numeric_maps_all_exact_kinds_keep_branches_shapes_fresh_payloads_
                         assert_eq!(
                             counts.complete,
                             u64::from(!items.is_empty()),
+                            "{kind} {counts:?}"
+                        );
+                        assert_eq!(counts.block_permutations, 0, "{kind} {counts:?}");
+                        assert_eq!(
+                            counts.direct_rectangles,
+                            u64::from(items.len() > 1),
                             "{kind} {counts:?}"
                         );
                         assert_eq!(snapshots(&output), snapshots(&reference), "{kind}");

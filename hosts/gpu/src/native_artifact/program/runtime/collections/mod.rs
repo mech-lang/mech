@@ -35,6 +35,10 @@ mod numeric_rectangles;
 mod numeric_reductions;
 mod numeric_transposes;
 mod row_blocks;
+#[cfg(test)]
+pub(super) fn test_take_block_orders() -> (u64, u64) {
+    row_blocks::test_take_block_orders()
+}
 pub(in crate::native_artifact) mod uniform_words;
 pub(in crate::native_artifact::program::runtime) mod utf8_read;
 mod word_collections;
@@ -103,13 +107,31 @@ struct PreparedRange {
     start: u64,
     count: u64,
 }
+// Three states fit the same two words as the former Option<u64> rows. The
+// order marker belongs to this builder's complete bank, never a source Value.
+enum BlockRows {
+    Unknown,
+    ColumnMajor(u64),
+    RowMajor(u64),
+}
+impl BlockRows {
+    fn rows(&self) -> Option<u64> {
+        match self {
+            Self::Unknown => None,
+            Self::ColumnMajor(rows) | Self::RowMajor(rows) => Some(*rows),
+        }
+    }
+    fn is_row_major(&self) -> bool {
+        matches!(self, Self::RowMajor(_))
+    }
+}
 struct Builder {
     // Owned drafts and their backing are released before their reservation.
     values: data::CollectedValues,
     join: Option<text_join::Builder>,
     query: Option<histogram_query::Builder>,
     histogram: Option<histogram::Builder>,
-    block_rows: Option<u64>,
+    block_rows: BlockRows,
     block_columns: u64,
     payload_bytes: u64,
     cloned_bytes: u64,
@@ -582,7 +604,7 @@ impl State {
                     join: None,
                     query: None,
                     histogram: None,
-                    block_rows,
+                    block_rows: block_rows.map_or(BlockRows::Unknown, BlockRows::ColumnMajor),
                     block_columns: 0,
                     payload_bytes: 0,
                     cloned_bytes: 0,

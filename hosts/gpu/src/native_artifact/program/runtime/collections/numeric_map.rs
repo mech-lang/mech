@@ -333,6 +333,7 @@ impl State {
             || builder.values.capacity() != 0
             || builder.reservation.capacity_bytes() != 0
             || builder.payload_bytes != 0
+            || builder.block_rows.is_row_major()
             || builder.values.packed_width() != Some(region.output_width as u64)
             || builder.join.is_some()
             || builder.query.is_some()
@@ -344,6 +345,7 @@ impl State {
             if builder.block_columns != 0
                 || builder
                     .block_rows
+                    .rows()
                     .is_some_and(|rows| rows != rectangle.rows)
             {
                 return Ok(None);
@@ -803,7 +805,9 @@ impl State {
         builder.reservation = output_reservation;
         builder.payload_bytes = bytes;
         if let Some(rows) = rectangle_rows {
-            builder.block_rows = Some(rows);
+            // Only the completed genuine native rectangle has initialized
+            // every cell at its final row-major position.
+            builder.block_rows = BlockRows::RowMajor(rows);
             builder.block_columns = completed_source_count;
         }
         self.live_bytes = add(old_live, bytes)?;

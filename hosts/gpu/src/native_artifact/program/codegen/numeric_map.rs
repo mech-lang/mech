@@ -365,7 +365,22 @@ fn emit(
                         } else {
                             b.ins().ireduce(integer(region.output_width), result)
                         };
-                        let displacement = b.ins().imul_imm(at, i64::from(region.output_width));
+                        // Preserve source evaluation order (one complete column at a time),
+                        // but initialize each cell at its final row-major location.
+                        // count = rows * source_count and 0 <= at < count were
+                        // checked above, so this permutation is in-bounds and
+                        // initializes every output cell exactly once.
+                        let output_at = if let Some(rectangle) = &region.rectangle {
+                            let rows = b.ins().iconst(types::I64, rectangle.rows as i64);
+                            let row = b.ins().urem(at, rows);
+                            let column = b.ins().udiv(at, rows);
+                            let base = b.ins().imul(row, source_count);
+                            b.ins().iadd(base, column)
+                        } else {
+                            at
+                        };
+                        let displacement =
+                            b.ins().imul_imm(output_at, i64::from(region.output_width));
                         let address = b.ins().iadd(output, displacement);
                         b.ins().store(MemFlags::new(), value, address, 0);
                     }

@@ -52,7 +52,7 @@ impl State {
             || builder.join.is_some()
             || builder.query.is_some()
             || builder.histogram.is_some()
-            || builder.block_rows.is_some()
+            || builder.block_rows.rows().is_some()
             || builder.block_columns != 0
         {
             return Ok(None);

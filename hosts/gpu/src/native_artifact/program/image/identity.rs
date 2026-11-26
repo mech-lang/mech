@@ -542,7 +542,9 @@ fn selected_template(
 // IR369 carries exact tags through complete common-prefix numeric FSMs.
 // IR370 composes sole-consumer F64 map/sum/extraction with checked completion.
 // IR371 publishes a sole-consumer scalar map directly in transposed shape.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 371;
+// IR372 emits rectangular numeric banks directly in final row-major order.
+// Old Objects initialize column-major payloads and require the old finish pass.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 372;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -802,7 +804,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 371;
 // Policy138 funds current-variant imports, discriminator homes and boundaries.
 // Policy139 funds ordered fold work and all elided logical constructors.
 // Policy140 funds exact transpose projection finish and constructor bounds.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 140;
+// Work141 retains the full source permutation work and physical reservations
+// for a native rectangle whose output cells are already in final order.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 141;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

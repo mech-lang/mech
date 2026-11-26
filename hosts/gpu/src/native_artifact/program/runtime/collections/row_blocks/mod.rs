@@ -8,6 +8,12 @@ use mech_engine::native_artifact::NativeMatchValue;
 thread_local! {
     static FORCE_GENERIC_PAYLOAD: core::cell::Cell<bool> = const { core::cell::Cell::new(false) };
     static PACKED_PAYLOADS: core::cell::Cell<u64> = const { core::cell::Cell::new(0) };
+    static BLOCK_ORDERS: core::cell::Cell<(u64, u64)> = const { core::cell::Cell::new((0, 0)) };
+}
+
+#[cfg(test)]
+pub(super) fn test_take_block_orders() -> (u64, u64) {
+    BLOCK_ORDERS.with(|counts| counts.replace((0, 0)))
 }
 
 /// Only canonical packed banks whose scalar payload width is fixed qualify.
@@ -91,15 +97,17 @@ impl State {
             return Ok(None);
         }
         let builder = self.builder(id)?;
-        let rows = builder.block_rows.unwrap_or(0);
+        let rows = builder.block_rows.rows().unwrap_or(0);
         let columns = builder.block_columns;
+        let row_major = builder.block_rows.is_row_major();
         let count = builder.values.len() as u64;
         if mul(rows, columns)? != count {
             return Err(invalid("collected matrix block geometry differs"));
         }
         if rows > 1 && columns > 1 {
-            // The admitted scalar bank is column-major. Reorder in place
-            // using one byte per cycle mark; no scalar payload is cloned.
+            // Retain the original source work, temporary and node admission,
+            // including physical coexistence, even when the native emitter has
+            // already stored the complete bank in final row-major order.
             self.account(ctx, id, 0, add(mul(count, 64)?, 256)?)?;
             check(
                 definition.origin(),
@@ -116,6 +124,19 @@ impl State {
             let memory = ctx.library().memory_budget();
             let _nodes = memory.reserve_nodes(1)?;
             let _marks = memory.reserve_capacity(count)?;
+            if row_major {
+                #[cfg(test)]
+                BLOCK_ORDERS.with(|counts| {
+                    let (permutations, direct) = counts.get();
+                    counts.set((permutations, direct + 1));
+                });
+                return Ok(Some([rows, columns]));
+            }
+            #[cfg(test)]
+            BLOCK_ORDERS.with(|counts| {
+                let (permutations, direct) = counts.get();
+                counts.set((permutations + 1, direct));
+            });
             let count = usize::try_from(count).map_err(|_| invalid("block permutation count"))?;
             let mut visited = Vec::<u8>::new();
             visited
@@ -185,7 +206,16 @@ impl State {
         let origin = collection.origin();
         let output = &descriptor.metadata().plan.values()[collection.output().get() as usize];
         let builder = self.builder(id)?;
-        if builder.block_rows.is_some_and(|expected| rows != expected) {
+        if builder.block_rows.is_row_major() {
+            return Err(invalid(
+                "native row-major rectangle cannot accept another block",
+            ));
+        }
+        if builder
+            .block_rows
+            .rows()
+            .is_some_and(|expected| rows != expected)
+        {
             return Err(invalid("native matrix block row counts differ"));
         }
         let next_columns = add(builder.block_columns, columns)?;
@@ -271,7 +301,7 @@ impl State {
             builder.values.reserve(capacity)?;
         }
         builder.values.append_row(&value, rows)?;
-        builder.block_rows = Some(rows);
+        builder.block_rows = BlockRows::ColumnMajor(rows);
         builder.block_columns = next_columns;
         builder.nodes.merge(pending_nodes)?;
         builder.payload_bytes = payload_bytes;

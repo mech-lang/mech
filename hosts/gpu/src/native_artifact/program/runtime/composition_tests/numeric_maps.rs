@@ -22,6 +22,8 @@ pub(super) struct Counts {
     pub(super) word_selected: u64,
     pub(super) word_complete: u64,
     pub(super) transpose_complete: u64,
+    pub(super) block_permutations: u64,
+    pub(super) direct_rectangles: u64,
     pub(super) interleaved_refused: u64,
     pub(super) elements: BTreeMap<u64, u64>,
     pub(super) helpers: BTreeMap<(u64, u64), u64>,
@@ -269,6 +271,7 @@ pub(super) fn run(
     let restored = restored.then(|| super::super::tests::restore_admitted_helper_descriptor(jit));
     let descriptor = restored.as_ref().unwrap_or_else(|| jit.descriptor());
     FLAGS.with(|v| v.set(flags));
+    super::super::collections::test_take_block_orders();
     COUNTS.with(|v| *v.borrow_mut() = Counts::default());
     let entry = jit.test_checked_entry();
     let result = execute(
@@ -288,6 +291,12 @@ pub(super) fn run(
         memory,
     );
     FLAGS.with(|v| v.set(Flags::default()));
+    let (permutations, direct) = super::super::collections::test_take_block_orders();
+    COUNTS.with(|v| {
+        let mut counts = v.borrow_mut();
+        counts.block_permutations = permutations;
+        counts.direct_rectangles = direct;
+    });
     (
         result,
         COUNTS.with(|v| std::mem::take(&mut *v.borrow_mut())),
