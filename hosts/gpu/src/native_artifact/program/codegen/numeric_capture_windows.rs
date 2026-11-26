@@ -155,6 +155,7 @@ pub(super) fn scope(
                 Some(
                     Operation::Fallback
                         | Operation::Write { .. }
+                        | Operation::CellWrite { .. }
                         | Operation::Append { .. }
                         | Operation::AppendLeBytes { .. }
                 )

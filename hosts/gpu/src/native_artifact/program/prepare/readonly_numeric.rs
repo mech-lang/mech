@@ -10,9 +10,10 @@ use mech_engine::native_artifact::{
     NativeAggregateWord, NativeBufferFrameLane as Lane, NativeBufferFrameOperation as Frame,
     NativeBufferFrames, NativeControlLoop, NativeIterationAction as Action,
     NativeIterationTerminator as Term, NativeMatchAction as Scalar,
-    NativeMatchTerminator as Branch, NativePreparedLibraryCall, NativeProgramArtifactPlan as Plan,
-    NativeProgramFacts, NativeScalarAggregateAction as Aggregate, NativeScalarAggregates,
-    NativeScalarKind, NativeTailLoop,
+    NativeMatchTerminator as Branch, NativeMatchValue as Value, NativePreparedLibraryCall,
+    NativeProgramArtifactPlan as Plan, NativeProgramFacts,
+    NativeScalarAggregateAction as Aggregate, NativeScalarAggregates, NativeScalarKind,
+    NativeTailLoop,
 };
 use std::collections::{BTreeMap, BTreeSet};
 #[path = "numeric_append.rs"]
@@ -337,6 +338,17 @@ impl Proof {
     pub fn view(&self, array: usize) -> usize {
         self.scalar_words + array * 4
     }
+    /// First-change transport retains both independent selectors only for a
+    /// proof that actually contains a two-axis replacement.
+    pub fn write_argument_words(&self) -> usize {
+        self.words
+            + 4
+            + usize::from(
+                self.actions
+                    .iter()
+                    .any(|(_, a)| matches!(a, Operation::CellWrite { .. })),
+            )
+    }
     pub fn writes(&self) -> bool {
         self.arrays.iter().any(|array| array.writable)
     }
@@ -381,13 +393,69 @@ pub(super) fn width(body: &SchemaBody) -> Option<u8> {
     })
 }
 
-/// Exact linear access factories; two-axis operations retain their independent
-/// selector proof and cannot enter a one-coordinate traversal optimization.
-pub(super) fn linear_read(call: &NativePreparedLibraryCall) -> bool {
-    call.template().inputs().len() == 2 && call.scalar_matrix_element_kind().is_some()
+/// Exact selected scalar accesses. Two-axis operations retain both indices;
+/// their dedicated emission cannot use a one-coordinate traversal proof.
+pub(super) fn scalar_read(call: &NativePreparedLibraryCall) -> bool {
+    call.scalar_matrix_element_kind().is_some()
 }
-pub(super) fn linear_write(call: &NativePreparedLibraryCall) -> bool {
-    call.template().inputs().len() == 3 && call.scalar_matrix_replace_kind().is_some()
+pub(super) fn scalar_write(call: &NativePreparedLibraryCall) -> bool {
+    call.scalar_matrix_replace_kind().is_some()
+}
+
+pub(super) fn scalar_access(
+    plan: &Plan,
+    call: &NativePreparedLibraryCall,
+    operands: &[mech_engine::native_artifact::NativeMatchValue],
+    array: usize,
+    output: mech_engine::native_artifact::NativeMatchValue,
+) -> Result<Operation, &'static str> {
+    let selector = |value: Value| {
+        plan.values()[value.get() as usize].scalar_kind() == Some(NativeScalarKind::U64)
+    };
+    if let Some(kind) = call.scalar_matrix_replace_kind() {
+        if operands
+            .get(1)
+            .is_none_or(|v| plan.values()[v.get() as usize].scalar_kind() != Some(kind))
+        {
+            return Err("numeric replacement has a different scalar kind");
+        }
+        return Ok(match operands {
+            [_, incoming, index] if selector(*index) => Operation::Write {
+                array,
+                index: index.get(),
+                incoming: incoming.get(),
+            },
+            [_, incoming, row, column] if selector(*row) && selector(*column) => {
+                Operation::CellWrite {
+                    array,
+                    row: row.get(),
+                    column: column.get(),
+                    incoming: incoming.get(),
+                }
+            }
+            _ => return Err("numeric replacement lacks exact axis selectors"),
+        });
+    }
+    if call
+        .scalar_matrix_element_kind()
+        .is_none_or(|kind| plan.values()[output.get() as usize].scalar_kind() != Some(kind))
+    {
+        return Err("numeric read has a different scalar result kind");
+    }
+    Ok(match operands {
+        [_, index] if selector(*index) => Operation::Read {
+            array,
+            index: index.get(),
+            output: output.get(),
+        },
+        [_, row, column] if selector(*row) && selector(*column) => Operation::CellRead {
+            array,
+            row: row.get(),
+            column: column.get(),
+            output: output.get(),
+        },
+        _ => return Err("numeric read lacks exact axis selectors"),
+    })
 }
 
 pub(in crate::native_artifact::program::prepare) fn scalar_children(
@@ -557,7 +625,7 @@ impl Provenance<'_, '_> {
             {
                 let call = self.calls.get(site)?.as_ref()?;
                 if output.get() != value
-                    || !(linear_write(call) || call.supports_unsigned_matrix_append())
+                    || !(scalar_write(call) || call.supports_unsigned_matrix_append())
                 {
                     return None;
                 }
@@ -1115,8 +1183,8 @@ fn derive_inner(
                 .and_then(Option::as_ref)
                 .ok_or("missing selected factory")?;
             let is_length = call.supports_unsigned_matrix_length();
-            let is_read = linear_read(call);
-            let is_write = linear_write(call);
+            let is_read = scalar_read(call);
+            let is_write = scalar_write(call);
             let is_append = call.supports_unsigned_matrix_append();
             if !(is_length || is_read || is_write || is_append) {
                 return Err("unsupported selected library effect or operation");
@@ -1170,32 +1238,8 @@ fn derive_inner(
                     array: at,
                     incoming: operands[1].get(),
                 }
-            } else if is_write {
-                if operands.len() != 3
-                    || plan.values()[operands[2].get() as usize].scalar_kind()
-                        != Some(NativeScalarKind::U64)
-                    || plan.values()[operands[1].get() as usize].scalar_kind()
-                        != call.scalar_matrix_replace_kind()
-                {
-                    return Err("unsupported write operands");
-                }
-                Operation::Write {
-                    array: at,
-                    incoming: operands[1].get(),
-                    index: operands[2].get(),
-                }
             } else {
-                if operands.len() != 2
-                    || plan.values()[operands[1].get() as usize].scalar_kind()
-                        != Some(NativeScalarKind::U64)
-                {
-                    return Err("unsupported read selector");
-                }
-                Operation::Read {
-                    array: at,
-                    index: operands[1].get(),
-                    output: output.get(),
-                }
+                scalar_access(plan, call, operands, at, *output)?
             }
         } else {
             match action {
@@ -1226,7 +1270,7 @@ fn derive_inner(
         .fields(tail.carrier())
         .is_some_and(|fields| numeric_fields::has_nested_managed(frames, fields))
         && !actions.iter().any(|(_, action)| {
-            matches!(action, Operation::Read { array, .. }
+            matches!(action, Operation::Read { array, .. } | Operation::CellRead { array, .. }
                 if !arrays[*array].writable && !arrays[*array].appends)
         })
     {

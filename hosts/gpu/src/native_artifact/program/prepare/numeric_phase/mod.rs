@@ -246,10 +246,10 @@ impl Forest {
                             .and_then(Option::as_ref)
                             .filter(|call| call.template() == template)
                             .ok_or("numeric child lacks its exact selected factory")?;
-                        if super::readonly_numeric::linear_read(call) {
+                        if super::readonly_numeric::scalar_read(call) {
                             reads += 1;
                         } else if !call.supports_unsigned_matrix_length()
-                            && !super::readonly_numeric::linear_write(call)
+                            && !super::readonly_numeric::scalar_write(call)
                         {
                             return Err("numeric child has a mutation or unsupported effect");
                         }
@@ -513,7 +513,6 @@ pub(in crate::native_artifact) fn mutation_needs_funding(
     forest: &Forest,
     actions: &[(usize, super::numeric_plan::Operation)],
 ) -> Result<bool, &'static str> {
-    use super::numeric_plan::Operation;
     let latches = forest
         .loops
         .iter()
@@ -527,7 +526,7 @@ pub(in crate::native_artifact) fn mutation_needs_funding(
         .collect::<BTreeSet<_>>();
     let mut funding = false;
     for &(site, ref action) in actions {
-        if !matches!(action, Operation::Write { .. }) && !action.grows() {
+        if !action.replaces() && !action.grows() {
             continue;
         }
         if plan.blocks()[site].iteration() != Some(forest.loops[0].iteration) {

@@ -74,6 +74,7 @@ pub(super) fn materialize(
     frame: Value,
     locals: Value,
     index: Value,
+    column: Option<Value>,
     incoming: Value,
     hooks: &Hooks,
     error: Block,
@@ -96,7 +97,7 @@ pub(super) fn materialize(
         locals,
         offset(region.words)?,
     );
-    hooks.require_argument_words(b, proof.words + 4, error);
+    hooks.require_argument_words(b, proof.words + 4 + usize::from(column.is_some()), error);
     for field in proof
         .frame(region.tail.carrier().get())
         .into_iter()
@@ -166,6 +167,14 @@ pub(super) fn materialize(
         hooks.arguments,
         offset(3 + proof.words)?,
     );
+    if let Some(column) = column {
+        b.ins().store(
+            MemFlags::new(),
+            column,
+            hooks.arguments,
+            offset(4 + proof.words)?,
+        );
+    }
     let compute = words.read(b, region.words + 1);
     let comparison = words.read(b, region.words + 2);
     use crate::native_artifact::program::protocol::NumericWriteHandoff;

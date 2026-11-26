@@ -460,6 +460,7 @@ unsafe extern "C" fn helper(
         let proof = region.numeric.as_ref().unwrap();
         use crate::native_artifact::program::prepare::readonly_numeric::Operation;
         let (Operation::Write { array, .. }
+        | Operation::CellWrite { array, .. }
         | Operation::Append { array, .. }
         | Operation::AppendLeBytes { array, .. }) = proof.action(site as usize).unwrap()
         else {

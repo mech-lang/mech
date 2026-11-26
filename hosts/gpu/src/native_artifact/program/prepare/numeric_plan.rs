@@ -42,6 +42,18 @@ pub(in crate::native_artifact) enum Operation {
         index: u32,
         incoming: u32,
     },
+    CellRead {
+        array: usize,
+        row: u32,
+        column: u32,
+        output: u32,
+    },
+    CellWrite {
+        array: usize,
+        row: u32,
+        column: u32,
+        incoming: u32,
+    },
     Append {
         array: usize,
         incoming: u32,
@@ -53,6 +65,9 @@ pub(in crate::native_artifact) enum Operation {
     },
 }
 impl Operation {
+    pub fn replaces(&self) -> bool {
+        matches!(self, Self::Write { .. } | Self::CellWrite { .. })
+    }
     pub fn grows(&self) -> bool {
         matches!(self, Self::Append { .. } | Self::AppendLeBytes { .. })
     }

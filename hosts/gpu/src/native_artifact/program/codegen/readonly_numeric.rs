@@ -1097,6 +1097,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     frame,
                     locals,
                     index,
+                    None,
                     incoming,
                     hooks,
                     error,
@@ -1178,6 +1179,7 @@ pub(in crate::native_artifact) fn emit_entry(
                     frame,
                     locals,
                     count,
+                    None,
                     incoming,
                     hooks,
                     error,
@@ -1211,6 +1213,142 @@ pub(in crate::native_artifact) fn emit_entry(
                 if boundary::tree_owner_handoff(controls, region, proof) {
                     report.owned_handoff_boundaries.push(site);
                 }
+            }
+            Some(
+                operation @ (Operation::CellRead {
+                    array, row, column, ..
+                }
+                | Operation::CellWrite {
+                    array, row, column, ..
+                }),
+            ) => {
+                let view = shadow + proof.view(*array);
+                let row = words.read(b, *row as usize);
+                let column = words.read(b, *column as usize);
+                let rows = words.read(b, view + 2);
+                let columns = words.read(b, view + 3);
+                let base = words.read(b, view);
+                let width = proof.arrays[*array].width;
+                let bad = b.create_block();
+                let after = b.create_block();
+                b.set_cold_block(bad);
+                boundaries.insert(bad);
+                // These are independent source axes, never a linear access or
+                // a one-coordinate CSE/window certificate.
+                let (address, ty) = super::numeric_words::cell_address(
+                    b, row, column, rows, columns, width, base, bad,
+                )?;
+                match operation {
+                    Operation::CellRead { output, .. } => {
+                        let value = super::numeric_words::load_unsigned_word(
+                            b,
+                            ty,
+                            super::numeric_words::guarded_load_flags(controls.options()),
+                            address,
+                            0,
+                        );
+                        words.write(b, *output as usize, value);
+                        report.typed_loads.push((site, width));
+                    }
+                    Operation::CellWrite { incoming, .. } => {
+                        let incoming = words.read(b, *incoming as usize);
+                        super::numeric_words::guard_scalar_store(b, code, site, incoming, fail)?;
+                        let old = super::numeric_words::load_unsigned_word(
+                            b,
+                            ty,
+                            super::numeric_words::guarded_load_flags(controls.options()),
+                            address,
+                            0,
+                        );
+                        report.typed_loads.push((site, width));
+                        let changed = b.ins().icmp(IntCC::NotEqual, old, incoming);
+                        let update = b.create_block();
+                        let done = b.create_block();
+                        let store = b.create_block();
+                        let materialize = b.create_block();
+                        b.set_cold_block(materialize);
+                        boundaries.insert(materialize);
+                        b.ins().brif(changed, update, &[], done, &[]);
+                        b.switch_to_block(update);
+                        let private = words.read(b, shadow + proof.private_flag(*array));
+                        b.ins().brif(private, store, &[], materialize, &[]);
+                        b.switch_to_block(materialize);
+                        boundary::materialize(
+                            controls,
+                            b,
+                            &words,
+                            region,
+                            proof,
+                            *array,
+                            site,
+                            frame,
+                            locals,
+                            row,
+                            Some(column),
+                            incoming,
+                            hooks,
+                            error,
+                            fuel_debits.as_ref(),
+                            retirement.as_ref(),
+                        )?;
+                        b.ins().jump(done, &[]);
+                        b.switch_to_block(store);
+                        let value = if width < 8 {
+                            b.ins().ireduce(ty, incoming)
+                        } else {
+                            incoming
+                        };
+                        b.ins().store(MemFlags::new(), value, address, 0);
+                        b.ins().jump(done, &[]);
+                        b.switch_to_block(done);
+                        report.typed_stores.push((site, width));
+                        report.first_change_boundaries.push(site);
+                        if boundary::tree_owner_handoff(controls, region, proof) {
+                            report.owned_handoff_boundaries.push(site);
+                        }
+                    }
+                    _ => unreachable!("selected cell access"),
+                }
+                b.ins().jump(after, &[]);
+                b.switch_to_block(bad);
+                if region.numeric_tree.is_some() || proof.boundary_values.candidates.is_empty() {
+                    set_origin(b, frame, site as u64);
+                    super::numeric_fuel_debits::spill_live(
+                        fuel_debits.as_ref(),
+                        b,
+                        &words,
+                        locals,
+                        &live_at(site),
+                    )?;
+                    // Ordinary source sites retain their deepest independent leaf
+                    // proof for a declined outer tree. This generated path owns
+                    // the known root loan, so reconcile that exact region instead
+                    // of looking up the ordinary site's shadowed leaf region.
+                    let source_site = b.ins().iconst(types::I64, site as i64);
+                    tail::leave(
+                        controls.options(),
+                        b,
+                        locals,
+                        region,
+                        source_site,
+                        2,
+                        hooks,
+                        error,
+                    )?;
+                    let Action::LibraryCall { operands, .. } = code.blocks()[site].action() else {
+                        return Err(backend("numeric read lost selected call"));
+                    };
+                    hooks.library(b, site, operands, locals, |v| code.kind(v).is_some(), error)?;
+                    let status = b.ins().iconst(types::I64, STATUS_ABI as i64);
+                    b.ins().jump(error, &[status.into()]);
+                } else {
+                    let spilled = boundary::source_failure(
+                        b, controls, &words, frame, locals, code, closed, id, site, hooks, error,
+                    )?;
+                    report.bounds_error_spill_words.push((site, spilled));
+                }
+
+                b.switch_to_block(after);
             }
             Some(
                 operation @ (Operation::Read { array, index, .. }
@@ -1466,6 +1604,7 @@ pub(in crate::native_artifact) fn emit_entry(
                             frame,
                             locals,
                             index,
+                            None,
                             incoming,
                             hooks,
                             error,

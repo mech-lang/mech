@@ -596,6 +596,63 @@ pub(in crate::native_artifact) fn emit(
                 report.first_change_boundaries.push(site);
             }
             Some(
+                operation @ (Operation::CellRead {
+                    array, row, column, ..
+                }
+                | Operation::CellWrite {
+                    array, row, column, ..
+                }),
+            ) => {
+                let view = shadow + proof.view(*array);
+                let row = words.read(b, *row as usize);
+                let column = words.read(b, *column as usize);
+                let rows = words.read(b, view + 2);
+                let columns = words.read(b, view + 3);
+                let base = words.read(b, view);
+                let width = proof.arrays[*array].width;
+                let bad = b.create_block();
+                let after = b.create_block();
+                b.set_cold_block(bad);
+                boundaries.insert(bad);
+                let (address, ty) = super::numeric_words::cell_address(
+                    b, row, column, rows, columns, width, base, bad,
+                )?;
+                match operation {
+                    Operation::CellRead { output, .. } => {
+                        let value = super::numeric_words::load_unsigned_word(
+                            b,
+                            ty,
+                            MemFlags::new(),
+                            address,
+                            0,
+                        );
+                        words.write(b, *output as usize, value);
+                        report.typed_loads.push((site, width));
+                    }
+                    Operation::CellWrite { incoming, .. } => {
+                        let incoming = words.read(b, *incoming as usize);
+                        super::numeric_words::guard_scalar_store(b, code, site, incoming, fail)?;
+                        let value = if width < 8 {
+                            b.ins().ireduce(ty, incoming)
+                        } else {
+                            incoming
+                        };
+                        // This private compact contract already owns the view;
+                        // it grants neither a linear index nor speculative CSE.
+                        b.ins().store(MemFlags::new(), value, address, 0);
+                        report.typed_stores.push((site, width));
+                        report.private_write_sites.push((site, *array, width));
+                        report.first_change_boundaries.push(site);
+                    }
+                    _ => unreachable!("selected cell access"),
+                }
+                b.ins().jump(after, &[]);
+                b.switch_to_block(bad);
+                native.reject(b, super::numeric_minimal::BOUNDS, fail);
+                report.bounds_error_spill_words.push((site, 0));
+                b.switch_to_block(after);
+            }
+            Some(
                 operation @ (Operation::Read { array, index, .. }
                 | Operation::Write { array, index, .. }),
             ) => {

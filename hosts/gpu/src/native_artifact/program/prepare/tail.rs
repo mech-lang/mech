@@ -407,7 +407,7 @@ impl Layout {
                 if numeric
                     .as_ref()
                     .and_then(|p| p.action(site as usize))
-                    .is_some_and(|a| matches!(a, super::readonly_numeric::Operation::Write { .. }))
+                    .is_some_and(|a| a.replaces())
                 {
                     comparison = comparison
                         .checked_add(1)
@@ -546,9 +546,7 @@ impl Layout {
                             .checked_add(visits[site].work)
                             .and_then(|n| n.checked_add(OVERHEAD))
                             .ok_or("numeric tree node price overflow")?;
-                        if proof.action(site).is_some_and(|a| {
-                            matches!(a, super::readonly_numeric::Operation::Write { .. })
-                        }) {
+                        if proof.action(site).is_some_and(|a| a.replaces()) {
                             node.comparison = node
                                 .comparison
                                 .checked_add(1)

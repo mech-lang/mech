@@ -36,7 +36,10 @@ pub(super) fn stable_arrays(code: CodePlan<'_>, region: &Region, proof: &Proof) 
     for &(site, ref operation) in &proof.actions {
         if matches!(
             operation,
-            Operation::Write { .. } | Operation::Append { .. } | Operation::AppendLeBytes { .. }
+            Operation::Write { .. }
+                | Operation::CellWrite { .. }
+                | Operation::Append { .. }
+                | Operation::AppendLeBytes { .. }
         ) {
             let Some(call) = metadata
                 .unsigned_buffer_calls

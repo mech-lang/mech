@@ -4,7 +4,7 @@ use crate::native_artifact::codegen::options::OptimizationPass;
 use crate::native_artifact::program::prepare::readonly_numeric::Operation;
 use mech_core::snapshot::F64Bits;
 
-fn cases() -> Vec<(&'static str, Vec<Data>, Data)> {
+pub(super) fn cases() -> Vec<(&'static str, Vec<Data>, Data)> {
     vec![
         (
             "bool",

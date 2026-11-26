@@ -146,6 +146,44 @@ impl NativePreparedLibraryCall {
         .map(|(private, _)| private)
     }
 
+    /// The selected two-axis unsigned replacement shares the scalar update
+    /// protocol and confines its result to the maintained unsigned owner. This
+    /// preserves unsigned append authority without admitting other cell kinds.
+    pub fn unsigned_matrix_cell_replace_private(
+        &self,
+        source: Value,
+        row: u64,
+        column: u64,
+        incoming: u64,
+        may_consume: bool,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+    ) -> Result<mech_core::snapshot::PrivateUnsignedMatrix, InvokeError> {
+        if self.template.inputs().len() != 4
+            || self
+                .scalar_matrix_replace_kind()
+                .and_then(|k| k.unsigned_maximum())
+                .is_none()
+        {
+            return Err(InvokeError::InvalidInput);
+        }
+        self.matrix_replace_with::<_, false>(
+            source,
+            &[row, column],
+            incoming,
+            may_consume,
+            limits,
+            work,
+            coexistence,
+            |value, admission| {
+                let admission = admission.ok_or(InvokeError::InvalidInput)?;
+                Ok(value.into_private_unsigned_matrix(admission)?)
+            },
+        )
+        .map(|(private, _)| private)
+    }
+
     /// Confine this exact selected scalar replacement to the shared private
     /// publication owner. The first-change caller retains source-order checks;
     /// only a changed, freshly constructed result can enter this phase.

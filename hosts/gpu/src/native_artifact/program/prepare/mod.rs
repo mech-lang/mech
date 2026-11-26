@@ -428,7 +428,13 @@ impl PreparedNativeProgram {
                     .regions
                     .iter()
                     .filter_map(|r| r.numeric.as_ref())
-                    .map(|p| p.words + if p.writes() { 4 } else { 2 })
+                    .map(|p| {
+                        if p.writes() {
+                            p.write_argument_words()
+                        } else {
+                            p.words + 2
+                        }
+                    })
                     .max()
                     .unwrap_or(0),
             )

@@ -487,6 +487,8 @@ impl Invocation<'_, '_, '_> {
             let Some(
                 Operation::Read { array, .. }
                 | Operation::Write { array, .. }
+                | Operation::CellRead { array, .. }
+                | Operation::CellWrite { array, .. }
                 | Operation::AppendLeBytes { array, .. },
             ) = proof.action(site)
             else {

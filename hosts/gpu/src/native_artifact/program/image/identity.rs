@@ -532,7 +532,8 @@ fn selected_template(
 // or prepared U64 cursors, including checked immutable matrix reads.
 // IR360 shares checked source branches and phi words inside native scalar maps.
 // IR361 reuses typed scalar storage in closed numeric array phases.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 361;
+// IR362 preserves independent row/column selectors in native numeric phases.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 362;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -782,7 +783,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 361;
 // Policy128 funds typed-map loans, selected reads and complete ordinary replay.
 // Policy129 prepays the complete acyclic conditional map body.
 // Policy130 funds the typed private owner bank and scalar store guards.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 130;
+// Policy131 funds two-axis guards and first-change coordinate transport.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 131;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

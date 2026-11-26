@@ -52,9 +52,7 @@ impl Schedule {
                     .checked_add(visits[site].work)
                     .and_then(|n| n.checked_add(OVERHEAD))
                     .ok_or("phase traversal price overflows")?;
-                if actions.iter().any(|(s, a)| {
-                    *s == site && matches!(a, super::super::numeric_plan::Operation::Write { .. })
-                }) {
+                if actions.iter().any(|(s, a)| *s == site && a.replaces()) {
                     comparison = comparison
                         .checked_add(1)
                         .ok_or("phase comparison price overflows")?;

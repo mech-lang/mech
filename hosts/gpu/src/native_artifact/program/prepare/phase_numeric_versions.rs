@@ -44,7 +44,9 @@ fn summaries<'a>(
             let changed = actions
                 .iter()
                 .filter_map(|(site, operation)| {
-                    let Operation::Write { array, .. } = operation else {
+                    let (Operation::Write { array, .. } | Operation::CellWrite { array, .. }) =
+                        operation
+                    else {
                         return None;
                     };
                     plan.blocks()[*site]
@@ -271,8 +273,7 @@ pub(super) fn validate(
 ) -> Result<(), &'static str> {
     let summaries = summaries(plan, frames, provenance, forest, actions, arrays, exits);
     if actions.iter().any(|(site, operation)| {
-        matches!(operation, Operation::Write { .. })
-            && plan.blocks()[*site].iteration() != Some(forest.loops[0].iteration)
+        operation.replaces() && plan.blocks()[*site].iteration() != Some(forest.loops[0].iteration)
     }) {
         // Prove each call's carried/returned versions locally, then use that
         // exact summary at its caller. Independent loop guards do not require
@@ -487,7 +488,9 @@ fn pass(
             }
             Some(
                 operation @ (Operation::Read { array, .. }
+                | Operation::CellRead { array, .. }
                 | Operation::Write { array, .. }
+                | Operation::CellWrite { array, .. }
                 | Operation::Append { array, .. }
                 | Operation::AppendLeBytes { array, .. }
                 | Operation::Length { array, .. }),
@@ -506,6 +509,7 @@ fn pass(
                 if matches!(
                     operation,
                     Operation::Write { .. }
+                        | Operation::CellWrite { .. }
                         | Operation::Append { .. }
                         | Operation::AppendLeBytes { .. }
                 ) {

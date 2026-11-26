@@ -114,6 +114,17 @@ pub(super) fn source_slots(
             }) => {
                 slots.extend([*index as usize, *incoming as usize]);
             }
+            Some(Operation::CellRead { row, column, .. }) => {
+                slots.extend([*row as usize, *column as usize]);
+            }
+            Some(Operation::CellWrite {
+                row,
+                column,
+                incoming,
+                ..
+            }) => {
+                slots.extend([*row as usize, *column as usize, *incoming as usize]);
+            }
             Some(Operation::Append { incoming, .. }) => {
                 slots.insert(*incoming as usize);
             }
@@ -409,4 +420,32 @@ pub(super) fn guard_scalar_store(
         b.switch_to_block(good);
     }
     Ok(())
+}
+
+/// Independent one-based axes over an entry-validated canonical row-major
+/// view. Check the row before the column, then compute only a physical ordinal.
+/// The caller's cold block executes the original selected rejecting operation.
+pub(super) fn cell_address(
+    b: &mut FunctionBuilder<'_>,
+    row: Value,
+    column: Value,
+    rows: Value,
+    columns: Value,
+    width: u8,
+    base: Value,
+    bad: Block,
+) -> Result<(Value, cranelift_codegen::ir::Type), NativeCompileError> {
+    let row = b.ins().iadd_imm(row, -1);
+    let valid = b.ins().icmp(IntCC::UnsignedLessThan, row, rows);
+    let good = b.create_block();
+    b.ins().brif(valid, good, &[], bad, &[]);
+    b.switch_to_block(good);
+    let column = b.ins().iadd_imm(column, -1);
+    let valid = b.ins().icmp(IntCC::UnsignedLessThan, column, columns);
+    let good = b.create_block();
+    b.ins().brif(valid, good, &[], bad, &[]);
+    b.switch_to_block(good);
+    let start = b.ins().imul(row, columns);
+    let physical = b.ins().iadd(start, column);
+    element_address(b, physical, width, |_| base)
 }

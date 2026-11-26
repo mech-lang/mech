@@ -120,6 +120,32 @@ pub(super) fn required(
                     e.used(shadow + proof.view(*array) + at)
                 }
             }
+            Some(Operation::CellRead {
+                array,
+                row,
+                column,
+                output,
+            }) => {
+                e.used(*row as usize);
+                e.used(*column as usize);
+                for at in 0..4 {
+                    e.used(shadow + proof.view(*array) + at)
+                }
+                e.writes.insert(*output as usize);
+            }
+            Some(Operation::CellWrite {
+                array,
+                row,
+                column,
+                incoming,
+            }) => {
+                e.used(*row as usize);
+                e.used(*column as usize);
+                e.used(*incoming as usize);
+                for at in 0..4 {
+                    e.used(shadow + proof.view(*array) + at)
+                }
+            }
             Some(Operation::Append { array, incoming })
             | Some(Operation::AppendLeBytes {
                 array, incoming, ..

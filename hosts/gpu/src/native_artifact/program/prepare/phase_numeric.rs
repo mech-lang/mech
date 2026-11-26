@@ -144,7 +144,7 @@ impl Provenance<'_, '_> {
             {
                 let call = self.calls.get(site)?.as_ref()?;
                 if output.get() != value
-                    || !(super::readonly_numeric::linear_write(call)
+                    || !(super::readonly_numeric::scalar_write(call)
                         || call.supports_unsigned_matrix_append()
                         || call.supports_unsigned_matrix_append_le_bytes())
                 {
@@ -533,8 +533,8 @@ fn derive_with_children(
                 .and_then(Option::as_ref)
                 .ok_or("missing selected factory")?;
             let is_length = call.supports_unsigned_matrix_length();
-            let is_read = super::readonly_numeric::linear_read(call);
-            let is_write = super::readonly_numeric::linear_write(call);
+            let is_read = super::readonly_numeric::scalar_read(call);
+            let is_write = super::readonly_numeric::scalar_write(call);
             let is_append = call.supports_unsigned_matrix_append();
             let is_bulk = call.supports_unsigned_matrix_append_le_bytes();
             if !(is_length || is_read || is_write || is_append || is_bulk) {
@@ -601,32 +601,8 @@ fn derive_with_children(
                     array: at,
                     incoming: operands[1].get(),
                 }
-            } else if is_write {
-                if operands.len() != 3
-                    || plan.values()[operands[2].get() as usize].scalar_kind()
-                        != Some(NativeScalarKind::U64)
-                    || plan.values()[operands[1].get() as usize].scalar_kind()
-                        != call.scalar_matrix_replace_kind()
-                {
-                    return Err("unsupported write operands");
-                }
-                Operation::Write {
-                    array: at,
-                    incoming: operands[1].get(),
-                    index: operands[2].get(),
-                }
             } else {
-                if operands.len() != 2
-                    || plan.values()[operands[1].get() as usize].scalar_kind()
-                        != Some(NativeScalarKind::U64)
-                {
-                    return Err("unsupported read selector");
-                }
-                Operation::Read {
-                    array: at,
-                    index: operands[1].get(),
-                    output: output.get(),
-                }
+                super::readonly_numeric::scalar_access(plan, call, operands, at, *output)?
             }
         } else {
             match action {
@@ -650,7 +626,7 @@ fn derive_with_children(
     }
     if arrays.iter().any(|array| array.witness == usize::MAX)
         && !actions.iter().any(|(_, action)| {
-            matches!(action, Operation::Read { array, .. }
+            matches!(action, Operation::Read { array, .. } | Operation::CellRead { array, .. }
                 if !arrays[*array].writable && !arrays[*array].appends)
         })
     {

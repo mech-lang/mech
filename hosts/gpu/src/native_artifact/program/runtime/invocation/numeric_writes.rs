@@ -32,6 +32,7 @@ impl Invocation<'_, '_, '_> {
             .ok_or_else(|| invalid("numeric materialization lacks proof"))?;
         let Some(
             operation @ (Operation::Write { array, .. }
+            | Operation::CellWrite { array, .. }
             | Operation::Append { array, .. }
             | Operation::AppendLeBytes { array, .. }),
         ) = proof.action(site)
@@ -54,6 +55,17 @@ impl Invocation<'_, '_, '_> {
         // selector, ordinary append position, or positive bulk byte count.
         let index = self.read_borrowed_word(2 + proof.words)?;
         let incoming = self.read_borrowed_word(3 + proof.words)?;
+        let column = if matches!(operation, Operation::CellWrite { .. }) {
+            Some(self.read_borrowed_word(4 + proof.words)?)
+        } else {
+            None
+        };
+        let indices = [index, column.unwrap_or(0)];
+        let indices = if column.is_some() {
+            &indices[..]
+        } else {
+            &indices[..1]
+        };
         // Close the current loan before any fallible factory/account operation.
         // This traversal has already been prepaid at its native header.
         self.end_closed_tail(site, [args[0], args[1], 5])?;
@@ -129,6 +141,22 @@ impl Invocation<'_, '_, '_> {
                 coexistence,
             )
             .map(PrivateNumericArray::Unsigned)
+        } else if let Some(column) = column.filter(|_| {
+            call.scalar_matrix_replace_kind()
+                .and_then(|k| k.unsigned_maximum())
+                .is_some()
+        }) {
+            call.unsigned_matrix_cell_replace_private(
+                source,
+                index,
+                column,
+                incoming,
+                true,
+                self.limits,
+                &self.state.library,
+                coexistence,
+            )
+            .map(PrivateNumericArray::Unsigned)
         } else if call.supports_unsigned_matrix_replace() {
             call.unsigned_matrix_replace_private(
                 source,
@@ -143,7 +171,7 @@ impl Invocation<'_, '_, '_> {
         } else {
             call.scalar_matrix_replace_private(
                 source,
-                &[index],
+                indices,
                 incoming,
                 true,
                 self.limits,
