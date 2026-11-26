@@ -790,3 +790,90 @@ Typed matrix scalar reads: 2.447% of weighted profiled time.
 Other selected library dispatch: 2.436% of weighted profiled time.
 Loop-local retirement: 1.330% of weighted profiled time.
 Other execution and generated code: 0.646% of weighted profiled time.
+
+Sixth frozen compiler round (IR364): current numeric cache headroom
+
+Prepared numeric calls previously needed to prove optional-cache headroom
+against the entire temporary-memory ceiling. A ceiling equal to the global
+account cannot coexist with already-live arguments, so those calls repeatedly
+rebuilt bindings and memory plans. The compiler/runtime now derives a shallow
+current-call coexistence bound for maintained F64 transpose, sums, broadcasts,
+matrix multiplication, square root and power. This selects existing caches.
+
+The allocation-free preview reads same-account retained bytes/nodes, atomic
+axis dimensions and packed lengths. It bounds legal result populations,
+canonical draft/finalization workspaces, prior outputs and numeric staging.
+Overflow, recursive dimension expressions and unknown geometry decline optional
+metadata. The bound is never a kernel permit or a replacement for actual facts.
+Current schema/shape/policy/account checks, maintained kernel admission, finite
+work and atomic publication still run. Values and results are never cached.
+
+Four new tests cover eleven numeric call forms, real cache retention, fresh
+content/shapes, empty axes, foreign work accounts, finite call limits and
+retry. Cold/warm byte/node pressure preserves an otherwise viable ordinary
+call; a separate growing-payload threshold proves warm cache eviction.
+306 numeric/phase, 24 matrix, all 30 PolyBench and 102 selected Program tests
+pass. The preceding unsigned and scalar native paths retain their checks.
+
+The source is fe60ce70f840357c9eaee32dc751f0e96213b17f, work policy133.
+The compiler and driver were frozen before holdout timing. No Mech port, input,
+C executable, tolerance or timing boundary changed. Both sets retain the same
+equal-weight geometric mean of median Mech/C kernel runtime, lower is better.
+The strict below-1.0x goal applies to the holdout and remains open.
+
+frozen compiler                         optimization x      holdout x
+baseline                                      783.258       2020.085
+round-01-native-matrix-frames                 441.860       1610.274
+round-02-native-scalar-matrix-updates         346.025       1529.299
+round-03-native-maps                          318.844       1468.557
+round-04-conditional-maps                     301.197        724.274
+round-05-guarded-tagged-numeric               159.693        814.668
+round-06-numeric-call-cache                   142.999        440.804
+
+Round 06 aggregate results:
+optimization: kernel 142.999400197x C; fresh 87.220594167x C; paired-original speedup 5.566147x; sum medians 0.096089540s.
+holdout: kernel 440.803690020x C; fresh 263.876744119x C; paired-original speedup 4.517397x; sum medians 0.344056625s.
+all: kernel 251.067049366x C; fresh 151.708557468x C; paired-original speedup 5.014429x; sum medians 0.440146165s.
+
+Relative to frozen round05, both aggregate compiler times improve.
+optimization: Mech 0.866085512x runtime; original compiler 1.028432449x; C 0.967191804x; normalized Mech/C score 0.895464073x.
+holdout: Mech 0.540833902x runtime; original compiler 1.000753100x; C 0.999538195x; normalized Mech/C score 0.541083777x.
+The 1.849x holdout compiler gain accompanies C and original-compiler
+aggregates within 0.1% of their round05 values. Individual regressions above
+5% versus round05 are retained, even though neither original-baseline
+comparison has a regression above 5%:
+optimization cholesky: 1.058761883x previous Mech runtime.
+optimization nussinov: 1.089676455x previous Mech runtime.
+optimization seidel-2d: 1.114255547x previous Mech runtime.
+holdout trisolv: 1.054233676x previous Mech runtime.
+
+The seven-sample-per-actor optimization probe replays round05 across all fifteen
+programs: 1.161430x aggregate speedup. Gramschmidt improves
+3.039326x, Correlation 1.685092x, and Durbin 1.409842x.
+Cholesky is 1.061786x slower; work increases from 49,468,185,460
+to 50,349,314,868, with visits unchanged at 16,365. Cause unproven.
+This probe is neither a C nor a holdout comparison. All cases are retained.
+
+All 900 sequential observations validate full finite warm-up outputs; timed
+checked calls must succeed. Timed outputs are not independently flattened.
+Raw regressions and both original-compiler references remain in the receipts.
+The split and previous holdout results were exposed. No holdout profiling or
+compiler changes after this round's freeze were used. Numeric kernels and Core
+code are unchanged; this round fills an optional metadata reuse gap.
+Larger datasets, GPU/SIMD selection, full compression application/AOT and an
+external application remain unqualified.
+
+The five largest optimization medians cover 97.959% of summed
+optimization runtime, with 15,881 canonical-execution stack samples.
+Parsing, JIT, input import, cache flushing and serialization are excluded by
+stack; profiled times do not enter scores. No holdout was profiled.
+Canonical library calls: 24.139% of weighted profiled time.
+Private frame transport: 23.742% of weighted profiled time.
+Source visits and admission: 17.517% of weighted profiled time.
+Other helper dispatch: 12.165% of weighted profiled time.
+Selected matrix updates: 7.533% of weighted profiled time.
+Comprehension collection bookkeeping: 5.378% of weighted profiled time.
+Typed matrix scalar reads: 3.737% of weighted profiled time.
+Other selected library dispatch: 2.869% of weighted profiled time.
+Loop-local retirement: 1.869% of weighted profiled time.
+Other execution and generated code: 1.051% of weighted profiled time.
