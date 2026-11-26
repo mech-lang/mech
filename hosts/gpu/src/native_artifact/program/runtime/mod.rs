@@ -33,7 +33,9 @@ use std::ffi::c_void;
 mod call_inputs;
 mod collections;
 #[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) use collections::numeric_map::Frame as NativeNumericMapFrame;
+pub(in crate::native_artifact) use collections::numeric_map::{
+    Frame as NativeNumericMapFrame, MatrixView as NativeNumericMapMatrixView,
+};
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) use collections::uniform_words::Frame as NativeUniformFillFrame;
 

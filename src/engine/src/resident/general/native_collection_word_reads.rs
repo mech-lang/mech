@@ -326,6 +326,66 @@ impl NativePreparedLibraryCall {
 }
 
 impl NativePreparedLibraryCall {
+    /// Fixed logical debit of the maintained typed scalar read. A fused
+    /// consumer must also fund its own physical work, current-owner census,
+    /// temporary coexistence and fallback before borrowing any native view.
+    pub fn scalar_matrix_element_native_work(&self) -> Option<u64> {
+        self.scalar_matrix_element_kind()?;
+        self.lookup_work
+            .checked_add(128)?
+            .checked_add(if self.template.inputs().len() == 3 {
+                16
+            } else {
+                0
+            })
+    }
+
+    /// Borrow canonical numeric storage through this exact selected read.
+    /// This grants no visit, work credit, mutable access or publication. The
+    /// caller retains the current owner for the entire synchronous native loan.
+    /// The established unsigned buffer view keeps its narrower contract.
+    pub fn scalar_matrix_element_native_view(
+        &self,
+        source: &Value,
+        memory: &mech_core::ManagedMemoryBudget,
+    ) -> Option<[u64; 4]> {
+        let kind = self.scalar_matrix_element_kind()?;
+        let mech_core::ResolvedOperationContract::Declared(contract) = self.template.contract()
+        else {
+            return None;
+        };
+        if source.schema() != contract.inputs[0].schema
+            || source.schema_key() != self.input_keys[0]
+            || source.shape().parameter_values().len()
+                != self.template.inputs()[0].dimension_parameters().len()
+        {
+            return None;
+        }
+        source.validate_against(&self.schemas).ok()?;
+        source.memory_budget_retained_bytes(memory)?;
+        source.memory_budget_retained_nodes(memory)?;
+        let ValueData::Matrix(matrix) = source.data() else {
+            return None;
+        };
+        let cells = matrix.elements();
+        let pointer = match (kind, cells) {
+            (Kind::Bool, SequenceView::Bool(xs)) => xs.as_ptr() as u64,
+            (Kind::U8, SequenceView::U8(xs)) => xs.as_ptr() as u64,
+            (Kind::U16, SequenceView::U16(xs)) => xs.as_ptr() as u64,
+            (Kind::U32, SequenceView::U32(xs)) => xs.as_ptr() as u64,
+            (Kind::U64, SequenceView::U64(xs)) => xs.as_ptr() as u64,
+            (Kind::I64, SequenceView::I64(xs)) => xs.as_ptr() as u64,
+            (Kind::F64, SequenceView::F64(xs)) => xs.as_ptr() as u64,
+            _ => return None,
+        };
+        let (rows, columns) = crate::resident::numeric::snapshot_matrix_dimensions(
+            source,
+            self.template.inputs()[0].body(),
+        )
+        .ok()?;
+        Some([pointer, cells.len() as u64, rows as u64, columns as u64])
+    }
+
     /// Derive a borrowed packed view only from this original selected read/length
     /// factory and an immutable value admitted to the caller's SAME account.
     /// No execution permit is granted. The synchronous caller must retain the

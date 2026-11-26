@@ -183,6 +183,50 @@ impl CollectedValues {
             }
         })
     }
+    /// Exact typed sink for a checked scalar map. This is separate from the
+    /// unsigned-only word/fill loans; a width match alone grants no access.
+    pub(super) fn scalar_capacity_pointer(&mut self, kind: NativeScalarKind) -> Result<u64, Error> {
+        use NativeScalarKind as K;
+        Ok(match (self, kind) {
+            (Self::U8(v), K::U8) => v.as_mut_ptr() as u64,
+            (Self::U16(v), K::U16) => v.as_mut_ptr() as u64,
+            (Self::U32(v), K::U32) => v.as_mut_ptr() as u64,
+            (Self::U64(v), K::U64) => v.as_mut_ptr() as u64,
+            (Self::Bool(v), K::Bool) => v.as_mut_ptr() as u64,
+            (Self::I64(v), K::I64) => v.as_mut_ptr() as u64,
+            (Self::F64(v), K::F64) => v.as_mut_ptr() as u64,
+            _ => return Err(invalid("native scalar sink kind differs")),
+        })
+    }
+    /// # Safety
+    /// The successful same-build scalar kernel initialized the complete exact
+    /// capacity in its precise kind. Bool stores must have been guarded <=1.
+    /// A failed/partial kernel must leave the vector's length at zero.
+    pub(super) unsafe fn set_initialized_scalar_len(
+        &mut self,
+        count: usize,
+        kind: NativeScalarKind,
+    ) -> Result<(), Error> {
+        self.scalar_capacity_pointer(kind)?;
+        if self.len() != 0 || self.capacity() != count {
+            return Err(invalid("native scalar sink initialized extent differs"));
+        }
+        // SAFETY: exact kind, complete capacity and zero previous length were
+        // checked above; the caller supplies the successful initialized loan.
+        unsafe {
+            match self {
+                Self::U8(v) => v.set_len(count),
+                Self::U16(v) => v.set_len(count),
+                Self::U32(v) => v.set_len(count),
+                Self::U64(v) => v.set_len(count),
+                Self::Bool(v) => v.set_len(count),
+                Self::I64(v) => v.set_len(count),
+                Self::F64(v) => v.set_len(count),
+                Self::Draft(_) => unreachable!("exact scalar kind checked"),
+            }
+        }
+        Ok(())
+    }
     /// Caller proves that generated stores initialized exactly the complete
     /// capacity. A partially filled vector must retain its zero length.
     pub(super) unsafe fn set_initialized_unsigned_len(

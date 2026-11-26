@@ -2182,6 +2182,11 @@ fn emission_template_bound(
                 .and_then(|n| {
                     n.checked_add(if metadata.utf8_reads.at_header(index).is_some() {
                         crate::native_artifact::program::prepare::utf8_reads::HEADER_WORK
+                    } else if metadata.numeric_maps.at_header(index).is_some() {
+                        // The same header debit is already present in both
+                        // visit tables. Audit the native map's emitted guards
+                        // and body against that admitted instruction envelope.
+                        crate::native_artifact::program::prepare::numeric_maps::HEADER_WORK
                     } else {
                         0
                     })

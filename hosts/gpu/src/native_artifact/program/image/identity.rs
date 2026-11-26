@@ -528,7 +528,9 @@ fn selected_template(
 // finalization copy while preserving unsigned-only raw sink authority.
 // IR358 shares exact scalar matrix replacement across all native kinds and
 // linear/cell selectors, with the existing exclusive handoff and finite checks.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 358;
+// IR359 emits exact typed scalar comprehension maps over immutable matrices
+// or prepared U64 cursors, including checked immutable matrix reads.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 359;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -775,7 +777,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 358;
 // Work125 funds the same source-site alias checks and ordered matching
 // retirements at numeric-tree first writes; existing leaves keep their prices.
 // Work127 funds the additional native prediction at its original exit visit.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 127;
+// Policy128 funds typed-map loans, selected reads and complete ordinary replay.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 128;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

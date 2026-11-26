@@ -2,9 +2,21 @@
 //! A failed arithmetic preflight discards its private bytes; the original CFG
 //! then produces the original error at its original source visit.
 use super::*;
-use crate::native_artifact::program::prepare::numeric_maps::Region;
+use crate::native_artifact::program::prepare::numeric_maps::{MAX_MATRICES, Region};
 use mech_core::snapshot::SequenceView;
 
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub(in crate::native_artifact) struct MatrixView {
+    pub input: u64,
+    pub count: u64,
+    pub rows: u64,
+    pub columns: u64,
+}
+struct MatrixOwner {
+    handle: NativeValueHandle,
+    owner: Value,
+}
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub(in crate::native_artifact) struct Frame {
@@ -18,13 +30,18 @@ pub(in crate::native_artifact) struct Frame {
     pub epoch: u64,
     pub issued: u64,
     pub next: u64,
+    pub range_start: u64,
+    pub matrices: [MatrixView; MAX_MATRICES],
 }
 pub(super) struct Loan {
     frame: Frame,
     expected: Frame,
     values: data::CollectedValues,
-    source: Value,
-    source_handle: NativeValueHandle,
+    source: Option<Value>,
+    source_handle: Option<NativeValueHandle>,
+    source_slot: u32,
+    matrices: [Option<MatrixOwner>; MAX_MATRICES],
+    output_kind: NativeScalarKind,
     collection: u32,
     iteration: u32,
     header: usize,
@@ -38,15 +55,31 @@ pub(super) struct Loan {
 fn fits(need: u64, cap: Option<u64>) -> bool {
     cap.is_some_and(|cap| need <= cap)
 }
-fn source_pointer(owner: &Value, width: u8) -> Option<(u64, usize)> {
+fn matrix_kind(body: &mech_core::SchemaBody) -> Option<NativeScalarKind> {
+    let mech_core::SchemaBody::Matrix {
+        element,
+        dimensions,
+    } = body
+    else {
+        return None;
+    };
+    (dimensions.len() == 2)
+        .then(|| NativeScalarKind::from_schema_body(element))
+        .flatten()
+}
+fn source_pointer(owner: &Value, kind: NativeScalarKind) -> Option<(u64, usize)> {
     let ValueData::Matrix(matrix) = owner.data() else {
         return None;
     };
-    Some(match (width, matrix.elements()) {
-        (1, SequenceView::U8(xs)) => (xs.as_ptr() as u64, xs.len()),
-        (2, SequenceView::U16(xs)) => (xs.as_ptr() as u64, xs.len()),
-        (4, SequenceView::U32(xs)) => (xs.as_ptr() as u64, xs.len()),
-        (8, SequenceView::U64(xs)) => (xs.as_ptr() as u64, xs.len()),
+    use NativeScalarKind as K;
+    Some(match (kind, matrix.elements()) {
+        (K::Bool, SequenceView::Bool(xs)) => (xs.as_ptr() as u64, xs.len()),
+        (K::U8, SequenceView::U8(xs)) => (xs.as_ptr() as u64, xs.len()),
+        (K::U16, SequenceView::U16(xs)) => (xs.as_ptr() as u64, xs.len()),
+        (K::U32, SequenceView::U32(xs)) => (xs.as_ptr() as u64, xs.len()),
+        (K::U64, SequenceView::U64(xs)) => (xs.as_ptr() as u64, xs.len()),
+        (K::I64, SequenceView::I64(xs)) => (xs.as_ptr() as u64, xs.len()),
+        (K::F64, SequenceView::F64(xs)) => (xs.as_ptr() as u64, xs.len()),
         _ => return None,
     })
 }
@@ -99,7 +132,19 @@ impl State {
             let growth = u64::from(region.output_width)
                 .checked_mul(64)?
                 .checked_add(256)?;
+            let inventory = (metadata.plan.values().len() as u64)
+                .checked_add(metadata.plan.blocks().len() as u64)?
+                .checked_add(metadata.plan.iterations().len() as u64)?
+                .checked_add(metadata.plan.collections().len() as u64)?;
+            let read_replay = region.reads.iter().try_fold(0u64, |n, read| {
+                let call = metadata.calls.get(read.site as usize)?.as_ref()?;
+                n.checked_add(call.scalar_matrix_element_native_work()?)?
+                    .checked_add(inventory.checked_mul(8192)?)?
+                    .checked_add(metadata.observation_schema_bytes.checked_mul(128)?)?
+                    .checked_add(65536)
+            })?;
             let traversal = visits
+                .checked_add(read_replay)?
                 .checked_add(source_floor)?
                 .checked_add(frozen)?
                 .checked_add(growth)?
@@ -111,10 +156,6 @@ impl State {
                 .checked_add(4096)?;
             // Complete descriptor inventories bound caller geometry and all
             // fixed owner/type/cache queries, including their finish checks.
-            let inventory = (metadata.plan.values().len() as u64)
-                .checked_add(metadata.plan.blocks().len() as u64)?
-                .checked_add(metadata.plan.iterations().len() as u64)?
-                .checked_add(metadata.plan.collections().len() as u64)?;
             let probe = metadata
                 .scalar_bytes
                 .checked_add(metadata.observation_schema_bytes)?
@@ -143,8 +184,10 @@ impl State {
                 .get(iteration as usize)
                 .and_then(Option::as_ref)
                 .is_some_and(|source| {
-                    matches!(source.backing, SourceBacking::Value(_))
-                        && progress.get(iteration as usize * 2) == Some(&source.count)
+                    matches!(
+                        source.backing,
+                        SourceBacking::Value(_) | SourceBacking::U64Range { .. }
+                    ) && progress.get(iteration as usize * 2) == Some(&source.count)
                         && progress.get(iteration as usize * 2 + 1) == Some(&1)
                         && source.index_offset == 0
                         && source.element.is_none()
@@ -166,36 +209,84 @@ impl State {
         let plan = &metadata.plan;
         let source = self.sources[region.iteration as usize].as_ref().unwrap();
         let count = source.count;
-        let SourceBacking::Value(owner) = &source.backing else {
-            return Ok(None);
-        };
-        let owner = owner.clone();
-        let Some((input, host_count)) = source_pointer(&owner, region.input_width) else {
-            return Ok(None);
-        };
-        if host_count as u64 != count || !ctx.arena_entry_is_current(region.source)? {
-            return Ok(None);
-        }
-        let source_handle = ctx.arena_current_handle(region.source)?;
-        let current = ctx.arena_get(source_handle)?;
-        if !current.shares_frozen_storage(&owner)
-            || !std::ptr::eq(current.shape(), owner.shape())
-            || current.schema() != owner.schema()
-            || current.schema_key() != owner.schema_key()
-        {
-            return Ok(None);
-        }
-        let ty = &metadata.types[region.source as usize];
-        if owner.schema() != ty.schema || owner.schema_key() != ty.key {
-            return Ok(None);
-        }
         let memory = ctx.library().memory_budget();
-        let Some(source_bytes) = owner.memory_budget_retained_bytes(&memory) else {
-            return Ok(None);
+        let (
+            owner,
+            source_handle,
+            input,
+            host_count,
+            range_start,
+            mut source_bytes,
+            mut source_nodes,
+        ) = match &source.backing {
+            SourceBacking::Value(owner) if !region.range => {
+                let ty = &metadata.types[region.source as usize];
+                let kind = matrix_kind(plan.values()[region.source as usize].definition().body())
+                    .ok_or_else(|| invalid("numeric map source kind disappeared"))?;
+                let Some((input, host_count)) = source_pointer(owner, kind) else {
+                    return Ok(None);
+                };
+                if host_count as u64 != count || !ctx.arena_entry_is_current(region.source)? {
+                    return Ok(None);
+                }
+                let handle = ctx.arena_current_handle(region.source)?;
+                let current = ctx.arena_get(handle)?;
+                if !current.shares_frozen_storage(owner)
+                    || !std::ptr::eq(current.shape(), owner.shape())
+                    || owner.schema() != ty.schema
+                    || owner.schema_key() != ty.key
+                {
+                    return Ok(None);
+                }
+                let Some(bytes) = owner.memory_budget_retained_bytes(&memory) else {
+                    return Ok(None);
+                };
+                let Some(nodes) = owner.memory_budget_retained_nodes(&memory) else {
+                    return Ok(None);
+                };
+                (
+                    Some(owner.clone()),
+                    Some(handle),
+                    input,
+                    host_count,
+                    0,
+                    bytes,
+                    nodes,
+                )
+            }
+            SourceBacking::U64Range { start } if region.range => {
+                let Ok(host_count) = usize::try_from(count) else {
+                    return Ok(None);
+                };
+                if count != 0 && start.checked_add(count - 1).is_none() {
+                    return Ok(None);
+                }
+                (None, None, 0, host_count, *start, 0, 0)
+            }
+            _ => return Ok(None),
         };
-        let Some(source_nodes) = owner.memory_budget_retained_nodes(&memory) else {
-            return Ok(None);
-        };
+        let mut matrix_owners: [Option<MatrixOwner>; MAX_MATRICES] = std::array::from_fn(|_| None);
+        // A bounded stack inventory retains genuine current immutable owners.
+        // It grants no pointer until all finite admission below has succeeded.
+        for (at, matrix) in region.matrices.iter().enumerate() {
+            if !ctx.arena_entry_is_current(matrix.value)? {
+                return Ok(None);
+            }
+            let handle = ctx.arena_current_handle(matrix.value)?;
+            let value = ctx.arena_get(handle)?;
+            let Some(bytes) = value.memory_budget_retained_bytes(&memory) else {
+                return Ok(None);
+            };
+            let Some(nodes) = value.memory_budget_retained_nodes(&memory) else {
+                return Ok(None);
+            };
+            source_bytes = add(source_bytes, bytes)?;
+            source_nodes = add(source_nodes, nodes)?;
+            matrix_owners[at] = Some(MatrixOwner {
+                handle,
+                owner: value.clone(),
+            });
+        }
         let old_live = self.live_bytes;
         let retained = self.retained_nodes()?;
         let builder = self.builder(region.collection)?;
@@ -211,8 +302,21 @@ impl State {
             return Ok(None);
         }
         let output_definition = plan.values()[region.output as usize].definition();
+        let output_kind = matrix_kind(output_definition.body())
+            .ok_or_else(|| invalid("numeric map output kind disappeared"))?;
+        let read_work = region.reads.iter().try_fold(0u64, |n, read| {
+            let call = metadata.calls.get(read.site as usize)?.as_ref()?;
+            n.checked_add(call.scalar_matrix_element_native_work()?)
+        });
+        let Some(read_work) = read_work else {
+            return Ok(None);
+        };
         let geometry = (|| {
-            let input_bytes = count.checked_mul(u64::from(region.input_width))?;
+            let input_bytes = if region.range {
+                0
+            } else {
+                count.checked_mul(u64::from(region.input_width))?
+            };
             let output_bytes = count.checked_mul(u64::from(region.output_width))?;
             if input_bytes > isize::MAX as u64 || output_bytes > isize::MAX as u64 {
                 return None;
@@ -223,9 +327,14 @@ impl State {
                 .checked_add(output_bytes.checked_mul(4)?)?
                 .checked_add(4096)?;
             // Retain both source element and packed push logical floors.
-            let commit_compute = count.checked_mul(352u64.checked_add(
-                (u64::from(region.input_width) + u64::from(region.output_width)).checked_mul(16)?,
-            )?)?;
+            let commit_compute = count.checked_mul(
+                352u64
+                    .checked_add(
+                        (u64::from(region.input_width) + u64::from(region.output_width))
+                            .checked_mul(16)?,
+                    )?
+                    .checked_add(read_work)?,
+            )?;
             let commit_cloned = input_bytes.checked_add(output_bytes)?;
             let finish = envelope.checked_mul(16)?.checked_add(256)?;
             let allocation = output_bytes
@@ -310,7 +419,26 @@ impl State {
             return Ok(None);
         };
         let limits = ctx.limits();
-        if !fits(count, limits.max_output_elements)
+        let read_output_bytes = region
+            .matrices
+            .iter()
+            .map(|m| u64::from(m.width))
+            .max()
+            .unwrap_or(0);
+        let scalar_read_temporary = prior
+            .turn_peak_bytes
+            .checked_add(old_live)
+            .and_then(|v| v.checked_add(source_bytes))
+            .and_then(|v| v.checked_add(32));
+        let scalar_read_nodes = prior
+            .retained_nodes
+            .checked_add(retained)
+            .and_then(|v| v.checked_add(source_nodes))
+            .and_then(|v| v.checked_add(4));
+        if !fits(read_output_bytes, limits.max_output_bytes)
+            || scalar_read_temporary.is_none_or(|v| !fits(v, limits.max_temporary_bytes))
+            || scalar_read_nodes.is_none_or(|v| !fits(v, limits.max_retained_nodes))
+            || !fits(count, limits.max_output_elements)
             || !fits(compute, limits.max_compute_work)
             || !fits(cloned, limits.max_cloned_bytes)
             || !fits(temporary, limits.max_temporary_bytes)
@@ -350,9 +478,36 @@ impl State {
         // Every metadata/schema walk and full native attempt is paid even if
         // a checked scalar later fails. No failed allocator is cold-retried.
         charge(&mut ctx.work(), setup)?;
-        owner
-            .validate_against(&metadata.schemas)
-            .map_err(Error::Snapshot)?;
+        if let Some(owner) = &owner {
+            owner
+                .validate_against(&metadata.schemas)
+                .map_err(Error::Snapshot)?;
+        }
+        let mut matrices = [MatrixView::default(); MAX_MATRICES];
+        for (at, matrix) in region.matrices.iter().enumerate() {
+            let call = metadata.calls[matrix.witness as usize]
+                .as_ref()
+                .ok_or_else(|| invalid("numeric map read factory disappeared"))?;
+            let pin = matrix_owners[at].as_ref().unwrap();
+            let Some([input, cells, rows, columns]) =
+                call.scalar_matrix_element_native_view(&pin.owner, &memory)
+            else {
+                return Ok(None);
+            };
+            if rows.checked_mul(columns) != Some(cells)
+                || cells
+                    .checked_mul(u64::from(matrix.width))
+                    .is_none_or(|n| n > isize::MAX as u64)
+            {
+                return Ok(None);
+            }
+            matrices[at] = MatrixView {
+                input,
+                count: cells,
+                rows,
+                columns,
+            };
+        }
         let output_reservation = memory.reserve_capacity(output_bytes)?;
         let metadata_reservation = memory.reserve_capacity(metadata_bytes)?;
         let nodes = memory.reserve_nodes(3)?;
@@ -361,7 +516,7 @@ impl State {
         if values.capacity() != host_count {
             return Err(invalid("numeric map output capacity differs"));
         }
-        let output = values.unsigned_capacity_pointer()?;
+        let output = values.scalar_capacity_pointer(output_kind)?;
         let epoch = ctx
             .ledger()
             .visits
@@ -384,6 +539,8 @@ impl State {
             epoch,
             issued: epoch,
             next: 0,
+            range_start,
+            matrices,
         };
         let loan = super::utf8_read::boxed(Loan {
             frame,
@@ -391,6 +548,9 @@ impl State {
             values,
             source: owner,
             source_handle,
+            source_slot: region.source,
+            matrices: matrix_owners,
+            output_kind,
             collection: region.collection,
             iteration: region.iteration,
             header: region.header as usize,
@@ -428,12 +588,7 @@ impl State {
             || loan.frame.next > loan.frame.count
             || status > 1
             || !loan.work.shares_account(ctx.library())
-            || !ctx
-                .arena_get(loan.source_handle)?
-                .shares_frozen_storage(&loan.source)
-            || source_pointer(&loan.source, loan.expected.input_width as u8)
-                != Some((loan.expected.input, loan.expected.count as usize))
-            || loan.frame.output != loan.values.unsigned_capacity_pointer()?
+            || loan.frame.output != loan.values.scalar_capacity_pointer(loan.output_kind)?
             || loan.output_reservation.capacity_bytes() != loan.expected.capacity_bytes
             || loan.values.len() != 0
             || loan.values.capacity() as u64 != loan.expected.count
@@ -443,13 +598,34 @@ impl State {
         let source = self.sources[loan.iteration as usize]
             .as_ref()
             .ok_or_else(|| invalid("numeric map source disappeared"))?;
-        if !matches!(&source.backing,SourceBacking::Value(value)if value.shares_frozen_storage(&loan.source))
+        let source_current = match (&source.backing, &loan.source, loan.source_handle) {
+            (SourceBacking::Value(value), Some(owner), Some(handle)) => {
+                let kind = matrix_kind(
+                    ctx.descriptor().metadata().plan.values()[loan.source_slot as usize]
+                        .definition()
+                        .body(),
+                )
+                .ok_or_else(|| invalid("numeric map source kind changed"))?;
+                value.shares_frozen_storage(owner)
+                    && ctx.arena_get(handle)?.shares_frozen_storage(owner)
+                    && source_pointer(owner, kind)
+                        == Some((loan.expected.input, loan.expected.count as usize))
+            }
+            (SourceBacking::U64Range { start }, None, None) => *start == loan.expected.range_start,
+            _ => false,
+        };
+        if !source_current
             || ctx.progress().get(loan.iteration as usize * 2) != Some(&loan.expected.count)
             || ctx.progress().get(loan.iteration as usize * 2 + 1) != Some(&1)
             || source.index_offset != 0
             || source.element.is_some()
         {
             return Err(invalid("numeric map source visit changed"));
+        }
+        for pin in loan.matrices.iter().flatten() {
+            if !ctx.arena_get(pin.handle)?.shares_frozen_storage(&pin.owner) {
+                return Err(invalid("numeric map matrix owner changed"));
+            }
         }
         if status == 1 {
             return Ok(false);
@@ -465,10 +641,10 @@ impl State {
         )?;
         // SAFETY: only the genuine emitted kernel initializes this fresh exact
         // capacity. Full completion, kind/width, current owners and epoch were
-        // checked above. All unsigned output bit patterns are valid.
+        // checked above. The emitted Bool store additionally guards <=1.
         unsafe {
             loan.values
-                .set_initialized_unsigned_len(loan.expected.count as usize)?
+                .set_initialized_scalar_len(loan.expected.count as usize, loan.output_kind)?
         };
         let old_live = self.live_bytes;
         let builder = self.builder(loan.collection)?;

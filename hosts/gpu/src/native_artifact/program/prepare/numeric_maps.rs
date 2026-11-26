@@ -1,13 +1,13 @@
-//! Same-plan facts for a linear scalar transform of an immutable unsigned Matrix.
+//! Same-plan facts for a scalar transform of an immutable Matrix or U64 cursor.
 //! These facts grant neither a source loan nor publication or budget authority.
-use mech_core::{IntegerWidth, SchemaBody};
+use mech_core::SchemaBody;
 use mech_engine::native_artifact::{
-    NativeCollectionResult as ResultKind, NativeCollectionSource as Source,
-    NativeControlLoop as Loop, NativeIterationAction as Action,
+    NativeCollectionPrimitive as Primitive, NativeCollectionResult as ResultKind,
+    NativeCollectionSource as Source, NativeControlLoop as Loop, NativeIterationAction as Action,
     NativeIterationTerminator as Terminator, NativeIterationValueScope as Scope,
     NativeMatchAction as Scalar, NativeMatchTerminator as Term, NativeMatchValue as Value,
     NativeProgramArtifactPlan as Plan, NativeProgramFacts as Facts,
-    NativeProgramProducerRole as Producer, NativeProgramReadRole as Read,
+    NativeProgramProducerRole as Producer, NativeProgramReadRole as Read, NativeScalarKind,
 };
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -16,6 +16,24 @@ const MAX_SITES: usize = 16384;
 const MAX_VALUES: usize = 65536;
 const MAX_BODY: usize = 256;
 const MAX_STEPS: usize = 64;
+pub(in crate::native_artifact) const MAX_MATRICES: usize = 16;
+
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(in crate::native_artifact) struct Matrix {
+    pub value: u32,
+    pub witness: u32,
+    pub width: u8,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(in crate::native_artifact) struct MatrixRead {
+    pub site: u32,
+    pub matrix: usize,
+    pub indices: Vec<u32>,
+    pub output: u32,
+}
 
 #[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields, rename = "mech.native.image.Region")]
@@ -25,6 +43,7 @@ pub(in crate::native_artifact) struct Region {
     pub header: u32,
     pub exit: u32,
     pub source: u32,
+    pub range: bool,
     pub element: u32,
     pub result: u32,
     pub output: u32,
@@ -35,6 +54,8 @@ pub(in crate::native_artifact) struct Region {
     /// Complete body/header/latch inventory, including empty source visits.
     pub sites: Vec<u32>,
     pub captures: Vec<u32>,
+    pub matrices: Vec<Matrix>,
+    pub reads: Vec<MatrixRead>,
 }
 #[derive(Clone, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(deny_unknown_fields, rename = "mech.native.image.Layout")]
@@ -42,23 +63,22 @@ pub(in crate::native_artifact) struct Layout {
     pub regions: Vec<Region>,
     pub headers: Vec<Option<usize>>,
 }
-pub(super) fn unsigned_width(body: &SchemaBody) -> Option<u8> {
-    match body {
-        SchemaBody::UnsignedInteger(IntegerWidth::W8) => Some(1),
-        SchemaBody::UnsignedInteger(IntegerWidth::W16) => Some(2),
-        SchemaBody::UnsignedInteger(IntegerWidth::W32) => Some(4),
-        SchemaBody::UnsignedInteger(IntegerWidth::W64) => Some(8),
-        _ => None,
-    }
-}
 fn matrix_width(body: &SchemaBody) -> Option<u8> {
     match body {
         SchemaBody::Matrix {
             element,
             dimensions,
-        } if dimensions.len() == 2 => unsigned_width(element),
+        } if dimensions.len() == 2 => scalar_width(element),
         _ => None,
     }
+}
+fn scalar_width(body: &SchemaBody) -> Option<u8> {
+    Some(match NativeScalarKind::from_schema_body(body)? {
+        NativeScalarKind::Bool | NativeScalarKind::U8 => 1,
+        NativeScalarKind::U16 => 2,
+        NativeScalarKind::U32 => 4,
+        NativeScalarKind::U64 | NativeScalarKind::I64 | NativeScalarKind::F64 => 8,
+    })
 }
 fn immutable_before(
     facts: &Facts<'_>,
@@ -133,7 +153,6 @@ impl Layout {
             if collection.kind() != mech_engine::ComprehensionKind::Matrix
                 || !matches!(collection.result(), ResultKind::Materialized)
                 || collection.generators().len() != 1
-                || collection.parent_collection().is_some()
                 || collection.string_span_projection().is_some()
                 || collection.string_element_map_projection().is_some()
                 || !facts.is_reachable(collection.begin())?
@@ -144,14 +163,42 @@ impl Layout {
             let Loop::Collection(generator) = &plan.iterations()[iteration as usize] else {
                 continue;
             };
-            let (Source::Value(source), Some(element)) = (generator.source(), generator.element())
-            else {
+            let Some(element) = generator.element() else {
                 continue;
             };
-            let Some(input_width) =
-                matrix_width(plan.values()[source.get() as usize].definition().body())
-            else {
-                continue;
+            let (source, range, input_width) = match generator.source() {
+                Source::Value(source) => {
+                    let Some(width) =
+                        matrix_width(plan.values()[source.get() as usize].definition().body())
+                    else {
+                        continue;
+                    };
+                    let SchemaBody::Matrix { element: kind, .. } =
+                        plan.values()[source.get() as usize].definition().body()
+                    else {
+                        unreachable!()
+                    };
+                    if NativeScalarKind::from_schema_body(kind)
+                        != plan.values()[element.get() as usize].scalar_kind()
+                        || !immutable_before(
+                            &facts,
+                            *source,
+                            generator.initialize(),
+                            generator.parent(),
+                        )?
+                    {
+                        continue;
+                    }
+                    (*source, false, width)
+                }
+                Source::U64Range(cursor) => {
+                    if plan.values()[element.get() as usize].scalar_kind()
+                        != Some(NativeScalarKind::U64)
+                    {
+                        continue;
+                    }
+                    (cursor.semantic_output(), true, 8)
+                }
             };
             let Some(output_width) = matrix_width(
                 plan.values()[collection.output().get() as usize]
@@ -162,9 +209,8 @@ impl Layout {
             };
             if generator.collection() != id as u32
                 || generator.parent() != collection.parent()
-                || unsigned_width(plan.values()[element.get() as usize].definition().body())
+                || scalar_width(plan.values()[element.get() as usize].definition().body())
                     != Some(input_width)
-                || !immutable_before(&facts, *source, generator.initialize(), generator.parent())?
                 || !matches!(plan.blocks()[generator.initialize() as usize].action(), Action::Initialize { iteration: owner } if *owner == iteration)
                 || plan.blocks()[generator.initialize() as usize].terminator()
                     != Terminator::Scalar(Term::Jump(generator.header()))
@@ -186,6 +232,8 @@ impl Layout {
             let mut produced = BTreeMap::new();
             let mut captures = BTreeSet::new();
             let mut steps = Vec::new();
+            let mut matrices = Vec::<Matrix>::new();
+            let mut reads = Vec::new();
             let mut element_seen = false;
             let mut pushed = None;
             let mut site = generator.body();
@@ -286,6 +334,92 @@ impl Layout {
                         produced.insert(output.get(), site);
                         steps.push(site);
                     }
+                    Action::LibraryCall {
+                        template,
+                        operands,
+                        output,
+                    } if element_seen && pushed.is_none() && steps.len() < MAX_STEPS => {
+                        if !matches!(
+                            (template.primitive(), operands.len()),
+                            (Primitive::MatrixScalarAccess, 2) | (Primitive::MatrixCellAccess, 3)
+                        ) || template.inputs().len() != operands.len()
+                            || template.output().dimension_parameters().len() != 0
+                            || plan.values()[output.get() as usize].scalar_kind().is_none()
+                            || produced.contains_key(&output.get())
+                            || !defined_here(&facts, *output, site)?
+                        {
+                            complete = false;
+                            break;
+                        }
+                        let matrix = operands[0];
+                        let body = plan.values()[matrix.get() as usize].definition().body();
+                        let Some(width) = matrix_width(body) else {
+                            complete = false;
+                            break;
+                        };
+                        let SchemaBody::Matrix { element: kind, .. } = body else {
+                            unreachable!()
+                        };
+                        if template.inputs()[0].body() != body
+                            || template.output().body() != kind.as_ref()
+                            || !immutable_before(
+                                &facts,
+                                matrix,
+                                generator.initialize(),
+                                generator.parent(),
+                            )?
+                        {
+                            complete = false;
+                            break;
+                        }
+                        for &input in &operands[1..] {
+                            if plan.values()[input.get() as usize].scalar_kind()
+                                != Some(NativeScalarKind::U64)
+                            {
+                                complete = false;
+                                break;
+                            }
+                            if !produced.contains_key(&input.get()) {
+                                if !immutable_before(
+                                    &facts,
+                                    input,
+                                    generator.initialize(),
+                                    generator.parent(),
+                                )? {
+                                    complete = false;
+                                    break;
+                                }
+                                captures.insert(input.get());
+                            }
+                        }
+                        if !complete {
+                            break;
+                        }
+                        let at = if let Some(at) =
+                            matrices.iter().position(|v| v.value == matrix.get())
+                        {
+                            at
+                        } else {
+                            if matrices.len() == MAX_MATRICES {
+                                complete = false;
+                                break;
+                            }
+                            matrices.push(Matrix {
+                                value: matrix.get(),
+                                witness: site,
+                                width,
+                            });
+                            matrices.len() - 1
+                        };
+                        reads.push(MatrixRead {
+                            site,
+                            matrix: at,
+                            indices: operands[1..].iter().map(|v| v.get()).collect(),
+                            output: output.get(),
+                        });
+                        produced.insert(output.get(), site);
+                        steps.push(site);
+                    }
                     Action::CollectionPush {
                         collection: owner,
                         value,
@@ -308,8 +442,10 @@ impl Layout {
             if !complete
                 || !element_seen
                 || captures.len() > 128
-                || unsigned_width(plan.values()[pushed.get() as usize].definition().body())
+                || scalar_width(plan.values()[pushed.get() as usize].definition().body())
                     != Some(output_width)
+                || !matches!(plan.values()[collection.output().get() as usize].definition().body(),
+                    SchemaBody::Matrix { element, .. } if NativeScalarKind::from_schema_body(element) == plan.values()[pushed.get() as usize].scalar_kind())
                 || !matches!(latch.action(), Action::Latch { iteration: owner } if *owner == iteration)
                 || latch.terminator() != Terminator::Scalar(Term::Jump(generator.header()))
                 || plan.activation_boundary() == Some(generator.latch())
@@ -323,12 +459,11 @@ impl Layout {
                 let value = if *value == element.get() {
                     element
                 } else {
-                    let Action::Scalar(action) = plan.blocks()[produced[value] as usize].action()
-                    else {
-                        unreachable!()
-                    };
-                    match action {
-                        Scalar::Copy { output, .. } | Scalar::Primitive { output, .. } => *output,
+                    match plan.blocks()[produced[value] as usize].action() {
+                        Action::Scalar(
+                            Scalar::Copy { output, .. } | Scalar::Primitive { output, .. },
+                        )
+                        | Action::LibraryCall { output, .. } => *output,
                         _ => unreachable!(),
                     }
                 };
@@ -360,6 +495,7 @@ impl Layout {
                 header: generator.header(),
                 exit: generator.exit(),
                 source: source.get(),
+                range,
                 element: element.get(),
                 result: pushed.get(),
                 output: collection.output().get(),
@@ -368,6 +504,8 @@ impl Layout {
                 steps,
                 sites: sites.into_iter().collect(),
                 captures: captures.into_iter().collect(),
+                matrices,
+                reads,
             });
         }
         Ok(result)

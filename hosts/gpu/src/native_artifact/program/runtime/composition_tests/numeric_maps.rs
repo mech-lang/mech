@@ -82,6 +82,38 @@ unsafe extern "C" fn helper(
                 _ => unreachable!(),
             }
         }
+        if (13..=15).contains(&flags.corrupt) {
+            let frame = unsafe { &mut *(a as *mut NativeNumericMapFrame) };
+            match flags.corrupt {
+                13 => frame.range_start ^= 1,
+                14 => frame.matrices[0].input ^= 1,
+                15 => frame.matrices[0].columns += 1,
+                _ => unreachable!(),
+            }
+        }
+        if flags.corrupt == 16 {
+            let invocation = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
+            let source = invocation
+                .descriptor
+                .metadata()
+                .numeric_maps
+                .regions
+                .iter()
+                .find(|r| u64::from(r.header) == site)
+                .unwrap()
+                .matrices[0]
+                .value;
+            let owner = invocation
+                .state
+                .arena
+                .copy_current(source, &mut invocation.state.control.work)
+                .unwrap();
+            invocation
+                .state
+                .arena
+                .put(source, &owner, &mut invocation.state.control.work)
+                .unwrap();
+        }
         if flags.corrupt == 10 || flags.corrupt == 11 {
             let invocation = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
             if flags.corrupt == 10 {
@@ -651,5 +683,534 @@ fn numeric_map_fallible_probe_keeps_arithmetic_errors_under_tight_native_work_ca
             (memory.used_bytes(), memory.retained_snapshot_nodes()),
             (0, 0)
         );
+    }
+}
+
+fn typed_arguments(
+    artifact: &ProgramArtifact,
+    memory: &ManagedMemoryBudget,
+    named: &[(&str, Data, &[u64])],
+) -> Vec<Value> {
+    artifact
+        .inputs()
+        .iter()
+        .map(|input| {
+            let name = mech_engine::decode_source_input_name(&input.name).unwrap();
+            let (_, data, extents) = named.iter().find(|(n, _, _)| *n == name).unwrap();
+            let shape_values = if extents.is_empty() {
+                Box::new([]) as Box<[u64]>
+            } else {
+                mech_core::shape_for_resolved_extents(
+                    artifact.schemas().get(input.schema).unwrap(),
+                    extents,
+                )
+                .unwrap()
+                .parameter_values()
+                .into()
+            };
+            let value = ValueDraft {
+                schema: input.schema,
+                shape_values,
+                data: data.clone(),
+            }
+            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+            .unwrap();
+            let mut reservation = memory
+                .reserve_capacity(value.memory_budget_admission_bytes(memory).unwrap())
+                .unwrap();
+            value.into_memory_budget(&mut reservation).unwrap()
+        })
+        .collect()
+}
+
+#[test]
+fn numeric_maps_exact_scalar_kinds_keep_bits_and_never_call_per_element_helpers() {
+    use mech_core::snapshot::F64Bits;
+    let cases = [
+        ("u8", vec![Data::U8(0), Data::U8(1), Data::U8(u8::MAX)]),
+        ("u16", vec![Data::U16(0), Data::U16(1), Data::U16(u16::MAX)]),
+        ("u32", vec![Data::U32(0), Data::U32(1), Data::U32(u32::MAX)]),
+        ("u64", vec![Data::U64(0), Data::U64(1), Data::U64(u64::MAX)]),
+        (
+            "bool",
+            vec![Data::Bool(true), Data::Bool(false), Data::Bool(true)],
+        ),
+        (
+            "i64",
+            vec![Data::I64(i64::MIN), Data::I64(-1), Data::I64(i64::MAX)],
+        ),
+        (
+            "f64",
+            [0x8000000000000000, 0x7ff8000000000037, 0x3ff8000000000000]
+                .map(|bits| Data::F64(F64Bits::from_bits(bits)))
+                .to_vec(),
+        ),
+    ];
+    for (kind, cells) in cases {
+        for by_range in [false, true] {
+            let source = if by_range {
+                format!("data := words<[{kind}]>\n[data[i] | i <- 1u64..=3u64]\n")
+            } else {
+                format!("[x | x <- words<[{kind}]>]\n")
+            };
+            for artifact in artifacts(&source) {
+                let mode = NativeProgramLimitMode::NoLimits;
+                let catalog = mech_stdlib::source_catalog();
+                let jit = JitProgramArtifact::compile_with_limits(
+                    &artifact,
+                    &catalog,
+                    mode.compilation(),
+                )
+                .unwrap();
+                assert_eq!(jit.descriptor().metadata().numeric_maps.regions.len(), 1);
+                let object =
+                    crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+                assert_eq!(
+                    object.metadata()["compiled_numeric_map_regions"]
+                        .as_array()
+                        .unwrap()
+                        .len(),
+                    1
+                );
+                for values in [vec![], cells.clone()] {
+                    if by_range && values.is_empty() {
+                        continue;
+                    }
+                    let memory = mode.memory_budget();
+                    let args = typed_arguments(
+                        &artifact,
+                        &memory,
+                        &[(
+                            "words",
+                            Data::Matrix(values.clone().into()),
+                            &[1, values.len() as u64],
+                        )],
+                    );
+                    let aliases = args.clone();
+                    let retained = memory.used_bytes();
+                    for restored in [false, true] {
+                        for ordinary in [false, true] {
+                            let mut output = vec![None; artifact.outputs().len()];
+                            let (result, counts) = run(
+                                &jit,
+                                &args,
+                                &mut output,
+                                &memory,
+                                mode.execution(),
+                                restored,
+                                Flags {
+                                    ordinary,
+                                    ..Default::default()
+                                },
+                            );
+                            result.unwrap();
+                            assert_eq!(last(&output), Data::Matrix(values.clone().into()));
+                            if !ordinary {
+                                assert_eq!(
+                                    (
+                                        counts.selected + counts.word_selected,
+                                        counts.complete + counts.word_complete
+                                    ),
+                                    (1, 1)
+                                );
+                            }
+                            for region in &jit.descriptor().metadata().numeric_maps.regions {
+                                if !ordinary {
+                                    for site in &region.steps {
+                                        assert!(
+                                            !counts
+                                                .helpers
+                                                .keys()
+                                                .any(|(at, _)| *at == u64::from(*site))
+                                        );
+                                    }
+                                }
+                            }
+                            drop(output);
+                            assert_eq!(memory.used_bytes(), retained);
+                        }
+                    }
+                    assert_eq!(
+                        aliases[0].canonical_data_draft().unwrap(),
+                        Data::Matrix(values.into())
+                    );
+                    drop((args, aliases));
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        (0, 0)
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn numeric_maps_range_matrix_reads_keep_axes_column_order_errors_and_finite_declines() {
+    use mech_core::snapshot::F64Bits;
+    let cells = [10.0, 20.0, 30.0, 40.0, 50.0, 60.0]
+        .map(|v| Data::F64(F64Bits::from_f64(v)))
+        .to_vec();
+    for two_axes in [false, true] {
+        let selection = if two_axes {
+            "data[selected-row,i]"
+        } else {
+            "data[i]"
+        };
+        let source = format!(
+            "data := words<[f64]:2,3>\nfirst := begin<u64>\nlast := end<u64>\nselected-row := row<u64>\nshift := bias<f64>\n[{selection} + shift | i <- first..=last]\n"
+        );
+        for artifact in artifacts(&source) {
+            let mode = NativeProgramLimitMode::NoLimits;
+            let catalog = mech_stdlib::source_catalog();
+            let jit =
+                JitProgramArtifact::compile_with_limits(&artifact, &catalog, mode.compilation())
+                    .unwrap();
+            let proof = &jit.descriptor().metadata().numeric_maps.regions;
+            assert_eq!(proof.len(), 1, "{source}");
+            assert!(proof[0].range);
+            assert_eq!((proof[0].matrices.len(), proof[0].reads.len()), (1, 1));
+            crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+            for restored in [false, true] {
+                for (begin, end, row) in [
+                    (1, 3, 1),
+                    (1, 3, 2),
+                    (1, 4, 2),
+                    (0, 1, 1),
+                    (1, 1, 0),
+                    (1, 1, 3),
+                    (4, 3, 2),
+                ] {
+                    let memory = mode.memory_budget();
+                    let args = typed_arguments(
+                        &artifact,
+                        &memory,
+                        &[
+                            ("words", Data::Matrix(cells.clone().into()), &[2, 3]),
+                            ("begin", Data::U64(begin), &[]),
+                            ("end", Data::U64(end), &[]),
+                            ("row", Data::U64(row), &[]),
+                            ("bias", Data::F64(F64Bits::from_f64(0.5)), &[]),
+                        ],
+                    );
+                    let retained = memory.used_bytes();
+                    let mut cold = vec![None; artifact.outputs().len()];
+                    let (a, _) = run(
+                        &jit,
+                        &args,
+                        &mut cold,
+                        &memory,
+                        mode.execution(),
+                        restored,
+                        Flags {
+                            ordinary: true,
+                            ..Default::default()
+                        },
+                    );
+                    let mut fast = vec![None; artifact.outputs().len()];
+                    let (b, counts) = run(
+                        &jit,
+                        &args,
+                        &mut fast,
+                        &memory,
+                        mode.execution(),
+                        restored,
+                        Flags::default(),
+                    );
+                    match (a, b) {
+                        (Ok(_), Ok(_)) => {
+                            assert_eq!(last(&cold), last(&fast));
+                            assert_eq!((counts.selected, counts.complete), (1, 1));
+                            if begin == 1 && end == 3 {
+                                let expected: Vec<f64> = if two_axes {
+                                    if row == 1 {
+                                        vec![10.5, 20.5, 30.5]
+                                    } else {
+                                        vec![40.5, 50.5, 60.5]
+                                    }
+                                } else {
+                                    vec![10.5, 40.5, 20.5]
+                                };
+                                assert_eq!(
+                                    last(&fast),
+                                    Data::Matrix(
+                                        expected
+                                            .into_iter()
+                                            .map(|v| Data::F64(F64Bits::from_f64(v)))
+                                            .collect()
+                                    )
+                                );
+                            }
+                            for site in &proof[0].steps {
+                                assert!(
+                                    !counts.helpers.keys().any(|(at, _)| *at == u64::from(*site))
+                                );
+                            }
+                        }
+                        (Err(a), Err(b)) => {
+                            assert_eq!(format!("{a:?}"), format!("{b:?}"));
+                            assert!(fast.iter().all(Option::is_none));
+                        }
+                        pair => panic!("different read outcomes: {pair:?}"),
+                    }
+                    drop((cold, fast));
+                    assert_eq!(memory.used_bytes(), retained);
+                    if begin == 1 && end == 3 && row == 1 {
+                        for dimension in 0..8 {
+                            for cap in [0, 1, 16, 255, 4095, 65535] {
+                                let mut policy = mode.execution();
+                                match dimension {
+                                    0 => policy.library.max_output_elements = Some(cap),
+                                    1 => policy.library.max_output_bytes = Some(cap),
+                                    2 => policy.library.max_temporary_bytes = Some(cap),
+                                    3 => policy.library.max_cloned_bytes = Some(cap),
+                                    4 => policy.library.max_retained_nodes = Some(cap),
+                                    5 => policy.library.max_compute_work = Some(cap),
+                                    6 => policy.library.max_comparison_work = Some(cap),
+                                    _ => policy.execution.max_work = cap,
+                                }
+                                let mut cold = vec![None; artifact.outputs().len()];
+                                let mut fast = cold.clone();
+                                let (a, _) = run(
+                                    &jit,
+                                    &args,
+                                    &mut cold,
+                                    &memory,
+                                    policy,
+                                    restored,
+                                    Flags {
+                                        ordinary: true,
+                                        ..Default::default()
+                                    },
+                                );
+                                let (b, _) = run(
+                                    &jit,
+                                    &args,
+                                    &mut fast,
+                                    &memory,
+                                    policy,
+                                    restored,
+                                    Flags::default(),
+                                );
+                                match (a, b) {
+                                    (Ok(_), Ok(_)) => assert_eq!(last(&cold), last(&fast)),
+                                    (Err(a), Err(b)) => {
+                                        assert_eq!(
+                                            format!("{a:?}"),
+                                            format!("{b:?}"),
+                                            "dimension {dimension} cap {cap}"
+                                        );
+                                        assert!(fast.iter().all(Option::is_none));
+                                    }
+                                    pair => panic!(
+                                        "different finite outcomes dimension {dimension} cap {cap}: {pair:?}"
+                                    ),
+                                }
+                                drop((cold, fast));
+                                assert_eq!(memory.used_bytes(), retained);
+                            }
+                        }
+                    }
+                    drop(args);
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        (0, 0)
+                    );
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn numeric_maps_range_read_loans_reject_changed_geometry_and_stale_matrix_owners() {
+    use mech_core::snapshot::F64Bits;
+    let source = "data := words<[f64]:2,3>\n[data[i] | i <- 1u64..=6u64]\n";
+    for artifact in artifacts(source) {
+        let mode = NativeProgramLimitMode::NoLimits;
+        let jit = JitProgramArtifact::compile_with_limits(
+            &artifact,
+            &mech_stdlib::source_catalog(),
+            mode.compilation(),
+        )
+        .unwrap();
+        assert_eq!(jit.descriptor().metadata().numeric_maps.regions.len(), 1);
+        for restored in [false, true] {
+            let memory = mode.memory_budget();
+            let args = typed_arguments(
+                &artifact,
+                &memory,
+                &[(
+                    "words",
+                    Data::Matrix(
+                        [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+                            .into_iter()
+                            .map(|v| Data::F64(F64Bits::from_f64(v)))
+                            .collect(),
+                    ),
+                    &[2, 3],
+                )],
+            );
+            let retained = memory.used_bytes();
+            for corrupt in 13..=16 {
+                let mut output = vec![None; artifact.outputs().len()];
+                let (result, counts) = run(
+                    &jit,
+                    &args,
+                    &mut output,
+                    &memory,
+                    mode.execution(),
+                    restored,
+                    Flags {
+                        corrupt,
+                        ..Default::default()
+                    },
+                );
+                assert_eq!(counts.selected, 1);
+                assert!(result.is_err(), "corruption {corrupt}");
+                assert!(output.iter().all(Option::is_none));
+                assert_eq!(memory.used_bytes(), retained);
+                let (result, counts) = run(
+                    &jit,
+                    &args,
+                    &mut output,
+                    &memory,
+                    mode.execution(),
+                    restored,
+                    Flags {
+                        interleave: true,
+                        ..Default::default()
+                    },
+                );
+                result.unwrap();
+                assert_eq!(
+                    (counts.selected, counts.complete, counts.interleaved_refused),
+                    (1, 1, 2)
+                );
+                drop(output);
+                assert_eq!(memory.used_bytes(), retained);
+            }
+            drop(args);
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
+    }
+}
+
+#[test]
+fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveouts() {
+    use mech_core::snapshot::F64Bits;
+    let fixtures =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/polybench");
+    let cases: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(fixtures.join("cases.json")).unwrap())
+            .unwrap();
+    fn flatten(data: Data, out: &mut Vec<f64>) {
+        match data {
+            Data::F64(v) => out.push(v.to_f64()),
+            Data::Matrix(v) | Data::Tuple(v) => {
+                for item in v {
+                    flatten(item, out)
+                }
+            }
+            _ => panic!("unexpected numerical output"),
+        }
+    }
+    for name in ["gramschmidt", "cholesky"] {
+        let case = cases["cases"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|case| case["name"] == name)
+            .unwrap();
+        let named: Vec<_> = case["inputs"]
+            .as_object()
+            .unwrap()
+            .iter()
+            .map(|(name, value)| {
+                let (data, extents) = if let Some(cells) = value["values"].as_array() {
+                    (
+                        Data::Matrix(
+                            cells
+                                .iter()
+                                .map(|v| Data::F64(F64Bits::from_f64(v.as_f64().unwrap())))
+                                .collect(),
+                        ),
+                        value["shape"]
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .map(|v| v.as_u64().unwrap())
+                            .collect::<Vec<_>>(),
+                    )
+                } else if let Some(n) = value["u64"].as_u64() {
+                    (Data::U64(n), vec![])
+                } else {
+                    (
+                        Data::F64(F64Bits::from_f64(value.as_f64().unwrap())),
+                        vec![],
+                    )
+                };
+                (name.as_str(), data, extents)
+            })
+            .collect();
+        let source = std::fs::read_to_string(fixtures.join(format!("{name}.mec"))).unwrap();
+        for artifact in artifacts(&source) {
+            let mode = NativeProgramLimitMode::NoLimits;
+            let jit = JitProgramArtifact::compile_with_limits(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+                mode.compilation(),
+            )
+            .unwrap();
+            assert!(
+                !jit.descriptor().metadata().numeric_maps.regions.is_empty(),
+                "{name}"
+            );
+            let memory = mode.memory_budget();
+            let borrowed = named
+                .iter()
+                .map(|(n, d, e)| (*n, d.clone(), &e[..]))
+                .collect::<Vec<_>>();
+            let args = typed_arguments(&artifact, &memory, &borrowed);
+            let retained = memory.used_bytes();
+            for restored in [false, true] {
+                let mut fast = vec![None; artifact.outputs().len()];
+                let (result, counts) = run(
+                    &jit,
+                    &args,
+                    &mut fast,
+                    &memory,
+                    mode.execution(),
+                    restored,
+                    Flags::default(),
+                );
+                result.unwrap();
+                assert!(
+                    counts.selected > 0 && counts.selected == counts.complete,
+                    "{name}: {counts:?}"
+                );
+                let mut values = Vec::new();
+                flatten(last(&fast), &mut values);
+                let expected = case["expected"].as_array().unwrap();
+                assert_eq!(values.len(), expected.len());
+                for (actual, expected) in values.iter().zip(expected) {
+                    let expected = expected.as_f64().unwrap();
+                    assert!(
+                        actual.is_finite()
+                            && (actual - expected).abs() <= 1e-9 + 1e-10 * expected.abs()
+                    );
+                }
+                drop(fast);
+                assert_eq!(memory.used_bytes(), retained);
+            }
+            drop(args);
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
     }
 }
