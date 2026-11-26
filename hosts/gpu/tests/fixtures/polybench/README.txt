@@ -499,3 +499,125 @@ syr2k              holdout      1.008       1.002         217.38         166.37
 syrk               holdout      1.006       1.001         247.32         183.85
 trisolv            holdout      4.633       4.621         843.51         223.58
 trmm               holdout      1.019       1.019         212.82         123.61
+
+Fourth frozen compiler round (IR360): conditional native comprehension loops
+
+The compiler now admits complete acyclic scalar branch bodies and phi copies
+inside exact typed native maps. Original CFG edges preserve source order and
+inactive reads/arithmetic stay inactive. Language literal equality uses the
+same maintained emitter as ordinary branches, including signed zeros and NaNs.
+All seven scalar kinds, prepared ranges, immutable captured matrix reads and
+current outer scalar/matrix phi captures use the existing map loan and output
+banks. One Push must dominate the successful latch; filters keep the ordinary
+route. Failed attempts discard private partial output and replay the source.
+The full conditional body is prepaid under work policy129. No Mech port,
+input, C executable, tolerance or timing boundary changed.
+
+Both sets use the same metric: the equal-weight geometric mean of median
+Mech/C kernel runtime, lower is better. The strict target below 1.0x applies
+to the fixed fifteen-program holdout. History retains both sets:
+
+frozen compiler                         optimization x      holdout x
+baseline                                      783.258       2020.085
+round-01-native-matrix-frames                 441.860       1610.274
+round-02-native-scalar-matrix-updates         346.025       1529.299
+round-03-native-maps                          318.844       1468.557
+round-04-conditional-maps                     301.197        724.274
+
+Round 04 aggregate results:
+partition       recorded x    replay x    Mech/C x    C fresh x    sum Mech s
+optimization         2.487       2.671      301.20       166.68      0.387935
+holdout              2.407       2.436      724.27       469.38      0.804653
+all                  2.447       2.551      467.06       279.70      1.192588
+
+Compiler 19cd8a6bcb5ba504b6ac22c059c3e33a66d6ee5c was frozen before holdout
+timing; driver SHA256 is d000b7b77f102db3d0a68e9d2d738e8767e9cbde364bcd0585ad2da3725b765d.
+The strict below-1.0x goal remains open. Raw C observations and paired
+original replays are retained because scores across rounds include timing
+variation. All 900 sequential observations validate their process's untimed
+warm-up against all finite C live-outs; timed checked calls must succeed.
+The split and previous holdout timings were already exposed.
+
+Regressions above 5% against the recorded and paired original compilers:
+optimization 3mm: 1.059x slower than recorded original.
+optimization covariance: 1.313x slower than recorded original.
+optimization doitgen: 1.299x slower than recorded original.
+optimization gemm: 1.227x slower than recorded original.
+optimization mvt: 1.225x slower than recorded original.
+holdout gemver: 1.055x slower than recorded original.
+holdout gesummv: 1.091x slower than recorded original.
+
+Before freezing, seven samples per actor on all fifteen optimization programs
+replayed the round03 compiler against this candidate. This separate training
+probe is not a C or holdout comparison:
+{"count": 15, "geomean_speedup_from_round_03_replay": 1.1171130340897801, "regressions_over_five_percent": 1, "sum_candidate_median_seconds": 0.386654248, "sum_reference_median_seconds": 0.432214834}
+correlation: 1.479x speedup vs round03 replay.
+durbin: 1.750x speedup vs round03 replay.
+gramschmidt: 1.794x speedup vs round03 replay.
+mvt: 0.939x speedup vs round03 replay.
+
+MVT is 1.065x slower in that probe; its source visits and admitted work are
+unchanged, and the cause is unproven. All cases are retained. Gramschmidt
+source visits fall from 569,803 to 46,693 and Durbin from 16,164 to 1,422.
+
+round-04-qualification.json records 21 focused native/collector/route checks,
+24 matrix checks, all 30 original/decoded PolyBench programs and 102 selected
+scalar/buffer/compression Program regressions. Actual conditional Gramschmidt
+native selection is observed in original, decoded and restored execution and
+compared with full finite C outputs. Other 1416 GPU units and 415 Program
+integration checks were filtered. Larger datasets, GPU/SIMD execution and full
+compression application/AOT qualification remain unqualified.
+
+Post-round-04 profiles cover 99.01% of summed optimization
+kernel medians in 5 programs, with 20671 execution-stack samples.
+No holdout program was profiled. Parsing, JIT, input import, cache flushing
+and serialization are excluded by stack. Profiled times do not enter scores.
+round-04-training-profile.json includes raw compressed sample hashes, exact
+commands, finite warm-up validation and disjoint action attribution.
+ 28.34% Private frame transport (weighted by unprofiled case medians)
+ 23.49% Source visits and admission (weighted by unprofiled case medians)
+ 16.13% Canonical library calls (weighted by unprofiled case medians)
+ 10.52% Other helper dispatch (weighted by unprofiled case medians)
+  9.34% Typed matrix scalar reads (weighted by unprofiled case medians)
+  4.26% Other selected library dispatch (weighted by unprofiled case medians)
+  3.50% Selected matrix updates (weighted by unprofiled case medians)
+  1.99% Loop-local retirement (weighted by unprofiled case medians)
+  1.57% Comprehension collection bookkeeping (weighted by unprofiled case medians)
+  0.85% Other execution and generated code (weighted by unprofiled case medians)
+
+Remaining compiler gaps include full native numeric regions over tagged
+state and mutable Bool/I64/F64 loop arrays. Existing numeric Tail proofs
+require untagged array leaves and restrict private mutable arrays to unsigned
+storage. The benchmark sources retain their idiomatic state machines.
+
+kernel             split   recorded x    replay x       Mech/C x      C fresh x
+2mm                opt          0.967       1.002          92.91          60.14
+3mm                opt          0.944       0.966          38.47          17.71
+adi                holdout      1.947       1.950       10426.37       10193.06
+atax               opt          0.997       0.989          76.78          31.72
+bicg               opt          0.967       0.984          90.94          30.86
+cholesky           opt         10.182      10.137        2253.74        1668.12
+correlation        opt          1.384       1.470         206.77          98.07
+covariance         opt          0.762       0.975          58.51          41.23
+deriche            opt         22.032      22.466        1851.78        1558.11
+doitgen            opt          0.770       1.018          27.40          13.12
+durbin             opt          3.409       3.474        1076.30         431.45
+fdtd-2d            holdout      2.453       2.499        3229.89        2753.96
+floyd-warshall     holdout      5.250       5.290         882.93         855.83
+gemm               opt          0.815       0.959          42.23          23.01
+gemver             holdout      0.948       0.975         262.59         107.50
+gesummv            holdout      0.916       1.005          39.34          32.92
+gramschmidt        opt          1.913       1.940       13632.77        7482.81
+heat-3d            holdout      8.966       8.895         454.28         414.03
+jacobi-1d          holdout      5.320       5.304        1570.62         289.27
+jacobi-2d          holdout      3.363       3.405        2491.94        1886.17
+lu                 holdout      2.651       2.659        7944.00        7089.15
+ludcmp             holdout      2.711       2.702        6634.92        5782.61
+mvt                opt          0.817       0.994         150.57          45.85
+nussinov           opt         35.119      35.337        3387.93        3196.50
+seidel-2d          opt         35.296      35.284        1396.06        1360.28
+symm               holdout      1.387       1.387         152.17          92.46
+syr2k              holdout      1.497       1.522         116.63         104.54
+syrk               holdout      1.585       1.595         134.27         104.50
+trisolv            holdout      4.651       4.645         840.30         203.14
+trmm               holdout      1.368       1.384         137.32          73.20
