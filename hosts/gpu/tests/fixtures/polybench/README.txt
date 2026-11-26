@@ -1505,3 +1505,29 @@ No compiler source changed after freeze. The exposed fixed split is not a
 blind experiment, and no holdout was profiled. Scope remains CPU MINI F64 plus
 selected tests; broader datasets, GPU/SIMD selection, full compression/AOT and
 a fresh external application remain unqualified.
+
+Round 13: direct rectangular native publication
+Source 5cbf06b8000f37a10cabf1aa74a752cf29216ff3; IR372/work141; executable b027872f169df308ad1093ad188bbede894535ae50886f6819164bb812985447.
+The same native scalar DAG now stores rectangular cells directly at their final
+row-major locations while preserving the exact column-then-row source order.
+A same-footprint three-state row geometry marks only complete native banks.
+The original source work, temporary/node checks and physical reservations remain;
+the cycle-mark allocation and swap permutation are skipped. Ordinary producers
+and failed native attempts retain the original builder/order/CFG.
+
+Equal-weight geometric means of median kernel runtimes (lower Mech/C is better):
+optimization: 60.500560x C; 12.371485x faster than recorded start; 12.107126x faster than paired original; summed medians 0.011805626s; raw runtime multiplier vs round12 0.999667x.
+holdout: 196.253849x C; 10.131471x faster than recorded start; 9.942332x faster than paired original; summed medians 0.144079581s; raw runtime multiplier vs round12 0.956371x.
+
+Optimization-only seven-sample round12 replay: 1.011703x speedup; 0 >5% regressions.
+Final checks: 338 native/phase/ordinary block, 24 matrix, 30 PolyBench, 102
+selected Program and one protocol (495 newly run); unchanged Engine/Core/stdlib/
+syntax trees retain the passing195-check Engine log. Both exact Huffman bills
+remain unchanged. Initial policy-pin failures are retained by log hash.
+All900 balanced finite observations, 29482 live-outs per artifact, both sets,
+all regressions, fourteen-entry history and five raw compressed optimization
+profiles remain. Profile samples 7258; coverage of
+training summed medians 87.562430%.
+No source changed after freeze and no benchmark port was rewritten. The split
+and past holdout results were exposed; no holdout was profiled. The strict
+holdout goal remains open unless the recorded score is below1.0x C.
