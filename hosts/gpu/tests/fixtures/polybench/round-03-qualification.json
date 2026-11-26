@@ -1,0 +1,316 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v1",
+  "label": "round-03-native-maps",
+  "compiler_commit": "e68d404257b794b4daaea33c4dd7b6310b3896d3",
+  "compiler_fingerprint": "c0258c17ad598f9a986f01094106d51c096ac7de12af7df077d2ae0e169f389f",
+  "driver_sha256": "d285d9fcd1316f2cf850d6c2dce0fbebb5345cccc03962a2758252f8398fc4f3",
+  "frozen_candidate_sha256": "eaa70fa1f9f2cc421421fc7f4cf8973e3ff2a37cdf0fa5843bbcc02447de08d7",
+  "native_typed_ir_version": 359,
+  "native_work_policy_version": 128,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "live_outs_per_artifact": 29482
+  },
+  "checks": [
+    {
+      "suite": "numeric maps actual training selection typed collectors row blocks lifetime and restored routes",
+      "passed_by_target": [
+        17
+      ],
+      "log_sha256": "d10f44fc843369e88da3a2e7243bf7a1cdabab5c27e669efd204defe7cf09afd"
+    },
+    {
+      "suite": "matrix and complete PolyBench original decoded Object validation",
+      "passed_by_target": [
+        24,
+        30
+      ],
+      "log_sha256": "28fe28d0141dd303477f2d9aac11a5a98c29bbaed8b5704e7beec48207709670"
+    },
+    {
+      "suite": "selected scalar buffer numeric and compression Program regressions",
+      "passed_by_target": [
+        102
+      ],
+      "log_sha256": "a4f3eba82de28ad1aa81145a06e9da358764d5acfa72da826f758fc565881ddf"
+    }
+  ],
+  "goal": {
+    "partition": "holdout",
+    "metric": "geomean_mech_over_c_kernel",
+    "value": 1468.5568039584937,
+    "target_strictly_below": 1.0,
+    "achieved": false,
+    "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+    "objective_frozen_with_candidate": true,
+    "sum_mech_median_seconds": 1.539412749
+  },
+  "cases": {
+    "2mm": {
+      "expected_live_outs": 384,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 1.4210854715202004e-14,
+      "source_sha256": "7ba60323744d94a886cbf88a6925c4a7d298a451bf62c405eede86fcecd7b5b6",
+      "c_binary_sha256": "2b285d8fcd35c9330e9f373a4379a8a988613d8d96d721e8c07ee9d0d16eac8a"
+    },
+    "3mm": {
+      "expected_live_outs": 352,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 2.220446049250313e-16,
+      "source_sha256": "8b044fe251822fd8b585b1accfe084d4c322af5abd48601aa04b578994418646",
+      "c_binary_sha256": "e865519b0804f54ee247884c748bd611c6735b71ca4f727d4c230c5aa94ff59d"
+    },
+    "atax": {
+      "expected_live_outs": 42,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 7.105427357601002e-15,
+      "source_sha256": "509a9938a750b830994e8d5f4846c247e6eead3471a395038fa435b012c7cfb9",
+      "c_binary_sha256": "74b1d44b54b2ec8e31c7289c633d7b2b8db604fd96d9ce451a391a590f705092"
+    },
+    "bicg": {
+      "expected_live_outs": 80,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 1.7763568394002505e-15,
+      "source_sha256": "ad80eb32865012a68fd64dc0a32cf16139b20c882b4d9a165aacda59666f2084",
+      "c_binary_sha256": "bd4b0260113dae3f89ec5f3f9cd184afbb52116df96478f9f67f5feb25dbb8a0"
+    },
+    "cholesky": {
+      "expected_live_outs": 1600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 3.2751579226442118e-15,
+      "source_sha256": "5c11d488f791bfd3da69a37b9dfc3ff4eec4d7fd64b54d5f823adf9b9ac452fa",
+      "c_binary_sha256": "6710d27fc9e410fa389d06eabf53552a816cbd4c8db3e1ec36958c165039d75f"
+    },
+    "correlation": {
+      "expected_live_outs": 784,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "17eab510250df6dc8ba959f8c83bb2bdd96d11dd1042aeb1100a960b85026515",
+      "c_binary_sha256": "181e29a47cef3212ec2e038cf8a0ad90c65d0d9701aeaecaefc8baad608ca72b"
+    },
+    "covariance": {
+      "expected_live_outs": 784,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 1.4210854715202004e-14,
+      "source_sha256": "354aeb3e176cd327c8660206ca163bbc6e87fcbfaae4ddbd195c5aa4455c3f87",
+      "c_binary_sha256": "1cd6f6f031e11a5611e35f6e8449c98c33c029514b2c653f9f57eb9e9cd5055a"
+    },
+    "deriche": {
+      "expected_live_outs": 4096,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 4.85722573273506e-17,
+      "source_sha256": "73dd0bbdc2048cb3dea73a499f9e6557b4ab2b0eff988da2ad6cea344e7daf6c",
+      "c_binary_sha256": "a4440580179c951c2385f5e0218b353d725d3063e8559ca6dc75d7e0f020955a"
+    },
+    "doitgen": {
+      "expected_live_outs": 960,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "fdcdb96925e013d913ed4ed88043636116c13e225d4124d0a0495dec97e81f37",
+      "c_binary_sha256": "d9dde06c4d544037afe02330ceb98abf9bacaca3c5513150a4e876494572ba2e"
+    },
+    "durbin": {
+      "expected_live_outs": 40,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "62da21e96d894e89a7f94f39d14795e70413a86053487aa7cb2e2c35fa4edf77",
+      "c_binary_sha256": "185aa486affc8db90972752286d6cd693417b3a83cbde0332fae1b4e0155e748"
+    },
+    "gemm": {
+      "expected_live_outs": 500,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 7.105427357601002e-15,
+      "source_sha256": "3f738611433fdade00258c76485f6c63634268fc95bf4f9e74b9a685ad178111",
+      "c_binary_sha256": "bf857a20260a91b2be987f0966fa9c5709c11db21a281ea9ad536eb0aadb7019"
+    },
+    "gramschmidt": {
+      "expected_live_outs": 2100,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "9d49c8c808089de3b4dc0c47f66619952fffe8691afd865cda8871fb21e16bfd",
+      "c_binary_sha256": "4491d8eb03edf17e230223f76630af4f9dbdf641dfd1524e0559d6ef589d3b53"
+    },
+    "mvt": {
+      "expected_live_outs": 80,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 3.552713678800501e-15,
+      "source_sha256": "dcdbc81b044cf721648a6527ed9f6c6c5d99304f9d65fca4b7590e615a2f1f83",
+      "c_binary_sha256": "bf57d186146c4930f000c722d693f1d516855510e68a67dceee57e170b4656f8"
+    },
+    "nussinov": {
+      "expected_live_outs": 3600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "13e227bd65e4a450fe3a1ac48995911d214c9e070c6eccf3ffde41ac6cb0f6fd",
+      "c_binary_sha256": "e19004cdcabef6646bf08f7ef74e67132b36824b393c673224cbe77c445a0dd6"
+    },
+    "seidel-2d": {
+      "expected_live_outs": 1600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "16e7ea753a2825eec81f7068cc49d689ba2aa8db38189927286507fec8d2f93e",
+      "c_binary_sha256": "b3a0bc6646ebb2a6d75b45334f4349bee5cb385fccaaed979336eebc381419b4"
+    },
+    "adi": {
+      "expected_live_outs": 400,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "4eef6deb3462a70ad1a4f04bec4ed4420670091b3f4846e978b1af19c950e621",
+      "c_binary_sha256": "2cb99d1df6fc1a5875490651e63fc5eec8ff33b7a3acc3d6ebd90bdcd31dd004"
+    },
+    "fdtd-2d": {
+      "expected_live_outs": 1800,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 1.2434497875801753e-14,
+      "source_sha256": "8e46cb2addaf56d522e75b690735ef39f066e7768b06322100697a4e0da26491",
+      "c_binary_sha256": "3c55e67a42a3939c265dfa17ae9a1e9a0a2ddc9758d840b8ef335046cb528151"
+    },
+    "floyd-warshall": {
+      "expected_live_outs": 3600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "d46ae4cfd3e5bb6d6afdb6967dc7be317e3d71443b1cfe7b0be5a2950b376ec6",
+      "c_binary_sha256": "485f53dc282a4022595c61993d3de18a276a6f4b8ec319072cb94652191f8a20"
+    },
+    "gemver": {
+      "expected_live_outs": 40,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 1.3642420526593924e-12,
+      "source_sha256": "cadbb064acc0b2ba4399e64c12d518b5968e8ab010ce11bd1b48cfed346cebec",
+      "c_binary_sha256": "37ff7d7b8f8e5b20a469e7f80483b6c7296f80a2e4e59e53a01868a598c582e7"
+    },
+    "gesummv": {
+      "expected_live_outs": 30,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 7.105427357601002e-15,
+      "source_sha256": "00221010bd148c6308132c0c20d85edc794ea445140a8509f062fce6403f8f41",
+      "c_binary_sha256": "e151f433035736b57a34cda2ce28b7333d71aeb2cafaf282da31b27792dd4db3"
+    },
+    "heat-3d": {
+      "expected_live_outs": 1000,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "5c1df9f38726634ed9b0407320c7c84cbd212e54805996c36ec0a969ea2553e8",
+      "c_binary_sha256": "b5a4fe7de657ccfd79a986db121e27094261a4a243beb35f9ac6f7c58ce60821"
+    },
+    "jacobi-1d": {
+      "expected_live_outs": 30,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 3.3306690738754696e-16,
+      "source_sha256": "8323ac8a0b980045166aab68fda04fa74d3f800a366871bfc3f8d9e2423d71a9",
+      "c_binary_sha256": "37faea5e754f4d6cd39c60ab914df36c9ba00f46425084aa8ee4fa2c50192d63"
+    },
+    "jacobi-2d": {
+      "expected_live_outs": 900,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 3.552713678800501e-15,
+      "source_sha256": "07d9a1d89939fd28f7fb945b798de1b382108acdaeac368d121acb1a338050f2",
+      "c_binary_sha256": "9a7e086656a25f37b77a9b157f1a6a6f246395b7500d1cb208b0dec597c93ec7"
+    },
+    "lu": {
+      "expected_live_outs": 1600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 3.9968028886505635e-15,
+      "source_sha256": "7fb265c2d68670d34a1e6ff86f6e2440ae114b20768a19c78016e37e90a310d8",
+      "c_binary_sha256": "6ff3dfb2337b60de20055820e3d8fd332d8fda64a56e3fc18d3aa32880fa33d7"
+    },
+    "ludcmp": {
+      "expected_live_outs": 40,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 8.881784197001252e-16,
+      "source_sha256": "a652f9599cb42263da892b83aa1fbe9662e1b20df6cadfb058274a0abc0cfcf5",
+      "c_binary_sha256": "777200bf9eda48aba5c175cc890f81e62314bd0939216e49085c4fe84ca58034"
+    },
+    "symm": {
+      "expected_live_outs": 600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 2.842170943040401e-14,
+      "source_sha256": "6d71a90011f9b57928b2184710f19e0491147d2d1eaddac79ee974e93a49fef7",
+      "c_binary_sha256": "a69ae6185b42e898ed754a774ca5fe9208984ee1157b6ea02e1424e0a0f3c537"
+    },
+    "syr2k": {
+      "expected_live_outs": 900,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 7.105427357601002e-15,
+      "source_sha256": "0aca0944ba571592754e6f8358b42d7a8fdb62147d37acf4f066a8debe3a6d14",
+      "c_binary_sha256": "acd1ecf30e61385124159b208405d27c3e4bcab42a094f9b7963d65ec0c71a87"
+    },
+    "syrk": {
+      "expected_live_outs": 900,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 5.329070518200751e-15,
+      "source_sha256": "8da7871082a91840b9fcc3cbee206cc86f2e85ae740fa9a38ca0f563569ab4b5",
+      "c_binary_sha256": "2559a74cac6957dcf7ffa9070a095130610b5e4453857874c527eaaeda2e242d"
+    },
+    "trisolv": {
+      "expected_live_outs": 40,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 6.63358257213531e-15,
+      "source_sha256": "be9fde0ca616e82d3a37a511a6a9cfba29026c42eae5d66d45956d8ca3aacb11",
+      "c_binary_sha256": "8441d7845a4a986f17497f7f28f92b878634b9730e3ddde40fd3c0575e26d638"
+    },
+    "trmm": {
+      "expected_live_outs": 600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 1.7763568394002505e-15,
+      "source_sha256": "14c42b4a82f8ac4302fa90b3cf32cac2e96f2bc41cf4a55b8882883f1a5179b5",
+      "c_binary_sha256": "50dae4618452c8d83110ad406844f4b56f5f1e8fc65e5075ffb994aa6d30fae3"
+    }
+  },
+  "coverage": [
+    "Exact Bool/U8/U16/U32/U64/I64/F64 collection banks and preserved signed-zero/NaN bits; original unsigned raw APIs still reject boxed scalar kinds.",
+    "Prepared U64 cursor sources and immutable canonical matrix sources, including nested leaf comprehensions and captured scalars/matrices.",
+    "Linear column-major and independent row/column bounds; complete ordinary error replay after private partial-output discard.",
+    "Original/decoded/restored execution, Object emission, no per-element helper callbacks on selected native loops, and complete finite C outputs for actual Gramschmidt and Cholesky selections.",
+    "Finite decline/recovery across output elements, output bytes, temporary bytes, cloned bytes, nodes, compute, comparison and native work; exact copy thresholds on fused and filtered fallback routes.",
+    "Current source/matrix handles, shared-account owner pins, exact loan geometry/epoch, stale-owner and metadata rejection, reentry refusal and managed cleanup."
+  ],
+  "timing": {
+    "samples_per_actor_and_comparison": 5,
+    "actors": [
+      "candidate Mech",
+      "preserved original compiler",
+      "C"
+    ],
+    "comparisons": [
+      "kernel",
+      "fresh"
+    ],
+    "observations": 900,
+    "sequential": true,
+    "frozen_before_holdout": true,
+    "validation_boundary": "Each process validates its untimed warm-up result against the full C live-outs; all timed checked calls must succeed. Original/decoded numerical equivalence is also covered by the independent maintained regressions."
+  },
+  "training_probe": {
+    "receipt_sha256": "d7e2a4649107fac91a1973e322fed5f6fe502215b4767e682cb22ac84298d5ce",
+    "reference": "round-02 frozen compiler replay",
+    "cases": 15,
+    "samples_per_actor": 7,
+    "summary": {
+      "count": 15,
+      "geomean_speedup_from_round_02_replay": 1.058835424357112,
+      "regressions_over_five_percent": 0,
+      "sum_candidate_median_seconds": 0.422917043,
+      "sum_reference_median_seconds": 0.444180749
+    },
+    "frozen_aggregate_qualification": false
+  },
+  "scope": [
+    "CPU MINI F64 only; larger datasets, GPU/SIMD execution and full compression application/AOT qualification remain unqualified.",
+    "17 focused GPU units pass; 1416 others are filtered. 102 selected Program tests pass; 415 others are filtered.",
+    "The fixed split and earlier holdout results were already exposed. No compiler change followed freezing or was selected from this round holdout timings.",
+    "Native map bodies are currently straight-line scalar code and immutable matrix reads. Conditional comprehensions, full tagged numeric state machines and mutable typed numeric loop phases remain compiler work.",
+    "The strict below-1.0x C goal is not achieved; no C kernel wins. All measurements and regressions remain recorded."
+  ],
+  "receipts": {
+    "round-03-frozen.json": "eaa70fa1f9f2cc421421fc7f4cf8973e3ff2a37cdf0fa5843bbcc02447de08d7",
+    "round-03-optimization.json": "1b60cb5463c5b5c1f8c37660357f57ff5fe655c2cc05b4e579eec3df0503cbcf",
+    "round-03-holdout.json": "f9dbfcf010cfac6aa3decc764a7cfa40a6c4d86dba9860bb38588a213217243f",
+    "round-03-progress.json": "12398feed46b3595077fa57265c8ca6c9e450c81b6b2a776bd499169ffd48c1c",
+    "round-03-training-probe.json": "d7e2a4649107fac91a1973e322fed5f6fe502215b4767e682cb22ac84298d5ce"
+  }
+}
