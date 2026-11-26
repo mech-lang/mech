@@ -1311,8 +1311,6 @@ pub(crate) static DOCUMENT_RULES: &[DocumentRule] = &[
     DocumentRule {
         rule: rules::ORDERED_LIST_ITEM,
         expression: GrammarExpression::Sequence(&[
-            // A subtitle probe may scan the entire line. Only ordered-list
-            // prefixes need that ambiguity check; code and prose reject first.
             GrammarExpression::Peek(&GrammarExpression::Sequence(&[
                 GrammarExpression::Rule(rules::NUMBER),
                 GrammarExpression::Rule(rules::PERIOD),
