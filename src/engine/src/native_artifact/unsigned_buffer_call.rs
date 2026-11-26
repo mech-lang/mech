@@ -1,4 +1,5 @@
-//! Same-plan last-use candidates for selected packed buffer operations.
+//! Same-plan last-use candidates for selected packed buffer operations and
+//! scalar matrix assignments. Exact kinds remain the selected call's proof.
 //! Runtime exclusivity and the original current-visit checks remain mandatory.
 use super::{
     NativeCollectionPrimitive as Primitive, NativeIterationAction as Action,
@@ -46,7 +47,7 @@ impl Facts<'_> {
         let facts = self;
         let plan = facts.plan();
         if !plan.blocks().iter().any(|block| matches!(block.action(), Action::LibraryCall { template, .. }
-            if matches!(template.primitive(), Primitive::MatrixIndexedReplace | Primitive::SequenceWithCapacity | Primitive::SequenceReserve | Primitive::SequenceAppend | Primitive::SequenceAppendLeBytes | Primitive::SequenceAppendSublist | Primitive::SequenceClear))) {
+            if matches!(template.primitive(), Primitive::MatrixIndexedReplace | Primitive::MatrixCellReplace | Primitive::SequenceWithCapacity | Primitive::SequenceReserve | Primitive::SequenceAppend | Primitive::SequenceAppendLeBytes | Primitive::SequenceAppendSublist | Primitive::SequenceClear))) {
             return Vec::new();
         }
         plan.blocks()
@@ -62,6 +63,7 @@ impl Facts<'_> {
                 let source = match template.primitive() {
                     Primitive::SequenceWithCapacity => None,
                     Primitive::MatrixIndexedReplace
+                    | Primitive::MatrixCellReplace
                     | Primitive::SequenceReserve
                     | Primitive::SequenceAppend
                     | Primitive::SequenceAppendLeBytes

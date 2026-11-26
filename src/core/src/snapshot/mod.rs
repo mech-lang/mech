@@ -45,10 +45,11 @@ pub use self::relations::{
 pub use self::sequence::SequenceView;
 pub use self::validation::{
     CompositeSnapshotConstructor, FrozenSnapshotIdentity, MatrixSnapshotConstructor,
-    OwnedSnapshotBytes, OwnedSnapshotString, OwnedSnapshotUnsignedMatrix,
-    PrivateUnsignedAppendPreparation, PrivateUnsignedMatrix, SnapshotCanonicalizationBudget,
-    SnapshotValidationContext, StringMatrixSnapshotConstructor, StringOwnershipTransfer,
-    StringSnapshotConstructor, TableSnapshotBuilder, UnsignedMatrixBuffer,
+    NumericMatrixBuffer, NumericMatrixOwnershipTransfer, NumericMatrixSnapshotConstructor,
+    OwnedSnapshotBytes, OwnedSnapshotNumericMatrix, OwnedSnapshotString,
+    OwnedSnapshotUnsignedMatrix, PrivateUnsignedAppendPreparation, PrivateUnsignedMatrix,
+    SnapshotCanonicalizationBudget, SnapshotValidationContext, StringMatrixSnapshotConstructor,
+    StringOwnershipTransfer, StringSnapshotConstructor, TableSnapshotBuilder, UnsignedMatrixBuffer,
     UnsignedMatrixOwnershipTransfer, UnsignedMatrixSnapshotConstructor, UnsignedMatrixViewMut,
     Value, build_f64_set_snapshot, build_f64_set_snapshot_after_remove,
     canonical_snapshot_data_draft, canonical_snapshot_data_draft_in,

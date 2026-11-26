@@ -150,6 +150,307 @@ fn typed_inputs(
         .collect()
 }
 
+fn update_cases() -> Vec<(&'static str, usize, Vec<Data>, Data, u64)> {
+    let mut cases = Vec::new();
+    for (kind, width) in [("u8", 1), ("u16", 2), ("u32", 4), ("u64", 8)] {
+        let cell = |word| match kind {
+            "u8" => Data::U8(word as u8),
+            "u16" => Data::U16(word as u16),
+            "u32" => Data::U32(word as u32),
+            "u64" => Data::U64(word),
+            _ => unreachable!(),
+        };
+        cases.push((kind, width, (1..=6).map(cell).collect(), cell(127), 127));
+    }
+    cases.push(("bool", 1, vec![Data::Bool(false); 6], Data::Bool(true), 1));
+    cases.push((
+        "i64",
+        8,
+        [i64::MIN, -2, -1, 0, 1, i64::MAX].map(Data::I64).into(),
+        Data::I64(i64::MIN),
+        i64::MIN as u64,
+    ));
+    cases.push((
+        "f64",
+        8,
+        [
+            0x8000_0000_0000_0000,
+            0x7ff8_0000_0000_0001,
+            0,
+            0x7ff0_0000_0000_0000,
+            0xfff0_0000_0000_0000,
+            0x3ff0_0000_0000_0000,
+        ]
+        .map(|bits| Data::F64(F64Bits::from_bits(bits)))
+        .into(),
+        Data::F64(F64Bits::from_bits(0x7ff8_0000_0000_0002)),
+        0x7ff8_0000_0000_0002,
+    ));
+    cases
+}
+
+fn matrix_pointer(value: &Value) -> usize {
+    use mech_core::{ValueData, snapshot::SequenceView};
+    let ValueData::Matrix(matrix) = value.data() else {
+        panic!("matrix")
+    };
+    match matrix.elements() {
+        SequenceView::Bool(v) => v.as_ptr() as usize,
+        SequenceView::U8(v) => v.as_ptr() as usize,
+        SequenceView::U16(v) => v.as_ptr() as usize,
+        SequenceView::U32(v) => v.as_ptr() as usize,
+        SequenceView::U64(v) => v.as_ptr() as usize,
+        SequenceView::I64(v) => v.as_ptr() as usize,
+        SequenceView::F64(v) => v.as_ptr() as usize,
+        _ => panic!("native scalar kind"),
+    }
+}
+
+#[test]
+fn selected_scalar_matrix_updates_reuse_owned_storage_and_keep_exact_finite_denials() {
+    use mech_core::MemoryBudgetDimension as Dimension;
+    use mech_engine::native_artifact::{
+        NativeCollectionPrimitive as Primitive, NativeIterationAction as Action,
+        NativeLibraryWorkBudget, lower_native_program_artifact,
+        prepare_native_program_library_call,
+    };
+    for (kind, width, cells, incoming, word) in update_cases() {
+        for axes in [1, 2] {
+            let selector = if axes == 1 { "at" } else { "row,column" };
+            let source = format!(
+                "replace(xs<[{kind}]>, at<u64>, row<u64>, column<u64>, word<{kind}>) => (out<[{kind}]>) :=\n  ~next := xs\n  next[{selector}] = word\n  out := next.\nreplace(input<[{kind}]>, at<u64>, row<u64>, column<u64>, word<{kind}>)\n"
+            );
+            for artifact in artifacts(&source) {
+                let catalog = mech_stdlib::source_catalog();
+                let plan = lower_native_program_artifact(&artifact, &catalog).unwrap();
+                let primitive = if axes == 1 {
+                    Primitive::MatrixIndexedReplace
+                } else {
+                    Primitive::MatrixCellReplace
+                };
+                let template = plan
+                    .blocks()
+                    .iter()
+                    .find_map(|block| match block.action() {
+                        Action::LibraryCall { template, .. }
+                            if template.primitive() == primitive =>
+                        {
+                            Some(template)
+                        }
+                        _ => None,
+                    })
+                    .unwrap();
+                let call =
+                    prepare_native_program_library_call(&artifact, template, &catalog).unwrap();
+                assert!(call.scalar_matrix_replace_kind().is_some());
+                let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                let args = typed_inputs(
+                    &artifact,
+                    &[
+                        ("input", [2, 3], Data::Matrix(cells.clone().into())),
+                        ("at", [1, 1], Data::U64(2)),
+                        ("row", [1, 1], Data::U64(2)),
+                        ("column", [1, 1], Data::U64(1)),
+                        ("word", [1, 1], incoming.clone()),
+                    ],
+                    &memory,
+                );
+                let original = &args[artifact
+                    .inputs()
+                    .iter()
+                    .position(|port| {
+                        mech_engine::decode_source_input_name(&port.name).unwrap() == "input"
+                    })
+                    .unwrap()];
+                let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+                check_restored_image(&jit);
+                assert!(
+                    !emit_program_object(&artifact, &catalog)
+                        .unwrap()
+                        .bytes()
+                        .is_empty()
+                );
+                let mut published = vec![None; artifact.outputs().len()];
+                jit.evaluate_into(&args, &mut published, limits(), &memory)
+                    .unwrap();
+                let mut native_expected = cells.clone();
+                native_expected[3] = incoming.clone();
+                assert_eq!(
+                    published
+                        .last()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .canonical_data_draft()
+                        .unwrap(),
+                    Data::Matrix(native_expected.into()),
+                    "{kind}/{axes}: native operand transport"
+                );
+                drop(published);
+                let indices: &[u64] = if axes == 1 { &[2] } else { &[2, 1] };
+                let work = NativeLibraryWorkBudget::new(1 << 40, 1 << 32, &memory).unwrap();
+                let policy = limits().library;
+                let start = work.used();
+                let (first, changed) = call
+                    .scalar_matrix_replace(
+                        original.clone(),
+                        indices,
+                        word,
+                        true,
+                        policy,
+                        &work,
+                        Default::default(),
+                    )
+                    .unwrap();
+                let cost = (work.used().0 - start.0, work.used().1 - start.1);
+                assert!(changed);
+                assert_ne!(matrix_pointer(&first), matrix_pointer(original));
+                let mut expected = cells.clone();
+                expected[3] = incoming.clone();
+                assert_eq!(
+                    first.canonical_data_draft().unwrap(),
+                    Data::Matrix(expected.into())
+                );
+                assert_eq!(
+                    original.canonical_data_draft().unwrap(),
+                    Data::Matrix(cells.clone().into())
+                );
+                let footprint = original.retained_footprint(artifact.schemas()).unwrap();
+                let payload = (6 * width) as u64;
+                let metadata = call.binding_metadata_bytes()
+                    + artifact.schemas().clone_allocation_bound_bytes().unwrap()
+                    + 4096;
+                let mut exact = policy;
+                exact.max_output_elements = Some(6);
+                exact.max_output_bytes = Some(footprint.retained_bytes);
+                exact.max_cloned_bytes = Some(payload);
+                exact.max_temporary_bytes = Some(
+                    original.memory_budget_retained_bytes(&memory).unwrap() + metadata + payload,
+                );
+                exact.max_retained_nodes = Some(
+                    original.memory_budget_retained_nodes(&memory).unwrap()
+                        + footprint.node_count
+                        + 8,
+                );
+                exact.max_compute_work = Some(cost.0);
+                exact.max_comparison_work = Some(cost.1);
+                drop(
+                    call.scalar_matrix_replace(
+                        original.clone(),
+                        indices,
+                        word,
+                        true,
+                        exact,
+                        &work,
+                        Default::default(),
+                    )
+                    .unwrap(),
+                );
+                for dimension in [
+                    Dimension::OutputElements,
+                    Dimension::OutputBytes,
+                    Dimension::ClonedBytes,
+                    Dimension::TemporaryBytes,
+                    Dimension::RetainedNodes,
+                    Dimension::ComputeWork,
+                    Dimension::ComparisonWork,
+                ] {
+                    let mut short = exact;
+                    let limit = match dimension {
+                        Dimension::OutputElements => &mut short.max_output_elements,
+                        Dimension::OutputBytes => &mut short.max_output_bytes,
+                        Dimension::ClonedBytes => &mut short.max_cloned_bytes,
+                        Dimension::TemporaryBytes => &mut short.max_temporary_bytes,
+                        Dimension::RetainedNodes => &mut short.max_retained_nodes,
+                        Dimension::ComputeWork => &mut short.max_compute_work,
+                        Dimension::ComparisonWork => &mut short.max_comparison_work,
+                        _ => unreachable!(),
+                    };
+                    *limit = Some(limit.unwrap() - 1);
+                    let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                    let error = call
+                        .scalar_matrix_replace(
+                            original.clone(),
+                            indices,
+                            word,
+                            true,
+                            short,
+                            &work,
+                            Default::default(),
+                        )
+                        .unwrap_err();
+                    let denied = match error {
+                        mech_engine::native_artifact::NativeCollectionInvocationError::Plan(
+                            mech_core::MemoryPlanError::TargetLimitExceeded { violation },
+                        ) => violation.dimension,
+                        mech_engine::native_artifact::NativeCollectionInvocationError::Kernel(
+                            mech_core::ResidentKernelError::ResourceLimit { dimension, .. },
+                        ) => dimension,
+                        other => panic!("{kind}/{axes}/{dimension:?}: {other:?}"),
+                    };
+                    assert_eq!(denied, dimension, "{kind}/{axes}");
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        retained
+                    );
+                }
+                let pointer = matrix_pointer(&first);
+                let old_word = match &cells[3] {
+                    Data::Bool(v) => u64::from(*v),
+                    Data::U8(v) => *v as u64,
+                    Data::U16(v) => *v as u64,
+                    Data::U32(v) => *v as u64,
+                    Data::U64(v) => *v,
+                    Data::I64(v) => *v as u64,
+                    Data::F64(v) => v.bits(),
+                    _ => unreachable!(),
+                };
+                let mut zero_copy = policy;
+                zero_copy.max_cloned_bytes = Some(0);
+                let (second, changed) = call
+                    .scalar_matrix_replace(
+                        first,
+                        indices,
+                        old_word,
+                        true,
+                        zero_copy,
+                        &work,
+                        Default::default(),
+                    )
+                    .unwrap();
+                assert!(changed);
+                assert_eq!(
+                    matrix_pointer(&second),
+                    pointer,
+                    "{kind}/{axes}: reuse private backing"
+                );
+                assert_eq!(
+                    second.canonical_data_draft().unwrap(),
+                    Data::Matrix(cells.clone().into())
+                );
+                let (same, changed) = call
+                    .scalar_matrix_replace(
+                        second.clone(),
+                        indices,
+                        old_word,
+                        true,
+                        zero_copy,
+                        &work,
+                        Default::default(),
+                    )
+                    .unwrap();
+                assert!(!changed);
+                assert!(same.shares_frozen_storage(&second));
+                drop((same, second, args, work));
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    (0, 0)
+                );
+            }
+        }
+    }
+}
+
 fn check_output(
     artifact: &ProgramArtifact,
     output: &[Option<Value>],

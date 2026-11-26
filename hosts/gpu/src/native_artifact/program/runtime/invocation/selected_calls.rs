@@ -53,6 +53,9 @@ impl Invocation<'_, '_, '_> {
             LibraryCallRoute::UnsignedMatrixReplace => Ok(self
                 .unsigned_matrix_replace_call(site, words)?
                 .then_some(None)),
+            LibraryCallRoute::ScalarMatrixReplace => Ok(self
+                .scalar_matrix_replace_call(site, words)?
+                .then_some(None)),
         }
     }
 }

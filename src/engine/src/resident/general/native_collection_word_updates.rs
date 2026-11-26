@@ -1,17 +1,41 @@
-//! One selected plain unsigned replacement; immutable aliases keep their backing.
+//! One selected plain scalar replacement; immutable aliases keep their backing.
 use super::{InvokeError, NativePreparedLibraryCall, finite_limits};
-use crate::native_artifact::NativeCollectionPrimitive as Primitive;
+use crate::native_artifact::{NativeCollectionPrimitive as Primitive, NativeScalarKind as Kind};
 use crate::resident::budget::{
     NativeLibraryWorkBudget, native_turn_plan_cache::NativeProjectionIndexContext,
 };
-use mech_core::snapshot::{SequenceView, UnsignedMatrixBuffer, UnsignedMatrixOwnershipTransfer};
+use mech_core::snapshot::{
+    NumericMatrixBuffer, NumericMatrixOwnershipTransfer, SequenceView, UnsignedMatrixBuffer,
+};
 use mech_core::{IntegerWidth, MemoryBudgetLimits, ResourceDemand, SchemaBody, Value, ValueData};
 
 impl NativePreparedLibraryCall {
     fn unsigned_matrix_replace_width(&self) -> Option<usize> {
-        let [matrix, incoming, selector] = self.template.inputs() else {
+        if self.template.inputs().len() != 3 {
             return None;
-        };
+        }
+        Some(match self.scalar_matrix_replace_kind()? {
+            Kind::U8 => 1,
+            Kind::U16 => 2,
+            Kind::U32 => 4,
+            Kind::U64 => 8,
+            _ => return None,
+        })
+    }
+
+    /// Exact maintained scalar assignment, with one linear selector or two
+    /// independent axis selectors. This does not admit arbitrary rectangles,
+    /// interval kinds, cross-kind conversion or compound assignment.
+    pub fn scalar_matrix_replace_kind(&self) -> Option<Kind> {
+        let inputs = self.template.inputs();
+        if !matches!(
+            (self.template.primitive(), inputs.len()),
+            (Primitive::MatrixIndexedReplace, 3) | (Primitive::MatrixCellReplace, 4)
+        ) {
+            return None;
+        }
+        let matrix = &inputs[0];
+        let incoming = &inputs[1];
         let SchemaBody::Matrix {
             element,
             dimensions,
@@ -19,23 +43,18 @@ impl NativePreparedLibraryCall {
         else {
             return None;
         };
-        if self.template.primitive() != Primitive::MatrixIndexedReplace
-            || matrix != self.template.output()
+        if matrix != self.template.output()
             || dimensions.len() != 2
             || element.as_ref() != incoming.body()
             || !incoming.dimension_parameters().is_empty()
-            || selector.body() != &SchemaBody::UnsignedInteger(IntegerWidth::W64)
-            || !selector.dimension_parameters().is_empty()
+            || inputs[2..].iter().any(|selector| {
+                selector.body() != &SchemaBody::UnsignedInteger(IntegerWidth::W64)
+                    || !selector.dimension_parameters().is_empty()
+            })
         {
             return None;
         }
-        Some(match element.as_ref() {
-            SchemaBody::UnsignedInteger(IntegerWidth::W8) => 1,
-            SchemaBody::UnsignedInteger(IntegerWidth::W16) => 2,
-            SchemaBody::UnsignedInteger(IntegerWidth::W32) => 4,
-            SchemaBody::UnsignedInteger(IntegerWidth::W64) => 8,
-            _ => return None,
-        })
+        Kind::from_schema_body(element)
     }
 
     pub fn supports_unsigned_matrix_replace(&self) -> bool {
@@ -55,9 +74,37 @@ impl NativePreparedLibraryCall {
         work: &NativeLibraryWorkBudget,
         coexistence: ResourceDemand,
     ) -> Result<(Value, bool), InvokeError> {
-        self.unsigned_matrix_replace_with(
+        self.matrix_replace_with::<_, true>(
             source,
-            index,
+            &[index],
+            incoming,
+            may_consume,
+            limits,
+            work,
+            coexistence,
+            |value, admission| match admission {
+                Some(admission) => Ok(value.into_memory_budget(admission)?),
+                None => Ok(value),
+            },
+        )
+    }
+
+    /// The same checked update protocol for every maintained native scalar
+    /// kind and both supported selector geometries. A private owner is reused
+    /// only after the ordinary same-account exclusive transfer succeeds.
+    pub fn scalar_matrix_replace(
+        &self,
+        source: Value,
+        indices: &[u64],
+        incoming: u64,
+        may_consume: bool,
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+    ) -> Result<(Value, bool), InvokeError> {
+        self.matrix_replace_with::<_, false>(
+            source,
+            indices,
             incoming,
             may_consume,
             limits,
@@ -83,9 +130,9 @@ impl NativePreparedLibraryCall {
         work: &NativeLibraryWorkBudget,
         coexistence: ResourceDemand,
     ) -> Result<mech_core::snapshot::PrivateUnsignedMatrix, InvokeError> {
-        self.unsigned_matrix_replace_with(
+        self.matrix_replace_with::<_, true>(
             source,
-            index,
+            &[index],
             incoming,
             may_consume,
             limits,
@@ -99,10 +146,10 @@ impl NativePreparedLibraryCall {
         .map(|(private, _)| private)
     }
 
-    fn unsigned_matrix_replace_with<T>(
+    fn matrix_replace_with<T, const UNSIGNED: bool>(
         &self,
         source: Value,
-        index: u64,
+        indices: &[u64],
         incoming: u64,
         may_consume: bool,
         limits: MemoryBudgetLimits,
@@ -114,10 +161,19 @@ impl NativePreparedLibraryCall {
         ) -> Result<T, InvokeError>,
     ) -> Result<(T, bool), InvokeError> {
         finite_limits(self.template.origin().node(), limits).map_err(InvokeError::Binding)?;
-        let width = self
-            .unsigned_matrix_replace_width()
+        if UNSIGNED && self.unsigned_matrix_replace_width().is_none() {
+            return Err(InvokeError::InvalidInput);
+        }
+        let kind = self
+            .scalar_matrix_replace_kind()
             .ok_or(InvokeError::InvalidInput)?;
-        if width < 8 && incoming >> (width * 8) != 0 {
+        let width = match kind {
+            Kind::Bool | Kind::U8 => 1,
+            Kind::U16 => 2,
+            Kind::U32 => 4,
+            Kind::U64 | Kind::I64 | Kind::F64 => 8,
+        };
+        if !kind.accepts_bits(incoming) || indices.len() + 2 != self.template.inputs().len() {
             return Err(InvokeError::InvalidInput);
         }
         work.with_call_limits(
@@ -158,17 +214,38 @@ impl NativePreparedLibraryCall {
                     return Err(InvokeError::InvalidInput);
                 };
                 let length = matrix.elements().len();
-                let capacity = matrix
-                    .unsigned_buffer_capacity()
-                    .ok_or(InvokeError::InvalidInput)?;
-                let ordinal = crate::resident::numeric::available_scalar_index(index, length)?;
-                let (rows, columns) = crate::resident::numeric::snapshot_matrix_dimensions(
-                    &source,
-                    self.template.inputs()[0].body(),
-                )?;
-                let ordinal =
-                    crate::resident::numeric::canonical_matrix_index(ordinal, rows, columns)?;
-                let old = word(matrix.elements(), width, ordinal)?;
+                let capacity = match kind {
+                    Kind::Bool | Kind::I64 | Kind::F64 => length,
+                    _ => matrix
+                        .unsigned_buffer_capacity()
+                        .ok_or(InvokeError::InvalidInput)?,
+                };
+                let ordinal = match indices {
+                    [index] => {
+                        let ordinal =
+                            crate::resident::numeric::available_scalar_index(*index, length)?;
+                        let (rows, columns) = crate::resident::numeric::snapshot_matrix_dimensions(
+                            &source,
+                            self.template.inputs()[0].body(),
+                        )?;
+                        crate::resident::numeric::canonical_matrix_index(ordinal, rows, columns)?
+                    }
+                    [row, column] => {
+                        let (rows, columns) = crate::resident::numeric::snapshot_matrix_dimensions(
+                            &source,
+                            self.template.inputs()[0].body(),
+                        )?;
+                        let row = crate::resident::numeric::available_scalar_index(*row, rows)?;
+                        let column =
+                            crate::resident::numeric::available_scalar_index(*column, columns)?;
+                        context.charge(16, 0)?;
+                        row.checked_mul(columns)
+                            .and_then(|at| at.checked_add(column))
+                            .ok_or(InvokeError::InvalidInput)?
+                    }
+                    _ => return Err(InvokeError::InvalidInput),
+                };
+                let old = word(matrix.elements(), kind, ordinal)?;
                 let footprint = source
                     .retained_footprint(&self.schemas)
                     .map_err(|_| InvokeError::InvalidInput)?;
@@ -179,8 +256,9 @@ impl NativePreparedLibraryCall {
                     footprint.retained_bytes,
                     0,
                 )?;
-                // Plain unsigned equality and unchanged shape/schema make this one
-                // selected-word comparison exactly the full snapshot changed bit.
+                // Exact scalar bits and unchanged shape/schema make this one
+                // selected-word comparison exactly the snapshot changed bit,
+                // including signed zero and distinct floating-point NaN payloads.
                 context.charge(16, 1)?;
                 if old == incoming {
                     return Ok((finish(source, None)?, false));
@@ -209,14 +287,12 @@ impl NativePreparedLibraryCall {
                 // envelope. The detached charge remains live on every failure exit.
                 let mut admission = memory.reserve_capacity(metadata)?;
                 let constructor = source
-                    .unsigned_matrix_replacement_constructor(self.schemas.clone())
+                    .numeric_matrix_replacement_constructor(self.schemas.clone())
                     .map_err(|_| InvokeError::InvalidInput)?;
                 let (source, owned) = if may_consume {
-                    match source.try_into_owned_unsigned_matrix(&memory)? {
-                        UnsignedMatrixOwnershipTransfer::Owned(buffer) => (None, Some(buffer)),
-                        UnsignedMatrixOwnershipTransfer::Unavailable(source) => {
-                            (Some(source), None)
-                        }
+                    match source.try_into_owned_numeric_matrix(&memory)? {
+                        NumericMatrixOwnershipTransfer::Owned(buffer) => (None, Some(buffer)),
+                        NumericMatrixOwnershipTransfer::Unavailable(source) => (Some(source), None),
                     }
                 } else {
                     (Some(source), None)
@@ -309,17 +385,22 @@ fn check_output(
     Ok(())
 }
 
-fn word(values: SequenceView<'_>, width: usize, at: usize) -> Result<u64, InvokeError> {
-    Ok(match (values, width) {
-        (SequenceView::U8(v), 1) => *v.get(at).ok_or(InvokeError::InvalidInput)? as u64,
-        (SequenceView::U16(v), 2) => *v.get(at).ok_or(InvokeError::InvalidInput)? as u64,
-        (SequenceView::U32(v), 4) => *v.get(at).ok_or(InvokeError::InvalidInput)? as u64,
-        (SequenceView::U64(v), 8) => *v.get(at).ok_or(InvokeError::InvalidInput)?,
+fn word(values: SequenceView<'_>, kind: Kind, at: usize) -> Result<u64, InvokeError> {
+    Ok(match (values, kind) {
+        (SequenceView::U8(v), Kind::U8) => *v.get(at).ok_or(InvokeError::InvalidInput)? as u64,
+        (SequenceView::U16(v), Kind::U16) => *v.get(at).ok_or(InvokeError::InvalidInput)? as u64,
+        (SequenceView::U32(v), Kind::U32) => *v.get(at).ok_or(InvokeError::InvalidInput)? as u64,
+        (SequenceView::U64(v), Kind::U64) => *v.get(at).ok_or(InvokeError::InvalidInput)?,
+        (SequenceView::Bool(v), Kind::Bool) => {
+            u64::from(*v.get(at).ok_or(InvokeError::InvalidInput)?)
+        }
+        (SequenceView::I64(v), Kind::I64) => *v.get(at).ok_or(InvokeError::InvalidInput)? as u64,
+        (SequenceView::F64(v), Kind::F64) => v.get(at).ok_or(InvokeError::InvalidInput)?.bits(),
         _ => return Err(InvokeError::InvalidInput),
     })
 }
 
-fn copy(values: SequenceView<'_>, capacity: usize) -> Result<UnsignedMatrixBuffer, InvokeError> {
+fn copy(values: SequenceView<'_>, capacity: usize) -> Result<NumericMatrixBuffer, InvokeError> {
     macro_rules! words {
         ($v:expr, $kind:ident) => {{
             let mut next = Vec::new();
@@ -329,30 +410,31 @@ fn copy(values: SequenceView<'_>, capacity: usize) -> Result<UnsignedMatrixBuffe
                 return Err(InvokeError::InvalidInput);
             }
             next.extend_from_slice($v);
-            UnsignedMatrixBuffer::$kind(next)
+            next
         }};
     }
     Ok(match values {
-        SequenceView::U8(v) => words!(v, U8),
-        SequenceView::U16(v) => words!(v, U16),
-        SequenceView::U32(v) => words!(v, U32),
-        SequenceView::U64(v) => words!(v, U64),
+        SequenceView::U8(v) => {
+            NumericMatrixBuffer::Unsigned(UnsignedMatrixBuffer::U8(words!(v, U8)))
+        }
+        SequenceView::U16(v) => {
+            NumericMatrixBuffer::Unsigned(UnsignedMatrixBuffer::U16(words!(v, U16)))
+        }
+        SequenceView::U32(v) => {
+            NumericMatrixBuffer::Unsigned(UnsignedMatrixBuffer::U32(words!(v, U32)))
+        }
+        SequenceView::U64(v) => {
+            NumericMatrixBuffer::Unsigned(UnsignedMatrixBuffer::U64(words!(v, U64)))
+        }
+        SequenceView::Bool(v) => NumericMatrixBuffer::Bool(words!(v, Bool).into_boxed_slice()),
+        SequenceView::I64(v) => NumericMatrixBuffer::I64(words!(v, I64).into_boxed_slice()),
+        SequenceView::F64(v) => NumericMatrixBuffer::F64(words!(v, F64).into_boxed_slice()),
         _ => return Err(InvokeError::InvalidInput),
     })
 }
 
-fn replace(buffer: &mut UnsignedMatrixBuffer, at: usize, incoming: u64) -> Result<(), InvokeError> {
-    macro_rules! put {
-        ($v:expr, $ty:ty) => {
-            *$v.get_mut(at).ok_or(InvokeError::InvalidInput)? =
-                <$ty>::try_from(incoming).map_err(|_| InvokeError::InvalidInput)?
-        };
-    }
-    match buffer {
-        UnsignedMatrixBuffer::U8(v) => put!(v, u8),
-        UnsignedMatrixBuffer::U16(v) => put!(v, u16),
-        UnsignedMatrixBuffer::U32(v) => put!(v, u32),
-        UnsignedMatrixBuffer::U64(v) => put!(v, u64),
-    }
-    Ok(())
+fn replace(buffer: &mut NumericMatrixBuffer, at: usize, incoming: u64) -> Result<(), InvokeError> {
+    buffer
+        .replace_word(at, incoming)
+        .ok_or(InvokeError::InvalidInput)
 }

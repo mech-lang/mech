@@ -66,6 +66,26 @@ fn prepared_selected_routes_are_rederived_from_actual_factories_on_image_restore
             Route::RecordScalarField,
         ),
         (
+            "replace(xs<[f64]>, at<u64>, word<f64>) => (out<[f64]>) :=\n  ~next := xs\n  next[at] = word\n  out := next.\nreplace(input<[f64]>, at<u64>, word<f64>)\n",
+            Route::ScalarMatrixReplace,
+        ),
+        (
+            "replace(xs<[f64]>, row<u64>, column<u64>, word<f64>) => (out<[f64]>) :=\n  ~next := xs\n  next[row,column] = word\n  out := next.\nreplace(input<[f64]>, row<u64>, column<u64>, word<f64>)\n",
+            Route::ScalarMatrixReplace,
+        ),
+        (
+            "replace(xs<[i64]>, row<u64>, column<u64>, word<i64>) => (out<[i64]>) :=\n  ~next := xs\n  next[row,column] = word\n  out := next.\nreplace(input<[i64]>, row<u64>, column<u64>, word<i64>)\n",
+            Route::ScalarMatrixReplace,
+        ),
+        (
+            "replace(xs<[bool]>, at<u64>, word<bool>) => (out<[bool]>) :=\n  ~next := xs\n  next[at] = word\n  out := next.\nreplace(input<[bool]>, at<u64>, word<bool>)\n",
+            Route::ScalarMatrixReplace,
+        ),
+        (
+            "replace(xs<[u64]>, row<u64>, column<u64>, word<u64>) => (out<[u64]>) :=\n  ~next := xs\n  next[row,column] = word\n  out := next.\nreplace(input<[u64]>, row<u64>, column<u64>, word<u64>)\n",
+            Route::ScalarMatrixReplace,
+        ),
+        (
             "+> sequence\nwalk(words<[u32]>, left<u64>) => <u64>\n  | (words, left) => ((left > 0u64)? | true => walk(words, left - 1u64) | false => sequence/length(words)).\nwalk(input<[u32]>, steps<u64>)\n",
             Route::BufferFrame,
         ),

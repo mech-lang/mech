@@ -526,7 +526,9 @@ fn selected_template(
 // reads through the maintained word boundary with canonical leaf admission.
 // IR357 collects Bool/I64/F64 directly in typed banks, admitting any boxed
 // finalization copy while preserving unsigned-only raw sink authority.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 357;
+// IR358 shares exact scalar matrix replacement across all native kinds and
+// linear/cell selectors, with the existing exclusive handoff and finite checks.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 358;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

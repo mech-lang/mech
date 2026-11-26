@@ -17,7 +17,14 @@ pub use string_matrix::StringMatrixSnapshotConstructor;
 
 #[path = "numeric_matrix.rs"]
 mod numeric_matrix;
-pub use numeric_matrix::{UnsignedMatrixBuffer, UnsignedMatrixSnapshotConstructor};
+pub use numeric_matrix::{
+    NumericMatrixBuffer, NumericMatrixSnapshotConstructor, UnsignedMatrixBuffer,
+    UnsignedMatrixSnapshotConstructor,
+};
+
+#[path = "owned_numeric_matrix.rs"]
+mod owned_numeric_matrix;
+pub use owned_numeric_matrix::{NumericMatrixOwnershipTransfer, OwnedSnapshotNumericMatrix};
 
 #[path = "owned_unsigned_matrix.rs"]
 mod owned_unsigned_matrix;

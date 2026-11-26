@@ -18,6 +18,7 @@ pub(in crate::native_artifact) enum LibraryCallRoute {
     ScalarMatrixElement,
     StringMatrixElement,
     UnsignedMatrixReplace,
+    ScalarMatrixReplace,
 }
 
 pub(in crate::native_artifact) fn derive(
@@ -51,6 +52,9 @@ pub(in crate::native_artifact) fn derive(
             if buffers.get(site).is_some_and(Option::is_some) {
                 if call.supports_unsigned_matrix_replace() {
                     return LibraryCallRoute::UnsignedMatrixReplace;
+                }
+                if call.scalar_matrix_replace_kind().is_some() {
+                    return LibraryCallRoute::ScalarMatrixReplace;
                 }
                 if call.supports_unsigned_buffer() {
                     return LibraryCallRoute::UnsignedBuffer;
