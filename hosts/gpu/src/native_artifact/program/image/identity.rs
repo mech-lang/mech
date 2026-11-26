@@ -548,7 +548,8 @@ fn selected_template(
 // IR374 selects existing U64 cursors for matrix block comprehensions.
 // IR375 borrows exact Core typed numeric operands for complete admitted calls.
 // IR376 composes exact ordered scalar folds inside native scalar maps.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 376;
+// IR377 executes exact F64 broadcast arithmetic without per-cell generic drafts.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 377;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -814,7 +815,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 376;
 // Work143 applies the existing selected-range source prices to block builders.
 // Work144 retains the original full staging, clone and publication envelope.
 // Work145 prepays nested source work, physical attempts and complete replay.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 145;
+// Work146 retains the complete existing numeric source and constructor prices.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 146;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

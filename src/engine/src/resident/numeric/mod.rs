@@ -3,6 +3,7 @@ mod borrowed_numeric;
 use borrowed_numeric::BorrowedNumericOperand;
 mod compact_range;
 mod compact_string_access;
+mod direct_float_binary;
 pub mod linkage_factories;
 mod nested_assignment;
 mod packed_indexed_assign;
@@ -19292,6 +19293,13 @@ fn snapshot_numeric_binary(
         }
     }
     if let Some(shape) = &output_shape {
+        if !rational_power
+            && let Some(next) = direct_float_binary::try_construct(
+                kernel, shape, rows, columns, arithmetic, &left, left_mode, &right, right_mode,
+            )
+        {
+            return write_snapshot_value(kernel, output, next?);
+        }
         if let Some(next) =
             packed_snapshot_output::try_construct(kernel, shape, output_len, |index| {
                 apply(index / columns, index % columns)

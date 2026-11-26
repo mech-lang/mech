@@ -594,3 +594,240 @@ fn borrowed_snapshot_numeric_constrained_composite_and_mismatched_schemas_keep_c
     assert!(matches!(operand, BorrowedNumericOperand::Snapshot { .. }));
     assert_eq!(operand.at(0), Err(ResidentKernelError::InvalidInput));
 }
+
+#[test]
+fn direct_float_binary_uses_current_typed_banks_for_every_broadcast_pair_and_ieee_value() {
+    let element = SchemaBody::FloatingPoint(F::W64);
+    let patterns = [
+        0u64,
+        1 << 63,
+        0x7ff0_0000_0000_0000,
+        0xfff0_0000_0000_0000,
+        0x7ff8_0000_0000_0123,
+        1,
+    ];
+    // Include both a scalar owner and a one-cell matrix, plus row, column and
+    // exact shapes. Both operands change on the second invocation.
+    let shapes = [
+        (false, 1, 1),
+        (true, 1, 1),
+        (true, 1, 3),
+        (true, 2, 1),
+        (true, 2, 3),
+    ];
+    for &(lm, lr, lc) in &shapes {
+        for &(rm, rr, rc) in &shapes {
+            let (rows, columns) = (lr.max(rr), lc.max(rc));
+            let (schemas, ids) = table([
+                if lm {
+                    matrix(&element, lr, lc)
+                } else {
+                    element.clone()
+                },
+                if rm {
+                    matrix(&element, rr, rc)
+                } else {
+                    element.clone()
+                },
+                matrix(&element, rows, columns),
+            ]);
+            for operation in [
+                SemanticArithmetic::Add,
+                SemanticArithmetic::Subtract,
+                SemanticArithmetic::Multiply,
+                SemanticArithmetic::Divide,
+            ] {
+                let bound = kernel(
+                    snapshot_numeric_binary,
+                    &schemas,
+                    ids[2],
+                    vec![
+                        operation as u64,
+                        0,
+                        1,
+                        1,
+                        1,
+                        lr as u64,
+                        lc as u64,
+                        rr as u64,
+                        rc as u64,
+                    ],
+                );
+                let mut fast = [None];
+                let mut ordinary = [None];
+                for turn in 0..2 {
+                    let input = |matrix: bool, id: SchemaId, count: usize, offset: usize| {
+                        let mut cells = (0..count)
+                            .map(|i| {
+                                ValueDataDraft::F64(F64Bits::from_bits(
+                                    patterns[(i + offset + turn) % patterns.len()],
+                                ))
+                            })
+                            .collect::<Vec<_>>();
+                        ValueDraft {
+                            schema: id,
+                            shape_values: Box::new([]),
+                            data: if matrix {
+                                ValueDataDraft::Matrix(cells.into_boxed_slice())
+                            } else {
+                                cells.remove(0)
+                            },
+                        }
+                        .finalize(&SnapshotValidationContext::new(&schemas))
+                        .unwrap()
+                    };
+                    let left = [Some(input(lm, ids[0], lr * lc, 0))];
+                    let right = [Some(input(rm, ids[1], rr * rc, 2))];
+                    let before = (data(&left), data(&right));
+                    let args = Inputs(&[
+                        ResidentValueRef::Snapshot(&left),
+                        ResidentValueRef::Snapshot(&right),
+                    ]);
+                    direct_float_binary::constructions();
+                    let a = bound.execute(&args, ResidentValueMut::Snapshot(&mut fast));
+                    assert_eq!(
+                        direct_float_binary::constructions(),
+                        1,
+                        "actual direct arithmetic selection"
+                    );
+                    let b = direct_float_binary::without(|| {
+                        bound.execute(&args, ResidentValueMut::Snapshot(&mut ordinary))
+                    });
+                    assert_eq!(a, b, "{operation:?} {lm} {lr}x{lc} / {rm} {rr}x{rc}");
+                    assert_eq!(
+                        data(&fast),
+                        data(&ordinary),
+                        "{operation:?} {lm} {lr}x{lc} / {rm} {rr}x{rc}"
+                    );
+                    assert_eq!((data(&left), data(&right)), before, "immutable inputs");
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn direct_float_binary_retains_complete_finite_admission_and_atomic_replacement() {
+    let element = SchemaBody::FloatingPoint(F::W64);
+    let (schemas, ids) = table([
+        matrix(&element, 2, 1),
+        matrix(&element, 1, 3),
+        matrix(&element, 2, 3),
+    ]);
+    let cells = |xs: &[f64]| {
+        xs.iter()
+            .map(|x| ValueDataDraft::F64(F64Bits::from_f64(*x)))
+            .collect()
+    };
+    let left = [Some(value(&schemas, ids[0], cells(&[1.0, -2.0])))];
+    let right = [Some(value(&schemas, ids[1], cells(&[0.5, 4.0, -0.0])))];
+    let before = (data(&left), data(&right));
+    for operation in [
+        SemanticArithmetic::Add,
+        SemanticArithmetic::Subtract,
+        SemanticArithmetic::Multiply,
+        SemanticArithmetic::Divide,
+    ] {
+        let bound = kernel(
+            snapshot_numeric_binary,
+            &schemas,
+            ids[2],
+            vec![operation as u64, 0, 1, 1, 1, 2, 1, 1, 3],
+        );
+        let args = Inputs(&[
+            ResidentValueRef::Snapshot(&left),
+            ResidentValueRef::Snapshot(&right),
+        ]);
+        let mut prior = [None];
+        bound
+            .execute(&args, ResidentValueMut::Snapshot(&mut prior))
+            .unwrap();
+        for dimension in 0..8 {
+            for cap in [0, 1, 16, 128, 4096, 65535, 1_000_000] {
+                let mut plan = crate::resident::budget::detached_turn_plan(
+                    mech_core::ResourceDemand::default(),
+                )
+                .unwrap();
+                match dimension {
+                    0 => plan.budget_limits.max_output_elements = Some(cap),
+                    1 => plan.budget_limits.max_output_bytes = Some(cap),
+                    2 => plan.budget_limits.max_temporary_bytes = Some(cap),
+                    3 => plan.budget_limits.max_cloned_bytes = Some(cap),
+                    4 => plan.budget_limits.max_retained_nodes = Some(cap),
+                    5 => plan.budget_limits.max_compute_work = Some(cap),
+                    6 => plan.budget_limits.max_comparison_work = Some(cap),
+                    _ => plan.budget_limits.max_storage_buffer_bytes = Some(cap),
+                }
+                let mut fast = prior.clone();
+                let mut ordinary = prior.clone();
+                let a = crate::resident::budget::with_resident_turn_plan(plan.clone(), || {
+                    bound.execute(&args, ResidentValueMut::Snapshot(&mut fast))
+                });
+                let b = direct_float_binary::without(|| {
+                    crate::resident::budget::with_resident_turn_plan(plan, || {
+                        bound.execute(&args, ResidentValueMut::Snapshot(&mut ordinary))
+                    })
+                });
+                assert_eq!(a, b, "{operation:?} dimension {dimension} cap {cap}");
+                assert_eq!(data(&fast), data(&ordinary));
+                if a.is_err() {
+                    assert_eq!(data(&fast), data(&prior));
+                }
+            }
+        }
+        let mut recovered = [None];
+        bound
+            .execute(&args, ResidentValueMut::Snapshot(&mut recovered))
+            .unwrap();
+        assert_eq!(data(&prior), data(&recovered));
+    }
+    assert_eq!((data(&left), data(&right)), before);
+}
+
+#[test]
+fn direct_float_binary_accepts_empty_broadcasts_without_reading_either_operand() {
+    let element = SchemaBody::FloatingPoint(F::W64);
+    for (rows, columns) in [(0, 3), (2, 0), (0, 0)] {
+        let (schemas, ids) = table([matrix(&element, rows, columns)]);
+        let left = [Some(value(&schemas, ids[0], vec![]))];
+        for operation in [
+            SemanticArithmetic::Add,
+            SemanticArithmetic::Subtract,
+            SemanticArithmetic::Multiply,
+            SemanticArithmetic::Divide,
+        ] {
+            let bound = kernel(
+                snapshot_numeric_binary,
+                &schemas,
+                ids[0],
+                vec![
+                    operation as u64,
+                    0,
+                    1,
+                    1,
+                    1,
+                    rows as u64,
+                    columns as u64,
+                    rows as u64,
+                    columns as u64,
+                ],
+            );
+            let args = Inputs(&[
+                ResidentValueRef::Snapshot(&left),
+                ResidentValueRef::Snapshot(&left),
+            ]);
+            let mut fast = [None];
+            let mut ordinary = [None];
+            direct_float_binary::constructions();
+            let a = bound.execute(&args, ResidentValueMut::Snapshot(&mut fast));
+            let selected = direct_float_binary::constructions();
+            let b = direct_float_binary::without(|| {
+                bound.execute(&args, ResidentValueMut::Snapshot(&mut ordinary))
+            });
+            assert_eq!(a, b);
+            assert_eq!(data(&fast), data(&ordinary));
+            assert!(a.is_ok());
+            assert_eq!(selected, 1);
+        }
+    }
+}

@@ -86,3 +86,44 @@ pub(super) fn try_construct(
         _ => None,
     }
 }
+
+/// Exact F64 banks need no per-cell generic draft. The caller retains the
+/// original complete admission and current operands, as with `try_construct`.
+pub(super) fn try_construct_f64(
+    kernel: &BoundResidentKernel,
+    shape: &ShapeInstance,
+    count: usize,
+    mut cell: impl FnMut(usize) -> Result<F64Bits, ResidentKernelError>,
+) -> Option<Result<mech_core::Value, ResidentKernelError>> {
+    #[cfg(test)]
+    if DISABLED.with(std::cell::Cell::get) {
+        return None;
+    }
+    let metadata = kernel.snapshot_output()?;
+    let schemas = kernel.shared_snapshot_schemas()?;
+    let SchemaBody::Matrix { element, .. } = schemas.get(metadata.schema)?.body() else {
+        return None;
+    };
+    if element.as_ref() != &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64) {
+        return None;
+    }
+    Some((|| {
+        #[cfg(test)]
+        CONSTRUCTIONS.with(|v| v.set(v.get() + 1));
+        let mut cells = Vec::with_capacity(count);
+        for index in 0..count {
+            cells.push(cell(index)?);
+        }
+        let next = mech_core::Value::from_f64_matrix(
+            metadata.schema,
+            shape.clone(),
+            cells.into_boxed_slice(),
+            Arc::clone(schemas),
+        )
+        .map_err(|_| ResidentKernelError::InvalidOutput)?;
+        if next.schema_key() != metadata.schema_key {
+            return Err(ResidentKernelError::InvalidOutput);
+        }
+        Ok(next)
+    })())
+}
