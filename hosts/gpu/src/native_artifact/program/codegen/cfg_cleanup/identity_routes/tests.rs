@@ -1,3 +1,4 @@
+use super::super::threaded_edges::test_support::branch_calls;
 use crate::native_artifact::codegen::options::{
     CompilationControls, OptimizationOptions, OptimizationPass,
 };
@@ -292,13 +293,18 @@ fn identity_routes_preserve_previous_predicate_snapshots_and_decline_reentry() {
     old.func = c.func.clone();
     let before = define(&mut module, &mut old, "atom_before");
     let on = CompilationControls::new(OptimizationOptions::default());
-    assert_eq!(
-        forward_identity_routes(&on, &mut c, module.isa())
-            .unwrap()
-            .threaded_edges,
-        0
-    );
-    c.verify(module.isa()).unwrap();
+    let calls = branch_calls(&c.func);
+    assert!(!calls.is_empty());
+    for _ in 0..2 {
+        assert_eq!(
+            forward_identity_routes(&on, &mut c, module.isa())
+                .unwrap()
+                .threaded_edges,
+            0
+        );
+        assert_eq!(branch_calls(&c.func), calls);
+        c.verify(module.isa()).unwrap();
+    }
     let after = define(&mut module, &mut c, "atom_after");
     for seed in [0, 1, u64::MAX] {
         let mut memory = [0, 0];

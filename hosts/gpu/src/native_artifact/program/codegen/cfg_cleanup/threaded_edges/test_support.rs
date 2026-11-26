@@ -3,7 +3,7 @@ use crate::native_artifact::codegen::options::{CompilationControls, Optimization
 use crate::native_artifact::program::codegen::cfg_cleanup::thread_loop_edges;
 use cranelift_codegen::Context;
 use cranelift_codegen::ir::condcodes::IntCC;
-use cranelift_codegen::ir::{AbiParam, InstBuilder, MemFlags, types};
+use cranelift_codegen::ir::{AbiParam, BlockCall, Function, Inst, InstBuilder, MemFlags, types};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_jit::JITModule;
 use cranelift_module::{Linkage, Module};
@@ -12,6 +12,22 @@ const ASSERT: u64 = u64::MAX - 17;
 const OVERFLOW: u64 = u64::MAX - 18;
 const MULTIPLIER: u64 = 0x9e37_79b9;
 pub(super) type Entry = unsafe extern "C" fn(u64, u64, u64, *mut u64) -> u64;
+
+pub(in super::super) fn branch_calls(func: &Function) -> Vec<(Inst, usize, BlockCall)> {
+    let dfg = &func.dfg;
+    func.layout
+        .blocks()
+        .flat_map(|block| func.layout.block_insts(block))
+        .flat_map(|inst| {
+            dfg.insts[inst]
+                .branch_destination(&dfg.jump_tables, &dfg.exception_tables)
+                .iter()
+                .copied()
+                .enumerate()
+                .map(move |(ordinal, call)| (inst, ordinal, call))
+        })
+        .collect()
+}
 
 pub(in super::super) fn fixture(module: &JITModule, variant: &str) -> Context {
     let mut c = module.make_context();

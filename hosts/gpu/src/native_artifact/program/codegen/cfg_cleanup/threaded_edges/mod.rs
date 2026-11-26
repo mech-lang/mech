@@ -245,7 +245,9 @@ fn optimize_with_index(
         report.threaded_edges += 1;
         report.selected_conditions += plan.conditions;
     }
-    rewrite(f, dom, &replacements);
+    if report.threaded_edges != 0 {
+        rewrite(f, dom, &replacements);
+    }
     report
 }
 
