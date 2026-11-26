@@ -1,4 +1,6 @@
 mod aggregate_access;
+mod borrowed_numeric;
+use borrowed_numeric::BorrowedNumericOperand;
 mod compact_range;
 mod compact_string_access;
 pub mod linkage_factories;
@@ -11661,10 +11663,8 @@ fn unary_float_snapshot(
         output_len,
         0,
     )?;
-    let operand = BorrowedNumericOperand::Snapshot {
-        value: input,
-        element: comparison_element_body(input_schema.body()),
-    };
+    let operand =
+        BorrowedNumericOperand::snapshot(input, comparison_element_body(input_schema.body()));
     if let Some(next) =
         packed_snapshot_output::try_construct(kernel, &output_shape, output_len, |index| {
             match operand.at(index)? {
@@ -13489,10 +13489,8 @@ fn transpose_snapshot(
     )
     .admit()?
     .into_plan();
-    let operand = BorrowedNumericOperand::Snapshot {
-        value: input,
-        element: comparison_element_body(input_schema.body()),
-    };
+    let operand =
+        BorrowedNumericOperand::snapshot(input, comparison_element_body(input_schema.body()));
     if let Some(next) =
         packed_snapshot_output::try_construct(kernel, &output_shape, count, |index| {
             let output_row = index / rows;
@@ -13690,10 +13688,7 @@ fn sum_snapshot(
         .into_plan();
     }
     if let Some(shape) = &output_shape {
-        let operand = BorrowedNumericOperand::Snapshot {
-            value: input,
-            element,
-        };
+        let operand = BorrowedNumericOperand::snapshot(input, element);
         if let Some(next) =
             packed_snapshot_output::try_construct(kernel, shape, output_count, |at| {
                 if column {
@@ -20923,91 +20918,6 @@ pub(super) fn numeric_float_binary_snapshot(
             F64Bits::from_f64(operation.apply_snapshot_f64(left.to_f64(), right.to_f64())),
         )),
         _ => Err(ResidentKernelError::InvalidInput),
-    }
-}
-
-/// One validated operand, borrowed for the complete synchronous arithmetic
-/// call. Canonical matrices are row-major; dense F64 transport is column-major.
-/// Element reads use the core conversion rather than another numeric relation.
-enum BorrowedNumericOperand<'a> {
-    Snapshot {
-        value: &'a mech_core::Value,
-        element: &'a SchemaBody,
-    },
-    DenseF64 {
-        values: &'a [f64],
-        rows: usize,
-        columns: usize,
-    },
-}
-
-impl<'a> BorrowedNumericOperand<'a> {
-    fn new(
-        value: Option<&'a mech_core::Value>,
-        schema: Option<&'a mech_core::Schema>,
-        input: ResidentValueRef<'a>,
-        (rows, columns): (usize, usize),
-    ) -> Result<Self, ResidentKernelError> {
-        if let (Some(value), Some(schema)) = (value, schema) {
-            return Ok(Self::Snapshot {
-                value,
-                element: comparison_element_body(schema.body()),
-            });
-        }
-        let ResidentValueRef::F64(values) = input else {
-            return Err(ResidentKernelError::InvalidInput);
-        };
-        if values.len()
-            != rows
-                .checked_mul(columns)
-                .ok_or(ResidentKernelError::InvalidShape)?
-        {
-            return Err(ResidentKernelError::InvalidShape);
-        }
-        Ok(Self::DenseF64 {
-            values,
-            rows,
-            columns,
-        })
-    }
-
-    fn at(&self, index: usize) -> Result<ValueDataDraft, ResidentKernelError> {
-        match self {
-            Self::Snapshot { value, element } => {
-                if let ValueData::Matrix(matrix) = value.data() {
-                    let data = matrix
-                        .elements()
-                        .value_at(index)
-                        .ok_or(ResidentKernelError::InvalidShape)?;
-                    canonical_snapshot_data_draft(element, &data)
-                        .map_err(|_| ResidentKernelError::InvalidInput)
-                } else if index == 0 {
-                    canonical_snapshot_data_draft(element, value.data())
-                        .map_err(|_| ResidentKernelError::InvalidInput)
-                } else {
-                    Err(ResidentKernelError::InvalidShape)
-                }
-            }
-            Self::DenseF64 {
-                values,
-                rows,
-                columns,
-            } => {
-                if *columns == 0 || index >= values.len() {
-                    return Err(ResidentKernelError::InvalidShape);
-                }
-                let row = index / columns;
-                let column = index % columns;
-                let offset = column
-                    .checked_mul(*rows)
-                    .and_then(|offset| offset.checked_add(row))
-                    .ok_or(ResidentKernelError::InvalidShape)?;
-                let value = values
-                    .get(offset)
-                    .ok_or(ResidentKernelError::InvalidShape)?;
-                Ok(ValueDataDraft::F64(F64Bits::from_f64(*value)))
-            }
-        }
     }
 }
 

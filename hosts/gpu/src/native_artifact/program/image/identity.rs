@@ -546,7 +546,8 @@ fn selected_template(
 // Old Objects initialize column-major payloads and require the old finish pass.
 // IR373 composes checked ordered range folds inside a numeric phase loan.
 // IR374 selects existing U64 cursors for matrix block comprehensions.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 374;
+// IR375 borrows exact Core typed numeric operands for complete admitted calls.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 375;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -810,7 +811,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 374;
 // for a native rectangle whose output cells are already in final order.
 // Work142 prepays composed folds, elided constructors and unspent source replay.
 // Work143 applies the existing selected-range source prices to block builders.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 143;
+// Work144 retains the original full staging, clone and publication envelope.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 144;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

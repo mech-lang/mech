@@ -443,3 +443,154 @@ fn packed_snapshot_rejections_and_constrained_fallbacks_keep_canonical_validatio
         assert!(fast[0].is_none() && old[0].is_none());
     }
 }
+
+#[test]
+fn borrowed_snapshot_numeric_views_keep_exact_scalar_matrix_bits_and_empty_axes() {
+    for (element, cells) in cases() {
+        for (rows, columns) in [(2, 3), (0, 3), (2, 0)] {
+            let (schemas, ids) = table([matrix(&element, rows, columns), element.clone()]);
+            let input = value(
+                &schemas,
+                ids[0],
+                if rows * columns == 0 {
+                    vec![]
+                } else {
+                    cells.clone()
+                },
+            );
+            let typed = BorrowedNumericOperand::snapshot(&input, &element);
+            assert!(
+                !matches!(typed, BorrowedNumericOperand::Snapshot { .. }),
+                "{element:?}"
+            );
+            let original = super::borrowed_numeric::without(|| {
+                BorrowedNumericOperand::snapshot(&input, &element)
+            });
+            assert!(matches!(original, BorrowedNumericOperand::Snapshot { .. }));
+            for index in 0..=rows * columns {
+                assert_eq!(
+                    typed.at(index),
+                    original.at(index),
+                    "{element:?} index {index}"
+                );
+            }
+            let scalar = ValueDraft {
+                schema: ids[1],
+                shape_values: Box::new([]),
+                data: cells[0].clone(),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap();
+            let typed = BorrowedNumericOperand::snapshot(&scalar, &element);
+            assert!(!matches!(typed, BorrowedNumericOperand::Snapshot { .. }));
+            let original = super::borrowed_numeric::without(|| {
+                BorrowedNumericOperand::snapshot(&scalar, &element)
+            });
+            assert_eq!(typed.at(0), original.at(0));
+            assert_eq!(typed.at(1), original.at(1));
+        }
+    }
+}
+
+#[test]
+fn borrowed_snapshot_numeric_scalar_broadcasts_match_original_arithmetic_and_failures() {
+    for (element, cells) in cases()
+        .into_iter()
+        .filter(|(e, _)| !matches!(e, SchemaBody::Bool | SchemaBody::Index))
+    {
+        let (schemas, ids) = table([matrix(&element, 2, 3), element.clone()]);
+        let matrix = [Some(value(&schemas, ids[0], cells.clone()))];
+        let scalar = [Some(
+            ValueDraft {
+                schema: ids[1],
+                shape_values: Box::new([]),
+                data: cells[1].clone(),
+            }
+            .finalize(&SnapshotValidationContext::new(&schemas))
+            .unwrap(),
+        )];
+        for operation in [
+            SemanticArithmetic::Add,
+            SemanticArithmetic::Subtract,
+            SemanticArithmetic::Multiply,
+            SemanticArithmetic::Divide,
+            SemanticArithmetic::Remainder,
+            SemanticArithmetic::Power,
+        ] {
+            for scalar_left in [false, true] {
+                let (args, dimensions) = if scalar_left {
+                    (
+                        [
+                            ResidentValueRef::Snapshot(&scalar),
+                            ResidentValueRef::Snapshot(&matrix),
+                        ],
+                        [1, 1, 2, 3],
+                    )
+                } else {
+                    (
+                        [
+                            ResidentValueRef::Snapshot(&matrix),
+                            ResidentValueRef::Snapshot(&scalar),
+                        ],
+                        [2, 3, 1, 1],
+                    )
+                };
+                let mut parameters = vec![operation as u64, 0, 1, 1, 1];
+                parameters.extend(dimensions);
+                parity(
+                    &kernel(snapshot_numeric_binary, &schemas, ids[0], parameters),
+                    &args,
+                    true,
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn borrowed_snapshot_numeric_constrained_composite_and_mismatched_schemas_keep_core_checks() {
+    for (element, cells) in [
+        (
+            SchemaBody::String,
+            vec![
+                ValueDataDraft::String("é".into()),
+                ValueDataDraft::String("x".into()),
+            ],
+        ),
+        (
+            SchemaBody::IntegerInterval(mech_core::IntegerInterval::Unsigned {
+                width: W::W8,
+                lower: 1,
+                upper: 10,
+                upper_inclusive: true,
+            }),
+            vec![ValueDataDraft::U8(2), ValueDataDraft::U8(3)],
+        ),
+        (
+            SchemaBody::Complex(F::W32),
+            vec![complex32_to_draft(0.0, -0.0), complex32_to_draft(-0.0, 0.0)],
+        ),
+    ] {
+        let (schemas, ids) = table([matrix(&element, 1, 2)]);
+        let input = value(&schemas, ids[0], cells);
+        let operand = BorrowedNumericOperand::snapshot(&input, &element);
+        assert!(matches!(operand, BorrowedNumericOperand::Snapshot { .. }));
+        for index in 0..2 {
+            assert_eq!(
+                operand.at(index).unwrap(),
+                snapshot_numeric_elements(&input).unwrap()[index]
+            );
+        }
+    }
+    let actual = SchemaBody::FloatingPoint(F::W64);
+    let (schemas, ids) = table([matrix(&actual, 1, 1)]);
+    let input = value(
+        &schemas,
+        ids[0],
+        vec![ValueDataDraft::F64(F64Bits::from_f64(1.0))],
+    );
+    let claimed = SchemaBody::UnsignedInteger(W::W64);
+    let operand = BorrowedNumericOperand::snapshot(&input, &claimed);
+    assert!(matches!(operand, BorrowedNumericOperand::Snapshot { .. }));
+    assert_eq!(operand.at(0), Err(ResidentKernelError::InvalidInput));
+}

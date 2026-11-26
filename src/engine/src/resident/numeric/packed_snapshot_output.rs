@@ -16,7 +16,7 @@ pub(super) fn without<T>(run: impl FnOnce() -> T) -> T {
         }
     }
     let _reset = Reset(DISABLED.with(|v| v.replace(true)));
-    run()
+    super::borrowed_numeric::without(run)
 }
 #[cfg(test)]
 pub(super) fn constructions() -> usize {
