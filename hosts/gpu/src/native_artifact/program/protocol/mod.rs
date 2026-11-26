@@ -68,7 +68,6 @@ pub(in crate::native_artifact) enum GlobalHelper {
     NumericWritePrepare,
     NumericSegmentBegin,
     NumericSegmentEnd,
-    AdmitCollection,
     AdmitMove,
     AdmitStructuralObservation,
     AdmitNumericSegmentBegin,
@@ -129,7 +128,6 @@ impl GlobalHelper {
             value if value == u64::MAX - 26 => Self::NumericWritePrepare,
             value if value == u64::MAX - 27 => Self::NumericSegmentBegin,
             value if value == u64::MAX - 28 => Self::NumericSegmentEnd,
-            value if value == u64::MAX - 54 => Self::AdmitCollection,
             value if value == u64::MAX - 29 => Self::AdmitMove,
             value if value == u64::MAX - 30 => Self::AdmitStructuralObservation,
             value if value == u64::MAX - 31 => Self::AdmitNumericSegmentBegin,
@@ -154,16 +152,6 @@ impl GlobalHelper {
             value if value == u64::MAX - 50 => Self::MapSeedFrame,
             value if value == u64::MAX - 51 => Self::MapOwnerBeginBorrowedValues,
             value => Self::Output(OutputIndex(value - 3)),
-        }
-    }
-    /// This is transport classification, never source admission authority.
-    pub const fn admitted_operation(self) -> Option<Self> {
-        match self {
-            Self::AdmitCollection => Some(Self::Collection),
-            Self::AdmitMove => Some(Self::Move),
-            Self::AdmitStructuralObservation => Some(Self::StructuralObservation),
-            Self::AdmitNumericSegmentBegin => Some(Self::NumericSegmentBegin),
-            _ => None,
         }
     }
     pub const fn raw(self) -> u64 {
@@ -200,7 +188,6 @@ impl GlobalHelper {
             Self::NumericWritePrepare => u64::MAX - 26,
             Self::NumericSegmentBegin => u64::MAX - 27,
             Self::NumericSegmentEnd => u64::MAX - 28,
-            Self::AdmitCollection => u64::MAX - 54,
             Self::AdmitMove => u64::MAX - 29,
             Self::AdmitStructuralObservation => u64::MAX - 30,
             Self::AdmitNumericSegmentBegin => u64::MAX - 31,
@@ -243,10 +230,6 @@ pub(in crate::native_artifact) mod abi;
 #[test]
 fn collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space() {
     let tags = [
-        GlobalHelper::AdmitCollection,
-        GlobalHelper::AdmitMove,
-        GlobalHelper::AdmitStructuralObservation,
-        GlobalHelper::AdmitNumericSegmentBegin,
         GlobalHelper::UniformFillPrepare,
         GlobalHelper::UniformFillFinish,
         GlobalHelper::HistogramPrepare,

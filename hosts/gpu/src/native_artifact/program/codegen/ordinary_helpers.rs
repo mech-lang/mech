@@ -1,9 +1,9 @@
-//! Compose adjacent source admission and ordinary fixed-lane callbacks.
+//! Compose adjacent admission and zero-word callbacks without moving a check.
 use crate::native_artifact::codegen::control::plan::CodePlan;
 use crate::native_artifact::program::protocol::GlobalHelper;
 use mech_engine::native_artifact::{
-    NativeControlLoopRef as Loop, NativeIterationAction as Action,
-    NativeIterationTerminator as Terminator, NativeMatchAction as Scalar,
+    NativeIterationAction as Action, NativeIterationTerminator as Terminator,
+    NativeMatchAction as Scalar,
 };
 
 pub(in crate::native_artifact) fn selected(
@@ -15,14 +15,12 @@ pub(in crate::native_artifact) fn selected(
     };
     let metadata = program.metadata();
     let block = &code.blocks()[site];
-    // Keep every native specialization and argument-transport ABI guard at
-    // its established admission boundary. Selected actions below have only
-    // infallible, in-bounds local word loads before their ordinary callback.
+    // Header/initializer/latch work, argument transport, and every selected
+    // native specialization retain their original admission boundary. Only
+    // the ordinary action below can run between these two callbacks.
     if !matches!(block.terminator(), Terminator::Scalar(_))
         || metadata.prefix.is_some()
         || metadata.compositions.entry(site).is_some()
-        || metadata.numeric_maps.at_reduction_finish(site).is_some()
-        || metadata.numeric_maps.at_transpose_finish(site).is_some()
         || metadata.scalar_aggregates.action(site).is_some()
         || metadata
             .borrowed_strings
@@ -71,29 +69,6 @@ pub(in crate::native_artifact) fn selected(
         return None;
     }
     match block.action() {
-        Action::PrepareU64Range { .. }
-        | Action::CollectionBegin { .. }
-        | Action::CollectionElement { .. }
-        | Action::CollectionPush { .. }
-        | Action::CollectionFinish { .. } => Some(GlobalHelper::AdmitCollection),
-        Action::Initialize { iteration } => match code.iteration(*iteration as usize) {
-            Loop::Collection(_) => Some(GlobalHelper::AdmitCollection),
-            Loop::Iteration(loop_) if code.kind(loop_.carrier()).is_none() => {
-                Some(GlobalHelper::AdmitMove)
-            }
-            Loop::Tail(loop_) if code.kind(loop_.carrier()).is_none() => {
-                Some(GlobalHelper::AdmitMove)
-            }
-            _ => None,
-        },
-        // Counted latches have a native zero-counter ABI guard before their
-        // move and retain separate admission. Tail latches have no such guard.
-        Action::Latch { iteration } => match code.iteration(*iteration as usize) {
-            Loop::Tail(loop_) if code.kind(loop_.carrier()).is_none() => {
-                Some(GlobalHelper::AdmitMove)
-            }
-            _ => None,
-        },
         Action::Structural { .. } => Some(GlobalHelper::AdmitStructuralObservation),
         Action::Scalar(Scalar::Copy { output, .. }) if code.kind(*output).is_none() => {
             Some(GlobalHelper::AdmitMove)

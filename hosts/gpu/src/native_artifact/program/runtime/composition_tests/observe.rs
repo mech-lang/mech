@@ -207,7 +207,12 @@ unsafe extern "C" fn helper(
     out: *mut u64,
 ) -> u64 {
     let before = unsafe { before_work(context) };
-    if GlobalHelper::decode(op).admitted_operation().is_some() {
+    if matches!(
+        GlobalHelper::decode(op),
+        GlobalHelper::AdmitMove
+            | GlobalHelper::AdmitStructuralObservation
+            | GlobalHelper::AdmitNumericSegmentBegin
+    ) {
         COUNTS.with(|v| *v.borrow_mut().admits.entry(site).or_default() += 1);
     }
     let fused_numeric = op == GlobalHelper::AdmitNumericSegmentBegin.raw();
@@ -216,8 +221,6 @@ unsafe extern "C" fn helper(
     }
     let logical_op = if fused_numeric {
         GlobalHelper::NumericSegmentBegin.raw()
-    } else if op == GlobalHelper::AdmitCollection.raw() {
-        GlobalHelper::Collection.raw()
     } else {
         op
     };

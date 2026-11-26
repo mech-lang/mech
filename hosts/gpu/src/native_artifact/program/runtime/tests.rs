@@ -1007,7 +1007,7 @@ fn managed_link_metadata_rederives_semantics_and_rejects_mutations_without_an_en
 }
 #[test]
 fn worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-    assert_eq!(VERSION, 43);
+    assert_eq!(VERSION, 42);
     assert_eq!(
         crate::native_artifact::program::protocol::abi::PHASE_CAPTURE_TAIL,
         3
@@ -1458,7 +1458,6 @@ unsafe extern "C" fn observe_admitted_helper(
     result: *mut u64,
 ) -> u64 {
     let plain = match GlobalHelper::decode(operation) {
-        GlobalHelper::AdmitCollection => GlobalHelper::Collection,
         GlobalHelper::AdmitMove => GlobalHelper::Move,
         GlobalHelper::AdmitStructuralObservation => GlobalHelper::StructuralObservation,
         _ => {
@@ -1559,31 +1558,6 @@ fn execute_observed_admitted_helper(
     Result<NativeProgramExecutionReport, NativeProgramExecutionError>,
     Vec<AdmittedHelperRow>,
 ) {
-    execute_observed_admitted_helper_with_limits(
-        jit,
-        descriptor,
-        args,
-        outputs,
-        memory,
-        split,
-        fault,
-        limits(),
-    )
-}
-
-fn execute_observed_admitted_helper_with_limits(
-    jit: &crate::native_artifact::JitProgramArtifact,
-    descriptor: &NativeProgramDescriptor,
-    args: &[Value],
-    outputs: &mut [Option<Value>],
-    memory: &ManagedMemoryBudget,
-    split: bool,
-    fault: u8,
-    execution_limits: NativeProgramExecutionLimits,
-) -> (
-    Result<NativeProgramExecutionReport, NativeProgramExecutionError>,
-    Vec<AdmittedHelperRow>,
-) {
     ADMITTED_HELPER_OBSERVATION.with(|cell| {
         *cell.borrow_mut() = AdmittedHelperObservation {
             split,
@@ -1607,7 +1581,7 @@ fn execute_observed_admitted_helper_with_limits(
         },
         args,
         outputs,
-        execution_limits,
+        limits(),
         memory,
     );
     let rows =

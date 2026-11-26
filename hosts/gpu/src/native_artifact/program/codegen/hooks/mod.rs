@@ -621,23 +621,28 @@ impl Hooks {
             crate::native_artifact::abi::STATUS_ADMISSION,
         );
     }
-    pub fn collection_operation(
+    pub fn collection(
         &self,
         b: &mut FunctionBuilder<'_>,
         site: usize,
-        operation: GlobalHelper,
         args: [Value; 2],
         error: Block,
     ) -> Result<(), NativeCompileError> {
         #[cfg(feature = "canonical-native-program")]
         {
             let zero = b.ins().iconst(types::I64, 0);
-            self.call(b, site, operation, [args[0], args[1], zero], error);
+            self.call(
+                b,
+                site,
+                GlobalHelper::Collection,
+                [args[0], args[1], zero],
+                error,
+            );
             Ok(())
         }
         #[cfg(not(feature = "canonical-native-program"))]
         {
-            let _ = (b, site, operation, args, error);
+            let _ = (b, site, args, error);
             Err(crate::native_artifact::compiler::backend(
                 "collection ABI is not enabled",
             ))

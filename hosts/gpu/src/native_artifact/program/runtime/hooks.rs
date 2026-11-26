@@ -79,20 +79,32 @@ pub(in crate::native_artifact::program::runtime) unsafe extern "C" fn helper(
     if context.error.is_some() {
         return STATUS_ADMISSION;
     }
-    let tag = GlobalHelper::decode(operation);
-    let fused_numeric = tag == GlobalHelper::AdmitNumericSegmentBegin;
+    let fused_numeric = GlobalHelper::decode(operation) == GlobalHelper::AdmitNumericSegmentBegin;
     let mut scalar_ready = 0;
-    let operation = if let Some(plain) = tag.admitted_operation() {
-        let status = admit_current(context, site);
-        if status != STATUS_OK {
-            return status;
-        }
-        if fused_numeric {
+    let operation = match GlobalHelper::decode(operation) {
+        GlobalHelper::AdmitNumericSegmentBegin => {
+            let status = admit_current(context, site);
+            if status != STATUS_OK {
+                return status;
+            }
             scalar_ready = context.scalar_admission_word(site).unwrap_or(0);
+            GlobalHelper::NumericSegmentBegin.raw()
         }
-        plain.raw()
-    } else {
-        operation
+        GlobalHelper::AdmitMove => {
+            let status = admit_current(context, site);
+            if status != STATUS_OK {
+                return status;
+            }
+            GlobalHelper::Move.raw()
+        }
+        GlobalHelper::AdmitStructuralObservation => {
+            let status = admit_current(context, site);
+            if status != STATUS_OK {
+                return status;
+            }
+            GlobalHelper::StructuralObservation.raw()
+        }
+        _ => operation,
     };
     let outcome = if result.is_null() || result != context.result {
         Err(invalid("helper result pointer mismatch"))
