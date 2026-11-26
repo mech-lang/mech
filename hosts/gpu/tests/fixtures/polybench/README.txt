@@ -1797,3 +1797,51 @@ ledgers, and returns failure if the latest candidate was not accepted. It never
 rewrites timing receipts or history. Continue selecting candidates from training
 profiles only, freeze before either formal set, and use the holdout aggregate
 only for acceptance. The previously exposed split is not blind validation.
+
+Round23: shared checked map and cell bounds
+Source 68ccea3f81bd2aebcaa88231253bb523784e241e; IR383/work150/ABI42; executable d36717332070821c123e21e3d90f80ed7e6ee6ad7bb734b11bac6569570a7ba1.
+Maps and state-machine cells share checked native addressing. One-axis map reads combine zero/upper bounds; two-axis reads share one pure rejection branch. Original write ordering, full source prices, physical/fuel admission and exact cold errors remain.
+
+Equal-weight geometric means of median kernel runtimes (lower Mech/C is better):
+optimization: 30.769365x C; 25.335174x faster than recorded start; 24.664952x faster than paired original; summed medians 0.004756417s; raw Mech speedup vs22 1.028349x; original-reference runtime multiplier 0.994009x; C runtime multiplier 0.999733x; reference-adjusted Mech speedup 1.022188x.
+holdout: 63.724306x C; 31.772123x faster than recorded start; 31.449850x faster than paired original; summed medians 0.016566336s; raw Mech speedup vs22 1.034320x; original-reference runtime multiplier 0.991828x; C runtime multiplier 1.038924x; reference-adjusted Mech speedup 1.025868x.
+
+Training-only seven-sample replay vs22: 1.023462x; 2 regressions over5%. Source/binary frozen after selection and before either formal set.
+A proposed two-axis private-first write ordering failed its training probe at0.953301x speedup. A reversed-order14-sample training ablation isolated the regression; original write ordering was restored before new qualification/selection. Neither rejected probe used the holdout. Every raw training observation remains.
+Correctness:546 selected checks and both feature builds pass. All900 formal observations,29482 finite warm-up live-outs per artifact and24 history entries remain. Five optimization-only profiles retain 2998 canonical execution samples and cover 79.983168% of training summed medians.
+Performance gate: accepted; accepted history index23. Both scores must improve against the last accepted run.
+Raw runtime regressions over5% vs22: none.
+No ports, limits or compiler source changed after freeze. Holdout aggregate informs acceptance/rejection; optimization selection/tuning uses the optimization pile only. The strict goal remains open unless holdout is below1.0x C.
+
+All thirty kernels, descending current Mech/C kernel ratio. Each C ratio uses its own round C; raw speedups remain separate.
+kernel             set            start xC          now xC
+jacobi-2d          holdout             9,612.12          449.19
+jacobi-1d          holdout             7,168.14          387.74
+adi                holdout            21,631.38          201.98
+gemver             holdout               260.73          153.56
+mvt                optimization          138.96          109.05
+gesummv            holdout               112.38           99.55
+deriche            optimization       43,560.74           96.16
+ludcmp             holdout            20,723.72           83.61
+correlation        optimization          327.94           73.83
+2mm                optimization           77.03           72.45
+bicg               optimization           87.94           72.36
+atax               optimization           79.13           65.59
+gramschmidt        optimization       27,896.34           55.28
+lu                 holdout            20,830.73           52.51
+symm               holdout               218.10           46.08
+syr2k              holdout               224.54           44.87
+syrk               holdout               245.10           39.44
+trmm               holdout               219.61           36.85
+covariance         optimization           50.46           32.44
+3mm                optimization           38.12           31.72
+fdtd-2d            holdout            10,500.55           26.27
+heat-3d            holdout             4,178.38           24.53
+trisolv            holdout             3,606.16           24.29
+gemm               optimization           36.05           23.72
+durbin             optimization        3,899.39           22.51
+doitgen            optimization           22.47           18.04
+floyd-warshall     holdout             4,841.31           10.45
+cholesky           optimization       23,662.23            8.28
+nussinov           optimization      119,638.18            6.07
+seidel-2d          optimization       50,168.86            2.86

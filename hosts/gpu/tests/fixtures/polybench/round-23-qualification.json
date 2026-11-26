@@ -1,0 +1,677 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v1",
+  "label": "round-23-shared-bounds",
+  "compiler_commit": "68ccea3f81bd2aebcaa88231253bb523784e241e",
+  "compiler_fingerprint": "0aa2b72813db1aa39632cd3c4e219cc03c64c08880211ccac52c1b70101812c2",
+  "driver_sha256": "d36717332070821c123e21e3d90f80ed7e6ee6ad7bb734b11bac6569570a7ba1",
+  "frozen_candidate_sha256": "bfdb7874d28ed24466a1a1c6ebd20e06597a434a038be60c23334848dd6f093b",
+  "native_typed_ir_version": 383,
+  "native_work_policy_version": 150,
+  "native_abi_version": 42,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "live_outs_per_artifact": 29482
+  },
+  "checks": [
+    {
+      "suite": "native numeric, phase, maps/cells, private publication and exact Huffman equations",
+      "passed_by_target": [
+        377
+      ],
+      "log": "numeric-regressions.log",
+      "log_sha256": "2aaf6f7b6ececdb6f840f371f42ff778d6a4241feb9345c66fbf6debf8ddc694"
+    },
+    {
+      "suite": "matrix and all thirty original/decoded/Object PolyBench C live-outs",
+      "passed_by_target": [
+        24,
+        30
+      ],
+      "log": "matrix-polybench.log",
+      "log_sha256": "969f7278142c37ce4611e09088edad87e0941340331540b9fd171cea4ab1135a"
+    },
+    {
+      "suite": "selected scalar, frame, compression, collection and range/cursor regressions",
+      "passed_by_target": [
+        114
+      ],
+      "log": "program-regressions.log",
+      "log_sha256": "dd0961efc6595862f56e9645fe3d6ad6902efaedd3c1d704efaaccc80995d1de"
+    },
+    {
+      "suite": "helper tag round-trip and output reservation",
+      "passed_by_target": [
+        1
+      ],
+      "log": "protocol.log",
+      "log_sha256": "2797507bcacee0509886c4ae367fe90e9182d735c3f8c5eb146b2f86fbd4530b"
+    }
+  ],
+  "total_selected_checks": 546,
+  "feature_checks": [
+    {
+      "feature": "canonical-native-program-runtime",
+      "status": "passed",
+      "log": "runtime-feature.log",
+      "log_sha256": "4174d71096e1615c7c991f527c4e673e84b5d07964161774d25d78a52f1874a4"
+    },
+    {
+      "feature": "canonical-native-program",
+      "status": "passed",
+      "log": "production-feature.log",
+      "log_sha256": "ce37823127d31b4e504a6abe29a132825f7d675cd1cc11d64ca9deb305bfd664"
+    }
+  ],
+  "goal": {
+    "partition": "holdout",
+    "metric": "geomean_mech_over_c_kernel",
+    "value": 63.7243057918152,
+    "target_strictly_below": 1.0,
+    "achieved": false,
+    "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+    "objective_frozen_with_candidate": true,
+    "sum_mech_median_seconds": 0.016566336
+  },
+  "aggregates": {
+    "optimization": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 25.33517438413404,
+      "median_speedup": 1.57956980712755,
+      "minimum_speedup": 1.0778859527121,
+      "maximum_speedup": 19630.880136518022,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 30.769365191381855,
+      "geomean_mech_over_c_fresh": 19.356479016325075,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 109.05333571636707,
+      "sum_mech_median_seconds": 0.004756417,
+      "geomean_speedup_from_contemporaneous_baseline": 24.66495169132923,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.052383866481224
+    },
+    "holdout": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 31.772123184385816,
+      "median_speedup": 23.521999020639736,
+      "minimum_speedup": 1.0863035714285714,
+      "maximum_speedup": 467.23424700901893,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 63.7243057918152,
+      "geomean_mech_over_c_fresh": 38.204306626142895,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 449.1893767038432,
+      "sum_mech_median_seconds": 0.016566336,
+      "geomean_speedup_from_contemporaneous_baseline": 31.449849805796603,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.0565446428571428
+    },
+    "all": {
+      "count": 30,
+      "geomean_speedup_from_recorded_baseline": 28.37168097647023,
+      "median_speedup": 13.732560339724031,
+      "minimum_speedup": 1.0778859527121,
+      "maximum_speedup": 19630.880136518022,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 44.28042949741624,
+      "geomean_mech_over_c_fresh": 27.193765085809364,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 449.1893767038432,
+      "sum_mech_median_seconds": 0.021322753,
+      "geomean_speedup_from_contemporaneous_baseline": 27.851553388626876,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.052383866481224
+    }
+  },
+  "cases": {
+    "jacobi-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.003499625,
+      "c_median_seconds": 7.790978997945786e-06,
+      "mech_over_c_kernel": 449.1893767038432,
+      "starting_mech_over_c_kernel": 9612.11646057087,
+      "speedup_from_recorded_baseline": 21.057315569525304,
+      "speedup_from_paired_original": 21.314235953852197,
+      "speedup_from_round22": 1.016144586920027,
+      "observations": 30
+    },
+    "jacobi-1d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000177667,
+      "c_median_seconds": 4.5821070671081543e-07,
+      "mech_over_c_kernel": 387.74083057847156,
+      "starting_mech_over_c_kernel": 7168.140899468677,
+      "speedup_from_recorded_baseline": 23.521999020639736,
+      "speedup_from_paired_original": 23.457507584413538,
+      "speedup_from_round22": 1.0072664028772929,
+      "observations": 30
+    },
+    "adi": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.008659875,
+      "c_median_seconds": 4.287483170628548e-05,
+      "mech_over_c_kernel": 201.9803846537421,
+      "starting_mech_over_c_kernel": 21631.38022675036,
+      "speedup_from_recorded_baseline": 111.57231391908083,
+      "speedup_from_paired_original": 111.2795508018303,
+      "speedup_from_round22": 1.022594552461785,
+      "observations": 30
+    },
+    "gemver": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000307125,
+      "c_median_seconds": 2.00001522898674e-06,
+      "mech_over_c_kernel": 153.56133070826542,
+      "starting_mech_over_c_kernel": 260.7344433964597,
+      "speedup_from_recorded_baseline": 1.5204167684167684,
+      "speedup_from_paired_original": 1.5155327635327636,
+      "speedup_from_round22": 0.9867057387057387,
+      "observations": 30
+    },
+    "mvt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000149959,
+      "c_median_seconds": 1.375097781419754e-06,
+      "mech_over_c_kernel": 109.05333571636707,
+      "starting_mech_over_c_kernel": 138.9627991919192,
+      "speedup_from_recorded_baseline": 1.1961602838109084,
+      "speedup_from_paired_original": 1.1414186544322116,
+      "speedup_from_round22": 1.0069418974519704,
+      "observations": 30
+    },
+    "gesummv": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000112,
+      "c_median_seconds": 1.125037670135498e-06,
+      "mech_over_c_kernel": 99.55222209271523,
+      "starting_mech_over_c_kernel": 112.37666473873892,
+      "speedup_from_recorded_baseline": 1.0863035714285714,
+      "speedup_from_paired_original": 1.0565446428571428,
+      "speedup_from_round22": 1.0126517857142858,
+      "observations": 30
+    },
+    "deriche": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.002796542,
+      "c_median_seconds": 2.9082875698804855e-05,
+      "mech_over_c_kernel": 96.15768498831504,
+      "starting_mech_over_c_kernel": 43560.74017727218,
+      "speedup_from_recorded_baseline": 450.43138704871944,
+      "speedup_from_paired_original": 447.3531954821347,
+      "speedup_from_round22": 1.0269082316661078,
+      "observations": 30
+    },
+    "ludcmp": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.001038167,
+      "c_median_seconds": 1.2416858226060867e-05,
+      "mech_over_c_kernel": 83.60947520694603,
+      "starting_mech_over_c_kernel": 20723.719650259725,
+      "speedup_from_recorded_baseline": 240.36185893021064,
+      "speedup_from_paired_original": 241.14396720373503,
+      "speedup_from_round22": 1.0435864364789094,
+      "observations": 30
+    },
+    "correlation": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000319917,
+      "c_median_seconds": 4.332978278398514e-06,
+      "mech_over_c_kernel": 73.83304956660032,
+      "starting_mech_over_c_kernel": 327.9356878116524,
+      "speedup_from_recorded_baseline": 4.399578640709933,
+      "speedup_from_paired_original": 4.066160910486158,
+      "speedup_from_round22": 1.0102870432018305,
+      "observations": 30
+    },
+    "2mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.00011775,
+      "c_median_seconds": 1.62515789270401e-06,
+      "mech_over_c_kernel": 72.45449843896849,
+      "starting_mech_over_c_kernel": 77.03124240848712,
+      "speedup_from_recorded_baseline": 1.3358131634819534,
+      "speedup_from_paired_original": 1.3014861995753717,
+      "speedup_from_round22": 0.9635583864118896,
+      "observations": 30
+    },
+    "bicg": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000114625,
+      "c_median_seconds": 1.584179699420929e-06,
+      "mech_over_c_kernel": 72.35605912757201,
+      "starting_mech_over_c_kernel": 87.93647372142229,
+      "speedup_from_recorded_baseline": 1.1192322791712106,
+      "speedup_from_paired_original": 1.1083271537622683,
+      "speedup_from_round22": 1.018538713195202,
+      "observations": 30
+    },
+    "atax": {
+      "partition": "optimization",
+      "mech_median_seconds": 8.4667e-05,
+      "c_median_seconds": 1.2908130884170532e-06,
+      "mech_over_c_kernel": 65.5919906295873,
+      "starting_mech_over_c_kernel": 79.13415176878613,
+      "speedup_from_recorded_baseline": 1.1294246873043807,
+      "speedup_from_paired_original": 1.1545230136889226,
+      "speedup_from_round22": 1.016240093542939,
+      "observations": 30
+    },
+    "gramschmidt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000195791,
+      "c_median_seconds": 3.541819751262665e-06,
+      "mech_over_c_kernel": 55.27977529918065,
+      "starting_mech_over_c_kernel": 27896.336343602026,
+      "speedup_from_recorded_baseline": 510.6103804567114,
+      "speedup_from_paired_original": 509.57526137565054,
+      "speedup_from_round22": 1.288363612219152,
+      "observations": 30
+    },
+    "lu": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000645417,
+      "c_median_seconds": 1.229066401720047e-05,
+      "mech_over_c_kernel": 52.512785240631054,
+      "starting_mech_over_c_kernel": 20830.730988440668,
+      "speedup_from_recorded_baseline": 373.83492687673237,
+      "speedup_from_paired_original": 372.49896888368295,
+      "speedup_from_round22": 1.060748322402416,
+      "observations": 30
+    },
+    "symm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000167042,
+      "c_median_seconds": 3.62517312169075e-06,
+      "mech_over_c_kernel": 46.07835112770918,
+      "starting_mech_over_c_kernel": 218.1017246501925,
+      "speedup_from_recorded_baseline": 4.896223704218101,
+      "speedup_from_paired_original": 4.853821194669604,
+      "speedup_from_round22": 0.9950132302055771,
+      "observations": 30
+    },
+    "syr2k": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000302875,
+      "c_median_seconds": 6.750226020812988e-06,
+      "mech_over_c_kernel": 44.868867955849886,
+      "starting_mech_over_c_kernel": 224.54405071064102,
+      "speedup_from_recorded_baseline": 4.973035080478746,
+      "speedup_from_paired_original": 4.98018984729674,
+      "speedup_from_round22": 1.0127940569541891,
+      "observations": 30
+    },
+    "syrk": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000210375,
+      "c_median_seconds": 5.334150046110153e-06,
+      "mech_over_c_kernel": 39.439273020340465,
+      "starting_mech_over_c_kernel": 245.10186705759173,
+      "speedup_from_recorded_baseline": 6.407805109922757,
+      "speedup_from_paired_original": 6.338486036838978,
+      "speedup_from_round22": 1.0522875816993464,
+      "observations": 30
+    },
+    "trmm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000124375,
+      "c_median_seconds": 3.375113010406494e-06,
+      "mech_over_c_kernel": 36.850617924944814,
+      "starting_mech_over_c_kernel": 219.61129772332706,
+      "speedup_from_recorded_baseline": 5.6643216080402015,
+      "speedup_from_paired_original": 5.251923618090452,
+      "speedup_from_round22": 1.0190954773869345,
+      "observations": 30
+    },
+    "covariance": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.00015275,
+      "c_median_seconds": 4.708301275968552e-06,
+      "mech_over_c_kernel": 32.442698766887546,
+      "starting_mech_over_c_kernel": 50.45658200493294,
+      "speedup_from_recorded_baseline": 1.458808510638298,
+      "speedup_from_paired_original": 1.4435351882160392,
+      "speedup_from_round22": 1.0095515548281504,
+      "observations": 30
+    },
+    "3mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 8.9875e-05,
+      "c_median_seconds": 2.8330832719802856e-06,
+      "mech_over_c_kernel": 31.72338804470743,
+      "starting_mech_over_c_kernel": 38.12304900128275,
+      "speedup_from_recorded_baseline": 1.0778859527121,
+      "speedup_from_paired_original": 1.052383866481224,
+      "speedup_from_round22": 0.9990764951321279,
+      "observations": 30
+    },
+    "fdtd-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000184959,
+      "c_median_seconds": 7.041729986667633e-06,
+      "mech_over_c_kernel": 26.266130673881232,
+      "starting_mech_over_c_kernel": 10500.55203711869,
+      "speedup_from_recorded_baseline": 392.6374656004844,
+      "speedup_from_paired_original": 390.94587449110344,
+      "speedup_from_round22": 1.0119323742018502,
+      "observations": 30
+    },
+    "heat-3d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000431375,
+      "c_median_seconds": 1.758430153131485e-05,
+      "mech_over_c_kernel": 24.53182454997087,
+      "starting_mech_over_c_kernel": 4178.378618335307,
+      "speedup_from_recorded_baseline": 171.9305523036801,
+      "speedup_from_paired_original": 169.4955085482469,
+      "speedup_from_round22": 1.0001947261663284,
+      "observations": 30
+    },
+    "trisolv": {
+      "partition": "holdout",
+      "mech_median_seconds": 2.6334e-05,
+      "c_median_seconds": 1.084059476852417e-06,
+      "mech_over_c_kernel": 24.292025080082475,
+      "starting_mech_over_c_kernel": 3606.1591485281647,
+      "speedup_from_recorded_baseline": 148.450330371383,
+      "speedup_from_paired_original": 147.3348902559429,
+      "speedup_from_round22": 1.014202172096909,
+      "observations": 30
+    },
+    "gemm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000100792,
+      "c_median_seconds": 4.2496249079704285e-06,
+      "mech_over_c_kernel": 23.71785797164322,
+      "starting_mech_over_c_kernel": 36.05363035229189,
+      "speedup_from_recorded_baseline": 1.57956980712755,
+      "speedup_from_paired_original": 1.4762183506627509,
+      "speedup_from_round22": 1.0033038336375903,
+      "observations": 30
+    },
+    "durbin": {
+      "partition": "optimization",
+      "mech_median_seconds": 2.9083e-05,
+      "c_median_seconds": 1.2922100722789764e-06,
+      "mech_over_c_kernel": 22.50640249902126,
+      "starting_mech_over_c_kernel": 3899.393007189661,
+      "speedup_from_recorded_baseline": 178.7513323934945,
+      "speedup_from_paired_original": 175.1896984492659,
+      "speedup_from_round22": 1.0200804593748924,
+      "observations": 30
+    },
+    "doitgen": {
+      "partition": "optimization",
+      "mech_median_seconds": 5.5625e-05,
+      "c_median_seconds": 3.0831433832645416e-06,
+      "mech_over_c_kernel": 18.04165200422897,
+      "starting_mech_over_c_kernel": 22.47169074801,
+      "speedup_from_recorded_baseline": 1.279406741573034,
+      "speedup_from_paired_original": 1.1288269662921349,
+      "speedup_from_round22": 1.008988764044944,
+      "observations": 30
+    },
+    "floyd-warshall": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000679125,
+      "c_median_seconds": 6.499979645013809e-05,
+      "mech_over_c_kernel": 10.44810964171192,
+      "starting_mech_over_c_kernel": 4841.308551231542,
+      "speedup_from_recorded_baseline": 467.23424700901893,
+      "speedup_from_paired_original": 463.27934180011044,
+      "speedup_from_round22": 1.2917356893060923,
+      "observations": 30
+    },
+    "cholesky": {
+      "partition": "optimization",
+      "mech_median_seconds": 5.6958e-05,
+      "c_median_seconds": 6.875023245811462e-06,
+      "mech_over_c_kernel": 8.28477198745489,
+      "starting_mech_over_c_kernel": 23662.233271603498,
+      "speedup_from_recorded_baseline": 2786.8561044980515,
+      "speedup_from_paired_original": 2769.9971909126025,
+      "speedup_from_round22": 1.0182941816777276,
+      "observations": 30
+    },
+    "nussinov": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000182833,
+      "c_median_seconds": 3.0125025659799576e-05,
+      "mech_over_c_kernel": 6.06914005865834,
+      "starting_mech_over_c_kernel": 119638.17928254372,
+      "speedup_from_recorded_baseline": 19630.880136518022,
+      "speedup_from_paired_original": 19654.785602161537,
+      "speedup_from_round22": 1.0100310119070408,
+      "observations": 30
+    },
+    "seidel-2d": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.00030925,
+      "c_median_seconds": 0.00010812468826770782,
+      "mech_over_c_kernel": 2.8601238528829094,
+      "starting_mech_over_c_kernel": 50168.862826898156,
+      "speedup_from_recorded_baseline": 17905.824979789813,
+      "speedup_from_paired_original": 17880.092430072757,
+      "speedup_from_round22": 1.0576653193209378,
+      "observations": 30
+    }
+  },
+  "inter_round_aggregates_vs22": {
+    "optimization": {
+      "mech_runtime_multiplier": 0.9724325198392767,
+      "reference_runtime_multiplier": 0.9940092498781166,
+      "c_runtime_multiplier": 0.999732530813475,
+      "raw_mech_speedup": 1.028348990390901,
+      "reference_adjusted_mech_speedup": 1.022188408551378,
+      "mech_over_c_score_multiplier": 0.9726926851605154
+    },
+    "holdout": {
+      "mech_runtime_multiplier": 0.9668185381943378,
+      "reference_runtime_multiplier": 0.9918279775123993,
+      "c_runtime_multiplier": 1.0389240337686465,
+      "raw_mech_speedup": 1.0343202581403053,
+      "reference_adjusted_mech_speedup": 1.0258677697314016,
+      "mech_over_c_score_multiplier": 0.9305959885125099
+    }
+  },
+  "inter_round_regressions_over_five_percent": [],
+  "performance_acceptance": {
+    "schema": "mech.polybench.performance-acceptance-snapshot.v1",
+    "policy": {
+      "metric": "geomean_mech_over_c_kernel",
+      "lower_is_better": true,
+      "promotion": "Both scores must be strictly below the last accepted run.",
+      "failed_run": "Both scores increased versus the immediately preceding measured run.",
+      "ties_or_mixed_results": "Retain the measurements without promotion.",
+      "comparison_threshold": "Strict improvement; no post-hoc tolerance.",
+      "scope": "Performance aggregates only; correctness and frozen-source qualification are separate prerequisites.",
+      "holdout_use": "Aggregate acceptance after training-only selection and freeze; no per-case holdout tuning.",
+      "controls": "Report raw Mech runtime, original-reference drift and C drift separately; this gate uses the fixed Mech/C metric."
+    },
+    "decision": {
+      "history_index": 23,
+      "label": "round-23-shared-bounds",
+      "source_commit": "68ccea3f81bd2aebcaa88231253bb523784e241e",
+      "history_entry_sha256": "38d9f28778985f00b8144f02f6b08a4eafc5d11c7502f0a942092e2c8ecabc0c",
+      "scores": {
+        "optimization": 30.769365191381855,
+        "holdout": 63.7243057918152
+      },
+      "previous_measured_index": 22,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 22,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9726926851605154,
+        "holdout": 0.9305959885125102
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 23
+    },
+    "accepted_history_index": 23,
+    "accepted": {
+      "history_index": 23,
+      "label": "round-23-shared-bounds",
+      "source_commit": "68ccea3f81bd2aebcaa88231253bb523784e241e",
+      "history_entry_sha256": "38d9f28778985f00b8144f02f6b08a4eafc5d11c7502f0a942092e2c8ecabc0c",
+      "scores": {
+        "optimization": 30.769365191381855,
+        "holdout": 63.7243057918152
+      },
+      "previous_measured_index": 22,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 22,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9726926851605154,
+        "holdout": 0.9305959885125102
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 23
+    }
+  },
+  "implementation": [
+    "The shared numeric_words::cell_address checks both independent one-based unsigned axes before computing or dereferencing a physical address. Pure conjunction shares one rejection branch; the original selected source operation retains error ordering.",
+    "Comprehension map reads reuse maintained numeric_words::linear_address and cell_address. Unsigned (index -1)<length combines zero and upper bounds for one-axis selection. Every checked current geometry, pointer span and exact packed width remains.",
+    "Retain the previous two-axis write ordering. A proposed private-first extension was rejected on optimization-only timing and isolated by a reversed-order fourteen-sample training ablation before any candidate holdout measurement.",
+    "Native map/cell tests verify actual Cranelift branch selection, all seven exact scalar kinds and F64 payload bits, non-square/fixed/dynamic/empty geometry, maximum/zero selectors and exact source cold rejection.",
+    "A generic repeated-write state machine checks original/decoded/restored artifacts and Object emission against ordinary source execution, including shared no-ops, aliases, first changes, errors and retry.",
+    "IR383 identifies emitted checked addressing. Work150, ABI42, every source price/fuel/physical admission, arithmetic order and all benchmark ports remain."
+  ],
+  "case_order": "Descending current Mech/C kernel ratio (largest first).",
+  "training_probe": {
+    "receipt_sha256": "66a12f314a900e14f3c9721847f7e19fd30b2d92e14ae5a608578ea31281c1d1",
+    "cases": 15,
+    "samples_per_actor": 7,
+    "summary": {
+      "count": 15,
+      "geomean_speedup_from_round_22_replay": 1.023461801872461,
+      "regressions_over_five_percent": 2,
+      "sum_candidate_median_seconds": 0.004389334,
+      "sum_reference_median_seconds": 0.004446626
+    },
+    "selection": {
+      "selected_at": "2026-11-26T23:21:36.777729+00:00",
+      "compiler_commit": "68ccea3f81bd2aebcaa88231253bb523784e241e",
+      "compiler_fingerprint": "0aa2b72813db1aa39632cd3c4e219cc03c64c08880211ccac52c1b70101812c2",
+      "driver_sha256": "d36717332070821c123e21e3d90f80ed7e6ee6ad7bb734b11bac6569570a7ba1",
+      "probe_sha256": "66a12f314a900e14f3c9721847f7e19fd30b2d92e14ae5a608578ea31281c1d1",
+      "probe_completed_at": "2026-11-26T23:16:51.426341+00:00",
+      "scope": "All15 optimization programs only; no new candidate holdout timing or profile.",
+      "criterion": "546 selected correctness checks and both feature builds; all15 optimization geomean speedup greater than1.0. The gain is modest and both>5% training regressions remain. An earlier private-first variant was rejected using optimization-only evidence before this selection.",
+      "summary": {
+        "count": 15,
+        "geomean_speedup_from_round_22_replay": 1.023461801872461,
+        "regressions_over_five_percent": 2,
+        "sum_candidate_median_seconds": 0.004389334,
+        "sum_reference_median_seconds": 0.004446626
+      }
+    },
+    "frozen_aggregate_qualification": false
+  },
+  "rejected_training_experiment": {
+    "receipt_sha256": "529049cafef8b780883e85543efa9cf758b08a85e8ac30c32ef9ffa18da3b756",
+    "source_commit": "aff07370454a653dd3802536c82dfa9eff252e30",
+    "compiler_fingerprint": "539d5e58bd941c7d9864fd7fdf194c46fd8b5bc62d3c4a3e6466dd8b286458f3",
+    "driver_sha256": "a185a7c304eb70248956fa71d3b48e87159921bc801d5464053e4e3e7cf8ecb9",
+    "training_geomean_speedup_vs22": 0.9533010070892517,
+    "holdout_measured": false,
+    "decision": "Rejected; removed the two-axis private-first extension on training evidence.",
+    "causal_ablation_receipt_sha256": "294546e3260370fbcbc49c8f8b0e29473a298569cbe88781579a08f3a490b53f",
+    "causal_ablation_source_sha256": "cc7b8523fb1e334ec60e8a1160559310bdd2deba242e08a8fdd0f3902bf5b863"
+  },
+  "profiling": {
+    "receipt_sha256": "b8b60619e34c8a4466f386cc4556c59d57658054cc68438221e438067ce4994f",
+    "partition": "optimization",
+    "cases": [
+      "deriche",
+      "correlation",
+      "seidel-2d",
+      "gramschmidt",
+      "nussinov"
+    ],
+    "canonical_execution_samples": 2998,
+    "coverage_of_training_sum": 0.799831680023009,
+    "weighted_categories": [
+      {
+        "name": "Other helper dispatch",
+        "fraction_of_profiled_time": 0.24919588332303763,
+        "estimated_seconds_in_training_sum": 0.0009480241223899817
+      },
+      {
+        "name": "Other execution and generated code",
+        "fraction_of_profiled_time": 0.22368985905376274,
+        "estimated_seconds_in_training_sum": 0.0008509907125635784
+      },
+      {
+        "name": "Canonical library calls",
+        "fraction_of_profiled_time": 0.20484348317619513,
+        "estimated_seconds_in_training_sum": 0.0007792928228821439
+      },
+      {
+        "name": "Private frame transport",
+        "fraction_of_profiled_time": 0.1083762882340955,
+        "estimated_seconds_in_training_sum": 0.0004122994897464812
+      },
+      {
+        "name": "Source visits and admission",
+        "fraction_of_profiled_time": 0.10630511865372526,
+        "estimated_seconds_in_training_sum": 0.00040442007096328257
+      },
+      {
+        "name": "Comprehension collection bookkeeping",
+        "fraction_of_profiled_time": 0.10245437520993213,
+        "estimated_seconds_in_training_sum": 0.00038977056060552674
+      },
+      {
+        "name": "Loop-local retirement",
+        "fraction_of_profiled_time": 0.004344993526289932,
+        "estimated_seconds_in_training_sum": 1.6529802256851155e-05
+      },
+      {
+        "name": "Other selected library dispatch",
+        "fraction_of_profiled_time": 0.0007899988229618058,
+        "estimated_seconds_in_training_sum": 3.0054185921547556e-06
+      }
+    ]
+  },
+  "development_checks": {
+    "plan_log_sha256": "b27b2395b8368b3700504416febf55e3a579855df6d20b101e0d751e4fad684f",
+    "focused_log_sha256": "6ff5cd11cd5ba8362aa77bec11ac29a85b99feaca7ae9c189c0e2da006182f56",
+    "development_failures_retained": {
+      "../cell-access/focused.log": "98fdc2c163f4e2fdad31dbb8eba79d2d60a4b5f658f7c1c3a6cee71646122861",
+      "../cell-access/focused-2.log": "333452fa77952183330d58130d487265820c82551d8ed9b7564466f6820fdd60",
+      "../cell-access/focused-3.log": "3bde9859df6972e0fa05f65c39554ac63f119dcf20be147a5138675f9c75b716"
+    },
+    "corrections": [
+      "Use the emitted Object reporting API instead of the JIT API in the new test.",
+      "Count the maintained numeric-write report category alongside readonly reports.",
+      "Make a repeated-write fixture expose its prior read in the result and compare the selected native body with ordinary source execution."
+    ],
+    "regression_tests": [
+      "Actual native branch counts and safe rejection before any load for invalid axes.",
+      "All seven kinds and exact F64 NaN/inf/signed-zero payloads in fixed/dynamic/non-square/empty maps.",
+      "Repeated identical writes, no-op shared owners, strict aliases, source error parity, original/decoded/restored/Object and finite denial/retry coverage."
+    ]
+  },
+  "scope": [
+    "CPU MINI F64 and selected regression checks are qualified; larger datasets, GPU/SIMD selection, linked Object execution, full compression/AOT and a fresh external application remain unqualified.",
+    "Choose and tune only from optimization-set profiles, source inspection and probes. Freeze before final optimization/holdout timing. Holdout aggregate informs acceptance/rejection; subsequent tuning again uses optimization evidence.",
+    "The split and prior holdout results were exposed; reused holdout is not blind external validation. No new candidate holdout timing/profile selected or retuned this candidate.",
+    "All limits, full original source prices, physical admission, C binaries/flags, inputs, tolerances, objective, split and timing boundaries remain.",
+    "Each process validates all untimed finite warm-up live-outs; timed checked calls must succeed but timed outputs are not separately flattened.",
+    "No Rust source or executable changed after freeze. Only PR1001 may change; PR1000 remains unchanged."
+  ],
+  "interpretation": "Optimization 30.769365x C; holdout 63.724306x C. Performance gate: accepted. Goal requires holdout strictly below1.0x C; all regressions remain in each aggregate.",
+  "receipts": {
+    "round-23-frozen.json": "bfdb7874d28ed24466a1a1c6ebd20e06597a434a038be60c23334848dd6f093b",
+    "round-23-optimization.json": "8e93533751153156c84c3eed8241dc9e6198ac980b8edb968a255b4a92b69db1",
+    "round-23-holdout.json": "9eb6a3d3c2d2a4d5e471f4190b573705ac1aedd52c6b7900fac1bc148aaa0133",
+    "round-23-progress.json": "a96725251d4277216f2fc6ab0fc8063b028059baf1b9e7a0d24740b180b16850",
+    "round-23-training-probe.json": "66a12f314a900e14f3c9721847f7e19fd30b2d92e14ae5a608578ea31281c1d1",
+    "round-23-training-rejected-private-writes.json": "529049cafef8b780883e85543efa9cf758b08a85e8ac30c32ef9ffa18da3b756",
+    "round-23-training-write-ablation.json": "294546e3260370fbcbc49c8f8b0e29473a298569cbe88781579a08f3a490b53f",
+    "round-23-performance-acceptance.json": "dce123112deb7bf5f200bd10b74d516a30f2b3d5997da5fd05b95ed96d764445",
+    "round-23-training-profile.json": "b8b60619e34c8a4466f386cc4556c59d57658054cc68438221e438067ce4994f"
+  }
+}

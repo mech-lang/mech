@@ -1933,6 +1933,92 @@
         "objective_frozen_with_candidate": true,
         "sum_mech_median_seconds": 0.017118792
       }
+    },
+    {
+      "schema": "mech.polybench.performance-progress.v1",
+      "created_at": "2026-11-26T23:26:49.943447+00:00",
+      "candidate": {
+        "schema": "mech.polybench.frozen-candidate.v1",
+        "created_at": "2026-11-26T23:21:43.521861+00:00",
+        "label": "round-23-shared-bounds",
+        "source_commit": "68ccea3f81bd2aebcaa88231253bb523784e241e",
+        "compiler_fingerprint": "0aa2b72813db1aa39632cd3c4e219cc03c64c08880211ccac52c1b70101812c2",
+        "driver_sha256": "d36717332070821c123e21e3d90f80ed7e6ee6ad7bb734b11bac6569570a7ba1",
+        "reference_driver_sha256": "52298504b6a7b7abf44b399ed42f56bb2ee9f335f2601c683a7928041a0b883a",
+        "protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+        "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+        "fixture_sha256": "acc2a0b76f458eafca9beffb1eb2830f7fe87e6c5bc0dd46af817285202cf488",
+        "baseline_sha256": "96e5867a9bd7a1cde6c6dea266766ae3f4b23d51092e9f07911ca9266ec1f976",
+        "runner_sha256": "71c7f2e0dc32b5bf0a2b61fff11ec253828634b1933dd4bb308a14ab537963dc",
+        "rustc": "rustc 1.96.0-nightly (ec818fda3 2026-03-02)",
+        "machine": {
+          "platform": "Darwin-25.2.0-arm64-arm-64bit-Mach-O",
+          "processor": "arm64"
+        }
+      },
+      "freeze_sha256": "bfdb7874d28ed24466a1a1c6ebd20e06597a434a038be60c23334848dd6f093b",
+      "optimization_receipt_sha256": "8e93533751153156c84c3eed8241dc9e6198ac980b8edb968a255b4a92b69db1",
+      "holdout_receipt_sha256": "9eb6a3d3c2d2a4d5e471f4190b573705ac1aedd52c6b7900fac1bc148aaa0133",
+      "aggregates": {
+        "optimization": {
+          "count": 15,
+          "geomean_speedup_from_recorded_baseline": 25.33517438413404,
+          "median_speedup": 1.57956980712755,
+          "minimum_speedup": 1.0778859527121,
+          "maximum_speedup": 19630.880136518022,
+          "regressions_over_five_percent": 0,
+          "geomean_mech_over_c_kernel": 30.769365191381855,
+          "geomean_mech_over_c_fresh": 19.356479016325075,
+          "faster_than_c_kernel": 0,
+          "worst_mech_over_c_kernel": 109.05333571636707,
+          "sum_mech_median_seconds": 0.004756417,
+          "geomean_speedup_from_contemporaneous_baseline": 24.66495169132923,
+          "contemporaneous_regressions_over_five_percent": 0,
+          "minimum_contemporaneous_speedup": 1.052383866481224
+        },
+        "holdout": {
+          "count": 15,
+          "geomean_speedup_from_recorded_baseline": 31.772123184385816,
+          "median_speedup": 23.521999020639736,
+          "minimum_speedup": 1.0863035714285714,
+          "maximum_speedup": 467.23424700901893,
+          "regressions_over_five_percent": 0,
+          "geomean_mech_over_c_kernel": 63.7243057918152,
+          "geomean_mech_over_c_fresh": 38.204306626142895,
+          "faster_than_c_kernel": 0,
+          "worst_mech_over_c_kernel": 449.1893767038432,
+          "sum_mech_median_seconds": 0.016566336,
+          "geomean_speedup_from_contemporaneous_baseline": 31.449849805796603,
+          "contemporaneous_regressions_over_five_percent": 0,
+          "minimum_contemporaneous_speedup": 1.0565446428571428
+        },
+        "all": {
+          "count": 30,
+          "geomean_speedup_from_recorded_baseline": 28.37168097647023,
+          "median_speedup": 13.732560339724031,
+          "minimum_speedup": 1.0778859527121,
+          "maximum_speedup": 19630.880136518022,
+          "regressions_over_five_percent": 0,
+          "geomean_mech_over_c_kernel": 44.28042949741624,
+          "geomean_mech_over_c_fresh": 27.193765085809364,
+          "faster_than_c_kernel": 0,
+          "worst_mech_over_c_kernel": 449.1893767038432,
+          "sum_mech_median_seconds": 0.021322753,
+          "geomean_speedup_from_contemporaneous_baseline": 27.851553388626876,
+          "contemporaneous_regressions_over_five_percent": 0,
+          "minimum_contemporaneous_speedup": 1.052383866481224
+        }
+      },
+      "goal": {
+        "partition": "holdout",
+        "metric": "geomean_mech_over_c_kernel",
+        "value": 63.7243057918152,
+        "target_strictly_below": 1.0,
+        "achieved": false,
+        "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+        "objective_frozen_with_candidate": true,
+        "sum_mech_median_seconds": 0.016566336
+      }
     }
   ]
 }

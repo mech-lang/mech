@@ -1,0 +1,107 @@
+{
+  "schema": "mech.polybench.training-causal-ablation.v1",
+  "scope": "Optimization-set Seidel only; fourteen checked samples per actor in two reversed-order rounds. No holdout access.",
+  "created_at": "2026-11-26T23:07:31.902914+00:00",
+  "source_ablation": {
+    "scope": "Training-only causal ablation; retain combined map/cell bounds, restore previous two-axis write emission. This is not a selected or frozen candidate.",
+    "source_commit": "aff07370454a653dd3802536c82dfa9eff252e30",
+    "changed_file": "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+    "replacement_from_commit": "1589b652e0d67424c969f78ef6c72f999d1baf2c",
+    "replacement_sha256": "270170b8a1ff59d0624c70fdc0f982507c50af59957cefde2849363d4497a347",
+    "compiler_fingerprint": "f693b580ad2fdec19e2001b513ed8df6272e46aee8a1a076201cd7b6db696467",
+    "driver_sha256": "d36717332070821c123e21e3d90f80ed7e6ee6ad7bb734b11bac6569570a7ba1"
+  },
+  "actors": {
+    "round-22": {
+      "driver_sha256": "2f1fe3109ec55521ab7bffb48b8f69f5dc6391e6afdcdbaac4a7c3ace77a1ee9",
+      "samples_seconds": [
+        0.000341084,
+        0.000327791,
+        0.000318,
+        0.000315542,
+        0.000310792,
+        0.000310833,
+        0.000316791,
+        0.000326375,
+        0.000309875,
+        0.000305291,
+        0.000304125,
+        0.000304,
+        0.000303458,
+        0.000305209
+      ],
+      "reports": [
+        "NativeProgramExecutionReport { work: 2364180548, comparison_work: 29662, visits: 26, transport_bytes: 12824, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+        "NativeProgramExecutionReport { work: 2364180548, comparison_work: 29662, visits: 26, transport_bytes: 12824, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+      ],
+      "validation": {
+        "count": 1600,
+        "finite": true,
+        "max_absolute_error": 0.0
+      },
+      "median_seconds": 0.0003108125,
+      "runtime_multiplier_vs_round22": 1.0
+    },
+    "both-changes": {
+      "driver_sha256": "a185a7c304eb70248956fa71d3b48e87159921bc801d5464053e4e3e7cf8ecb9",
+      "samples_seconds": [
+        0.000748292,
+        0.000737625,
+        0.000724791,
+        0.000731458,
+        0.000722708,
+        0.000730417,
+        0.000726125,
+        0.000737208,
+        0.000726709,
+        0.00072625,
+        0.000723,
+        0.000721791,
+        0.000721792,
+        0.000721708
+      ],
+      "reports": [
+        "NativeProgramExecutionReport { work: 2364180548, comparison_work: 29662, visits: 26, transport_bytes: 12824, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+        "NativeProgramExecutionReport { work: 2364180548, comparison_work: 29662, visits: 26, transport_bytes: 12824, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+      ],
+      "validation": {
+        "count": 1600,
+        "finite": true,
+        "max_absolute_error": 0.0
+      },
+      "median_seconds": 0.0007261875,
+      "runtime_multiplier_vs_round22": 2.3364166499095114
+    },
+    "old-write-order": {
+      "driver_sha256": "d36717332070821c123e21e3d90f80ed7e6ee6ad7bb734b11bac6569570a7ba1",
+      "samples_seconds": [
+        0.0003125,
+        0.000298791,
+        0.000290709,
+        0.000291709,
+        0.000288,
+        0.00028875,
+        0.000286666,
+        0.000309042,
+        0.000297958,
+        0.000292959,
+        0.000285292,
+        0.000284875,
+        0.00028775,
+        0.000284291
+      ],
+      "reports": [
+        "NativeProgramExecutionReport { work: 2364180548, comparison_work: 29662, visits: 26, transport_bytes: 12824, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }",
+        "NativeProgramExecutionReport { work: 2364180548, comparison_work: 29662, visits: 26, transport_bytes: 12824, hash_table_regions: 0, hash_table_updates: 0, packed_map_regions: 0, direct_lookup_regions: 0, packed_map_updates: 0, packed_ssa_regions: 0, guarded_loop_regions: 0, guarded_call_regions: 0, frozen_map_regions: 0, frozen_map_reads: 0, worker_credit_claims: 0, worker_credit_batches: 0, worker_credit_reclaims: 0, fused_string_map_bytes: 0, parallel_regions: 0, parallel_batches: 0, parallel_tasks: 0, parallel_peak_workers: 0, parallel_numeric_regions: 0, parallel_numeric_work: 0 }"
+      ],
+      "validation": {
+        "count": 1600,
+        "finite": true,
+        "max_absolute_error": 0.0
+      },
+      "median_seconds": 0.0002897295,
+      "runtime_multiplier_vs_round22": 0.932168107782023
+    }
+  },
+  "completed_at": "2026-11-26T23:07:35.131062+00:00"
+}
