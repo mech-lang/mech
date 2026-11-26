@@ -18,7 +18,9 @@ mod cold;
 mod flow;
 mod homes;
 mod intervals;
+mod reductions;
 mod schedule;
+pub(in crate::native_artifact) use reductions::{Fold, Reduction};
 mod words;
 pub(in crate::native_artifact) use bounds::Bound;
 #[cfg(feature = "canonical-native-program")]
@@ -71,6 +73,7 @@ pub(in crate::native_artifact) struct Loop {
 #[derive(Debug)]
 pub(in crate::native_artifact) struct Forest {
     pub loops: Vec<Loop>,
+    pub reductions: Vec<Reduction>,
     pub cold: Vec<ColdChild>,
     pub sites: BTreeSet<usize>,
     /// A current traversal order, cutting each declared latch backedge.
@@ -231,6 +234,10 @@ impl Forest {
                 if self.stops.contains(&site) {
                     continue;
                 }
+                if let Some(reduction) = self.reductions.iter().find(|r| r.entry as usize == site) {
+                    reads += reduction.region.reads.len();
+                    continue;
+                }
                 if frames.action(site).is_some() || aggregates.action(site).is_some() {
                     continue;
                 }
@@ -299,6 +306,8 @@ impl Forest {
     pub fn successors(&self, plan: &Plan, site: usize) -> Vec<usize> {
         if self.stops.contains(&site) {
             Vec::new()
+        } else if let Some(reduction) = self.reductions.iter().find(|r| r.entry as usize == site) {
+            vec![reduction.after as usize]
         } else {
             cold::successors(&self.cold, plan, site)
         }
@@ -333,6 +342,14 @@ impl Forest {
             })
             .ok_or("numeric phase root is absent")? as u32;
         let mut members = BTreeSet::from([root_id]);
+        let candidates = if matches!(
+            mode,
+            Coverage::Complete | Coverage::Fueled | Coverage::Hybrid
+        ) {
+            reductions::inventory(plan)?
+        } else {
+            Vec::new()
+        };
         let cold = if mode == Coverage::ScalarCold {
             cold::children(plan, root_id)?
         } else {
@@ -363,6 +380,9 @@ impl Forest {
                     .is_some_and(|p| members.contains(&p))
                 {
                     if !matches!(loop_, NativeControlLoop::Tail(_)) {
+                        if candidates.iter().any(|r| r.region.iteration == id as u32) {
+                            continue;
+                        }
                         if mode == Coverage::Hybrid {
                             continue;
                         }
@@ -375,6 +395,15 @@ impl Forest {
                 break;
             }
         }
+        let mut reductions = candidates
+            .into_iter()
+            .filter(|r| {
+                plan.iterations()[r.region.iteration as usize]
+                    .as_ref()
+                    .parent()
+                    .is_some_and(|p| members.contains(&p))
+            })
+            .collect::<Vec<_>>();
         if mode == Coverage::Hybrid {
             // Keep synchronous Tail calls inside the same owner/fuel region.
             // A Collection owns hidden builder/progress state and must begin
@@ -400,7 +429,10 @@ impl Forest {
                         .map(|n| n as u32),
                     _ => None,
                 };
-                if child.is_some_and(|child| !members.contains(&child)) {
+                if child.is_some_and(|child| {
+                    !members.contains(&child)
+                        && !reductions.iter().any(|r| r.region.iteration == child)
+                }) {
                     stops.insert(site);
                 }
             }
@@ -408,6 +440,8 @@ impl Forest {
         let successors = |site| {
             if stops.contains(&site) {
                 Vec::new()
+            } else if let Some(reduction) = reductions.iter().find(|r| r.entry as usize == site) {
+                vec![reduction.after as usize]
             } else {
                 cold::successors(&cold, plan, site)
             }
@@ -515,11 +549,13 @@ impl Forest {
             return Err("numeric phase has an undeclared cycle");
         }
         stops.retain(|site| sites.contains(site));
+        reductions.retain(|r| sites.contains(&(r.entry as usize)));
         if mode == Coverage::Intervals && stops.is_empty() {
             return Err("numeric interval has no reachable cold boundary");
         }
         Ok(Self {
             loops,
+            reductions,
             cold,
             sites,
             order,
@@ -572,10 +608,9 @@ pub(in crate::native_artifact) fn mutation_needs_funding(
                 continue;
             }
             pending.extend(
-                NativeProgramFacts::control_successors(plan.blocks()[at].terminator())
+                forest
+                    .successors(plan, at)
                     .into_iter()
-                    .flatten()
-                    .map(|s| s as usize)
                     .filter(|s| forest.sites.contains(s)),
             );
         }

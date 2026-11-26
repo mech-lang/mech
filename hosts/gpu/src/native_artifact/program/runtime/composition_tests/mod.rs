@@ -152,9 +152,9 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                141
+                142
             );
-            // Policy141 preserves source permutation funding and this unsigned fixture retains
+            // Policy142 retains this unsigned fixture’s existing funding and this unsigned fixture retains
             // the policy127 tree handoff and its exact source work bill.
             // Policy125 adds tree first-write alias checks.
             // Policies107/108/110/111 add fills, recursive frames, worker
@@ -620,6 +620,7 @@ mod uniform_fill;
 mod numeric_map_reductions;
 mod numeric_map_transposes;
 mod numeric_maps;
+mod numeric_phase_reductions;
 mod rectangular_numeric_maps;
 
 #[test]
@@ -661,12 +662,12 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                141
+                142
             );
             assert_eq!(
                 report.work,
                 owner_layout_work(41_515_826, 41_513_202),
-                "policy141 keeps this unsigned fixture's established source prices and child fallback banks"
+                "policy142 keeps this unsigned fixture's established source prices and child fallback banks"
             );
             println!("huffman-cleanup work={} batches={batches}", report.work);
             assert!(

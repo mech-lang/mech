@@ -28,6 +28,8 @@ pub(in crate::native_artifact) struct Schedule {
     pub compute_bound: Bound,
     pub comparison_bound: Bound,
     pub checked_children: bool,
+    pub replay_credit: u64,
+    pub replay_comparison: u64,
 }
 impl Schedule {
     pub fn derive(
@@ -39,6 +41,26 @@ impl Schedule {
         counter: usize,
         boundary_work: u64,
     ) -> Result<Self, &'static str> {
+        let replay_credit = actions
+            .iter()
+            .try_fold(0u64, |total, (_, action)| {
+                total.checked_add(match action {
+                    super::super::numeric_plan::Operation::Reduce { fold } => fold.budget.replay,
+                    _ => 0,
+                })
+            })
+            .ok_or("phase reduction replay credit overflows")?;
+        let replay_comparison = actions
+            .iter()
+            .try_fold(0u64, |total, (_, action)| {
+                total.checked_add(match action {
+                    super::super::numeric_plan::Operation::Reduce { fold } => {
+                        fold.budget.comparison
+                    }
+                    _ => 0,
+                })
+            })
+            .ok_or("phase reduction replay comparison overflows")?;
         let mut loops = Vec::new();
         for (index, loop_) in forest.loops.iter().enumerate() {
             let mut compute = if index == 0 {
@@ -52,6 +74,16 @@ impl Schedule {
                     .checked_add(visits[site].work)
                     .and_then(|n| n.checked_add(OVERHEAD))
                     .ok_or("phase traversal price overflows")?;
+                if let Some((_, super::super::numeric_plan::Operation::Reduce { fold })) =
+                    actions.iter().find(|(s, _)| *s == site)
+                {
+                    compute = compute
+                        .checked_add(fold.budget.compute)
+                        .ok_or("phase reduction price overflows")?;
+                    comparison = comparison
+                        .checked_add(fold.budget.comparison)
+                        .ok_or("phase reduction comparison overflows")?;
+                }
                 if actions.iter().any(|(s, a)| *s == site && a.replaces()) {
                     comparison = comparison
                         .checked_add(1)
@@ -98,12 +130,24 @@ impl Schedule {
         }
         if forest.checked_children {
             return Ok(Self {
-                compute_bound: Bound::Constant(loops[0].compute),
-                comparison_bound: Bound::Constant(loops[0].comparison),
+                compute_bound: Bound::Constant(
+                    loops[0]
+                        .compute
+                        .checked_add(replay_credit)
+                        .ok_or("phase reduction entry credit overflows")?,
+                ),
+                comparison_bound: Bound::Constant(
+                    loops[0]
+                        .comparison
+                        .checked_add(replay_comparison)
+                        .ok_or("phase reduction comparison credit overflows")?,
+                ),
                 loops,
                 cold: forest.cold.clone(),
                 boundary_work,
                 checked_children: true,
+                replay_credit,
+                replay_comparison,
             });
         }
         let mut envelopes = BTreeMap::<u32, (Bound, Bound)>::new();
@@ -128,9 +172,11 @@ impl Schedule {
             loops,
             cold: forest.cold.clone(),
             boundary_work,
-            compute_bound,
-            comparison_bound,
+            compute_bound: Bound::add(compute_bound, Bound::Constant(replay_credit)),
+            comparison_bound: Bound::add(comparison_bound, Bound::Constant(replay_comparison)),
             checked_children: false,
+            replay_credit,
+            replay_comparison,
         })
     }
 

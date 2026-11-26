@@ -544,7 +544,8 @@ fn selected_template(
 // IR371 publishes a sole-consumer scalar map directly in transposed shape.
 // IR372 emits rectangular numeric banks directly in final row-major order.
 // Old Objects initialize column-major payloads and require the old finish pass.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 372;
+// IR373 composes checked ordered range folds inside a numeric phase loan.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 373;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -806,7 +807,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 372;
 // Policy140 funds exact transpose projection finish and constructor bounds.
 // Work141 retains the full source permutation work and physical reservations
 // for a native rectangle whose output cells are already in final order.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 141;
+// Work142 prepays composed folds, elided constructors and unspent source replay.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 142;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

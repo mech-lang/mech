@@ -14,6 +14,7 @@ mod helper_fallbacks;
 mod histogram;
 mod numeric_exits;
 mod numeric_map;
+mod numeric_phase_reductions;
 mod numeric_prefix;
 mod numeric_segments;
 mod numeric_tree;

@@ -104,7 +104,7 @@ fn integer(width: u8) -> cranelift_codegen::ir::Type {
 /// All dynamic loop work is prepaid by the loan. Arithmetic uses the common
 /// checked native emitter; no source visit, helper or per-operation dispatch
 /// occurs between the exact prepare and finish boundaries.
-fn emit(
+pub(super) fn emit(
     b: &mut FunctionBuilder<'_>,
     frame: Value,
     region: &Region,

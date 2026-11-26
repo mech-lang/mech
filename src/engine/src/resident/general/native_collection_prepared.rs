@@ -774,6 +774,12 @@ impl NativePreparedLibraryCall {
         self.binding_work
     }
 
+    /// Fixed ownership envelope of the same sealed schema arena used by this
+    /// resident factory. This contains no live input, pointer or call permit.
+    pub fn schema_context_allocation_bound_bytes(&self) -> Option<u64> {
+        self.schemas.clone_allocation_bound_bytes()
+    }
+
     /// Pure fixed metadata-work envelope for a sealed read-only String/U64
     /// access replay, not work credit, a call permit or a payload bound. The
     /// caller proves the current source visit and, for RecordFieldAccess, the

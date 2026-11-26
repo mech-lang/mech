@@ -497,6 +497,17 @@ fn pass(
                     }
                 }
             },
+            Some(Operation::Reduce { fold }) => {
+                if fold
+                    .source
+                    .region
+                    .matrices
+                    .iter()
+                    .any(|m| !fresh(&state, (m.value, None)))
+                {
+                    return Err("reduction reads an older array version");
+                }
+            }
             Some(Operation::ArrayCopy) => {
                 let Action::Scalar(Scalar::Copy { source, output }) = plan.blocks()[site].action()
                 else {

@@ -147,10 +147,7 @@ fn tag_flow(
             predicate = Some((source.get(), *ordinal, no, yes));
             break;
         }
-        for next in Facts::control_successors(plan.blocks()[site].terminator())
-            .into_iter()
-            .flatten()
-        {
+        for next in forest.successors(plan, site).into_iter().map(|n| n as u32) {
             if next == tail.exit() {
                 continue;
             }
@@ -237,7 +234,11 @@ pub(in crate::native_artifact) fn derive(
         visits,
         BTreeSet::new(),
     )?;
-    if !phase.exits.is_empty() {
+    if phase.exits.iter().any(|exit| {
+        !phase.actions.iter().any(|(site, action)| {
+            *site == exit.to && matches!(action, super::numeric_plan::Operation::Reduce { .. })
+        })
+    }) {
         return Err("prefix phase has an ordinary cold action");
     }
     let mut proof = super::readonly_numeric::from_phase(plan, tail, &projected, aggregates, phase)?;

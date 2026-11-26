@@ -18,6 +18,9 @@ pub(in crate::native_artifact) struct FrameWords {
 pub(in crate::native_artifact) enum Operation {
     /// The summary edge is descriptive only; execute the original child here.
     Fallback,
+    Reduce {
+        fold: Box<super::numeric_phase::Fold>,
+    },
     Frame,
     Aggregate,
     ArrayCopy,

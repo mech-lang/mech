@@ -1255,6 +1255,12 @@ fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveou
                 .collect::<Vec<_>>();
             let args = typed_arguments(&artifact, &memory, &borrowed);
             let retained = memory.used_bytes();
+            let phase_folds = jit.descriptor().metadata().closed_tails.regions.iter()
+                .flat_map(|r| r.numeric.iter().flat_map(|p| p.actions.iter().filter_map(|(_, action)| {
+                    if let crate::native_artifact::program::prepare::readonly_numeric::Operation::Reduce { fold } = action {
+                        Some(fold.as_ref())
+                    } else { None }
+                }))).collect::<Vec<_>>();
             for restored in [false, true] {
                 let mut fast = vec![None; artifact.outputs().len()];
                 let (result, counts) = run(
@@ -1268,7 +1274,8 @@ fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveou
                 );
                 result.unwrap();
                 assert!(
-                    counts.selected > 0 && counts.selected == counts.complete,
+                    counts.selected == counts.complete
+                        && (counts.selected > 0 || !phase_folds.is_empty()),
                     "{name}: {counts:?}"
                 );
                 let folded: Vec<_> = jit
@@ -1284,7 +1291,7 @@ fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveou
                     .collect();
                 if name != "deriche" {
                     assert!(
-                        !folded.is_empty(),
+                        !folded.is_empty() || !phase_folds.is_empty(),
                         "actual numerical source selects scalar folds: {name}"
                     );
                 }
@@ -1293,6 +1300,37 @@ fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveou
                         counts.transpose_complete > 0,
                         "actual numerical source directly publishes transposed maps: {name} {counts:?}"
                     );
+                }
+                for fold in &phase_folds {
+                    assert_eq!(
+                        counts
+                            .helpers
+                            .get(&(
+                                u64::from(fold.source.region.header),
+                                GlobalHelper::NumericMapPrepare.raw()
+                            ))
+                            .copied()
+                            .unwrap_or(0),
+                        0,
+                        "composed source fold needs no per-fold loan {name}"
+                    );
+                    for site in fold.source.region.reads.iter().map(|r| r.site).chain(
+                        fold.source
+                            .region
+                            .reduction
+                            .iter()
+                            .flat_map(|r| [r.sum, r.select]),
+                    ) {
+                        assert_eq!(
+                            counts
+                                .helpers
+                                .get(&(u64::from(site), GlobalHelper::Library.raw()))
+                                .copied()
+                                .unwrap_or(0),
+                            0,
+                            "composed source fold has no per-operation dispatch {name} {site}"
+                        );
+                    }
                 }
                 for region in folded {
                     let reduction = region.reduction.as_ref().unwrap();

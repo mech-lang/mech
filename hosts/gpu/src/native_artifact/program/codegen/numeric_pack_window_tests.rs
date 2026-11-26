@@ -83,7 +83,7 @@ fn source_window_facts_refuse_unproved_paths_members_and_boundaries() {
             assert!(refuses(&frontier), "cold endpoint {member}");
         }
         for field in ["header", "initialize", "latch", "finish", "exit"] {
-            let mut phase = serde_json::json!({"loops":[{"iteration":0,"header":0,"initialize":0,"latch":0,"finish":0,"exit":0,"parent":null,"counter":0,"first_visit":null,"compute":0,"comparison":0,"trips":null}],"cold":[],"boundary_work":0,"compute_bound":{"Constant":0},"comparison_bound":{"Constant":0},"checked_children":false});
+            let mut phase = serde_json::json!({"loops":[{"iteration":0,"header":0,"initialize":0,"latch":0,"finish":0,"exit":0,"parent":null,"counter":0,"first_visit":null,"compute":0,"comparison":0,"trips":null}],"cold":[],"boundary_work":0,"compute_bound":{"Constant":0},"comparison_bound":{"Constant":0},"checked_children":false, "replay_credit": 0, "replay_comparison": 0});
             phase["loops"][0][field] = serde_json::json!(member);
             let mut frontier = proof.clone();
             frontier.phase = Some(serde_json::from_value(phase).unwrap());

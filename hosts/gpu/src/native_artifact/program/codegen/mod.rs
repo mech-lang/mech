@@ -3,11 +3,11 @@
 #[cfg(all(test, feature = "jit", target_arch = "aarch64"))]
 mod byte_boolean_tests;
 #[cfg(all(test, feature = "jit", target_arch = "aarch64"))]
+mod ccmp_immediate_tests;
+#[cfg(all(test, feature = "jit", target_arch = "aarch64"))]
 mod narrow_pack_tests;
 #[cfg(all(test, feature = "jit", target_arch = "aarch64"))]
 mod shared_boolean_tests;
-#[cfg(all(test, feature = "jit", target_arch = "aarch64"))]
-mod ccmp_immediate_tests;
 
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod ascii_map;
@@ -85,6 +85,8 @@ pub(in crate::native_artifact) mod utf8_lookup;
 pub(in crate::native_artifact) mod constant_fill;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod numeric_map;
+#[cfg(feature = "canonical-native-program")]
+mod numeric_phase_reductions;
 
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod utf8_histogram;

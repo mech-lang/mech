@@ -127,6 +127,11 @@ impl Invocation<'_, '_, '_> {
             };
             entry_work = entry_work.and_then(|n| n.checked_add(retained.checked_mul(8)?));
         }
+        for (_, action) in &proof.actions {
+            if let Operation::Reduce { fold } = action {
+                entry_work = entry_work.and_then(|n| n.checked_add(fold.budget.setup));
+            }
+        }
         let Some(entry_work) = entry_work else {
             return Ok(false);
         };
@@ -204,8 +209,10 @@ impl Invocation<'_, '_, '_> {
                 publication_work = publication_work.and_then(|n| n.checked_add(work));
             }
         }
+        let fold_credit = proof.phase.as_ref().map_or(0, |phase| phase.replay_credit);
         if publication_work
             .and_then(|n| n.checked_add(entry_work))
+            .and_then(|n| n.checked_add(fold_credit))
             .is_none_or(|n| n > remaining)
         {
             return Ok(false);
@@ -214,6 +221,9 @@ impl Invocation<'_, '_, '_> {
             crate::native_artifact::NativeExecutionPhase::Setup,
             entry_work,
         )?;
+        if !self.admit_numeric_reductions(id)? {
+            return Ok(false);
+        }
         // Temporary validation metadata is separately admitted once. A capacity
         // miss declines optimization and retains the original source boundary.
         let temporary = metadata

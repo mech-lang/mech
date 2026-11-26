@@ -815,8 +815,19 @@ pub(super) fn from_phase(
         .frame()
         .map_or_else(|| Ok(Vec::new()), bindings)?;
     let sites = phase.sites.iter().copied().collect::<BTreeSet<_>>();
+    let reduction_words = phase
+        .actions
+        .iter()
+        .try_fold(0usize, |n, (_, action)| {
+            n.checked_add(match action {
+                Operation::Reduce { fold } => fold.source.scalar_values().count(),
+                _ => 0,
+            })
+        })
+        .ok_or("phase reduction word inventory overflows")?;
     let boundary_words = register_bound(plan, aggregates, &sites)?
-        .checked_add(phase.words)
+        .checked_add(reduction_words)
+        .and_then(|n| n.checked_add(phase.words))
         .and_then(|n| n.checked_add(3))
         .ok_or("phase boundary words overflow")?;
     let boundary_work = phase

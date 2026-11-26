@@ -390,8 +390,11 @@ fn derive_inventory(
     // A guarded complete FSM still owns one synchronous phase account even
     // when it has no ordinary cold transition. Its tag transport is funded by
     // the same per-traversal and boundary schedule as a partial tagged phase.
-    let nested =
-        guarded || forest.loops.len() > 1 || !forest.cold.is_empty() || !forest.stops.is_empty();
+    let nested = guarded
+        || forest.loops.len() > 1
+        || !forest.reductions.is_empty()
+        || !forest.cold.is_empty()
+        || !forest.stops.is_empty();
     #[cfg(all(test, feature = "canonical-native-program-runtime"))]
     if nested && test_decline_nested_phase() {
         return Err("test declines nested phases to exercise ordinary parent segments");
@@ -409,34 +412,39 @@ fn derive_inventory(
     let sites = forest.sites.clone();
     let mut captures = BTreeMap::new();
     let mut captured = Vec::new();
+    let mut capture_sources = Vec::new();
     for &site in &sites {
         if forest.stops.contains(&site) || forest.cold.iter().any(|c| c.initialize == site) {
             continue;
         }
-        let Action::LibraryCall { operands, .. } = plan.blocks()[site].action() else {
-            continue;
-        };
-        for &source in operands {
-            if captures.contains_key(&source.get())
-                || width(plan.values()[source.get() as usize].definition().body()).is_none()
-                || super::captured_numeric::immutable_source(plan, tail, source).is_err()
-            {
-                continue;
-            }
-            let root = fields.len() + captured.len();
-            captures.insert(source.get(), root);
-            captured.push(Array {
-                root,
-                storage: super::readonly_numeric::ArrayStorage::Capture {
-                    value: source.get(),
-                },
-                schema: plan.values()[source.get() as usize].schema(),
-                width: 0,
-                witness: usize::MAX,
-                writable: false,
-                appends: false,
-            });
+        if let Action::LibraryCall { operands, .. } = plan.blocks()[site].action() {
+            capture_sources.extend(operands.iter().map(|source| source.get()));
         }
+    }
+    capture_sources.extend(
+        forest
+            .reductions
+            .iter()
+            .flat_map(|r| r.region.matrices.iter().map(|m| m.value)),
+    );
+    for source in capture_sources {
+        if captures.contains_key(&source)
+            || width(plan.values()[source as usize].definition().body()).is_none()
+            || super::captured_numeric::immutable_source_id(plan, tail, source).is_err()
+        {
+            continue;
+        }
+        let root = fields.len() + captured.len();
+        captures.insert(source, root);
+        captured.push(Array {
+            root,
+            storage: super::readonly_numeric::ArrayStorage::Capture { value: source },
+            schema: plan.values()[source as usize].schema(),
+            width: 0,
+            witness: usize::MAX,
+            writable: false,
+            appends: false,
+        });
     }
     let mut provenance = Provenance {
         facts,
@@ -536,6 +544,41 @@ fn derive_inventory(
         if forest.stops.contains(&site) || forest.cold.iter().any(|child| child.initialize == site)
         {
             actions.push((site, Operation::Fallback));
+            continue;
+        }
+        if let Some(reduction) = forest.reductions.iter().find(|r| r.entry as usize == site) {
+            let budget = reduction
+                .budget(plan, calls, visits)
+                .ok_or("reduction lost its selected factories or finite source budget")?;
+            let mut roots = Vec::new();
+            for matrix in &reduction.region.matrices {
+                let root = provenance
+                    .array(matrix.value, None)
+                    .ok_or("reduction matrix has no invariant phase root")?;
+                let at = arrays
+                    .iter()
+                    .position(|a| a.root == root)
+                    .ok_or("reduction matrix is outside the phase")?;
+                if plan.values()[matrix.value as usize].schema() != arrays[at].schema
+                    || (arrays[at].width != 0 && arrays[at].width != matrix.width)
+                    || arrays[at].appends
+                {
+                    return Err("reduction matrix schema, width or extent changes");
+                }
+                arrays[at].width = matrix.width;
+                arrays[at].witness = arrays[at].witness.min(matrix.witness as usize);
+                roots.push(at);
+            }
+            actions.push((
+                site,
+                Operation::Reduce {
+                    fold: Box::new(super::numeric_phase::Fold {
+                        source: reduction.clone(),
+                        arrays: roots,
+                        budget,
+                    }),
+                },
+            ));
             continue;
         }
         let action = plan.blocks()[site].action();
@@ -749,7 +792,7 @@ fn derive_inventory(
     }
     if arrays.iter().any(|array| array.witness == usize::MAX)
         && !actions.iter().any(|(_, action)| {
-            matches!(action, Operation::Read { array, .. } | Operation::CellRead { array, .. }
+            matches!(action, Operation::Reduce { fold } if !fold.arrays.is_empty()) || matches!(action, Operation::Read { array, .. } | Operation::CellRead { array, .. }
                 if !arrays[*array].writable && !arrays[*array].appends)
         })
     {

@@ -9,6 +9,7 @@ impl Invocation<'_, '_, '_> {
         site: usize,
     ) -> Result<(), Error> {
         let metadata = self.descriptor.metadata();
+        let region_id = region;
         let region = &metadata.closed_tails.regions[region];
         let proof = region
             .numeric
@@ -28,6 +29,10 @@ impl Invocation<'_, '_, '_> {
             if let Some(variant) = &proof.tagged
                 && variant.contains(value)
             {
+                if variant.prefix.is_some() {
+                    self.export_numeric_prefix(region_id, value)?;
+                    continue;
+                }
                 let (_, bindings) = variant
                     .scalars
                     .iter()

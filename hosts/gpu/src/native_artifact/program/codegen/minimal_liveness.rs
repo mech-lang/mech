@@ -66,6 +66,26 @@ pub(super) fn required(
     for &site in &proof.sites {
         let mut e = Effects::default();
         match proof.action(site) {
+            Some(Operation::Reduce { fold }) => {
+                e.used(fold.source.first as usize);
+                e.used(fold.source.last as usize);
+                for &value in &fold.source.region.captures {
+                    e.used(value as usize);
+                }
+                for &array in &fold.arrays {
+                    for at in 0..4 {
+                        e.used(shadow + proof.view(array) + at);
+                    }
+                }
+                e.writes.insert(
+                    fold.source
+                        .region
+                        .reduction
+                        .as_ref()
+                        .ok_or_else(|| backend("fold liveness lost its scalar output"))?
+                        .scalar as usize,
+                );
+            }
             Some(Operation::Frame) => {
                 let moves = super::super::numeric_words::frame_word_moves_for(
                     shadow,
@@ -209,13 +229,19 @@ pub(super) fn required(
             }
             _ => {}
         }
-        let successors = NativeProgramFacts::control_successors(code.blocks()[site].terminator());
-        if successors.into_iter().flatten().any(|n| n as usize == exit) {
+        let successors = if let Some(Operation::Reduce { fold }) = proof.action(site) {
+            vec![fold.source.after]
+        } else {
+            NativeProgramFacts::control_successors(code.blocks()[site].terminator())
+                .into_iter()
+                .flatten()
+                .collect()
+        };
+        if successors.iter().any(|&n| n as usize == exit) {
             exits.insert(site);
         }
         let next = successors
             .into_iter()
-            .flatten()
             .map(|n| n as usize)
             .filter(|n| proof.sites.binary_search(n).is_ok())
             .collect::<Vec<_>>();

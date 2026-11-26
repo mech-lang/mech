@@ -103,17 +103,16 @@ fn numeric_score(plan: &Plan, tail: &NativeTailLoop, proof: &Proof) -> usize {
     proof
         .actions
         .iter()
-        .filter(|(site, op)| {
-            recurrent.contains(site)
-                && matches!(
-                    op,
-                    Operation::Read { .. }
-                        | Operation::CellRead { .. }
-                        | Operation::Write { .. }
-                        | Operation::CellWrite { .. }
-                )
+        .filter(|(site, _)| recurrent.contains(site))
+        .map(|(_, op)| match op {
+            Operation::Read { .. }
+            | Operation::CellRead { .. }
+            | Operation::Write { .. }
+            | Operation::CellWrite { .. } => 1,
+            Operation::Reduce { fold } => fold.source.region.reads.len() + 1,
+            _ => 0,
         })
-        .count()
+        .sum()
 }
 
 fn recurrent_sites(plan: &Plan, tail: &NativeTailLoop, proof: &Proof) -> BTreeSet<usize> {
@@ -133,11 +132,16 @@ fn recurrent_sites(plan: &Plan, tail: &NativeTailLoop, proof: &Proof) -> BTreeSe
         if site == tail.latch() as usize {
             continue;
         }
-        for next in NativeProgramFacts::control_successors(plan.blocks()[site].terminator())
-            .into_iter()
-            .flatten()
-            .map(|s| s as usize)
-        {
+        let successors = if let Some(Operation::Reduce { fold }) = proof.action(site) {
+            vec![fold.source.after as usize]
+        } else {
+            NativeProgramFacts::control_successors(plan.blocks()[site].terminator())
+                .into_iter()
+                .flatten()
+                .map(|s| s as usize)
+                .collect()
+        };
+        for next in successors {
             if hot.contains(&next) {
                 predecessors.entry(next).or_default().push(site);
             }

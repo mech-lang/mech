@@ -12,82 +12,32 @@ pub(super) struct Pending {
     pub _metadata: ManagedMemoryReservation,
     pub _nodes: ManagedNodeReservation,
 }
-#[derive(Default)]
-pub(super) struct Bound {
-    pub temporary: u64,
-    pub nodes: u64,
-    pub output: u64,
-    pub elements: u64,
-    pub comparison: u64,
-    pub setup: u64,
-    pub replay: u64,
-    pub commit: u64,
-    pub cloned: u64,
-}
+pub(super) use crate::native_artifact::program::prepare::numeric_reduction_budget::Bound;
 pub(super) fn bound(
     descriptor: &NativeProgramDescriptor,
     region: &Region,
     count: u64,
 ) -> Option<Bound> {
-    let Some(reduction) = &region.reduction else {
-        return Some(Bound::default());
-    };
     let metadata = descriptor.metadata();
-    // Source grouping has a distinct paid frontier. A future extension needs
-    // its own composition proof; it cannot inherit ordinary visit permission.
-    if reduction
-        .finish_path
-        .iter()
-        .chain(&reduction.continuation)
-        .any(|&site| metadata.map_admission.group(site as usize).is_some())
-    {
-        return None;
+    if let Some(reduction) = &region.reduction {
+        // Keep the standalone helper's original grouping frontier unchanged.
+        if reduction
+            .finish_path
+            .iter()
+            .chain(&reduction.continuation)
+            .any(|&site| metadata.map_admission.group(site as usize).is_some())
+        {
+            return None;
+        }
     }
-    let sum = metadata.calls.get(reduction.sum as usize)?.as_ref()?;
-    let select = metadata.calls.get(reduction.select as usize)?.as_ref()?;
-    if !sum.supports_f64_row_sum() || !select.supports_f64_matrix_element() {
-        return None;
-    }
-    let bytes = sum
-        .binding_metadata_bytes()
-        .checked_add(select.binding_metadata_bytes())?;
-    let work = sum.binding_work().checked_add(select.binding_work())?;
-    let cells = count.checked_add(4)?.checked_mul(
-        (size_of::<ValueDataDraft>() as u64)
-            .checked_mul(16)?
-            .checked_add(512)?,
-    )?;
-    let temporary = bytes
-        .checked_mul(128)?
-        .checked_add(metadata.observation_schema_bytes.checked_mul(32)?)?
-        .checked_add(cells)?
-        .checked_add(65536)?;
-    let output = count
-        .checked_add(4)?
-        .checked_mul(size_of::<ValueDataDraft>() as u64)?
-        .checked_add(bytes)?
-        .checked_add(4096)?;
-    let commit = work
-        .checked_mul(16)?
-        .checked_add(temporary.checked_mul(16)?)?
-        .checked_add(8192)?;
-    let replay = work
-        .checked_mul(1024)?
-        .checked_add(temporary.checked_mul(128)?)?
-        .checked_add(65536)?;
-    Some(Bound {
-        temporary,
-        nodes: count.checked_mul(4)?.checked_add(bytes)?.checked_add(256)?,
-        output,
-        // Even an empty producer has a 1x1 sum and scalar selection.
-        elements: count.max(1),
-        comparison: output,
-        setup: bytes.checked_mul(128)?.checked_add(4096)?,
-        replay,
-        commit,
-        cloned: cells.checked_add(bytes)?,
-    })
+    crate::native_artifact::program::prepare::numeric_reduction_budget::bound(
+        &metadata.calls,
+        metadata.observation_schema_bytes,
+        region,
+        count,
+    )
 }
+
 impl State {
     pub(in crate::native_artifact::program::runtime) fn has_numeric_reduction(&self) -> bool {
         self.native_reduction.is_some()

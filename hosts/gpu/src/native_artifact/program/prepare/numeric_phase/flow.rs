@@ -68,9 +68,10 @@ impl Flow<'_, '_> {
             };
             let successors = known.map_or_else(
                 || {
-                    NativeProgramFacts::control_successors(term)
+                    self.forest
+                        .successors(self.plan, site)
                         .into_iter()
-                        .flatten()
+                        .map(|s| s as u32)
                         .collect()
                 },
                 |s| vec![s],

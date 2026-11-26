@@ -471,6 +471,11 @@ pub(in crate::native_artifact) fn emit(
         }
         match proof.action(site) {
             Some(Operation::Fallback) => unreachable!("cold edge emitted above"),
+            Some(Operation::Reduce { .. }) => {
+                return Err(backend(
+                    "scalar fold requires canonical finite source admission",
+                ));
+            }
             Some(Operation::Aggregate) => {
                 let layout = &program.metadata().scalar_aggregates;
                 let action = layout

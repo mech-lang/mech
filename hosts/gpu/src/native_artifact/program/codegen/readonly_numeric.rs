@@ -58,6 +58,7 @@ pub(in crate::native_artifact) struct Report {
     pub owned_handoff_boundaries: Vec<usize>,
     pub cold_exits: Vec<(usize, usize)>,
     pub length_sites: Vec<usize>,
+    pub fused_reductions: Vec<(usize, u32, u64)>,
     pub static_array_extents: Vec<(usize, usize, u64)>,
     pub append_sites: Vec<(usize, u8)>,
     pub bulk_append_sites: Vec<usize>,
@@ -633,6 +634,7 @@ pub(in crate::native_artifact) fn emit_entry(
             .map(|exit| (exit.from, exit.to))
             .collect(),
         length_sites: Vec::new(),
+        fused_reductions: Vec::new(),
         static_array_extents: Vec::new(),
         append_sites: Vec::new(),
         bulk_append_sites: Vec::new(),
@@ -743,8 +745,15 @@ pub(in crate::native_artifact) fn emit_entry(
         };
         let traversal = version.map_or(&traversal, |v| &v.facts);
         b.switch_to_block(target(site as u32));
-        if matches!(proof.action(site), Some(Operation::Fallback)) {
-            boundaries.insert(target(site as u32));
+        let reduction_miss =
+            matches!(proof.action(site), Some(Operation::Reduce { .. })).then(|| b.create_block());
+        if matches!(proof.action(site), Some(Operation::Fallback)) || reduction_miss.is_some() {
+            let cold = reduction_miss.unwrap_or_else(|| target(site as u32));
+            if reduction_miss.is_some() {
+                b.switch_to_block(cold);
+            }
+            b.set_cold_block(cold);
+            boundaries.insert(cold);
             let continuation = proof
                 .exits
                 .iter()
@@ -787,7 +796,11 @@ pub(in crate::native_artifact) fn emit_entry(
                     .ok_or_else(|| backend("cold numeric continuation is absent"))?,
                 &[],
             );
-            continue;
+            if reduction_miss.is_some() {
+                b.switch_to_block(target(site as u32));
+            } else {
+                continue;
+            }
         }
         let fail = b.create_block();
         b.append_block_param(fail, types::I64);
@@ -1041,6 +1054,23 @@ pub(in crate::native_artifact) fn emit_entry(
         }
         match proof.action(site) {
             Some(Operation::Fallback) => unreachable!("cold edge emitted above"),
+            Some(Operation::Reduce { fold }) => {
+                super::numeric_phase_reductions::emit(
+                    b,
+                    &words,
+                    shadow,
+                    proof,
+                    fold,
+                    &program.metadata().plan,
+                    reduction_miss
+                        .ok_or_else(|| backend("phase fold lost its original cold edge"))?,
+                )?;
+                report.fused_reductions.push((
+                    site,
+                    fold.source.region.header,
+                    fold.source.maximum,
+                ));
+            }
             Some(Operation::Aggregate) => {
                 let layout = &program.metadata().scalar_aggregates;
                 let action = layout
@@ -1714,6 +1744,8 @@ pub(in crate::native_artifact) fn emit_entry(
                 false,
                 false,
             );
+        } else if let Some(Operation::Reduce { fold }) = proof.action(site) {
+            b.ins().jump(target(fold.source.after), &[]);
         } else {
             terminators::emit_source_terminator(
                 b,
@@ -1747,7 +1779,24 @@ pub(in crate::native_artifact) fn emit_entry(
             .max(live_before - live.len());
         super::numeric_fuel_debits::spill_live(fuel_debits.as_ref(), b, &words, locals, &live)?;
         b.ins().jump(failed, &[status.into()]);
-        report.source_instructions(b.func.dfg.num_insts() - before)?;
+        let instructions = b.func.dfg.num_insts() - before;
+        if let Some(Operation::Reduce { fold }) = proof.action(site) {
+            // The summary contains an independently priced native scalar DAG,
+            // rather than a single source action's 512-unit template.
+            let bound = fold
+                .budget
+                .native_step
+                .checked_add(OVERHEAD)
+                .and_then(|n| n.checked_add(report.register_words as u64 * 2))
+                .ok_or_else(|| backend("phase fold instruction bound overflows"))?;
+            if instructions as u64 > bound {
+                return Err(backend("phase fold exceeds its checked native envelope"));
+            }
+            report.maximum_source_instructions =
+                report.maximum_source_instructions.max(instructions);
+        } else {
+            report.source_instructions(instructions)?;
+        }
     }
     let boundary = b.func.dfg.num_insts();
     for (&site, &bailout) in &bailouts {

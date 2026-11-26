@@ -244,6 +244,11 @@ impl Layout {
                 }
             }
             let successors = |site: usize| {
+                if let Some(super::numeric_plan::Operation::Reduce { fold }) =
+                    numeric.as_ref().and_then(|p| p.action(site))
+                {
+                    return vec![fold.source.after];
+                }
                 if numeric.as_ref().is_some_and(|proof| {
                     proof.exits.iter().any(|exit| {
                         exit.to == site
@@ -717,6 +722,26 @@ pub(in crate::native_artifact) fn validate_image(
     selected
         .fund_visit_checks(&mut visits)
         .map_err(str::to_owned)?;
+    // A composed fold prices its original collection header as well as its
+    // parent sites. Reconstruct the same optional native-header fees used by
+    // normal preparation before deriving any complete source summaries.
+    let numeric_maps = super::numeric_maps::Layout::derive(plan)?;
+    let utf8_reads = super::utf8_reads::Layout::derive(plan)?;
+    for (site, visit) in visits.iter_mut().enumerate() {
+        let extra = if utf8_reads.at_header(site).is_some() {
+            super::utf8_reads::HEADER_WORK
+        } else if numeric_maps.at_header(site).is_some() {
+            super::numeric_maps::HEADER_WORK
+        } else if numeric_maps.at_transpose_finish(site).is_some() {
+            super::numeric_maps::TRANSPOSE_FINISH_WORK
+        } else {
+            0
+        };
+        visit.work = visit
+            .work
+            .checked_add(extra)
+            .ok_or("restored native header price overflows")?;
+    }
     let prefix = super::prefix::derive_with_frontiers(
         plan,
         &borrowed,
