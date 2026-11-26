@@ -1082,3 +1082,121 @@ Larger datasets, GPU/SIMD choice, full compression application/AOT and an
 external application remain unqualified. Numeric geometry history covers
 only already-supported shallow F64 templates. Comprehension/reduction fusion,
 managed-frame captures and multi-variant phase loans remain compiler gaps.
+
+Ninth frozen compiler round (IR368): native rectangular comprehensions
+
+One enclosing horizontal-block matrix comprehension can now reuse its exact
+inner scalar native DAG and fill one final bank. The inner U64 range must have
+immutable constant endpoints. The inner row and singleton transpose must each
+have one consumer; complete source CFG, capture/read and escape inventories
+exclude intervening effects. The source compiler selects structure and exact
+factories, never benchmark names or timing data. Existing Cranelift scalar
+emission, checked branches/indices, current immutable owners and synchronous
+output loans are reused. Original row-block permutation, shape construction
+and atomic publication remain. A failed native attempt discards partial output
+and follows the original checked source path.
+
+The same loan checks exact source and output counts separately, with current
+handles/storage, matrix owners, epoch, account, width, capacity, progress and
+complete initialization. Both selected factories, range cardinality and the
+intermediate shapes remain checked. Conservative finite bounds cover ordinary
+draft/planning/finalization metadata, output, nodes, cloned bytes, physical
+coexistence, comparison admission and fallback work. A finite test caught a
+missing comparison bound for the elided transpose; production now checks it
+before entry and retains ordinary rejection under insufficient allowance. No per-cell helper or generic dispatch remains.
+The existing resident transpose kernel is now reachable for all seven native
+scalar kinds, with exact matching input/output element types. Core is unchanged.
+
+Five new original/decoded tests cover real native entry, Objects/restored
+images, all seven kinds and F64 bit patterns, branches/phi words, shapes, empty
+sources, fresh payloads, immutable aliases, partial bounds/arithmetic errors,
+nine finite limit dimensions, changed loans/source counts, denied interleaving,
+old outputs, cleanup and retry. Dynamic/ragged inner ranges remain ordinary.
+The existing Gram coverage assertion now recognizes the exact same body/steps/
+reads inside a completed rectangular parent as well as direct inner entry.
+
+Resource checks reflect real optimized work/storage. An existing exact inner
+bank retains three unsigned cells instead of ordinary capacity four, so a later
+transpose may report 272 rather than 288 required clone bytes; tests preserve
+origin, phase, dimension, limit and rejection, with nonincreasing demand.
+Native execution may fit a compute cap that ordinary source-call preparation
+exhausts; that success must match the complete full-budget output oracle.
+Arithmetic/bounds errors still match exactly. Existing finite tests, Huffman
+work equations and scalar entry remain maintained. All 194 Engine, 314 native
+numeric/phase, 24 matrix, 30 PolyBench and 102 Program checks pass (664 total).
+The 194 Engine results precede GPU test-expectation corrections only; Engine
+source was unchanged by those corrections and the later GPU admission fix.
+
+Compiler source 24135d2a5aef38c56ebc651d91d8a851b0442fde; work policy 137.
+The source and driver were frozen before holdout timing. Both fixed sets
+use the equal-weight geometric mean of median Mech/C kernel runtime; lower
+is better. The primary goal remains strict holdout <1.0x C.
+
+frozen compiler                         optimization x      holdout x
+baseline                                      783.258       2020.085
+round-01-native-matrix-frames                 441.860       1610.274
+round-02-native-scalar-matrix-updates         346.025       1529.299
+round-03-native-maps                          318.844       1468.557
+round-04-conditional-maps                     301.197        724.274
+round-05-guarded-tagged-numeric               159.693        814.668
+round-06-numeric-call-cache                   142.999        440.804
+round-07-captured-numeric-phases              123.865        456.181
+round-08-packed-numeric-output                111.804        435.641
+round-09-rectangular-maps                     104.876        278.733
+
+Round 09 aggregate results:
+optimization: kernel 104.875920472x C; fresh 63.638018940x C; paired-original speedup 7.426036x; sum medians 0.031275085s.
+holdout: kernel 278.733261294x C; fresh 160.100032543x C; paired-original speedup 7.475046x; sum medians 0.162169290s.
+all: kernel 170.974873430x C; fresh 100.937846734x C; paired-original speedup 7.450501x; sum medians 0.193444375s.
+
+Inter-round comparisons against frozen round 08:
+optimization: Mech 0.903306976x; original compiler 0.991484953x; C 0.962981522x; normalized Mech/C score 0.938031473x.
+holdout: Mech 0.617172571x; original compiler 0.998320137x; C 0.964599534x; normalized Mech/C score 0.639822589x.
+
+Measured holdout Mech runtime improves 1.620292x, with the preserved original
+at 0.998320x and C at 0.964600x previous runtime. The normalized holdout Mech/C
+score improves by 1.562933x. The strict below 1.0x C goal remains unmet.
+
+Gram optimization-probe counters (conservative budget charges and visits):
+rectangular-map: work 58128242741, comparison work 4860, visits 11593.
+round-08: work 39435454217, comparison work 514260, visits 46693.
+Work counters are conservative budget charges; elapsed kernel times define the performance metric.
+
+Cases more than 5% slower than frozen round 08:
+None.
+
+Cases more than 5% slower than an original compiler:
+None.
+
+The optimization-only seven-sample replay improves 1.098150x geometrically versus round 08; this is neither a C nor a holdout score.
+doitgen: 0.939702x training-probe speedup.
+gramschmidt: 3.995828x training-probe speedup.
+
+All 900 sequential observations validate complete finite warm-up outputs;
+timed checked calls must succeed. Timed outputs are not independently flattened.
+All cases, regressions, paired originals and raw observations are retained.
+No compiler source changed after freezing. The split and previous holdout
+results were exposed; no holdout was profiled.
+
+The five largest optimization medians cover 93.980% of
+summed optimization runtime with 12,848 canonical-execution stack samples.
+Parsing, JIT, input import, cache flush and serialization are excluded by stack.
+Profile times do not enter scores; separate profiles do not establish causes
+for individual unprofiled timing shifts.
+Canonical library calls: 30.376% of weighted profiled time.
+Source visits and admission: 17.530% of weighted profiled time.
+Private frame transport: 16.940% of weighted profiled time.
+Other helper dispatch: 16.497% of weighted profiled time.
+Comprehension collection bookkeeping: 6.255% of weighted profiled time.
+Typed matrix scalar reads: 4.211% of weighted profiled time.
+Other execution and generated code: 3.165% of weighted profiled time.
+Loop-local retirement: 2.021% of weighted profiled time.
+Other selected library dispatch: 1.880% of weighted profiled time.
+Selected matrix updates: 1.125% of weighted profiled time.
+
+The qualification remains CPU MINI F64 plus selected regression suites.
+Larger datasets, GPU/SIMD choice, full compression application/AOT and an
+external application remain unqualified. General comprehension/reduction
+fusion, managed frame captures and multi-variant phase loans remain compiler
+gaps. This rectangle proof currently requires constant inner U64 endpoints,
+one native scalar body and its sole consuming singleton transpose.

@@ -1,0 +1,400 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v1",
+  "label": "round-09-rectangular-maps",
+  "compiler_commit": "24135d2a5aef38c56ebc651d91d8a851b0442fde",
+  "compiler_fingerprint": "9f68c9df64f0975d1057c06567f2145948ce074853c3bf9cea808fc6dbb5beb1",
+  "driver_sha256": "a3140a67f1ae579a5886a3b95727a09d2c328c442289e8cc76e035ca870eb0f0",
+  "frozen_candidate_sha256": "9f85a280f66d1fdde302ef71218bba09531278ca970151b757adca36b6572592",
+  "native_typed_ir_version": 368,
+  "native_work_policy_version": 137,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "live_outs_per_artifact": 29482
+  },
+  "checks": [
+    {
+      "suite": "resident numeric, geometry history and existing finite capacity regressions",
+      "passed_by_target": [
+        194
+      ],
+      "log_sha256": "3799ca3dc2816ddd4b45dcaef88b901c0f14e7bf92dc589b89ae663fdc58a315"
+    },
+    {
+      "suite": "native numeric/phase regressions including five rectangular-map tests and both exact Huffman work bills",
+      "passed_by_target": [
+        314
+      ],
+      "log_sha256": "6b44f0daa1410742d23185ded474603dbb4f2ad23d935446d378ee2d919d96f3"
+    },
+    {
+      "suite": "matrix and all thirty PolyBench original/decoded/Object qualifications",
+      "passed_by_target": [
+        24,
+        30
+      ],
+      "log_sha256": "009eb36d07cabb26e1c309f7754821879c0fcb29f48936ed873dd11524e3372c"
+    },
+    {
+      "suite": "selected scalar buffer numeric and compression Program regressions",
+      "passed_by_target": [
+        102
+      ],
+      "log_sha256": "297c33e10fd101742ab0d21047b929392207152b4cec55bdd55a5455a96241fc"
+    }
+  ],
+  "goal": {
+    "partition": "holdout",
+    "metric": "geomean_mech_over_c_kernel",
+    "value": 278.73326129407394,
+    "target_strictly_below": 1.0,
+    "achieved": false,
+    "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+    "objective_frozen_with_candidate": true,
+    "sum_mech_median_seconds": 0.16216929
+  },
+  "cases": {
+    "2mm": {
+      "expected_live_outs": 384,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 1.4210854715202004e-14,
+      "source_sha256": "7ba60323744d94a886cbf88a6925c4a7d298a451bf62c405eede86fcecd7b5b6",
+      "c_binary_sha256": "2b285d8fcd35c9330e9f373a4379a8a988613d8d96d721e8c07ee9d0d16eac8a"
+    },
+    "3mm": {
+      "expected_live_outs": 352,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 2.220446049250313e-16,
+      "source_sha256": "8b044fe251822fd8b585b1accfe084d4c322af5abd48601aa04b578994418646",
+      "c_binary_sha256": "e865519b0804f54ee247884c748bd611c6735b71ca4f727d4c230c5aa94ff59d"
+    },
+    "atax": {
+      "expected_live_outs": 42,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 7.105427357601002e-15,
+      "source_sha256": "509a9938a750b830994e8d5f4846c247e6eead3471a395038fa435b012c7cfb9",
+      "c_binary_sha256": "74b1d44b54b2ec8e31c7289c633d7b2b8db604fd96d9ce451a391a590f705092"
+    },
+    "bicg": {
+      "expected_live_outs": 80,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 1.7763568394002505e-15,
+      "source_sha256": "ad80eb32865012a68fd64dc0a32cf16139b20c882b4d9a165aacda59666f2084",
+      "c_binary_sha256": "bd4b0260113dae3f89ec5f3f9cd184afbb52116df96478f9f67f5feb25dbb8a0"
+    },
+    "cholesky": {
+      "expected_live_outs": 1600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 3.2751579226442118e-15,
+      "source_sha256": "5c11d488f791bfd3da69a37b9dfc3ff4eec4d7fd64b54d5f823adf9b9ac452fa",
+      "c_binary_sha256": "6710d27fc9e410fa389d06eabf53552a816cbd4c8db3e1ec36958c165039d75f"
+    },
+    "correlation": {
+      "expected_live_outs": 784,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "17eab510250df6dc8ba959f8c83bb2bdd96d11dd1042aeb1100a960b85026515",
+      "c_binary_sha256": "181e29a47cef3212ec2e038cf8a0ad90c65d0d9701aeaecaefc8baad608ca72b"
+    },
+    "covariance": {
+      "expected_live_outs": 784,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 1.4210854715202004e-14,
+      "source_sha256": "354aeb3e176cd327c8660206ca163bbc6e87fcbfaae4ddbd195c5aa4455c3f87",
+      "c_binary_sha256": "1cd6f6f031e11a5611e35f6e8449c98c33c029514b2c653f9f57eb9e9cd5055a"
+    },
+    "deriche": {
+      "expected_live_outs": 4096,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 4.85722573273506e-17,
+      "source_sha256": "73dd0bbdc2048cb3dea73a499f9e6557b4ab2b0eff988da2ad6cea344e7daf6c",
+      "c_binary_sha256": "a4440580179c951c2385f5e0218b353d725d3063e8559ca6dc75d7e0f020955a"
+    },
+    "doitgen": {
+      "expected_live_outs": 960,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "fdcdb96925e013d913ed4ed88043636116c13e225d4124d0a0495dec97e81f37",
+      "c_binary_sha256": "d9dde06c4d544037afe02330ceb98abf9bacaca3c5513150a4e876494572ba2e"
+    },
+    "durbin": {
+      "expected_live_outs": 40,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "62da21e96d894e89a7f94f39d14795e70413a86053487aa7cb2e2c35fa4edf77",
+      "c_binary_sha256": "185aa486affc8db90972752286d6cd693417b3a83cbde0332fae1b4e0155e748"
+    },
+    "gemm": {
+      "expected_live_outs": 500,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 7.105427357601002e-15,
+      "source_sha256": "3f738611433fdade00258c76485f6c63634268fc95bf4f9e74b9a685ad178111",
+      "c_binary_sha256": "bf857a20260a91b2be987f0966fa9c5709c11db21a281ea9ad536eb0aadb7019"
+    },
+    "gramschmidt": {
+      "expected_live_outs": 2100,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "9d49c8c808089de3b4dc0c47f66619952fffe8691afd865cda8871fb21e16bfd",
+      "c_binary_sha256": "4491d8eb03edf17e230223f76630af4f9dbdf641dfd1524e0559d6ef589d3b53"
+    },
+    "mvt": {
+      "expected_live_outs": 80,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 3.552713678800501e-15,
+      "source_sha256": "dcdbc81b044cf721648a6527ed9f6c6c5d99304f9d65fca4b7590e615a2f1f83",
+      "c_binary_sha256": "bf57d186146c4930f000c722d693f1d516855510e68a67dceee57e170b4656f8"
+    },
+    "nussinov": {
+      "expected_live_outs": 3600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "13e227bd65e4a450fe3a1ac48995911d214c9e070c6eccf3ffde41ac6cb0f6fd",
+      "c_binary_sha256": "e19004cdcabef6646bf08f7ef74e67132b36824b393c673224cbe77c445a0dd6"
+    },
+    "seidel-2d": {
+      "expected_live_outs": 1600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "16e7ea753a2825eec81f7068cc49d689ba2aa8db38189927286507fec8d2f93e",
+      "c_binary_sha256": "b3a0bc6646ebb2a6d75b45334f4349bee5cb385fccaaed979336eebc381419b4"
+    },
+    "adi": {
+      "expected_live_outs": 400,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "4eef6deb3462a70ad1a4f04bec4ed4420670091b3f4846e978b1af19c950e621",
+      "c_binary_sha256": "2cb99d1df6fc1a5875490651e63fc5eec8ff33b7a3acc3d6ebd90bdcd31dd004"
+    },
+    "fdtd-2d": {
+      "expected_live_outs": 1800,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 1.2434497875801753e-14,
+      "source_sha256": "8e46cb2addaf56d522e75b690735ef39f066e7768b06322100697a4e0da26491",
+      "c_binary_sha256": "3c55e67a42a3939c265dfa17ae9a1e9a0a2ddc9758d840b8ef335046cb528151"
+    },
+    "floyd-warshall": {
+      "expected_live_outs": 3600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "d46ae4cfd3e5bb6d6afdb6967dc7be317e3d71443b1cfe7b0be5a2950b376ec6",
+      "c_binary_sha256": "485f53dc282a4022595c61993d3de18a276a6f4b8ec319072cb94652191f8a20"
+    },
+    "gemver": {
+      "expected_live_outs": 40,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 1.3642420526593924e-12,
+      "source_sha256": "cadbb064acc0b2ba4399e64c12d518b5968e8ab010ce11bd1b48cfed346cebec",
+      "c_binary_sha256": "37ff7d7b8f8e5b20a469e7f80483b6c7296f80a2e4e59e53a01868a598c582e7"
+    },
+    "gesummv": {
+      "expected_live_outs": 30,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 7.105427357601002e-15,
+      "source_sha256": "00221010bd148c6308132c0c20d85edc794ea445140a8509f062fce6403f8f41",
+      "c_binary_sha256": "e151f433035736b57a34cda2ce28b7333d71aeb2cafaf282da31b27792dd4db3"
+    },
+    "heat-3d": {
+      "expected_live_outs": 1000,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 0.0,
+      "source_sha256": "5c1df9f38726634ed9b0407320c7c84cbd212e54805996c36ec0a969ea2553e8",
+      "c_binary_sha256": "b5a4fe7de657ccfd79a986db121e27094261a4a243beb35f9ac6f7c58ce60821"
+    },
+    "jacobi-1d": {
+      "expected_live_outs": 30,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 3.3306690738754696e-16,
+      "source_sha256": "8323ac8a0b980045166aab68fda04fa74d3f800a366871bfc3f8d9e2423d71a9",
+      "c_binary_sha256": "37faea5e754f4d6cd39c60ab914df36c9ba00f46425084aa8ee4fa2c50192d63"
+    },
+    "jacobi-2d": {
+      "expected_live_outs": 900,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 3.552713678800501e-15,
+      "source_sha256": "07d9a1d89939fd28f7fb945b798de1b382108acdaeac368d121acb1a338050f2",
+      "c_binary_sha256": "9a7e086656a25f37b77a9b157f1a6a6f246395b7500d1cb208b0dec597c93ec7"
+    },
+    "lu": {
+      "expected_live_outs": 1600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 3.9968028886505635e-15,
+      "source_sha256": "7fb265c2d68670d34a1e6ff86f6e2440ae114b20768a19c78016e37e90a310d8",
+      "c_binary_sha256": "6ff3dfb2337b60de20055820e3d8fd332d8fda64a56e3fc18d3aa32880fa33d7"
+    },
+    "ludcmp": {
+      "expected_live_outs": 40,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 8.881784197001252e-16,
+      "source_sha256": "a652f9599cb42263da892b83aa1fbe9662e1b20df6cadfb058274a0abc0cfcf5",
+      "c_binary_sha256": "777200bf9eda48aba5c175cc890f81e62314bd0939216e49085c4fe84ca58034"
+    },
+    "symm": {
+      "expected_live_outs": 600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 2.842170943040401e-14,
+      "source_sha256": "6d71a90011f9b57928b2184710f19e0491147d2d1eaddac79ee974e93a49fef7",
+      "c_binary_sha256": "a69ae6185b42e898ed754a774ca5fe9208984ee1157b6ea02e1424e0a0f3c537"
+    },
+    "syr2k": {
+      "expected_live_outs": 900,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 7.105427357601002e-15,
+      "source_sha256": "0aca0944ba571592754e6f8358b42d7a8fdb62147d37acf4f066a8debe3a6d14",
+      "c_binary_sha256": "acd1ecf30e61385124159b208405d27c3e4bcab42a094f9b7963d65ec0c71a87"
+    },
+    "syrk": {
+      "expected_live_outs": 900,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 5.329070518200751e-15,
+      "source_sha256": "8da7871082a91840b9fcc3cbee206cc86f2e85ae740fa9a38ca0f563569ab4b5",
+      "c_binary_sha256": "2559a74cac6957dcf7ffa9070a095130610b5e4453857874c527eaaeda2e242d"
+    },
+    "trisolv": {
+      "expected_live_outs": 40,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 6.63358257213531e-15,
+      "source_sha256": "be9fde0ca616e82d3a37a511a6a9cfba29026c42eae5d66d45956d8ca3aacb11",
+      "c_binary_sha256": "8441d7845a4a986f17497f7f28f92b878634b9730e3ddde40fd3c0575e26d638"
+    },
+    "trmm": {
+      "expected_live_outs": 600,
+      "observations_with_validated_warmup": 30,
+      "maximum_candidate_absolute_error": 1.7763568394002505e-15,
+      "source_sha256": "14c42b4a82f8ac4302fa90b3cf32cac2e96f2bc41cf4a55b8882883f1a5179b5",
+      "c_binary_sha256": "50dae4618452c8d83110ad406844f4b56f5f1e8fc65e5075ffb994aa6d30fae3"
+    }
+  },
+  "coverage": [
+    "An enclosing horizontal-block matrix comprehension may reuse its exact inner native scalar DAG when the inner selected U64 range has immutable constant endpoints, the inner row and its singleton transpose each have exactly one consumer, and the complete source CFG/capture/read inventories prove no escape or intervening effect. Selection uses no benchmark names, inputs or timings.",
+    "The same Cranelift numeric-map emitter fills one final typed bank. The outer source index and inner induction word are derived from its admitted flat count. Checked scalar operations, branches, phi copies and independent matrix indices reuse the existing emitter and current immutable-owner views. Original row-block permutation, shape construction and atomic publication remain.",
+    "The existing synchronous output loan now separately carries exact source count and output count. Preparation and completion check the same epoch, account, current source handle/storage, matrix owners, width, capacity, progress and complete initialization. Partial output is never published; a refused native attempt discards the bank and follows the original checked CFG.",
+    "Both elided selected factories are checked with prepaid metadata scratch. The maintained range resolver certifies its cardinality and representation; both intermediate shapes are validated. Conservative bounds cover ordinary draft/finalization metadata, output, nodes, cloned bytes, comparison work, physical coexistence and complete fallback work. No source visit, helper callback or per-operation dispatch occurs in the native element body.",
+    "The canonical transpose entry gate now admits exact matching Bool/U8/U16/U32/U64/I64/F64 rank-two matrices through the existing resident transpose kernel. No Core constructor or transpose arithmetic implementation changed.",
+    "Five new original/decoded tests cover real rectangular entry and Object/restored descriptors, all seven scalar kinds including F64 bit patterns, conditional bodies, shapes, empty sources, fresh contents, immutable aliases, zero per-cell helpers, partial bounds/arithmetic failure, nine finite limit dimensions, exact current-loan corruption including source count, interleaving denial, atomic old outputs, cleanup and retry. Dynamic/ragged inner ranges retain the original path."
+  ],
+  "timing": {
+    "samples_per_actor_and_comparison": 5,
+    "actors": [
+      "candidate Mech",
+      "preserved original compiler",
+      "C"
+    ],
+    "comparisons": [
+      "kernel",
+      "fresh"
+    ],
+    "observations": 900,
+    "sequential": true,
+    "frozen_before_holdout": true,
+    "validation_boundary": "Each process validates its untimed warm-up result against the full C live-outs; all timed checked calls must succeed. Original/decoded numerical equivalence is also covered by the independent maintained regressions.",
+    "balanced_actor_mode_observations_by_partition": {
+      "optimization": {
+        "mech/kernel": 75,
+        "c/kernel": 75,
+        "reference/kernel": 75,
+        "mech/fresh": 75,
+        "c/fresh": 75,
+        "reference/fresh": 75
+      },
+      "holdout": {
+        "mech/kernel": 75,
+        "c/kernel": 75,
+        "reference/kernel": 75,
+        "mech/fresh": 75,
+        "c/fresh": 75,
+        "reference/fresh": 75
+      }
+    }
+  },
+  "regressions_over_five_percent": [],
+  "inter_round_aggregates": {
+    "optimization": {
+      "mech_new_over_round08": 0.9033069757347592,
+      "reference_new_over_round08": 0.9914849530318726,
+      "c_new_over_round08": 0.9629815221218868,
+      "mech_over_c_score_new_over_round08": 0.9380314730695586,
+      "mech_new_over_round08_regressions_over_five_percent": 0
+    },
+    "holdout": {
+      "mech_new_over_round08": 0.6171725708057925,
+      "reference_new_over_round08": 0.998320137247525,
+      "c_new_over_round08": 0.9645995338443664,
+      "mech_over_c_score_new_over_round08": 0.639822588702775,
+      "mech_new_over_round08_regressions_over_five_percent": 0
+    }
+  },
+  "inter_round_regressions_over_five_percent": [],
+  "training_probe": {
+    "receipt_sha256": "ad9033f4a2944976d659d771851569ea9034c6d9a95d81755a4d00bb774166f4",
+    "reference": "round-08 frozen compiler replay",
+    "cases": 15,
+    "samples_per_actor": 7,
+    "summary": {
+      "count": 15,
+      "geomean_speedup_from_round_08_replay": 1.0981496079577262,
+      "regressions_over_five_percent": 1,
+      "sum_candidate_median_seconds": 0.030336916000000002,
+      "sum_reference_median_seconds": 0.042673710000000004
+    },
+    "frozen_aggregate_qualification": false,
+    "regressions_over_five_percent": [
+      {
+        "case": "doitgen",
+        "runtime_multiplier": 1.0641673640167364,
+        "same_execution_report": true
+      }
+    ]
+  },
+  "training_probe_key_reports": {
+    "rectangular-map": {
+      "work": 58128242741,
+      "comparison_work": 4860,
+      "visits": 11593
+    },
+    "round-08": {
+      "work": 39435454217,
+      "comparison_work": 514260,
+      "visits": 46693
+    }
+  },
+  "development_checks": {
+    "first_broad_numeric_log_sha256": "871deadbb75ee06753293d8898967f353a4e2a7490c5739c180a472e4d26b739",
+    "coverage_update": "The established Gram conditional-body test expected each inner header to enter separately. It now proves either direct successful entry or the exact same body, steps and reads executing inside a selected completed rectangular parent; total selected==completed remains required. No conditional body coverage or C live-out comparison was removed.",
+    "finite_budget_expectations": "New finite tests initially required identical resource diagnostics and exhaustion outcomes. Existing inner-map exact unsigned capacity 3 versus ordinary Vec capacity 4 makes a later transpose require 272 versus 288 cloned bytes: the check now retains rejection/origin/phase/dimension/limit and requires the optimized demand not to increase. Eliminating source-call preparation can also succeed under a compute cap that ordinary execution exhausts; the test requires the full-budget semantic oracle. Arithmetic/bounds errors remain exact; remaining finite outcomes and prior outputs remain compared.",
+    "comparison_admission_fix": "The next broader run caught a missing comparison-work admission for the elided transpose (ordinary required 1 with limit 0 while fusion succeeded). Production now requires a conservative comparison bound before entry, retaining the ordinary rejection path under insufficient allowance. The finite test was kept.",
+    "second_broad_numeric_log_sha256": "9d109aeebce1326fc0ee8cfbdb8e6384db062e280b02793c7311cec822e22bea",
+    "engine_check_reuse": "The 194 Engine checks passed before the two GPU test-expectation corrections. Engine sources were unchanged by those corrections and the later GPU comparison-admission fix; their green log is retained rather than needlessly rerun."
+  },
+  "scope": [
+    "CPU MINI F64 only; larger datasets, GPU/SIMD selection, full compression application/AOT and an external application remain unqualified.",
+    "194 Engine, 314 native numeric/phase, 24 matrix, 30 PolyBench and 102 selected Program tests pass (664 total). This is selected regression coverage, not the entire repository suite. Exact Huffman work equations remain unchanged under policy137.",
+    "Only one scalar inner collection, an invariant constant selected U64 range, a singleton transpose and a sole outer block consumer are fused. Dynamic/ragged inner ranges, deeper collection trees and bodies with unsupported library actions retain their existing paths.",
+    "The ports, inputs, C binaries, tolerances and timing boundary did not change. No compiler code changed after freezing. Selection used optimization evidence only; no holdout was profiled. The fixed split and earlier holdout results were already exposed.",
+    "Direct scalar native entry and its checked errors and finite admission remain maintained. Existing resident kernels, typed constructors, scalar emission, owner loans and row-block finalization are reused."
+  ],
+  "training_profile": {
+    "cases": [
+      "nussinov",
+      "cholesky",
+      "deriche",
+      "gramschmidt",
+      "durbin"
+    ],
+    "execution_samples": 12848,
+    "fraction_of_optimization_runtime_profiled": 0.9397963266926374,
+    "scope": "Optimization cases only, sampled after aggregate timing. Profiled times do not enter scores."
+  },
+  "receipts": {
+    "round-09-frozen.json": "9f85a280f66d1fdde302ef71218bba09531278ca970151b757adca36b6572592",
+    "round-09-optimization.json": "d6591fe859af25ea5c9fd6f65b3bddb2b6b11b9383a660ad948006c9d668190a",
+    "round-09-holdout.json": "2689800660d231c8a105f88c82c2d1761bac2d1a099f4c72d5b915fe757e5f21",
+    "round-09-progress.json": "43bb26afa3bccb5f2024dc4c4ab9e6890e043f3e16a8316a4ceace26bc44cec6",
+    "round-09-training-probe.json": "ad9033f4a2944976d659d771851569ea9034c6d9a95d81755a4d00bb774166f4",
+    "round-09-training-profile.json": "a779fc57074043148c9046a9d938480be681e4443db4c828bcf13170f7352e81"
+  },
+  "inter_round_interpretation": "Measured kernel runtime improves 1.107043x on optimization and 1.620292x on holdout versus round08. Preserved-original holdout runtime is 0.998320x and C is 0.964600x; normalized holdout Mech/C is 0.639823x its previous value. This is a substantial measured holdout gain, while the strict below1.0x C goal remains open. Individual timing causes are not established by separate sampled profiles."
+}
