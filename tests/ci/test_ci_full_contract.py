@@ -207,7 +207,7 @@ class FullWorkflowContractTests(unittest.TestCase):
                            if "Inventory and execute native composition contracts" in step)
         self.assertIn("if: ${{ matrix.suite == 'composition' }}", composition)
         self.assertIn("--test-threads=1 --nocapture", composition)
-        self.assertIn('" -eq 650', composition)
+        self.assertIn('" -eq 652', composition)
         self.assertNotIn("continue-on-error", composition)
         gate = job_block(FULL, "cargo")
         self.assertIn("      - canonical-applications\n", gate)
