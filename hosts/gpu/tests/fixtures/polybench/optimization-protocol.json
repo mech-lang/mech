@@ -1,0 +1,48 @@
+{
+  "schema": "mech.polybench.optimization-protocol.v1",
+  "suite": "PolyBench/C 4.2.1 beta",
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "baseline_commit": "b2c5f6951af43d59cdc14d53195b405bd63a7adc",
+  "baseline": "baseline-m3-mini.json",
+  "optimization": [
+    "2mm", "3mm", "atax", "bicg", "cholesky", "correlation",
+    "covariance", "deriche", "doitgen", "durbin", "gemm",
+    "gramschmidt", "mvt", "nussinov", "seidel-2d"
+  ],
+  "holdout": [
+    "adi", "fdtd-2d", "floyd-warshall", "gemver", "gesummv",
+    "heat-3d", "jacobi-1d", "jacobi-2d", "lu", "ludcmp",
+    "symm", "syr2k", "syrk", "trisolv", "trmm"
+  ],
+  "selection": "Fixed before optimization. Keep close variants (2mm/3mm, correlation/covariance, LU/LUDCMP, Jacobi 1d/2d, SYRK/SYR2K) together. Optimization covers dense products, matrix/vector algebra, factorization, statistics, recursive filtering, recurrence, dynamic programming and in-place stencils; holdout covers different programs using overlapping techniques. All original baseline timings were already public, so this is not a blind experiment or proof of generalization to arbitrary applications.",
+  "procedure": [
+    "Keep all thirty Mech programs, inputs, C flags, finite limits and comparison tolerances fixed.",
+    "Investigate profiles and per-case candidate timing only on the optimization set.",
+    "Freeze the compiler candidate and its source fingerprint before holdout timing. Correctness checks may run on all programs throughout.",
+    "Report holdout results even if they regress. Do not select or retune the same candidate using holdout per-case performance.",
+    "Future rounds reuse this split and disclose previous holdout exposure; a new application is needed for a fresh external validation.",
+    "Commit compiler changes and experiment receipts only to the PR #1001 branch codex/polybench-native-matrices."
+  ],
+  "measurements": {
+    "samples": 5,
+    "sequential_execution": true,
+    "cache_flush_bytes": 33556480,
+    "timing_boundaries": "Reuse baseline checked Mech timing and separate C kernel/fresh-allocation timings; parsing, JIT compilation and input import are excluded.",
+    "correctness": "Check all finite C live-outs with rtol=1e-10 and atol=1e-9. Original/decoded artifacts, Object emission, alias safety, resource denial/recovery and compression regressions remain required."
+  },
+  "aggregate_metrics": {
+    "primary": "Equal-weight geometric mean of baseline Mech time / candidate Mech time, separately for optimization, holdout and all thirty kernels.",
+    "c_comparison": "Equal-weight geometric mean of Mech/C runtime ratios for kernel-only and fresh allocation/copy comparisons, kept separate.",
+    "also_report": [
+      "median speedup from baseline",
+      "minimum speedup (worst regression)",
+      "maximum speedup",
+      "number of kernels over 5% slower than baseline",
+      "number of kernels faster than C",
+      "worst Mech/C ratio",
+      "sum of per-kernel median Mech times (secondary; workload dependent)"
+    ],
+    "exclusions": "No silent removal of slow, failed or incorrect cases. A missing case makes an aggregate incomplete; a correctness failure invalidates the candidate."
+  }
+}

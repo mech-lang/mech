@@ -9646,7 +9646,10 @@ fn indexed_assign_snapshot(
     )?
     .admit()?
     .into_plan();
-    if packed {
+    if packed
+        || (kernel.retained_state::<SemanticArithmetic>().is_none()
+            && packed_indexed_assign::supported(current_schema.body()))
+    {
         let next = packed_indexed_assign::construct(
             kernel,
             current,
@@ -10473,7 +10476,13 @@ fn indexed_assign_matrix_selection(
                 source_schema.body(),
                 source.data(),
                 output_len,
-                None,
+                // Both selectors and the one source cell have already been
+                // validated. A single fixed-width replacement cannot alter
+                // any footprint. Reuse the exact prepaid scan with its normal
+                // ordered fallback when a finite ledger cannot cover it.
+                (write_count == 1 && source_len == 1 && plan.arithmetic.is_none())
+                    .then(|| u64::try_from(output_len).ok())
+                    .flatten(),
                 |destination, meter| {
                     matrix_selection_last_source(plan, inputs, destination, true, meter)
                 },
@@ -10769,6 +10778,30 @@ fn indexed_assign_matrix_selection(
         }
         (ResidentValueRef::Snapshot([Some(source)]), ResidentValueMut::Snapshot([target])) => {
             let current = target.as_ref().ok_or(ResidentKernelError::InvalidOutput)?;
+            if plan.arithmetic.is_none()
+                && packed_indexed_assign::supported(
+                    current
+                        .validate_against(schemas)
+                        .map_err(|_| ResidentKernelError::InvalidOutput)?
+                        .body(),
+                )
+            {
+                // Keep the complete preceding draft/copy/publication envelope.
+                // Only physical construction changes; aliases stay immutable.
+                let next = packed_indexed_assign::construct_rectangle(
+                    kernel,
+                    current,
+                    source,
+                    &selected_rows,
+                    &selected_columns,
+                    plan,
+                )?;
+                let changed = !current
+                    .snapshot_eq(schemas, &next, schemas)
+                    .map_err(|_| ResidentKernelError::InvalidOutput)?;
+                *target = Some(next);
+                return Ok(changed);
+            }
             let ValueDataDraft::Matrix(mut next) = current
                 .canonical_data_draft()
                 .map_err(|_| ResidentKernelError::InvalidOutput)?

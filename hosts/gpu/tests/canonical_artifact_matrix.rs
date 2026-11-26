@@ -115,6 +115,41 @@ fn inputs(
         .collect()
 }
 
+fn typed_inputs(
+    artifact: &ProgramArtifact,
+    named: &[(&str, [u64; 2], Data)],
+    memory: &ManagedMemoryBudget,
+) -> Vec<Value> {
+    artifact
+        .inputs()
+        .iter()
+        .map(|input| {
+            let name = mech_engine::decode_source_input_name(&input.name).unwrap();
+            let (_, dimensions, data) = named.iter().find(|(key, ..)| *key == name).unwrap();
+            let schema = artifact.schemas().get(input.schema).unwrap();
+            let shape_values = if matches!(schema.body(), SchemaBody::Matrix { .. }) {
+                mech_core::shape_for_resolved_extents(schema, dimensions)
+                    .unwrap()
+                    .parameter_values()
+                    .into()
+            } else {
+                Box::new([]) as Box<[u64]>
+            };
+            let value = ValueDraft {
+                schema: input.schema,
+                shape_values,
+                data: data.clone(),
+            }
+            .finalize(&SnapshotValidationContext::new(artifact.schemas()))
+            .unwrap();
+            let mut reservation = memory
+                .reserve_capacity(value.memory_budget_admission_bytes(memory).unwrap())
+                .unwrap();
+            value.into_memory_budget(&mut reservation).unwrap()
+        })
+        .collect()
+}
+
 fn check_output(
     artifact: &ProgramArtifact,
     output: &[Option<Value>],
@@ -620,6 +655,381 @@ fn triangular_substitution_combines_f64_state_indexing_reduction_and_replacement
         jit.evaluate_into(&args, &mut output, limits(), &memory)
             .unwrap();
         check_output(&artifact, &output, [3, 1], &[1., 2., 2.]);
+    }
+}
+
+#[test]
+fn private_f64_state_keeps_aliases_atomic_denials_and_fresh_recovery() {
+    let source = "#Sweep(initial<[f64]:2,3>) => <[f64]:2,3>\n\
+      | :Next(values<[f64]:2,3>, step<u64>, offset<f64>)\n\
+      | :Done(values<[f64]:2,3>).\n\
+    #Sweep(initial) -> :Next(initial, 0u64, 0.5)\n\
+      :Next(values, step, offset)\n\
+        | step < 3u64 -> {\n\
+            at := ((values[1u64,1u64] < 0.0)? | true => 0u64 | false => step + 1u64)\n\
+            ~next := values\n\
+            next[2u64,at] = values[2u64,step + 1u64] + offset\n\
+          } -> :Next(next, step + 1u64, offset + 1.0)\n\
+        | * -> :Done(values)\n\
+      :Done(values) => values.\n\
+    #Sweep(left<[f64]:2,3>)\n";
+    for artifact in artifacts(source) {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        assert!(
+            !emit_program_object(&artifact, &mech_stdlib::source_catalog())
+                .unwrap()
+                .bytes()
+                .is_empty()
+        );
+        check_restored_image(&jit);
+        let frames = jit.descriptor().plan().facts().buffer_frames();
+        assert!(frames.managed_fields() > 0 && frames.scalar_fields() > 0);
+        let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+        let args = inputs(
+            &artifact,
+            &[("left", 2, 3, &[1., 2., 3., 4., 5., 6.])],
+            &memory,
+        );
+        let aliases = args.clone();
+        let original = args[0].canonical_data_draft().unwrap();
+        let bad = inputs(
+            &artifact,
+            &[("left", 2, 3, &[-1., 2., 3., 4., 5., 6.])],
+            &memory,
+        );
+        let mut output = vec![None; artifact.outputs().len()];
+        let report = jit
+            .evaluate_into(&args, &mut output, limits(), &memory)
+            .unwrap();
+        check_output(&artifact, &output, [2, 3], &[1., 2., 3., 4.5, 6.5, 8.5]);
+        let prior = output.clone();
+        let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+        let mut work_denied = limits();
+        work_denied.execution.max_work = report.work / 2;
+        let mut output_denied = limits();
+        output_denied.library.max_output_elements = Some(1);
+        let mut clone_denied = limits();
+        clone_denied.library.max_cloned_bytes = Some(0);
+        for (arguments, admitted) in [
+            (&bad, limits()),
+            (&args, work_denied),
+            (&args, output_denied),
+            (&args, clone_denied),
+        ] {
+            assert!(
+                jit.evaluate_into(arguments, &mut output, admitted, &memory)
+                    .is_err()
+            );
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                retained
+            );
+            assert!(output.iter().zip(&prior).all(|(a, b)| {
+                a.as_ref()
+                    .unwrap()
+                    .shares_frozen_storage(b.as_ref().unwrap())
+            }));
+            assert!(args[0].shares_frozen_storage(&aliases[0]));
+            assert_eq!(aliases[0].canonical_data_draft().unwrap(), original);
+        }
+        jit.evaluate_into(&args, &mut output, limits(), &memory)
+            .unwrap();
+        check_output(&artifact, &output, [2, 3], &[1., 2., 3., 4.5, 6.5, 8.5]);
+        drop((args, aliases, bad, prior, output));
+        assert_eq!(
+            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+            (0, 0)
+        );
+    }
+}
+
+#[test]
+fn boolean_and_signed_matrices_use_native_frames_and_checked_word_reads() {
+    for (kind, cells) in [
+        (
+            "i64",
+            vec![
+                Data::I64(i64::MIN),
+                Data::I64(-7),
+                Data::I64(0),
+                Data::I64(i64::MAX),
+                Data::I64(12),
+                Data::I64(-9),
+            ],
+        ),
+        (
+            "bool",
+            vec![
+                Data::Bool(false),
+                Data::Bool(true),
+                Data::Bool(false),
+                Data::Bool(true),
+                Data::Bool(false),
+                Data::Bool(true),
+            ],
+        ),
+    ] {
+        for (expression, prefix) in [
+            ("values[at<u64>]", String::new()),
+            ("values[row<u64>,column<u64>]", String::new()),
+            (
+                "read-cell(values, 3u64, at<u64>)",
+                format!(
+                    "read-cell(values<[{kind}]>, remaining<u64>, at<u64>) => <{kind}>\n\
+                      | (values, remaining, at) => ((remaining > 0u64)?\n\
+                          | true => read-cell(values, remaining - 1u64, at)\n\
+                          | false => values[at]).\n"
+                ),
+            ),
+        ] {
+            let source = format!(
+                "{prefix}frame := (left<[{kind}]>, (1.5, 7u64))\n(values, state) := frame\n({expression}, state.1 + 1.0, state.2)\n"
+            );
+            for artifact in artifacts(&source) {
+                let jit =
+                    JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+                assert!(
+                    !emit_program_object(&artifact, &mech_stdlib::source_catalog())
+                        .unwrap()
+                        .bytes()
+                        .is_empty()
+                );
+                check_restored_image(&jit);
+                let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+                let mut output = vec![None; artifact.outputs().len()];
+                let make_args = |shape, at, row, column| {
+                    typed_inputs(
+                        &artifact,
+                        &[
+                            ("left", shape, Data::Matrix(cells.clone().into())),
+                            ("at", [1, 1], Data::U64(at)),
+                            ("row", [1, 1], Data::U64(row)),
+                            ("column", [1, 1], Data::U64(column)),
+                        ],
+                        &memory,
+                    )
+                };
+                for (shape, expected) in [
+                    (
+                        [2, 3],
+                        if expression.contains("at") {
+                            &cells[3]
+                        } else {
+                            &cells[4]
+                        },
+                    ),
+                    ([1, 6], &cells[1]),
+                ] {
+                    let args = make_args(shape, 2, if shape[0] == 2 { 2 } else { 1 }, 2);
+                    let aliases = args.clone();
+                    jit.evaluate_into(&args, &mut output, limits(), &memory)
+                        .unwrap();
+                    let expected = Data::Tuple(
+                        vec![
+                            expected.clone(),
+                            Data::F64(F64Bits::from_f64(2.5)),
+                            Data::U64(7),
+                        ]
+                        .into(),
+                    );
+                    assert_eq!(
+                        output
+                            .last()
+                            .unwrap()
+                            .as_ref()
+                            .unwrap()
+                            .canonical_data_draft()
+                            .unwrap(),
+                        expected
+                    );
+                    assert!(
+                        args.iter()
+                            .zip(&aliases)
+                            .all(|(a, b)| a.shares_frozen_storage(b))
+                    );
+                    let prior = output.clone();
+                    let bad = make_args(shape, 0, 0, 2);
+                    let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                    assert!(
+                        jit.evaluate_into(&bad, &mut output, limits(), &memory)
+                            .is_err()
+                    );
+                    let mut denied = limits();
+                    denied.library.max_output_bytes = Some(0);
+                    assert!(
+                        jit.evaluate_into(&args, &mut output, denied, &memory)
+                            .is_err()
+                    );
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        retained
+                    );
+                    assert!(output.iter().zip(&prior).all(|(a, b)| {
+                        a.as_ref()
+                            .unwrap()
+                            .shares_frozen_storage(b.as_ref().unwrap())
+                    }));
+                    jit.evaluate_into(&args, &mut output, limits(), &memory)
+                        .unwrap();
+                    assert_eq!(
+                        output
+                            .last()
+                            .unwrap()
+                            .as_ref()
+                            .unwrap()
+                            .canonical_data_draft()
+                            .unwrap(),
+                        expected
+                    );
+                }
+                drop(output);
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    (0, 0)
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn boolean_and_signed_fsm_matrix_updates_keep_aliases_bounds_and_recovery() {
+    for (kind, expression, cells, expected) in [
+        (
+            "i64",
+            "values[2u64,step + 1u64] - 1i64",
+            vec![
+                Data::I64(i64::MIN),
+                Data::I64(-7),
+                Data::I64(0),
+                Data::I64(-2),
+                Data::I64(0),
+                Data::I64(i64::MAX),
+            ],
+            vec![
+                Data::I64(i64::MIN),
+                Data::I64(-7),
+                Data::I64(0),
+                Data::I64(-3),
+                Data::I64(-1),
+                Data::I64(i64::MAX - 1),
+            ],
+        ),
+        (
+            "bool",
+            "(values[2u64,step + 1u64]? | true => false | false => true)",
+            vec![
+                Data::Bool(false),
+                Data::Bool(true),
+                Data::Bool(false),
+                Data::Bool(true),
+                Data::Bool(false),
+                Data::Bool(true),
+            ],
+            vec![
+                Data::Bool(false),
+                Data::Bool(true),
+                Data::Bool(false),
+                Data::Bool(false),
+                Data::Bool(true),
+                Data::Bool(false),
+            ],
+        ),
+    ] {
+        let source = format!(
+            "#Sweep(initial<[{kind}]:2,3>, target<u64>) => <[{kind}]:2,3>\n\
+          | :Next(values<[{kind}]:2,3>, step<u64>)\n\
+          | :Done(values<[{kind}]:2,3>).\n\
+        #Sweep(initial, target) -> :Next(initial, 0u64)\n\
+          :Next(values, step)\n\
+            | step < 3u64 -> {{\n\
+                ~next := values\n\
+                next[target,step + 1u64] = {expression}\n\
+              }} -> :Next(next, step + 1u64)\n\
+            | * -> :Done(values)\n\
+          :Done(values) => values.\n\
+        #Sweep(left<[{kind}]:2,3>, row<u64>)\n"
+        );
+        for artifact in artifacts(&source) {
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            assert!(
+                !emit_program_object(&artifact, &mech_stdlib::source_catalog())
+                    .unwrap()
+                    .bytes()
+                    .is_empty()
+            );
+            check_restored_image(&jit);
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let make_args = |row| {
+                typed_inputs(
+                    &artifact,
+                    &[
+                        ("left", [2, 3], Data::Matrix(cells.clone().into())),
+                        ("row", [1, 1], Data::U64(row)),
+                    ],
+                    &memory,
+                )
+            };
+            let args = make_args(2);
+            let aliases = args.clone();
+            let bad = make_args(3);
+            let mut output = vec![None; artifact.outputs().len()];
+            let report = jit
+                .evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            assert_eq!(
+                output
+                    .last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                Data::Matrix(expected.clone().into())
+            );
+            let prior = output.clone();
+            let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+            let mut denied = limits();
+            denied.execution.max_work = report.work / 2;
+            for (arguments, admitted) in [(&bad, limits()), (&args, denied)] {
+                assert!(
+                    jit.evaluate_into(arguments, &mut output, admitted, &memory)
+                        .is_err()
+                );
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    retained
+                );
+                assert!(output.iter().zip(&prior).all(|(a, b)| {
+                    a.as_ref()
+                        .unwrap()
+                        .shares_frozen_storage(b.as_ref().unwrap())
+                }));
+                assert!(args[0].shares_frozen_storage(&aliases[0]));
+                assert_eq!(
+                    aliases[0].canonical_data_draft().unwrap(),
+                    Data::Matrix(cells.clone().into())
+                );
+            }
+            jit.evaluate_into(&args, &mut output, limits(), &memory)
+                .unwrap();
+            assert_eq!(
+                output
+                    .last()
+                    .unwrap()
+                    .as_ref()
+                    .unwrap()
+                    .canonical_data_draft()
+                    .unwrap(),
+                Data::Matrix(expected.clone().into())
+            );
+            drop((args, aliases, bad, prior, output));
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
     }
 }
 

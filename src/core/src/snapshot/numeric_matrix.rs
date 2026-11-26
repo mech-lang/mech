@@ -189,6 +189,7 @@ macro_rules! constructor {
 }
 
 impl Value {
+    constructor!(from_bool_matrix, bool, Bool, SchemaBody::Bool);
     constructor!(
         from_u8_matrix,
         u8,

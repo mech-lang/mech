@@ -521,7 +521,10 @@ fn selected_template(
 // Compose selected increment proofs with lazy successful Map diagnostic paths.
 // IR353 certifies and natively emits all five checked U16 scalar arithmetic operations.
 // Compose checked U16 arithmetic with exact-capacity histogram key copies.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 355;
+// IR356 transports numeric matrix payloads through existing private frame
+// lanes, admits Bool/I64 matrix composition, and returns exact typed scalar
+// reads through the maintained word boundary with canonical leaf admission.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 356;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

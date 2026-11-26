@@ -1,9 +1,9 @@
-//! Original selected unsigned reads returning words into native scalar storage.
+//! Original selected typed reads returning words into native scalar storage.
 use super::{Error, Invocation, invalid};
 use mech_engine::native_artifact::{NativeIterationAction as Action, NativeScalarKind};
 
 impl Invocation<'_, '_, '_> {
-    pub(super) fn f64_matrix_element_call(
+    pub(super) fn scalar_matrix_element_call(
         &mut self,
         site: usize,
         words: &[u64],
@@ -12,14 +12,14 @@ impl Invocation<'_, '_, '_> {
         let Some(call) = descriptor.metadata().calls[site].as_ref() else {
             return Ok(None);
         };
-        if !call.supports_f64_matrix_element() {
+        let Some(kind) = call.scalar_matrix_element_kind() else {
             return Ok(None);
-        }
+        };
         let Action::LibraryCall {
             operands, output, ..
         } = descriptor.metadata().plan.blocks()[site].action()
         else {
-            return Err(invalid("F64 read outside selected call"));
+            return Err(invalid("scalar matrix read outside selected call"));
         };
         if words.len() != operands.len()
             || words.first() != Some(&0)
@@ -31,9 +31,9 @@ impl Invocation<'_, '_, '_> {
                     != Some(NativeScalarKind::U64)
             })
             || descriptor.metadata().plan.values()[output.get() as usize].scalar_kind()
-                != Some(NativeScalarKind::F64)
+                != Some(kind)
         {
-            return Err(invalid("F64 read native transport differs"));
+            return Err(invalid("scalar matrix read native transport differs"));
         }
         if self.has_uninventoried_private_owners() {
             return Ok(None);
@@ -44,7 +44,7 @@ impl Invocation<'_, '_, '_> {
             .arena
             .copy_current(operands[0].get(), &mut self.state.control.work)?;
         let word = call
-            .f64_matrix_element(
+            .scalar_matrix_element(
                 &source,
                 &words[1..],
                 self.limits,

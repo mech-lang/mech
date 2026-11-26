@@ -44,8 +44,8 @@ impl Invocation<'_, '_, '_> {
             LibraryCallRoute::UnsignedMatrixElement => {
                 Ok(self.unsigned_matrix_element_call(site, words)?.map(Some))
             }
-            LibraryCallRoute::F64MatrixElement => {
-                Ok(self.f64_matrix_element_call(site, words)?.map(Some))
+            LibraryCallRoute::ScalarMatrixElement => {
+                Ok(self.scalar_matrix_element_call(site, words)?.map(Some))
             }
             LibraryCallRoute::StringMatrixElement => Ok(self
                 .string_matrix_element_call(site, words)?

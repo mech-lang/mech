@@ -29,6 +29,12 @@ fn payload(body: &SchemaBody, depth: usize) -> Option<bool> {
     if opaque_map(body) {
         return Some(true);
     }
+    if matches!(body, SchemaBody::Matrix { element, dimensions }
+        if dimensions.len() == 2
+            && super::super::NativeScalarKind::from_schema_body(element).is_some())
+    {
+        return Some(true);
+    }
     let fields = match body {
         SchemaBody::Tuple(fields) if !fields.is_empty() && fields.len() <= 32 => {
             fields.iter().collect::<Vec<_>>()
@@ -46,7 +52,8 @@ fn payload(body: &SchemaBody, depth: usize) -> Option<bool> {
 }
 
 /// Every variant has a closed represented payload and at least one variant
-/// carries a supported opaque map. Pure scalar enums retain their scalar owner.
+/// carries a supported opaque map or numeric matrix owner. Pure scalar enums
+/// retain their scalar owner.
 /// Payload-free/open/nested enum layouts keep the ordinary canonical route.
 pub(super) fn schemas(plan: &Plan, value: Value) -> Option<Vec<SchemaId>> {
     let definition = plan.values()[value.get() as usize].definition();

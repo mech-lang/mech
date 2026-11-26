@@ -164,6 +164,15 @@ irrefutable bindings retain exact comprehension cardinality; filters and
 refutable patterns remain runtime-sized. Construction still checks actual
 geometry before publication.
 
+Bool, I64 and F64 matrices reuse private tuple and closed-enum frame lanes,
+retaining their immutable packed owners across recursive calls and FSM steps.
+Typed linear and coordinate reads return exact scalar words through the same
+checked boundary as unsigned reads. Signed values retain all 64 bits, and
+Boolean matrices use Boolean storage. Non-compound selected assignments share
+packed snapshot construction; single-cell planning can prepay the identical
+scan cost when it fits, with the original ordered denial path otherwise.
+These paths keep finite admission, canonical publication and alias isolation.
+
 The focused `canonical_artifact_matrix` test covers original/decoded artifacts,
 Object emission, independent matrix shapes, broadcasting, coordinate access
 and replacement, real power, restored factory images,

@@ -1822,8 +1822,8 @@ fn is_control_closed_component(body: &mech_core::SchemaBody) -> bool {
     }
 }
 
-/// A turn-shaped unsigned, String or fixed-aggregate matrix carries its dimensions
-/// in a canonical snapshot. This is structural-pattern authority; closed-value,
+/// A turn-shaped scalar or fixed-aggregate matrix carries its dimensions in a
+/// canonical snapshot. This is structural-pattern authority; closed-value,
 /// literal and capture eligibility remain separate predicates.
 pub(crate) fn is_control_pattern_schema(schema: &mech_core::Schema) -> bool {
     fn carrier(body: &mech_core::SchemaBody) -> Option<bool> {
@@ -1833,8 +1833,14 @@ pub(crate) fn is_control_pattern_schema(schema: &mech_core::Schema) -> bool {
                 element,
                 dimensions,
             } if dimensions.len() == 2
-                && (matches!(element.as_ref(), B::UnsignedInteger(_) | B::String)
-                    || is_control_fixed_aggregate_element(element)) =>
+                && (matches!(
+                    element.as_ref(),
+                    B::Bool
+                        | B::UnsignedInteger(_)
+                        | B::String
+                        | B::SignedInteger(mech_core::IntegerWidth::W64)
+                        | B::FloatingPoint(mech_core::FloatWidth::W64)
+                ) || is_control_fixed_aggregate_element(element)) =>
             {
                 Some(true)
             }
@@ -2454,13 +2460,26 @@ mod tests {
             .unwrap()
         };
         for element in [
+            SchemaBody::Bool,
             SchemaBody::String,
+            SchemaBody::SignedInteger(mech_core::IntegerWidth::W64),
             SchemaBody::UnsignedInteger(mech_core::IntegerWidth::W64),
             SchemaBody::FloatingPoint(FloatWidth::W64),
         ] {
             let turn = schema(element.clone(), 2, DimensionLifetime::Turn);
+            assert!(is_control_pattern_schema(&turn));
             assert!(is_control_capture_schema(&turn));
             assert!(!is_control_value_schema(&turn));
+            assert!(!is_control_pattern_schema(&schema(
+                element.clone(),
+                2,
+                DimensionLifetime::Activation,
+            )));
+            assert!(!is_control_pattern_schema(&schema(
+                element.clone(),
+                1,
+                DimensionLifetime::Turn,
+            )));
             assert!(!is_control_capture_schema(&schema(
                 element.clone(),
                 2,

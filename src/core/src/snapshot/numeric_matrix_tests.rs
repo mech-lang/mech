@@ -316,7 +316,7 @@ fn ordinary(
 }
 
 #[test]
-fn numeric_matrix_constructors_transfer_all_thirteen_buffers_with_exact_canonical_values() {
+fn numeric_matrix_constructors_transfer_all_fourteen_buffers_with_exact_canonical_values() {
     macro_rules! check {
         ($constructor:ident, $variant:ident, $body:expr, $values:expr) => {{
             let all = $values;
@@ -374,6 +374,12 @@ fn numeric_matrix_constructors_transfer_all_thirteen_buffers_with_exact_canonica
             );
         };
     }
+    check!(
+        from_bool_matrix,
+        Bool,
+        SchemaBody::Bool,
+        [false, true, true, false]
+    );
     integer!(from_u8_matrix, U8, UnsignedInteger, W8, u8);
     integer!(from_u16_matrix, U16, UnsignedInteger, W16, u16);
     integer!(from_u32_matrix, U32, UnsignedInteger, W32, u32);
@@ -412,6 +418,19 @@ fn numeric_matrix_constructors_transfer_all_thirteen_buffers_with_exact_canonica
 
 #[test]
 fn numeric_matrix_cardinality_and_index_errors_match_ordinary_finalization() {
+    let (id, shape, schemas) = schema(SchemaBody::Bool, 2, 2);
+    for count in [0, 3, 5] {
+        let values = vec![true; count];
+        let expected = ordinary(
+            id,
+            values.iter().copied().map(ValueDataDraft::Bool).collect(),
+            &schemas,
+        )
+        .unwrap_err();
+        let actual =
+            Value::from_bool_matrix(id, shape.clone(), values.into(), schemas.clone()).unwrap_err();
+        assert_eq!(actual, expected);
+    }
     for element in [
         SchemaBody::UnsignedInteger(IntegerWidth::W64),
         SchemaBody::Index,
@@ -452,6 +471,7 @@ fn numeric_matrix_cardinality_and_index_errors_match_ordinary_finalization() {
 #[test]
 fn typed_numeric_matrix_checks_kinds_constraints_and_parameter_shapes() {
     for element in [
+        SchemaBody::Bool,
         SchemaBody::UnsignedInteger(IntegerWidth::W8),
         SchemaBody::String,
         SchemaBody::IntegerInterval(IntegerInterval::Unsigned {
@@ -467,6 +487,11 @@ fn typed_numeric_matrix_checks_kinds_constraints_and_parameter_shapes() {
             Err(SnapshotValueError::SnapshotSchemaDefinitionMismatch { .. })
         ));
     }
+    let (id, shape, schemas) = schema(SchemaBody::UnsignedInteger(IntegerWidth::W8), 1, 2);
+    assert!(matches!(
+        Value::from_bool_matrix(id, shape, [false, true].into(), schemas),
+        Err(SnapshotValueError::SnapshotSchemaDefinitionMismatch { .. })
+    ));
     use crate::{
         DimensionLifetime, DimensionParameterDeclaration, DimensionParameterId,
         DimensionParameterOrigin,

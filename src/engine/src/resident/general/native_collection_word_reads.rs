@@ -1,6 +1,7 @@
-//! A selected linear unsigned word read from a genuine immutable canonical matrix.
+//! A selected scalar-word read from a genuine immutable canonical matrix.
 //! No selector/result Value, temporary vector, or runtime call plan is built.
 use super::{InvokeError, NativePreparedLibraryCall, finite_limits};
+use crate::native_artifact::NativeScalarKind as Kind;
 use crate::{
     native_artifact::NativeCollectionPrimitive as Primitive,
     resident::budget::{
@@ -13,22 +14,20 @@ use mech_core::{
 };
 
 impl NativePreparedLibraryCall {
-    /// Exact F64 reads reuse the admitted scalar-word boundary. The result is
-    /// transported as its bits, without inventing a canonical scalar owner.
-    pub fn supports_f64_matrix_element(&self) -> bool {
+    /// Exact typed reads reuse the admitted scalar-word boundary. No canonical
+    /// scalar owner or unsigned view is invented for Bool/I64/F64 storage.
+    pub fn scalar_matrix_element_kind(&self) -> Option<Kind> {
         let inputs = self.template.inputs();
-        let Some(matrix) = inputs.first() else {
-            return false;
-        };
+        let matrix = inputs.first()?;
         let SchemaBody::Matrix {
             element,
             dimensions,
         } = matrix.body()
         else {
-            return false;
+            return None;
         };
-        dimensions.len() == 2
-            && element.as_ref() == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)
+        let kind = Kind::from_schema_body(element)?;
+        (dimensions.len() == 2
             && self.template.output().body() == element.as_ref()
             && self.template.output().dimension_parameters().is_empty()
             && matches!(
@@ -38,7 +37,12 @@ impl NativePreparedLibraryCall {
             && inputs[1..].iter().all(|selector| {
                 selector.body() == &SchemaBody::UnsignedInteger(IntegerWidth::W64)
                     && selector.dimension_parameters().is_empty()
-            })
+            }))
+        .then_some(kind)
+    }
+
+    pub fn supports_f64_matrix_element(&self) -> bool {
+        self.scalar_matrix_element_kind() == Some(Kind::F64)
     }
 
     pub fn f64_matrix_element(
@@ -54,7 +58,25 @@ impl NativePreparedLibraryCall {
         {
             return Err(InvokeError::InvalidInput);
         }
-        self.matrix_element_word(source, indices, None, limits, work, coexistence)
+        self.matrix_element_word(source, indices, Kind::F64, limits, work, coexistence)
+    }
+
+    pub fn scalar_matrix_element(
+        &self,
+        source: &Value,
+        indices: &[u64],
+        limits: MemoryBudgetLimits,
+        work: &NativeLibraryWorkBudget,
+        coexistence: ResourceDemand,
+    ) -> Result<u64, InvokeError> {
+        finite_limits(self.template.origin().node(), limits).map_err(InvokeError::Binding)?;
+        let kind = self
+            .scalar_matrix_element_kind()
+            .ok_or(InvokeError::InvalidInput)?;
+        if indices.len() + 1 != self.template.inputs().len() {
+            return Err(InvokeError::InvalidInput);
+        }
+        self.matrix_element_word(source, indices, kind, limits, work, coexistence)
     }
 
     fn unsigned_matrix_element_width(&self) -> Option<IntegerWidth> {
@@ -126,24 +148,30 @@ impl NativePreparedLibraryCall {
         let width = self
             .unsigned_matrix_element_width()
             .ok_or(InvokeError::InvalidInput)?;
-        self.matrix_element_word(source, &[index], Some(width), limits, work, coexistence)
+        let kind = match width {
+            IntegerWidth::W8 => Kind::U8,
+            IntegerWidth::W16 => Kind::U16,
+            IntegerWidth::W32 => Kind::U32,
+            IntegerWidth::W64 => Kind::U64,
+            _ => return Err(InvokeError::InvalidInput),
+        };
+        self.matrix_element_word(source, &[index], kind, limits, work, coexistence)
     }
 
     fn matrix_element_word(
         &self,
         source: &Value,
         indices: &[u64],
-        width: Option<IntegerWidth>,
+        kind: Kind,
         limits: MemoryBudgetLimits,
         work: &NativeLibraryWorkBudget,
         mut coexistence: ResourceDemand,
     ) -> Result<u64, InvokeError> {
-        let output_bytes = match width {
-            Some(IntegerWidth::W8) => 1,
-            Some(IntegerWidth::W16) => 2,
-            Some(IntegerWidth::W32) => 4,
-            Some(IntegerWidth::W64) | None => 8,
-            _ => return Err(InvokeError::InvalidInput),
+        let output_bytes = match kind {
+            Kind::Bool | Kind::U8 => 1,
+            Kind::U16 => 2,
+            Kind::U32 => 4,
+            Kind::U64 | Kind::I64 | Kind::F64 => 8,
         };
         work.with_call_limits(
             limits.max_compute_work.unwrap(),
@@ -155,7 +183,7 @@ impl NativePreparedLibraryCall {
                     .output_elements
                     .checked_add(1)
                     .ok_or(InvokeError::InvalidInput)?;
-                // Logical output limits still describe the exact unsigned width;
+                // Logical output limits still describe the exact scalar width;
                 // absence of a new allocation does not waive those limits.
                 if let Some(violation) = mech_core::first_call_memory_budget_violation(
                     mech_core::MemoryObjectOwner::NodeOutput {
@@ -248,47 +276,48 @@ impl NativePreparedLibraryCall {
                     }
                     _ => return Err(InvokeError::InvalidInput),
                 };
-                match (width, cells) {
-                    (Some(IntegerWidth::W8), SequenceView::U8(values)) => values
+                match (kind, cells) {
+                    (Kind::U8, SequenceView::U8(values)) => values
                         .get(ordinal)
                         .copied()
                         .map(u64::from)
                         .ok_or(InvokeError::InvalidInput),
-                    (Some(IntegerWidth::W16), SequenceView::U16(values)) => values
+                    (Kind::U16, SequenceView::U16(values)) => values
                         .get(ordinal)
                         .copied()
                         .map(u64::from)
                         .ok_or(InvokeError::InvalidInput),
-                    (Some(IntegerWidth::W32), SequenceView::U32(values)) => values
+                    (Kind::U32, SequenceView::U32(values)) => values
                         .get(ordinal)
                         .copied()
                         .map(u64::from)
                         .ok_or(InvokeError::InvalidInput),
-                    (Some(IntegerWidth::W64), SequenceView::U64(values)) => values
+                    (Kind::U64, SequenceView::U64(values)) => values
                         .get(ordinal)
                         .copied()
                         .ok_or(InvokeError::InvalidInput),
-                    (None, SequenceView::F64(values)) => values
+                    (Kind::F64, SequenceView::F64(values)) => values
                         .get(ordinal)
                         .map(|value| value.bits())
                         .ok_or(InvokeError::InvalidInput),
-                    (None, SequenceView::Values(values)) => match values.get(ordinal) {
-                        Some(ValueData::F64(value)) => Ok(value.bits()),
+                    (Kind::I64, SequenceView::I64(values)) => values
+                        .get(ordinal)
+                        .map(|value| *value as u64)
+                        .ok_or(InvokeError::InvalidInput),
+                    (Kind::Bool, SequenceView::Bool(values)) => values
+                        .get(ordinal)
+                        .map(|value| u64::from(*value))
+                        .ok_or(InvokeError::InvalidInput),
+                    (kind, SequenceView::Values(values)) => match (kind, values.get(ordinal)) {
+                        (Kind::U8, Some(ValueData::U8(value))) => Ok(u64::from(*value)),
+                        (Kind::U16, Some(ValueData::U16(value))) => Ok(u64::from(*value)),
+                        (Kind::U32, Some(ValueData::U32(value))) => Ok(u64::from(*value)),
+                        (Kind::U64, Some(ValueData::U64(value))) => Ok(*value),
+                        (Kind::I64, Some(ValueData::I64(value))) => Ok(*value as u64),
+                        (Kind::Bool, Some(ValueData::Bool(value))) => Ok(u64::from(*value)),
+                        (Kind::F64, Some(ValueData::F64(value))) => Ok(value.bits()),
                         _ => Err(InvokeError::InvalidInput),
                     },
-                    (Some(width), SequenceView::Values(values)) => {
-                        match (width, values.get(ordinal)) {
-                            (IntegerWidth::W8, Some(ValueData::U8(value))) => Ok(u64::from(*value)),
-                            (IntegerWidth::W16, Some(ValueData::U16(value))) => {
-                                Ok(u64::from(*value))
-                            }
-                            (IntegerWidth::W32, Some(ValueData::U32(value))) => {
-                                Ok(u64::from(*value))
-                            }
-                            (IntegerWidth::W64, Some(ValueData::U64(value))) => Ok(*value),
-                            _ => Err(InvokeError::InvalidInput),
-                        }
-                    }
                     _ => Err(InvokeError::InvalidInput),
                 }
             },

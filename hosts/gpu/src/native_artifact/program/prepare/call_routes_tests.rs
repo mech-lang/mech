@@ -33,10 +33,25 @@ fn prepared_selected_routes_are_rederived_from_actual_factories_on_image_restore
             "xs := input<[u16]>\nxs[at<u64>]\n",
             Route::UnsignedMatrixElement,
         ),
-        ("xs := input<[f64]>\nxs[at<u64>]\n", Route::F64MatrixElement),
+        (
+            "xs := input<[f64]>\nxs[at<u64>]\n",
+            Route::ScalarMatrixElement,
+        ),
         (
             "xs := input<[f64]>\nxs[row<u64>,column<u64>]\n",
-            Route::F64MatrixElement,
+            Route::ScalarMatrixElement,
+        ),
+        (
+            "xs := input<[i64]>\nxs[at<u64>]\n",
+            Route::ScalarMatrixElement,
+        ),
+        (
+            "xs := input<[bool]>\nxs[row<u64>,column<u64>]\n",
+            Route::ScalarMatrixElement,
+        ),
+        (
+            "xs := input<[u32]>\nxs[row<u64>,column<u64>]\n",
+            Route::ScalarMatrixElement,
         ),
         (
             "xs := input<[string]>\nxs[at<u64>]\n",

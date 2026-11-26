@@ -98,3 +98,58 @@ trisolv                 0.001084         3.909291    3606.16         1080.09
 trmm                    0.003208         0.704500     219.61          124.29
 
 qualification-m3-mini.json records all 30 C comparisons and regression checks.
+
+Compiler optimization protocol and performance history
+
+optimization-protocol.json freezes 15 optimization programs and 15 holdout
+programs before the first optimization round. Close variants stay together.
+The optimization programs are 2mm, 3mm, atax, bicg, cholesky, correlation,
+covariance, deriche, doitgen, durbin, gemm, gramschmidt, mvt, nussinov and
+seidel-2d. The other fifteen are the holdout. Every original baseline timing
+was already visible; this is a fixed holdout for subsequent tuning, not a blind
+experiment. Future rounds disclose previous holdout exposure. A separately
+selected application will be needed for fresh external validation.
+
+The Mech programs and all C-derived inputs/results remain pinned. Changes
+target general compiler/runtime machinery shared by other programs. Candidate
+profiles and tuning timings use only the optimization partition. Freeze the
+candidate before any holdout timing and retain all holdout results, including
+regressions; do not retune that candidate against holdout per-case results.
+Correctness tests may run on both partitions throughout development.
+
+performance-history.json starts with the original baseline and appends one
+entry per frozen candidate. The primary aggregate is the equal-weight geometric
+mean of baseline Mech time / candidate Mech time, separately for optimization,
+holdout and all kernels. Larger speedup is better. Mech/C runtime ratios use
+separate kernel-only and fresh-allocation comparisons; smaller is better.
+Median/minimum/maximum speedups, regressions over 5%, C wins, worst C ratio and
+summed medians accompany the geometric means. Summed medians are secondary
+because they heavily weight the slowest programs. A missing case makes an
+aggregate incomplete; a failed numerical comparison invalidates the candidate.
+
+scripts/prepare-polybench-c.py preserves the original adapter generator and
+builds the C side from a PolyBench/C 4.2.1 beta checkout. Obtain the archive URL
+and SHA256 from cases.json, verify the archive, and extract it outside the
+repository. This recipe verifies every C source hash, generated input and full
+live-out. The timing runner additionally requires executable hashes identical
+to the pinned C baseline; changing the C toolchain requires an explicit new
+baseline rather than silently changing comparisons.
+
+Run from the repository root, with paths chosen for this host:
+
+python3 scripts/prepare-polybench-c.py --suite /path/to/polybench-c-4.2.1-beta --output /path/to/c-mini
+CARGO_TARGET_DIR=/path/to/target cargo build --release -p mech-gpu --no-default-features --features canonical-native-program --example polybench_qualification
+python3 scripts/benchmark-polybench.py freeze --label round-01 --driver /path/to/target/release/examples/polybench_qualification --output /path/to/frozen.json
+python3 scripts/benchmark-polybench.py run --partition optimization --driver /path/to/target/release/examples/polybench_qualification --c-build /path/to/c-mini --freeze /path/to/frozen.json --output /path/to/optimization.json
+python3 scripts/benchmark-polybench.py run --partition holdout --driver /path/to/target/release/examples/polybench_qualification --c-build /path/to/c-mini --freeze /path/to/frozen.json --output /path/to/holdout.json
+python3 scripts/benchmark-polybench.py summarize --optimization /path/to/optimization.json --holdout /path/to/holdout.json --output /path/to/progress.json --history hosts/gpu/tests/fixtures/polybench/performance-history.json
+
+Use an immutable copy of the original baseline executable with
+--reference-driver /path/to/baseline-driver on freeze and both run commands to
+add contemporaneous paired baseline observations. This separates historical
+machine drift from compiler improvement. Five observations per actor and C
+comparison alternate execution order; all actors run sequentially. Do not run
+builds or profiles alongside measurements. The candidate receipt pins compiler
+source and executable fingerprints, protocol/fixture/runner hashes and machine
+metadata. Source or driver changes after freezing are rejected. Keep the raw
+partition receipts alongside each aggregate entry.

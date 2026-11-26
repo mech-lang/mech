@@ -6,7 +6,7 @@ use super::*;
 mod tests;
 
 /// The caller has already validated one selected destination and one source
-/// element. A packed unsigned replacement cannot change the result footprint.
+/// element. A packed scalar replacement cannot change the result footprint.
 /// Prepay the SAME planning work only when the existing meter proves it fits;
 /// a miss retains the ordinary traversal and its first-denied work prefix.
 pub(super) fn try_project_single_source(
@@ -36,6 +36,11 @@ pub(super) fn try_project_single_source(
         (SchemaBody::UnsignedInteger(IntegerWidth::W128), SequenceView::U128(_)) => {
             source_kind!(U128)
         }
+        (SchemaBody::FloatingPoint(mech_core::FloatWidth::W64), SequenceView::F64(_)) => {
+            source_kind!(F64)
+        }
+        (SchemaBody::SignedInteger(IntegerWidth::W64), SequenceView::I64(_)) => source_kind!(I64),
+        (SchemaBody::Bool, SequenceView::Bool(_)) => source_kind!(Bool),
         _ => return Ok(false),
     };
     let source_work = if scalar {
@@ -99,6 +104,103 @@ pub(super) fn construct(
     source: &mech_core::Value,
     plan: Plan<'_>,
 ) -> Result<mech_core::Value, ResidentKernelError> {
+    construct_with(kernel, current, source, Selection::Linear(plan))
+}
+
+/// Reuse the same packed constructors for checked row/column selections. The
+/// selected coordinate order, duplicate last-write behavior and source routing
+/// are identical to the ordinary draft path. Admission stays with the caller.
+pub(super) fn construct_rectangle(
+    kernel: &BoundResidentKernel,
+    current: &mech_core::Value,
+    source: &mech_core::Value,
+    rows: &[usize],
+    columns: &[usize],
+    plan: &MatrixSelectionAssignPlan,
+) -> Result<mech_core::Value, ResidentKernelError> {
+    construct_with(
+        kernel,
+        current,
+        source,
+        Selection::Rectangle {
+            rows,
+            columns,
+            plan,
+        },
+    )
+}
+
+enum Selection<'a> {
+    Linear(Plan<'a>),
+    Rectangle {
+        rows: &'a [usize],
+        columns: &'a [usize],
+        plan: &'a MatrixSelectionAssignPlan,
+    },
+}
+impl Selection<'_> {
+    fn visit(
+        &self,
+        mut emit: impl FnMut(usize, usize) -> Result<(), ResidentKernelError>,
+    ) -> Result<(), ResidentKernelError> {
+        match self {
+            Self::Linear(plan) => plan.positions.try_for_each(|ordinal, position| {
+                let source_index = match plan.routing {
+                    ResolvedSourceRouting::ScalarBroadcast => 0,
+                    ResolvedSourceRouting::Positional => {
+                        canonical_index(position, plan.source_rows, plan.source_columns)?
+                    }
+                    ResolvedSourceRouting::CompactSelectionOrder => ordinal,
+                };
+                emit(
+                    canonical_index(position, plan.rows, plan.columns)?,
+                    source_index,
+                )
+            }),
+            Self::Rectangle {
+                rows,
+                columns,
+                plan,
+            } => {
+                let mut ordinal = 0usize;
+                for row in *rows {
+                    for column in *columns {
+                        let destination = row
+                            .checked_mul(plan.columns)
+                            .and_then(|offset| offset.checked_add(*column))
+                            .ok_or(ResidentKernelError::InvalidShape)?;
+                        let source_index = match plan.source_routing {
+                            ResolvedSourceRouting::ScalarBroadcast => 0,
+                            ResolvedSourceRouting::Positional => destination,
+                            ResolvedSourceRouting::CompactSelectionOrder => ordinal,
+                        };
+                        emit(destination, source_index)?;
+                        ordinal = ordinal
+                            .checked_add(1)
+                            .ok_or(ResidentKernelError::InvalidShape)?;
+                    }
+                }
+                Ok(())
+            }
+        }
+    }
+}
+
+pub(super) fn supported(body: &SchemaBody) -> bool {
+    super::super::structural_values::word_matrix(body)
+        || matches!(body, SchemaBody::Matrix {element, dimensions}
+            if dimensions.len() == 2
+                && matches!(element.as_ref(), SchemaBody::Bool
+                    | SchemaBody::SignedInteger(IntegerWidth::W64)
+                    | SchemaBody::FloatingPoint(mech_core::FloatWidth::W64)))
+}
+
+fn construct_with(
+    kernel: &BoundResidentKernel,
+    current: &mech_core::Value,
+    source: &mech_core::Value,
+    selection: Selection<'_>,
+) -> Result<mech_core::Value, ResidentKernelError> {
     let ValueData::Matrix(matrix) = current.data() else {
         return Err(ResidentKernelError::InvalidOutput);
     };
@@ -111,14 +213,7 @@ pub(super) fn construct(
     macro_rules! update {
         ($words:expr, $kind:ident, $constructor:ident) => {{
             let mut next = $words.to_vec();
-            plan.positions.try_for_each(|ordinal, position| {
-                let source_index = match plan.routing {
-                    ResolvedSourceRouting::ScalarBroadcast => 0,
-                    ResolvedSourceRouting::Positional => {
-                        canonical_index(position, plan.source_rows, plan.source_columns)?
-                    }
-                    ResolvedSourceRouting::CompactSelectionOrder => ordinal,
-                };
+            selection.visit(|destination, source_index| {
                 let incoming = match source.data() {
                     ValueData::$kind(value) if source_index == 0 => *value,
                     ValueData::Matrix(matrix) => {
@@ -131,7 +226,6 @@ pub(super) fn construct(
                     }
                     _ => return Err(ResidentKernelError::InvalidInput),
                 };
-                let destination = canonical_index(position, plan.rows, plan.columns)?;
                 *next
                     .get_mut(destination)
                     .ok_or(ResidentKernelError::InvalidShape)? = incoming;
@@ -152,6 +246,9 @@ pub(super) fn construct(
         SequenceView::U32(words) => update!(words, U32, from_u32_matrix),
         SequenceView::U64(words) => update!(words, U64, from_u64_matrix),
         SequenceView::U128(words) => update!(words, U128, from_u128_matrix),
+        SequenceView::F64(words) => update!(words, F64, from_f64_matrix),
+        SequenceView::I64(words) => update!(words, I64, from_i64_matrix),
+        SequenceView::Bool(words) => update!(words, Bool, from_bool_matrix),
         _ => Err(ResidentKernelError::InvalidOutput),
     }
 }
