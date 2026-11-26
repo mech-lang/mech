@@ -124,4 +124,48 @@ impl Invocation<'_, '_, '_> {
         }
         Ok(result)
     }
+    pub(super) fn finish_numeric_reduction(
+        &mut self,
+        site: usize,
+        args: [u64; 3],
+    ) -> Result<Option<u64>, Error> {
+        let descriptor = self.descriptor;
+        let region = descriptor
+            .metadata()
+            .numeric_maps
+            .at_reduction_finish(site)
+            .ok_or_else(|| invalid("numeric reduction outside its selected finish"))?;
+        if args != [0; 3]
+            || self.state.consumed
+            || self.state.control.previous != Some(site as u32)
+            || !matches!(descriptor.metadata().plan.blocks()[site].action(),mech_engine::native_artifact::NativeIterationAction::CollectionFinish{collection} if *collection==region.collection)
+        {
+            return Err(invalid("numeric reduction finish lost original admission"));
+        }
+        let mut state = self
+            .state
+            .collections
+            .take()
+            .ok_or_else(|| invalid("numeric reduction has no collection state"))?;
+        let result = state.finish_numeric_reduction(&mut CollectionExecution::new(self), site);
+        self.state.collections = Some(state);
+        let Some((word, header)) = result? else {
+            return Ok(Some(0));
+        };
+        if header != region.header as usize {
+            return Err(invalid("numeric reduction source header differs"));
+        }
+        self.state.consumed = true;
+        let proof = region.reduction.as_ref().unwrap();
+        // These are the exact original pure continuation visits, with normal
+        // admission, retirement and required-action accounting. The private
+        // proof supplies the already computed operation result; it grants no
+        // generic runtime arithmetic or arbitrary source skipping.
+        for &next in &proof.continuation {
+            self.visit(u64::from(next))?;
+            self.state.consumed = true;
+        }
+        self.write_borrowed_word(0, word)?;
+        Ok(Some(1))
+    }
 }

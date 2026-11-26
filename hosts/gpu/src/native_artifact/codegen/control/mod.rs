@@ -908,6 +908,26 @@ impl<'plan> CfgDefinition<'plan> {
             .iter()
             .map(|&used| used.then(|| b.create_block()))
             .collect::<Vec<_>>();
+        #[cfg(feature = "canonical-native-program")]
+        let mut reduction_continuations = std::collections::BTreeMap::new();
+        #[cfg(feature = "canonical-native-program")]
+        if controls
+            .enabled(crate::native_artifact::codegen::options::OptimizationPass::NumericCollections)
+            && let plan::CodePlan::Program(program) = plan
+        {
+            for region in &program.metadata().numeric_maps.regions {
+                if let Some(reduction) = &region.reduction {
+                    let block = b.create_block();
+                    b.append_block_param(block, types::I64);
+                    if reduction_continuations
+                        .insert(reduction.select as usize, block)
+                        .is_some()
+                    {
+                        return Err(backend("numeric reductions share an extraction site"));
+                    }
+                }
+            }
+        }
         b.ins()
             .jump(blocks[plan.entry() as usize].expect("reachable entry"), &[]);
         if let Some(resume) = resume_block {
@@ -1790,6 +1810,16 @@ impl<'plan> CfgDefinition<'plan> {
                         }
                         _ => zero,
                     };
+                    #[cfg(feature = "canonical-native-program")]
+                    if let plan::CodePlan::Program(program) = plan
+                        && let Some(region) =
+                            program.metadata().numeric_maps.at_reduction_finish(index)
+                        && let Some(reduction) = &region.reduction
+                        && let Some(&continuation) =
+                            reduction_continuations.get(&(reduction.select as usize))
+                    {
+                        crate::native_artifact::program::codegen::numeric_map::emit_reduction_finish(b,locals,index,hooks,reduction,continuation,error)?;
+                    }
                     hooks.collection(b, index, [value, zero], error)?;
                     #[cfg(feature = "canonical-native-program")]
                     if let NativeIterationAction::HistogramQueryStep { collection, step } =
@@ -1855,6 +1885,14 @@ impl<'plan> CfgDefinition<'plan> {
                 b.ins().jump(joined, &[]);
                 b.switch_to_block(joined);
             }
+            #[cfg(feature = "canonical-native-program")]
+            let locals = if let Some(&joined) = reduction_continuations.get(&index) {
+                b.ins().jump(joined, &[locals.into()]);
+                b.switch_to_block(joined);
+                b.block_params(joined)[0]
+            } else {
+                locals
+            };
             #[cfg(feature = "canonical-native-program")]
             if controls
                 .enabled(crate::native_artifact::codegen::options::OptimizationPass::ScalarLoops)

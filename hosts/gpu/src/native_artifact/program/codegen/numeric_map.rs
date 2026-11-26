@@ -147,9 +147,22 @@ fn emit(
     require(b, good, malformed);
     let good = b.ins().icmp_imm(IntCC::Equal, next, 0);
     require(b, good, malformed);
+    let output_count = get(b, frame, offset_of!(Frame, output_count));
+    let expected_output_count = if region.reduction.is_some() {
+        b.ins().iconst(types::I64, 0)
+    } else {
+        count
+    };
+    let good = b
+        .ins()
+        .icmp(IntCC::Equal, output_count, expected_output_count);
+    require(b, good, malformed);
+    let initial_fold = get(b, frame, offset_of!(Frame, fold));
+    let good = b.ins().icmp_imm(IntCC::Equal, initial_fold, 0);
+    require(b, good, malformed);
     let mut banks = vec![(
         region.output_width,
-        count,
+        output_count,
         output,
         offset_of!(Frame, capacity_bytes),
     )];
@@ -258,6 +271,13 @@ fn emit(
     let cursor = b.declare_var(types::I64);
     let zero = b.ins().iconst(types::I64, 0);
     b.def_var(cursor, zero);
+    let fold = if region.reduction.is_some() {
+        let var = b.declare_var(types::I64);
+        b.def_var(var, zero);
+        Some(var)
+    } else {
+        None
+    };
     let head = b.create_block();
     let body = b.create_block();
     let done = b.create_block();
@@ -330,14 +350,25 @@ fn emit(
                         let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, result, 1);
                         require(b, valid, malformed);
                     }
-                    let value = if region.output_width == 8 {
-                        result
+                    if let Some(fold) = fold {
+                        let prior = b.use_var(fold);
+                        let next = primitive(
+                            b,
+                            mech_engine::native_artifact::NativeScalarOp::F64Add,
+                            &[prior, result],
+                            miss,
+                        );
+                        b.def_var(fold, next);
                     } else {
-                        b.ins().ireduce(integer(region.output_width), result)
-                    };
-                    let displacement = b.ins().imul_imm(at, i64::from(region.output_width));
-                    let address = b.ins().iadd(output, displacement);
-                    b.ins().store(MemFlags::new(), value, address, 0);
+                        let value = if region.output_width == 8 {
+                            result
+                        } else {
+                            b.ins().ireduce(integer(region.output_width), result)
+                        };
+                        let displacement = b.ins().imul_imm(at, i64::from(region.output_width));
+                        let address = b.ins().iadd(output, displacement);
+                        b.ins().store(MemFlags::new(), value, address, 0);
+                    }
                 }
                 Action::Scalar(Scalar::None) | Action::CollectionElement { .. } => {}
                 _ => return Err(backend("numeric map source action changed")),
@@ -388,6 +419,15 @@ fn emit(
     b.def_var(cursor, next);
     b.ins().jump(head, &[]);
     b.switch_to_block(done);
+    if let Some(fold) = fold {
+        let value = b.use_var(fold);
+        b.ins().store(
+            MemFlags::new(),
+            value,
+            frame,
+            offset_of!(Frame, fold) as i32,
+        );
+    }
     b.ins().store(
         MemFlags::new(),
         count,
@@ -459,4 +499,43 @@ fn emit_read(
         address,
         0,
     ))
+}
+
+/// Complete the exact elided producer/sum/extraction chain after the original
+/// collection exit visit. The ordinary builder remains live on a declined map.
+pub(in crate::native_artifact) fn emit_reduction_finish(
+    b: &mut FunctionBuilder<'_>,
+    locals: Value,
+    site: usize,
+    hooks: &Hooks,
+    reduction: &crate::native_artifact::program::prepare::numeric_maps::Reduction,
+    continuation: Block,
+    error: Block,
+) -> Result<(), NativeCompileError> {
+    hooks.require_argument_words(b, 1, error);
+    let zero = b.ins().iconst(types::I64, 0);
+    hooks.call(
+        b,
+        site,
+        GlobalHelper::NumericReductionFinish,
+        [zero; 3],
+        error,
+    );
+    let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+    let done = b.create_block();
+    let ordinary = b.create_block();
+    b.ins().brif(ready, done, &[], ordinary, &[]);
+    b.switch_to_block(done);
+    let word = b
+        .ins()
+        .load(types::I64, MemFlags::new(), hooks.arguments, 0);
+    b.ins().store(
+        MemFlags::new(),
+        word,
+        locals,
+        offset(reduction.scalar as usize)?,
+    );
+    b.ins().jump(continuation, &[locals.into()]);
+    b.switch_to_block(ordinary);
+    Ok(())
 }

@@ -32,6 +32,7 @@ pub(in crate::native_artifact::program::runtime) fn admitted_capacity<T>(
 mod data;
 pub(in crate::native_artifact) mod numeric_map;
 mod numeric_rectangles;
+mod numeric_reductions;
 mod row_blocks;
 pub(in crate::native_artifact) mod uniform_words;
 pub(in crate::native_artifact::program::runtime) mod utf8_read;
@@ -126,6 +127,7 @@ pub(in crate::native_artifact::program::runtime) struct State {
     native_read: Option<Box<utf8_read::Storage>>,
     native_fill: Option<Box<uniform_words::Loan>>,
     native_map: Option<Box<numeric_map::Loan>>,
+    native_reduction: Option<Box<numeric_reductions::Pending>>,
     live_bytes: u64,
     // Genuine query scalar roots stay in the arena after token cleanup.
     // Keep their complete bound in every later collection workspace peak.
@@ -269,6 +271,16 @@ impl State {
                 0
             } else {
                 size_of::<Option<Box<numeric_map::Loan>>>()
+            } + if descriptor
+                .metadata()
+                .numeric_maps
+                .regions
+                .iter()
+                .any(|r| r.reduction.is_some())
+            {
+                size_of::<Option<Box<numeric_reductions::Pending>>>()
+            } else {
+                0
             } + size_of::<[u64; 6]>()
                 + size_of::<Vec<Option<string_span::Lane>>>()
                 + size_of::<Vec<Option<string_map_entry::Lane>>>()) as u64
@@ -360,6 +372,7 @@ impl State {
             native_read: None,
             native_fill: None,
             native_map: None,
+            native_reduction: None,
             live_bytes: bytes,
             query_scalar_bytes: 0,
             query_scalar_nodes: 0,
@@ -373,7 +386,11 @@ impl State {
         }))
     }
     pub(in crate::native_artifact::program::runtime) fn is_complete(&self) -> bool {
-        if self.has_utf8_read() || self.native_fill.is_some() {
+        if self.has_utf8_read()
+            || self.native_fill.is_some()
+            || self.native_map.is_some()
+            || self.native_reduction.is_some()
+        {
             return false;
         }
         self.current.is_none()

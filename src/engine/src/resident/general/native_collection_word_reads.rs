@@ -41,6 +41,21 @@ impl NativePreparedLibraryCall {
         .then_some(kind)
     }
 
+    /// A selected ordered row reduction. The caller must separately prove
+    /// one-row current geometry, exact output shape, complete source order,
+    /// finite construction/call admission and publication ownership.
+    pub fn supports_f64_row_sum(&self) -> bool {
+        let f64_matrix = |schema: &mech_core::Schema| {
+            matches!(schema.body(),
+            SchemaBody::Matrix { element, dimensions } if dimensions.len() == 2
+                && element.as_ref() == &SchemaBody::FloatingPoint(mech_core::FloatWidth::W64))
+        };
+        self.template.primitive() == Primitive::SumColumns
+            && self.template.inputs().len() == 1
+            && f64_matrix(&self.template.inputs()[0])
+            && f64_matrix(self.template.output())
+    }
+
     pub fn supports_f64_matrix_element(&self) -> bool {
         self.scalar_matrix_element_kind() == Some(Kind::F64)
     }

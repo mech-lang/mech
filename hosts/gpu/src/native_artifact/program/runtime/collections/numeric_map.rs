@@ -26,6 +26,8 @@ pub(in crate::native_artifact) struct Frame {
     pub capacity_bytes: u64,
     pub count: u64,
     pub source_count: u64,
+    pub output_count: u64,
+    pub fold: u64,
     pub input_width: u64,
     pub output_width: u64,
     pub epoch: u64,
@@ -43,6 +45,7 @@ pub(super) struct Loan {
     source_slot: u32,
     matrices: [Option<MatrixOwner>; MAX_MATRICES],
     output_kind: NativeScalarKind,
+    reduction: bool,
     collection: u32,
     iteration: u32,
     header: usize,
@@ -171,9 +174,11 @@ impl State {
                 .checked_mul(128)?
                 .checked_add(inventory.checked_mul(8192)?)?
                 .checked_add(65536)?;
+            let reduction = super::numeric_reductions::bound(descriptor, region, traversals)?;
             replay
                 .checked_add(probe)?
-                .checked_add(source.count.checked_mul(rectangle.replay)?)
+                .checked_add(source.count.checked_mul(rectangle.replay)?)?
+                .checked_add(reduction.replay)
         })();
         Ok(credit)
     }
@@ -187,6 +192,7 @@ impl State {
         progress: &[u64],
     ) -> bool {
         self.native_map.is_none()
+            && self.native_reduction.is_none()
             && self.native_fill.is_none()
             && !self.has_utf8_read()
             && self.current == Some(collection)
@@ -292,6 +298,12 @@ impl State {
         let Some(rectangle) = super::numeric_rectangles::bound(ctx.descriptor(), region) else {
             return Ok(None);
         };
+        let Some(reduction) = super::numeric_reductions::bound(ctx.descriptor(), region, count)
+        else {
+            return Ok(None);
+        };
+        let bank_count = if region.reduction.is_some() { 0 } else { count };
+        let bank_bytes = mul(bank_count, u64::from(region.output_width))?;
         let mut matrix_owners: [Option<MatrixOwner>; MAX_MATRICES] = std::array::from_fn(|_| None);
         // A bounded stack inventory retains genuine current immutable owners.
         // It grants no pointer until all finite admission below has succeeded.
@@ -357,7 +369,12 @@ impl State {
             if input_bytes > isize::MAX as u64 || output_bytes > isize::MAX as u64 {
                 return None;
             }
-            let metadata_bytes = size_of::<Loan>() as u64;
+            let metadata_bytes =
+                (size_of::<Loan>() as u64).checked_add(if region.reduction.is_some() {
+                    size_of::<super::numeric_reductions::Pending>() as u64
+                } else {
+                    0
+                })?;
             let envelope = metadata
                 .scalar_bytes
                 .checked_add(output_bytes.checked_mul(4)?)?
@@ -384,23 +401,30 @@ impl State {
             let per_element = (region.steps.len() as u64)
                 .checked_mul(1024)?
                 .checked_add((region.body.len() as u64).checked_mul(128)?)?
-                .checked_add(4096)?;
+                .checked_add(4096)?
+                .checked_add(if region.reduction.is_some() { 1024 } else { 0 })?;
             let preflight = count.checked_mul(per_element)?.checked_add(8192)?;
             let setup = source_bytes
                 .checked_mul(64)?
                 .checked_add(metadata.observation_schema_bytes.checked_mul(16)?)?
                 .checked_add(allocation)?
                 .checked_add(2048)?
-                .checked_add(rectangle.setup)?;
+                .checked_add(rectangle.setup)?
+                .checked_add(reduction.setup)?;
             let total = setup
                 .checked_add(preflight)?
                 .checked_add(commit_compute)?
-                .checked_add(finish)?;
+                .checked_add(finish)?
+                .checked_add(reduction.commit)?;
             let compute = builder
                 .compute
                 .checked_add(commit_compute)?
-                .checked_add(finish)?;
-            let cloned = builder.cloned_bytes.checked_add(commit_cloned)?;
+                .checked_add(finish)?
+                .checked_add(reduction.commit)?;
+            let cloned = builder
+                .cloned_bytes
+                .checked_add(commit_cloned)?
+                .checked_add(reduction.cloned)?;
             let temporary = prior
                 .turn_peak_bytes
                 .checked_add(old_live)?
@@ -408,13 +432,15 @@ impl State {
                 .checked_add(metadata_bytes)?
                 .checked_add(output_bytes)?
                 .checked_add(envelope)?
-                .checked_add(rectangle.temporary)?;
+                .checked_add(rectangle.temporary)?
+                .checked_add(reduction.temporary)?;
             let nodes = prior
                 .retained_nodes
                 .checked_add(source_nodes)?
                 .checked_add(retained)?
                 .checked_add(8)?
-                .checked_add(rectangle.nodes)?;
+                .checked_add(rectangle.nodes)?
+                .checked_add(reduction.nodes)?;
             let output_bound = builder
                 .values
                 .output_bytes(
@@ -480,13 +506,19 @@ impl State {
         if !fits(read_output_bytes, limits.max_output_bytes)
             || scalar_read_temporary.is_none_or(|v| !fits(v, limits.max_temporary_bytes))
             || scalar_read_nodes.is_none_or(|v| !fits(v, limits.max_retained_nodes))
-            || !fits(count, limits.max_output_elements)
+            || !fits(count.max(reduction.elements), limits.max_output_elements)
             || !fits(compute, limits.max_compute_work)
             || !fits(cloned, limits.max_cloned_bytes)
-            || !fits(rectangle.comparison, limits.max_comparison_work)
+            || rectangle
+                .comparison
+                .checked_add(reduction.comparison)
+                .is_none_or(|n| !fits(n, limits.max_comparison_work))
             || !fits(temporary, limits.max_temporary_bytes)
             || !fits(nodes, limits.max_retained_nodes)
-            || !fits(output_bound.max(rectangle.output), limits.max_output_bytes)
+            || !fits(
+                output_bound.max(rectangle.output).max(reduction.output),
+                limits.max_output_bytes,
+            )
         {
             return Ok(None);
         }
@@ -496,7 +528,9 @@ impl State {
         if ctx
             .library()
             .unscoped_remaining()
-            .is_none_or(|(remaining, _)| remaining < admission)
+            .is_none_or(|(remaining, comparison)| {
+                remaining < admission || comparison < reduction.comparison
+            })
         {
             return Ok(None);
         }
@@ -509,7 +543,7 @@ impl State {
         }
         let physical = add(
             add(add(output_bytes, metadata_bytes)?, envelope)?,
-            rectangle.temporary,
+            add(rectangle.temporary, reduction.temporary)?,
         )?;
         match memory.reserve_capacity(physical) {
             Ok(probe) => drop(probe),
@@ -525,6 +559,9 @@ impl State {
         // a checked scalar later fails. No failed allocator is cold-retried.
         charge(&mut ctx.work(), setup)?;
         if !super::numeric_rectangles::validate(ctx, region, &rectangle)? {
+            return Ok(None);
+        }
+        if !super::numeric_reductions::validate(ctx, region, count, &reduction)? {
             return Ok(None);
         }
         if let Some(owner) = &owner {
@@ -557,15 +594,19 @@ impl State {
                 columns,
             };
         }
-        let output_reservation = memory.reserve_capacity(output_bytes)?;
+        let output_reservation = memory.reserve_capacity(bank_bytes)?;
         let metadata_reservation = memory.reserve_capacity(metadata_bytes)?;
         let nodes = memory.reserve_nodes(3)?;
         let mut values = data::CollectedValues::new(output_definition.body());
-        values.reserve(host_count)?;
-        if values.capacity() != host_count {
+        values.reserve(bank_count as usize)?;
+        if values.capacity() != bank_count as usize {
             return Err(invalid("numeric map output capacity differs"));
         }
-        let output = values.scalar_capacity_pointer(output_kind)?;
+        let output = if region.reduction.is_some() {
+            0
+        } else {
+            values.scalar_capacity_pointer(output_kind)?
+        };
         let epoch = ctx
             .ledger()
             .visits
@@ -581,9 +622,11 @@ impl State {
             input,
             input_bytes,
             output,
-            capacity_bytes: output_bytes,
+            capacity_bytes: bank_bytes,
             count,
             source_count,
+            output_count: bank_count,
+            fold: 0,
             input_width: u64::from(region.input_width),
             output_width: u64::from(region.output_width),
             epoch,
@@ -601,6 +644,7 @@ impl State {
             source_slot: region.source,
             matrices: matrix_owners,
             output_kind,
+            reduction: region.reduction.is_some(),
             collection: region.collection,
             iteration: region.iteration,
             header: region.header as usize,
@@ -629,6 +673,9 @@ impl State {
             .ok_or_else(|| invalid("numeric map finish has no loan"))?;
         let mut actual = loan.frame;
         actual.next = 0;
+        if loan.reduction && status == 0 && loan.frame.next == loan.frame.count {
+            actual.fold = 0;
+        }
         if pointer != (&loan.frame as *const Frame) as u64
             || loan.header != site
             || self.current != Some(loan.collection)
@@ -638,10 +685,15 @@ impl State {
             || loan.frame.next > loan.frame.count
             || status > 1
             || !loan.work.shares_account(ctx.library())
-            || loan.frame.output != loan.values.scalar_capacity_pointer(loan.output_kind)?
+            || loan.frame.output
+                != if loan.reduction {
+                    0
+                } else {
+                    loan.values.scalar_capacity_pointer(loan.output_kind)?
+                }
             || loan.output_reservation.capacity_bytes() != loan.expected.capacity_bytes
             || loan.values.len() != 0
-            || loan.values.capacity() as u64 != loan.expected.count
+            || loan.values.capacity() as u64 != loan.expected.output_count
         {
             return Err(invalid("numeric map changed its exact admitted loan"));
         }
@@ -689,6 +741,35 @@ impl State {
             loan.commit_cloned,
             loan.commit_compute,
         )?;
+        if loan.reduction {
+            if self.native_reduction.is_some() || loan.expected.output_count != 0 {
+                return Err(invalid("duplicate or materialized numeric reduction"));
+            }
+            let word = loan.frame.fold;
+            let count = loan.expected.count;
+            let header = loan.header;
+            let epoch = ctx.ledger().visits;
+            let Loan {
+                work,
+                _metadata,
+                _nodes,
+                ..
+            } = *loan;
+            self.native_reduction = Some(
+                super::utf8_read::boxed(super::numeric_reductions::Pending {
+                    header,
+                    count,
+                    word,
+                    epoch,
+                    visited: 0,
+                    work,
+                    _metadata,
+                    _nodes,
+                })
+                .ok_or_else(|| invalid("numeric reduction completion allocation"))?,
+            );
+            return Ok(true);
+        }
         // SAFETY: only the genuine emitted kernel initializes this fresh exact
         // capacity. Full completion, kind/width, current owners and epoch were
         // checked above. The emitted Bool store additionally guards <=1.

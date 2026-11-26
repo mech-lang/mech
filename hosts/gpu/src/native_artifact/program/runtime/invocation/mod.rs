@@ -610,6 +610,20 @@ impl Invocation<'_, '_, '_> {
         {
             return Err(invalid("helper while native numeric map loan is active"));
         }
+        if self
+            .state
+            .collections
+            .as_ref()
+            .is_some_and(|state| state.has_numeric_reduction())
+            && tag != GlobalHelper::NumericReductionFinish
+        {
+            return Err(invalid(
+                "helper while a numeric reduction completion is pending",
+            ));
+        }
+        if tag == GlobalHelper::NumericReductionFinish {
+            return self.finish_numeric_reduction(site, args);
+        }
         if tag == GlobalHelper::MapSeedFrame {
             return self.seed_frame_call(site, args);
         }
@@ -1067,6 +1081,13 @@ impl Invocation<'_, '_, '_> {
         }
         if self.state.control.completed && self.parent_continuation.is_pending() {
             return Err(invalid("completion with pending parent child edge"));
+        }
+        if let Some(state) = self.state.collections.as_mut() {
+            state.advance_numeric_reduction_visit(
+                self.descriptor,
+                index,
+                self.state.control.visits,
+            )?;
         }
         self.state.consumed = false;
         // Keep the actual admitted anchor. The next callback must belong to

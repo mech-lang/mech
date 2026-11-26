@@ -92,6 +92,10 @@ unsafe extern "C" fn helper(
                 _ => unreachable!(),
             }
         }
+        if flags.corrupt == 18 {
+            let frame = unsafe { &mut *(a as *mut NativeNumericMapFrame) };
+            frame.output_count += 1;
+        }
         if flags.corrupt == 17 {
             let frame = unsafe { &mut *(a as *mut NativeNumericMapFrame) };
             frame.source_count += 1;
@@ -165,6 +169,28 @@ unsafe extern "C" fn helper(
             .unwrap();
         assert_ne!(before, after);
     }
+    if op == GlobalHelper::NumericReductionFinish.raw() {
+        let invocation = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
+        if flags.corrupt == 21 {
+            invocation.state.control.visits += 1;
+        }
+        if flags.interleave {
+            let before = invocation.state.control.visits;
+            assert!(invocation.visit(site).is_err());
+            assert!(
+                invocation
+                    .helper(site, GlobalHelper::Move.raw(), [0; 3])
+                    .is_err()
+            );
+            assert!(
+                invocation
+                    .helper(site, GlobalHelper::NumericReductionFinish.raw(), [1, 0, 0])
+                    .is_err()
+            );
+            assert_eq!(invocation.state.control.visits, before);
+            COUNTS.with(|v| v.borrow_mut().interleaved_refused += 3);
+        }
+    }
     let status = unsafe { ORIGINAL.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
     if status == 0 {
         let value = unsafe { *out };
@@ -178,6 +204,14 @@ unsafe extern "C" fn helper(
             COUNTS.with(|v| {
                 let mut counts = v.borrow_mut();
                 counts.selected += 1;
+                if flags.corrupt == 19 || flags.corrupt == 20 {
+                    let frame = unsafe { &mut *(value as *mut NativeNumericMapFrame) };
+                    if flags.corrupt == 19 {
+                        frame.fold = 42;
+                    } else {
+                        frame.output_count += 1;
+                    }
+                }
                 counts.elements.insert(site, unsafe {
                     (*(value as *const NativeNumericMapFrame)).count
                 });
@@ -1197,6 +1231,46 @@ fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveou
                     counts.selected > 0 && counts.selected == counts.complete,
                     "{name}: {counts:?}"
                 );
+                let folded: Vec<_> = jit
+                    .descriptor()
+                    .metadata()
+                    .numeric_maps
+                    .regions
+                    .iter()
+                    .filter(|region| {
+                        region.reduction.is_some()
+                            && counts.elements.contains_key(&u64::from(region.header))
+                    })
+                    .collect();
+                assert!(
+                    !folded.is_empty(),
+                    "actual numerical source selects scalar folds: {name}"
+                );
+                for region in folded {
+                    let reduction = region.reduction.as_ref().unwrap();
+                    assert!(
+                        counts
+                            .helpers
+                            .get(&(
+                                u64::from(reduction.finish),
+                                GlobalHelper::NumericReductionFinish.raw()
+                            ))
+                            .copied()
+                            .unwrap_or(0)
+                            > 0
+                    );
+                    for site in [reduction.sum, reduction.select] {
+                        assert_eq!(
+                            counts
+                                .helpers
+                                .get(&(u64::from(site), GlobalHelper::Library.raw()))
+                                .copied()
+                                .unwrap_or(0),
+                            0,
+                            "native source reduction {name} {site}"
+                        );
+                    }
+                }
                 if name == "gramschmidt" {
                     let conditional = jit.descriptor().metadata().numeric_maps.regions.iter().filter(|region|
                         region.body.iter().any(|&site| matches!(jit.descriptor().plan().blocks()[site as usize].terminator(),

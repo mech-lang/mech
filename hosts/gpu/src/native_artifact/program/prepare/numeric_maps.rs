@@ -13,7 +13,10 @@ use std::collections::{BTreeMap, BTreeSet};
 
 #[path = "numeric_rectangles.rs"]
 mod rectangles;
+#[path = "numeric_map_reductions.rs"]
+mod reductions;
 pub(in crate::native_artifact) use rectangles::Rectangle;
+pub(in crate::native_artifact) use reductions::Reduction;
 
 pub(in crate::native_artifact) const HEADER_WORK: u64 = 32768;
 const MAX_SITES: usize = 16384;
@@ -43,6 +46,7 @@ pub(in crate::native_artifact) struct MatrixRead {
 #[serde(deny_unknown_fields, rename = "mech.native.image.Region")]
 pub(in crate::native_artifact) struct Region {
     pub rectangle: Option<Rectangle>,
+    pub reduction: Option<Reduction>,
     pub collection: u32,
     pub iteration: u32,
     pub header: u32,
@@ -232,6 +236,14 @@ fn ordered_body(plan: &Plan, iteration: u32, first: u32, latch: u32) -> Option<V
 impl Layout {
     pub fn at_header(&self, site: usize) -> Option<&Region> {
         self.regions.get(self.headers.get(site).copied().flatten()?)
+    }
+    pub fn at_reduction_finish(&self, site: usize) -> Option<&Region> {
+        self.regions.iter().find(|region| {
+            region
+                .reduction
+                .as_ref()
+                .is_some_and(|reduction| reduction.finish as usize == site)
+        })
     }
     pub fn derive(plan: &Plan) -> Result<Self, &'static str> {
         plan.validate_current_visits()?;
@@ -532,6 +544,7 @@ impl Layout {
             result.headers[generator.header() as usize] = Some(result.regions.len());
             result.regions.push(Region {
                 rectangle: None,
+                reduction: None,
                 collection: id as u32,
                 iteration,
                 header: generator.header(),
@@ -552,6 +565,7 @@ impl Layout {
             });
         }
         rectangles::extend(plan, &mut result)?;
+        reductions::extend(plan, &mut result);
         Ok(result)
     }
 }
