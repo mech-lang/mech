@@ -1,0 +1,456 @@
+{
+  "schema": "mech.polybench.performance-acceptance.v1",
+  "adopted_at": "2026-11-26T22:36:04.587006+00:00",
+  "retrospective_through_history_index": 22,
+  "interpretation": "Earlier runs are classified retrospectively under this newly adopted rule; their measurements and historical selection criteria are unchanged.",
+  "policy": {
+    "metric": "geomean_mech_over_c_kernel",
+    "lower_is_better": true,
+    "promotion": "Both scores must be strictly below the last accepted run.",
+    "failed_run": "Both scores increased versus the immediately preceding measured run.",
+    "ties_or_mixed_results": "Retain the measurements without promotion.",
+    "comparison_threshold": "Strict improvement; no post-hoc tolerance.",
+    "scope": "Performance aggregates only; correctness and frozen-source qualification are separate prerequisites.",
+    "holdout_use": "Aggregate acceptance after training-only selection and freeze; no per-case holdout tuning.",
+    "controls": "Report raw Mech runtime, original-reference drift and C drift separately; this gate uses the fixed Mech/C metric."
+  },
+  "history_sha256": "cad2809070a9cb1e075a8af7940c2108b6e8d1e65d4c3df74bd23b17a826c4ff",
+  "history_entries": 23,
+  "entries": [
+    {
+      "history_index": 0,
+      "label": "baseline",
+      "source_commit": "58c085a5e508b21766482d5c12c45009d53871f3",
+      "history_entry_sha256": "5afa422b201142a2a1844983ac94aeb8d8fb97fb6e974f3262067e228c94d2aa",
+      "scores": {
+        "optimization": 783.2584767166992,
+        "holdout": 2020.0854398950937
+      },
+      "previous_measured_index": null,
+      "run_outcome": "baseline",
+      "compared_to_accepted_index": null,
+      "multipliers_vs_accepted": null,
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 0
+    },
+    {
+      "history_index": 1,
+      "label": "round-01-native-matrix-frames",
+      "source_commit": "b791cd541ce2a39d46e3ea1236523fc111019b78",
+      "history_entry_sha256": "f642d2fd5be1d7f7bbc5a2832238c2837108dc1dafdfbc9d0c0ca51b09ea161c",
+      "scores": {
+        "optimization": 441.859811127942,
+        "holdout": 1610.2738988969445
+      },
+      "previous_measured_index": 0,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 0,
+      "multipliers_vs_accepted": {
+        "optimization": 0.5641302638436182,
+        "holdout": 0.7971315802269079
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 1
+    },
+    {
+      "history_index": 2,
+      "label": "round-02-native-scalar-matrix-updates",
+      "source_commit": "ea3977e8f1cf3aa085424b854816bbb6e81d85db",
+      "history_entry_sha256": "f5087c1ac151bacb227dae6479280ad9e331fa7536587a18249739907714222c",
+      "scores": {
+        "optimization": 346.0245145135151,
+        "holdout": 1529.298567056931
+      },
+      "previous_measured_index": 1,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 1,
+      "multipliers_vs_accepted": {
+        "optimization": 0.7831092708572279,
+        "holdout": 0.9497133177806071
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 2
+    },
+    {
+      "history_index": 3,
+      "label": "round-03-native-maps",
+      "source_commit": "e68d404257b794b4daaea33c4dd7b6310b3896d3",
+      "history_entry_sha256": "20fdbc5b7acc7649c5e83949d6b633ac92cdb662def5a294194981d113db33b1",
+      "scores": {
+        "optimization": 318.8440279096326,
+        "holdout": 1468.5568039584937
+      },
+      "previous_measured_index": 2,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 2,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9214492457504166,
+        "holdout": 0.9602812920858664
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 3
+    },
+    {
+      "history_index": 4,
+      "label": "round-04-conditional-maps",
+      "source_commit": "19cd8a6bcb5ba504b6ac22c059c3e33a66d6ee5c",
+      "history_entry_sha256": "2456fd1aa72d08ac4fe249b9eb342a150e50dc1f482aeb9d85e5b49f80f3da63",
+      "scores": {
+        "optimization": 301.1974962493746,
+        "holdout": 724.2742286534767
+      },
+      "previous_measured_index": 3,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 3,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9446546583420423,
+        "holdout": 0.49318775188075537
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 4
+    },
+    {
+      "history_index": 5,
+      "label": "round-05-guarded-tagged-numeric",
+      "source_commit": "6887ed78c8741a311c7648d050b773897ec420f0",
+      "history_entry_sha256": "6cb92f7d010b23048a65d45560718c65a63607eb5b195ebec4394c9b92ce4669",
+      "scores": {
+        "optimization": 159.69306245409211,
+        "holdout": 814.6680951794095
+      },
+      "previous_measured_index": 4,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 4,
+      "multipliers_vs_accepted": {
+        "optimization": 0.5301938576603414,
+        "holdout": 1.124806134126831
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 4
+    },
+    {
+      "history_index": 6,
+      "label": "round-06-numeric-call-cache",
+      "source_commit": "fe60ce70f840357c9eaee32dc751f0e96213b17f",
+      "history_entry_sha256": "fc72c8029a114b0e5a6f3c611d942c4c36aa5f93977887f044859a2ba6671c59",
+      "scores": {
+        "optimization": 142.99940019704346,
+        "holdout": 440.80369001956063
+      },
+      "previous_measured_index": 5,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 4,
+      "multipliers_vs_accepted": {
+        "optimization": 0.47476955146615163,
+        "holdout": 0.6086143515544852
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 6
+    },
+    {
+      "history_index": 7,
+      "label": "round-07-captured-numeric-phases",
+      "source_commit": "0c37ee2e170769c3c187bda09deab98326722e8b",
+      "history_entry_sha256": "2036c0e783a72e426e4820b851128eb104ca4d907f7082ef44b60b3129ab3786",
+      "scores": {
+        "optimization": 123.8647535830103,
+        "holdout": 456.18124066068634
+      },
+      "previous_measured_index": 6,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 6,
+      "multipliers_vs_accepted": {
+        "optimization": 0.8661907211661943,
+        "holdout": 1.0348852584252264
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 6
+    },
+    {
+      "history_index": 8,
+      "label": "round-08-packed-numeric-output",
+      "source_commit": "cec3d5d8eb386be4d91d7daf251b0249bf10ec48",
+      "history_entry_sha256": "d1a76a8fcddd245face8e7494d5380cf71306ae069890ae4b896b656678087f0",
+      "scores": {
+        "optimization": 111.80426614944933,
+        "holdout": 435.6414828354201
+      },
+      "previous_measured_index": 7,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 6,
+      "multipliers_vs_accepted": {
+        "optimization": 0.7818512944487225,
+        "holdout": 0.9882891016998713
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 8
+    },
+    {
+      "history_index": 9,
+      "label": "round-09-rectangular-maps",
+      "source_commit": "24135d2a5aef38c56ebc651d91d8a851b0442fde",
+      "history_entry_sha256": "1c01d20d1ac22ecf14cacdcb8ea26987f06e8e78a46c38bbae18de82a56b6402",
+      "scores": {
+        "optimization": 104.87592047162897,
+        "holdout": 278.73326129407394
+      },
+      "previous_measured_index": 8,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 8,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9380314730695588,
+        "holdout": 0.6398225887027749
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 9
+    },
+    {
+      "history_index": 10,
+      "label": "round10-prefix-fsms",
+      "source_commit": "b08f2ff9cf543fd63e10e0b2c6c05970b13dd9b9",
+      "history_entry_sha256": "61b3cbe9cd351dfdef87ceeb0c36a14d1510a85623f5c75ae93cc1f23adc629c",
+      "scores": {
+        "optimization": 76.82871792007424,
+        "holdout": 269.2266523277008
+      },
+      "previous_measured_index": 9,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 9,
+      "multipliers_vs_accepted": {
+        "optimization": 0.7325677579235925,
+        "holdout": 0.9658935251493243
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 10
+    },
+    {
+      "history_index": 11,
+      "label": "round11-map-reductions",
+      "source_commit": "c72146bbcb1d86c71dd72e27e6efca759a5c2b6d",
+      "history_entry_sha256": "065cbf11b02e47821edd5ac50d4fb1a1d8a7dcd035ef06c86655773bfc34c5f1",
+      "scores": {
+        "optimization": 69.99384808712122,
+        "holdout": 241.6990656664671
+      },
+      "previous_measured_index": 10,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 10,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9110375648847426,
+        "holdout": 0.8977531146220721
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 11
+    },
+    {
+      "history_index": 12,
+      "label": "round12-map-transposes",
+      "source_commit": "b7a3610472f83f4ccda82d193235f71bf167bb97",
+      "history_entry_sha256": "8801917ba52372f69e9aea6b0915b0e07598d8b6d27f4007afaeec79c70b910b",
+      "scores": {
+        "optimization": 64.35912213077829,
+        "holdout": 214.24126775818524
+      },
+      "previous_measured_index": 11,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 11,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9194968399318552,
+        "holdout": 0.8863967560959781
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 12
+    },
+    {
+      "history_index": 13,
+      "label": "round13-direct-rectangles",
+      "source_commit": "5cbf06b8000f37a10cabf1aa74a752cf29216ff3",
+      "history_entry_sha256": "3bc5a5972e0b2ad09bd6bebd86f375d8611c87e397a4a96d313acb0f25848c23",
+      "scores": {
+        "optimization": 60.50055958437494,
+        "holdout": 196.25384877579955
+      },
+      "previous_measured_index": 12,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 12,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9400463769757034,
+        "holdout": 0.9160412969424353
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 13
+    },
+    {
+      "history_index": 14,
+      "label": "round14-phase-reductions",
+      "source_commit": "e065bf86a67ad7c74c40d3264ef5940de74fb9db",
+      "history_entry_sha256": "54ff1500d3f63289c99e56b3082feaefe6ce41d7eea378b3607bc4ad1741ec17",
+      "scores": {
+        "optimization": 48.3629118002557,
+        "holdout": 181.02105364633815
+      },
+      "previous_measured_index": 13,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 13,
+      "multipliers_vs_accepted": {
+        "optimization": 0.799379578180729,
+        "holdout": 0.92238218396999
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 14
+    },
+    {
+      "history_index": 15,
+      "label": "round-15-block-range-cursors",
+      "source_commit": "6b84591c2f3e435552af969fe435f3c1937a3d35",
+      "history_entry_sha256": "cab91cb55e4523fb8e2dade3082e330841f79741e347ab383e4391a1c399f9c5",
+      "scores": {
+        "optimization": 47.201218958057694,
+        "holdout": 133.61134224078683
+      },
+      "previous_measured_index": 14,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 14,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9759796753554474,
+        "holdout": 0.7380983567901669
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 15
+    },
+    {
+      "history_index": 16,
+      "label": "round-16-typed-numeric-operands",
+      "source_commit": "52a80673f627d6bfff778382203dc8db2b98bd59",
+      "history_entry_sha256": "d9493111d48da56d95ed0a60a53d98b71230a1e2f6cbfe311e787582e0d24df1",
+      "scores": {
+        "optimization": 44.38513146877133,
+        "holdout": 129.6480569298469
+      },
+      "previous_measured_index": 15,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 15,
+      "multipliers_vs_accepted": {
+        "optimization": 0.940338670240938,
+        "holdout": 0.9703372090686917
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 16
+    },
+    {
+      "history_index": 17,
+      "label": "round-17-nested-ordered-reductions",
+      "source_commit": "8974a661a4e0987cfd6ae24bb572dc4284bd478e",
+      "history_entry_sha256": "c6e744b503066f3e3e42346d3669ddbd56d6d783380ee4fc739eed951c98eb92",
+      "scores": {
+        "optimization": 41.513488187773284,
+        "holdout": 91.53488471866345
+      },
+      "previous_measured_index": 16,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 16,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9353016835599893,
+        "holdout": 0.706025889521764
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 17
+    },
+    {
+      "history_index": 18,
+      "label": "round-18-direct-typed-f64-broadcast",
+      "source_commit": "ec96f1d0ec97a8554c07b30c7b7bda94d98c3a16",
+      "history_entry_sha256": "3dd7a1cefbcc5ce929a2fd1da0ddba2dea09102d4c24e64767378f4525020cd6",
+      "scores": {
+        "optimization": 39.77160968397907,
+        "holdout": 89.6891841365111
+      },
+      "previous_measured_index": 17,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 17,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9580406614853618,
+        "holdout": 0.9798360965021675
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 18
+    },
+    {
+      "history_index": 19,
+      "label": "round-19-inline-current-shape-leaves",
+      "source_commit": "3294d36340510bdbd0c7ec071ef78ce96468389f",
+      "history_entry_sha256": "b30f2d61f46966e27a0af190d3199b4c32715103c9ea235d2054146629328e7c",
+      "scores": {
+        "optimization": 39.05084826487183,
+        "holdout": 84.28176686288246
+      },
+      "previous_measured_index": 18,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 18,
+      "multipliers_vs_accepted": {
+        "optimization": 0.9818774893740954,
+        "holdout": 0.9397093715848914
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 19
+    },
+    {
+      "history_index": 20,
+      "label": "round-20-phase-maps",
+      "source_commit": "9f6ed6c5e789f363a5194b604f95db4ad4fe6ad8",
+      "history_entry_sha256": "c90e8c85b9985de64a20672d1eb20bab4473a6344375239a75fa83773d474940",
+      "scores": {
+        "optimization": 33.21157075463987,
+        "holdout": 86.62116166287066
+      },
+      "previous_measured_index": 19,
+      "run_outcome": "mixed_or_tied",
+      "compared_to_accepted_index": 19,
+      "multipliers_vs_accepted": {
+        "optimization": 0.850469893237001,
+        "holdout": 1.0277568314840166
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 19
+    },
+    {
+      "history_index": 21,
+      "label": "round-21-owned-maps",
+      "source_commit": "3789f44d051a5749daf5c5cfb2e8cd3b81bdbf88",
+      "history_entry_sha256": "25ee31b813447c9c84a8abcedcc49b707dc94bdb083cc2b950e31f05a46b4c05",
+      "scores": {
+        "optimization": 35.08102837485539,
+        "holdout": 116.81341366363743
+      },
+      "previous_measured_index": 20,
+      "run_outcome": "failed_both_regressed",
+      "compared_to_accepted_index": 19,
+      "multipliers_vs_accepted": {
+        "optimization": 0.8983422879039612,
+        "holdout": 1.3859867680951745
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 19
+    },
+    {
+      "history_index": 22,
+      "label": "round-22-owned-maps",
+      "source_commit": "6a6b5f47078edd5f67b5857fed70655f9f21326c",
+      "history_entry_sha256": "95ce59f4024c3b8fb90ba3727f6ba2141fcd98b3f5c3cce0489911daf2e87864",
+      "scores": {
+        "optimization": 31.63318246430962,
+        "holdout": 68.4768756565068
+      },
+      "previous_measured_index": 21,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 19,
+      "multipliers_vs_accepted": {
+        "optimization": 0.8100510967072956,
+        "holdout": 0.8124755591314483
+      },
+      "performance_gate": "accepted",
+      "accepted_index_after_run": 22
+    }
+  ],
+  "accepted_history_index": 22
+}

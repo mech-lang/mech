@@ -1764,3 +1764,36 @@ floyd-warshall     holdout             4,841.31           13.07
 cholesky           optimization       23,662.23            8.44
 nussinov           optimization      119,638.18            5.25
 seidel-2d          optimization       50,168.86            3.02
+
+Performance acceptance rule (adopted after round22)
+
+performance-history.json retains every measured run, including failed runs.
+performance-acceptance.json separately records the accepted comparator under
+the new rule. Earlier results are classified retrospectively; this does not
+change their original selection criteria or any measurement.
+
+A candidate passes the performance gate only when BOTH optimization and holdout
+Mech/C geometric means are strictly lower than the last accepted run. Ties or
+mixed results do not replace that comparator. A run that worsens both scores
+versus the immediately preceding measurement is explicitly a failed run.
+Correctness and frozen-source qualification remain separate prerequisites.
+The fixed aggregate gate uses Mech/C; raw Mech speedup, original-reference drift
+and C drift remain separately reported. It does not establish statistical
+significance for small changes.
+
+round  optimization xC  holdout xC  outcome / performance gate
+19              39.05       84.28  accepted comparator before rounds20/21
+20              33.21       86.62  mixed; not promoted
+21              35.08      116.81  both regressed vs20; failed, not promoted
+22              31.63       68.48  both improve vs19; accepted
+
+Run after every complete two-set summary, retaining failed runs as well:
+python3 scripts/record-polybench-acceptance.py
+Before reporting a new performance improvement, require the gate to pass:
+python3 scripts/record-polybench-acceptance.py --check --require-latest-accepted
+
+The command preserves prior decisions, detects edited measurements and stale
+ledgers, and returns failure if the latest candidate was not accepted. It never
+rewrites timing receipts or history. Continue selecting candidates from training
+profiles only, freeze before either formal set, and use the holdout aggregate
+only for acceptance. The previously exposed split is not blind validation.
