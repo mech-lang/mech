@@ -758,6 +758,7 @@ fn prepare_impl<M: Module>(
         false,
         error_origin_base,
     )?;
+    phase_layout::apply_comparison_options(compiler_inputs, &mut context, &symbol);
     let function = declare_phase(module, &symbol, &signature)?;
     if let Err(error) = context.verify(module.isa()) {
         if let Some(path) = compiler_inputs.var_os("MECH_COMPACT_FAILURE_DIR") {

@@ -13,6 +13,8 @@ use cranelift_codegen::{
     flowgraph::ControlFlowGraph,
 };
 use std::collections::{BTreeMap, BTreeSet};
+#[path = "append_store_pairs.rs"]
+mod store_pairs;
 #[cfg(all(test, feature = "jit", target_pointer_width = "64"))]
 #[path = "append_previous_tests.rs"]
 mod tests;
@@ -93,7 +95,7 @@ impl Hint {
         } else {
             None
         };
-        forward(
+        let result = forward(
             context,
             self.read,
             &stores,
@@ -101,7 +103,18 @@ impl Hint {
             compiler_inputs
                 .var_os("MECH_FORWARD_PREVIOUS_NARROW")
                 .is_some(),
-        )
+        )?;
+        if compiler_inputs
+            .var_os("MECH_COMPACT_PAIR_ADMITTED_APPEND_STORES")
+            .is_some()
+        {
+            // The caller's sealed NoGrowth contract admits this exclusive
+            // append vector, and the complete write census above classifies
+            // every mutation before changing the previous-value recurrence.
+            let paired = store_pairs::fold(&mut context.func, &stores);
+            eprintln!("compact admitted append store pairs: {paired}");
+        }
+        Ok(result)
     }
 }
 

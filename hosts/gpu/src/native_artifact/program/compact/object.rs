@@ -314,6 +314,13 @@ impl PreparedObject {
             return Ok(false);
         }
         let mut candidate = Context::for_function(prepared.func);
+        if self
+            .compiler_inputs
+            .var_os("MECH_COMPACT_ROUTE_DUMP")
+            .is_some()
+        {
+            candidate.set_disasm(true);
+        }
         if !candidate
             .inline(super::inlining::OnceCalled(&selected))
             .map_err(|error| ModuleError::Backend(error.into()))?
@@ -608,6 +615,9 @@ impl Module for PreparedObject {
         control: &mut ControlPlane,
     ) -> ModuleResult<()> {
         let declaration = self.declarations.get_function_decl(id);
+        if let Some(symbol) = declaration.name.as_deref() {
+            phase_layout::apply_comparison_options(&self.compiler_inputs, context, symbol);
+        }
         let checked_root = declaration.name.as_deref() == Some("mech_compact_closed_checked");
         let checked_body = checked_root
             || declaration.name.as_deref().is_some_and(|name| {

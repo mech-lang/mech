@@ -216,6 +216,9 @@ pub struct FunctionStencil {
     /// Load wide integer constants for conditional comparisons from the literal pool.
     #[cfg_attr(feature = "enable-serde", serde(default))]
     pub aarch64_ccmp_literal_constants: bool,
+    /// Use immediate conditional comparisons for small integer literals.
+    #[cfg_attr(feature = "enable-serde", serde(default))]
+    pub aarch64_ccmp_immediates: bool,
     /// Fold an adjacent CSET inversion into its sole user's register on AArch64.
     #[cfg_attr(feature = "enable-serde", serde(default))]
     pub aarch64_fold_single_use_cset: bool,
@@ -287,6 +290,7 @@ impl FunctionStencil {
         self.aarch64_branch_on_zero = false;
         self.aarch64_branch_on_negated_disjunction = false;
         self.aarch64_ccmp_literal_constants = false;
+        self.aarch64_ccmp_immediates = false;
         self.aarch64_fold_single_use_cset = false;
         self.aarch64_hoist_prefetch_bases = false;
         self.aarch64_hoist_indexed_load_bases = false;
@@ -497,6 +501,7 @@ impl Function {
                 aarch64_branch_on_zero: false,
                 aarch64_branch_on_negated_disjunction: false,
                 aarch64_ccmp_literal_constants: false,
+                aarch64_ccmp_immediates: false,
                 aarch64_fold_single_use_cset: false,
                 aarch64_hoist_prefetch_bases: false,
                 aarch64_hoist_indexed_load_bases: false,

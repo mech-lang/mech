@@ -36,6 +36,7 @@ pub(super) fn define_body<M: Module>(
     context: &mut Context,
     bodies: Option<&mut PhaseBodies>,
 ) -> Result<(FuncId, String), NativeCompileError> {
+    super::phase_layout::apply_comparison_options(compiler_inputs, context, symbol);
     prepare_body(compiler_inputs, module.isa(), context)?;
     define_prepared_body(module, function, symbol, context, bodies)
 }

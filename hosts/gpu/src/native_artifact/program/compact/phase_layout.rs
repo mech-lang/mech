@@ -29,6 +29,25 @@ pub(super) fn profiles(compiler_inputs: &CompilationInputs) -> Option<String> {
     compiler_inputs.var("MECH_COMPACT_PHASE_BLOCK_LAYOUT").ok()
 }
 
+/// Pure comparison lowering also applies to checked roots and composed bodies.
+/// Set it from the captured inputs before inspection or body compilation.
+pub(super) fn apply_comparison_options(
+    compiler_inputs: &CompilationInputs,
+    context: &mut Context,
+    symbol: &str,
+) {
+    if compiler_inputs
+        .var("MECH_COMPACT_CCMP_IMMEDIATES")
+        .is_ok_and(|targets| {
+            targets
+                .split(';')
+                .any(|target| target == "all" || target == symbol)
+        })
+    {
+        context.func.aarch64_ccmp_immediates = true;
+    }
+}
+
 pub(super) fn apply_fp_spill_cache(
     compiler_inputs: &CompilationInputs,
     context: &mut Context,
@@ -94,6 +113,7 @@ pub(super) fn apply_register_weights(
     context: &mut Context,
     symbol: &str,
 ) -> io::Result<()> {
+    apply_comparison_options(compiler_inputs, context, symbol);
     #[derive(serde::Deserialize)]
     struct RegisterWeights {
         expected_vcode: String,
@@ -469,4 +489,23 @@ mod tests {
         assert_eq!(child("explicit-ambient-a", "a"), expected);
         assert_eq!(child("explicit-ambient-b", "b"), expected);
     }
+}
+
+#[cfg(test)]
+#[test]
+fn comparison_options_use_captured_phase_selection() {
+    let inputs = CompilationInputs::capture([(
+        "MECH_COMPACT_CCMP_IMMEDIATES".into(),
+        "first;selected".into(),
+    )]);
+    let mut selected = Context::new();
+    let mut other = Context::new();
+    apply_comparison_options(&inputs, &mut selected, "selected");
+    apply_comparison_options(&inputs, &mut other, "other");
+    assert!(selected.func.aarch64_ccmp_immediates);
+    assert!(!other.func.aarch64_ccmp_immediates);
+    let inputs =
+        CompilationInputs::capture([("MECH_COMPACT_CCMP_IMMEDIATES".into(), "all".into())]);
+    apply_comparison_options(&inputs, &mut other, "other");
+    assert!(other.func.aarch64_ccmp_immediates);
 }

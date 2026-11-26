@@ -2467,6 +2467,28 @@ fn test_aarch64_binemit() {
         "ccmp w3, #30, #NZCV, gt",
     ));
     insns.push((
+        Inst::CCmnImm {
+            size: OperandSize::Size64,
+            rn: xreg(22),
+            imm: UImm5::maybe_from_u8(5).unwrap(),
+            nzcv: NZCV::new(false, false, true, true),
+            cond: Cond::Eq,
+        },
+        "C30A45BA",
+        "ccmn x22, #5, #nzCV, eq",
+    ));
+    insns.push((
+        Inst::CCmnImm {
+            size: OperandSize::Size32,
+            rn: xreg(3),
+            imm: UImm5::maybe_from_u8(30).unwrap(),
+            nzcv: NZCV::new(true, true, true, true),
+            cond: Cond::Gt,
+        },
+        "6FC85E3A",
+        "ccmn w3, #30, #NZCV, gt",
+    ));
+    insns.push((
         Inst::MovToFpu {
             rd: writable_vreg(31),
             rn: xreg(0),

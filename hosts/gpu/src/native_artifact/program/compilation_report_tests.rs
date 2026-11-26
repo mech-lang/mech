@@ -217,6 +217,7 @@ mod qualified {
     const WEIGHTS: &str = "MECH_COMPACT_PHASE_REGISTER_WEIGHTS";
     const ROOT_TAIL: &str = "MECH_COMPACT_ROOT_TAIL_PROFILE";
     const VECTOR: &str = "mech_compact_numeric_475_vector";
+    const CHECKED_ROOT: &str = "mech_compact_closed_checked";
     type Settings = BTreeMap<String, String>;
 
     fn digest(bytes: &[u8]) -> String {
@@ -385,6 +386,17 @@ mod qualified {
         let bytecode = mech_engine::encode_program_artifact_bytecode_v1(&artifact).unwrap();
         assert_eq!(digest(&bytecode), expected["program.mecb"]);
         assert!(settings.contains_key("MECH_COMPACT_DIRECT_ENTRY_LITERALS"));
+        assert!(!settings.contains_key("MECH_COMPACT_CCMP_IMMEDIATES"));
+        assert!(!settings.contains_key("MECH_COMPACT_PAIR_ADMITTED_APPEND_STORES"));
+        assert!(
+            settings[WEIGHTS]
+                .split(';')
+                .filter_map(|entry| entry.split_once('@'))
+                .all(|(symbol, _)| !matches!(
+                    symbol,
+                    CHECKED_ROOT | "mech_compact_closed_v1" | "mech_compact_closed_v2"
+                ))
+        );
         let check_artifacts = |mode: &str, actual: &(Vec<u8>, Value)| {
             assert_eq!(digest(&actual.0), expected["program.o"]);
             let expected_descriptor = if mode == "0" {
@@ -481,6 +493,41 @@ mod qualified {
                 .contains("register frequency profile does not match lowered code"),
             "{error}"
         );
+
+        let folder = tempfile::tempdir().unwrap();
+        let mut checked = copy_profiles(&settings, folder.path());
+        let weights = folder.path().join("checked-root-weights.json");
+        fs::write(&weights, serde_json::to_vec(&stale_profile).unwrap()).unwrap();
+        checked
+            .get_mut(WEIGHTS)
+            .unwrap()
+            .push_str(&format!(";{CHECKED_ROOT}@{}", weights.to_str().unwrap()));
+        let reads = Rc::new(RefCell::new(0));
+        let observed = reads.clone();
+        let selected = SelectedProfiles::with_reader(move |path| {
+            let bytes = fs::read(path)?;
+            if path == weights {
+                *observed.borrow_mut() += 1;
+                fs::remove_file(path).unwrap();
+            }
+            Ok(bytes)
+        });
+        let error = emit_compact_with_selected_profiles(
+            &artifact,
+            &catalog,
+            false,
+            &capture(&checked).0,
+            &selected,
+            None,
+        )
+        .unwrap_err();
+        assert!(
+            error
+                .to_string()
+                .contains("register frequency profile does not match lowered code"),
+            "{error}"
+        );
+        assert_eq!(*reads.borrow(), 1);
 
         let folder = tempfile::tempdir().unwrap();
         let local = copy_profiles(&settings, folder.path());
