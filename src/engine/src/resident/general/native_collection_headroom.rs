@@ -36,6 +36,10 @@ fn scalar_u64(schema: &Schema) -> bool {
 /// Unsupported families keep the existing complete-ceiling capacity proof.
 /// A supported family whose current proof fails must instead decline/evict
 /// optional metadata, retaining the ordinary call's own rejection order.
+pub(super) fn supports_numeric_template(template: &NativeProgramLibraryTemplate) -> bool {
+    numeric::supports(template)
+}
+
 pub(super) fn supports_template(template: &NativeProgramLibraryTemplate) -> bool {
     if numeric::supports(template) {
         return true;

@@ -371,6 +371,8 @@ impl NativePreparedLibraryCall {
                         projection_count: Some(selector.count),
                         binding_nodes: self.binding_nodes,
                         projection_index: Default::default(),
+                        previous: None,
+                        history_len: 0,
                         _reservation: reservation,
                         _nodes: nodes,
                     }));
