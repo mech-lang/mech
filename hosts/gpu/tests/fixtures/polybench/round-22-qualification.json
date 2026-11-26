@@ -1,0 +1,671 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v1",
+  "label": "round-22-owned-maps",
+  "compiler_commit": "6a6b5f47078edd5f67b5857fed70655f9f21326c",
+  "compiler_fingerprint": "5145ef2ad1966c7e0c5ee28d9b8b81b29b333e8e1d5c26425c67733352c426a3",
+  "driver_sha256": "2f1fe3109ec55521ab7bffb48b8f69f5dc6391e6afdcdbaac4a7c3ace77a1ee9",
+  "frozen_candidate_sha256": "c06bf32ddebb621c6c823d0a0cde054502271182283b2b255866c1e6294e2691",
+  "native_typed_ir_version": 382,
+  "native_work_policy_version": 150,
+  "native_abi_version": 42,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "live_outs_per_artifact": 29482
+  },
+  "checks": [
+    {
+      "suite": "native numeric, phase, row blocks, summary accounting, private publication and exact Huffman equations",
+      "passed_by_target": [
+        374
+      ],
+      "log": "numeric-regressions-2.log",
+      "log_sha256": "4981b7d3466444f410db2d3254044122a13bd1332ad1b01c9b07f098f863473a"
+    },
+    {
+      "suite": "matrix and all thirty original/decoded/Object PolyBench C live-outs",
+      "passed_by_target": [
+        24,
+        30
+      ],
+      "log": "matrix-polybench.log",
+      "log_sha256": "facae33b2fb751df3188d7f15311625fbc1de8f38cc56375d9fa01dd63299ae1"
+    },
+    {
+      "suite": "selected scalar, frame, compression, collection and range/cursor regressions",
+      "passed_by_target": [
+        114
+      ],
+      "log": "program-regressions.log",
+      "log_sha256": "14e3c3b588efbe3596920adf5301f03f52b91682be072e21393043366e139b40"
+    },
+    {
+      "suite": "helper tag round-trip and output reservation",
+      "passed_by_target": [
+        1
+      ],
+      "log": "protocol.log",
+      "log_sha256": "35b0cbb75ec1875d67ffea87b51ec5e933c5b41600a996189cf23c871ec827fe"
+    }
+  ],
+  "total_selected_checks": 543,
+  "feature_checks": [
+    {
+      "feature": "canonical-native-program-runtime",
+      "status": "passed",
+      "log": "runtime-feature.log",
+      "log_sha256": "553d115dfbfa6d9a9a76084d2aad24886f1afac1e6febc69b11656d2f532af18"
+    },
+    {
+      "feature": "canonical-native-program",
+      "status": "passed",
+      "log": "production-feature.log",
+      "log_sha256": "85fe8e83a7d2552fe0e3bdc4db9f12698e28f4ada84a9f89074156f51684735a"
+    }
+  ],
+  "goal": {
+    "partition": "holdout",
+    "metric": "geomean_mech_over_c_kernel",
+    "value": 68.4768756565068,
+    "target_strictly_below": 1.0,
+    "achieved": false,
+    "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+    "objective_frozen_with_candidate": true,
+    "sum_mech_median_seconds": 0.017118792
+  },
+  "aggregates": {
+    "optimization": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 24.636747466930963,
+      "median_speedup": 1.5743683559950556,
+      "minimum_speedup": 1.0788823057733428,
+      "maximum_speedup": 19435.918209533917,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 31.63318246430962,
+      "geomean_mech_over_c_fresh": 20.57709457799159,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 113.26232303457913,
+      "sum_mech_median_seconds": 0.0049151690000000005,
+      "geomean_speedup_from_contemporaneous_baseline": 24.129555261034348,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.0612526728439058
+    },
+    "holdout": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 30.717877692458327,
+      "median_speedup": 23.352311715598074,
+      "minimum_speedup": 1.0727316010827301,
+      "maximum_speedup": 388.00761356229225,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 68.4768756565068,
+      "geomean_mech_over_c_fresh": 39.33182100664541,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 463.8999081365569,
+      "sum_mech_median_seconds": 0.017118792,
+      "geomean_speedup_from_contemporaneous_baseline": 30.656826087860207,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.102127547016761
+    },
+    "all": {
+      "count": 30,
+      "geomean_speedup_from_recorded_baseline": 27.509790901225838,
+      "median_speedup": 13.406080051121824,
+      "minimum_speedup": 1.0727316010827301,
+      "maximum_speedup": 19435.918209533917,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 46.541825299703504,
+      "geomean_mech_over_c_fresh": 28.448806667035768,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 463.8999081365569,
+      "sum_mech_median_seconds": 0.022033961,
+      "geomean_speedup_from_contemporaneous_baseline": 27.19808043254049,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.0612526728439058
+    }
+  },
+  "cases": {
+    "jacobi-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.003556125,
+      "c_median_seconds": 7.665716111660004e-06,
+      "mech_over_c_kernel": 463.8999081365569,
+      "starting_mech_over_c_kernel": 9612.11646057087,
+      "speedup_from_recorded_baseline": 20.722755246230097,
+      "speedup_from_paired_original": 20.620701465780872,
+      "speedup_from_round21": 1.0025426552778658,
+      "speedup_from_round20": 1.0249217898695913,
+      "observations": 30
+    },
+    "jacobi-1d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000178958,
+      "c_median_seconds": 4.172325134277344e-07,
+      "mech_over_c_kernel": 428.9167172754286,
+      "starting_mech_over_c_kernel": 7168.140899468677,
+      "speedup_from_recorded_baseline": 23.352311715598074,
+      "speedup_from_paired_original": 23.357206718894933,
+      "speedup_from_round21": 1.0251455648811454,
+      "speedup_from_round20": 1.0218878172532102,
+      "observations": 30
+    },
+    "adi": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.008855541,
+      "c_median_seconds": 4.587508738040924e-05,
+      "mech_over_c_kernel": 193.03594839105898,
+      "starting_mech_over_c_kernel": 21631.38022675036,
+      "speedup_from_recorded_baseline": 109.10708809320627,
+      "speedup_from_paired_original": 108.53489922298367,
+      "speedup_from_round21": 1.0028749231695726,
+      "speedup_from_round20": 1.0144118806518994,
+      "observations": 30
+    },
+    "gemver": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000303042,
+      "c_median_seconds": 1.6670674085617065e-06,
+      "mech_over_c_kernel": 181.78149152436202,
+      "starting_mech_over_c_kernel": 260.7344433964597,
+      "speedup_from_recorded_baseline": 1.5409019211858423,
+      "speedup_from_paired_original": 1.5154665029929846,
+      "speedup_from_round21": 1.009625728446882,
+      "speedup_from_round20": 0.9799268748226319,
+      "observations": 30
+    },
+    "gesummv": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000113417,
+      "c_median_seconds": 9.168870747089386e-07,
+      "mech_over_c_kernel": 123.69789380661047,
+      "starting_mech_over_c_kernel": 112.37666473873892,
+      "speedup_from_recorded_baseline": 1.0727316010827301,
+      "speedup_from_paired_original": 1.102127547016761,
+      "speedup_from_round21": 0.9999911829796239,
+      "speedup_from_round20": 0.9316592750645847,
+      "observations": 30
+    },
+    "mvt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000151,
+      "c_median_seconds": 1.3331882655620575e-06,
+      "mech_over_c_kernel": 113.26232303457913,
+      "starting_mech_over_c_kernel": 138.9627991919192,
+      "speedup_from_recorded_baseline": 1.1879139072847682,
+      "speedup_from_paired_original": 1.1142384105960264,
+      "speedup_from_round21": 1.0935430463576157,
+      "speedup_from_round20": 1.109271523178808,
+      "observations": 30
+    },
+    "deriche": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.002871792,
+      "c_median_seconds": 2.933293581008911e-05,
+      "mech_over_c_kernel": 97.90332677891186,
+      "starting_mech_over_c_kernel": 43560.74017727218,
+      "speedup_from_recorded_baseline": 438.62866530723664,
+      "speedup_from_paired_original": 436.6229197657769,
+      "speedup_from_round21": 0.9994484280198566,
+      "speedup_from_round20": 0.9902353652353652,
+      "observations": 30
+    },
+    "ludcmp": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.001083417,
+      "c_median_seconds": 1.2208707630634308e-05,
+      "mech_over_c_kernel": 88.74133387234785,
+      "starting_mech_over_c_kernel": 20723.719650259725,
+      "speedup_from_recorded_baseline": 230.32290429262233,
+      "speedup_from_paired_original": 229.9382795359497,
+      "speedup_from_round21": 37.79892691364452,
+      "speedup_from_round20": 3.8815469943705887,
+      "observations": 30
+    },
+    "bicg": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.00011675,
+      "c_median_seconds": 1.4998950064182281e-06,
+      "mech_over_c_kernel": 77.83878171499535,
+      "starting_mech_over_c_kernel": 87.93647372142229,
+      "speedup_from_recorded_baseline": 1.0988608137044968,
+      "speedup_from_paired_original": 1.1216959314775161,
+      "speedup_from_round21": 1.3954346895074945,
+      "speedup_from_round20": 0.9803768736616701,
+      "observations": 30
+    },
+    "atax": {
+      "partition": "optimization",
+      "mech_median_seconds": 8.6042e-05,
+      "c_median_seconds": 1.125037670135498e-06,
+      "mech_over_c_kernel": 76.47921690447683,
+      "starting_mech_over_c_kernel": 79.13415176878613,
+      "speedup_from_recorded_baseline": 1.11137583970619,
+      "speedup_from_paired_original": 1.1065409916087492,
+      "speedup_from_round21": 1.4004788359173428,
+      "speedup_from_round20": 0.9544757211594338,
+      "observations": 30
+    },
+    "correlation": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000323208,
+      "c_median_seconds": 4.332978278398514e-06,
+      "mech_over_c_kernel": 74.59257333721483,
+      "starting_mech_over_c_kernel": 327.9356878116524,
+      "speedup_from_recorded_baseline": 4.354780822256874,
+      "speedup_from_paired_original": 4.097593500160887,
+      "speedup_from_round21": 1.2040729189871537,
+      "speedup_from_round20": 0.9951022251924457,
+      "observations": 30
+    },
+    "gramschmidt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.00025225,
+      "c_median_seconds": 3.5408884286880493e-06,
+      "mech_over_c_kernel": 71.23918335192003,
+      "starting_mech_over_c_kernel": 27896.336343602026,
+      "speedup_from_recorded_baseline": 396.3247452923687,
+      "speedup_from_paired_original": 395.33383151635286,
+      "speedup_from_round21": 0.9671318136769079,
+      "speedup_from_round20": 2.20399603567889,
+      "observations": 30
+    },
+    "2mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000113459,
+      "c_median_seconds": 1.8328428268432617e-06,
+      "mech_over_c_kernel": 61.903289435577236,
+      "starting_mech_over_c_kernel": 77.03124240848712,
+      "speedup_from_recorded_baseline": 1.3863333891537915,
+      "speedup_from_paired_original": 1.3679743343410395,
+      "speedup_from_round21": 1.340422531487145,
+      "speedup_from_round20": 1.0216642135044376,
+      "observations": 30
+    },
+    "lu": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000684625,
+      "c_median_seconds": 1.1208001524209976e-05,
+      "mech_over_c_kernel": 61.08359269234285,
+      "starting_mech_over_c_kernel": 20830.730988440668,
+      "speedup_from_recorded_baseline": 352.4256593025379,
+      "speedup_from_paired_original": 351.7781033412452,
+      "speedup_from_round21": 55.70786927149899,
+      "speedup_from_round20": 5.591808654372832,
+      "observations": 30
+    },
+    "symm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000166209,
+      "c_median_seconds": 3.6670826375484467e-06,
+      "mech_over_c_kernel": 45.32458535243581,
+      "starting_mech_over_c_kernel": 218.1017246501925,
+      "speedup_from_recorded_baseline": 4.9207624135877115,
+      "speedup_from_paired_original": 4.876889939774621,
+      "speedup_from_round21": 1.0120330427353512,
+      "speedup_from_round20": 1.0009987425470341,
+      "observations": 30
+    },
+    "syr2k": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.00030675,
+      "c_median_seconds": 6.792135536670685e-06,
+      "mech_over_c_kernel": 45.16252632825998,
+      "starting_mech_over_c_kernel": 224.54405071064102,
+      "speedup_from_recorded_baseline": 4.910213528932355,
+      "speedup_from_paired_original": 4.904916055419723,
+      "speedup_from_round21": 1.0088280358598207,
+      "speedup_from_round20": 0.9917163814180929,
+      "observations": 30
+    },
+    "syrk": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000221375,
+      "c_median_seconds": 5.33275306224823e-06,
+      "mech_over_c_kernel": 41.51232907579462,
+      "starting_mech_over_c_kernel": 245.10186705759173,
+      "speedup_from_recorded_baseline": 6.089404856013552,
+      "speedup_from_paired_original": 6.073404856013552,
+      "speedup_from_round21": 1.005081874647092,
+      "speedup_from_round20": 0.9501208356860531,
+      "observations": 30
+    },
+    "trmm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.00012675,
+      "c_median_seconds": 3.33273783326149e-06,
+      "mech_over_c_kernel": 38.03179438088584,
+      "starting_mech_over_c_kernel": 219.61129772332706,
+      "speedup_from_recorded_baseline": 5.558185404339251,
+      "speedup_from_paired_original": 5.5519368836291925,
+      "speedup_from_round21": 1.3727810650887575,
+      "speedup_from_round20": 0.9641656804733729,
+      "observations": 30
+    },
+    "3mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 8.9792e-05,
+      "c_median_seconds": 2.5420449674129486e-06,
+      "mech_over_c_kernel": 35.32274257578604,
+      "starting_mech_over_c_kernel": 38.12304900128275,
+      "speedup_from_recorded_baseline": 1.0788823057733428,
+      "speedup_from_paired_original": 1.0612526728439058,
+      "speedup_from_round21": 1.3716923556664293,
+      "speedup_from_round20": 0.9582256771204561,
+      "observations": 30
+    },
+    "covariance": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000154209,
+      "c_median_seconds": 4.624947905540466e-06,
+      "mech_over_c_kernel": 33.34286204937897,
+      "starting_mech_over_c_kernel": 50.45658200493294,
+      "speedup_from_recorded_baseline": 1.4450064522822923,
+      "speedup_from_paired_original": 1.4571652756972682,
+      "speedup_from_round21": 1.3507123449344722,
+      "speedup_from_round20": 0.9872964612960333,
+      "observations": 30
+    },
+    "trisolv": {
+      "partition": "holdout",
+      "mech_median_seconds": 2.6708e-05,
+      "c_median_seconds": 9.997747838497162e-07,
+      "mech_over_c_kernel": 26.714016427938517,
+      "starting_mech_over_c_kernel": 3606.1591485281647,
+      "speedup_from_recorded_baseline": 146.37153661824172,
+      "speedup_from_paired_original": 145.87236034147074,
+      "speedup_from_round21": 1.4820652987868803,
+      "speedup_from_round20": 1.0311891568069493,
+      "observations": 30
+    },
+    "fdtd-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000187166,
+      "c_median_seconds": 7.040798664093018e-06,
+      "mech_over_c_kernel": 26.58306378714074,
+      "starting_mech_over_c_kernel": 10500.55203711869,
+      "speedup_from_recorded_baseline": 388.00761356229225,
+      "speedup_from_paired_original": 387.09109026212025,
+      "speedup_from_round21": 1.205929495741748,
+      "speedup_from_round20": 2.188784287744569,
+      "observations": 30
+    },
+    "heat-3d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000431459,
+      "c_median_seconds": 1.7750076949596405e-05,
+      "mech_over_c_kernel": 24.30744391842258,
+      "starting_mech_over_c_kernel": 4178.378618335307,
+      "speedup_from_recorded_baseline": 171.8970794443968,
+      "speedup_from_paired_original": 172.2125787154747,
+      "speedup_from_round21": 1.133750831481091,
+      "speedup_from_round20": 1.130274255491252,
+      "observations": 30
+    },
+    "gemm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000101125,
+      "c_median_seconds": 4.416797310113907e-06,
+      "mech_over_c_kernel": 22.895549172799157,
+      "starting_mech_over_c_kernel": 36.05363035229189,
+      "speedup_from_recorded_baseline": 1.5743683559950556,
+      "speedup_from_paired_original": 1.4956736711990108,
+      "speedup_from_round21": 1.1079555006180468,
+      "speedup_from_round20": 0.9645686032138442,
+      "observations": 30
+    },
+    "durbin": {
+      "partition": "optimization",
+      "mech_median_seconds": 2.9667e-05,
+      "c_median_seconds": 1.3331882655620575e-06,
+      "mech_over_c_kernel": 22.25267110905204,
+      "starting_mech_over_c_kernel": 3899.393007189661,
+      "speedup_from_recorded_baseline": 175.2325816563859,
+      "speedup_from_paired_original": 174.27333400748307,
+      "speedup_from_round21": 1.0280783361984698,
+      "speedup_from_round20": 0.9705059493713555,
+      "observations": 30
+    },
+    "doitgen": {
+      "partition": "optimization",
+      "mech_median_seconds": 5.6125e-05,
+      "c_median_seconds": 3.082677721977234e-06,
+      "mech_over_c_kernel": 18.206573979456195,
+      "starting_mech_over_c_kernel": 22.47169074801,
+      "speedup_from_recorded_baseline": 1.268008908685969,
+      "speedup_from_paired_original": 1.1262004454342982,
+      "speedup_from_round21": 1.0460222717149221,
+      "speedup_from_round20": 0.9873853006681514,
+      "observations": 30
+    },
+    "floyd-warshall": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.00087725,
+      "c_median_seconds": 6.71246089041233e-05,
+      "mech_over_c_kernel": 13.068977448390207,
+      "starting_mech_over_c_kernel": 4841.308551231542,
+      "speedup_from_recorded_baseline": 361.7104109432887,
+      "speedup_from_paired_original": 358.47055229410086,
+      "speedup_from_round21": 1.2030971786833855,
+      "speedup_from_round20": 0.8978341407808493,
+      "observations": 30
+    },
+    "cholesky": {
+      "partition": "optimization",
+      "mech_median_seconds": 5.8e-05,
+      "c_median_seconds": 6.875023245811462e-06,
+      "mech_over_c_kernel": 8.436335111351937,
+      "starting_mech_over_c_kernel": 23662.233271603498,
+      "speedup_from_recorded_baseline": 2736.7887931034484,
+      "speedup_from_paired_original": 2727.4051724137935,
+      "speedup_from_round21": 1.3419482758620689,
+      "speedup_from_round20": 0.9856379310344827,
+      "observations": 30
+    },
+    "nussinov": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000184667,
+      "c_median_seconds": 3.516674041748047e-05,
+      "mech_over_c_kernel": 5.251183300122034,
+      "starting_mech_over_c_kernel": 119638.17928254372,
+      "speedup_from_recorded_baseline": 19435.918209533917,
+      "speedup_from_paired_original": 19452.947965797895,
+      "speedup_from_round21": 0.9948122837323398,
+      "speedup_from_round20": 0.9898465887245691,
+      "observations": 30
+    },
+    "seidel-2d": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000327083,
+      "c_median_seconds": 0.00010816706344485283,
+      "mech_over_c_kernel": 3.0238687229108128,
+      "starting_mech_over_c_kernel": 50168.862826898156,
+      "speedup_from_recorded_baseline": 16929.575597019717,
+      "speedup_from_paired_original": 16982.259472366342,
+      "speedup_from_round21": 0.996688913823097,
+      "speedup_from_round20": 0.994142159635322,
+      "observations": 30
+    }
+  },
+  "inter_round_aggregates": {
+    "optimization": {
+      "vs_round_20": {
+        "mech_runtime_multiplier": 0.9563439783676722,
+        "reference_runtime_multiplier": 0.9988267041439888,
+        "c_runtime_multiplier": 1.0040622924730096,
+        "raw_mech_speedup": 1.0456488696743214,
+        "reference_adjusted_mech_speedup": 1.0444220141886897,
+        "mech_over_c_score_multiplier": 0.9524747473706965
+      },
+      "vs_round_21": {
+        "mech_runtime_multiplier": 0.8588937841685659,
+        "reference_runtime_multiplier": 0.8956094731052056,
+        "c_runtime_multiplier": 0.9525085643026835,
+        "raw_mech_speedup": 1.1642883188030393,
+        "reference_adjusted_mech_speedup": 1.0427476477457356,
+        "mech_over_c_score_multiplier": 0.9017176499587156
+      }
+    },
+    "holdout": {
+      "vs_round_20": {
+        "mech_runtime_multiplier": 0.7772022827741493,
+        "reference_runtime_multiplier": 1.0136547440122352,
+        "c_runtime_multiplier": 0.9831372114381007,
+        "raw_mech_speedup": 1.2866663186199037,
+        "reference_adjusted_mech_speedup": 1.3042354178298234,
+        "mech_over_c_score_multiplier": 0.7905328714364126
+      },
+      "vs_round_21": {
+        "mech_runtime_multiplier": 0.5515260196020991,
+        "reference_runtime_multiplier": 0.9933962880388163,
+        "c_runtime_multiplier": 0.9408378588592564,
+        "raw_mech_speedup": 1.8131510834637583,
+        "reference_adjusted_mech_speedup": 1.8011775559664553,
+        "mech_over_c_score_multiplier": 0.5862072985358087
+      }
+    }
+  },
+  "inter_round_regressions_over_five_percent": [],
+  "implementation": [
+    "Derive one exact source-site attempt counter and complete existing price for each fused map/fold. Base traversal charges retain every original source visit; skipped branches pay no unexecuted summary bound.",
+    "Before an attempt, retain its full work/comparison price plus the remaining root traversal envelope and complete source replay allowance. Overflow or insufficient fuel resumes before the original operation on the same ledger.",
+    "Independently reconcile traversal and summary counts at every cold, error, terminal and first-change exit. Export all counters, admit their homes and boundary transport, and reset them together only on fresh partial loans.",
+    "Phases with changing summary debits retain checked child funding instead of an entry-only funding window. Ordered arithmetic, all scalar kinds, input/old aliases, private-bank ownership and scratch-before-commit remain.",
+    "Reuse maintained numeric_words::linear_ordinal for map vector/general reads. Guard literal positive geometry before supplying constants; share one rectangle quotient/remainder and retain guarded fixed trip counts.",
+    "IR382/work150 identify the changed control/accounting path; ABI42 remains. No benchmark ports, inputs, C binaries/flags, tolerance, split, objective or timing boundaries changed."
+  ],
+  "case_order": "Descending current Mech/C kernel ratio (largest first).",
+  "training_probe": {
+    "receipt_sha256": "58e7685d51499f09c45109fd0d890c68dbd1aa79ef1caf32c2ef9ae5ade0ecb0",
+    "cases": 15,
+    "samples_per_actor": 7,
+    "summary": {
+      "count": 15,
+      "geomean_speedup_from_round_21_replay": 1.0060153136247247,
+      "regressions_over_five_percent": 1,
+      "sum_candidate_median_seconds": 0.004573875,
+      "sum_reference_median_seconds": 0.004517417,
+      "geomean_speedup_from_round_20_replay": 1.0849086047224885
+    },
+    "selection": {
+      "selected_at": "2026-11-26T22:18:47.434986+00:00",
+      "compiler_commit": "6a6b5f47078edd5f67b5857fed70655f9f21326c",
+      "compiler_fingerprint": "5145ef2ad1966c7e0c5ee28d9b8b81b29b333e8e1d5c26425c67733352c426a3",
+      "driver_sha256": "2f1fe3109ec55521ab7bffb48b8f69f5dc6391e6afdcdbaac4a7c3ace77a1ee9",
+      "probe_sha256": "58e7685d51499f09c45109fd0d890c68dbd1aa79ef1caf32c2ef9ae5ade0ecb0",
+      "probe_completed_at": "2026-11-26T22:17:37.758282+00:00",
+      "scope": "All15 optimization programs only; no new candidate holdout timing or profile.",
+      "criterion": "Qualified generic accounting correction,543 selected checks and both feature builds; training geomean speedup greater than1.0. The observed1.006x change is near neutral, with one>5% regression; no broad performance gain is claimed from this probe.",
+      "summary": {
+        "count": 15,
+        "geomean_speedup_from_round_21_replay": 1.0060153136247247,
+        "regressions_over_five_percent": 1,
+        "sum_candidate_median_seconds": 0.004573875,
+        "sum_reference_median_seconds": 0.004517417,
+        "geomean_speedup_from_round_20_replay": 1.0849086047224885
+      }
+    },
+    "frozen_aggregate_qualification": false,
+    "interpretation": "Near-neutral1.006x training replay with one>5% regression. It selects a qualified general accounting correction; it is not evidence of a broad aggregate performance gain."
+  },
+  "profiling": {
+    "receipt_sha256": "bf8277d0041dfa0e64383e74c15a18111a3665d4c19ea7a1308bd601d944f773",
+    "partition": "optimization",
+    "cases": [
+      "deriche",
+      "seidel-2d",
+      "correlation",
+      "gramschmidt",
+      "nussinov"
+    ],
+    "canonical_execution_samples": 3092,
+    "coverage_of_training_sum": 0.8054656920240177,
+    "weighted_categories": [
+      {
+        "name": "Other helper dispatch",
+        "fraction_of_profiled_time": 0.25352675293675725,
+        "estimated_seconds_in_training_sum": 0.001003712414876622
+      },
+      {
+        "name": "Other execution and generated code",
+        "fraction_of_profiled_time": 0.2479011439670941,
+        "estimated_seconds_in_training_sum": 0.0009814406289657255
+      },
+      {
+        "name": "Canonical library calls",
+        "fraction_of_profiled_time": 0.20172611940880122,
+        "estimated_seconds_in_training_sum": 0.000798633706739444
+      },
+      {
+        "name": "Private frame transport",
+        "fraction_of_profiled_time": 0.10620685473991107,
+        "estimated_seconds_in_training_sum": 0.0004204729379153079
+      },
+      {
+        "name": "Source visits and admission",
+        "fraction_of_profiled_time": 0.09335571893080083,
+        "estimated_seconds_in_training_sum": 0.00036959529124704044
+      },
+      {
+        "name": "Comprehension collection bookkeeping",
+        "fraction_of_profiled_time": 0.09181765948596755,
+        "estimated_seconds_in_training_sum": 0.0003635061139049455
+      },
+      {
+        "name": "Loop-local retirement",
+        "fraction_of_profiled_time": 0.004294518274096356,
+        "estimated_seconds_in_training_sum": 1.7001997847147472e-05
+      },
+      {
+        "name": "Other selected library dispatch",
+        "fraction_of_profiled_time": 0.0011712322565717336,
+        "estimated_seconds_in_training_sum": 4.636908503767493e-06
+      }
+    ]
+  },
+  "development_checks": {
+    "plan_log_sha256": "fb9a3aec0bd76ed4e91fbc4b7ec45ef2be551ebd722879503e24b7d77b42f1df",
+    "focused_log_sha256": "028e5359aa60417e2241b2f598c4aaa6883c0e35b24ca07f1f83f62efffb597a",
+    "development_failures_retained": {
+      "summary-branch-gates.log": "06d5bd4f68faac6de6a4e6327c600c13f79f8e8af35a69df99faf84f230a0991",
+      "summary-branch-gates-2.log": "167c1dd569b1b5a46fe7a503d7ce04cd76c25c8b70bf2097f9050964063109dd",
+      "numeric-regressions.log": "ed74929e20b73909b0f5aa5c2ebc7f7d9b6f0f6fad4b4359e2f15e8256be268b"
+    },
+    "corrections": [
+      "Correct temporary/shared module imports during development.",
+      "Add the mandatory empty summaries field to two manually serialized source-proof test fixtures.",
+      "Pin work150 in both Huffman tests while preserving every historical source bill, numeric golden value and equality assertion."
+    ],
+    "regression_tests": [
+      "4096 state-machine steps under a fixed finite budget execute rare maps/folds natively, charging exactly reached operations.",
+      "An admitted phase with too little fuel for the next summary replays its exact original source operation and retries without leaks or changed input aliases.",
+      "Original/decoded/restored/Object cases and forged source/counter/price image metadata."
+    ]
+  },
+  "correctness_plan": {
+    "user_approval": "Earlier explicit approval persists; staged source/accounting plan and evidence are retained.",
+    "gates": [
+      "Exact canonical sources, all original visits and full replay budgets retained.",
+      "Separately admitted/cross-boundary attempt counters and checked arithmetic prevent renewed or underflowed fuel.",
+      "All30 finite C live-outs, all scalar kinds, vector/rectangle geometry, ordered folds, errors, aliases, partial publication, low physical/finite allowances and retry.",
+      "543 selected checks, unchanged exact Huffman source bills, runtime-only/codegen feature builds.",
+      "Training-only candidate selection, then immutable source/binary freeze before both final timing sets."
+    ]
+  },
+  "scope": [
+    "CPU MINI F64 and selected regression checks are qualified; larger datasets, GPU/SIMD selection, linked Object execution, full compression/AOT and a fresh external application remain unqualified.",
+    "Prior holdout results were exposed. The previous frozen LU regression prompted a source/accounting diagnosis; no new candidate holdout timing/profile selected or retuned this candidate. The reused split is not blind external validation.",
+    "Conservative work units remain finite. Every process validates all warm-up live-outs; timed checked calls must succeed but timed outputs are not separately flattened.",
+    "No compiler source changed after freeze. Only PR1001 may change; PR1000 remains unchanged."
+  ],
+  "interpretation": "Holdout 68.476876x C; optimization 31.633182x C. Goal achieved only if holdout is strictly below1.0x C; every regression remains in the aggregate. No retuning follows these frozen holdout results.",
+  "receipts": {
+    "round-22-frozen.json": "c06bf32ddebb621c6c823d0a0cde054502271182283b2b255866c1e6294e2691",
+    "round-22-optimization.json": "38a889594273ead28f584feb4d9cdf81b68e9e8bfe740d4ee06cd52d66f9d746",
+    "round-22-holdout.json": "fdcce759a5cfc56deeb2f9db1103a593aae9a807cef8d9cadb428a1b770a4b34",
+    "round-22-progress.json": "9f83928e0f4d3012862513f840e260e5f655700f98b64868a8de1febf1a0b564",
+    "round-22-training-probe.json": "58e7685d51499f09c45109fd0d890c68dbd1aa79ef1caf32c2ef9ae5ade0ecb0",
+    "round-22-training-profile.json": "bf8277d0041dfa0e64383e74c15a18111a3665d4c19ea7a1308bd601d944f773"
+  }
+}

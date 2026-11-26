@@ -1717,3 +1717,50 @@ nussinov           optimization      119,638.18            5.82
 seidel-2d          optimization       50,168.86            2.95
 
 The formal round fails the holdout generalization check. LU/LUDCMP regress about 10x in raw runtime; no compiler change was made after freeze. The seven-sample training probe and final measurements are separate receipts.
+
+Round22: reached summary charges and matrix geometry
+Source 6a6b5f47078edd5f67b5857fed70655f9f21326c; IR382/work150/ABI42; executable 2f1fe3109ec55521ab7bffb48b8f69f5dc6391e6afdcdbaac4a7c3ace77a1ee9.
+Complete map/fold bounds now debit only at reached source operations, with separate attempt counters and unchanged full replay/physical admission. Exact source/error/cold/first-change/terminal boundaries reconcile all counts. Shared guarded vector/matrix addressing and fixed geometry/count constants preserve ordered scalar arithmetic.
+
+Equal-weight geometric means of median kernel runtimes (lower Mech/C is better):
+optimization: 31.633182x C; 24.636747x faster than recorded start; 24.129555x faster than paired original; summed medians 0.004915169s; raw Mech speedup vs21 1.164288x; C runtime multiplier 0.952509x; reference-adjusted Mech speedup 1.042748x.
+holdout: 68.476876x C; 30.717878x faster than recorded start; 30.656826x faster than paired original; summed medians 0.017118792s; raw Mech speedup vs21 1.813151x; C runtime multiplier 0.940838x; reference-adjusted Mech speedup 1.801178x.
+
+Training-only seven-sample replay vs21: 1.006015x; one>5% regression. This is near neutral, not a broad gain claim. Source and binary then frozen before both complete sets.
+Correctness:543 selected checks and both feature builds pass; both exact historical Huffman work equations remain unchanged. Development failures and their corrections remain in qualification evidence.
+All900 balanced observations,29482 finite warm-up live-outs per artifact and23 history entries remain. Five training-only profiles retain 3092 canonical samples and cover 80.546569% of the training sum.
+Raw runtime regressions over5% vs21: none.
+No ports, limits or compiler source changed after freeze. The strict holdout goal remains open unless below1.0x C.
+
+All thirty kernels, descending current Mech/C kernel ratio. Each C ratio uses its round's C measurement; raw Mech speedups are separate.
+kernel             set            start xC          now xC
+jacobi-2d          holdout             9,612.12          463.90
+jacobi-1d          holdout             7,168.14          428.92
+adi                holdout            21,631.38          193.04
+gemver             holdout               260.73          181.78
+gesummv            holdout               112.38          123.70
+mvt                optimization          138.96          113.26
+deriche            optimization       43,560.74           97.90
+ludcmp             holdout            20,723.72           88.74
+bicg               optimization           87.94           77.84
+atax               optimization           79.13           76.48
+correlation        optimization          327.94           74.59
+gramschmidt        optimization       27,896.34           71.24
+2mm                optimization           77.03           61.90
+lu                 holdout            20,830.73           61.08
+symm               holdout               218.10           45.32
+syr2k              holdout               224.54           45.16
+syrk               holdout               245.10           41.51
+trmm               holdout               219.61           38.03
+3mm                optimization           38.12           35.32
+covariance         optimization           50.46           33.34
+trisolv            holdout             3,606.16           26.71
+fdtd-2d            holdout            10,500.55           26.58
+heat-3d            holdout             4,178.38           24.31
+gemm               optimization           36.05           22.90
+durbin             optimization        3,899.39           22.25
+doitgen            optimization           22.47           18.21
+floyd-warshall     holdout             4,841.31           13.07
+cholesky           optimization       23,662.23            8.44
+nussinov           optimization      119,638.18            5.25
+seidel-2d          optimization       50,168.86            3.02
