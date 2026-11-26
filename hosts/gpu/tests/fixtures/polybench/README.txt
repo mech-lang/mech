@@ -1600,3 +1600,26 @@ profiles retain 4636 canonical execution samples and cover
 No compiler source changed after freeze and no benchmark port was rewritten.
 The split and prior holdout results were exposed; no holdout was profiled.
 The strict holdout goal remains open unless its score is below 1.0x C.
+
+Round 17: nested ordered reductions inside scalar maps and rectangles
+Source 8974a661a4e0987cfd6ae24bb572dc4284bd478e; IR376/work145; executable 81edc385496470335e202e43feeee56447c840a1e1ef19cf154fb21323231ed4.
+Exact child range/map/sum/extraction summaries share one parent native loan.
+The checked phase fold/map emitter uses current parent SSA words and immutable
+views in a private stack frame. Complete source work/constructor bounds,
+physical coexistence and unspent whole-parent replay credit remain admitted.
+Independent images rebuild nonserialized funds from source/calls/visit prices.
+No port, source arithmetic order, reassociation or FMA changed.
+
+Equal-weight geometric means of median kernel runtimes (lower Mech/C is better):
+optimization: 41.513488x C; 19.308929x faster than recorded start; 18.862150x faster than paired original; summed medians 0.005633250s; raw runtime multiplier vs round16 0.904511x.
+holdout: 91.534885x C; 22.400509x faster than recorded start; 22.144092x faster than paired original; summed medians 0.024106209s; raw runtime multiplier vs round16 0.701977x.
+
+Optimization-only seven-sample round16 replay: 1.056739x speedup; 1 >5% regressions retained.
+Final selected checks: 722; both exact Huffman bills remain.
+All 900 balanced finite observations, 29482 live-outs per artifact, both sets,
+all regressions and eighteen-entry history remain. Five optimization-only raw
+profiles retain 3710 canonical execution samples and cover
+78.899836% of training summed medians.
+No compiler source changed after freeze and no benchmark port was rewritten.
+The split and prior holdout results were exposed; no holdout was profiled.
+The strict holdout goal remains open unless its score is below 1.0x C.

@@ -1,0 +1,633 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v1",
+  "label": "round-17-nested-ordered-reductions",
+  "compiler_commit": "8974a661a4e0987cfd6ae24bb572dc4284bd478e",
+  "compiler_fingerprint": "9293209d8e9db94eb6b4ff00199d690a86a2ff382bee6aa11873fc3baff4181f",
+  "driver_sha256": "81edc385496470335e202e43feeee56447c840a1e1ef19cf154fb21323231ed4",
+  "frozen_candidate_sha256": "b2876f4e4c79351b4f0fe0c413b0aacce913dd1ab4a499df9b2f80dc58943523",
+  "native_typed_ir_version": 376,
+  "native_work_policy_version": 145,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "live_outs_per_artifact": 29482
+  },
+  "checks": [
+    {
+      "suite": "native numeric/phase, ordinary row blocks and unchanged exact Huffman work equations",
+      "log": "numeric-regressions.log",
+      "passed_by_target": [
+        350
+      ],
+      "log_sha256": "bf8eaa1defa3f69de9479d2726775aaf5ec571e69e0b0783e047b886aa24903a"
+    },
+    {
+      "suite": "matrix and all thirty original/decoded/Object PolyBench qualifications",
+      "log": "matrix-polybench.log",
+      "passed_by_target": [
+        24,
+        30
+      ],
+      "log_sha256": "2f0eaffffc3d39d1f96018f8452bea57d98ac8189677be945cabadcd9d83fdd5"
+    },
+    {
+      "suite": "selected scalar/frame/compression, collection and all range/cursor regressions",
+      "log": "program-regressions.log",
+      "passed_by_target": [
+        114
+      ],
+      "log_sha256": "e8196cf017f39a3c335e673f2d2636fe32f2b86105a185d3ecf5537e6f5c9cea"
+    },
+    {
+      "suite": "resident numeric, geometry, capacity, prefix projections and range cursor proofs",
+      "log": "engine-numeric.log",
+      "passed_by_target": [
+        203
+      ],
+      "log_sha256": "5fa49468a783ab5529e9603151bf42e6572bf506609732d0db571262943455a1"
+    },
+    {
+      "suite": "collection helper tag round-trip and output reservation",
+      "log": "protocol.log",
+      "passed_by_target": [
+        1
+      ],
+      "log_sha256": "8e7ba2fde0eff86ffa6e00d00d3c7560cc35597c4890a07489f5d7c28e9afdfb"
+    }
+  ],
+  "total_selected_checks": 722,
+  "goal": {
+    "partition": "holdout",
+    "metric": "geomean_mech_over_c_kernel",
+    "value": 91.53488471866345,
+    "target_strictly_below": 1.0,
+    "achieved": false,
+    "objective_sha256": "96ab4e4282a424d36c7eaf298862d21811e591e00565f85a388991d7c1ec48db",
+    "objective_frozen_with_candidate": true,
+    "sum_mech_median_seconds": 0.024106209
+  },
+  "aggregates": {
+    "optimization": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 19.308928978234768,
+      "median_speedup": 1.2965665515668772,
+      "minimum_speedup": 1.0222470119521914,
+      "maximum_speedup": 19626.371609022553,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 41.513488187773284,
+      "geomean_mech_over_c_fresh": 25.38962159158947,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 186.89770204906205,
+      "sum_mech_median_seconds": 0.00563325,
+      "geomean_speedup_from_contemporaneous_baseline": 18.862150154274968,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.014605577689243
+    },
+    "holdout": {
+      "count": 15,
+      "geomean_speedup_from_recorded_baseline": 22.400509228504763,
+      "median_speedup": 22.774294277929158,
+      "minimum_speedup": 1.092811655124716,
+      "maximum_speedup": 400.6865088134237,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 91.53488471866345,
+      "geomean_mech_over_c_fresh": 54.877666867717465,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 476.52524827211,
+      "sum_mech_median_seconds": 0.024106209,
+      "geomean_speedup_from_contemporaneous_baseline": 22.14409182957018,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.0318144665103788
+    },
+    "all": {
+      "count": 30,
+      "geomean_speedup_from_recorded_baseline": 20.797351797031542,
+      "median_speedup": 12.510411045140609,
+      "minimum_speedup": 1.0222470119521914,
+      "maximum_speedup": 19626.371609022553,
+      "regressions_over_five_percent": 0,
+      "geomean_mech_over_c_kernel": 61.6435913582055,
+      "geomean_mech_over_c_fresh": 37.32724468267988,
+      "faster_than_c_kernel": 0,
+      "worst_mech_over_c_kernel": 476.52524827211,
+      "sum_mech_median_seconds": 0.029739459,
+      "geomean_speedup_from_contemporaneous_baseline": 20.437347800519674,
+      "contemporaneous_regressions_over_five_percent": 0,
+      "minimum_contemporaneous_speedup": 1.014605577689243
+    }
+  },
+  "cases": {
+    "2mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000134625,
+      "c_median_seconds": 1.7080456018447876e-06,
+      "mech_over_c_kernel": 78.81815324754635,
+      "speedup_from_recorded_baseline": 1.1683714020427112,
+      "speedup_from_paired_original": 1.1584623955431754,
+      "runtime_multiplier_from_round16": 1.0224657659094534,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "3mm": {
+      "partition": "optimization",
+      "mech_median_seconds": 9.025e-05,
+      "c_median_seconds": 2.6659108698368073e-06,
+      "mech_over_c_kernel": 33.853344844017464,
+      "speedup_from_recorded_baseline": 1.0734072022160666,
+      "speedup_from_paired_original": 1.0526315789473686,
+      "runtime_multiplier_from_round16": 0.9872343218438584,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "atax": {
+      "partition": "optimization",
+      "mech_median_seconds": 8.3792e-05,
+      "c_median_seconds": 1.2079253792762756e-06,
+      "mech_over_c_kernel": 69.36852345150963,
+      "speedup_from_recorded_baseline": 1.1412187320985296,
+      "speedup_from_paired_original": 1.1581177200687416,
+      "runtime_multiplier_from_round16": 0.9301540784157009,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "bicg": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.0001255,
+      "c_median_seconds": 1.4998950064182281e-06,
+      "mech_over_c_kernel": 83.67252338528407,
+      "speedup_from_recorded_baseline": 1.0222470119521914,
+      "speedup_from_paired_original": 1.014605577689243,
+      "runtime_multiplier_from_round16": 1.054994199633484,
+      "runtime_regression_over_five_percent_from_round16": true,
+      "observations": 30
+    },
+    "cholesky": {
+      "partition": "optimization",
+      "mech_median_seconds": 5.9375e-05,
+      "c_median_seconds": 7.33276829123497e-06,
+      "mech_over_c_kernel": 8.097214809170001,
+      "speedup_from_recorded_baseline": 2673.4105263157894,
+      "speedup_from_paired_original": 2663.314374736842,
+      "runtime_multiplier_from_round16": 0.9680759134560514,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "correlation": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000373708,
+      "c_median_seconds": 4.292000085115433e-06,
+      "mech_over_c_kernel": 87.07082772342237,
+      "speedup_from_recorded_baseline": 3.766309525083755,
+      "speedup_from_paired_original": 3.486344953814208,
+      "runtime_multiplier_from_round16": 0.9416264566929134,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "covariance": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000177166,
+      "c_median_seconds": 4.457775503396988e-06,
+      "mech_over_c_kernel": 39.74314091523744,
+      "speedup_from_recorded_baseline": 1.2577639050382128,
+      "speedup_from_paired_original": 1.2547046272986917,
+      "runtime_multiplier_from_round16": 0.9895275383850626,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "deriche": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.002950916,
+      "c_median_seconds": 2.8833281248807907e-05,
+      "mech_over_c_kernel": 102.3440923887913,
+      "speedup_from_recorded_baseline": 426.8675529903257,
+      "speedup_from_paired_original": 424.3973593284255,
+      "runtime_multiplier_from_round16": 0.9706692315080767,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "doitgen": {
+      "partition": "optimization",
+      "mech_median_seconds": 5.625e-05,
+      "c_median_seconds": 3.3332034945487976e-06,
+      "mech_over_c_kernel": 16.875657334450963,
+      "speedup_from_recorded_baseline": 1.2651911111111112,
+      "speedup_from_paired_original": 1.1585066666666668,
+      "runtime_multiplier_from_round16": 0.9440612255173455,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "durbin": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.00024125,
+      "c_median_seconds": 1.2908130884170532e-06,
+      "mech_over_c_kernel": 186.89770204906205,
+      "speedup_from_recorded_baseline": 21.548704663212433,
+      "speedup_from_paired_original": 21.063730569948188,
+      "runtime_multiplier_from_round16": 0.9218289085545723,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "gemm": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000122792,
+      "c_median_seconds": 4.124827682971954e-06,
+      "mech_over_c_kernel": 29.769001140801088,
+      "speedup_from_recorded_baseline": 1.2965665515668772,
+      "speedup_from_paired_original": 1.2086780897778358,
+      "runtime_multiplier_from_round16": 0.9334813215550927,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "gramschmidt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000550792,
+      "c_median_seconds": 3.541819751262665e-06,
+      "mech_over_c_kernel": 155.51101938590799,
+      "speedup_from_recorded_baseline": 181.50756910049526,
+      "speedup_from_paired_original": 181.24521779546544,
+      "runtime_multiplier_from_round16": 0.33739173047473203,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "mvt": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000156,
+      "c_median_seconds": 1.125037670135498e-06,
+      "mech_over_c_kernel": 138.66202362913907,
+      "speedup_from_recorded_baseline": 1.1498397435897436,
+      "speedup_from_paired_original": 1.0926794871794872,
+      "runtime_multiplier_from_round16": 0.9334330590875093,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "nussinov": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000182875,
+      "c_median_seconds": 2.7957838028669357e-05,
+      "mech_over_c_kernel": 6.5410994874664805,
+      "speedup_from_recorded_baseline": 19626.371609022553,
+      "speedup_from_paired_original": 19616.46161038961,
+      "runtime_multiplier_from_round16": 0.9954602115301918,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "seidel-2d": {
+      "partition": "optimization",
+      "mech_median_seconds": 0.000327959,
+      "c_median_seconds": 0.00010291673243045807,
+      "mech_over_c_kernel": 3.186644117579281,
+      "speedup_from_recorded_baseline": 16884.35559018048,
+      "speedup_from_paired_original": 16765.95207022829,
+      "runtime_multiplier_from_round16": 1.0047240186632436,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "adi": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.009082375,
+      "c_median_seconds": 4.583410918712616e-05,
+      "mech_over_c_kernel": 198.15755473548177,
+      "speedup_from_recorded_baseline": 106.38211833358565,
+      "speedup_from_paired_original": 106.6377324213105,
+      "runtime_multiplier_from_round16": 1.001166583184447,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "fdtd-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000410875,
+      "c_median_seconds": 6.875023245811462e-06,
+      "mech_over_c_kernel": 59.763434290978054,
+      "speedup_from_recorded_baseline": 176.74921326437482,
+      "speedup_from_paired_original": 175.63948889564955,
+      "runtime_multiplier_from_round16": 0.9839361276680324,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "floyd-warshall": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000791917,
+      "c_median_seconds": 6.541656330227852e-05,
+      "mech_over_c_kernel": 12.105756707833912,
+      "speedup_from_recorded_baseline": 400.6865088134237,
+      "speedup_from_paired_original": 400.938640034246,
+      "runtime_multiplier_from_round16": 0.9853280229535814,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "gemver": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000364625,
+      "c_median_seconds": 1.7918646335601807e-06,
+      "mech_over_c_kernel": 203.48914375051973,
+      "speedup_from_recorded_baseline": 1.2806527254028113,
+      "speedup_from_paired_original": 1.2483153925265684,
+      "runtime_multiplier_from_round16": 1.0119112043581908,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "gesummv": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000111333,
+      "c_median_seconds": 1.125037670135498e-06,
+      "mech_over_c_kernel": 98.95935305578809,
+      "speedup_from_recorded_baseline": 1.092811655124716,
+      "speedup_from_paired_original": 1.0318144665103788,
+      "runtime_multiplier_from_round16": 0.964264370902225,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "heat-3d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000490625,
+      "c_median_seconds": 1.7292331904172897e-05,
+      "mech_over_c_kernel": 28.37240244513262,
+      "speedup_from_recorded_baseline": 151.1674741401274,
+      "speedup_from_paired_original": 149.6368570700637,
+      "runtime_multiplier_from_round16": 0.9956046275195771,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "jacobi-1d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.0001835,
+      "c_median_seconds": 4.172325134277344e-07,
+      "mech_over_c_kernel": 439.8027337142857,
+      "speedup_from_recorded_baseline": 22.774294277929158,
+      "speedup_from_paired_original": 22.745912806539508,
+      "runtime_multiplier_from_round16": 0.977363515312916,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "jacobi-2d": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.003713042,
+      "c_median_seconds": 7.791910320520401e-06,
+      "mech_over_c_kernel": 476.52524827211,
+      "speedup_from_recorded_baseline": 19.84699014985556,
+      "speedup_from_paired_original": 19.896219865005566,
+      "runtime_multiplier_from_round16": 1.0040111318779257,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "lu": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.003766833,
+      "c_median_seconds": 1.1958181858062744e-05,
+      "mech_over_c_kernel": 315.0004778912299,
+      "speedup_from_recorded_baseline": 64.05365382537532,
+      "speedup_from_paired_original": 63.90822874281924,
+      "runtime_multiplier_from_round16": 0.07429290559655105,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "ludcmp": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.004175375,
+      "c_median_seconds": 1.237494871020317e-05,
+      "mech_over_c_kernel": 337.40543882476015,
+      "speedup_from_recorded_baseline": 59.76367392150405,
+      "speedup_from_paired_original": 59.728597311618714,
+      "runtime_multiplier_from_round16": 0.08192015928792878,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "symm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000198834,
+      "c_median_seconds": 3.750436007976532e-06,
+      "mech_over_c_kernel": 53.016235866207104,
+      "speedup_from_recorded_baseline": 4.113355864691149,
+      "speedup_from_paired_original": 4.094913344800185,
+      "runtime_multiplier_from_round16": 0.9985386064030132,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "syr2k": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000385375,
+      "c_median_seconds": 6.666872650384903e-06,
+      "mech_over_c_kernel": 57.80446398323671,
+      "speedup_from_recorded_baseline": 3.908421667207266,
+      "speedup_from_paired_original": 3.880096010379501,
+      "runtime_multiplier_from_round16": 0.9886683154092438,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "syrk": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000270417,
+      "c_median_seconds": 5.458015948534012e-06,
+      "mech_over_c_kernel": 49.54492668212747,
+      "speedup_from_recorded_baseline": 4.985049016888731,
+      "speedup_from_paired_original": 5.0089306515492735,
+      "runtime_multiplier_from_round16": 0.9915990730011589,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "trisolv": {
+      "partition": "holdout",
+      "mech_median_seconds": 2.4917e-05,
+      "c_median_seconds": 1.000240445137024e-06,
+      "mech_over_c_kernel": 24.91101026872253,
+      "speedup_from_recorded_baseline": 156.89252317694746,
+      "speedup_from_paired_original": 155.89087771401051,
+      "runtime_multiplier_from_round16": 0.9583461538461538,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    },
+    "trmm": {
+      "partition": "holdout",
+      "mech_median_seconds": 0.000136166,
+      "c_median_seconds": 3.541354089975357e-06,
+      "mech_over_c_kernel": 38.45026409119895,
+      "speedup_from_recorded_baseline": 5.173831940425657,
+      "speedup_from_paired_original": 4.866611342038394,
+      "runtime_multiplier_from_round16": 0.9374595524956971,
+      "runtime_regression_over_five_percent_from_round16": false,
+      "observations": 30
+    }
+  },
+  "implementation": [
+    "The scalar-map compiler composes exact selected U64 range -> scalar F64 map -> ordered row sum -> scalar extraction children into an enclosing acyclic map. The same summaries compose through the existing rectangular native map. Source names, ports and benchmark inputs do not participate in selection.",
+    "The existing phase reduction proof and checked Cranelift map/fold emitter are shared. Each child uses a fixed private stack frame, current parent SSA words and mapped already-admitted immutable parent views. No per-cell/per-fold general helper, managed row/sum intermediate, result cache, arithmetic reassociation or FMA is introduced.",
+    "Complete source setup/body/finish/continuation inventories, definite assignment, escape checks and current lexical ownership remain. Captured matrices must be immutable before the complete parent map or rectangle loan. Both builder/range orders, conditional source operations, constant and bounded dynamic cardinalities retain their original order.",
+    "Exact factories, source schemas, positive cardinality envelopes and complete source prices produce pure nonserialized funds once during descriptor construction. Both independent image and verified Object paths rebuild funds from their checked source/calls/final visits. Serialized bounds cannot grant funding; forged source/view/membership metadata is rejected.",
+    "The parent admits native work, every skipped child source cost, constructor/output/clone/temporary/node/comparison bounds, physical coexistence and full remaining source replay credit. Bounds/cardinality/arithmetic misses discard every private output and replay the original whole parent, preserving exact semantic errors and inactive branches. Counts outside the native envelope are never truncated.",
+    "IR376 and Work145 identify the new graph and full prepayment/replay contract. Both established exact Huffman work equations remain unchanged."
+  ],
+  "development_checks": {
+    "focused_tests": {
+      "passed": 7,
+      "log_sha256": "0480a1ee037f714e5bc155ff53001223f8792f68d060c05b98be8c87c9e2c073",
+      "scope": "Original/decoded/restored one-loan maps and rectangles, exact ordered F64 bits, fresh current captures and immutable aliases, helper-free child source sites, inactive invalid and bounded dynamic ranges, exact range/arithmetic/index replay, partial parent prefixes, all finite resource dimensions, output atomicity, memory cleanup, retry, corrupt parent views/handles, refused interleaving and forged images/funding."
+    },
+    "development_logs_sha256": {
+      "wired-check.log": "3df8d42255aead00089f3dd2a126414e2b35a1458f9e733399a833bcb56ab3ac",
+      "focused-initial.log": "2c44793ffae8259f45b59eede63b55502369e94b549cbd286fdb1623fb6a7d75",
+      "focused-2.log": "136fb9ffbb29e8a5d82a5d2bfca0d6028408e65f8a1b9efabd2a870ecf5d7cea",
+      "focused-3.log": "0bbcfeec28412ebd31e379b19bbf40e2c9bcd3a8ae391a7ca512b4bf0415d23b",
+      "focused-4.log": "9f11fa47ed7d88abd9dee2b156f5f2f60d59c1b713d7ac978108cefe665c36ef",
+      "focused-5.log": "0480a1ee037f714e5bc155ff53001223f8792f68d060c05b98be8c87c9e2c073"
+    },
+    "initial_checks": "The first compile check exposed an unused import, missing Debug derive and missing independent-image funding construction; all were connected. Synthetic test fixtures then needed canonical typed input bindings, independent warmed output owners for memory baselines, and the existing build-owned metadata reader/encoder. No validation default or rejection rule was weakened. All seven pass in the final binary.",
+    "selection": "All15 optimization programs receive one seven-sample replay against frozen round16. The sole 2mm >5% flag receives one predeclared six-pair/31-sample alternating follow-up without any source/binary change. All initial flags and observations remain. No current holdout timing or profile selected/refined the candidate."
+  },
+  "inter_round_aggregates": {
+    "optimization": {
+      "mech_new_over_round16": 0.904510698738481,
+      "reference_new_over_round16": 0.9791063184322358,
+      "c_new_over_round16": 0.9670790875685046,
+      "mech_over_c_score_new_over_round16": 0.9353016835599897,
+      "mech_new_over_round16_regressions_over_five_percent": 1
+    },
+    "holdout": {
+      "mech_new_over_round16": 0.7019765247764097,
+      "reference_new_over_round16": 0.990658820501519,
+      "c_new_over_round16": 0.9942645662072014,
+      "mech_over_c_score_new_over_round16": 0.7060258895217635,
+      "mech_new_over_round16_regressions_over_five_percent": 0
+    }
+  },
+  "inter_round_regressions_over_five_percent": [
+    {
+      "partition": "optimization",
+      "case": "bicg",
+      "reference": "frozen round16 Mech",
+      "runtime_multiplier": 1.054994199633484
+    }
+  ],
+  "training_probe": {
+    "receipt_sha256": "314a56009f85867ed3c313443053cc7a46d77a176b717827bec977effeb966fd",
+    "reference": "frozen round16 compiler replay",
+    "cases": 15,
+    "samples_per_actor": 7,
+    "summary": {
+      "count": 15,
+      "geomean_speedup_from_round_16_replay": 1.0567394197811646,
+      "regressions_over_five_percent": 1,
+      "sum_candidate_median_seconds": 0.005193082,
+      "sum_reference_median_seconds": 0.0061284189999999995
+    },
+    "frozen_aggregate_qualification": false,
+    "regressions_over_five_percent": [
+      {
+        "case": "2mm",
+        "runtime_multiplier": 1.3748138455843741
+      }
+    ]
+  },
+  "training_regression_diagnostic": {
+    "receipt_sha256": "d9f289903332b101a9519fa16d2a5183412827a52c33ff8eefbc67b51da3cfc8",
+    "partition": "optimization",
+    "case": "2mm",
+    "pairs": 6,
+    "samples_per_actor_per_pair": 31,
+    "source_or_binary_changes": false,
+    "original_flag_is_retained": true,
+    "summary": {
+      "geomean_speedup": 0.9975979814322307,
+      "candidate_medians_seconds": [
+        0.0001155,
+        0.000115583,
+        0.000116333,
+        0.000115625,
+        0.000115916,
+        0.000114792
+      ],
+      "reference_medians_seconds": [
+        0.00011575,
+        0.000116208,
+        0.000115125,
+        0.000114958,
+        0.000115208,
+        0.000114834
+      ],
+      "all_work_reports_equal": true
+    }
+  },
+  "profiling": {
+    "receipt_sha256": "72a485d1d726c0271bbd4286a447790f52064ef55f4da29b3759ed39a58b99e0",
+    "partition": "optimization",
+    "cases": [
+      "deriche",
+      "gramschmidt",
+      "correlation",
+      "seidel-2d",
+      "durbin"
+    ],
+    "canonical_execution_samples": 3710,
+    "coverage_of_training_sum": 0.7889983579638752,
+    "weighted_categories": [
+      {
+        "name": "Other helper dispatch",
+        "fraction_of_profiled_time": 0.2852622494026266,
+        "estimated_seconds_in_training_sum": 0.0012678837252511493
+      },
+      {
+        "name": "Canonical library calls",
+        "fraction_of_profiled_time": 0.2246084333264539,
+        "estimated_seconds_in_training_sum": 0.0009983002579735901
+      },
+      {
+        "name": "Other execution and generated code",
+        "fraction_of_profiled_time": 0.15393894393603552,
+        "estimated_seconds_in_training_sum": 0.0006842008786917018
+      },
+      {
+        "name": "Source visits and admission",
+        "fraction_of_profiled_time": 0.11015337378377381,
+        "estimated_seconds_in_training_sum": 0.0004895904389537057
+      },
+      {
+        "name": "Comprehension collection bookkeeping",
+        "fraction_of_profiled_time": 0.108038722359343,
+        "estimated_seconds_in_training_sum": 0.00048019160636639485
+      },
+      {
+        "name": "Private frame transport",
+        "fraction_of_profiled_time": 0.10653055490449707,
+        "estimated_seconds_in_training_sum": 0.0004734883675924003
+      },
+      {
+        "name": "Loop-local retirement",
+        "fraction_of_profiled_time": 0.008493402941401666,
+        "estimated_seconds_in_training_sum": 3.774999104842737e-05
+      },
+      {
+        "name": "Other selected library dispatch",
+        "fraction_of_profiled_time": 0.0015644740234320481,
+        "estimated_seconds_in_training_sum": 6.953500356396667e-06
+      },
+      {
+        "name": "Typed matrix scalar reads",
+        "fraction_of_profiled_time": 0.00105738399182728,
+        "estimated_seconds_in_training_sum": 4.699675324675325e-06
+      },
+      {
+        "name": "Selected matrix updates",
+        "fraction_of_profiled_time": 0.0003524613306090934,
+        "estimated_seconds_in_training_sum": 1.5665584415584417e-06
+      }
+    ]
+  },
+  "scope": [
+    "CPU MINI F64 and selected regressions; larger datasets, GPU/SIMD selection, full compression/AOT and an external application remain unqualified.",
+    "Composition requires the existing exact scalar F64 range/map/sum/extraction proof and a finite positive source envelope. One leaf-reduction level composes into scalar maps and rectangles; deeper compositions, escaping intermediates and unsupported shape relations retain source execution.",
+    "The fixed split and prior holdout results were exposed. No holdout profile or timing selected/refined the candidate. Ports, inputs, pinned C binaries, tolerances and timing boundaries are unchanged.",
+    "Source work units are conservative finite prices, not elapsed CPU time. Each process validates complete finite untimed warm-up live-outs; timed checked calls must succeed but their outputs are not separately flattened.",
+    "No compiler source changed after freeze. Only the PR1001 branch is updated; PR1000 remains unchanged."
+  ],
+  "receipts": {
+    "round-17-frozen.json": "b2876f4e4c79351b4f0fe0c413b0aacce913dd1ab4a499df9b2f80dc58943523",
+    "round-17-optimization.json": "bf9a3b16c772a495491cbbea4c0469378593024acf2aeb9d8d7ac16d3a874550",
+    "round-17-holdout.json": "4bf6075c10adb4cf0563dbf3a796ceedd70f8c6a41962a3007ee139fb0e66222",
+    "round-17-progress.json": "d0ad82b61d85f0faf31406e8af16eaa9d2bf4b63e9760745d3c3944ee86ac6f3",
+    "round-17-training-probe.json": "314a56009f85867ed3c313443053cc7a46d77a176b717827bec977effeb966fd",
+    "round-17-training-profile.json": "72a485d1d726c0271bbd4286a447790f52064ef55f4da29b3759ed39a58b99e0",
+    "round-17-training-regression.json": "d9f289903332b101a9519fa16d2a5183412827a52c33ff8eefbc67b51da3cfc8"
+  }
+}
