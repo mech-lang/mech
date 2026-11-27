@@ -1,0 +1,58 @@
+{
+  "schema": "mech.polybench.prepared-type-slots-plan.v1",
+  "status": "Prospective, before compiler edits or candidate timing",
+  "source_parent": "04cf16143f3b9220b97fce4a536a7520f2dfa50b",
+  "accepted_round": 45,
+  "accepted_scores": {
+    "optimization": 9.784192694066512,
+    "holdout": 25.86144806723818
+  },
+  "accepted_driver": "/private/tmp/mech-polybench-optimization/round-45/current-bound-rectangles-shared-comparison/shared-comparison-final-driver",
+  "accepted_driver_sha256": "3c01042439d90f2d08c960f36c9fd9aed488798369f0c52ebf0348f6dbf84c30",
+  "fixed_protocol_sha256": "36915d7e0623ced0b1282fa59c1d3de4ac4ea7995b18c34f4790299e479dcc30",
+  "profiling_basis": [
+    "training-experiments/accepted44-long-training-profile.json",
+    "training-experiments/accepted44-margin-profile.json"
+  ],
+  "diagnosis": "Repeated NativeProgramType::schema_key encodes and hashes immutable schemas in numeric input validation. The exact compiled metadata already holds every key in types, validated against its exact plan definition and SchemaTable entry on source preparation and independent image loading. Reuse these existing slots in numeric helpers and output retirement; do not add another cache, wire field or retained allocation.",
+  "prior_related_experiment": {
+    "round": 34,
+    "outcome": "Not promoted; its optimization score exceeded accepted31. All old observations remain unchanged.",
+    "difference": "That implementation added32 bytes to every NativeProgramType and initialized a new private key at every source/rich/compact type constructor. This candidate leaves NativeProgramType and all constructors unchanged and uses the already retained, independently validated ProgramMetadata.types slots at exact runtime value/output indexes. It is evaluated once against materially changed accepted45, not remeasuring the rejected fingerprint."
+  },
+  "source_paths": [
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_composite.rs",
+    "hosts/gpu/src/native_artifact/program/runtime/session/mod.rs",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs",
+    "hosts/gpu/src/native_artifact/program/image/binding_tests.rs"
+  ],
+  "accepted_source_sha256": {
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_binary.rs": "59c1cbeba27e6587a1846f9faedf62e1eff0f46ceef1d3e2faab646afe003378",
+    "hosts/gpu/src/native_artifact/program/runtime/invocation/numeric_composite.rs": "9bb3868438015cbaaaa981ad1c79b0b8e53577661dea1705942ed9a8ba156cac",
+    "hosts/gpu/src/native_artifact/program/runtime/session/mod.rs": "6ca7599155803d52a308dea68fb08acd8de5d1cc74c229c24e981ed7303bf683",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "e14a48bd76587bbc55d097fb66f2f4a1c4095f15b0ecc8b401d9ed25bfd522e9",
+    "hosts/gpu/src/native_artifact/program/image/binding_tests.rs": "a9f980ffd5211cbd9ebd8c49457baf2c74a28753859156be2f9914a0b6526533"
+  },
+  "invariants": [
+    "No new cache/state/allocation/wire field, no owner or admission change. Current Value schema ID AND semantic key AND account/shape/data validation remain checked.",
+    "ProgramMetadata.types remains private and source/image validated against exact plan indexes, complete definitions and actual canonical table keys. Key/schema/index substitution must be rejected before any helper can execute.",
+    "Original source work/comparison fees, visits, all other counters, scalar direct emission, arithmetic order, cold replay, finite admission, atomicity, aliases, cleanup and retry remain unchanged. IR411/work157/ABI47.",
+    "All30 unchanged original/decoded C cases, restored helper descriptors, Object emission, numeric/scalar/compression regressions and both feature builds required. No holdout per-case diagnosis or tuning."
+  ],
+  "qualification": "Focused image type-slot substitution/reconstruction negatives and numeric/current owner/cold/finite/scalar/compression regressions; maintained full711+ broad set including all30 original/decoded/restored C cases and both feature builds. Record actual counts and every failure.",
+  "untimed_gate": "Before timing, optimization15 accepted45/candidate finite C outputs and every execution counter must exactly match. Inspect all15 emitted Object function disassemblies; no native instruction change expected. Preserve differences/errors and reject unexplained differences.",
+  "training_probe": {
+    "actors": [
+      "accepted45",
+      "candidate"
+    ],
+    "samples_per_actor_case": 7,
+    "observations": 210,
+    "process": "One fresh process per actor/case/sample; interleave accepted45/candidate, alternate order by case and pair, fixed formal cache/warmup/checked-call boundary.",
+    "selection": "Exactly one prospective probe for each fully qualified fingerprint; raw equal-weight GM accepted45/candidate median-runtime speedup strictly>1 with full untimed gate. Retain all samples/regressions; no retries or exclusions."
+  },
+  "formal_acceptance": "After selection, commit/push and freeze exact clean source and driver before both formal sets. Retain all900 observations/29482 finite liveouts and append-only history. Promote only BOTH primary scores strictly improve accepted45. Otherwise restore every listed Rust path from source_parent; preserve all evidence. Controls never override the gate.",
+  "holdout_use": "Aggregate acceptance only; no holdout profiling, diagnosis or performance-based source changes.",
+  "performance_observations": 0
+}
