@@ -1,0 +1,68 @@
+{
+  "schema": "mech.polybench.training-research-plan.v1",
+  "created_at": "2026-11-27T11:54:41.220835+00:00",
+  "scope": "Optimization15 only; no holdout case inspection, profiling or source tuning.",
+  "accepted_round": 31,
+  "accepted_compiler_fingerprint": "6447915ae298711f3886c6cba28e0608eb3ce59feab6287308162e45e006c895",
+  "evidence": {
+    "root_profile_receipt": "training-experiments/root-operator-profile.json",
+    "root_profile_sha256": "92cde7455d744873ba3126f73778cfba305eb85572c0e1ba452b98197f96bcf6",
+    "rejected_cache_round": 34,
+    "cache_training_speedup": 1.0268150170966808,
+    "formal_aggregate_decision": {
+      "history_index": 34,
+      "label": "round-34-native-type-keys",
+      "source_commit": "c82333fc2bb7e7fcab23ce6a64768435fe3cb40f",
+      "history_entry_sha256": "9555293c3001d59a205f41f8b4a93dcab2d50692602228bfe506d622c79339a9",
+      "scores": {
+        "optimization": 11.471281724314528,
+        "holdout": 38.72314933453182
+      },
+      "previous_measured_index": 33,
+      "run_outcome": "improved_both",
+      "compared_to_accepted_index": 31,
+      "multipliers_vs_accepted": {
+        "optimization": 1.0030537472941428,
+        "holdout": 0.9849285088984755
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 31
+    }
+  },
+  "finding": "Per-type identity caching produced only a small training gain and failed the formal gate. Existing generated root matrix operators still prepare/pin/validate/allocate and materialize a canonical result separately for each operator. Accepted31 mvt and bicg have no selected complete numeric region; their profiles spend54% and63% in allocation plus schema/planning.",
+  "next_action": "Prototype source-selected closed matrix-expression regions that reuse the existing resident geometry, numeric_binary Cranelift kernels and typed current banks. Plan the full operator DAG from actual canonical calls, preserve source order and intermediate escapes, and reduce repeated helper transitions and intermediate canonical materialization. Keep generic calls as fallback.",
+  "required_proofs": [
+    "Derive region membership from actual same-plan canonical calls and independently reconstruct it on every image path; no benchmark names or source rewrites.",
+    "Check actual current input type/key/account/shape and all dynamic geometry, overflow, range and operation constraints before lending views. Pin original owners and preserve alias lifetimes.",
+    "Use existing private banks, initialized backing and scalar/SIMD native emission. Fuse only nonescaping intermediates, with exact source FP term/order semantics, NaN/signed-zero behavior, zero dimensions and mismatch fallbacks.",
+    "Prove complete ordinary work/replay/byte/node envelopes and source-site first-error/first-change semantics. If complete fast admission is unavailable, retain original execution and atomic publication.",
+    "Exercise real checked original/decoded/restored JIT paths and malformed/current-visit/resource/alias/error tests. Qualify runtime/compiler features and unchanged30 C-liveout cases before performance.",
+    "Select once from a prospective optimization15 probe. Commit/freeze before both formal sets. Promote only if BOTH aggregate Mech/C scores strictly improve over accepted31."
+  ],
+  "training_root_metadata": {
+    "mvt": {
+      "metadata_sha256": "e670f50cc797b847d4f8f11639b901fc9ab8973e5250b4bccb7332cbc2ca0611",
+      "code_bytes": 3812,
+      "selected_region_counts": {
+        "compiled_numeric_functions": 0,
+        "compiled_numeric_map_regions": 0,
+        "compiled_numeric_outlines": 0,
+        "compiled_numeric_segments": 0,
+        "compiled_preserving_call_regions": 0,
+        "compiled_readonly_numeric_loops": 0
+      }
+    },
+    "bicg": {
+      "metadata_sha256": "93243ea0756f1348a8d22023a20ca3c7f8628091a7935a03029189bb89515210",
+      "code_bytes": 2224,
+      "selected_region_counts": {
+        "compiled_numeric_functions": 0,
+        "compiled_numeric_map_regions": 0,
+        "compiled_numeric_outlines": 0,
+        "compiled_numeric_segments": 0,
+        "compiled_preserving_call_regions": 0,
+        "compiled_readonly_numeric_loops": 0
+      }
+    }
+  }
+}

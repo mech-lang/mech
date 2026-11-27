@@ -319,50 +319,47 @@ fn guarded_histogram_query_schema_certificate_declines_hidden_distinct_constrain
             },
         ] {
             let mut constrained = plan.clone();
-            constrained.values[h.output().unwrap().get() as usize].replace_definition(
-                SchemaDraft {
-                    dimension_parameters: Box::new([]),
-                    body: SchemaBody::Map {
-                        key: Box::new(SchemaBody::String),
-                        value: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
-                        cardinality: cardinality.clone(),
-                    },
-                }
-                .finalize()
-                .unwrap(),
-            );
+            constrained.values[h.output().unwrap().get() as usize].definition = SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::Map {
+                    key: Box::new(SchemaBody::String),
+                    value: Box::new(SchemaBody::UnsignedInteger(IntegerWidth::W64)),
+                    cardinality: cardinality.clone(),
+                },
+            }
+            .finalize()
+            .unwrap()
+            .into();
             assert!(schema_certificate(&constrained, h, k, s).is_none());
             constrained = plan.clone();
-            constrained.values[s.output().unwrap().get() as usize].replace_definition(
-                SchemaDraft {
-                    dimension_parameters: Box::new([]),
-                    body: SchemaBody::Set {
-                        element: Box::new(SchemaBody::String),
-                        cardinality,
-                    },
-                }
-                .finalize()
-                .unwrap(),
-            );
+            constrained.values[s.output().unwrap().get() as usize].definition = SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::Set {
+                    element: Box::new(SchemaBody::String),
+                    cardinality,
+                },
+            }
+            .finalize()
+            .unwrap()
+            .into();
             assert!(schema_certificate(&constrained, h, k, s).is_none());
         }
         let mut constrained = plan.clone();
         let original = schema(&plan, k.output().unwrap()).unwrap();
-        constrained.values[k.output().unwrap().get() as usize].replace_definition(
-            SchemaDraft {
-                dimension_parameters: vec![mech_core::DimensionParameterDeclaration {
-                    id: mech_core::DimensionParameterId::new(0),
-                    origin: mech_core::DimensionParameterOrigin::Inferred,
-                    lifetime: mech_core::DimensionLifetime::Turn,
-                    lower_bound: DimensionExpr::Constant(0),
-                    upper_bound: Some(DimensionExpr::Constant(1)),
-                }]
-                .into(),
-                body: original.body().clone(),
-            }
-            .finalize()
-            .unwrap(),
-        );
+        constrained.values[k.output().unwrap().get() as usize].definition = SchemaDraft {
+            dimension_parameters: vec![mech_core::DimensionParameterDeclaration {
+                id: mech_core::DimensionParameterId::new(0),
+                origin: mech_core::DimensionParameterOrigin::Inferred,
+                lifetime: mech_core::DimensionLifetime::Turn,
+                lower_bound: DimensionExpr::Constant(0),
+                upper_bound: Some(DimensionExpr::Constant(1)),
+            }]
+            .into(),
+            body: original.body().clone(),
+        }
+        .finalize()
+        .unwrap()
+        .into();
         assert!(schema_certificate(&constrained, h, k, s).is_none());
     }
 }

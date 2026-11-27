@@ -2425,3 +2425,26 @@ was rejected before holdout. Accepted31 remains11.436358x C optimization and
 39.315695x C holdout. All measurements, failures, profiles and source remain in
 training-experiments/direct-phase-maps.json and
 qualification/experiments/direct-phase-maps/.
+
+Round34: cache canonical native type keys
+
+Immutable native types retain their canonical schema key instead of allocating canonical bytes and hashing the same schema during execution. The definition and cache are private, derived at source/image construction and absent from serialized images. No runtime field, allocation, pointer, helper, admission, source fee or arithmetic change is introduced. Compiled host metadata adds32 bytes per type.
+
+Performance gate: not_promoted; accepted compiler after this run: round31. Strict comparison is against accepted31.
+
+| Set | Accepted31 x C | Round34 x C | Raw speedup vs31 | Raw speedup since start |
+|---|---:|---:|---:|---:|
+| Optimization | 11.44x | 11.47x | 1.00858x | 66.71x |
+| Holdout | 39.32x | 38.72x | 1.00612x | 51.48x |
+
+608 selected checks and both feature checks pass. Type/image checks include fixed and parameterized managed matrices, all scalar kinds, same-ID different definitions, and rejection of caller-supplied derived keys; maintained negative nominal/constrained type checks remain. All30 original/decoded finite C-liveout programs and Object emission pass. IR397/work156/ABI47.
+
+The one prospective optimization-only probe measured 1.02682x vs accepted31, retaining all 2 regressions>5%. Every execution counter matches exactly. All15 optimization Object function disassemblies are identical to accepted31.
+
+Original-reference runtime multipliers vs31: 1.01083x/1.01920x. Reference-adjusted gains: 1.01950x/1.02544x. C multipliers: 0.98848x/1.00913x. Raw regressions>5% vs31: 3/2, all retained.
+
+Formal sums of Mech medians: 1.301ms/15.315ms. All900 observations,29482 finite C-liveouts, and35 append-only history entries are retained. Source and driver were committed/frozen before both formal sets. Goal remains strictly below1.0x C on fixed15 holdout.
+
+[Qualification](round-34-qualification.json) · [Frozen source](round-34-frozen.json) · [Acceptance](round-34-performance-acceptance.json) · [Optimization-only profile](training-experiments/root-operator-profile.json)
+
+Round34 was not promoted because optimization11.4712817243x C is worse than accepted31 11.4363579771x, despite holdout38.7231493345x improving from39.3156954892x. Both scores must strictly improve. Exact accepted31 compiler source and driver are restored; all608 checks,900 observations and all regressions remain. No remote push. Next training-only target is closed matrix-expression regions using existing resident/JIT kernels and current-bank machinery; see training-experiments/root-operator-regions-plan.json.

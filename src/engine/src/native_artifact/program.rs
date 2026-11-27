@@ -16,9 +16,7 @@ use mech_core::{
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NativeProgramType {
     pub(crate) schema: SchemaId,
-    definition: std::sync::Arc<Schema>,
-    // Derived once with this immutable definition, never accepted from an image.
-    schema_key: SchemaKey,
+    pub(crate) definition: std::sync::Arc<Schema>,
     pub(crate) scalar: Option<std::sync::Arc<NativeScalarType>>,
 }
 impl serde::Serialize for NativeProgramType {
@@ -32,32 +30,11 @@ impl serde::Serialize for NativeProgramType {
     }
 }
 impl NativeProgramType {
-    pub(crate) fn new(
-        schema: SchemaId,
-        definition: std::sync::Arc<Schema>,
-        scalar: Option<std::sync::Arc<NativeScalarType>>,
-    ) -> Self {
-        let schema_key = definition.key();
-        Self {
-            schema,
-            definition,
-            schema_key,
-            scalar,
-        }
-    }
-    // Negative proof tests replace an entire immutable definition. Keep its
-    // derived identity synchronized just as a fresh source/image constructor.
-    #[cfg(test)]
-    pub(crate) fn replace_definition(&mut self, definition: Schema) {
-        self.schema_key = definition.key();
-        self.definition = std::sync::Arc::new(definition);
-    }
     pub const fn schema(&self) -> SchemaId {
         self.schema
     }
-    #[inline]
-    pub const fn schema_key(&self) -> SchemaKey {
-        self.schema_key
+    pub fn schema_key(&self) -> SchemaKey {
+        self.definition.key()
     }
     pub fn definition(&self) -> &Schema {
         &self.definition
