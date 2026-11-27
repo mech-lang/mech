@@ -67,6 +67,7 @@ pub(in crate::native_artifact) struct Report {
     pub refined_capacity_guards: Vec<(usize, usize, usize)>,
     pub scalar_operations: usize,
     pub register_words: usize,
+    pub f64_home_slots: Vec<usize>,
     pub fresh_traversal_words: usize,
     pub bounds_error_spill_words: Vec<(usize, usize)>,
     pub boundary_spill_words: Vec<(&'static str, usize, usize)>,
@@ -434,6 +435,12 @@ pub(in crate::native_artifact) fn emit_entry(
                 },
             )?
         };
+    let f64_home_slots = if controls.enabled(OptimizationPass::F64SsaHomes) {
+        let typed = super::numeric_words::f64_homes(program, proof, shadow, &slots)?;
+        words.keep_f64_homes(b, &typed)
+    } else {
+        Vec::new()
+    };
     for (at, array) in proof.arrays.iter().enumerate() {
         if matches!(array.width, 1 | 2 | 4 | 8) {
             // Runtime unsigned_matrix_native_view validates the actual packed
@@ -645,6 +652,7 @@ pub(in crate::native_artifact) fn emit_entry(
         refined_capacity_guards: Vec::new(),
         scalar_operations: 0,
         register_words,
+        f64_home_slots,
         fresh_traversal_words: fresh.len(),
         bounds_error_spill_words: Vec::new(),
         boundary_spill_words: Vec::new(),
