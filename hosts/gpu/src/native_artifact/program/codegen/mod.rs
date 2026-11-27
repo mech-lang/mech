@@ -133,3 +133,4 @@ mod fp_spill_tests;
 
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod numeric_binary;
+mod numeric_product;

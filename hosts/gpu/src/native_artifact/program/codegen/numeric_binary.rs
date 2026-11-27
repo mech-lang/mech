@@ -1,8 +1,8 @@
-//! Source-selected elementwise F64 loops over one checked synchronous loan.
+//! Source-selected F64 matrix loops over one checked synchronous loan.
 //! Flat scalar/exact broadcasts use independent SIMD lanes, with scalar tails.
 use super::hooks::Hooks;
 use crate::native_artifact::program::{
-    prepare::numeric_binary::Operation,
+    prepare::numeric_binary::{Kind, Operation},
     protocol::{GlobalHelper, abi::NumericBinaryFrame as Frame},
 };
 use crate::native_artifact::{
@@ -11,14 +11,14 @@ use crate::native_artifact::{
 };
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
-use mech_engine::native_artifact::NativeMatchValue;
+use mech_engine::native_artifact::{NativeMatchValue, NativeScalarOp};
 use std::mem::offset_of;
 
 fn get(b: &mut FunctionBuilder<'_>, frame: Value, offset: usize) -> Value {
     b.ins()
         .load(types::I64, MemFlags::new(), frame, offset as i32)
 }
-fn address(b: &mut FunctionBuilder<'_>, pointer: Value, index: Value) -> Value {
+pub(super) fn address(b: &mut FunctionBuilder<'_>, pointer: Value, index: Value) -> Value {
     let bytes = b.ins().imul_imm(index, 8);
     b.ins().iadd(pointer, bytes)
 }
@@ -56,7 +56,7 @@ fn scalar_at(
 }
 fn flat(
     b: &mut FunctionBuilder<'_>,
-    op: &Operation,
+    op: NativeScalarOp,
     left: Value,
     right: Value,
     sleft: Value,
@@ -99,7 +99,7 @@ fn flat(
         let p = address(b, right, at);
         b.ins().load(vector_type, MemFlags::new(), p, 0)
     };
-    let next = f64_arithmetic(b, op.op, a, c);
+    let next = f64_arithmetic(b, op, a, c);
     let p = address(b, output, at);
     b.ins().store(MemFlags::new(), next, p, 0);
     let advanced = b.ins().iadd_imm(at, 2);
@@ -123,7 +123,7 @@ fn flat(
         let p = address(b, right, at);
         b.ins().load(types::F64, MemFlags::new(), p, 0)
     };
-    let next = f64_arithmetic(b, op.op, a, c);
+    let next = f64_arithmetic(b, op, a, c);
     let p = address(b, output, at);
     b.ins().store(MemFlags::new(), next, p, 0);
     b.ins().jump(done, &[]);
@@ -168,50 +168,58 @@ pub(in crate::native_artifact) fn emit_entry(
     let sleft = get(b, frame, offset_of!(Frame, left_scalar));
     let sright = get(b, frame, offset_of!(Frame, right_scalar));
     let complete = b.create_block();
-    let flat_entry = b.create_block();
-    let strided = b.create_block();
-    let lf = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, lmode, 1);
-    let rf = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, rmode, 1);
-    let both = b.ins().band(lf, rf);
-    b.ins().brif(both, flat_entry, &[], strided, &[]);
-    b.switch_to_block(flat_entry);
-    let ls = b.ins().icmp_imm(IntCC::Equal, lmode, 0);
-    let rs = b.ins().icmp_imm(IntCC::Equal, rmode, 0);
-    let lscalar = b.create_block();
-    let lexact = b.create_block();
-    b.ins().brif(ls, lscalar, &[], lexact, &[]);
-    for (block, scalar) in [(lscalar, true), (lexact, false)] {
-        b.switch_to_block(block);
-        let rscalar = b.create_block();
-        let rexact = b.create_block();
-        b.ins().brif(rs, rscalar, &[], rexact, &[]);
-        for (block, rscalar) in [(rscalar, true), (rexact, false)] {
-            b.switch_to_block(block);
-            flat(
-                b, op, left, right, sleft, sright, output, count, scalar, rscalar, complete,
-            );
+    match op.kind {
+        Kind::Product => {
+            let inner = get(b, frame, offset_of!(Frame, inner));
+            super::numeric_product::emit(b, left, right, output, count, columns, inner, complete);
+        }
+        Kind::Elementwise(op) => {
+            let flat_entry = b.create_block();
+            let strided = b.create_block();
+            let lf = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, lmode, 1);
+            let rf = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, rmode, 1);
+            let both = b.ins().band(lf, rf);
+            b.ins().brif(both, flat_entry, &[], strided, &[]);
+            b.switch_to_block(flat_entry);
+            let ls = b.ins().icmp_imm(IntCC::Equal, lmode, 0);
+            let rs = b.ins().icmp_imm(IntCC::Equal, rmode, 0);
+            let lscalar = b.create_block();
+            let lexact = b.create_block();
+            b.ins().brif(ls, lscalar, &[], lexact, &[]);
+            for (block, scalar) in [(lscalar, true), (lexact, false)] {
+                b.switch_to_block(block);
+                let rscalar = b.create_block();
+                let rexact = b.create_block();
+                b.ins().brif(rs, rscalar, &[], rexact, &[]);
+                for (block, rscalar) in [(rscalar, true), (rexact, false)] {
+                    b.switch_to_block(block);
+                    flat(
+                        b, op, left, right, sleft, sright, output, count, scalar, rscalar, complete,
+                    );
+                }
+            }
+            b.switch_to_block(strided);
+            let index = b.declare_var(types::I64);
+            let zero = b.ins().iconst(types::I64, 0);
+            b.def_var(index, zero);
+            let header = b.create_block();
+            let body = b.create_block();
+            b.ins().jump(header, &[]);
+            b.switch_to_block(header);
+            let at = b.use_var(index);
+            let valid = b.ins().icmp(IntCC::UnsignedLessThan, at, count);
+            b.ins().brif(valid, body, &[], complete, &[]);
+            b.switch_to_block(body);
+            let a = scalar_at(b, left, sleft, lmode, at, columns);
+            let c = scalar_at(b, right, sright, rmode, at, columns);
+            let next = f64_arithmetic(b, op, a, c);
+            let p = address(b, output, at);
+            b.ins().store(MemFlags::new(), next, p, 0);
+            let next = b.ins().iadd_imm(at, 1);
+            b.def_var(index, next);
+            b.ins().jump(header, &[]);
         }
     }
-    b.switch_to_block(strided);
-    let index = b.declare_var(types::I64);
-    let zero = b.ins().iconst(types::I64, 0);
-    b.def_var(index, zero);
-    let header = b.create_block();
-    let body = b.create_block();
-    b.ins().jump(header, &[]);
-    b.switch_to_block(header);
-    let at = b.use_var(index);
-    let valid = b.ins().icmp(IntCC::UnsignedLessThan, at, count);
-    b.ins().brif(valid, body, &[], complete, &[]);
-    b.switch_to_block(body);
-    let a = scalar_at(b, left, sleft, lmode, at, columns);
-    let c = scalar_at(b, right, sright, rmode, at, columns);
-    let next = f64_arithmetic(b, op.op, a, c);
-    let p = address(b, output, at);
-    b.ins().store(MemFlags::new(), next, p, 0);
-    let next = b.ins().iadd_imm(at, 1);
-    b.def_var(index, next);
-    b.ins().jump(header, &[]);
     b.switch_to_block(complete);
     let zero = b.ins().iconst(types::I64, 0);
     hooks.call(

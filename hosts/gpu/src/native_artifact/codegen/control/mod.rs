@@ -1579,7 +1579,7 @@ impl<'plan> CfgDefinition<'plan> {
                     };
                     #[cfg(feature = "canonical-native-program")]
                     let numeric_binary_done = if controls.enabled(
-                        crate::native_artifact::codegen::options::OptimizationPass::NumericElementwise,
+                        crate::native_artifact::codegen::options::OptimizationPass::NumericMatrixArithmetic,
                     ) && operation == GlobalHelper::Library.raw() {
                         if let plan::CodePlan::Program(program) = plan
                             && let Some(proof) = program.metadata().numeric_binary.at(index)

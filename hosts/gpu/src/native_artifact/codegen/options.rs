@@ -55,7 +55,7 @@ pub(in crate::native_artifact) enum OptimizationPass {
     UniformWords,
     NumericCollections,
     /// Native typed whole-matrix arithmetic; ordinary calls remain the fallback.
-    NumericElementwise,
+    NumericMatrixArithmetic,
     /// Omit capacity guards at a proved frontier with no append operation.
     ZeroAppendFrontiers,
     /// Refine a declined static capacity frontier using only a bounded pure

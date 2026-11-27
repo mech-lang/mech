@@ -22,6 +22,18 @@ fn f64(schema: &Schema) -> bool {
     }
 }
 impl NativeProgramLibraryTemplate {
+    /// The maintained matrix-product factory, with two typed matrix sources.
+    /// Scalar dot results and other numeric kinds retain their own routes.
+    pub fn f64_matrix_product(&self) -> bool {
+        self.primitive() == P::MatrixMatmul
+            && self.inputs().len() == 2
+            && self
+                .inputs()
+                .iter()
+                .chain([self.output()])
+                .all(|s| f64(s) && matches!(s.body(), SchemaBody::Matrix { .. }))
+    }
+
     /// A private registration witness attached to the maintained factory.
     /// Current dimensions, source values and complete admission remain separate.
     pub fn f64_matrix_binary_op(&self) -> Option<NativeScalarOp> {
@@ -44,6 +56,33 @@ impl NativeProgramLibraryTemplate {
     }
 }
 impl NativePreparedLibraryCall {
+    pub fn f64_matrix_product_geometry(
+        &self,
+        left: [usize; 2],
+        right: [usize; 2],
+    ) -> Option<[u64; 3]> {
+        if !self.template().f64_matrix_product() {
+            return None;
+        }
+        crate::resident::numeric::native_product_geometry(left, right)
+            .ok()
+            .map(|axes| axes.map(|n| n as u64))
+    }
+    pub fn f64_matrix_product_source_bound(
+        &self,
+        inputs: u64,
+        output: u64,
+        inner: u64,
+    ) -> Option<(ResourceDemand, u64)> {
+        if !self.template().f64_matrix_product() {
+            return None;
+        }
+        // The ordinary F64 product charges two arithmetic operations per
+        // term. Fund those and the complete emitted load/store/loop work;
+        // the common envelope also retains all original planning/publication.
+        self.f64_matrix_source_bound(inputs, output, output.checked_mul(inner)?)
+    }
+
     pub fn f64_matrix_binary_geometry(
         &self,
         left: [usize; 2],
@@ -85,6 +124,14 @@ impl NativePreparedLibraryCall {
         output: u64,
     ) -> Option<(ResourceDemand, u64)> {
         self.template().f64_matrix_binary_op()?;
+        self.f64_matrix_source_bound(inputs, output, 0)
+    }
+    fn f64_matrix_source_bound(
+        &self,
+        inputs: u64,
+        output: u64,
+        terms: u64,
+    ) -> Option<(ResourceDemand, u64)> {
         let schema = self.schema_context_allocation_bound_bytes()?;
         let binding = self.binding_metadata_bytes();
         let cell = core::mem::size_of::<mech_core::ValueDataDraft>() as u64;
@@ -108,6 +155,7 @@ impl NativePreparedLibraryCall {
             .checked_add(temporary.checked_mul(16)?)?
             .checked_add(published.checked_mul(16)?)?
             .checked_add(inputs.checked_add(output)?.checked_mul(1024)?)?
+            .checked_add(terms.checked_mul(16)?)?
             .checked_add(65536)?;
         let comparison = published.checked_add(temporary)?;
         let nodes = inputs

@@ -18612,11 +18612,10 @@ fn matrix_multiply_snapshot(
     let rhs_schema = rhs
         .validate_against(schemas)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
-    let (rows, inner) = snapshot_matrix_dimensions(lhs, lhs_schema.body())?;
-    let (rhs_rows, columns) = snapshot_matrix_dimensions(rhs, rhs_schema.body())?;
-    if inner != rhs_rows {
-        return Err(ResidentKernelError::InvalidShape);
-    }
+    let [rows, columns, inner] = native_product_geometry(
+        snapshot_matrix_dimensions(lhs, lhs_schema.body())?.into(),
+        snapshot_matrix_dimensions(rhs, rhs_schema.body())?.into(),
+    )?;
     let output_shape = resolved_snapshot_output_shape(kernel, rows, columns)?;
     let lhs_len = rows
         .checked_mul(inner)
@@ -18785,6 +18784,20 @@ fn matrix_dot_f64(
     let changed = target.to_bits() != next.to_bits();
     *target = next;
     Ok(changed)
+}
+
+/// Current product geometry shared by the ordinary packed kernel and native
+/// matrix emitter. No arithmetic, allocation, source ownership or permission.
+pub(in crate::resident) fn native_product_geometry(
+    left: [usize; 2],
+    right: [usize; 2],
+) -> Result<[usize; 3], ResidentKernelError> {
+    let [rows, inner] = left;
+    let [rhs_rows, columns] = right;
+    if inner != rhs_rows {
+        return Err(ResidentKernelError::InvalidShape);
+    }
+    Ok([rows, columns, inner])
 }
 
 /// Current row-major broadcast geometry shared with the native matrix emitter.

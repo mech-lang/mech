@@ -1,6 +1,7 @@
 //! Exact-site loans for one generated F64 matrix operation.
 //! Inputs stay pinned; one initialized private result bank publishes atomically.
 use super::*;
+use crate::native_artifact::program::prepare::numeric_binary::Kind;
 use crate::native_artifact::program::protocol::{GlobalHelper, abi::NumericBinaryFrame};
 use mech_core::{
     DimensionExpr, FloatWidth, ManagedMemoryReservation, ManagedNodeReservation, SchemaBody,
@@ -134,13 +135,29 @@ impl Invocation<'_, '_, '_> {
         let call = m.calls[site]
             .as_ref()
             .ok_or_else(|| invalid("matrix arithmetic selected call missing"))?;
-        if call.template().f64_matrix_binary_op() != Some(op.op) {
-            return Err(invalid("matrix arithmetic selected factory differs"));
-        }
-        let Some([rows, columns, left_mode, right_mode]) =
-            call.f64_matrix_binary_geometry(dimensions[0], dimensions[1])
-        else {
-            return Ok(Some(0));
+        let (rows, columns, left_mode, right_mode, inner) = match op.kind {
+            Kind::Elementwise(kind) => {
+                if call.template().f64_matrix_binary_op() != Some(kind) {
+                    return Err(invalid("matrix arithmetic selected factory differs"));
+                }
+                let Some([rows, columns, left, right]) =
+                    call.f64_matrix_binary_geometry(dimensions[0], dimensions[1])
+                else {
+                    return Ok(Some(0));
+                };
+                (rows, columns, left, right, 0)
+            }
+            Kind::Product => {
+                if !call.template().f64_matrix_product() {
+                    return Err(invalid("matrix product selected factory differs"));
+                }
+                let Some([rows, columns, inner]) =
+                    call.f64_matrix_product_geometry(dimensions[0], dimensions[1])
+                else {
+                    return Ok(Some(0));
+                };
+                (rows, columns, 1, 1, inner)
+            }
         };
         let Some(count) = rows.checked_mul(columns) else {
             return Ok(Some(0));
@@ -151,7 +168,11 @@ impl Invocation<'_, '_, '_> {
         let Some(input_count) = input_count else {
             return Ok(Some(0));
         };
-        let Some((demand, replay)) = call.f64_matrix_binary_source_bound(input_count, count) else {
+        let bound = match op.kind {
+            Kind::Elementwise(_) => call.f64_matrix_binary_source_bound(input_count, count),
+            Kind::Product => call.f64_matrix_product_source_bound(input_count, count, inner),
+        };
+        let Some((demand, replay)) = bound else {
             return Ok(Some(0));
         };
         let caps = self.limits;
@@ -277,6 +298,7 @@ impl Invocation<'_, '_, '_> {
                 output: 0,
                 count: count as u64,
                 columns,
+                inner,
                 left_mode,
                 right_mode,
                 left_scalar: words[0],

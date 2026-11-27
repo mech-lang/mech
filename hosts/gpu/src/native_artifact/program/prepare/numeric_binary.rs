@@ -1,13 +1,18 @@
-//! Same-plan selected elementwise arithmetic; no values, pointers or permits.
+//! Same-plan selected matrix arithmetic; no values, pointers or permits.
 use mech_engine::native_artifact::{
     NativeIterationAction as Action, NativeProgramArtifactPlan as Plan, NativeScalarOp,
 };
 pub(in crate::native_artifact) const HEADER_WORK: u64 = 32768;
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(in crate::native_artifact) enum Kind {
+    Elementwise(NativeScalarOp),
+    Product,
+}
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(in crate::native_artifact) struct Operation {
     pub operands: [u32; 2],
     pub output: u32,
-    pub op: NativeScalarOp,
+    pub kind: Kind,
 }
 #[derive(Debug)]
 pub(in crate::native_artifact) struct Layout {
@@ -39,10 +44,14 @@ impl Layout {
                 {
                     return Ok(None);
                 }
-                Ok(template.f64_matrix_binary_op().map(|op| Operation {
+                let kind = template
+                    .f64_matrix_binary_op()
+                    .map(Kind::Elementwise)
+                    .or_else(|| template.f64_matrix_product().then_some(Kind::Product));
+                Ok(kind.map(|kind| Operation {
                     operands: [operands[0].get(), operands[1].get()],
                     output: output.get(),
-                    op,
+                    kind,
                 }))
             })
             .collect::<Result<Box<[_]>, &'static str>>()?;
