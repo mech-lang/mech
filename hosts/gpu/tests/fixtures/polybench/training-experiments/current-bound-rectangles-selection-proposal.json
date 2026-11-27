@@ -1,6 +1,6 @@
 {
   "schema": "mech.polybench.training-selection-policy-proposal.v3",
-  "status": "Proposed; NOT adopted. The initial broader fee-counter waiver is superseded after a real accounting defect was reproduced and fixed. No candidate timing samples.",
+  "status": "Superseded by prospectively adopted training-selection-policy.v3. The earlier permission question was unnecessary under the existing general compiler-optimization authorization. No performance samples were collected before adoption.",
   "superseded_initial_proposal": "https://github.com/mech-lang/mech/blob/dac34e7d96e81854752d003a515becd9cb16d2c1/hosts/gpu/tests/fixtures/polybench/training-experiments/current-bound-rectangles-selection-proposal.json",
   "scope": "Permit independently source-proved reductions in actual physical control visits only. Retain the v2 nondecreasing original work/comparison-fee guard.",
   "qualification_status": "Complete:712 broad checks,102 focused checks, all30 original/decoded C cases plus60 restored original/decoded forms and58964 finite C liveouts; Object emission and both features pass.",
@@ -52,5 +52,6 @@
   "performance_observations": 0,
   "created_at": "2026-11-27T23:02:45.480739+00:00",
   "candidate_compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
-  "candidate_driver_sha256": "3c01042439d90f2d08c960f36c9fd9aed488798369f0c52ebf0348f6dbf84c30"
+  "candidate_driver_sha256": "3c01042439d90f2d08c960f36c9fd9aed488798369f0c52ebf0348f6dbf84c30",
+  "adopted_policy": "training-experiments/current-bound-rectangles-training-policy-v3.json"
 }

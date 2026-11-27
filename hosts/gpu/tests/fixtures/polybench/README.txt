@@ -2685,3 +2685,22 @@ Accepted44 remains10.24618x C optimization /38.46048x C holdout; history45.
 
 [Corrected qualification/audit](training-experiments/current-bound-rectangles-shared-comparison.json)
 [Proposed physical-visit guard](training-experiments/current-bound-rectangles-selection-proposal.json)
+
+Prospective training guard v3
+-----------------------------
+
+The identical-visit condition was an assistant-added v2 guard, not part of the
+fixed user benchmark protocol. Asking for separate permission to revise that
+condition unnecessarily blocked the authorized general compiler optimization
+work. V3 is adopted before any candidate timing, with source-rederived private
+fusion proofs and actual callback evidence required for physical-visit
+reductions. Original work/comparison fees must remain nondecreasing and every
+other execution/transport counter must match. No fee exception is allowed.
+All ports, inputs, C flags/binaries, finite limits, tolerances, fixed15/15 split,
+cache/timing boundaries, one prospective210-observation probe,900-observation
+formal evaluation and strict improvement of BOTH scores over accepted44 stay
+fixed. No prior result is reclassified and no failed fingerprint is retried.
+The earlier approval question is not a prerequisite; silence is not treated as
+approval. Complete the running accepted44 profiles before any census or trial.
+
+[Prospective v3 policy](training-experiments/current-bound-rectangles-training-policy-v3.json)
