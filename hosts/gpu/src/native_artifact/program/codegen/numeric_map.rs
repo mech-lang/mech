@@ -103,9 +103,29 @@ fn integer(width: u8) -> cranelift_codegen::ir::Type {
         _ => unreachable!(),
     }
 }
-/// All dynamic loop work is prepaid by the loan. Arithmetic uses the common
-/// checked native emitter; no source visit, helper or per-operation dispatch
-/// occurs between the exact prepare and finish boundaries.
+/// Native composition carries the same checked map inputs as SSA values.
+/// These are code-generation values, not a runtime loan or serialized carrier.
+/// The public host adapter still loads every field from its actual current loan.
+pub(super) struct Values {
+    pub count: Value,
+    pub source_count: Value,
+    pub input: Value,
+    pub input_bytes: Value,
+    pub output: Value,
+    pub capacity_bytes: Value,
+    pub output_count: Value,
+    pub input_width: Value,
+    pub output_width: Value,
+    pub epoch: Value,
+    pub issued: Value,
+    pub next: Value,
+    pub fold: Value,
+    pub range_start: Value,
+    pub matrices: Vec<[Value; 4]>,
+}
+
+/// Adapt an actual current runtime loan to the one maintained native map DAG.
+/// Only a complete map publishes its cursor/fold back to the runtime frame.
 pub(super) fn emit(
     b: &mut FunctionBuilder<'_>,
     frame: Value,
@@ -116,11 +136,77 @@ pub(super) fn emit(
     miss: Block,
     malformed: Block,
 ) -> Result<(), NativeCompileError> {
+    let inputs = Values {
+        count: get(b, frame, offset_of!(Frame, count)),
+        source_count: get(b, frame, offset_of!(Frame, source_count)),
+        input: get(b, frame, offset_of!(Frame, input)),
+        input_bytes: get(b, frame, offset_of!(Frame, input_bytes)),
+        output: get(b, frame, offset_of!(Frame, output)),
+        capacity_bytes: get(b, frame, offset_of!(Frame, capacity_bytes)),
+        output_count: get(b, frame, offset_of!(Frame, output_count)),
+        input_width: get(b, frame, offset_of!(Frame, input_width)),
+        output_width: get(b, frame, offset_of!(Frame, output_width)),
+        epoch: get(b, frame, offset_of!(Frame, epoch)),
+        issued: get(b, frame, offset_of!(Frame, issued)),
+        next: get(b, frame, offset_of!(Frame, next)),
+        fold: get(b, frame, offset_of!(Frame, fold)),
+        range_start: get(b, frame, offset_of!(Frame, range_start)),
+        matrices: region
+            .matrices
+            .iter()
+            .enumerate()
+            .map(|(at, _)| {
+                let base = offset_of!(Frame, matrices) + at * std::mem::size_of::<MatrixView>();
+                [
+                    offset_of!(MatrixView, input),
+                    offset_of!(MatrixView, count),
+                    offset_of!(MatrixView, rows),
+                    offset_of!(MatrixView, columns),
+                ]
+                .map(|field| get(b, frame, base + field))
+            })
+            .collect(),
+    };
+    let done = b.create_block();
+    b.append_block_param(done, types::I64);
+    emit_values(b, &inputs, region, plan, captures, done, miss, malformed)?;
+    b.switch_to_block(done);
+    if region.reduction.is_some() {
+        let fold = b.block_params(done)[0];
+        b.ins()
+            .store(MemFlags::new(), fold, frame, offset_of!(Frame, fold) as i32);
+    }
+    b.ins().store(
+        MemFlags::new(),
+        inputs.count,
+        frame,
+        offset_of!(Frame, next) as i32,
+    );
+    b.ins().jump(complete, &[]);
+    Ok(())
+}
+
+/// All dynamic loop work is prepaid by the loan. Arithmetic uses the common
+/// checked native emitter; no source visit, helper or per-operation dispatch
+/// occurs between the exact prepare and finish boundaries.
+pub(super) fn emit_values(
+    b: &mut FunctionBuilder<'_>,
+    inputs: &Values,
+    region: &Region,
+    plan: &Plan,
+    captures: &BTreeMap<u32, Value>,
+    complete: Block,
+    miss: Block,
+    malformed: Block,
+) -> Result<(), NativeCompileError> {
+    if inputs.matrices.len() != region.matrices.len() {
+        return Err(backend("numeric map SSA view inventory differs"));
+    }
     // Arithmetic failures carry the common emitter's diagnostic word. A
     // bounds miss needs no synthetic source error: ordinary replay owns it.
     let index_miss = b.create_block();
-    let count = get(b, frame, offset_of!(Frame, count));
-    let source_count = get(b, frame, offset_of!(Frame, source_count));
+    let count = inputs.count;
+    let source_count = inputs.source_count;
     let inner_count = b.ins().iconst(
         types::I64,
         region.rectangle.as_ref().map_or(1, |r| r.rows) as i64,
@@ -130,26 +216,26 @@ pub(super) fn emit(
     require(b, good, malformed);
     let good = b.ins().icmp(IntCC::Equal, expected, count);
     require(b, good, malformed);
-    let input = get(b, frame, offset_of!(Frame, input));
-    let output = get(b, frame, offset_of!(Frame, output));
+    let input = inputs.input;
+    let output = inputs.output;
     for (field, expected) in [
-        (offset_of!(Frame, input_width), region.input_width),
-        (offset_of!(Frame, output_width), region.output_width),
+        (inputs.input_width, region.input_width),
+        (inputs.output_width, region.output_width),
     ] {
-        let width = get(b, frame, field);
+        let width = field;
         let good = b.ins().icmp_imm(IntCC::Equal, width, i64::from(expected));
         require(b, good, malformed);
     }
-    let epoch = get(b, frame, offset_of!(Frame, epoch));
-    let issued = get(b, frame, offset_of!(Frame, issued));
-    let next = get(b, frame, offset_of!(Frame, next));
+    let epoch = inputs.epoch;
+    let issued = inputs.issued;
+    let next = inputs.next;
     let good = b.ins().icmp(IntCC::Equal, epoch, issued);
     require(b, good, malformed);
     let good = b.ins().icmp_imm(IntCC::NotEqual, epoch, 0);
     require(b, good, malformed);
     let good = b.ins().icmp_imm(IntCC::Equal, next, 0);
     require(b, good, malformed);
-    let output_count = get(b, frame, offset_of!(Frame, output_count));
+    let output_count = inputs.output_count;
     let expected_output_count = if region.reduction.is_some() {
         b.ins().iconst(types::I64, 0)
     } else {
@@ -159,30 +245,25 @@ pub(super) fn emit(
         .ins()
         .icmp(IntCC::Equal, output_count, expected_output_count);
     require(b, good, malformed);
-    let initial_fold = get(b, frame, offset_of!(Frame, fold));
+    let initial_fold = inputs.fold;
     let good = b.ins().icmp_imm(IntCC::Equal, initial_fold, 0);
     require(b, good, malformed);
     let mut banks = vec![(
         region.output_width,
         output_count,
         output,
-        offset_of!(Frame, capacity_bytes),
+        inputs.capacity_bytes,
     )];
     if !region.range {
-        banks.push((
-            region.input_width,
-            source_count,
-            input,
-            offset_of!(Frame, input_bytes),
-        ));
+        banks.push((region.input_width, source_count, input, inputs.input_bytes));
     } else {
-        let bytes = get(b, frame, offset_of!(Frame, input_bytes));
+        let bytes = inputs.input_bytes;
         let good = b.ins().icmp_imm(IntCC::Equal, bytes, 0);
         require(b, good, malformed);
         let good = b.ins().icmp_imm(IntCC::Equal, input, 0);
         require(b, good, malformed);
     }
-    for (width, count, pointer, field) in banks {
+    for (width, count, pointer, bound) in banks {
         let good = b.ins().icmp_imm(
             IntCC::UnsignedLessThanOrEqual,
             count,
@@ -190,7 +271,6 @@ pub(super) fn emit(
         );
         require(b, good, malformed);
         let bytes = b.ins().imul_imm(count, i64::from(width));
-        let bound = get(b, frame, field);
         let good = b.ins().icmp(IntCC::Equal, bytes, bound);
         require(b, good, malformed);
         let empty = b.ins().icmp_imm(IntCC::Equal, count, 0);
@@ -205,11 +285,7 @@ pub(super) fn emit(
     // source is genuinely pinned through the exact same synchronous loan.
     let mut matrices = Vec::new();
     for (at, matrix) in region.matrices.iter().enumerate() {
-        let base = offset_of!(Frame, matrices) + at * std::mem::size_of::<MatrixView>();
-        let pointer = get(b, frame, base + offset_of!(MatrixView, input));
-        let cells = get(b, frame, base + offset_of!(MatrixView, count));
-        let rows = get(b, frame, base + offset_of!(MatrixView, rows));
-        let columns = get(b, frame, base + offset_of!(MatrixView, columns));
+        let [pointer, cells, rows, columns] = inputs.matrices[at];
         let (product, overflow) = b.ins().umul_overflow(rows, columns);
         let good = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
         require(b, good, malformed);
@@ -242,7 +318,7 @@ pub(super) fn emit(
         );
         matrices.push((pointer, cells, rows, columns));
     }
-    let start = get(b, frame, offset_of!(Frame, range_start));
+    let start = inputs.range_start;
     if region.range {
         // count==0 has no generated element; otherwise the last value must fit.
         let last = b.ins().iadd_imm(source_count, -1);
@@ -491,22 +567,10 @@ pub(super) fn emit(
     b.def_var(cursor, next);
     b.ins().jump(head, &[]);
     b.switch_to_block(done);
-    if let Some(fold) = fold {
-        let value = b.use_var(fold);
-        b.ins().store(
-            MemFlags::new(),
-            value,
-            frame,
-            offset_of!(Frame, fold) as i32,
-        );
-    }
-    b.ins().store(
-        MemFlags::new(),
-        count,
-        frame,
-        offset_of!(Frame, next) as i32,
-    );
-    b.ins().jump(complete, &[]);
+    // Return the same ordered fold directly to a native caller. Runtime loans
+    // adapt this word and the complete cursor only at their finish boundary.
+    let value = fold.map_or(zero, |fold| b.use_var(fold));
+    b.ins().jump(complete, &[value.into()]);
     b.switch_to_block(index_miss);
     let no_diagnostic = b.ins().iconst(types::I64, 0);
     b.ins().jump(miss, &[no_diagnostic.into()]);
