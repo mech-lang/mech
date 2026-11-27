@@ -1897,3 +1897,57 @@ seidel-2d          optimization       50,168.86            2.84
 Round24 promotion decision and source restoration
 
 Round24 is mixed and not promoted. Accepted23 remains optimization30.769365x C and holdout63.724306x C. After the frozen candidate/profile audit passed, all4 Rust changes were restored exactly from a9d3efc15e. Complete compiler fingerprint is again 0aa2b72813db1aa39632cd3c4e219cc03c64c08880211ccac52c1b70101812c2, matching accepted23. The rejected source f1f701bcb14b7c4d76737177cd2dec46d68bb2ae,559-check qualification,900 observations, development failure and training profiles remain. round-24-restoration.json links the exact decision and byte restoration; no holdout per-case tuning was performed.
+
+Round 25: native elementwise arithmetic
+
+Source-selected F64 matrix arithmetic now uses checked typed loans, shared scalar emission, independent SIMD lanes and packed output. Complete source bills and fallback/replay admission remain. Whole enclosing matrix-valued comprehension/child-FSM fusion remains open.
+
+Both frozen scores improve against accepted23; round25 is accepted. Lower Mech/C is better.
+
+| Set | Accepted23 x C | Round25 x C | Raw speedup vs23 | Raw speedup since start |
+|---|---:|---:|---:|---:|
+| Optimization | 30.77x | 27.80x | 1.114x | 28.21x |
+| Holdout | 63.72x | 56.60x | 1.127x | 35.80x |
+
+553 selected checks and both feature builds pass, including all 29,482 finite C live-outs in original/decoded artifacts and Object emission. IR384/work151/ABI43. The unchanged root frame and scalar prefix remain; the arithmetic loan is 72 bytes. Four optimization cases and zero holdout cases regress by>5% in raw runtime against23; none are excluded.
+
+Original-reference runtime multipliers vs23 are 1.00950x/1.00737x; reference-adjusted speedups 1.12412x/1.13516x; C multipliers 0.99408x/0.99911x (optimization/holdout). Summed medians are 4.326ms/16.533ms.
+
+Training-only selection was 1.19384x vs23, before freeze. Holdout aggregate informed acceptance; no holdout per-case tuning. Five optimization-only profiles contain 2826 execution samples and cover 81.12% of training summed medians. Failed development sources/logs remain in `round-25-development-failure.json`.
+
+The goal remains unmet: holdout 56.60x C, targeting strictly below 1.0x C. PR1001 remains draft. All 900 observations and 26 append-only history entries remain.
+
+| Kernel | Set | Accepted23 x C | Round25 x C | Starting x C |
+|---|---|---:|---:|---:|
+| jacobi-2d | Holdout | 449.19x | 449.53x | 9612.12x |
+| jacobi-1d | Holdout | 387.74x | 432.71x | 7168.14x |
+| adi | Holdout | 201.98x | 191.32x | 21631.38x |
+| mvt | Opt | 109.05x | 110.22x | 138.96x |
+| gemver | Holdout | 153.56x | 100.37x | 260.73x |
+| deriche | Opt | 96.16x | 87.68x | 43560.74x |
+| ludcmp | Holdout | 83.61x | 81.62x | 20723.72x |
+| bicg | Opt | 72.36x | 74.89x | 87.94x |
+| atax | Opt | 65.59x | 67.30x | 79.13x |
+| gesummv | Holdout | 99.55x | 67.27x | 112.38x |
+| gramschmidt | Opt | 55.28x | 59.66x | 27896.34x |
+| correlation | Opt | 73.83x | 52.43x | 327.94x |
+| lu | Holdout | 52.51x | 52.32x | 20830.73x |
+| 2mm | Opt | 72.45x | 42.06x | 77.03x |
+| 3mm | Opt | 31.72x | 34.33x | 38.12x |
+| trmm | Holdout | 36.85x | 34.13x | 219.61x |
+| syr2k | Holdout | 44.87x | 33.11x | 224.54x |
+| symm | Holdout | 46.08x | 32.73x | 218.10x |
+| syrk | Holdout | 39.44x | 31.32x | 245.10x |
+| trisolv | Holdout | 24.29x | 25.55x | 3606.16x |
+| fdtd-2d | Holdout | 26.27x | 25.38x | 10500.55x |
+| heat-3d | Holdout | 24.53x | 23.95x | 4178.38x |
+| covariance | Opt | 32.44x | 23.74x | 50.46x |
+| durbin | Opt | 22.51x | 22.79x | 3899.39x |
+| doitgen | Opt | 18.04x | 18.20x | 22.47x |
+| gemm | Opt | 23.72x | 14.89x | 36.05x |
+| floyd-warshall | Holdout | 10.45x | 10.16x | 4841.31x |
+| cholesky | Opt | 8.28x | 8.45x | 23662.23x |
+| nussinov | Opt | 6.07x | 5.96x | 119638.18x |
+| seidel-2d | Opt | 2.86x | 2.81x | 50168.86x |
+
+[Qualification and controls](round-25-qualification.json) · [Frozen source](round-25-frozen.json) · [Acceptance](round-25-performance-acceptance.json) · [Optimization-only profile](round-25-training-profile.json)
