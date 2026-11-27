@@ -2596,3 +2596,21 @@ The single prospective v2 optimization15 probe retains all210 fresh-process obse
 Both primary scores strictly improve; round44 is accepted. All900 formal observations,29482 finite liveouts,45 append-only history entries and all regressions remain. Holdout is the aggregate gate only; no per-case diagnosis, profiling or tuning. Below1.0x C holdout remains the unchanged objective, requiring a separate completion audit.
 
 [Qualification](round-44-qualification.json) · [Frozen source](round-44-frozen.json) · [Acceptance](round-44-performance-acceptance.json) · [Optimization-only constructor profile](training-experiments/composite-pack-profile.json)
+
+Accepted44 optimization-only margin profiles
+--------------------------------------------
+
+All15 optimization programs were freshly sampled with the exact accepted44
+compiler and driver, in descending Mech/C margin order. Every process exited
+successfully; all finite C liveouts and accepted44 execution reports match.
+Diagnostic samples and Object export add no performance observations or history
+entries. Gram-Schmidt has90.83% generated-numeric-function self samples.
+Correlation has substantial helper/collection/transpose/publication overhead.
+Its emitted Object has no rectangular map because the inner range ends at a
+current immutable input, while the current rectangle proof accepts only literal
+inner bounds. Next work is the general current-bound rectangular-map gap, with
+unchanged source factories, full finite admission/replay and original fallback.
+No holdout per-case diagnosis or profiling. All101 raw evidence archives have
+verified compressed and uncompressed hashes.
+
+[Profile evidence](training-experiments/accepted44-margin-profile.json)
