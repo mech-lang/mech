@@ -68,6 +68,38 @@ enum Child<'a> {
     Word(mech_core::SchemaId, NativeScalarValue),
 }
 impl NativePreparedLibraryCall {
+    /// A compiler construction strategy, not a view or publication permit.
+    /// Reuse the existing current-shape recipe; scalar-only aggregates retain
+    /// their established native scalar strategy.
+    pub fn supports_canonical_numeric_pack(&self) -> bool {
+        fn field(body: &mech_core::SchemaBody) -> bool {
+            NativeScalarKind::from_schema_body(body).is_some()
+                || matches!(body, mech_core::SchemaBody::Matrix {element,dimensions}
+                    if dimensions.len()==2 && NativeScalarKind::from_schema_body(element).is_some())
+        }
+        let Primitive::CompositePack(count) = self.template.primitive() else {
+            return false;
+        };
+        let fields = match self.template.output().body() {
+            mech_core::SchemaBody::Tuple(fields) => fields.len(),
+            mech_core::SchemaBody::Record(fields) => fields.len(),
+            _ => return false,
+        };
+        count == fields
+            && count == self.template.inputs().len()
+            && self.template.inputs().iter().all(|s| field(s.body()))
+            && self
+                .template
+                .inputs()
+                .iter()
+                .any(|s| matches!(s.body(), mech_core::SchemaBody::Matrix { .. }))
+            && self
+                .frame_geometry
+                .as_ref()
+                .and_then(|g| g.shape.as_ref())
+                .is_some()
+    }
+
     /// Logical cardinality of a validated private-frame leaf at its selected
     /// output boundary. A canonical matrix stores exactly its current elements;
     /// backing capacity and the number of managed handles are not its shape.
