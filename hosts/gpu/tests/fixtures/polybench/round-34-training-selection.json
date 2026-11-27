@@ -1,0 +1,50 @@
+{
+  "schema": "mech.polybench.training-selection.v1",
+  "created_at": "2026-11-27T11:45:37.308059+00:00",
+  "prospective_rule": {
+    "schema": "mech.polybench.prospective-training-selection.v1",
+    "scope": "General immutable native type schema-key caching, selected only from accepted31 optimization profiles of mvt and bicg. No holdout profiling or case selection.",
+    "candidate": "round-34-native-type-keys",
+    "versions": {
+      "ir": 397,
+      "work": 156,
+      "abi": 47
+    },
+    "training_probe": {
+      "partition": "optimization",
+      "samples_per_actor": 7,
+      "actors": [
+        "accepted31",
+        "type-keys"
+      ],
+      "rotating_actor_order": true,
+      "one_probe_per_source": true,
+      "select_if": "Raw geometric-mean speedup > 1.0; retain all samples, cases and regressions; no retries or exclusions."
+    },
+    "formal_gate": "Commit and freeze source and driver before BOTH full sets; five samples per actor/mode, original-baseline replay, strict improvement of BOTH geometric-mean Mech/C kernel scores over accepted31.",
+    "invariants": [
+      "Recompute cached semantic key from immutable schema during every source/image type construction.",
+      "Keep cached key private and absent from wire formats; changed/untrusted image keys cannot assert identity.",
+      "No native entry ABI, invocation layout, work fee, resource admission or timing-boundary change.",
+      "Use actual checked original/decoded/image executions; preserve finite failures, current keys, scalar lowering and first changes."
+    ],
+    "required_qualification": [
+      "Native type/image reconstruction and rejection tests, including same-ID different schemas.",
+      "Maintained numeric, matrix, PolyBench, program, protocol and ABI regressions.",
+      "Runtime-only and full compiler feature builds."
+    ]
+  },
+  "probe_sha256": "9c008a8053d6f2d3bf80b72359a1e0546b27002c9f564033ca7fb7a8442942ce",
+  "emission_census_sha256": "4dbd23c8b20c03fd7acec53cba92a8356035213dda15141d6afdf8fd5ed4d1ba",
+  "selected_compiler_fingerprint": "be83fdbadfd04a14b3c53899a91218f0167ce344df676ce70e5b780110c31f68",
+  "selected_driver_sha256": "09ab814c9da2b909853f98388edb1b23eca899992e39abc9270d1394f1f056af",
+  "decision": "Select unchanged qualified native type schema-key cache for frozen formal both-set evaluation.",
+  "summary": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted31": 1.0268150170966808,
+    "regressions_over_five_percent": 2,
+    "sum_candidate_median_seconds": 0.000975583,
+    "sum_reference_median_seconds": 0.000999832
+  },
+  "holdout_performance_used": false
+}
