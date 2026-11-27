@@ -3247,5 +3247,60 @@
       "abi": 47
     },
     "accepted_driver_unchanged": true
+  },
+  "next_research": {
+    "scope": "Prospective optimization-only research after rejected F64 fold trial. Exact accepted31 source restored. No holdout case diagnosis.",
+    "source_commit": "a57aa274cf09abc1c113666e46f08733014213d3",
+    "compiler_fingerprint": "6447915ae298711f3886c6cba28e0608eb3ce59feab6287308162e45e006c895",
+    "next_ir_version": 396,
+    "profile_facts": [
+      "Accepted31 Gram-Schmidt has174 native self samples among225 canonical execution samples.",
+      "At0x1e5c,14 samples land on a scalar store inside a7200-byte full-map completion copy. The preceding load at0x1e54 reads the source word; this is copying, not zero initialization.",
+      "Other top sites include loop comparisons, stack loads, bounds branches, constant-division arithmetic and addresses. The F64 fold change removed only six instructions from4286 and failed the aggregate selection rule."
+    ],
+    "sampled_copy_window": [
+      "    1e50:      \tmov\tx0, #0",
+      "    1e54:      \tldr\tx12, [x8, x0]",
+      "    1e58:      \tldr\tx1, [sp, #21792]",
+      "    1e5c:      \tstr\tx12, [x1, x0]",
+      "    1e60:      \tadd\tx0, x0, #8",
+      "    1e64:      \tmov\tx13, #7200",
+      "    1e68:      \tcmp\tx0, x13",
+      "    1e6c:      \tb.lo\t0x1e54 <_mech_canonical_program_entry_v1_numeric_5+0x1e54>"
+    ],
+    "sources": [
+      {
+        "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs",
+        "sha256": "7095918c7b5c7601814481c855473479d18c75ccc78d0fd3188531dde50cb30f",
+        "fact": "Every map first computes the complete result in a bounded private stack scratch bank. After success it copies every typed cell into the existing exclusive destination or owned map bank, then updates current view/private state."
+      },
+      {
+        "path": "hosts/gpu/src/native_artifact/program/prepare/numeric_phase/matrix_maps.rs",
+        "sha256": "6560e240eaeec2803b174e53f42a4b3003e46cefec1b90f068e630479274e870",
+        "fact": "The existing source-only proof carries exact range/cardinality/geometry, source membership, current target and independent funding. It grants no owner by itself."
+      },
+      {
+        "path": "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs",
+        "sha256": "271c51cf0dd31f78b1db7e662a70faf6f393d6b574fcff4c5143a3ed005eaeee",
+        "fact": "Shared map reads also emit per-cell checked addresses; any hoisting must reconstruct a complete source range/capture proof and guard empty sources."
+      }
+    ],
+    "prior_rejected_approach": "Round32 SIMD bank-copy widening already failed both formal aggregate scores. Do not repeat width-only copy tuning as a new hypothesis.",
+    "candidate_to_prove": "Investigate eliminating complete-map completion copies by selecting or rotating the existing private bank and the already bounded stack scratch bank. A new result may replace only a proved nonescaping current view after every source cell succeeds. Reuse current owned-bank/loan machinery; do not expose stack addresses as runtime authority.",
+    "required_plan": [
+      "Trace all current logical aliases and source version liveness before reusing either bank; distinct source/read views must observe the complete old vector during evaluation. If disjointness or complete-use facts are unavailable, preserve the existing scratch/copy route.",
+      "Keep partial failed output separate from the current old view. Before every resumable helper, source fallback, error settlement, outlined return, final native finish or publication, normalize any stack-current view into the admitted canonical owned bank and reconcile exact view/private flags. Audit every synchronization path, not just the successful backedge.",
+      "Use only existing current loans and finite scratch/owner capacity. Preserve independently funded source fees, byte/node/work admission, owner epochs, raw ABI, exact scalar bits and source term/evaluation order. Price any actual added runtime layout explicitly; do not weaken admission or counters.",
+      "Qualification must execute repeated same-site maps, cross-map old aliases, reverse/overlapping reads, source failures after a partial scratch result, first-change and helper reentry, original/decoded/restored images, finite denial and atomic retry across all admitted widths/kinds.",
+      "Require actual checked machine-code evidence that the sampled full copy is removed or substantially reduced before one new optimization15 probe. Freeze committed source and driver before both formal sets, and strictly improve both scores versus accepted31 without timing retries/exclusions."
+    ],
+    "fallback_research": "Prove invariant capture-axis guards and bounded range geometry once per shared map attempt, preserving empty-source behavior and the original first-error path. Use source facts rather than benchmark names or payloads.",
+    "accepted_round": 31,
+    "accepted_scores": {
+      "optimization": 11.43635797708715,
+      "holdout": 39.31569548924827
+    },
+    "formal_history_entries": 34,
+    "holdout_observed": false
   }
 }
