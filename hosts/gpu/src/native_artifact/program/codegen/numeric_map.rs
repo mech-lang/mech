@@ -103,15 +103,38 @@ fn integer(width: u8) -> cranelift_codegen::ir::Type {
         _ => unreachable!(),
     }
 }
-/// All dynamic loop work is prepaid by the loan. Arithmetic uses the common
-/// checked native emitter; no source visit, helper or per-operation dispatch
-/// occurs between the exact prepare and finish boundaries.
+/// A source-proved identity tail may keep a cell only when its current view
+/// is already the fresh private output bank. No FP operation is bypassed.
+pub(super) struct Identity {
+    pub current_bank: Value,
+    pub sites: std::collections::BTreeSet<u32>,
+}
+
 pub(super) fn emit(
     b: &mut FunctionBuilder<'_>,
     frame: Value,
     region: &Region,
     plan: &Plan,
     captures: &BTreeMap<u32, Value>,
+    complete: Block,
+    miss: Block,
+    malformed: Block,
+) -> Result<(), NativeCompileError> {
+    emit_with_identity(
+        b, frame, region, plan, captures, None, complete, miss, malformed,
+    )
+}
+
+/// All dynamic loop work is prepaid by the loan. Arithmetic uses the common
+/// checked native emitter; no source visit, helper or per-operation dispatch
+/// occurs between the exact prepare and finish boundaries.
+pub(super) fn emit_with_identity(
+    b: &mut FunctionBuilder<'_>,
+    frame: Value,
+    region: &Region,
+    plan: &Plan,
+    captures: &BTreeMap<u32, Value>,
+    identity: Option<&Identity>,
     complete: Block,
     miss: Block,
     malformed: Block,
@@ -382,6 +405,11 @@ pub(super) fn emit(
             continue;
         }
         if let Some(read) = region.reads.iter().find(|r| r.site == site) {
+            if let Some(identity) = identity.filter(|proof| proof.sites.contains(&site)) {
+                let load = b.create_block();
+                b.ins().brif(identity.current_bank, latch, &[], load, &[]);
+                b.switch_to_block(load);
+            }
             let value = emit_read(b, read, region, plan, &matrices, &words, index_miss)?;
             b.def_var(words[&read.output], value);
         } else {

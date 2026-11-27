@@ -2,6 +2,8 @@
 use super::*;
 #[path = "numeric_phase_owned_maps.rs"]
 mod owned;
+#[path = "numeric_total_map_tests.rs"]
+mod total;
 
 #[test]
 fn numeric_phase_map_source_proof_keeps_exact_shapes_and_cold_range_boundaries() {

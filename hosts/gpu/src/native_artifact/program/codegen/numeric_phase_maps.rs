@@ -1,6 +1,6 @@
 //! Simultaneous whole-map replacement through the maintained native map DAG.
-//! Old current views remain read-only until every output cell succeeds. Only an
-//! already exclusive phase bank receives the final non-failing typed copy.
+//! Source-proved total pointwise maps write only fresh private banks. Other
+//! maps keep old views read-only until their complete scratch result succeeds.
 use crate::native_artifact::codegen::common::ssa_words::Words;
 use crate::native_artifact::program::prepare::{
     numeric_phase::matrix_maps::Replacement, readonly_numeric::Proof,
@@ -77,6 +77,87 @@ pub(super) fn emit(
         .and_then(|n| u32::try_from(n).ok())
         .filter(|&n| n > 0 && n <= 65536)
         .ok_or_else(|| backend("phase map lost finite scratch geometry"))?;
+    if let Some(total) = owned.and_then(|_| {
+        crate::native_artifact::program::prepare::numeric_phase::total_maps::derive(
+            plan,
+            replacement,
+        )
+    }) {
+        let base = words.read(b, shadow + owned.unwrap());
+        let private = words.read(b, shadow + proof.private_flag(target));
+        let private = b.ins().icmp_imm(IntCC::Equal, private, 1);
+        let current = words.read(b, view);
+        let same = b.ins().icmp(IntCC::Equal, current, base);
+        let current_bank = b.ins().band(same, private);
+        let valid = b.ins().icmp_imm(IntCC::Equal, first, total.first as i64);
+        require(b, valid, miss);
+        for &(value, expected) in &total.literals {
+            let actual = words.read(b, value as usize);
+            let valid = b.ins().icmp_imm(IntCC::Equal, actual, expected as i64);
+            require(b, valid, miss);
+        }
+        let capacity = b.ins().iconst(types::I64, i64::from(bytes));
+        let (end, overflow) = b.ins().uadd_overflow(base, capacity);
+        let good = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
+        require(b, good, miss);
+        let matrices = replacement
+            .arrays
+            .iter()
+            .map(|&array| {
+                std::array::from_fn(|lane| words.read(b, shadow + proof.view(array) + lane))
+            })
+            .collect::<Vec<[_; 4]>>();
+        for (at, matrix) in matrices.iter().enumerate() {
+            let pointer = matrix[0];
+            let length = b.ins().iconst(types::I64, total.matrix_bytes[at] as i64);
+            let (source_end, overflow) = b.ins().uadd_overflow(pointer, length);
+            let good = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
+            require(b, good, miss);
+            let before = b
+                .ins()
+                .icmp(IntCC::UnsignedLessThanOrEqual, source_end, base);
+            let after = b
+                .ins()
+                .icmp(IntCC::UnsignedGreaterThanOrEqual, pointer, end);
+            let mut good = b.ins().bor(before, after);
+            if replacement.arrays[at] == target {
+                let same = b.ins().icmp(IntCC::Equal, pointer, base);
+                let same_private = b.ins().band(same, private);
+                good = b.ins().bor(good, same_private);
+            }
+            require(b, good, miss);
+        }
+        let captures = source
+            .region
+            .captures
+            .iter()
+            .map(|&v| (v, words.read(b, v as usize)))
+            .collect::<BTreeMap<_, _>>();
+        let identity = super::numeric_map::Identity {
+            current_bank,
+            sites: total.identity_sites,
+        };
+        // The maintained map preflight checks all actual current geometry and
+        // backing before the first store. Source totality and same-cell target
+        // dependence then make every emitted per-cell error edge unreachable.
+        // No private partial result can cross the pre-map cold boundary.
+        super::numeric_phase_reductions::emit_region_with_identity(
+            b,
+            &source.region,
+            plan,
+            first,
+            count,
+            &matrices,
+            &captures,
+            Some((base, capacity)),
+            Some(&identity),
+            miss,
+        )?;
+        words.write(b, view, base);
+        let one = b.ins().iconst(types::I64, 1);
+        words.write(b, shadow + proof.private_flag(target), one);
+        return Ok(());
+    }
     let slot = b.create_sized_stack_slot(StackSlotData::new(StackSlotKind::ExplicitSlot, bytes, 3));
     let scratch = b.ins().stack_addr(types::I64, slot, 0);
     let capacity = b.ins().iconst(types::I64, i64::from(bytes));
