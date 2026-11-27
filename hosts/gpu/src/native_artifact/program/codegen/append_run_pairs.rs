@@ -14,6 +14,7 @@ pub(super) struct Pair {
     cache: Value,
     literals: Value,
     literal_limit: Word,
+    literal_bias: i64,
     output: Value,
     selector_bits: u32,
     item_shift: u32,
@@ -95,6 +96,7 @@ impl Pair {
         context: &Context,
         trace: &Trace,
         params: &[Value],
+        allow_biased_costs: bool,
     ) -> Result<Self, &'static str> {
         let window = trace.window.ok_or("missing readable window")?;
         // The trace's operand bindings are the values on the empty edge.
@@ -141,12 +143,12 @@ impl Pair {
         else {
             return Err("cache ordinal is not cursor minus one");
         };
-        let (literals, literal, 0) = walk
+        let (literals, literal, literal_bias) = walk
             .scaled_address(cost_addr, 4)
-            .ok_or("unsupported cost address")?
-        else {
+            .ok_or("unsupported cost address")?;
+        if literal_bias != 0 && !allow_biased_costs {
             return Err("cost ordinal has an offset");
-        };
+        }
         let (packed, bits) =
             constant_binary(&walk, literal, Opcode::Ushr).ok_or("missing literal extraction")?;
         let selector_bits = u32::try_from(bits & 63)
@@ -174,7 +176,9 @@ impl Pair {
                 Step::Guard(check)
                     if *check != window.cache_guard && *check != window.previous_guard =>
                 {
-                    (check.left == Word::Value(literal)).then_some(*check)
+                    matches!(check.left, Word::Value(value)
+                        if walk.addend(value) == (literal, literal_bias))
+                    .then_some(*check)
                 }
                 _ => None,
             })
@@ -315,6 +319,7 @@ impl Pair {
             cache,
             literals,
             literal_limit,
+            literal_bias,
             output,
             selector_bits,
             item_shift,
@@ -334,6 +339,7 @@ impl Pair {
         descriptors: &BTreeMap<Value, Value>,
         scalar: Block,
         scalar_args: &[BlockArg],
+        stores: &mut Vec<Inst>,
     ) {
         let [count, cache_cursor, length] =
             [window.count, window.cursor, window.length].map(|i| seed[i]);
@@ -402,14 +408,22 @@ impl Pair {
         let second = b
             .ins()
             .band_imm(second, i64::from(u32::MAX >> self.selector_bits));
-        let first_valid = b.ins().icmp(IntCC::UnsignedLessThan, first, literal_limit);
-        let second_valid = b.ins().icmp(IntCC::UnsignedLessThan, second, literal_limit);
+        // Keep the original modular index arithmetic. A failed lookahead
+        // returns to the same scalar visit before either append is committed.
+        let first_index = b.ins().iadd_imm(first, self.literal_bias);
+        let second_index = b.ins().iadd_imm(second, self.literal_bias);
+        let first_valid = b
+            .ins()
+            .icmp(IntCC::UnsignedLessThan, first_index, literal_limit);
+        let second_valid = b
+            .ins()
+            .icmp(IntCC::UnsignedLessThan, second_index, literal_limit);
         let both = b.ins().band(first_valid, second_valid);
         b.ins().brif(both, append, &[], scalar, &resume);
 
         b.goto_bottom(append);
-        let first_addr = indexed(b, literals, first, 4);
-        let second_addr = indexed(b, literals, second, 4);
+        let first_addr = indexed(b, literals, first_index, 4);
+        let second_addr = indexed(b, literals, second_index, 4);
         let first_cost = b.ins().load(types::I32, self.cost_flags, first_addr, 0);
         let second_cost = b.ins().load(types::I32, self.cost_flags, second_addr, 0);
         let previous = b.ins().ireduce(types::I32, previous);
@@ -418,8 +432,8 @@ impl Pair {
         let first_word = self.pack(b, first, first_cost);
         let second_word = self.pack(b, second, second_cost);
         let address = indexed(b, output, length, 8);
-        b.ins().store(self.output_flags, first_word, address, 0);
-        b.ins().store(self.output_flags, second_word, address, 8);
+        stores.push(b.ins().store(self.output_flags, first_word, address, 0));
+        stores.push(b.ins().store(self.output_flags, second_word, address, 8));
         let next_count = b.ins().iadd_imm(count, -2);
         let next_length = b.ins().iadd_imm(length, 2);
         let args = [next_count, next_cache, next_length, second_word].map(BlockArg::Value);
@@ -455,3 +469,7 @@ fn disjoint(b: &mut FuncCursor<'_>, a: Value, a_end: Value, z: Value, z_end: Val
     let after = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, z_end, a);
     b.ins().bor(before, after)
 }
+
+#[cfg(all(test, feature = "jit", target_pointer_width = "64"))]
+#[path = "append_run_pairs_tests.rs"]
+mod tests;

@@ -24,6 +24,7 @@ use target_lexicon::{Aarch64Architecture, Architecture, OperatingSystem, Triple}
 mod abi;
 mod block_layout;
 mod cold_tails;
+mod fp_spill_cache;
 pub mod inst;
 mod lower;
 pub mod settings;
@@ -86,7 +87,55 @@ impl TargetIsa for AArch64Backend {
             if self.flags.regalloc_checker() {
                 let mut checker = regalloc2::checker::Checker::new(&vcode, vcode.abi.machine_env());
                 checker.prepare(&regalloc_result);
-                checker.run().expect("spill forwarding preserves register allocation");
+                checker
+                    .run()
+                    .expect("spill forwarding preserves register allocation");
+            }
+        }
+
+        #[cfg(feature = "std")]
+        let inspect_spills = std::env::var_os("MECH_INSPECT_FP_SPILL_CACHE");
+        #[cfg(feature = "std")]
+        let inspect_requested = inspect_spills.is_some();
+        #[cfg(not(feature = "std"))]
+        let inspect_requested = false;
+        if func.aarch64_fp_spill_slots != 0 || inspect_requested {
+            let plan = if func.debug_tags.is_empty() {
+                fp_spill_cache::apply(
+                    &vcode,
+                    &mut regalloc_result,
+                    func.aarch64_fp_spill_slots,
+                    func.aarch64_fp_spill_keep_pairs,
+                )
+            } else {
+                fp_spill_cache::Plan::rejected("source debug tags")
+            };
+            log::trace!("FP spill cache: {}", plan.report());
+            if plan.rewritten_moves != 0 && self.flags.regalloc_checker() {
+                let mut checker = regalloc2::checker::Checker::new(&vcode, vcode.abi.machine_env());
+                checker.prepare(&regalloc_result);
+                checker
+                    .run()
+                    .expect("FP spill storage preserves register allocation");
+            }
+            #[cfg(feature = "std")]
+            if let Some(directory) = inspect_spills {
+                use core::hash::{Hash, Hasher};
+                let mut hash = std::collections::hash_map::DefaultHasher::new();
+                func.stencil.hash(&mut hash);
+                let directory = std::path::PathBuf::from(directory);
+                std::fs::create_dir_all(&directory).map_err(|e| {
+                    crate::CodegenError::Unsupported(alloc::format!(
+                        "spill inspection directory: {e}"
+                    ))
+                })?;
+                std::fs::write(
+                    directory.join(alloc::format!("{}-{:016x}.txt", func.name, hash.finish())),
+                    plan.report(),
+                )
+                .map_err(|e| {
+                    crate::CodegenError::Unsupported(alloc::format!("spill inspection output: {e}"))
+                })?;
             }
         }
 
@@ -137,14 +186,19 @@ impl TargetIsa for AArch64Backend {
                 || !emit_result.value_labels_ranges.is_empty()
                 || !matches!(func.signature.call_conv, crate::isa::CallConv::AppleAarch64)
             {
-                return Err(crate::CodegenError::Unsupported("AArch64 block layout metadata".into()));
+                return Err(crate::CodegenError::Unsupported(
+                    "AArch64 block layout metadata".into(),
+                ));
             }
             block_layout::apply(
                 &mut emit_result.buffer,
                 &func.aarch64_block_layout,
                 func.aarch64_block_layout_literal_start,
+                func.aarch64_block_layout_thread_jumps,
             )
-                .ok_or_else(|| crate::CodegenError::Unsupported("AArch64 block layout profile".into()))?;
+            .ok_or_else(|| {
+                crate::CodegenError::Unsupported("AArch64 block layout profile".into())
+            })?;
         }
         let value_labels_ranges = emit_result.value_labels_ranges;
         let buffer = emit_result.buffer;

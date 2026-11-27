@@ -29,7 +29,7 @@ pub fn compile<B: LowerBackend + TargetIsa>(
         crate::machinst::Lower::new(f, abi, emit_info, block_order, sigs, b.flags().clone())?;
 
     // Lower the IR.
-    let vcode = {
+    let mut vcode = {
         log::debug!(
             "Number of CLIF instructions to lower: {}",
             f.dfg.num_insts()
@@ -47,6 +47,10 @@ pub fn compile<B: LowerBackend + TargetIsa>(
     log::debug!("Number of lowered vcode blocks: {}", vcode.num_blocks());
     trace!("vcode from lowering: \n{:?}", vcode);
 
+    if let Some((expected, frequencies)) = &f.regalloc_block_frequencies {
+        vcode.apply_register_profile(expected, frequencies)?;
+    }
+
     // Perform register allocation.
     let regalloc_result = {
         let _tt = timing::regalloc();
@@ -62,7 +66,21 @@ pub fn compile<B: LowerBackend + TargetIsa>(
             RegallocAlgorithm::SinglePass => Algorithm::Fastalloc,
         };
 
-        regalloc2::run(&vcode, vcode.abi.machine_env(), &options)
+        let normal_env = vcode.abi.machine_env();
+        let mut preserved_env;
+        let allocation_env = if f.aarch64_prefer_preserved_regs
+            && f.signature.call_conv == crate::isa::CallConv::AppleAarch64
+        {
+            preserved_env = normal_env.clone();
+            core::mem::swap(
+                &mut preserved_env.preferred_regs_by_class[0],
+                &mut preserved_env.non_preferred_regs_by_class[0],
+            );
+            &preserved_env
+        } else {
+            normal_env
+        };
+        regalloc2::run(&vcode, allocation_env, &options)
             .map_err(|err| {
                 log::error!(
                     "Register allocation error for vcode\n{vcode:?}\nError: {err:?}\nCLIF for error:\n{f:?}",

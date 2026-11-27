@@ -8,6 +8,7 @@ use cranelift_codegen::ir::{Block, BlockCall, Function, Value, ValueDef};
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 pub(super) mod equal_arguments;
+pub(super) mod identical_arguments;
 pub(super) mod literal_arguments;
 mod parallel_arguments;
 
@@ -294,3 +295,6 @@ pub(super) fn simplify(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod identical_arguments_tests;

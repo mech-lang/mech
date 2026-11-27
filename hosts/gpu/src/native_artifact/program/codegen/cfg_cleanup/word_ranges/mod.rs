@@ -106,6 +106,8 @@ pub(super) struct Facts<'a> {
     assumptions: Option<&'a BTreeMap<Value, Range>>,
     bound_values: bool,
     bitwise_constants: bool,
+    bitwise_ranges: bool,
+    select_ranges: bool,
     cfg: Option<&'a ControlFlowGraph>,
 }
 impl<'a> Facts<'a> {
@@ -117,6 +119,8 @@ impl<'a> Facts<'a> {
             cfg: None,
             bound_values: false,
             bitwise_constants: false,
+            bitwise_ranges: false,
+            select_ranges: false,
         }
     }
 
@@ -135,6 +139,8 @@ impl<'a> Facts<'a> {
             cfg: None,
             bound_values: false,
             bitwise_constants: false,
+            bitwise_ranges: false,
+            select_ranges: false,
         }
     }
 
@@ -158,7 +164,22 @@ impl<'a> Facts<'a> {
             cfg: Some(cfg),
             bound_values: false,
             bitwise_constants: true,
+            bitwise_ranges: false,
+            select_ranges: false,
         }
+    }
+
+    // Opt-in precision for independently bounded unsigned index expressions.
+    pub fn bitwise_edges(function: &'a Function, cfg: &'a ControlFlowGraph) -> Self {
+        Self {
+            bitwise_ranges: true,
+            ..Self::across_edges(function, cfg, None)
+        }
+    }
+
+    pub(super) fn with_select_ranges(mut self) -> Self {
+        self.select_ranges = true;
+        self
     }
 
     pub fn condition(&mut self, value: Value) -> Option<bool> {
@@ -266,6 +287,25 @@ impl<'a> Facts<'a> {
             _ => return None,
         };
         match self.function.dfg.insts[inst] {
+            Data::Ternary {
+                opcode: Op::Select,
+                args: [condition, yes, no],
+            } if self.select_ranges => {
+                let a = self.range(yes, depth)?;
+                let b = self.range(no, depth)?;
+                Some(
+                    match super::selected_values::unsigned_minimum(
+                        self.function,
+                        condition,
+                        yes,
+                        no,
+                    ) {
+                        Some(true) => Range(a.0.min(b.0), a.1.min(b.1)),
+                        Some(false) => Range(a.0.max(b.0), a.1.max(b.1)),
+                        None => Range(a.0.min(b.0), a.1.max(b.1)),
+                    },
+                )
+            }
             Data::Load { opcode, .. } if self.cfg.is_some() => {
                 let width = match opcode {
                     Op::Uload8 => 8,
@@ -296,6 +336,18 @@ impl<'a> Facts<'a> {
                         left.0 | right.0
                     };
                     return Some(Range(value, value));
+                }
+                if opcode == Op::Bor && self.bitwise_ranges {
+                    // Every possible bit lies below the highest bit of the
+                    // unsigned maximum. OR cannot set a bit outside this union.
+                    let bits = |maximum: u64| {
+                        if maximum == 0 {
+                            0
+                        } else {
+                            u64::MAX >> maximum.leading_zeros()
+                        }
+                    };
+                    return Some(Range(0, bits(left.1) | bits(right.1)));
                 }
                 (opcode == Op::Band).then(|| left.bit_and(right))
             }

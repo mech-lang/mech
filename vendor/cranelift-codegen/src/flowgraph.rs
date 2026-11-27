@@ -106,6 +106,8 @@ impl ControlFlowGraph {
     /// This will clear and overwrite any information already stored in this data structure.
     pub fn compute(&mut self, func: &Function) {
         let _tt = timing::flowgraph();
+        #[cfg(feature = "construction-census")]
+        crate::construction_census::cfg_build();
         self.clear();
         self.data.resize(func.dfg.num_blocks());
 

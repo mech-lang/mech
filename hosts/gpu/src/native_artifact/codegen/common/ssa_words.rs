@@ -8,23 +8,63 @@ use cranelift_frontend::{FunctionBuilder, Variable};
 use std::cell::{Cell, RefCell};
 use std::collections::{BTreeMap, BTreeSet};
 
+#[cfg(feature = "canonical-native-program")]
+#[path = "ssa_direct_homes.rs"]
+mod direct_homes;
+
 #[derive(Clone, Copy)]
 enum Home {
     Variable(Variable),
     Literal(Value),
+    #[cfg(feature = "canonical-native-program")]
+    Tracked(u32),
+    #[cfg(feature = "early-region-emission")]
+    Packet {
+        address: Value,
+        offset: i32,
+    },
 }
 
 pub(in crate::native_artifact) struct Words {
     variables: BTreeMap<usize, (Home, MemFlags)>,
     literal_write: Cell<bool>,
+    #[cfg(feature = "canonical-native-program")]
+    tracked: RefCell<Vec<direct_homes::Tracked>>,
+    #[cfg(feature = "canonical-native-program")]
+    promote_tracked: bool,
     native_extent_slots: BTreeMap<usize, u64>,
     native_extent_values: RefCell<BTreeMap<Value, u64>>,
 }
 
+#[cfg(all(test, feature = "early-region-emission", feature = "jit"))]
+#[path = "ssa_packet_homes_tests.rs"]
+mod packet_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "ssa_words_tests.rs"]
 mod tests;
 impl Words {
+    /// Bind the exact initialized in/out ownership lanes certified by an early
+    /// unit boundary. Its caller-owned packet is aligned, invocation-local and
+    /// nonescaping. It is disjoint from the unit's ordinary output/call storage.
+    #[cfg(feature = "early-region-emission")]
+    pub(in crate::native_artifact) fn bind_packet_homes(
+        &mut self,
+        address: Value,
+        homes: &BTreeMap<usize, usize>,
+    ) -> Result<(), NativeCompileError> {
+        for (&slot, &position) in homes {
+            let Some((home @ Home::Variable(_), _)) = self.variables.get_mut(&slot) else {
+                return Err(crate::native_artifact::compiler::backend(
+                    "packet ownership home needs an ordinary source lane",
+                ));
+            };
+            *home = Home::Packet {
+                address,
+                offset: offset(position)?,
+            };
+        }
+        Ok(())
+    }
     pub(in crate::native_artifact) fn new(
         b: &mut FunctionBuilder<'_>,
         locals: Value,
@@ -157,6 +197,10 @@ impl Words {
         Ok(Self {
             variables,
             literal_write: Cell::new(false),
+            #[cfg(feature = "canonical-native-program")]
+            tracked: RefCell::new(Vec::new()),
+            #[cfg(feature = "canonical-native-program")]
+            promote_tracked: false,
             native_extent_slots: BTreeMap::new(),
             native_extent_values: RefCell::new(BTreeMap::new()),
         })
@@ -169,6 +213,17 @@ impl Words {
         let value = match self.variables[&slot].0 {
             Home::Variable(variable) => b.use_var(variable),
             Home::Literal(value) => value,
+            #[cfg(feature = "canonical-native-program")]
+            Home::Tracked(index) => {
+                self.tracked.borrow_mut()[index as usize].read(b, self.promote_tracked)
+            }
+            #[cfg(feature = "early-region-emission")]
+            Home::Packet { address, offset } => b.ins().load(
+                types::I64,
+                MemFlags::new().with_aligned().with_notrap(),
+                address,
+                offset,
+            ),
         };
         if let Some(&upper) = self.native_extent_slots.get(&slot) {
             self.native_extent_values
@@ -203,6 +258,17 @@ impl Words {
         match self.variables[&slot].0 {
             Home::Variable(variable) => b.def_var(variable, value),
             Home::Literal(_) => self.literal_write.set(true),
+            #[cfg(feature = "canonical-native-program")]
+            Home::Tracked(index) => self.tracked.borrow_mut()[index as usize].write(b, value),
+            #[cfg(feature = "early-region-emission")]
+            Home::Packet { address, offset } => {
+                b.ins().store(
+                    MemFlags::new().with_aligned().with_notrap(),
+                    value,
+                    address,
+                    offset,
+                );
+            }
         }
     }
     pub(in crate::native_artifact) fn spill_all(

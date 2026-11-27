@@ -1,5 +1,12 @@
 //! Native owner namespace.
 
+#[cfg(all(test, feature = "jit", target_arch = "aarch64"))]
+mod byte_boolean_tests;
+#[cfg(all(test, feature = "jit", target_arch = "aarch64"))]
+mod narrow_pack_tests;
+#[cfg(all(test, feature = "jit", target_arch = "aarch64"))]
+mod shared_boolean_tests;
+
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod ascii_map;
 #[cfg(feature = "canonical-native-program")]
@@ -110,3 +117,9 @@ pub(in crate::native_artifact) mod wide_equal;
 
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod numeric_compact;
+
+#[cfg(all(test, feature = "jit"))]
+mod prefetch_base_tests;
+
+#[cfg(all(test, feature = "jit"))]
+mod fp_spill_tests;

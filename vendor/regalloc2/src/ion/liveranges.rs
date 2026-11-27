@@ -37,11 +37,15 @@ pub fn spill_weight_from_constraint(
     constraint: OperandConstraint,
     loop_depth: usize,
     is_def: bool,
+    frequency: Option<u32>,
 ) -> SpillWeight {
     // A bonus of 1000 for one loop level, 4000 for two loop levels,
     // 16000 for three loop levels, etc. Avoids exponentiation.
     let loop_depth = core::cmp::min(10, loop_depth);
-    let hot_bonus: f32 = (0..loop_depth).fold(1000.0, |a, _| a * 4.0);
+    let hot_bonus: f32 = match frequency {
+        Some(frequency) => 1000.0 * frequency.clamp(1, 1 << 20) as f32,
+        None => (0..loop_depth).fold(1000.0, |a, _| a * 4.0),
+    };
     let def_bonus: f32 = if is_def { 2000.0 } else { 0.0 };
     let constraint_bonus: f32 = match constraint {
         OperandConstraint::Any => 1000.0,
@@ -221,6 +225,7 @@ impl<'a, F: Function> Env<'a, F> {
             constraint,
             loop_depth,
             operand.kind() != OperandKind::Use,
+            self.func.block_frequency(block),
         );
         u.weight = weight.to_bits();
 

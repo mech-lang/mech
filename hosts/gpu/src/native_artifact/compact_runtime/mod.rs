@@ -66,14 +66,8 @@ pub struct ScratchAudit {
 // cannot be a legal packed level-12 match/header.
 const CACHE_WORDS: usize = 1_500_513;
 
-/// Storage for one owner descriptor borrowed by an opaque native invocation.
-pub struct OwnerStorage(MaybeUninit<Owner>);
-
-impl Default for OwnerStorage {
-    fn default() -> Self {
-        Self(MaybeUninit::uninit())
-    }
-}
+mod owner_storage;
+pub use owner_storage::OwnerStorage;
 
 #[derive(Default)]
 pub struct Heap<'storage> {
@@ -96,12 +90,12 @@ impl Heap<'static> {
 }
 
 impl<'storage> Heap<'storage> {
-    /// Keep the first record at a stable address owned by the caller. The heap
+    /// Keep owner records at stable addresses owned by the caller. The heap
     /// cannot outlive that exclusive loan. Scratch payload allocation and the
     /// owner token exposed to generated code keep their existing representation.
     pub fn with_owner_storage(storage: &'storage mut OwnerStorage) -> Self {
         let mut heap = Self::default();
-        heap.owner_storage = Some(NonNull::from(&mut storage.0).cast());
+        heap.owner_storage = Some(NonNull::from(&mut storage.records).cast());
         heap
     }
 
@@ -214,11 +208,27 @@ impl<'storage> Heap<'storage> {
                 alignment
             },
         };
-        let owner = if self.first_owner.is_null()
+        let owner = if owner_storage::RECORDS > 1
             && let Some(storage) = self.owner_storage
         {
-            // SAFETY: the heap holds the exclusive storage loan. A free first
-            // slot means that no live token points into the loan.
+            let vacant = if self.first_owner.is_null() {
+                0
+            } else {
+                self.free
+                    .last()
+                    .map_or(self.owners.len() + 1, |&index| index + 1)
+            };
+            // SAFETY: this heap exclusively borrows the storage, and vacant is
+            // exactly the unoccupied slot that register consumes next.
+            match unsafe { OwnerStorage::store(storage.as_ptr().cast(), owner, vacant) } {
+                Ok(record) => record,
+                Err(record) => Box::into_raw(Box::new(record)),
+            }
+        } else if self.first_owner.is_null()
+            && let Some(storage) = self.owner_storage
+        {
+            // SAFETY: the exclusive storage loan outlives this heap. A vacant
+            // first slot means no live owner token points into its record.
             unsafe { storage.as_ptr().write(owner) };
             storage.as_ptr()
         } else {
@@ -296,15 +306,23 @@ impl<'storage> Heap<'storage> {
         Ok(())
     }
     unsafe fn retire_record(&self, owner: *mut Owner) {
+        if owner_storage::RECORDS > 1
+            && let Some(storage) = self.owner_storage
+            // SAFETY: release/take_u8 validated this registered owner; retire
+            // checks that the record lies inside this exclusive storage loan.
+            && unsafe { OwnerStorage::retire(storage.as_ptr().cast(), owner) }
+        {
+            return;
+        }
         if self
             .owner_storage
             .is_some_and(|storage| storage.as_ptr() == owner)
         {
-            // SAFETY: the current registered record was initialized in this
-            // slot. End its lifetime while retaining the storage loan.
+            // SAFETY: this registered record was initialized in the loan. End
+            // its lifetime without deallocating caller-owned storage.
             unsafe { owner.drop_in_place() };
         } else {
-            // SAFETY: all other records are allocated as Box<Owner>.
+            // SAFETY: every record outside the borrowed storage was boxed.
             unsafe { drop(Box::from_raw(owner)) };
         }
     }
@@ -720,7 +738,7 @@ mod tests {
     #[test]
     fn borrowed_owner_storage_survives_heap_moves_and_failure_retries() {
         let mut storage = OwnerStorage::default();
-        let address = storage.0.as_mut_ptr();
+        let address = storage.records.as_mut_ptr().cast::<Owner>();
         let mut heap = Heap::with_owner_storage(&mut storage);
         let mut output = heap.allocate(13, 1, 1, false).unwrap();
         let owner = output[5] as *mut Owner;

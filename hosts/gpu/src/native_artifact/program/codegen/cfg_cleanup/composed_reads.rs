@@ -19,6 +19,9 @@ use std::{
     sync::Arc,
 };
 
+#[path = "composed_code_pages.rs"]
+mod code_pages;
+
 #[derive(Clone)]
 pub(in crate::native_artifact) struct Literal {
     pub length: u64,
@@ -85,16 +88,18 @@ struct DenseCodes {
     key: CodeKey,
 }
 
-#[derive(Default)]
-pub(in crate::native_artifact) struct DenseTables(BTreeMap<CodeKey, DataId>);
+#[derive(Clone, Default)]
+pub(in crate::native_artifact) struct DenseTables(BTreeMap<(CodeKey, Option<u8>), DataId>);
 
 impl DenseTables {
     fn intern<M: Module>(
         &mut self,
         module: &mut M,
         key: &CodeKey,
+        packed: Option<&code_pages::Packed>,
     ) -> Result<DataId, NativeCompileError> {
-        if let Some(id) = self.0.get(key) {
+        let storage_key = (key.clone(), packed.map(|packed| packed.shift));
+        if let Some(id) = self.0.get(&storage_key) {
             return Ok(*id);
         }
         let id = module
@@ -107,9 +112,9 @@ impl DenseTables {
             .map_err(backend)?;
         let mut data = DataDescription::new();
         data.set_align(16);
-        data.define(key.encode());
+        data.define(packed.map_or_else(|| key.encode(), |packed| packed.bytes.clone()));
         module.define_data(id, &data).map_err(backend)?;
-        self.0.insert(key.clone(), id);
+        self.0.insert(storage_key, id);
         Ok(id)
     }
 }
@@ -154,7 +159,7 @@ fn incoming(
 
 // Invariant packet fields can pass through a self edge or be reloaded by an
 // alternate entry. All external definitions must identify the same word.
-pub(super) fn packet_word(
+pub(in crate::native_artifact) fn packet_word(
     f: &Function,
     cfg: &ControlFlowGraph,
     loads: &BTreeMap<Value, (Inst, usize)>,
@@ -998,7 +1003,9 @@ impl Rewrite {
         else {
             return Ok(None);
         };
-        let id = tables.intern(module, &dense.key)?;
+        let packed = code_pages::selected_shift()
+            .and_then(|shift| code_pages::pack(&dense.key.encode(), shift));
+        let id = tables.intern(module, &dense.key, packed.as_ref())?;
         let global = module.declare_data_in_func(id, f);
         let flags = MemFlags::new();
         let mut c = FuncCursor::new(f).at_inst(start);
@@ -1015,8 +1022,7 @@ impl Rewrite {
         } else {
             c.ins().uextend(types::I64, dense.word)
         };
-        let cell = c.ins().iadd(codes, word);
-        let code = c.ins().uload8(types::I64, flags, cell, 0);
+        let code = code_pages::load_code(&mut c, codes, word, packed.as_ref());
         let byte = c.ins().ishl_imm(code, 2);
         let address = c.ins().iadd(costs, byte);
         let value = c.ins().uload32(flags, address, 0);
@@ -1024,7 +1030,11 @@ impl Rewrite {
             .dfg
             .replace(self.slot.branch)
             .jump(self.cost.join, &[value.into()]);
-        Ok(Some(self.admission))
+        let mut admission = self.admission;
+        if let Some(packed) = packed {
+            admission.immutable_code_bytes = Some(packed.bytes.len() as u64);
+        }
+        Ok(Some(admission))
     }
 }
 

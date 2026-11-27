@@ -1485,6 +1485,19 @@ impl Inst {
                 debug_assert_eq!(rn, rd.to_reg());
                 sink.put4(enc_movk(rd, imm, size));
             }
+            &Inst::Bfi {
+                size,
+                rd,
+                old,
+                rn,
+                lsb,
+                width,
+            } => {
+                debug_assert_eq!(old, rd.to_reg());
+                assert!(width != 0 && lsb < size.bits() && width <= size.bits() - lsb);
+                let immr = size.bits().wrapping_sub(lsb) & (size.bits() - 1);
+                sink.put4(enc_bfm(1, size, rd, rn, immr, width - 1));
+            }
             &Inst::CSel { rd, rn, rm, cond } => {
                 sink.put4(enc_csel(rd, rn, rm, cond, 0, 0));
             }
@@ -2331,6 +2344,9 @@ impl Inst {
                     _ => unreachable!(),
                 };
                 sink.put4(template | (machreg_to_gpr(rn) << 5) | machreg_to_vec(rd.to_reg()));
+            }
+            &Inst::MovFromFpu64 { rd, rn } => {
+                sink.put4(0x9e66_0000 | (machreg_to_vec(rn) << 5) | machreg_to_gpr(rd.to_reg()));
             }
             &Inst::FpuMoveFPImm { rd, imm, size } => {
                 sink.put4(

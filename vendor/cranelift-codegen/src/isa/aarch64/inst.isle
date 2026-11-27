@@ -59,6 +59,16 @@
         (rm Reg)
         (shiftop ShiftOpAndAmt))
 
+       ;; Insert low source bits into an existing destination field. The
+       ;; allocator ties rd to old; both sources are read before the write.
+       (Bfi
+        (size OperandSize)
+        (rd WritableReg)
+        (old Reg)
+        (rn Reg)
+        (lsb u8)
+        (width u8))
+
        ;; An ALU operation with two register sources, one of which can be {zero,sign}-extended and
        ;; shifted, and a register destination.
        (AluRRRExtend
@@ -540,6 +550,12 @@
         (rd WritableReg)
         (rn Reg)
         (size ScalarSize))
+
+       ;; Copy the exact low 64 bits from a scalar FP register to a GPR.
+       ;; This does not convert the floating-point value.
+       (MovFromFpu64
+        (rd WritableReg)
+        (rn Reg))
 
        ;; Loads a floating-point immediate.
        (FpuMoveFPImm

@@ -7,6 +7,8 @@ use std::{io, path::Path};
 struct Profile {
     order: Vec<u32>,
     literal_offset: Option<u32>,
+    #[serde(default)]
+    thread_jumps: bool,
     object_tail: Option<ObjectTail>,
 }
 
@@ -21,6 +23,23 @@ struct ObjectTail {
 
 pub(super) fn profiles() -> Option<String> {
     std::env::var("MECH_COMPACT_PHASE_BLOCK_LAYOUT").ok()
+}
+
+pub(super) fn apply_fp_spill_cache(context: &mut Context, symbol: &str) -> io::Result<()> {
+    context.func.aarch64_fp_spill_keep_pairs =
+        std::env::var_os("MECH_COMPACT_FP_SPILL_KEEP_PAIRS").is_some();
+    if let Ok(selection) = std::env::var("MECH_COMPACT_FP_SPILL_SLOTS") {
+        for entry in selection.split(';') {
+            let (name, count) = entry
+                .split_once('@')
+                .ok_or_else(|| io::Error::other("expected phase@spill-cell-count"))?;
+            let count = count.parse::<u8>().map_err(io::Error::other)?;
+            if name == "all" || name == symbol {
+                context.func.aarch64_fp_spill_slots = count;
+            }
+        }
+    }
+    Ok(())
 }
 
 fn read(profiles: &str, symbol: &str) -> io::Result<Option<Profile>> {
@@ -38,6 +57,28 @@ pub(super) fn apply(context: &mut Context, symbol: &str) -> io::Result<()> {
     {
         context.func.aarch64_block_layout = profile.order;
         context.func.aarch64_block_layout_literal_start = profile.literal_offset;
+        context.func.aarch64_block_layout_thread_jumps = profile.thread_jumps;
+    }
+    Ok(())
+}
+
+/// Register weights refer to the full lowered VCode, rather than byte offsets
+/// in a previously allocated machine body. Validation occurs after lowering.
+pub(super) fn apply_register_weights(context: &mut Context, symbol: &str) -> io::Result<()> {
+    #[derive(serde::Deserialize)]
+    struct RegisterWeights {
+        expected_vcode: String,
+        block_frequencies: Vec<u32>,
+    }
+    if let Ok(profiles) = std::env::var("MECH_COMPACT_PHASE_REGISTER_WEIGHTS")
+        && let Some(path) = profiles
+            .split(';')
+            .filter_map(|entry| entry.split_once('@'))
+            .find_map(|(name, path)| (name == symbol).then_some(path))
+    {
+        let weights: RegisterWeights = serde_json::from_slice(&std::fs::read(path)?)?;
+        context.func.regalloc_block_frequencies =
+            Some((weights.expected_vcode, weights.block_frequencies));
     }
     Ok(())
 }

@@ -1,15 +1,11 @@
 //! An edge may bypass only total scalar control. No load, store, call, checked
 //! arithmetic, source debit or exceptional edge is crossed.
+use super::super::route_uses::Uses;
 use super::super::word_ranges::{Facts, Range};
 use super::values::{self, Word};
 use cranelift_codegen::dominator_tree::DominatorTree;
 use cranelift_codegen::ir::{Block, Function, Inst, InstructionData as Data, Opcode, Value};
-use std::{
-    collections::{BTreeMap, BTreeSet},
-    sync::Arc,
-};
-#[path = "reach.rs"]
-mod reach;
+use std::collections::{BTreeMap, BTreeSet};
 
 pub(super) struct Edge {
     pub inst: Inst,
@@ -163,41 +159,10 @@ pub(super) fn find(
         })
         .collect::<BTreeSet<_>>();
     let mut repairs = BTreeMap::new();
-    let mut reach = BTreeMap::<Block, Arc<Vec<bool>>>::new();
+    let mut live_outs = uses.live_outs(target);
     for value in definitions {
         let owner = values::owner(f, value)?;
-        // A fresh visit to the defining block ends the query.
-        if owner == target {
-            continue;
-        }
-        let owner_dominates_target = dom.block_dominates(owner, target);
-        let mut used = false;
-        for &block in &uses.values[value.as_u32() as usize] {
-            if block == owner || !dom.is_reachable(block) {
-                continue;
-            }
-            if owner_dominates_target && dom.block_dominates(target, block) {
-                // A simple entry-to-use path visits owner before target and
-                // cannot visit owner again. Its suffix proves the use is live.
-                used = true;
-                continue;
-            }
-            if !owner_dominates_target && dom.block_dominates(owner, block) {
-                // A target-to-use path avoiding owner could be joined to an
-                // entry-to-target path avoiding owner, contradicting dominance.
-                continue;
-            }
-            // A remaining reachable use would lie outside a required
-            // dominance region. Its stopped reachability must be checked.
-            let reachable = reach.entry(owner).or_insert_with(|| {
-                uses.reach
-                    .reachable(target.as_u32() as usize, owner.as_u32() as usize)
-            });
-            if reachable[block.as_u32() as usize] {
-                return None;
-            }
-        }
-        if used {
+        if live_outs.required(dom, value, owner)? {
             repairs.insert(
                 value,
                 values::forward(f, value, &words, &known, &skipped, &source_known)?,
@@ -212,60 +177,4 @@ pub(super) fn find(
         repairs,
         conditions,
     })
-}
-
-// Index immutable SSA uses once. Reachability is shared by definitions from
-// the same block, stopping at a fresh visit to that defining block.
-pub(super) struct Uses {
-    values: Vec<Vec<Block>>,
-    // Captured with the immutable use inventory before any selected route is
-    // applied. Discovery never rescans branch argument storage per definition.
-    reach: reach::Reachability,
-}
-impl Uses {
-    pub fn new(f: &Function) -> Self {
-        let mut values = vec![Vec::new(); f.dfg.num_values()];
-        let blocks = f
-            .layout
-            .blocks()
-            .map(|b| b.as_u32() as usize + 1)
-            .max()
-            .unwrap_or(0);
-        let mut successors = vec![Vec::new(); blocks];
-        for block in f.layout.blocks() {
-            if let Some(last) = f.layout.last_inst(block) {
-                successors[block.as_u32() as usize].extend(
-                    f.dfg.insts[last]
-                        .branch_destination(&f.dfg.jump_tables, &f.dfg.exception_tables)
-                        .iter()
-                        .map(|call| call.block(&f.dfg.value_lists).as_u32() as usize),
-                );
-            }
-            for inst in f.layout.block_insts(block) {
-                let mut add = |value: Value| {
-                    let value = f.dfg.resolve_aliases(value);
-                    let list = &mut values[value.as_u32() as usize];
-                    if list.last() != Some(&block) {
-                        list.push(block)
-                    }
-                };
-                for &value in f.dfg.inst_args(inst) {
-                    add(value)
-                }
-                for call in f.dfg.insts[inst]
-                    .branch_destination(&f.dfg.jump_tables, &f.dfg.exception_tables)
-                {
-                    for arg in call.args(&f.dfg.value_lists) {
-                        if let Some(value) = arg.as_value() {
-                            add(value)
-                        }
-                    }
-                }
-            }
-        }
-        Self {
-            values,
-            reach: reach::Reachability::new(successors),
-        }
-    }
 }

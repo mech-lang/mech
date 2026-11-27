@@ -35,6 +35,7 @@ impl PrivatePhase {
         prepared: &PreparedNativeProgram,
         region: &Region,
         layout: &Layout,
+        compact_packet: bool,
     ) -> Result<Option<Self>, NativeCompileError> {
         let Some(proof) = region.numeric.as_ref() else {
             return Ok(None);
@@ -161,8 +162,8 @@ impl PrivatePhase {
                 exports,
             });
         }
-        let compact_packet = std::env::var_os("MECH_COMPACT_FIXED_PHASE_PACKET").is_some()
-            && std::env::var_os("MECH_PHASE_INVARIANT_VIEWS").is_some();
+        let compact_packet =
+            compact_packet && std::env::var_os("MECH_PHASE_INVARIANT_VIEWS").is_some();
         Ok(Some(Self {
             proof,
             compact_packet,
@@ -172,6 +173,28 @@ impl PrivatePhase {
 
     pub(in crate::native_artifact) fn permits(&self, proof: &Proof) -> bool {
         std::ptr::eq(self.proof, proof)
+    }
+
+    /// The root holds every immutable lane until this synchronous call returns.
+    /// Written backings pass its unique-owner gate, so another retained lane
+    /// cannot alias a backing that this callee mutates. Borrowed read copies
+    /// are independently forbidden across phase boundaries.
+    pub(super) fn immutable_fixed_arrays(&self, proof: &Proof) -> Vec<usize> {
+        if !self.permits(proof) {
+            return Vec::new();
+        }
+        proof
+            .arrays
+            .iter()
+            .enumerate()
+            .filter_map(|(array, view)| {
+                (!view.writable
+                    && !view.appends
+                    && matches!(view.width, 1 | 4)
+                    && view.witness != usize::MAX)
+                    .then_some(array)
+            })
+            .collect()
     }
 
     pub(in crate::native_artifact) fn compact_packet(&self) -> bool {

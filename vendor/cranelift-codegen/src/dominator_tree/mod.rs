@@ -308,6 +308,8 @@ impl DominatorTree {
     /// the implementation is heavily inspired by them.
     pub fn compute(&mut self, func: &Function, cfg: &ControlFlowGraph) {
         let _tt = timing::domtree();
+        #[cfg(feature = "construction-census")]
+        crate::construction_census::dominator_build();
         debug_assert!(cfg.is_valid());
 
         self.clear();

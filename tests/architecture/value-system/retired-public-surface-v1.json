@@ -284,7 +284,7 @@
     },
     {
       "path": "vendor/cranelift-codegen/src/lib.rs",
-      "sha256": "323511d499dac84de979aa8d0200615600d030af18b70dfafd8ba32087febe31"
+      "sha256": "8dd0f4ab473433741a4b7043e77c7d8ad0679fa51ed3e6c6da0806b856d6142f"
     },
     {
       "path": "vendor/cranelift-codegen/src/opts/generated_code.rs",

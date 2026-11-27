@@ -3,8 +3,12 @@
 //! Trapping loads, source failures and work debits retain their ordering.
 mod adjacent_addresses;
 pub(in crate::native_artifact) mod admitted_lengths;
+pub(in crate::native_artifact) mod admitted_spans;
+pub(in crate::native_artifact) mod argument_jumps;
 mod boolean_words;
+pub(in crate::native_artifact) mod bounded_byte_histogram;
 pub(in crate::native_artifact) mod checked_adds;
+pub(in crate::native_artifact) mod compared_bytes;
 pub(in crate::native_artifact) mod composed_reads;
 mod current_predicates;
 mod dead_values;
@@ -14,18 +18,23 @@ pub(in crate::native_artifact) mod empty_jumps;
 pub(in crate::native_artifact) mod future_store;
 pub(in crate::native_artifact) mod grouped_histogram;
 pub(in crate::native_artifact) mod identity_routes;
+pub(in crate::native_artifact) mod immutable_word_reads;
 pub(in crate::native_artifact) mod independent_private_read;
+pub(in crate::native_artifact) mod indexed_addresses;
 mod known_widths;
 mod local_phis;
+pub(in crate::native_artifact) mod narrow_bits;
 pub(in crate::native_artifact) mod packed_halfword_reads;
 mod preheaders;
 pub(in crate::native_artifact) mod reduction_bound;
 pub(in crate::native_artifact) mod reduction_rotation;
 mod repeated_bounds;
+mod route_uses;
 pub(in crate::native_artifact) mod selected_continuations;
 mod selected_homes;
 mod selected_increments;
 mod selected_ranges;
+mod selected_values;
 pub(in crate::native_artifact) mod shared_clamp;
 mod threaded_edges;
 mod unsigned_intervals;
@@ -288,6 +297,97 @@ pub(in crate::native_artifact) fn optimize(
 ) -> Result<CfgCleanup, NativeCompileError> {
     let mut report = optimize_ordered(controls, context, isa, true)?;
     finish_imported_passes(controls, context, isa, &mut report)?;
+    Ok(report)
+}
+
+// Optional compact final cleanup can repeat the ordered CFG/phi/liveness
+// schedule without rerunning the imported source-specialization searches.
+// Every retained fold still derives its facts from the current function.
+pub(in crate::native_artifact) fn optimize_final_ordered(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<CfgCleanup, NativeCompileError> {
+    optimize_ordered(controls, context, isa, true)
+}
+
+// Late compact packet rewrites can expose routes and addresses even after
+// the earlier source range/predicate specialization has reached a fixed point.
+pub(in crate::native_artifact) fn optimize_final_routes(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<CfgCleanup, NativeCompileError> {
+    let mut report = optimize_final_ordered(controls, context, isa)?;
+    report.loop_edges += thread_loop_edges(controls, context, isa)?.threaded_edges;
+    report.identity_edges += forward_identity_routes(controls, context, isa)?.threaded_edges;
+    report.adjacent_addresses_reused += reuse_adjacent_addresses(controls, context, isa)?;
+    (report.after_blocks, report.after_instructions) = counts(&context.func);
+    Ok(report)
+}
+
+pub(in crate::native_artifact) fn optimize_final_batched_routes(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+    ordered_finish: bool,
+) -> Result<CfgCleanup, NativeCompileError> {
+    let mut report = optimize_final_ordered(controls, context, isa)?;
+    if !report.enabled {
+        return Ok(report);
+    }
+    let combine_verification = std::env::var_os("MECH_COMPACT_VERIFY_CLEANUP_ONCE").is_some();
+    let finish_route = |context: &mut Context| -> Result<(), NativeCompileError> {
+        if combine_verification {
+            context
+                .compute_flowgraph_cleanup_and_verify(isa)
+                .map_err(backend)?;
+        } else {
+            context
+                .compute_flowgraph_and_cleanup(isa)
+                .map_err(backend)?;
+            context.verify(isa).map_err(backend)?;
+        }
+        Ok(())
+    };
+    // Each search reconstructs its current CFG and dominance facts. Between
+    // rewrites retire unreachable routes/constant phis, retaining valid SSA,
+    // without rerunning every ordered source-range search after each edge.
+    if controls.enabled(OptimizationPass::LoopEdgeThreading) {
+        context.func.dfg.resolve_all_aliases();
+        context.compute_cfg();
+        context.compute_domtree();
+        report.loop_edges =
+            threaded_edges::optimize(&mut context.func, &context.cfg, &context.domtree)
+                .threaded_edges;
+        if report.loop_edges != 0 {
+            finish_route(context)?;
+        }
+    }
+    if controls.enabled(OptimizationPass::IdentityRoutes) {
+        context.func.dfg.resolve_all_aliases();
+        context.compute_cfg();
+        context.compute_domtree();
+        report.identity_edges =
+            identity_routes::optimize(&mut context.func, &context.cfg, &context.domtree, None)
+                .threaded_edges;
+        if report.identity_edges != 0 {
+            finish_route(context)?;
+        }
+    }
+    if report.loop_edges != 0 || report.identity_edges != 0 {
+        if ordered_finish {
+            optimize_final_ordered(controls, context, isa)?;
+        } else if controls.enabled(OptimizationPass::DemandLiveness) {
+            let dead = dead_values::eliminate(&mut context.func);
+            report.dead_parameters_removed += dead.parameters;
+            report.dead_instructions_removed += dead.instructions;
+            report.dead_loads_removed += dead.loads;
+        }
+        context.verify(isa).map_err(backend)?;
+    }
+    report.adjacent_addresses_reused += reuse_adjacent_addresses(controls, context, isa)?;
+    (report.after_blocks, report.after_instructions) = counts(&context.func);
     Ok(report)
 }
 
@@ -584,6 +684,28 @@ pub(in crate::native_artifact::program) fn coalesce_parallel_join_arguments(
     Ok(removed)
 }
 
+pub(in crate::native_artifact::program) fn coalesce_identical_join_arguments(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<usize, NativeCompileError> {
+    if !controls.enabled(OptimizationPass::CfgCleanup) {
+        return Ok(0);
+    }
+    context.func.dfg.resolve_all_aliases();
+    context.flowgraph();
+    let removed = local_phis::identical_arguments::coalesce(
+        &mut context.func,
+        &context.cfg,
+        &context.domtree,
+    );
+    if removed != 0 {
+        context.func.dfg.resolve_all_aliases();
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(removed)
+}
+
 pub(in crate::native_artifact::program) fn coalesce_literal_join_arguments(
     controls: &CompilationControls,
     context: &mut Context,
@@ -682,6 +804,33 @@ pub(in crate::native_artifact) fn fold_proved_widths(
     context.compute_cfg();
     context.compute_domtree();
     let removed = known_widths::fold(&mut context.func, &context.cfg, &context.domtree);
+    if removed != 0 {
+        optimize_ordered(controls, context, isa, true)?;
+        context.func.dfg.resolve_all_aliases();
+        context.verify(isa).map_err(backend)?;
+    }
+    Ok(removed)
+}
+
+pub(in crate::native_artifact) fn fold_selected_value_ranges(
+    controls: &CompilationControls,
+    context: &mut Context,
+    isa: &dyn TargetIsa,
+) -> Result<usize, NativeCompileError> {
+    if !controls.enabled(OptimizationPass::CfgCleanup)
+        || !controls.enabled(OptimizationPass::ProvedWordWidths)
+    {
+        return Ok(0);
+    }
+    context.compute_cfg();
+    context.compute_domtree();
+    let ranges = selected_values::fold(&mut context.func, &context.cfg, &context.domtree);
+    if ranges != 0 {
+        context.compute_cfg();
+        context.compute_domtree();
+    }
+    let widths = known_widths::fold_selected(&mut context.func, &context.cfg, &context.domtree);
+    let removed = ranges + widths;
     if removed != 0 {
         optimize_ordered(controls, context, isa, true)?;
         context.func.dfg.resolve_all_aliases();
@@ -924,3 +1073,14 @@ pub(in crate::native_artifact) fn share_repeated_bounds(
     }
     Ok(changed)
 }
+
+#[cfg(test)]
+mod verified_cleanup_tests;
+
+#[cfg(all(test, target_arch = "aarch64"))]
+#[path = "i32_arithmetic_extensions_tests.rs"]
+mod arithmetic_word_extensions_tests;
+
+#[cfg(all(test, target_arch = "aarch64"))]
+#[path = "byte_definition_extensions_tests.rs"]
+mod byte_definition_extensions_tests;

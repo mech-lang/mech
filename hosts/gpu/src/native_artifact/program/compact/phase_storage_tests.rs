@@ -1,9 +1,115 @@
-use super::{pack_used_input_words, sink_exit_packet_words};
+use super::{
+    pack_used_input_words, qualify_input_packet_loads, qualify_movable_input_packet_loads,
+    sink_exit_packet_words,
+};
 use cranelift_codegen::ir::types::{I32, I64};
 use cranelift_codegen::ir::{AbiParam, Block, Function, Inst, InstBuilder, MemFlags};
 use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
 use cranelift_jit::{JITBuilder, JITModule};
 use cranelift_module::{Linkage, Module, default_libcall_names};
+
+#[cfg(feature = "early-region-emission")]
+#[test]
+fn nested_call_outputs_can_use_a_checked_caller_extent() {
+    for borrowed in [false, true] {
+        let mut module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+        let mut leaf = module.make_context();
+        leaf.func.signature.params = vec![AbiParam::new(I64); 2];
+        let mut frontend = FunctionBuilderContext::new();
+        let mut b = FunctionBuilder::new(&mut leaf.func, &mut frontend);
+        let entry = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let [input, output] = b.block_params(entry).try_into().unwrap();
+        let a = b.ins().load(I64, MemFlags::new(), input, 0);
+        let c = b.ins().load(I64, MemFlags::new(), input, 8);
+        let values = [b.ins().iadd(a, c), b.ins().bxor(a, c), b.ins().isub(a, c)];
+        for (at, value) in values.into_iter().enumerate() {
+            b.ins()
+                .store(MemFlags::new(), value, output, (at * 8) as i32);
+        }
+        b.ins().return_(&[]);
+        b.seal_all_blocks();
+        b.finalize();
+        let leaf_id = module
+            .declare_function("packet_leaf", Linkage::Local, &leaf.func.signature)
+            .unwrap();
+        module.define_function(leaf_id, &mut leaf).unwrap();
+
+        let mut context = module.make_context();
+        context.func.signature.params = vec![AbiParam::new(I64); 3];
+        context.func.signature.returns.push(AbiParam::new(I64));
+        let mut frontend = FunctionBuilderContext::new();
+        let mut b = FunctionBuilder::new(&mut context.func, &mut frontend);
+        let entry = b.create_block();
+        let reject = b.create_block();
+        let call = b.create_block();
+        b.append_block_params_for_function_params(entry);
+        b.switch_to_block(entry);
+        let [ok, input, output] = b.block_params(entry).try_into().unwrap();
+        let geometry = super::Geometry::derive([(2, 3)]).unwrap().unwrap();
+        assert!(geometry.reserve_with_output(&mut b, output, 2).is_err());
+        assert!(b.func.sized_stack_slots.is_empty());
+        let slots = if borrowed {
+            geometry.reserve_with_output(&mut b, output, 3).unwrap()
+        } else {
+            geometry.reserve(&mut b).unwrap()
+        };
+        assert_eq!(b.func.sized_stack_slots.len(), if borrowed { 1 } else { 2 });
+        assert!(slots.input_for_call(3, 3).is_err());
+        assert!(slots.output_address(&mut b, 2, 4).is_err());
+        assert!(slots.read_output(&mut b, 3).is_err());
+        if borrowed {
+            assert!(slots.for_call(2, 3).is_err());
+        }
+        b.ins().brif(ok, call, &[], reject, &[]);
+        b.switch_to_block(reject);
+        let failure = b.ins().iconst(I64, 1);
+        b.ins().return_(&[failure]);
+        b.switch_to_block(call);
+        let input_slot = slots.input_for_call(2, 3).unwrap();
+        for at in 0..2 {
+            let value = b.ins().load(I64, MemFlags::new(), input, at * 8);
+            b.ins().stack_store(value, input_slot, at * 8);
+        }
+        let packet = b.ins().stack_addr(I64, input_slot, 0);
+        let out = slots.output_address(&mut b, 2, 3).unwrap();
+        let leaf = module.declare_func_in_func(leaf_id, b.func);
+        b.ins().call(leaf, &[packet, out]);
+        for at in 0..3 {
+            let value = slots.read_output(&mut b, at).unwrap();
+            b.ins()
+                .store(MemFlags::new(), value, output, (at * 8) as i32);
+        }
+        let success = b.ins().iconst(I64, 0);
+        b.ins().return_(&[success]);
+        b.seal_all_blocks();
+        b.finalize();
+        let function = module
+            .declare_function("packet_parent", Linkage::Local, &context.func.signature)
+            .unwrap();
+        module.define_function(function, &mut context).unwrap();
+        module.finalize_definitions().unwrap();
+        type Call = unsafe extern "C" fn(u64, *const u64, *mut u64) -> u64;
+        let call = unsafe {
+            core::mem::transmute::<*const u8, Call>(module.get_finalized_function(function))
+        };
+        for input in [[0u64, 0], [77, 39], [u64::MAX, 1]] {
+            let mut output = [u64::MAX; 3];
+            assert_eq!(unsafe { call(0, input.as_ptr(), output.as_mut_ptr()) }, 1);
+            assert_eq!(output, [u64::MAX; 3]);
+            assert_eq!(unsafe { call(1, input.as_ptr(), output.as_mut_ptr()) }, 0);
+            assert_eq!(
+                output,
+                [
+                    input[0].wrapping_add(input[1]),
+                    input[0] ^ input[1],
+                    input[0].wrapping_sub(input[1])
+                ]
+            );
+        }
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Shape {
@@ -18,6 +124,198 @@ enum Shape {
     OutputOutside,
     OtherWidth,
     Nonterminal,
+}
+
+#[test]
+fn input_packet_flags_require_the_complete_nonescaping_load_contract() {
+    use cranelift_codegen::ir::InstructionData;
+    let module = JITModule::new(JITBuilder::new(default_libcall_names()).unwrap());
+    for movable in [false, true] {
+        for shape in [
+            Shape::ExitCopy,
+            Shape::RepeatedCopy,
+            Shape::ExtraUse,
+            Shape::UnusedInput,
+        ] {
+            let mut context = module.make_context();
+            build(&mut context.func, shape);
+            let expected = if shape == Shape::UnusedInput { 2 } else { 1 };
+            let changed = if movable {
+                qualify_movable_input_packet_loads(&mut context.func, 2)
+            } else {
+                qualify_input_packet_loads(&mut context.func, 2)
+            };
+            assert_eq!(changed, expected);
+            for block in context.func.layout.blocks() {
+                for inst in context.func.layout.block_insts(block) {
+                    if let InstructionData::Load { flags, .. } = context.func.dfg.insts[inst] {
+                        assert!(flags.notrap() && flags.readonly() && flags.aligned());
+                        assert_eq!(flags.can_move(), movable);
+                    }
+                }
+            }
+            context.verify(module.isa()).unwrap();
+        }
+        for shape in [
+            Shape::InputEscape,
+            Shape::InputWrite,
+            Shape::InputOutside,
+            Shape::OtherWidth,
+        ] {
+            let mut context = module.make_context();
+            build(&mut context.func, shape);
+            let before = context.func.display().to_string();
+            assert_eq!(
+                if movable {
+                    qualify_movable_input_packet_loads(&mut context.func, 2)
+                } else {
+                    qualify_input_packet_loads(&mut context.func, 2)
+                },
+                0,
+                "{shape:?}"
+            );
+            assert_eq!(context.func.display().to_string(), before);
+        }
+    }
+}
+
+#[test]
+fn movable_private_packet_keeps_current_words_finite_budget_and_partial_outputs() {
+    type Call = unsafe extern "C" fn(u64, *const u64, *mut u64) -> u64;
+    let mut module = JITModule::new(
+        JITBuilder::with_flags(
+            &[("opt_level", "speed"), ("regalloc_checker", "true")],
+            default_libcall_names(),
+        )
+        .unwrap(),
+    );
+    let mut calls = Vec::new();
+    for movable in [false, true] {
+        let mut context = module.make_context();
+        context.func.signature.params = vec![AbiParam::new(I64); 3];
+        context.func.signature.returns = vec![AbiParam::new(I64)];
+        let mut fc = FunctionBuilderContext::new();
+        let mut b = FunctionBuilder::new(&mut context.func, &mut fc);
+        let [entry, reject, init, header, check, body, done, fail] =
+            [(); 8].map(|()| b.create_block());
+        b.append_block_params_for_function_params(entry);
+        let at = b.append_block_param(header, I64);
+        let acc = b.append_block_param(header, I64);
+        b.switch_to_block(entry);
+        let [enabled, input, output] = b.block_params(entry).try_into().unwrap();
+        b.ins().brif(enabled, init, &[], reject, &[]);
+        b.switch_to_block(reject);
+        let status = b.ins().iconst(I64, 7);
+        b.ins().return_(&[status]);
+        b.switch_to_block(init);
+        let initial = b.ins().load(I64, MemFlags::new(), input, 0);
+        let rounds = b.ins().load(I64, MemFlags::new(), input, 16);
+        let rounds = b.ins().band_imm(rounds, 63);
+        let budget = b.ins().load(I64, MemFlags::new(), input, 24);
+        let zero = b.ins().iconst(I64, 0);
+        b.ins().jump(header, &[zero.into(), initial.into()]);
+        b.switch_to_block(header);
+        let finished = b
+            .ins()
+            .icmp(cranelift_codegen::ir::condcodes::IntCC::Equal, at, rounds);
+        b.ins().brif(finished, done, &[], check, &[]);
+        b.switch_to_block(check);
+        let exhausted = b.ins().icmp(
+            cranelift_codegen::ir::condcodes::IntCC::UnsignedGreaterThanOrEqual,
+            at,
+            budget,
+        );
+        b.ins().brif(exhausted, fail, &[], body, &[]);
+        b.switch_to_block(body);
+        let word = b.ins().load(I64, MemFlags::new(), input, 8);
+        let mixed = b.ins().imul_imm(acc, 17);
+        let mixed = b.ins().bxor(mixed, word);
+        let next_acc = b.ins().iadd(mixed, at);
+        b.ins().store(MemFlags::new(), next_acc, output, 0);
+        let next = b.ins().iadd_imm(at, 1);
+        b.ins().jump(header, &[next.into(), next_acc.into()]);
+        for (block, status) in [(done, 0), (fail, 1)] {
+            b.switch_to_block(block);
+            b.ins().store(MemFlags::new(), at, output, 8);
+            b.ins().store(MemFlags::new(), acc, output, 16);
+            let status = b.ins().iconst(I64, status);
+            b.ins().return_(&[status]);
+        }
+        b.seal_all_blocks();
+        b.finalize();
+        if movable {
+            assert_eq!(qualify_movable_input_packet_loads(&mut context.func, 4), 4);
+        }
+        context.verify(module.isa()).unwrap();
+        let name = if movable {
+            "movable_packet"
+        } else {
+            "ordinary_packet"
+        };
+        let id = module
+            .declare_function(name, Linkage::Local, &context.func.signature)
+            .unwrap();
+        module.define_function(id, &mut context).unwrap();
+        calls.push(id);
+    }
+    module.finalize_definitions().unwrap();
+    let calls: Vec<Call> = calls
+        .into_iter()
+        .map(|id| {
+            // The declared ABI has three word arguments and one word result; module stays live.
+            unsafe { core::mem::transmute(module.get_finalized_function(id)) }
+        })
+        .collect();
+    let mut compared = 0;
+    for a in [
+        0u64,
+        1,
+        u32::MAX as u64,
+        u64::MAX,
+        1 << 63,
+        0xabcdef0123456789,
+    ] {
+        for b in [
+            0u64,
+            1,
+            u32::MAX as u64,
+            u64::MAX,
+            1 << 63,
+            0xabcdef0123456789,
+        ] {
+            for rounds in [0u64, 1, 2, 3, 7, 8, 31, 63, 64, 127, u64::MAX] {
+                for budget in [0u64, 1, 2, 7, 16, 63, 64, u64::MAX] {
+                    for enabled in [0u64, 1, 2, u64::MAX] {
+                        let input = [a, b, rounds, budget];
+                        let mut expected = [0xa5a5a5a5a5a5a5a5; 3];
+                        let status = if enabled == 0 {
+                            7
+                        } else {
+                            let mut at = 0u64;
+                            let mut acc = a;
+                            while at != (rounds & 63) && at < budget {
+                                acc = (acc.wrapping_mul(17) ^ b).wrapping_add(at);
+                                expected[0] = acc;
+                                at += 1;
+                            }
+                            expected[1] = at;
+                            expected[2] = acc;
+                            u64::from(at != (rounds & 63))
+                        };
+                        for call in &calls {
+                            let mut observed = [0xa5a5a5a5a5a5a5a5; 3];
+                            // Slots' contract: all input words initialized, immutable and disjoint from outputs.
+                            let got =
+                                unsafe { call(enabled, input.as_ptr(), observed.as_mut_ptr()) };
+                            assert_eq!((got, observed), (status, expected));
+                            compared += 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    eprintln!("movable private packet differential native calls: {compared}");
 }
 
 fn build(function: &mut Function, shape: Shape) -> (Inst, Inst, Block) {

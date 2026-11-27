@@ -14,7 +14,6 @@ use crate::ir::{
 };
 use crate::isa::CallConv;
 use crate::write::{write_function, write_function_spec};
-#[cfg(feature = "enable-serde")]
 use alloc::string::String;
 use alloc::vec::Vec;
 use core::fmt;
@@ -199,8 +198,25 @@ pub struct FunctionStencil {
     /// Allow AArch64 to forward known values held in private spill slots.
     pub forward_spill_reloads: bool,
 
+    /// Prefer the existing preserved integer register pool for Apple AArch64.
+    /// Allocatable registers, call clobbers, and ABI preservation are unchanged.
+    #[cfg_attr(feature = "enable-serde", serde(default))]
+    pub aarch64_prefer_preserved_regs: bool,
+
+    /// Exact pre-allocation VCode and measured relative frequencies, indexed by
+    /// VCode block. The backend rejects mismatched code, missing blocks, or
+    /// weights outside 1..=2^20 before using the profile for spill costs.
+    #[cfg_attr(feature = "enable-serde", serde(default))]
+    pub regalloc_block_frequencies: Option<(String, Vec<u32>)>,
+
     /// Select AArch64 compare-and-branch instructions for integer zero comparisons.
     pub aarch64_branch_on_zero: bool,
+    /// Share and hoist pure prefetch base additions after egraph rematerialization.
+    pub aarch64_hoist_prefetch_bases: bool,
+    /// Maximum private integer spill cells kept in unused caller-saved FP registers.
+    pub aarch64_fp_spill_slots: u8,
+    /// Retain paired spill reloads and mirror their cached cells to memory.
+    pub aarch64_fp_spill_keep_pairs: bool,
 
     /// Measured order of AArch64 machine blocks, expressed in the original byte offsets.
     pub aarch64_block_layout: Vec<u32>,
@@ -208,6 +224,10 @@ pub struct FunctionStencil {
     /// Original start of an aligned trailing literal pool in a measured
     /// AArch64 leaf. All references and their readable extents are validated.
     pub aarch64_block_layout_literal_start: Option<u32>,
+
+    /// Let a measured AArch64 layout bypass blocks that only jump.
+    #[cfg_attr(feature = "enable-serde", serde(skip))]
+    pub aarch64_block_layout_thread_jumps: bool,
 
     /// Source locations.
     ///
@@ -252,9 +272,15 @@ impl FunctionStencil {
         self.aarch64_share_cold_tails = false;
         self.aarch64_share_frame_copies = false;
         self.forward_spill_reloads = false;
+        self.aarch64_prefer_preserved_regs = false;
+        self.regalloc_block_frequencies = None;
         self.aarch64_branch_on_zero = false;
+        self.aarch64_hoist_prefetch_bases = false;
+        self.aarch64_fp_spill_slots = 0;
+        self.aarch64_fp_spill_keep_pairs = false;
         self.aarch64_block_layout.clear();
         self.aarch64_block_layout_literal_start = None;
+        self.aarch64_block_layout_thread_jumps = false;
         self.srclocs.clear();
         self.debug_tags.clear();
         self.stack_limit = None;
@@ -452,9 +478,15 @@ impl Function {
                 aarch64_share_cold_tails: false,
                 aarch64_share_frame_copies: false,
                 forward_spill_reloads: false,
+                aarch64_prefer_preserved_regs: false,
+                regalloc_block_frequencies: None,
                 aarch64_branch_on_zero: false,
+                aarch64_hoist_prefetch_bases: false,
+                aarch64_fp_spill_slots: 0,
+                aarch64_fp_spill_keep_pairs: false,
                 aarch64_block_layout: Vec::new(),
                 aarch64_block_layout_literal_start: None,
+                aarch64_block_layout_thread_jumps: false,
                 srclocs: SecondaryMap::new(),
                 stack_limit: None,
                 debug_tags: DebugTags::default(),

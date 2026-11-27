@@ -85,6 +85,20 @@ fn rewrite(
 }
 
 pub(super) fn optimize(f: &mut Function, cfg: &ControlFlowGraph, dom: &DominatorTree) -> Report {
+    optimize_with_index(
+        f,
+        cfg,
+        dom,
+        std::env::var_os("MECH_COMPACT_INDEX_LOOP_LIVE_OUTS").is_some(),
+    )
+}
+
+fn optimize_with_index(
+    f: &mut Function,
+    cfg: &ControlFlowGraph,
+    dom: &DominatorTree,
+    index_live_outs: bool,
+) -> Report {
     let mut report = Report::default();
     // Unknown/exceptional edge values keep the original entry/landing contract.
     if f.layout.blocks().any(|b| {
@@ -133,13 +147,26 @@ pub(super) fn optimize(f: &mut Function, cfg: &ControlFlowGraph, dom: &Dominator
         }
     }
     report.candidates = edges.len();
-    // Every route observes this same immutable CFG. Reuse only visitation
-    // storage; each live-out traversal still starts with an empty visited set.
+    // Every route observes this same immutable CFG. The original traversal
+    // reuses visitation storage and starts each live-out query with a fresh set.
     let mut visits = visits::Visits::new(f.dfg.num_blocks());
+    // This index is created only after a route reaches live-out discovery.
+    // Discovery reads the same function until every plan has been collected.
+    let mut uses = None;
     let plans = edges
         .into_iter()
-        .filter_map(|edge| route::find(f, dom, edge, &mut known, &mut visits))
+        .filter_map(|edge| {
+            route::find(
+                f,
+                dom,
+                edge,
+                &mut known,
+                &mut visits,
+                index_live_outs.then_some(&mut uses),
+            )
+        })
         .collect::<Vec<_>>();
+    drop(uses);
     let targets = plans.iter().map(|p| p.target).collect::<BTreeSet<_>>();
     // Preserve the original dominance of every new transport phi. No other
     // shortcut may bypass its destination, including nested dispatch plans.
@@ -218,3 +245,5 @@ pub(super) fn optimize(f: &mut Function, cfg: &ControlFlowGraph, dom: &Dominator
 mod test_support;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod uses_index_tests;

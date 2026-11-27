@@ -16,12 +16,40 @@ enum Case {
     Signed,
     Equal,
     SignedNegative,
+    Masked,
+    MaskedReversed,
+    MaskedRoundTrip,
+    MaskedReject,
+    MaskedInclusive,
+    MaskedEdge,
+    MaskedSigned,
+    MaskedWrap,
+    MaskedDifferent,
+    MaskedChanged,
+    Joined,
+    JoinedRoundTrip,
+    JoinedUnknown,
+    JoinedWrap,
+    DeadFailureUse,
+    BitwiseOr,
+    BitwiseOrJoined,
+    BitwiseOrRoundTrip,
+    BitwiseOrUnknown,
+    BitwiseOrSigned,
 }
 
 type Run = unsafe extern "C" fn(u64, u64, u64) -> u64;
 
 fn compile(case: Case, optimize: bool) -> (JITModule, Run) {
     use IntCC::*;
+    let bitwise = matches!(
+        case,
+        Case::BitwiseOr
+            | Case::BitwiseOrJoined
+            | Case::BitwiseOrRoundTrip
+            | Case::BitwiseOrUnknown
+            | Case::BitwiseOrSigned
+    );
     let mut module = JITModule::new(
         JITBuilder::with_flags(
             &[("opt_level", "speed"), ("regalloc_checker", "true")],
@@ -62,6 +90,117 @@ fn compile(case: Case, optimize: bool) -> (JITModule, Run) {
         let current = b.block_params(admitted)[0];
         length = current;
         let check = match case {
+            Case::BitwiseOr
+            | Case::BitwiseOrJoined
+            | Case::BitwiseOrRoundTrip
+            | Case::BitwiseOrUnknown
+            | Case::BitwiseOrSigned => {
+                let left = b.ins().band_imm(other, 6);
+                let right = if matches!(case, Case::BitwiseOrUnknown) {
+                    arithmetic_ok
+                } else {
+                    b.ins().band_imm(other, 1)
+                };
+                let mut index = b.ins().bor(left, right);
+                if matches!(case, Case::BitwiseOrJoined) {
+                    let a = b.create_block();
+                    let c = b.create_block();
+                    let join = b.create_block();
+                    b.append_block_param(join, types::I64);
+                    b.ins().brif(arithmetic_ok, a, &[], c, &[]);
+                    b.switch_to_block(a);
+                    b.ins().jump(join, &[index.into()]);
+                    b.switch_to_block(c);
+                    let seven = b.ins().iconst(types::I64, 7);
+                    b.ins().jump(join, &[seven.into()]);
+                    b.switch_to_block(join);
+                    index = b.block_params(join)[0];
+                }
+                if matches!(case, Case::BitwiseOrRoundTrip) {
+                    let one_based = b.ins().iadd_imm(index, 1);
+                    index = b.ins().iadd_imm(one_based, -1);
+                }
+                b.ins().icmp(
+                    if matches!(case, Case::BitwiseOrSigned) {
+                        SignedLessThan
+                    } else {
+                        UnsignedLessThan
+                    },
+                    index,
+                    current,
+                )
+            }
+            Case::Joined | Case::JoinedRoundTrip | Case::JoinedUnknown | Case::JoinedWrap => {
+                let left = b.create_block();
+                let right = b.create_block();
+                let join = b.create_block();
+                b.append_block_param(join, types::I64);
+                b.ins().brif(other, left, &[], right, &[]);
+                b.switch_to_block(left);
+                let zero = b.ins().iconst(types::I64, 0);
+                b.ins().jump(join, &[zero.into()]);
+                b.switch_to_block(right);
+                let one = if matches!(case, Case::JoinedUnknown) {
+                    arithmetic_ok
+                } else {
+                    b.ins().iconst(types::I64, 1)
+                };
+                b.ins().jump(join, &[one.into()]);
+                b.switch_to_block(join);
+                let bit = b.block_params(join)[0];
+                let mut index = b.ins().iadd_imm(bit, 5);
+                if matches!(case, Case::JoinedRoundTrip) {
+                    let one_based = b.ins().iadd_imm(index, 1);
+                    index = b.ins().iadd_imm(one_based, -1);
+                }
+                if matches!(case, Case::JoinedWrap) {
+                    index = b.ins().iadd_imm(index, -6);
+                }
+                b.ins().icmp(UnsignedLessThan, index, current)
+            }
+            Case::DeadFailureUse
+            | Case::Masked
+            | Case::MaskedReversed
+            | Case::MaskedRoundTrip
+            | Case::MaskedReject
+            | Case::MaskedInclusive
+            | Case::MaskedEdge
+            | Case::MaskedSigned
+            | Case::MaskedWrap
+            | Case::MaskedDifferent
+            | Case::MaskedChanged => {
+                let mask = if matches!(case, Case::MaskedInclusive | Case::MaskedEdge) {
+                    8
+                } else {
+                    7
+                };
+                let mut index = b.ins().band_imm(other, mask);
+                if matches!(case, Case::MaskedRoundTrip) {
+                    let one_based = b.ins().iadd_imm(index, 1);
+                    index = b.ins().iadd_imm(one_based, -1);
+                }
+                if matches!(case, Case::MaskedWrap) {
+                    index = b.ins().iadd_imm(index, -1);
+                }
+                let length = if matches!(case, Case::MaskedDifferent) {
+                    arithmetic_ok
+                } else if matches!(case, Case::MaskedChanged) {
+                    b.ins().iadd_imm(current, -1)
+                } else {
+                    current
+                };
+                let condition = match case {
+                    Case::MaskedReject => UnsignedGreaterThanOrEqual,
+                    Case::MaskedInclusive => UnsignedLessThanOrEqual,
+                    Case::MaskedSigned => SignedLessThan,
+                    _ => UnsignedLessThan,
+                };
+                if matches!(case, Case::MaskedReversed) {
+                    b.ins().icmp(UnsignedGreaterThan, length, index)
+                } else {
+                    b.ins().icmp(condition, index, length)
+                }
+            }
             Case::Exact => b.ins().icmp_imm(UnsignedGreaterThanOrEqual, current, 8),
             Case::Strict => b.ins().icmp_imm(UnsignedGreaterThan, current, 7),
             Case::Reversed => {
@@ -85,8 +224,16 @@ fn compile(case: Case, optimize: bool) -> (JITModule, Run) {
             Case::SignedNegative => b.ins().icmp_imm(UnsignedGreaterThanOrEqual, current, -1),
         };
         let rejection = b.ins().iconst(types::I64, 12);
-        b.ins()
-            .brif(check, end, &[current.into()], end, &[rejection.into()]);
+        if matches!(case, Case::DeadFailureUse) {
+            let dead = b.create_block();
+            b.ins().brif(check, end, &[current.into()], dead, &[]);
+            b.switch_to_block(dead);
+            let dependent = b.ins().iadd(current, other);
+            b.ins().jump(end, &[dependent.into()]);
+        } else {
+            b.ins()
+                .brif(check, end, &[current.into()], end, &[rejection.into()]);
+        }
         b.switch_to_block(end);
         let result = b.block_params(end)[0];
         b.ins().return_(&[result]);
@@ -94,17 +241,94 @@ fn compile(case: Case, optimize: bool) -> (JITModule, Run) {
         b.finalize();
     }
     if optimize {
-        assert_eq!(
-            fold(&mut context.func, &BTreeMap::from([(length, 8)])),
-            usize::from(matches!(
-                case,
-                Case::Exact | Case::Strict | Case::Reversed | Case::Wrapped
-            )),
-            "{case:?}"
+        let original = context.func.display().to_string();
+        let derived = required_index_floors(
+            &context.func,
+            &std::collections::BTreeSet::from([length]),
+            bitwise,
         );
+        assert_eq!(context.func.display().to_string(), original);
+        if bitwise {
+            assert!(
+                required_index_floors(
+                    &context.func,
+                    &std::collections::BTreeSet::from([length]),
+                    false
+                )
+                .is_empty()
+            );
+        }
+        match case {
+            Case::BitwiseOr | Case::BitwiseOrJoined | Case::BitwiseOrRoundTrip => {
+                assert_eq!(derived.get(&length), Some(&8))
+            }
+            Case::BitwiseOrUnknown | Case::BitwiseOrSigned => assert!(derived.is_empty()),
+            Case::Joined | Case::JoinedRoundTrip => assert_eq!(derived.get(&length), Some(&7)),
+            Case::JoinedUnknown | Case::JoinedWrap => assert!(derived.is_empty()),
+            _ => {}
+        }
+        let floors = BTreeMap::from([(length, 8)]);
+        if matches!(
+            case,
+            Case::BitwiseOr
+                | Case::BitwiseOrJoined
+                | Case::BitwiseOrRoundTrip
+                | Case::BitwiseOrUnknown
+                | Case::BitwiseOrSigned
+                | Case::DeadFailureUse
+                | Case::Joined
+                | Case::JoinedRoundTrip
+                | Case::JoinedUnknown
+                | Case::JoinedWrap
+                | Case::Masked
+                | Case::MaskedReversed
+                | Case::MaskedRoundTrip
+                | Case::MaskedReject
+                | Case::MaskedInclusive
+                | Case::MaskedEdge
+                | Case::MaskedSigned
+                | Case::MaskedWrap
+                | Case::MaskedDifferent
+                | Case::MaskedChanged
+        ) {
+            let (literals, ranged) = fold_index_ranges(&mut context.func, &floors, bitwise);
+            assert_eq!(literals, 0, "{case:?}");
+            assert_eq!(
+                ranged,
+                usize::from(matches!(
+                    case,
+                    Case::BitwiseOr
+                        | Case::BitwiseOrJoined
+                        | Case::BitwiseOrRoundTrip
+                        | Case::DeadFailureUse
+                        | Case::Joined
+                        | Case::JoinedRoundTrip
+                        | Case::Masked
+                        | Case::MaskedReversed
+                        | Case::MaskedRoundTrip
+                        | Case::MaskedReject
+                        | Case::MaskedInclusive
+                )),
+                "{case:?}"
+            );
+        } else {
+            assert_eq!(
+                fold(&mut context.func, &floors),
+                usize::from(matches!(
+                    case,
+                    Case::Exact | Case::Strict | Case::Reversed | Case::Wrapped
+                )),
+                "{case:?}"
+            );
+        }
     }
     context.compute_cfg();
     context.compute_domtree();
+    if optimize {
+        context.eliminate_unreachable_code(module.isa()).unwrap();
+        context.compute_cfg();
+        context.compute_domtree();
+    }
     context.verify(module.isa()).unwrap();
     let id = module
         .declare_function("floor", Linkage::Local, &context.func.signature)
@@ -129,6 +353,26 @@ fn admitted_unsigned_length_retains_fallback_and_selected_values() {
         Case::Signed,
         Case::Equal,
         Case::SignedNegative,
+        Case::Masked,
+        Case::MaskedReversed,
+        Case::MaskedRoundTrip,
+        Case::MaskedReject,
+        Case::MaskedInclusive,
+        Case::MaskedEdge,
+        Case::MaskedSigned,
+        Case::MaskedWrap,
+        Case::MaskedDifferent,
+        Case::MaskedChanged,
+        Case::Joined,
+        Case::JoinedRoundTrip,
+        Case::JoinedUnknown,
+        Case::JoinedWrap,
+        Case::DeadFailureUse,
+        Case::BitwiseOr,
+        Case::BitwiseOrJoined,
+        Case::BitwiseOrRoundTrip,
+        Case::BitwiseOrUnknown,
+        Case::BitwiseOrSigned,
     ] {
         let (_old, original) = compile(case, false);
         let (_new, optimized) = compile(case, true);
@@ -143,8 +387,8 @@ fn admitted_unsigned_length_retains_fallback_and_selected_values() {
             i64::MIN as u64,
             u64::MAX,
         ] {
-            for other in [0, 7, 8, u64::MAX] {
-                for arithmetic_ok in [0, 1] {
+            for other in [0, 1, 6, 7, 8, 9, i64::MIN as u64, u64::MAX] {
+                for arithmetic_ok in [0, 1, 8, u64::MAX] {
                     assert_eq!(
                         unsafe { original(current, other, arithmetic_ok) },
                         unsafe { optimized(current, other, arithmetic_ok) },

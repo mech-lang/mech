@@ -1,6 +1,6 @@
 //! Select a safe address for a defaulted read before issuing its only load.
 use super::{
-    composed_reads::{arm, read_comparison},
+    composed_reads::{View, arm, defaulted_read, read_comparison},
     word_ranges::literal,
 };
 use crate::native_artifact::{NativeCompileError, compiler::backend};
@@ -12,6 +12,9 @@ use cranelift_codegen::ir::{
     condcodes::IntCC, types,
 };
 use cranelift_module::{DataDescription, Module};
+use std::collections::BTreeMap;
+
+mod immutable;
 
 struct Read {
     branch: Inst,
@@ -104,16 +107,68 @@ pub(in crate::native_artifact) fn fold<M: Module>(
     module: &mut M,
     context: &mut Context,
 ) -> Result<usize, NativeCompileError> {
+    fold_with_views(module, context, None, false).map(|(folded, _)| folded)
+}
+
+/// Only the private caller's fixed, immutable view loan may supply these
+/// packet words. A matching source bound and address make the selected load
+/// safe independently of control flow; the zero arm uses immutable data.
+pub(in crate::native_artifact) fn fold_immutable<M: Module>(
+    module: &mut M,
+    context: &mut Context,
+    packet_loads: &BTreeMap<Value, (Inst, usize)>,
+    views: &[View],
+    rematerialize: bool,
+) -> Result<(usize, usize), NativeCompileError> {
+    fold_with_views(module, context, Some((packet_loads, views)), rematerialize)
+}
+
+type ImmutableViews<'a> = (&'a BTreeMap<Value, (Inst, usize)>, &'a [View]);
+
+fn fold_with_views<M: Module>(
+    module: &mut M,
+    context: &mut Context,
+    immutable: Option<ImmutableViews<'_>>,
+    rematerialize: bool,
+) -> Result<(usize, usize), NativeCompileError> {
     context.flowgraph();
+    let endianness = module.isa().endianness();
     let f = &mut context.func;
     let reads = f
         .layout
         .blocks()
-        .filter_map(|block| find(f, &context.cfg, f.layout.last_inst(block)?))
+        .filter_map(|block| {
+            let branch = f.layout.last_inst(block)?;
+            let read = find(f, &context.cfg, branch)?;
+            let pure = immutable.and_then(|(loads, views)| {
+                let matched = defaulted_read(f, &context.cfg, loads, views, branch, endianness)?;
+                let Data::Load { flags, .. } = f.dfg.insts[read.load] else {
+                    return None;
+                };
+                Some(immutable::Spec {
+                    index: matched.index,
+                    pointer_word: matched.view.pointer_word,
+                    length_word: matched.view.length_word,
+                    width: matched.view.width,
+                    flags,
+                })
+            });
+            // This private-loan pass changes only certified immutable reads.
+            // Keep every other checked branch in place; the independent
+            // ordinary safe-address fold can still be enabled separately.
+            if immutable.is_some() && pure.is_none() {
+                return None;
+            }
+            Some((read, pure))
+        })
         .collect::<Vec<_>>();
     if reads.is_empty() {
-        return Ok(0);
+        return Ok((0, 0));
     }
+    let (groups, owners) = immutable.map_or_else(
+        || (Vec::new(), vec![None; reads.len()]),
+        |views| immutable::plan(f, &context.cfg, &context.domtree, &reads, views),
+    );
 
     let object = module
         .declare_anonymous_data(false, false)
@@ -130,17 +185,33 @@ pub(in crate::native_artifact) fn fold<M: Module>(
     let mut cursor = FuncCursor::new(f);
     cursor.goto_first_inst(entry);
     let zero = cursor.ins().global_value(types::I64, global);
+    let values = groups
+        .iter()
+        .map(|group| group.emit(&mut cursor, zero, rematerialize))
+        .collect::<Vec<_>>();
 
     let count = reads.len();
-    for Read {
-        branch,
-        condition,
-        load,
-        address,
-        compute_address,
-        join,
-    } in reads
+    let immutable_count = owners.iter().flatten().count();
+    for (
+        (
+            Read {
+                branch,
+                condition,
+                load,
+                address,
+                compute_address,
+                join,
+            },
+            _,
+        ),
+        owner,
+    ) in reads.into_iter().zip(owners)
     {
+        if let Some(owner) = owner {
+            let loaded = values[owner];
+            cursor.func.dfg.replace(branch).jump(join, &[loaded.into()]);
+            continue;
+        }
         for inst in compute_address {
             cursor.func.layout.remove_inst(inst);
             cursor.func.layout.insert_inst(inst, branch);
@@ -164,63 +235,8 @@ pub(in crate::native_artifact) fn fold<M: Module>(
     context.flowgraph();
     context.eliminate_unreachable_code(isa).map_err(backend)?;
     context.verify(isa).map_err(backend)?;
-    Ok(count)
+    Ok((count, immutable_count))
 }
 
 #[cfg(all(test, feature = "jit", target_pointer_width = "64"))]
-mod tests {
-    use super::*;
-    use cranelift_codegen::ir::{AbiParam, MemFlags};
-    use cranelift_frontend::{FunctionBuilder, FunctionBuilderContext};
-    use cranelift_jit::{JITBuilder, JITModule};
-    use cranelift_module::Linkage;
-
-    #[test]
-    fn default_path_does_not_read_the_original_address() {
-        let mut module =
-            JITModule::new(JITBuilder::new(cranelift_module::default_libcall_names()).unwrap());
-        let mut context = module.make_context();
-        context.func.signature.params = vec![AbiParam::new(types::I64); 3];
-        context.func.signature.returns = vec![AbiParam::new(types::I64)];
-        let mut builder = FunctionBuilderContext::new();
-        let mut b = FunctionBuilder::new(&mut context.func, &mut builder);
-        let entry = b.create_block();
-        let yes = b.create_block();
-        let no = b.create_block();
-        let join = b.create_block();
-        b.append_block_params_for_function_params(entry);
-        let result = b.append_block_param(join, types::I64);
-        b.switch_to_block(entry);
-        let [base, index, length] = b.block_params(entry).try_into().unwrap();
-        let bounded = b.ins().icmp(IntCC::UnsignedLessThan, index, length);
-        b.ins().brif(bounded, yes, &[], no, &[]);
-        b.switch_to_block(yes);
-        let bytes = b.ins().imul_imm(index, 4);
-        let address = b.ins().iadd(base, bytes);
-        let word = b.ins().uload32(MemFlags::new(), address, 0);
-        b.ins().jump(join, &[word.into()]);
-        b.switch_to_block(no);
-        let zero = b.ins().iconst(types::I64, 0);
-        b.ins().jump(join, &[zero.into()]);
-        b.switch_to_block(join);
-        b.ins().return_(&[result]);
-        b.seal_all_blocks();
-        b.finalize();
-
-        assert_eq!(fold(&mut module, &mut context).unwrap(), 1);
-        let id = module
-            .declare_function("defaulted_word", Linkage::Local, &context.func.signature)
-            .unwrap();
-        module.define_function(id, &mut context).unwrap();
-        module.finalize_definitions().unwrap();
-        let read: unsafe extern "C" fn(*const u32, u64, u64) -> u64 =
-            unsafe { std::mem::transmute(module.get_finalized_function(id)) };
-        let words = [0xfedc_ba98, 19];
-        unsafe {
-            assert_eq!(read(words.as_ptr(), 0, 2), 0xfedc_ba98);
-            assert_eq!(read(words.as_ptr(), 1, 2), 19);
-            assert_eq!(read(words.as_ptr(), 2, 2), 0);
-            assert_eq!(read(std::ptr::null(), u64::MAX, 0), 0);
-        }
-    }
-}
+mod tests;
