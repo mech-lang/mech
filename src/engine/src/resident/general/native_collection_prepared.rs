@@ -727,9 +727,9 @@ pub fn prepare_native_program_library_call_with_descriptors(
     } else {
         (0, 0)
     };
+    let schemas = Arc::new(artifact.schemas().clone());
     #[cfg(feature = "sequence_buffers")]
-    let frame_geometry =
-        buffer_frames::FrameGeometry::derive(&template, artifact.schemas(), binding_bytes);
+    let frame_geometry = buffer_frames::FrameGeometry::derive(&template, &schemas, binding_bytes);
     #[cfg(feature = "sequence_buffers")]
     let record_selector = record_selector::RecordSelector::derive(&template);
     let descriptor_templates = descriptors.for_template(&template);
@@ -737,7 +737,7 @@ pub fn prepare_native_program_library_call_with_descriptors(
         map_owner_constructors::normalization(&template, artifact.schemas());
     Ok(NativePreparedLibraryCall {
         template,
-        schemas: Arc::new(artifact.schemas().clone()),
+        schemas,
         factory,
         descriptor_templates,
         constructor_normalization,

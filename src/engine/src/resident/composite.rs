@@ -67,6 +67,7 @@ struct CompositePackPlan {
     // at the original visit; only reuse the already checked constructor.
     reuse_closed_constructor: bool,
     normalization: mech_core::snapshot::CompositeBindingCost,
+    current_recipe: Option<mech_core::snapshot::CompositeSnapshotRecipe>,
 }
 
 #[derive(Clone, Debug)]
@@ -317,7 +318,18 @@ fn composite_pack_plan(request: &ResidentKernelBindRequest<'_>) -> Option<Compos
             .collect::<Vec<_>>(),
         request.schemas,
     )?;
+    let schemas = Arc::new(request.schemas.clone());
+    let current_recipe = mech_core::snapshot::CompositeSnapshotRecipe::derive(
+        request.output.schema_id,
+        &request
+            .inputs
+            .iter()
+            .map(|input| input.schema_id)
+            .collect::<Vec<_>>(),
+        Arc::clone(&schemas),
+    );
     Some(CompositePackPlan {
+        current_recipe,
         normalization,
         children,
         table,
@@ -340,7 +352,7 @@ fn composite_pack_plan(request: &ResidentKernelBindRequest<'_>) -> Option<Compos
                         .is_some_and(|schema| schema.dimension_parameters().is_empty())
             }),
         output: request.output.clone(),
-        schemas: Arc::new(request.schemas.clone()),
+        schemas,
     })
 }
 
@@ -1138,12 +1150,27 @@ fn current_constructor(
             Ok((child.source.schema_id, shape.clone()))
         })
         .collect::<Result<Vec<_>, ResidentKernelError>>()?;
-    let shape = mech_core::snapshot::CompositeSnapshotConstructor::shape_for_children(
-        plan.output.schema_id,
-        &children,
-        &plan.schemas,
-    )
-    .map_err(|_| ResidentKernelError::InvalidShape)?;
+    let prepared = plan
+        .current_recipe
+        .as_ref()
+        .map(|recipe| {
+            recipe
+                .bind(children.len(), |index| {
+                    children.get(index).map(|(id, shape)| (*id, shape))
+                })
+                .map_err(|_| ResidentKernelError::InvalidShape)
+        })
+        .transpose()?;
+    let shape = if let Some(constructor) = &prepared {
+        constructor.shape().clone()
+    } else {
+        mech_core::snapshot::CompositeSnapshotConstructor::shape_for_children(
+            plan.output.schema_id,
+            &children,
+            &plan.schemas,
+        )
+        .map_err(|_| ResidentKernelError::InvalidShape)?
+    };
     let output_schema = plan
         .schemas
         .get(plan.output.schema_id)
@@ -1152,6 +1179,9 @@ fn current_constructor(
         || !composite_shapes_match_declared_output(&shape, plan)
     {
         return Err(ResidentKernelError::InvalidShape);
+    }
+    if let Some(constructor) = prepared {
+        return Ok(constructor);
     }
     mech_core::snapshot::CompositeSnapshotConstructor::bind(
         plan.output.schema_id,
@@ -2068,6 +2098,7 @@ mod tests {
         .into_boxed_slice();
 
         let mismatched = CompositePackPlan {
+            current_recipe: None,
             normalization: mech_core::snapshot::CompositeBindingCost::default(),
             constructor_is_fixed: true,
             reuse_closed_constructor: false,
@@ -2100,6 +2131,7 @@ mod tests {
         ));
 
         let matching = CompositePackPlan {
+            current_recipe: None,
             normalization: mech_core::snapshot::CompositeBindingCost::default(),
             constructor_is_fixed: true,
             reuse_closed_constructor: false,

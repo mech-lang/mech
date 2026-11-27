@@ -7,6 +7,7 @@ use mech_engine::native_artifact::{
 #[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub(in crate::native_artifact) enum LibraryCallRoute {
     Canonical,
+    NumericComposite,
     BufferFrame,
     BorrowedMapKeysFrame,
     BorrowedMapKeysLength,
@@ -72,6 +73,8 @@ pub(in crate::native_artifact) fn derive(
                 LibraryCallRoute::ScalarMatrixElement
             } else if call.supports_string_matrix_element() {
                 LibraryCallRoute::StringMatrixElement
+            } else if call.supports_canonical_numeric_pack() {
+                LibraryCallRoute::NumericComposite
             } else {
                 LibraryCallRoute::Canonical
             }

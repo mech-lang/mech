@@ -9,6 +9,11 @@ use mech_syntax::document::{
 #[test]
 fn prepared_selected_routes_are_rederived_from_actual_factories_on_image_restore() {
     for (source, expected) in [
+        ("(input<[f64]>, peer<[f64]>)\n", Route::NumericComposite),
+        (
+            "{values: input<[f64]>, enabled: flag<bool>}\n",
+            Route::NumericComposite,
+        ),
         (
             "+> sequence\nsequence/clear(input<[u8]>)\n",
             Route::UnsignedBuffer,

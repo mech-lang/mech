@@ -3186,6 +3186,10 @@ impl<'a> TableSnapshotBuilder<'a> {
     }
 }
 
+#[path = "prepared_composite.rs"]
+mod prepared_composite;
+pub use self::prepared_composite::CompositeSnapshotRecipe;
+
 /// A canonical aggregate constructor bound to one schema arena and exact
 /// child identities. Binding validates nominal kinds and resolved dimensions;
 /// construction rechecks those identities before cloning any child payload.
@@ -3245,6 +3249,11 @@ fn composite_schema_components(
 }
 
 impl CompositeSnapshotConstructor {
+    /// Current output shape witnessed by this constructor.
+    pub fn shape(&self) -> &ShapeInstance {
+        &self.shape
+    }
+
     /// Shape-independent allocation/work witness for current binding. Compute
     /// once during activation, then admit it before per-turn normalization.
     pub fn binding_cost(
