@@ -200,7 +200,7 @@ mod scalar_kind_borrow_tests {
         }
     }
 }
-pub(in crate::native_artifact) fn scalar_bindings(
+pub(in crate::native_artifact::program::prepare) fn scalar_bindings(
     frames: &NativeBufferFrames,
     value: u32,
     paths: &[(Vec<usize>, usize)],

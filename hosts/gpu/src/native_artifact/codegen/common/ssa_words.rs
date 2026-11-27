@@ -15,8 +15,6 @@ mod direct_homes;
 #[derive(Clone, Copy)]
 enum Home {
     Variable(Variable),
-    #[cfg(feature = "canonical-native-program")]
-    F64(Variable),
     Literal(Value),
     #[cfg(feature = "canonical-native-program")]
     Tracked(u32),
@@ -38,9 +36,6 @@ pub(in crate::native_artifact) struct Words {
     native_extent_values: RefCell<BTreeMap<Value, u64>>,
 }
 
-#[cfg(all(test, feature = "canonical-native-program", feature = "jit"))]
-#[path = "ssa_f64_homes_tests.rs"]
-mod f64_tests;
 #[cfg(all(test, feature = "early-region-emission", feature = "jit"))]
 #[path = "ssa_packet_homes_tests.rs"]
 mod packet_tests;
@@ -161,34 +156,6 @@ impl Words {
         self.literal_write.get()
     }
 
-    /// Preserve independently typed scalar payload in the floating register
-    /// class across branch/loop joins. The public word API and cold memory
-    /// layout keep their exact bits, including NaN payloads and signed zero.
-    /// Call once in the dominating entry before any use or tracked-home proof.
-    #[cfg(feature = "canonical-native-program")]
-    pub(in crate::native_artifact) fn keep_f64_homes(
-        &mut self,
-        b: &mut FunctionBuilder<'_>,
-        slots: &BTreeSet<usize>,
-    ) -> Vec<usize> {
-        let mut promoted = Vec::new();
-        for &slot in slots {
-            let Some((home @ Home::Variable(_), _)) = self.variables.get_mut(&slot) else {
-                continue;
-            };
-            let Home::Variable(old) = *home else {
-                unreachable!()
-            };
-            let word = b.use_var(old);
-            let value = b.ins().bitcast(types::F64, MemFlags::new(), word);
-            let variable = b.declare_var(types::F64);
-            b.def_var(variable, value);
-            *home = Home::F64(variable);
-            promoted.push(slot);
-        }
-        promoted
-    }
-
     fn build(
         b: &mut FunctionBuilder<'_>,
         locals: Value,
@@ -245,11 +212,6 @@ impl Words {
     ) -> Value {
         let value = match self.variables[&slot].0 {
             Home::Variable(variable) => b.use_var(variable),
-            #[cfg(feature = "canonical-native-program")]
-            Home::F64(variable) => {
-                let value = b.use_var(variable);
-                b.ins().bitcast(types::I64, MemFlags::new(), value)
-            }
             Home::Literal(value) => value,
             #[cfg(feature = "canonical-native-program")]
             Home::Tracked(index) => {
@@ -295,11 +257,6 @@ impl Words {
     ) {
         match self.variables[&slot].0 {
             Home::Variable(variable) => b.def_var(variable, value),
-            #[cfg(feature = "canonical-native-program")]
-            Home::F64(variable) => {
-                let value = b.ins().bitcast(types::F64, MemFlags::new(), value);
-                b.def_var(variable, value);
-            }
             Home::Literal(_) => self.literal_write.set(true),
             #[cfg(feature = "canonical-native-program")]
             Home::Tracked(index) => self.tracked.borrow_mut()[index as usize].write(b, value),

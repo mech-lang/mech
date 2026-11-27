@@ -72,8 +72,6 @@ pub(in crate::native_artifact) enum OptimizationPass {
     BitCounts,
     /// Cancel lossless scalar bitcast round trips before register allocation.
     InverseBitcasts,
-    /// Preserve known F64 numeric scalar payloads in floating SSA homes.
-    F64SsaHomes,
     ScalarSelects,
     UnsignedGuardFacts,
     /// Preserve a convex unsigned range through one common modular addition

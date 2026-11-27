@@ -2383,3 +2383,16 @@ Formal summed medians: 1.268ms/15.300ms. Goal remains strictly below1.0x C on fi
 | seidel-2d | Opt | 1.89x | 1.90x | 50168.86x | 205.542 | 107.958 |
 
 [Qualification](round-33-qualification.json) · [Frozen source](round-33-frozen.json) · [Acceptance](round-33-performance-acceptance.json) · [Optimization-only profiles](round-33-training-profile.json)
+
+
+Training-only experiment: F64 SSA homes (IR394), not promoted
+
+Known F64 numeric payloads used floating SSA homes with exact raw-word boundaries,
+checked guarded/prefix bindings, maintained scalar emission and existing bitcast
+cleanup. All585 selected checks and both feature checks passed. The single
+seven-sample optimization15 probe measured0.997353x versus accepted31, with three
+regressions above5%; it was rejected by the prospective rule before holdout.
+Accepted31 remains11.436358x C optimization and39.315695x C holdout. No formal
+measurement or history entry was added. Complete cases, correctness logs, both
+development failures, checked Object code and source commit remain in
+training-experiments/f64-ssa-homes.json and qualification/experiments/f64-ssa-homes/.
