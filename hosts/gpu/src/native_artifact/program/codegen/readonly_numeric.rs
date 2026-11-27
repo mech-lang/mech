@@ -60,6 +60,7 @@ pub(in crate::native_artifact) struct Report {
     pub length_sites: Vec<usize>,
     pub fused_reductions: Vec<(usize, u32, u64)>,
     pub fused_matrix_maps: Vec<(usize, u32, u64)>,
+    pub guarded_direct_matrix_maps: Vec<(usize, u32, u64)>,
     pub static_array_extents: Vec<(usize, usize, u64)>,
     pub append_sites: Vec<(usize, u8)>,
     pub bulk_append_sites: Vec<usize>,
@@ -638,6 +639,7 @@ pub(in crate::native_artifact) fn emit_entry(
         length_sites: Vec::new(),
         fused_reductions: Vec::new(),
         fused_matrix_maps: Vec::new(),
+        guarded_direct_matrix_maps: Vec::new(),
         static_array_extents: Vec::new(),
         append_sites: Vec::new(),
         bulk_append_sites: Vec::new(),
@@ -1094,7 +1096,7 @@ pub(in crate::native_artifact) fn emit_entry(
                 ));
             }
             Some(Operation::Map { replacement }) => {
-                super::numeric_phase_maps::emit(
+                let direct = super::numeric_phase_maps::emit(
                     b,
                     &words,
                     shadow,
@@ -1103,7 +1105,15 @@ pub(in crate::native_artifact) fn emit_entry(
                     &program.metadata().plan,
                     reduction_miss
                         .ok_or_else(|| backend("phase map lost its original cold edge"))?,
+                    controls.enabled(OptimizationPass::DirectPhaseMaps),
                 )?;
+                if direct.is_some() {
+                    report.guarded_direct_matrix_maps.push((
+                        site,
+                        replacement.source.region.header,
+                        replacement.source.elements,
+                    ));
+                }
                 report.fused_matrix_maps.push((
                     site,
                     replacement.source.region.header,

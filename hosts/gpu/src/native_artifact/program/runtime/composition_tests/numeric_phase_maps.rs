@@ -1,5 +1,7 @@
 //! Checked whole-matrix maps inside existing native numeric FSM phases.
 use super::*;
+#[path = "numeric_phase_direct_bank_tests.rs"]
+mod direct_bank;
 #[path = "numeric_phase_owned_maps.rs"]
 mod owned;
 
