@@ -2271,3 +2271,59 @@ Formal summed medians: 1.280ms/15.617ms. Goal remains strictly below1.0x C on th
 | seidel-2d | Opt | 2.94x | 1.89x | 50168.86x | 203.708 | 107.750 |
 
 [Qualification](round-31-qualification.json) · [Frozen source](round-31-frozen.json) · [Acceptance](round-31-performance-acceptance.json) · [Optimization-only native profiles](round-31-training-profile.json)
+
+Round32: shared SIMD numeric bank copies
+
+Complete checked matrix maps and existing numeric generator prefix copies share one exact-bit emitter.128-bit transfers run in64-byte chunks with exact vector/scalar tails. Partial overlaps retain original left-to-right scalar-unit order. Source computations all succeed before destination stores; current owners, initialized storage, finite admission, source prices/replay, actual fixed-template funding and atomic publication remain.
+
+Performance gate: not_promoted; outcome: failed_both_regressed. Accepted compiler after this run: round31.
+
+| Set | Accepted31 x C | Round32 x C | Raw speedup vs31 | Raw speedup since start |
+|---|---:|---:|---:|---:|
+| Optimization | 11.44x | 12.13x | 0.991x | 65.55x |
+| Holdout | 39.32x | 39.49x | 0.993x | 50.81x |
+
+585 selected checks and both standalone feature checks pass, including all30 original/decoded C-liveout programs and Object emission. Direct speed-optimized JIT tests preserve arbitrary bits, all scalar widths, unaligned and odd tails, both partial overlaps and self copy. Independent inaccessible guard pages enforce exact reads/writes and zero-length null spans. IR391/work156/ABI47.
+
+The optimization-only probe measured 1.00681x against accepted31, retaining 2 regressions>5%. All execution counters match exactly. Current real Objects emit54 SIMD memory instructions in the profiled copy function versus0 before.
+
+Accepted31 optimization profiles used 1099 canonical execution samples, including 806 resolved JIT self samples, covering 72.47% of summed optimization medians. All130 sampled hot-site instructions and surrounding68-byte windows matched actual checked JIT bytes to real Objects. No profiles, debugger snapshots or Object-inspection times enter scores.
+
+Original-reference runtime multipliers vs31: 0.99699x/1.00928x. Reference-adjusted gains: 0.98815x/1.00224x. C multipliers: 0.95138x/1.00250x. Raw regressions>5% vs31: 3/3 (optimization/holdout), all retained.
+
+Formal summed medians: 1.283ms/15.198ms. Goal remains strictly below1.0x C on the fixed15 holdout.
+
+| Kernel | Set | Accepted31 x C | Round32 x C | Starting x C | Round32 Mech us | Round32 C us |
+|---|---|---:|---:|---:|---:|---:|
+| jacobi-2d | Holdout | 458.98x | 451.17x | 9612.12x | 3478.042 | 7.709 |
+| jacobi-1d | Holdout | 388.01x | 400.61x | 7168.14x | 183.375 | 0.458 |
+| adi | Holdout | 191.08x | 183.27x | 21631.38x | 8224.208 | 44.875 |
+| ludcmp | Holdout | 85.37x | 83.79x | 20723.72x | 1029.833 | 12.291 |
+| mvt | Opt | 44.97x | 53.40x | 138.96x | 69.000 | 1.292 |
+| lu | Holdout | 53.43x | 53.09x | 20830.73x | 634.916 | 11.959 |
+| gramschmidt | Opt | 54.48x | 52.34x | 27896.34x | 189.750 | 3.625 |
+| bicg | Opt | 42.71x | 46.97x | 87.94x | 72.375 | 1.541 |
+| correlation | Opt | 32.72x | 34.40x | 327.94x | 146.167 | 4.250 |
+| fdtd-2d | Holdout | 25.45x | 24.05x | 10500.55x | 165.334 | 6.875 |
+| symm | Holdout | 20.30x | 23.05x | 218.10x | 82.625 | 3.584 |
+| trmm | Holdout | 21.52x | 22.58x | 219.61x | 77.125 | 3.416 |
+| durbin | Opt | 21.03x | 22.38x | 3899.39x | 28.916 | 1.292 |
+| heat-3d | Holdout | 19.11x | 21.07x | 4178.38x | 359.875 | 17.083 |
+| trisolv | Holdout | 22.67x | 20.92x | 3606.16x | 25.292 | 1.209 |
+| syrk | Holdout | 21.20x | 20.34x | 245.10x | 114.417 | 5.625 |
+| syr2k | Holdout | 17.94x | 19.10x | 224.54x | 129.708 | 6.792 |
+| gemver | Holdout | 16.42x | 18.67x | 260.73x | 37.333 | 2.000 |
+| gesummv | Holdout | 18.49x | 15.12x | 112.38x | 17.625 | 1.166 |
+| atax | Opt | 13.31x | 14.90x | 79.13x | 18.625 | 1.250 |
+| 2mm | Opt | 11.63x | 12.20x | 77.03x | 20.833 | 1.708 |
+| floyd-warshall | Holdout | 9.61x | 9.95x | 4841.31x | 638.334 | 64.125 |
+| 3mm | Opt | 8.65x | 8.15x | 38.12x | 20.708 | 2.542 |
+| cholesky | Opt | 7.79x | 8.05x | 23662.23x | 54.000 | 6.708 |
+| deriche | Opt | 7.04x | 7.03x | 43560.74x | 204.250 | 29.041 |
+| covariance | Opt | 6.34x | 6.52x | 50.46x | 28.792 | 4.417 |
+| nussinov | Opt | 5.83x | 6.25x | 119638.18x | 187.458 | 30.000 |
+| gemm | Opt | 4.57x | 5.37x | 36.05x | 22.583 | 4.208 |
+| doitgen | Opt | 4.42x | 5.16x | 22.47x | 15.708 | 3.042 |
+| seidel-2d | Opt | 1.89x | 1.89x | 50168.86x | 204.208 | 108.000 |
+
+[Qualification](round-32-qualification.json) · [Frozen source](round-32-frozen.json) · [Acceptance](round-32-performance-acceptance.json) · [Optimization-only profiles](round-32-training-profile.json)
