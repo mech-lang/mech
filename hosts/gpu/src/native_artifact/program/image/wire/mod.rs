@@ -558,6 +558,7 @@ fn decode_inner<
     };
     let numeric_binary =
         native::program::prepare::numeric_binary::Layout::derive(&plan).map_err(str::to_owned)?;
+    #[cfg(feature = "canonical-native-program")]
     let numeric_regions =
         native::program::prepare::numeric_regions::Layout::derive(&plan, &numeric_binary)
             .map_err(str::to_owned)?;
@@ -947,6 +948,7 @@ fn decode_inner<
             utf8_reads,
             numeric_maps,
             numeric_binary,
+            #[cfg(feature = "canonical-native-program")]
             numeric_regions,
             numeric_generators,
             nested_numeric,

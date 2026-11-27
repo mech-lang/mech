@@ -1,0 +1,305 @@
+{
+  "schema": "mech.polybench.matrix-region-ownership-stage.v1",
+  "created_at": "2026-11-27T12:59:04.325432+00:00",
+  "scope": "Shared canonical F64 ownership pricing and compiler-only matrix-expression inventory. Full-region native execution is not selected or performance-qualified.",
+  "source_parent": "394ff52a5570af68d2ea12b7030b07aeadc492f7",
+  "compiler_fingerprint": "6da8146506446453fc5e161e7ec3a8662e100117c832a34c265e43c4af70f499",
+  "versions": {
+    "ir": 390,
+    "work": 156,
+    "abi": 47
+  },
+  "qualification": {
+    "schema": "mech.polybench.component-qualification.v1",
+    "created_at": "2026-11-27T12:54:47.847600+00:00",
+    "compiler_fingerprint": "6da8146506446453fc5e161e7ec3a8662e100117c832a34c265e43c4af70f499",
+    "scope": "Source region inventory and shared Core owner pricing correctness/features; no performance measurements or complete-region execution selection.",
+    "checks": [
+      {
+        "name": "ownership-production-feature.log",
+        "command": [
+          "cargo",
+          "check",
+          "--release",
+          "-p",
+          "mech-gpu",
+          "--no-default-features",
+          "--features",
+          "canonical-native-program",
+          "--lib"
+        ],
+        "exit_code": 0,
+        "wall_seconds": 20.29979420779273,
+        "passed_tests": []
+      },
+      {
+        "name": "ownership-runtime-feature.log",
+        "command": [
+          "cargo",
+          "check",
+          "--release",
+          "-p",
+          "mech-gpu",
+          "--no-default-features",
+          "--features",
+          "canonical-native-program-runtime",
+          "--lib"
+        ],
+        "exit_code": 0,
+        "wall_seconds": 4.288166583050042,
+        "passed_tests": []
+      },
+      {
+        "name": "ownership-matrix-polybench.log",
+        "command": [
+          "cargo",
+          "test",
+          "--release",
+          "-p",
+          "mech-gpu",
+          "--no-default-features",
+          "--features",
+          "canonical-native-program",
+          "--test",
+          "canonical_artifact_matrix",
+          "--test",
+          "canonical_artifact_polybench",
+          "--",
+          "--test-threads=1"
+        ],
+        "exit_code": 0,
+        "wall_seconds": 64.0022021252662,
+        "passed_tests": [
+          24,
+          30
+        ]
+      },
+      {
+        "name": "ownership-snapshot-regressions.log",
+        "command": [
+          "cargo",
+          "test",
+          "--release",
+          "-p",
+          "mech-core",
+          "-p",
+          "mech-gpu",
+          "--no-default-features",
+          "--features",
+          "mech-gpu/canonical-native-program",
+          "--lib",
+          "--",
+          "snapshot::validation",
+          "numeric_regions",
+          "matrix_node_footprint",
+          "--test-threads=1"
+        ],
+        "exit_code": 0,
+        "wall_seconds": 93.6369387502782,
+        "passed_tests": [
+          94,
+          6
+        ]
+      }
+    ],
+    "complete": true,
+    "total_selected_checks": 154
+  },
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/program/image/wire/mod.rs": "0ae9bcc983051fbf7258dde4f92a9f8fc750f0f11b455d6a9e96371a871b8b8d",
+    "hosts/gpu/src/native_artifact/program/prepare/mod.rs": "e59b5f1490e6a42d88f5fd485b4cd7453ebca7564ea7c7676790de2dab87d7c5",
+    "src/core/src/snapshot/numeric_matrix.rs": "8cc6c585ea52b08225569951f4fde431c813ee71a8e967ff704e6ac238a44ff7",
+    "src/core/src/snapshot/numeric_matrix_tests.rs": "27cd8557b976c232b2d8ec2fce8855e76422e0248737fd84a83dc51fc17594c4",
+    "src/core/src/snapshot/validation.rs": "0be9d77b5733aa6bf7b4a63fc740d1e37191b81df6668c3201d8b7ffcd8e72bc"
+  },
+  "archives": {
+    "attempt-02-thin-core-test-features/failure.json": {
+      "path": "qualification/experiments/matrix-region-ownership/attempt-02-thin-core-test-features/failure.json.gz",
+      "sha256": "9f5816b9ac7208347ebef110373da0ad4d6b7ca0d9e478442af70ab2a190f0e4",
+      "compressed_sha256": "2a2ea42cb5b7a5882277b01704fe801e1d266214a837c679880127202c30d593"
+    },
+    "attempt-02-thin-core-test-features/ownership-focused-command.json": {
+      "path": "qualification/experiments/matrix-region-ownership/attempt-02-thin-core-test-features/ownership-focused-command.json.gz",
+      "sha256": "ce43c04bd70ac351e6aecdfc75bf6a5292cfaa5067bd62c4cd5a9d0e7a787f42",
+      "compressed_sha256": "4f33703074227a04587d6c87ad5c43cd77b7ba9874daaaa1d80edf4bdea6962b"
+    },
+    "attempt-02-thin-core-test-features/ownership-focused-result.json": {
+      "path": "qualification/experiments/matrix-region-ownership/attempt-02-thin-core-test-features/ownership-focused-result.json.gz",
+      "sha256": "5362722f1c4f9eee86b834131eb4c3a4a3e7449c1e5d1e84c54dd617003821f3",
+      "compressed_sha256": "2485edacb3a0c5e8366ff8f4f67e237ae5a11b8f00f9c9f3e2c4825d8ea7e97a"
+    },
+    "attempt-02-thin-core-test-features/ownership-focused.log": {
+      "path": "qualification/experiments/matrix-region-ownership/attempt-02-thin-core-test-features/ownership-focused.log.gz",
+      "sha256": "623c1937fa00a22db957c2fe97a27d1227714c533b1b7382a03952da8c374bff",
+      "compressed_sha256": "42b894a35062fab6a43bb3e4297f2991045bbd683096b8c33e0b550484fa3426"
+    },
+    "attempt-02-thin-core-test-features/ownership-source-checkpoint.json": {
+      "path": "qualification/experiments/matrix-region-ownership/attempt-02-thin-core-test-features/ownership-source-checkpoint.json.gz",
+      "sha256": "3d2cfda5b6cb8401b77b99d6016f90d4f6461fd5f9f4f1fc0ddf06863d83053b",
+      "compressed_sha256": "74ae8e7a6bd744917e07b589fc562111b8160792de4c316cf090a3d69ecac4b4"
+    },
+    "attempt-02-thin-core-test-features/ownership-source.patch": {
+      "path": "qualification/experiments/matrix-region-ownership/attempt-02-thin-core-test-features/ownership-source.patch.gz",
+      "sha256": "5b14bb3ee9e9a523a39f722f0a141419efa839b2412f06c4bc9f6e368f4c05b2",
+      "compressed_sha256": "de2d22a629e151633a8e36cf1c47e3a923e42d41035e5e1bb6ff6309944057ca"
+    },
+    "attempt-03-unselected-runtime-cache/component-qualification.json": {
+      "path": "qualification/experiments/matrix-region-ownership/attempt-03-unselected-runtime-cache/component-qualification.json.gz",
+      "sha256": "77ecc3157353031099ab55a7d1367fb1ebb9f7e5b48e55f02e0f8648cec7c157",
+      "compressed_sha256": "d210d8b26e2b2405b3b9ba8c42b39128f0ef547ca1ff580880b53070068ca8fe"
+    },
+    "attempt-03-unselected-runtime-cache/component-qualification.log": {
+      "path": "qualification/experiments/matrix-region-ownership/attempt-03-unselected-runtime-cache/component-qualification.log.gz",
+      "sha256": "2dfebb2639edc5017230e5479baaf26d359ba2ed1df5af3c3aa5920e3ebf731e",
+      "compressed_sha256": "fcf61feee14af5d223d8ef62089ca3c241e1057feb2db266e168688e4557e989"
+    },
+    "attempt-03-unselected-runtime-cache/failure.json": {
+      "path": "qualification/experiments/matrix-region-ownership/attempt-03-unselected-runtime-cache/failure.json.gz",
+      "sha256": "5711c7532c32bf4558864101b245cfd4587be4e6faa1b3e047a79232e00ea7ae",
+      "compressed_sha256": "b5af31da383557d87b075f31b1fae218063ee3b73eb14f11431f67c6b26e41b2"
+    },
+    "attempt-03-unselected-runtime-cache/ownership-matrix-polybench.log": {
+      "path": "qualification/experiments/matrix-region-ownership/attempt-03-unselected-runtime-cache/ownership-matrix-polybench.log.gz",
+      "sha256": "c19d88255de048763817bdee97e227a631e8a85d6ae86322c731f853ad338764",
+      "compressed_sha256": "1c30a3790f5c92d2af66c2baf36cc50fdd81a6a828311475be69f7c0565a42d8"
+    },
+    "attempt-03-unselected-runtime-cache/ownership-runtime-feature.log": {
+      "path": "qualification/experiments/matrix-region-ownership/attempt-03-unselected-runtime-cache/ownership-runtime-feature.log.gz",
+      "sha256": "09377f39adb77858be392bf44e502642b3da53be0459111bb90a8ef6014867f3",
+      "compressed_sha256": "678609cd007eda0306713c2ddb723dd2ddce974e21f38624a8340c6d4220fec6"
+    },
+    "attempt-03-unselected-runtime-cache/ownership-snapshot-regressions.log": {
+      "path": "qualification/experiments/matrix-region-ownership/attempt-03-unselected-runtime-cache/ownership-snapshot-regressions.log.gz",
+      "sha256": "1d5bc3214805d87c8df4e44d38caab5527d162353132e26c9e955d6887e1cb85",
+      "compressed_sha256": "33d55eae6e2814f0d492249c30ad1498beb0621268f6c7589701c7527b3dc525"
+    },
+    "attempt-03-unselected-runtime-cache/source/hosts/gpu/src/native_artifact/program/image/wire/mod.rs": {
+      "path": "qualification/experiments/matrix-region-ownership/attempt-03-unselected-runtime-cache/source/hosts/gpu/src/native_artifact/program/image/wire/mod.rs.gz",
+      "sha256": "85252bd2c743431a973c6b7d4e3a640ee1dc5750e79473cb174b50464864923a",
+      "compressed_sha256": "13342d4996a47d8330a2ece9b5e36a2b8bed7613b8de2279b6ad6549001bad46"
+    },
+    "attempt-03-unselected-runtime-cache/source/hosts/gpu/src/native_artifact/program/prepare/mod.rs": {
+      "path": "qualification/experiments/matrix-region-ownership/attempt-03-unselected-runtime-cache/source/hosts/gpu/src/native_artifact/program/prepare/mod.rs.gz",
+      "sha256": "b7580c126c44a7685871e38fe69f3e477d450971236036fde9c51768d3afd211",
+      "compressed_sha256": "7b944596e3f4e0f9fc87843d1f8567a594dddb408d5518b4a7b03a2609c922c0"
+    },
+    "component-qualification.json": {
+      "path": "qualification/experiments/matrix-region-ownership/component-qualification.json.gz",
+      "sha256": "43b0732690668975c1db51d7ec5863bde9c929a45ada60c553e1fa2878f9bb7e",
+      "compressed_sha256": "313f3574d54bd88a01ea47b8edd9b80fe0ab18968ee87a15b2e0344362b0c0f3"
+    },
+    "component-qualification.log": {
+      "path": "qualification/experiments/matrix-region-ownership/component-qualification.log.gz",
+      "sha256": "06dfa748b92dfd8990b7d4355ab7e496e862738a79b1f42f04729de6e87e688b",
+      "compressed_sha256": "db8cc4eebebe8c8497ca5e0ac33ae19a20c85d6fddeb01c5000b828f1cef1e82"
+    },
+    "ownership-focused-command.json": {
+      "path": "qualification/experiments/matrix-region-ownership/ownership-focused-command.json.gz",
+      "sha256": "d37776e3a580581e7db7c4a52d97d9cbd038c1449c84507a71af038c7a6aa491",
+      "compressed_sha256": "cb92221d78702a5729f1b19d17175df7e4cfa3307e51330772848ce267b8dd27"
+    },
+    "ownership-focused-result.json": {
+      "path": "qualification/experiments/matrix-region-ownership/ownership-focused-result.json.gz",
+      "sha256": "a41028e9da679d2239030e5eb1b695c00ea5a5bd56a2e212e8d8fb087311adb1",
+      "compressed_sha256": "af370f51abe157617caffaabefda2df98ce097f7aea268d4f778686ce8a6ca27"
+    },
+    "ownership-focused.log": {
+      "path": "qualification/experiments/matrix-region-ownership/ownership-focused.log.gz",
+      "sha256": "b25819552acfd4dae40cf6a5622c964b4fbc8b669340e85859b85b5a0045a933",
+      "compressed_sha256": "9b80b023901a0aa04008e4b5be6113df3b402ccb95393e642e7ee27f34601c95"
+    },
+    "ownership-matrix-polybench.log": {
+      "path": "qualification/experiments/matrix-region-ownership/ownership-matrix-polybench.log.gz",
+      "sha256": "43c692f0a22dcde7f3d384bfd6c004c69be8c44a837ced4aa35ee96ffedecc32",
+      "compressed_sha256": "d7b02f94fd910329d52595b120f9c2ce7ee24c167c2bb772023bc1b52636cb4b"
+    },
+    "ownership-production-feature.log": {
+      "path": "qualification/experiments/matrix-region-ownership/ownership-production-feature.log.gz",
+      "sha256": "8f9500390b63b5bf79728fe036cc4c15fc032f431b79dd842d431f7c42b2f0f6",
+      "compressed_sha256": "204230153f8e689821ff882f9621a71717d5b54992bf06c63c681bc6a484947c"
+    },
+    "ownership-runtime-feature.log": {
+      "path": "qualification/experiments/matrix-region-ownership/ownership-runtime-feature.log.gz",
+      "sha256": "b846b521b9348dda4cf54d3bd03d76e6074f4d46279af079fce6310f44ecf47a",
+      "compressed_sha256": "236418898d20fbf4e04690626746f4bbb437e71b8f93f84edbadc23f48c16e83"
+    },
+    "ownership-snapshot-regressions.log": {
+      "path": "qualification/experiments/matrix-region-ownership/ownership-snapshot-regressions.log.gz",
+      "sha256": "b19c7555f90775a5ca5c16ed592ca16c48da62fe01d4921845e0fa529f940343",
+      "compressed_sha256": "3de6f4a590b5865d4ff6fcf02f064830521a7da643feca4912d0e7350ed95c2d"
+    },
+    "ownership-source-checkpoint.json": {
+      "path": "qualification/experiments/matrix-region-ownership/ownership-source-checkpoint.json.gz",
+      "sha256": "3d2cfda5b6cb8401b77b99d6016f90d4f6461fd5f9f4f1fc0ddf06863d83053b",
+      "compressed_sha256": "74ae8e7a6bd744917e07b589fc562111b8160792de4c316cf090a3d69ecac4b4"
+    },
+    "ownership-source.patch": {
+      "path": "qualification/experiments/matrix-region-ownership/ownership-source.patch.gz",
+      "sha256": "5b14bb3ee9e9a523a39f722f0a141419efa839b2412f06c4bc9f6e368f4c05b2",
+      "compressed_sha256": "de2d22a629e151633a8e36cf1c47e3a923e42d41035e5e1bb6ff6309944057ca"
+    },
+    "ownership-stage-source/hosts/gpu/src/native_artifact/program/image/wire/mod.rs": {
+      "path": "qualification/experiments/matrix-region-ownership/ownership-stage-source/hosts/gpu/src/native_artifact/program/image/wire/mod.rs.gz",
+      "sha256": "0ae9bcc983051fbf7258dde4f92a9f8fc750f0f11b455d6a9e96371a871b8b8d",
+      "compressed_sha256": "8c1251a84753d5d86cc8d3f275a9d18e6bbf23d09563fad58f86c475d0b80856"
+    },
+    "ownership-stage-source/hosts/gpu/src/native_artifact/program/prepare/mod.rs": {
+      "path": "qualification/experiments/matrix-region-ownership/ownership-stage-source/hosts/gpu/src/native_artifact/program/prepare/mod.rs.gz",
+      "sha256": "e59b5f1490e6a42d88f5fd485b4cd7453ebca7564ea7c7676790de2dab87d7c5",
+      "compressed_sha256": "fa89d9b5e8f68e44f7edc226fcfb7797e765cade398fb47f224fabb040459340"
+    },
+    "ownership-stage-source/src/core/src/snapshot/numeric_matrix.rs": {
+      "path": "qualification/experiments/matrix-region-ownership/ownership-stage-source/src/core/src/snapshot/numeric_matrix.rs.gz",
+      "sha256": "8cc6c585ea52b08225569951f4fde431c813ee71a8e967ff704e6ac238a44ff7",
+      "compressed_sha256": "ad1db2f54068e622e3a7eca2aedcb8e4be717d92e9d84c63034bb68bd731ce94"
+    },
+    "ownership-stage-source/src/core/src/snapshot/numeric_matrix_tests.rs": {
+      "path": "qualification/experiments/matrix-region-ownership/ownership-stage-source/src/core/src/snapshot/numeric_matrix_tests.rs.gz",
+      "sha256": "27cd8557b976c232b2d8ec2fce8855e76422e0248737fd84a83dc51fc17594c4",
+      "compressed_sha256": "af4e69f1b347af5e42b3534036da5123d3749a6d78beaa5929d02557d9469d57"
+    },
+    "ownership-stage-source/src/core/src/snapshot/validation.rs": {
+      "path": "qualification/experiments/matrix-region-ownership/ownership-stage-source/src/core/src/snapshot/validation.rs.gz",
+      "sha256": "0be9d77b5733aa6bf7b4a63fc740d1e37191b81df6668c3201d8b7ffcd8e72bc",
+      "compressed_sha256": "d16a87902fb6b4f213e4494143f6762f0892e9bad957fc793d55539bcdf55d4e"
+    },
+    "preserve-ownership-stage.py": {
+      "path": "qualification/experiments/matrix-region-ownership/preserve-ownership-stage.py.gz",
+      "sha256": "51463a6428f007225dd6e7d20c90a431d8252277af268fcb6ee2544fa2bfd739",
+      "compressed_sha256": "66fce3d62ec98154a428bf4169e3c64292f78d74e09c006d795284f05f274dda"
+    },
+    "run-component-checks.py": {
+      "path": "qualification/experiments/matrix-region-ownership/run-component-checks.py.gz",
+      "sha256": "2b9318f8454ee088e779da4c3e0fff1826502475541668f9629784810865582d",
+      "compressed_sha256": "fd57d93ce5c9da66f22ebd1ef4139f54b89cb7cb6b9301f5b8945d4fe9ef2d5e"
+    },
+    "runtime-integration-notes.json": {
+      "path": "qualification/experiments/matrix-region-ownership/runtime-integration-notes.json.gz",
+      "sha256": "7a30d6c0ed8555d2c6ed5a5aeaf931d4979c1123ec3cf184053dccf3a297f3af",
+      "compressed_sha256": "a13ebd579b6176561126f7756109636964c19b2cf1b0f612339aab045a0e1046"
+    }
+  },
+  "source_invariants": [
+    "Core prospective_f64_matrix_ownership validates the actual plain-F64 schema, shape bounds and cardinality and computes complete canonical byte/node ownership. It constructs no payload, snapshot, import, permit or view.",
+    "Finalized fresh F64 owners reuse the same constant-time cost calculation. The original canonical traversal remains for other data, nested roots and rebound metadata retaining an older shape owner. Current schema keys remain checked.",
+    "Independent tests compare with the maintained generic traversal, actual same-budget imports, zero-sized and rank2/rank3 arrays, dynamic parameters, arbitrary F64 bits including infinities/NaNs/signedzero, rebound owners, wrong keys, type/bound/cardinality denial and overflow.",
+    "All94 shared snapshot checks,6 region checks,24 matrix checks and30 original/decoded PolyBench correctness cases pass; both runtime-only and compiler feature builds pass.",
+    "The source-region inventory is compiler-only while it has no runtime consumer; no unused prototype cache is retained in runtime-only metadata. Independent compiler/image paths rederive the inventory and diagnostics explicitly report selected:false. Remove these temporary feature gates when the admitted region execution path is integrated.",
+    "No Mech port, input, C binary/flag, limit, tolerance, objective, split or timing-boundary change. No source fee is reduced and no scalar native capability is retired."
+  ],
+  "development_failures": [
+    "The initial thin Core test command omitted functions required by existing bytecode tests; no source change was needed. The production feature closure passed all three targeted ownership tests.",
+    "The first runtime-only feature check caught unused source-only prototype metadata. The inventory is compiler-gated until a real runtime loan consumes it; both standalone feature checks now pass. All failed commands/logs/source are retained."
+  ],
+  "performance": {
+    "new_samples": 0,
+    "formal_history_entries_unchanged": 35,
+    "accepted_round": 31,
+    "accepted_scores": {
+      "optimization": 11.43635797708715,
+      "holdout": 39.31569548924827
+    },
+    "goal_below_1x_holdout_achieved": false
+  },
+  "next_action": "Finish a sealed complete matrix-region loan, current geometry/finite funding and existing-kernel code generation. Keep actual source visits, copies, canonical publication/retirement costs, first errors, aliases and atomic outputs. Qualify the executable feature before one prospective optimization15 probe and frozen both-set acceptance."
+}
