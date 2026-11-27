@@ -1,0 +1,25 @@
+{
+  "schema": "mech.polybench.training-research-plan.v1",
+  "created_at": "2026-11-27T14:30:22.018263+00:00",
+  "scope": "Optimization15 only, starting from exact accepted31 source. Full goal remains below1.0x C holdout.",
+  "accepted_round": 31,
+  "accepted_compiler_fingerprint": "6447915ae298711f3886c6cba28e0608eb3ce59feab6287308162e45e006c895",
+  "rejected_source_commit": "54990a49aca3be73a44c10cdb753b8f810f06c22",
+  "evidence": {
+    "profile_receipt": "training-experiments/matrix-region-regression-profile.json",
+    "profile_sha256": "e5b0830247a83b5b8a53fcbb5c97df4c7f9a4aa920dcc21d5455170f8d972186",
+    "formal_rejection": "round-35-performance-acceptance.json",
+    "formal_rejection_sha256": "f5633f4af5b73aba44bef0b5ed42d9f3caa570ecd6a6fcd005d96bee00b21676"
+  },
+  "next_action": "Reapply the qualified region implementation as a new source candidate, replace the host magnitude-bound scan with finite-result checks fused into shared Cranelift kernels, and provide a checked whole-loan cancellation/replay route before any logical source settlement. Preserve ordinary single-kernel code/layout.",
+  "requirements": [
+    "Keep all ports, inputs, C flags/binaries, limits, tolerances, split, objective and timing boundaries unchanged. No benchmark-name selection.",
+    "Finiteness checks belong to generated typed kernels, preferably fused with existing output production. Optional guards must add no instructions to ordinary single-operation emission.",
+    "A nonfinite intermediate cancels only the current issued region loan, releases all staging, preserves the fresh original entry visit, and replays unchanged original execution before any source settlement or public publication. Preserve exact NaN/signedzero semantics and aliases.",
+    "Retain full original compute/comparison/copy/publication/retirement fees and complete byte/node/replay envelopes. Never lower bills to pay for consolidation.",
+    "Retain independently derived image/source recipes, current type/key/account/shape/generation checks, full issued-frame integrity, dynamic/empty shapes, produced1x1 broadcasts and atomic output/retry behavior.",
+    "Measure actual single/region loan object sizes and preserve efficient existing scalar/matrix paths and the frozen invocation envelope. Do not infer a size regression without evidence.",
+    "Qualify real original/decoded/restored paths, malformed/cancelled loans, resource refusal/recovery and all30 finite C-liveout correctness cases before a new prospective optimization-only probe.",
+    "The e67d25a candidate probe and round35 formal run are complete and cannot be retried. Select a genuinely changed qualified source once, commit/freeze before BOTH formal sets, and promote only if BOTH scores strictly improve over accepted31."
+  ]
+}
