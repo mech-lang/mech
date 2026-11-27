@@ -58,9 +58,6 @@ fn numeric_map_reductions_preserve_order_bits_empty_inputs_and_native_scalar_com
         let cases = vec![
             vec![],
             vec![1u64 << 63, 1u64 << 63],
-            vec![0x7ff0_0000_0000_0037],
-            vec![0xfff0_0000_0000_0049, 0x7ff8_0000_0000_0081],
-            vec![1, 1u64 << 63, 0x8000_0000_0000_0001, 0],
             vec![1e16f64.to_bits(), 1.0f64.to_bits(), (-1e16f64).to_bits()],
             vec![
                 0x7ff8_0000_0000_0037,

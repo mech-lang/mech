@@ -2396,3 +2396,18 @@ Accepted31 remains11.436358x C optimization and39.315695x C holdout. No formal
 measurement or history entry was added. Complete cases, correctness logs, both
 development failures, checked Object code and source commit remain in
 training-experiments/f64-ssa-homes.json and qualification/experiments/f64-ssa-homes/.
+
+
+Training-only experiment: ordered F64 fold accumulators (IR395), not promoted
+
+The shared comprehension fold used an F64 SSA accumulator with positive-zero
+seed, unchanged source term order and the existing raw-word completion frame.
+All584 selected checks and both feature checks passed. Checked Gram-Schmidt
+code lost two integer/F64 transfers and six instructions, but the single
+seven-sample optimization15 probe measured0.989228x versus accepted31, with
+two regressions above5%. It was rejected before holdout under the preset rule.
+Accepted31 remains11.436358x C optimization and39.315695x C holdout. No formal
+measurement or history entry was added. All cases, correctness logs, actual
+emitter witnesses, checked Objects and source commit remain in
+training-experiments/f64-fold-accumulators.json and
+qualification/experiments/f64-fold-accumulators/.

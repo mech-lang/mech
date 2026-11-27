@@ -1,7 +1,7 @@
 //! A checked scalar DAG inside a native immutable-source collection loop.
 use super::hooks::Hooks;
 use crate::native_artifact::NativeCompileError;
-use crate::native_artifact::compiler::{backend, f64_arithmetic, offset, primitive};
+use crate::native_artifact::compiler::{backend, offset, primitive};
 use crate::native_artifact::program::prepare::numeric_maps::Region;
 use crate::native_artifact::program::protocol::GlobalHelper;
 use crate::native_artifact::program::runtime::NativeNumericMapFrame as Frame;
@@ -107,21 +107,6 @@ fn integer(width: u8) -> cranelift_codegen::ir::Type {
 /// checked native emitter; no source visit, helper or per-operation dispatch
 /// occurs between the exact prepare and finish boundaries.
 pub(super) fn emit(
-    b: &mut FunctionBuilder<'_>,
-    frame: Value,
-    region: &Region,
-    plan: &Plan,
-    captures: &BTreeMap<u32, Value>,
-    complete: Block,
-    miss: Block,
-    malformed: Block,
-) -> Result<(), NativeCompileError> {
-    emit_with_fold_home::<true>(b, frame, region, plan, captures, complete, miss, malformed)
-}
-
-// The test-only false instantiation retains the former word-home emitter for
-// exact machine-level comparison. Public compilation uses the F64 home.
-fn emit_with_fold_home<const FLOATING: bool>(
     b: &mut FunctionBuilder<'_>,
     frame: Value,
     region: &Region,
@@ -304,16 +289,8 @@ fn emit_with_fold_home<const FLOATING: bool>(
     let zero = b.ins().iconst(types::I64, 0);
     b.def_var(cursor, zero);
     let fold = if region.reduction.is_some() {
-        // The admitted reduction recipe is strictly ordered F64 addition.
-        // Keep its accumulator in the arithmetic register class through the
-        // loop; only successful completion exports the canonical word bits.
-        let var = b.declare_var(if FLOATING { types::F64 } else { types::I64 });
-        let identity = if FLOATING {
-            b.ins().f64const(0.0)
-        } else {
-            zero
-        };
-        b.def_var(var, identity);
+        let var = b.declare_var(types::I64);
+        b.def_var(var, zero);
         Some(var)
     } else {
         None
@@ -435,22 +412,12 @@ fn emit_with_fold_home<const FLOATING: bool>(
                     }
                     if let Some(fold) = fold {
                         let prior = b.use_var(fold);
-                        let next = if FLOATING {
-                            let term = b.ins().bitcast(types::F64, MemFlags::new(), result);
-                            f64_arithmetic(
-                                b,
-                                mech_engine::native_artifact::NativeScalarOp::F64Add,
-                                prior,
-                                term,
-                            )
-                        } else {
-                            primitive(
-                                b,
-                                mech_engine::native_artifact::NativeScalarOp::F64Add,
-                                &[prior, result],
-                                miss,
-                            )
-                        };
+                        let next = primitive(
+                            b,
+                            mech_engine::native_artifact::NativeScalarOp::F64Add,
+                            &[prior, result],
+                            miss,
+                        );
                         b.def_var(fold, next);
                     } else {
                         let value = if region.output_width == 8 {
@@ -526,11 +493,6 @@ fn emit_with_fold_home<const FLOATING: bool>(
     b.switch_to_block(done);
     if let Some(fold) = fold {
         let value = b.use_var(fold);
-        let value = if FLOATING {
-            b.ins().bitcast(types::I64, MemFlags::new(), value)
-        } else {
-            value
-        };
         b.ins().store(
             MemFlags::new(),
             value,
@@ -706,7 +668,3 @@ pub(in crate::native_artifact) fn emit_projection_finish(
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "numeric_map_geometry_tests.rs"]
 mod geometry_tests;
-
-#[cfg(all(test, feature = "jit"))]
-#[path = "numeric_map_fold_home_tests.rs"]
-mod fold_home_tests;
