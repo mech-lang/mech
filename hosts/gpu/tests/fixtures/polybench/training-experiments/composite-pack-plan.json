@@ -1,0 +1,35 @@
+{
+  "schema": "mech.polybench.training-research-plan.v1",
+  "created_at": "2026-11-27T17:06:23.166507+00:00",
+  "accepted_round": 31,
+  "accepted_scores": {
+    "optimization": 11.43635797708715,
+    "holdout": 39.31569548924827
+  },
+  "formal_history_entries": 39,
+  "scope": "General compiler specialization of canonical numeric tuple/record construction, selected from optimization-only MVT/BiCG profiles. No changes to Mech ports or benchmark protocol; no holdout case diagnosis.",
+  "profiling_receipt": "training-experiments/composite-pack-profile.json",
+  "finding": "The five MVT and three BiCG arithmetic/transpose calls already execute native prepare/finish pairs. Each program has exactly one generic library callback: its final CompositePack(2). No escaping buffer frame is selected. Inclusive generic-pack stack samples are100/153 and89/125 respectively.",
+  "rejected_attempts": {
+    "37": {
+      "optimization": 12.107292771679115,
+      "holdout": 39.45198365884885,
+      "restored": true
+    },
+    "38": {
+      "optimization": 11.86032191827669,
+      "holdout": 39.864984592635594,
+      "restored": true
+    }
+  },
+  "next_steps": [
+    "Extend existing compiler/resident constructor machinery for canonical numeric aggregate publication rather than changing programs or rebuilding matrix kernels.",
+    "Reuse CompositeSnapshotConstructor and existing original-source construction envelopes, current-schema/key/shape checks, exact source visits and full work/comparison bills.",
+    "Handle current turn-varying child dimensions from the actual invocation. Cache only immutable recipes, never values, owners, concrete input shapes or publication authority. Preserve the ordinary path on unsupported or denied cases.",
+    "Preserve current memory/node/transport admission, atomic output publication, aliases, source error order, original/decoded/restored-image checks and efficient scalar paths.",
+    "Qualify correctness and both features, verify actual generic-planning bypass on optimization programs, then exactly one prospective v2 fresh-process optimization15 probe for a changed qualified fingerprint.",
+    "Freeze selected exact committed source/driver before both formal sets and promote only if BOTH primary scores strictly improve. No retries/exclusions."
+  ],
+  "new_performance_samples": 0,
+  "compiler_changes_started": false
+}

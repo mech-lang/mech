@@ -1,0 +1,543 @@
+{
+  "schema": "mech.polybench.training-admission-profile.v1",
+  "created_at": "2026-11-27T17:06:22.984030+00:00",
+  "scope": "Accepted31 MVT/BiCG only. Saved CPU profiles plus untimed actual Rust callback-site census in fresh children of the exact frozen driver. No holdout diagnosis; zero new performance samples.",
+  "source_commit": "b13397c08b6f749b63c10b1094f66ffc0541ae98",
+  "compiler_fingerprint": "6447915ae298711f3886c6cba28e0608eb3ce59feab6287308162e45e006c895",
+  "driver_sha256": "041cdb610c9b046645bfd32f6406e70ce8476288f910b8181291d6ca5c1444ed",
+  "prior_profile_receipt": "training-experiments/root-matrix-regression-profile.json",
+  "cases": {
+    "mvt": {
+      "native_prepare_finish_sites": {
+        "2": "MatrixMatmul",
+        "3": "MatrixAdd",
+        "4": "MatrixTranspose",
+        "5": "MatrixMatmul",
+        "6": "MatrixAdd"
+      },
+      "native_callbacks_per_site": 2,
+      "generic_pack_site": 7,
+      "generic_pack_primitive": {
+        "CompositePack": 2
+      },
+      "pack_factory": {
+        "contract": {
+          "Declared": {
+            "inputs": [
+              {
+                "access": "Read",
+                "delivery": "Signal",
+                "schema": 1
+              },
+              {
+                "access": "Read",
+                "delivery": "Signal",
+                "schema": 1
+              }
+            ],
+            "interaction": "Pure",
+            "outputs": [
+              {
+                "access": "Write",
+                "alias": "NoAlias",
+                "change_detection": "KernelReported",
+                "construction": {
+                  "FullWrite": {
+                    "shape": "Declared"
+                  }
+                },
+                "delivery": "Signal",
+                "schema": 2
+              }
+            ]
+          }
+        },
+        "implementation_memory": "CanonicalFinalize",
+        "inputs": [
+          {
+            "body": {
+              "Matrix": {
+                "dimensions": [
+                  {
+                    "Parameter": 0
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ],
+                "element": {
+                  "FloatingPoint": "W64"
+                }
+              }
+            },
+            "dimension_parameters": [
+              {
+                "lifetime": "Turn",
+                "lower_bound": {
+                  "Constant": 0
+                },
+                "upper_bound": null
+              },
+              {
+                "lifetime": "Turn",
+                "lower_bound": {
+                  "Constant": 0
+                },
+                "upper_bound": null
+              }
+            ]
+          },
+          {
+            "body": {
+              "Matrix": {
+                "dimensions": [
+                  {
+                    "Parameter": 0
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ],
+                "element": {
+                  "FloatingPoint": "W64"
+                }
+              }
+            },
+            "dimension_parameters": [
+              {
+                "lifetime": "Turn",
+                "lower_bound": {
+                  "Constant": 0
+                },
+                "upper_bound": null
+              },
+              {
+                "lifetime": "Turn",
+                "lower_bound": {
+                  "Constant": 0
+                },
+                "upper_bound": null
+              }
+            ]
+          }
+        ],
+        "output": {
+          "body": {
+            "Tuple": [
+              {
+                "Matrix": {
+                  "dimensions": [
+                    {
+                      "Parameter": 0
+                    },
+                    {
+                      "Parameter": 1
+                    }
+                  ],
+                  "element": {
+                    "FloatingPoint": "W64"
+                  }
+                }
+              },
+              {
+                "Matrix": {
+                  "dimensions": [
+                    {
+                      "Parameter": 2
+                    },
+                    {
+                      "Parameter": 3
+                    }
+                  ],
+                  "element": {
+                    "FloatingPoint": "W64"
+                  }
+                }
+              }
+            ]
+          },
+          "dimension_parameters": [
+            {
+              "lifetime": "Turn",
+              "lower_bound": {
+                "Constant": 0
+              },
+              "upper_bound": null
+            },
+            {
+              "lifetime": "Turn",
+              "lower_bound": {
+                "Constant": 0
+              },
+              "upper_bound": null
+            },
+            {
+              "lifetime": "Turn",
+              "lower_bound": {
+                "Constant": 0
+              },
+              "upper_bound": null
+            },
+            {
+              "lifetime": "Turn",
+              "lower_bound": {
+                "Constant": 0
+              },
+              "upper_bound": null
+            }
+          ]
+        },
+        "primitive": {
+          "CompositePack": 2
+        },
+        "selected_key": {
+          "module_path": [
+            "core"
+          ],
+          "operation_name": "composite-pack"
+        }
+      },
+      "escaping_buffer_frame_selected": false,
+      "all_native_arithmetic_selected": true,
+      "c_validation": {
+        "count": 80,
+        "finite": true,
+        "max_absolute_error": 3.552713678800501e-15
+      },
+      "timing_samples": 0,
+      "saved_profile_execution_samples": 153,
+      "saved_profile_generic_pack_inclusive_samples": 100,
+      "saved_profile_generic_pack_inclusive_fraction": 0.6535947712418301,
+      "limitation": "Coarse saved sampling fractions are inclusive attribution, not precise causal cost or a timing score."
+    },
+    "bicg": {
+      "native_prepare_finish_sites": {
+        "2": "MatrixTranspose",
+        "3": "MatrixMatmul",
+        "4": "MatrixMatmul"
+      },
+      "native_callbacks_per_site": 2,
+      "generic_pack_site": 5,
+      "generic_pack_primitive": {
+        "CompositePack": 2
+      },
+      "pack_factory": {
+        "contract": {
+          "Declared": {
+            "inputs": [
+              {
+                "access": "Read",
+                "delivery": "Signal",
+                "schema": 1
+              },
+              {
+                "access": "Read",
+                "delivery": "Signal",
+                "schema": 1
+              }
+            ],
+            "interaction": "Pure",
+            "outputs": [
+              {
+                "access": "Write",
+                "alias": "NoAlias",
+                "change_detection": "KernelReported",
+                "construction": {
+                  "FullWrite": {
+                    "shape": "Declared"
+                  }
+                },
+                "delivery": "Signal",
+                "schema": 2
+              }
+            ]
+          }
+        },
+        "implementation_memory": "CanonicalFinalize",
+        "inputs": [
+          {
+            "body": {
+              "Matrix": {
+                "dimensions": [
+                  {
+                    "Parameter": 0
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ],
+                "element": {
+                  "FloatingPoint": "W64"
+                }
+              }
+            },
+            "dimension_parameters": [
+              {
+                "lifetime": "Turn",
+                "lower_bound": {
+                  "Constant": 0
+                },
+                "upper_bound": null
+              },
+              {
+                "lifetime": "Turn",
+                "lower_bound": {
+                  "Constant": 0
+                },
+                "upper_bound": null
+              }
+            ]
+          },
+          {
+            "body": {
+              "Matrix": {
+                "dimensions": [
+                  {
+                    "Parameter": 0
+                  },
+                  {
+                    "Parameter": 1
+                  }
+                ],
+                "element": {
+                  "FloatingPoint": "W64"
+                }
+              }
+            },
+            "dimension_parameters": [
+              {
+                "lifetime": "Turn",
+                "lower_bound": {
+                  "Constant": 0
+                },
+                "upper_bound": null
+              },
+              {
+                "lifetime": "Turn",
+                "lower_bound": {
+                  "Constant": 0
+                },
+                "upper_bound": null
+              }
+            ]
+          }
+        ],
+        "output": {
+          "body": {
+            "Tuple": [
+              {
+                "Matrix": {
+                  "dimensions": [
+                    {
+                      "Parameter": 0
+                    },
+                    {
+                      "Parameter": 1
+                    }
+                  ],
+                  "element": {
+                    "FloatingPoint": "W64"
+                  }
+                }
+              },
+              {
+                "Matrix": {
+                  "dimensions": [
+                    {
+                      "Parameter": 2
+                    },
+                    {
+                      "Parameter": 3
+                    }
+                  ],
+                  "element": {
+                    "FloatingPoint": "W64"
+                  }
+                }
+              }
+            ]
+          },
+          "dimension_parameters": [
+            {
+              "lifetime": "Turn",
+              "lower_bound": {
+                "Constant": 0
+              },
+              "upper_bound": null
+            },
+            {
+              "lifetime": "Turn",
+              "lower_bound": {
+                "Constant": 0
+              },
+              "upper_bound": null
+            },
+            {
+              "lifetime": "Turn",
+              "lower_bound": {
+                "Constant": 0
+              },
+              "upper_bound": null
+            },
+            {
+              "lifetime": "Turn",
+              "lower_bound": {
+                "Constant": 0
+              },
+              "upper_bound": null
+            }
+          ]
+        },
+        "primitive": {
+          "CompositePack": 2
+        },
+        "selected_key": {
+          "module_path": [
+            "core"
+          ],
+          "operation_name": "composite-pack"
+        }
+      },
+      "escaping_buffer_frame_selected": false,
+      "all_native_arithmetic_selected": true,
+      "c_validation": {
+        "count": 80,
+        "finite": true,
+        "max_absolute_error": 1.7763568394002505e-15
+      },
+      "timing_samples": 0,
+      "saved_profile_execution_samples": 125,
+      "saved_profile_generic_pack_inclusive_samples": 89,
+      "saved_profile_generic_pack_inclusive_fraction": 0.712,
+      "limitation": "Coarse saved sampling fractions are inclusive attribution, not precise causal cost or a timing score."
+    }
+  },
+  "new_performance_samples": 0,
+  "archives": {
+    "admission-census.json": {
+      "path": "qualification/experiments/composite-pack-profile/admission-census.json.gz",
+      "sha256": "a7953cc280cb392598b4c9fd1f05f47dd63ec37f3abc7cf6a3203572201d610e",
+      "compressed_sha256": "b1bd7bfdd4bae861b7fbc8b97f988262a9b70446c517f0f5b70d4700af9eafcf"
+    },
+    "analysis.json": {
+      "path": "qualification/experiments/composite-pack-profile/analysis.json.gz",
+      "sha256": "8578d1578acb5531453753db3aca8029c76628c6499d08d6a8af569beed24389",
+      "compressed_sha256": "5aa5cbdcf447d39d06a8016197ca31fb676e0d5eb20fabdaeb7f08ba493c4bbc"
+    },
+    "attempt01-admission-census.json": {
+      "path": "qualification/experiments/composite-pack-profile/attempt01-admission-census.json.gz",
+      "sha256": "70c4370e0e6a922194f91ee2d63956f236e4b959dfb19a2659bef77d40959137",
+      "compressed_sha256": "53f64547c8686dca12c1d6d2767d428641d22ffd51b2ebd6e0a93bff2acd6c3d"
+    },
+    "attempt01-bicg-driver.stderr": {
+      "path": "qualification/experiments/composite-pack-profile/attempt01-bicg-driver.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "attempt01-bicg-driver.stdout": {
+      "path": "qualification/experiments/composite-pack-profile/attempt01-bicg-driver.stdout.gz",
+      "sha256": "672cf1514e4d331d1a1090328345154b716e2eb92e12a798c62baf4b69c45def",
+      "compressed_sha256": "6af92e7b76c8a1caaa88f4d8f0cfedb7867961aad65de75e0eb718718111a2fd"
+    },
+    "attempt01-debugger-census.log": {
+      "path": "qualification/experiments/composite-pack-profile/attempt01-debugger-census.log.gz",
+      "sha256": "70a68dd391b7606c10525e46a22eef9d3402e2428412a1836d7da0fc0a070ebb",
+      "compressed_sha256": "9c76ba16ccd03f3f66629a355a42def6ab2e6823d742337d73be5817d2164e6c"
+    },
+    "attempt01-diagnostic-note.json": {
+      "path": "qualification/experiments/composite-pack-profile/attempt01-diagnostic-note.json.gz",
+      "sha256": "8b883dfee4720d692dd5e95808b5e2690475b0a128a9e4cb6172c383ea0b6fc9",
+      "compressed_sha256": "3d40105125183253e876ab52c7ccd89f5a4f324a1a0974087d70efeeb00b791b"
+    },
+    "attempt01-mvt-driver.stderr": {
+      "path": "qualification/experiments/composite-pack-profile/attempt01-mvt-driver.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "attempt01-mvt-driver.stdout": {
+      "path": "qualification/experiments/composite-pack-profile/attempt01-mvt-driver.stdout.gz",
+      "sha256": "49c5b6d54387fb6acfd3dc7f8151d903291f4b49f1f70ecbe9feeb99bf1d73cf",
+      "compressed_sha256": "a478fec3f1dd7ecd4185d80aaae0b73664faa0fd6913cc0f422643e38035fc30"
+    },
+    "bicg-driver.stderr": {
+      "path": "qualification/experiments/composite-pack-profile/bicg-driver.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "bicg-driver.stdout": {
+      "path": "qualification/experiments/composite-pack-profile/bicg-driver.stdout.gz",
+      "sha256": "1003a0312d69a7493d46a46d76eec47aed6e3fce1a948b0476e7937c6e91a056",
+      "compressed_sha256": "408a4e62f5e44810510be21b08a17ec0198daac128749a64b4c9854046eef677"
+    },
+    "bicg-image.json": {
+      "path": "qualification/experiments/composite-pack-profile/bicg-image.json.gz",
+      "sha256": "906b71831bdb4c4c6783d8467c6bf16c01fb1b0e64a23d512f5c2b7586ad6ab1",
+      "compressed_sha256": "9033e6c38bc747340a95729bcfd38e0d13756b450668808828af16fd91237911"
+    },
+    "bicg-inputs.json": {
+      "path": "qualification/experiments/composite-pack-profile/bicg-inputs.json.gz",
+      "sha256": "347f9b21418af097b688c3c2f2b0b3d1b26a2f22bad25d3ac1ea2417ec595541",
+      "compressed_sha256": "1e74978db54bdc2ed6d045554f7df777f40b87b6545b1c17e48aae2215532f81"
+    },
+    "census-config.json": {
+      "path": "qualification/experiments/composite-pack-profile/census-config.json.gz",
+      "sha256": "246769a5a98d31ee0593d857a603b3c094da3c6fccb81b64900e424eb96bc598",
+      "compressed_sha256": "f5a4a104ac035d54d6da7867ac3b1e3774aa5816fad11e7f18687af48d19237d"
+    },
+    "current-work.json": {
+      "path": "qualification/experiments/composite-pack-profile/current-work.json.gz",
+      "sha256": "4bd0e875079399b2f07eeef87855a100e885295eb5a5e41339da9e89bd6d4dfb",
+      "compressed_sha256": "04c19acda44f10c7e784888b602041e353ff7d32d776de04d93f4ce6c8012a21"
+    },
+    "debugger-census.log": {
+      "path": "qualification/experiments/composite-pack-profile/debugger-census.log.gz",
+      "sha256": "95bd4a4a56beb5ea7325e4e1f49843bb6dc737b8608bc58d83b302ee34245146",
+      "compressed_sha256": "d7279b1986d56f702e9aecea1e73a3a403b7e62b45a133cc033bf220a5239e37"
+    },
+    "decode-bicg.log": {
+      "path": "qualification/experiments/composite-pack-profile/decode-bicg.log.gz",
+      "sha256": "33c033a241122f01d0d44ae8de258ba8c77831d59ca0e734cbaf9e70a29ebe90",
+      "compressed_sha256": "6636f4213146a38304802239f10e3b006c6bdb7616f9225db15b8790611dd1df"
+    },
+    "decode-mvt.log": {
+      "path": "qualification/experiments/composite-pack-profile/decode-mvt.log.gz",
+      "sha256": "51d9f320273f416b98e581563097bb0f7f87288f1fcffd8a0cf5fa5624aa6c54",
+      "compressed_sha256": "5425999c131b7795a89e0b0ec917e75f11220bd36401ad749d79720ba4ae0af7"
+    },
+    "mvt-driver.stderr": {
+      "path": "qualification/experiments/composite-pack-profile/mvt-driver.stderr.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "compressed_sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+    },
+    "mvt-driver.stdout": {
+      "path": "qualification/experiments/composite-pack-profile/mvt-driver.stdout.gz",
+      "sha256": "b2011968dff0585f4cc9007fee21933e25ba9e553c33d10189e06064a86a42fa",
+      "compressed_sha256": "8d35239d07f42bc6de0fb78c81329ba1848039fa7c373b4ec0751c4e285e9efb"
+    },
+    "mvt-image.json": {
+      "path": "qualification/experiments/composite-pack-profile/mvt-image.json.gz",
+      "sha256": "48b1ecf74ce091d7c150053ea86aa2d2225cce1dfd8df31320dd39dddd024fcd",
+      "compressed_sha256": "763c6c7d652835fe333034f9a89705bc9d00ff51a487035ecbf5edef820b250c"
+    },
+    "mvt-inputs.json": {
+      "path": "qualification/experiments/composite-pack-profile/mvt-inputs.json.gz",
+      "sha256": "fbade0c9877a296d71ab1f406c9e272cc1d24e07cfa9916c41d47b90be287822",
+      "compressed_sha256": "5d7e60c56b967b4d1963e38ff4330e3eefaac46b4c4f46cb28f2107a18154cac"
+    },
+    "pack_census.py": {
+      "path": "qualification/experiments/composite-pack-profile/pack_census.py.gz",
+      "sha256": "c9870590928d71b1dc567160629d52120ad8027ef480cf8a4832c69626702b9c",
+      "compressed_sha256": "d23c74a3232e2cc6a4cb527198df8cb8f61f6432cf61ae05fc973cb3b84bda3c"
+    },
+    "read-bicg-image.py": {
+      "path": "qualification/experiments/composite-pack-profile/read-bicg-image.py.gz",
+      "sha256": "d8cff97d46f44d203949061f1146099c94b19d1c96a072925e4b8afcda714aeb",
+      "compressed_sha256": "17637e04df55cb450574d400bb87e3df30bea629985254d9dd9683d69b532551"
+    },
+    "read-mvt-image.py": {
+      "path": "qualification/experiments/composite-pack-profile/read-mvt-image.py.gz",
+      "sha256": "6953b2d1ee53005aba6e17732ff1fb7d131878235d85bc487af9f6cdd44706ae",
+      "compressed_sha256": "6ebb450e731f7c2d6cf55026563d14476e63eab3cef3afe196c6b13efd1d18ac"
+    }
+  }
+}
