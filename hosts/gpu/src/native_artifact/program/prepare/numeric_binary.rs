@@ -7,7 +7,13 @@ pub(in crate::native_artifact) const HEADER_WORK: u64 = 32768;
 pub(in crate::native_artifact) enum Kind {
     Elementwise(NativeScalarOp),
     Product,
-    Transpose { input: [Option<u64>; 2] },
+    Sum {
+        axis: usize,
+        input: [Option<u64>; 2],
+    },
+    Transpose {
+        input: [Option<u64>; 2],
+    },
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(in crate::native_artifact) struct Operation {
@@ -18,6 +24,20 @@ pub(in crate::native_artifact) struct Operation {
 #[derive(Debug)]
 pub(in crate::native_artifact) struct Layout {
     sites: Box<[Option<Operation>]>,
+}
+fn constant_axes(
+    template: &mech_engine::native_artifact::NativeProgramLibraryTemplate,
+) -> Option<[Option<u64>; 2]> {
+    let mech_core::SchemaBody::Matrix { dimensions, .. } = template.inputs().first()?.body() else {
+        return None;
+    };
+    if dimensions.len() != 2 {
+        return None;
+    }
+    Some(std::array::from_fn(|at| match dimensions[at] {
+        mech_core::DimensionExpr::Constant(value) => Some(value),
+        _ => None,
+    }))
 }
 impl Layout {
     pub fn derive(plan: &Plan) -> Result<Self, &'static str> {
@@ -50,21 +70,18 @@ impl Layout {
                     .map(Kind::Elementwise)
                     .or_else(|| template.f64_matrix_product().then_some(Kind::Product))
                     .or_else(|| {
-                        if !template.f64_matrix_transpose() {
-                            return None;
-                        }
-                        let mech_core::SchemaBody::Matrix { dimensions, .. } =
-                            template.inputs()[0].body()
-                        else {
-                            return None;
-                        };
-                        let mut input = [None; 2];
-                        for (at, axis) in dimensions.iter().enumerate() {
-                            if let mech_core::DimensionExpr::Constant(value) = axis {
-                                input[at] = Some(*value);
-                            }
-                        }
-                        Some(Kind::Transpose { input })
+                        template.f64_matrix_sum_axis().and_then(|axis| {
+                            Some(Kind::Sum {
+                                axis,
+                                input: constant_axes(template)?,
+                            })
+                        })
+                    })
+                    .or_else(|| {
+                        template.f64_matrix_transpose().then_some(())?;
+                        Some(Kind::Transpose {
+                            input: constant_axes(template)?,
+                        })
                     });
                 Ok(kind.map(|kind| Operation {
                     operands: operands.iter().map(|v| v.get()).collect(),

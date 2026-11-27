@@ -128,6 +128,69 @@ fn flat(
     b.ins().store(MemFlags::new(), next, p, 0);
     b.ins().jump(done, &[]);
 }
+/// Validate both physical spans before any typed unary kernel access. Current
+/// owner/shape authority comes from the exact synchronous prepare/finish loan.
+fn unary_spans(
+    b: &mut FunctionBuilder<'_>,
+    input: Value,
+    output: Value,
+    input_count: Value,
+    output_count: Value,
+    error: Block,
+) {
+    let mut ends = Vec::new();
+    for (pointer, count) in [(input, input_count), (output, output_count)] {
+        let good = b.ins().icmp_imm(
+            IntCC::UnsignedLessThanOrEqual,
+            count,
+            (isize::MAX as u64 / 8) as i64,
+        );
+        guard(
+            b,
+            good,
+            error,
+            crate::native_artifact::abi::STATUS_INTEGRITY,
+        );
+        let empty = b.ins().icmp_imm(IntCC::Equal, count, 0);
+        let nonnull = b.ins().icmp_imm(IntCC::NotEqual, pointer, 0);
+        let good = b.ins().bor(empty, nonnull);
+        guard(
+            b,
+            good,
+            error,
+            crate::native_artifact::abi::STATUS_INTEGRITY,
+        );
+        let low = b.ins().band_imm(pointer, 7);
+        let good = b.ins().icmp_imm(IntCC::Equal, low, 0);
+        guard(
+            b,
+            good,
+            error,
+            crate::native_artifact::abi::STATUS_INTEGRITY,
+        );
+        let bytes = b.ins().imul_imm(count, 8);
+        let (end, overflow) = b.ins().uadd_overflow(pointer, bytes);
+        let good = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
+        guard(
+            b,
+            good,
+            error,
+            crate::native_artifact::abi::STATUS_INTEGRITY,
+        );
+        ends.push(end);
+    }
+    let before = b
+        .ins()
+        .icmp(IntCC::UnsignedLessThanOrEqual, ends[0], output);
+    let after = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, ends[1], input);
+    let good = b.ins().bor(before, after);
+    guard(
+        b,
+        good,
+        error,
+        crate::native_artifact::abi::STATUS_INTEGRITY,
+    );
+}
 /// Leaves the builder at the original ordinary call on refusal. The returned
 /// join is reached only after that call or successful native publication.
 pub(in crate::native_artifact) fn emit_entry(
@@ -186,58 +249,7 @@ pub(in crate::native_artifact) fn emit_entry(
                 error,
                 crate::native_artifact::abi::STATUS_INTEGRITY,
             );
-            let good = b.ins().icmp_imm(
-                IntCC::UnsignedLessThanOrEqual,
-                count,
-                (isize::MAX as u64 / 8) as i64,
-            );
-            guard(
-                b,
-                good,
-                error,
-                crate::native_artifact::abi::STATUS_INTEGRITY,
-            );
-            let bytes = b.ins().imul_imm(count, 8);
-            let empty = b.ins().icmp_imm(IntCC::Equal, count, 0);
-            let mut ends = Vec::new();
-            for pointer in [left, output] {
-                let nonnull = b.ins().icmp_imm(IntCC::NotEqual, pointer, 0);
-                let good = b.ins().bor(empty, nonnull);
-                guard(
-                    b,
-                    good,
-                    error,
-                    crate::native_artifact::abi::STATUS_INTEGRITY,
-                );
-                let low = b.ins().band_imm(pointer, 7);
-                let good = b.ins().icmp_imm(IntCC::Equal, low, 0);
-                guard(
-                    b,
-                    good,
-                    error,
-                    crate::native_artifact::abi::STATUS_INTEGRITY,
-                );
-                let (end, overflow) = b.ins().uadd_overflow(pointer, bytes);
-                let good = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
-                guard(
-                    b,
-                    good,
-                    error,
-                    crate::native_artifact::abi::STATUS_INTEGRITY,
-                );
-                ends.push(end);
-            }
-            let before = b
-                .ins()
-                .icmp(IntCC::UnsignedLessThanOrEqual, ends[0], output);
-            let after = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, ends[1], left);
-            let good = b.ins().bor(before, after);
-            guard(
-                b,
-                good,
-                error,
-                crate::native_artifact::abi::STATUS_INTEGRITY,
-            );
+            unary_spans(b, left, output, count, count, error);
             let mut output_columns = columns;
             let mut input_columns = source_columns;
             for (known, actual, target) in [
@@ -264,6 +276,47 @@ pub(in crate::native_artifact) fn emit_entry(
                 input_columns,
                 complete,
             );
+        }
+        Kind::Sum { axis, input } => {
+            let mut inner = get(b, frame, offset_of!(Frame, inner));
+            let mut outputs = count;
+            let expected_columns = if axis == 0 {
+                count
+            } else {
+                b.ins().iconst(types::I64, 1)
+            };
+            let good = b.ins().icmp(IntCC::Equal, columns, expected_columns);
+            guard(
+                b,
+                good,
+                error,
+                crate::native_artifact::abi::STATUS_INTEGRITY,
+            );
+            let (input_count, overflow) = b.ins().umul_overflow(count, inner);
+            let good = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
+            guard(
+                b,
+                good,
+                error,
+                crate::native_artifact::abi::STATUS_INTEGRITY,
+            );
+            unary_spans(b, left, output, input_count, count, error);
+            for (known, actual, target) in [
+                (input[axis], inner, &mut inner),
+                (input[1 - axis], count, &mut outputs),
+            ] {
+                if let Some(known) = known {
+                    let good = b.ins().icmp_imm(IntCC::Equal, actual, known as i64);
+                    guard(
+                        b,
+                        good,
+                        error,
+                        crate::native_artifact::abi::STATUS_INTEGRITY,
+                    );
+                    *target = b.ins().iconst(types::I64, known as i64);
+                }
+            }
+            super::numeric_sum::emit(b, left, output, outputs, inner, axis, complete);
         }
         Kind::Product => {
             let inner = get(b, frame, offset_of!(Frame, inner));

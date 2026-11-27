@@ -560,8 +560,8 @@ fn selected_template(
 // IR385 emits ordered F64 matrix products over exact current typed banks.
 // IR386 retains complete fixed-array numeric FSM results through native return.
 // IR387 emits source-closed fixed matrix generators with bounded numeric FSM children.
-// IR388 emits typed F64 transposes through the shared matrix loan/kernel.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 388;
+// IR389 emits ordered F64 matrix sums through the shared numeric loan.
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 389;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses
@@ -839,8 +839,8 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 388;
 // Work153 binds the existing complete-prefix source and boundary prices
 // when closing fixed-array numeric results. Source prices are unchanged.
 // Policy154 funds whole-generator source work, coexistence and ordinary replay.
-// Policy155 retains complete transpose source costs and ordinary replay.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 155;
+// Policy156 retains complete ordered-sum source costs and ordinary replay.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 156;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

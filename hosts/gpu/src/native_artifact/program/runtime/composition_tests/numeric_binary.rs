@@ -12,10 +12,11 @@ fn data(values: &[f64]) -> Data {
     )
 }
 fn expression(operator: &str) -> String {
-    if operator == "'" {
-        "input<[f64]>'\n".into()
-    } else {
-        format!("input<[f64]> {operator} peer<[f64]>\n")
+    match operator {
+        "'" => "input<[f64]>'\n".into(),
+        "sum-row" => "+> stats\nstats/sum/row(input<[f64]>)\n".into(),
+        "sum-column" => "+> stats\nstats/sum/column(input<[f64]>)\n".into(),
+        _ => format!("input<[f64]> {operator} peer<[f64]>\n"),
     }
 }
 fn completed(counts: &observe::Counts) -> u64 {
@@ -236,7 +237,7 @@ fn numeric_binary_input_nan_falls_back_and_generated_nan_keeps_exact_payload() {
 
 #[test]
 fn numeric_binary_finite_caps_decline_without_losing_aliases_or_retry() {
-    for operator in ["+", "**", "'"] {
+    for operator in ["+", "**", "'", "sum-row", "sum-column"] {
         for artifact in artifacts(&expression(operator)) {
             let mode = NativeProgramLimitMode::NoLimits;
             let catalog = mech_stdlib::source_catalog();
@@ -321,7 +322,7 @@ fn numeric_binary_finite_caps_decline_without_losing_aliases_or_retry() {
 
 #[test]
 fn numeric_binary_physical_refusal_replays_original_and_releases_private_claims() {
-    for operator in ["+", "**", "'"] {
+    for operator in ["+", "**", "'", "sum-row", "sum-column"] {
         for artifact in artifacts(&expression(operator)) {
             let mode = NativeProgramLimitMode::NoLimits;
             let catalog = mech_stdlib::source_catalog();
@@ -342,12 +343,15 @@ fn numeric_binary_physical_refusal_replays_original_and_releases_private_claims(
                     call.template().f64_matrix_binary_op().is_some()
                         || call.template().f64_matrix_product()
                         || call.template().f64_matrix_transpose()
+                        || call.template().f64_matrix_sum_axis().is_some()
                 })
                 .unwrap();
             let (demand, _) = if operator == "**" {
                 call.f64_matrix_product_source_bound(6, 1, 3)
             } else if operator == "'" {
                 call.f64_matrix_transpose_source_bound(3)
+            } else if operator.starts_with("sum-") {
+                call.f64_matrix_sum_source_bound(3, if operator == "sum-row" { 3 } else { 1 })
             } else {
                 call.f64_matrix_binary_source_bound(6, 3)
             }
@@ -511,7 +515,7 @@ mod loan_checks {
     }
     #[test]
     fn numeric_binary_loans_reject_forged_frames_and_interleaving_then_retry() {
-        for operator in ["+", "**", "'"] {
+        for operator in ["+", "**", "'", "sum-row", "sum-column"] {
             for artifact in artifacts(&expression(operator)) {
                 let mode = NativeProgramLimitMode::NoLimits;
                 let memory = mode.memory_budget();

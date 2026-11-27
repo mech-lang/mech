@@ -1007,7 +1007,7 @@ fn managed_link_metadata_rederives_semantics_and_rejects_mutations_without_an_en
 }
 #[test]
 fn worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes() {
-    assert_eq!(VERSION, 46);
+    assert_eq!(VERSION, 47);
     // The new synchronous arithmetic loan is separate from the unchanged
     // 144-byte root frame and frozen scalar prefix checked below.
     assert_eq!(

@@ -22,6 +22,29 @@ fn f64(schema: &Schema) -> bool {
     }
 }
 impl NativeProgramLibraryTemplate {
+    /// Exact ordered F64 sum axis, derived solely from the sealed factory.
+    /// Axis0 reduces rows; axis1 reduces columns. Current geometry is separate.
+    pub fn f64_matrix_sum_axis(&self) -> Option<usize> {
+        let axis = match self.primitive() {
+            P::SumRows => 0,
+            P::SumColumns => 1,
+            _ => return None,
+        };
+        if self.inputs().len() != 1
+            || !self
+                .inputs()
+                .iter()
+                .chain([self.output()])
+                .all(|s| f64(s) && matches!(s.body(), SchemaBody::Matrix { .. }))
+        {
+            return None;
+        }
+        let SchemaBody::Matrix { dimensions, .. } = self.output().body() else {
+            return None;
+        };
+        (dimensions[axis] == mech_core::DimensionExpr::Constant(1)).then_some(axis)
+    }
+
     /// Exact maintained rank-two F64 transpose, selected by its sealed factory.
     pub fn f64_matrix_transpose(&self) -> bool {
         self.primitive() == P::MatrixTranspose
@@ -66,6 +89,23 @@ impl NativeProgramLibraryTemplate {
     }
 }
 impl NativePreparedLibraryCall {
+    pub fn f64_matrix_sum_geometry(&self, input: [usize; 2]) -> Option<[u64; 4]> {
+        let axis = self.template().f64_matrix_sum_axis()?;
+        crate::resident::numeric::native_sum_geometry(input, axis)
+            .ok()
+            .map(|axes| axes.map(|n| n as u64))
+    }
+    /// Full maintained source construction/import/publication and replay,
+    /// plus an explicit bound for every ordered native reduction term.
+    pub fn f64_matrix_sum_source_bound(
+        &self,
+        inputs: u64,
+        output: u64,
+    ) -> Option<(ResourceDemand, u64)> {
+        self.template().f64_matrix_sum_axis()?;
+        self.f64_matrix_source_bound(inputs, output, inputs)
+    }
+
     pub fn f64_matrix_transpose_geometry(&self, input: [usize; 2]) -> Option<[u64; 3]> {
         if !self.template().f64_matrix_transpose() || !self.supports_numeric_matrix_transpose() {
             return None;

@@ -13594,6 +13594,22 @@ fn sum_rows(
     }))
 }
 
+pub(in crate::resident) fn native_sum_geometry(
+    input: [usize; 2],
+    axis: usize,
+) -> Result<[usize; 4], ResidentKernelError> {
+    let [rows, columns] = input;
+    let count = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    let (output_rows, output_columns, inner) = match axis {
+        0 => (1, columns, rows),
+        1 => (rows, 1, columns),
+        _ => return Err(ResidentKernelError::InvalidShape),
+    };
+    Ok([output_rows, output_columns, count, inner])
+}
+
 fn sum_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -13625,14 +13641,14 @@ fn sum_snapshot(
         return Err(ResidentKernelError::InvalidInput);
     };
     let (rows, columns) = snapshot_matrix_dimensions(input, schema.body())?;
-    let input_count = rows
-        .checked_mul(columns)
+    let [output_rows, output_columns, input_count, _] =
+        native_sum_geometry([rows, columns], usize::from(column))?;
+    let output_count = output_rows
+        .checked_mul(output_columns)
         .ok_or(ResidentKernelError::InvalidShape)?;
-    let output_count = if column { rows } else { columns };
     if snapshot_numeric_element_count(input)? != input_count {
         return Err(ResidentKernelError::InvalidShape);
     }
-    let (output_rows, output_columns) = if column { (rows, 1) } else { (1, columns) };
     let output_shape = snapshot_output
         .then(|| resolved_snapshot_output_shape(kernel, output_rows, output_columns))
         .transpose()?;

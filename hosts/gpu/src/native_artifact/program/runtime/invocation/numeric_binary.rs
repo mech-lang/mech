@@ -165,6 +165,21 @@ impl Invocation<'_, '_, '_> {
                 }
                 (rows, columns, 1, 1, dimensions[0][1] as u64)
             }
+            Kind::Sum { axis, .. } => {
+                if call.template().f64_matrix_sum_axis() != Some(axis) {
+                    return Err(invalid("matrix sum selected factory differs"));
+                }
+                let Some([rows, columns, input_count, inner]) =
+                    call.f64_matrix_sum_geometry(dimensions[0])
+                else {
+                    return Ok(Some(0));
+                };
+                if rows.checked_mul(columns).and_then(|n| n.checked_mul(inner)) != Some(input_count)
+                {
+                    return Ok(Some(0));
+                }
+                (rows, columns, 1, 1, inner)
+            }
             Kind::Product => {
                 if !call.template().f64_matrix_product() {
                     return Err(invalid("matrix product selected factory differs"));
@@ -189,6 +204,7 @@ impl Invocation<'_, '_, '_> {
         let bound = match op.kind {
             Kind::Elementwise(_) => call.f64_matrix_binary_source_bound(input_count, count),
             Kind::Transpose { .. } => call.f64_matrix_transpose_source_bound(count),
+            Kind::Sum { .. } => call.f64_matrix_sum_source_bound(input_count, count),
             Kind::Product => call.f64_matrix_product_source_bound(input_count, count, inner),
         };
         let Some((demand, replay)) = bound else {
