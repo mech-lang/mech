@@ -324,6 +324,11 @@ impl NativeProgramObject {
         metadata["readonly_numeric_regions"] = serde_json::json!(self.descriptor.metadata().closed_tails.regions.iter().filter_map(|r| r.numeric.as_ref().filter(|p| !p.writes()).map(|p| serde_json::json!({"iteration":r.iteration,"parent":r.tail.parent(),"header":r.tail.header(),"compute_per_traversal":r.compute,"proof":p}))).collect::<Vec<_>>());
         metadata["numeric_write_regions"] = serde_json::json!(self.descriptor.metadata().closed_tails.regions.iter().filter_map(|r| r.numeric.as_ref().filter(|p| p.writes()).map(|p| serde_json::json!({"iteration":r.iteration,"parent":r.tail.parent(),"header":r.tail.header(),"compute_per_traversal":r.compute,"proof":p}))).collect::<Vec<_>>());
         let prepared = self.descriptor.metadata();
+        metadata["matrix_expression_candidates"] = serde_json::json!({
+            "scope": "Source-closed matrix expressions; current finite admission and fallback remain required",
+            "selected": prepared.numeric_regions.candidates.iter().any(|c| c.body(&prepared.plan).is_some_and(|(steps, _)| steps.iter().all(|s| prepared.map_admission.group(s.site() as usize).is_none()))),
+            "inventory": &prepared.numeric_regions,
+        });
         metadata["numeric_generator_candidates"] = serde_json::json!({
             "scope": "Source-closed ordinary generator entry; current finite admission required",
             "selected": !prepared.numeric_generators.regions.is_empty(),

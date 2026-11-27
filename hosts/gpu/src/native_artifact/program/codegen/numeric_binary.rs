@@ -9,7 +9,11 @@ use crate::native_artifact::{
     NativeCompileError,
     compiler::{backend, f64_arithmetic, guard},
 };
-use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
+use cranelift_codegen::ir::{
+    Block, InstBuilder, MemFlags, Value,
+    condcodes::{FloatCC, IntCC},
+    types,
+};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::{NativeMatchValue, NativeScalarOp};
 use std::mem::offset_of;
@@ -21,6 +25,30 @@ fn get(b: &mut FunctionBuilder<'_>, frame: Value, offset: usize) -> Value {
 pub(super) fn address(b: &mut FunctionBuilder<'_>, pointer: Value, index: Value) -> Value {
     let bytes = b.ins().imul_imm(index, 8);
     b.ins().iadd(pointer, bytes)
+}
+/// Check a just-produced F64 scalar/SIMD result before its store or use.
+/// Ordinary single kernels pass None, retaining their exact original code.
+pub(super) fn finite_result(b: &mut FunctionBuilder<'_>, value: Value, cancel: Option<Block>) {
+    let Some(cancel) = cancel else {
+        return;
+    };
+    let ty = b.func.dfg.value_type(value);
+    let limit = b.ins().f64const(f64::MAX);
+    let limit = if ty.is_vector() {
+        b.ins().splat(ty, limit)
+    } else {
+        limit
+    };
+    let magnitude = b.ins().fabs(value);
+    let finite = b.ins().fcmp(FloatCC::LessThanOrEqual, magnitude, limit);
+    let finite = if ty.is_vector() {
+        b.ins().vall_true(finite)
+    } else {
+        finite
+    };
+    let valid = b.create_block();
+    b.ins().brif(finite, valid, &[], cancel, &[]);
+    b.switch_to_block(valid);
 }
 fn scalar_at(
     b: &mut FunctionBuilder<'_>,
@@ -65,6 +93,7 @@ fn flat(
     count: Value,
     left_scalar: bool,
     right_scalar: bool,
+    cancel: Option<Block>,
     done: Block,
 ) {
     let vector_type = types::F64.by(2).expect("two F64 lanes");
@@ -100,6 +129,7 @@ fn flat(
         b.ins().load(vector_type, MemFlags::new(), p, 0)
     };
     let next = f64_arithmetic(b, op, a, c);
+    finite_result(b, next, cancel);
     let p = address(b, output, at);
     b.ins().store(MemFlags::new(), next, p, 0);
     let advanced = b.ins().iadd_imm(at, 2);
@@ -124,6 +154,7 @@ fn flat(
         b.ins().load(types::F64, MemFlags::new(), p, 0)
     };
     let next = f64_arithmetic(b, op, a, c);
+    finite_result(b, next, cancel);
     let p = address(b, output, at);
     b.ins().store(MemFlags::new(), next, p, 0);
     b.ins().jump(done, &[]);
@@ -221,6 +252,64 @@ pub(in crate::native_artifact) fn emit_entry(
     let joined = b.create_block();
     b.ins().brif(frame, native, &[], ordinary, &[]);
     b.switch_to_block(native);
+    let count = emit_kernel(b, op.kind, frame, [false; 2], None, error);
+    let zero = b.ins().iconst(types::I64, 0);
+    hooks.call(
+        b,
+        site,
+        GlobalHelper::NumericBinaryFinish,
+        [frame, count, zero],
+        error,
+    );
+    let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+    let valid = b.ins().icmp_imm(IntCC::Equal, ready, 1);
+    guard(
+        b,
+        valid,
+        error,
+        crate::native_artifact::abi::STATUS_INTEGRITY,
+    );
+    b.ins().jump(joined, &[]);
+    b.switch_to_block(ordinary);
+    Ok(joined)
+}
+
+// A produced1x1 matrix is computed after the loan is issued. Its scalar
+// broadcast word must therefore be loaded from its current private bank here,
+// never from the pre-initialized frame word. No frame field is mutated.
+fn current_scalar(
+    b: &mut FunctionBuilder<'_>,
+    pointer: Value,
+    mode: Value,
+    fallback: Value,
+    bank: bool,
+) -> Value {
+    if !bank {
+        return fallback;
+    }
+    let scalar = b.create_block();
+    let matrix = b.create_block();
+    let done = b.create_block();
+    b.append_block_param(done, types::I64);
+    let selected = b.ins().icmp_imm(IntCC::Equal, mode, 0);
+    b.ins().brif(selected, scalar, &[], matrix, &[]);
+    b.switch_to_block(scalar);
+    let word = b.ins().load(types::I64, MemFlags::new(), pointer, 0);
+    b.ins().jump(done, &[word.into()]);
+    b.switch_to_block(matrix);
+    b.ins().jump(done, &[fallback.into()]);
+    b.switch_to_block(done);
+    b.block_params(done)[0]
+}
+
+pub(super) fn emit_kernel(
+    b: &mut FunctionBuilder<'_>,
+    kind: Kind,
+    frame: Value,
+    bank_inputs: [bool; 2],
+    cancel: Option<Block>,
+    error: Block,
+) -> Value {
     let left = get(b, frame, offset_of!(Frame, left));
     let right = get(b, frame, offset_of!(Frame, right));
     let output = get(b, frame, offset_of!(Frame, output));
@@ -230,8 +319,10 @@ pub(in crate::native_artifact) fn emit_entry(
     let rmode = get(b, frame, offset_of!(Frame, right_mode));
     let sleft = get(b, frame, offset_of!(Frame, left_scalar));
     let sright = get(b, frame, offset_of!(Frame, right_scalar));
+    let sleft = current_scalar(b, left, lmode, sleft, bank_inputs[0]);
+    let sright = current_scalar(b, right, rmode, sright, bank_inputs[1]);
     let complete = b.create_block();
-    match op.kind {
+    match kind {
         Kind::Transpose { input } => {
             let source_columns = get(b, frame, offset_of!(Frame, inner));
             let (expected, overflow) = b.ins().umul_overflow(columns, source_columns);
@@ -274,6 +365,7 @@ pub(in crate::native_artifact) fn emit_entry(
                 count,
                 output_columns,
                 input_columns,
+                cancel,
                 complete,
             );
         }
@@ -316,11 +408,13 @@ pub(in crate::native_artifact) fn emit_entry(
                     *target = b.ins().iconst(types::I64, known as i64);
                 }
             }
-            super::numeric_sum::emit(b, left, output, outputs, inner, axis, complete);
+            super::numeric_sum::emit(b, left, output, outputs, inner, axis, cancel, complete);
         }
         Kind::Product => {
             let inner = get(b, frame, offset_of!(Frame, inner));
-            super::numeric_product::emit(b, left, right, output, count, columns, inner, complete);
+            super::numeric_product::emit(
+                b, left, right, output, count, columns, inner, cancel, complete,
+            );
         }
         Kind::Elementwise(op) => {
             let flat_entry = b.create_block();
@@ -343,7 +437,8 @@ pub(in crate::native_artifact) fn emit_entry(
                 for (block, rscalar) in [(rscalar, true), (rexact, false)] {
                     b.switch_to_block(block);
                     flat(
-                        b, op, left, right, sleft, sright, output, count, scalar, rscalar, complete,
+                        b, op, left, right, sleft, sright, output, count, scalar, rscalar, cancel,
+                        complete,
                     );
                 }
             }
@@ -362,6 +457,7 @@ pub(in crate::native_artifact) fn emit_entry(
             let a = scalar_at(b, left, sleft, lmode, at, columns);
             let c = scalar_at(b, right, sright, rmode, at, columns);
             let next = f64_arithmetic(b, op, a, c);
+            finite_result(b, next, cancel);
             let p = address(b, output, at);
             b.ins().store(MemFlags::new(), next, p, 0);
             let next = b.ins().iadd_imm(at, 1);
@@ -370,23 +466,5 @@ pub(in crate::native_artifact) fn emit_entry(
         }
     }
     b.switch_to_block(complete);
-    let zero = b.ins().iconst(types::I64, 0);
-    hooks.call(
-        b,
-        site,
-        GlobalHelper::NumericBinaryFinish,
-        [frame, count, zero],
-        error,
-    );
-    let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
-    let valid = b.ins().icmp_imm(IntCC::Equal, ready, 1);
-    guard(
-        b,
-        valid,
-        error,
-        crate::native_artifact::abi::STATUS_INTEGRITY,
-    );
-    b.ins().jump(joined, &[]);
-    b.switch_to_block(ordinary);
-    Ok(joined)
+    count
 }

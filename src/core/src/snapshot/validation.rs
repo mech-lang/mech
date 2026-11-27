@@ -1051,6 +1051,36 @@ impl Value {
                 reason: "immutable snapshot has no retained schema context".into(),
             }
         })?;
+        if let ValueData::Matrix(matrix) = self.data()
+            && let SequenceStorage::F64(cells) = &matrix.elements
+            && Arc::ptr_eq(&self.shape, &self.root.data.shape)
+        {
+            let definition = self.validate_against(schemas).map_err(|_| {
+                crate::MemoryRuntimeError::CandidateValidationFailed {
+                    object: None,
+                    reason: "immutable snapshot retained footprint is invalid or overflows".into(),
+                }
+            })?;
+            if matches!(definition.body(), SchemaBody::Matrix { element, .. }
+                if element.as_ref() == &SchemaBody::FloatingPoint(FloatWidth::W64))
+            {
+                return Self::fresh_f64_matrix_ownership_count(
+                    self.shape.parameter_values().len(),
+                    cells.len() as u64,
+                    schemas,
+                );
+            }
+        }
+        self.memory_budget_ownership_by_traversal(schemas)
+    }
+
+    // The full canonical traversal remains authoritative for every other kind,
+    // nested Dynamic roots and metadata sharing an older payload's shape.
+    #[inline]
+    fn memory_budget_ownership_by_traversal(
+        &self,
+        schemas: &SchemaTable,
+    ) -> crate::MemoryRuntimeResult<(u64, u64)> {
         let footprint = self.retained_footprint(schemas).map_err(|_| {
             crate::MemoryRuntimeError::CandidateValidationFailed {
                 object: None,

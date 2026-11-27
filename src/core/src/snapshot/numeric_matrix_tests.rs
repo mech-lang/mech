@@ -683,3 +683,274 @@ fn borrowed_numeric_matrix_validation_resolves_original_dimension_expressions() 
         actual.validate_against(&schemas).unwrap();
     }
 }
+
+fn prospective_owner_schema(
+    dimensions: Vec<DimensionExpr>,
+    parameters: Vec<crate::DimensionParameterDeclaration>,
+    element: SchemaBody,
+) -> (SchemaId, Arc<SchemaTable>) {
+    let mut builder = SchemaTableBuilder::new();
+    let handle = builder
+        .insert(
+            SchemaDraft {
+                dimension_parameters: parameters.into_boxed_slice(),
+                body: SchemaBody::Matrix {
+                    element: Box::new(element),
+                    dimensions: dimensions.into_boxed_slice(),
+                },
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let built = builder.finish().unwrap();
+    (built.resolve(handle).unwrap(), Arc::new(built.table))
+}
+fn prospective_parameter(lower: u64, upper: Option<u64>) -> crate::DimensionParameterDeclaration {
+    crate::DimensionParameterDeclaration {
+        id: crate::DimensionParameterId::new(0),
+        origin: crate::DimensionParameterOrigin::Explicit,
+        lifetime: crate::DimensionLifetime::Turn,
+        lower_bound: DimensionExpr::Constant(lower),
+        upper_bound: upper.map(DimensionExpr::Constant),
+    }
+}
+#[test]
+fn prospective_f64_owner_matches_complete_canonical_walk_and_real_admission() {
+    for extents in [
+        vec![0, 0],
+        vec![0, 3],
+        vec![2, 0],
+        vec![1, 1],
+        vec![2, 3],
+        vec![4, 17],
+        vec![4, 64],
+        vec![2, 3, 4],
+    ] {
+        for dynamic in [false, true] {
+            let dimensions = extents
+                .iter()
+                .enumerate()
+                .map(|(at, &n)| {
+                    if dynamic && at == 0 {
+                        DimensionExpr::Parameter(crate::DimensionParameterId::new(0))
+                    } else {
+                        DimensionExpr::Constant(n)
+                    }
+                })
+                .collect();
+            let parameters = if dynamic {
+                vec![prospective_parameter(0, Some(128))]
+            } else {
+                Vec::new()
+            };
+            let (id, table) = prospective_owner_schema(
+                dimensions,
+                parameters,
+                SchemaBody::FloatingPoint(FloatWidth::W64),
+            );
+            let shape = table
+                .get(id)
+                .unwrap()
+                .instantiate_shape(if dynamic {
+                    vec![extents[0]].into()
+                } else {
+                    Box::new([])
+                })
+                .unwrap();
+            let count: u64 = extents.iter().product();
+            let price = Value::prospective_f64_matrix_ownership(id, &shape, count, &table).unwrap();
+            let patterns = [
+                0,
+                1 << 63,
+                0x7ff0_0000_0000_0000,
+                0xfff0_0000_0000_0000,
+                0x7ff8_0000_0000_0042,
+                0x7ff0_0000_0000_0017,
+                1,
+                0x7fef_ffff_ffff_ffff,
+            ];
+            let cells = (0..count as usize)
+                .map(|at| F64Bits::from_bits(patterns[at % patterns.len()]))
+                .collect::<Vec<_>>()
+                .into_boxed_slice();
+            let raw = Value::from_f64_matrix(id, shape, cells, Arc::clone(&table)).unwrap();
+            let generic = raw.memory_budget_ownership_by_traversal(&table).unwrap();
+            assert_eq!(price, generic, "{extents:?}, dynamic={dynamic}");
+            assert_eq!(price.1, 3);
+            assert_eq!(raw.memory_budget_required_bytes().unwrap(), price.0);
+            let memory = crate::ManagedMemoryBudget::new(16 * 1024 * 1024);
+            let mut reserve = memory
+                .reserve_capacity(raw.memory_budget_admission_bytes(&memory).unwrap())
+                .unwrap();
+            let admitted = raw.clone().into_memory_budget(&mut reserve).unwrap();
+            assert_eq!(
+                admitted.memory_budget_retained_bytes(&memory),
+                Some(price.0)
+            );
+            assert_eq!(
+                admitted.memory_budget_retained_nodes(&memory),
+                Some(price.1)
+            );
+            assert_eq!(
+                admitted
+                    .memory_budget_ownership_by_traversal(&table)
+                    .unwrap(),
+                price
+            );
+            assert_eq!(admitted.memory_budget_required_bytes().unwrap(), price.0);
+            drop((admitted, raw, reserve));
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
+        }
+    }
+}
+
+#[test]
+fn prospective_f64_owner_rejects_other_kinds_bounds_cardinality_and_overflow() {
+    let element = SchemaBody::FloatingPoint(FloatWidth::W64);
+    let (id, table) = prospective_owner_schema(
+        vec![
+            DimensionExpr::Parameter(crate::DimensionParameterId::new(0)),
+            DimensionExpr::Constant(3),
+        ],
+        vec![prospective_parameter(2, Some(4))],
+        element.clone(),
+    );
+    let shape = table
+        .get(id)
+        .unwrap()
+        .instantiate_shape(vec![2].into())
+        .unwrap();
+    assert!(Value::prospective_f64_matrix_ownership(id, &shape, 6, &table).is_ok());
+    assert!(Value::prospective_f64_matrix_ownership(id, &shape, 5, &table).is_err());
+    assert!(
+        Value::prospective_f64_matrix_ownership(SchemaId::new(u32::MAX), &shape, 6, &table)
+            .is_err()
+    );
+    let (_, loose) = prospective_owner_schema(
+        vec![DimensionExpr::Parameter(crate::DimensionParameterId::new(
+            0,
+        ))],
+        vec![prospective_parameter(0, None)],
+        element.clone(),
+    );
+    let loose_shape = loose
+        .entries()
+        .next()
+        .unwrap()
+        .schema()
+        .instantiate_shape(vec![1].into())
+        .unwrap();
+    assert!(Value::prospective_f64_matrix_ownership(id, &loose_shape, 3, &table).is_err());
+    for element in [
+        SchemaBody::Bool,
+        SchemaBody::FloatingPoint(FloatWidth::W32),
+        SchemaBody::UnsignedInteger(IntegerWidth::W64),
+    ] {
+        let (id, table) = prospective_owner_schema(
+            vec![DimensionExpr::Constant(2), DimensionExpr::Constant(3)],
+            Vec::new(),
+            element,
+        );
+        let shape = table
+            .get(id)
+            .unwrap()
+            .instantiate_shape(Box::new([]))
+            .unwrap();
+        assert!(Value::prospective_f64_matrix_ownership(id, &shape, 6, &table).is_err());
+    }
+    let (id, table) = prospective_owner_schema(
+        vec![DimensionExpr::Constant(u64::MAX)],
+        Vec::new(),
+        SchemaBody::FloatingPoint(FloatWidth::W64),
+    );
+    let shape = table
+        .get(id)
+        .unwrap()
+        .instantiate_shape(Box::new([]))
+        .unwrap();
+    assert!(
+        Value::prospective_f64_matrix_ownership(id, &shape, u64::MAX, &table).is_err(),
+        "byte arithmetic cannot wrap before any payload allocation"
+    );
+}
+
+#[test]
+fn prospective_f64_owner_keeps_rebound_shape_and_current_schema_key_accounting() {
+    let mut builder = SchemaTableBuilder::new();
+    let dynamic = builder
+        .insert(
+            SchemaDraft {
+                dimension_parameters: vec![prospective_parameter(0, None)].into(),
+                body: SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                    dimensions: vec![DimensionExpr::Parameter(crate::DimensionParameterId::new(
+                        0,
+                    ))]
+                    .into(),
+                },
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let fixed = builder
+        .insert(
+            SchemaDraft {
+                dimension_parameters: Box::new([]),
+                body: SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                    dimensions: vec![DimensionExpr::Constant(4)].into(),
+                },
+            }
+            .finalize()
+            .unwrap(),
+        )
+        .unwrap();
+    let built = builder.finish().unwrap();
+    let dynamic = built.resolve(dynamic).unwrap();
+    let fixed = built.resolve(fixed).unwrap();
+    let table = Arc::new(built.table);
+    let raw = Value::from_f64_matrix(
+        dynamic,
+        table
+            .get(dynamic)
+            .unwrap()
+            .instantiate_shape(vec![4].into())
+            .unwrap(),
+        [0, 1 << 63, 0x7ff8_0000_0000_0042, 0x7ff0_0000_0000_0017]
+            .map(F64Bits::from_bits)
+            .into(),
+        Arc::clone(&table),
+    )
+    .unwrap();
+    let shape = table
+        .get(fixed)
+        .unwrap()
+        .instantiate_shape(Box::new([]))
+        .unwrap();
+    let rebound = raw
+        .rebind_with_context(
+            fixed,
+            &shape,
+            &SnapshotValidationContext::with_shared_schemas(&table),
+        )
+        .unwrap();
+    assert!(raw.shares_frozen_storage(&rebound));
+    assert!(!Arc::ptr_eq(&rebound.shape, &rebound.root.data.shape));
+    let generic = rebound
+        .memory_budget_ownership_by_traversal(&table)
+        .unwrap();
+    assert_eq!(rebound.memory_budget_required_bytes().unwrap(), generic.0);
+    let fresh = Value::prospective_f64_matrix_ownership(fixed, &shape, 4, &table).unwrap();
+    assert!(
+        generic.0 > fresh.0,
+        "original shape owner remains retained through the shared payload"
+    );
+    let mut wrong_key = raw.clone();
+    wrong_key.schema_key = SchemaKey::from_bytes([0; 32]);
+    assert!(wrong_key.memory_budget_required_bytes().is_err());
+}

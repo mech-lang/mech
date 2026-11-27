@@ -668,6 +668,25 @@ impl<'a> NativeValueArena<'a> {
         Ok(())
     }
 
+    /// Exact virtual-generation check inside an already funded generated
+    /// operation. The selecting caller retains its original complete read/copy
+    /// bill; this grants no payload access or new work credit.
+    #[cfg(feature = "canonical-native-program-runtime")]
+    pub(in crate::native_artifact) fn check_virtual_prepaid(
+        &self,
+        handle: NativeValueHandle,
+        work: &NativeWorkMeter,
+    ) -> Result<(), NativeValueError> {
+        self.check_work(work)?;
+        if handle.domain != self.values.domain_id()
+            || self.generation(handle.slot).ok() != Some(handle.generation)
+            || !matches!(self.current(handle.slot), Ok(None))
+        {
+            return Err(NativeValueError::StaleHandle);
+        }
+        Ok(())
+    }
+
     /// Capture an existing current generation without publishing/replacing a
     /// slot. Only the certified generated caller can obtain this handle.
     #[cfg(feature = "canonical-native-program-runtime")]

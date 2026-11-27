@@ -27,6 +27,8 @@ pub(in crate::native_artifact::program::runtime) struct Counts {
     pub admission_callbacks: BTreeMap<u64, u64>,
     pub helpers: BTreeMap<(u64, u64), u64>,
     pub selected: u64,
+    pub matrix_region_completions: u64,
+    pub matrix_region_cancellations: u64,
     pub fused_numeric_entries: u64,
     pub phases: u64,
     pub phase_sites: BTreeMap<u64, u64>,
@@ -519,9 +521,53 @@ unsafe extern "C" fn helper(
     } else {
         None
     };
+    let cancellation = (op == GlobalHelper::NumericBinaryFinish.raw() && c == 2).then(|| {
+        // Observe the real private loan before its release; no source cursor
+        // or producer may have been committed by speculative native arithmetic.
+        let invocation = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        (
+            invocation.state.control.visits,
+            invocation.state.control.previous,
+            invocation.state.control.current,
+            invocation.state.consumed,
+            invocation.state.control.work.used(),
+            invocation.state.library.used(),
+            invocation.state.library.memory_budget().used_bytes(),
+            invocation.state.library.memory_budget().retained_nodes(),
+        )
+    });
     // SAFETY: unchanged arguments and result pointer from the checked entry.
     let status = unsafe { HELPER.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
     unsafe { after_work(context, site, op, before) };
+    if let Some(before) = cancellation
+        && status == 0
+    {
+        let invocation = unsafe { &*context.cast::<Invocation<'_, '_, '_>>() };
+        assert_eq!(unsafe { *out }, 0);
+        assert_eq!(
+            (
+                invocation.state.control.visits,
+                invocation.state.control.previous,
+                invocation.state.control.current,
+                invocation.state.consumed,
+                invocation.state.control.work.used(),
+                invocation.state.library.used(),
+            ),
+            (before.0, before.1, before.2, before.3, before.4, before.5),
+            "cancel must leave all logical source execution untouched"
+        );
+        assert!(invocation.numeric_binary.is_none() && invocation.numeric_region.is_none());
+        let memory = invocation.state.library.memory_budget();
+        assert!(memory.used_bytes() < before.6 && memory.retained_nodes() < before.7);
+        COUNTS.with(|v| v.borrow_mut().matrix_region_cancellations += 1);
+    }
+    if op == GlobalHelper::NumericBinaryFinish.raw() && c == 1 && status == 0 {
+        // The delegated callback has finished; this same live result cell is
+        // still owned by the suspended checked caller.
+        if unsafe { *out } == 1 {
+            COUNTS.with(|v| v.borrow_mut().matrix_region_completions += 1);
+        }
+    }
     if op == GlobalHelper::ClosedTailEnd.raw() && c == 0 && status == 0 {
         // SAFETY: the delegated callback has returned and ended its exclusive
         // borrow of this same live Invocation. Observe the actual settled work.

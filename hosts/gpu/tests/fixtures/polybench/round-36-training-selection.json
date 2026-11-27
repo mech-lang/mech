@@ -1,0 +1,36 @@
+{
+  "schema": "mech.polybench.training-selection.v1",
+  "created_at": "2026-11-27T15:11:27.871590+00:00",
+  "prospective_rule": {
+    "schema": "mech.polybench.training-selection-policy.v1",
+    "scope": "Optimization15 only. No holdout performance selects or tunes this source.",
+    "accepted_round": 31,
+    "samples_per_actor": 7,
+    "actors": [
+      "accepted31",
+      "native-guards"
+    ],
+    "execution": "Sequential actors with rotating case order; full finite C liveout warmup validation.",
+    "selection": "Select only if equal-weight geometric mean of accepted31/candidate median Mech runtime is strictly greater than 1. Preserve every case and regression. One prospective probe per source fingerprint, with no retries or exclusions.",
+    "formal_gate": "After successful training selection, commit/freeze exact source and driver before both formal optimization and holdout runs. Promote only if BOTH primary Mech/C geomeans strictly improve over accepted31.",
+    "timing_samples_so_far": 0
+  },
+  "probe_sha256": "2f21e41af40d0c155e19df2007b1e2809891ccc9f10d82d552ade85567a0b9eb",
+  "emission_census_sha256": "4abfd3fb2331e91e60a1c02f5a9fbd40c0e129e4790c1176c9859a5de0520f04",
+  "selected_compiler_fingerprint": "4717ff8eacdf08846335a6d8946c68a32c6f9e15d7308021176210768bee7fb2",
+  "selected_driver_sha256": "510d881ab1fa6f09ea9b2d9cbe389835410ec85704c6e0aefffb9567db73b593",
+  "candidate_compiler_fingerprint": "4717ff8eacdf08846335a6d8946c68a32c6f9e15d7308021176210768bee7fb2",
+  "candidate_driver_sha256": "510d881ab1fa6f09ea9b2d9cbe389835410ec85704c6e0aefffb9567db73b593",
+  "decision": "Select qualified native finite guards and checked whole-region cancellation for frozen both-set evaluation.",
+  "summary": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted31": 1.0777576934200883,
+    "regressions_over_five_percent": 0,
+    "sum_candidate_median_seconds": 0.000979959,
+    "sum_reference_median_seconds": 0.001004332,
+    "all_visits_match": true,
+    "all_work_not_reduced": true,
+    "selected": true
+  },
+  "holdout_performance_used": false
+}

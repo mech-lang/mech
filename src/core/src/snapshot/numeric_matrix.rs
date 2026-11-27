@@ -55,6 +55,80 @@ fn from_numeric_matrix<S: Borrow<ShapeInstance> + Into<Arc<ShapeInstance>>>(
     ))
 }
 
+impl Value {
+    /// Complete byte/node cost of a fresh packed F64 matrix owner, without
+    /// constructing a payload or snapshot. This is descriptive pricing only:
+    /// callers still own/validate actual cells and admit their full execution,
+    /// construction, source-replay and publication envelopes separately.
+    #[doc(hidden)]
+    pub fn prospective_f64_matrix_ownership(
+        schema: SchemaId,
+        shape: &ShapeInstance,
+        elements: u64,
+        schemas: &SchemaTable,
+    ) -> crate::MemoryRuntimeResult<(u64, u64)> {
+        let invalid = || crate::MemoryRuntimeError::CandidateValidationFailed {
+            object: None,
+            reason: "prospective F64 matrix differs from schema or shape".into(),
+        };
+        let definition = schemas.get(schema).ok_or_else(invalid)?;
+        definition.validate_shape(shape).map_err(|_| invalid())?;
+        let SchemaBody::Matrix {
+            element,
+            dimensions,
+        } = definition.body()
+        else {
+            return Err(invalid());
+        };
+        if element.as_ref() != &SchemaBody::FloatingPoint(FloatWidth::W64) {
+            return Err(invalid());
+        }
+        let count = dimensions
+            .iter()
+            .try_fold(1u64, |count, dimension| {
+                count.checked_mul(shape.resolve_dimension(dimension).ok()?)
+            })
+            .ok_or_else(invalid)?;
+        if count != elements {
+            return Err(invalid());
+        }
+        Self::fresh_f64_matrix_ownership_count(shape.parameter_values().len(), elements, schemas)
+    }
+
+    // Only already-finalized fresh F64 owners can omit repeated shape/data
+    // validation here. Rebound metadata retains its generic two-shape walk.
+    pub(super) fn fresh_f64_matrix_ownership_count(
+        parameters: usize,
+        elements: u64,
+        schemas: &SchemaTable,
+    ) -> crate::MemoryRuntimeResult<(u64, u64)> {
+        let overflow = || crate::MemoryRuntimeError::CandidateValidationFailed {
+            object: None,
+            reason: "prospective F64 matrix ownership overflows".into(),
+        };
+        let shape_bytes = u64::try_from(parameters)
+            .ok()
+            .and_then(|n| n.checked_mul(core::mem::size_of::<u64>() as u64))
+            .ok_or_else(overflow)?;
+        let payload = elements
+            .checked_mul(core::mem::size_of::<F64Bits>() as u64)
+            .ok_or_else(overflow)?;
+        let required = (core::mem::size_of::<Value>() as u64)
+            .checked_add(core::mem::size_of::<ValueData>() as u64)
+            .and_then(|bytes| bytes.checked_add(shape_bytes))
+            .and_then(|bytes| bytes.checked_add(payload))
+            .and_then(|bytes| bytes.checked_add(Self::canonical_owner_allocation_bytes()))
+            .and_then(|bytes| bytes.checked_add(schemas.clone_allocation_bound_bytes()?))
+            .ok_or_else(overflow)?;
+        let nodes = crate::snapshot::prospective_packed_matrix_node_count(
+            &SchemaBody::FloatingPoint(FloatWidth::W64),
+            elements,
+        )
+        .ok_or_else(overflow)?;
+        Ok((required, nodes))
+    }
+}
+
 /// Detached packed words. Length describes initialized logical elements;
 /// capacity describes owned storage and is never encoded as matrix data.
 #[derive(Debug)]

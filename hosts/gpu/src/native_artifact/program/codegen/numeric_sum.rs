@@ -1,6 +1,6 @@
 //! Ordered +0-seeded F64 reductions. SIMD lanes are independent outputs;
 //! every lane retains the source term order, including empty inner axes.
-use super::numeric_binary::address;
+use super::numeric_binary::{address, finite_result};
 use crate::native_artifact::compiler::f64_arithmetic;
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
@@ -15,6 +15,7 @@ fn cell(
     inner: Value,
     axis: usize,
     vector: bool,
+    cancel: Option<Block>,
 ) {
     let ty = if vector {
         types::F64.by(2).unwrap()
@@ -71,6 +72,7 @@ fn cell(
     b.ins().jump(header, &[]);
     b.switch_to_block(finish);
     let result = b.use_var(sum);
+    finite_result(b, result, cancel);
     let destination = address(b, output, index);
     b.ins().store(MemFlags::new(), result, destination, 0);
 }
@@ -81,6 +83,7 @@ pub(super) fn emit(
     count: Value,
     inner: Value,
     axis: usize,
+    cancel: Option<Block>,
     done: Block,
 ) {
     let index = b.declare_var(types::I64);
@@ -103,7 +106,7 @@ pub(super) fn emit(
     b.ins().brif(two, pair, &[], single, &[]);
     for (block, vector, width) in [(pair, true, 2), (single, false, 1)] {
         b.switch_to_block(block);
-        cell(b, input, output, at, count, inner, axis, vector);
+        cell(b, input, output, at, count, inner, axis, vector, cancel);
         let next = b.ins().iadd_imm(at, width);
         b.def_var(index, next);
         b.ins().jump(header, &[]);

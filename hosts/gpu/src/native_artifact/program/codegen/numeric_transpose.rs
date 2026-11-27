@@ -1,5 +1,5 @@
 //! Exact-bit native transpose over runtime-admitted disjoint typed banks.
-use super::numeric_binary::address;
+use super::numeric_binary::{address, finite_result};
 use cranelift_codegen::ir::{Block, InstBuilder, MemFlags, Value, condcodes::IntCC, types};
 use cranelift_frontend::FunctionBuilder;
 
@@ -10,6 +10,7 @@ pub(super) fn emit(
     count: Value,
     output_columns: Value,
     input_columns: Value,
+    cancel: Option<Block>,
     done: Block,
 ) {
     let header = b.create_block();
@@ -31,6 +32,10 @@ pub(super) fn emit(
     let from = address(b, input, source);
     let to = address(b, output, index);
     let word = b.ins().load(types::I64, MemFlags::new(), from, 0);
+    if cancel.is_some() {
+        let value = b.ins().bitcast(types::F64, MemFlags::new(), word);
+        finite_result(b, value, cancel);
+    }
     b.ins().store(MemFlags::new(), word, to, 0);
     let next = b.ins().iadd_imm(index, 1);
     b.ins().jump(header, &[next.into()]);

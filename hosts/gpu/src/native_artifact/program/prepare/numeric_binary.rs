@@ -3,7 +3,7 @@ use mech_engine::native_artifact::{
     NativeIterationAction as Action, NativeProgramArtifactPlan as Plan, NativeScalarOp,
 };
 pub(in crate::native_artifact) const HEADER_WORK: u64 = 32768;
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq, serde::Serialize)]
 pub(in crate::native_artifact) enum Kind {
     Elementwise(NativeScalarOp),
     Product,
