@@ -66,11 +66,11 @@ pub(super) fn program_type<'de, D: Deserializer<'de>>(
             })
         })
         .transpose()?;
-    Ok(NativeProgramType {
-        schema: image.schema,
-        definition: std::sync::Arc::new(definition.clone()),
-        scalar: scalar.map(std::sync::Arc::new),
-    })
+    Ok(NativeProgramType::new(
+        image.schema,
+        std::sync::Arc::new(definition.clone()),
+        scalar.map(std::sync::Arc::new),
+    ))
 }
 
 /// Per-image canonical type rows. Only immutable, safely constructed types are
@@ -128,11 +128,7 @@ impl<'a> TypeTable<'a> {
                 }))
             })
             .transpose()?;
-        let ty = NativeProgramType {
-            schema,
-            definition: std::sync::Arc::new(definition.clone()),
-            scalar,
-        };
+        let ty = NativeProgramType::new(schema, std::sync::Arc::new(definition.clone()), scalar);
         self.entries.insert((schema, tag), ty.clone());
         Ok(ty)
     }
@@ -377,10 +373,7 @@ mod tests {
         let first = with_image(&row, |r| types.read(r)).unwrap();
         let second = with_image(&row, |r| types.read(r)).unwrap();
         assert_eq!(serde_json::to_value(&first).unwrap(), image);
-        assert!(std::sync::Arc::ptr_eq(
-            &first.definition,
-            &second.definition
-        ));
+        assert!(core::ptr::eq(first.definition(), second.definition()));
         assert!(std::sync::Arc::ptr_eq(
             first.scalar.as_ref().unwrap(),
             second.scalar.as_ref().unwrap()
@@ -424,10 +417,66 @@ mod tests {
             let ty = with_image(&row, |r| types.read(r)).unwrap();
             assert_eq!(ty.scalar().unwrap().descriptor().schema(), &definition);
             assert_eq!(ty.scalar().unwrap().schema_key(), definition.key());
+            assert_eq!(ty.schema_key(), definition.key());
             let foreign = serde_json::json!([0, if index == 0 { 2 } else { 1 }]);
             assert!(with_image(&foreign, |r| types.read(r)).is_err());
         }
     }
+    #[test]
+    fn native_program_type_keys_are_rebuilt_from_each_actual_managed_schema() {
+        let mut keys = Vec::new();
+        for extent in [
+            DimensionExpr::Constant(3),
+            DimensionExpr::Constant(4),
+            DimensionExpr::Parameter(DimensionParameterId::new(0)),
+        ] {
+            let parameters = if matches!(extent, DimensionExpr::Parameter(_)) {
+                vec![DimensionParameterDeclaration {
+                    id: DimensionParameterId::new(0),
+                    origin: DimensionParameterOrigin::Inferred,
+                    lifetime: DimensionLifetime::Turn,
+                    lower_bound: DimensionExpr::Constant(0),
+                    upper_bound: Some(DimensionExpr::Constant(7)),
+                }]
+            } else {
+                Vec::new()
+            };
+            let definition = SchemaDraft {
+                dimension_parameters: parameters.into_boxed_slice(),
+                body: SchemaBody::Matrix {
+                    element: Box::new(SchemaBody::FloatingPoint(FloatWidth::W64)),
+                    dimensions: vec![DimensionExpr::Constant(1), extent].into_boxed_slice(),
+                },
+            }
+            .finalize()
+            .unwrap();
+            let table = values::schemas(&serde_json::json!([definition])).unwrap();
+            let entry = table.entries().next().unwrap();
+            let image = serde_json::json!({"schema":0,"definition":definition,"scalar":null});
+            let restored = with_image(&image, |r| program_type(r, &table)).unwrap();
+            let mut rows = TypeTable::new(&table);
+            let row = serde_json::json!([0, 0]);
+            let compact = with_image(&row, |r| rows.read(r)).unwrap();
+            let direct = NativeProgramType::new(restored.schema(), definition.clone().into(), None);
+            for ty in [direct, restored, compact] {
+                assert_eq!(ty.schema_key(), definition.key());
+                assert_eq!(ty.schema_key(), entry.key());
+                assert_eq!(ty.clone().schema_key(), ty.schema_key());
+                assert_eq!(serde_json::to_value(&ty).unwrap(), image);
+            }
+            keys.push(definition.key());
+            // No caller-provided cache can replace the canonical definition.
+            let mut asserted = image;
+            asserted["schema_key"] = serde_json::to_value(SchemaKey::from_bytes([0; 32])).unwrap();
+            assert!(with_image(&asserted, |r| program_type(r, &table)).is_err());
+        }
+        assert!(
+            keys.iter()
+                .enumerate()
+                .all(|(at, key)| keys[..at].iter().all(|old| old != key))
+        );
+    }
+
     #[test]
     fn resource_description_roundtrips_without_granting_authority() {
         let original = ExecutionResourceRequest {

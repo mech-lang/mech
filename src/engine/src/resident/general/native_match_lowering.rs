@@ -132,11 +132,11 @@ fn program_type(
         Err(_) if managed => None,
         Err(error) => return Err(error),
     };
-    Ok(NativeProgramType {
-        schema: id,
-        definition: std::sync::Arc::new(definition),
-        scalar: scalar.map(std::sync::Arc::new),
-    })
+    Ok(NativeProgramType::new(
+        id,
+        std::sync::Arc::new(definition),
+        scalar.map(std::sync::Arc::new),
+    ))
 }
 
 pub(crate) fn validate_library_types(
@@ -1901,19 +1901,20 @@ mod iteration_proof_tests {
             };
             let mut foreign_nominal = valid.clone();
             let ty = &mut foreign_nominal.values[tail.next().get() as usize];
-            let mech_core::SchemaBody::Enum { variants, .. } = ty.definition.body() else {
+            let mech_core::SchemaBody::Enum { variants, .. } = ty.definition().body() else {
                 panic!("nominal enum state")
             };
-            ty.definition = mech_core::SchemaDraft {
-                dimension_parameters: Box::new([]),
-                body: mech_core::SchemaBody::Enum {
-                    key: mech_core::NominalKey::from_bytes([0x7b; 32]),
-                    variants: variants.clone(),
-                },
-            }
-            .finalize()
-            .unwrap()
-            .into();
+            ty.replace_definition(
+                mech_core::SchemaDraft {
+                    dimension_parameters: Box::new([]),
+                    body: mech_core::SchemaBody::Enum {
+                        key: mech_core::NominalKey::from_bytes([0x7b; 32]),
+                        variants: variants.clone(),
+                    },
+                }
+                .finalize()
+                .unwrap(),
+            );
             assert!(foreign_nominal.validate_current_visits().is_err());
             let mut bad_tag = valid.clone();
             let action = bad_tag
