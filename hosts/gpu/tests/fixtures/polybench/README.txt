@@ -2109,3 +2109,55 @@ Training-only profiles cover78.3% of the current optimization sum and1553 canoni
 | seidel-2d | Opt | 2.92x | 3.04x | 50168.86x |
 
 [Qualification](round-28-qualification.json) · [Frozen source](round-28-frozen.json) · [Acceptance](round-28-performance-acceptance.json) · [Optimization-only profile](round-28-training-profile.json)
+
+Round29: typed native matrix transpose
+
+Sealed F64 rank2 transposes now use the maintained numeric-operation loan and resident shape/source-budget machinery. Ordinary calls and generator banks share exact-bit Cranelift transpose lowering. Dynamic and literal axes remain checked; complete source costs, replay, pinned owners, finite admission and atomic publication remain.
+
+Performance gate: accepted; outcome: improved_both. Accepted compiler after this run: round29.
+
+| Set | Accepted27 x C | Round29 x C | Raw speedup vs27 | Raw speedup since start |
+|---|---:|---:|---:|---:|
+| Optimization | 17.52x | 14.24x | 1.228x | 55.52x |
+| Holdout | 44.53x | 41.53x | 1.090x | 49.00x |
+
+576 selected checks and both standalone feature checks pass, including all30 original/decoded C-liveout programs and Object emission. Fixed/dynamic empty, vector and rectangular shapes preserve exact F64 signedzero, infinity and quiet/signaling NaN payload bits. Existing finite caps, managed memory/node refusal, forged loans, source errors, alias preservation, cleanup and retry remain covered. IR388/work155/ABI46.
+
+Original-reference runtime multipliers vs27: 1.00460x/1.00344x. Reference-adjusted gains: 1.23322x/1.09424x. C multipliers: 1.00253x/0.98323x. Raw regressions>5% vs27: 4/2 (optimization/holdout). All remain.
+
+The prospective optimization-only A/B rule rejected shared numeric-loan ownership at0.98737x vs transpose-only; that source was restored exactly before freeze. Selected transpose-only raw training speedup vs accepted27: 1.32837x. All execution counters match between the two transpose variants. Formal summed medians: 1.620ms/15.606ms. The holdout goal remains strictly below1.0x C.
+
+| Kernel | Set | Accepted27 x C | Round29 x C | Starting x C | Round29 Mech us | Round29 C us |
+|---|---|---:|---:|---:|---:|---:|
+| jacobi-2d | Holdout | 471.95x | 451.95x | 9612.12x | 3502.583 | 7.750 |
+| jacobi-1d | Holdout | 394.25x | 397.02x | 7168.14x | 181.917 | 0.458 |
+| adi | Holdout | 193.76x | 192.91x | 21631.38x | 8439.917 | 43.750 |
+| ludcmp | Holdout | 84.69x | 84.41x | 20723.72x | 1041.084 | 12.333 |
+| gramschmidt | Opt | 55.67x | 60.40x | 27896.34x | 208.916 | 3.459 |
+| lu | Holdout | 52.82x | 59.10x | 20830.73x | 659.917 | 11.167 |
+| mvt | Opt | 67.49x | 58.27x | 138.96x | 75.292 | 1.292 |
+| bicg | Opt | 53.15x | 47.12x | 87.94x | 74.625 | 1.584 |
+| correlation | Opt | 49.16x | 42.99x | 327.94x | 184.500 | 4.292 |
+| fdtd-2d | Holdout | 26.09x | 26.55x | 10500.55x | 182.541 | 6.875 |
+| heat-3d | Holdout | 24.19x | 24.81x | 4178.38x | 433.167 | 17.458 |
+| durbin | Opt | 23.13x | 24.26x | 3899.39x | 30.334 | 1.250 |
+| trisolv | Holdout | 23.44x | 23.82x | 3606.16x | 25.791 | 1.083 |
+| trmm | Holdout | 20.81x | 23.37x | 219.61x | 77.875 | 3.333 |
+| symm | Holdout | 22.28x | 21.60x | 218.10x | 81.916 | 3.792 |
+| syrk | Holdout | 28.69x | 20.96x | 245.10x | 117.042 | 5.583 |
+| syr2k | Holdout | 24.56x | 18.65x | 224.54x | 128.250 | 6.875 |
+| gemver | Holdout | 57.17x | 18.51x | 260.73x | 39.333 | 2.125 |
+| gesummv | Holdout | 11.64x | 18.37x | 112.38x | 18.375 | 1.000 |
+| covariance | Opt | 18.58x | 15.49x | 50.46x | 69.708 | 4.500 |
+| atax | Opt | 44.82x | 14.92x | 79.13x | 18.042 | 1.209 |
+| 2mm | Opt | 11.60x | 13.68x | 77.03x | 22.792 | 1.667 |
+| deriche | Opt | 73.67x | 10.78x | 43560.74x | 316.542 | 29.375 |
+| floyd-warshall | Holdout | 10.37x | 10.38x | 4841.31x | 676.042 | 65.125 |
+| 3mm | Opt | 7.54x | 8.29x | 38.12x | 22.792 | 2.750 |
+| cholesky | Opt | 7.73x | 7.91x | 23662.23x | 56.375 | 7.125 |
+| nussinov | Opt | 6.52x | 6.35x | 119638.18x | 185.208 | 29.167 |
+| doitgen | Opt | 4.86x | 5.83x | 22.47x | 18.459 | 3.167 |
+| gemm | Opt | 5.15x | 4.75x | 36.05x | 20.208 | 4.250 |
+| seidel-2d | Opt | 2.92x | 2.94x | 50168.86x | 316.417 | 107.667 |
+
+[Qualification](round-29-qualification.json) · [Frozen source](round-29-frozen.json) · [Acceptance](round-29-performance-acceptance.json) · [Training selection](round-29-training-selection.json)
