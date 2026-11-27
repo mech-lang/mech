@@ -3170,5 +3170,55 @@
       "abi": 47
     },
     "accepted_driver_unchanged": true
+  },
+  "next_research": {
+    "scope": "Optimization-only follow-up after rejected F64 shared-home experiment; no holdout diagnosis.",
+    "source": "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs",
+    "source_observations": [
+      {
+        "line": 292,
+        "fact": "The shared comprehension/reduction emitter declares the ordered F64 fold accumulator as types::I64 and seeds its raw word with zero."
+      },
+      {
+        "line": 415,
+        "fact": "Each source CollectionPush sends the raw-word accumulator and current term through the maintained primitive F64Add emitter, then writes its raw I64 result into the I64 fold variable."
+      },
+      {
+        "line": 495,
+        "fact": "Only successful loop completion publishes the final raw fold word to NativeNumericMapFrame.fold; miss/replay leaves it uncommitted."
+      },
+      {
+        "source": "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs",
+        "line": 234,
+        "fact": "Native phase reductions and reductions nested in scalar maps share numeric_map::emit, so this is also the ordered comprehension-fold path inside the profiled Gram-Schmidt native function."
+      },
+      {
+        "source": "hosts/gpu/src/native_artifact/program/codegen/numeric_product.rs",
+        "line": 28,
+        "fact": "Whole-matrix products already declare their F64/SIMD accumulator with its actual floating type."
+      },
+      {
+        "source": "hosts/gpu/src/native_artifact/program/codegen/numeric_sum.rs",
+        "line": 25,
+        "fact": "Whole-matrix sums already declare their F64/SIMD accumulator with its actual floating type."
+      }
+    ],
+    "hypothesis": "Keep this independently known F64 fold accumulator in an F64 SSA variable, reuse f64_arithmetic, and bitcast only the finished scalar into the existing frame word. Do not revive the rejected shared-home changes. Confirm the hot emitted function actually loses integer/floating transfers before any probe.",
+    "requirements": [
+      "Start from exact accepted31 compiler; preserve scalar Bool/U64/I64/F64 entry capability and Cranelift-only lowering.",
+      "Preserve positive-zero seed, exact source term order, strict FP operations and every source fee/guard, error, fallback, raw frame ABI and publication boundary. No reassociation, additional SIMD reduction tree or port rewrite.",
+      "Compare actual shared production emitter against its previous word-home form with exact bits, cancellation, infinities/NaNs, zero/odd counts, branch joins, malformed frame and first-error behavior; full original/decoded/restored finite qualification.",
+      "One prospective optimization15 seven-sample probe; preserve all cases and regressions. Freeze committed source/driver before both formal sets. Strictly improve both formal scores versus accepted31."
+    ],
+    "next_ir_version": 395,
+    "accepted_round": 31,
+    "formal_history_entries": 34,
+    "holdout_observed": false
+  },
+  "remote_verification": {
+    "pr1001_head": "f60baf055a39497400f9392e0294911becf1a697",
+    "pr1000_head": "71bb1f90b39ad0bceebf1b5871a375de19683ac8",
+    "both_unchanged": true,
+    "push_performed": false
   }
 }
