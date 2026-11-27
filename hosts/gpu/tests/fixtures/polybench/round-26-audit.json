@@ -1,0 +1,34 @@
+{
+  "status": "passed",
+  "compiler_fingerprint": "859f0e8c3d50f46477db14e2043e3a84297985e2424ae642bc44ac29f57ab551",
+  "driver_sha256": "1bac36d1f66eae10ec230d394429c7061ed17c16705cd50640971bdcb90ebe7e",
+  "observations": 900,
+  "history_entries": 27,
+  "unique_selected_checks": 555,
+  "profile_samples": 2804,
+  "profile_fraction_of_optimization_sum": 0.8759383893899984,
+  "performance_gate": "accepted",
+  "accepted_index": 26,
+  "scores": {
+    "optimization": 18.0785033163086,
+    "holdout": 46.093348121179915
+  },
+  "controls": {
+    "optimization": {
+      "raw_mech_speedup": 1.5342766345944718,
+      "original_reference_runtime_multiplier": 0.9991086237410911,
+      "reference_adjusted_speedup": 1.5329090168277957,
+      "c_runtime_multiplier": 1.0021259836217686,
+      "raw_regressions_over_five_percent_vs_accepted25": 0
+    },
+    "holdout": {
+      "raw_mech_speedup": 1.2459094213515207,
+      "original_reference_runtime_multiplier": 0.9910640491799003,
+      "reference_adjusted_speedup": 1.2347760360360247,
+      "c_runtime_multiplier": 0.9856009651421149,
+      "raw_regressions_over_five_percent_vs_accepted25": 0
+    }
+  },
+  "goal_achieved": false,
+  "holdout_use": "Aggregate acceptance only after training selection/freeze; no holdout per-case profiling or tuning."
+}

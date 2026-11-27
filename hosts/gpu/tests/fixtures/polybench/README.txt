@@ -1951,3 +1951,55 @@ The goal remains unmet: holdout 56.60x C, targeting strictly below 1.0x C. PR100
 | seidel-2d | Opt | 2.86x | 2.81x | 50168.86x |
 
 [Qualification and controls](round-25-qualification.json) · [Frozen source](round-25-frozen.json) · [Acceptance](round-25-performance-acceptance.json) · [Optimization-only profile](round-25-training-profile.json)
+
+Round26: ordered native matrix products
+
+F64 matrix products now use source-selected Cranelift loops over exact current typed loans, sharing resident geometry and scalar arithmetic. Independent output-column SIMD lanes preserve each cell’s +0 identity and term order, including odd tails and empty inner dimensions. Full source costs, physical checks, replay and atomic publication remain.
+
+Performance gate: accepted; classification: improved_both. Compare against accepted25, with no excluded cases.
+
+| Set | Accepted25 x C | Round26 x C | Raw speedup vs25 | Raw speedup since start |
+|---|---:|---:|---:|---:|
+| Optimization | 27.80x | 18.08x | 1.534x | 43.28x |
+| Holdout | 56.60x | 46.09x | 1.246x | 44.61x |
+
+555 selected checks and both feature builds pass, including29482 finite C live-outs in original/decoded artifacts and Object emission. IR385/work152/ABI44. Root frame144bytes; separate matrix arithmetic loan80bytes.
+
+Original-reference runtime multipliers vs25: 0.99911x/0.99106x. Reference-adjusted gains: 1.53291x/1.23478x. C multipliers: 1.00213x/0.98560x. Raw regressions>5% vs25: 0/0 (optimization/holdout). All remain.
+
+Training-only seven-sample selection: 1.67345x. Summed medians: 3.918ms/15.892ms. Holdout target remains strictly below1.0x C.
+
+| Kernel | Set | Accepted25 x C | Round26 x C | Starting x C |
+|---|---|---:|---:|---:|---:|
+| jacobi-2d | Holdout | 449.53x | 450.51x | 9612.12x |
+| jacobi-1d | Holdout | 432.71x | 431.56x | 7168.14x |
+| adi | Holdout | 191.32x | 192.41x | 21631.38x |
+| deriche | Opt | 87.68x | 86.63x | 43560.74x |
+| ludcmp | Holdout | 81.62x | 78.78x | 20723.72x |
+| bicg | Opt | 74.89x | 62.47x | 87.94x |
+| mvt | Opt | 110.22x | 59.01x | 138.96x |
+| gramschmidt | Opt | 59.66x | 56.81x | 27896.34x |
+| gemver | Holdout | 100.37x | 56.53x | 260.73x |
+| lu | Holdout | 52.32x | 56.10x | 20830.73x |
+| atax | Opt | 67.30x | 50.78x | 79.13x |
+| correlation | Opt | 52.43x | 47.84x | 327.94x |
+| syrk | Holdout | 31.32x | 28.14x | 245.10x |
+| fdtd-2d | Holdout | 25.38x | 26.54x | 10500.55x |
+| syr2k | Holdout | 33.11x | 26.52x | 224.54x |
+| heat-3d | Holdout | 23.95x | 24.53x | 4178.38x |
+| durbin | Opt | 22.79x | 23.92x | 3899.39x |
+| trmm | Holdout | 34.13x | 23.43x | 219.61x |
+| trisolv | Holdout | 25.55x | 22.85x | 3606.16x |
+| symm | Holdout | 32.73x | 22.40x | 218.10x |
+| covariance | Opt | 23.74x | 18.58x | 50.46x |
+| gesummv | Holdout | 67.27x | 15.99x | 112.38x |
+| 2mm | Opt | 42.06x | 11.52x | 77.03x |
+| floyd-warshall | Holdout | 10.16x | 10.34x | 4841.31x |
+| 3mm | Opt | 34.33x | 8.55x | 38.12x |
+| cholesky | Opt | 8.45x | 7.73x | 23662.23x |
+| nussinov | Opt | 5.96x | 6.08x | 119638.18x |
+| doitgen | Opt | 18.20x | 5.41x | 22.47x |
+| gemm | Opt | 14.89x | 5.15x | 36.05x |
+| seidel-2d | Opt | 2.81x | 2.85x | 50168.86x |
+
+[Qualification](round-26-qualification.json) · [Frozen source](round-26-frozen.json) · [Acceptance](round-26-performance-acceptance.json) · [Optimization-only profile](round-26-training-profile.json)
