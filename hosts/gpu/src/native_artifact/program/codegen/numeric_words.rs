@@ -518,6 +518,20 @@ pub(super) fn cell_address(
     let good = b.create_block();
     b.ins().brif(valid, good, &[], bad, &[]);
     b.switch_to_block(good);
+    cell_address_from_ordinals(b, row, column, columns, width, base)
+}
+
+/// Physical address after both zero-based axes have current-view bounds proofs.
+/// The caller retains the exact typed owner and its complete pointer span.
+/// No bounds, lifetime, alignment or alias authority is created here.
+pub(super) fn cell_address_from_ordinals(
+    b: &mut FunctionBuilder<'_>,
+    row: Value,
+    column: Value,
+    columns: Value,
+    width: u8,
+    base: Value,
+) -> Result<(Value, cranelift_codegen::ir::Type), NativeCompileError> {
     let start = b.ins().imul(row, columns);
     let physical = b.ins().iadd(start, column);
     element_address(b, physical, width, |_| base)

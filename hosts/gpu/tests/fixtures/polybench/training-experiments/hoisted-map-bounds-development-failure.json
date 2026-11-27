@@ -1,0 +1,201 @@
+{
+  "schema": "mech.polybench.development-failure.v1",
+  "scope": "Round38 hoisted map bounds focused-build attempt01; no performance observations.",
+  "result": {
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "-p",
+      "mech-gpu",
+      "--no-default-features",
+      "--features",
+      "canonical-native-program",
+      "--lib",
+      "--",
+      "rectangular_map",
+      "numeric_map",
+      "numeric_phase",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "exit_code": 101,
+    "wall_seconds": 15.044633833225816,
+    "compiler_fingerprint": "ad8f9b6682f544bdc6b96c8ff3521adba92be0fd9ebdd5c40d78db0fe1b041c1",
+    "source_unchanged": true,
+    "passed_tests": [],
+    "complete": true
+  },
+  "failure": "Two existing direct emitter geometry tests need the new explicit bounds_proven=false argument so they retain their original checked-read path.",
+  "archives": [
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/attempt-01/source.patch.gz",
+      "sha256": "2a4c433d575f3b71f3f0aa585e9f2929098094dfb4203eae1298aea6281c43c5"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/attempt-01/source-checkpoint.json.gz",
+      "sha256": "94321779e1d70bf516f5e3e8622345a81c42b72c64402a401e9b209a6b60bc3f"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/attempt-01/focused-result.json.gz",
+      "sha256": "9c0a93e2e7bf4865357636290d6631ba2029dd1b06755fedf9aa3820722c42eb"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/attempt-01/focused.log.gz",
+      "sha256": "39fdbbea898bc3cfc3ee047e9570ea76c039aa917756fd04c881c1cfe0423cd0"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/attempt-01/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz",
+      "sha256": "41b023f6d96058a60766890d1372fb66e78eee13ad4b7e06d8283800897232f2"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs.gz",
+      "sha256": "603ebbde1a6f8dd4b51383a2692d4986237fc8db0cd3dece6aaa97c66f38c7b8"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs.gz",
+      "sha256": "2365557101d5badf9a7e3a2e1d507308a135053be50f678cfd41c71bd04fd4dc"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs.gz",
+      "sha256": "64627d7352001c1e488cbdfa032681eac004653bf8baff1765f0e67925557075"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz",
+      "sha256": "22a213ca4b7beca5cb042beacc3ae7f0046943eb48ff13f0b88f4699b8f31f0c"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs.gz",
+      "sha256": "ab701a7d823775a93b6da0e72210fe9027b5f2f933c4adfaf5eec29016025e11"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_map_bounds.rs.gz",
+      "sha256": "33e9fb70139be449de47f3603ef05134fa354105c71a28e9f16aeae98c51faab"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/attempt-01/source/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs.gz",
+      "sha256": "b523c18e749c55dc1fa35e01ddde35d7854041598d5254b31636259cb082a4b8"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/attempt-01/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz",
+      "sha256": "90ce02f3bae2547bd66f90bc9f827a238222bf1809b8c4732d1720647f373c7d"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/hoisted_map_bounds.rs.gz",
+      "sha256": "65f834aef1eaf65a32dd79a1496d405af2d858876cc16357a8f152b9f05e7750"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/attempt-01/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz",
+      "sha256": "37cc1af3053f937314fee71fbe8361b3ffb25ec5489e23b6e21b146c8c5acdc2"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/attempt-01/source/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz",
+      "sha256": "9220720bc807c5ef2b7edfcdd7941faf0b70d464b3428ad77348ebfa4ccf6213"
+    }
+  ],
+  "additional_attempts": [
+    {
+      "attempt": "02",
+      "result": {
+        "command": [
+          "cargo",
+          "test",
+          "--release",
+          "-p",
+          "mech-gpu",
+          "--no-default-features",
+          "--features",
+          "canonical-native-program",
+          "--lib",
+          "--",
+          "rectangular_map",
+          "numeric_map",
+          "numeric_phase",
+          "--test-threads=1",
+          "--nocapture"
+        ],
+        "exit_code": 101,
+        "wall_seconds": 111.24202595790848,
+        "compiler_fingerprint": "fc0f03a72b50d3a4bb3f4a72e430f46e8dac69523cb686d439df9d4ef9a5257d",
+        "source_unchanged": true,
+        "passed_tests": [],
+        "complete": true
+      },
+      "test_summary": {
+        "passed": 101,
+        "failed": 9
+      },
+      "failure": "Conservative whole-range entry misses can change native admission, original lazy reads and replay/source bills even when ordinary outputs match. Keep the complete checked native body and select a proved fast body with pure invariant bounds predicates; never trigger early replay from a hoisted hypothesis.",
+      "archives": [
+        {
+          "path": "qualification/experiments/hoisted-map-bounds-development/attempt-02/source.patch.gz",
+          "sha256": "b7baa196b1adda8b160f64a4c4d813be6956259d07de29d98a01e68d93275ec9"
+        },
+        {
+          "path": "qualification/experiments/hoisted-map-bounds-development/attempt-02/source-checkpoint.json.gz",
+          "sha256": "de589551bc0726889f8cfca09f157912bef0d77f4ab7c6941f31145aec0b6ad6"
+        },
+        {
+          "path": "qualification/experiments/hoisted-map-bounds-development/attempt-02/focused-result.json.gz",
+          "sha256": "aa78b4a9b8e8a6812aa2318122bffa06e7521bf9ae829a3cfab265e5c9179b5a"
+        },
+        {
+          "path": "qualification/experiments/hoisted-map-bounds-development/attempt-02/focused.log.gz",
+          "sha256": "a2cb07b3396dc02ac9af086ca315249ec58d1c602a967c8c7e1ccb4bfc237be8"
+        },
+        {
+          "path": "qualification/experiments/hoisted-map-bounds-development/attempt-02/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz",
+          "sha256": "41b023f6d96058a60766890d1372fb66e78eee13ad4b7e06d8283800897232f2"
+        },
+        {
+          "path": "qualification/experiments/hoisted-map-bounds-development/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs.gz",
+          "sha256": "603ebbde1a6f8dd4b51383a2692d4986237fc8db0cd3dece6aaa97c66f38c7b8"
+        },
+        {
+          "path": "qualification/experiments/hoisted-map-bounds-development/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_map_geometry_tests.rs.gz",
+          "sha256": "6700c327b8f75ce449eb41023d69dbfe04c9cb2839346ce480fcac25910935d9"
+        },
+        {
+          "path": "qualification/experiments/hoisted-map-bounds-development/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs.gz",
+          "sha256": "2365557101d5badf9a7e3a2e1d507308a135053be50f678cfd41c71bd04fd4dc"
+        },
+        {
+          "path": "qualification/experiments/hoisted-map-bounds-development/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs.gz",
+          "sha256": "64627d7352001c1e488cbdfa032681eac004653bf8baff1765f0e67925557075"
+        },
+        {
+          "path": "qualification/experiments/hoisted-map-bounds-development/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz",
+          "sha256": "22a213ca4b7beca5cb042beacc3ae7f0046943eb48ff13f0b88f4699b8f31f0c"
+        },
+        {
+          "path": "qualification/experiments/hoisted-map-bounds-development/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs.gz",
+          "sha256": "ab701a7d823775a93b6da0e72210fe9027b5f2f933c4adfaf5eec29016025e11"
+        },
+        {
+          "path": "qualification/experiments/hoisted-map-bounds-development/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_map_bounds.rs.gz",
+          "sha256": "4a6ca861b2a3f9d34d1e7ad2a225dc18090f18e3ca83eac4c21653231f606d72"
+        },
+        {
+          "path": "qualification/experiments/hoisted-map-bounds-development/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs.gz",
+          "sha256": "b523c18e749c55dc1fa35e01ddde35d7854041598d5254b31636259cb082a4b8"
+        },
+        {
+          "path": "qualification/experiments/hoisted-map-bounds-development/attempt-02/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz",
+          "sha256": "90ce02f3bae2547bd66f90bc9f827a238222bf1809b8c4732d1720647f373c7d"
+        },
+        {
+          "path": "qualification/experiments/hoisted-map-bounds-development/attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/hoisted_map_bounds.rs.gz",
+          "sha256": "7811aa44d05c06688d76296cc1c7ce3447c312d5119455d06d35cd00878bce58"
+        },
+        {
+          "path": "qualification/experiments/hoisted-map-bounds-development/attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz",
+          "sha256": "37cc1af3053f937314fee71fbe8361b3ffb25ec5489e23b6e21b146c8c5acdc2"
+        },
+        {
+          "path": "qualification/experiments/hoisted-map-bounds-development/attempt-02/source/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz",
+          "sha256": "9220720bc807c5ef2b7edfcdd7941faf0b70d464b3428ad77348ebfa4ccf6213"
+        }
+      ]
+    }
+  ]
+}

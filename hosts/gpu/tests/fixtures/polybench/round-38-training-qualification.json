@@ -1,0 +1,958 @@
+{
+  "scope": "Hoisted map bounds: map/phase/source correctness, scalar/compression regressions, all30 C liveouts and feature qualification; no performance measurements",
+  "compiler_fingerprint": "cd648ded5f7a06a0778813920f03ff667aba36ac43520c5c7237a1dee34c63b8",
+  "checks": [
+    {
+      "name": "semantic-catalog-solver.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-core",
+        "--no-default-features",
+        "--features",
+        "functions",
+        "--test",
+        "type_system_catalog",
+        "--test",
+        "type_system_solver",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.3740295418538153,
+      "passed_tests": [
+        27,
+        34
+      ]
+    },
+    {
+      "name": "source-broadcast-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-engine",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-gpu/canonical-native-program",
+        "--test",
+        "canonical_source_semantics",
+        "--test",
+        "canonical_source_review",
+        "--",
+        "broadcast",
+        "arithmetic",
+        "matrix",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.30235049966722727,
+      "passed_tests": [
+        6,
+        9
+      ]
+    },
+    {
+      "name": "type-image-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-engine",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-gpu/canonical-native-program",
+        "--lib",
+        "--",
+        "program_image_read",
+        "guarded_histogram_query_schema_certificate_declines_hidden_distinct_constraints",
+        "tail_proof_keeps_nominal_enum_identity_and_validates_tag_and_projection_paths",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.3016052502207458,
+      "passed_tests": [
+        25,
+        0
+      ]
+    },
+    {
+      "name": "numeric-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric",
+        "rectangular_map",
+        "phase",
+        "row_block",
+        "huffman",
+        "private_publication",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 101.24957854207605,
+      "passed_tests": [
+        414
+      ]
+    },
+    {
+      "name": "matrix-polybench.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_matrix",
+        "--test",
+        "canonical_artifact_polybench",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 64.8258159160614,
+      "passed_tests": [
+        24,
+        30
+      ]
+    },
+    {
+      "name": "program-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_program",
+        "--",
+        "buffer_frame_qualification",
+        "nested_frame_qualification",
+        "numeric_tail_qualification",
+        "numeric_write_qualification",
+        "scalar_state_qualification",
+        "scalar_record_qualification",
+        "word_read_qualification",
+        "huffman_qualification",
+        "sequence_writer_qualification",
+        "collection_qualification",
+        "packed_update_qualification",
+        "range_cursor_qualification",
+        "range_qualification",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 27.953114666976035,
+      "passed_tests": [
+        114
+      ]
+    },
+    {
+      "name": "protocol.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space",
+        "native_runtime_consolidation_preserves_the_charged_layout_envelope",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.19028212502598763,
+      "passed_tests": [
+        2
+      ]
+    },
+    {
+      "name": "abi-layout.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.1718890001066029,
+      "passed_tests": [
+        1
+      ]
+    },
+    {
+      "name": "runtime-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program-runtime",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 4.385287125129253,
+      "passed_tests": []
+    },
+    {
+      "name": "production-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 8.625926416832954,
+      "passed_tests": []
+    }
+  ],
+  "complete": true,
+  "tests": 686,
+  "driver_sha256": "1b6b22da3ae7cdbefbce83caf4e971da2c88f66aad5c62f06b105c80b6d6df58",
+  "driver": "/private/tmp/mech-polybench-optimization/round-38/hoisted-map-bounds/map-bounds-driver",
+  "driver_build_complete": true,
+  "versions": {
+    "ir": 403,
+    "work": 156,
+    "abi": 47
+  },
+  "source_parent": "c7d5c1fc209e08ef8cb3d8c83ecd47ce1f5ebe84",
+  "source_uncommitted": true,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "new_performance_samples": 0,
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "7138c0496416175479b39afc2cad900901e1ad1bad928d12dd593c75ec619368",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "cf6e7515b9a38e82fa996e03fd15556cc926a49ab27421747c79965b6abaf688",
+    "hosts/gpu/src/native_artifact/program/codegen/mod.rs": "e4831e2fa9243a3247e0ca125f0f73d040e96c3a694b5feac18ca4a4b3ad5c60",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs": "299e82b531dca6ad418b31b4a56ba8126221ae6dd14e30d4f7709243bbe89f20",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_bounds.rs": "ca5e8b32beef5dd4b97b1c86d514d8620d3cb0b639d6bf6c13e4c39a37f610ef",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map_geometry_tests.rs": "4cc75447320c3f573749b765e7cac8275b1c65eeb5a86421e80e08dda1fb31a9",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs": "214cb4fabd727f83c7effb1bd4fd3d487b7216539c6b415cbf26d2dd394b62cb",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs": "3d7b32cc4c4b5f9a65371eea8be7304071f613dffbee5b1e6a9592731ce23fe8",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs": "1b3b80a189c75c7680f9ea43265c928a4c288c971fd67e5fe1726724b6b2814b",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "d5ed7da9a636dad3ca20e94b8fb1a4f684d384d79c61b7a703f111c589e916a7",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "e65bf3747a3511076cd983933649c5210f0e15a028b067092476a9d930d6b389",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/hoisted_map_bounds.rs": "c9a52bdd89babbb93fbefcebed8374b80d137cea3b24129c9e10768de0772869",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "4cd90ef1dcd209019d72abaffe615da3ac53704c621a0e8f3a2ba3c052b655a8"
+  },
+  "driver_build": {
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "-p",
+      "mech-gpu",
+      "--no-default-features",
+      "--features",
+      "canonical-native-program",
+      "--example",
+      "polybench_qualification"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 3.440219665877521,
+    "compiler_fingerprint": "cd648ded5f7a06a0778813920f03ff667aba36ac43520c5c7237a1dee34c63b8",
+    "source_unchanged": true
+  },
+  "focused_checks": {
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "-p",
+      "mech-gpu",
+      "--no-default-features",
+      "--features",
+      "canonical-native-program",
+      "--lib",
+      "--",
+      "rectangular_map",
+      "numeric_map",
+      "numeric_phase",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 111.9850705419667,
+    "compiler_fingerprint": "cd648ded5f7a06a0778813920f03ff667aba36ac43520c5c7237a1dee34c63b8",
+    "source_unchanged": true,
+    "passed_tests": [
+      110
+    ],
+    "complete": true
+  },
+  "schema": "mech.polybench.training-qualification.v1",
+  "label": "round38-versioned-map-bounds",
+  "invariants": [
+    "All30 Mech ports, source inputs, C binaries/flags, F64 MINI dataset, limits, finite comparison tolerances, split, primary objective and formal timing/cache boundaries remain unchanged.",
+    "General Cranelift map bounds predicates select a proved body or the unchanged checked body inside one shared native loop. No program-name checks, source rewrite, FP reassociation or FMA.",
+    "Same source evaluation order, scalar operations, lazy reads, errors, current view/span/epoch guards, private output bank, native admission and exact source accounting. False range hypotheses never trigger early replay.",
+    "The pass is shared by standalone maps, phase maps and nested reductions; an explicit test ablation retains the original per-read checked body. Unknown selectors keep checked reads in both paths.",
+    "Prospective v2 selection uses seven fresh-process observations per actor per optimization case, interleaving accepted31 and candidate with alternating pair order. Every sample, case and regression is retained. This is the only observed probe for this source fingerprint.",
+    "Holdout is reserved for the aggregate gate after source/driver freeze. No holdout implementation diagnosis, profiling or per-case tuning."
+  ],
+  "profiling_basis": {
+    "receipt": "training-experiments/optimization-margin-profile.json",
+    "scope": "All15 accepted31 optimization cases, descending Mech/C; no holdout profile.",
+    "target": "gramschmidt",
+    "accepted_mech_over_c": 54.48016,
+    "execution_samples": 225,
+    "hot_function_samples": 174,
+    "hot_function": "mech_canonical_program_entry_v1_numeric_5",
+    "actual_codegen_check": "Before timing, the actual hot function must change, preserve native loops and the original checked body, and show a bounds-proved CFG cycle that skips per-read axis comparisons. Static available-path counts are not measured runtime or path feasibility."
+  },
+  "total_unique_selected_checks": 686,
+  "focused_selected_checks": 110,
+  "development_failure_receipt": "training-experiments/hoisted-map-bounds-development-failure.json",
+  "development_archives": {
+    "2mm-inputs.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/2mm-inputs.json.gz",
+      "sha256": "5d214091e646773faa9e0ddfceb3ccfb55673e953166a92f4adbcb8a2c436579",
+      "compressed_sha256": "5602c071134a0ed5ade81f6c495a1e19ab755b1eacfae24a6232fff252a3b73b"
+    },
+    "3mm-inputs.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/3mm-inputs.json.gz",
+      "sha256": "fa14b5a3947688228fe2fe5a967d8f5be6434f1e055edd6a564d4a840453f32c",
+      "compressed_sha256": "fd745e698c7fc8ca9176d99b9b8e2af115ea65b4132c20314a14ba3ebec82f41"
+    },
+    "abi-layout.log": {
+      "path": "qualification/round-38-versioned-map-bounds/development/abi-layout.log.gz",
+      "sha256": "4598131fbae89530e4d7d8baa8b0b2133a31c17ebb664ac062dbb5ecb8d68730",
+      "compressed_sha256": "884c253a2f512346967c3dd07f72f0d01c614b831d5ff728e46b2ad72946d193"
+    },
+    "atax-inputs.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/atax-inputs.json.gz",
+      "sha256": "7fe07963b30e68ffe7ed86dee64ebc9e404ed264703680ba7f341815dd9300cb",
+      "compressed_sha256": "bad0b3739cc9dcd5910f4eeb62e37389bb38759c322be7f22248ef49435e0cba"
+    },
+    "attempt-04/focused-result.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt-04/focused-result.json.gz",
+      "sha256": "32fb4fdbadc363dd2613ce716c8a3fa35729169091909ce29ddd50a399dd8620",
+      "compressed_sha256": "9cfcb35b6a04aba04cdbbbe6ec608ab74b75dff142b9af84f15f9f637f3f731e"
+    },
+    "attempt-04/focused.log": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt-04/focused.log.gz",
+      "sha256": "8f37a03fde351e6ebb7206ea09f0f34755d9fb4981b1a830655b819d5ea333a4",
+      "compressed_sha256": "9f4f28dabc9520187f31e472ff75c67303448b66348edd59b885cc9c421bec17"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt-04/source/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz.gz",
+      "sha256": "0ac9b674031096fd69316ca5f16de6f99b23235e53389aa162e676b10998a71b",
+      "compressed_sha256": "b59e426f4dd3e9c899fc45b860becd9bf5113ab5a30b95ea095bb412f6a669ad"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt-04/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz.gz",
+      "sha256": "b61a209d6735fcbfec1772d545fd2bf76afd5975938714f2de9ac18d9ee8f5b8",
+      "compressed_sha256": "04025cb02701299fd036c696a693bf422af839a2246fa1f72302e7fa968d5ef8"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz.gz",
+      "sha256": "22a213ca4b7beca5cb042beacc3ae7f0046943eb48ff13f0b88f4699b8f31f0c",
+      "compressed_sha256": "2e7b97e05844a01c955aae93d37f97d9a784243d39de98aeb6d7ff78c724f3ce"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs.gz": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs.gz.gz",
+      "sha256": "f5522faf934ed25c60f3c4b630f61083c40713c1245d812b4202e1bc6392b23a",
+      "compressed_sha256": "1d9cc6a9fce85522ecbcf568c9936ecae647990c165fd04d7e88076fbb62d180"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/numeric_map_bounds.rs.gz": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/numeric_map_bounds.rs.gz.gz",
+      "sha256": "75c1a2417594411162ac7997e8867d2075f81b7c6053afda1cada87c88d07c06",
+      "compressed_sha256": "22c53d8f781795fe31361a2322eb50d141ed2fa66e0579cd0f3f5cc6de1f00e9"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/numeric_map_geometry_tests.rs.gz": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/numeric_map_geometry_tests.rs.gz.gz",
+      "sha256": "6700c327b8f75ce449eb41023d69dbfe04c9cb2839346ce480fcac25910935d9",
+      "compressed_sha256": "3e21e7fcdb1a0a041fa43dfefbd75e606672bde35764525703563ec864f86227"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs.gz": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs.gz.gz",
+      "sha256": "b523c18e749c55dc1fa35e01ddde35d7854041598d5254b31636259cb082a4b8",
+      "compressed_sha256": "8524b9c89dbac6631acf81bcbf31b68d1bb96bd3b917c68e43429cf8d7efb6ff"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs.gz": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs.gz.gz",
+      "sha256": "603ebbde1a6f8dd4b51383a2692d4986237fc8db0cd3dece6aaa97c66f38c7b8",
+      "compressed_sha256": "1d2b6cb5b28ea95d7c934b6b99a1219002170b7f7dc7847655eff202d2e0b587"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs.gz": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs.gz.gz",
+      "sha256": "64627d7352001c1e488cbdfa032681eac004653bf8baff1765f0e67925557075",
+      "compressed_sha256": "4983c5eaed2b5ca14d89df5a42718c5d9ce3b4dd6ce2158ad51572698fd8f7ee"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs.gz": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt-04/source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs.gz.gz",
+      "sha256": "54e6ea9d4eeb753ab4d55148a8fdd41c64e2321a17c51e9cad20c13f1dd38094",
+      "compressed_sha256": "45aadd09aaee6a7937319d32e74cbdf531ce8c07c3755d18be0d54122009c34f"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt-04/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz.gz",
+      "sha256": "dc972b763cabcf7a4a1f9f5d332c3778bcdc1965de5ea52c20f8d5b92a6d3885",
+      "compressed_sha256": "d0816a4c8ee6442ed83f4d5a83496cac79d105826cbc6224627417db604829b5"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/hoisted_map_bounds.rs.gz": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/hoisted_map_bounds.rs.gz.gz",
+      "sha256": "7033f045a6967c330f0358d5206d4f64d5ce971755f4ce1f5bee2310c79f908a",
+      "compressed_sha256": "f732b3a23ebcec9b460f7701cca4391da030c65721e33137e7ad7386d3c5cd75"
+    },
+    "attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt-04/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz.gz",
+      "sha256": "37cc1af3053f937314fee71fbe8361b3ffb25ec5489e23b6e21b146c8c5acdc2",
+      "compressed_sha256": "eeb1c2187a56d4f1b3fb3a1fea83b6eb47ed45d2a7886c2fa36f0eca522ab5f9"
+    },
+    "attempt-04/source-checkpoint.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt-04/source-checkpoint.json.gz",
+      "sha256": "2f1b3b4c4e8921f6f938cf7f15b392f793af9787fe9ff5ab2e8c37bb6c666d9c",
+      "compressed_sha256": "8364c973f02a84e277e9fa0ed3ecc39da3856489b72c05d6e1bc6d339f26cd38"
+    },
+    "attempt-04/source.patch.gz": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt-04/source.patch.gz.gz",
+      "sha256": "2c49803459ce7abe9f757a1b83698580c94f7f079ec1923732fc3b9315018e14",
+      "compressed_sha256": "664d428c0865f2d52811b12d95b88c8cc85a97c3d9c91d26f19f25bd40809a8a"
+    },
+    "attempt03-accepted-loop-census.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt03-accepted-loop-census.json.gz",
+      "sha256": "b4a9e26abde627fae5d14c41673cc21450451978192204479256f0d648fa3989",
+      "compressed_sha256": "451bbbc7c2625498e7cbf52db7781cfc335d2d238253f836317f4d2bb1ccb4d1"
+    },
+    "attempt03-candidate-loop-census.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt03-candidate-loop-census.json.gz",
+      "sha256": "c0474aab74cb0e487ddce230c8e6871cdaab5cf3f5e25fa63bde433a6c456567",
+      "compressed_sha256": "115395124cb619a80a6658510bd801a16927a373e327eae715adc8a7682a2989"
+    },
+    "attempt03-emission-census.log": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt03-emission-census.log.gz",
+      "sha256": "34aaf4116d167166d3b6a37e934fb2d90831d5358475499e841d43b81806deb6",
+      "compressed_sha256": "667e8022749bce621c706a1b8d43ff566bd038823b458d1cfb4c692382fb3c34"
+    },
+    "attempt03-execution-emission-census.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt03-execution-emission-census.json.gz",
+      "sha256": "bbffd5ce24a6858ebf6b40eeade352c39cb2cda3559660c04c7c993805862354",
+      "compressed_sha256": "79ffaa9a187652f4aa7ed8e48cf79f8e59b67886bf1c5cc0422f95f5dcbe962c"
+    },
+    "attempt03-qualification.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/attempt03-qualification.json.gz",
+      "sha256": "a6295c80baf1c7bf6bfa87757a0d72e6880d518df7b1d00ebc3eb9a0b985be67",
+      "compressed_sha256": "d85b8d762e33174deb71d100a23c77a8125a4e3835e613900d094cc372e79507"
+    },
+    "audit-results.py": {
+      "path": "qualification/round-38-versioned-map-bounds/development/audit-results.py.gz",
+      "sha256": "d95c241c6f8805d76c34b138f713ca07a9c06d55340edd102bfa31d45deb34f5",
+      "compressed_sha256": "cf9babe87d5c61e3fb3ea82b27038dda1d72bcabda1958f1fe2d672e78dde3bd"
+    },
+    "bicg-inputs.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/bicg-inputs.json.gz",
+      "sha256": "347f9b21418af097b688c3c2f2b0b3d1b26a2f22bad25d3ac1ea2417ec595541",
+      "compressed_sha256": "1e74978db54bdc2ed6d045554f7df777f40b87b6545b1c17e48aae2215532f81"
+    },
+    "cholesky-inputs.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/cholesky-inputs.json.gz",
+      "sha256": "36015a532a5ec081582b68ab0a979f68ac933d2c089cf0dada1d0352015406a0",
+      "compressed_sha256": "feb9754246ac52e4fef5e31f50918b4af8010a8d26462ad52214437ba5a3d934"
+    },
+    "correlation-inputs.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/correlation-inputs.json.gz",
+      "sha256": "63def6b801c89d6ec8f56de58e4fada06c3167679c8912a63a3eb93fe64fa2c9",
+      "compressed_sha256": "72fb62f1351c7f69e73a5d1668f3fe0069108fdd03924832411669f2f6defa62"
+    },
+    "covariance-inputs.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/covariance-inputs.json.gz",
+      "sha256": "3b0a2f978458496f4ec87ea86df85a41f27e39fa724c38e7248624129adaeff6",
+      "compressed_sha256": "7085a3135550544f36d91d1d458f186f9f9fbcc18d875767dbe1bb96947b6ec8"
+    },
+    "current-work.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/current-work.json.gz",
+      "sha256": "8c1d2f8e7ccee9fe7d6fe34d5396f983f98bfce7b72c92f0026fd9d441e3145b",
+      "compressed_sha256": "7c46ad364a97fa377cd18f2cbcc2acdb3fbbcef51f2d0ed12ca5db43d902f6a0"
+    },
+    "deriche-inputs.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/deriche-inputs.json.gz",
+      "sha256": "19f4630f10d8326720ae223ec26ef8a1a510ba026fdcfd625352a2a6b94d7a16",
+      "compressed_sha256": "1ea5fdf9d6dc37d816a5942df11752f5f125ff93cbf7c76d2488aaf729a36d0a"
+    },
+    "doitgen-inputs.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/doitgen-inputs.json.gz",
+      "sha256": "6f6c233f541bb809c3daaef615884c2b868b5f25d399f8ed113d8fbea7fd993a",
+      "compressed_sha256": "248848cd22a20ba8f0533633cbd433e7547268b1b8c35953a1a925de1f237d1f"
+    },
+    "driver-build-result.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/driver-build-result.json.gz",
+      "sha256": "5507a3f8c1d8bbb2379ca0eae3d55a9637d1c8174c128ccfecfb71e8360a8c8f",
+      "compressed_sha256": "bffeab700c2466012b1d1c31320d621d6c13a1fdc41153de7376808936e816b5"
+    },
+    "driver-build.log": {
+      "path": "qualification/round-38-versioned-map-bounds/development/driver-build.log.gz",
+      "sha256": "23f89f22f102d518a18d294a34b66bdfb83be68b43f843b9cc14d8646e5161dc",
+      "compressed_sha256": "d8ab7a681451ae521181d3eb66e001be852817ac3cb1e08aaebba1a5852c00a4"
+    },
+    "durbin-inputs.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/durbin-inputs.json.gz",
+      "sha256": "9417fe0f792480da60eb0e9741a032bdf4aea4667f370a3b6f6b8229d33da4c7",
+      "compressed_sha256": "1c4405da5f001d79de3e815ddaed455c7f88e79b19286305a46afec148406310"
+    },
+    "emission-census.log": {
+      "path": "qualification/round-38-versioned-map-bounds/development/emission-census.log.gz",
+      "sha256": "e24f7ce7adf77208d7da5358fdceaa86f928d01d8defda1bed251039bbe37876",
+      "compressed_sha256": "c0bc677cb8e885e971c98cdf94c6185c27ce7940e6afad012ff4d2561b60b9a4"
+    },
+    "execution-emission-census.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-emission-census.json.gz",
+      "sha256": "29692b868eb8187851b93e603a09e8dc6bdbed552d3da1d3a7b40f8f499fd3c4",
+      "compressed_sha256": "80749e3700a0108ba0f89d73827b311e11e8702a3636ca65ad795efedf1c1fc7"
+    },
+    "execution-emission-census.py": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-emission-census.py.gz",
+      "sha256": "302e8db2a24768b58666d859c590508182d4cc0d9e9c23aebee4dfce017d2175",
+      "compressed_sha256": "bfcfccb05fcab26256d764bce70d75fae123faf4cfe42aab38109af3115bfc97"
+    },
+    "execution-objects/2mm.disasm.txt": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/2mm.disasm.txt.gz",
+      "sha256": "a4e2ee8ec814599cd8b19a0e55b3b9f8936806d158f2d961307e13e31f30f21b",
+      "compressed_sha256": "12f9145afc46649ce966a2cc155e1984aeeb11402de38971a346c44976b711b4"
+    },
+    "execution-objects/2mm.metadata.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/2mm.metadata.json.gz",
+      "sha256": "5e93c974d499397d5649afb6022b58e33aa42de163c5cf865c946171f436cec6",
+      "compressed_sha256": "b3795db7609edc46eb6a5b4cf2016f62098c7fb19d21be176b8c146309093239"
+    },
+    "execution-objects/2mm.o": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/2mm.o.gz",
+      "sha256": "0beaf7832a950ea84eab56a71df052d4d5e184713b606c93202ce134d9cc4a2b",
+      "compressed_sha256": "4761c252791fdf10f80cbd3504f8232eef904992c1acf00c096836f8a63155d9"
+    },
+    "execution-objects/3mm.disasm.txt": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/3mm.disasm.txt.gz",
+      "sha256": "b94720f05a0302b73015efe39eacff508c6db54935eac7259968a40edfd05420",
+      "compressed_sha256": "e72d6a59ad24f16016b4c1dea6f055d796f81aa727c83ebdfe42a41029ed7545"
+    },
+    "execution-objects/3mm.metadata.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/3mm.metadata.json.gz",
+      "sha256": "b73e155dd622f20befe793dd5deffe3757802398ac3600372a20787eac7d8c7f",
+      "compressed_sha256": "dcce4aa97fc5f6ee7eb158404bc494234bfc920e7930f12e531a9423f0a959ea"
+    },
+    "execution-objects/3mm.o": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/3mm.o.gz",
+      "sha256": "1553f99d45a316bcf46f6553821fb4ae256d8efd8c9c246c834686949d9b09f5",
+      "compressed_sha256": "01191dcbd1552eac74c9d5007fdcbb4872783770f6c8b598c571bc4a1adb74c6"
+    },
+    "execution-objects/atax.disasm.txt": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/atax.disasm.txt.gz",
+      "sha256": "433ad29a7e1053e6964f4b735e92f77c4772029fe699dcd44c90d0fdeda07d07",
+      "compressed_sha256": "d94cf10669af2d3d1e4342b4b01540df11a732ce5cdf1895fc4c5ee186e2e1db"
+    },
+    "execution-objects/atax.metadata.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/atax.metadata.json.gz",
+      "sha256": "36c40c95b2868effaf78032aac4168b6099f63d71e9a39a453f382ab008aea04",
+      "compressed_sha256": "d928c70f8b2970c56a674ed4d6a2bf0c2d93cdb46ef183443210f3f07f8c3f3d"
+    },
+    "execution-objects/atax.o": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/atax.o.gz",
+      "sha256": "6962f925d533fc2c438c413ea4bddb7a451a1e77677f0b53b6e8a4574a13570d",
+      "compressed_sha256": "6ae0e827ba39fc720ac3be86a6d87aa72571927d11340261fb594b6ad47a0f44"
+    },
+    "execution-objects/bicg.disasm.txt": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/bicg.disasm.txt.gz",
+      "sha256": "691d752e4d35cb0ba5c94f61fe71c1eb357d584899c1d795679e829b2f2d351d",
+      "compressed_sha256": "823419cbb86a79b6bbd56045842a4e7a252e305caa3a7815e915061f3d1bece4"
+    },
+    "execution-objects/bicg.metadata.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/bicg.metadata.json.gz",
+      "sha256": "02a86fe1911ac51b861c5e52b45920f947cfb241ce47411dcb0339751996ff91",
+      "compressed_sha256": "b147c2b78bcc539ff1b547a04678a78a87b636c1d1f1a11ed48804afce248740"
+    },
+    "execution-objects/bicg.o": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/bicg.o.gz",
+      "sha256": "e41f0430a9e89ac666b8115554ee3a8e0450ecc31a920037fb6b3b08e80f515a",
+      "compressed_sha256": "bc41988507bad3ded696b891faf35570ede20d68c4c3006891603c16837ed393"
+    },
+    "execution-objects/cholesky.disasm.txt": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/cholesky.disasm.txt.gz",
+      "sha256": "abd2a011b12de5f5d3c24a800f9d4f12224ea5f970d13592c7c1bad3b2f92ac5",
+      "compressed_sha256": "1ecca369b3fdc344dd78d2a419523a276cc9c050156c12a66fbbd80de772e4c4"
+    },
+    "execution-objects/cholesky.metadata.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/cholesky.metadata.json.gz",
+      "sha256": "557e75ec0d06da7e2f0ddb7f61241f9dc9fec174b2a1571a3a851b7a24feb976",
+      "compressed_sha256": "9f7fee178a8e0a6273e2c2e505f7d928c5c9a4814a67be7d76989c1aead90733"
+    },
+    "execution-objects/cholesky.o": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/cholesky.o.gz",
+      "sha256": "3484529fc803ddaf0860761e477308579f251b2a8d3a4c82da0b6d17829931fc",
+      "compressed_sha256": "c9949cc5e71e0e2fd4d02ba149ed7c290286ce2a89399ef975fdce4cda562c95"
+    },
+    "execution-objects/correlation.disasm.txt": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/correlation.disasm.txt.gz",
+      "sha256": "20684035750fa907670dbd844a897ba9011076ca0f62f3d7f27aa66d6fb715d3",
+      "compressed_sha256": "97085bebf80a5d27faa50d4956f072b33ee7dcdc846cecc4a6dd7b7d6e9b9409"
+    },
+    "execution-objects/correlation.metadata.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/correlation.metadata.json.gz",
+      "sha256": "c45655b7da8a68b9df9ce1b9c9c0c83256e56784443665024a4e279623b384d7",
+      "compressed_sha256": "0be511732ca63cc5d325d57b0710a2bb55a14f5e51fa57efe9161bea3d5fa859"
+    },
+    "execution-objects/correlation.o": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/correlation.o.gz",
+      "sha256": "eb97f2ae1bbdd43ef7e0af8107a5a2eca714dc44901e1125e6ae5deaa53d2e25",
+      "compressed_sha256": "7ce86bfed252c7580259699975a2f05745e0de826b4edee32906796b869dcd5b"
+    },
+    "execution-objects/covariance.disasm.txt": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/covariance.disasm.txt.gz",
+      "sha256": "4fa4e141dbe818db7fc6377424d9f9d572dcdd4d41dc604eeb1dbfd297fa8b42",
+      "compressed_sha256": "d9ea877f496b3eb63562e0f7c5eb26d4ec5d02584e41e2ad81da856e402c82ff"
+    },
+    "execution-objects/covariance.metadata.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/covariance.metadata.json.gz",
+      "sha256": "9119ee039013cacdcaf4c7198f2e51d8dd29469d48786bff470b365b1e0682d0",
+      "compressed_sha256": "fa79157e744c9284c9bc6f282654bcb3be218ebda2cc4622c60fa49933586cc3"
+    },
+    "execution-objects/covariance.o": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/covariance.o.gz",
+      "sha256": "30b2a8c02f8dcb97f5106cf1c420be9abc97d8a99696c69738532aaf9eec58f0",
+      "compressed_sha256": "dbc00339e5bb696527091f365dde5a48aa72f04a81174731eaa6d5ac5a089004"
+    },
+    "execution-objects/deriche.disasm.txt": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/deriche.disasm.txt.gz",
+      "sha256": "a150859841b9e26af1c169637a8211ac88a4128c802da374fcd93bf1cbf56738",
+      "compressed_sha256": "aa1b760135d4c3bbe87c7fcb916d55ba836c9c78c4b9dee6485962bf7cf5b1f7"
+    },
+    "execution-objects/deriche.metadata.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/deriche.metadata.json.gz",
+      "sha256": "1698f1a7356eb79ad98a623e323f74f462893aff5a307375465736dcfc32d285",
+      "compressed_sha256": "5629839bfdb772d1d64e5cc62d3f846a602115ff063e09709e6147e86f63c072"
+    },
+    "execution-objects/deriche.o": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/deriche.o.gz",
+      "sha256": "97843f84289b4c7c712a8bd3acf170d4c3d86af9b37b33aa51e36b511adb3759",
+      "compressed_sha256": "54129f4eeff23b154708726664b824ccdf5946d098a13999982b3c72306e403b"
+    },
+    "execution-objects/doitgen.disasm.txt": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/doitgen.disasm.txt.gz",
+      "sha256": "2bc21cce7cef6f8015403c48afbb30a95121dce30c37579007496a8a0d3f4c6d",
+      "compressed_sha256": "5e091a705175a996d2d2289bbdd6e3886d84cffe809f5b0841af2ff762dc2998"
+    },
+    "execution-objects/doitgen.metadata.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/doitgen.metadata.json.gz",
+      "sha256": "b2bbb4a7a084fed64453e1de7f284f8215bedb3b71d11ae018c447ea8dae356d",
+      "compressed_sha256": "0771b9e97efd20b63e3870ba687990d7c1a1634ad86c23c88218dd1ac915786d"
+    },
+    "execution-objects/doitgen.o": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/doitgen.o.gz",
+      "sha256": "2d037d8304fe4c180ba0400b7402fc88884640dfcbf88f99859dd51b4ccfef6c",
+      "compressed_sha256": "b34554bcfb3f813c86e47f13519f3daebf9512075808c88c41c2fd992180e76a"
+    },
+    "execution-objects/durbin.disasm.txt": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/durbin.disasm.txt.gz",
+      "sha256": "21afe4cf8f7eade04ad71add12d4a545fcbf97f3e0b9b3f5e066fd82dfb43d00",
+      "compressed_sha256": "7d5eb7735da0ca3ccbeb72f8eb6976ce5c0f9b7cad520d44b86cdd15f288aa80"
+    },
+    "execution-objects/durbin.metadata.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/durbin.metadata.json.gz",
+      "sha256": "65aeeacbfb2cdd9e75b6da20822e6114bcf1b9cf6ee87fecb1823d08d16b7325",
+      "compressed_sha256": "6964f76aa998ff3ba0ba86df0af6d87b9e5487a0d27167a6aa848c1c1f4c656a"
+    },
+    "execution-objects/durbin.o": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/durbin.o.gz",
+      "sha256": "dfdbb7b3d5ad0d176855d184ce44cea274ddf4195626f9dc926bf7c4276b1975",
+      "compressed_sha256": "8eea9c2e8e0b2029b8333ee6bf8769deecb983edbf50b1a1584619c802752463"
+    },
+    "execution-objects/gemm.disasm.txt": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/gemm.disasm.txt.gz",
+      "sha256": "1616b5d6bfb3deceda75b8fee11992388832b536ae0144cd8798c15ce13a7a6f",
+      "compressed_sha256": "3326059a9c60485b57d92d9dfb6b2df336965842221aecc750266f6ed2dd3de6"
+    },
+    "execution-objects/gemm.metadata.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/gemm.metadata.json.gz",
+      "sha256": "3ed0908801f73bc18f2272e133660a47da4a85a99973139f988799e17c89eeb0",
+      "compressed_sha256": "770efe897580a11fdeead4ce91e256e99d779a8e59859fe4ca80f2156b804d5d"
+    },
+    "execution-objects/gemm.o": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/gemm.o.gz",
+      "sha256": "0f415bbd000fbb84b52f553f2cc8651fc9aacccfa9a8497e461db919f287eafe",
+      "compressed_sha256": "a8719ab348583b1f9c0a1b68c55726e8c983de68e495ea2b930d5487f199e626"
+    },
+    "execution-objects/gramschmidt.disasm.txt": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/gramschmidt.disasm.txt.gz",
+      "sha256": "d740ffca5776849c943bef92366acce868647e4b204d11b887bfaf5e0af60e1b",
+      "compressed_sha256": "7610bb8a9d30efbe5c81e31e2c98a076f2a54ee8a6cd02ecccf6f4b041cde4e8"
+    },
+    "execution-objects/gramschmidt.metadata.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/gramschmidt.metadata.json.gz",
+      "sha256": "eab8e4573735fddfa625b10b09e38c22932c3b927ea0846e51e982b6da802752",
+      "compressed_sha256": "a5cec9f417a707bc3e763c4d445e31ee29353cf07126058661c7db806f2cc78d"
+    },
+    "execution-objects/gramschmidt.o": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/gramschmidt.o.gz",
+      "sha256": "9d3274cdcd71ee405d2991947711a115b25120bdcc7f7e6da1aad21053c4d008",
+      "compressed_sha256": "aa716814ae1fd606494f12f395aae2f2f7823fbfc11ac6ab2c49c4731f2ef979"
+    },
+    "execution-objects/mvt.disasm.txt": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/mvt.disasm.txt.gz",
+      "sha256": "f3744c1e0db4bfa14a62f879adc62a72bd98f4f3dae0ac26b5c7e5831b7d51ac",
+      "compressed_sha256": "d6b2d932cded6e2e99acf977656b88b808d0f95e94c40422f9b410b2ac53f00d"
+    },
+    "execution-objects/mvt.metadata.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/mvt.metadata.json.gz",
+      "sha256": "a93df52585fd8a840a0d6ba2969bbf1cbc5206a09f26f2ebd424713c12eb7ffb",
+      "compressed_sha256": "bf9d7c162a80029f07a55f5478a3553e80c1839d60785ec73a20c771f22b5804"
+    },
+    "execution-objects/mvt.o": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/mvt.o.gz",
+      "sha256": "d576365d37f161687dea26f6d2c3ad768a8f87461b028870d24ec719c41a28f1",
+      "compressed_sha256": "31f475c50ba84ac574e00490202c061e4228d08ce06af100460ba9c4857b35ee"
+    },
+    "execution-objects/nussinov.disasm.txt": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/nussinov.disasm.txt.gz",
+      "sha256": "94032f71fecad32d56cb97b451e891b2b0dc810d0fd8c2836353a9d0b05473da",
+      "compressed_sha256": "c77939cd65ad4df88f6f2cd76e022a7a41228c1d73fbddfcf28c862888288b12"
+    },
+    "execution-objects/nussinov.metadata.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/nussinov.metadata.json.gz",
+      "sha256": "64fbef453ee36541b1e36e0b1cf3b3f164de481ce52ee67009d4a8931f4494a8",
+      "compressed_sha256": "1b2f7c183d3c7c087a1c0a8cf3e398fe724c2360142e8de15d2ea91a589b20ee"
+    },
+    "execution-objects/nussinov.o": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/nussinov.o.gz",
+      "sha256": "b7ea5d6d2e4d10c27408d7aed0f22a5c185dd9766416b72928a02c37dac1e3d9",
+      "compressed_sha256": "f2bf3a8153ad0f250c2b4a65376c065325fa6eb8bb2b0b4c84fec13a22edb2b0"
+    },
+    "execution-objects/seidel-2d.disasm.txt": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/seidel-2d.disasm.txt.gz",
+      "sha256": "2a2727c65eba00c61eccc39264e4bccca1a5e50531856cc3dc935cb49d987c7c",
+      "compressed_sha256": "ea553bf053258db529d08de9fd929292679b4f9d9cb4a43e9432b07e0b0341db"
+    },
+    "execution-objects/seidel-2d.metadata.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/seidel-2d.metadata.json.gz",
+      "sha256": "ef09cd05d0b319ebcea1522efe8a26fe761ffc3d8eeda5a1f15c364245897f6d",
+      "compressed_sha256": "05dcc12b55b6266334a1a612de7e36590e5ae7273cbd228ff66e875e04f1cf96"
+    },
+    "execution-objects/seidel-2d.o": {
+      "path": "qualification/round-38-versioned-map-bounds/development/execution-objects/seidel-2d.o.gz",
+      "sha256": "c92312a9add526421f54a5fc87c27e18da94577b6459ec10f498dbeb3dce9937",
+      "compressed_sha256": "8573670f9ae00772534162bc686ddbc74ec821e2e125f2e78477389051b7d658"
+    },
+    "finalize-results.py": {
+      "path": "qualification/round-38-versioned-map-bounds/development/finalize-results.py.gz",
+      "sha256": "accf1a02e727c7e6b177fc0e228f394e6669608802a1620df9ccd0a91f22b025",
+      "compressed_sha256": "ccc48e3bc12758178e7808d8d0d4db8197ec064125121d0e29d163175b89a2bd"
+    },
+    "gemm-inputs.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/gemm-inputs.json.gz",
+      "sha256": "efbbdcaccd1d9e18b09ea4769add03f659bd68323ac133ed1588851643fac6e0",
+      "compressed_sha256": "c618d5ca18d56426e17ef95a24c63a0887356320b868c22ab618c53f9ba2c952"
+    },
+    "gramschmidt-inputs.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/gramschmidt-inputs.json.gz",
+      "sha256": "83895c3341e6ac8f3763e6c2572fabb644c15950aa43618730181d888aa5bf51",
+      "compressed_sha256": "9e7ccb7deeb7cdd887ce9fae90183b7314e8d6ca3d3052b2fa7fb8b5bf362c4c"
+    },
+    "implement.py": {
+      "path": "qualification/round-38-versioned-map-bounds/development/implement.py.gz",
+      "sha256": "e75dd91a0b05130efb94b0905895a9ce0ea8e6409e502b09ed366cebe1928fe3",
+      "compressed_sha256": "154a48efe52ca434580128ccc0a8267428cada4aaf27ffeb1efeed7c54fec932"
+    },
+    "implementation-attempt01.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/implementation-attempt01.json.gz",
+      "sha256": "e6474d18721f49bb91e77a938f4a1266e5b22b53eb3be8cf962e89841e0a2307",
+      "compressed_sha256": "5e5d0982ba2d79803562555125233e1681a46751996e37f0551f69a840344812"
+    },
+    "implementation-attempt01.py": {
+      "path": "qualification/round-38-versioned-map-bounds/development/implementation-attempt01.py.gz",
+      "sha256": "f8b2d3756e5e6c05280afa8ae05e9255dd7147a5b79e608053527b06ebb3251c",
+      "compressed_sha256": "a42555f209f98855d7bc786cc728eb6974076b05ec82ba526ed3e5b65a5d0bbd"
+    },
+    "matrix-polybench.log": {
+      "path": "qualification/round-38-versioned-map-bounds/development/matrix-polybench.log.gz",
+      "sha256": "61b26fe882ebf3c962b6e7fd31eaae7672545fbf5ce7092a144312114af5d9a8",
+      "compressed_sha256": "9c7a1ca9ba9b908b151333c025cf0e4ca79b666d06ada8a38a6804c2519f785e"
+    },
+    "measure-candidate.py": {
+      "path": "qualification/round-38-versioned-map-bounds/development/measure-candidate.py.gz",
+      "sha256": "88064ee1f63042783b59097a0ee838c83222d1e266a6e7e95dffd3b810b17d57",
+      "compressed_sha256": "b6479c53e1e6ea406fa1bf974063f824e94e75fa19f7f77bed08bf6607ca58b0"
+    },
+    "mvt-inputs.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/mvt-inputs.json.gz",
+      "sha256": "fbade0c9877a296d71ab1f406c9e272cc1d24e07cfa9916c41d47b90be287822",
+      "compressed_sha256": "5d7e60c56b967b4d1963e38ff4330e3eefaac46b4c4f46cb28f2107a18154cac"
+    },
+    "native-loop-census.py": {
+      "path": "qualification/round-38-versioned-map-bounds/development/native-loop-census.py.gz",
+      "sha256": "e2074df9414c93b0dba21afa84b7cb4e51f437739373e467b1bed2ab1a32757a",
+      "compressed_sha256": "14b14af84045f8644432b461e95c9efc59f4ab988a5281c8067a50cf8f7a9421"
+    },
+    "numeric-regressions.log": {
+      "path": "qualification/round-38-versioned-map-bounds/development/numeric-regressions.log.gz",
+      "sha256": "6e1a1e1f7f7542916f7f2eaa19bbbb78db7f33f5afb4cfecf7820a52dd04c612",
+      "compressed_sha256": "220dd0e871c307427043163d5380560bd77b7ac40034474d9f43eb2714661e1c"
+    },
+    "nussinov-inputs.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/nussinov-inputs.json.gz",
+      "sha256": "a3b59f91ae1d7d0220770602ebc1e84861fdac162a1867926f1f3e06b7f681ab",
+      "compressed_sha256": "4cacc7fe25f9f6a9df95cfe6b9c145dc1d52a7c86d66f8bd2c8ad995d931b002"
+    },
+    "prepare-qualification-manifest.py": {
+      "path": "qualification/round-38-versioned-map-bounds/development/prepare-qualification-manifest.py.gz",
+      "sha256": "a88a549966cfea5a766d716029cfb6dda25bb5f77acead2467589a83f79d49ab",
+      "compressed_sha256": "28e4732317d89f1644278cb04454ee44c2b6266b8447698e238f2252c04443c6"
+    },
+    "preserve-training.py": {
+      "path": "qualification/round-38-versioned-map-bounds/development/preserve-training.py.gz",
+      "sha256": "2c06dc60d7d14063e5d5f2671f70e344574ca949531fe83c108d051c41b49189",
+      "compressed_sha256": "051d4355ef395b62be0d57d766ab048bf6c87fbbc82bddf4946b34ae9e57b43b"
+    },
+    "production-feature.log": {
+      "path": "qualification/round-38-versioned-map-bounds/development/production-feature.log.gz",
+      "sha256": "c2f199171dc2cdd2525ea0eac09cee9780195c5f24c78e362fdbcf0c76fa8a70",
+      "compressed_sha256": "28f080267b5970d30ad49f4a0e76d08052e993590a710c1dea9d8726aa680a8f"
+    },
+    "program-regressions.log": {
+      "path": "qualification/round-38-versioned-map-bounds/development/program-regressions.log.gz",
+      "sha256": "7c26477e2047e00dd75d85500ccb4a57eeb527f62e44f1873d1dead44ad8059b",
+      "compressed_sha256": "190e066674e571096fc7382d49676bf46342be944695f752058067cce80daaec"
+    },
+    "protocol.log": {
+      "path": "qualification/round-38-versioned-map-bounds/development/protocol.log.gz",
+      "sha256": "aaa661d673f7d21c9eecb22028a48bb7b3b3ad246af35628c3301e66c6b317f3",
+      "compressed_sha256": "d32981254dd88521275ed2199d82b6fa3dfd90c3852a4975734bdd831549ff12"
+    },
+    "qualification-checks.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/qualification-checks.json.gz",
+      "sha256": "317c7003a19d10cbb7e3914c44b1439d77eb2bc575569634bd3085f8ece57edd",
+      "compressed_sha256": "51cc05b8c0cc8b38fa1a9570ef3ca41e4907eb4b756b267097a9433dd5dfe3d7"
+    },
+    "qualification.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/qualification.json.gz",
+      "sha256": "093604ebf9948b6bde0d81281b6240a73c5e317eb2088e7a8e3a0522c72de2a6",
+      "compressed_sha256": "020d5f66d78ad886595ff3c949988f37f7c3e76c25acabd8b239961150372928"
+    },
+    "run-focused-02.py": {
+      "path": "qualification/round-38-versioned-map-bounds/development/run-focused-02.py.gz",
+      "sha256": "51e6364847d7b49c95509147fafd2376dff5589f160ce425862d5add1c54ef39",
+      "compressed_sha256": "56e5bfac0e500a5c5dab053b05ebfe408f9a42ce82d3f25ac24596cb09724d32"
+    },
+    "run-focused-03.py": {
+      "path": "qualification/round-38-versioned-map-bounds/development/run-focused-03.py.gz",
+      "sha256": "c3add6a9e232a5c4b4103a4539104b91c5b9cccf947b2bfffaf77deaab56399e",
+      "compressed_sha256": "e189377f14c7d13ace1e3415c187a8fe6ca244f0f7e28d2733bafff740f5dbd0"
+    },
+    "run-focused-04.py": {
+      "path": "qualification/round-38-versioned-map-bounds/development/run-focused-04.py.gz",
+      "sha256": "e6da7890dad9367a176118d94093b307a45fcd8005a8b428f4232aff07098f1f",
+      "compressed_sha256": "4b501d646988d9c2d47301708dbed9d4f431630ee58474e323891c45cbfdd534"
+    },
+    "run-focused.py": {
+      "path": "qualification/round-38-versioned-map-bounds/development/run-focused.py.gz",
+      "sha256": "9eb6c9cf58d53921b3f0c46f63e8adec1dbb10c24e992fe09dceb90efd9d35b8",
+      "compressed_sha256": "c88f163352ef051a3919767d59dcbc3668d7282e6628cc752f8eb067190cf243"
+    },
+    "run-qualification.py": {
+      "path": "qualification/round-38-versioned-map-bounds/development/run-qualification.py.gz",
+      "sha256": "a38e8f3fae39c83e4c5f71350905c79138456eecbcf9ef37ab7c07f4459a9d7c",
+      "compressed_sha256": "4acc8641b49d308d837a222e22d413189c84c3cd8652fa92094e89ff6253b9fd"
+    },
+    "runtime-feature.log": {
+      "path": "qualification/round-38-versioned-map-bounds/development/runtime-feature.log.gz",
+      "sha256": "83b4deef2f36981e067bad8b5bc7731faa9cb85f6e1374aee18381010e86dbed",
+      "compressed_sha256": "e3ab1c35c223385ae73d44c182db0116c574d5dd236b3c18327d74bb7aaf7f05"
+    },
+    "seidel-2d-inputs.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/seidel-2d-inputs.json.gz",
+      "sha256": "c5c70866b04dbaa635db7493f8097fcd4769c70a1782dac78e7543a78a047577",
+      "compressed_sha256": "e8fcd1f4d36f2dbc89891dfa9f8fd21871d4612911ae205b7c0a6d223b5f5f21"
+    },
+    "selection-policy.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/selection-policy.json.gz",
+      "sha256": "e17e010a6fb919b67b3f380531267398d78b9816f9ff4d89612d3fd443df33ad",
+      "compressed_sha256": "22758f5b75532fcd597b3c6197a3c3183ba18f937d88a7163e71f1862a1b7f31"
+    },
+    "semantic-catalog-solver.log": {
+      "path": "qualification/round-38-versioned-map-bounds/development/semantic-catalog-solver.log.gz",
+      "sha256": "3032789a909c8e3e8252404f1b1d5dcce8c7e7b85819adfbb76c3b73e520aed3",
+      "compressed_sha256": "725bcf3bd20b17def4be4d06658747e89e0af50088a917bd97ce92239ea84671"
+    },
+    "source-broadcast-regressions.log": {
+      "path": "qualification/round-38-versioned-map-bounds/development/source-broadcast-regressions.log.gz",
+      "sha256": "51f62b9d631a8d109f57950ac2fe749cf6b695d8945673de47593ec63eb8315d",
+      "compressed_sha256": "f3c789ca9cdbb8c6bb8f4494dfe324e166d13ee72cbc3345d7a13775085fd882"
+    },
+    "training-probe-plan.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/training-probe-plan.json.gz",
+      "sha256": "44fa2e8cae3ea6a22dccd1fee790959592d5037f6a8f608d8950c59ac06ca6fe",
+      "compressed_sha256": "9055550a6f4566d0c8cb36c38856f50f25ed201c583b23a59fc53298d11f8184"
+    },
+    "training-probe.json": {
+      "path": "qualification/round-38-versioned-map-bounds/development/training-probe.json.gz",
+      "sha256": "13076539121f6bde86e6e6fbf91fff0bf4db91cef306c81fb0fea2e01459c9ba",
+      "compressed_sha256": "e92ddf7500eb434d23d85975b54f71462ec7b60d2f4aebe570e09954633e729f"
+    },
+    "training-probe.log": {
+      "path": "qualification/round-38-versioned-map-bounds/development/training-probe.log.gz",
+      "sha256": "75bd3536188af1256e92c26c2162bda6ce60608f81923cf6fed2db1228562163",
+      "compressed_sha256": "d87a7e47db38df8076e9e210c7093592d3de49f831d6183a5a93e712718211ee"
+    },
+    "training-probe.py": {
+      "path": "qualification/round-38-versioned-map-bounds/development/training-probe.py.gz",
+      "sha256": "d3b1434b6572480394c7f7eeae8f2e0f86511e5d43af8aeb56ffebabff4a1ee2",
+      "compressed_sha256": "fd257c5f74fd12e3ad302da53f0508e281f0de98b0058512836cb572442763d4"
+    },
+    "type-image-regressions.log": {
+      "path": "qualification/round-38-versioned-map-bounds/development/type-image-regressions.log.gz",
+      "sha256": "e628bcdb5a4e810e1640153cb4292d01b0aba44250c9564ad1e0c2aeb51d4e7d",
+      "compressed_sha256": "dae41668e6e8ca9291a8f5fc9860ed2e2f20b424a53dd0730c468b774453418d"
+    }
+  },
+  "limitations": "F64 MINI CPU benchmark scope. Short-kernel profiles are coarse. The fixed holdout has been exposed historically and is an aggregate acceptance control. This training probe does not establish a formal Mech/C score or authorize promotion.",
+  "training_probe_summary": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted31": 1.011908583539466,
+    "regressions_over_five_percent": 0,
+    "all_visits_match": true,
+    "all_work_not_reduced": true,
+    "selected": true
+  }
+}

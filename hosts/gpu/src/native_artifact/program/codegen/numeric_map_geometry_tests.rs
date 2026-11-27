@@ -80,6 +80,7 @@ fn read_function(jit: &JitProgramArtifact) -> Function {
             &metadata.plan,
             &[(args[3], count, rows, columns)],
             &words,
+            false,
             bad,
         )
         .unwrap();
@@ -263,6 +264,7 @@ fn cell_read_function(jit: &JitProgramArtifact) -> Function {
             &metadata.plan,
             &[(args[4], cells, rows, columns)],
             &words,
+            false,
             bad,
         )
         .unwrap();

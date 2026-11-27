@@ -1,0 +1,2016 @@
+{
+  "scope": "Real checked Object export for optimization15 only; no timing observations or linked Object execution.",
+  "compiler_fingerprint": "cd648ded5f7a06a0778813920f03ff667aba36ac43520c5c7237a1dee34c63b8",
+  "driver_sha256": "1b6b22da3ae7cdbefbce83caf4e971da2c88f66aad5c62f06b105c80b6d6df58",
+  "cases": {
+    "2mm": {
+      "stack_bytes": 96,
+      "numeric_function_stacks": {},
+      "code_bytes": 3876,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 969,
+          "disassembly_sha256": "fd45f1073bc60b06aa99c2141b38042c4318d65a726da1672556898b0a28e8cb",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 8,
+          "f64_integer_register_moves": 30,
+          "f64_loads": 24,
+          "f64_stores": 17,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "0beaf7832a950ea84eab56a71df052d4d5e184713b606c93202ce134d9cc4a2b",
+      "metadata_sha256": "5e93c974d499397d5649afb6022b58e33aa42de163c5cf865c946171f436cec6",
+      "disassembly_sha256": "a4e2ee8ec814599cd8b19a0e55b3b9f8936806d158f2d961307e13e31f30f21b",
+      "object_executed": false,
+      "accepted31_stack_bytes": 96,
+      "accepted31_numeric_function_stacks": {},
+      "accepted31_code_bytes": 3876,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 969,
+          "disassembly_sha256": "fd45f1073bc60b06aa99c2141b38042c4318d65a726da1672556898b0a28e8cb",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 8,
+          "f64_integer_register_moves": 30,
+          "f64_loads": 24,
+          "f64_stores": 17,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "rectangular_map_regions": []
+    },
+    "3mm": {
+      "stack_bytes": 96,
+      "numeric_function_stacks": {},
+      "code_bytes": 2040,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 510,
+          "disassembly_sha256": "5328116b83a54d23df87b9193f1deff584a9b3deaeb5034f87983cbd86ff0178",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 3,
+          "f64_integer_register_moves": 0,
+          "f64_loads": 9,
+          "f64_stores": 3,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "1553f99d45a316bcf46f6553821fb4ae256d8efd8c9c246c834686949d9b09f5",
+      "metadata_sha256": "b73e155dd622f20befe793dd5deffe3757802398ac3600372a20787eac7d8c7f",
+      "disassembly_sha256": "b94720f05a0302b73015efe39eacff508c6db54935eac7259968a40edfd05420",
+      "object_executed": false,
+      "accepted31_stack_bytes": 96,
+      "accepted31_numeric_function_stacks": {},
+      "accepted31_code_bytes": 2040,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 510,
+          "disassembly_sha256": "5328116b83a54d23df87b9193f1deff584a9b3deaeb5034f87983cbd86ff0178",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 3,
+          "f64_integer_register_moves": 0,
+          "f64_loads": 9,
+          "f64_stores": 3,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "rectangular_map_regions": []
+    },
+    "atax": {
+      "stack_bytes": 96,
+      "numeric_function_stacks": {},
+      "code_bytes": 2256,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 564,
+          "disassembly_sha256": "11576bcc611390a09c3214968c2180effe20de833ac46db244c530cc77dc9599",
+          "integer_high_multiplications": 1,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 3,
+          "f64_integer_register_moves": 0,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "6962f925d533fc2c438c413ea4bddb7a451a1e77677f0b53b6e8a4574a13570d",
+      "metadata_sha256": "36c40c95b2868effaf78032aac4168b6099f63d71e9a39a453f382ab008aea04",
+      "disassembly_sha256": "433ad29a7e1053e6964f4b735e92f77c4772029fe699dcd44c90d0fdeda07d07",
+      "object_executed": false,
+      "accepted31_stack_bytes": 96,
+      "accepted31_numeric_function_stacks": {},
+      "accepted31_code_bytes": 2256,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 564,
+          "disassembly_sha256": "11576bcc611390a09c3214968c2180effe20de833ac46db244c530cc77dc9599",
+          "integer_high_multiplications": 1,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 3,
+          "f64_integer_register_moves": 0,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "rectangular_map_regions": []
+    },
+    "bicg": {
+      "stack_bytes": 96,
+      "numeric_function_stacks": {},
+      "code_bytes": 2224,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 556,
+          "disassembly_sha256": "4e510d56563321da3ea91332f1ce96a7df726b25d98dbe6f38728610c9166652",
+          "integer_high_multiplications": 1,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 3,
+          "f64_integer_register_moves": 0,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "e41f0430a9e89ac666b8115554ee3a8e0450ecc31a920037fb6b3b08e80f515a",
+      "metadata_sha256": "02a86fe1911ac51b861c5e52b45920f947cfb241ce47411dcb0339751996ff91",
+      "disassembly_sha256": "691d752e4d35cb0ba5c94f61fe71c1eb357d584899c1d795679e829b2f2d351d",
+      "object_executed": false,
+      "accepted31_stack_bytes": 96,
+      "accepted31_numeric_function_stacks": {},
+      "accepted31_code_bytes": 2224,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 556,
+          "disassembly_sha256": "4e510d56563321da3ea91332f1ce96a7df726b25d98dbe6f38728610c9166652",
+          "integer_high_multiplications": 1,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 3,
+          "f64_integer_register_moves": 0,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "rectangular_map_regions": []
+    },
+    "cholesky": {
+      "stack_bytes": 1600,
+      "numeric_function_stacks": {
+        "mech_canonical_program_entry_v1_numeric_5": 1456
+      },
+      "code_bytes": 20636,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 1742,
+          "disassembly_sha256": "fe2098f42de0735665a4423f34977aa7676a6a9483ecca53bc76216514aed5f9",
+          "integer_high_multiplications": 4,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 20,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 2,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3417,
+          "disassembly_sha256": "cbd5d5ca9b7d33536de6e5ce5e7821d7f20f32ae52ba423d4a158ef097318337",
+          "integer_high_multiplications": 6,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 21,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "3484529fc803ddaf0860761e477308579f251b2a8d3a4c82da0b6d17829931fc",
+      "metadata_sha256": "557e75ec0d06da7e2f0ddb7f61241f9dc9fec174b2a1571a3a851b7a24feb976",
+      "disassembly_sha256": "abd2a011b12de5f5d3c24a800f9d4f12224ea5f970d13592c7c1bad3b2f92ac5",
+      "object_executed": false,
+      "accepted31_stack_bytes": 1568,
+      "accepted31_numeric_function_stacks": {
+        "mech_canonical_program_entry_v1_numeric_5": 1440
+      },
+      "accepted31_code_bytes": 19928,
+      "code_bytes_delta": 708,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 1646,
+          "disassembly_sha256": "9b9946988d9f4f9b66e60010c26e811bbfd055b36c8576a263eda863a6064fa8",
+          "integer_high_multiplications": 4,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 15,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 2,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3336,
+          "disassembly_sha256": "04cc32994a7defcef22507e8c0ca8770b5e80cb883368425fee687f9a07e65af",
+          "integer_high_multiplications": 6,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 16,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "rectangular_map_regions": []
+    },
+    "correlation": {
+      "stack_bytes": 128,
+      "numeric_function_stacks": {},
+      "code_bytes": 13264,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3316,
+          "disassembly_sha256": "3fedfa8c4b3506162138d75e51100af752f67f3c80cd45f8fec5a87245667da2",
+          "integer_high_multiplications": 7,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 14,
+          "f64_integer_register_moves": 65,
+          "f64_loads": 41,
+          "f64_stores": 33,
+          "f64_divisions": 15,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "eb97f2ae1bbdd43ef7e0af8107a5a2eca714dc44901e1125e6ae5deaa53d2e25",
+      "metadata_sha256": "c45655b7da8a68b9df9ce1b9c9c0c83256e56784443665024a4e279623b384d7",
+      "disassembly_sha256": "20684035750fa907670dbd844a897ba9011076ca0f62f3d7f27aa66d6fb715d3",
+      "object_executed": false,
+      "accepted31_stack_bytes": 112,
+      "accepted31_numeric_function_stacks": {},
+      "accepted31_code_bytes": 13108,
+      "code_bytes_delta": 156,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3277,
+          "disassembly_sha256": "5c1919ae880d64bcba130b5af3d9e4806aa954e97b4043334922637001e0678b",
+          "integer_high_multiplications": 7,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 14,
+          "f64_integer_register_moves": 65,
+          "f64_loads": 41,
+          "f64_stores": 33,
+          "f64_divisions": 15,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "rectangular_map_regions": []
+    },
+    "covariance": {
+      "stack_bytes": 112,
+      "numeric_function_stacks": {},
+      "code_bytes": 4884,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 1221,
+          "disassembly_sha256": "e8649b09375cb5b3f167027ebb33d5a37ce809609edfff4d6cac1295a51bd7f0",
+          "integer_high_multiplications": 2,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 8,
+          "f64_integer_register_moves": 32,
+          "f64_loads": 22,
+          "f64_stores": 17,
+          "f64_divisions": 10,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "30b2a8c02f8dcb97f5106cf1c420be9abc97d8a99696c69738532aaf9eec58f0",
+      "metadata_sha256": "9119ee039013cacdcaf4c7198f2e51d8dd29469d48786bff470b365b1e0682d0",
+      "disassembly_sha256": "4fa4e141dbe818db7fc6377424d9f9d572dcdd4d41dc604eeb1dbfd297fa8b42",
+      "object_executed": false,
+      "accepted31_stack_bytes": 112,
+      "accepted31_numeric_function_stacks": {},
+      "accepted31_code_bytes": 4884,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 1221,
+          "disassembly_sha256": "e8649b09375cb5b3f167027ebb33d5a37ce809609edfff4d6cac1295a51bd7f0",
+          "integer_high_multiplications": 2,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 8,
+          "f64_integer_register_moves": 32,
+          "f64_loads": 22,
+          "f64_stores": 17,
+          "f64_divisions": 10,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "rectangular_map_regions": []
+    },
+    "deriche": {
+      "stack_bytes": 528,
+      "numeric_function_stacks": {
+        "mech_canonical_program_entry_v1_numeric_67": 192,
+        "mech_canonical_program_entry_v1_numeric_142": 192,
+        "mech_canonical_program_entry_v1_numeric_232": 192,
+        "mech_canonical_program_entry_v1_numeric_307": 192
+      },
+      "code_bytes": 62812,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_67": {
+          "instructions": 753,
+          "disassembly_sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_142": {
+          "instructions": 686,
+          "disassembly_sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_232": {
+          "instructions": 753,
+          "disassembly_sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_307": {
+          "instructions": 686,
+          "disassembly_sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 12825,
+          "disassembly_sha256": "7ce5d96f4d31d9d3e791a81ae88917d3cc19be92f20f9b723275eb40bbcd7f58",
+          "integer_high_multiplications": 24,
+          "logical_right_shifts": 4,
+          "multiply_subtracts": 4,
+          "f64_integer_register_moves": 150,
+          "f64_loads": 16,
+          "f64_stores": 12,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "97843f84289b4c7c712a8bd3acf170d4c3d86af9b37b33aa51e36b511adb3759",
+      "metadata_sha256": "1698f1a7356eb79ad98a623e323f74f462893aff5a307375465736dcfc32d285",
+      "disassembly_sha256": "a150859841b9e26af1c169637a8211ac88a4128c802da374fcd93bf1cbf56738",
+      "object_executed": false,
+      "accepted31_stack_bytes": 496,
+      "accepted31_numeric_function_stacks": {
+        "mech_canonical_program_entry_v1_numeric_67": 192,
+        "mech_canonical_program_entry_v1_numeric_142": 192,
+        "mech_canonical_program_entry_v1_numeric_232": 192,
+        "mech_canonical_program_entry_v1_numeric_307": 192
+      },
+      "accepted31_code_bytes": 62308,
+      "code_bytes_delta": 504,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_67": {
+          "instructions": 753,
+          "disassembly_sha256": "43eeb7e601883de4a122e9dffc990d16c0e904e4b62d27e4a3aac76a898ef7d7",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_142": {
+          "instructions": 686,
+          "disassembly_sha256": "bdb47c88ea6ac69eaaea413dabe351ffd84d54f1bdff9b9005d9b56803888377",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_232": {
+          "instructions": 753,
+          "disassembly_sha256": "e4b73c5d0ca237be83d186898521ad2c33313c5ffb37bf3170937787b85e00d7",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1_numeric_307": {
+          "instructions": 686,
+          "disassembly_sha256": "c86e3ef2a4bb56abf2553fbba813eb0df88aee9072ac3a3ec1bfff09c5e941ff",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 40,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 12699,
+          "disassembly_sha256": "c86880cc3faed4d5fa1f97aa6f21bf491eb89802a64fee9acee0a588e36e3288",
+          "integer_high_multiplications": 24,
+          "logical_right_shifts": 4,
+          "multiply_subtracts": 4,
+          "f64_integer_register_moves": 150,
+          "f64_loads": 16,
+          "f64_stores": 12,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "rectangular_map_regions": []
+    },
+    "doitgen": {
+      "stack_bytes": 96,
+      "numeric_function_stacks": {},
+      "code_bytes": 1200,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 300,
+          "disassembly_sha256": "930481a2e1b204e441d54b3690ad8b98f729c63f270d014ee5b5950f87357649",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 1,
+          "f64_integer_register_moves": 0,
+          "f64_loads": 3,
+          "f64_stores": 1,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "2d037d8304fe4c180ba0400b7402fc88884640dfcbf88f99859dd51b4ccfef6c",
+      "metadata_sha256": "b2bbb4a7a084fed64453e1de7f284f8215bedb3b71d11ae018c447ea8dae356d",
+      "disassembly_sha256": "2bc21cce7cef6f8015403c48afbb30a95121dce30c37579007496a8a0d3f4c6d",
+      "object_executed": false,
+      "accepted31_stack_bytes": 96,
+      "accepted31_numeric_function_stacks": {},
+      "accepted31_code_bytes": 1200,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 300,
+          "disassembly_sha256": "930481a2e1b204e441d54b3690ad8b98f729c63f270d014ee5b5950f87357649",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 1,
+          "f64_integer_register_moves": 0,
+          "f64_loads": 3,
+          "f64_stores": 1,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "rectangular_map_regions": []
+    },
+    "durbin": {
+      "stack_bytes": 1968,
+      "numeric_function_stacks": {
+        "mech_canonical_program_entry_v1_numeric_4": 1824
+      },
+      "code_bytes": 20836,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_4": {
+          "instructions": 1775,
+          "disassembly_sha256": "196c7d8b52ec60a6586968513eb931328dd2ecd3c9fef10aee1f3be6e3a3d2ec",
+          "integer_high_multiplications": 5,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 55,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 6,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3434,
+          "disassembly_sha256": "e5f2f1dc702cb66d2341014e62b392a5eff907d158eab8babf5fc901af8e6af5",
+          "integer_high_multiplications": 7,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 33,
+          "f64_loads": 3,
+          "f64_stores": 1,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "dfdbb7b3d5ad0d176855d184ce44cea274ddf4195626f9dc926bf7c4276b1975",
+      "metadata_sha256": "65aeeacbfb2cdd9e75b6da20822e6114bcf1b9cf6ee87fecb1823d08d16b7325",
+      "disassembly_sha256": "21afe4cf8f7eade04ad71add12d4a545fcbf97f3e0b9b3f5e066fd82dfb43d00",
+      "object_executed": false,
+      "accepted31_stack_bytes": 1936,
+      "accepted31_numeric_function_stacks": {
+        "mech_canonical_program_entry_v1_numeric_4": 1808
+      },
+      "accepted31_code_bytes": 20008,
+      "code_bytes_delta": 828,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_4": {
+          "instructions": 1662,
+          "disassembly_sha256": "33e48e3cc6efc4c6c1b5fdcb5acc350f33aa077ed211c89c55fa8da54eb0fb6e",
+          "integer_high_multiplications": 5,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 38,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 4,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3340,
+          "disassembly_sha256": "4a2ea7350b9d2d38ae65ecc44010dbb79bc88934cc0056cf516f66bc344a7936",
+          "integer_high_multiplications": 7,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 27,
+          "f64_loads": 3,
+          "f64_stores": 1,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "rectangular_map_regions": []
+    },
+    "gemm": {
+      "stack_bytes": 96,
+      "numeric_function_stacks": {},
+      "code_bytes": 3424,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 856,
+          "disassembly_sha256": "6f24829ccddf1405fed4b53f742e347d22089c036c75136206071f13a6393589",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 7,
+          "f64_integer_register_moves": 30,
+          "f64_loads": 21,
+          "f64_stores": 16,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "0f415bbd000fbb84b52f553f2cc8651fc9aacccfa9a8497e461db919f287eafe",
+      "metadata_sha256": "3ed0908801f73bc18f2272e133660a47da4a85a99973139f988799e17c89eeb0",
+      "disassembly_sha256": "1616b5d6bfb3deceda75b8fee11992388832b536ae0144cd8798c15ce13a7a6f",
+      "object_executed": false,
+      "accepted31_stack_bytes": 96,
+      "accepted31_numeric_function_stacks": {},
+      "accepted31_code_bytes": 3424,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 856,
+          "disassembly_sha256": "6f24829ccddf1405fed4b53f742e347d22089c036c75136206071f13a6393589",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 7,
+          "f64_integer_register_moves": 30,
+          "f64_loads": 21,
+          "f64_stores": 16,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "rectangular_map_regions": []
+    },
+    "gramschmidt": {
+      "stack_bytes": 23088,
+      "numeric_function_stacks": {
+        "mech_canonical_program_entry_v1_numeric_5": 22128
+      },
+      "code_bytes": 53744,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 4567,
+          "disassembly_sha256": "89e59b419aa67ba44dbe4c1b52f5efed183e509ab6455df10f5d497dc088795c",
+          "integer_high_multiplications": 29,
+          "logical_right_shifts": 6,
+          "multiply_subtracts": 14,
+          "f64_integer_register_moves": 26,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 2,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 8869,
+          "disassembly_sha256": "cb58d135d0bff878162187d114df88019a10bec6457f6bc3685a52226854aa33",
+          "integer_high_multiplications": 45,
+          "logical_right_shifts": 6,
+          "multiply_subtracts": 14,
+          "f64_integer_register_moves": 43,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 3,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "9d3274cdcd71ee405d2991947711a115b25120bdcc7f7e6da1aad21053c4d008",
+      "metadata_sha256": "eab8e4573735fddfa625b10b09e38c22932c3b927ea0846e51e982b6da802752",
+      "disassembly_sha256": "d740ffca5776849c943bef92366acce868647e4b204d11b887bfaf5e0af60e1b",
+      "object_executed": false,
+      "accepted31_stack_bytes": 22944,
+      "accepted31_numeric_function_stacks": {
+        "mech_canonical_program_entry_v1_numeric_5": 22080
+      },
+      "accepted31_code_bytes": 50664,
+      "code_bytes_delta": 3080,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 4286,
+          "disassembly_sha256": "554d0cbe21bdbb72b806be17668d1b6a0edd65a954101da3b615400aa559a08c",
+          "integer_high_multiplications": 26,
+          "logical_right_shifts": 3,
+          "multiply_subtracts": 7,
+          "f64_integer_register_moves": 15,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 8380,
+          "disassembly_sha256": "dacfa17c9b1bc8b3fb2b706d68b1d0df6272182cdf3592d704c9dd1f894afe55",
+          "integer_high_multiplications": 42,
+          "logical_right_shifts": 3,
+          "multiply_subtracts": 7,
+          "f64_integer_register_moves": 27,
+          "f64_loads": 6,
+          "f64_stores": 2,
+          "f64_divisions": 2,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "rectangular_map_regions": [
+        {
+          "body": [
+            99,
+            101,
+            102,
+            103,
+            105,
+            106,
+            107,
+            108,
+            109,
+            110,
+            111,
+            112,
+            104,
+            113
+          ],
+          "captures": [
+            10,
+            11,
+            22
+          ],
+          "collection": 4,
+          "element": 53,
+          "exit": 117,
+          "header": 89,
+          "input_width": 8,
+          "iteration": 5,
+          "matrices": [
+            {
+              "value": 37,
+              "width": 8,
+              "witness": 107
+            },
+            {
+              "value": 21,
+              "width": 8,
+              "witness": 111
+            }
+          ],
+          "nested": [],
+          "output": 51,
+          "output_width": 8,
+          "range": true,
+          "reads": [
+            {
+              "indices": [
+                56
+              ],
+              "matrix": 0,
+              "output": 59,
+              "site": 107
+            },
+            {
+              "indices": [
+                56,
+                53
+              ],
+              "matrix": 1,
+              "output": 60,
+              "site": 111
+            }
+          ],
+          "rectangle": {
+            "elided_values": [
+              54,
+              61,
+              55
+            ],
+            "end": 20,
+            "inner_collection": 5,
+            "inner_element": 56,
+            "inner_iteration": 6,
+            "range_prepare": 96,
+            "rows": 20,
+            "start": 1,
+            "transpose": 115
+          },
+          "reduction": null,
+          "result": 58,
+          "sites": [
+            89,
+            90,
+            91,
+            92,
+            93,
+            94,
+            95,
+            96,
+            97,
+            98,
+            99,
+            100,
+            101,
+            102,
+            103,
+            104,
+            105,
+            106,
+            107,
+            108,
+            109,
+            110,
+            111,
+            112,
+            113,
+            114,
+            115,
+            116
+          ],
+          "source": 52,
+          "steps": [
+            102,
+            107,
+            108,
+            111,
+            112
+          ],
+          "transpose": null
+        },
+        {
+          "body": [
+            133,
+            135,
+            136,
+            137,
+            139,
+            140,
+            141,
+            142,
+            144,
+            145,
+            146,
+            147,
+            148,
+            149,
+            150,
+            152,
+            153,
+            154,
+            155,
+            156,
+            157,
+            158,
+            159,
+            151,
+            160,
+            143,
+            161,
+            162,
+            163,
+            164,
+            165,
+            138,
+            166
+          ],
+          "captures": [
+            10,
+            11,
+            22,
+            31
+          ],
+          "collection": 6,
+          "element": 64,
+          "exit": 170,
+          "header": 123,
+          "input_width": 8,
+          "iteration": 7,
+          "matrices": [
+            {
+              "value": 38,
+              "width": 8,
+              "witness": 154
+            },
+            {
+              "value": 20,
+              "width": 8,
+              "witness": 158
+            }
+          ],
+          "nested": [],
+          "output": 62,
+          "output_width": 8,
+          "range": true,
+          "reads": [
+            {
+              "indices": [
+                64
+              ],
+              "matrix": 0,
+              "output": 74,
+              "site": 154
+            },
+            {
+              "indices": [
+                67,
+                64
+              ],
+              "matrix": 1,
+              "output": 75,
+              "site": 158
+            },
+            {
+              "indices": [
+                67,
+                64
+              ],
+              "matrix": 1,
+              "output": 76,
+              "site": 164
+            }
+          ],
+          "rectangle": {
+            "elided_values": [
+              65,
+              77,
+              66
+            ],
+            "end": 30,
+            "inner_collection": 7,
+            "inner_element": 67,
+            "inner_iteration": 8,
+            "range_prepare": 130,
+            "rows": 30,
+            "start": 1,
+            "transpose": 168
+          },
+          "reduction": null,
+          "result": 69,
+          "sites": [
+            123,
+            124,
+            125,
+            126,
+            127,
+            128,
+            129,
+            130,
+            131,
+            132,
+            133,
+            134,
+            135,
+            136,
+            137,
+            138,
+            139,
+            140,
+            141,
+            142,
+            143,
+            144,
+            145,
+            146,
+            147,
+            148,
+            149,
+            150,
+            151,
+            152,
+            153,
+            154,
+            155,
+            156,
+            157,
+            158,
+            159,
+            160,
+            161,
+            162,
+            163,
+            164,
+            165,
+            166,
+            167,
+            168,
+            169
+          ],
+          "source": 63,
+          "steps": [
+            136,
+            141,
+            146,
+            149,
+            154,
+            155,
+            158,
+            159,
+            160,
+            161,
+            164,
+            165
+          ],
+          "transpose": null
+        },
+        {
+          "body": [
+            186,
+            188,
+            189,
+            190,
+            192,
+            193,
+            194,
+            195,
+            196,
+            197,
+            198,
+            199,
+            200,
+            201,
+            202,
+            203,
+            191,
+            204
+          ],
+          "captures": [
+            10,
+            11,
+            22
+          ],
+          "collection": 8,
+          "element": 80,
+          "exit": 208,
+          "header": 176,
+          "input_width": 8,
+          "iteration": 9,
+          "matrices": [
+            {
+              "value": 19,
+              "width": 8,
+              "witness": 194
+            },
+            {
+              "value": 37,
+              "width": 8,
+              "witness": 195
+            },
+            {
+              "value": 38,
+              "width": 8,
+              "witness": 196
+            }
+          ],
+          "nested": [],
+          "output": 78,
+          "output_width": 8,
+          "range": true,
+          "reads": [
+            {
+              "indices": [
+                83,
+                80
+              ],
+              "matrix": 0,
+              "output": 86,
+              "site": 194
+            },
+            {
+              "indices": [
+                83
+              ],
+              "matrix": 1,
+              "output": 87,
+              "site": 195
+            },
+            {
+              "indices": [
+                80
+              ],
+              "matrix": 2,
+              "output": 88,
+              "site": 196
+            },
+            {
+              "indices": [
+                83,
+                80
+              ],
+              "matrix": 0,
+              "output": 91,
+              "site": 202
+            }
+          ],
+          "rectangle": {
+            "elided_values": [
+              81,
+              92,
+              82
+            ],
+            "end": 20,
+            "inner_collection": 9,
+            "inner_element": 83,
+            "inner_iteration": 10,
+            "range_prepare": 183,
+            "rows": 20,
+            "start": 1,
+            "transpose": 206
+          },
+          "reduction": null,
+          "result": 85,
+          "sites": [
+            176,
+            177,
+            178,
+            179,
+            180,
+            181,
+            182,
+            183,
+            184,
+            185,
+            186,
+            187,
+            188,
+            189,
+            190,
+            191,
+            192,
+            193,
+            194,
+            195,
+            196,
+            197,
+            198,
+            199,
+            200,
+            201,
+            202,
+            203,
+            204,
+            205,
+            206,
+            207
+          ],
+          "source": 79,
+          "steps": [
+            189,
+            194,
+            195,
+            196,
+            197,
+            198,
+            199,
+            202,
+            203
+          ],
+          "transpose": null
+        }
+      ]
+    },
+    "mvt": {
+      "stack_bytes": 96,
+      "numeric_function_stacks": {},
+      "code_bytes": 3812,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 953,
+          "disassembly_sha256": "0fc6adbb24489ca7fafb85102979d3b1d02e79643bf12ac6dd4570c3fd017b27",
+          "integer_high_multiplications": 1,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 7,
+          "f64_integer_register_moves": 20,
+          "f64_loads": 18,
+          "f64_stores": 12,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "d576365d37f161687dea26f6d2c3ad768a8f87461b028870d24ec719c41a28f1",
+      "metadata_sha256": "a93df52585fd8a840a0d6ba2969bbf1cbc5206a09f26f2ebd424713c12eb7ffb",
+      "disassembly_sha256": "f3744c1e0db4bfa14a62f879adc62a72bd98f4f3dae0ac26b5c7e5831b7d51ac",
+      "object_executed": false,
+      "accepted31_stack_bytes": 96,
+      "accepted31_numeric_function_stacks": {},
+      "accepted31_code_bytes": 3812,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "instructions": 953,
+          "disassembly_sha256": "0fc6adbb24489ca7fafb85102979d3b1d02e79643bf12ac6dd4570c3fd017b27",
+          "integer_high_multiplications": 1,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 7,
+          "f64_integer_register_moves": 20,
+          "f64_loads": 18,
+          "f64_stores": 12,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "rectangular_map_regions": []
+    },
+    "nussinov": {
+      "stack_bytes": 320,
+      "numeric_function_stacks": {
+        "mech_canonical_program_entry_v1_numeric_6": 208
+      },
+      "code_bytes": 19360,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_6": {
+          "instructions": 1404,
+          "disassembly_sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 13,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3436,
+          "disassembly_sha256": "ffcf958701da35a6e177b23bd27e837d8cd4aa83887f2f74ae72c2868814efdd",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 16,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "b7ea5d6d2e4d10c27408d7aed0f22a5c185dd9766416b72928a02c37dac1e3d9",
+      "metadata_sha256": "64fbef453ee36541b1e36e0b1cf3b3f164de481ce52ee67009d4a8931f4494a8",
+      "disassembly_sha256": "94032f71fecad32d56cb97b451e891b2b0dc810d0fd8c2836353a9d0b05473da",
+      "object_executed": false,
+      "accepted31_stack_bytes": 320,
+      "accepted31_numeric_function_stacks": {
+        "mech_canonical_program_entry_v1_numeric_6": 208
+      },
+      "accepted31_code_bytes": 19360,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_6": {
+          "instructions": 1404,
+          "disassembly_sha256": "69a65ef77034e41c21855600e37ad1a1ed5542af435714c80807164f186b1fd1",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 13,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 3436,
+          "disassembly_sha256": "ffcf958701da35a6e177b23bd27e837d8cd4aa83887f2f74ae72c2868814efdd",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 16,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 0,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "rectangular_map_regions": []
+    },
+    "seidel-2d": {
+      "stack_bytes": 288,
+      "numeric_function_stacks": {
+        "mech_canonical_program_entry_v1_numeric_5": 176
+      },
+      "code_bytes": 16104,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 1367,
+          "disassembly_sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 20,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 2,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 2659,
+          "disassembly_sha256": "4a4b83c2d90288ba631f0e93a00c79d08a1ff918336688c54a4de5c181fbb054",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 18,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "object_sha256": "c92312a9add526421f54a5fc87c27e18da94577b6459ec10f498dbeb3dce9937",
+      "metadata_sha256": "ef09cd05d0b319ebcea1522efe8a26fe761ffc3d8eeda5a1f15c364245897f6d",
+      "disassembly_sha256": "2a2727c65eba00c61eccc39264e4bccca1a5e50531856cc3dc935cb49d987c7c",
+      "object_executed": false,
+      "accepted31_stack_bytes": 288,
+      "accepted31_numeric_function_stacks": {
+        "mech_canonical_program_entry_v1_numeric_5": 176
+      },
+      "accepted31_code_bytes": 16104,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "instructions": 1367,
+          "disassembly_sha256": "b881d96c445951b9c5141d6aa34ec1bd54ba1489d97892bf40b9eb08155dbc06",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 20,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 2,
+          "fused_f64_multiply_adds": 0
+        },
+        "mech_canonical_program_entry_v1": {
+          "instructions": 2659,
+          "disassembly_sha256": "4a4b83c2d90288ba631f0e93a00c79d08a1ff918336688c54a4de5c181fbb054",
+          "integer_high_multiplications": 0,
+          "logical_right_shifts": 0,
+          "multiply_subtracts": 0,
+          "f64_integer_register_moves": 18,
+          "f64_loads": 0,
+          "f64_stores": 0,
+          "f64_divisions": 1,
+          "fused_f64_multiply_adds": 0
+        }
+      },
+      "rectangular_map_regions": []
+    }
+  },
+  "native_code_changed_cases": [
+    "cholesky",
+    "correlation",
+    "deriche",
+    "durbin",
+    "gramschmidt"
+  ],
+  "rectangular_map_cases": [
+    "gramschmidt"
+  ],
+  "profiled_function_before": {
+    "instructions": 4286,
+    "disassembly_sha256": "554d0cbe21bdbb72b806be17668d1b6a0edd65a954101da3b615400aa559a08c",
+    "integer_high_multiplications": 26,
+    "logical_right_shifts": 3,
+    "multiply_subtracts": 7,
+    "f64_integer_register_moves": 15,
+    "f64_loads": 0,
+    "f64_stores": 0,
+    "f64_divisions": 1,
+    "fused_f64_multiply_adds": 0
+  },
+  "profiled_function_after": {
+    "instructions": 4567,
+    "disassembly_sha256": "89e59b419aa67ba44dbe4c1b52f5efed183e509ab6455df10f5d497dc088795c",
+    "integer_high_multiplications": 29,
+    "logical_right_shifts": 6,
+    "multiply_subtracts": 14,
+    "f64_integer_register_moves": 26,
+    "f64_loads": 0,
+    "f64_stores": 0,
+    "f64_divisions": 2,
+    "fused_f64_multiply_adds": 0
+  },
+  "profiled_loop_checks_before": {
+    "method": "AArch64 instruction CFG, reachable dominators and natural backedges; innermost loops contain no strict natural subloop. Static counts are not runtime percentages.",
+    "instructions": 4286,
+    "reachable_instructions": 4284,
+    "natural_loops": 13,
+    "innermost_loops": 11,
+    "innermost_union": {
+      "instructions": 234,
+      "integer_comparisons": 37,
+      "conditional_branches": 30
+    },
+    "loops": [
+      {
+        "header": 2792,
+        "instructions": 25,
+        "integer_comparisons": 3,
+        "conditional_branches": 3,
+        "minimum_cycle_integer_comparisons": 3,
+        "cycle_conditional_branches": 3,
+        "cycle_instructions": 25,
+        "cycle_addresses": [
+          2792,
+          2796,
+          12536,
+          12540,
+          12544,
+          12548,
+          12552,
+          12556,
+          12560,
+          12564,
+          12568,
+          12572,
+          12576,
+          12580,
+          12592,
+          12596,
+          12600,
+          12604,
+          12908,
+          12912,
+          12916,
+          12920,
+          12924,
+          12928,
+          12932
+        ]
+      },
+      {
+        "header": 3824,
+        "instructions": 20,
+        "integer_comparisons": 3,
+        "conditional_branches": 2,
+        "minimum_cycle_integer_comparisons": 3,
+        "cycle_conditional_branches": 2,
+        "cycle_instructions": 20,
+        "cycle_addresses": [
+          3824,
+          3828,
+          12164,
+          12168,
+          12172,
+          12176,
+          12180,
+          12184,
+          12188,
+          12192,
+          12496,
+          12500,
+          12504,
+          12508,
+          12512,
+          12516,
+          12520,
+          12524,
+          12528,
+          12532
+        ]
+      },
+      {
+        "header": 3840,
+        "instructions": 6,
+        "integer_comparisons": 1,
+        "conditional_branches": 1,
+        "minimum_cycle_integer_comparisons": 1,
+        "cycle_conditional_branches": 1,
+        "cycle_instructions": 6,
+        "cycle_addresses": [
+          3840,
+          3844,
+          3848,
+          3852,
+          3856,
+          3860
+        ]
+      },
+      {
+        "header": 5124,
+        "instructions": 8,
+        "integer_comparisons": 1,
+        "conditional_branches": 1,
+        "minimum_cycle_integer_comparisons": 1,
+        "cycle_conditional_branches": 1,
+        "cycle_instructions": 8,
+        "cycle_addresses": [
+          5124,
+          5128,
+          5132,
+          5136,
+          5140,
+          5144,
+          5148,
+          5152
+        ]
+      },
+      {
+        "header": 6424,
+        "instructions": 31,
+        "integer_comparisons": 5,
+        "conditional_branches": 4,
+        "minimum_cycle_integer_comparisons": 3,
+        "cycle_conditional_branches": 3,
+        "cycle_instructions": 23,
+        "cycle_addresses": [
+          6424,
+          6428,
+          10280,
+          10284,
+          10288,
+          10292,
+          10296,
+          10300,
+          10304,
+          10308,
+          10312,
+          10316,
+          10320,
+          10364,
+          10368,
+          10372,
+          10676,
+          10680,
+          10684,
+          10688,
+          10692,
+          10696,
+          10700
+        ]
+      },
+      {
+        "header": 6440,
+        "instructions": 7,
+        "integer_comparisons": 1,
+        "conditional_branches": 1,
+        "minimum_cycle_integer_comparisons": 1,
+        "cycle_conditional_branches": 1,
+        "cycle_instructions": 7,
+        "cycle_addresses": [
+          6440,
+          6444,
+          6448,
+          6452,
+          6456,
+          6460,
+          6464
+        ]
+      },
+      {
+        "header": 7748,
+        "instructions": 50,
+        "integer_comparisons": 9,
+        "conditional_branches": 7,
+        "minimum_cycle_integer_comparisons": 3,
+        "cycle_conditional_branches": 3,
+        "cycle_instructions": 25,
+        "cycle_addresses": [
+          7748,
+          7752,
+          9772,
+          9776,
+          9780,
+          9784,
+          9788,
+          9792,
+          9796,
+          9800,
+          9804,
+          9808,
+          9812,
+          9860,
+          9864,
+          9868,
+          10244,
+          10248,
+          10252,
+          10256,
+          10260,
+          10264,
+          10268,
+          10272,
+          10276
+        ]
+      },
+      {
+        "header": 7764,
+        "instructions": 7,
+        "integer_comparisons": 1,
+        "conditional_branches": 1,
+        "minimum_cycle_integer_comparisons": 1,
+        "cycle_conditional_branches": 1,
+        "cycle_instructions": 7,
+        "cycle_addresses": [
+          7764,
+          7768,
+          7772,
+          7776,
+          7780,
+          7784,
+          7788
+        ]
+      },
+      {
+        "header": 9096,
+        "instructions": 48,
+        "integer_comparisons": 8,
+        "conditional_branches": 6,
+        "minimum_cycle_integer_comparisons": 4,
+        "cycle_conditional_branches": 3,
+        "cycle_instructions": 25,
+        "cycle_addresses": [
+          9096,
+          9100,
+          9268,
+          9272,
+          9276,
+          9280,
+          9284,
+          9288,
+          9292,
+          9296,
+          9300,
+          9304,
+          9308,
+          9312,
+          9316,
+          9320,
+          9324,
+          9336,
+          9340,
+          9344,
+          9752,
+          9756,
+          9760,
+          9764,
+          9768
+        ]
+      },
+      {
+        "header": 9112,
+        "instructions": 7,
+        "integer_comparisons": 1,
+        "conditional_branches": 1,
+        "minimum_cycle_integer_comparisons": 1,
+        "cycle_conditional_branches": 1,
+        "cycle_instructions": 7,
+        "cycle_addresses": [
+          9112,
+          9116,
+          9120,
+          9124,
+          9128,
+          9132,
+          9136
+        ]
+      },
+      {
+        "header": 11724,
+        "instructions": 25,
+        "integer_comparisons": 4,
+        "conditional_branches": 3,
+        "minimum_cycle_integer_comparisons": 4,
+        "cycle_conditional_branches": 3,
+        "cycle_instructions": 25,
+        "cycle_addresses": [
+          11724,
+          11728,
+          11768,
+          11772,
+          11776,
+          11780,
+          11784,
+          11788,
+          11800,
+          11804,
+          11808,
+          11812,
+          11816,
+          11820,
+          11824,
+          12124,
+          12128,
+          12132,
+          12136,
+          12140,
+          12144,
+          12148,
+          12152,
+          12156,
+          12160
+        ]
+      }
+    ],
+    "minimum_cycle_comparison_sum": 25,
+    "minimum_comparison_cycle_branch_sum": 22,
+    "cycle_limit": "Static minimum-comparison CFG cycles demonstrate an available path, not input feasibility, dynamic counts or measured speed. Differential execution proves current-input correctness and the subsequent one-probe measurements decide performance.",
+    "unsupported_edges": [],
+    "decoded_dispatches": [
+      {
+        "branch": 544,
+        "table": 548,
+        "bound": 2,
+        "targets": [
+          572,
+          556
+        ]
+      }
+    ]
+  },
+  "profiled_loop_checks_after": {
+    "method": "AArch64 instruction CFG, reachable dominators and natural backedges; innermost loops contain no strict natural subloop. Static counts are not runtime percentages.",
+    "instructions": 4567,
+    "reachable_instructions": 4564,
+    "natural_loops": 13,
+    "innermost_loops": 11,
+    "innermost_union": {
+      "instructions": 389,
+      "integer_comparisons": 42,
+      "conditional_branches": 41
+    },
+    "loops": [
+      {
+        "header": 2836,
+        "instructions": 40,
+        "integer_comparisons": 3,
+        "conditional_branches": 4,
+        "minimum_cycle_integer_comparisons": 1,
+        "cycle_conditional_branches": 2,
+        "cycle_instructions": 18,
+        "cycle_addresses": [
+          2836,
+          2840,
+          12944,
+          12948,
+          12952,
+          13284,
+          13288,
+          13292,
+          13296,
+          13300,
+          13304,
+          13308,
+          13312,
+          13316,
+          13320,
+          13324,
+          13328,
+          13332
+        ]
+      },
+      {
+        "header": 3916,
+        "instructions": 41,
+        "integer_comparisons": 3,
+        "conditional_branches": 3,
+        "minimum_cycle_integer_comparisons": 1,
+        "cycle_conditional_branches": 2,
+        "cycle_instructions": 24,
+        "cycle_addresses": [
+          3916,
+          3920,
+          12540,
+          12544,
+          12548,
+          12552,
+          12556,
+          12560,
+          12880,
+          12884,
+          12888,
+          12892,
+          12896,
+          12900,
+          12904,
+          12908,
+          12912,
+          12916,
+          12920,
+          12924,
+          12928,
+          12932,
+          12936,
+          12940
+        ]
+      },
+      {
+        "header": 3932,
+        "instructions": 6,
+        "integer_comparisons": 1,
+        "conditional_branches": 1,
+        "minimum_cycle_integer_comparisons": 1,
+        "cycle_conditional_branches": 1,
+        "cycle_instructions": 6,
+        "cycle_addresses": [
+          3932,
+          3936,
+          3940,
+          3944,
+          3948,
+          3952
+        ]
+      },
+      {
+        "header": 5228,
+        "instructions": 7,
+        "integer_comparisons": 1,
+        "conditional_branches": 1,
+        "minimum_cycle_integer_comparisons": 1,
+        "cycle_conditional_branches": 1,
+        "cycle_instructions": 7,
+        "cycle_addresses": [
+          5228,
+          5232,
+          5236,
+          5240,
+          5244,
+          5248,
+          5252
+        ]
+      },
+      {
+        "header": 6576,
+        "instructions": 56,
+        "integer_comparisons": 6,
+        "conditional_branches": 6,
+        "minimum_cycle_integer_comparisons": 2,
+        "cycle_conditional_branches": 3,
+        "cycle_instructions": 24,
+        "cycle_addresses": [
+          6576,
+          6580,
+          10568,
+          10572,
+          10576,
+          10580,
+          10584,
+          10920,
+          10924,
+          10928,
+          10932,
+          10936,
+          10940,
+          10944,
+          10948,
+          10952,
+          10976,
+          10980,
+          10984,
+          10988,
+          10992,
+          10996,
+          11000,
+          11004
+        ]
+      },
+      {
+        "header": 6592,
+        "instructions": 7,
+        "integer_comparisons": 1,
+        "conditional_branches": 1,
+        "minimum_cycle_integer_comparisons": 1,
+        "cycle_conditional_branches": 1,
+        "cycle_instructions": 7,
+        "cycle_addresses": [
+          6592,
+          6596,
+          6600,
+          6604,
+          6608,
+          6612,
+          6616
+        ]
+      },
+      {
+        "header": 7952,
+        "instructions": 90,
+        "integer_comparisons": 12,
+        "conditional_branches": 11,
+        "minimum_cycle_integer_comparisons": 2,
+        "cycle_conditional_branches": 3,
+        "cycle_instructions": 27,
+        "cycle_addresses": [
+          7952,
+          7956,
+          10052,
+          10056,
+          10060,
+          10064,
+          10424,
+          10428,
+          10432,
+          10436,
+          10440,
+          10444,
+          10448,
+          10452,
+          10456,
+          10460,
+          10464,
+          10468,
+          10472,
+          10476,
+          10480,
+          10484,
+          10548,
+          10552,
+          10556,
+          10560,
+          10564
+        ]
+      },
+      {
+        "header": 7968,
+        "instructions": 7,
+        "integer_comparisons": 1,
+        "conditional_branches": 1,
+        "minimum_cycle_integer_comparisons": 1,
+        "cycle_conditional_branches": 1,
+        "cycle_instructions": 7,
+        "cycle_addresses": [
+          7968,
+          7972,
+          7976,
+          7980,
+          7984,
+          7988,
+          7992
+        ]
+      },
+      {
+        "header": 9380,
+        "instructions": 85,
+        "integer_comparisons": 9,
+        "conditional_branches": 8,
+        "minimum_cycle_integer_comparisons": 2,
+        "cycle_conditional_branches": 3,
+        "cycle_instructions": 25,
+        "cycle_addresses": [
+          9380,
+          9384,
+          9548,
+          9552,
+          9556,
+          9560,
+          9928,
+          9932,
+          9936,
+          9940,
+          9944,
+          9948,
+          9952,
+          9956,
+          9960,
+          9964,
+          9968,
+          9972,
+          9976,
+          9980,
+          10032,
+          10036,
+          10040,
+          10044,
+          10048
+        ]
+      },
+      {
+        "header": 9396,
+        "instructions": 7,
+        "integer_comparisons": 1,
+        "conditional_branches": 1,
+        "minimum_cycle_integer_comparisons": 1,
+        "cycle_conditional_branches": 1,
+        "cycle_instructions": 7,
+        "cycle_addresses": [
+          9396,
+          9400,
+          9404,
+          9408,
+          9412,
+          9416,
+          9420
+        ]
+      },
+      {
+        "header": 12100,
+        "instructions": 43,
+        "integer_comparisons": 4,
+        "conditional_branches": 4,
+        "minimum_cycle_integer_comparisons": 1,
+        "cycle_conditional_branches": 2,
+        "cycle_instructions": 18,
+        "cycle_addresses": [
+          12100,
+          12104,
+          12148,
+          12152,
+          12484,
+          12488,
+          12492,
+          12496,
+          12500,
+          12504,
+          12508,
+          12512,
+          12516,
+          12520,
+          12524,
+          12528,
+          12532,
+          12536
+        ]
+      }
+    ],
+    "minimum_cycle_comparison_sum": 14,
+    "minimum_comparison_cycle_branch_sum": 20,
+    "cycle_limit": "Static minimum-comparison CFG cycles demonstrate an available path, not input feasibility, dynamic counts or measured speed. Differential execution proves current-input correctness and the subsequent one-probe measurements decide performance.",
+    "unsupported_edges": [],
+    "decoded_dispatches": [
+      {
+        "branch": 536,
+        "table": 540,
+        "bound": 2,
+        "targets": [
+          560,
+          548
+        ]
+      }
+    ]
+  },
+  "complete": true
+}

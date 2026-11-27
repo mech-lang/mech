@@ -24,6 +24,7 @@ pub(super) fn emit(
     proof: &Proof,
     replacement: &Replacement,
     plan: &Plan,
+    hoisted_bounds: bool,
     miss: Block,
 ) -> Result<(), NativeCompileError> {
     let source = &replacement.source;
@@ -100,6 +101,7 @@ pub(super) fn emit(
         &matrices,
         &captures,
         Some((scratch, capacity)),
+        hoisted_bounds,
         miss,
     )?;
     // The complete checked map succeeded. No fallible source operation or

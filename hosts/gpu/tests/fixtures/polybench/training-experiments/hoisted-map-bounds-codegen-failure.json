@@ -1,0 +1,574 @@
+{
+  "schema": "mech.polybench.codegen-gate-failure.v1",
+  "compiler_fingerprint": "5b8440b6edc4c854ce92aed6cf3ec58d84f91c7dacd42437aa1ac8eb9b6c2bf8",
+  "driver_sha256": "3c8cf9f30fded8658247d3b212dd465961b46e53726da9aa218ac7d59ff49018",
+  "broad_checks": 686,
+  "focused_checks": 110,
+  "all30_finite_liveouts": true,
+  "both_feature_checks_passed": true,
+  "performance_observations": 0,
+  "failure": "Actual machine loop path still computes invariant predicate comparisons. Before25 minimum-cycle comparisons, after38, with the same13 natural and11 innermost loops. Timing gate rejects the source before training.",
+  "next": "Use a bounded private invariant home, retaining the exact checked/proved bodies and native stack-limit accounting; verify actual machine placement before any timing.",
+  "archives": [
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/emission-census.log.gz",
+      "sha256": "667e8022749bce621c706a1b8d43ff566bd038823b458d1cfb4c692382fb3c34",
+      "raw_sha256": "34aaf4116d167166d3b6a37e934fb2d90831d5358475499e841d43b81806deb6"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/correlation-inputs.json.gz",
+      "sha256": "72fb62f1351c7f69e73a5d1668f3fe0069108fdd03924832411669f2f6defa62",
+      "raw_sha256": "63def6b801c89d6ec8f56de58e4fada06c3167679c8912a63a3eb93fe64fa2c9"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/training-probe.py.gz",
+      "sha256": "fd257c5f74fd12e3ad302da53f0508e281f0de98b0058512836cb572442763d4",
+      "raw_sha256": "d3b1434b6572480394c7f7eeae8f2e0f86511e5d43af8aeb56ffebabff4a1ee2"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-emission-census.json.gz",
+      "sha256": "79ffaa9a187652f4aa7ed8e48cf79f8e59b67886bf1c5cc0422f95f5dcbe962c",
+      "raw_sha256": "bbffd5ce24a6858ebf6b40eeade352c39cb2cda3559660c04c7c993805862354"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/numeric-regressions.log.gz",
+      "sha256": "1412538417496d43369699363744bb721b33b21bee4f1c954026a44d83592bef",
+      "raw_sha256": "8ef7c20f8b73d8a8469303a8a9bb2766493bd13a164ec6601ce7cc11911a319c"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/run-qualification.py.gz",
+      "sha256": "2a36b143e4246c2c3231bf50b99a08d9428a948f9205c5f5e4c5010c04b1febf",
+      "raw_sha256": "8a1a8a9c6bd094c312ea69b5a81d7fd32ac64bdc603f5b54812eb65883680498"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/production-feature.log.gz",
+      "sha256": "ff343923516de6b1d71be01297a12f1220393669e1b42d54cbd2bf161e7bbcd6",
+      "raw_sha256": "98213609f2e382d8c6b65dcd56b6050aad8978e30854caa00255312f772db878"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/qualification.json.gz",
+      "sha256": "d85b8d762e33174deb71d100a23c77a8125a4e3835e613900d094cc372e79507",
+      "raw_sha256": "a6295c80baf1c7bf6bfa87757a0d72e6880d518df7b1d00ebc3eb9a0b985be67"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/accepted-loop-census.json.gz",
+      "sha256": "451bbbc7c2625498e7cbf52db7781cfc335d2d238253f836317f4d2bb1ccb4d1",
+      "raw_sha256": "b4a9e26abde627fae5d14c41673cc21450451978192204479256f0d648fa3989"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/deriche-inputs.json.gz",
+      "sha256": "1ea5fdf9d6dc37d816a5942df11752f5f125ff93cbf7c76d2488aaf729a36d0a",
+      "raw_sha256": "19f4630f10d8326720ae223ec26ef8a1a510ba026fdcfd625352a2a6b94d7a16"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/driver-build.log.gz",
+      "sha256": "d31b51236b169f7deae6d95ca988708087d47c84f6ddcb3c64292d496c1abafb",
+      "raw_sha256": "c561ba4100f1406381b20f2e5a4e76a9eea3e6fb978210411b7388852ba3e76e"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/semantic-catalog-solver.log.gz",
+      "sha256": "5cd36d5205312e7f97f8e1ea41b0a19d4958fc106f36c076b305cf908afe7246",
+      "raw_sha256": "ba674e68ef7e818db88b0d8d83ae18d2bb1a77b7f2146342aa21d56da5b536d8"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/implementation-attempt01.py.gz",
+      "sha256": "a42555f209f98855d7bc786cc728eb6974076b05ec82ba526ed3e5b65a5d0bbd",
+      "raw_sha256": "f8b2d3756e5e6c05280afa8ae05e9255dd7147a5b79e608053527b06ebb3251c"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/program-regressions.log.gz",
+      "sha256": "9c6068159bd5b52249347f5ade8764bd5cedd09ea4d78780719eb4cf4fd6e0c3",
+      "raw_sha256": "a2713345d8a705f8262726cb1f3e36976a0aa1eb35d6f0c343c7786f6c70ce99"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/run-focused.py.gz",
+      "sha256": "c88f163352ef051a3919767d59dcbc3668d7282e6628cc752f8eb067190cf243",
+      "raw_sha256": "9eb6c9cf58d53921b3f0c46f63e8adec1dbb10c24e992fe09dceb90efd9d35b8"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-emission-census.py.gz",
+      "sha256": "4f6d4d16d696368103b564f44b12e9ede6ed0c4885784fd826a5b75bf3e91ea5",
+      "raw_sha256": "d52892371231604b9dc14d0a3f123b91d5977773b37f875c9f1236726d237b24"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/candidate-loop-census.json.gz",
+      "sha256": "115395124cb619a80a6658510bd801a16927a373e327eae715adc8a7682a2989",
+      "raw_sha256": "c0474aab74cb0e487ddce230c8e6871cdaab5cf3f5e25fa63bde433a6c456567"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/run-focused-02.py.gz",
+      "sha256": "56e5bfac0e500a5c5dab053b05ebfe408f9a42ce82d3f25ac24596cb09724d32",
+      "raw_sha256": "51e6364847d7b49c95509147fafd2376dff5589f160ce425862d5add1c54ef39"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/durbin-inputs.json.gz",
+      "sha256": "1c4405da5f001d79de3e815ddaed455c7f88e79b19286305a46afec148406310",
+      "raw_sha256": "9417fe0f792480da60eb0e9741a032bdf4aea4667f370a3b6f6b8229d33da4c7"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/doitgen-inputs.json.gz",
+      "sha256": "248848cd22a20ba8f0533633cbd433e7547268b1b8c35953a1a925de1f237d1f",
+      "raw_sha256": "6f6c233f541bb809c3daaef615884c2b868b5f25d399f8ed113d8fbea7fd993a"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/run-focused-03.py.gz",
+      "sha256": "e189377f14c7d13ace1e3415c187a8fe6ca244f0f7e28d2733bafff740f5dbd0",
+      "raw_sha256": "c3add6a9e232a5c4b4103a4539104b91c5b9cccf947b2bfffaf77deaab56399e"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/2mm-inputs.json.gz",
+      "sha256": "5602c071134a0ed5ade81f6c495a1e19ab755b1eacfae24a6232fff252a3b73b",
+      "raw_sha256": "5d214091e646773faa9e0ddfceb3ccfb55673e953166a92f4adbcb8a2c436579"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/training-probe-plan.json.gz",
+      "sha256": "9055550a6f4566d0c8cb36c38856f50f25ed201c583b23a59fc53298d11f8184",
+      "raw_sha256": "44fa2e8cae3ea6a22dccd1fee790959592d5037f6a8f608d8950c59ac06ca6fe"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/gramschmidt-inputs.json.gz",
+      "sha256": "9e7ccb7deeb7cdd887ce9fae90183b7314e8d6ca3d3052b2fa7fb8b5bf362c4c",
+      "raw_sha256": "83895c3341e6ac8f3763e6c2572fabb644c15950aa43618730181d888aa5bf51"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/preserve-training.py.gz",
+      "sha256": "1b218ccbbfbfb3bec6fbee1635d95595ff7e7c797f064166cc639ed4d40db122",
+      "raw_sha256": "85942b2d98844941dd0d58898cc3c965ca67e7f80aad648e059e3f846f9fd2cb"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/3mm-inputs.json.gz",
+      "sha256": "fd745e698c7fc8ca9176d99b9b8e2af115ea65b4132c20314a14ba3ebec82f41",
+      "raw_sha256": "fa14b5a3947688228fe2fe5a967d8f5be6434f1e055edd6a564d4a840453f32c"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/nussinov-inputs.json.gz",
+      "sha256": "4cacc7fe25f9f6a9df95cfe6b9c145dc1d52a7c86d66f8bd2c8ad995d931b002",
+      "raw_sha256": "a3b59f91ae1d7d0220770602ebc1e84861fdac162a1867926f1f3e06b7f681ab"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/audit-results.py.gz",
+      "sha256": "cf9babe87d5c61e3fb3ea82b27038dda1d72bcabda1958f1fe2d672e78dde3bd",
+      "raw_sha256": "d95c241c6f8805d76c34b138f713ca07a9c06d55340edd102bfa31d45deb34f5"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/measure-candidate.py.gz",
+      "sha256": "b6479c53e1e6ea406fa1bf974063f824e94e75fa19f7f77bed08bf6607ca58b0",
+      "raw_sha256": "88064ee1f63042783b59097a0ee838c83222d1e266a6e7e95dffd3b810b17d57"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/implementation-attempt01.json.gz",
+      "sha256": "5e5d0982ba2d79803562555125233e1681a46751996e37f0551f69a840344812",
+      "raw_sha256": "e6474d18721f49bb91e77a938f4a1266e5b22b53eb3be8cf962e89841e0a2307"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/native-loop-census.py.gz",
+      "sha256": "14b14af84045f8644432b461e95c9efc59f4ab988a5281c8067a50cf8f7a9421",
+      "raw_sha256": "e2074df9414c93b0dba21afa84b7cb4e51f437739373e467b1bed2ab1a32757a"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/seidel-2d-inputs.json.gz",
+      "sha256": "e8fcd1f4d36f2dbc89891dfa9f8fd21871d4612911ae205b7c0a6d223b5f5f21",
+      "raw_sha256": "c5c70866b04dbaa635db7493f8097fcd4769c70a1782dac78e7543a78a047577"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/gemm-inputs.json.gz",
+      "sha256": "c618d5ca18d56426e17ef95a24c63a0887356320b868c22ab618c53f9ba2c952",
+      "raw_sha256": "efbbdcaccd1d9e18b09ea4769add03f659bd68323ac133ed1588851643fac6e0"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/atax-inputs.json.gz",
+      "sha256": "bad0b3739cc9dcd5910f4eeb62e37389bb38759c322be7f22248ef49435e0cba",
+      "raw_sha256": "7fe07963b30e68ffe7ed86dee64ebc9e404ed264703680ba7f341815dd9300cb"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/implement.py.gz",
+      "sha256": "154a48efe52ca434580128ccc0a8267428cada4aaf27ffeb1efeed7c54fec932",
+      "raw_sha256": "e75dd91a0b05130efb94b0905895a9ce0ea8e6409e502b09ed366cebe1928fe3"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/bicg-inputs.json.gz",
+      "sha256": "1e74978db54bdc2ed6d045554f7df777f40b87b6545b1c17e48aae2215532f81",
+      "raw_sha256": "347f9b21418af097b688c3c2f2b0b3d1b26a2f22bad25d3ac1ea2417ec595541"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/runtime-feature.log.gz",
+      "sha256": "9d8cdcf1925851e0681f07b8da6ee1a1817e7960c88407d4352c3b528e389648",
+      "raw_sha256": "de125494b37f2b36f67d39781231ffb9fb758bc5ae6944b9357798a17f9583a3"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/cholesky-inputs.json.gz",
+      "sha256": "feb9754246ac52e4fef5e31f50918b4af8010a8d26462ad52214437ba5a3d934",
+      "raw_sha256": "36015a532a5ec081582b68ab0a979f68ac933d2c089cf0dada1d0352015406a0"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/driver-build-result.json.gz",
+      "sha256": "c1c01370fa0886c75a35094f874a4f73d9d74af8c0b45b56d07655301be99c66",
+      "raw_sha256": "def86168bdc1ab7c485c766255adbcbc7145a6f44cc2f6865dc8d90aaf946aa2"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/matrix-polybench.log.gz",
+      "sha256": "b009586585a76462b87accf5a40392614d4f208db349ea43fc79f2c3fbf9ae5b",
+      "raw_sha256": "b90898f1669d1a461794a864efacbd18b780f6d0f6bbd0c7a32351b386cd8df1"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/source-broadcast-regressions.log.gz",
+      "sha256": "a8155924aa6cb39944fd42f53e14821566feaa2de37c2f8d804a4a8438f18032",
+      "raw_sha256": "60990e72d64978a1b98be5772e70cadce94f7a4e1160de1ee8334c308b86d341"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/mvt-inputs.json.gz",
+      "sha256": "5d7e60c56b967b4d1963e38ff4330e3eefaac46b4c4f46cb28f2107a18154cac",
+      "raw_sha256": "fbade0c9877a296d71ab1f406c9e272cc1d24e07cfa9916c41d47b90be287822"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/abi-layout.log.gz",
+      "sha256": "884c253a2f512346967c3dd07f72f0d01c614b831d5ff728e46b2ad72946d193",
+      "raw_sha256": "4598131fbae89530e4d7d8baa8b0b2133a31c17ebb664ac062dbb5ecb8d68730"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/protocol.log.gz",
+      "sha256": "06891ed588ed04f5a81546e46ab824f67d5b11ab41076977fe20ff71bd285d47",
+      "raw_sha256": "cc216e23092bd8d6149c34fc2454f276255f9e384f26d8f147cbfc9237c8dbe3"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/type-image-regressions.log.gz",
+      "sha256": "d8eeb749862ad7a42485574db26c7b5efdab76a5f51b8a70f7ed1eac07837d26",
+      "raw_sha256": "62fea36958f618d17c8904c4052c28c0f845e5a1a07737b14a620dca49f8476e"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/covariance-inputs.json.gz",
+      "sha256": "7085a3135550544f36d91d1d458f186f9f9fbcc18d875767dbe1bb96947b6ec8",
+      "raw_sha256": "3b0a2f978458496f4ec87ea86df85a41f27e39fa724c38e7248624129adaeff6"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/current-work.json.gz",
+      "sha256": "ca7fd78c5015609454ea3541b4d71954bc666fa7a0fda454dd7773f2c6f6acff",
+      "raw_sha256": "dec555debee219f19f686d933a790f5be204b72c79c302c949a663b31faa3a8e"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/qualification-checks.json.gz",
+      "sha256": "0065a94db89a3599b7db2966be416fea86bbb97c41eacc3b9ee9f22182f6c48c",
+      "raw_sha256": "5f4c72fbd58a678ff8324a86272d3dced3236f8261302eebdb0e5d8065d0f8dd"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/finalize-results.py.gz",
+      "sha256": "18b2779199b48b9a205a816b56b26391a620e1f60a1b17c3e01105f26a4dc693",
+      "raw_sha256": "f7d35c02bbb5aa3ae5d2842bf4057b11912a586053a39e3406d46812bab12ca2"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/prepare-qualification-manifest.py.gz",
+      "sha256": "d6462f00271319d00eddf7c698953c73748278d192541548a382c0600b072df2",
+      "raw_sha256": "54b67cdc88c729126ef72d923fc4710932120e5ba5ff441145b64fab27dc925a"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/attempt-03/source.patch.gz.gz",
+      "sha256": "972b1558721668660c4f908ece27e0ac9115ceb207d25444def0cf4cb50283c2",
+      "raw_sha256": "cff56ea42907439b916084e6153a36bf68d3ba31d2ceef09129d8cbd36735539"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/attempt-03/source-checkpoint.json.gz",
+      "sha256": "704561cbb4871f674280ca6e2a662bf2e933efe69c02f9002302609defed1ae0",
+      "raw_sha256": "d726e119dd4de1b443ac22a1f2f11b11c4779f864861d8e9f4995b3bb7b32ec8"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/attempt-03/focused-result.json.gz",
+      "sha256": "2ac998c382999e46fae2174f1835956ba1d7f04b0e37ebcdec2f7a2cda1c789a",
+      "raw_sha256": "75a3424053cd3866e2feb52923c9b9e609c17ecc2663b27573a66bb961f0a6e8"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/attempt-03/focused.log.gz",
+      "sha256": "95a104b60eea285d7d91e409dffebf024f9c249c1dba0d1eaf9b1ae2f7a5f69d",
+      "raw_sha256": "0e429664ffdfdea22e3459fbf2326a8122fadd22abd9e21295523ac7a96b5b68"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/attempt-03/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz.gz",
+      "sha256": "04025cb02701299fd036c696a693bf422af839a2246fa1f72302e7fa968d5ef8",
+      "raw_sha256": "b61a209d6735fcbfec1772d545fd2bf76afd5975938714f2de9ac18d9ee8f5b8"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/attempt-03/source/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs.gz.gz",
+      "sha256": "1d2b6cb5b28ea95d7c934b6b99a1219002170b7f7dc7847655eff202d2e0b587",
+      "raw_sha256": "603ebbde1a6f8dd4b51383a2692d4986237fc8db0cd3dece6aaa97c66f38c7b8"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/attempt-03/source/hosts/gpu/src/native_artifact/program/codegen/numeric_map_geometry_tests.rs.gz.gz",
+      "sha256": "3e21e7fcdb1a0a041fa43dfefbd75e606672bde35764525703563ec864f86227",
+      "raw_sha256": "6700c327b8f75ce449eb41023d69dbfe04c9cb2839346ce480fcac25910935d9"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/attempt-03/source/hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs.gz.gz",
+      "sha256": "4e115a40bbfb6ae4e4ed59cd91e0f2a726b7bc57450e62c90c66d2f0e3485bea",
+      "raw_sha256": "07db78ca773250ad2dd0b579935ccf0dd683cf33e2bbf52d48ef374301132759"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/attempt-03/source/hosts/gpu/src/native_artifact/program/codegen/numeric_words.rs.gz.gz",
+      "sha256": "4983c5eaed2b5ca14d89df5a42718c5d9ce3b4dd6ce2158ad51572698fd8f7ee",
+      "raw_sha256": "64627d7352001c1e488cbdfa032681eac004653bf8baff1765f0e67925557075"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/attempt-03/source/hosts/gpu/src/native_artifact/program/codegen/mod.rs.gz.gz",
+      "sha256": "2e7b97e05844a01c955aae93d37f97d9a784243d39de98aeb6d7ff78c724f3ce",
+      "raw_sha256": "22a213ca4b7beca5cb042beacc3ae7f0046943eb48ff13f0b88f4699b8f31f0c"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/attempt-03/source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs.gz.gz",
+      "sha256": "45aadd09aaee6a7937319d32e74cbdf531ce8c07c3755d18be0d54122009c34f",
+      "raw_sha256": "54e6ea9d4eeb753ab4d55148a8fdd41c64e2321a17c51e9cad20c13f1dd38094"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/attempt-03/source/hosts/gpu/src/native_artifact/program/codegen/numeric_map_bounds.rs.gz.gz",
+      "sha256": "22c53d8f781795fe31361a2322eb50d141ed2fa66e0579cd0f3f5cc6de1f00e9",
+      "raw_sha256": "75c1a2417594411162ac7997e8867d2075f81b7c6053afda1cada87c88d07c06"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/attempt-03/source/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs.gz.gz",
+      "sha256": "8524b9c89dbac6631acf81bcbf31b68d1bb96bd3b917c68e43429cf8d7efb6ff",
+      "raw_sha256": "b523c18e749c55dc1fa35e01ddde35d7854041598d5254b31636259cb082a4b8"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/attempt-03/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz.gz",
+      "sha256": "dcb4ba998e009c421b6af5dc0a015af90d981f5696d6553463c9e4c9af029a65",
+      "raw_sha256": "602a3261b4155505d1bbb4d6b388268374242d2ea471476a3dcd1ea9146cc251"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/hoisted_map_bounds.rs.gz.gz",
+      "sha256": "f732b3a23ebcec9b460f7701cca4391da030c65721e33137e7ad7386d3c5cd75",
+      "raw_sha256": "7033f045a6967c330f0358d5206d4f64d5ce971755f4ce1f5bee2310c79f908a"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz.gz",
+      "sha256": "eeb1c2187a56d4f1b3fb3a1fea83b6eb47ed45d2a7886c2fa36f0eca522ab5f9",
+      "raw_sha256": "37cc1af3053f937314fee71fbe8361b3ffb25ec5489e23b6e21b146c8c5acdc2"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/attempt-03/source/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz.gz",
+      "sha256": "b59e426f4dd3e9c899fc45b860becd9bf5113ab5a30b95ea095bb412f6a669ad",
+      "raw_sha256": "0ac9b674031096fd69316ca5f16de6f99b23235e53389aa162e676b10998a71b"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/cholesky.disasm.txt.gz",
+      "sha256": "ae30675b768db3dfd773a0b5d4d14088bcec5c21afc4a361eb0b598d1b1cc67a",
+      "raw_sha256": "dd12236600364f09e29ef48f2969eb4e29eef6755756ade0e8eca1054b5e701e"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/bicg.metadata.json.gz",
+      "sha256": "83213c7afd14d2f67571347b3025093ec8a8b6117e87a9774c87d1c6d5f8c5d3",
+      "raw_sha256": "0f5289990254c570d8c604e6a0458686f47cc8f529b3f26d36716ab79a3d74e7"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/3mm.metadata.json.gz",
+      "sha256": "932be0f2b2562d2936eb890df2eed709b7143bc05c16aaf4804e875eab4ef905",
+      "raw_sha256": "6851e407b3fb5da89c21d7817f9882417ed88a934af1485dd49a3fd98c3bd65f"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/gramschmidt.o.gz",
+      "sha256": "d7d7b010fa1307dd6c26dbd5a5905be498cf58e3afbabeff30df250570371013",
+      "raw_sha256": "d60ddc6187a31ee3a661e968fd41a24a766fe5e63f55d7f6edf04b0915364dc4"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/doitgen.disasm.txt.gz",
+      "sha256": "5e091a705175a996d2d2289bbdd6e3886d84cffe809f5b0841af2ff762dc2998",
+      "raw_sha256": "2bc21cce7cef6f8015403c48afbb30a95121dce30c37579007496a8a0d3f4c6d"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/doitgen.o.gz",
+      "sha256": "6e5ab7a74c89dda36f92ad3e7682fdd64d7a1bddfa17345b48c71578dbc22d7f",
+      "raw_sha256": "e352b2f3b8ca7809dfa3529a064b715c846424aa82aede70d199cc32e7d23a61"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/gemm.o.gz",
+      "sha256": "69e8637fe8ea99911213dfdb913c9a2ebc0a5dd7b8e43567d1f74537c7e96124",
+      "raw_sha256": "6511c745b7f0df5aff44deca209af721b29c1daac19e1228e6c57d3929196c3f"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/bicg.o.gz",
+      "sha256": "0a4e311a19d744d52f4b9e3b79fca186db42fc8c29f72e483a7b6caa1515aabc",
+      "raw_sha256": "f557df937beb86b0778cb58fefb83524a8481e15eef70f508317be8cd7843550"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/seidel-2d.metadata.json.gz",
+      "sha256": "956dba0737143fa0753663c1fbaf2418cd805aeb201ea5beeb7303957042298b",
+      "raw_sha256": "b7b7938caffe7651a79104c5961722e6ca6a4c9f77c14f4f83050d6a3884cf1c"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/deriche.disasm.txt.gz",
+      "sha256": "c23f2969219d04ee9a233adb9233e7b1cc9fe4c6141c19b6aa8ae7fffb6ed768",
+      "raw_sha256": "ae4edce1769d575d2e5ac248445340e1babc6def099316a5ee64c1322bc14e95"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/atax.disasm.txt.gz",
+      "sha256": "d94cf10669af2d3d1e4342b4b01540df11a732ce5cdf1895fc4c5ee186e2e1db",
+      "raw_sha256": "433ad29a7e1053e6964f4b735e92f77c4772029fe699dcd44c90d0fdeda07d07"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/cholesky.metadata.json.gz",
+      "sha256": "4f11ceb2ad56e3655554617b4817e68f5950147d4fdb008d432e323e9b833bed",
+      "raw_sha256": "8f985f532bfc1e661a7781abf347eb4214ace77c99614c22fc8e1196a3402e66"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/nussinov.disasm.txt.gz",
+      "sha256": "c77939cd65ad4df88f6f2cd76e022a7a41228c1d73fbddfcf28c862888288b12",
+      "raw_sha256": "94032f71fecad32d56cb97b451e891b2b0dc810d0fd8c2836353a9d0b05473da"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/gramschmidt.disasm.txt.gz",
+      "sha256": "1267824c0e0135fe5f510d705c76075675abcb935593552e1a10853d7b2af524",
+      "raw_sha256": "254c5b4b6659eb6fa2903f9769e8a33f454e1d6dba2661c8233c84a57435f0b3"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/doitgen.metadata.json.gz",
+      "sha256": "db5e8c85a97f8033d73752234af6c519b2be342b75ebce6dacb2a349a1dfef6f",
+      "raw_sha256": "79a55056324136c2c40fb3b28b1d6ad0a5ac973e7ff654147adcef2d6a843487"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/mvt.o.gz",
+      "sha256": "9b77aac20d19b71b77bc0cd4c46cab15dcf7cdfdc5844624cbecba31375d64ee",
+      "raw_sha256": "09ed5aba883735501ba47d8aed8935fad139d7f2b7c7c675d1ecfde292e4cf32"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/3mm.disasm.txt.gz",
+      "sha256": "e72d6a59ad24f16016b4c1dea6f055d796f81aa727c83ebdfe42a41029ed7545",
+      "raw_sha256": "b94720f05a0302b73015efe39eacff508c6db54935eac7259968a40edfd05420"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/deriche.metadata.json.gz",
+      "sha256": "3965715ea095cc08b81a8670872941674319ece16a3d14a487eae893aa5a53a4",
+      "raw_sha256": "118c7a6f65f35883e7421d3cfb84a4a6e46ac42520ff01561219543c86d200ad"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/2mm.disasm.txt.gz",
+      "sha256": "12f9145afc46649ce966a2cc155e1984aeeb11402de38971a346c44976b711b4",
+      "raw_sha256": "a4e2ee8ec814599cd8b19a0e55b3b9f8936806d158f2d961307e13e31f30f21b"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/2mm.metadata.json.gz",
+      "sha256": "d17ed4521390445c5a2f3369b3823db80ea3f79af762a4a53349a25946f5d66a",
+      "raw_sha256": "bbbd96f22b9d1c577cbf8f533e294ddcae34eef6d299c1678f12ae2e1dc8a42c"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/gramschmidt.metadata.json.gz",
+      "sha256": "b0fd41f235c44b3eadc29d2b31a6a721c70687138e442d6ecd87554e2abe6cd6",
+      "raw_sha256": "eaec5f5c25fd1a9f6373ed864cce8ba3651f5ea0ea488ba7280c89d999392616"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/durbin.o.gz",
+      "sha256": "e1876893bba04bb593fa5efe727a5d891cb1d194b9ade39ce0a3d32801f16583",
+      "raw_sha256": "eae0468379c5f7c55cc009eece4536b5ae01eaecad10f36119833e86e3cc1285"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/seidel-2d.disasm.txt.gz",
+      "sha256": "ea553bf053258db529d08de9fd929292679b4f9d9cb4a43e9432b07e0b0341db",
+      "raw_sha256": "2a2727c65eba00c61eccc39264e4bccca1a5e50531856cc3dc935cb49d987c7c"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/mvt.disasm.txt.gz",
+      "sha256": "d6b2d932cded6e2e99acf977656b88b808d0f95e94c40422f9b410b2ac53f00d",
+      "raw_sha256": "f3744c1e0db4bfa14a62f879adc62a72bd98f4f3dae0ac26b5c7e5831b7d51ac"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/2mm.o.gz",
+      "sha256": "784050c0e3052b9ddeb52ea3c7aeaf0ddc6883109698e7d23c5e587b357145ac",
+      "raw_sha256": "5f81a66b4cdad3f1c08d58b1aeb4e87410a109b2c2b4a9ff80891569ae88495e"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/3mm.o.gz",
+      "sha256": "49cf67f660a9e6e8292663da1b4c9c7b41aec04404438f522706f5edcbbb340a",
+      "raw_sha256": "ad2d0fe8ae0e1722508c5583f7553b0b02b65cd10816e2d4de8ea90cca1c096f"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/gemm.metadata.json.gz",
+      "sha256": "ca57d282252c231b56d7aa8741fbda6e8373604e8353ef03a17229da8d989faf",
+      "raw_sha256": "656ed0ebbe40c28bd1f69ec88a26cbc053ea17041dd170e194714609f19d81ba"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/bicg.disasm.txt.gz",
+      "sha256": "823419cbb86a79b6bbd56045842a4e7a252e305caa3a7815e915061f3d1bece4",
+      "raw_sha256": "691d752e4d35cb0ba5c94f61fe71c1eb357d584899c1d795679e829b2f2d351d"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/gemm.disasm.txt.gz",
+      "sha256": "3326059a9c60485b57d92d9dfb6b2df336965842221aecc750266f6ed2dd3de6",
+      "raw_sha256": "1616b5d6bfb3deceda75b8fee11992388832b536ae0144cd8798c15ce13a7a6f"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/atax.o.gz",
+      "sha256": "a9e2f3c0652511b608ae2838ef460d3af3fa931710306c64d9b9534f354266de",
+      "raw_sha256": "2a4bcef3a4807005c4807a1e8cb0ed676b1b7b62f7e29a7daa0da015d4be94b2"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/deriche.o.gz",
+      "sha256": "a77850e214a2c5eb4162e998e77bc456db52b429ca3da8004697bbbe2943e3c2",
+      "raw_sha256": "d5896d3d9d269c13d47d811e33c4574b2212ce81ab972406ae47387621dc845d"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/nussinov.metadata.json.gz",
+      "sha256": "47d3f0b3deaa3b0fbcfaa6c633feddb48df05fe0e16216d7afcf06b59f7026ce",
+      "raw_sha256": "4d19386869fcb7dc871a595ec73e1a7e5743dac94dc9482036e253151bd755f4"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/cholesky.o.gz",
+      "sha256": "cab92fa035ea98d3f7a2a5a8aaa2cf02bf09664ad3fab8e469a184998c172fac",
+      "raw_sha256": "27155abcb5a37bda7c446cdca3133350c3d44b2d9efb1f97c534e8cfaea1a484"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/durbin.disasm.txt.gz",
+      "sha256": "e9cd8bec470407be358fd25f6f085467860b845b17bea9c7d475b1a57add35c7",
+      "raw_sha256": "c63ec3dfed12e22489d4765c74fffad895fa85ab742d19ec32e1304df71723f9"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/nussinov.o.gz",
+      "sha256": "34c02c0961482f9a821fac7575561e4d5192d62506f423bd8e5634d40899d175",
+      "raw_sha256": "5f288257d93689b52ec4975fbeb9eb6cdcf73d0fefaa1cc5167e712a9587f100"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/durbin.metadata.json.gz",
+      "sha256": "4ee3fd8398a9c0701c7c873f3b85aec2b40752feb3653035fcb1cae4295bce36",
+      "raw_sha256": "960d9a4eaeb2a2a80194e53e6a5bfc06a9fa98d09ec68979ab3d152221e444ee"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/covariance.disasm.txt.gz",
+      "sha256": "d9ea877f496b3eb63562e0f7c5eb26d4ec5d02584e41e2ad81da856e402c82ff",
+      "raw_sha256": "4fa4e141dbe818db7fc6377424d9f9d572dcdd4d41dc604eeb1dbfd297fa8b42"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/covariance.metadata.json.gz",
+      "sha256": "f8ed6725ea9e50a4045a6caa2de2b0dd140d7fe49853066cf8fd0fabde1b2802",
+      "raw_sha256": "20a428d670cfbc201411a5463f6318d4b59277a0e1616a6e247845ff247dea27"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/correlation.disasm.txt.gz",
+      "sha256": "d2b7b31e05d35e22341859ecfe502a27c449c8eb3e440e079868b6a867b44dcb",
+      "raw_sha256": "dff674de87a7331ab6f92431330fd4671bd6692bc6f1f3a8c759ce0c129d3bdb"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/correlation.o.gz",
+      "sha256": "e6ba601bf3a27b7cf6a245af00aa9fd016e3fb586dc38958574926eb99e01528",
+      "raw_sha256": "ec21fdf025bacdcb20a048a1e7d0e1ca3ea31f9919a48bd50b37428ba2dd106e"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/mvt.metadata.json.gz",
+      "sha256": "2f1e463412225e038713b62b541f6c5751e9b188b64a33513e2f0b5bc861789e",
+      "raw_sha256": "d7e2c1d01acffcda834cd53c6443cb9e066b713fbdf8d248961346e8fc191a61"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/atax.metadata.json.gz",
+      "sha256": "c1fd4a0383d74184048b17e7a445c2a651094713fcaa935dbe8bf27d5f79bdf6",
+      "raw_sha256": "ac39c20f7e5cb4307391b597ff0c9f0c6258ae84294da15a5b1c33fd9b7360e5"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/correlation.metadata.json.gz",
+      "sha256": "e302d3c9f8dd4d1f3dc1615933d940cf8c27c2f4f3eeda7f6f852935f051ca8c",
+      "raw_sha256": "cf7ae89c2eb165c82ef94df178299d197067188ff4830660234029528527e9d4"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/seidel-2d.o.gz",
+      "sha256": "9489db864358e18938abad4f3a8476c50c3084c8c1f428ed5f318cb5f5435705",
+      "raw_sha256": "646582a79d150912b290f6b68a08cde3a6b8122193dabb582b44ba52b6273dd4"
+    },
+    {
+      "path": "qualification/experiments/hoisted-map-bounds-development/qualified-attempt-03/execution-objects/covariance.o.gz",
+      "sha256": "c428b9ed79b5c70885a892dc45efe7b96fdb0ea9709bcf553a17f2a26f825920",
+      "raw_sha256": "8863f45c150f151456b669eda944525910e41be9cc438b6473f7f443a93fd268"
+    }
+  ]
+}

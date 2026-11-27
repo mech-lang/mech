@@ -1353,6 +1353,7 @@ impl<'plan> CfgDefinition<'plan> {
                         .ok_or_else(|| backend("numeric map lacks owner hooks"))?,
                     region,
                     prepared.plan(),
+                    controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::VersionedMapBounds),
                     plan.value_count() + iteration as usize,
                     blocks[exit as usize].expect("reachable numeric map exit"),
                     error,
