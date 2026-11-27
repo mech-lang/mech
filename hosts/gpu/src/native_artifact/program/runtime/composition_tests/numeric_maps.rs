@@ -79,6 +79,38 @@ unsafe extern "C" fn helper(
             invocation.state.control.previous = None;
         }
     }
+    if op == GlobalHelper::NumericMapPrepare.raw() && flags.corrupt == 29 {
+        let invocation = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
+        let rectangle = invocation
+            .descriptor
+            .metadata()
+            .numeric_maps
+            .regions
+            .iter()
+            .any(|region| u64::from(region.header) == site && region.rectangle.is_some());
+        if rectangle {
+            // A real debit on this invocation's SAME account represents a
+            // fully spent prefix. Never alter/reset counters or forge a meter.
+            let (_, remaining) = invocation.state.library.unscoped_remaining().unwrap();
+            invocation.state.library.charge(0, remaining).unwrap();
+        }
+    }
+    if op == GlobalHelper::NumericMapPrepare.raw() && flags.corrupt == 30 {
+        let invocation = unsafe { &mut *context.cast::<Invocation<'_, '_, '_>>() };
+        if invocation
+            .descriptor
+            .metadata()
+            .numeric_maps
+            .regions
+            .iter()
+            .any(|region| u64::from(region.header) == site && region.rectangle.is_some())
+        {
+            // Preserve the independently proved inner map and transpose routes
+            // to quote the exact original row-by-row source price.
+            unsafe { *out = 0 };
+            return 0;
+        }
+    }
     if op == GlobalHelper::NumericMapPrepare.raw() && flags.ordinary {
         unsafe { *out = 0 };
         return 0;
@@ -1968,4 +2000,148 @@ fn conditional_numeric_maps_snapshot_current_scalar_and_matrix_phi_captures_once
             }
         }
     }
+}
+
+#[test]
+fn polybench_all30_restored_helper_images_match_every_finite_c_liveout() {
+    use mech_core::snapshot::F64Bits;
+    use sha2::Digest;
+    let fixtures =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/polybench");
+    let fixture: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(fixtures.join("cases.json")).unwrap())
+            .unwrap();
+    let cases = fixture["cases"].as_array().unwrap();
+    assert_eq!(cases.len(), 30);
+    let expected_per_corpus: usize = cases
+        .iter()
+        .map(|case| case["expected"].as_array().unwrap().len())
+        .sum();
+    assert_eq!(expected_per_corpus, 29_482);
+    fn flatten(data: Data, out: &mut Vec<f64>) {
+        match data {
+            Data::F64(value) => out.push(value.to_f64()),
+            Data::Matrix(values) | Data::Tuple(values) => {
+                for value in values {
+                    flatten(value, out);
+                }
+            }
+            _ => panic!("unexpected numerical liveout"),
+        }
+    }
+    let mut forms = 0;
+    let mut finite_liveouts = 0;
+    for case in cases {
+        let name = case["name"].as_str().unwrap();
+        let source = std::fs::read_to_string(fixtures.join(format!("{name}.mec"))).unwrap();
+        let digest = sha2::Sha256::digest(source.as_bytes())
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        assert_eq!(digest, case["mech_sha256"].as_str().unwrap());
+        let named = case["inputs"]
+            .as_object()
+            .unwrap()
+            .iter()
+            .map(|(name, value)| {
+                if let Some(cells) = value["values"].as_array() {
+                    (
+                        name.as_str(),
+                        Data::Matrix(
+                            cells
+                                .iter()
+                                .map(|x| Data::F64(F64Bits::from_f64(x.as_f64().unwrap())))
+                                .collect(),
+                        ),
+                        value["shape"]
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .map(|x| x.as_u64().unwrap())
+                            .collect::<Vec<_>>(),
+                    )
+                } else if let Some(value) = value["u64"].as_u64() {
+                    (name.as_str(), Data::U64(value), vec![])
+                } else {
+                    (
+                        name.as_str(),
+                        Data::F64(F64Bits::from_f64(value.as_f64().unwrap())),
+                        vec![],
+                    )
+                }
+            })
+            .collect::<Vec<_>>();
+        // No case-specific lowering assertions, profiles or timers. The fixed
+        // whole corpus is used only for restored descriptor correctness.
+        for artifact in artifacts(&source) {
+            let jit =
+                JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+            let memory = ManagedMemoryBudget::new(256 * 1024 * 1024);
+            let borrowed = named
+                .iter()
+                .map(|(n, d, e)| (*n, d.clone(), &e[..]))
+                .collect::<Vec<_>>();
+            let args = typed_arguments(&artifact, &memory, &borrowed);
+            let aliases = args.clone();
+            let before = args
+                .iter()
+                .map(|value| value.canonical_data_draft().unwrap())
+                .collect::<Vec<_>>();
+            let mut output = vec![None; artifact.outputs().len()];
+            let mut policy = NativeProgramLimitMode::NoLimits.execution();
+            policy.execution.max_work = 1_000_000_000_000_000;
+            policy.execution.max_transport_bytes = 2 * 1024 * 1024 * 1024;
+            policy.execution.max_native_stack_bytes = 64 * 1024 * 1024;
+            policy.library.max_output_elements = Some(100_000_000);
+            policy.library.max_output_bytes = Some(2 * 1024 * 1024 * 1024);
+            policy.library.max_temporary_bytes = Some(2 * 1024 * 1024 * 1024);
+            policy.library.max_cloned_bytes = Some(1_000_000_000_000_000);
+            policy.library.max_retained_nodes = Some(100_000_000);
+            policy.library.max_comparison_work = Some(1_000_000_000_000_000);
+            policy.library.max_compute_work = Some(1_000_000_000_000_000);
+            let (result, _) = run(
+                &jit,
+                &args,
+                &mut output,
+                &memory,
+                policy,
+                true,
+                Flags::default(),
+            );
+            result.unwrap_or_else(|error| panic!("restored C correctness {name}: {error:?}"));
+            let mut actual = Vec::new();
+            flatten(last(&output), &mut actual);
+            let expected = case["expected"].as_array().unwrap();
+            assert_eq!(actual.len(), expected.len(), "{name}");
+            for (actual, expected) in actual.iter().zip(expected) {
+                let expected = expected.as_f64().unwrap();
+                assert!(
+                    actual.is_finite()
+                        && expected.is_finite()
+                        && (actual - expected).abs() <= 1e-9 + 1e-10 * expected.abs(),
+                    "restored C correctness {name}"
+                );
+            }
+            assert_eq!(
+                aliases
+                    .iter()
+                    .map(|value| value.canonical_data_draft().unwrap())
+                    .collect::<Vec<_>>(),
+                before
+            );
+            finite_liveouts += actual.len();
+            forms += 1;
+            drop((output, args, aliases));
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0),
+                "{name}"
+            );
+        }
+    }
+    assert_eq!(forms, 60);
+    assert_eq!(finite_liveouts, expected_per_corpus * 2);
+    println!(
+        "restored_polybench_c_correctness: 30 programs, {forms} original/decoded forms, {finite_liveouts} finite liveouts; no timing observations"
+    );
 }

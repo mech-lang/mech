@@ -328,6 +328,9 @@ impl State {
         let Some(nested_comparison) = count.checked_mul(nested.comparison) else {
             return Ok(None);
         };
+        let Some(rectangle_comparison) = source_count.checked_mul(rectangle.comparison) else {
+            return Ok(None);
+        };
         let bank_count = if region.reduction.is_some() { 0 } else { count };
         let bank_bytes = mul(bank_count, u64::from(region.output_width))?;
         let mut matrix_owners: [Option<MatrixOwner>; MAX_MATRICES] = std::array::from_fn(|_| None);
@@ -408,22 +411,25 @@ impl State {
                 .checked_add(output_bytes.checked_mul(4)?)?
                 .checked_add(4096)?;
             // Retain both source element and packed push logical floors.
-            let commit_compute = count.checked_mul(
-                352u64
-                    .checked_add(
-                        (u64::from(region.input_width) + u64::from(region.output_width))
-                            .checked_mul(16)?,
-                    )?
-                    .checked_add(read_work)?
-                    .checked_add(nested.compute)?,
-            )?;
+            let commit_compute = count
+                .checked_mul(
+                    352u64
+                        .checked_add(
+                            (u64::from(region.input_width) + u64::from(region.output_width))
+                                .checked_mul(16)?,
+                        )?
+                        .checked_add(read_work)?
+                        .checked_add(nested.compute)?,
+                )?
+                .checked_add(source_count.checked_mul(rectangle.compute)?)?;
             let commit_cloned = input_bytes
                 .checked_add(output_bytes.checked_mul(if region.rectangle.is_some() {
                     8
                 } else {
                     1
                 })?)?
-                .checked_add(count.checked_mul(nested.cloned)?)?;
+                .checked_add(count.checked_mul(nested.cloned)?)?
+                .checked_add(source_count.checked_mul(rectangle.cloned)?)?;
             let finish = envelope.checked_mul(16)?.checked_add(256)?;
             let allocation = output_bytes
                 .checked_mul(16)?
@@ -443,7 +449,7 @@ impl State {
                 .checked_add(metadata.observation_schema_bytes.checked_mul(16)?)?
                 .checked_add(allocation)?
                 .checked_add(2048)?
-                .checked_add(rectangle.setup)?
+                .checked_add(source_count.checked_mul(rectangle.setup)?)?
                 .checked_add(reduction.setup)?;
             let total = setup
                 .checked_add(preflight)?
@@ -548,8 +554,7 @@ impl State {
             )
             || !fits(compute, limits.max_compute_work)
             || !fits(cloned, limits.max_cloned_bytes)
-            || rectangle
-                .comparison
+            || rectangle_comparison
                 .checked_add(reduction.comparison)
                 .and_then(|n| n.checked_add(nested_comparison))
                 .is_none_or(|n| !fits(n, limits.max_comparison_work))
@@ -575,6 +580,7 @@ impl State {
                 remaining < admission
                     || nested_comparison
                         .checked_mul(2)
+                        .and_then(|n| rectangle_comparison.checked_mul(2)?.checked_add(n))
                         .and_then(|n| n.checked_add(reduction.comparison))
                         .is_none_or(|need| comparison < need)
             })
@@ -608,6 +614,19 @@ impl State {
         // Every metadata/schema walk and full native attempt is paid even if
         // a checked scalar later fails. No failed allocator is cold-retried.
         charge(&mut ctx.work(), setup)?;
+        // Eliding a row's transpose cannot renew or bypass its source fee.
+        // This exact shared account retains fuel for the full ordinary replay
+        // if metadata validation or the checked private kernel declines.
+        if rectangle_comparison != 0 {
+            ctx.library()
+                .charge(0, rectangle_comparison)
+                .map_err(
+                    |error| crate::native_artifact::NativeExecutionError::LibraryWork {
+                        phase: Phase::Setup,
+                        error,
+                    },
+                )?;
+        }
         if !super::numeric_rectangles::validate(ctx, region, rectangle_geometry, &rectangle)? {
             return Ok(None);
         }

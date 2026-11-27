@@ -35,6 +35,7 @@ pub(in crate::native_artifact) mod numeric_map;
 mod numeric_rectangles;
 pub(in crate::native_artifact::program::runtime) use numeric_rectangles::Geometry as NumericRectangleGeometry;
 mod numeric_reductions;
+mod numeric_transpose_budget;
 mod numeric_transposes;
 mod row_blocks;
 #[cfg(test)]

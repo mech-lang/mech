@@ -1,40 +1,56 @@
 {
   "schema": "mech.polybench.training-selection-policy-proposal.v3",
-  "created_at": "2026-11-27T22:11:03.454959+00:00",
-  "status": "Proposed; not adopted. No performance measurements authorized by this proposal yet.",
-  "candidate_compiler_fingerprint": "bd4c72b4bb93f4c384b8f14b37f77a2603431796dfcc193e6802097c88b7f2e6",
-  "candidate_driver_sha256": "d84913d93b849069fb340c1d8f64c0fcbbdd8184a26bd3e4e912cb8ea0c442f6",
-  "reason": "The precommitted v2 counter guard rejects legitimate source-derived fusion because actual runtime control visits and work/comparison counters decrease when repeated pure range/builder/transpose/publication paths are removed. The qualified source executes the same ordered scalar body and finite C liveouts; retaining fictitious physical visits would misreport the implementation.",
-  "concrete_evidence": {
-    "broad_tests": 709,
-    "focused_tests": 91,
-    "finite_c_liveouts_for_census": 784,
+  "status": "Proposed; NOT adopted. The initial broader fee-counter waiver is superseded after a real accounting defect was reproduced and fixed. No candidate timing samples.",
+  "superseded_initial_proposal": "https://github.com/mech-lang/mech/blob/dac34e7d96e81854752d003a515becd9cb16d2c1/hosts/gpu/tests/fixtures/polybench/training-experiments/current-bound-rectangles-selection-proposal.json",
+  "scope": "Permit independently source-proved reductions in actual physical control visits only. Retain the v2 nondecreasing original work/comparison-fee guard.",
+  "qualification_status": "Complete:712 broad checks,102 focused checks, all30 original/decoded C cases plus60 restored original/decoded forms and58964 finite C liveouts; Object emission and both features pass.",
+  "corrected_code_evidence": {
+    "compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+    "driver_sha256": "3c01042439d90f2d08c960f36c9fd9aed488798369f0c52ebf0348f6dbf84c30",
     "accepted44": {
       "work": 99926852068,
       "comparison_work": 5082102222,
       "visits": 392
     },
     "candidate": {
-      "work": 36175107508,
-      "comparison_work": 1496518178,
+      "work": 107839595060,
+      "comparison_work": 5082102222,
       "visits": 28
     },
-    "repeated_inner_map_callbacks_before": 56,
-    "rectangle_prepare_finish_callbacks_after": 2,
-    "inner_transpose_callbacks_before": 28,
-    "inner_transpose_callbacks_after": 0,
+    "finite_c_liveouts_for_census": 784,
+    "full_restored_corpus_liveouts": 58964,
+    "source_fees_preserved": true,
+    "actual_map_callbacks": {
+      "accepted44": {
+        "13": 2,
+        "47": 56
+      },
+      "candidate": {
+        "13": 2,
+        "38": 2
+      }
+    },
+    "actual_transpose_callbacks": {
+      "accepted44": {
+        "43": 28
+      },
+      "candidate": {}
+    },
     "candidate_timing_samples": 0
   },
   "proposed_counter_gate": [
-    "Before any performance probe, run an untimed optimization15 current-input C-liveout and execution-counter census against accepted44. Preserve every actual counter and delta; never fabricate or pad visits.",
-    "Keep the v2 equal-visits/nondecreasing-work check for unchanged executed source paths. Permit lower visit/work/comparison counters only for a source-derived private fusion proved by the independently rederived exact descriptor, actual selected callbacks and unchanged ordered numeric body/read/branch/error semantics.",
-    "Require the full original selected-factory/range/builder/transpose/source replay, physical/coexistence and finite admission bounds before lending current storage. Existing source logical floors remain. A lower actual bookkeeping counter is not permission to lower these required envelopes or skip required effects.",
-    "Reject unexplained counter deltas, changed liveouts, missing source work, changed error ordering, omitted checks or weakened resource/owner/publication guarantees. All other execution/transport counters must match.",
-    "Retain original/decoded/restored differential tests, all scalar bits, current input/alias checks, finite/cold/replay/shared ledger denial and retry, partial error atomicity and tampered proof/frame rejection."
+    "Before timing, collect an untimed optimization15 C-liveout/counter census against accepted44 and preserve every actual counter/delta. No fabricated or padded visits.",
+    "Require unchanged visits for unchanged source paths. Permit fewer actual visits only when an independently rederived private descriptor and actual callback census prove complete source-derived fusion with unchanged ordered numeric body, reads, branches, checked errors and required effects.",
+    "Keep original source work and comparison fees nondecreasing. No exception for lower work/comparison counters. Preserve full original selected-factory, range/builder/transpose/publication, clone, finite/physical/coexistence and failed-attempt replay envelopes on the same current account.",
+    "Reject unexplained counter changes, missing fees, omitted checks/effects, changed liveouts/errors or weakened owner/publication/resource guarantees. All other execution/transport counters must match.",
+    "Require all30 finite C checks for original/decoded artifacts, Object emission and restored helper descriptors, plus the focused bit/shape/currentness/finite/cold/replay/alias/tamper/cleanup/retry checks and both feature builds."
   ],
   "unchanged_training_measurement": "Exactly one prospective optimization15 probe per qualified fingerprint:7 fresh processes per actor/case, interleaved accepted44/candidate with alternating order;210 observations, no retries/exclusions. Select only raw equal-weight GM accepted44/candidate median-runtime speedup >1 after the counter proof gate.",
   "unchanged_formal_acceptance": "Commit/push and freeze exact clean selected source and driver before BOTH formal sets. All900 observations and29482 finite liveouts retained. Accept only if BOTH primary kernel GM Mech/C scores strictly improve accepted44:10.24618089248072 /38.46047945936111. Restore exact accepted44 on rejection. Controls cannot override either score.",
   "unchanged_benchmark_protocol": "No change to all30 ports/inputs, C binaries/flags, MINI F64 CPU, finite limits/tolerances, fixed15/15 split, profiling/selection on optimization15 only, cache/timing boundaries, metric/goal or prior history. No prior rejected candidate is reclassified or remeasured.",
-  "requires_decision": "Whether the research selection guard should permit independently source-proved fusion with honestly lower physical control/bookkeeping counters.",
-  "performance_observations": 0
+  "requires_decision": "Whether the research probe guard may permit independently source-proved physical-visit reductions while the original billing and all benchmark/acceptance requirements stay fixed.",
+  "performance_observations": 0,
+  "created_at": "2026-11-27T23:02:45.480739+00:00",
+  "candidate_compiler_fingerprint": "cd4d1a9f261eaa16ee9476fbb87a66d8525e7df5af851dafa2c1972867b322ae",
+  "candidate_driver_sha256": "3c01042439d90f2d08c960f36c9fd9aed488798369f0c52ebf0348f6dbf84c30"
 }

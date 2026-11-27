@@ -840,8 +840,9 @@ pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 410;
 // Work153 binds the existing complete-prefix source and boundary prices
 // when closing fixed-array numeric results. Source prices are unchanged.
 // Policy154 funds whole-generator source work, coexistence and ordinary replay.
-// Policy156 retains complete ordered-sum source costs and ordinary replay.
-pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 156;
+// Policy157 retains complete rectangular row-transpose fees on the same shared
+// comparison account, including current admission and failed-attempt replay.
+pub const NATIVE_PROGRAM_WORK_POLICY_VERSION: u64 = 157;
 pub const NATIVE_PROGRAM_LINK_IDENTITY_BYTES: usize = 192;
 const MAGIC: &[u8; 16] = b"MECHNATIVEPROG\0\0";
 #[derive(Clone, Debug)]

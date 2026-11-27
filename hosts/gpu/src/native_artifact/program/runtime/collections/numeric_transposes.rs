@@ -59,7 +59,15 @@ impl State {
             return Ok(None);
         }
         let count = builder.values.len() as u64;
-        let Some((
+        let Ok(output_bytes) = builder.values.output_bytes(
+            builder.payload_bytes,
+            count,
+            builder.values.capacity(),
+            source.definition().dimension_parameters().len(),
+        ) else {
+            return Ok(None);
+        };
+        let Some(super::numeric_transpose_budget::Funding {
             envelope,
             temporary,
             cloned,
@@ -69,80 +77,27 @@ impl State {
             output_bound,
             nodes,
             comparison,
-        )) = (|| {
-            let bytes = selected.binding_metadata_bytes();
-            let binding_work = selected.binding_work();
-            let payload = count.checked_mul(u64::from(region.output_width))?;
-            let envelope = metadata
-                .scalar_bytes
-                .checked_add(builder.reservation.capacity_bytes().checked_mul(4)?)?
-                .checked_add(4096)?;
-            // Fund the complete original builder and transpose call, including
-            // draft staging, selected-schema planning and both logical roots.
-            let temporary = bytes
-                .checked_mul(128)?
-                .checked_add(metadata.observation_schema_bytes.checked_mul(32)?)?
-                .checked_add(
-                    count.checked_add(4)?.checked_mul(
-                        (size_of::<ValueDataDraft>() as u64)
-                            .checked_mul(16)?
-                            .checked_add(512)?,
-                    )?,
-                )?
-                .checked_add(65536)?;
-            let cloned = builder
-                .values
-                .finalization_cloned_bytes(builder.payload_bytes)
-                .checked_add(payload.checked_mul(2)?)?
-                .checked_add(bytes)?;
-            let compute = envelope
-                .checked_mul(16)?
-                .checked_add(temporary.checked_mul(16)?)?
-                .checked_add(binding_work.checked_mul(16)?)?
-                .checked_add(8192)?;
-            let setup = bytes.checked_mul(128)?.checked_add(4096)?;
-            let output_bound = builder
-                .values
-                .output_bytes(
-                    builder.payload_bytes,
-                    count,
-                    builder.values.capacity(),
-                    source.definition().dimension_parameters().len(),
-                )
-                .ok()?
-                .checked_mul(4)?
-                .checked_add(bytes)?
-                .checked_add(metadata.observation_schema_bytes)?
-                .checked_add(4096)?;
-            let nodes = prior
-                .retained_nodes
-                .checked_add(retained)?
-                .checked_add(count.checked_mul(4)?)?
-                .checked_add(bytes)?
-                .checked_add(metadata.observation_schema_bytes)?
-                .checked_add(256)?;
-            let comparison = output_bound.checked_add(temporary)?;
-            let visit_work = projection.continuation.iter().try_fold(0u64, |n, &s| {
-                n.checked_add(metadata.visits.get(s as usize)?.work)
-            })?;
-            let replay = compute
-                .checked_add(setup)?
-                .checked_add(visit_work)?
-                .checked_add(metadata.scalar_bytes.checked_mul(16)?)?
-                .checked_mul(128)?
-                .checked_add(65536)?;
-            Some((
-                envelope,
-                temporary,
-                cloned,
-                compute,
-                setup,
-                replay,
-                output_bound,
-                nodes,
-                comparison,
-            ))
-        })()
+        }) = super::numeric_transpose_budget::bound(
+            descriptor,
+            projection.transpose,
+            &projection.continuation,
+            super::numeric_transpose_budget::Row {
+                count,
+                width: region.output_width,
+                capacity_bytes: builder.reservation.capacity_bytes(),
+                finalization_cloned: builder
+                    .values
+                    .finalization_cloned_bytes(builder.payload_bytes),
+                output_bytes,
+            },
+        )
+        else {
+            return Ok(None);
+        };
+        let Some(nodes) = prior
+            .retained_nodes
+            .checked_add(retained)
+            .and_then(|n| n.checked_add(nodes))
         else {
             return Ok(None);
         };

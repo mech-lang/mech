@@ -2643,3 +2643,45 @@ including two debugger selector failures before process launch, is preserved.
 
 [Qualified source/evidence](training-experiments/current-bound-rectangles-development.json)
 [Selection gate proposal](training-experiments/current-bound-rectangles-selection-proposal.json)
+
+Rectangular source fees and complete restored-corpus qualification
+----------------------------------------------------------------
+
+The initial untimed rectangle checkpoint had a real shared-comparison funding
+defect. A regression spent the genuine invocation account at the rectangular
+header: the ordinary path rejected, but the native rectangle completed. That
+checkpoint was never benchmarked or performance-accepted. The initial proposal
+to allow lower fee counters is superseded.
+
+The corrected compiler shares the ordinary transpose funding formulas. Every
+elided row retains its original compute, clone, comparison, temporary/output/
+node and replay prices. The current shared comparison ledger must fund both
+the native attempt and ordinary replay; the source fee is paid before factory
+metadata/shape work. Work policy157 records this correction; typed IR410 and
+helper ABI47 remain. No visits are fabricated or padded.
+
+The actual untimed correlation census now reports:
+
+                         accepted44         corrected candidate
+work                     99926852068         107839595060
+comparison work           5082102222           5082102222
+physical visits                 392                  28
+inner transpose callbacks        28                   0
+
+All784 finite C outputs match. Original billing guards pass; only the v2
+identical-visit guard fails. The revised proposed gate permits independently
+source-proved physical-visit reductions while retaining nondecreasing source
+work/comparison fees and every fixed benchmark/acceptance requirement. It is
+NOT adopted and no candidate performance sample has been collected.
+
+All712 broad checks and102 focused checks pass, including both features, exact
+compression work totals and all30 original/decoded C integration cases. The
+coverage audit also added restored-helper checks for all30 original/decoded
+forms:60 forms and58964 finite C liveouts, preserved aliases and zero retained
+bytes/nodes after cleanup. The prior restored-helper C tests covered selected
+programs; the full-corpus gap is now closed. All149 audit archives verify both
+compressed and raw hashes, including every failure and superseded checkpoint.
+Accepted44 remains10.24618x C optimization /38.46048x C holdout; history45.
+
+[Corrected qualification/audit](training-experiments/current-bound-rectangles-shared-comparison.json)
+[Proposed physical-visit guard](training-experiments/current-bound-rectangles-selection-proposal.json)

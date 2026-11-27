@@ -4109,5 +4109,7 @@
       "sha256": "13696a7db09bb8722fac77aefe929a1ffd8c6deae80e640d8bb002847e54cee0",
       "compressed_sha256": "6a869e78ae6adc98c4fba72f51456a8d6858a1bde2e5e2c196a61896ddbbec4a"
     }
-  }
+  },
+  "superseded_by": "training-experiments/current-bound-rectangles-shared-comparison.json",
+  "superseded_reason": "The subsequent spent-shared-ledger regression exposed missing original row-transpose comparison funding. The earlier checkpoint was never timed or accepted. Corrected source now retains all original row fees and complete restored-corpus coverage."
 }

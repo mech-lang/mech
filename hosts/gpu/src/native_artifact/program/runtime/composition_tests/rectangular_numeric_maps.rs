@@ -920,3 +920,248 @@ fn rectangular_numeric_maps_current_bounds_cannot_become_fixed_phase_banks() {
         );
     }
 }
+
+#[test]
+fn rectangular_numeric_maps_spent_shared_comparison_fuel_declines_and_recovers() {
+    use super::numeric_maps::{Flags, run, typed_arguments};
+    for current in [false, true] {
+        let endpoint = if current { "last" } else { "3u64" };
+        let source = format!(
+            "last := last<u64>\ndata := values<[u64]:1,3>\n[[data[i] + j | i <- 1u64..={endpoint}]' | j <- items<[u64]>]\n"
+        );
+        for artifact in artifacts(&source) {
+            let mode = NativeProgramLimitMode::NoLimits;
+            let jit = JitProgramArtifact::compile_with_limits(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+                mode.compilation(),
+            )
+            .unwrap();
+            let header = jit
+                .descriptor()
+                .metadata()
+                .numeric_maps
+                .regions
+                .iter()
+                .find(|region| region.rectangle.is_some())
+                .unwrap()
+                .header;
+            for restored in [false, true] {
+                let memory = mode.memory_budget();
+                let args = typed_arguments(
+                    &artifact,
+                    &memory,
+                    &[
+                        ("last", Data::U64(3), &[]),
+                        (
+                            "values",
+                            Data::Matrix([2, 4, 6].map(Data::U64).into()),
+                            &[1, 3],
+                        ),
+                        ("items", Data::Matrix([1, 2].map(Data::U64).into()), &[1, 2]),
+                    ],
+                );
+                let aliases = args.clone();
+                let inputs = args
+                    .iter()
+                    .map(|v| v.canonical_data_draft().unwrap())
+                    .collect::<Vec<_>>();
+                let mut policy = mode.execution();
+                policy.library.max_comparison_work = Some(1_000_000_000_000);
+                let mut prior = vec![None; artifact.outputs().len()];
+                let (result, selected) = run(
+                    &jit,
+                    &args,
+                    &mut prior,
+                    &memory,
+                    policy,
+                    restored,
+                    Flags::default(),
+                );
+                result.unwrap();
+                assert!(selected.elements.contains_key(&u64::from(header)));
+                let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                let mut expected = prior.clone();
+                let mut output = prior.clone();
+                let reference = run(
+                    &jit,
+                    &args,
+                    &mut expected,
+                    &memory,
+                    policy,
+                    restored,
+                    Flags {
+                        ordinary: true,
+                        corrupt: 29,
+                        ..Default::default()
+                    },
+                )
+                .0;
+                assert!(
+                    reference.is_err(),
+                    "spent source comparison ledger must reject"
+                );
+                let (actual, counts) = run(
+                    &jit,
+                    &args,
+                    &mut output,
+                    &memory,
+                    policy,
+                    restored,
+                    Flags {
+                        corrupt: 29,
+                        ..Default::default()
+                    },
+                );
+                assert!(
+                    actual.is_err(),
+                    "spent shared ledger cannot fund a native rectangle: {actual:?} {counts:?}"
+                );
+                assert!(
+                    !counts.elements.contains_key(&u64::from(header)),
+                    "spent comparison ledger must decline before the rectangular loan: {counts:?}"
+                );
+                assert_eq!(snapshots(&output), snapshots(&prior));
+                assert_eq!(snapshots(&expected), snapshots(&prior));
+                drop((output, expected));
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    retained
+                );
+                let (retry, counts) = run(
+                    &jit,
+                    &args,
+                    &mut prior,
+                    &memory,
+                    policy,
+                    restored,
+                    Flags::default(),
+                );
+                retry.unwrap();
+                assert!(counts.elements.contains_key(&u64::from(header)));
+                assert_eq!(
+                    args.iter()
+                        .map(|v| v.canonical_data_draft().unwrap())
+                        .collect::<Vec<_>>(),
+                    inputs
+                );
+                assert_eq!(
+                    aliases
+                        .iter()
+                        .map(|v| v.canonical_data_draft().unwrap())
+                        .collect::<Vec<_>>(),
+                    inputs
+                );
+                drop((prior, args, aliases));
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    (0, 0)
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn rectangular_numeric_maps_pay_each_original_row_transpose_comparison_fee() {
+    use super::numeric_maps::{Flags, run, typed_arguments};
+    use mech_core::snapshot::F64Bits;
+    for (kind, cells) in [
+        ("u64", vec![Data::U64(2), Data::U64(4), Data::U64(6)]),
+        (
+            "f64",
+            [1.25, -0.0, 7.5]
+                .map(|x| Data::F64(F64Bits::from_f64(x)))
+                .to_vec(),
+        ),
+    ] {
+        for current in [false, true] {
+            let endpoint = if current { "last" } else { "3u64" };
+            let source = format!(
+                "last := last<u64>\ndata := values<[{kind}]:1,3>\n[[data[i] | i <- 1u64..={endpoint}]' | j <- items<[u64]>]\n"
+            );
+            for artifact in artifacts(&source) {
+                let mode = NativeProgramLimitMode::NoLimits;
+                let jit = JitProgramArtifact::compile_with_limits(
+                    &artifact,
+                    &mech_stdlib::source_catalog(),
+                    mode.compilation(),
+                )
+                .unwrap();
+                for restored in [false, true] {
+                    for columns in [1u64, 4] {
+                        let memory = mode.memory_budget();
+                        let args = typed_arguments(
+                            &artifact,
+                            &memory,
+                            &[
+                                ("last", Data::U64(3), &[]),
+                                ("values", Data::Matrix(cells.clone().into()), &[1, 3]),
+                                (
+                                    "items",
+                                    Data::Matrix((1..=columns).map(Data::U64).collect()),
+                                    &[1, columns],
+                                ),
+                            ],
+                        );
+                        let aliases = args.clone();
+                        let before = args
+                            .iter()
+                            .map(|v| v.canonical_data_draft().unwrap())
+                            .collect::<Vec<_>>();
+                        let mut reference = vec![None; artifact.outputs().len()];
+                        let (source, source_counts) = run(
+                            &jit,
+                            &args,
+                            &mut reference,
+                            &memory,
+                            mode.execution(),
+                            restored,
+                            Flags {
+                                corrupt: 30,
+                                ..Default::default()
+                            },
+                        );
+                        let source = source.unwrap();
+                        assert_eq!(source_counts.transpose_complete, columns);
+                        assert!(source.comparison_work > 0);
+                        let mut output = vec![None; artifact.outputs().len()];
+                        let (native, counts) = run(
+                            &jit,
+                            &args,
+                            &mut output,
+                            &memory,
+                            mode.execution(),
+                            restored,
+                            Flags::default(),
+                        );
+                        let native = native.unwrap();
+                        assert_eq!(counts.transpose_complete, 0);
+                        assert_eq!(counts.complete, 1);
+                        assert!(
+                            native.comparison_work >= source.comparison_work,
+                            "all original row fees must be paid: native={native:?}, source={source:?}"
+                        );
+                        assert!(
+                            native.visits < source.visits,
+                            "physical visits must remain honest"
+                        );
+                        assert_eq!(snapshots(&output), snapshots(&reference));
+                        assert_eq!(
+                            aliases
+                                .iter()
+                                .map(|v| v.canonical_data_draft().unwrap())
+                                .collect::<Vec<_>>(),
+                            before
+                        );
+                        drop((args, aliases, output, reference));
+                        assert_eq!(
+                            (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                            (0, 0)
+                        );
+                    }
+                }
+            }
+        }
+    }
+}

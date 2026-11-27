@@ -80,7 +80,10 @@ pub(super) struct Bound {
     pub nodes: u64,
     pub output: u64,
     pub comparison: u64,
+    /// Complete selected transpose source fees for one original inner row.
     pub setup: u64,
+    pub compute: u64,
+    pub cloned: u64,
     pub replay: u64,
 }
 pub(super) fn bound(
@@ -92,13 +95,45 @@ pub(super) fn bound(
         return Some(Bound::default());
     };
     let metadata = descriptor.metadata();
-    let mut bytes = 0u64;
-    let mut work = 0u64;
-    for site in [rectangle.range_prepare, rectangle.transpose] {
-        let selected = metadata.calls.get(site as usize)?.as_ref()?;
-        bytes = bytes.checked_add(selected.binding_metadata_bytes())?;
-        work = work.checked_add(selected.binding_work())?;
+    let range = metadata
+        .calls
+        .get(rectangle.range_prepare as usize)?
+        .as_ref()?;
+    let bytes = range.binding_metadata_bytes();
+    let work = range.binding_work();
+    let definition = metadata.plan.values()[metadata.plan.collections()
+        [rectangle.inner_collection as usize]
+        .output()
+        .get() as usize]
+        .definition();
+    let values = data::CollectedValues::new(definition.body());
+    if values.packed_width() != Some(u64::from(region.output_width)) {
+        return None;
     }
+    let payload = geometry.rows.checked_mul(u64::from(region.output_width))?;
+    // The ordinary growing packed bank has capacity<4*n plus its initial
+    // four-word bank. This bounds both exact native and ordinary cold rows.
+    // Only empty type metadata is created here; no row payload is allocated.
+    let capacity = geometry.rows.checked_add(4)?.checked_mul(4)?;
+    let transpose = super::numeric_transpose_budget::bound(
+        descriptor,
+        rectangle.transpose,
+        &region.sites,
+        super::numeric_transpose_budget::Row {
+            count: geometry.rows,
+            width: region.output_width,
+            capacity_bytes: capacity.checked_mul(u64::from(region.output_width))?,
+            finalization_cloned: payload,
+            output_bytes: values
+                .output_bytes(
+                    payload,
+                    geometry.rows,
+                    usize::try_from(capacity).ok()?,
+                    definition.dimension_parameters().len(),
+                )
+                .ok()?,
+        },
+    )?;
     // Keep a full ordinary construction/planning/finalization envelope for
     // both elided leaves. This is deliberately conservative and contains the
     // original draft bank even though no intermediate Value is constructed.
@@ -129,14 +164,17 @@ pub(super) fn bound(
         .checked_add(temporary.checked_mul(128)?)?
         .checked_add(65536)?;
     Some(Bound {
-        temporary,
-        nodes,
-        output,
-        // The elided transpose retains its original conservative comparison
-        // admission even when its private output is never materialized.
-        comparison: output,
-        setup,
-        replay,
+        temporary: temporary
+            .checked_add(transpose.temporary)?
+            .checked_add(transpose.envelope)?,
+        nodes: nodes.checked_add(transpose.nodes)?,
+        output: output.max(transpose.output_bound),
+        // Reuse the ordinary row price even though no transpose Value exists.
+        comparison: transpose.comparison,
+        setup: setup.checked_add(transpose.setup)?,
+        compute: transpose.compute,
+        cloned: transpose.cloned,
+        replay: replay.checked_add(transpose.replay)?,
     })
 }
 pub(super) fn validate(
