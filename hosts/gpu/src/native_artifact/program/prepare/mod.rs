@@ -23,7 +23,6 @@ pub(in crate::native_artifact) mod numeric_binary;
 pub(in crate::native_artifact) mod numeric_generators;
 pub(in crate::native_artifact) mod numeric_phase;
 pub(in crate::native_artifact) mod numeric_prefix;
-pub(in crate::native_artifact) mod numeric_regions;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod visit_predecessors;
 pub(in crate::native_artifact) mod worker_values;
@@ -113,8 +112,6 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     pub(in crate::native_artifact) numeric_maps: numeric_maps::Layout,
     // Pure source-derived cache, rebuilt independently on every image load.
     pub(in crate::native_artifact) numeric_binary: numeric_binary::Layout,
-    // Source topology and lifetimes only; no runtime selection or views.
-    pub(in crate::native_artifact) numeric_regions: numeric_regions::Layout,
     // Complete source/bank/funding cache; independently rebuilt on image load.
     pub(in crate::native_artifact) numeric_generators: numeric_generators::funding::Layout,
     // Pure nonserialized source funds; rebuilt with exact selected calls.
@@ -231,8 +228,6 @@ impl PreparedNativeProgram {
         let utf8_reads = utf8_reads::Layout::derive(&plan).map_err(str::to_owned)?;
         let numeric_maps = numeric_maps::Layout::derive(&plan).map_err(str::to_owned)?;
         let numeric_binary = numeric_binary::Layout::derive(&plan).map_err(str::to_owned)?;
-        let numeric_regions =
-            numeric_regions::Layout::derive(&plan, &numeric_binary).map_err(str::to_owned)?;
         let mut analysis_visits = native::iteration_abi::control_visits(
             plan.blocks(),
             plan.iterations().iter().map(Into::into),
@@ -499,8 +494,7 @@ impl PreparedNativeProgram {
                 4
             })
             .max(compositions.argument_words())
-            .max(if word_collections.is_empty() { 0 } else { 3 })
-            .max(numeric_regions.argument_words(&plan));
+            .max(if word_collections.is_empty() { 0 } else { 3 });
         let types: Box<[_]> = plan
             .values()
             .iter()
@@ -583,7 +577,6 @@ impl PreparedNativeProgram {
             utf8_reads,
             numeric_maps,
             numeric_binary,
-            numeric_regions,
             numeric_generators,
             nested_numeric,
             word_collections,

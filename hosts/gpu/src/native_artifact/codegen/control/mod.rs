@@ -1613,12 +1613,6 @@ impl<'plan> CfgDefinition<'plan> {
                         if let plan::CodePlan::Program(program) = plan
                             && let Some(proof) = program.metadata().numeric_binary.at(index)
                         {
-                            if controls.enabled(crate::native_artifact::codegen::options::OptimizationPass::MatrixExpressionRegions) {
-                                crate::native_artifact::program::codegen::numeric_regions::emit_entry(
-                                    b,hooks,program.metadata(),index,locals,
-                                    |operand|plan.kind(operand).is_some(),&blocks,error,
-                                )?;
-                            }
                             Some(crate::native_artifact::program::codegen::numeric_binary::emit_entry(
                                 b, hooks, index, proof, operands, locals,
                                 |operand| plan.kind(operand).is_some(), error,

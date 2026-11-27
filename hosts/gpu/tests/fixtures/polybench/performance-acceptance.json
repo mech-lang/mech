@@ -14,8 +14,8 @@
     "holdout_use": "Aggregate acceptance after training-only selection and freeze; no per-case holdout tuning.",
     "controls": "Report raw Mech runtime, original-reference drift and C drift separately; this gate uses the fixed Mech/C metric."
   },
-  "history_sha256": "12b547eecad0743a96141912dcd311014d8236cf8877b5cf71fe58aff4336c0a",
-  "history_entries": 35,
+  "history_sha256": "61c8f60bb17fc47e4174a2b60df5f66c3477fa628b9f5df40194e2481c7701ae",
+  "history_entries": 36,
   "entries": [
     {
       "history_index": 0,
@@ -675,6 +675,25 @@
       "multipliers_vs_accepted": {
         "optimization": 1.0030537472941428,
         "holdout": 0.9849285088984755
+      },
+      "performance_gate": "not_promoted",
+      "accepted_index_after_run": 31
+    },
+    {
+      "history_index": 35,
+      "label": "round-35-matrix-expression-regions",
+      "source_commit": "54990a49aca3be73a44c10cdb753b8f810f06c22",
+      "history_entry_sha256": "b585e9f2179c972eba52ab8d5b1a90aeacbd253872264491f3ad062129234471",
+      "scores": {
+        "optimization": 12.020652207931867,
+        "holdout": 40.93922854820974
+      },
+      "previous_measured_index": 34,
+      "run_outcome": "failed_both_regressed",
+      "compared_to_accepted_index": 31,
+      "multipliers_vs_accepted": {
+        "optimization": 1.0510909357695306,
+        "holdout": 1.0412947816071436
       },
       "performance_gate": "not_promoted",
       "accepted_index_after_run": 31

@@ -2450,3 +2450,16 @@ Formal sums of Mech medians: 1.301ms/15.315ms. All900 observations,29482 finite 
 Round34 was not promoted because optimization11.4712817243x C is worse than accepted31 11.4363579771x, despite holdout38.7231493345x improving from39.3156954892x. Both scores must strictly improve. Exact accepted31 compiler source and driver are restored; all608 checks,900 observations and all regressions remain. No remote push. Next training-only target is closed matrix-expression regions using existing resident/JIT kernels and current-bank machinery; see training-experiments/root-operator-regions-plan.json.
 
 Matrix-expression implementation stage: source-derived regions cover8 optimization programs,37 operators and25 nonescaping intermediates;37 logical banks can use26 strictly disjoint storage slots. The source inventory is compiler-only and region execution remains selected:false. Core now exposes and shares exact prospective ownership costs for fresh plain-F64 matrices without making intermediate snapshots merely to price them.94 snapshot checks,6 region checks,24 matrix checks and all30 numerical correctness cases pass, along with both standalone feature builds. No new timings, formal history entry or promotion; accepted31 remains11.4363579771x/39.3156954892x C. Runtime lending and complete-region kernel emission are the next required work. See training-experiments/matrix-region-inventory.json and training-experiments/matrix-region-ownership.json.
+
+Round35: complete matrix-expression loans (not promoted)
+
+General root matrix-expression DAGs use one current checked loan and the existing ordered scalar/SIMD kernels. Private intermediates share disjoint storage; escaping values keep canonical publication. Shared Core F64 owner pricing and a singleton/live-matrix broadcast type gap are filled. All697 selected checks pass, including30 original/decoded finite C-liveout cases and both feature builds. IR398/work156/ABI47.
+
+The one prospective optimization15 probe measured1.03552x raw geomean speedup against accepted31, with one regression>5% retained and all execution counters identical. The exact compiler and driver were committed/frozen before BOTH formal sets.
+
+| Set | Accepted31 x C | Round35 x C | Raw speedup vs31 | Reference-adjusted speedup |
+|---|---:|---:|---:|---:|
+| Optimization | 11.43636x | 12.02065x | 0.96734x | 0.97068x |
+| Holdout | 39.31570x | 40.93923x | 0.96381x | 0.97439x |
+
+Both sets regress. No tolerance, retries or exclusions are applied. All900 observations,29482 finite C-liveouts,36 append-only history entries, failed source and raw training/formal evidence remain. Exact accepted31 compiler source and driver are restored, and no remote push is made. The below1.0x C holdout goal remains unmet. Subsequent profiling and source choices remain optimization-only.
