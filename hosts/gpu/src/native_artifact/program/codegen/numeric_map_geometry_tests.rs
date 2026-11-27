@@ -15,7 +15,7 @@ fn source(kind: &str, dimensions: &str) -> JitProgramArtifact {
     let source = format!("data := input<[{kind}]{dimensions}>\n[data[i] | i <- 1u64..=6u64]\n");
     compile_source(source)
 }
-pub(super) fn compile_source(source: String) -> JitProgramArtifact {
+fn compile_source(source: String) -> JitProgramArtifact {
     let parsed = parse_canonical_document(
         TextSnapshot::new(DocumentId(0x4d415047), Revision(1), source.as_str()).unwrap(),
         ParseConfig::default(),
