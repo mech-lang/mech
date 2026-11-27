@@ -2551,3 +2551,18 @@ The single prospective v2 optimization15 probe uses seven fresh-process observat
 The strict two-set gate rejects this run; exact accepted31 compiler source and driver are restored. All900 formal observations,29482 finite liveouts,42 append-only history entries, all regressions and development stages remain. No holdout per-case diagnosis, profiling or tuning. The fixed below1.0x C holdout goal is assessed from the accepted scores, with a separate completion audit required before claiming success.
 
 [Qualification](round-41-qualification.json) · [Frozen source](round-41-frozen.json) · [Acceptance](round-41-performance-acceptance.json) · [Optimization-only native loop profile](training-experiments/native-map-memory-profile.json)
+
+Round42: native total private maps (not promoted)
+
+Source CFG totality, literal guarded range/capture facts, checked fixed geometry and pointwise target dependence authorize direct writes only into fresh private banks. All non-target views have disjoint complete spans. Pure same-cell identity tails retain the existing bits only when the current view is already that private bank. Every uncertain or fallible map retains complete scratch evaluation and copy. No source-port change, benchmark-name checks, FP arithmetic change, runtime ABI change, weaker admission, ownership relaxation or reduced source bills. All687 broad checks,123 focused checks and both feature configurations pass, including all30 finite C-liveout programs. IR407/work156/ABI47.
+
+The single prospective v2 optimization15 probe uses seven fresh-process observations per actor in alternating accepted31/candidate order. Raw geomean speedup is1.016381x; Gram-Schmidt is1.099101x. All210 observations and1 regressions>5% remain. Visits match and source work/comparison charges do not decrease. Before timing, actual checked optimization Objects must satisfy the preregistered removal of all three hot large whole-map copy loops and smaller combined/function stacks, without new FMA. Static counts do not establish runtime cost or feasibility. Source and driver were committed/frozen before both formal sets.
+
+| Set | Accepted31 x C | Round42 x C | Raw speedup vs31 | Reference-adjusted speedup |
+|---|---:|---:|---:|---:|
+| Optimization | 11.43636x | 11.89518x | 0.99485x | 0.99301x |
+| Holdout | 39.31570x | 40.45042x | 0.98173x | 0.99411x |
+
+The strict two-set gate rejects this run; exact accepted31 compiler source and driver are restored. All900 formal observations,29482 finite liveouts,43 append-only history entries, all regressions and development stages remain. No holdout per-case diagnosis, profiling or tuning. The fixed below1.0x C holdout goal is assessed from the accepted scores, with a separate completion audit required before claiming success.
+
+[Qualification](round-42-qualification.json) · [Frozen source](round-42-frozen.json) · [Acceptance](round-42-performance-acceptance.json) · [Optimization-only native loop profile](training-experiments/native-map-memory-profile.json)

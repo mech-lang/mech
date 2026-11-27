@@ -25,8 +25,6 @@ pub(in crate::native_artifact) mod map_banks;
 pub(in crate::native_artifact) mod matrix_maps;
 mod reductions;
 mod schedule;
-#[cfg(feature = "canonical-native-program")]
-pub(in crate::native_artifact) mod total_maps;
 pub(in crate::native_artifact) use reductions::{Fold, FoldBudget, Reduction};
 mod words;
 pub(in crate::native_artifact) use bounds::Bound;
