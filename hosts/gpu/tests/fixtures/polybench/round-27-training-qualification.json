@@ -1,0 +1,249 @@
+{
+  "schema": "mech.polybench.training-qualification.v1",
+  "created_at": "2026-11-27T02:32:47.561620+00:00",
+  "scope": "Correctness and feature qualification before candidate timing. Holdout performance untouched.",
+  "source_parent": "79aecffb50d14fc0c76969c497b23970db530a93",
+  "compiler_fingerprint": "017a8a8ca4454a5bf95690f33e8ab5a2ed385b1254cade4458fb3e98a5573929",
+  "driver_sha256": "a4f3437cc56a85f338d0a9d3bde106439dba44034a3d24f52461fefd8abc4184",
+  "versions": {
+    "ir": 386,
+    "work": 153,
+    "abi": 44
+  },
+  "total_unique_selected_checks": 556,
+  "checks": [
+    {
+      "name": "numeric-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric",
+        "phase",
+        "row_block",
+        "huffman",
+        "private_publication",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 95.24018279183656,
+      "passed_tests": [
+        385
+      ]
+    },
+    {
+      "name": "matrix-polybench.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_matrix",
+        "--test",
+        "canonical_artifact_polybench",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 62.3179847500287,
+      "passed_tests": [
+        24,
+        30
+      ]
+    },
+    {
+      "name": "program-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_program",
+        "--",
+        "buffer_frame_qualification",
+        "nested_frame_qualification",
+        "numeric_tail_qualification",
+        "numeric_write_qualification",
+        "scalar_state_qualification",
+        "scalar_record_qualification",
+        "word_read_qualification",
+        "huffman_qualification",
+        "sequence_writer_qualification",
+        "collection_qualification",
+        "packed_update_qualification",
+        "range_cursor_qualification",
+        "range_qualification",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 27.99944195803255,
+      "passed_tests": [
+        114
+      ]
+    },
+    {
+      "name": "protocol.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space",
+        "native_runtime_consolidation_preserves_the_charged_layout_envelope",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.1888381657190621,
+      "passed_tests": [
+        2
+      ]
+    },
+    {
+      "name": "abi-layout.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.16252570925280452,
+      "passed_tests": [
+        1
+      ]
+    },
+    {
+      "name": "runtime-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program-runtime",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 4.270111000165343,
+      "passed_tests": []
+    },
+    {
+      "name": "production-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 8.256066834088415,
+      "passed_tests": []
+    }
+  ],
+  "logs": [
+    {
+      "log": "qualification/round-27-numeric-closure/numeric-regressions.log.gz",
+      "log_sha256": "18bd4a6757e544966ff8d270b9062c00b17bea0a62a9d334a7caf1222e649d9f",
+      "compressed_sha256": "034a52de74f194baf440f4fc7bf8c5f0082fd91d3ef27d2a64d2ef6387280a23",
+      "passed_tests": 385
+    },
+    {
+      "log": "qualification/round-27-numeric-closure/matrix-polybench.log.gz",
+      "log_sha256": "98ca07717fe7b4d022e63dd4c19942a164377f7e688f5a0402f943c6929a65e8",
+      "compressed_sha256": "feed180aa37a1b6882266725d79318c6dafce38d0c9f8f0f327e14478f6697b2",
+      "passed_tests": 54
+    },
+    {
+      "log": "qualification/round-27-numeric-closure/program-regressions.log.gz",
+      "log_sha256": "5a2d02b475fa11a3fadac3f4574b3311dc95791e6335f6e76518ecc285b91164",
+      "compressed_sha256": "b36da3201dd4f6766705960c6ffc7c060fc7b62190b0d2f9ae1efc3fc246bc66",
+      "passed_tests": 114
+    },
+    {
+      "log": "qualification/round-27-numeric-closure/protocol.log.gz",
+      "log_sha256": "05e1a36f4bb75b957550a3f714a4256068ec8b923c175fdfd86b6965556358a5",
+      "compressed_sha256": "8786f6a0be32f3f8e2dc7ad36ad0743342b2505d35be04be6345f15a440d7ed3",
+      "passed_tests": 2
+    },
+    {
+      "log": "qualification/round-27-numeric-closure/abi-layout.log.gz",
+      "log_sha256": "27831c919971afc002d09f46c4cc14205b15f786267a0641be5881502687b773",
+      "compressed_sha256": "2056e4ad973393046541f68df6005f33106fe7be9f5b50cd2d508a03dcc2d23b",
+      "passed_tests": 1
+    },
+    {
+      "log": "qualification/round-27-numeric-closure/runtime-feature.log.gz",
+      "log_sha256": "ef22073cda8b814df13c5c1699e8f7d9d08f4d0d3de1556f9086e7074b17e3b5",
+      "compressed_sha256": "bfb3c5aeac169a53c2262c09c44e3a00ee7b9185490b9b16490ced4c99cfbb8f",
+      "passed_tests": 0
+    },
+    {
+      "log": "qualification/round-27-numeric-closure/production-feature.log.gz",
+      "log_sha256": "97274fb697b69d1e93ba70ce31b3e5474c3df94f09665243da0ab3f622a9db41",
+      "compressed_sha256": "d6edb1b7c457c7a32af609251b40be0e13d83d220e4c14eb9c4850b73e54ae49",
+      "passed_tests": 0
+    },
+    {
+      "log": "qualification/round-27-numeric-closure/focused.log.gz",
+      "log_sha256": "63d64a3515acc9ca498a2b5cd5963c6127b278411a4af783820d2ac4eebf66bc",
+      "compressed_sha256": "81b3ce55796599acffe8cd6291254eaa7b10a6dad8f6740f85cff7b61db12600",
+      "passed_tests": 9
+    },
+    {
+      "log": "qualification/round-27-numeric-closure/driver-build.log.gz",
+      "log_sha256": "8ee052e868845b32b4ffde35f17c54cb3ad1f3af70018333cd40429da7523990",
+      "compressed_sha256": "1d60fbf6d59f9743c80c11243ca6997ade7309cdb07f4af295566966778a016d",
+      "passed_tests": 0
+    }
+  ],
+  "invariants": [
+    "All30 unchanged ports match29482 finite C live-outs in original/decoded artifacts and emit Objects.",
+    "At identical recurring numeric coverage, prefer a complete fixed-array result over managed cold constructors/extraction. Growing banks retain existing selection. All frame/tag/current-array/alias proofs, scalar emission and finite admission are reused.",
+    "All four optimization-only diagnosed child FSMs now have zero cold exits, with equal or higher original per-traversal compute prices. The original complete-prefix representation, tag-flow proof, original source operation prices, boundary funding and resource guards are unchanged.",
+    "New captured-array child tests include original/decoded/restored descriptors, exact F64 bits, NaNs/infinities/overflow, zero-trip and invalid-index paths, old output aliases, no terminal library/structural callbacks and cleanup/retry.",
+    "Nine focused FSM checks, exact unsigned Huffman bills, scalar/resource regressions and both feature builds pass. IR386/work153/ABI44; root frame144bytes and matrix arithmetic loan80bytes remain.",
+    "No ports, C binaries/flags, inputs, tolerances, finite benchmark limits, split, goal or timing boundaries changed. Bookkeeping visits/transport/work may change when managed continuations disappear; all differences are retained and audited."
+  ],
+  "limitations": [
+    "Whole enclosing matrix-valued comprehension/child-FSM fusion is still open. Completing child FSM results is a prerequisite.",
+    "Larger datasets, GPU execution, linked Object execution, full compression/AOT and a fresh external application remain unqualified."
+  ]
+}

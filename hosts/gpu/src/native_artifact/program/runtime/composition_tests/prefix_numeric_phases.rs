@@ -671,7 +671,7 @@ fn prefix_numeric_phases_restore_owners_after_checked_arithmetic_failure_and_ret
 }
 
 #[test]
-fn prefix_numeric_phases_keep_a_constant_tag_when_it_covers_all_repeated_numeric_work() {
+fn prefix_numeric_phases_close_fixed_array_results_without_losing_recurrent_numeric_work() {
     let text = r#"#Scan(initial<[u64]:2,3>, end<u64>, marker<u64>) => <[u64]:2,3>
   | :Walk(data<[u64]:2,3>, at<u64>, carried<u64>)
   | :Done(data<[u64]:2,3>).
@@ -708,8 +708,8 @@ fn prefix_numeric_phases_keep_a_constant_tag_when_it_covers_all_repeated_numeric
                 .as_ref()
                 .unwrap()
                 .prefix
-                .is_none(),
-            "retain the efficient existing constant-tag proof"
+                .is_some(),
+            "close the exact array result at unchanged recurring numeric coverage"
         );
         crate::native_artifact::program::prepare::numeric_prefix::derive(
             &metadata.plan.facts(),
@@ -719,9 +719,37 @@ fn prefix_numeric_phases_keep_a_constant_tag_when_it_covers_all_repeated_numeric
             &metadata.calls,
             &metadata.visits,
         )
-        .expect(
-            "the full prefix must be eligible; coverage profitability chooses the narrower proof",
+        .expect("complete prefix is independently eligible");
+        assert!(region.numeric.as_ref().unwrap().exits.is_empty());
+        assert!(
+            region
+                .numeric
+                .as_ref()
+                .unwrap()
+                .result
+                .direct_array()
+                .is_some()
         );
+        let narrow = crate::native_artifact::program::prepare::readonly_numeric::tagged::candidate(
+            &metadata.plan.facts(),
+            &region.tail,
+            &metadata.buffer_frames,
+            &metadata.scalar_aggregates,
+            &metadata.calls,
+            &metadata.visits,
+            0,
+        )
+        .expect("the constant-tag specialization remains available");
+        assert!(!narrow.exits.is_empty());
+        let numeric =
+            |proof: &crate::native_artifact::program::prepare::readonly_numeric::Proof| {
+                proof.actions.iter().filter(|(_, op)| matches!(op,
+                crate::native_artifact::program::prepare::readonly_numeric::Operation::CellRead { .. }
+                | crate::native_artifact::program::prepare::readonly_numeric::Operation::CellWrite { .. }
+            )).count()
+            };
+        assert!(numeric(&narrow) > 0);
+        assert_eq!(numeric(&narrow), numeric(region.numeric.as_ref().unwrap()));
         let args = super::numeric_maps::typed_arguments(
             &artifact,
             &memory,
@@ -744,6 +772,19 @@ fn prefix_numeric_phases_keep_a_constant_tag_when_it_covers_all_repeated_numeric
             };
             result.unwrap();
             assert_eq!(counts.tail_entries.len(), 1);
+            for &site in &region.numeric.as_ref().unwrap().sites {
+                for helper in [GlobalHelper::Library, GlobalHelper::StructuralObservation] {
+                    assert_eq!(
+                        counts
+                            .helpers
+                            .get(&(site as u64, helper.raw()))
+                            .copied()
+                            .unwrap_or(0),
+                        0,
+                        "complete native constructor/extraction at source{site}"
+                    );
+                }
+            }
             assert_eq!(
                 out.last()
                     .unwrap()
@@ -870,6 +911,161 @@ fn prefix_numeric_phases_cover_recurring_scalar_transition_states() {
                 }
             }
             assert_eq!(contents(&args), before);
+        }
+    }
+}
+
+#[test]
+fn prefix_numeric_phases_close_captured_array_children_inside_block_comprehensions() {
+    let text = r#"#Scan(source<[f64]:3,1>, a<f64>, end<u64>) => <[f64]:3,1>
+  | :Walk(values<[f64]:3,1>, at<u64>, prior<f64>)
+  | :Done(values<[f64]:3,1>).
+#Scan(source,a,end) -> :Walk([0.0 | j <- 1u64..=3u64]',1u64,0.0)
+  :Walk(values,at,prior)
+    | at < end -> {
+        value := a * source[at] + prior
+        ~next := values
+        next[at] = value
+      } -> :Walk(next,at + 1u64,value)
+    | * -> :Done(values)
+  :Done(values) => values.
+image := input<[f64]:2,3>
+answer := [(#Scan([image[row,column] | column <- 1u64..=3u64]',a<f64>,end<u64>)) | row <- 1u64..=2u64]'
+(answer,image)
+"#;
+    for artifact in artifacts(text) {
+        let catalog = mech_stdlib::source_catalog();
+        let mode = NativeProgramLimitMode::NoLimits;
+        let memory = mode.memory_budget();
+        let jit = JitProgramArtifact::compile(&artifact, &catalog).unwrap();
+        let ordinary = JitProgramArtifact::compile_for_test(
+            &artifact,
+            &catalog,
+            OptimizationPass::ScalarLoops,
+        )
+        .unwrap();
+        let metadata = jit.descriptor().metadata();
+        let region = metadata
+            .closed_tails
+            .regions
+            .iter()
+            .find(|r| {
+                r.numeric
+                    .as_ref()
+                    .and_then(|p| p.tagged.as_ref())
+                    .is_some_and(|v| v.prefix.is_some())
+            })
+            .expect("complete child kernel under the original collection");
+        let proof = region.numeric.as_ref().unwrap();
+        assert!(region.tail.parent().is_some());
+        assert!(proof.exits.is_empty() && proof.result.direct_array().is_some());
+        assert!(proof.arrays.iter().any(|a| a.immutable_capture()));
+        crate::native_artifact::emit_program_object(&artifact, &catalog).unwrap();
+        for (cells, a) in [
+            (vec![1., 2., 3., 4., 5., 6.], 0.25),
+            (vec![-0., 0., f64::MAX, -f64::MAX, f64::INFINITY, 1.], 2.),
+            (
+                vec![f64::from_bits(0x7ff8000000000042), 1., -1., 2., 3., 4.],
+                1.,
+            ),
+        ] {
+            let mut prior = vec![None; artifact.outputs().len()];
+            for (end, error) in [(4, false), (1, false), (5, true), (3, false)] {
+                let args = super::numeric_maps::typed_arguments(
+                    &artifact,
+                    &memory,
+                    &[
+                        (
+                            "input",
+                            Data::Matrix(
+                                cells
+                                    .iter()
+                                    .map(|v| Data::F64(mech_core::snapshot::F64Bits::from_f64(*v)))
+                                    .collect(),
+                            ),
+                            &[2, 3],
+                        ),
+                        (
+                            "a",
+                            Data::F64(mech_core::snapshot::F64Bits::from_f64(a)),
+                            &[],
+                        ),
+                        ("end", Data::U64(end), &[]),
+                    ],
+                );
+                let before = contents(&args);
+                let baseline = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                for restored in [false, true] {
+                    let mut actual = prior.clone();
+                    let mut expected = prior.clone();
+                    let (result, counts) = if restored {
+                        observe::run_restored(&jit, &args, &mut actual, mode.execution(), &memory)
+                    } else {
+                        observe::run(&jit, &args, &mut actual, mode.execution(), &memory)
+                    };
+                    let oracle =
+                        ordinary.evaluate_into(&args, &mut expected, mode.execution(), &memory);
+                    assert_eq!(result.is_err(), error, "end{end}: {result:?}");
+                    assert_eq!(
+                        format!("{:?}", result.as_ref().err()),
+                        format!("{:?}", oracle.as_ref().err())
+                    );
+                    assert_eq!(
+                        contents(&actual.iter().flatten().cloned().collect::<Vec<_>>()),
+                        contents(&expected.iter().flatten().cloned().collect::<Vec<_>>())
+                    );
+                    if !error {
+                        assert_eq!(
+                            counts
+                                .tail_entries
+                                .iter()
+                                .filter(|(_, id, _)| metadata.closed_tails.regions[*id].iteration
+                                    == region.iteration)
+                                .count(),
+                            2
+                        );
+                        for &site in &proof.sites {
+                            for helper in
+                                [GlobalHelper::Library, GlobalHelper::StructuralObservation]
+                            {
+                                assert_eq!(
+                                    counts
+                                        .helpers
+                                        .get(&(site as u64, helper.raw()))
+                                        .copied()
+                                        .unwrap_or(0),
+                                    0,
+                                    "native child terminal site{site}"
+                                );
+                            }
+                        }
+                    } else {
+                        for (a, p) in actual.iter().zip(&prior) {
+                            assert!(
+                                a.as_ref()
+                                    .unwrap()
+                                    .shares_frozen_storage(p.as_ref().unwrap())
+                            );
+                        }
+                    }
+                    assert_eq!(contents(&args), before);
+                    drop((actual, expected));
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        baseline
+                    );
+                }
+                if !error {
+                    ordinary
+                        .evaluate_into(&args, &mut prior, mode.execution(), &memory)
+                        .unwrap();
+                }
+            }
+            drop(prior);
+            assert_eq!(
+                (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                (0, 0)
+            );
         }
     }
 }

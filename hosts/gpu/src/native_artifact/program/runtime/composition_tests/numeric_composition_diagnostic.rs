@@ -35,7 +35,10 @@ fn diagnose_numeric_child_composition() {
         let NativeControlLoop::Tail(tail)=control else{return None};
         let result=readonly_numeric::derive(&m.plan,tail,&m.buffer_frames,&m.scalar_aggregates,&m.calls,&m.visits);
         let complete=readonly_numeric::derive_complete_for_diagnostic(&m.plan,tail,&m.buffer_frames,&m.scalar_aggregates,&m.calls,&m.visits);
+        let prefix=crate::native_artifact::program::prepare::numeric_prefix::derive(&m.plan.facts(),tail,&m.buffer_frames,&m.scalar_aggregates,&m.calls,&m.visits);
         Some(json!({"iteration":id,"header":tail.header(),"parent":tail.parent(),"carrier":tail.carrier().get(),
+            "prefix_rejection":prefix.as_ref().err(),
+            "prefix_proof":prefix.as_ref().ok().map(|p|json!({"arrays":p.arrays,"sites":p.sites,"phase":p.phase,"exits":p.exits,"result":p.result,"tagged":p.tagged})),
             "proof_rejection":result.as_ref().err(),"complete_rejection":complete.as_ref().err(),
             "selected":m.closed_tails.regions.iter().any(|r|r.iteration as usize==id&&r.numeric.is_some()),
             "proof":result.as_ref().ok().map(|p|json!({"arrays":p.arrays,"maps":p.map_banks,"native_sites":p.sites,

@@ -169,7 +169,7 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                152
+                153
             );
             // Policy152 adds ordered product fees. This unsigned fixture has no
             // selected products. Policy151 adds F64 matrix arithmetic fees. This unsigned fixture
@@ -692,7 +692,7 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                152
+                153
             );
             assert_eq!(
                 report.work,

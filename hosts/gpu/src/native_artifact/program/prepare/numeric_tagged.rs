@@ -61,12 +61,13 @@ pub(super) fn derive(
             }
         }
     }
-    // A complete union carries a dynamic tag. Retain the existing constant-tag
-    // body when it already covers every recurring state. Select the broader
-    // loan when it adds numeric work or another recurring payload body, which
-    // can include scalar transitions that otherwise repeatedly close the loan.
-    // This is source dataflow profitability, independent of program names,
-    // dimensions, payload contents and benchmark measurements.
+    // A complete union carries a dynamic tag. At equal recurring numeric
+    // coverage, close a fixed-array result instead of exporting ordinary
+    // constructor/extraction continuations. This preserves one owner loan
+    // through completion and makes the child a composable native kernel.
+    // Growing banks retain their existing capacity/callback selection. These
+    // are source/representation facts, independent of program names, array
+    // dimensions, payload contents and performance measurements.
     if let Some(prefix) = prefix
         && (selected.is_none()
             || numeric_score(facts.plan(), tail, &prefix) > score
@@ -74,6 +75,13 @@ pub(super) fn derive(
                 && selected.as_ref().is_some_and(|selected| {
                     numeric_total_score(&prefix) > numeric_total_score(selected)
                 }))
+            || (numeric_score(facts.plan(), tail, &prefix) == score
+                && prefix.exits.is_empty()
+                && prefix.result.direct_array().is_some()
+                && prefix.arrays.iter().all(|array| !array.appends)
+                && selected
+                    .as_ref()
+                    .is_some_and(|proof| !proof.exits.is_empty()))
             || selected
                 .as_ref()
                 .and_then(|proof| proof.tagged.as_ref())
