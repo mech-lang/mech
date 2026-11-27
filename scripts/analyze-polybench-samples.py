@@ -5,6 +5,7 @@ Pass a Rust symbol filter such as rustfilt with --demangler. Action categories
 are disjoint outer-call attribution; self mechanisms form a separate view.
 """
 import argparse
+import bisect
 import collections
 import gzip
 import hashlib
@@ -28,7 +29,8 @@ def parse_nodes(text):
             stack.pop()
         at = len(records)
         parent = stack[-1] if stack else None
-        records.append({'depth': depth, 'count': int(count), 'name': name, 'parent': parent, 'children': []})
+        address = re.search(r'\[0x([0-9a-fA-F]+)\]', rest)
+        records.append({'depth': depth, 'count': int(count), 'name': name, 'parent': parent, 'children': [], 'instruction_address': int(address[1], 16) if address else None})
         if parent is not None:
             records[parent]['children'].append(at)
         stack.append(at)
@@ -37,6 +39,31 @@ def parse_nodes(text):
         if n['self'] < 0:
             raise ValueError(('child count exceeds parent', n))
     return records
+
+def resolve_jit(records, path):
+    """Use same-process Cranelift perf ranges; mapped names grant no authority."""
+    ranges = []
+    for line in path.read_text().splitlines():
+        start, size, name = line.split(maxsplit=2)
+        start, size = int(start, 16), int(size, 16)
+        if start < 0 or size <= 0 or start + size > 1 << 64:
+            raise ValueError(('invalid JIT function range', line))
+        ranges.append((start, start + size, name))
+    ranges.sort()
+    for prior, current in zip(ranges, ranges[1:]):
+        if prior[1] > current[0]:
+            raise ValueError(('overlapping JIT function ranges', prior, current))
+    starts = [start for start, _, _ in ranges]
+    for node in records:
+        address = node['instruction_address']
+        if address is None or not node['name'].startswith('???'):
+            continue
+        index = bisect.bisect_right(starts, address) - 1
+        if index < 0 or address >= ranges[index][1]:
+            continue
+        start, _, name = ranges[index]
+        node.update(name='JIT::' + name, jit_symbol=name, jit_offset=address - start)
+    return ranges
 
 def action(stack):
     if any(('runtime::invocation::Invocation' in n and n.endswith('::visit') or '::visit_from_entry' in n or 'runtime::hooks::admit' in n for n in stack)):
@@ -70,6 +97,8 @@ def mechanism(leaf):
         return 'Resource bookkeeping and locks'
     if any((t in leaf for t in ['memory_plan::', 'memory_planner::', 'memory_contract::', 'schema::', 'dimension::', 'snapshot::validation::'])):
         return 'Memory planning, schema and snapshot validation'
+    if leaf.startswith('JIT::'):
+        return 'Generated code, resolved function'
     if leaf.startswith('???'):
         return 'Generated code, unresolved symbol'
     return 'Other runtime self time'
@@ -95,6 +124,8 @@ def analyze(records):
     inclusive = collections.Counter()
     own = collections.Counter()
     paths = collections.Counter()
+    jit_functions = collections.Counter()
+    jit_sites = collections.Counter()
 
     def visit(i, stack):
         n = records[i]
@@ -104,6 +135,9 @@ def analyze(records):
             actions[action(stack)] += amount
             mechanisms[mechanism(n['name'])] += amount
             own[n['name']] += amount
+            if 'jit_symbol' in n:
+                jit_functions[n['jit_symbol']] += amount
+                jit_sites[(n['jit_symbol'], n['jit_offset'])] += amount
             for symbol in dict.fromkeys(stack):
                 inclusive[symbol] += amount
             paths[tuple(stack[-8:])] += amount
@@ -116,19 +150,35 @@ def analyze(records):
     def rows(counts, limit=None):
         return [{'name': name, 'samples': n, 'percent': 100 * n / total} for name, n in sorted(counts.items(), key=lambda item: (-item[1], item[0]))[:limit]]
     all_samples = sum((n['count'] for n in records if n['parent'] is None))
-    return {'all_thread_samples': all_samples, 'execution_samples': total, 'excluded_samples': all_samples - total, 'action_categories': rows(actions), 'self_time_mechanisms': rows(mechanisms), 'top_self_functions': rows(own, 25), 'top_inclusive_functions': rows(inclusive, 30), 'top_leaf_stacks': [{'samples': n, 'percent': 100 * n / total, 'stack': list(stack)} for stack, n in sorted(paths.items(), key=lambda item: (-item[1], item[0]))[:20]]}
+    result = {'all_thread_samples': all_samples, 'execution_samples': total, 'excluded_samples': all_samples - total, 'action_categories': rows(actions), 'self_time_mechanisms': rows(mechanisms), 'top_self_functions': rows(own, 25), 'top_inclusive_functions': rows(inclusive, 30), 'top_leaf_stacks': [{'samples': n, 'percent': 100 * n / total, 'stack': list(stack)} for stack, n in sorted(paths.items(), key=lambda item: (-item[1], item[0]))[:20]]}
+
+    result.update(jit_self_samples=sum(jit_functions.values()), jit_functions=rows(jit_functions),
+                  top_jit_sites=[{'symbol': name, 'offset': offset, 'samples': count,
+                                  'percent': 100 * count / total}
+                                 for (name, offset), count in jit_sites.most_common(30)])
+    return result
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--demangler', type=pathlib.Path, required=True)
     parser.add_argument('--output', type=pathlib.Path, required=True)
+    parser.add_argument('--jit-map', action='append', default=[], metavar='SAMPLE=MAP', help='Same-process Cranelift perf map for this sample basename; may repeat.')
     parser.add_argument('samples', type=pathlib.Path, nargs='+')
     args = parser.parse_args()
+    maps = {}
+    for item in args.jit_map:
+        name, separator, value = item.partition('=')
+        if not separator or not name or not value or name in maps:
+            raise ValueError(('invalid or duplicate sample/map pair', item))
+        maps[name] = pathlib.Path(value)
+    if not set(maps).issubset({path.name for path in args.samples}):
+        raise ValueError('JIT map does not match an input sample basename')
     output = {}
     for path in args.samples:
         payload = path.read_bytes()
         text = (gzip.decompress(payload) if path.suffix == '.gz' else payload).decode()
         records = parse_nodes(text)
+        ranges = resolve_jit(records, maps[path.name]) if path.name in maps else None
         symbols = list(dict.fromkeys((n['name'] for n in records)))
         result = subprocess.run([str(args.demangler)], input='\n'.join(symbols) + '\n', text=True, capture_output=True, check=True)
         decoded = dict(zip(symbols, result.stdout.splitlines(), strict=True))
@@ -136,6 +186,9 @@ def main():
             node['name'] = decoded[node['name']]
         row = analyze(records)
         row['sample_sha256'] = hashlib.sha256(text.encode()).hexdigest()
+        if ranges is not None:
+            row['jit_map_sha256'] = hashlib.sha256(maps[path.name].read_bytes()).hexdigest()
+            row['jit_map_functions'] = len(ranges)
         output[path.name.removesuffix('.gz')] = row
         print(path.name, row['execution_samples'], 'execution samples')
         for category in row['action_categories']:

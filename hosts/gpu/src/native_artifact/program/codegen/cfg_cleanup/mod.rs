@@ -22,6 +22,7 @@ pub(in crate::native_artifact) mod identity_routes;
 pub(in crate::native_artifact) mod immutable_word_reads;
 pub(in crate::native_artifact) mod independent_private_read;
 pub(in crate::native_artifact) mod indexed_addresses;
+mod inverse_bitcasts;
 mod known_widths;
 mod local_phis;
 pub(in crate::native_artifact) mod narrow_bits;
@@ -490,6 +491,7 @@ fn optimize_ordered(
         rounds: 0,
         constant_branches_removed: 0,
         neutral_operations_removed: 0,
+        inverse_bitcasts_removed: 0,
         boolean_conditions_simplified: 0,
         unsigned_intervals_combined: 0,
         selected_range_branches_removed: 0,
@@ -525,6 +527,9 @@ fn optimize_ordered(
     // placement/rematerialization and increase register pressure. Leave exactly
     // one ordinary data/speed pass to the final backend compilation.
     for _ in 0..MAX_ROUNDS {
+        if controls.enabled(OptimizationPass::InverseBitcasts) {
+            report.inverse_bitcasts_removed += inverse_bitcasts::fold(&mut context.func);
+        }
         if controls.enabled(OptimizationPass::EarlyIdentities) {
             report.neutral_operations_removed += fold_identities(&mut context.func);
         }
@@ -576,6 +581,9 @@ fn optimize_ordered(
                 .compute_flowgraph_and_cleanup(isa)
                 .map_err(backend)?;
         }
+    }
+    if controls.enabled(OptimizationPass::InverseBitcasts) {
+        report.inverse_bitcasts_removed += inverse_bitcasts::fold(&mut context.func);
     }
     if controls.enabled(OptimizationPass::DemandLiveness) {
         let dead = dead_values::eliminate(&mut context.func);

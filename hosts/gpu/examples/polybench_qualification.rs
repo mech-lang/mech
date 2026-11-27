@@ -103,12 +103,15 @@ fn run() -> Result<Json, String> {
     let args: Vec<_> = std::env::args().collect();
     if !(3..=5).contains(&args.len()) {
         return Err(
-            "usage: polybench_qualification SOURCE.mec INPUTS.json [SAMPLES] [resident-reference]"
+            "usage: polybench_qualification SOURCE.mec INPUTS.json [SAMPLES] [resident-reference|emit-object=PATH]"
                 .into(),
         );
     }
-    if args.get(4).is_some_and(|mode| mode != "resident-reference") {
-        return Err("the optional mode must be resident-reference".into());
+    if args
+        .get(4)
+        .is_some_and(|mode| mode != "resident-reference" && !mode.starts_with("emit-object="))
+    {
+        return Err("the optional mode must be resident-reference or emit-object=PATH".into());
     }
     let source = std::fs::read_to_string(&args[1]).map_err(err)?;
     let config: Json =
@@ -138,6 +141,26 @@ fn run() -> Result<Json, String> {
         .compile_artifact()
         .map_err(|e| format!("artifact: {e:?}"))?;
     let frontend_seconds = start.elapsed().as_secs_f64();
+    if let Some(path) = args
+        .get(4)
+        .and_then(|mode| mode.strip_prefix("emit-object="))
+    {
+        if path.is_empty() {
+            return Err("Object output path is empty".into());
+        }
+        let object =
+            mech_gpu::native_artifact::emit_program_object(&artifact, &catalog).map_err(err)?;
+        let path = std::path::Path::new(path);
+        std::fs::write(path, object.bytes()).map_err(err)?;
+        std::fs::write(
+            path.with_extension("metadata.json"),
+            serde_json::to_vec_pretty(&object.metadata()).map_err(err)?,
+        )
+        .map_err(err)?;
+        return Ok(
+            json!({"status":"ok","mode":"emit-object","path":path,"metadata":path.with_extension("metadata.json")}),
+        );
+    }
     let memory = ManagedMemoryBudget::new(2 * 1024 * 1024 * 1024);
     let args_values = inputs(&artifact, &config, &memory)?;
     if args.get(4).map(String::as_str) == Some("resident-reference") {

@@ -70,6 +70,8 @@ pub(in crate::native_artifact) enum OptimizationPass {
     NumericOutlining,
     BooleanBranches,
     BitCounts,
+    /// Cancel lossless scalar bitcast round trips before register allocation.
+    InverseBitcasts,
     ScalarSelects,
     UnsignedGuardFacts,
     /// Preserve a convex unsigned range through one common modular addition
