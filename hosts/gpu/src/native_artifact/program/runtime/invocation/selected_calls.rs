@@ -11,9 +11,6 @@ impl Invocation<'_, '_, '_> {
         let metadata = self.descriptor.metadata();
         match metadata.call_routes[site] {
             LibraryCallRoute::Canonical => Ok(None),
-            LibraryCallRoute::NumericComposite => {
-                Ok(self.numeric_composite_call(site, words)?.then_some(None))
-            }
             LibraryCallRoute::BorrowedMapKeysLength => {
                 Ok(self.borrowed_keys_length_call(site, words)?.map(Some))
             }

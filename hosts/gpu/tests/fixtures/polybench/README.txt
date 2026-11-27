@@ -2506,3 +2506,18 @@ The single prospective v2 optimization15 probe uses seven fresh-process samples 
 The strict two-set gate rejects this run; exact accepted31 compiler source and driver are restored. All900 formal observations,29482 finite liveouts,39 append-only history entries, all regressions, failed development sources and raw evidence remain. No holdout per-case tuning was used. The below1.0x C holdout goal remains unmet.
 
 [Qualification](round-38-qualification.json) · [Frozen source](round-38-frozen.json) · [Acceptance](round-38-performance-acceptance.json) · [Optimization-only profiles](training-experiments/optimization-margin-profile.json)
+
+Round39: canonical numeric composite construction (not promoted)
+
+The compiler derives a numeric tuple/record strategy from the actual resident CompositePack factory. It reuses Core CompositeSnapshotConstructor and the complete original-source construction/publication/replay envelope. Current admitted child schemas, keys and shapes determine the result; no input shapes or owners are cached. All finite caps, caller coexistence, aliases, atomic publication, exact visits and work/comparison charges remain. Existing private-frame and scalar routes retain priority. No source-port changes or benchmark-name checks. All686 broad checks,19 focused checks and both feature checks pass, including all30 finite C-liveout programs. IR404/work156/ABI47.
+
+The one prospective v2 optimization15 probe uses seven fresh-process samples per actor in alternating accepted31/candidate order. Raw geomean speedup is1.150103x; MVT is2.699389x and BiCG is2.528068x. All210 observations and2 regressions>5% remain. Visits match and source work/comparison bills do not decrease. Before timing, a debugger census on the exact qualified driver confirms one numeric composite call, zero generic canonical calls and unchanged native arithmetic callbacks in both MVT/BiCG; all160 C liveouts pass. The census has zero timing samples. Source and driver were committed/frozen before both formal sets.
+
+| Set | Accepted31 x C | Round39 x C | Raw speedup vs31 | Reference-adjusted speedup |
+|---|---:|---:|---:|---:|
+| Optimization | 11.43636x | 10.88235x | 1.12822x | 1.12780x |
+| Holdout | 39.31570x | 41.26878x | 0.98834x | 1.00595x |
+
+The strict two-set gate rejects this run; exact accepted31 source and driver are restored. All900 formal observations,29482 finite liveouts,40 append-only history entries, all regressions and development failures remain. Holdout use is aggregate acceptance only. The below1.0x C holdout goal remains unmet.
+
+[Qualification](round-39-qualification.json) · [Frozen source](round-39-frozen.json) · [Acceptance](round-39-performance-acceptance.json) · [Optimization profiles](training-experiments/optimization-margin-profile.json) · [Constructor profile](training-experiments/composite-pack-profile.json)

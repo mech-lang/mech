@@ -258,20 +258,6 @@ impl NativePreparedLibraryCall {
         Some((source, replay))
     }
 
-    /// The same full source construction/publication and replay envelope for
-    /// a compiler-selected canonical numeric tuple/record. This grants no
-    /// current owner, shape, entry or output authority.
-    pub fn canonical_numeric_pack_source_bound(
-        &self,
-        inputs: u64,
-        output: u64,
-    ) -> Option<(ResourceDemand, u64)> {
-        if !self.supports_canonical_numeric_pack() {
-            return None;
-        }
-        self.f64_matrix_source_bound(inputs, output, 0)
-    }
-
     fn f64_matrix_source_bound(
         &self,
         inputs: u64,

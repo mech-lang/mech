@@ -13,7 +13,6 @@ pub(super) mod continuation;
 mod helper_fallbacks;
 mod histogram;
 mod numeric_binary;
-mod numeric_composite;
 mod numeric_exits;
 mod numeric_generator;
 mod numeric_map;

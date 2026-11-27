@@ -35,8 +35,6 @@ mod identity_inventory_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 mod matrix_length_lowering_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
-mod numeric_composite_tests;
-#[cfg(all(test, feature = "canonical-native-program"))]
 mod prefix_tests;
 #[cfg(all(test, feature = "canonical-native-program"))]
 mod prefix_window_tests;

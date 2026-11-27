@@ -178,49 +178,10 @@ fn numeric_interval_finite_cold_suffix_keeps_publication_account_and_retry() {
             };
             run(&mut out, mode.execution()).0.unwrap();
             let full = run(&mut out, mode.execution()).0.unwrap();
-            // The selected construction pays a conservative source envelope;
-            // a finite budget can instead select the cheaper ordinary call.
-            // Quote that independent source path for the denial boundary so
-            // this still detects a reset of the prepaid prefix's shared ledger.
-            let mut canonical = super::super::tests::restore_admitted_helper_descriptor(&jit);
-            use crate::native_artifact::program::prepare::call_routes::LibraryCallRoute as Route;
-            for route in &mut canonical.metadata.call_routes {
-                if *route == Route::NumericComposite {
-                    *route = Route::Canonical;
-                }
-            }
-            let mut reference = out.clone();
-            let source = observe::run_descriptor(
-                &jit,
-                &canonical,
-                &args,
-                &mut reference,
-                mode.execution(),
-                &memory,
-            )
-            .0
-            .unwrap();
-            assert!(full.work >= source.work);
-            assert!(full.comparison_work >= source.comparison_work);
-            assert_eq!(full.visits, source.visits);
-            assert_eq!(
-                contents(
-                    &out.iter()
-                        .map(|v| v.as_ref().unwrap().clone())
-                        .collect::<Vec<_>>()
-                ),
-                contents(
-                    &reference
-                        .iter()
-                        .map(|v| v.as_ref().unwrap().clone())
-                        .collect::<Vec<_>>()
-                )
-            );
-            drop(reference);
             let prior = out.clone();
             let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
             let mut finite = mode.execution();
-            finite.execution.max_work = source.work - 1;
+            finite.execution.max_work = full.work - 1;
             let (failure, counts) = run(&mut out, finite);
             let error = format!("{:?}", failure.unwrap_err());
             assert!(error.contains("WorkLimit"), "{error}");
