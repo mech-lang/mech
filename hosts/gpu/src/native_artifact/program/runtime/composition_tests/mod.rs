@@ -64,7 +64,6 @@ mod numeric_generators;
 mod numeric_induction;
 mod numeric_matrix_sums;
 mod numeric_outlining;
-mod numeric_regions;
 mod numeric_summary_branches;
 mod numeric_transpose;
 mod numeric_tree;

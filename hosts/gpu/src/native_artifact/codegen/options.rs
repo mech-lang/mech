@@ -58,8 +58,6 @@ pub(in crate::native_artifact) enum OptimizationPass {
     NumericGenerators,
     /// Native typed whole-matrix arithmetic; ordinary calls remain the fallback.
     NumericMatrixArithmetic,
-    /// One current-funded loan for a source-closed matrix-expression DAG.
-    MatrixExpressionRegions,
     /// Omit capacity guards at a proved frontier with no append operation.
     ZeroAppendFrontiers,
     /// Refine a declined static capacity frontier using only a bounded pure

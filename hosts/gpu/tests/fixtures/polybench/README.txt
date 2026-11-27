@@ -2463,3 +2463,16 @@ The one prospective optimization15 probe measured1.03552x raw geomean speedup ag
 | Holdout | 39.31570x | 40.93923x | 0.96381x | 0.97439x |
 
 Both sets regress. No tolerance, retries or exclusions are applied. All900 observations,29482 finite C-liveouts,36 append-only history entries, failed source and raw training/formal evidence remain. Exact accepted31 compiler source and driver are restored, and no remote push is made. The below1.0x C holdout goal remains unmet. Subsequent profiling and source choices remain optimization-only.
+
+Round36: native finite-result guards and checked matrix-region replay (not promoted)
+
+General root matrix-expression regions use shared ordered scalar/SIMD kernels and per-result finite checks. A nonfinite private result releases its exact loan and replays unchanged source before any logical settlement. Canonical F64 ownership pricing and singleton/live-matrix typing are shared prerequisites. All700 broad checks and28 focused checks pass, including30 finite C-liveout programs and both feature builds. IR399/work156/ABI47.
+
+The one prospective optimization15 probe measured1.07776x raw geomean speedup versus accepted31, with no regressions over5% and all execution counters identical. Exact source and driver were committed/frozen before BOTH formal sets.
+
+| Set | Accepted31 x C | Round36 x C | Raw speedup vs31 | Reference-adjusted speedup |
+|---|---:|---:|---:|---:|
+| Optimization | 11.43636x | 13.94767x | 0.76584x | 0.89660x |
+| Holdout | 39.31570x | 41.57038x | 0.97499x | 0.99461x |
+
+Both scores regress. All900 observations,29482 finite liveouts,37 append-only history entries, failed source and raw evidence remain. Accepted31 compiler source and driver are restored. No push is made. The below1.0x C holdout goal remains unmet. Profiling now covers all15 accepted optimization programs, prioritized by Mech/C; no holdout per-case diagnosis was used. Investigate the training-probe/formal sampling difference and the largest optimization-set native loop next.

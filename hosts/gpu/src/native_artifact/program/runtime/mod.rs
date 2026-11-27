@@ -323,12 +323,6 @@ fn native_runtime_consolidation_preserves_the_charged_layout_envelope() {
     let persistent = core::mem::size_of::<ExecutionState<'_>>();
     let invocation = core::mem::size_of::<Invocation<'_, '_, '_>>();
     eprintln!("native-layout: persistent={persistent} invocation={invocation}");
-    let (single, region, previous, optional_region) = invocation::matrix_loan_layouts();
-    eprintln!(
-        "matrix-loan-layout: single={single} region={region} previous-combined={previous} optional-region={optional_region}"
-    );
-    assert_eq!(optional_region, core::mem::size_of::<usize>());
-    assert!(single <= previous);
     let map_view = core::mem::size_of::<invocation::MapExecution<'_, '_, '_, '_>>();
     let collection_view = core::mem::size_of::<invocation::CollectionExecution<'_, '_, '_, '_>>();
     assert!(persistent + invocation + map_view + collection_view <= 2432 + 128);

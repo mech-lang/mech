@@ -20,7 +20,7 @@ pub(in crate::native_artifact::program::runtime) struct Pending {
     reservation: ManagedMemoryReservation,
     _nodes: ManagedNodeReservation,
 }
-pub(super) fn fits(value: u64, cap: Option<u64>) -> bool {
+fn fits(value: u64, cap: Option<u64>) -> bool {
     cap.is_some_and(|cap| value <= cap)
 }
 fn dims(value: &Value, schema: &mech_core::Schema) -> Option<[usize; 2]> {
@@ -55,7 +55,7 @@ fn dims(value: &Value, schema: &mech_core::Schema) -> Option<[usize; 2]> {
     };
     (rows.checked_mul(columns)? == cells.len()).then_some([rows, columns])
 }
-pub(super) fn cells(value: &Value) -> Option<&[F64Bits]> {
+fn cells(value: &Value) -> Option<&[F64Bits]> {
     let mech_core::ValueData::Matrix(matrix) = value.data() else {
         return None;
     };
@@ -72,16 +72,7 @@ impl Invocation<'_, '_, '_> {
         args: [u64; 3],
     ) -> Result<Option<u64>, Error> {
         if tag == GlobalHelper::NumericBinaryFinish {
-            if let Some(region) = self.numeric_region.take() {
-                if self.numeric_binary.is_some() {
-                    return Err(invalid("overlapping matrix loans"));
-                }
-                return self.finish_numeric_region(site, args, region);
-            }
             return self.finish_numeric_binary(site, args);
-        }
-        if args[2] == 1 {
-            return self.prepare_numeric_region(site, args);
         }
         let descriptor = self.descriptor;
         let m = descriptor.metadata();

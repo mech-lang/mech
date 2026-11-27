@@ -19,7 +19,6 @@ mod numeric_map;
 mod numeric_map_banks;
 mod numeric_phase_reductions;
 mod numeric_prefix;
-mod numeric_regions;
 mod numeric_segments;
 mod numeric_tree;
 mod numeric_writes;
@@ -215,7 +214,6 @@ pub(in crate::native_artifact::program::runtime) struct Invocation<'state, 'visi
         Option<crate::native_artifact::program::runtime::invocation::tail::State>,
     pub(super) numeric_prepaid: Option<NumericPrepaid>,
     pub(super) numeric_binary: Option<Box<numeric_binary::Pending>>,
-    pub(super) numeric_region: Option<Box<numeric_regions::Region>>,
     // Scalar edge identity only; all owners remain in the inventoried frame/arena banks.
     pub(in crate::native_artifact::program::runtime) parent_continuation: continuation::Pending,
     pub(in crate::native_artifact::program::runtime) selected_join:
@@ -516,9 +514,7 @@ impl Invocation<'_, '_, '_> {
         {
             return Err(invalid("helper while native generator loan is active"));
         }
-        if (self.numeric_binary.is_some() || self.numeric_region.is_some())
-            && tag != GlobalHelper::NumericBinaryFinish
-        {
+        if self.numeric_binary.is_some() && tag != GlobalHelper::NumericBinaryFinish {
             return Err(invalid(
                 "helper while native matrix arithmetic loan is active",
             ));
@@ -858,7 +854,7 @@ impl Invocation<'_, '_, '_> {
                 "source visit while native generator loan is active",
             ));
         }
-        if self.numeric_binary.is_some() || self.numeric_region.is_some() {
+        if self.numeric_binary.is_some() {
             return Err(invalid(
                 "source visit while matrix arithmetic loan is active",
             ));
@@ -1578,18 +1574,3 @@ pub(in crate::native_artifact::program::runtime) mod joins;
 pub(in crate::native_artifact::program::runtime) mod prefix;
 
 pub(in crate::native_artifact::program::runtime) mod window;
-
-#[cfg(test)]
-pub(super) fn matrix_loan_layouts() -> (usize, usize, usize, usize) {
-    #[allow(dead_code)]
-    enum PreviousCombinedLoan {
-        Single(numeric_binary::Pending),
-        Region(numeric_regions::Region),
-    }
-    (
-        core::mem::size_of::<numeric_binary::Pending>(),
-        core::mem::size_of::<numeric_regions::Region>(),
-        core::mem::size_of::<PreviousCombinedLoan>(),
-        core::mem::size_of::<Option<Box<numeric_regions::Region>>>(),
-    )
-}

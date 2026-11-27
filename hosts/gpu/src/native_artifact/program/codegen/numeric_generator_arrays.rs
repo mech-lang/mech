@@ -208,7 +208,6 @@ pub(super) fn transpose(
         count,
         output_columns,
         input_columns,
-        None,
         done,
     );
     b.switch_to_block(done);

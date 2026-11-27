@@ -245,43 +245,6 @@ pub fn promoted_binary_elementwise() -> Result<Vec<KindScheme>, SemanticModelErr
             ],
         )?);
     }
-    // A1x1 matrix broadcasts over both axes of the other matrix. Describing
-    // it only as a row or column leaves two competing partial-shape results
-    // when that other matrix has two independent live dimensions. Retain its
-    // complete shape directly; no rigid input extent is rewritten to one.
-    for reversed in [false, true] {
-        let shaped = matrix(kind(if reversed { 1 } else { 0 }), dim(0), dim(1));
-        let singleton = matrix(
-            kind(if reversed { 0 } else { 1 }),
-            DimensionExpr::Constant(1),
-            DimensionExpr::Constant(1),
-        );
-        schemes.push(make(
-            3,
-            2,
-            if reversed {
-                vec![singleton, shaped]
-            } else {
-                vec![shaped, singleton]
-            },
-            vec![matrix(kind(2), dim(0), dim(1))],
-            vec![
-                KindConstraint::Satisfies {
-                    kind: kind(0),
-                    predicate: BuiltinKindPredicate::Number,
-                },
-                KindConstraint::Satisfies {
-                    kind: kind(1),
-                    predicate: BuiltinKindPredicate::Number,
-                },
-                KindConstraint::Promotes {
-                    left: kind(0),
-                    right: kind(1),
-                    output: kind(2),
-                },
-            ],
-        )?);
-    }
     // Cross-representation matrix operations support one shaped operand and
     // one row or column broadcast. Describe those relationships directly so
     // source resolution cannot admit arbitrary incompatible matrix pairs and
