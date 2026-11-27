@@ -288,6 +288,46 @@ pub fn promoted_binary_elementwise() -> Result<Vec<KindScheme>, SemanticModelErr
             )?);
         }
     }
+    // A column and a row contribute different output axes. Neither input
+    // alone supplies the result shape, so the one-shaped-operand schemes
+    // above cannot describe this already-supported elementwise broadcast.
+    for reversed in [false, true] {
+        let column = matrix(
+            kind(if reversed { 1 } else { 0 }),
+            dim(0),
+            DimensionExpr::Constant(1),
+        );
+        let row = matrix(
+            kind(if reversed { 0 } else { 1 }),
+            DimensionExpr::Constant(1),
+            dim(1),
+        );
+        schemes.push(make(
+            3,
+            2,
+            if reversed {
+                vec![row, column]
+            } else {
+                vec![column, row]
+            },
+            vec![matrix(kind(2), dim(0), dim(1))],
+            vec![
+                KindConstraint::Satisfies {
+                    kind: kind(0),
+                    predicate: BuiltinKindPredicate::Number,
+                },
+                KindConstraint::Satisfies {
+                    kind: kind(1),
+                    predicate: BuiltinKindPredicate::Number,
+                },
+                KindConstraint::Promotes {
+                    left: kind(0),
+                    right: kind(1),
+                    output: kind(2),
+                },
+            ],
+        )?);
+    }
     schemes.extend(compatible_binary_matrices(
         3,
         kind(0),

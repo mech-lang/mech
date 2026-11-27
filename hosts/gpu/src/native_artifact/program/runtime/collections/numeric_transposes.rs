@@ -24,6 +24,7 @@ impl State {
             || ctx.ledger().current != definition.parent()
             || ctx.ledger().previous != Some(projection.finish)
             || self.native_map.is_some()
+            || self.native_generator.is_some()
             || self.native_fill.is_some()
             || self.native_reduction.is_some()
             || self.has_utf8_read()

@@ -38,6 +38,7 @@ fn diagnose_numeric_child_composition() {
         let prefix=crate::native_artifact::program::prepare::numeric_prefix::derive(&m.plan.facts(),tail,&m.buffer_frames,&m.scalar_aggregates,&m.calls,&m.visits);
         Some(json!({"iteration":id,"header":tail.header(),"parent":tail.parent(),"carrier":tail.carrier().get(),
             "prefix_rejection":prefix.as_ref().err(),
+            "fixed_trips":crate::native_artifact::program::prepare::numeric_phase::fixed_state_trips(&m.plan.facts(),&m.buffer_frames,&m.scalar_aggregates,tail).map_err(str::to_owned),
             "prefix_proof":prefix.as_ref().ok().map(|p|json!({"arrays":p.arrays,"sites":p.sites,"phase":p.phase,"exits":p.exits,"result":p.result,"tagged":p.tagged})),
             "proof_rejection":result.as_ref().err(),"complete_rejection":complete.as_ref().err(),
             "selected":m.closed_tails.regions.iter().any(|r|r.iteration as usize==id&&r.numeric.is_some()),
@@ -56,6 +57,8 @@ fn diagnose_numeric_child_composition() {
         "blocks":blocks,"values":values,"tails":tails,"collections":collections,
         "iterations":m.plan.iterations().iter().map(|v|format!("{v:?}")).collect::<Vec<_>>(),
         "numeric_maps":numeric_maps::Layout::derive(&m.plan).unwrap(),
+        "numeric_generators":crate::native_artifact::program::prepare::numeric_generators::Layout::derive(&m.plan,&m.buffer_frames,&m.scalar_aggregates,&m.closed_tails).unwrap(),
+        "funded_numeric_generators": &m.numeric_generators,
         "phase_maps":matrix_maps::inventory(&m.plan).unwrap(),
         "selected_numeric_regions":m.closed_tails.regions.iter().filter(|r|r.numeric.is_some()).map(|r|r.iteration).collect::<Vec<_>>()});
     std::fs::write(

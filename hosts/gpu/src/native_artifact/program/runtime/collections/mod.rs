@@ -30,6 +30,7 @@ pub(in crate::native_artifact::program::runtime) fn admitted_capacity<T>(
     allocation::exact_capacity(values, count, reason)
 }
 mod data;
+mod numeric_generator;
 pub(in crate::native_artifact) mod numeric_map;
 mod numeric_rectangles;
 mod numeric_reductions;
@@ -150,6 +151,7 @@ pub(in crate::native_artifact::program::runtime) struct State {
     native_read: Option<Box<utf8_read::Storage>>,
     native_fill: Option<Box<uniform_words::Loan>>,
     native_map: Option<Box<numeric_map::Loan>>,
+    native_generator: Option<Box<numeric_generator::Loan>>,
     native_reduction: Option<Box<numeric_reductions::Pending>>,
     live_bytes: u64,
     // Genuine query scalar roots stay in the arena after token cleanup.
@@ -395,6 +397,7 @@ impl State {
             native_read: None,
             native_fill: None,
             native_map: None,
+            native_generator: None,
             native_reduction: None,
             live_bytes: bytes,
             query_scalar_bytes: 0,
@@ -412,6 +415,7 @@ impl State {
         if self.has_utf8_read()
             || self.native_fill.is_some()
             || self.native_map.is_some()
+            || self.native_generator.is_some()
             || self.native_reduction.is_some()
         {
             return false;

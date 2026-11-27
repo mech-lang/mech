@@ -324,6 +324,11 @@ impl NativeProgramObject {
         metadata["readonly_numeric_regions"] = serde_json::json!(self.descriptor.metadata().closed_tails.regions.iter().filter_map(|r| r.numeric.as_ref().filter(|p| !p.writes()).map(|p| serde_json::json!({"iteration":r.iteration,"parent":r.tail.parent(),"header":r.tail.header(),"compute_per_traversal":r.compute,"proof":p}))).collect::<Vec<_>>());
         metadata["numeric_write_regions"] = serde_json::json!(self.descriptor.metadata().closed_tails.regions.iter().filter_map(|r| r.numeric.as_ref().filter(|p| p.writes()).map(|p| serde_json::json!({"iteration":r.iteration,"parent":r.tail.parent(),"header":r.tail.header(),"compute_per_traversal":r.compute,"proof":p}))).collect::<Vec<_>>());
         let prepared = self.descriptor.metadata();
+        metadata["numeric_generator_candidates"] = serde_json::json!({
+            "scope": "Source-closed ordinary generator entry; current finite admission required",
+            "selected": !prepared.numeric_generators.regions.is_empty(),
+            "inventory": &prepared.numeric_generators,
+        });
         metadata["readonly_numeric_candidates"] = serde_json::json!(prepared.plan.iterations().iter().enumerate().filter_map(|(iteration, control)| {
             let mech_engine::native_artifact::NativeControlLoop::Tail(tail) = control else { return None };
             if prepared.buffer_frames.fields(tail.carrier()).is_none() { return None }

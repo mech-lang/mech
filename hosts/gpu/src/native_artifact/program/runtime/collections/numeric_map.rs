@@ -200,6 +200,7 @@ impl State {
         progress: &[u64],
     ) -> bool {
         self.native_map.is_none()
+            && self.native_generator.is_none()
             && self.native_reduction.is_none()
             && self.native_fill.is_none()
             && !self.has_utf8_read()

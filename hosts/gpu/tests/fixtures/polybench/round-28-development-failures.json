@@ -1,0 +1,311 @@
+{
+  "schema": "mech.polybench.development-failure.v1",
+  "source_parent": "07efbdf326ad5bad590d0d74c15c53aca98cfd51",
+  "candidate_performance_measured_at_failing_stages": false,
+  "failures": [
+    {
+      "stage": "focused test compilation",
+      "error": "F64Bits does not implement From<f64>; corrected tests to use F64Bits::from_f64."
+    },
+    {
+      "stage": "focused source tests",
+      "error": "Two source fixtures omitted +> bits; 1 passed, 2 failed. Original/decoded Deriche children proof passed.",
+      "log": "fsm-test-missing-import.log"
+    },
+    {
+      "stage": "generator planner test compilation",
+      "error": "Two unused imports rejected by -D warnings; removed imports.",
+      "log": "focused-unused-imports.log"
+    },
+    {
+      "stage": "focused tests",
+      "passed": 4,
+      "failed": 2,
+      "error": "The complete collection inventory correctly rejected missing ordinary map exit no-op bridges. Added checked bridge membership and visit bounds.",
+      "log": "focused-map-exit-closure.log"
+    },
+    {
+      "stage": "expanded test compilation",
+      "error": "A relocated import remained at module scope; -D warnings rejected the duplicate unused import. Removed it.",
+      "log": "focused-expanded-unused-imports.log"
+    },
+    {
+      "stage": "native generator kernel test compilation",
+      "error": "Corrected F64Bits accessors and the shared primitive emitter return type.",
+      "log": "kernel-compile-api-errors.log"
+    },
+    {
+      "stage": "native kernel execution/compilation",
+      "passed": 1,
+      "failed": 1,
+      "error": "Both generic forward/reverse/arithmetic execution passed. Deriche second root exposed a source inventory bug: direct_action_outputs is keyed by value identity, not source site. Corrected full definition/read membership and terminator-only captures.",
+      "log": "kernel-missing-scalar-words.log",
+      "backtrace": "kernel-deriche-backtrace.log"
+    },
+    {
+      "stage": "expanded source inventory tests",
+      "passed": 5,
+      "failed": 1,
+      "error": "The extra capture test compared encoded input names directly. Corrected it to decode source input names. Both Deriche native kernels compile and native generic execution passes.",
+      "log": "kernel-encoded-input-name.log"
+    },
+    {
+      "stage": "native generator broadcast source coverage",
+      "passed": 5,
+      "failed": 1,
+      "error": "Fixed column plus fixed row was rejected by maintained source type schemes although resident/native broadcasting supports it. Filling the type-resolution gap instead of rewriting the source.",
+      "log": "kernel-fixed-outer-broadcast-gap.log"
+    },
+    {
+      "stage": "type scheme qualification invocation",
+      "error": "Core test target is gated by functions and the initial default-feature invocation selected zero tests. Rerunning with the full feature set; zero tests is not a passing qualification.",
+      "log": "outer-broadcast-core-missing-feature.log"
+    },
+    {
+      "stage": "standalone full source feature qualification",
+      "error": "Existing native_binary_geometry was not gated with its native-artifact callers, causing -D dead_code outside native builds. Added the matching feature gate.",
+      "log": "outer-broadcast-source-native-gate.log"
+    },
+    {
+      "stage": "ordinary compiler feature check",
+      "error": "Independent Object/image ProgramMetadata initializer lacked the new nonserialized generator cache. Added source/bank/funding rederivation and checked original header funding to that independent path.",
+      "log": "ordinary-entry-check.log"
+    },
+    {
+      "stage": "ordinary generator tests",
+      "passed": 1,
+      "failed": 9,
+      "error": "Compilation correctly rejected counting the complete newly prepaid generator body as unfunded ordinary header instructions. Added an independent static native-body audit against a shape/source-derived per-visit envelope, retaining only the entry wrapper in the ordinary visit audit. Widened native funding to include wide aggregate SSA. No runtime or performance measurements occurred.",
+      "log": "ordinary-entry-tests.log"
+    },
+    {
+      "stage": "first broad ordinary qualification",
+      "passed": 399,
+      "failed": 4,
+      "errors": [
+        "Two compression resource checks pin Work153; update version pins while preserving exact work equations.",
+        "New image negative test assumed compact visit_work bytes, but build-owned images use full visit objects; support both encodings.",
+        "The existing numerical-map selection test was preempted by the new enclosing generator under NoLimits; keep an explicit generator ablation for map-path coverage and add a separate full finite-budget generator/C-liveout check."
+      ],
+      "log": "qualification-attempt-1/numeric-regressions.log",
+      "additional_finding": "Pure Deriche budget inventory shows stacking the existing matrix-source speculative replay multiplier again exceeds fixed benchmark work caps. Price fixed numeric replay from two complete source construction/import envelopes, keeping original factory and visit fees intact. Earlier diagnostics and source fingerprint retained in qualification-attempt-1."
+    },
+    {
+      "stage": "native Frame interior mutation hardening compilation",
+      "error": "One multiline traversal access still addressed the UnsafeCell wrapper instead of the already-read Frame copy. Corrected that access; no runtime ran.",
+      "log": "ordinary-diagnostic-cell-field.log"
+    }
+  ],
+  "archives": {
+    "correlation-sample.log": {
+      "path": "qualification/round-28-generators/correlation-sample.log.gz",
+      "sha256": "858d416acd4f204c08ce8df2d8007ff89558cfa74b7ed27c3747d7f20be80f91",
+      "compressed_sha256": "567671e1bbd69f377b83462428bbf341d4f7ef6692dd0c5bd3527193fa5acc09"
+    },
+    "deriche-sample.log": {
+      "path": "qualification/round-28-generators/deriche-sample.log.gz",
+      "sha256": "ef688a3c09f3f93cb2dd5cefe23aa937f7e6acc6d244ac7570ed0d30152a03a6",
+      "compressed_sha256": "8fa93f0f7e0c5a718a5686189df6a6dd6325b79ec4bf2339052928eded365d7a"
+    },
+    "diagnostic.log": {
+      "path": "qualification/round-28-generators/diagnostic.log.gz",
+      "sha256": "630efd9a29efbc9ae490472ae6eed5374ab6c4c3e2aefbcfb4a4fc6eac9ef663",
+      "compressed_sha256": "f3ed5bd85fd05dccbc1f01d7b0a7b1df2578465fbf3acaed0f26c10ef9406eb3"
+    },
+    "focused-expanded-unused-imports.log": {
+      "path": "qualification/round-28-generators/focused-expanded-unused-imports.log.gz",
+      "sha256": "dc6fdb094b325d3707178f53854805d7d7987281f4500f5653c0b49f3bff64c7",
+      "compressed_sha256": "fc07f78d9eaa093f970fea1b2f46f28160f74145416d38e4a3571fdf9a48bed0"
+    },
+    "focused-expanded.log": {
+      "path": "qualification/round-28-generators/focused-expanded.log.gz",
+      "sha256": "a619abc57a0b9a4ab1b0e09b45831f064a0ca2fdfad9d8fa601a62f30f5978e7",
+      "compressed_sha256": "35641d4c57859df3b65f6bb5bef15b31c09455d180f7f746f843762d6618bed8"
+    },
+    "focused-map-exit-closure.log": {
+      "path": "qualification/round-28-generators/focused-map-exit-closure.log.gz",
+      "sha256": "cddd324c476bf81e9e4337547fe3e69db329b4b4a5b318bbe58e79db81ce44c2",
+      "compressed_sha256": "317a6563992649fff0a12cef8d618b07b30a6d8f0f59704d33df6bd4c0b2b8eb"
+    },
+    "focused-unused-imports.log": {
+      "path": "qualification/round-28-generators/focused-unused-imports.log.gz",
+      "sha256": "d5871d6c33fa66c508e8998be083da5aa052883b02fca7fdb4a5501743fe4b37",
+      "compressed_sha256": "641e854827c11933d408268f20f1134e19ec467586df8e468bed08ee6b4f76dd"
+    },
+    "focused.log": {
+      "path": "qualification/round-28-generators/focused.log.gz",
+      "sha256": "e002a2284c120ed533f7a0ea34be52bee6b20617ed45cfbb51d1dbfad392358b",
+      "compressed_sha256": "00db060b8f3cb1a90196ef70806aea03facc81aa667b1f6585312fcf645b8a65"
+    },
+    "fsm-test-missing-import.log": {
+      "path": "qualification/round-28-generators/fsm-test-missing-import.log.gz",
+      "sha256": "92ca831270dfd5868cf8d5ba9548c0f128f0a4c629facf4e3d835aee834610b9",
+      "compressed_sha256": "f4db772839ae09cdc010c755af242642c7fc25ba9dcf915a41c68aca7245653b"
+    },
+    "gramschmidt-sample.log": {
+      "path": "qualification/round-28-generators/gramschmidt-sample.log.gz",
+      "sha256": "73c95c4da8c9ccf10e5034950ab6e953d9dbe32731685d125bef9931a8a7f469",
+      "compressed_sha256": "b372f953f88be1ead206c4d8c43092a4dc80522b139fcb9d1e3cdd2115a3c9b1"
+    },
+    "kernel-compile-api-errors.log": {
+      "path": "qualification/round-28-generators/kernel-compile-api-errors.log.gz",
+      "sha256": "10e1e3b726ad367aa2fffa9e3ba975e8c743ca7bc7aebf6269799d7fce0fffaf",
+      "compressed_sha256": "a638e0e84850ccd6ee3243af8d38e34d3b738cdaddcb14302f537b13353bfa42"
+    },
+    "kernel-deriche-backtrace.log": {
+      "path": "qualification/round-28-generators/kernel-deriche-backtrace.log.gz",
+      "sha256": "81570b661fada1279be2bdbfcc0c6a66040b7bc39d0d6643f3991b51d87466b1",
+      "compressed_sha256": "7ed646027fa5ebf2b7bd85e599921f56c72ac30abe8df8dd0295d1113a41aefe"
+    },
+    "kernel-encoded-input-name.log": {
+      "path": "qualification/round-28-generators/kernel-encoded-input-name.log.gz",
+      "sha256": "2b874f93b952f37c8a81df4d4bf777fec7687fb8a8de7909602e3c64dafb0822",
+      "compressed_sha256": "3f95baaf6a26f9090f7ed0ff56e010c195ed905de4c236fc6041419f934d8753"
+    },
+    "kernel-fixed-outer-broadcast-gap.log": {
+      "path": "qualification/round-28-generators/kernel-fixed-outer-broadcast-gap.log.gz",
+      "sha256": "38b6dc82b9411f5386e7ea28757f9c4d81633b63d2742b1c0892dcc00f708b0a",
+      "compressed_sha256": "c4e0acb79c8cd16da6df313f4816d9d943c39ad2caac856bd47073497fd4ff78"
+    },
+    "kernel-focused.log": {
+      "path": "qualification/round-28-generators/kernel-focused.log.gz",
+      "sha256": "4a2629f71ea39cd54a4a3219be26993a4c25cdd819b218ffab573c9c53d4ff5e",
+      "compressed_sha256": "e58c0a21cbc98c81ba406c135142d5c4082d8dc36e71a49daeeff365a7454963"
+    },
+    "kernel-missing-scalar-words.log": {
+      "path": "qualification/round-28-generators/kernel-missing-scalar-words.log.gz",
+      "sha256": "01344ae4b1b4d8f0d820b4f53328e06f82f3236b72f7c50b7bd233dc8dceac47",
+      "compressed_sha256": "377034c4c03f51731d49ac8dba831f17e8e70617d13bd6c655236e34722e046c"
+    },
+    "nussinov-sample.log": {
+      "path": "qualification/round-28-generators/nussinov-sample.log.gz",
+      "sha256": "89fe5d2980fb7f3df810d3d48d692e429c94d53c100948a89f0749d9a5b75f1f",
+      "compressed_sha256": "db51679d07787f1c474be71c1639738b286646da08ea3a85f1a705fea0913b12"
+    },
+    "ordinary-diagnostic-cell-field.log": {
+      "path": "qualification/round-28-generators/ordinary-diagnostic-cell-field.log.gz",
+      "sha256": "38c5201741d27d2149b33760ead8c2db1f3aa3d6441962f4f2371a432ba0ba06",
+      "compressed_sha256": "f79fe06d7b97e442a1c0307c26bdafad0c5c3c3a4d8e5ef4815bafd01f335b75"
+    },
+    "ordinary-diagnostic.log": {
+      "path": "qualification/round-28-generators/ordinary-diagnostic.log.gz",
+      "sha256": "66dcdc324e3de73581595651cac2fa6e0dfdd1679d1ab3bc4086a30b3bfc261f",
+      "compressed_sha256": "120d883570b065765e16be66f9b3b2bfeb99e848640bff76fe0e8d35059051b9"
+    },
+    "ordinary-driver-build.log": {
+      "path": "qualification/round-28-generators/ordinary-driver-build.log.gz",
+      "sha256": "eb2a0fda91d1e6f66202c81703a59cb2bdf4d5a100d9d05e3d185319b2d4e488",
+      "compressed_sha256": "da91d7819209a01651e5e761c8c3e28814daa5dda9474a3d6137d7b9c674506f"
+    },
+    "ordinary-entry-check.log": {
+      "path": "qualification/round-28-generators/ordinary-entry-check.log.gz",
+      "sha256": "2d86cdcf0410ee8fe952856abc9ca8a1cb3f27278ad0176859e8a54f2ba74da0",
+      "compressed_sha256": "ec21427c6384227d046f4b7bba6a5d4b6b3d34f3dd49d8655027f02fdd706ab2"
+    },
+    "ordinary-entry-tests-2.log": {
+      "path": "qualification/round-28-generators/ordinary-entry-tests-2.log.gz",
+      "sha256": "32bded841a1d295f3b3fb868a69b3c6923e9a133446cfa1b500ab54e352fc90c",
+      "compressed_sha256": "00e0f035d505d5ed974886c3da3a036a8eacbc595885f1949624bc7873b6bf63"
+    },
+    "ordinary-entry-tests-3.log": {
+      "path": "qualification/round-28-generators/ordinary-entry-tests-3.log.gz",
+      "sha256": "fd8da0613e233cabe3d211b45dc947a20c5696b0867f7102ba156e2e31f21837",
+      "compressed_sha256": "ad40171976b163d493c026b47e6296988451b1b157448dfc0b28571696311493"
+    },
+    "ordinary-entry-tests.log": {
+      "path": "qualification/round-28-generators/ordinary-entry-tests.log.gz",
+      "sha256": "096e9e44bb96232af9fc42b5665644d17f989e1e769f5fd5d5f10ad63c53e1f6",
+      "compressed_sha256": "0faf8ef663e8f21722d3061fa5bd5f91d06c7bb3de8e8ce28bd227f4b4f8860c"
+    },
+    "outer-broadcast-core-missing-feature.log": {
+      "path": "qualification/round-28-generators/outer-broadcast-core-missing-feature.log.gz",
+      "sha256": "455d851ab8cc55eac185a19515b39d388af75e547aec1726c8946224dece99ed",
+      "compressed_sha256": "fee1f6938dfcacdaf8f499504f08766c9c9a480d73868408a77f3c1ff4df244d"
+    },
+    "outer-broadcast-core.log": {
+      "path": "qualification/round-28-generators/outer-broadcast-core.log.gz",
+      "sha256": "8c6ffa60bde77e3cde8a180fd2a14510f0c1a983505ef2059363e8474c4dbd13",
+      "compressed_sha256": "4291d202b8f7b9f9c45eb2c1068004d0c9f900ad0e5f2bb4dd1fcf1ff1c24898"
+    },
+    "outer-broadcast-source-native-gate.log": {
+      "path": "qualification/round-28-generators/outer-broadcast-source-native-gate.log.gz",
+      "sha256": "248614756b5e4bdf15700f5855bd1ee8712d8af51b10e625935e0f7be5858bd0",
+      "compressed_sha256": "ce48b8a0c854881d2e332faa32e8173ebaf27b7ee8067786ec59f74343bf3f8d"
+    },
+    "outer-broadcast-source.log": {
+      "path": "qualification/round-28-generators/outer-broadcast-source.log.gz",
+      "sha256": "e08c90f9cd3c8060ec6917c21427fff68b33db17d440a7006c10898620bcc583",
+      "compressed_sha256": "47cd13dfe0415731f4b3e149fe28d832b72c8ae4e6806a0b09e6e42eb96b9f8e"
+    },
+    "profile-progress.log": {
+      "path": "qualification/round-28-generators/profile-progress.log.gz",
+      "sha256": "7508b947ed30854460857074138face18ebf874b67c05c9096f89625e31c4268",
+      "compressed_sha256": "2f8fb3dc5c9113c5886f3e0dee74b83cf034953f8fc8399fdb04bbe6270f1495"
+    },
+    "qualification-attempt-1/numeric-regressions.log": {
+      "path": "qualification/round-28-generators/qualification-attempt-1/numeric-regressions.log.gz",
+      "sha256": "40bf9fdbc2120e9bb30d2dc7420536debeecc421b3e6818a34ec56d99a2f67cc",
+      "compressed_sha256": "c4b2d68c91bf91d3dbe437780ec4d64a96415b5a3eeb15a18ef104d86f49666e"
+    },
+    "qualification-attempt-1/ordinary-diagnostic.log": {
+      "path": "qualification/round-28-generators/qualification-attempt-1/ordinary-diagnostic.log.gz",
+      "sha256": "cfa3f1de3aa054efdda588e5d0c04a7bf490c0a9e447b776fe946d6881e12e0a",
+      "compressed_sha256": "47cab243e5f8d04a0151fc278e8b68c980a3969176e550865edff0271a90a78b"
+    },
+    "qualification-attempt-1/qualification-progress.log": {
+      "path": "qualification/round-28-generators/qualification-attempt-1/qualification-progress.log.gz",
+      "sha256": "5978ce6405ceeb67f8dcf36b85b69f9b0794bc89dd67ab86dd7194f1a817a3eb",
+      "compressed_sha256": "e87a2ba2e9d66457b2fbab7cf2f990bef24dbe30f47c9e948c5a969d7a670891"
+    },
+    "qualification-progress.log": {
+      "path": "qualification/round-28-generators/qualification-progress.log.gz",
+      "sha256": "d3fdfa6ce2afc688e409ab8f1f4b4a1ddb31f341d3c145b5a678696c1693d8d2",
+      "compressed_sha256": "5ffe06fc6762f4f534cae6408b0bd4e78234d13c3a62800fbbf78d06f1d142c8"
+    },
+    "seidel-2d-sample.log": {
+      "path": "qualification/round-28-generators/seidel-2d-sample.log.gz",
+      "sha256": "888da54b082355d46f718256ffbb366011028e6e31a7180f628066dd3afa8e1a",
+      "compressed_sha256": "4b6e541661d0d8ad59b0267b7d179ec3aadb607766412c96c8e6e535837bbc1f"
+    },
+    "training-probe.log": {
+      "path": "qualification/round-28-generators/training-probe.log.gz",
+      "sha256": "55ae90df36df828d02f0a1ce8e7c5c8341762d1fd0c5015f5ccd44b7e88361b0",
+      "compressed_sha256": "8eecc9d9c1fb593e77fd8f2ad92174ad6ab0d6a369b5ab8fb16504c69d900f58"
+    },
+    "type-catalog.log": {
+      "path": "qualification/round-28-generators/type-catalog.log.gz",
+      "sha256": "8611b0474981737ffc3a2521dfb57714c5046a7f57e6dfda1ced21f8136d6031",
+      "compressed_sha256": "2c830a5c7a015c6a2cf1b8438898ad6f663f0ac4f1132cdd4c403a101bf55274"
+    },
+    "deriche-plan.json": {
+      "path": "qualification/round-28-generators/deriche-plan.json.gz",
+      "sha256": "d18d47e7de9db6e612c45212eb3ec02f443eb448d0aebf69f1d586d3f5daa0f5",
+      "compressed_sha256": "090064d6dfce923510fb1faaccb7ea3ccefec4846858d43078aea5657b1bf0a7"
+    },
+    "ordinary-source-checkpoint.json": {
+      "path": "qualification/round-28-generators/ordinary-source-checkpoint.json.gz",
+      "sha256": "07c5136f0804d67ace4b0f586ef636f12983f873a817160141cbb84457f61f76",
+      "compressed_sha256": "055c823ca4f00f856be9abb3f1ca5571d8c15ed9322e1771f214b80e90498bbe"
+    },
+    "ordinary-qualification.json": {
+      "path": "qualification/round-28-generators/ordinary-qualification.json.gz",
+      "sha256": "7235441c567179fc00ce4a244ba3148a7c9be2e613853dc2451345de4dd19a07",
+      "compressed_sha256": "48353bee82a998d1b6623051fa0bb01ba4121a05072bdea86241c6b4b1f5ab39"
+    },
+    "focused-ordinary-qualified.json": {
+      "path": "qualification/round-28-generators/focused-ordinary-qualified.json.gz",
+      "sha256": "9c1f5e9e76ddba1da719d3805d967cf5c2be9e332b54f3feb01e4c3f5361bc3f",
+      "compressed_sha256": "b6070cfd2a6b1c40f565859a5fe8a52394f29eb018d560c945c92594254fd312"
+    },
+    "qualification-attempt-1/deriche-plan.json": {
+      "path": "qualification/round-28-generators/qualification-attempt-1/deriche-plan.json.gz",
+      "sha256": "67d193c5c01364ef3238a0059bea9909f2c9450105c7e66441757c8fc920f19c",
+      "compressed_sha256": "3a2171858a717b8113b709f2235656ad5f5cc548adb56bffc88b9e9ccc90f196"
+    },
+    "qualification-attempt-1/ordinary-source-checkpoint.json": {
+      "path": "qualification/round-28-generators/qualification-attempt-1/ordinary-source-checkpoint.json.gz",
+      "sha256": "d0d17f6ba16f5e4f22c29d2716110eefa5cc2af247dc60a42cd2644350621554",
+      "compressed_sha256": "f251b35ac70a2c06320f42c4fbefc0763b684f8a7e4eee25d30234c2fadbe3a4"
+    }
+  }
+}

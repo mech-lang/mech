@@ -623,6 +623,29 @@ fn decode_inner<
         }
     };
 
+    // Reconstruct generator source closure and the original header fee even
+    // on the verified Object path. No serialized generator grants authority.
+    let numeric_generator_candidates =
+        native::program::prepare::numeric_generators::Layout::derive(
+            &plan,
+            &buffer_frames,
+            &w.scalar_aggregates,
+            &closed_tails,
+        )
+        .map_err(str::to_owned)?;
+    for region in &numeric_generator_candidates.regions {
+        let site = region.header as usize;
+        let required = base_visits
+            .get(site)
+            .and_then(|v| {
+                v.work
+                    .checked_add(native::program::prepare::numeric_generators::HEADER_WORK)
+            })
+            .ok_or("numeric generator header price overflows")?;
+        if visits.get(site).is_none_or(|v| v.work < required) {
+            return Err("numeric generator header template is not funded".into());
+        }
+    }
     for region in &utf8_reads.regions {
         let site = region.header as usize;
         let required = base_visits
@@ -872,6 +895,15 @@ fn decode_inner<
         &calls,
         &visits,
     );
+    let numeric_generators = native::program::prepare::numeric_generators::funding::Layout::derive(
+        numeric_generator_candidates,
+        &plan,
+        &closed_tails,
+        &calls,
+        &visits,
+        w.scalar_bytes,
+        w.observation_schema_bytes,
+    );
     let mut descriptor = NativeProgramDescriptor {
         metadata: native::program::prepare::ProgramMetadata {
             plan,
@@ -912,6 +944,7 @@ fn decode_inner<
             utf8_reads,
             numeric_maps,
             numeric_binary,
+            numeric_generators,
             nested_numeric,
             frozen_maps,
             map_admission: w.map_admission,

@@ -1238,10 +1238,12 @@ fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveou
         let source = std::fs::read_to_string(fixtures.join(format!("{name}.mec"))).unwrap();
         for artifact in artifacts(&source) {
             let mode = NativeProgramLimitMode::NoLimits;
-            let jit = JitProgramArtifact::compile_with_limits(
+            // Keep the smaller map/phase route independently exercised even
+            // when a complete enclosing generator can now replace its body.
+            let jit = JitProgramArtifact::compile_for_test(
                 &artifact,
                 &mech_stdlib::source_catalog(),
-                mode.compilation(),
+                OptimizationPass::NumericGenerators,
             )
             .unwrap();
             assert!(

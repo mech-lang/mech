@@ -1,0 +1,14 @@
+{
+  "selected_at": "2026-11-27T05:36:42.936421+00:00",
+  "probe_sha256": "49f29d49380366f7f110b88307d13c97481d3158d14c77b203ea731d0628626a",
+  "reference": "accepted27",
+  "criterion": "All15 optimization programs correct; raw geometric mean improves; source/error/resource invariants and full ordinary replay qualified. Two raw regressions>5% retained. All unrelated execution counters unchanged. No holdout performance used.",
+  "decision": "Select unchanged qualified candidate for frozen formal evaluation",
+  "summary": {
+    "count": 15,
+    "geomean_speedup_from_round_27_replay": 1.1030835133467138,
+    "regressions_over_five_percent": 2,
+    "sum_candidate_median_seconds": 0.001467039,
+    "sum_reference_median_seconds": 0.003236957
+  }
+}

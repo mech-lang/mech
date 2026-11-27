@@ -99,7 +99,7 @@ fn scalar_width(body: &SchemaBody) -> Option<u8> {
         NativeScalarKind::U64 | NativeScalarKind::I64 | NativeScalarKind::F64 => 8,
     })
 }
-fn immutable_before(
+pub(super) fn immutable_before(
     facts: &Facts<'_>,
     value: Value,
     at: u32,

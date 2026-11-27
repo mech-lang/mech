@@ -1,0 +1,116 @@
+{
+  "schema": "mech.polybench.training-diagnostic.v1",
+  "scope": "Optimization-only compiler/source and budget inventory; no pointer, live owner or resource permission.",
+  "compiler_fingerprint": "0b69ccfa5151d65e4281a5a6b4f0615becbf4a05731507faf8ad417073261dce",
+  "archive": {
+    "path": "qualification/round-28-generators/deriche-plan.json.gz",
+    "sha256": "d18d47e7de9db6e612c45212eb3ec02f443eb448d0aebf69f1d586d3f5daa0f5",
+    "compressed_sha256": "090064d6dfce923510fb1faaccb7ea3ccefec4846858d43078aea5657b1bf0a7"
+  },
+  "native_generator_roots": [
+    {
+      "header": 35,
+      "source_sites": 157,
+      "local_values": 87,
+      "captures": [
+        1,
+        24,
+        27,
+        30,
+        34,
+        35,
+        38
+      ],
+      "maps": 4,
+      "fsm_children": 2,
+      "output_extents": [
+        64,
+        64
+      ],
+      "scratch_elements": 448,
+      "budget": {
+        "cloned": 6369418009344,
+        "comparison": 6555815468248,
+        "compute": 156726425357160,
+        "elements": 4096,
+        "maximum": [
+          65,
+          4160,
+          4160,
+          4288,
+          4160,
+          4160,
+          4224,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "native": 578687225856,
+        "native_per_visit": 1162240,
+        "nodes": 31275012,
+        "output": 263949056,
+        "replay": 391564630041344,
+        "setup": 21643578752,
+        "temporary": 1352129560
+      }
+    },
+    {
+      "header": 200,
+      "source_sites": 157,
+      "local_values": 87,
+      "captures": [
+        24,
+        27,
+        30,
+        34,
+        35,
+        38,
+        133
+      ],
+      "maps": 4,
+      "fsm_children": 2,
+      "output_extents": [
+        64,
+        64
+      ],
+      "scratch_elements": 448,
+      "budget": {
+        "cloned": 6369418009344,
+        "comparison": 6555815468248,
+        "compute": 156726425357160,
+        "elements": 4096,
+        "maximum": [
+          65,
+          4160,
+          4160,
+          4288,
+          4160,
+          4160,
+          4224,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "native": 578687225856,
+        "native_per_visit": 1162240,
+        "nodes": 31275012,
+        "output": 263949056,
+        "replay": 391564630041344,
+        "setup": 21643578752,
+        "temporary": 1352129560
+      }
+    }
+  ]
+}

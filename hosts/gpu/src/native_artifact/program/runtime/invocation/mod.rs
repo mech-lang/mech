@@ -14,6 +14,7 @@ mod helper_fallbacks;
 mod histogram;
 mod numeric_binary;
 mod numeric_exits;
+mod numeric_generator;
 mod numeric_map;
 mod numeric_map_banks;
 mod numeric_phase_reductions;
@@ -504,6 +505,15 @@ impl Invocation<'_, '_, '_> {
         args: [u64; 3],
     ) -> Result<Option<u64>, NativeProgramExecutionError> {
         let tag = GlobalHelper::decode(operation);
+        if self
+            .state
+            .collections
+            .as_ref()
+            .is_some_and(|c| c.has_numeric_generator())
+            && tag != GlobalHelper::NumericGeneratorFinish
+        {
+            return Err(invalid("helper while native generator loan is active"));
+        }
         if self.numeric_binary.is_some() && tag != GlobalHelper::NumericBinaryFinish {
             return Err(invalid(
                 "helper while native matrix arithmetic loan is active",
@@ -816,6 +826,11 @@ impl Invocation<'_, '_, '_> {
             GlobalHelper::NumericMapPrepare | GlobalHelper::NumericMapFinish
         ) {
             self.numeric_map_helper(site, tag, args)
+        } else if matches!(
+            tag,
+            GlobalHelper::NumericGeneratorPrepare | GlobalHelper::NumericGeneratorFinish
+        ) {
+            self.numeric_generator_helper(site, tag, args)
         } else if tag == GlobalHelper::Collection {
             if self.state.consumed || args[2] != 0 {
                 return Err(invalid("duplicate collection helper"));
@@ -829,6 +844,16 @@ impl Invocation<'_, '_, '_> {
         &mut self,
         site: u64,
     ) -> Result<(), NativeProgramExecutionError> {
+        if self
+            .state
+            .collections
+            .as_ref()
+            .is_some_and(|c| c.has_numeric_generator())
+        {
+            return Err(invalid(
+                "source visit while native generator loan is active",
+            ));
+        }
         if self.numeric_binary.is_some() {
             return Err(invalid(
                 "source visit while matrix arithmetic loan is active",

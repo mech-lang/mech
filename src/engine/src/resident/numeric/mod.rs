@@ -18802,6 +18802,7 @@ pub(in crate::resident) fn native_product_geometry(
 
 /// Current row-major broadcast geometry shared with the native matrix emitter.
 /// This computes no value and grants no execution or allocation permission.
+#[cfg(feature = "native-artifact")]
 pub(in crate::resident) fn native_binary_geometry(
     left: (usize, usize),
     right: (usize, usize),

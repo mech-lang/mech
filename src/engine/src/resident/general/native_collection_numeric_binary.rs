@@ -126,6 +126,72 @@ impl NativePreparedLibraryCall {
         self.template().f64_matrix_binary_op()?;
         self.f64_matrix_source_bound(inputs, output, 0)
     }
+    /// Complete conservative source construction envelope for fixed numeric
+    /// frame/array factories. Counts describe the exact caller-proved shape;
+    /// they grant no view, permit, execution or publication authority.
+    pub fn fixed_numeric_source_bound(
+        &self,
+        inputs: u64,
+        output: u64,
+    ) -> Option<(ResourceDemand, u64)> {
+        use crate::native_artifact::NativeScalarKind;
+        fn numeric(body: &SchemaBody, depth: usize) -> bool {
+            if depth == 16 {
+                return false;
+            }
+            if NativeScalarKind::from_schema_body(body).is_some() || body == &SchemaBody::Index {
+                return true;
+            }
+            match body {
+                SchemaBody::Matrix {
+                    element,
+                    dimensions,
+                } => dimensions.len() == 2 && NativeScalarKind::from_schema_body(element).is_some(),
+                SchemaBody::Tuple(fields) => fields.iter().all(|s| numeric(s, depth + 1)),
+                SchemaBody::Enum { variants, .. } => variants
+                    .iter()
+                    .all(|v| v.payload.as_ref().is_none_or(|s| numeric(s, depth + 1))),
+                _ => false,
+            }
+        }
+        let selected = self.template().f64_matrix_binary_op().is_some()
+            || self.supports_numeric_matrix_transpose()
+            || self.scalar_matrix_replace_kind().is_some()
+            || self.supports_unsigned_matrix_length()
+            || matches!(
+                self.template().primitive(),
+                P::CompositePack(_) | P::EnumPack
+            );
+        if !selected
+            || !self
+                .template()
+                .inputs()
+                .iter()
+                .chain([self.template().output()])
+                .all(|s| numeric(s.body(), 0))
+        {
+            return None;
+        }
+        let (source, _) = self.f64_matrix_source_bound(inputs, output, 0)?;
+        // This closed subset has no data-dependent traversal beyond the
+        // caller-proved numeric leaves. The existing source compute envelope
+        // already pays full metadata, drafts, copying and canonical publication.
+        // A second complete envelope funds caller imports, owner observations
+        // and retirement; retain explicit schema/binding probes as well. The
+        // general matrix-attempt replay multiplier is not another source fee.
+        let replay = source
+            .work
+            .compute
+            .checked_mul(2)?
+            .checked_add(
+                self.schema_context_allocation_bound_bytes()?
+                    .checked_mul(128)?,
+            )?
+            .checked_add(self.binding_metadata_bytes().checked_mul(128)?)?
+            .checked_add(65536)?;
+        Some((source, replay))
+    }
+
     fn f64_matrix_source_bound(
         &self,
         inputs: u64,

@@ -16,7 +16,9 @@ mod bounds;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod captured_windows;
 mod cold;
+mod fixed_state;
 mod flow;
+pub(in crate::native_artifact) use fixed_state::{StateTrips, fixed_state_trips};
 mod homes;
 mod intervals;
 pub(in crate::native_artifact) mod map_banks;

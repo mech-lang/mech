@@ -57,6 +57,10 @@ mod numeric_call_cache;
 mod numeric_cell_phases;
 mod numeric_cell_write_ownership;
 mod numeric_composition_diagnostic;
+mod numeric_fsm_trips;
+mod numeric_generator_execution;
+mod numeric_generator_kernel;
+mod numeric_generators;
 mod numeric_induction;
 mod numeric_outlining;
 mod numeric_summary_branches;
@@ -169,7 +173,7 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                153
+                154
             );
             // Policy152 adds ordered product fees. This unsigned fixture has no
             // selected products. Policy151 adds F64 matrix arithmetic fees. This unsigned fixture
@@ -692,7 +696,7 @@ fn huffman_parent_cleanup_selects_funded_retirement_batches_latest_phase() {
             assert_eq!(report.work, *expected_work.get_or_insert(report.work));
             assert_eq!(
                 crate::native_artifact::NATIVE_PROGRAM_WORK_POLICY_VERSION,
-                153
+                154
             );
             assert_eq!(
                 report.work,

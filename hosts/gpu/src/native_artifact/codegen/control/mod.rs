@@ -1305,6 +1305,35 @@ impl<'plan> CfgDefinition<'plan> {
                     )?;
             }
             #[cfg(feature = "canonical-native-program")]
+            let generator_ir = if let crate::native_artifact::codegen::control::plan::CodePlan::Program(prepared) =
+                plan
+                && let NativeIterationTerminator::Header {
+                    iteration, exit, ..
+                } = block.terminator()
+                && controls.enabled(
+                    crate::native_artifact::codegen::options::OptimizationPass::NumericGenerators,
+                )
+                && controls.enabled(
+                    crate::native_artifact::codegen::options::OptimizationPass::ScalarLoops,
+                )
+                && let Some(selected) = prepared.metadata().numeric_generators.at_header(index)
+            {
+                crate::native_artifact::program::codegen::numeric_generator::emit_entry(
+                    b,
+                    plan,
+                    selected,
+                    locals,
+                    hooks
+                        .as_ref()
+                        .ok_or_else(|| backend("numeric generator lacks owner hooks"))?,
+                    plan.value_count() + iteration as usize,
+                    blocks[exit as usize].expect("reachable numeric generator exit"),
+                    error,
+                )?
+            } else { 0 };
+            #[cfg(not(feature = "canonical-native-program"))]
+            let generator_ir = 0;
+            #[cfg(feature = "canonical-native-program")]
             if let crate::native_artifact::codegen::control::plan::CodePlan::Program(prepared) =
                 plan
                 && let NativeIterationTerminator::Header {
@@ -2062,7 +2091,7 @@ impl<'plan> CfgDefinition<'plan> {
             // entry guard in this unchanged ordinary visit audit.
             // The entry-pointer reload precedes specialized region emission;
             // include it in this visit's unchanged conservative template.
-            let emitted = (b.func.dfg.num_insts() - before - segment_ir
+            let emitted = (b.func.dfg.num_insts() - before - segment_ir - generator_ir
                 + usize::from(locals_home.is_some())) as u64;
             let bound = emission_template_bound(plan, index)?;
             if emitted.checked_add(128).is_none_or(|total| total > bound) {
@@ -2262,6 +2291,13 @@ fn emission_template_bound(
                         .map_err(backend)?,
                 )
                 .and_then(|n| n.checked_add(metadata.closed_tails.extra_work(index)))
+                .and_then(|n| {
+                    n.checked_add(if metadata.numeric_generators.at_header(index).is_some() {
+                        crate::native_artifact::program::prepare::numeric_generators::HEADER_WORK
+                    } else {
+                        0
+                    })
+                })
                 .and_then(|n| {
                     n.checked_add(if metadata.numeric_binary.at(index).is_some() {
                         crate::native_artifact::program::prepare::numeric_binary::HEADER_WORK

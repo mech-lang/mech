@@ -1,0 +1,260 @@
+{
+  "schema": "mech.polybench.training-qualification.v1",
+  "created_at": "2026-11-27T05:36:42.971991+00:00",
+  "scope": "Current-source correctness and feature qualification before formal timing. Holdout performance untouched.",
+  "source_parent": "07efbdf326ad5bad590d0d74c15c53aca98cfd51",
+  "compiler_fingerprint": "0b69ccfa5151d65e4281a5a6b4f0615becbf4a05731507faf8ad417073261dce",
+  "driver_sha256": "cd95922cc3c2d2bf062eac8de1b0a01617422389fd123f1be48ddf77afae1391",
+  "versions": {
+    "ir": 387,
+    "work": 154,
+    "abi": 45
+  },
+  "total_unique_selected_checks": 575,
+  "checks": [
+    {
+      "name": "numeric-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric",
+        "phase",
+        "row_block",
+        "huffman",
+        "private_publication",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 99.39976954227313,
+      "passed_tests": [
+        404
+      ]
+    },
+    {
+      "name": "matrix-polybench.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_matrix",
+        "--test",
+        "canonical_artifact_polybench",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 64.6601420417428,
+      "passed_tests": [
+        24,
+        30
+      ]
+    },
+    {
+      "name": "program-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_program",
+        "--",
+        "buffer_frame_qualification",
+        "nested_frame_qualification",
+        "numeric_tail_qualification",
+        "numeric_write_qualification",
+        "scalar_state_qualification",
+        "scalar_record_qualification",
+        "word_read_qualification",
+        "huffman_qualification",
+        "sequence_writer_qualification",
+        "collection_qualification",
+        "packed_update_qualification",
+        "range_cursor_qualification",
+        "range_qualification",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 27.834086707793176,
+      "passed_tests": [
+        114
+      ]
+    },
+    {
+      "name": "protocol.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space",
+        "native_runtime_consolidation_preserves_the_charged_layout_envelope",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.18562279175966978,
+      "passed_tests": [
+        2
+      ]
+    },
+    {
+      "name": "abi-layout.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.16635245829820633,
+      "passed_tests": [
+        1
+      ]
+    },
+    {
+      "name": "runtime-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program-runtime",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 16.160331374965608,
+      "passed_tests": []
+    },
+    {
+      "name": "production-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 16.372960166074336,
+      "passed_tests": []
+    }
+  ],
+  "logs": [
+    {
+      "log": "qualification/round-28-generators/numeric-regressions.log.gz",
+      "log_sha256": "a64b9eb3ad80657d6f12d649fc198ca5df4e7d4582df773fd704f3bdcad3f713",
+      "compressed_sha256": "1d599887ac481ccecda0ab59a04afff655d924fada5183551ab77f5d0692a877",
+      "passed_tests": 404
+    },
+    {
+      "log": "qualification/round-28-generators/matrix-polybench.log.gz",
+      "log_sha256": "80377a9a36bf69237959479d38275c1f4fe188a57cbfab384b406124bbcd9c40",
+      "compressed_sha256": "d924feae607e6b07ef13dd947a8ca834444844f8572a64e24fca937198d2e1f1",
+      "passed_tests": 54
+    },
+    {
+      "log": "qualification/round-28-generators/program-regressions.log.gz",
+      "log_sha256": "b94312bebe3fb35bb42612e9b50d55f6a135a86e2af982fac9dbcd56136b90c5",
+      "compressed_sha256": "cf14030aa8ddbdeccc31c8334d98c7224df437268779df1be15dfea4123adf13",
+      "passed_tests": 114
+    },
+    {
+      "log": "qualification/round-28-generators/protocol.log.gz",
+      "log_sha256": "bda507a51323b7079dc75d060ddb0c10fd3d87cbe5aba414bd41d3028aa9fc85",
+      "compressed_sha256": "f2cf4edb103c4c1efb357de8071979881ae84558cc166b8f5de02a7faf1ff4aa",
+      "passed_tests": 2
+    },
+    {
+      "log": "qualification/round-28-generators/abi-layout.log.gz",
+      "log_sha256": "9b615730d04330e630834d0ffc020f184aab3fd5c16e80237c9a07e2b57e5ba0",
+      "compressed_sha256": "71bc8ccc245d25cd0abce111ceedcad3bff361903c9d91ac5fb42e660a7b873b",
+      "passed_tests": 1
+    },
+    {
+      "log": "qualification/round-28-generators/runtime-feature.log.gz",
+      "log_sha256": "83f7fea16babb3b2f27b3930909733657faff9038e6aeef19bd9506a3ec3ca00",
+      "compressed_sha256": "62d179f5d140fffdf5e7ede1b496e31901f8fe06fe0be04ac829decf0adc54e4",
+      "passed_tests": 0
+    },
+    {
+      "log": "qualification/round-28-generators/production-feature.log.gz",
+      "log_sha256": "b89ca5c52eefd46950f2ffad64c37aef8c452d88eeaeb7dfd66536244af08e63",
+      "compressed_sha256": "211d5ee0d0b31b4d0e31fe9abdd41a30a9826da045fda7d4039fb278a3f6d996",
+      "passed_tests": 0
+    }
+  ],
+  "additional_component_checks": {
+    "source_outer_broadcast": {
+      "passed": 1,
+      "archive": {
+        "path": "qualification/round-28-generators/outer-broadcast-source.log.gz",
+        "sha256": "e08c90f9cd3c8060ec6917c21427fff68b33db17d440a7006c10898620bcc583",
+        "compressed_sha256": "47cd13dfe0415731f4b3e149fe28d832b72c8ae4e6806a0b09e6e42eb96b9f8e"
+      }
+    },
+    "type_catalog": {
+      "passed": 27,
+      "archive": {
+        "path": "qualification/round-28-generators/type-catalog.log.gz",
+        "sha256": "8611b0474981737ffc3a2521dfb57714c5046a7f57e6dfda1ced21f8136d6031",
+        "compressed_sha256": "2c830a5c7a015c6a2cf1b8438898ad6f663f0ac4f1132cdd4c403a101bf55274"
+      }
+    },
+    "scope": "Component checks ran before ordinary integration; the corresponding core type schemes and source/catalog test files remained unchanged."
+  },
+  "invariants": [
+    "All30 unchanged ports match29482 finite C live-outs in original/decoded artifacts and emit Objects.",
+    "The ordinary JIT and Object emitter share one source-derived Cranelift generator kernel; no benchmark-name dispatch or port changes. Scalar operations, array addressing, aggregate/frame recipes, broadcast geometry and source map budgets reuse maintained machinery.",
+    "Complete fixed-shape matrix generators require a closed source CFG, immutable captures, fixed U64 range, dominating block yield and independently proven bounded FSM children. Nonprogress, wraparound, guard bypass, unknown reverse seeds, growing arrays, external entries/effects and unsupported types decline to ordinary source.",
+    "One synchronous private loan pins genuine current immutable input owners. Initialized output/scratch banks, exact shadow/epoch/progress/shape/span checks, disjointness, managed memory/node coexistence, complete source costs, prepaid native instructions and full ordinary replay precede native execution. Native mutation uses UnsafeCell; no shared Rust Frame reference crosses execution.",
+    "Success installs a complete row-major bank into the original builder and takes the original exit/finish/publication. Checked arithmetic, source bounds and NaN-consumer misses discard private state and replay the original source. No successful body callbacks or per-operation dispatch.",
+    "Actual original/decoded/restored Deriche execution selects both roots under the unchanged finite benchmark caps, has no body callbacks, matches ordinary bits and all4096 finite C live-outs, preserves inputs, releases all claims and supports retry.",
+    "Forward/reverse/untagged/tagged FSM proofs, scalar/exact/row-column broadcasts, terminator-only Boolean captures, signed zero, infinities, overflow, qNaN/sNaN payloads, malformed frames, zero/one-short finite limits, managed byte/node refusal, source error replay, old outputs, cleanup/retry and independent image reconstruction are covered.",
+    "IR387/work154/ABI45. Fixed numeric replay uses two complete maintained source construction/import envelopes plus schema/binding probes; general matrix replay and original factory/visit fees remain. Conservative source admission raises Deriche work/comparison debits; full counter deltas are retained. Other training execution counters match accepted27.",
+    "Column/row outer broadcasting is admitted by the maintained numeric type schemes in either order with kind promotion and rigid input axes; incompatible axes stay rejected. No benchmark ports, inputs, C flags/binaries, tolerances, finite benchmark limits, split, objective or timing boundaries changed."
+  ],
+  "limitations": [
+    "Generator admission currently requires statically fixed F64 matrices and bounded single-state recurrences; other source shapes remain ordinary. Conservative envelopes can decline below the fixed benchmark caps.",
+    "This is not an acceptance result. The complete exposed fixed split must be measured after freezing source and driver; promotion requires both aggregate Mech/C scores to improve strictly.",
+    "Larger datasets, GPU execution, linked Object execution, full compression/AOT and a fresh external application remain unqualified."
+  ]
+}
