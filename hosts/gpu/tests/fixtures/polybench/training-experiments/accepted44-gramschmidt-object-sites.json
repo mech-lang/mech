@@ -1,0 +1,402 @@
+{
+  "schema": "mech.polybench.training-object-site-inspection.v1",
+  "scope": "Independent optimization-only inspection of the largest accepted44 training ratio, while the qualified current-bound fusion candidate awaits a selection-policy decision. No kernel execution or timing.",
+  "accepted_round": 44,
+  "compiler_fingerprint": "ce93b8e75d631d70cce83e10a4401815fd50a8572b87657ae8dcf41f599e0dfa",
+  "driver_sha256": "e315dff607b9d70621752bf741dac476386a9dd65685b62c9a0f14b8b9324580",
+  "object_sha256": "8e5673ca21a5c16d65768f7e3d629c0077c07859e6333fa7aa453cd3b409a3e4",
+  "profile_receipt": "training-experiments/accepted44-margin-profile.json",
+  "symbol": "mech_canonical_program_entry_v1_numeric_5",
+  "object_function_bytes": 17152,
+  "sites": [
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_5",
+      "offset": 7748,
+      "samples": 42,
+      "percent": 12.034383954154729,
+      "object_instruction": "cmp\tx13, x9",
+      "object_window": [
+        {
+          "offset": 7740,
+          "instruction": "cbz\tx5, 0x3a80"
+        },
+        {
+          "offset": 7744,
+          "instruction": "mov\tx13, #0x0"
+        },
+        {
+          "offset": 7748,
+          "instruction": "cmp\tx13, x9"
+        },
+        {
+          "offset": 7752,
+          "instruction": "b.lo\t0x262c"
+        },
+        {
+          "offset": 7756,
+          "instruction": "str\tx9, [sp, #0x3d00]"
+        }
+      ]
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_5",
+      "offset": 9804,
+      "samples": 34,
+      "percent": 9.742120343839542,
+      "object_instruction": "ldr\tx5, [sp, #0x5478]",
+      "object_window": [
+        {
+          "offset": 9796,
+          "instruction": "msub\tx11, x1, x19, x13"
+        },
+        {
+          "offset": 9800,
+          "instruction": "add\tx0, x11, #0x1"
+        },
+        {
+          "offset": 9804,
+          "instruction": "ldr\tx5, [sp, #0x5478]"
+        },
+        {
+          "offset": 9808,
+          "instruction": "cmp\tx0, x5"
+        },
+        {
+          "offset": 9812,
+          "instruction": "b.eq\t0x2684"
+        }
+      ]
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_5",
+      "offset": 9096,
+      "samples": 27,
+      "percent": 7.736389684813753,
+      "object_instruction": "cmp\tx1, x6",
+      "object_window": [
+        {
+          "offset": 9088,
+          "instruction": "cbz\tx7, 0x3bf4"
+        },
+        {
+          "offset": 9092,
+          "instruction": "mov\tx1, #0x0"
+        },
+        {
+          "offset": 9096,
+          "instruction": "cmp\tx1, x6"
+        },
+        {
+          "offset": 9100,
+          "instruction": "b.lo\t0x2434"
+        },
+        {
+          "offset": 9104,
+          "instruction": "str\tx6, [sp, #0x5230]"
+        }
+      ]
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_5",
+      "offset": 6424,
+      "samples": 20,
+      "percent": 5.730659025787966,
+      "object_instruction": "cmp\tx11, x2",
+      "object_window": [
+        {
+          "offset": 6416,
+          "instruction": "cbz\tx0, 0x3944"
+        },
+        {
+          "offset": 6420,
+          "instruction": "mov\tx11, #0x0"
+        },
+        {
+          "offset": 6424,
+          "instruction": "cmp\tx11, x2"
+        },
+        {
+          "offset": 6428,
+          "instruction": "b.lo\t0x2828"
+        },
+        {
+          "offset": 6432,
+          "instruction": "str\tx2, [sp, #0x1e70]"
+        }
+      ]
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_5",
+      "offset": 11724,
+      "samples": 19,
+      "percent": 5.444126074498567,
+      "object_instruction": "cmp\tx3, x15",
+      "object_window": [
+        {
+          "offset": 11716,
+          "instruction": "mov\tx3, #0x0"
+        },
+        {
+          "offset": 11720,
+          "instruction": "mov\tx0, x3"
+        },
+        {
+          "offset": 11724,
+          "instruction": "cmp\tx3, x15"
+        },
+        {
+          "offset": 11728,
+          "instruction": "b.lo\t0x2df8"
+        },
+        {
+          "offset": 11732,
+          "instruction": "str\tx0, [sp, #0x918]"
+        }
+      ]
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_5",
+      "offset": 7772,
+      "samples": 17,
+      "percent": 4.871060171919771,
+      "object_instruction": "str\tx12, [x1, x0]",
+      "object_window": [
+        {
+          "offset": 7764,
+          "instruction": "ldr\tx12, [x8, x0]"
+        },
+        {
+          "offset": 7768,
+          "instruction": "ldr\tx1, [sp, #0x5520]"
+        },
+        {
+          "offset": 7772,
+          "instruction": "str\tx12, [x1, x0]"
+        },
+        {
+          "offset": 7776,
+          "instruction": "add\tx0, x0, #0x8"
+        },
+        {
+          "offset": 7780,
+          "instruction": "mov\tx13, #0x1c20"
+        }
+      ]
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_5",
+      "offset": 10312,
+      "samples": 17,
+      "percent": 4.871060171919771,
+      "object_instruction": "ldr\tx12, [sp, #0x5478]",
+      "object_window": [
+        {
+          "offset": 10304,
+          "instruction": "lsr\tx0, x0, #4"
+        },
+        {
+          "offset": 10308,
+          "instruction": "add\tx5, x1, x0"
+        },
+        {
+          "offset": 10312,
+          "instruction": "ldr\tx12, [sp, #0x5478]"
+        },
+        {
+          "offset": 10316,
+          "instruction": "cmp\tx5, x12"
+        },
+        {
+          "offset": 10320,
+          "instruction": "b.eq\t0x287c"
+        }
+      ]
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_5",
+      "offset": 9120,
+      "samples": 16,
+      "percent": 4.584527220630372,
+      "object_instruction": "str\tx13, [x9, x0]",
+      "object_window": [
+        {
+          "offset": 9112,
+          "instruction": "ldr\tx13, [x5, x0]"
+        },
+        {
+          "offset": 9116,
+          "instruction": "ldr\tx9, [sp, #0x5528]"
+        },
+        {
+          "offset": 9120,
+          "instruction": "str\tx13, [x9, x0]"
+        },
+        {
+          "offset": 9124,
+          "instruction": "add\tx0, x0, #0x8"
+        },
+        {
+          "offset": 9128,
+          "instruction": "mov\tx14, #0x12c0"
+        }
+      ]
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_5",
+      "offset": 9296,
+      "samples": 16,
+      "percent": 4.584527220630372,
+      "object_instruction": "ldr\tx0, [sp, #0x5478]",
+      "object_window": [
+        {
+          "offset": 9288,
+          "instruction": "lsr\tx2, x2, #4"
+        },
+        {
+          "offset": 9292,
+          "instruction": "add\tx7, x11, x2"
+        },
+        {
+          "offset": 9296,
+          "instruction": "ldr\tx0, [sp, #0x5478]"
+        },
+        {
+          "offset": 9300,
+          "instruction": "cmp\tx7, x0"
+        },
+        {
+          "offset": 9304,
+          "instruction": "b.hi\t0x2484"
+        }
+      ]
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_5",
+      "offset": 11768,
+      "samples": 13,
+      "percent": 3.7249283667621778,
+      "object_instruction": "add\tx5, x7, x3",
+      "object_window": [
+        {
+          "offset": 11760,
+          "instruction": "str\tx21, [sp, #0x5500]"
+        },
+        {
+          "offset": 11764,
+          "instruction": "b\t0x13f0"
+        },
+        {
+          "offset": 11768,
+          "instruction": "add\tx5, x7, x3"
+        },
+        {
+          "offset": 11772,
+          "instruction": "sub\tx5, x5, #0x1"
+        },
+        {
+          "offset": 11776,
+          "instruction": "cmp\tx5, #0x14"
+        }
+      ]
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_5",
+      "offset": 9376,
+      "samples": 12,
+      "percent": 3.438395415472779,
+      "object_instruction": "uxtb\tw14, w14",
+      "object_window": [
+        {
+          "offset": 9368,
+          "instruction": "cset\tx0, lo"
+        },
+        {
+          "offset": 9372,
+          "instruction": "and\tw14, w14, w0"
+        },
+        {
+          "offset": 9376,
+          "instruction": "uxtb\tw14, w14"
+        },
+        {
+          "offset": 9380,
+          "instruction": "cbnz\tx14, 0x24b0"
+        },
+        {
+          "offset": 9384,
+          "instruction": "ldr\tx9, [sp, #0x5478]"
+        }
+      ]
+    },
+    {
+      "symbol": "mech_canonical_program_entry_v1_numeric_5",
+      "offset": 10324,
+      "samples": 10,
+      "percent": 2.865329512893983,
+      "object_instruction": "msub\tx3, x0, x24, x11",
+      "object_window": [
+        {
+          "offset": 10316,
+          "instruction": "cmp\tx5, x12"
+        },
+        {
+          "offset": 10320,
+          "instruction": "b.eq\t0x287c"
+        },
+        {
+          "offset": 10324,
+          "instruction": "msub\tx3, x0, x24, x11"
+        },
+        {
+          "offset": 10328,
+          "instruction": "sub\tx5, x5, #0x1"
+        },
+        {
+          "offset": 10332,
+          "instruction": "cmp\tx3, #0x14"
+        }
+      ]
+    }
+  ],
+  "limitation": "Offsets are from the accepted44 same-process perf map/sample. Object instructions are newly emitted by that exact driver. Original profile JIT bytes were not retained, so matching offsets alone do not prove byte identity with the past JIT allocation. No kernel performance observations.",
+  "observation": "Several largest sampled offsets map to copy-loop comparisons, stack loads and scalar load/store pairs in a fresh Object emitted by the accepted44 driver. This motivates checking copy placement and invariant geometry. It does not prove byte identity to the past JIT allocation, precise cost per instruction, or a new speedup. Earlier rejected identical source fingerprints remain ineligible for retry.",
+  "archives": {
+    "gramschmidt-hot-object-sites.json": {
+      "path": "qualification/experiments/accepted44-gramschmidt-object-sites/gramschmidt-hot-object-sites.json.gz",
+      "sha256": "94ace4a37b6bf39501ed04aa14b0abc7a20fc05e85c174a2313d328c41ef0ae2",
+      "compressed_sha256": "1d5bc69637137af08c6e0fddebeb579f4d26a5d9617d2e7f9c6da3d5a93eee7b"
+    },
+    "gramschmidt-inputs.json": {
+      "path": "qualification/experiments/accepted44-gramschmidt-object-sites/gramschmidt-inputs.json.gz",
+      "sha256": "83895c3341e6ac8f3763e6c2572fabb644c15950aa43618730181d888aa5bf51",
+      "compressed_sha256": "9e7ccb7deeb7cdd887ce9fae90183b7314e8d6ca3d3052b2fa7fb8b5bf362c4c"
+    },
+    "gramschmidt-object-export-receipt.json": {
+      "path": "qualification/experiments/accepted44-gramschmidt-object-sites/gramschmidt-object-export-receipt.json.gz",
+      "sha256": "f0d8577de97013478ca1a330c7ffe0a55aa1bf026772426895e5eddf33156bad",
+      "compressed_sha256": "f3779a121ad8e4e3cc234ef8bb60c89d92b869bb4b2b19d5ae699d11f9e859c2"
+    },
+    "gramschmidt-object-export.log": {
+      "path": "qualification/experiments/accepted44-gramschmidt-object-sites/gramschmidt-object-export.log.gz",
+      "sha256": "5ecb89145c5ee57c89b8a979a28b02803cd27b69fcdea92e44b77dcb9773261e",
+      "compressed_sha256": "331f664f14f024f5d04bded935c04aac7dc77124991e749d461e3ef1696c63ab"
+    },
+    "gramschmidt.disassembly.txt": {
+      "path": "qualification/experiments/accepted44-gramschmidt-object-sites/gramschmidt.disassembly.txt.gz",
+      "sha256": "8aaacda95a883700e2007c34c830461fc074d25c9e42a496ac2d715b8be2e790",
+      "compressed_sha256": "e4ae49ad7d680babcd829c1e822c45900c72c351b735dd9c61a09ea9834b46fd"
+    },
+    "gramschmidt.metadata.json": {
+      "path": "qualification/experiments/accepted44-gramschmidt-object-sites/gramschmidt.metadata.json.gz",
+      "sha256": "2c572c8bbd62117273ead9fccaa1f5a87c726094ed36349f20dd1f5edce0086b",
+      "compressed_sha256": "7510fbf88f8150b59f4509b5ff57f5a2768544fbdb65c5b2950b06a8b354227d"
+    },
+    "gramschmidt.o": {
+      "path": "qualification/experiments/accepted44-gramschmidt-object-sites/gramschmidt.o.gz",
+      "sha256": "8e5673ca21a5c16d65768f7e3d629c0077c07859e6333fa7aa453cd3b409a3e4",
+      "compressed_sha256": "5c429802afdc83ea418314d5fbb361e2e4a1512d0f3081f0ccaa2e0db3cd4890"
+    }
+  },
+  "performance_observations": 0,
+  "formal_history_entries_unchanged": 45
+}
