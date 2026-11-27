@@ -2055,3 +2055,57 @@ Training-only seven-sample replay: 1.00233x overall; one>5% regression retained.
 | seidel-2d | Opt | 2.85x | 2.92x | 50168.86x |
 
 [Qualification](round-27-qualification.json) · [Frozen source](round-27-frozen.json) · [Acceptance](round-27-performance-acceptance.json) · [Optimization-only profile](round-27-training-profile.json)
+
+Round28: bounded matrix generators
+
+One ordinary native generator combines fixed F64 matrix comprehensions, bounded FSMs and scalar maps. Source proofs, native scalar/array/frame machinery, source prices, immutable owner pins, finite admission, checked failure replay and atomic publication are shared. Column/row outer broadcasting is supported by the maintained type schemes.
+
+Performance gate: not_promoted; outcome: mixed_or_tied. Optimization improved, holdout regressed. Accepted compiler remains round27; this candidate is retained for further training-only compiler work.
+
+| Set | Accepted27 x C | Round28 x C | Raw speedup vs27 | Raw speedup since start |
+|---|---:|---:|---:|---:|
+| Optimization | 17.52x | 15.98x | 1.087x | 49.18x |
+| Holdout | 44.53x | 45.76x | 0.979x | 43.99x |
+
+575 selected checks and both feature builds pass, including all30 original/decoded C-liveout programs and Object emission. Actual full Deriche generator execution also passes under the unchanged benchmark caps, matches4096 finite C outputs and has no successful body callbacks. Resource refusal, aliases, source errors, malformed loans, NaN payloads and retry cleanup remain covered. IR387/work154/ABI45.
+
+Original-reference runtime multipliers vs27: 1.01296x/1.00174x. Reference-adjusted gains: 1.10129x/0.98062x. C multipliers: 1.00839x/0.99417x. Raw regressions>5% vs27: 4/2 (optimization/holdout). All remain.
+
+Optimization-only seven-sample replay: 1.10308x overall; Deriche 5.81406x; two>5% regressions retained. All unrelated execution counters match. Original source work/comparison accounting increases conservatively. Formal summed medians: 1.788ms/16.266ms. The holdout goal remains strictly below1.0x C.
+
+Training-only profiles cover78.3% of the current optimization sum and1553 canonical execution samples. Deriche is now about50.7% generated execution and47.8% canonical library calls, with transpose prominent. Correlation remains46.4% canonical library calls. Future source selection will use optimization evidence only.
+
+| Kernel | Set | Accepted27 x C | Round28 x C | Starting x C |
+|---|---|---:|---:|---:|---:|
+| jacobi-2d | Holdout | 471.95x | 466.21x | 9612.12x |
+| jacobi-1d | Holdout | 394.25x | 401.11x | 7168.14x |
+| adi | Holdout | 193.76x | 196.67x | 21631.38x |
+| ludcmp | Holdout | 84.69x | 91.34x | 20723.72x |
+| mvt | Opt | 67.49x | 68.53x | 138.96x |
+| bicg | Opt | 53.15x | 58.08x | 87.94x |
+| lu | Holdout | 52.82x | 56.58x | 20830.73x |
+| gramschmidt | Opt | 55.67x | 55.48x | 27896.34x |
+| gemver | Holdout | 57.17x | 49.75x | 260.73x |
+| atax | Opt | 44.82x | 48.94x | 79.13x |
+| correlation | Opt | 49.16x | 48.34x | 327.94x |
+| syrk | Holdout | 28.69x | 27.27x | 245.10x |
+| fdtd-2d | Holdout | 26.09x | 26.14x | 10500.55x |
+| syr2k | Holdout | 24.56x | 25.97x | 224.54x |
+| trisolv | Holdout | 23.44x | 25.22x | 3606.16x |
+| heat-3d | Holdout | 24.19x | 24.06x | 4178.38x |
+| durbin | Opt | 23.13x | 22.70x | 3899.39x |
+| symm | Holdout | 22.28x | 22.31x | 218.10x |
+| trmm | Holdout | 20.81x | 21.85x | 219.61x |
+| covariance | Opt | 18.58x | 17.92x | 50.46x |
+| gesummv | Holdout | 11.64x | 15.04x | 112.38x |
+| deriche | Opt | 73.67x | 13.47x | 43560.74x |
+| 2mm | Opt | 11.60x | 11.81x | 77.03x |
+| floyd-warshall | Holdout | 10.37x | 10.37x | 4841.31x |
+| 3mm | Opt | 7.54x | 9.15x | 38.12x |
+| cholesky | Opt | 7.73x | 7.84x | 23662.23x |
+| nussinov | Opt | 6.52x | 6.20x | 119638.18x |
+| doitgen | Opt | 4.86x | 5.01x | 22.47x |
+| gemm | Opt | 5.15x | 4.94x | 36.05x |
+| seidel-2d | Opt | 2.92x | 3.04x | 50168.86x |
+
+[Qualification](round-28-qualification.json) · [Frozen source](round-28-frozen.json) · [Acceptance](round-28-performance-acceptance.json) · [Optimization-only profile](round-28-training-profile.json)
