@@ -558,6 +558,9 @@ fn decode_inner<
     };
     let numeric_binary =
         native::program::prepare::numeric_binary::Layout::derive(&plan).map_err(str::to_owned)?;
+    let numeric_regions =
+        native::program::prepare::numeric_regions::Layout::derive(&plan, &numeric_binary)
+            .map_err(str::to_owned)?;
     // Keep the zero-completion base prices intact for funding validation below.
     // Final charges (including completion) overlay a separate eagerly built box.
     let base_visits = native::iteration_abi::control_visits(
@@ -944,6 +947,7 @@ fn decode_inner<
             utf8_reads,
             numeric_maps,
             numeric_binary,
+            numeric_regions,
             numeric_generators,
             nested_numeric,
             frozen_maps,
