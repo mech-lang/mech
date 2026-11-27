@@ -1,0 +1,53 @@
+{
+  "schema": "mech.polybench.prepared-composite-binding-plan.v1",
+  "created_at": "2026-11-27T20:54:24.268343+00:00",
+  "source_parent": "ad0b5d4d4c16c9ae993fdd4d12ade010a089b3b4",
+  "accepted_round": 31,
+  "accepted_compiler_fingerprint": "6447915ae298711f3886c6cba28e0608eb3ce59feab6287308162e45e006c895",
+  "accepted_driver_sha256": "041cdb610c9b046645bfd32f6406e70ce8476288f910b8181291d6ca5c1444ed",
+  "scope": "Optimization15 diagnosis and selection only; holdout aggregate gate only. All30 source ports, inputs, C binaries/flags, F64 MINI CPU, limits, tolerances, split, metric and timing/cache boundaries fixed.",
+  "profiling_basis": {
+    "receipt": "training-experiments/composite-pack-profile.json",
+    "sha256": "d37dd4ce20997a6fea4092a490a62f545b0e31bcd0503dfa99ce1515b0e95d25",
+    "mvt": {
+      "mech_over_c": 44.96978436870602,
+      "generic_pack_execution_samples": 100,
+      "execution_samples": 153
+    },
+    "bicg": {
+      "mech_over_c": 42.71453,
+      "generic_pack_execution_samples": 89,
+      "execution_samples": 125
+    },
+    "round39_source": "cc9283737f86d0332505e258ac2fe81fd9fb3619",
+    "round39_training_speedup": 1.1501034469904308,
+    "round39_formal_scores": {
+      "optimization": 10.88234889799657,
+      "holdout": 41.26878226320756
+    },
+    "caution": "Round39 was rejected. Reuse its selected numeric pack strategy as a foundation, with new general shared current-shape binding work; do not remeasure its exact fingerprint."
+  },
+  "implementation": "Add a Core prepared flat tuple/record constructor recipe for statically equal closed fields or matrices with closed elements and directly witnessed output axes. Retain immutable schema relations once. Validate each current child shape in its own arena, infer all current output parameters, check constants/repeated axes, instantiate the full output shape and retain exact child identities. Reuse the ordinary canonical constructor, resident CompositePack and native selected numeric pack route; cache its original normalization cost at preparation. Unsupported schemas and unadmitted attempts preserve the ordinary path.",
+  "invariants": [
+    "Cranelift sole Mech native generator; no source-port edits, benchmark names/dimensions or new arithmetic kernels. Existing private-frame and scalar route priority preserved.",
+    "Core recipe privately derives structural/nominal compatibility from the exact immutable schema arena; never retain concrete child shapes, values, owners or publication authority.",
+    "All current input parameter bounds, body extent/overflow checks, constant axes, repeated output parameters, child arity/schema identities and full output shape remain checked. Unsupported bounded/persistent/computed output relations use the ordinary solver.",
+    "Retain the full original source normalization, publication, clone, comparison, work/replay credit and finite/physical/coexistence envelopes even when the new binder allocates less. Preserve visits, aliases, cold fallback, atomic publication, cleanup and retry.",
+    "Only optimization15 influences implementation/selection; no holdout source diagnosis, profiling or per-case tuning."
+  ],
+  "prospective_route_gate": {
+    "cases": [
+      "mvt",
+      "bicg"
+    ],
+    "numeric_composite_callbacks_per_case": 1,
+    "generic_callbacks_per_case": 0,
+    "unchanged_native_arithmetic_prepare_finish_counts": true,
+    "finite_c_liveouts": 160,
+    "performance_observations": 0
+  },
+  "qualification": "Core differential tests against ordinary shape inference/binding over repeated/fixed/zero/rectangular axes, fresh input shapes, independent parameter arenas, nominal substitutions, invalid cardinality/arity, bounded input dimensions and overflow; retained native current-shape/budget/alias/cold tests, all30 C finite original/decoded/restored tests, and both feature builds. No Rust edits during Cargo.",
+  "training_selection": "Exactly one v2 prospective probe per qualified fingerprint: seven fresh processes per actor/case, accepted31/candidate interleaved with alternating order. Retain all210 observations and regressions. Select raw geomean accepted/candidate >1 with equal visits and unreduced work/comparison bills; no retries/exclusions.",
+  "formal_acceptance": "Commit/push and freeze exact clean qualified source and driver before both formal sets. Retain all900 observations/29482 finite liveouts. Promote only if BOTH primary kernel geometric-mean Mech/C scores strictly improve accepted31 (11.43635797708715 /39.31569548924827); otherwise restore exact accepted31.",
+  "performance_observations": 0
+}
