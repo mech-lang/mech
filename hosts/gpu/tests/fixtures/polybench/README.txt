@@ -2161,3 +2161,57 @@ The prospective optimization-only A/B rule rejected shared numeric-loan ownershi
 | seidel-2d | Opt | 2.92x | 2.94x | 50168.86x | 316.417 | 107.667 |
 
 [Qualification](round-29-qualification.json) · [Frozen source](round-29-frozen.json) · [Acceptance](round-29-performance-acceptance.json) · [Training selection](round-29-training-selection.json)
+
+Round30: ordered native matrix sums
+
+Sealed F64 row/column reductions share resident geometry, full source costs/replay, checked numeric loans and native scalar emission. Every lane starts at positive zero and adds terms in source order. SIMD lanes compute independent outputs; empty reduced axes return typed zero. Current owner pins, initialized banks, finite admission, span/frame checks, ordinary fallback and atomic publication remain.
+
+Performance gate: not_promoted; outcome: mixed_or_tied. Accepted compiler after this run: round29.
+
+| Set | Accepted29 x C | Round30 x C | Raw speedup vs29 | Raw speedup since start |
+|---|---:|---:|---:|---:|
+| Optimization | 14.24x | 13.04x | 1.098x | 60.98x |
+| Holdout | 41.53x | 42.29x | 0.997x | 48.87x |
+
+579 selected checks and both standalone features pass, including all30 original/decoded C-liveout programs and Object emission. New reductions cover original/decoded/restored fixed/dynamic shapes, empty axes, odd tails, signedzero, cancellation, input/generated NaNs and infinities. Existing finite limits, physical byte refusal, forged loans, aliases, interleaving, cleanup and retry include both axes. IR389/work156/ABI47.
+
+Optimization-only seven-sample replay measured 1.10250x vs accepted29, with 0 raw regressions>5%. All unrelated counters match; every work/comparison/visit/transport delta remains. Profiling accepted29 selected this family using1380 execution samples covering74.8% of optimization medians; no holdout profile or per-case diagnosis.
+
+Original-reference runtime multipliers vs29: 1.00596x/1.00241x. Reference-adjusted gains: 1.10476x/0.99975x. C multipliers: 0.99425x/0.98473x. Raw regressions>5% vs29: 1/1 (optimization/holdout), all retained.
+
+Formal summed medians: 1.503ms/15.684ms. The goal remains strictly below1.0x C on the fixed15 holdout.
+
+| Kernel | Set | Accepted29 x C | Round30 x C | Starting x C | Round30 Mech us | Round30 C us |
+|---|---|---:|---:|---:|---:|---:|
+| jacobi-2d | Holdout | 451.95x | 461.17x | 9612.12x | 3555.167 | 7.709 |
+| jacobi-1d | Holdout | 397.02x | 437.90x | 7168.14x | 182.708 | 0.417 |
+| adi | Holdout | 192.91x | 188.95x | 21631.38x | 8463.083 | 44.791 |
+| ludcmp | Holdout | 84.41x | 84.42x | 20723.72x | 1041.166 | 12.333 |
+| gramschmidt | Opt | 60.40x | 59.51x | 27896.34x | 205.791 | 3.458 |
+| lu | Holdout | 59.10x | 54.58x | 20830.73x | 657.166 | 12.041 |
+| mvt | Opt | 58.27x | 52.91x | 138.96x | 70.542 | 1.333 |
+| bicg | Opt | 47.12x | 49.92x | 87.94x | 74.875 | 1.500 |
+| correlation | Opt | 42.99x | 34.45x | 327.94x | 146.417 | 4.250 |
+| fdtd-2d | Holdout | 26.55x | 26.65x | 10500.55x | 183.208 | 6.875 |
+| heat-3d | Holdout | 24.81x | 25.08x | 4178.38x | 432.625 | 17.250 |
+| trmm | Holdout | 23.37x | 24.45x | 219.61x | 77.417 | 3.166 |
+| trisolv | Holdout | 23.82x | 23.85x | 3606.16x | 27.833 | 1.167 |
+| durbin | Opt | 24.26x | 22.64x | 3899.39x | 29.250 | 1.292 |
+| symm | Holdout | 21.60x | 22.41x | 218.10x | 83.125 | 3.709 |
+| syrk | Holdout | 20.96x | 21.55x | 245.10x | 117.625 | 5.458 |
+| gemver | Holdout | 18.51x | 20.33x | 260.73x | 37.292 | 1.834 |
+| syr2k | Holdout | 18.65x | 20.13x | 224.54x | 131.666 | 6.542 |
+| gesummv | Holdout | 18.37x | 16.87x | 112.38x | 17.584 | 1.042 |
+| atax | Opt | 14.92x | 15.47x | 79.13x | 19.334 | 1.250 |
+| 2mm | Opt | 13.68x | 11.84x | 77.03x | 21.209 | 1.791 |
+| floyd-warshall | Holdout | 10.38x | 10.83x | 4841.31x | 676.500 | 62.458 |
+| deriche | Opt | 10.78x | 9.98x | 43560.74x | 289.541 | 29.000 |
+| cholesky | Opt | 7.91x | 8.07x | 23662.23x | 55.791 | 6.917 |
+| 3mm | Opt | 8.29x | 8.03x | 38.12x | 20.416 | 2.542 |
+| covariance | Opt | 15.49x | 7.09x | 50.46x | 31.625 | 4.458 |
+| nussinov | Opt | 6.35x | 6.25x | 119638.18x | 183.750 | 29.416 |
+| doitgen | Opt | 5.83x | 5.47x | 22.47x | 16.875 | 3.083 |
+| gemm | Opt | 4.75x | 5.04x | 36.05x | 21.000 | 4.167 |
+| seidel-2d | Opt | 2.94x | 3.01x | 50168.86x | 316.791 | 105.333 |
+
+[Qualification](round-30-qualification.json) · [Frozen source](round-30-frozen.json) · [Acceptance](round-30-performance-acceptance.json) · [Optimization-only profile](round-30-training-profile.json)
