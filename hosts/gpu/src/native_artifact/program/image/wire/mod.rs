@@ -558,7 +558,6 @@ fn decode_inner<
     };
     let numeric_binary =
         native::program::prepare::numeric_binary::Layout::derive(&plan).map_err(str::to_owned)?;
-    #[cfg(feature = "canonical-native-program")]
     let numeric_regions =
         native::program::prepare::numeric_regions::Layout::derive(&plan, &numeric_binary)
             .map_err(str::to_owned)?;
@@ -866,6 +865,9 @@ fn decode_inner<
             )
         }
     };
+    if w.max_library_inputs < numeric_regions.argument_words(&plan) {
+        return Err("restored matrix-region argument bank is too small".into());
+    }
     if w.max_library_inputs < compositions.argument_words() {
         return Err("restored parent native argument bank is too small".into());
     }
@@ -948,7 +950,6 @@ fn decode_inner<
             utf8_reads,
             numeric_maps,
             numeric_binary,
-            #[cfg(feature = "canonical-native-program")]
             numeric_regions,
             numeric_generators,
             nested_numeric,

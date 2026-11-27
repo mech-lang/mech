@@ -221,6 +221,63 @@ pub(in crate::native_artifact) fn emit_entry(
     let joined = b.create_block();
     b.ins().brif(frame, native, &[], ordinary, &[]);
     b.switch_to_block(native);
+    let count = emit_kernel(b, op.kind, frame, [false; 2], error);
+    let zero = b.ins().iconst(types::I64, 0);
+    hooks.call(
+        b,
+        site,
+        GlobalHelper::NumericBinaryFinish,
+        [frame, count, zero],
+        error,
+    );
+    let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
+    let valid = b.ins().icmp_imm(IntCC::Equal, ready, 1);
+    guard(
+        b,
+        valid,
+        error,
+        crate::native_artifact::abi::STATUS_INTEGRITY,
+    );
+    b.ins().jump(joined, &[]);
+    b.switch_to_block(ordinary);
+    Ok(joined)
+}
+
+// A produced1x1 matrix is computed after the loan is issued. Its scalar
+// broadcast word must therefore be loaded from its current private bank here,
+// never from the pre-initialized frame word. No frame field is mutated.
+fn current_scalar(
+    b: &mut FunctionBuilder<'_>,
+    pointer: Value,
+    mode: Value,
+    fallback: Value,
+    bank: bool,
+) -> Value {
+    if !bank {
+        return fallback;
+    }
+    let scalar = b.create_block();
+    let matrix = b.create_block();
+    let done = b.create_block();
+    b.append_block_param(done, types::I64);
+    let selected = b.ins().icmp_imm(IntCC::Equal, mode, 0);
+    b.ins().brif(selected, scalar, &[], matrix, &[]);
+    b.switch_to_block(scalar);
+    let word = b.ins().load(types::I64, MemFlags::new(), pointer, 0);
+    b.ins().jump(done, &[word.into()]);
+    b.switch_to_block(matrix);
+    b.ins().jump(done, &[fallback.into()]);
+    b.switch_to_block(done);
+    b.block_params(done)[0]
+}
+
+pub(super) fn emit_kernel(
+    b: &mut FunctionBuilder<'_>,
+    kind: Kind,
+    frame: Value,
+    bank_inputs: [bool; 2],
+    error: Block,
+) -> Value {
     let left = get(b, frame, offset_of!(Frame, left));
     let right = get(b, frame, offset_of!(Frame, right));
     let output = get(b, frame, offset_of!(Frame, output));
@@ -230,8 +287,10 @@ pub(in crate::native_artifact) fn emit_entry(
     let rmode = get(b, frame, offset_of!(Frame, right_mode));
     let sleft = get(b, frame, offset_of!(Frame, left_scalar));
     let sright = get(b, frame, offset_of!(Frame, right_scalar));
+    let sleft = current_scalar(b, left, lmode, sleft, bank_inputs[0]);
+    let sright = current_scalar(b, right, rmode, sright, bank_inputs[1]);
     let complete = b.create_block();
-    match op.kind {
+    match kind {
         Kind::Transpose { input } => {
             let source_columns = get(b, frame, offset_of!(Frame, inner));
             let (expected, overflow) = b.ins().umul_overflow(columns, source_columns);
@@ -370,23 +429,5 @@ pub(in crate::native_artifact) fn emit_entry(
         }
     }
     b.switch_to_block(complete);
-    let zero = b.ins().iconst(types::I64, 0);
-    hooks.call(
-        b,
-        site,
-        GlobalHelper::NumericBinaryFinish,
-        [frame, count, zero],
-        error,
-    );
-    let ready = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
-    let valid = b.ins().icmp_imm(IntCC::Equal, ready, 1);
-    guard(
-        b,
-        valid,
-        error,
-        crate::native_artifact::abi::STATUS_INTEGRITY,
-    );
-    b.ins().jump(joined, &[]);
-    b.switch_to_block(ordinary);
-    Ok(joined)
+    count
 }

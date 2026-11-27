@@ -27,6 +27,7 @@ pub(in crate::native_artifact::program::runtime) struct Counts {
     pub admission_callbacks: BTreeMap<u64, u64>,
     pub helpers: BTreeMap<(u64, u64), u64>,
     pub selected: u64,
+    pub matrix_region_completions: u64,
     pub fused_numeric_entries: u64,
     pub phases: u64,
     pub phase_sites: BTreeMap<u64, u64>,
@@ -522,6 +523,13 @@ unsafe extern "C" fn helper(
     // SAFETY: unchanged arguments and result pointer from the checked entry.
     let status = unsafe { HELPER.with(Cell::get).unwrap()(context, site, op, a, b, c, out) };
     unsafe { after_work(context, site, op, before) };
+    if op == GlobalHelper::NumericBinaryFinish.raw() && c == 1 && status == 0 {
+        // The delegated callback has finished; this same live result cell is
+        // still owned by the suspended checked caller.
+        if unsafe { *out } == 1 {
+            COUNTS.with(|v| v.borrow_mut().matrix_region_completions += 1);
+        }
+    }
     if op == GlobalHelper::ClosedTailEnd.raw() && c == 0 && status == 0 {
         // SAFETY: the delegated callback has returned and ended its exclusive
         // borrow of this same live Invocation. Observe the actual settled work.

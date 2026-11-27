@@ -9,7 +9,11 @@ use mech_core::{
     snapshot::{F64Bits, SequenceView},
 };
 
-pub(in crate::native_artifact::program::runtime) struct Pending {
+pub(in crate::native_artifact::program::runtime) enum Pending {
+    Single(Single),
+    Region(super::numeric_regions::Region),
+}
+pub(in crate::native_artifact::program::runtime) struct Single {
     pub frame: NumericBinaryFrame,
     issued: NumericBinaryFrame,
     site: usize,
@@ -20,7 +24,7 @@ pub(in crate::native_artifact::program::runtime) struct Pending {
     reservation: ManagedMemoryReservation,
     _nodes: ManagedNodeReservation,
 }
-fn fits(value: u64, cap: Option<u64>) -> bool {
+pub(super) fn fits(value: u64, cap: Option<u64>) -> bool {
     cap.is_some_and(|cap| value <= cap)
 }
 fn dims(value: &Value, schema: &mech_core::Schema) -> Option<[usize; 2]> {
@@ -55,7 +59,7 @@ fn dims(value: &Value, schema: &mech_core::Schema) -> Option<[usize; 2]> {
     };
     (rows.checked_mul(columns)? == cells.len()).then_some([rows, columns])
 }
-fn cells(value: &Value) -> Option<&[F64Bits]> {
+pub(super) fn cells(value: &Value) -> Option<&[F64Bits]> {
     let mech_core::ValueData::Matrix(matrix) = value.data() else {
         return None;
     };
@@ -73,6 +77,9 @@ impl Invocation<'_, '_, '_> {
     ) -> Result<Option<u64>, Error> {
         if tag == GlobalHelper::NumericBinaryFinish {
             return self.finish_numeric_binary(site, args);
+        }
+        if args[2] == 1 {
+            return self.prepare_numeric_region(site, args);
         }
         let descriptor = self.descriptor;
         let m = descriptor.metadata();
@@ -328,7 +335,7 @@ impl Invocation<'_, '_, '_> {
         if core::alloc::Layout::array::<F64Bits>(count).is_err() {
             return Ok(Some(0));
         }
-        let mut pending = Box::new(Pending {
+        let mut allocation = Box::new(Pending::Single(Single {
             frame: NumericBinaryFrame {
                 left: 0,
                 right: 0,
@@ -349,7 +356,10 @@ impl Invocation<'_, '_, '_> {
             shape,
             reservation,
             _nodes: nodes,
-        });
+        }));
+        let Pending::Single(pending) = allocation.as_mut() else {
+            unreachable!()
+        };
         for at in 0..arity {
             if let Some(value) = &pending.inputs[at] {
                 let source =
@@ -371,14 +381,20 @@ impl Invocation<'_, '_, '_> {
         pending.frame.output = pending.cells.as_mut_ptr() as u64;
         pending.issued = pending.frame;
         let pointer = &pending.frame as *const NumericBinaryFrame as u64;
-        self.numeric_binary = Some(pending);
+        self.numeric_binary = Some(allocation);
         Ok(Some(pointer))
     }
     fn finish_numeric_binary(&mut self, site: usize, args: [u64; 3]) -> Result<Option<u64>, Error> {
-        let mut pending = self
+        let mut allocation = self
             .numeric_binary
             .take()
             .ok_or_else(|| invalid("matrix arithmetic finish without loan"))?;
+        if matches!(allocation.as_ref(), Pending::Region(_)) {
+            return self.finish_numeric_region(site, args, allocation);
+        }
+        let Pending::Single(pending) = allocation.as_mut() else {
+            unreachable!()
+        };
         let pointer = &pending.frame as *const NumericBinaryFrame as u64;
         if site != pending.site
             || self.state.control.previous != Some(site as u32)
@@ -393,6 +409,9 @@ impl Invocation<'_, '_, '_> {
                 "matrix arithmetic finish differs from current loan",
             ));
         }
+        let Pending::Single(mut pending) = *allocation else {
+            unreachable!()
+        };
         let metadata = self.descriptor.metadata();
         let ty = &metadata.types[pending.output as usize];
         let value = Value::from_f64_matrix(

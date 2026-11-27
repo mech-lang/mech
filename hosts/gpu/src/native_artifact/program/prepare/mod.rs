@@ -23,7 +23,6 @@ pub(in crate::native_artifact) mod numeric_binary;
 pub(in crate::native_artifact) mod numeric_generators;
 pub(in crate::native_artifact) mod numeric_phase;
 pub(in crate::native_artifact) mod numeric_prefix;
-#[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod numeric_regions;
 #[cfg(feature = "canonical-native-program")]
 pub(in crate::native_artifact) mod visit_predecessors;
@@ -115,7 +114,6 @@ pub(in crate::native_artifact) struct ProgramMetadata {
     // Pure source-derived cache, rebuilt independently on every image load.
     pub(in crate::native_artifact) numeric_binary: numeric_binary::Layout,
     // Source topology and lifetimes only; no runtime selection or views.
-    #[cfg(feature = "canonical-native-program")]
     pub(in crate::native_artifact) numeric_regions: numeric_regions::Layout,
     // Complete source/bank/funding cache; independently rebuilt on image load.
     pub(in crate::native_artifact) numeric_generators: numeric_generators::funding::Layout,
@@ -233,7 +231,6 @@ impl PreparedNativeProgram {
         let utf8_reads = utf8_reads::Layout::derive(&plan).map_err(str::to_owned)?;
         let numeric_maps = numeric_maps::Layout::derive(&plan).map_err(str::to_owned)?;
         let numeric_binary = numeric_binary::Layout::derive(&plan).map_err(str::to_owned)?;
-        #[cfg(feature = "canonical-native-program")]
         let numeric_regions =
             numeric_regions::Layout::derive(&plan, &numeric_binary).map_err(str::to_owned)?;
         let mut analysis_visits = native::iteration_abi::control_visits(
@@ -502,7 +499,8 @@ impl PreparedNativeProgram {
                 4
             })
             .max(compositions.argument_words())
-            .max(if word_collections.is_empty() { 0 } else { 3 });
+            .max(if word_collections.is_empty() { 0 } else { 3 })
+            .max(numeric_regions.argument_words(&plan));
         let types: Box<[_]> = plan
             .values()
             .iter()
@@ -585,7 +583,6 @@ impl PreparedNativeProgram {
             utf8_reads,
             numeric_maps,
             numeric_binary,
-            #[cfg(feature = "canonical-native-program")]
             numeric_regions,
             numeric_generators,
             nested_numeric,

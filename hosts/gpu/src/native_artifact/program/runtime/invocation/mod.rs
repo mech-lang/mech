@@ -19,6 +19,7 @@ mod numeric_map;
 mod numeric_map_banks;
 mod numeric_phase_reductions;
 mod numeric_prefix;
+mod numeric_regions;
 mod numeric_segments;
 mod numeric_tree;
 mod numeric_writes;

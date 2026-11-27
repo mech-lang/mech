@@ -1,4 +1,4 @@
-//! Source-closed root matrix-expression candidates. No pointer, owner, budget
+//! Source-closed root matrix-expression recipes. No pointer, owner, budget
 //! credit or execution permission is cached here. Current admission is separate.
 use super::numeric_binary::{Kind, Layout as Operators};
 use mech_engine::native_artifact::{
@@ -323,5 +323,65 @@ impl Layout {
         Ok(Self {
             candidates: candidates.into_boxed_slice(),
         })
+    }
+}
+
+impl Candidate {
+    /// Leave the ordinary terminal visit/output publication in the source CFG.
+    /// Scalar aliases observed outside this body need the existing word-home
+    /// bridge, so they retain ordinary execution rather than inventing homes.
+    pub fn body<'a>(&'a self, plan: &Plan) -> Option<(&'a [Step], u32)> {
+        if self.outputs.iter().any(|o| {
+            plan.values()[o.value.get() as usize]
+                .scalar_kind()
+                .is_some()
+        }) {
+            return None;
+        }
+        let (steps, exit) = match self.exit {
+            Some(exit) => (self.steps.as_ref(), exit),
+            None => match self.steps.last()? {
+                Step::Empty { site } => (&self.steps[..self.steps.len() - 1], *site),
+                _ => return None,
+            },
+        };
+        // The existing original entry header pays all bounded metadata
+        // discovery before current dynamic source envelopes are available.
+        let mut discovery = 4096u64.checked_add((self.external.len() as u64).checked_mul(256)?)?;
+        for step in steps {
+            discovery = discovery.checked_add(256)?;
+            if let Step::Operator { output, .. } = step {
+                discovery = discovery.checked_add(
+                    plan.values()[output.get() as usize]
+                        .definition()
+                        .clone_allocation_bound_bytes()?
+                        .checked_mul(4)?,
+                )?;
+            }
+        }
+        (discovery <= super::numeric_binary::HEADER_WORK).then_some((steps, exit))
+    }
+}
+impl Layout {
+    pub fn at_entry(&self, site: usize) -> Option<(usize, &Candidate)> {
+        self.candidates
+            .iter()
+            .enumerate()
+            .find(|(_, c)| c.entry as usize == site)
+    }
+    pub fn argument_words(&self, plan: &Plan) -> usize {
+        self.candidates
+            .iter()
+            .filter(|c| c.body(plan).is_some())
+            .map(|c| {
+                c.external
+                    .iter()
+                    .filter(|v| {
+                        plan.values()[v.get() as usize].scalar_kind() == Some(NativeScalarKind::F64)
+                    })
+                    .count()
+            })
+            .max()
+            .unwrap_or(0)
     }
 }

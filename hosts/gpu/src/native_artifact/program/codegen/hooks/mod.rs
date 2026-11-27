@@ -538,6 +538,19 @@ impl Hooks {
         is_scalar: impl Fn(mech_engine::native_artifact::NativeMatchValue) -> bool,
         error: Block,
     ) -> Result<(), NativeCompileError> {
+        self.library_operation_mode(b, site, operation, operands, locals, is_scalar, 0, error)
+    }
+    pub fn library_operation_mode(
+        &self,
+        b: &mut FunctionBuilder<'_>,
+        site: usize,
+        operation: u64,
+        operands: &[mech_engine::native_artifact::NativeMatchValue],
+        locals: Value,
+        is_scalar: impl Fn(mech_engine::native_artifact::NativeMatchValue) -> bool,
+        mode: u64,
+        error: Block,
+    ) -> Result<(), NativeCompileError> {
         let operation = GlobalHelper::decode(operation);
         #[cfg(feature = "canonical-native-program")]
         {
@@ -563,13 +576,13 @@ impl Hooks {
                     crate::native_artifact::compiler::offset(index)?,
                 );
             }
-            let zero = b.ins().iconst(types::I64, 0);
-            self.call(b, site, operation, [self.arguments, count, zero], error);
+            let mode = b.ins().iconst(types::I64, mode as i64);
+            self.call(b, site, operation, [self.arguments, count, mode], error);
             Ok(())
         }
         #[cfg(not(feature = "canonical-native-program"))]
         {
-            let _ = (b, site, operation, operands, locals, is_scalar, error);
+            let _ = (b, site, operation, operands, locals, is_scalar, mode, error);
             Err(crate::native_artifact::compiler::backend(
                 "library operand ABI is not enabled",
             ))
