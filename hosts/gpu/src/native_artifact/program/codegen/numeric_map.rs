@@ -21,6 +21,7 @@ pub(in crate::native_artifact) fn emit_entry(
     hooks: &Hooks,
     region: &Region,
     plan: &Plan,
+    rectangular_induction: bool,
     counter_slot: usize,
     exit: Block,
     error: Block,
@@ -58,7 +59,17 @@ pub(in crate::native_artifact) fn emit_entry(
     let settle = b.create_block();
     b.append_block_param(miss, types::I64);
     b.append_block_param(settle, types::I64);
-    emit(b, frame, region, plan, &captures, complete, miss, malformed)?;
+    emit(
+        b,
+        frame,
+        region,
+        plan,
+        &captures,
+        rectangular_induction,
+        complete,
+        miss,
+        malformed,
+    )?;
     b.switch_to_block(complete);
     b.ins().jump(settle, &[zero.into()]);
     b.switch_to_block(miss);
@@ -112,6 +123,7 @@ pub(super) fn emit(
     region: &Region,
     plan: &Plan,
     captures: &BTreeMap<u32, Value>,
+    rectangular_induction: bool,
     complete: Block,
     miss: Block,
     malformed: Block,
@@ -298,14 +310,57 @@ pub(super) fn emit(
     let head = b.create_block();
     let body = b.create_block();
     let done = b.create_block();
+    // Preserve the source column-then-row order. A nontrivial inner range
+    // carries its coordinates directly instead of reconstructing quotient and
+    // remainder for every cell. Empty/one-row rectangles retain the flat loop.
+    let rectangle_cursor = if rectangular_induction {
+        region.rectangle.as_ref().filter(|r| r.rows > 1).map(|r| {
+            let row = b.declare_var(types::I64);
+            let column = b.declare_var(types::I64);
+            b.def_var(column, zero);
+            (row, column, r.rows, b.create_block())
+        })
+    } else {
+        None
+    };
     b.ins().jump(head, &[]);
     b.switch_to_block(head);
-    let at = b.use_var(cursor);
-    let more = b.ins().icmp(IntCC::UnsignedLessThan, at, count);
-    b.ins().brif(more, body, &[], done, &[]);
+    if let Some((row, column, rows, inner_head)) = rectangle_cursor {
+        let column_at = b.use_var(column);
+        let more = b
+            .ins()
+            .icmp(IntCC::UnsignedLessThan, column_at, source_count);
+        let start_column = b.create_block();
+        let next_column = b.create_block();
+        b.ins().brif(more, start_column, &[], done, &[]);
+        b.switch_to_block(start_column);
+        b.def_var(row, zero);
+        b.ins().jump(inner_head, &[]);
+        b.switch_to_block(inner_head);
+        let row_at = b.use_var(row);
+        let more = b
+            .ins()
+            .icmp_imm(IntCC::UnsignedLessThan, row_at, rows as i64);
+        b.ins().brif(more, body, &[], next_column, &[]);
+        b.switch_to_block(next_column);
+        let next = b.ins().iadd_imm(column_at, 1);
+        b.def_var(column, next);
+        b.ins().jump(head, &[]);
+    } else {
+        let at = b.use_var(cursor);
+        let more = b.ins().icmp(IntCC::UnsignedLessThan, at, count);
+        b.ins().brif(more, body, &[], done, &[]);
+    }
     b.switch_to_block(body);
     let at = b.use_var(cursor);
-    let (source_at, rectangle_row) = if let Some(rectangle) = &region.rectangle {
+    let (source_at, rectangle_row) = if let Some((row, column, _, _)) = rectangle_cursor {
+        let row = b.use_var(row);
+        let column = b.use_var(column);
+        let rectangle = region.rectangle.as_ref().unwrap();
+        let inner = b.ins().iadd_imm(row, rectangle.start as i64);
+        b.def_var(words[&rectangle.inner_element], inner);
+        (column, Some(row))
+    } else if let Some(rectangle) = &region.rectangle {
         let rows = b.ins().iconst(types::I64, rectangle.rows as i64);
         let column = b.ins().udiv(at, rows);
         // One quotient serves the source cursor and final row-major store.
@@ -368,6 +423,7 @@ pub(super) fn emit(
                 last,
                 &views,
                 &captures,
+                rectangular_induction,
                 index_miss,
             )?;
             b.def_var(words[&child.output(plan).get()], value);
@@ -487,9 +543,16 @@ pub(super) fn emit(
         }
     }
     b.switch_to_block(latch);
-    let next = b.ins().iadd_imm(at, 1);
-    b.def_var(cursor, next);
-    b.ins().jump(head, &[]);
+    if let Some((row, _, _, inner_head)) = rectangle_cursor {
+        let current = b.use_var(row);
+        let next = b.ins().iadd_imm(current, 1);
+        b.def_var(row, next);
+        b.ins().jump(inner_head, &[]);
+    } else {
+        let next = b.ins().iadd_imm(at, 1);
+        b.def_var(cursor, next);
+        b.ins().jump(head, &[]);
+    }
     b.switch_to_block(done);
     if let Some(fold) = fold {
         let value = b.use_var(fold);

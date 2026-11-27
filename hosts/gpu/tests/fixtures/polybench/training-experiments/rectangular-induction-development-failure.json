@@ -1,0 +1,174 @@
+{
+  "schema": "mech.polybench.development-failure.v1",
+  "scope": "Round37 rectangular induction focused-build attempt01. No performance observations.",
+  "compiler_fingerprint": "67364804c3cf9b0fa847ecc46ae9d0cf84229effc3b5e7a6a15ee6f712cbe455",
+  "result": {
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "-p",
+      "mech-gpu",
+      "--no-default-features",
+      "--features",
+      "canonical-native-program",
+      "--lib",
+      "--",
+      "rectangular_map",
+      "numeric_map",
+      "numeric_phase",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "exit_code": 101,
+    "wall_seconds": 688.9449180839583,
+    "compiler_fingerprint": "67364804c3cf9b0fa847ecc46ae9d0cf84229effc3b5e7a6a15ee6f712cbe455",
+    "source_unchanged": true,
+    "passed_tests": [],
+    "complete": true
+  },
+  "failure": "Two new test Data::Matrix constructors pass Vec instead of the required boxed slice. Compiler transformation was not reached by tests.",
+  "archives": [
+    {
+      "path": "qualification/experiments/rectangular-induction-development/source.patch.gz",
+      "sha256": "c4d41f6e0a563d9a5aa898f6f3d9ddabbe3c8d6214be7ab66f6c22235740762f"
+    },
+    {
+      "path": "qualification/experiments/rectangular-induction-development/source-checkpoint.json.gz",
+      "sha256": "dff817a3979863095428e2731af19db15a9b7a8af07eef2f309152223631b24a"
+    },
+    {
+      "path": "qualification/experiments/rectangular-induction-development/focused-result.json.gz",
+      "sha256": "2dea6ad2b0cd1543348573e27523e104d5c8e6cbbe78a7dfe49399a085267643"
+    },
+    {
+      "path": "qualification/experiments/rectangular-induction-development/focused.log.gz",
+      "sha256": "de59b1c49ec90e495de8fa99fc3ddc0bffd29ecdfdd90b533acbfa335d871e0e"
+    },
+    {
+      "path": "qualification/experiments/rectangular-induction-development/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz",
+      "sha256": "60887db87ffa5978f210615f32d7560383c01dd5f9a7a3af0d848688332134e4"
+    },
+    {
+      "path": "qualification/experiments/rectangular-induction-development/source/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs.gz",
+      "sha256": "c92507fd55baf79f24c50fd1e20c9a6f60d4049f8ff489318a9449d3276e9114"
+    },
+    {
+      "path": "qualification/experiments/rectangular-induction-development/source/hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs.gz",
+      "sha256": "67518378049509ad231e271149c0549e7bbb5de20241fdde4211e6289def3756"
+    },
+    {
+      "path": "qualification/experiments/rectangular-induction-development/source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs.gz",
+      "sha256": "9ec02c49bfc1d2fd338efcbc386ae66b31593f643467f3742d2ed19a47a38a7e"
+    },
+    {
+      "path": "qualification/experiments/rectangular-induction-development/source/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs.gz",
+      "sha256": "d354760c4f95d4f5a491bdac5a44cca833c25392d449479b3d1d79a80f5ff85c"
+    },
+    {
+      "path": "qualification/experiments/rectangular-induction-development/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz",
+      "sha256": "8c018b95872fbe39cf0161a99ed5f860ba381410ae17fa4040f98d27ec8f0fb3"
+    },
+    {
+      "path": "qualification/experiments/rectangular-induction-development/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/rectangular_induction.rs.gz",
+      "sha256": "fc8bae10b2a81658c48c4be2c060a8a87cb922a97155539c32d1371c531e5478"
+    },
+    {
+      "path": "qualification/experiments/rectangular-induction-development/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz",
+      "sha256": "3fc0cefc8d7f75907d9370800ca160c484f1e3c9a2035dc4117734b0f0d8f93f"
+    },
+    {
+      "path": "qualification/experiments/rectangular-induction-development/source/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz",
+      "sha256": "81e789097cc0be9e2bd8feb5acc56b5bab3028ee564578867438d84b1a979d32"
+    }
+  ],
+  "additional_attempts": [
+    {
+      "attempt": "02",
+      "result": {
+        "command": [
+          "cargo",
+          "test",
+          "--release",
+          "-p",
+          "mech-gpu",
+          "--no-default-features",
+          "--features",
+          "canonical-native-program",
+          "--lib",
+          "--",
+          "rectangular_map",
+          "numeric_map",
+          "numeric_phase",
+          "--test-threads=1",
+          "--nocapture"
+        ],
+        "exit_code": 101,
+        "wall_seconds": 113.58613462513313,
+        "compiler_fingerprint": "f4237adfd85d4060b640292b8858d59bfd0864208d4fc0e00a85022bfaf2da81",
+        "source_unchanged": true,
+        "passed_tests": [],
+        "complete": true
+      },
+      "test_summary": {
+        "passed": 107,
+        "failed": 2
+      },
+      "failure": "Both new tests require native rectangle admission for a singleton inner range, which uses an existing different lowering. All output, failure, accounting and memory checks completed for that shape. Require rectangle admission for the changed rows>1 route and retain singleton fallback equivalence coverage.",
+      "archives": [
+        {
+          "path": "qualification/experiments/rectangular-induction-development/attempt-02/source.patch.gz",
+          "sha256": "c4d41f6e0a563d9a5aa898f6f3d9ddabbe3c8d6214be7ab66f6c22235740762f"
+        },
+        {
+          "path": "qualification/experiments/rectangular-induction-development/attempt-02/source-checkpoint.json.gz",
+          "sha256": "b41561790b3eb50ea9ae046c3d598115e05e01e5efb850be68034867116a944d"
+        },
+        {
+          "path": "qualification/experiments/rectangular-induction-development/attempt-02/focused-result.json.gz",
+          "sha256": "2f1eec9727c29d911bcffd08fd39840bb14c7e2d0d007dac6c73b47835733170"
+        },
+        {
+          "path": "qualification/experiments/rectangular-induction-development/attempt-02/focused.log.gz",
+          "sha256": "82452c1d57436bfb2ae48d44f7c4462618ce3a279e8a0f0b857829d02a76540e"
+        },
+        {
+          "path": "qualification/experiments/rectangular-induction-development/attempt-02/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz",
+          "sha256": "60887db87ffa5978f210615f32d7560383c01dd5f9a7a3af0d848688332134e4"
+        },
+        {
+          "path": "qualification/experiments/rectangular-induction-development/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs.gz",
+          "sha256": "c92507fd55baf79f24c50fd1e20c9a6f60d4049f8ff489318a9449d3276e9114"
+        },
+        {
+          "path": "qualification/experiments/rectangular-induction-development/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs.gz",
+          "sha256": "67518378049509ad231e271149c0549e7bbb5de20241fdde4211e6289def3756"
+        },
+        {
+          "path": "qualification/experiments/rectangular-induction-development/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs.gz",
+          "sha256": "9ec02c49bfc1d2fd338efcbc386ae66b31593f643467f3742d2ed19a47a38a7e"
+        },
+        {
+          "path": "qualification/experiments/rectangular-induction-development/attempt-02/source/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs.gz",
+          "sha256": "d354760c4f95d4f5a491bdac5a44cca833c25392d449479b3d1d79a80f5ff85c"
+        },
+        {
+          "path": "qualification/experiments/rectangular-induction-development/attempt-02/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz",
+          "sha256": "8c018b95872fbe39cf0161a99ed5f860ba381410ae17fa4040f98d27ec8f0fb3"
+        },
+        {
+          "path": "qualification/experiments/rectangular-induction-development/attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/rectangular_induction.rs.gz",
+          "sha256": "ad4897f6eb79974ec36be57caf8d12c39424cc635c964b0c2cf090c523254cdd"
+        },
+        {
+          "path": "qualification/experiments/rectangular-induction-development/attempt-02/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz",
+          "sha256": "3fc0cefc8d7f75907d9370800ca160c484f1e3c9a2035dc4117734b0f0d8f93f"
+        },
+        {
+          "path": "qualification/experiments/rectangular-induction-development/attempt-02/source/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz",
+          "sha256": "81e789097cc0be9e2bd8feb5acc56b5bab3028ee564578867438d84b1a979d32"
+        }
+      ]
+    }
+  ]
+}

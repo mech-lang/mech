@@ -1,0 +1,271 @@
+{
+  "schema": "mech.polybench.training-research-plan.v1",
+  "created_at": "2026-11-27T15:37:52.934730+00:00",
+  "scope": "Optimization-only response to failed36 and the largest accepted training margin, Gram-Schmidt. Full below1.0x C holdout goal remains active.",
+  "accepted_round": 31,
+  "accepted_scores": {
+    "optimization": 11.43635797708715,
+    "holdout": 39.31569548924827
+  },
+  "failed_round": {
+    "index": 36,
+    "source_commit": "a6ae11915f114a7c53b3ee94493dc3402b0c598f",
+    "compiler_fingerprint": "4717ff8eacdf08846335a6d8946c68a32c6f9e15d7308021176210768bee7fb2",
+    "scores": {
+      "optimization": 13.94766662478119,
+      "holdout": 41.57037861029694
+    },
+    "receipt": "round-36-audit.json",
+    "compiler_restored_before_new_work": true,
+    "rejected_source_must_not_be_retimed": true
+  },
+  "sampling_audit": {
+    "driver_source": "hosts/gpu/examples/polybench_qualification.rs",
+    "driver_source_sha256": "e0b1f710c90b6a8724d5812b397555e10ba5bc8448898ec29b1f4cdbf4fa8a5d",
+    "formal_runner": "scripts/benchmark-polybench.py",
+    "formal_runner_sha256": "71c7f2e0dc32b5bf0a2b61fff11ec253828634b1933dd4bb308a14ab537963dc",
+    "same_cache_flush_bytes": 33556480,
+    "same_warmup_limits_and_checked_call_timer": true,
+    "previous_probe": "Seven checked samples per actor in one driver process, actors sequential within each case.",
+    "formal": "One driver process per sample, actors interleaved within each pair.",
+    "causal_limit": "The process-sampling mismatch and environmental drift do not prove the exact cause of the failed formal result.",
+    "prospective_change": "Future changed-source probes use one process per sample and interleave accepted31/candidate actors, seven samples per actor on optimization15. Formal protocol, objective, timing boundaries and sample count remain unchanged.",
+    "schedule": "training-probe-plan.json",
+    "planned_observations": 210,
+    "new_observations": 0
+  },
+  "native_review": {
+    "case": "gramschmidt",
+    "accepted_mech_over_c": 54.48016,
+    "accepted_profile_execution_samples": 225,
+    "accepted_generated_native_samples": 174,
+    "verified_native_function_bytes": 17144,
+    "native_instructions": 4286,
+    "hardware_integer_divisions": 0,
+    "finding": "Source literal extents already propagate through guarded map geometry. Flattened rectangular cursors still reconstruct coordinates with constant multiplication/shifts and subtraction for every cell.",
+    "arrays": [
+      {
+        "array": 0,
+        "schema": {
+          "dimension_parameters": [],
+          "body": {
+            "Matrix": {
+              "element": {
+                "FloatingPoint": "W64"
+              },
+              "dimensions": [
+                {
+                  "Constant": 20
+                },
+                {
+                  "Constant": 30
+                }
+              ]
+            }
+          }
+        },
+        "storage": {
+          "TaggedCarrier": {
+            "value": 15,
+            "field": 0
+          }
+        }
+      },
+      {
+        "array": 1,
+        "schema": {
+          "dimension_parameters": [],
+          "body": {
+            "Matrix": {
+              "element": {
+                "FloatingPoint": "W64"
+              },
+              "dimensions": [
+                {
+                  "Constant": 30
+                },
+                {
+                  "Constant": 30
+                }
+              ]
+            }
+          }
+        },
+        "storage": {
+          "TaggedCarrier": {
+            "value": 15,
+            "field": 1
+          }
+        }
+      },
+      {
+        "array": 2,
+        "schema": {
+          "dimension_parameters": [],
+          "body": {
+            "Matrix": {
+              "element": {
+                "FloatingPoint": "W64"
+              },
+              "dimensions": [
+                {
+                  "Constant": 20
+                },
+                {
+                  "Constant": 30
+                }
+              ]
+            }
+          }
+        },
+        "storage": {
+          "TaggedCarrier": {
+            "value": 15,
+            "field": 2
+          }
+        }
+      },
+      {
+        "array": 3,
+        "schema": {
+          "dimension_parameters": [],
+          "body": {
+            "Matrix": {
+              "element": {
+                "FloatingPoint": "W64"
+              },
+              "dimensions": [
+                {
+                  "Constant": 20
+                },
+                {
+                  "Constant": 1
+                }
+              ]
+            }
+          }
+        },
+        "storage": {
+          "PhaseLocal": {
+            "value": 37,
+            "extents": [
+              20,
+              1
+            ]
+          }
+        }
+      },
+      {
+        "array": 4,
+        "schema": {
+          "dimension_parameters": [],
+          "body": {
+            "Matrix": {
+              "element": {
+                "FloatingPoint": "W64"
+              },
+              "dimensions": [
+                {
+                  "Constant": 1
+                },
+                {
+                  "Constant": 30
+                }
+              ]
+            }
+          }
+        },
+        "storage": {
+          "PhaseLocal": {
+            "value": 38,
+            "extents": [
+              1,
+              30
+            ]
+          }
+        }
+      }
+    ],
+    "object_sha256": "80e241e2ba3afa8a7a4dff9cf92340028af859e2d9f50aac7884132907a3e80d",
+    "metadata_sha256": "5f23f3e73a2955b76c1fda9ff8b8e2e212116e66940b4123a906b385c0a60186",
+    "image_inspection": "Read-only typed Object data decoding. No linked Object execution, native code generation or use of serialized proof fields as runtime authority."
+  },
+  "candidate": {
+    "compiler_fingerprint": "3ffecc8492875f3ae0994a5b14d3462d47c0071a17bf94642928d20249997d37",
+    "versions": {
+      "ir": 400,
+      "work": 156,
+      "abi": 47
+    },
+    "source_paths": [
+      "hosts/gpu/src/native_artifact/codegen/control/mod.rs",
+      "hosts/gpu/src/native_artifact/codegen/options.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs",
+      "hosts/gpu/src/native_artifact/program/image/identity.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs",
+      "hosts/gpu/src/native_artifact/program/runtime/composition_tests/rectangular_induction.rs"
+    ],
+    "implementation": "Use carried column and row induction variables for nontrivial rectangular maps in the shared Cranelift emitter. Preserve column-then-row source order, current view checks, ordered FP operations, scratch publication and all source prices. Flat emission remains for empty and one-row rectangles, and as a test ablation.",
+    "stage": "Focused correctness build running; no qualified performance claim.",
+    "live_session": 80504,
+    "initial_failed_build_fingerprint": "67364804c3cf9b0fa847ecc46ae9d0cf84229effc3b5e7a6a15ee6f712cbe455",
+    "focused_attempt": "attempt-03",
+    "focused_live_exec_session": null,
+    "focused_checks_passed": 109,
+    "qualification_checks_passed": 685,
+    "driver_sha256": "06ee28c8025ea53ff9b56e8068318b8db09f3e4e3349542fbb03bcea2dc442fb"
+  },
+  "requirements": [
+    "Do not edit Rust or overlap tests/profiles/timings while the focused Cargo session is live.",
+    "Qualify original/decoded/restored paths, checked errors, resource recovery, compression regressions, all30 finite C-liveouts and both features.",
+    "Inspect optimization15 native Object emission and the intended Gram-Schmidt function before a single changed-source probe.",
+    "Commit/freeze selected source and driver before both formal sets; promote only if BOTH scores strictly improve.",
+    "Keep all ports, inputs, C binaries/flags, limits, tolerances, split, objective and timing boundaries unchanged; no benchmark-name dispatch or holdout per-case diagnosis."
+  ],
+  "archives": {
+    "read-object-image.py": {
+      "path": "qualification/experiments/rectangular-induction-research/read-object-image.py.gz",
+      "sha256": "1e5465676c3458a1cafed13152ecb84e2848dfa55679da0a29b3791819f54d5e",
+      "compressed_sha256": "c040c20b7aa87f39cac655ab7f2e01a4f153a8cc3a1a4a718a1757a6f44bf56d"
+    },
+    "gramschmidt-image.json": {
+      "path": "qualification/experiments/rectangular-induction-research/gramschmidt-image.json.gz",
+      "sha256": "6790b2647e23831591e6bf7b79dae91626e44a900727823c12c17f24c7c16537",
+      "compressed_sha256": "6cd03f1ec47f77d8d74bbd47a0b054f4268505f20a14dafbcb9247e6b5aa125f"
+    },
+    "implement-induction.py": {
+      "path": "qualification/experiments/rectangular-induction-research/implement-induction.py.gz",
+      "sha256": "add35b0c0cf1e3762aeecb8c87ce9af232f147a9392cf0d1f6e78dd9a29e4a0f",
+      "compressed_sha256": "0dc2856d0aacef990a843e2d7d7397ef883cb28aff254b753ddd9ccac6c8e486"
+    },
+    "training-probe.py": {
+      "path": "qualification/experiments/rectangular-induction-research/training-probe.py.gz",
+      "sha256": "d3b1434b6572480394c7f7eeae8f2e0f86511e5d43af8aeb56ffebabff4a1ee2",
+      "compressed_sha256": "fd257c5f74fd12e3ad302da53f0508e281f0de98b0058512836cb572442763d4"
+    },
+    "training-probe-plan.json": {
+      "path": "qualification/experiments/rectangular-induction-research/training-probe-plan.json.gz",
+      "sha256": "44fa2e8cae3ea6a22dccd1fee790959592d5037f6a8f608d8950c59ac06ca6fe",
+      "compressed_sha256": "9055550a6f4566d0c8cb36c38856f50f25ed201c583b23a59fc53298d11f8184"
+    }
+  },
+  "development_failure_receipt": "training-experiments/rectangular-induction-development-failure.json",
+  "new_performance_observations": 210,
+  "prospective_emission_gate": {
+    "path": "qualification/experiments/rectangular-induction-research/execution-emission-census-v2.py.gz",
+    "sha256": "39cd9237b76b87e62a19da619cea3341320a67039bd1974adb11a89d20767bf4",
+    "requirement": "Before timing, the actual profiled Gram-Schmidt numeric_5 function must change and contain fewer logical right shifts used in the old constant-quotient coordinate reconstruction. No added FMA."
+  },
+  "completed_training_probe_receipt": "round-37-training-probe.json",
+  "training_result": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted31": 1.0068925692277577,
+    "regressions_over_five_percent": 2,
+    "all_visits_match": true,
+    "all_work_not_reduced": true,
+    "selected": true
+  }
+}

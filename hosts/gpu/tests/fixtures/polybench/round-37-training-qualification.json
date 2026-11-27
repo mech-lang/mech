@@ -1,0 +1,894 @@
+{
+  "scope": "Rectangular map induction: map/phase/source correctness, scalar/compression regressions, all30 C liveouts and feature qualification; no performance measurements",
+  "compiler_fingerprint": "3ffecc8492875f3ae0994a5b14d3462d47c0071a17bf94642928d20249997d37",
+  "checks": [
+    {
+      "name": "semantic-catalog-solver.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-core",
+        "--no-default-features",
+        "--features",
+        "functions",
+        "--test",
+        "type_system_catalog",
+        "--test",
+        "type_system_solver",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 12.887021457776427,
+      "passed_tests": [
+        27,
+        34
+      ]
+    },
+    {
+      "name": "source-broadcast-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-engine",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-gpu/canonical-native-program",
+        "--test",
+        "canonical_source_semantics",
+        "--test",
+        "canonical_source_review",
+        "--",
+        "broadcast",
+        "arithmetic",
+        "matrix",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 7.804595707915723,
+      "passed_tests": [
+        6,
+        9
+      ]
+    },
+    {
+      "name": "type-image-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-engine",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-gpu/canonical-native-program",
+        "--lib",
+        "--",
+        "program_image_read",
+        "guarded_histogram_query_schema_certificate_declines_hidden_distinct_constraints",
+        "tail_proof_keeps_nominal_enum_identity_and_validates_tag_and_projection_paths",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 125.13861241703853,
+      "passed_tests": [
+        25,
+        0
+      ]
+    },
+    {
+      "name": "numeric-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric",
+        "rectangular_map",
+        "phase",
+        "row_block",
+        "huffman",
+        "private_publication",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 101.35981345782056,
+      "passed_tests": [
+        413
+      ]
+    },
+    {
+      "name": "matrix-polybench.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_matrix",
+        "--test",
+        "canonical_artifact_polybench",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 66.90730845788494,
+      "passed_tests": [
+        24,
+        30
+      ]
+    },
+    {
+      "name": "program-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_program",
+        "--",
+        "buffer_frame_qualification",
+        "nested_frame_qualification",
+        "numeric_tail_qualification",
+        "numeric_write_qualification",
+        "scalar_state_qualification",
+        "scalar_record_qualification",
+        "word_read_qualification",
+        "huffman_qualification",
+        "sequence_writer_qualification",
+        "collection_qualification",
+        "packed_update_qualification",
+        "range_cursor_qualification",
+        "range_qualification",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 28.059805375058204,
+      "passed_tests": [
+        114
+      ]
+    },
+    {
+      "name": "protocol.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space",
+        "native_runtime_consolidation_preserves_the_charged_layout_envelope",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.18502900004386902,
+      "passed_tests": [
+        2
+      ]
+    },
+    {
+      "name": "abi-layout.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.17169733392074704,
+      "passed_tests": [
+        1
+      ]
+    },
+    {
+      "name": "runtime-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program-runtime",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 16.367602666839957,
+      "passed_tests": []
+    },
+    {
+      "name": "production-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 20.229824250098318,
+      "passed_tests": []
+    }
+  ],
+  "complete": true,
+  "tests": 685,
+  "driver_sha256": "06ee28c8025ea53ff9b56e8068318b8db09f3e4e3349542fbb03bcea2dc442fb",
+  "driver": "/private/tmp/mech-polybench-optimization/round-37/gramschmidt-native-review/rectangular-induction-driver",
+  "driver_build_complete": true,
+  "versions": {
+    "ir": 400,
+    "work": 156,
+    "abi": 47
+  },
+  "source_parent": "bff5e536e9ea4913502ec1dfb23a5cc862b9c09f",
+  "source_uncommitted": true,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "new_performance_samples": 0,
+  "source_sha256": {
+    "hosts/gpu/src/native_artifact/codegen/control/mod.rs": "2978c26e0aca4e7ccbb71456ef701bf234dfd33e0354fd2ae9c3a75ade60bf5e",
+    "hosts/gpu/src/native_artifact/codegen/options.rs": "f1209c489e7eb77ac3c9b29ec8a80eb32eeff68b106113e2fdc2692acb5ddbb2",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs": "0b2a70c802cb0c65c9ef9fdc7692fa941a19303f86fe6922315285d513a3dd71",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs": "f5094a5f595621582f66e5daa48e785cd6e182fbe5217b60f4653ebf8bd5202d",
+    "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs": "2c0414845d5325c9d75047e1468b7b099e3113e486f656ae857faed754e3ce1b",
+    "hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs": "b08ff3645868fd7951d48322defe2448d6edc0c5e315d77305f9e152c18d6dea",
+    "hosts/gpu/src/native_artifact/program/image/identity.rs": "1b18a8c6f0bbd4fd61ff6b5c87d003f3cca8931e2531e7f3e77e7b2aefa3a130",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs": "61b1e58123ec0af0657743e940a3d7626a4da1a400f1f31a95d0ab34f525be42",
+    "hosts/gpu/src/native_artifact/program/runtime/composition_tests/rectangular_induction.rs": "5b98604887a232d74da5f9a03e8ddeeed828de45f6c6bef2bb6c976b4b09512c"
+  },
+  "driver_build": {
+    "command": [
+      "cargo",
+      "build",
+      "--release",
+      "-p",
+      "mech-gpu",
+      "--no-default-features",
+      "--features",
+      "canonical-native-program",
+      "--example",
+      "polybench_qualification"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 3.260896375402808,
+    "compiler_fingerprint": "3ffecc8492875f3ae0994a5b14d3462d47c0071a17bf94642928d20249997d37",
+    "source_unchanged": true
+  },
+  "focused_checks": {
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "-p",
+      "mech-gpu",
+      "--no-default-features",
+      "--features",
+      "canonical-native-program",
+      "--lib",
+      "--",
+      "rectangular_map",
+      "numeric_map",
+      "numeric_phase",
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 113.69936012476683,
+    "compiler_fingerprint": "3ffecc8492875f3ae0994a5b14d3462d47c0071a17bf94642928d20249997d37",
+    "source_unchanged": true,
+    "passed_tests": [
+      109
+    ],
+    "complete": true
+  },
+  "schema": "mech.polybench.training-qualification.v1",
+  "label": "round37-rectangular-map-induction",
+  "invariants": [
+    "All30 Mech ports, source inputs, C binaries/flags, F64 MINI dataset, limits, finite comparison tolerances, split, primary objective and formal timing/cache boundaries remain unchanged.",
+    "General Cranelift map induction carries outer-column and inner-row coordinates for admitted rectangular comprehensions with more than one inner row. No program-name checks, source rewrite, FP reassociation or FMA.",
+    "Same source column-then-row evaluation order, scalar operations, errors, current view/span/epoch guards, private output mapping and exact source accounting.",
+    "The pass is shared by standalone maps, phase maps and nested reductions; an explicit test ablation retains the original flat-cursor lowering.",
+    "Prospective v2 selection uses seven fresh-process observations per actor per optimization case, interleaving accepted31 and candidate with alternating pair order. Every sample, case and regression is retained. This is the only observed probe for this source fingerprint.",
+    "Holdout is reserved for the aggregate gate after source/driver freeze. No holdout implementation diagnosis, profiling or per-case tuning."
+  ],
+  "profiling_basis": {
+    "receipt": "training-experiments/optimization-margin-profile.json",
+    "scope": "All15 accepted31 optimization cases, descending Mech/C; no holdout profile.",
+    "target": "gramschmidt",
+    "accepted_mech_over_c": 54.48016,
+    "execution_samples": 225,
+    "hot_function_samples": 174,
+    "hot_function": "mech_canonical_program_entry_v1_numeric_5",
+    "actual_codegen_check": "Before timing, that function must change and contain fewer logical right shifts from constant-quotient coordinate reconstruction."
+  },
+  "total_unique_selected_checks": 685,
+  "focused_selected_checks": 109,
+  "development_failure_receipt": "training-experiments/rectangular-induction-development-failure.json",
+  "development_archives": {
+    "2mm-inputs.json": {
+      "path": "qualification/round-37-rectangular-induction/development/2mm-inputs.json.gz",
+      "sha256": "5d214091e646773faa9e0ddfceb3ccfb55673e953166a92f4adbcb8a2c436579",
+      "compressed_sha256": "5602c071134a0ed5ade81f6c495a1e19ab755b1eacfae24a6232fff252a3b73b"
+    },
+    "3mm-inputs.json": {
+      "path": "qualification/round-37-rectangular-induction/development/3mm-inputs.json.gz",
+      "sha256": "fa14b5a3947688228fe2fe5a967d8f5be6434f1e055edd6a564d4a840453f32c",
+      "compressed_sha256": "fd745e698c7fc8ca9176d99b9b8e2af115ea65b4132c20314a14ba3ebec82f41"
+    },
+    "abi-layout.log": {
+      "path": "qualification/round-37-rectangular-induction/development/abi-layout.log.gz",
+      "sha256": "de439a160fd35f5eb531d860b10c39c0e0b46941594ed98abbee0a54f7e6d26d",
+      "compressed_sha256": "1649a30efd18757f30a8a5bbc4f7e0c3998a5e1a96ab2bf5f10fe7bc300b948a"
+    },
+    "atax-inputs.json": {
+      "path": "qualification/round-37-rectangular-induction/development/atax-inputs.json.gz",
+      "sha256": "7fe07963b30e68ffe7ed86dee64ebc9e404ed264703680ba7f341815dd9300cb",
+      "compressed_sha256": "bad0b3739cc9dcd5910f4eeb62e37389bb38759c322be7f22248ef49435e0cba"
+    },
+    "attempt-03/focused-result.json": {
+      "path": "qualification/round-37-rectangular-induction/development/attempt-03/focused-result.json.gz",
+      "sha256": "f6aaaebb5c8f11224b7a7d9150d896f135b843cb944f32d6235526fb3cc050bf",
+      "compressed_sha256": "2f43c031098cb05aff5110d89d07ca7551e374b392657829ed5ef2bdedb7a2c6"
+    },
+    "attempt-03/focused.log": {
+      "path": "qualification/round-37-rectangular-induction/development/attempt-03/focused.log.gz",
+      "sha256": "161529f8cf258b13f85d3fed8173bdbc8390e2c81f42578e1ab83bb740e275ce",
+      "compressed_sha256": "758eeeb661812cfd93cd4a1719f94cb7384c5554ef13b8a5936d30207bdfbfef"
+    },
+    "attempt-03/source/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz": {
+      "path": "qualification/round-37-rectangular-induction/development/attempt-03/source/hosts/gpu/src/native_artifact/codegen/control/mod.rs.gz.gz",
+      "sha256": "81e789097cc0be9e2bd8feb5acc56b5bab3028ee564578867438d84b1a979d32",
+      "compressed_sha256": "95aa47df00430d28ac71e5925c6576189d34a91ac085521cf7beed542fea25e7"
+    },
+    "attempt-03/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz": {
+      "path": "qualification/round-37-rectangular-induction/development/attempt-03/source/hosts/gpu/src/native_artifact/codegen/options.rs.gz.gz",
+      "sha256": "60887db87ffa5978f210615f32d7560383c01dd5f9a7a3af0d848688332134e4",
+      "compressed_sha256": "e5911d4d458bb91493148c142f245050343d5b17dde08a1acce417955f9906c1"
+    },
+    "attempt-03/source/hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs.gz": {
+      "path": "qualification/round-37-rectangular-induction/development/attempt-03/source/hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs.gz.gz",
+      "sha256": "67518378049509ad231e271149c0549e7bbb5de20241fdde4211e6289def3756",
+      "compressed_sha256": "b9f46ee679af6c2723e6114ae52a8fdd038b2673d526253fc3a685099895fea0"
+    },
+    "attempt-03/source/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs.gz": {
+      "path": "qualification/round-37-rectangular-induction/development/attempt-03/source/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_maps.rs.gz.gz",
+      "sha256": "d354760c4f95d4f5a491bdac5a44cca833c25392d449479b3d1d79a80f5ff85c",
+      "compressed_sha256": "d7d18934578d2331d80240e4650e029f21de4e803c6b69a008d9e06d8ad7c0c8"
+    },
+    "attempt-03/source/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs.gz": {
+      "path": "qualification/round-37-rectangular-induction/development/attempt-03/source/hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs.gz.gz",
+      "sha256": "c92507fd55baf79f24c50fd1e20c9a6f60d4049f8ff489318a9449d3276e9114",
+      "compressed_sha256": "7c9a1a8e60fcd1f7a0a3af1621b03c543727c68d29ac7797a191d5a6915a3409"
+    },
+    "attempt-03/source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs.gz": {
+      "path": "qualification/round-37-rectangular-induction/development/attempt-03/source/hosts/gpu/src/native_artifact/program/codegen/readonly_numeric.rs.gz.gz",
+      "sha256": "9ec02c49bfc1d2fd338efcbc386ae66b31593f643467f3742d2ed19a47a38a7e",
+      "compressed_sha256": "dd7429a10fed35dd7a19e163727c6e593c8fa9122f3074ff80495025a3072e7d"
+    },
+    "attempt-03/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz": {
+      "path": "qualification/round-37-rectangular-induction/development/attempt-03/source/hosts/gpu/src/native_artifact/program/image/identity.rs.gz.gz",
+      "sha256": "8c018b95872fbe39cf0161a99ed5f860ba381410ae17fa4040f98d27ec8f0fb3",
+      "compressed_sha256": "469a3926008c87261ef63337dd3817601f8f93fcf720422d1a7c23fe178966e5"
+    },
+    "attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz": {
+      "path": "qualification/round-37-rectangular-induction/development/attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/mod.rs.gz.gz",
+      "sha256": "3fc0cefc8d7f75907d9370800ca160c484f1e3c9a2035dc4117734b0f0d8f93f",
+      "compressed_sha256": "cddead96c6743cabdde711b58a50f7ede234411c056f2246012babc4d28eadfb"
+    },
+    "attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/rectangular_induction.rs.gz": {
+      "path": "qualification/round-37-rectangular-induction/development/attempt-03/source/hosts/gpu/src/native_artifact/program/runtime/composition_tests/rectangular_induction.rs.gz.gz",
+      "sha256": "8e0074cd9d31ab3f04db90dbab913adc41732b9ced9ea2faa70449c5fd9a8802",
+      "compressed_sha256": "126e5a948b4d24450318392037d126b334190674da53e130f9dc5baf2c53a4cb"
+    },
+    "attempt-03/source-checkpoint.json": {
+      "path": "qualification/round-37-rectangular-induction/development/attempt-03/source-checkpoint.json.gz",
+      "sha256": "743b7dc931e143e8d8f71b1839f8bf944734bb73ad7fe5bc9225456dcc0c4575",
+      "compressed_sha256": "2bf961437b8ab4dea27dd2139f1e01ab3048c5c9d68bcf816d0688a8c2feb113"
+    },
+    "attempt-03/source.patch.gz": {
+      "path": "qualification/round-37-rectangular-induction/development/attempt-03/source.patch.gz.gz",
+      "sha256": "c4d41f6e0a563d9a5aa898f6f3d9ddabbe3c8d6214be7ab66f6c22235740762f",
+      "compressed_sha256": "efa415c59b317015c954d5039072b3fc9212dfea5c99f247c2d339282e19623b"
+    },
+    "audit-results.py": {
+      "path": "qualification/round-37-rectangular-induction/development/audit-results.py.gz",
+      "sha256": "6626e528975d85acaad2b1f9f3525621bd086caa6ffd103e26e4c74b14805742",
+      "compressed_sha256": "6d8155bee79882a009cb6560d8bf53fab256862a2023cac9039e631d11949333"
+    },
+    "bicg-inputs.json": {
+      "path": "qualification/round-37-rectangular-induction/development/bicg-inputs.json.gz",
+      "sha256": "347f9b21418af097b688c3c2f2b0b3d1b26a2f22bad25d3ac1ea2417ec595541",
+      "compressed_sha256": "1e74978db54bdc2ed6d045554f7df777f40b87b6545b1c17e48aae2215532f81"
+    },
+    "cholesky-inputs.json": {
+      "path": "qualification/round-37-rectangular-induction/development/cholesky-inputs.json.gz",
+      "sha256": "36015a532a5ec081582b68ab0a979f68ac933d2c089cf0dada1d0352015406a0",
+      "compressed_sha256": "feb9754246ac52e4fef5e31f50918b4af8010a8d26462ad52214437ba5a3d934"
+    },
+    "correlation-inputs.json": {
+      "path": "qualification/round-37-rectangular-induction/development/correlation-inputs.json.gz",
+      "sha256": "63def6b801c89d6ec8f56de58e4fada06c3167679c8912a63a3eb93fe64fa2c9",
+      "compressed_sha256": "72fb62f1351c7f69e73a5d1668f3fe0069108fdd03924832411669f2f6defa62"
+    },
+    "covariance-inputs.json": {
+      "path": "qualification/round-37-rectangular-induction/development/covariance-inputs.json.gz",
+      "sha256": "3b0a2f978458496f4ec87ea86df85a41f27e39fa724c38e7248624129adaeff6",
+      "compressed_sha256": "7085a3135550544f36d91d1d458f186f9f9fbcc18d875767dbe1bb96947b6ec8"
+    },
+    "current-work.json": {
+      "path": "qualification/round-37-rectangular-induction/development/current-work.json.gz",
+      "sha256": "695949056d0e6e28a0e13aeec7afa024c6a94302ca85098d897d6a91e3c2da0d",
+      "compressed_sha256": "654070a53e0ecbef3a47c51d2d0599baf464323173a0e218944786c30d723cfa"
+    },
+    "deriche-inputs.json": {
+      "path": "qualification/round-37-rectangular-induction/development/deriche-inputs.json.gz",
+      "sha256": "19f4630f10d8326720ae223ec26ef8a1a510ba026fdcfd625352a2a6b94d7a16",
+      "compressed_sha256": "1ea5fdf9d6dc37d816a5942df11752f5f125ff93cbf7c76d2488aaf729a36d0a"
+    },
+    "doitgen-inputs.json": {
+      "path": "qualification/round-37-rectangular-induction/development/doitgen-inputs.json.gz",
+      "sha256": "6f6c233f541bb809c3daaef615884c2b868b5f25d399f8ed113d8fbea7fd993a",
+      "compressed_sha256": "248848cd22a20ba8f0533633cbd433e7547268b1b8c35953a1a925de1f237d1f"
+    },
+    "driver-build-result.json": {
+      "path": "qualification/round-37-rectangular-induction/development/driver-build-result.json.gz",
+      "sha256": "24a43d5cdf503b689c74e88f1daa5b07305bd196d8cb547688edd1cae1ac4e01",
+      "compressed_sha256": "a2da97127398f284a5eaf5774779abb5717011cdef499ba4af7baa706009d7d1"
+    },
+    "driver-build.log": {
+      "path": "qualification/round-37-rectangular-induction/development/driver-build.log.gz",
+      "sha256": "2366245d89c0f3ab52eedc86317382f117649b47a7d39c439d30e7598d41de12",
+      "compressed_sha256": "bc8b13b134b384cb26910d3a0ec83cc0319e5afb55381ac15599813d4f02801e"
+    },
+    "durbin-inputs.json": {
+      "path": "qualification/round-37-rectangular-induction/development/durbin-inputs.json.gz",
+      "sha256": "9417fe0f792480da60eb0e9741a032bdf4aea4667f370a3b6f6b8229d33da4c7",
+      "compressed_sha256": "1c4405da5f001d79de3e815ddaed455c7f88e79b19286305a46afec148406310"
+    },
+    "emission-census.log": {
+      "path": "qualification/round-37-rectangular-induction/development/emission-census.log.gz",
+      "sha256": "63e295e029f43ce1fc5545874159cf7442e78e346bcd413649cb71992047ec0e",
+      "compressed_sha256": "26fed7b76bc14c319c33448e99673a145cea33b64b0c7c0879b52c8cf907f898"
+    },
+    "execution-emission-census.json": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-emission-census.json.gz",
+      "sha256": "f2be21a26e608e804c0a6906853ee04c0b6391dc1f90990756f00948caf26d41",
+      "compressed_sha256": "b5505a83f76d4c1b11d8da5623c601aed12bf7f980ff856656ef0516ec693ce5"
+    },
+    "execution-emission-census.py": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-emission-census.py.gz",
+      "sha256": "8433b95e2d049100ecbc21a4e00659b664a58dc2eeff2a942fc1f79548473202",
+      "compressed_sha256": "39cd9237b76b87e62a19da619cea3341320a67039bd1974adb11a89d20767bf4"
+    },
+    "execution-objects/2mm.disasm.txt": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/2mm.disasm.txt.gz",
+      "sha256": "71d287dbeb3939433abd344ee75ed7f32dffd95aa8f5ecba221551de938889bb",
+      "compressed_sha256": "dad06d1ba2733c5595a3c8546eb61b3aa2ce384db50daece67072b330a2b1a59"
+    },
+    "execution-objects/2mm.metadata.json": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/2mm.metadata.json.gz",
+      "sha256": "a0687359b5dfe2cac831661c7fd9de843052d7095252f824b8a85329481058a8",
+      "compressed_sha256": "07362c58ced0c81b5a5abbfa225be8107d6004a3678a4458a397e2e96e745a02"
+    },
+    "execution-objects/2mm.o": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/2mm.o.gz",
+      "sha256": "3c41896b7c65d3e0b08016c917487742257293d3149efcc3e5e77b58fc487318",
+      "compressed_sha256": "cadf19c9cbcba56c64e067b146c927add55509334f42c7cd66f6798937d871ff"
+    },
+    "execution-objects/3mm.disasm.txt": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/3mm.disasm.txt.gz",
+      "sha256": "8ba77264ec7f7ca0dad3fd8c75e0532988ce20c09604910478d2c4c66d5e3303",
+      "compressed_sha256": "9fab54359060233d400535e69d26c248161e290f41c6f60767cd0676f0cd0a65"
+    },
+    "execution-objects/3mm.metadata.json": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/3mm.metadata.json.gz",
+      "sha256": "366db1f02ff4f358bdbc287cc1bf9ff4a1b15bb5b713534faff8b4aa5f36a8cc",
+      "compressed_sha256": "a1b9251a9a9d659340ca39a35055fc83c3dbc1527f356cf9d82df3aa630889fb"
+    },
+    "execution-objects/3mm.o": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/3mm.o.gz",
+      "sha256": "b5be7f19f91797d9e3920f1cad3ad45d6465ba7bffa65c847331315640dd8108",
+      "compressed_sha256": "58956d6c72e6c3d628b819438564f7a1e87b127aab4aa52f5df43ec96389596b"
+    },
+    "execution-objects/atax.disasm.txt": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/atax.disasm.txt.gz",
+      "sha256": "094c864993795ea48c795747ac779c19602144d23187b192049324c58a728add",
+      "compressed_sha256": "4b08b83c2ca7c96547a0bb676eba3607171c919503b5ca68e42318fde0ec6af7"
+    },
+    "execution-objects/atax.metadata.json": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/atax.metadata.json.gz",
+      "sha256": "c1d220fb602f6aadd6a832100caf95abdb43bd10f78c11246e2f83068f8b9e5d",
+      "compressed_sha256": "4802a61750e0c41cc9faab225763648dbab65af70fa9aa54c5fe88847c435eff"
+    },
+    "execution-objects/atax.o": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/atax.o.gz",
+      "sha256": "43f6f2f778357039c30a9b9325c1d7e51eb0f54a8e8fe82ee08393aa103d39ff",
+      "compressed_sha256": "96bbb1badf3290255a5d39355088e29229531e19667f39a7db478f94ba0138d5"
+    },
+    "execution-objects/bicg.disasm.txt": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/bicg.disasm.txt.gz",
+      "sha256": "65cae755f8d64e7df0218afb6410567c928294046c3ba8f7af1405f9b0a11f2f",
+      "compressed_sha256": "70ec89586a12a0a796690353b12f717351efc9459ee2acca39243256f83e37da"
+    },
+    "execution-objects/bicg.metadata.json": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/bicg.metadata.json.gz",
+      "sha256": "fdeeb01b4a1f5ef1e51a998efed92047326800fa685a6627b4bebd744f834998",
+      "compressed_sha256": "a768cc40380974360c1d3ca8c6c194c4d8a2b78df438bb735a73403c8a0e3990"
+    },
+    "execution-objects/bicg.o": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/bicg.o.gz",
+      "sha256": "1253802139f91341590330452717eb319aca9db578e8865a1b831eb6c23cfb7c",
+      "compressed_sha256": "97ac660519b7f156574eb5d0830dd0d2f873fc9682d888b0405a6229a01c5497"
+    },
+    "execution-objects/cholesky.disasm.txt": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/cholesky.disasm.txt.gz",
+      "sha256": "d55741ee4a928c8ef303e56eca9a627e52409bd3d3b88ad1387dad70b36141aa",
+      "compressed_sha256": "3ab5d11a1e8a65ec7c2ff9f25b4508e63ff0725d6122c7c11f0fb09856885087"
+    },
+    "execution-objects/cholesky.metadata.json": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/cholesky.metadata.json.gz",
+      "sha256": "865d516e21827bc773a8d07b436ff9f095799697296ed92b67999367bbb15144",
+      "compressed_sha256": "4391f0908052b32c593abd729245539a03dde2072084b12230405a683473cda8"
+    },
+    "execution-objects/cholesky.o": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/cholesky.o.gz",
+      "sha256": "4950531ea1c9c5a3f79c6387506dd9a382dca2f74f784564d420ce789fa3d945",
+      "compressed_sha256": "5a0984e1253605ae5ee62fa51ac76eb08519e8e0162521afba4526d0cc3ac1d4"
+    },
+    "execution-objects/correlation.disasm.txt": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/correlation.disasm.txt.gz",
+      "sha256": "0e2d35e7983b7a1e4bfa96f9bff8bc8f5eb9ace59657724c12d1ef8e7af5cd5e",
+      "compressed_sha256": "b2bf15fad08692b95ce4fdcfa9e0410a257fc9c0846a6afff0b2a19442e6ed27"
+    },
+    "execution-objects/correlation.metadata.json": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/correlation.metadata.json.gz",
+      "sha256": "fe0ac0deb770b5627204ece273d4f65b1dcb7abd2a7512bc6c54bf3865445196",
+      "compressed_sha256": "901de0c0bb2240215a017bce697a70fffec4bf84d651491db09a4158c9ca5306"
+    },
+    "execution-objects/correlation.o": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/correlation.o.gz",
+      "sha256": "43622d5daa29460ae700a3b75be738673f4f71d29862cf6a1588dce8051b8652",
+      "compressed_sha256": "8ab3b232517b3c3d7c780ad1cc44db8329458f48cf4b3edbfc673085a20a328d"
+    },
+    "execution-objects/covariance.disasm.txt": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/covariance.disasm.txt.gz",
+      "sha256": "aba16279d13ec166b8d8bfa0f8874a18a993cafe65128c25e045411801f70f39",
+      "compressed_sha256": "3bcb2013dd4bbe6b253b008ac62f1a4bd283e891faf5dcb9cda9a9264877adbe"
+    },
+    "execution-objects/covariance.metadata.json": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/covariance.metadata.json.gz",
+      "sha256": "2d275745d249abcd7a8d1d0c5dbbe61fb07cb64c3f72781fa540ff878441475f",
+      "compressed_sha256": "74f282d9ea084f46ef2a79de8b12e93acd94735a4f98ef88a3b185857ba7d65c"
+    },
+    "execution-objects/covariance.o": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/covariance.o.gz",
+      "sha256": "323cda6c10efea244aa728cba8bec35abf468ff21d0c23da0719ebdd32ac8d2f",
+      "compressed_sha256": "48e02798118a6a02163946bfdd9e2a0b7796f1907e57ffebfce1ccf513552747"
+    },
+    "execution-objects/deriche.disasm.txt": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/deriche.disasm.txt.gz",
+      "sha256": "8a7081105622d4501de0b468086f9f217a5cfcf6ab929ca9f89525f0f009ac79",
+      "compressed_sha256": "9b64320c41263b3ade818fa1ca7c86e52a56cffec346e60ca92d92a0f8daa620"
+    },
+    "execution-objects/deriche.metadata.json": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/deriche.metadata.json.gz",
+      "sha256": "85336e09cd2df0cc2b6a2c23b0fb813cc5c7b653818eead66d6b2ff4e94e8c4d",
+      "compressed_sha256": "77827445143fed54ccef0bd8be0a803495b7f2d5e839fb0b94ca4922a87d5e25"
+    },
+    "execution-objects/deriche.o": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/deriche.o.gz",
+      "sha256": "aac60ed49e48e905021094edf7c04630fa5c2e29eb773465023aa77615c4659a",
+      "compressed_sha256": "10db1ea4376096d2f21721ce6ebfdd17422898aecb4f5e13a38a25f0ae65f777"
+    },
+    "execution-objects/doitgen.disasm.txt": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/doitgen.disasm.txt.gz",
+      "sha256": "ec522086b137fe01431eec315b26412c10047d4539af5c4a6e3f0f97a848fd25",
+      "compressed_sha256": "129d8af55920b05a0315ed8a5c7163b94248a71eadee8a4d750fe1e5fd5b2590"
+    },
+    "execution-objects/doitgen.metadata.json": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/doitgen.metadata.json.gz",
+      "sha256": "ed3247e8df5d79929c649b8c680126a2b63fde054b52d286fb30f1a3816bee1a",
+      "compressed_sha256": "9e4466fadb170a35b98d97ea332192ab888c395bebff86aa68d29e53e1754167"
+    },
+    "execution-objects/doitgen.o": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/doitgen.o.gz",
+      "sha256": "5683def3cb1646f63406b3e484ada812d9aa3affe626362f6b2e663c3f000438",
+      "compressed_sha256": "c25ca8a2662ea6a3a9c068612c0d275b2ece632670187d2d05b2c2af8fc34e8c"
+    },
+    "execution-objects/durbin.disasm.txt": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/durbin.disasm.txt.gz",
+      "sha256": "63ad8c26a0ab9eb64b619f096800286546c642368a483859316ea4c2e90a5cc6",
+      "compressed_sha256": "28ba8081fb4c1df5951848a61b0a2a4b09323fd9aa094e566f4121298db45b84"
+    },
+    "execution-objects/durbin.metadata.json": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/durbin.metadata.json.gz",
+      "sha256": "a50587d68bc500d2df4e72bc397566dcafc80e3c230ad8b7709554d5e6cf2246",
+      "compressed_sha256": "971f4b3fddf0431c9d1a7552dc8a4a29f64769694d3dbb4f3129d40f64c37b13"
+    },
+    "execution-objects/durbin.o": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/durbin.o.gz",
+      "sha256": "0e580f359552e0cde1f4c261527a63f4c7ae9762b61a69d866da23bec273a793",
+      "compressed_sha256": "ef6d370ce92ed6e079358badbce2d427421335f8f2c05ba01eecdf2f29cddcf6"
+    },
+    "execution-objects/gemm.disasm.txt": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/gemm.disasm.txt.gz",
+      "sha256": "17921db895fc022d6ba30343522b4d52a7656628dafca90c863b8aed04255b4e",
+      "compressed_sha256": "2b861313377cf24b7d9f600374d9c10ac7916e0f419a99e0523c60d8da6c03ef"
+    },
+    "execution-objects/gemm.metadata.json": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/gemm.metadata.json.gz",
+      "sha256": "b1418ce84ce0e6bc8f3032177c8ff92391b4d96241b71578542411cc5ca1c483",
+      "compressed_sha256": "6174f654d02c6b1416b17c1cc3f9d6200dacb38edc3a0496db90b856f35eec95"
+    },
+    "execution-objects/gemm.o": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/gemm.o.gz",
+      "sha256": "fa721d1b657f8cd7b366e17f4da981485d60932bc4b585a054cfdfe7710a8d94",
+      "compressed_sha256": "2d44ab38a4f88ebb2549a01fbf77ebf8abbe89c9934b6b5288d523f11f23659a"
+    },
+    "execution-objects/gramschmidt.disasm.txt": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/gramschmidt.disasm.txt.gz",
+      "sha256": "1eac87fdc13b51fd617632459bbb77caa1e52d3ac4a7c19541cda4961eb99909",
+      "compressed_sha256": "30ac4700991b282bd38897b17a4e803645a6ea8de439e28be8caa5e2382045eb"
+    },
+    "execution-objects/gramschmidt.metadata.json": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/gramschmidt.metadata.json.gz",
+      "sha256": "8fb9b296cdae230617389173cfad903de2bcf462527324b7222db9ea31f5555f",
+      "compressed_sha256": "32663832ed2feccd7ee0c0c29569e11c9fa5ca4ca095bf9d0e572412a8185cae"
+    },
+    "execution-objects/gramschmidt.o": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/gramschmidt.o.gz",
+      "sha256": "9ce17b848ee045649a6e24752cbafe4972ed5b3e09ac3c9bf40ffdbfafc578fd",
+      "compressed_sha256": "4430823a41176837d4c3debbcec07ff89e7884b63fae5e2be9ac09520e55ad1d"
+    },
+    "execution-objects/mvt.disasm.txt": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/mvt.disasm.txt.gz",
+      "sha256": "ad41492473225af73e770f32c60d8e79454fd5c026f8d9fe662dbb625bba1141",
+      "compressed_sha256": "8b6025373d76d4039ca4b78e72a03e34003657f61742867d8eea26a261a7229e"
+    },
+    "execution-objects/mvt.metadata.json": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/mvt.metadata.json.gz",
+      "sha256": "aae0a98ecea610bfe3db4fe1a0b76a77bcba83c810349b73b329f709a0e5cc0b",
+      "compressed_sha256": "5c9699dd66628d9ee3a19d061f079a45e9b74d9553f2b3a49416ec8e258ac061"
+    },
+    "execution-objects/mvt.o": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/mvt.o.gz",
+      "sha256": "0af8799eac2f1a258b21f538a55ace52e288152e3be007a6509d337a6a44e045",
+      "compressed_sha256": "fc99209795098773b265b79e0b1dd5506c4032231d242f40ea355964eee6a5f9"
+    },
+    "execution-objects/nussinov.disasm.txt": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/nussinov.disasm.txt.gz",
+      "sha256": "c1cfa883c2a15ca39215595140be8185b108f573609865e335a7fe9ce1944af4",
+      "compressed_sha256": "2bb1faca48dc586fde173e3c05a2fd31c7dc5dcc2c3e202eb1e190fecb5826b1"
+    },
+    "execution-objects/nussinov.metadata.json": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/nussinov.metadata.json.gz",
+      "sha256": "3bb3cef28c2c4a18b8a829e9d7d2f020da8496dafcc8951a103b3f752580d8cf",
+      "compressed_sha256": "cd0b4ad88a7b389654caa37f1ae323d290e1a3931857e43518e15e00c23e2c9f"
+    },
+    "execution-objects/nussinov.o": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/nussinov.o.gz",
+      "sha256": "3092360374f647c8676692fac79cac8ee25dade7be8a296833898e2e3a3a0ba9",
+      "compressed_sha256": "590c3a26faf8deabf32352642ff81a8e40359ff612d19facd6c98d41198e9305"
+    },
+    "execution-objects/seidel-2d.disasm.txt": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/seidel-2d.disasm.txt.gz",
+      "sha256": "9dddb7d605ffc24d4106f901d46d1eac0f3bd98e4f11a1384ca5080b52bfd29c",
+      "compressed_sha256": "87ca45c8a5695b36b896c58ef00517fe963f0a5f73535b543f7a65ee901384df"
+    },
+    "execution-objects/seidel-2d.metadata.json": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/seidel-2d.metadata.json.gz",
+      "sha256": "3b04c223f878f851a83465e7616838deaf59b57d5bd30f57f40a204cb8967144",
+      "compressed_sha256": "ecdd965f424c5ab65fd1549017e9953b89b8f08e36eab3817bc253fd1b963b99"
+    },
+    "execution-objects/seidel-2d.o": {
+      "path": "qualification/round-37-rectangular-induction/development/execution-objects/seidel-2d.o.gz",
+      "sha256": "110830a6b0d6dcbb9ec86668ec78b2c3bd4fac7d8c7371c3e0a6cc0fe8db5b43",
+      "compressed_sha256": "1ea8bd68b5bec6344d7c91c1b2f4053f6bf5be3f2e7a597800cefd6de42e8c54"
+    },
+    "gemm-inputs.json": {
+      "path": "qualification/round-37-rectangular-induction/development/gemm-inputs.json.gz",
+      "sha256": "efbbdcaccd1d9e18b09ea4769add03f659bd68323ac133ed1588851643fac6e0",
+      "compressed_sha256": "c618d5ca18d56426e17ef95a24c63a0887356320b868c22ab618c53f9ba2c952"
+    },
+    "gramschmidt-image.json": {
+      "path": "qualification/round-37-rectangular-induction/development/gramschmidt-image.json.gz",
+      "sha256": "6790b2647e23831591e6bf7b79dae91626e44a900727823c12c17f24c7c16537",
+      "compressed_sha256": "6cd03f1ec47f77d8d74bbd47a0b054f4268505f20a14dafbcb9247e6b5aa125f"
+    },
+    "gramschmidt-inputs.json": {
+      "path": "qualification/round-37-rectangular-induction/development/gramschmidt-inputs.json.gz",
+      "sha256": "83895c3341e6ac8f3763e6c2572fabb644c15950aa43618730181d888aa5bf51",
+      "compressed_sha256": "9e7ccb7deeb7cdd887ce9fae90183b7314e8d6ca3d3052b2fa7fb8b5bf362c4c"
+    },
+    "implement-induction.py": {
+      "path": "qualification/round-37-rectangular-induction/development/implement-induction.py.gz",
+      "sha256": "add35b0c0cf1e3762aeecb8c87ce9af232f147a9392cf0d1f6e78dd9a29e4a0f",
+      "compressed_sha256": "0dc2856d0aacef990a843e2d7d7397ef883cb28aff254b753ddd9ccac6c8e486"
+    },
+    "matrix-polybench.log": {
+      "path": "qualification/round-37-rectangular-induction/development/matrix-polybench.log.gz",
+      "sha256": "945eed849b95fa7a3fb49575935dd931b910ed1c921cc8b760ae22761b23969b",
+      "compressed_sha256": "0077fc2838b4c2219f939a58e42253fbcc5e6e59c6813b981bd41c9bdbaae90b"
+    },
+    "measure-candidate.py": {
+      "path": "qualification/round-37-rectangular-induction/development/measure-candidate.py.gz",
+      "sha256": "1a8dc1ab5c03a49341754622fd361cdc9010e9a3f0fad556cde3202b5ab97397",
+      "compressed_sha256": "f1bb4ef16e46f4a06e35ce10e8fa06114fd4a9f2516d815443bfb7683123b9a2"
+    },
+    "mvt-inputs.json": {
+      "path": "qualification/round-37-rectangular-induction/development/mvt-inputs.json.gz",
+      "sha256": "fbade0c9877a296d71ab1f406c9e272cc1d24e07cfa9916c41d47b90be287822",
+      "compressed_sha256": "5d7e60c56b967b4d1963e38ff4330e3eefaac46b4c4f46cb28f2107a18154cac"
+    },
+    "numeric-regressions.log": {
+      "path": "qualification/round-37-rectangular-induction/development/numeric-regressions.log.gz",
+      "sha256": "a9096a4b998cb46b28fff77dc44b3a4bcc11538e2df7cea67ac2e1fb81e4959b",
+      "compressed_sha256": "ff29597b5affb1ab2c95bac06cf552c00f3cb1ff94f4c27ab40e2b3f1d6b22be"
+    },
+    "nussinov-inputs.json": {
+      "path": "qualification/round-37-rectangular-induction/development/nussinov-inputs.json.gz",
+      "sha256": "a3b59f91ae1d7d0220770602ebc1e84861fdac162a1867926f1f3e06b7f681ab",
+      "compressed_sha256": "4cacc7fe25f9f6a9df95cfe6b9c145dc1d52a7c86d66f8bd2c8ad995d931b002"
+    },
+    "prepare-qualification-manifest.py": {
+      "path": "qualification/round-37-rectangular-induction/development/prepare-qualification-manifest.py.gz",
+      "sha256": "32d3b46e8ba0dda92cd2f6db23420ea4ac3240a578909877f4fac14926508514",
+      "compressed_sha256": "b12c1610e830b8055c2a358a614eb20202ba3a12fc150aab77d39ad6e37e0ca2"
+    },
+    "preserve-training.py": {
+      "path": "qualification/round-37-rectangular-induction/development/preserve-training.py.gz",
+      "sha256": "cc05a0168a6a7dd19b87dfca9ddf22803d6063a73521c3a0901c746e0b0580a9",
+      "compressed_sha256": "a8d247195cf4099be83f6895192801dc44f4e537cdc8ed4dd18a42c532c90d08"
+    },
+    "production-feature.log": {
+      "path": "qualification/round-37-rectangular-induction/development/production-feature.log.gz",
+      "sha256": "5688fdf264a0bcd8e087f8469f8fe5a124d0cd143f8bd2fd02124425b1008444",
+      "compressed_sha256": "9110c2a84811ba18fc0a632e4e3b9cf4092cf70fdcd82a93a3398acd4a6cf1a6"
+    },
+    "program-regressions.log": {
+      "path": "qualification/round-37-rectangular-induction/development/program-regressions.log.gz",
+      "sha256": "34a68e6c6804209e3fac040470a06059569456f8309f2ded20bd63a2cafa402d",
+      "compressed_sha256": "c3169de4598964752b08e2f854717d95da880da1f99bca4261728eec7c65caca"
+    },
+    "protocol.log": {
+      "path": "qualification/round-37-rectangular-induction/development/protocol.log.gz",
+      "sha256": "7be3161bb5cc915acbaa23742b67cc12e78b055fa8a0a4d376c0c9ab7ee1cb05",
+      "compressed_sha256": "d0c7ced3e633d2e8332e63f64e13b5651754f1c1491e7713311ae0f07d9e345c"
+    },
+    "qualification-checks.json": {
+      "path": "qualification/round-37-rectangular-induction/development/qualification-checks.json.gz",
+      "sha256": "6cf6f4b1c70777902800bdeda9294205124a8b1aba334bcea724a70c587ca66f",
+      "compressed_sha256": "6942323a65614c49358d750391716a53d7802d404e449b9814c1fb505f4e63a4"
+    },
+    "qualification.json": {
+      "path": "qualification/round-37-rectangular-induction/development/qualification.json.gz",
+      "sha256": "2688e6363de0913b9c7eec2ebf7ada651b10d05c3af01055a6e8455f5188766c",
+      "compressed_sha256": "e5c821626cbb2cf41b175750a0d00d6697926986bc809f4a6c2a2a03e9d8407b"
+    },
+    "read-object-image.py": {
+      "path": "qualification/round-37-rectangular-induction/development/read-object-image.py.gz",
+      "sha256": "1e5465676c3458a1cafed13152ecb84e2848dfa55679da0a29b3791819f54d5e",
+      "compressed_sha256": "c040c20b7aa87f39cac655ab7f2e01a4f153a8cc3a1a4a718a1757a6f44bf56d"
+    },
+    "run-focused-02.py": {
+      "path": "qualification/round-37-rectangular-induction/development/run-focused-02.py.gz",
+      "sha256": "e176bd85b6ad493eece917f0b127168cabcd7bb1b6e445a810ab1ca8d036b2f5",
+      "compressed_sha256": "4b8eb7b43fb7bdcee5a9101a89ca73dea2f0c21f69d1fd04b60bfb0bd81ada23"
+    },
+    "run-focused-03.py": {
+      "path": "qualification/round-37-rectangular-induction/development/run-focused-03.py.gz",
+      "sha256": "522032ca79da84c1644cdc99cfa3b6053c5d12d434ff8227be70f9428b01f6cc",
+      "compressed_sha256": "012517512278b831a05ed49155cf248ae0c9a6189762f507a8e59863e4e2ae6a"
+    },
+    "run-focused.py": {
+      "path": "qualification/round-37-rectangular-induction/development/run-focused.py.gz",
+      "sha256": "f4176b2148e15531efe6ea452bff13b2df963dd75af9598e15bffcde89d92ad4",
+      "compressed_sha256": "303846df6f585ad3aa6d39b9918d3f3b13e59dff61f908f16a8b83b414cb7008"
+    },
+    "run-qualification.py": {
+      "path": "qualification/round-37-rectangular-induction/development/run-qualification.py.gz",
+      "sha256": "7aebf18576f8763c514c478adf8f16d8b2e9e3f7a0cbea31be95d2b032beeaeb",
+      "compressed_sha256": "45e216d4cb7fa10fa4ab2b074dd3df63a635677d3cf303a9ac332c45e16fa2ad"
+    },
+    "runtime-feature.log": {
+      "path": "qualification/round-37-rectangular-induction/development/runtime-feature.log.gz",
+      "sha256": "0bccb744390f7f597ccff6c80751ac1c9ea7e67f5e06315f95c0f8dacd26a2f7",
+      "compressed_sha256": "3276bf687adcdb8bb568f04031604a05080105817a8dc5baedd6f6decc007d39"
+    },
+    "seidel-2d-inputs.json": {
+      "path": "qualification/round-37-rectangular-induction/development/seidel-2d-inputs.json.gz",
+      "sha256": "c5c70866b04dbaa635db7493f8097fcd4769c70a1782dac78e7543a78a047577",
+      "compressed_sha256": "e8fcd1f4d36f2dbc89891dfa9f8fd21871d4612911ae205b7c0a6d223b5f5f21"
+    },
+    "selection-policy.json": {
+      "path": "qualification/round-37-rectangular-induction/development/selection-policy.json.gz",
+      "sha256": "e17e010a6fb919b67b3f380531267398d78b9816f9ff4d89612d3fd443df33ad",
+      "compressed_sha256": "22758f5b75532fcd597b3c6197a3c3183ba18f937d88a7163e71f1862a1b7f31"
+    },
+    "semantic-catalog-solver.log": {
+      "path": "qualification/round-37-rectangular-induction/development/semantic-catalog-solver.log.gz",
+      "sha256": "7c10ec4d0be7ad843198b7f78e4001c352a1ffc4a91b9b324b720b7f7cb3f983",
+      "compressed_sha256": "b8024dd87627e2a268d42679408951e5b6fd83f42ce8f7bdcbf669ce387fcd40"
+    },
+    "source-broadcast-regressions.log": {
+      "path": "qualification/round-37-rectangular-induction/development/source-broadcast-regressions.log.gz",
+      "sha256": "287196169883d839d392ce600a41b46ac24bb17f859a42c8c4490529a7b3fea0",
+      "compressed_sha256": "6f259686aeb637af9391641e2ab26a7b54f3e49704cd64ed253e07455c128402"
+    },
+    "training-probe-plan.json": {
+      "path": "qualification/round-37-rectangular-induction/development/training-probe-plan.json.gz",
+      "sha256": "44fa2e8cae3ea6a22dccd1fee790959592d5037f6a8f608d8950c59ac06ca6fe",
+      "compressed_sha256": "9055550a6f4566d0c8cb36c38856f50f25ed201c583b23a59fc53298d11f8184"
+    },
+    "training-probe.json": {
+      "path": "qualification/round-37-rectangular-induction/development/training-probe.json.gz",
+      "sha256": "71b0f30d0c304605c78af27a06ffecd48e584fedc21361c2592b8bcbceae163b",
+      "compressed_sha256": "62f31c694922771ff41166dafb855d1d042a975f1c046ae9c2d061a6cc1f98d0"
+    },
+    "training-probe.log": {
+      "path": "qualification/round-37-rectangular-induction/development/training-probe.log.gz",
+      "sha256": "7185466f9654c9147b191fb9aef1ccb61233ef857da1645422189d2aaabb9feb",
+      "compressed_sha256": "a5631415382704204d0e2fe912b959524d206320c412d29cf1a42882c925a1aa"
+    },
+    "training-probe.py": {
+      "path": "qualification/round-37-rectangular-induction/development/training-probe.py.gz",
+      "sha256": "d3b1434b6572480394c7f7eeae8f2e0f86511e5d43af8aeb56ffebabff4a1ee2",
+      "compressed_sha256": "fd257c5f74fd12e3ad302da53f0508e281f0de98b0058512836cb572442763d4"
+    },
+    "type-image-regressions.log": {
+      "path": "qualification/round-37-rectangular-induction/development/type-image-regressions.log.gz",
+      "sha256": "f0c5780a311dd20c6598703dc667d2249c70d1cd95066a2028c6bb0d9125e873",
+      "compressed_sha256": "3999525b5cc1daac0a7d15ee0ea61bdc6c607464185b5b67a714014a449234b7"
+    }
+  },
+  "limitations": "F64 MINI CPU benchmark scope. Short-kernel profiles are coarse. The fixed holdout has been exposed historically and is an aggregate acceptance control. This training probe does not establish a formal Mech/C score or authorize promotion.",
+  "training_probe_summary": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted31": 1.0068925692277577,
+    "regressions_over_five_percent": 2,
+    "all_visits_match": true,
+    "all_work_not_reduced": true,
+    "selected": true
+  }
+}
