@@ -169,6 +169,102 @@ pub(in crate::native_artifact) fn emit_entry(
     let sright = get(b, frame, offset_of!(Frame, right_scalar));
     let complete = b.create_block();
     match op.kind {
+        Kind::Transpose { input } => {
+            let source_columns = get(b, frame, offset_of!(Frame, inner));
+            let (expected, overflow) = b.ins().umul_overflow(columns, source_columns);
+            let good = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
+            guard(
+                b,
+                good,
+                error,
+                crate::native_artifact::abi::STATUS_INTEGRITY,
+            );
+            let good = b.ins().icmp(IntCC::Equal, expected, count);
+            guard(
+                b,
+                good,
+                error,
+                crate::native_artifact::abi::STATUS_INTEGRITY,
+            );
+            let good = b.ins().icmp_imm(
+                IntCC::UnsignedLessThanOrEqual,
+                count,
+                (isize::MAX as u64 / 8) as i64,
+            );
+            guard(
+                b,
+                good,
+                error,
+                crate::native_artifact::abi::STATUS_INTEGRITY,
+            );
+            let bytes = b.ins().imul_imm(count, 8);
+            let empty = b.ins().icmp_imm(IntCC::Equal, count, 0);
+            let mut ends = Vec::new();
+            for pointer in [left, output] {
+                let nonnull = b.ins().icmp_imm(IntCC::NotEqual, pointer, 0);
+                let good = b.ins().bor(empty, nonnull);
+                guard(
+                    b,
+                    good,
+                    error,
+                    crate::native_artifact::abi::STATUS_INTEGRITY,
+                );
+                let low = b.ins().band_imm(pointer, 7);
+                let good = b.ins().icmp_imm(IntCC::Equal, low, 0);
+                guard(
+                    b,
+                    good,
+                    error,
+                    crate::native_artifact::abi::STATUS_INTEGRITY,
+                );
+                let (end, overflow) = b.ins().uadd_overflow(pointer, bytes);
+                let good = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
+                guard(
+                    b,
+                    good,
+                    error,
+                    crate::native_artifact::abi::STATUS_INTEGRITY,
+                );
+                ends.push(end);
+            }
+            let before = b
+                .ins()
+                .icmp(IntCC::UnsignedLessThanOrEqual, ends[0], output);
+            let after = b.ins().icmp(IntCC::UnsignedLessThanOrEqual, ends[1], left);
+            let good = b.ins().bor(before, after);
+            guard(
+                b,
+                good,
+                error,
+                crate::native_artifact::abi::STATUS_INTEGRITY,
+            );
+            let mut output_columns = columns;
+            let mut input_columns = source_columns;
+            for (known, actual, target) in [
+                (input[0], columns, &mut output_columns),
+                (input[1], source_columns, &mut input_columns),
+            ] {
+                if let Some(known) = known {
+                    let good = b.ins().icmp_imm(IntCC::Equal, actual, known as i64);
+                    guard(
+                        b,
+                        good,
+                        error,
+                        crate::native_artifact::abi::STATUS_INTEGRITY,
+                    );
+                    *target = b.ins().iconst(types::I64, known as i64);
+                }
+            }
+            super::numeric_transpose::emit(
+                b,
+                left,
+                output,
+                count,
+                output_columns,
+                input_columns,
+                complete,
+            );
+        }
         Kind::Product => {
             let inner = get(b, frame, offset_of!(Frame, inner));
             super::numeric_product::emit(b, left, right, output, count, columns, inner, complete);

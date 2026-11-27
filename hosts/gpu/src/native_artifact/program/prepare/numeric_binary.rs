@@ -1,4 +1,4 @@
-//! Same-plan selected matrix arithmetic; no values, pointers or permits.
+//! Same-plan selected typed matrix operations; no values, pointers or permits.
 use mech_engine::native_artifact::{
     NativeIterationAction as Action, NativeProgramArtifactPlan as Plan, NativeScalarOp,
 };
@@ -7,10 +7,11 @@ pub(in crate::native_artifact) const HEADER_WORK: u64 = 32768;
 pub(in crate::native_artifact) enum Kind {
     Elementwise(NativeScalarOp),
     Product,
+    Transpose { input: [Option<u64>; 2] },
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(in crate::native_artifact) struct Operation {
-    pub operands: [u32; 2],
+    pub operands: Vec<u32>,
     pub output: u32,
     pub kind: Kind,
 }
@@ -35,7 +36,7 @@ impl Layout {
                 let Some(template) = plan.prepared_library_template(site)? else {
                     return Ok(None);
                 };
-                if operands.len() != 2
+                if operands.len() != template.inputs().len()
                     || operands
                         .iter()
                         .zip(template.inputs())
@@ -47,9 +48,26 @@ impl Layout {
                 let kind = template
                     .f64_matrix_binary_op()
                     .map(Kind::Elementwise)
-                    .or_else(|| template.f64_matrix_product().then_some(Kind::Product));
+                    .or_else(|| template.f64_matrix_product().then_some(Kind::Product))
+                    .or_else(|| {
+                        if !template.f64_matrix_transpose() {
+                            return None;
+                        }
+                        let mech_core::SchemaBody::Matrix { dimensions, .. } =
+                            template.inputs()[0].body()
+                        else {
+                            return None;
+                        };
+                        let mut input = [None; 2];
+                        for (at, axis) in dimensions.iter().enumerate() {
+                            if let mech_core::DimensionExpr::Constant(value) = axis {
+                                input[at] = Some(*value);
+                            }
+                        }
+                        Some(Kind::Transpose { input })
+                    });
                 Ok(kind.map(|kind| Operation {
-                    operands: [operands[0].get(), operands[1].get()],
+                    operands: operands.iter().map(|v| v.get()).collect(),
                     output: output.get(),
                     kind,
                 }))

@@ -540,7 +540,8 @@ pub(in crate::native_artifact) fn emit(
                         let address = if read.indices.len() == 2 { arrays::cell(b, &words, &data, read.indices[0], read.indices[1], bad)? }
                             else { arrays::linear(b, &words, &data, read.indices[0], plan.values()[operands[0].get() as usize].definition().body(), bad)? };
                         let value = b.ins().load(types::I64, MemFlags::new(), address, 0); words.write(b, read.output as usize, value);
-                    } else if let Some(binary) = m.numeric_binary.at(site as usize) {
+                    } else if let Some(binary) = m.numeric_binary.at(site as usize)
+                        .filter(|op| matches!(op.kind, crate::native_artifact::program::prepare::numeric_binary::Kind::Elementwise(_))) {
                         let bank = banks.values[&binary.output];
                         arrays::binary(b, &words, &layout, m.calls[site as usize].as_ref().unwrap(), binary, private[bank], banks.banks[bank].extents, bad)?;
                     } else if let Action::LibraryCall { template, operands, output, .. } = block.action()

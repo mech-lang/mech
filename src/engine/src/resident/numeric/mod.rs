@@ -13398,6 +13398,16 @@ fn transpose_dense(
     }
 }
 
+pub(in crate::resident) fn native_transpose_geometry(
+    input: [usize; 2],
+) -> Result<[usize; 3], ResidentKernelError> {
+    let [rows, columns] = input;
+    let count = rows
+        .checked_mul(columns)
+        .ok_or(ResidentKernelError::InvalidShape)?;
+    Ok([columns, rows, count])
+}
+
 fn transpose_snapshot(
     kernel: &BoundResidentKernel,
     inputs: &dyn ResidentKernelInputs,
@@ -13424,10 +13434,8 @@ fn transpose_snapshot(
         .validate_against(schemas)
         .map_err(|_| ResidentKernelError::InvalidInput)?;
     let (rows, columns) = snapshot_matrix_dimensions(input, input_schema.body())?;
-    let count = rows
-        .checked_mul(columns)
-        .ok_or(ResidentKernelError::InvalidShape)?;
-    let output_shape = resolved_snapshot_output_shape(kernel, columns, rows)?;
+    let [output_rows, output_columns, count] = native_transpose_geometry([rows, columns])?;
+    let output_shape = resolved_snapshot_output_shape(kernel, output_rows, output_columns)?;
     let finalization_work =
         snapshot_data_finalization_work(&mut footprint_meter, input_schema.body(), input.data())?;
     let prior_footprint = match target.as_ref() {

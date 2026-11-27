@@ -24,7 +24,8 @@ use core::ffi::c_void;
 // ABI41 combines ABI40 related-post helpers with paired word-collection loans.
 // ABI43 adds paired typed matrix arithmetic loans; the root Frame is unchanged.
 // ABI45 adds paired complete numeric-generator loans; the root Frame is unchanged.
-pub(in crate::native_artifact) const VERSION: u64 = 45;
+// ABI46 admits unary transpose geometry in the same 80-byte matrix frame.
+pub(in crate::native_artifact) const VERSION: u64 = 46;
 pub(in crate::native_artifact) const JOIN_MAP_MISSING_BYTE: u8 = 0x80;
 pub(in crate::native_artifact) const PHASE_ACTIVATION: u64 = 0;
 pub(in crate::native_artifact) const PHASE_TURN: u64 = 1;

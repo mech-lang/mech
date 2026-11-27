@@ -22,6 +22,16 @@ fn f64(schema: &Schema) -> bool {
     }
 }
 impl NativeProgramLibraryTemplate {
+    /// Exact maintained rank-two F64 transpose, selected by its sealed factory.
+    pub fn f64_matrix_transpose(&self) -> bool {
+        self.primitive() == P::MatrixTranspose
+            && self.inputs().len() == 1
+            && self
+                .inputs()
+                .iter()
+                .chain([self.output()])
+                .all(|s| f64(s) && matches!(s.body(), SchemaBody::Matrix { .. }))
+    }
     /// The maintained matrix-product factory, with two typed matrix sources.
     /// Scalar dot results and other numeric kinds retain their own routes.
     pub fn f64_matrix_product(&self) -> bool {
@@ -56,6 +66,22 @@ impl NativeProgramLibraryTemplate {
     }
 }
 impl NativePreparedLibraryCall {
+    pub fn f64_matrix_transpose_geometry(&self, input: [usize; 2]) -> Option<[u64; 3]> {
+        if !self.template().f64_matrix_transpose() || !self.supports_numeric_matrix_transpose() {
+            return None;
+        }
+        crate::resident::numeric::native_transpose_geometry(input)
+            .ok()
+            .map(|axes| axes.map(|n| n as u64))
+    }
+    /// Retain full original source construction, copies, physical staging,
+    /// canonical publication and ordinary replay for a typed transpose loan.
+    pub fn f64_matrix_transpose_source_bound(&self, count: u64) -> Option<(ResourceDemand, u64)> {
+        if !self.template().f64_matrix_transpose() || !self.supports_numeric_matrix_transpose() {
+            return None;
+        }
+        self.f64_matrix_source_bound(count, count, 0)
+    }
     pub fn f64_matrix_product_geometry(
         &self,
         left: [usize; 2],

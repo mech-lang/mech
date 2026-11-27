@@ -606,7 +606,9 @@ fn supported(
             operands,
             output,
         } => {
-            if let Some(op) = binary.at(site as usize) {
+            if let Some(op) = binary.at(site as usize)
+                && !matches!(op.kind, numeric_binary::Kind::Transpose { .. })
+            {
                 return matches!(op.kind, numeric_binary::Kind::Elementwise(_));
             }
             template.primitive() == Primitive::MatrixTranspose

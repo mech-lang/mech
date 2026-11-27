@@ -93,19 +93,26 @@ impl Invocation<'_, '_, '_> {
         {
             return Ok(Some(0));
         }
-        if args != [self.arguments as u64, 2, 0]
-            || self.argument_capacity < 2
+        let arity = op.operands.len();
+        if !(1..=2).contains(&arity) {
+            return Err(invalid("matrix operation arity is unsupported"));
+        }
+        if args != [self.arguments as u64, arity as u64, 0]
+            || self.argument_capacity < arity
             || self.arguments.is_null()
         {
             return Err(invalid("matrix arithmetic source argument lane differs"));
         }
         // The session owns this exact disjoint initialized lane and suspends
         // generated code during this callback. No reference to it escapes.
-        let words = unsafe { [self.arguments.read(), self.arguments.add(1).read()] };
+        let mut words = [0; 2];
+        unsafe {
+            words[..arity].copy_from_slice(core::slice::from_raw_parts(self.arguments, arity));
+        }
         let memory = self.state.library.memory_budget();
         let mut values: [Option<Value>; 2] = [None, None];
         let mut dimensions = [[1usize, 1usize]; 2];
-        for at in 0..2 {
+        for at in 0..arity {
             let id = op.operands[at];
             let ty = &m.plan.values()[id as usize];
             if ty.scalar_kind() == Some(mech_engine::native_artifact::NativeScalarKind::F64) {
@@ -147,6 +154,17 @@ impl Invocation<'_, '_, '_> {
                 };
                 (rows, columns, left, right, 0)
             }
+            Kind::Transpose { .. } => {
+                let Some([rows, columns, count]) =
+                    call.f64_matrix_transpose_geometry(dimensions[0])
+                else {
+                    return Ok(Some(0));
+                };
+                if rows.checked_mul(columns) != Some(count) {
+                    return Ok(Some(0));
+                }
+                (rows, columns, 1, 1, dimensions[0][1] as u64)
+            }
             Kind::Product => {
                 if !call.template().f64_matrix_product() {
                     return Err(invalid("matrix product selected factory differs"));
@@ -162,7 +180,7 @@ impl Invocation<'_, '_, '_> {
         let Some(count) = rows.checked_mul(columns) else {
             return Ok(Some(0));
         };
-        let input_count = dimensions.iter().try_fold(0u64, |n, d| {
+        let input_count = dimensions[..arity].iter().try_fold(0u64, |n, d| {
             n.checked_add((d[0] as u64).checked_mul(d[1] as u64)?)
         });
         let Some(input_count) = input_count else {
@@ -170,6 +188,7 @@ impl Invocation<'_, '_, '_> {
         };
         let bound = match op.kind {
             Kind::Elementwise(_) => call.f64_matrix_binary_source_bound(input_count, count),
+            Kind::Transpose { .. } => call.f64_matrix_transpose_source_bound(count),
             Kind::Product => call.f64_matrix_product_source_bound(input_count, count, inner),
         };
         let Some((demand, replay)) = bound else {
@@ -254,7 +273,7 @@ impl Invocation<'_, '_, '_> {
                 origin: m.plan.blocks()[site].origin(),
                 error,
             })?;
-        for at in 0..2 {
+        for at in 0..arity {
             let id = op.operands[at];
             let ty = &m.plan.values()[id as usize];
             if ty.scalar_kind().is_none() {
@@ -267,7 +286,9 @@ impl Invocation<'_, '_, '_> {
                 }
                 // Retain exact ordinary NaN payload choice after host/native
                 // instruction selection. No output is changed on this miss.
-                if cells(&value).is_none_or(|v| v.iter().any(|x| x.to_f64().is_nan())) {
+                if !matches!(op.kind, Kind::Transpose { .. })
+                    && cells(&value).is_none_or(|v| v.iter().any(|x| x.to_f64().is_nan()))
+                {
                     return Ok(Some(0));
                 }
                 values[at] = Some(value);
@@ -313,7 +334,7 @@ impl Invocation<'_, '_, '_> {
             reservation,
             _nodes: nodes,
         });
-        for at in 0..2 {
+        for at in 0..arity {
             if let Some(value) = &pending.inputs[at] {
                 let source =
                     cells(value).ok_or_else(|| invalid("matrix arithmetic lost typed source"))?;

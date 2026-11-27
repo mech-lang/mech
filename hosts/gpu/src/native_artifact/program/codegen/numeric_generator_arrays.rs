@@ -197,32 +197,19 @@ pub(super) fn transpose(
     extents: [u64; 2],
     data: &[Value],
 ) {
-    let header = b.create_block();
-    let body = b.create_block();
     let done = b.create_block();
-    b.append_block_param(header, types::I64);
-    let zero = b.ins().iconst(types::I64, 0);
-    b.ins().jump(header, &[zero.into()]);
-    b.switch_to_block(header);
-    let index = b.block_params(header)[0];
-    let more = b.ins().icmp_imm(
-        IntCC::UnsignedLessThan,
-        index,
-        (extents[0] * extents[1]) as i64,
+    let count = b.ins().iconst(types::I64, (extents[0] * extents[1]) as i64);
+    let output_columns = b.ins().iconst(types::I64, extents[1] as i64);
+    let input_columns = b.ins().iconst(types::I64, extents[0] as i64);
+    super::super::numeric_transpose::emit(
+        b,
+        data[0],
+        output,
+        count,
+        output_columns,
+        input_columns,
+        done,
     );
-    b.ins().brif(more, body, &[], done, &[]);
-    b.switch_to_block(body);
-    let columns = b.ins().iconst(types::I64, extents[1] as i64);
-    let row = b.ins().udiv(index, columns);
-    let column = b.ins().urem(index, columns);
-    let input = b.ins().imul_imm(column, extents[0] as i64);
-    let input = b.ins().iadd(input, row);
-    let from = address(b, data[0], input);
-    let to = address(b, output, index);
-    let value = b.ins().load(types::I64, MemFlags::new(), from, 0);
-    b.ins().store(MemFlags::new(), value, to, 0);
-    let next = b.ins().iadd_imm(index, 1);
-    b.ins().jump(header, &[next.into()]);
     b.switch_to_block(done);
 }
 pub(super) fn binary(
