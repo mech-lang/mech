@@ -1,13 +1,21 @@
 //! Compose the maintained checked scalar map emitter inside one phase loan.
-//! Native values compose directly in SSA; all pointers belong to admitted
-//! phase roots. Failure discards the fold before the original range resumes.
+//! Only a fixed stack frame is local; all pointers belong to admitted phase
+//! roots. Failure discards the fold and resumes before the original range.
 use crate::native_artifact::codegen::common::ssa_words::Words;
 use crate::native_artifact::program::prepare::{numeric_phase::Fold, readonly_numeric::Proof};
+use crate::native_artifact::program::runtime::{
+    NativeNumericMapFrame as Frame, NativeNumericMapMatrixView as Matrix,
+};
 use crate::native_artifact::{NativeCompileError, compiler::backend};
-use cranelift_codegen::ir::{Block, InstBuilder, Value, condcodes::IntCC, types};
+use cranelift_codegen::ir::{
+    Block, InstBuilder, MemFlags, StackSlotData, StackSlotKind, Value, condcodes::IntCC, types,
+};
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::NativeProgramArtifactPlan as Plan;
-use std::collections::BTreeMap;
+use std::{
+    collections::BTreeMap,
+    mem::{offset_of, size_of},
+};
 
 fn require(b: &mut FunctionBuilder<'_>, good: Value, miss: Block) {
     let next = b.create_block();
@@ -94,9 +102,16 @@ pub(super) fn emit_from_views(
     } else {
         count
     };
-    emit_region(
+    let frame = emit_region(
         b, region, plan, first, count, matrices, captures, None, miss,
-    )
+    )?;
+    let value = b.ins().load(
+        types::I64,
+        MemFlags::new(),
+        frame,
+        offset_of!(Frame, fold) as i32,
+    );
+    Ok(value)
 }
 
 /// Shared checked map DAG emission from current admitted views. The optional
@@ -112,11 +127,12 @@ pub(super) fn emit_region(
     output: Option<(Value, Value)>,
     miss: Block,
 ) -> Result<Value, NativeCompileError> {
-    if !region.range || matrices.len() != region.matrices.len() {
-        return Err(backend(
-            "native map composition lost its range or exact views",
-        ));
-    }
+    let slot = b.create_sized_stack_slot(StackSlotData::new(
+        StackSlotKind::ExplicitSlot,
+        size_of::<Frame>() as u32,
+        3,
+    ));
+    let frame = b.ins().stack_addr(types::I64, slot, 0);
     let zero = b.ins().iconst(types::I64, 0);
     let one = b.ins().iconst(types::I64, 1);
     let elements = if let Some(rectangle) = &region.rectangle {
@@ -128,42 +144,88 @@ pub(super) fn emit_region(
     } else {
         count
     };
-    let (output, capacity_bytes, output_count) = output
-        .map_or((zero, zero, zero), |(pointer, capacity)| {
-            (pointer, capacity, elements)
-        });
-    let input_width = b.ins().iconst(types::I64, i64::from(region.input_width));
-    let output_width = b.ins().iconst(types::I64, i64::from(region.output_width));
-    let inputs = super::numeric_map::Values {
-        count: elements,
-        source_count: count,
-        input: zero,
-        input_bytes: zero,
-        output,
-        capacity_bytes,
-        output_count,
-        input_width,
-        output_width,
-        epoch: one,
-        issued: one,
-        next: zero,
-        fold: zero,
-        range_start: first,
-        matrices: matrices.to_vec(),
-    };
+    for at in [
+        offset_of!(Frame, input),
+        offset_of!(Frame, input_bytes),
+        offset_of!(Frame, output),
+        offset_of!(Frame, capacity_bytes),
+        offset_of!(Frame, output_count),
+        offset_of!(Frame, fold),
+        offset_of!(Frame, next),
+    ] {
+        b.ins().store(MemFlags::new(), zero, frame, at as i32);
+    }
+    if let Some((output, capacity)) = output {
+        b.ins().store(
+            MemFlags::new(),
+            elements,
+            frame,
+            offset_of!(Frame, output_count) as i32,
+        );
+        b.ins().store(
+            MemFlags::new(),
+            output,
+            frame,
+            offset_of!(Frame, output) as i32,
+        );
+        b.ins().store(
+            MemFlags::new(),
+            capacity,
+            frame,
+            offset_of!(Frame, capacity_bytes) as i32,
+        );
+    }
+    b.ins().store(
+        MemFlags::new(),
+        elements,
+        frame,
+        offset_of!(Frame, count) as i32,
+    );
+    b.ins().store(
+        MemFlags::new(),
+        count,
+        frame,
+        offset_of!(Frame, source_count) as i32,
+    );
+    for at in [offset_of!(Frame, epoch), offset_of!(Frame, issued)] {
+        b.ins().store(MemFlags::new(), one, frame, at as i32);
+    }
+    b.ins().store(
+        MemFlags::new(),
+        first,
+        frame,
+        offset_of!(Frame, range_start) as i32,
+    );
+    for (at, width) in [
+        (offset_of!(Frame, input_width), region.input_width),
+        (offset_of!(Frame, output_width), region.output_width),
+    ] {
+        let value = b.ins().iconst(types::I64, i64::from(width));
+        b.ins().store(MemFlags::new(), value, frame, at as i32);
+    }
+    if matrices.len() != region.matrices.len() {
+        return Err(backend("fold lost its exact matrix inventory"));
+    }
+    for (index, view) in matrices.iter().enumerate() {
+        for (lane, field) in [
+            offset_of!(Matrix, input),
+            offset_of!(Matrix, count),
+            offset_of!(Matrix, rows),
+            offset_of!(Matrix, columns),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let at = offset_of!(Frame, matrices) + index * size_of::<Matrix>() + field;
+            b.ins().store(MemFlags::new(), view[lane], frame, at as i32);
+        }
+    }
     let complete = b.create_block();
-    b.append_block_param(complete, types::I64);
     let arithmetic = b.create_block();
     b.append_block_param(arithmetic, types::I64);
-    super::numeric_map::emit_values(
-        b, &inputs, region, plan, captures, complete, arithmetic, miss,
-    )?;
+    super::numeric_map::emit(b, frame, region, plan, captures, complete, arithmetic, miss)?;
     b.switch_to_block(arithmetic);
     b.ins().jump(miss, &[]);
     b.switch_to_block(complete);
-    Ok(b.block_params(complete)[0])
+    Ok(frame)
 }
-
-#[cfg(all(test, feature = "canonical-native-program"))]
-#[path = "numeric_map_ssa_tests.rs"]
-mod tests;

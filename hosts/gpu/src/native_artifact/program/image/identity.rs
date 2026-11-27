@@ -561,9 +561,7 @@ fn selected_template(
 // IR386 retains complete fixed-array numeric FSM results through native return.
 // IR387 emits source-closed fixed matrix generators with bounded numeric FSM children.
 // IR390 cancels lossless scalar bitcast round trips before allocation.
-// IR406 composes the maintained checked numeric map DAG with native SSA inputs
-// and an SSA fold result, retaining the public runtime loan adapter and bills.
-pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 406;
+pub const NATIVE_PROGRAM_TYPED_IR_VERSION: u64 = 390;
 // Shared immutable schema arenas and the admitted two-phase entry protocol
 // change work accounting. ABI8/IR5 also commit the exact generated checkpoint;
 // neither phase may renew the invocation's cumulative ledger. Policy11 reuses

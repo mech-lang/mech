@@ -1,0 +1,474 @@
+{
+  "schema": "mech.polybench.optimization-qualification.v1",
+  "label": "round-41-native-map-ssa",
+  "compiler_commit": "1f75711d3b8ca715abf0b9e74738a061c20110f3",
+  "compiler_fingerprint": "9c64773275e1dbaaadbc2853c084688bbbf77e74991328718e444bf33caee480",
+  "driver_sha256": "b40d06adbffc7106ce1d0064152c561e56191df80fd5dcdeea7d891e6dd891f5",
+  "frozen_candidate_sha256": "afb6fddcc4315a7ef03f8c3ac989eed4dace0ababc0d95f802acd3b7db33e817",
+  "native_typed_ir_version": 406,
+  "native_work_policy_version": 156,
+  "native_abi_version": 47,
+  "dataset": "MINI",
+  "numeric_profile": "F64",
+  "comparison": {
+    "rtol": 1e-10,
+    "atol": 1e-09,
+    "finite_required": true,
+    "live_outs_per_artifact": 29482
+  },
+  "checks": [
+    {
+      "name": "semantic-catalog-solver.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-core",
+        "--no-default-features",
+        "--features",
+        "functions",
+        "--test",
+        "type_system_catalog",
+        "--test",
+        "type_system_solver",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.4009760841727257,
+      "passed_tests": [
+        27,
+        34
+      ]
+    },
+    {
+      "name": "source-broadcast-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-engine",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-gpu/canonical-native-program",
+        "--test",
+        "canonical_source_semantics",
+        "--test",
+        "canonical_source_review",
+        "--",
+        "broadcast",
+        "arithmetic",
+        "matrix",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.3264675410464406,
+      "passed_tests": [
+        6,
+        9
+      ]
+    },
+    {
+      "name": "type-image-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-engine",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "mech-gpu/canonical-native-program",
+        "--lib",
+        "--",
+        "program_image_read",
+        "guarded_histogram_query_schema_certificate_declines_hidden_distinct_constraints",
+        "tail_proof_keeps_nominal_enum_identity_and_validates_tag_and_projection_paths",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.28777616703882813,
+      "passed_tests": [
+        25,
+        0
+      ]
+    },
+    {
+      "name": "numeric-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "numeric",
+        "rectangular_map",
+        "phase",
+        "row_block",
+        "huffman",
+        "private_publication",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 100.24260587478057,
+      "passed_tests": [
+        413
+      ]
+    },
+    {
+      "name": "matrix-polybench.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_matrix",
+        "--test",
+        "canonical_artifact_polybench",
+        "--",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 64.66893037501723,
+      "passed_tests": [
+        24,
+        30
+      ]
+    },
+    {
+      "name": "program-regressions.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--test",
+        "canonical_artifact_program",
+        "--",
+        "buffer_frame_qualification",
+        "nested_frame_qualification",
+        "numeric_tail_qualification",
+        "numeric_write_qualification",
+        "scalar_state_qualification",
+        "scalar_record_qualification",
+        "word_read_qualification",
+        "huffman_qualification",
+        "sequence_writer_qualification",
+        "collection_qualification",
+        "packed_update_qualification",
+        "range_cursor_qualification",
+        "range_qualification",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 27.852428500074893,
+      "passed_tests": [
+        114
+      ]
+    },
+    {
+      "name": "protocol.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "collection_helpers_have_distinct_roundtrip_codes_and_reserve_output_space",
+        "native_runtime_consolidation_preserves_the_charged_layout_envelope",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.19055650010704994,
+      "passed_tests": [
+        2
+      ]
+    },
+    {
+      "name": "abi-layout.log",
+      "command": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib",
+        "--",
+        "worker_abi_keeps_the_frozen_scalar_prefix_and_disjoint_helper_lanes",
+        "--test-threads=1"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 0.1697038747370243,
+      "passed_tests": [
+        1
+      ]
+    },
+    {
+      "name": "runtime-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program-runtime",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 4.405642208177596,
+      "passed_tests": []
+    },
+    {
+      "name": "production-feature.log",
+      "command": [
+        "cargo",
+        "check",
+        "--release",
+        "-p",
+        "mech-gpu",
+        "--no-default-features",
+        "--features",
+        "canonical-native-program",
+        "--lib"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 8.573251875117421,
+      "passed_tests": []
+    }
+  ],
+  "total_unique_selected_checks": 685,
+  "focused_selected_checks": 121,
+  "source_invariants": [
+    "Cranelift remains the sole native code generator; no native C/Rust implementation of Mech algorithms.",
+    "Reuse one shared scalar/DAG map emitter for runtime loans and native phase composition. Maintain direct Bool/U64/I64/F64 emission.",
+    "Keep exact input/output widths, current shape checks, pointer overflow/capacity, unsigned range and element index validation, checked scalar errors, and source CFG/order.",
+    "Whole-map replacements still finish in the existing private scratch bank before the same non-failing scalar copy to the exclusive result bank. No ownership, alias or publication change.",
+    "Maintain complete original visits/work/comparison bills, finite and physical resource admission, ordinary replay, atomic publication, cleanup and retry. No new ABI fields or serialized runtime carrier types.",
+    "Optimization15 only. No holdout source diagnosis, profiling or selection. Fixed all30 Mech/C source, F64 MINI CPU inputs, finite tolerances, limits, timing and cache boundaries remain unchanged.",
+    "Exactly one v2 prospective fresh-process optimization15 probe per exact qualified fingerprint: seven observations per actor/case, accepted31/candidate interleaved with alternating pair/case order, all210 retained. Select only raw geomean speedup >1, equal visits and no reduced source work/comparison bills; no retries or exclusions.",
+    "Commit/freeze the exact clean source and driver before both formal sets. Keep all900 observations and29482 finite liveouts. Promote only if BOTH primary geomean median Mech/C kernel scores strictly improve on accepted31 (11.43635797708715 /39.31569548924827). Otherwise restore exact accepted31."
+  ],
+  "profiling_basis": {
+    "receipt": "training-experiments/native-map-memory-profile.json",
+    "receipt_sha256": "b7b00cffd3009f1ca1b3bba3d23f72ff509a5f2922b34c532d39ef17490aa5d1",
+    "target": "gramschmidt",
+    "mech_over_c": 54.480156773281955,
+    "execution_samples": 225,
+    "jit_samples": 174,
+    "main_map_samples": 110,
+    "caution": "Sampling is coarse. Static memory instructions do not establish dynamic cost or a speedup.",
+    "native_function": "mech_canonical_program_entry_v1_numeric_5",
+    "accepted31_static_emission": {
+      "instructions": 4286,
+      "stack_memory_instructions": 1146,
+      "max_stack_bytes": 22944,
+      "disassembly_sha256": "7029c3df9e17276751d5da557a8611857be870d6a27de8ee381adb16d8a23a80",
+      "object_sha256": "80e241e2ba3afa8a7a4dff9cf92340028af859e2d9f50aac7884132907a3e80d"
+    }
+  },
+  "development_attempts": [
+    {
+      "name": "attempt-01",
+      "source_checkpoint": {
+        "stage": "Native SSA map composition focused correctness build running; no new timing observations",
+        "live_exec_session": null,
+        "pid": 85230,
+        "source_parent": "614a4b8a4587cc6fbaf84d0ab985a3bc9de92d67",
+        "compiler_fingerprint": "9c64773275e1dbaaadbc2853c084688bbbf77e74991328718e444bf33caee480",
+        "source_paths": [
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs",
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_map_ssa_tests.rs",
+          "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs",
+          "hosts/gpu/src/native_artifact/program/image/identity.rs"
+        ],
+        "versions": {
+          "ir": 406,
+          "work": 156,
+          "abi": 47
+        },
+        "accepted_round": 31,
+        "formal_history_entries": 41,
+        "accepted_scores": {
+          "optimization": 11.43635797708715,
+          "holdout": 39.31569548924827
+        },
+        "next": "Wait for this exact focused Cargo session. No Rust edits or overlapping builds/tests/profiles/timings. Preserve every failure before editing; then qualify source and both features, inspect optimization15 emission, and use one fresh-process training probe for a changed qualified source."
+      },
+      "focused_result": {
+        "command": [
+          "cargo",
+          "test",
+          "--release",
+          "-p",
+          "mech-gpu",
+          "--no-default-features",
+          "--features",
+          "canonical-native-program",
+          "--lib",
+          "--",
+          "numeric_map",
+          "numeric_phase",
+          "rectangular_map",
+          "numeric_binary",
+          "numeric_cold_child",
+          "numeric_interval_finite_cold_suffix",
+          "--test-threads=1",
+          "--nocapture"
+        ],
+        "exit_code": 0,
+        "wall_seconds": 112.2341661658138,
+        "compiler_fingerprint": "9c64773275e1dbaaadbc2853c084688bbbf77e74991328718e444bf33caee480",
+        "source_unchanged": true,
+        "passed_tests": [
+          121
+        ],
+        "complete": true
+      },
+      "source_archive": "attempt-01/source",
+      "new_performance_observations": 0
+    }
+  ],
+  "emission_census": {
+    "receipt_sha256": "a1fd7b6b079f80756dfd5a1a3fedc27ea5e961e6902fdd457c2ac569eb5bd921",
+    "scope": "Optimization15 actual checked Objects: the profiled native function, stack and stack memory operations must shrink under the unchanged prospective gate. No new FMA, Object execution or timing."
+  },
+  "training_probe": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted31": 1.0091336554293764,
+    "regressions_over_five_percent": 3,
+    "all_visits_match": true,
+    "all_work_not_reduced": true,
+    "selected": true
+  },
+  "performance_acceptance": {
+    "history_index": 41,
+    "label": "round-41-native-map-ssa",
+    "source_commit": "1f75711d3b8ca715abf0b9e74738a061c20110f3",
+    "history_entry_sha256": "bac70838e457745eb5006d94b3c565b4aafd31b2943b6daa6cd9b955195c2d1c",
+    "scores": {
+      "optimization": 12.038834166933128,
+      "holdout": 40.63008387120563
+    },
+    "previous_measured_index": 40,
+    "run_outcome": "mixed_or_tied",
+    "compared_to_accepted_index": 31,
+    "multipliers_vs_accepted": {
+      "optimization": 1.0526807739888036,
+      "holdout": 1.033431645189052
+    },
+    "performance_gate": "not_promoted",
+    "accepted_index_after_run": 31
+  },
+  "aggregate_controls_vs_accepted31": {
+    "optimization": {
+      "raw_mech_speedup": 0.9810720543645328,
+      "original_reference_runtime_multiplier": 0.9995983289364222,
+      "reference_adjusted_speedup": 0.9806779861090098,
+      "c_runtime_multiplier": 0.9682832156148796,
+      "raw_regressions_over_five_percent_vs_accepted31": 8
+    },
+    "holdout": {
+      "raw_mech_speedup": 0.9830288330379255,
+      "original_reference_runtime_multiplier": 1.017936839776857,
+      "reference_adjusted_speedup": 1.0006612637121575,
+      "c_runtime_multiplier": 0.9843555349189459,
+      "raw_regressions_over_five_percent_vs_accepted31": 5
+    }
+  },
+  "scope": "F64 MINI CPU scope. The retained174 JIT samples are coarse. Static code counts are not dynamic costs. The historically exposed holdout is an aggregate acceptance control. Training selection is not a formal Mech/C score or promotion.",
+  "holdout_use": "Aggregate acceptance only; no per-case diagnosis, profiling or source tuning.",
+  "compiler_restored_to_accepted31": {
+    "restored_from_commit": "f60baf055a39497400f9392e0294911becf1a697",
+    "compiler_fingerprint": "6447915ae298711f3886c6cba28e0608eb3ce59feab6287308162e45e006c895",
+    "source_paths": [
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_map.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_map_ssa_tests.rs",
+      "hosts/gpu/src/native_artifact/program/codegen/numeric_phase_reductions.rs",
+      "hosts/gpu/src/native_artifact/program/image/identity.rs"
+    ],
+    "versions": {
+      "ir": 390,
+      "work": 156,
+      "abi": 47
+    },
+    "accepted_driver_unchanged": true,
+    "reason": "Both primary formal scores must strictly improve. A selected training probe cannot override that gate."
+  },
+  "formal_run_archives": {
+    "formal-measurement.log": {
+      "path": "qualification/round-41-native-map-ssa/formal-run/formal-measurement.log.gz",
+      "sha256": "d083478172e8937b449d840e398f7344ad794a1396e7035d9b2d2861a562c3ed",
+      "compressed_sha256": "81f4f6fc8bedc1f11cba37ac22cd53063c78b21c7a5e24d38af9d3fac251064e"
+    },
+    "frozen-source-checkpoint.json": {
+      "path": "qualification/round-41-native-map-ssa/formal-run/frozen-source-checkpoint.json.gz",
+      "sha256": "b376152815f69e6e83c9cb3f27b4da0dd17177d8f692ae052d27c37dca5578ec",
+      "compressed_sha256": "93e7c91dbee317092449ac29db77ae2578e2d8b6ba7b01803b8e35c80e33a43a"
+    },
+    "source-commit.log": {
+      "path": "qualification/round-41-native-map-ssa/formal-run/source-commit.log.gz",
+      "sha256": "eda8f6f2d33da131c441ff0193e432533905efa017ba3c6ef041b218006d5332",
+      "compressed_sha256": "9743de77375c7e52d66a49865cadd6eb8aa27ceba0871820927cfdff88f9057d"
+    },
+    "experiment-source-commit.json": {
+      "path": "qualification/round-41-native-map-ssa/formal-run/experiment-source-commit.json.gz",
+      "sha256": "c266ddcdb206a71e2f829fd3c8ab9f36ee3fb8e97adccc9361a220ef970c0982",
+      "compressed_sha256": "c2ba66b5befe82d483be1ec19a0eabc68b1279365b94fd4c8133f9938c3ac7f9"
+    },
+    "inter-round-aggregates.json": {
+      "path": "qualification/round-41-native-map-ssa/formal-run/inter-round-aggregates.json.gz",
+      "sha256": "dc794c72de43833257590992c2d86f4ded017e1bf72004e7f761f3d577fb3112",
+      "compressed_sha256": "92d964d5b351ffc35f46a2dfa0ef63df2eea9f96ac3e6ad39b5b1893c88c6903"
+    },
+    "formal-report-rows.json": {
+      "path": "qualification/round-41-native-map-ssa/formal-run/formal-report-rows.json.gz",
+      "sha256": "38839ca1d80c80298161ca16d4473a340efa218b76e809479c60f82ee5fd88b7",
+      "compressed_sha256": "c69521bcc4bda5b159c605678fcb8458a47387e19f3d8c04b468174bce2f3f0c"
+    },
+    "measure-candidate.py": {
+      "path": "qualification/round-41-native-map-ssa/formal-run/measure-candidate.py.gz",
+      "sha256": "f9c14ac4a8f49f329723ca6680d80630c27e28a82cc725c4da8cea14c8b1a212",
+      "compressed_sha256": "cc8831045d50dd9a24f0bdc6acf25c1ddb13d3d3bd90cd09c0c8f1e238cf1594"
+    },
+    "audit-results.py": {
+      "path": "qualification/round-41-native-map-ssa/formal-run/audit-results.py.gz",
+      "sha256": "15ced842e16ddef72b8f56f1bc6419a77decb274878bbbbac216e1c431038970",
+      "compressed_sha256": "8f773f3c737842fd2d3f837392b610c3bd93e27f59cee5905d7b357872f9ef80"
+    },
+    "finalize-results.py": {
+      "path": "qualification/round-41-native-map-ssa/formal-run/finalize-results.py.gz",
+      "sha256": "dc7556ff227393575ab0b19e4e12906712d3a3ec4fc53fe2c7efc6c2693dc951",
+      "compressed_sha256": "f3811167c94dfe03d7b8dfc275bb4557e6c2dfc69d03d535a957133ed11d3ce9"
+    }
+  }
+}
