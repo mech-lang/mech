@@ -1,0 +1,33 @@
+{
+  "schema": "mech.polybench.training-research-plan.v1",
+  "created_at": "2026-11-27T18:09:41.762001+00:00",
+  "accepted_round": 31,
+  "accepted_scores": {
+    "optimization": 11.43635797708715,
+    "holdout": 39.31569548924827
+  },
+  "formal_history_entries": 40,
+  "scope": "General native-map source-constant propagation and packed private-map publication copies. Selected only from optimization Gram profiles; no holdout case diagnosis.",
+  "profile": "training-experiments/native-map-memory-profile.json",
+  "evidence": {
+    "jit_self_samples": 174,
+    "copy_loop_samples": 31,
+    "main_rectangular_map_samples": 110,
+    "source_metadata_load": "Repeated stack loads at21624 occur in sampled map loops. Inspect actual new Object emission to verify source literal propagation removes them; do not infer a speedup from static counts."
+  },
+  "implementation": [
+    "Recover literal U64 range start/cardinality from the actual sealed source plan; guard current frame values once and retain constants in native SSA. Unknown, dynamic or overflowing source facts keep existing dynamic emission. No changed source bounds or error order.",
+    "Emit packed byte-preserving copies for completed, disjoint private map banks, with exact scalar tails. Preserve the full scratch-before-publication boundary, current ownership checks, arbitrary scalar widths, finite resource admission and unchanged source work/visits. Reuse the existing Cranelift backend and copy machinery.",
+    "Keep all compiler flags/Mech ports/C binaries/inputs/tolerances/limits/cache and checked-call boundaries fixed. No hardcoded dimensions or benchmark names in compiler code. Efficient scalar Bool/U64/I64/F64 remains maintained."
+  ],
+  "qualification": [
+    "Meaningful compiled guard tests for literal/dynamic/empty/inclusive/overflow source ranges and forged current metadata.",
+    "Packed copy tests for exact bytes, unaligned inputs, 0/1/vector-boundary/tail lengths, source immutability and surrounding canaries.",
+    "Original/decoded/restored finite-budget, exact F64 bits, error order, alias and atomic-publication/retry regressions; all30 C liveouts and both feature configurations.",
+    "Before timing inspect actual checked optimization Objects: profiled Gram native function must change, private copies must use packed loads/stores, and literal range facts must survive the control frame. No new FMA or FP reassociation.",
+    "Exactly one prospective v2 fresh-process optimization15 probe for the qualified fingerprint, preserving every observation/regression. Select only raw GM>1, equal visits and no reduced source work/comparison.",
+    "Commit/freeze exact source+driver before both formal sets; promote only if BOTH primary scores strictly beat accepted31. Otherwise retain all data and restore exact accepted31. Push completed checkpoints to PR1001."
+  ],
+  "compiler_changes_started": false,
+  "new_performance_observations": 0
+}
