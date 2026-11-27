@@ -633,7 +633,8 @@ impl Phase {
                 let replay = module.declare_func_in_func(replay, b.func);
                 let address = b.ins().func_addr(types::I64, function);
                 let scalars = b.ins().iconst(types::I64, scalars as i64);
-                b.ins().call(replay, &[storage.heap, input, out, address, scalars])
+                b.ins()
+                    .call(replay, &[storage.heap, input, out, address, scalars])
             } else {
                 b.ins().call(function, &[storage.heap, input, out])
             };
@@ -1726,18 +1727,32 @@ pub(super) fn define<M: Module>(
                 || !proof.scalar_captures.is_empty()
                 || !proof.scalar_outputs.is_empty()
                 || !proof.prepaid_sites.is_empty()
-                || proof.actions.iter().any(|(_, action)| {
-                    matches!(action, Operation::Fallback) || action.grows()
-                })
-                || proof.exits.iter().any(|exit| exit.kind == ExitKind::Unsupported)
-                || private.as_ref().is_some_and(|phase| !phase.handoffs.is_empty())
-                || outputs.iter().any(|(_, source)| matches!(source, Output::Stack(_)))
+                || proof
+                    .actions
+                    .iter()
+                    .any(|(_, action)| matches!(action, Operation::Fallback) || action.grows())
+                || proof
+                    .exits
+                    .iter()
+                    .any(|exit| exit.kind == ExitKind::Unsupported)
+                || private
+                    .as_ref()
+                    .is_some_and(|phase| !phase.handoffs.is_empty())
+                || outputs
+                    .iter()
+                    .any(|(_, source)| matches!(source, Output::Stack(_)))
             {
                 return None;
             }
-            let [array] = proof.arrays.as_slice() else { return None };
-            let [(base, true)] = arrays.as_slice() else { return None };
-            let [scalars @ .., data, len, rows, cols] = inputs.as_slice() else { return None };
+            let [array] = proof.arrays.as_slice() else {
+                return None;
+            };
+            let [(base, true)] = arrays.as_slice() else {
+                return None;
+            };
+            let [scalars @ .., data, len, rows, cols] = inputs.as_slice() else {
+                return None;
+            };
             (array.width == 4
                 && array.witness != usize::MAX
                 && !array.appends

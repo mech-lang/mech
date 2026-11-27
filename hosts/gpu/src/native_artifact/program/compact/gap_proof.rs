@@ -283,9 +283,13 @@ impl Path<'_> {
                         }
                         word
                     }
-                    Data::Unary { opcode: Op::Ireduce, arg }
-                        if byte_scatter && self.single_type(result, types::I8) => {
-                        let Word::Constant(value) = self.word(arg)? else { return None };
+                    Data::Unary {
+                        opcode: Op::Ireduce,
+                        arg,
+                    } if byte_scatter && self.single_type(result, types::I8) => {
+                        let Word::Constant(value) = self.word(arg)? else {
+                            return None;
+                        };
                         Word::Constant(value & 255)
                     }
                     Data::Unary {
@@ -322,7 +326,8 @@ impl Path<'_> {
                     {
                         let offset = i32::from(offset);
                         let address = self.word(arg)?;
-                        if opcode == Op::Load && !byte_scatter
+                        if opcode == Op::Load
+                            && !byte_scatter
                             && address == Word::InputPacket
                             && (0..self.input_bytes).contains(&offset)
                             && offset % 8 == 0
@@ -357,7 +362,8 @@ impl Path<'_> {
                         {
                             self.effects.push(Effect::Output);
                         } else if byte_scatter && width == types::I8 && offset == 0 {
-                            self.effects.push(Effect::StoreByte(address, self.word(args[0])?));
+                            self.effects
+                                .push(Effect::StoreByte(address, self.word(args[0])?));
                         } else if width == types::I32 && offset == 0 {
                             self.effects
                                 .push(Effect::Store(address, self.word(args[0])?));

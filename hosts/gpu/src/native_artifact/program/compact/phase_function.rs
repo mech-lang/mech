@@ -691,7 +691,10 @@ fn prepare_impl<M: Module>(
         && proof.exits.is_empty()
         && proof.prepaid_sites.is_empty()
         && proof.arrays.len() == 2
-        && proof.arrays.iter().all(|view| view.width == 1 && !view.appends)
+        && proof
+            .arrays
+            .iter()
+            .all(|view| view.width == 1 && !view.appends)
         && proof.arrays.iter().filter(|view| view.writable).count() == 1
         && module.isa().name() == "aarch64"
         && std::env::var_os("MECH_COMPACT_CHECKED_BYTE_SCATTER").is_some();
@@ -2231,17 +2234,23 @@ fn prepare_impl<M: Module>(
         let packet = numeric_minimal::input_words(proof, region.tail.carrier().get())?;
         let physical_word = |word| {
             let original = packet.iter().position(|&candidate| candidate == word)?;
-            packed_input.as_ref().map_or(Some(original), |kept| kept.binary_search(&original).ok())
+            packed_input
+                .as_ref()
+                .map_or(Some(original), |kept| kept.binary_search(&original).ok())
         };
         let input_extent = packed_input.as_ref().map_or(input_words, Vec::len);
         let view_word = |writable| {
-            let array = proof.arrays.iter().position(|view| view.writable == writable)?;
+            let array = proof
+                .arrays
+                .iter()
+                .position(|view| view.writable == writable)?;
             let view = proof.view(array);
             let ptr = physical_word(view)?;
             (physical_word(view + 1)? == ptr + 1).then_some(ptr)
         };
         if let (Some(src), Some(dst)) = (view_word(false), view_word(true))
-            && let Some(scatter) = gap_proof::byte_scatter::prove(&context.func, input_extent, src, dst)
+            && let Some(scatter) =
+                gap_proof::byte_scatter::prove(&context.func, input_extent, src, dst)
         {
             gap_proof::byte_scatter::lower(&mut context.func, scatter);
             context.flowgraph();
