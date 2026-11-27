@@ -35,6 +35,8 @@ pub(in crate::native_artifact) struct Frame {
     pub next: u64,
     pub range_start: u64,
     pub matrices: [MatrixView; MAX_MATRICES],
+    pub rectangle_start: u64,
+    pub rectangle_rows: u64,
 }
 pub(super) struct Loan {
     frame: Frame,
@@ -96,7 +98,8 @@ impl State {
         descriptor: &NativeProgramDescriptor,
         region: &Region,
         retirements: &[u64],
-    ) -> Result<Option<u64>, Error> {
+        args: [u64; 3],
+    ) -> Result<Option<(u64, super::NumericRectangleGeometry)>, Error> {
         use crate::native_artifact::program::prepare::retirement::RetirementKind;
         let metadata = descriptor.metadata();
         let Some(nested) = metadata.nested_numeric.at(region) else {
@@ -125,6 +128,14 @@ impl State {
             .get(region.iteration as usize)
             .and_then(Option::as_ref)
         else {
+            return Ok(None);
+        };
+        // An unused inner source must not be evaluated when the outer range
+        // is empty. In particular, invalid current endpoints remain unused.
+        if source.count == 0 && region.rectangle.is_some() {
+            return Ok(None);
+        }
+        let Some(geometry) = super::numeric_rectangles::resolve(descriptor, region, args)? else {
             return Ok(None);
         };
         let credit = (|| {
@@ -165,10 +176,8 @@ impl State {
                 .checked_add(frozen)?
                 .checked_add(growth)?
                 .checked_add(4096)?;
-            let rectangle = super::numeric_rectangles::bound(descriptor, region)?;
-            let traversals = source
-                .count
-                .checked_mul(region.rectangle.as_ref().map_or(1, |r| r.rows))?;
+            let rectangle = super::numeric_rectangles::bound(descriptor, region, geometry)?;
+            let traversals = source.count.checked_mul(geometry.rows)?;
             let replay = traversals
                 .checked_add(1)?
                 .checked_mul(traversal)?
@@ -188,7 +197,7 @@ impl State {
                 .checked_add(reduction.replay)?
                 .checked_add(traversals.checked_mul(nested.replay)?)
         })();
-        Ok(credit)
+        Ok(credit.map(|credit| (credit, geometry)))
     }
     pub(in crate::native_artifact::program::runtime) fn has_numeric_map(&self) -> bool {
         self.native_map.is_some()
@@ -225,6 +234,7 @@ impl State {
         region: &Region,
         prior: mech_core::ResourceDemand,
         replay_credit: u64,
+        rectangle_geometry: super::NumericRectangleGeometry,
     ) -> Result<Option<u64>, Error> {
         if !self.fresh_numeric_header(region.collection, region.iteration, ctx.progress())
             || ctx.ledger().current != Some(region.iteration)
@@ -297,14 +307,15 @@ impl State {
             }
             _ => return Ok(None),
         };
-        let Some(count) = source_count.checked_mul(region.rectangle.as_ref().map_or(1, |r| r.rows))
-        else {
+        let Some(count) = source_count.checked_mul(rectangle_geometry.rows) else {
             return Ok(None);
         };
         let Ok(host_count) = usize::try_from(count) else {
             return Ok(None);
         };
-        let Some(rectangle) = super::numeric_rectangles::bound(ctx.descriptor(), region) else {
+        let Some(rectangle) =
+            super::numeric_rectangles::bound(ctx.descriptor(), region, rectangle_geometry)
+        else {
             return Ok(None);
         };
         let Some(reduction) = super::numeric_reductions::bound(ctx.descriptor(), region, count)
@@ -356,12 +367,12 @@ impl State {
         {
             return Ok(None);
         }
-        if let Some(rectangle) = &region.rectangle {
+        if region.rectangle.is_some() {
             if builder.block_columns != 0
                 || builder
                     .block_rows
                     .rows()
-                    .is_some_and(|rows| rows != rectangle.rows)
+                    .is_some_and(|rows| rows != rectangle_geometry.rows)
             {
                 return Ok(None);
             }
@@ -597,7 +608,7 @@ impl State {
         // Every metadata/schema walk and full native attempt is paid even if
         // a checked scalar later fails. No failed allocator is cold-retried.
         charge(&mut ctx.work(), setup)?;
-        if !super::numeric_rectangles::validate(ctx, region, &rectangle)? {
+        if !super::numeric_rectangles::validate(ctx, region, rectangle_geometry, &rectangle)? {
             return Ok(None);
         }
         if !super::numeric_reductions::validate(ctx, region, count, &reduction)? {
@@ -673,6 +684,8 @@ impl State {
             next: 0,
             range_start,
             matrices,
+            rectangle_start: rectangle_geometry.start,
+            rectangle_rows: rectangle_geometry.rows,
         };
         let loan = super::utf8_read::boxed(Loan {
             frame,
@@ -849,7 +862,7 @@ impl State {
             .numeric_maps
             .at_header(site)
             .and_then(|r| r.rectangle.as_ref())
-            .map(|r| r.rows);
+            .map(|_| loan.expected.rectangle_rows);
         let Loan {
             values,
             output_reservation,

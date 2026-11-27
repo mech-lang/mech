@@ -122,6 +122,14 @@ unsafe extern "C" fn helper(
                 _ => unreachable!(),
             }
         }
+        if flags.corrupt == 27 || flags.corrupt == 28 {
+            let frame = unsafe { &mut *(a as *mut NativeNumericMapFrame) };
+            if flags.corrupt == 27 {
+                frame.rectangle_start ^= 1;
+            } else {
+                frame.rectangle_rows += 1;
+            }
+        }
         if flags.corrupt == 18 {
             let frame = unsafe { &mut *(a as *mut NativeNumericMapFrame) };
             frame.output_count += 1;
@@ -240,6 +248,14 @@ unsafe extern "C" fn helper(
                         frame.fold = 42;
                     } else {
                         frame.output_count += 1;
+                    }
+                }
+                if flags.corrupt == 25 || flags.corrupt == 26 {
+                    let frame = unsafe { &mut *(value as *mut NativeNumericMapFrame) };
+                    if flags.corrupt == 25 {
+                        frame.rectangle_rows = 0;
+                    } else {
+                        frame.rectangle_start = u64::MAX;
                     }
                 }
                 counts.elements.insert(site, unsafe {
@@ -1197,7 +1213,13 @@ fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveou
             _ => panic!("unexpected numerical output"),
         }
     }
-    for name in ["gramschmidt", "cholesky", "deriche", "durbin"] {
+    for name in [
+        "gramschmidt",
+        "cholesky",
+        "deriche",
+        "durbin",
+        "correlation",
+    ] {
         let case = cases["cases"]
             .as_array()
             .unwrap()
@@ -1299,13 +1321,13 @@ fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveou
                             && counts.elements.contains_key(&u64::from(region.header))
                     })
                     .collect();
-                if name != "deriche" {
+                if name != "deriche" && name != "correlation" {
                     assert!(
                         !folded.is_empty() || !phase_folds.is_empty(),
                         "actual numerical source selects scalar folds: {name}"
                     );
                 }
-                if name != "cholesky" {
+                if name != "cholesky" && name != "correlation" {
                     assert!(
                         counts.transpose_complete > 0
                             || phase_maps
@@ -1401,6 +1423,34 @@ fn numeric_maps_real_numerical_comprehensions_select_and_match_complete_c_liveou
                             "native source reduction {name} {site}"
                         );
                     }
+                }
+                if name == "correlation" {
+                    let rectangles = jit
+                        .descriptor()
+                        .metadata()
+                        .numeric_maps
+                        .regions
+                        .iter()
+                        .filter(|r| r.rectangle.is_some())
+                        .collect::<Vec<_>>();
+                    assert_eq!(rectangles.len(), 1);
+                    let region = rectangles[0];
+                    assert!(matches!(region.rectangle.as_ref().unwrap().bounds,
+                        crate::native_artifact::program::prepare::numeric_maps::RectangleBounds::Current { .. }));
+                    assert!(counts.elements.contains_key(&u64::from(region.header)));
+                    assert_eq!(counts.direct_rectangles, 1);
+                    assert_eq!(counts.block_permutations, 0);
+                    assert_eq!(counts.transpose_complete, 0);
+                    for &site in &region.body {
+                        assert!(
+                            counts.helpers.keys().all(|(at, _)| *at != u64::from(site)),
+                            "per-cell rectangle helper {site}"
+                        );
+                    }
+                    assert!(
+                        counts.helpers.keys().all(|(at, _)| *at
+                            != u64::from(region.rectangle.as_ref().unwrap().transpose))
+                    );
                 }
                 if name == "gramschmidt" {
                     let conditional = jit.descriptor().metadata().numeric_maps.regions.iter().filter(|region|

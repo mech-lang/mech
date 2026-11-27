@@ -42,13 +42,13 @@ impl Invocation<'_, '_, '_> {
         {
             return Ok(Some(0));
         }
-        let replay_credit = if tag == GlobalHelper::NumericMapPrepare {
-            let Some(credit) = self
+        let replay = if tag == GlobalHelper::NumericMapPrepare {
+            let Some((credit, geometry)) = self
                 .state
                 .collections
                 .as_ref()
                 .unwrap()
-                .numeric_replay_credit(self.descriptor, region, self.retirements)?
+                .numeric_replay_credit(self.descriptor, region, self.retirements, args)?
             else {
                 return Ok(Some(0));
             };
@@ -67,7 +67,7 @@ impl Invocation<'_, '_, '_> {
             {
                 return Ok(Some(0));
             }
-            Some(credit)
+            Some((credit, geometry))
         } else {
             None
         };
@@ -94,16 +94,9 @@ impl Invocation<'_, '_, '_> {
             let mut ctx = CollectionExecution::new(self);
             match tag {
                 GlobalHelper::NumericMapPrepare => {
-                    if args != [0; 3] {
-                        return Err(invalid("native numeric map entry has payload"));
-                    }
+                    let (credit, geometry) = replay.unwrap();
                     collections
-                        .prepare_numeric_map(
-                            &mut ctx,
-                            region,
-                            prior.unwrap(),
-                            replay_credit.unwrap(),
-                        )
+                        .prepare_numeric_map(&mut ctx, region, prior.unwrap(), credit, geometry)
                         .map(|pointer| Some(pointer.unwrap_or(0)))
                 }
                 GlobalHelper::NumericMapFinish => {

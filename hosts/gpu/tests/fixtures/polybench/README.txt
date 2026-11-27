@@ -2614,3 +2614,32 @@ No holdout per-case diagnosis or profiling. All101 raw evidence archives have
 verified compressed and uncompressed hashes.
 
 [Profile evidence](training-experiments/accepted44-margin-profile.json)
+
+Current-bound rectangular maps: qualified, not performance-selected
+-----------------------------------------------------------------
+
+The compiler now derives current immutable U64 inner-range endpoints before an
+enclosing rectangular map, transports the exact original scalar operands,
+certifies current cardinality and shapes with the original selected factories,
+and reuses the existing Cranelift scalar body and row-major private map bank.
+Fixed scratch phases explicitly decline current bounds. Typed IR410/work156/
+ABI47. All709 broad checks and91 focused checks pass, including all30 finite
+C-liveout cases, both features, fresh endpoints and all scalar bits, empty and
+invalid ranges, finite denial/replay, loan/proof tampering, cleanup and retry.
+
+The untimed actual correlation census replaces56 inner-map callbacks with2
+rectangle prepare/finish callbacks and removes28 inner transpose callbacks.
+All784 finite C liveouts match. Physical visits fall392 to28, work99926852068
+to36175107508, comparison work5082102222 to1496518178. Other execution counters
+match. Therefore the precommitted v2 counter guard fails BEFORE any timing
+probe. No performance sample or formal history entry was added. Accepted44
+remains the performance baseline (10.24618x optimization /38.46048x holdout).
+
+A proposed v3 gate permits only independently source-proved fusion with actual
+callback/counter evidence and full source admission/replay/finite guarantees.
+It is not adopted. The fixed ports, split, primary metric, all timing details
+and strict two-set acceptance gate stay unchanged. All development evidence,
+including two debugger selector failures before process launch, is preserved.
+
+[Qualified source/evidence](training-experiments/current-bound-rectangles-development.json)
+[Selection gate proposal](training-experiments/current-bound-rectangles-selection-proposal.json)

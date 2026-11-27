@@ -73,7 +73,10 @@ fn candidate(plan: &Plan, region: Region) -> Option<MatrixMap> {
         .checked_add(u64::from(inclusive))?;
     // This is a finite scratch-bank eligibility envelope, never a source bound.
     // Larger, dynamic, empty, and overflowed sources retain their original CFG.
-    let rows = region.rectangle.as_ref().map_or(1, |r| r.rows);
+    let rows = match &region.rectangle {
+        Some(rectangle) => rectangle.fixed()?[2],
+        None => 1,
+    };
     let elements = count.checked_mul(rows)?;
     if count == 0 || rows == 0 || elements.checked_mul(u64::from(region.output_width))? > 65536 {
         return None;

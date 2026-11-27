@@ -339,7 +339,7 @@ fn numeric_phase_owned_map_images_rederive_banks_locals_rectangles_and_nested_so
             fields.push(format!("actions/{i}/1/Map/replacement/source/elements"));
             if r["source"]["region"]["rectangle"].is_object() {
                 fields.push(format!(
-                    "actions/{i}/1/Map/replacement/source/region/rectangle/rows"
+                    "actions/{i}/1/Map/replacement/source/region/rectangle/bounds/Fixed/rows"
                 ));
             }
             if !r["source"]["region"]["nested"]

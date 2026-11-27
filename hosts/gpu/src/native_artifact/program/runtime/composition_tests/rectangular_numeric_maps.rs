@@ -162,6 +162,13 @@ fn artifacts(source: &str) -> [ProgramArtifact; 2] {
 #[test]
 fn rectangular_numeric_maps_all_exact_kinds_keep_branches_shapes_fresh_payloads_and_empty_sources()
 {
+    exact_kinds(false);
+}
+#[test]
+fn rectangular_numeric_maps_current_bounds_keep_all_exact_kinds_and_empty_sources() {
+    exact_kinds(true);
+}
+fn exact_kinds(current: bool) {
     use super::numeric_maps::{Flags, run, typed_arguments};
     use mech_core::snapshot::F64Bits;
     let cases = [
@@ -191,8 +198,18 @@ fn rectangular_numeric_maps_all_exact_kinds_keep_branches_shapes_fresh_payloads_
         ),
     ];
     for (kind, cells) in cases {
+        let endpoints = if current {
+            "first..=last"
+        } else {
+            "1u64..=3u64"
+        };
+        let prefix = if current {
+            "first := first<u64>\nlast := last<u64>\n"
+        } else {
+            ""
+        };
         let source = format!(
-            "data := values<[{kind}]:1,3>\n[[((j == 1u64)? | true => data[i] | false => data[4u64 - i]) | i <- 1u64..=3u64]' | j <- items<[u64]>]\n"
+            "{prefix}data := values<[{kind}]:1,3>\n[[((j == 1u64)? | true => data[i] | false => data[4u64 - i]) | i <- {endpoints}]' | j <- items<[u64]>]\n"
         );
         for artifact in artifacts(&source) {
             let mode = NativeProgramLimitMode::NoLimits;
@@ -221,6 +238,8 @@ fn rectangular_numeric_maps_all_exact_kinds_keep_branches_shapes_fresh_payloads_
                             &memory,
                             &[
                                 ("values", Data::Matrix(values.into()), &[1, 3]),
+                                ("first", Data::U64(1), &[]),
+                                ("last", Data::U64(3), &[]),
                                 (
                                     "items",
                                     Data::Matrix(items.iter().copied().map(Data::U64).collect()),
@@ -296,9 +315,24 @@ fn rectangular_numeric_maps_all_exact_kinds_keep_branches_shapes_fresh_payloads_
 
 #[test]
 fn rectangular_numeric_maps_replay_partial_bounds_and_arithmetic_errors_with_finite_limits() {
+    finite_limits(false);
+}
+#[test]
+fn rectangular_numeric_maps_current_bounds_preserve_finite_limits_and_original_errors() {
+    finite_limits(true);
+}
+fn finite_limits(current: bool) {
     use super::numeric_maps::{Flags, run, typed_arguments};
     let source = "data := values<[u64]:1,3>\ndivisor := divisor<u64>\n[[((j == 1u64)? | true => data[i] / divisor | false => data[9u64]) | i <- 1u64..=3u64]' | j <- items<[u64]>]\n";
-    for artifact in artifacts(source) {
+    let source = if current {
+        format!(
+            "last := last<u64>\n{}",
+            source.replace("1u64..=3u64", "1u64..=last")
+        )
+    } else {
+        source.to_owned()
+    };
+    for artifact in artifacts(&source) {
         let mode = NativeProgramLimitMode::NoLimits;
         let jit = JitProgramArtifact::compile_with_limits(
             &artifact,
@@ -329,6 +363,7 @@ fn rectangular_numeric_maps_replay_partial_bounds_and_arithmetic_errors_with_fin
                             &[1, 3],
                         ),
                         ("divisor", Data::U64(divisor), &[]),
+                        ("last", Data::U64(3), &[]),
                         (
                             "items",
                             Data::Matrix(items.iter().copied().map(Data::U64).collect()),
@@ -532,10 +567,25 @@ fn rectangular_numeric_maps_replay_partial_bounds_and_arithmetic_errors_with_fin
 
 #[test]
 fn rectangular_numeric_maps_reject_changed_loans_and_interleaving_then_retry() {
+    changed_loans(false);
+}
+#[test]
+fn rectangular_numeric_maps_current_bounds_reject_changed_loans_and_allow_retry() {
+    changed_loans(true);
+}
+fn changed_loans(current: bool) {
     use super::numeric_maps::{Flags, run, typed_arguments};
     use mech_core::snapshot::F64Bits;
     let source = "data := values<[f64]:1,3>\n[[data[i] | i <- 1u64..=3u64]' | j <- items<[u64]>]\n";
-    for artifact in artifacts(source) {
+    let source = if current {
+        format!(
+            "last := last<u64>\n{}",
+            source.replace("1u64..=3u64", "1u64..=last")
+        )
+    } else {
+        source.to_owned()
+    };
+    for artifact in artifacts(&source) {
         let mode = NativeProgramLimitMode::NoLimits;
         let jit = JitProgramArtifact::compile_with_limits(
             &artifact,
@@ -558,6 +608,7 @@ fn rectangular_numeric_maps_reject_changed_loans_and_interleaving_then_retry() {
                         ),
                         &[1, 3],
                     ),
+                    ("last", Data::U64(3), &[]),
                     (
                         "items",
                         Data::Matrix(vec![Data::U64(1), Data::U64(2)].into()),
@@ -581,7 +632,7 @@ fn rectangular_numeric_maps_reject_changed_loans_and_interleaving_then_retry() {
             .0
             .unwrap();
             let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
-            for corrupt in [1, 3, 5, 8, 9, 14, 16, 17] {
+            for corrupt in [1, 3, 5, 8, 9, 14, 16, 17, 25, 26, 27, 28] {
                 let mut output = prior.clone();
                 let (result, counts) = run(
                     &jit,
@@ -636,9 +687,9 @@ fn rectangular_numeric_maps_reject_changed_loans_and_interleaving_then_retry() {
 }
 
 #[test]
-fn rectangular_numeric_maps_keep_dynamic_and_ragged_inner_ranges_on_the_original_path() {
+fn rectangular_numeric_maps_keep_outer_dependent_inner_ranges_on_the_original_path() {
     for source in [
-        "data := values<[f64]:1,3>\nlast := last<u64>\n[[data[i] | i <- 1u64..=last]' | j <- items<[u64]>]\n",
+        "data := values<[f64]:1,3>\n[[data[i] | i <- j..=3u64]' | j <- items<[u64]>]\n",
         "data := values<[f64]:1,3>\n[[data[i] | i <- 1u64..=j]' | j <- items<[u64]>]\n",
     ] {
         for artifact in artifacts(source) {
@@ -653,5 +704,219 @@ fn rectangular_numeric_maps_keep_dynamic_and_ragged_inner_ranges_on_the_original
                     .all(|r| r.rectangle.is_none())
             );
         }
+    }
+}
+
+#[test]
+fn rectangular_numeric_maps_current_endpoints_are_fresh_and_keep_original_failures() {
+    use super::numeric_maps::{Flags, run, typed_arguments};
+    for inclusive in [false, true] {
+        let range = if inclusive {
+            "first..=last"
+        } else {
+            "first..last"
+        };
+        let source = format!(
+            "first := first<u64>\nlast := last<u64>\ndata := values<[u64]:1,5>\n[[data[i] + j | i <- {range}]' | j <- items<[u64]>]\n"
+        );
+        for artifact in artifacts(&source) {
+            let mode = NativeProgramLimitMode::NoLimits;
+            let jit = JitProgramArtifact::compile_with_limits(
+                &artifact,
+                &mech_stdlib::source_catalog(),
+                mode.compilation(),
+            )
+            .unwrap();
+            let rectangles = jit
+                .descriptor()
+                .metadata()
+                .numeric_maps
+                .regions
+                .iter()
+                .filter(|r| r.rectangle.is_some())
+                .collect::<Vec<_>>();
+            assert_eq!(rectangles.len(), 1);
+            assert!(rectangles[0].rectangle.as_ref().unwrap().fixed().is_none());
+            crate::native_artifact::emit_program_object(&artifact, &mech_stdlib::source_catalog())
+                .unwrap();
+            for restored in [false, true] {
+                let memory = mode.memory_budget();
+                let make = |first, last, items: &[u64]| {
+                    typed_arguments(
+                        &artifact,
+                        &memory,
+                        &[
+                            ("first", Data::U64(first), &[]),
+                            ("last", Data::U64(last), &[]),
+                            (
+                                "values",
+                                Data::Matrix([17, 34, 51, 68, 85].map(Data::U64).into()),
+                                &[1, 5],
+                            ),
+                            (
+                                "items",
+                                Data::Matrix(items.iter().copied().map(Data::U64).collect()),
+                                &[1, items.len() as u64],
+                            ),
+                        ],
+                    )
+                };
+                // Different starts, rows and column counts on the SAME compiled
+                // program, including a one-row result and repeated source words.
+                for (first, last, items) in [
+                    (1, if inclusive { 3 } else { 4 }, vec![2, 1]),
+                    (3, if inclusive { 5 } else { 6 }, vec![3, 1, 3, 2]),
+                    (2, if inclusive { 2 } else { 3 }, vec![9]),
+                    (1, if inclusive { 5 } else { 6 }, vec![4, 2, 4]),
+                ] {
+                    let args = make(first, last, &items);
+                    let retained = (memory.used_bytes(), memory.retained_snapshot_nodes());
+                    let input_before = args
+                        .iter()
+                        .map(|v| v.canonical_data_draft().unwrap())
+                        .collect::<Vec<_>>();
+                    let mut ordinary = vec![None; artifact.outputs().len()];
+                    run(
+                        &jit,
+                        &args,
+                        &mut ordinary,
+                        &memory,
+                        mode.execution(),
+                        restored,
+                        Flags {
+                            ordinary: true,
+                            ..Default::default()
+                        },
+                    )
+                    .0
+                    .unwrap();
+                    let mut output = vec![None; artifact.outputs().len()];
+                    let (result, counts) = run(
+                        &jit,
+                        &args,
+                        &mut output,
+                        &memory,
+                        mode.execution(),
+                        restored,
+                        Flags::default(),
+                    );
+                    result.unwrap();
+                    assert_eq!(counts.complete, 1, "{counts:?}");
+                    assert_eq!(counts.block_permutations, 0);
+                    assert_eq!(snapshots(&output), snapshots(&ordinary));
+                    assert_eq!(
+                        args.iter()
+                            .map(|v| v.canonical_data_draft().unwrap())
+                            .collect::<Vec<_>>(),
+                        input_before
+                    );
+                    drop((ordinary, output));
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        retained
+                    );
+                    drop(args);
+                    assert_eq!(
+                        (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                        (0, 0)
+                    );
+                }
+                let good = make(1, 3, &[1, 2]);
+                let mut prior = vec![None; artifact.outputs().len()];
+                run(
+                    &jit,
+                    &good,
+                    &mut prior,
+                    &memory,
+                    mode.execution(),
+                    restored,
+                    Flags {
+                        ordinary: true,
+                        ..Default::default()
+                    },
+                )
+                .0
+                .unwrap();
+                // The ordinary source owns errors for reversed/empty/overflowed
+                // ranges and checked matrix accesses, including partial banks.
+                let mut failures = vec![(9, 2), (0, u64::MAX), (0, 1), (u64::MAX, u64::MAX)];
+                if !inclusive {
+                    failures.push((2, 2));
+                }
+                for (first, last) in failures {
+                    for items in [vec![], vec![1, 2]] {
+                        let args = make(first, last, &items);
+                        let mut reference = prior.clone();
+                        let mut output = prior.clone();
+                        let expected = run(
+                            &jit,
+                            &args,
+                            &mut reference,
+                            &memory,
+                            mode.execution(),
+                            restored,
+                            Flags {
+                                ordinary: true,
+                                ..Default::default()
+                            },
+                        )
+                        .0;
+                        let (actual, _) = run(
+                            &jit,
+                            &args,
+                            &mut output,
+                            &memory,
+                            mode.execution(),
+                            restored,
+                            Flags::default(),
+                        );
+                        assert_eq!(
+                            format!("{:?}", actual.as_ref().err()),
+                            format!("{:?}", expected.as_ref().err()),
+                            "{first}..{last}, outer={items:?}"
+                        );
+                        assert_eq!(actual.is_ok(), items.is_empty());
+                        assert_eq!(snapshots(&output), snapshots(&reference));
+                        if actual.is_err() {
+                            assert_eq!(snapshots(&output), snapshots(&prior));
+                        }
+                    }
+                }
+                drop((good, prior));
+                assert_eq!(
+                    (memory.used_bytes(), memory.retained_snapshot_nodes()),
+                    (0, 0)
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn rectangular_numeric_maps_current_bounds_cannot_become_fixed_phase_banks() {
+    use crate::native_artifact::program::prepare::numeric_phase::matrix_maps;
+    let source = "last := last<u64>\ndata := values<[u64]:1,3>\n[[data[i] + j | i <- 1u64..=last]' | j <- 1u64..=4u64]\n";
+    for artifact in artifacts(source) {
+        let jit = JitProgramArtifact::compile(&artifact, &mech_stdlib::source_catalog()).unwrap();
+        let metadata = jit.descriptor().metadata();
+        assert_eq!(
+            metadata
+                .numeric_maps
+                .regions
+                .iter()
+                .filter(|r| r.rectangle.as_ref().is_some_and(|r| r.fixed().is_none()))
+                .count(),
+            1
+        );
+        assert!(
+            matrix_maps::inventory(&metadata.plan)
+                .unwrap()
+                .iter()
+                .all(|map| map
+                    .region
+                    .rectangle
+                    .as_ref()
+                    .is_none_or(|r| r.fixed().is_some()))
+        );
     }
 }

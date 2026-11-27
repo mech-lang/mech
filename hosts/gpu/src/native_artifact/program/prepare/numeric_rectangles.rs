@@ -12,11 +12,24 @@ pub(in crate::native_artifact) struct Rectangle {
     pub inner_element: u32,
     pub range_prepare: u32,
     pub transpose: u32,
-    pub start: u64,
-    pub end: u64,
-    /// A provisional bound, certified by the selected range factory per loan.
-    pub rows: u64,
+    pub bounds: Bounds,
     pub elided_values: Vec<u32>,
+}
+/// Source facts only. Current endpoints are read afresh at the exact outer
+/// header; they never become fixed scratch-bank cardinality facts.
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub(in crate::native_artifact) enum Bounds {
+    Fixed { start: u64, end: u64, rows: u64 },
+    Current { operands: [u32; 2] },
+}
+impl Rectangle {
+    pub fn fixed(&self) -> Option<[u64; 3]> {
+        match self.bounds {
+            Bounds::Fixed { start, end, rows } => Some([start, end, rows]),
+            Bounds::Current { .. } => None,
+        }
+    }
 }
 fn constant(plan: &Plan, value: Value) -> Option<u64> {
     let entry = plan.constants().iter().find(|c| c.value() == value)?;
@@ -25,17 +38,41 @@ fn constant(plan: &Plan, value: Value) -> Option<u64> {
         _ => None,
     }
 }
-fn range(plan: &Plan, cursor: &NativeU64RangeCursor) -> Option<(u64, u64, u64)> {
-    let [first, last] = cursor.operands();
-    let start = constant(plan, *first)?;
-    let end = constant(plan, *last)?;
-    let difference = end.checked_sub(start)?;
-    let rows = match cursor.template().primitive() {
-        Primitive::RangeExclusive => difference,
-        Primitive::RangeInclusive => difference.checked_add(1)?,
-        _ => return None,
-    };
-    (rows != 0).then_some((start, end, rows))
+fn range(
+    plan: &Plan,
+    facts: &Facts<'_>,
+    cursor: &NativeU64RangeCursor,
+    initialize: u32,
+    parent: Option<u32>,
+) -> Option<Bounds> {
+    if !matches!(
+        cursor.template().primitive(),
+        Primitive::RangeExclusive | Primitive::RangeInclusive
+    ) {
+        return None;
+    }
+    let operands = cursor.operands();
+    for &value in operands {
+        if plan.values()[value.get() as usize].scalar_kind() != Some(NativeScalarKind::U64)
+            || !immutable_before(facts, value, initialize, parent).ok()?
+        {
+            return None;
+        }
+    }
+    match operands.map(|value| constant(plan, value)) {
+        [Some(start), Some(end)] => {
+            let difference = end.checked_sub(start)?;
+            let rows = match cursor.template().primitive() {
+                Primitive::RangeExclusive => difference,
+                Primitive::RangeInclusive => difference.checked_add(1)?,
+                _ => return None,
+            };
+            (rows != 0).then_some(Bounds::Fixed { start, end, rows })
+        }
+        _ => Some(Bounds::Current {
+            operands: operands.map(|value| value.get()),
+        }),
+    }
 }
 fn segment(plan: &Plan, from: u32, until: u32, iteration: u32) -> Option<Vec<u32>> {
     let mut seen = BTreeSet::new();
@@ -131,7 +168,13 @@ fn candidate(plan: &Plan, facts: &Facts<'_>, layout: &Layout, id: usize) -> Opti
     let Source::U64Range(cursor) = inner_generator.source() else {
         return None;
     };
-    let (start, end, rows) = range(plan, cursor)?;
+    let bounds = range(
+        plan,
+        facts,
+        cursor,
+        generator.initialize(),
+        generator.parent(),
+    )?;
     let prefix = segment(plan, generator.body(), inner_generator.header(), iteration)?;
     let mut saw_element = false;
     let mut saw_range = false;
@@ -297,9 +340,7 @@ fn candidate(plan: &Plan, facts: &Facts<'_>, layout: &Layout, id: usize) -> Opti
         inner_element: inner.element,
         range_prepare: cursor.prepare(),
         transpose,
-        start,
-        end,
-        rows,
+        bounds,
         elided_values: vec![
             inner.output,
             transposed.get(),

@@ -17,7 +17,7 @@ pub(in crate::native_artifact) mod nested;
 mod rectangles;
 #[path = "numeric_map_reductions.rs"]
 mod reductions;
-pub(in crate::native_artifact) use rectangles::Rectangle;
+pub(in crate::native_artifact) use rectangles::{Bounds as RectangleBounds, Rectangle};
 pub(in crate::native_artifact) use reductions::Reduction;
 #[path = "numeric_map_transposes.rs"]
 mod transposes;

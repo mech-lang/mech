@@ -2,7 +2,7 @@
 use super::hooks::Hooks;
 use crate::native_artifact::NativeCompileError;
 use crate::native_artifact::compiler::{backend, offset, primitive};
-use crate::native_artifact::program::prepare::numeric_maps::Region;
+use crate::native_artifact::program::prepare::numeric_maps::{RectangleBounds, Region};
 use crate::native_artifact::program::protocol::GlobalHelper;
 use crate::native_artifact::program::runtime::NativeNumericMapFrame as Frame;
 use crate::native_artifact::program::runtime::NativeNumericMapMatrixView as MatrixView;
@@ -26,7 +26,34 @@ pub(in crate::native_artifact) fn emit_entry(
     error: Block,
 ) -> Result<(), NativeCompileError> {
     let zero = b.ins().iconst(types::I64, 0);
-    hooks.call(b, site, GlobalHelper::NumericMapPrepare, [zero; 3], error);
+    let args = if let Some(rectangle) = &region.rectangle {
+        if let RectangleBounds::Current { operands } = rectangle.bounds {
+            let mech_engine::native_artifact::NativeControlLoop::Collection(inner) =
+                &plan.iterations()[rectangle.inner_iteration as usize]
+            else {
+                return Err(backend("current rectangle lost inner collection"));
+            };
+            let mech_engine::native_artifact::NativeCollectionSource::U64Range(cursor) =
+                inner.source()
+            else {
+                return Err(backend("current rectangle lost inner range"));
+            };
+            if cursor.operands().map(|value| value.get()) != operands {
+                return Err(backend("current rectangle endpoint inventory differs"));
+            }
+            let [first, last] = cursor.operands();
+            [
+                crate::native_artifact::control_compiler::load(b, locals, *first)?,
+                crate::native_artifact::control_compiler::load(b, locals, *last)?,
+                zero,
+            ]
+        } else {
+            [zero; 3]
+        }
+    } else {
+        [zero; 3]
+    };
+    hooks.call(b, site, GlobalHelper::NumericMapPrepare, args, error);
     let frame = b.ins().load(types::I64, MemFlags::new(), hooks.result, 0);
     let selected = b.create_block();
     let ordinary = b.create_block();
@@ -121,10 +148,26 @@ pub(super) fn emit(
     let index_miss = b.create_block();
     let count = get(b, frame, offset_of!(Frame, count));
     let source_count = get(b, frame, offset_of!(Frame, source_count));
-    let inner_count = b.ins().iconst(
-        types::I64,
-        region.rectangle.as_ref().map_or(1, |r| r.rows) as i64,
-    );
+    let (inner_start, inner_count) = match &region.rectangle {
+        Some(rectangle) => match rectangle.bounds {
+            RectangleBounds::Fixed { start, rows, .. } => (
+                b.ins().iconst(types::I64, start as i64),
+                b.ins().iconst(types::I64, rows as i64),
+            ),
+            RectangleBounds::Current { .. } => {
+                let start = get(b, frame, offset_of!(Frame, rectangle_start));
+                let rows = get(b, frame, offset_of!(Frame, rectangle_rows));
+                let positive = b.ins().icmp_imm(IntCC::NotEqual, rows, 0);
+                require(b, positive, malformed);
+                let last = b.ins().iadd_imm(rows, -1);
+                let (_, overflow) = b.ins().uadd_overflow(start, last);
+                let good = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
+                require(b, good, malformed);
+                (start, rows)
+            }
+        },
+        None => (b.ins().iconst(types::I64, 0), b.ins().iconst(types::I64, 1)),
+    };
     let (expected, overflow) = b.ins().umul_overflow(source_count, inner_count);
     let good = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
     require(b, good, malformed);
@@ -306,13 +349,12 @@ pub(super) fn emit(
     b.switch_to_block(body);
     let at = b.use_var(cursor);
     let (source_at, rectangle_row) = if let Some(rectangle) = &region.rectangle {
-        let rows = b.ins().iconst(types::I64, rectangle.rows as i64);
-        let column = b.ins().udiv(at, rows);
+        let column = b.ins().udiv(at, inner_count);
         // One quotient serves the source cursor and final row-major store.
         // 0 <= at < rows * source_count, so column * rows <= at.
-        let consumed = b.ins().imul(column, rows);
+        let consumed = b.ins().imul(column, inner_count);
         let row = b.ins().isub(at, consumed);
-        let inner = b.ins().iadd_imm(row, rectangle.start as i64);
+        let inner = b.ins().iadd(row, inner_start);
         b.def_var(words[&rectangle.inner_element], inner);
         (column, Some(row))
     } else {

@@ -135,8 +135,26 @@ pub(super) fn emit_region(
     let frame = b.ins().stack_addr(types::I64, slot, 0);
     let zero = b.ins().iconst(types::I64, 0);
     let one = b.ins().iconst(types::I64, 1);
-    let elements = if let Some(rectangle) = &region.rectangle {
-        let rows = b.ins().iconst(types::I64, rectangle.rows as i64);
+    let (rectangle_start, rectangle_rows) = match &region.rectangle {
+        Some(rectangle) => {
+            let [start, _, rows] = rectangle
+                .fixed()
+                .ok_or_else(|| backend("fixed numeric phase has current rectangle bounds"))?;
+            (
+                b.ins().iconst(types::I64, start as i64),
+                b.ins().iconst(types::I64, rows as i64),
+            )
+        }
+        None => (zero, one),
+    };
+    for (at, word) in [
+        (offset_of!(Frame, rectangle_start), rectangle_start),
+        (offset_of!(Frame, rectangle_rows), rectangle_rows),
+    ] {
+        b.ins().store(MemFlags::new(), word, frame, at as i32);
+    }
+    let elements = if region.rectangle.is_some() {
+        let rows = rectangle_rows;
         let (elements, overflow) = b.ins().umul_overflow(count, rows);
         let good = b.ins().icmp_imm(IntCC::Equal, overflow, 0);
         require(b, good, miss);

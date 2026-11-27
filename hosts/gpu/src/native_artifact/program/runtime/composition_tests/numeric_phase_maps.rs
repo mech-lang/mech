@@ -959,7 +959,12 @@ fn numeric_phase_map_source_proof_keeps_rectangles_nested_folds_and_complete_out
         for map in maps {
             assert_eq!(map.extents[0] * map.extents[1], map.elements);
             assert_eq!(
-                map.count * map.region.rectangle.as_ref().map_or(1, |r| r.rows),
+                map.count
+                    * map
+                        .region
+                        .rectangle
+                        .as_ref()
+                        .map_or(1, |r| r.fixed().unwrap()[2]),
                 map.elements
             );
             let bound = map.budget(&m.plan, &m.calls, &m.visits).unwrap();
@@ -976,7 +981,13 @@ fn numeric_phase_map_source_proof_keeps_rectangles_nested_folds_and_complete_out
                     );
                 }
                 let mut forged = map.clone();
-                forged.region.rectangle.as_mut().unwrap().rows += 1;
+                let super::super::super::prepare::numeric_maps::RectangleBounds::Fixed {
+                    rows, ..
+                } = &mut forged.region.rectangle.as_mut().unwrap().bounds
+                else {
+                    panic!("fixed scratch-bank map")
+                };
+                *rows += 1;
                 assert!(forged.budget(&m.plan, &m.calls, &m.visits).is_none());
             }
             for child in &map.region.nested {

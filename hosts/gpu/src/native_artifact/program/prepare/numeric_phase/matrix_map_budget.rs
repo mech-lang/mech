@@ -19,15 +19,16 @@ impl MatrixMap {
         else {
             return None;
         };
+        let rows = match &self.region.rectangle {
+            Some(rectangle) => rectangle.fixed()?[2],
+            None => 1,
+        };
         if cursor.operands().map(|v| v.get()) != [self.first, self.last]
             || self.count
                 != super::super::reductions::constant(plan, self.last)?
                     .checked_sub(super::super::reductions::constant(plan, self.first)?)?
                     .checked_add(u64::from(self.inclusive))?
-            || self.elements
-                != self
-                    .count
-                    .checked_mul(self.region.rectangle.as_ref().map_or(1, |r| r.rows))?
+            || self.elements != self.count.checked_mul(rows)?
             || self.extents[0].checked_mul(self.extents[1])? != self.elements
         {
             return None;
@@ -58,6 +59,7 @@ impl MatrixMap {
             .binding_work()
             .checked_add(transpose.map_or(0, |call| call.binding_work()))?;
         if let Some(rectangle) = &self.region.rectangle {
+            let [start, end, rows] = rectangle.fixed()?;
             let NativeControlLoop::Collection(inner) =
                 &plan.iterations()[rectangle.inner_iteration as usize]
             else {
@@ -68,10 +70,8 @@ impl MatrixMap {
             else {
                 return None;
             };
-            if super::super::reductions::constant(plan, cursor.operands()[0].get())?
-                != rectangle.start
-                || super::super::reductions::constant(plan, cursor.operands()[1].get())?
-                    != rectangle.end
+            if super::super::reductions::constant(plan, cursor.operands()[0].get())? != start
+                || super::super::reductions::constant(plan, cursor.operands()[1].get())? != end
                 || cursor.prepare() != rectangle.range_prepare
             {
                 return None;
@@ -79,10 +79,7 @@ impl MatrixMap {
             let range = calls.get(rectangle.range_prepare as usize)?.as_ref()?;
             let transpose = calls.get(rectangle.transpose as usize)?.as_ref()?;
             if range.template() != cursor.template()
-                || range
-                    .selected_u64_range_cardinality(rectangle.start, rectangle.end)
-                    .ok()?
-                    != rectangle.rows
+                || range.selected_u64_range_cardinality(start, end).ok()? != rows
                 || !transpose.supports_numeric_matrix_transpose()
             {
                 return None;
@@ -91,19 +88,15 @@ impl MatrixMap {
                 .output()
                 .get() as usize]
                 .definition();
-            mech_core::shape_for_resolved_extents(range.template().output(), &[1, rectangle.rows])
-                .ok()?;
-            mech_core::shape_for_resolved_extents(input, &[1, rectangle.rows]).ok()?;
+            mech_core::shape_for_resolved_extents(range.template().output(), &[1, rows]).ok()?;
+            mech_core::shape_for_resolved_extents(input, &[1, rows]).ok()?;
             mech_core::shape_for_resolved_extents(
                 transpose.template().inputs().first()?,
-                &[1, rectangle.rows],
+                &[1, rows],
             )
             .ok()?;
-            mech_core::shape_for_resolved_extents(
-                transpose.template().output(),
-                &[rectangle.rows, 1],
-            )
-            .ok()?;
+            mech_core::shape_for_resolved_extents(transpose.template().output(), &[rows, 1])
+                .ok()?;
             binding_bytes = binding_bytes
                 .checked_add(range.binding_metadata_bytes())?
                 .checked_add(transpose.binding_metadata_bytes())?;

@@ -33,6 +33,7 @@ mod data;
 mod numeric_generator;
 pub(in crate::native_artifact) mod numeric_map;
 mod numeric_rectangles;
+pub(in crate::native_artifact::program::runtime) use numeric_rectangles::Geometry as NumericRectangleGeometry;
 mod numeric_reductions;
 mod numeric_transposes;
 mod row_blocks;
