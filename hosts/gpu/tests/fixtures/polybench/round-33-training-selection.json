@@ -1,0 +1,28 @@
+{
+  "selected_at": "2026-11-27T08:51:29.856245+00:00",
+  "prospective_rule": {
+    "scope": "Optimization15 only; prospective before candidate performance. No holdout tuning.",
+    "prerequisites": [
+      "585 selected checks and both standalone features on unchanged source",
+      "Actual checked Object emission removes the profiled coordinate-division sequence from rectangular map traversal",
+      "All15 optimization warmups match full C liveouts",
+      "Every execution counter matches accepted31 exactly"
+    ],
+    "training_selection": "One seven-sample rotating two-actor optimization probe against accepted31; select only if raw geometric-mean speedup is strictly above1. Preserve all cases, observations and regressions. No post-hoc timing retry or exclusion.",
+    "formal_promotion": "Commit and freeze source+driver before both900-observation formal sets. Both Mech/C scores must strictly improve versus accepted31, without tolerance.",
+    "goal": "Below1.0x C on fixed15 holdout."
+  },
+  "probe_sha256": "9d7f188c33d1ba68deefc1332a92c3755ca36c1198ea41c54c4e761b1a6582f3",
+  "emission_census_sha256": "aa9dbad36e259f16136c91e5844fac34b6054f37a9144841fc0502b42a07f997",
+  "selected_compiler_fingerprint": "7ace67804cf2202c9af0fd25d45298827d57b8c702e280fde252f11ba04697d1",
+  "selected_driver_sha256": "dd32c019bdf9a8ef88ad84cf4b815497bd49f98f2f1dce7bcf9133d69dae36d9",
+  "decision": "Select unchanged qualified source-ordered rectangular-loop candidate for frozen formal both-set evaluation",
+  "summary": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted31": 1.007267270999058,
+    "regressions_over_five_percent": 2,
+    "sum_candidate_median_seconds": 0.0009624620000000001,
+    "sum_reference_median_seconds": 0.001009249
+  },
+  "holdout_performance_used": false
+}

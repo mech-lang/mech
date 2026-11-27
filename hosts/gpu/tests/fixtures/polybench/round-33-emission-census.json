@@ -1,0 +1,399 @@
+{
+  "scope": "Real checked Object export for optimization15 only; no timing observations or linked Object execution.",
+  "compiler_fingerprint": "7ace67804cf2202c9af0fd25d45298827d57b8c702e280fde252f11ba04697d1",
+  "driver_sha256": "dd32c019bdf9a8ef88ad84cf4b815497bd49f98f2f1dce7bcf9133d69dae36d9",
+  "cases": {
+    "2mm": {
+      "code_bytes": 3876,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 18,
+          "instructions": 969
+        }
+      },
+      "object_sha256": "44550211217de51049141c82d7e5a937af2083be8fd49f8266af71719164e76c",
+      "metadata_sha256": "907caf5e3483ddd1e416492fb74ef2bf738e7a72b8c4bbedaeea83b8054a9bba",
+      "disassembly_sha256": "5a32e4ad1c04ebf27238290b4cc85188d74eb0537188b516f70748d77c9b4495",
+      "object_executed": false,
+      "accepted31_code_bytes": 3876,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 18,
+          "instructions": 969
+        }
+      }
+    },
+    "3mm": {
+      "code_bytes": 2040,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 9,
+          "instructions": 510
+        }
+      },
+      "object_sha256": "7e0c5106498a90e2f1cf84c0535c0612f58917ff4f0426a10a010882dd784b17",
+      "metadata_sha256": "8d5d154929acae586437f09bacc9ee945f32755721c934e39a8f3bee86cac78c",
+      "disassembly_sha256": "44b819ea60bc654c501f85308de4a6ace2086b539446bdabc709e991b57932e3",
+      "object_executed": false,
+      "accepted31_code_bytes": 2040,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 9,
+          "instructions": 510
+        }
+      }
+    },
+    "atax": {
+      "code_bytes": 2256,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 9,
+          "instructions": 564
+        }
+      },
+      "object_sha256": "364b2eab2eed8b29f82adc803d396e76a68f3eed440bd1456b05c7f8c09c480b",
+      "metadata_sha256": "4730914d64b32992be4d158a385ba546a1c820860d805aec4a32bd03d3045229",
+      "disassembly_sha256": "7f5ef69c7e66c33d88e53de0213e1191b3a94bbb7ee8882ce63da266edb9a5d5",
+      "object_executed": false,
+      "accepted31_code_bytes": 2256,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 9,
+          "instructions": 564
+        }
+      }
+    },
+    "bicg": {
+      "code_bytes": 2224,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 9,
+          "instructions": 556
+        }
+      },
+      "object_sha256": "e719a8e72d891a06220102e8e2694d9b395136af0084ab13a2f4c9778cc25bac",
+      "metadata_sha256": "3b6a33f7218262413085a98c367df6a1b13db28aed538dcd5e99d49d2d089d83",
+      "disassembly_sha256": "84b9ea4ecf0ced9de2725bb06e031340f06329b5ea9644e90ae1adc1f008f057",
+      "object_executed": false,
+      "accepted31_code_bytes": 2224,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 9,
+          "instructions": 556
+        }
+      }
+    },
+    "cholesky": {
+      "code_bytes": 19928,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "coordinate_division_ops": 4,
+          "instructions": 1646
+        },
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 6,
+          "instructions": 3336
+        }
+      },
+      "object_sha256": "136a539d9ec89f65e12b876b7128d8f628e8dff5f988554d942338169bfdac60",
+      "metadata_sha256": "478e0246632dbe98771a52f57d99b2ead2e416789acadef9e98bb3e31bc78ad3",
+      "disassembly_sha256": "b1cd95d6bcc6cffe9aa5d26f34793ad496609c4da74cc04aed3c14ea7e7afad4",
+      "object_executed": false,
+      "accepted31_code_bytes": 19928,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "coordinate_division_ops": 4,
+          "instructions": 1646
+        },
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 6,
+          "instructions": 3336
+        }
+      }
+    },
+    "correlation": {
+      "code_bytes": 13108,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 36,
+          "instructions": 3277
+        }
+      },
+      "object_sha256": "e0342e7d25f4017c7db671cec51e51f302d55a7c2216997c21f119c58fcb3098",
+      "metadata_sha256": "c280836cb80d343b18f40786a816e42d7923330ebfaa1494a6add40847b4f0da",
+      "disassembly_sha256": "24671361d7e1b5c0afa6bd2638a8caf90ccdd8c01c6405444d302d0ee4837af0",
+      "object_executed": false,
+      "accepted31_code_bytes": 13108,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 36,
+          "instructions": 3277
+        }
+      }
+    },
+    "covariance": {
+      "code_bytes": 4884,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 19,
+          "instructions": 1221
+        }
+      },
+      "object_sha256": "aee660732b728a64c49d287f112918809259bf83b08916ac7f2737373ee300a7",
+      "metadata_sha256": "b050e511c99b5f5d67701c112cf6ecfd97b0091082c251e6e0136aeca2913e15",
+      "disassembly_sha256": "e8208550c567dc7d87ecce773c27d2e37b48300fa196b2b97fcc3d1939182687",
+      "object_executed": false,
+      "accepted31_code_bytes": 4884,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 19,
+          "instructions": 1221
+        }
+      }
+    },
+    "deriche": {
+      "code_bytes": 62308,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_67": {
+          "coordinate_division_ops": 0,
+          "instructions": 753
+        },
+        "mech_canonical_program_entry_v1_numeric_142": {
+          "coordinate_division_ops": 0,
+          "instructions": 686
+        },
+        "mech_canonical_program_entry_v1_numeric_232": {
+          "coordinate_division_ops": 0,
+          "instructions": 753
+        },
+        "mech_canonical_program_entry_v1_numeric_307": {
+          "coordinate_division_ops": 0,
+          "instructions": 686
+        },
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 32,
+          "instructions": 12699
+        }
+      },
+      "object_sha256": "5ee5919854b7c767bbb458a3cc951a37ff7851270ecfc98f7c11203efb7ca133",
+      "metadata_sha256": "4309e562c85d9a0bfd5a178c5222aac136d34f8c7975e7e5ac6ce1a1deb15635",
+      "disassembly_sha256": "9ba36057e10ca26ff9714c0c46122edc123cafd574af022828ed818b73b2c996",
+      "object_executed": false,
+      "accepted31_code_bytes": 62308,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_67": {
+          "coordinate_division_ops": 0,
+          "instructions": 753
+        },
+        "mech_canonical_program_entry_v1_numeric_142": {
+          "coordinate_division_ops": 0,
+          "instructions": 686
+        },
+        "mech_canonical_program_entry_v1_numeric_232": {
+          "coordinate_division_ops": 0,
+          "instructions": 753
+        },
+        "mech_canonical_program_entry_v1_numeric_307": {
+          "coordinate_division_ops": 0,
+          "instructions": 686
+        },
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 32,
+          "instructions": 12699
+        }
+      }
+    },
+    "doitgen": {
+      "code_bytes": 1200,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 3,
+          "instructions": 300
+        }
+      },
+      "object_sha256": "60afa9dba42e5304cecfd82128f785a46ddc749cea3ab62857ab829748c63ff0",
+      "metadata_sha256": "93b9eaa1def9a500cc17c4e97dc417c5f4f1198afc303e335fb87a062edd921a",
+      "disassembly_sha256": "5fcc2fa74fabd89eb7edcd39b52245c9ffc3774926fad839529ab9ef6259d3e6",
+      "object_executed": false,
+      "accepted31_code_bytes": 1200,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 3,
+          "instructions": 300
+        }
+      }
+    },
+    "durbin": {
+      "code_bytes": 20008,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_4": {
+          "coordinate_division_ops": 5,
+          "instructions": 1662
+        },
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 7,
+          "instructions": 3340
+        }
+      },
+      "object_sha256": "29049bc7a20749617db2098aeecd44a992911cb1cfc686b2180cb9fe04c3ce71",
+      "metadata_sha256": "325660dac9e806efd14532f0f324d769ac2b7830668908521d8733f234120b71",
+      "disassembly_sha256": "db91bfbe16e5e85d505af11fdade4bbab3629505f0a842ca76086949e527082c",
+      "object_executed": false,
+      "accepted31_code_bytes": 20008,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_4": {
+          "coordinate_division_ops": 5,
+          "instructions": 1662
+        },
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 7,
+          "instructions": 3340
+        }
+      }
+    },
+    "gemm": {
+      "code_bytes": 3424,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 15,
+          "instructions": 856
+        }
+      },
+      "object_sha256": "37d9189072aec2c2c4bc58ff6196aef7b35984f0ca1bb965980457f9ab24c8c0",
+      "metadata_sha256": "855f511ed93e479f5c3bf2b239c8c239e9e3de5452b369469cd3fa8dde9c8658",
+      "disassembly_sha256": "45ff7f608c103784e94c57282b6f0856d8ec6ee1302c4d37f6f2313058b09302",
+      "object_executed": false,
+      "accepted31_code_bytes": 3424,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 15,
+          "instructions": 856
+        }
+      }
+    },
+    "gramschmidt": {
+      "code_bytes": 50712,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "coordinate_division_ops": 23,
+          "instructions": 4308
+        },
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 39,
+          "instructions": 8370
+        }
+      },
+      "object_sha256": "e9fb2787756530ada49b269f233d4d0871d77fdff2dbff6c48705188363ba79a",
+      "metadata_sha256": "81dd6b55f036021b37ee90300f767e5b642bc6cd6611be16cac9ceaf0f213c76",
+      "disassembly_sha256": "d7c24bf7120d41044b7850ce40885b6acf6f68a9763df92ac40bc153164f8208",
+      "object_executed": false,
+      "accepted31_code_bytes": 50664,
+      "code_bytes_delta": 48,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "coordinate_division_ops": 26,
+          "instructions": 4286
+        },
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 42,
+          "instructions": 8380
+        }
+      }
+    },
+    "mvt": {
+      "code_bytes": 3812,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 17,
+          "instructions": 953
+        }
+      },
+      "object_sha256": "0e21c0c498f6eb1736060bda621df6207b34f0c0d40e55cd7ca0107eb28850cf",
+      "metadata_sha256": "0cf7878970d89230a3352cd170567235c95581133352ea1d06701de96cd84e0c",
+      "disassembly_sha256": "2cddd3f40dcdcc3087ec0c02f73514bf5724321e96b1fef8f843ab4883ae46b1",
+      "object_executed": false,
+      "accepted31_code_bytes": 3812,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 17,
+          "instructions": 953
+        }
+      }
+    },
+    "nussinov": {
+      "code_bytes": 19360,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_6": {
+          "coordinate_division_ops": 0,
+          "instructions": 1404
+        },
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 0,
+          "instructions": 3436
+        }
+      },
+      "object_sha256": "1b5c3e1a190e36b91e9155c57ece57521a5d26c9c1c4b971d0bffe6d724fae31",
+      "metadata_sha256": "a3899cbd6d5ff0bc43bd6ba86c6cad5a52073d3c84db85479e4d5b840553ffae",
+      "disassembly_sha256": "570386f20a1253bc9f13d3aa250b5db9a833a5586ec77e2d0f0ace622ab59455",
+      "object_executed": false,
+      "accepted31_code_bytes": 19360,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_6": {
+          "coordinate_division_ops": 0,
+          "instructions": 1404
+        },
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 0,
+          "instructions": 3436
+        }
+      }
+    },
+    "seidel-2d": {
+      "code_bytes": 16104,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "coordinate_division_ops": 0,
+          "instructions": 1367
+        },
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 0,
+          "instructions": 2659
+        }
+      },
+      "object_sha256": "da2ec501375e285fee8929ae9afc3221a45649c96e9b146d86b0039216f8e576",
+      "metadata_sha256": "eed8778d6da7316db05562ec2da065bfa7a2980df6c323e8c9a414824e03c0c4",
+      "disassembly_sha256": "ff0c857a69540a4c9ab78dc1ad52de49fb9c6605868d899c158c9a19e726cc25",
+      "object_executed": false,
+      "accepted31_code_bytes": 16104,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "coordinate_division_ops": 0,
+          "instructions": 1367
+        },
+        "mech_canonical_program_entry_v1": {
+          "coordinate_division_ops": 0,
+          "instructions": 2659
+        }
+      }
+    }
+  },
+  "complete": true,
+  "profiled_rectangle_coordinate_division_ops": {
+    "before": 26,
+    "after": 23
+  }
+}

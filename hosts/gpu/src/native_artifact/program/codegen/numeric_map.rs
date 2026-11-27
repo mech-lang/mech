@@ -301,23 +301,42 @@ pub(super) fn emit(
     b.ins().jump(head, &[]);
     b.switch_to_block(head);
     let at = b.use_var(cursor);
-    let more = b.ins().icmp(IntCC::UnsignedLessThan, at, count);
+    let columns = match &region.rectangle {
+        // Current source eligibility excludes empty inner ranges. Retain the
+        // same zero-total behavior even for a zero-row diagnostic recipe.
+        Some(rectangle) if rectangle.rows == 0 => zero,
+        Some(_) => source_count,
+        None => count,
+    };
+    let more = b.ins().icmp(IntCC::UnsignedLessThan, at, columns);
     b.ins().brif(more, body, &[], done, &[]);
     b.switch_to_block(body);
     let at = b.use_var(cursor);
-    let (source_at, rectangle_row) = if let Some(rectangle) = &region.rectangle {
-        let rows = b.ins().iconst(types::I64, rectangle.rows as i64);
-        let column = b.ins().udiv(at, rows);
-        // One quotient serves the source cursor and final row-major store.
-        // 0 <= at < rows * source_count, so column * rows <= at.
-        let consumed = b.ins().imul(column, rows);
-        let row = b.ins().isub(at, consumed);
-        let inner = b.ins().iadd_imm(row, rectangle.start as i64);
-        b.def_var(words[&rectangle.inner_element], inner);
-        (column, Some(row))
-    } else {
-        (at, None)
-    };
+    let (source_at, rectangle_row, rectangle_loop) =
+        if let Some(rectangle) = region.rectangle.as_ref().filter(|r| r.rows == 1) {
+            let inner = b.ins().iconst(types::I64, rectangle.start as i64);
+            b.def_var(words[&rectangle.inner_element], inner);
+            (at, Some(zero), None)
+        } else if let Some(rectangle) = &region.rectangle {
+            // Visit one complete source column before the next. Direct counters
+            // preserve the source CFG and order without division per output cell.
+            let row_cursor = b.declare_var(types::I64);
+            b.def_var(row_cursor, zero);
+            let row_head = b.create_block();
+            let row_body = b.create_block();
+            let column_latch = b.create_block();
+            b.ins().jump(row_head, &[]);
+            b.switch_to_block(row_head);
+            let row = b.use_var(row_cursor);
+            let more = b.ins().icmp(IntCC::UnsignedLessThan, row, inner_count);
+            b.ins().brif(more, row_body, &[], column_latch, &[]);
+            b.switch_to_block(row_body);
+            let inner = b.ins().iadd_imm(row, rectangle.start as i64);
+            b.def_var(words[&rectangle.inner_element], inner);
+            (at, Some(row), Some((row_cursor, row_head, column_latch)))
+        } else {
+            (at, None, None)
+        };
     let word = if region.range {
         b.ins().iadd(start, source_at)
     } else {
@@ -487,6 +506,12 @@ pub(super) fn emit(
         }
     }
     b.switch_to_block(latch);
+    if let Some((row_cursor, row_head, column_latch)) = rectangle_loop {
+        let next = b.ins().iadd_imm(rectangle_row.unwrap(), 1);
+        b.def_var(row_cursor, next);
+        b.ins().jump(row_head, &[]);
+        b.switch_to_block(column_latch);
+    }
     let next = b.ins().iadd_imm(at, 1);
     b.def_var(cursor, next);
     b.ins().jump(head, &[]);
@@ -668,3 +693,7 @@ pub(in crate::native_artifact) fn emit_projection_finish(
 #[cfg(all(test, feature = "canonical-native-program"))]
 #[path = "numeric_map_geometry_tests.rs"]
 mod geometry_tests;
+
+#[cfg(all(test, feature = "canonical-native-program"))]
+#[path = "numeric_map_rectangle_tests.rs"]
+mod rectangle_tests;
