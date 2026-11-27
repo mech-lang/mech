@@ -21,7 +21,6 @@ pub(in crate::native_artifact) fn emit_entry(
     hooks: &Hooks,
     region: &Region,
     plan: &Plan,
-    hoisted_bounds: bool,
     counter_slot: usize,
     exit: Block,
     error: Block,
@@ -59,17 +58,7 @@ pub(in crate::native_artifact) fn emit_entry(
     let settle = b.create_block();
     b.append_block_param(miss, types::I64);
     b.append_block_param(settle, types::I64);
-    emit(
-        b,
-        frame,
-        region,
-        plan,
-        &captures,
-        hoisted_bounds,
-        complete,
-        miss,
-        malformed,
-    )?;
+    emit(b, frame, region, plan, &captures, complete, miss, malformed)?;
     b.switch_to_block(complete);
     b.ins().jump(settle, &[zero.into()]);
     b.switch_to_block(miss);
@@ -123,7 +112,6 @@ pub(super) fn emit(
     region: &Region,
     plan: &Plan,
     captures: &BTreeMap<u32, Value>,
-    hoisted_bounds: bool,
     complete: Block,
     miss: Block,
     malformed: Block,
@@ -264,13 +252,6 @@ pub(super) fn emit(
         let good = b.ins().bor(empty, no_overflow);
         require(b, good, malformed);
     }
-    // Snapshot pure current-range predicates once. A false hypothesis selects
-    // the unchanged checked body, retaining lazy reads, errors and source bills.
-    let (bounds_valid, hoisted_reads) = if hoisted_bounds {
-        super::numeric_map_bounds::emit(b, region, &matrices, captures, start, source_count, count)?
-    } else {
-        (b.ins().iconst(types::I8, 1), Default::default())
-    };
     // Source phi copies share a native SSA variable. Complete current-visits
     // and body inventories establish definite assignment before any use;
     // private body words need neither canonical slots nor runtime dispatch.
@@ -298,40 +279,11 @@ pub(super) fn emit(
             .entry(output)
             .or_insert_with(|| b.declare_var(types::I64));
     }
-    // A private home makes this computed invariant an actual snapshot, rather
-    // than a pure expression the backend can rematerialize in each iteration.
-    // The final aligned stack footprint is admitted by normal native limits.
-    let bounds_home = (!hoisted_reads.is_empty()).then(|| {
-        let home = b.create_sized_stack_slot(cranelift_codegen::ir::StackSlotData::new(
-            cranelift_codegen::ir::StackSlotKind::ExplicitSlot,
-            1,
-            0,
-        ));
-        b.ins().stack_store(bounds_valid, home, 0);
-        home
-    });
-    let versioned = bounds_home.is_some();
-    let source_versions: Vec<(bool, BTreeMap<u32, Block>)> = (if versioned {
-        vec![true, false]
-    } else {
-        vec![false]
-    })
-    .into_iter()
-    .map(|proved| {
-        let blocks = region
-            .body
-            .iter()
-            .map(|&at| {
-                let block = b.create_block();
-                if versioned && !proved {
-                    b.set_cold_block(block);
-                }
-                (at, block)
-            })
-            .collect();
-        (proved, blocks)
-    })
-    .collect();
+    let source_blocks: BTreeMap<_, _> = region
+        .body
+        .iter()
+        .map(|&at| (at, b.create_block()))
+        .collect();
     let latch = b.create_block();
     let cursor = b.declare_var(types::I64);
     let zero = b.ins().iconst(types::I64, 0);
@@ -380,18 +332,7 @@ pub(super) fn emit(
         )
     };
     b.def_var(words[&region.element], word);
-    if let Some(home) = bounds_home {
-        let valid = b.ins().stack_load(types::I8, home, 0);
-        b.ins().brif(
-            valid,
-            source_versions[0].1[&region.body[0]],
-            &[],
-            source_versions[1].1[&region.body[0]],
-            &[],
-        );
-    } else {
-        b.ins().jump(source_versions[0].1[&region.body[0]], &[]);
-    }
+    b.ins().jump(source_blocks[&region.body[0]], &[]);
     let source_latch = plan.iterations()[region
         .rectangle
         .as_ref()
@@ -399,163 +340,150 @@ pub(super) fn emit(
         as usize]
         .as_ref()
         .latch();
-    for (proved_bounds, source_blocks) in &source_versions {
-        for &site in &region.body {
-            b.switch_to_block(source_blocks[&site]);
-            if let Some(child) = region.nested.iter().find(|r| r.source.entry == site) {
-                let first = word_at(b, &words, child.source.first)?;
-                let last = word_at(b, &words, child.source.last)?;
-                let captures = child
-                    .source
-                    .region
-                    .captures
-                    .iter()
-                    .map(|&v| Ok((v, word_at(b, &words, v)?)))
-                    .collect::<Result<BTreeMap<_, _>, NativeCompileError>>()?;
-                let views = child
-                    .matrices
-                    .iter()
-                    .map(|&at| {
-                        let (input, count, rows, columns) = matrices[at];
-                        [input, count, rows, columns]
-                    })
-                    .collect::<Vec<_>>();
-                let value = super::numeric_phase_reductions::emit_from_views(
-                    b,
-                    &child.source,
-                    plan,
-                    first,
-                    last,
-                    &views,
-                    &captures,
-                    hoisted_bounds,
-                    index_miss,
-                )?;
-                b.def_var(words[&child.output(plan).get()], value);
-                let target = if child.source.after == source_latch {
-                    latch
-                } else {
-                    *source_blocks
-                        .get(&child.source.after)
-                        .ok_or_else(|| backend("nested fold leaves map"))?
-                };
-                b.ins().jump(target, &[]);
-                continue;
-            }
-            if let Some(read) = region.reads.iter().find(|r| r.site == site) {
-                let value = emit_read(
-                    b,
-                    read,
-                    region,
-                    plan,
-                    &matrices,
-                    &words,
-                    *proved_bounds && hoisted_reads.contains(&read.site),
-                    index_miss,
-                )?;
-                b.def_var(words[&read.output], value);
+    for &site in &region.body {
+        b.switch_to_block(source_blocks[&site]);
+        if let Some(child) = region.nested.iter().find(|r| r.source.entry == site) {
+            let first = word_at(b, &words, child.source.first)?;
+            let last = word_at(b, &words, child.source.last)?;
+            let captures = child
+                .source
+                .region
+                .captures
+                .iter()
+                .map(|&v| Ok((v, word_at(b, &words, v)?)))
+                .collect::<Result<BTreeMap<_, _>, NativeCompileError>>()?;
+            let views = child
+                .matrices
+                .iter()
+                .map(|&at| {
+                    let (input, count, rows, columns) = matrices[at];
+                    [input, count, rows, columns]
+                })
+                .collect::<Vec<_>>();
+            let value = super::numeric_phase_reductions::emit_from_views(
+                b,
+                &child.source,
+                plan,
+                first,
+                last,
+                &views,
+                &captures,
+                index_miss,
+            )?;
+            b.def_var(words[&child.output(plan).get()], value);
+            let target = if child.source.after == source_latch {
+                latch
             } else {
-                match plan.blocks()[site as usize].action() {
-                    Action::Scalar(Scalar::Copy { source, output }) => {
-                        let value = word_at(b, &words, source.get())?;
-                        b.def_var(words[&output.get()], value);
-                    }
-                    Action::Scalar(Scalar::Primitive {
-                        op,
-                        operands,
-                        output,
-                    }) => {
-                        let values = operands
-                            .iter()
-                            .map(|v| word_at(b, &words, v.get()))
-                            .collect::<Result<Vec<_>, _>>()?;
-                        let value = primitive(b, *op, &values, miss);
-                        b.def_var(words[&output.get()], value);
-                    }
-                    Action::CollectionPush { value, .. } => {
-                        let result = word_at(b, &words, value.get())?;
-                        if plan.values()[value.get() as usize].scalar_kind()
-                            == Some(mech_engine::native_artifact::NativeScalarKind::Bool)
-                        {
-                            let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, result, 1);
-                            require(b, valid, malformed);
-                        }
-                        if let Some(fold) = fold {
-                            let prior = b.use_var(fold);
-                            let next = primitive(
-                                b,
-                                mech_engine::native_artifact::NativeScalarOp::F64Add,
-                                &[prior, result],
-                                miss,
-                            );
-                            b.def_var(fold, next);
-                        } else {
-                            let value = if region.output_width == 8 {
-                                result
-                            } else {
-                                b.ins().ireduce(integer(region.output_width), result)
-                            };
-                            // Preserve source evaluation order (one complete column at a time),
-                            // but initialize each cell at its final row-major location.
-                            // count = rows * source_count and 0 <= at < count were
-                            // checked above, so this permutation is in-bounds and
-                            // initializes every output cell exactly once.
-                            let output_at = if let Some(row) = rectangle_row {
-                                let base = b.ins().imul(row, source_count);
-                                b.ins().iadd(base, source_at)
-                            } else {
-                                at
-                            };
-                            let displacement =
-                                b.ins().imul_imm(output_at, i64::from(region.output_width));
-                            let address = b.ins().iadd(output, displacement);
-                            b.ins().store(MemFlags::new(), value, address, 0);
-                        }
-                    }
-                    Action::Scalar(Scalar::None) | Action::CollectionElement { .. } => {}
-                    _ => return Err(backend("numeric map source action changed")),
-                }
-            }
-            let target = |to| {
-                if to == source_latch {
-                    Ok(latch)
-                } else {
-                    source_blocks
-                        .get(&to)
-                        .copied()
-                        .ok_or_else(|| backend("numeric map branch leaves its exact body"))
-                }
+                *source_blocks
+                    .get(&child.source.after)
+                    .ok_or_else(|| backend("nested fold leaves map"))?
             };
-            match plan.blocks()[site as usize].terminator() {
-                Terminator::Scalar(Term::Jump(to)) => {
-                    b.ins().jump(target(to)?, &[]);
+            b.ins().jump(target, &[]);
+            continue;
+        }
+        if let Some(read) = region.reads.iter().find(|r| r.site == site) {
+            let value = emit_read(b, read, region, plan, &matrices, &words, index_miss)?;
+            b.def_var(words[&read.output], value);
+        } else {
+            match plan.blocks()[site as usize].action() {
+                Action::Scalar(Scalar::Copy { source, output }) => {
+                    let value = word_at(b, &words, source.get())?;
+                    b.def_var(words[&output.get()], value);
                 }
-                Terminator::Scalar(Term::Branch { condition, yes, no }) => {
-                    let value = word_at(b, &words, condition.get())?;
-                    let condition = b.ins().icmp_imm(IntCC::NotEqual, value, 0);
-                    b.ins().brif(condition, target(yes)?, &[], target(no)?, &[]);
-                }
-                Terminator::Scalar(Term::LiteralBranch {
-                    left,
-                    right,
-                    yes,
-                    no,
+                Action::Scalar(Scalar::Primitive {
+                    op,
+                    operands,
+                    output,
                 }) => {
-                    let kind = plan.values()[left.get() as usize]
-                        .scalar_kind()
-                        .ok_or_else(|| backend("numeric map literal branch kind"))?;
-                    let left = word_at(b, &words, left.get())?;
-                    let right = word_at(b, &words, right.get())?;
-                    let condition = crate::native_artifact::control_compiler::literal_equal(
-                        b, kind, left, right,
-                    );
-                    b.ins().brif(condition, target(yes)?, &[], target(no)?, &[]);
+                    let values = operands
+                        .iter()
+                        .map(|v| word_at(b, &words, v.get()))
+                        .collect::<Result<Vec<_>, _>>()?;
+                    let value = primitive(b, *op, &values, miss);
+                    b.def_var(words[&output.get()], value);
                 }
-                Terminator::Scalar(Term::Reject | Term::IntegrityFailure) => {
-                    b.ins().jump(index_miss, &[]);
+                Action::CollectionPush { value, .. } => {
+                    let result = word_at(b, &words, value.get())?;
+                    if plan.values()[value.get() as usize].scalar_kind()
+                        == Some(mech_engine::native_artifact::NativeScalarKind::Bool)
+                    {
+                        let valid = b.ins().icmp_imm(IntCC::UnsignedLessThanOrEqual, result, 1);
+                        require(b, valid, malformed);
+                    }
+                    if let Some(fold) = fold {
+                        let prior = b.use_var(fold);
+                        let next = primitive(
+                            b,
+                            mech_engine::native_artifact::NativeScalarOp::F64Add,
+                            &[prior, result],
+                            miss,
+                        );
+                        b.def_var(fold, next);
+                    } else {
+                        let value = if region.output_width == 8 {
+                            result
+                        } else {
+                            b.ins().ireduce(integer(region.output_width), result)
+                        };
+                        // Preserve source evaluation order (one complete column at a time),
+                        // but initialize each cell at its final row-major location.
+                        // count = rows * source_count and 0 <= at < count were
+                        // checked above, so this permutation is in-bounds and
+                        // initializes every output cell exactly once.
+                        let output_at = if let Some(row) = rectangle_row {
+                            let base = b.ins().imul(row, source_count);
+                            b.ins().iadd(base, source_at)
+                        } else {
+                            at
+                        };
+                        let displacement =
+                            b.ins().imul_imm(output_at, i64::from(region.output_width));
+                        let address = b.ins().iadd(output, displacement);
+                        b.ins().store(MemFlags::new(), value, address, 0);
+                    }
                 }
-                _ => return Err(backend("numeric map source terminator changed")),
+                Action::Scalar(Scalar::None) | Action::CollectionElement { .. } => {}
+                _ => return Err(backend("numeric map source action changed")),
             }
+        }
+        let target = |to| {
+            if to == source_latch {
+                Ok(latch)
+            } else {
+                source_blocks
+                    .get(&to)
+                    .copied()
+                    .ok_or_else(|| backend("numeric map branch leaves its exact body"))
+            }
+        };
+        match plan.blocks()[site as usize].terminator() {
+            Terminator::Scalar(Term::Jump(to)) => {
+                b.ins().jump(target(to)?, &[]);
+            }
+            Terminator::Scalar(Term::Branch { condition, yes, no }) => {
+                let value = word_at(b, &words, condition.get())?;
+                let condition = b.ins().icmp_imm(IntCC::NotEqual, value, 0);
+                b.ins().brif(condition, target(yes)?, &[], target(no)?, &[]);
+            }
+            Terminator::Scalar(Term::LiteralBranch {
+                left,
+                right,
+                yes,
+                no,
+            }) => {
+                let kind = plan.values()[left.get() as usize]
+                    .scalar_kind()
+                    .ok_or_else(|| backend("numeric map literal branch kind"))?;
+                let left = word_at(b, &words, left.get())?;
+                let right = word_at(b, &words, right.get())?;
+                let condition =
+                    crate::native_artifact::control_compiler::literal_equal(b, kind, left, right);
+                b.ins().brif(condition, target(yes)?, &[], target(no)?, &[]);
+            }
+            Terminator::Scalar(Term::Reject | Term::IntegrityFailure) => {
+                b.ins().jump(index_miss, &[]);
+            }
+            _ => return Err(backend("numeric map source terminator changed")),
         }
     }
     b.switch_to_block(latch);
@@ -644,7 +572,6 @@ fn emit_read(
     plan: &Plan,
     matrices: &[(Value, Value, Value, Value)],
     words: &BTreeMap<u32, Variable>,
-    bounds_proven: bool,
     miss: Block,
 ) -> Result<Value, NativeCompileError> {
     let (pointer, cells, rows, columns) = matrices[read.matrix];
@@ -659,10 +586,8 @@ fn emit_read(
             // Unsigned (index - 1) < length checks zero and the upper bound
             // together, including zero-length and maximum-word selectors.
             let ordinal = b.ins().iadd_imm(*linear, -1);
-            if !bounds_proven {
-                let valid = b.ins().icmp(IntCC::UnsignedLessThan, ordinal, cells);
-                require(b, valid, miss);
-            }
+            let valid = b.ins().icmp(IntCC::UnsignedLessThan, ordinal, cells);
+            require(b, valid, miss);
             super::numeric_words::linear_address(
                 b,
                 ordinal,
@@ -673,13 +598,6 @@ fn emit_read(
                     .definition()
                     .body(),
                 |_| pointer,
-            )?
-        }
-        [row, column] if bounds_proven => {
-            let row = b.ins().iadd_imm(*row, -1);
-            let column = b.ins().iadd_imm(*column, -1);
-            super::numeric_words::cell_address_from_ordinals(
-                b, row, column, columns, width, pointer,
             )?
         }
         [row, column] => super::numeric_words::cell_address(

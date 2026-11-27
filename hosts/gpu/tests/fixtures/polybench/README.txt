@@ -2491,3 +2491,18 @@ The single prospective v2 optimization15 probe uses seven fresh-process samples 
 The strict two-set gate rejects this run; exact accepted31 compiler source and driver are restored. All900 formal observations,29482 finite liveouts,38 append-only history entries, all regressions, failed development sources and raw evidence remain. No holdout per-case tuning was used. The below1.0x C holdout goal remains unmet.
 
 [Qualification](round-37-qualification.json) · [Frozen source](round-37-frozen.json) · [Acceptance](round-37-performance-acceptance.json) · [Optimization-only profiles](training-experiments/optimization-margin-profile.json)
+
+Round38: versioned readonly map bounds (not promoted)
+
+The shared Cranelift map emitter computes pure current range/capture bounds predicates once, then selects a bounds-proved or unchanged checked body inside the same native loop. False hypotheses never cause earlier source replay or evaluate inactive reads. Source evaluation order, lazy bounds/error checks, native admission, output banks, arithmetic and exact accounting remain. Standalone maps, phase maps and nested reductions share the pass. No source-port changes, benchmark-name checks, FP reassociation or FMA. All686 broad checks,110 focused checks and both feature checks pass, including all30 finite C-liveout programs. IR403/work156/ABI47.
+
+The single prospective v2 optimization15 probe uses seven fresh-process samples per actor, interleaving accepted31 and candidate. Raw geomean speedup is1.011909x; Gram-Schmidt is1.070034x; all210 observations and0 regressions>5% remain. Visits match and source work/comparison bills do not decrease. Actual checked Object inspection preserves both native bodies and demonstrates an available bounds-proved CFG path with fewer per-read comparisons. Static path counts do not establish input feasibility or measured performance. Source/driver were committed/frozen before both formal sets.
+
+| Set | Accepted31 x C | Round38 x C | Raw speedup vs31 | Reference-adjusted speedup |
+|---|---:|---:|---:|---:|
+| Optimization | 11.43636x | 11.86032x | 0.98606x | 0.99917x |
+| Holdout | 39.31570x | 39.86498x | 0.97935x | 0.99873x |
+
+The strict two-set gate rejects this run; exact accepted31 compiler source and driver are restored. All900 formal observations,29482 finite liveouts,39 append-only history entries, all regressions, failed development sources and raw evidence remain. No holdout per-case tuning was used. The below1.0x C holdout goal remains unmet.
+
+[Qualification](round-38-qualification.json) · [Frozen source](round-38-frozen.json) · [Acceptance](round-38-performance-acceptance.json) · [Optimization-only profiles](training-experiments/optimization-margin-profile.json)
