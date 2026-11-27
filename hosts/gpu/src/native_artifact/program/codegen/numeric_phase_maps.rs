@@ -7,7 +7,7 @@ use crate::native_artifact::program::prepare::{
 };
 use crate::native_artifact::{NativeCompileError, compiler::backend};
 use cranelift_codegen::ir::{
-    Block, InstBuilder, MemFlags, StackSlotData, StackSlotKind, condcodes::IntCC, types,
+    Block, InstBuilder, StackSlotData, StackSlotKind, condcodes::IntCC, types,
 };
 use cranelift_frontend::FunctionBuilder;
 use mech_engine::native_artifact::NativeProgramArtifactPlan as Plan;
@@ -106,30 +106,7 @@ pub(super) fn emit(
     // helper occurs after the first destination store, so reverse/overlapping
     // source reads observe the entire old vector and failures publish nothing.
     let base = words.read(b, owned.map_or(view, |bank| shadow + bank));
-    let copy = b.create_block();
-    let done = b.create_block();
-    b.append_block_param(copy, types::I64);
-    let zero = b.ins().iconst(types::I64, 0);
-    b.ins().jump(copy, &[zero.into()]);
-    b.switch_to_block(copy);
-    let offset = b.block_params(copy)[0];
-    let input = b.ins().iadd(scratch, offset);
-    let output = b.ins().iadd(base, offset);
-    let ty = match width {
-        1 => types::I8,
-        2 => types::I16,
-        4 => types::I32,
-        8 => types::I64,
-        _ => return Err(backend("phase map lost its typed scalar width")),
-    };
-    let cell = b.ins().load(ty, MemFlags::new(), input, 0);
-    b.ins().store(MemFlags::new(), cell, output, 0);
-    let next = b.ins().iadd_imm(offset, i64::from(width));
-    let more = b
-        .ins()
-        .icmp_imm(IntCC::UnsignedLessThan, next, i64::from(bytes));
-    b.ins().brif(more, copy, &[next.into()], done, &[]);
-    b.switch_to_block(done);
+    super::bit_copy::emit(b, scratch, base, u64::from(bytes), width)?;
     if owned.is_some() {
         words.write(b, view, base);
         let one = b.ins().iconst(types::I64, 1);

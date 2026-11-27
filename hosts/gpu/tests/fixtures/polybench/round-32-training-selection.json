@@ -1,0 +1,28 @@
+{
+  "selected_at": "2026-11-27T08:20:11.289659+00:00",
+  "prospective_rule": {
+    "scope": "Optimization15 only, prospective before all candidate performance observations. No holdout tuning.",
+    "prerequisites": [
+      "585 selected checks and both standalone features pass on unchanged source",
+      "Current real checked Object disassembly shows SIMD bank copy instructions replacing scalar transfers in the profiled optimization path",
+      "All15 optimization warmups match full C liveouts",
+      "Every execution counter exactly matches accepted31"
+    ],
+    "training_selection": "One seven-sample probe against accepted31 with rotating actor order; select only if raw geometric-mean speedup is strictly above1. Preserve all cases, samples and regressions; no post-hoc timing retries or exclusions.",
+    "formal_promotion": "Freeze committed source and driver before both full formal sets; all900 observations retained, both Mech/C scores must strictly improve vs accepted31. No tolerances.",
+    "goal": "Below1.0x C on fixed15 holdout remains the objective."
+  },
+  "probe_sha256": "8fe6990201645bccd954d564f6dd4fc88d5ce2e6f1de611a01fc628236f744d1",
+  "emission_census_sha256": "ed7e2daf846e591c854120dded7f0ffdca2c7bfc86091667062915e6f72e58ff",
+  "selected_compiler_fingerprint": "6600c41339cfec0c87ced5e81c16be143c9497f2e0b478f17cf9c09732429bf6",
+  "selected_driver_sha256": "c32786dc285d5df7de4de07251ca3435e48416e7f0b098ea239ae390bd2b2b82",
+  "decision": "Select unchanged qualified shared SIMD bit-copy candidate for frozen formal both-set evaluation",
+  "summary": {
+    "count": 15,
+    "geomean_raw_speedup_vs_accepted31": 1.0068096630851084,
+    "regressions_over_five_percent": 2,
+    "sum_candidate_median_seconds": 0.000994124,
+    "sum_reference_median_seconds": 0.000996372
+  },
+  "holdout_performance_used": false
+}

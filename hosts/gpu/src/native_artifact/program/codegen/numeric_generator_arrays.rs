@@ -86,27 +86,16 @@ pub(super) fn write_view(b: &mut FunctionBuilder<'_>, words: &Words, at: usize, 
         words.write(b, at + n, value);
     }
 }
-pub(super) fn copy(b: &mut FunctionBuilder<'_>, source: Value, output: Value, count: u64) {
-    let header = b.create_block();
-    let body = b.create_block();
-    let done = b.create_block();
-    b.append_block_param(header, types::I64);
-    let zero = b.ins().iconst(types::I64, 0);
-    b.ins().jump(header, &[zero.into()]);
-    b.switch_to_block(header);
-    let index = b.block_params(header)[0];
-    let more = b
-        .ins()
-        .icmp_imm(IntCC::UnsignedLessThan, index, count as i64);
-    b.ins().brif(more, body, &[], done, &[]);
-    b.switch_to_block(body);
-    let from = address(b, source, index);
-    let to = address(b, output, index);
-    let value = b.ins().load(types::I64, MemFlags::new(), from, 0);
-    b.ins().store(MemFlags::new(), value, to, 0);
-    let next = b.ins().iadd_imm(index, 1);
-    b.ins().jump(header, &[next.into()]);
-    b.switch_to_block(done);
+pub(super) fn copy(
+    b: &mut FunctionBuilder<'_>,
+    source: Value,
+    output: Value,
+    count: u64,
+) -> Result<(), NativeCompileError> {
+    let bytes = count
+        .checked_mul(8)
+        .ok_or_else(|| backend("generator copy byte count overflowed"))?;
+    super::super::bit_copy::emit(b, source, output, bytes, 8)
 }
 pub(super) fn linear(
     b: &mut FunctionBuilder<'_>,

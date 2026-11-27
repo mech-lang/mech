@@ -1,0 +1,399 @@
+{
+  "scope": "Real checked Object export for optimization15 only; no timing observations or linked Object execution.",
+  "compiler_fingerprint": "6600c41339cfec0c87ced5e81c16be143c9497f2e0b478f17cf9c09732429bf6",
+  "driver_sha256": "c32786dc285d5df7de4de07251ca3435e48416e7f0b098ea239ae390bd2b2b82",
+  "cases": {
+    "2mm": {
+      "code_bytes": 3876,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 28,
+          "instructions": 969
+        }
+      },
+      "object_sha256": "99d95c8805780158ccfcfecf9d5840071d3fee3f0b793297b55525cb42ecddfd",
+      "metadata_sha256": "61a4c2112670824a4e601886310f3dc9f88b7e4ef8238cecde7f0254b09b4749",
+      "disassembly_sha256": "6ecc3d235c0698527d2f96e737de0a77d1a3046c23985cb39af7f809f26e7bc4",
+      "object_executed": false,
+      "accepted31_code_bytes": 3876,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 28,
+          "instructions": 969
+        }
+      }
+    },
+    "3mm": {
+      "code_bytes": 2040,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 6,
+          "instructions": 510
+        }
+      },
+      "object_sha256": "c4821e7ae9815f6a65a92e82e5cc6c2d6fb24964095a85bb4c83440b575e0fdc",
+      "metadata_sha256": "2e18615e88e55bb7a9332ba2ee6b36cb0ed146080c6fca00bbba04963617bc21",
+      "disassembly_sha256": "36d5e4d04a046c81d16398aaf193c2b55ae4ebd10ece5620938bdca0abd63307",
+      "object_executed": false,
+      "accepted31_code_bytes": 2040,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 6,
+          "instructions": 510
+        }
+      }
+    },
+    "atax": {
+      "code_bytes": 2256,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 4,
+          "instructions": 564
+        }
+      },
+      "object_sha256": "2771813b98162cd45109e73bbcc03f831f30fe0c0772ec3410b6219cd7f1be00",
+      "metadata_sha256": "70748a627679fe1e7ba6717734915451e9a7f0c547cc20e94da7fdf7501eb540",
+      "disassembly_sha256": "af951925568ccdcf4c230d1344bf68d138348c6dda0471e311b0fada28ae0b5e",
+      "object_executed": false,
+      "accepted31_code_bytes": 2256,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 4,
+          "instructions": 564
+        }
+      }
+    },
+    "bicg": {
+      "code_bytes": 2224,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 4,
+          "instructions": 556
+        }
+      },
+      "object_sha256": "8044a30eb3c1a2aa55f9222b4e5be72d5ee4754f4a17e750cfcd02986a6343bd",
+      "metadata_sha256": "f48e8e67ef8a72271a23a49d4452172947e49fd6ce1d461fcd0fe1379e1c4bf0",
+      "disassembly_sha256": "2202b4e0cfdbefd6cdafaaa5cb715c93d8b31c9a5044ea398e45347d9b6cb135",
+      "object_executed": false,
+      "accepted31_code_bytes": 2224,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 4,
+          "instructions": 556
+        }
+      }
+    },
+    "cholesky": {
+      "code_bytes": 19928,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "vector_memory_ops": 0,
+          "instructions": 1646
+        },
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 2,
+          "instructions": 3336
+        }
+      },
+      "object_sha256": "30c240d8eabf75939782e719fbcd03b9eedf5fdcf4869045a2cd2e891b1949fd",
+      "metadata_sha256": "b7534798ae8711eacdc9436db77d28c8f247e22ce346b37821c59114354263f8",
+      "disassembly_sha256": "b302c05f2ccb01b5f678eecd5ccceec6fe919ce346772001381bec5a466ba19a",
+      "object_executed": false,
+      "accepted31_code_bytes": 19928,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "vector_memory_ops": 0,
+          "instructions": 1646
+        },
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 2,
+          "instructions": 3336
+        }
+      }
+    },
+    "correlation": {
+      "code_bytes": 13108,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 54,
+          "instructions": 3277
+        }
+      },
+      "object_sha256": "56121dd7f4d7159857658347de3b99464a40c3fd658859f46b2614ceb3a9aa8f",
+      "metadata_sha256": "b15d42b88bc82c3c34b89abc3495e8347611d1046f42b7e297859284841f4d43",
+      "disassembly_sha256": "d10960f6ead37e46470bd71efbfdde2a3ee5cc08131951d828782c00fdef24f2",
+      "object_executed": false,
+      "accepted31_code_bytes": 13108,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 54,
+          "instructions": 3277
+        }
+      }
+    },
+    "covariance": {
+      "code_bytes": 4884,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 28,
+          "instructions": 1221
+        }
+      },
+      "object_sha256": "a5207fbb81f3f1ca26318dbcf40338dc72efaba46202ef8e2e872cbcc1bfc337",
+      "metadata_sha256": "ce15fbf5f54db3ac8b54de845f18cd1f74526e139f9a351b81d898457b0f0d63",
+      "disassembly_sha256": "37af4c382d2540ba6a14ca37dfd172708828fb190fca0e264a877b493f4e4de8",
+      "object_executed": false,
+      "accepted31_code_bytes": 4884,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 28,
+          "instructions": 1221
+        }
+      }
+    },
+    "deriche": {
+      "code_bytes": 62696,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_67": {
+          "vector_memory_ops": 0,
+          "instructions": 753
+        },
+        "mech_canonical_program_entry_v1_numeric_142": {
+          "vector_memory_ops": 0,
+          "instructions": 686
+        },
+        "mech_canonical_program_entry_v1_numeric_232": {
+          "vector_memory_ops": 0,
+          "instructions": 753
+        },
+        "mech_canonical_program_entry_v1_numeric_307": {
+          "vector_memory_ops": 0,
+          "instructions": 686
+        },
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 48,
+          "instructions": 12796
+        }
+      },
+      "object_sha256": "599e7be99f9452751a2019eb80e5f59e446a6196c3c1b24d2a1c90fe326b48c8",
+      "metadata_sha256": "f324a6291ac3c382e637465a57ec9bef034df45a10a00e035c567deae747799b",
+      "disassembly_sha256": "2d109bf9fc88e3eda42b02a45c3faf41e061653d747e3be0f2aa47a45c45a07e",
+      "object_executed": false,
+      "accepted31_code_bytes": 62308,
+      "code_bytes_delta": 388,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_67": {
+          "vector_memory_ops": 0,
+          "instructions": 753
+        },
+        "mech_canonical_program_entry_v1_numeric_142": {
+          "vector_memory_ops": 0,
+          "instructions": 686
+        },
+        "mech_canonical_program_entry_v1_numeric_232": {
+          "vector_memory_ops": 0,
+          "instructions": 753
+        },
+        "mech_canonical_program_entry_v1_numeric_307": {
+          "vector_memory_ops": 0,
+          "instructions": 686
+        },
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 16,
+          "instructions": 12699
+        }
+      }
+    },
+    "doitgen": {
+      "code_bytes": 1200,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 2,
+          "instructions": 300
+        }
+      },
+      "object_sha256": "038b606001a47165ac9fa99c70dc88227a64c5a408cd11adac4cd15d287e3ea2",
+      "metadata_sha256": "f534f4a56b4933c7c98d4990b09656ef3550c0c1abd524ddebb5ee898a86f4f7",
+      "disassembly_sha256": "c25edc5a02ee2d38d4a59ef006beca444153f82af4333b1ba4755b7d77918b04",
+      "object_executed": false,
+      "accepted31_code_bytes": 1200,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 2,
+          "instructions": 300
+        }
+      }
+    },
+    "durbin": {
+      "code_bytes": 20292,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_4": {
+          "vector_memory_ops": 8,
+          "instructions": 1733
+        },
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 1,
+          "instructions": 3340
+        }
+      },
+      "object_sha256": "d91f8d7784dd0b67a3fd62e5cf062d1e2483916e08d5fe47455fe01d038e4d05",
+      "metadata_sha256": "72f6f095f8e5b97fba2d9fa4377a702f6ccf3edf29a714d7930a0ba0831cf704",
+      "disassembly_sha256": "45b7d5ac20051e7f590160ddf7e596eeb3bff7e72c74f3f06b593164d942dc68",
+      "object_executed": false,
+      "accepted31_code_bytes": 20008,
+      "code_bytes_delta": 284,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_4": {
+          "vector_memory_ops": 0,
+          "instructions": 1662
+        },
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 1,
+          "instructions": 3340
+        }
+      }
+    },
+    "gemm": {
+      "code_bytes": 3424,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 26,
+          "instructions": 856
+        }
+      },
+      "object_sha256": "3245c47e7521b64ee7d54920cae86cc22ba61f8946accecbe1355da35747a8df",
+      "metadata_sha256": "2c5aee203dda84c6c7b0d5608c64f327e72c9da649756b5115d7ae172c9bed89",
+      "disassembly_sha256": "b4db7c3326f7fb4b3b217ff11abc9773b7cb5f34d5e453fd7449d28d5b91da21",
+      "object_executed": false,
+      "accepted31_code_bytes": 3424,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 26,
+          "instructions": 856
+        }
+      }
+    },
+    "gramschmidt": {
+      "code_bytes": 51512,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "vector_memory_ops": 54,
+          "instructions": 4498
+        },
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 2,
+          "instructions": 8380
+        }
+      },
+      "object_sha256": "a2f43daa932eedef17fab929aa3a8212ff78ef9e29433ae8dd1a1122d3c477f6",
+      "metadata_sha256": "bd20df79c3707088681a3c92af73220924e03d4a9b309d407737c6d1284c843c",
+      "disassembly_sha256": "1e2f5eead99f1b39d77cbec243411221c1e40e5baf30ac40bbcdcc9dde6bf7d0",
+      "object_executed": false,
+      "accepted31_code_bytes": 50664,
+      "code_bytes_delta": 848,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "vector_memory_ops": 0,
+          "instructions": 4286
+        },
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 2,
+          "instructions": 8380
+        }
+      }
+    },
+    "mvt": {
+      "code_bytes": 3812,
+      "functions": {
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 20,
+          "instructions": 953
+        }
+      },
+      "object_sha256": "6649a4760c8d6587719054188c39e0bd76172d2e5534907a33a62c7f041d614e",
+      "metadata_sha256": "f96f924d79d5b98ab521def884ae96b759fee93fb4047ed66e74597064749184",
+      "disassembly_sha256": "5553698d0608afcac362c50e38827e50f03636da4412ceb4493644df25ccd0df",
+      "object_executed": false,
+      "accepted31_code_bytes": 3812,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 20,
+          "instructions": 953
+        }
+      }
+    },
+    "nussinov": {
+      "code_bytes": 19360,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_6": {
+          "vector_memory_ops": 0,
+          "instructions": 1404
+        },
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 0,
+          "instructions": 3436
+        }
+      },
+      "object_sha256": "227c950ee2377bbc0f58091c77bd1309c59e163b2a75697545bc740e4d707621",
+      "metadata_sha256": "7ad7e3fbec66e431940d6bf327619361298c33b80bdaf4e58c73b83514f6f671",
+      "disassembly_sha256": "219d3fe79c2fa9f2f06b8119907cb0fb3b42c2f08e5599563e314f822d33f8b7",
+      "object_executed": false,
+      "accepted31_code_bytes": 19360,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_6": {
+          "vector_memory_ops": 0,
+          "instructions": 1404
+        },
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 0,
+          "instructions": 3436
+        }
+      }
+    },
+    "seidel-2d": {
+      "code_bytes": 16104,
+      "functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "vector_memory_ops": 0,
+          "instructions": 1367
+        },
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 0,
+          "instructions": 2659
+        }
+      },
+      "object_sha256": "c4b55bda571539dc80d6b0887253c79531182625cdbefecbae4e4531a6107b98",
+      "metadata_sha256": "6dc1225c78a7febb6f2de8850284d100a7e161ce22b3595a852149739a20df14",
+      "disassembly_sha256": "8857caa0c8a571866a03b0f188d06224729bdf3583b525b42c495f6d3248777f",
+      "object_executed": false,
+      "accepted31_code_bytes": 16104,
+      "code_bytes_delta": 0,
+      "accepted31_functions": {
+        "mech_canonical_program_entry_v1_numeric_5": {
+          "vector_memory_ops": 0,
+          "instructions": 1367
+        },
+        "mech_canonical_program_entry_v1": {
+          "vector_memory_ops": 0,
+          "instructions": 2659
+        }
+      }
+    }
+  },
+  "complete": true,
+  "profiled_copy_function_vector_memory_ops": {
+    "before": 0,
+    "after": 54
+  }
+}
